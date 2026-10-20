@@ -1,0 +1,210 @@
+import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
+import 'package:spring_core_dart/src/core/io/resource.dart';
+
+/// Loads resources by location, like Spring's `ResourceLoader`.
+///
+/// ```dart
+/// final ResourceLoader loader = DefaultResourceLoader();
+/// final resource = loader.getResource('file:config/app.properties');
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// ResourceLoader loader = new DefaultResourceLoader();
+/// Resource resource = loader.getResource("file:config/app.properties");
+/// ```
+///
+/// There is no `classpath:` prefix; register a [ProtocolResolver] for other
+/// sources (e.g. Flutter assets).
+abstract interface class ResourceLoader {
+  /// Prefix for file system locations.
+  static const filePrefix = 'file:';
+
+  /// Returns a handle for [location]; it may not exist.
+  ///
+  /// Never returns `null`; check [Resource.exists].
+  Resource getResource(String location);
+}
+
+/// Resolves custom location protocols, like Spring's `ProtocolResolver`.
+///
+/// ```dart
+/// class AssetProtocolResolver implements ProtocolResolver {
+///   @override
+///   Resource? resolve(String location, ResourceLoader resourceLoader) =>
+///       location.startsWith('asset:')
+///           ? AssetResource(location.substring(6))
+///           : null;
+/// }
+///
+/// final loader = DefaultResourceLoader(
+///   protocolResolvers: [AssetProtocolResolver()],
+/// );
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// ProtocolResolver assets = (location, loader) ->
+///     location.startsWith("asset:")
+///         ? new AssetResource(location.substring(6))
+///         : null;
+/// var loader = new DefaultResourceLoader();
+/// loader.addProtocolResolver(assets);
+/// ```
+abstract interface class ProtocolResolver {
+  /// A resource for [location], or `null` if this resolver does not handle
+  /// it.
+  Resource? resolve(String location, ResourceLoader resourceLoader);
+}
+
+/// A [ProtocolResolver] from a function.
+///
+/// ```dart
+/// final loader = DefaultResourceLoader(
+///   protocolResolvers: [
+///     FunctionProtocolResolver(
+///       (location, _) => location == 'inline:greeting'
+///           ? ByteArrayResource.fromString('hello=world')
+///           : null,
+///     ),
+///   ],
+/// );
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// // ProtocolResolver is a functional interface, so a lambda is enough:
+/// loader.addProtocolResolver((location, resourceLoader) ->
+///     location.equals("inline:greeting")
+///         ? new ByteArrayResource("hello=world".getBytes())
+///         : null);
+/// ```
+final class FunctionProtocolResolver implements ProtocolResolver {
+  /// Wraps a resolve function; it returns `null` for locations it does
+  /// not handle.
+  const FunctionProtocolResolver(this._resolve);
+
+  final Resource? Function(String location, ResourceLoader loader) _resolve;
+
+  @override
+  Resource? resolve(String location, ResourceLoader resourceLoader) =>
+      _resolve(location, resourceLoader);
+}
+
+/// Serves `prefix:path` locations from an in-memory map; handy for tests
+/// and for content embedded in the app.
+///
+/// Paths are normalized (`./`, `..`, leading `/`), so `memory:config/a`
+/// and `memory:/config/./a` are the same file. Unknown paths resolve to a
+/// resource that does not exist.
+///
+/// ```dart
+/// final loader = DefaultResourceLoader(
+///   protocolResolvers: [
+///     InMemoryProtocolResolver('memory:', {
+///       'config/application.properties': 'app.name=demo',
+///     }),
+///   ],
+/// );
+/// final environment = StandardEnvironment();
+/// ConfigDataEnvironment(
+///   environment,
+///   resourceLoader: loader,
+///   defaultLocations: const ['optional:memory:config/'],
+/// ).processAndApplySync();
+/// ```
+///
+/// Spring has no direct equivalent; tests usually use `ByteArrayResource`,
+/// `MockPropertySource` or `@TestPropertySource` instead.
+final class InMemoryProtocolResolver implements ProtocolResolver {
+  /// Serves [files] (path → content, copied) under [prefix].
+  InMemoryProtocolResolver(this.prefix, Map<String, String> files)
+    : _files = Map.of(files);
+
+  /// Protocol prefix including the colon, e.g. `memory:`.
+  final String prefix;
+  final Map<String, String> _files;
+
+  /// Adds or replaces [path].
+  void put(String path, String content) => _files[path] = content;
+
+  @override
+  Resource? resolve(String location, ResourceLoader resourceLoader) {
+    if (!location.startsWith(prefix)) {
+      return null;
+    }
+    final path = _normalize(location.substring(prefix.length));
+    final content = _files[path];
+    final description = 'resource [$prefix$path]';
+    return content == null
+        ? DescriptiveResource(description)
+        : ByteArrayResource.fromString(content, description: description);
+  }
+
+  // Reuses FileSystemResource's path cleaning (pure string logic, works on
+  // the web too), then drops the leading slash so keys are relative.
+  static String _normalize(String path) =>
+      FileSystemResource(path).path.replaceFirst(RegExp('^/'), '');
+}
+
+/// Default [ResourceLoader], like Spring's `DefaultResourceLoader`.
+///
+/// Order: registered [ProtocolResolver]s, then `file:` and plain paths as
+/// file system resources. Other `scheme:` locations resolve to a resource
+/// that does not exist.
+///
+/// ```dart
+/// final loader = DefaultResourceLoader()
+///   ..addProtocolResolver(InMemoryProtocolResolver('memory:', {}));
+/// loader.getResource('config/app.properties'); // FileSystemResource
+/// loader.getResource('file:///etc/app.properties'); // FileSystemResource
+/// loader.getResource('https://example.com/x').exists(); // false
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// var loader = new DefaultResourceLoader();
+/// loader.addProtocolResolver(myResolver);
+/// // Plain paths are classpath resources in Spring, files here.
+/// Resource resource = loader.getResource("file:config/app.properties");
+/// ```
+class DefaultResourceLoader implements ResourceLoader {
+  /// Creates a loader that tries [protocolResolvers] first, in order.
+  DefaultResourceLoader({
+    Iterable<ProtocolResolver> protocolResolvers = const [],
+  }) : _resolvers = [...protocolResolvers];
+
+  final List<ProtocolResolver> _resolvers;
+
+  /// Resolvers tried before the built-in rules.
+  List<ProtocolResolver> get protocolResolvers => List.unmodifiable(_resolvers);
+
+  /// Registers [resolver]; later ones are tried after earlier ones.
+  void addProtocolResolver(ProtocolResolver resolver) =>
+      _resolvers.add(resolver);
+
+  @override
+  Resource getResource(String location) {
+    for (final resolver in _resolvers) {
+      final resource = resolver.resolve(location, this);
+      if (resource != null) {
+        return resource;
+      }
+    }
+    if (location.startsWith(ResourceLoader.filePrefix)) {
+      return FileSystemResource(_filePath(location));
+    }
+    // Another `scheme:` prefix (at least two letters, so a Windows drive
+    // like `C:\` is still a plain path).
+    if (RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location)) {
+      return DescriptiveResource('resource [$location] (unsupported protocol)');
+    }
+    return FileSystemResource(location);
+  }
+
+  static String _filePath(String location) {
+    final rest = location.substring(ResourceLoader.filePrefix.length);
+    // file:///abs/path and file:/abs/path are both absolute.
+    return rest.startsWith('///') ? rest.substring(2) : rest;
+  }
+}

@@ -1,0 +1,7 @@
+builders:
+  spring_core_dart:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springCoreDartBuilder"]
+    build_extensions: {".dart": [".beans.dart"]}
+    auto_apply: dependents
+    build_to: source

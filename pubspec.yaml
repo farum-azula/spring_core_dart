@@ -1,0 +1,43 @@
+name: spring_core_dart_workspace
+description: "spring_core_dart: Spring Core for Dart."
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - spring_core_dart
+  - spring_core_dart_generator
+  - example
+
+dev_dependencies:
+  lints: ^6.0.0
+  melos: ^8.9.0
+
+melos:
+  scripts:
+    gen:
+      description: Regenerate *.beans.dart in packages that use the generator.
+      exec: dart run build_runner build
+      packageFilters:
+        dependsOn: build_runner
+    analyze:
+      exec: dart analyze .
+    format:
+      exec: dart format --set-exit-if-changed .
+    test:
+      exec: dart test
+      packageFilters:
+        dirExists: test
+    coverage:
+      description: Line coverage into coverage/lcov.info of each package.
+      exec: dart run coverage:test_with_coverage
+      packageFilters:
+        dependsOn: coverage
+    check:
+      description: gen + analyze + format + test.
+      steps:
+        - gen
+        - analyze
+        - format
+        - test
