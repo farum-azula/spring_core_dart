@@ -136,6 +136,83 @@ Starters of this repository:
 Test a starter's auto-configuration with `ApplicationContextRunner` from
 `spring_boot_starter_test`.
 
+## Writing your own starter
+
+Any package can be a starter. An application that adds it to
+`pubspec.yaml` and re-runs `build_runner` gets its beans with no code at
+all — exactly how `spring_boot_starter_logging` is picked up by the
+example.
+
+**1. Declare the module** in `lib/spring_auto_configuration.dart` (the file
+name is fixed): a public top-level `BeanModule` variable annotated with
+`@AutoConfigurationModule`.
+
+```dart
+// lib/spring_auto_configuration.dart of package `neon_cache`
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'src/cache.beans.dart';
+
+@AutoConfigurationModule(requires: '^0.1.0') // compatible spring_boot_dart versions
+final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
+```
+
+**2. Describe the beans**, with the generator (`@AutoConfiguration` +
+`@Bean` + conditions, scanned by a `@ComponentScan` in the starter) or as
+hand-written `BeanDefinition`s (both starters of this repository do that):
+
+```dart
+// lib/src/cache.dart
+@AutoConfiguration()
+class CacheAutoConfiguration {
+  @Bean()
+  @ConditionalOnMissingBean(Cache)              // the application's own Cache wins
+  @ConditionalOnProperty('neon.cache.enabled', matchIfMissing: true)
+  Cache cache(@Value(r'${neon.cache.size:100}') int size) => InMemoryCache(size);
+}
+```
+
+**3. Publish the generated code.** The generator writes files only into the
+package being built (`build_to: source`), never into dependencies, so run
+`dart run build_runner build` in the starter and publish its
+`*.beans.dart` with the package.
+
+**4. Test it** with `ApplicationContextRunner` (`spring_boot_starter_test`):
+the starter alone, with an application bean that makes it back off, with
+properties that switch it off.
+
+How it is found: when an application with `@SpringBootApplication` is
+built, the generator walks every package of its dependency graph (direct
+and transitive), reads `lib/spring_auto_configuration.dart` where present
+and lists the annotated modules in the generated `springApplication`
+(sorted by `order`, then package name):
+
+```dart
+// generated bin/main.beans.dart of the application
+final springApplication = SpringApplication(
+  [$application],
+  autoConfigurations: [
+    springBootAutoConfiguration,  // spring_boot_dart
+    neonCacheAutoConfiguration,   // found in neon_cache
+  ],
+);
+```
+
+Good to know:
+
+- **Only with `@SpringBootApplication`.** Applications that create the
+  context by hand (`AnnotationConfigApplicationContext`) list the module
+  themselves.
+- **Rebuild after adding the dependency.** Discovery happens at build time,
+  not by scanning a classpath at startup as in Java: until `build_runner`
+  runs again, the generated file does not know the new starter.
+- **Incompatible versions stop the build**: if `requires` does not match
+  the application's `spring_boot_dart`, the generator says which version to
+  use (see below).
+- **Registration order**: application beans first, then auto-configuration,
+  so `@ConditionalOnMissingBean` sees what the application declared.
+- Keep third-party constraints of the starter wide (`dio: '>=5.0.0 <7.0.0'`)
+  so applications can resolve them together with other starters.
+
 ## Logging levels
 
 `SpringApplication` applies `logging.level.*` to the `SpringLog` facade

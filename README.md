@@ -68,6 +68,12 @@ import 'main.beans.dart';
 void main(List<String> args) => runApplication(args);
 ```
 
+Starters are discovered automatically: add a package with a
+`lib/spring_auto_configuration.dart` to `pubspec.yaml`, re-run
+`build_runner`, and its beans are part of the application. Anyone can
+write one — see
+[Writing your own starter](spring_boot_dart/README.md#writing-your-own-starter).
+
 Tested with `spring_boot_starter_test` (a dev dependency):
 
 ```dart
@@ -610,6 +616,45 @@ Starters (each a separate package, discovered by the generator like
 - **HTTP client** (`spring_boot_starter_http`): a configured `http.Client`
   or `Dio` bean from `spring.http.*` (base URL, timeouts, interceptors),
   declarative clients like Spring's `@HttpExchange`.
+- **Feign clients** (`spring_boot_starter_feign`, like Spring Cloud
+  OpenFeign): an annotated interface becomes an injectable bean whose
+  implementation the generator writes, so wrong paths, missing
+  `@PathVariable`s or unsupported types are build errors.
+  ```dart
+  @FeignClient('catalog', url: r'${catalog.url}')
+  abstract interface class CatalogClient {
+    @GetMapping('/books/{isbn}')
+    Future<Book> find(@PathVariable('isbn') String isbn);
+
+    @GetMapping('/books')
+    Future<List<Book>> search(
+      @RequestParam('q') String query, {
+      @RequestParam('page') int page = 0,
+    });
+
+    @PostMapping('/books')
+    Future<Book> create(
+      @RequestBody() Book book,
+      @RequestHeader('X-Request-Id') String requestId,
+    );
+  }
+
+  @Service()
+  class Shop {
+    Shop(this.catalog); // injected like any bean
+    final CatalogClient catalog;
+  }
+  ```
+  - JSON (de)serialization from `@Introspected` / `toJson`-`fromJson`
+    classes, pluggable encoders and decoders.
+  - Per-client configuration from properties, like
+    `spring.cloud.openfeign.client.config.<name>.*`: URL, connect/read
+    timeouts, default headers, logger level (through `SpringLog`).
+  - Beans for request interceptors (auth tokens), an `ErrorDecoder`
+    (HTTP status to exceptions), a `Retryer`, and a `fallback` class used
+    when the call fails (with the retry and circuit-breaker starters).
+  - `@SpringBootTest` support: replace a client with `BeanOverride`, or
+    point it at a local stub server through properties.
 - **Data** (`spring_boot_starter_data_*`, like Spring Data JPA/JDBC):
   entities and repositories generated at build time, no reflection.
   `@Entity` classes get generated row mapping; repository interfaces get a
