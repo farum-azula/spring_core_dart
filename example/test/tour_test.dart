@@ -169,6 +169,8 @@ void main() {
   test('AOP', () {
     expectLine('slogans (advisor bean): READ MORE BOOKS');
     expectLine('proxy target: DefaultPricingService');
+    expectLine('self-invocation through this: timed calls: 0');
+    expectLine('self-invocation through @Lazy self: timed calls: 2');
     const order = [
       'audit: before quote[1, 3]',
       'timing: start',

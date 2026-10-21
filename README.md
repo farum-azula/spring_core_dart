@@ -181,6 +181,30 @@ class OrderService {
 }
 ```
 
+`@Lazy()` on an injection point injects a generated proxy that finds the
+bean on first use (Spring's lazy-resolution proxy). It breaks cycles and
+lets a bean call itself through its AOP proxy:
+
+```dart
+@Service()
+class BookService implements Books {
+  BookService(@Lazy() this._self);   // also on fields and setters
+  final Books _self;
+
+  @Timed()
+  @override
+  Book find(String isbn) => ...;
+
+  List<Book> findAll(List<String> isbns) =>
+      [for (final isbn in isbns) _self.find(isbn)];   // advised; this.find() is not
+}
+```
+
+The bean must exist and be unique (checked at refresh). The type must be
+an interface or a class without private members, not generic, and the
+point must not be nullable; otherwise the build stops and suggests
+`ObjectProvider<T>`.
+
 #### Primary constructors and other new syntax
 
 Dart 3.13+ syntax works with the generator: primary constructors (also on
@@ -414,6 +438,10 @@ Proxies are generated classes that implement the bean class (when it has
 no private members) and its interfaces, so they can be injected by either;
 `AopUtils.getTarget` unwraps them.
 
+As in Spring, a call through `this` inside the bean skips the proxy, so no
+advice runs. Call through another bean, or inject the bean into itself
+with `@Lazy()` (see Injection) or `ObjectProvider<T>`.
+
 ### Logging
 
 `SpringLog` is the logging facade (Spring's commons-logging / SLF4J): the
@@ -566,10 +594,47 @@ package-qualified AOP wildcards.
 
 ## Roadmap
 
-- Flutter library: bean builders, event listener widgets, `@Configurable`
-  `State` injection, asset resources.
-- Spring Web; more starters (HTTP client, scheduling, cache); a Flutter log
-  viewer screen over `LogBuffer`.
+Starters (each a separate package, discovered by the generator like
+`spring_boot_starter_logging`):
+
+- **Scheduling** (`spring_boot_starter_scheduling`): `@EnableScheduling`,
+  `@Scheduled(fixedRate: ..., fixedDelay: ..., initialDelay: ...)` and cron
+  expressions, stopped with the context; `@Async` methods.
+- **Cache** (`spring_boot_starter_cache`): `@Cacheable`, `@CachePut`,
+  `@CacheEvict`, `@Caching` over the existing AOP proxies; `CacheManager`
+  with an in-memory default, `spring.cache.*` properties (TTL, size),
+  pluggable stores.
+- **Retry**: `@Retryable(maxAttempts:, backoff:)` / `@Recover`, like
+  spring-retry, on the AOP proxies.
+- **HTTP client** (`spring_boot_starter_http`): a configured `http.Client`
+  or `Dio` bean from `spring.http.*` (base URL, timeouts, interceptors),
+  declarative clients like Spring's `@HttpExchange`.
+- **Flutter** (`flutter_spring`): the whole family for Flutter apps —
+  bean builders and event listener widgets, `@Configurable` `State`
+  injection, `runApplicationAsync` from `main`, log files in the app's
+  directory (`LoggingSystem.fileDirectory` via `path_provider`), a log
+  viewer screen over `LogBuffer`, `shared_preferences` as a property
+  source.
+- **Platform profiles** (in `flutter_spring`): the running platform is an
+  active profile — `android`, `ios`, `web`, `macos`, `windows`, `linux` —
+  plus the groups `mobile` (android, ios) and `desktop` (macos, windows,
+  linux). Beans are created only on their platform with the usual
+  `@Profile(['ios'])` / `@Profile(['mobile & !web'])`, and
+  `application-android.properties` / `application-mobile.properties` are
+  loaded automatically:
+  ```dart
+  @Component()
+  @Profile(['android'])
+  class AndroidPushService implements PushService { ... }
+
+  @Component()
+  @Profile(['ios'])
+  class ApnsPushService implements PushService { ... }
+  ```
+
+Framework:
+
+- Spring Web.
 - Rust bridge over rinf: Dart beans in Rust and Rust beans in Dart.
 
 ## License
@@ -592,7 +657,7 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 368 (runtime), 72 (generator), 12 (Spring Boot), 29 (logging
+Tests: 374 (runtime), 79 (generator), 12 (Spring Boot), 29 (logging
 starter), 25 (test starter), 16 end-to-end over the generated code of the
 example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,

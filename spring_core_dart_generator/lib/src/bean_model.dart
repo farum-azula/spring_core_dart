@@ -114,6 +114,7 @@ class InjectionPoint {
     this.expression,
     this.defaultValue,
     this.allowEmpty = false,
+    this.lazy,
   });
 
   /// A copy for a constructor or `@Bean` method parameter: a Dart default
@@ -131,6 +132,7 @@ class InjectionPoint {
     name: name,
     expression: expression,
     defaultValue: defaultValue,
+    lazy: lazy,
     allowEmpty:
         collectionsMayBeEmpty &&
         defaultValue == null &&
@@ -169,6 +171,10 @@ class InjectionPoint {
   /// A required collection that resolves to an empty collection when no
   /// bean matches (constructor and `@Bean` method parameters).
   final bool allowEmpty;
+
+  /// For a `@Lazy` single bean: the generated lazy proxy that resolves the
+  /// bean on every member access (Spring's lazy-resolution proxy).
+  final ProxyModel? lazy;
 }
 
 /// A constructor or method argument.
@@ -1378,6 +1384,10 @@ class ModuleModel {
 
   /// `@PropertySource` declarations of scanned and imported classes.
   final propertySources = <PropertySourceModel>[];
+
+  /// Lazy proxies for `@Lazy` injection points, one per type (keyed by
+  /// library URI and type name).
+  final lazyProxies = <String, ProxyModel>{};
   final _sources = <String>{};
 
   /// Records [classSource] and returns `false` if that class was already

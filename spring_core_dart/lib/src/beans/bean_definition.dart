@@ -48,6 +48,10 @@ enum DependencyKind {
   /// A lazy `ObjectProvider<T>`; never required, never part of a cycle.
   provider,
 
+  /// A `@Lazy` single bean: checked like [single] (present, unambiguous)
+  /// but resolved on first use, so never part of a cycle.
+  lazy,
+
   /// A `@Value` expression.
   value,
 }
@@ -111,6 +115,12 @@ final class Dependency {
     : kind = DependencyKind.provider,
       name = null,
       optional = true,
+      expression = null;
+
+  /// A `@Lazy` bean of [type]: validated at refresh, resolved on first use.
+  const Dependency.lazy(this.type, {this.qualifier, this.name})
+    : kind = DependencyKind.lazy,
+      optional = false,
       expression = null;
 
   /// A `@Value` [expression].

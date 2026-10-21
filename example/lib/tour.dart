@@ -7,6 +7,7 @@ import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/external/legacy_config.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
+import 'package:spring_core_dart_example/src/aop/self_invocation.dart';
 import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
 import 'package:spring_core_dart_example/src/catalog/welcome_letter.dart';
@@ -401,6 +402,27 @@ class _Tour {
     show('reserve (async)', await pricing.reserve('2'));
     show('slogans (advisor bean)', context.getBean<Slogans>().today());
     show('proxy target', AopUtils.getTarget(pricing).runtimeType);
+
+    // Self-invocation: only calls through the @Lazy self reference are
+    // advised.
+    final basket = context.getBean<BasketPricing>();
+    int timed(void Function() body) {
+      final before = tourLog.length;
+      body();
+      return tourLog
+          .skip(before)
+          .where((line) => line.startsWith('timing: start'))
+          .length;
+    }
+
+    show(
+      'self-invocation through this: timed calls',
+      timed(() => basket.totalDirect(['1', '2'])),
+    );
+    show(
+      'self-invocation through @Lazy self: timed calls',
+      timed(() => basket.total(['1', '2'])),
+    );
   }
 
   // Parent and child contexts built from hand-written modules.

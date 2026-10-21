@@ -1,5 +1,12 @@
 ## Unreleased
 
+- `@Lazy` on injection points (constructor parameters, fields, setters):
+  a generated lazy proxy resolves the bean on every call, on behalf of the
+  injecting bean (self-exclusion still applies). Breaks cycles and allows
+  self-injection through the AOP proxy. `Dependency.lazy` is validated at
+  refresh like a single dependency but is not an edge of the cycle check;
+  `DependencyResolver.lazyDependency`.
+- Lookups are cached per requester once the factory is frozen.
 - `ClasspathResources.addDirectory`: directories searched before the
   embedded `lib/resources/` files (the test classpath).
 - `SpringLog` is the logging facade of the family: per-logger levels

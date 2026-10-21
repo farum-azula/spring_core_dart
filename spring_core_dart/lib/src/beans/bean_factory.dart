@@ -531,6 +531,18 @@ abstract interface class DependencyResolver
   /// A lazy provider.
   ObjectProvider<T> provider<T extends Object>({String? qualifier});
 
+  /// A function resolving the bean of [T] each time it is called, as if
+  /// it were injected into the bean being created now (`@Lazy` injection
+  /// points: the generated lazy proxy calls it on every member access).
+  ///
+  /// ```dart
+  /// create: (r) => BookService(_$BookServiceLazy(r.lazyDependency<BookService>())),
+  /// ```
+  T Function() lazyDependency<T extends Object>({
+    String? qualifier,
+    String? name,
+  });
+
   /// A `@Value` expression converted to [T]: `${...}` placeholders are
   /// resolved, then `#{...}` is evaluated, then the result is converted.
   ///

@@ -154,6 +154,7 @@ class ModuleEmitter {
         ..body.addAll([
           for (final bean in module.beans)
             if (bean.proxy case final proxy?) _proxyClass(proxy, bean.element),
+          for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
         ])
         ..body.add(
           Field(
@@ -608,6 +609,134 @@ class ModuleEmitter {
     );
   }
 
+  // A `@Lazy` injection point gets an instance of this class instead of the
+  // bean: every member resolves the bean again (cheap once the factory is
+  // frozen) and forwards to it, like Spring's lazy-resolution proxy:
+  //
+  //   class _$BookServiceLazy implements BookService {
+  //     _$BookServiceLazy(this._resolve);
+  //     final BookService Function() _resolve;
+  //     @override
+  //     Book find(String isbn) => _resolve().find(isbn);
+  //   }
+  Class _lazyClass(ProxyModel proxy) {
+    final element = proxy.targetType.element;
+    final resolve = refer('_resolve').call([]);
+    return Class(
+      (c) => c
+        ..docs.add(
+          '/// Resolves `${proxy.targetType.element.name}` on every call '
+          '(`@Lazy` injection).',
+        )
+        ..name = proxy.className
+        ..implements.addAll([
+          for (final interface in proxy.interfaces) _type(interface, element),
+        ])
+        ..fields.add(
+          Field(
+            (f) => f
+              ..name = '_resolve'
+              ..modifier = FieldModifier.final$
+              ..type = cb.FunctionType(
+                (t) => t..returnType = _type(proxy.targetType, element),
+              ),
+          ),
+        )
+        ..constructors.add(
+          Constructor(
+            (k) => k.requiredParameters.add(
+              Parameter(
+                (p) => p
+                  ..name = '_resolve'
+                  ..toThis = true,
+              ),
+            ),
+          ),
+        )
+        ..methods.addAll([
+          Method(
+            (m) => m
+              ..annotations.add(refer('override'))
+              ..name = 'toString'
+              ..returns = refer('String')
+              ..lambda = true
+              ..body = resolve.property('toString').call([]).code,
+          ),
+          for (final member in proxy.members)
+            switch (member.kind) {
+              ProxyMemberKind.getter => Method(
+                (m) => m
+                  ..annotations.add(refer('override'))
+                  ..type = MethodType.getter
+                  ..name = member.name
+                  ..returns = _anyType(member.returnType, element)
+                  ..lambda = true
+                  ..body = resolve.property(member.name).code,
+              ),
+              ProxyMemberKind.setter => Method(
+                (m) => m
+                  ..annotations.add(refer('override'))
+                  ..type = MethodType.setter
+                  ..name = member.name
+                  ..requiredParameters.add(
+                    Parameter(
+                      (p) => p
+                        ..name = 'value'
+                        ..type = _anyType(member.returnType, element),
+                    ),
+                  )
+                  ..body = resolve
+                      .property(member.name)
+                      .assign(refer('value'))
+                      .statement,
+              ),
+              ProxyMemberKind.method => Method(
+                (m) => m
+                  ..annotations.add(refer('override'))
+                  ..name = member.name
+                  ..returns = _anyType(member.returnType, element)
+                  ..types.addAll([
+                    for (final typeParameter in member.typeParameters)
+                      TypeReference(
+                        (t) => t
+                          ..symbol = typeParameter.name
+                          ..bound = typeParameter.bound == null
+                              ? null
+                              : _anyType(typeParameter.bound!, element),
+                      ),
+                  ])
+                  ..requiredParameters.addAll([
+                    for (final parameter in member.parameters)
+                      if (!parameter.isNamed && parameter.isRequired)
+                        _proxyParameter(parameter, element),
+                  ])
+                  ..optionalParameters.addAll([
+                    for (final parameter in member.parameters)
+                      if (parameter.isNamed || !parameter.isRequired)
+                        _proxyParameter(parameter, element),
+                  ])
+                  ..lambda = true
+                  ..body = resolve.property(member.name).call(
+                    [
+                      for (final parameter in member.parameters)
+                        if (!parameter.isNamed) refer(parameter.name),
+                    ],
+                    {
+                      for (final parameter in member.parameters)
+                        if (parameter.isNamed)
+                          parameter.name: refer(parameter.name),
+                    },
+                    [
+                      for (final typeParameter in member.typeParameters)
+                        refer(typeParameter.name!),
+                    ],
+                  ).code,
+              ),
+            },
+        ]),
+    );
+  }
+
   // Every override calls `_invoker.invoke(this, _target, index, args,
   // call)`: [index] identifies the member's `MethodSignature`, `args` are
   // the original arguments (advice may replace them) and `call` performs
@@ -879,6 +1008,14 @@ class ModuleEmitter {
     };
     final dependency = _spring('Dependency');
     return switch (point.kind) {
+      PointKind.single when point.lazy != null => dependency.newInstanceNamed(
+        'lazy',
+        [_type(point.type, element)],
+        {
+          if (point.qualifier case final q?) 'qualifier': _str(q),
+          if (point.name case final name?) 'name': _str(name),
+        },
+      ),
       PointKind.single => dependency.newInstance(
         [_type(point.type, element)],
         {...named, if (point.name case final name?) 'name': _str(name)},
@@ -973,6 +1110,19 @@ class ModuleEmitter {
     final qualifier = {if (point.qualifier case final q?) 'qualifier': _str(q)};
     final lenient = point.optional || point.allowEmpty;
     switch (point.kind) {
+      case PointKind.single when point.lazy != null:
+        return refer(point.lazy!.className).newInstance([
+          r
+              .property('lazyDependency')
+              .call(
+                [],
+                {
+                  ...qualifier,
+                  if (point.name case final name?) 'name': _str(name),
+                },
+                [type],
+              ),
+        ]);
       case PointKind.single:
         return r
             .property(point.optional ? 'optionalDependency' : 'dependency')

@@ -743,7 +743,9 @@ class BeanScanner {
     InterfaceType targetType,
     String className, {
     required bool implementSelf,
+    ProxyMode? mode,
   }) {
+    final proxyMode = mode ?? this.proxyMode;
     if (proxyMode == ProxyMode.none || targetType.element.library.isInSdk) {
       return null;
     }
@@ -1286,6 +1288,13 @@ class BeanScanner {
     final valueAnnotation = _value.firstAnnotationOf(element);
     final optional = type.nullabilitySuffix == NullabilitySuffix.question;
     if (valueAnnotation != null) {
+      if (_isLazy(element) ?? false) {
+        _fail(
+          '@Lazy on ${element.displayName}: @Value is resolved at creation; '
+          'only beans can be injected lazily.',
+          element,
+        );
+      }
       return InjectionPoint(
         kind: PointKind.value,
         type: _requireInterfaceType(type, element, stripNullable: true),
@@ -1303,13 +1312,93 @@ class BeanScanner {
     }
     final qualifier = _qualifierOf(element);
     final (kind, beanType) = _pointKind(interfaceType, element);
+    final lazy = _isLazy(element) ?? false;
+    if (lazy) {
+      _checkLazyPoint(element, kind, beanType, optional: optional);
+    }
     return InjectionPoint(
       kind: kind,
       type: beanType,
       optional: optional,
       qualifier: qualifier,
       name: kind == PointKind.single ? element.name : null,
+      lazy: lazy ? _lazyProxy(beanType, element) : null,
     );
+  }
+
+  void _checkLazyPoint(
+    Element element,
+    PointKind kind,
+    InterfaceType type, {
+    required bool optional,
+  }) {
+    final name = element.displayName;
+    if (kind != PointKind.single) {
+      _fail(
+        '@Lazy on $name: only a single bean can be injected lazily '
+        '(ObjectProvider is lazy already; collections are not supported).',
+        element,
+      );
+    }
+    if (optional) {
+      _fail(
+        '@Lazy on $name: a lazy dependency cannot be nullable; use '
+        'ObjectProvider<${type.element.name}> for an optional lazy bean.',
+        element,
+      );
+    }
+  }
+
+  /// The lazy proxy class for `@Lazy` injection of [type], shared by all
+  /// injection points of that type in the module.
+  ProxyModel _lazyProxy(InterfaceType type, Element element) {
+    final typeName = type.element.name!;
+    final key = '${type.element.library.uri}#$typeName';
+    final existing = module.lazyProxies[key];
+    if (existing != null) {
+      return existing;
+    }
+    final hint =
+        'Inject an interface it implements, or use '
+        'ObjectProvider<$typeName> and call getObject().';
+    if (type.typeArguments.isNotEmpty) {
+      _fail(
+        '@Lazy on ${element.displayName}: generic types ($typeName<...>) '
+        'cannot be injected lazily yet. $hint',
+        element,
+      );
+    }
+    if (type.element.library.isInSdk || !_canImplement(type)) {
+      _fail(
+        '@Lazy on ${element.displayName}: the lazy proxy must implement '
+        '$typeName, which is not possible from generated code (SDK type, '
+        'private members, or a final/base/sealed class). $hint',
+        element,
+      );
+    }
+    var className = '_\$${typeName}Lazy';
+    for (
+      var i = 2;
+      module.lazyProxies.values.any((p) => p.className == className);
+      i++
+    ) {
+      className = '_\$$typeName${i}Lazy';
+    }
+    final proxy = _proxyModel(
+      type,
+      className,
+      implementSelf: true,
+      mode: ProxyMode.all,
+    );
+    if (proxy == null) {
+      _fail(
+        '@Lazy on ${element.displayName}: $typeName has members a proxy '
+        'cannot forward (operators, non-literal default values or private '
+        'types in signatures). $hint',
+        element,
+      );
+    }
+    return module.lazyProxies[key] = proxy;
   }
 
   // `List`/`Iterable`, `Set`, `Map<String, T>` and `ObjectProvider<T>`

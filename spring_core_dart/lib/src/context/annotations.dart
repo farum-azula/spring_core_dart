@@ -251,16 +251,33 @@ class Scope {
   final String value;
 }
 
-/// Creates a singleton on first use instead of at refresh, like Spring's
-/// `@Lazy`. On a configuration class it applies to all its `@Bean` methods.
+/// Delays creation, like Spring's `@Lazy`.
+///
+/// On a bean class or `@Bean` method the singleton is created on first use
+/// instead of at refresh; on a configuration class it applies to all its
+/// `@Bean` methods.
+///
+/// On an injection point (constructor parameter, field, setter) a
+/// generated lazy proxy is injected instead of the bean: it finds the bean
+/// on every call. This breaks cycles and lets a bean call itself through
+/// its AOP proxy (self-invocation through `this` skips advice). The bean
+/// must still exist and be unique, which is checked at refresh. The type
+/// must be implementable from generated code (an interface, or a class
+/// without private members; not generic) and the point must not be
+/// nullable — use `ObjectProvider<T>` otherwise.
 ///
 /// ```dart
 /// @Component()
 /// @Lazy()
-/// class ReportGenerator {
-///   ReportGenerator() {
-///     print('created on first getBean/injection');
-///   }
+/// class ReportGenerator { ... } // created on first getBean/injection
+///
+/// @Service()
+/// class BookService implements Books {
+///   BookService(@Lazy() this._self);
+///   final Books _self;          // the proxy: @Cacheable, @Timed... apply
+///
+///   List<Book> findAll(List<String> isbns) =>
+///       [for (final isbn in isbns) _self.find(isbn)];
 /// }
 /// ```
 ///
@@ -269,12 +286,17 @@ class Scope {
 /// @Component
 /// @Lazy
 /// class ReportGenerator { ... }
+///
+/// @Service
+/// class BookService {
+///   @Lazy @Autowired private BookService self;
+/// }
 /// ```
 class Lazy {
   /// Creates the annotation; `@Lazy(false)` forces eager creation.
   const Lazy([this.value = true]);
 
-  /// Whether the bean is created lazily.
+  /// Whether the bean (or the injection point) is lazy.
   final bool value;
 }
 

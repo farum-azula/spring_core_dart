@@ -144,6 +144,30 @@ class OrderService {
 }
 ```
 
+`@Lazy()` on an injection point injects a generated proxy that finds the
+bean on first use (Spring's lazy-resolution proxy). It breaks cycles and
+lets a bean call itself through its AOP proxy:
+
+```dart
+@Service()
+class BookService implements Books {
+  BookService(@Lazy() this._self);   // also on fields and setters
+  final Books _self;
+
+  @Timed()
+  @override
+  Book find(String isbn) => ...;
+
+  List<Book> findAll(List<String> isbns) =>
+      [for (final isbn in isbns) _self.find(isbn)];   // advised; this.find() is not
+}
+```
+
+The bean must exist and be unique (checked at refresh). The type must be
+an interface or a class without private members, not generic, and the
+point must not be nullable; otherwise the build stops and suggests
+`ObjectProvider<T>`.
+
 #### Primary constructors and other new syntax
 
 Dart 3.13+ syntax works with the generator: primary constructors (also on
@@ -376,6 +400,10 @@ completes. `PointcutAdvisor` beans work as well.
 Proxies are generated classes that implement the bean class (when it has
 no private members) and its interfaces, so they can be injected by either;
 `AopUtils.getTarget` unwraps them.
+
+As in Spring, a call through `this` inside the bean skips the proxy, so no
+advice runs. Call through another bean, or inject the bean into itself
+with `@Lazy()` (see Injection) or `ObjectProvider<T>`.
 
 ### Logging
 

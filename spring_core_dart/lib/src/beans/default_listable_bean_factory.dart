@@ -100,7 +100,8 @@ class DefaultListableBeanFactory
   final _byType = <Type, List<BeanDefinition<Object>>>{};
   // (type, qualifier, parameter name) -> selected definition, for lookups
   // after the configuration is frozen (the answer can no longer change).
-  final _resolved = <(Type, String?, String?), BeanDefinition<Object>>{};
+  final _resolved =
+      <(Type, String?, String?, String?), BeanDefinition<Object>>{};
   // alias -> name (which may itself be an alias).
   final _aliases = <String, String>{};
   // Names registered with registerSingleton; they survive destroySingletons.
@@ -528,23 +529,25 @@ class DefaultListableBeanFactory
     String? qualifier,
     String? name,
     required bool required,
+    String? requester,
   }) {
     // Resolution order: local definitions, then resolvable dependencies
     // (the factory, the context, ...), then the parent factory.
     //
-    // Once the configuration is frozen the selection for a lookup from
-    // outside bean creation is remembered (with a requester, self-exclusion
-    // makes the answer depend on who asks).
-    final cacheable = _frozen && _currentBean == null;
-    final key = (T, qualifier, name);
+    // Once the configuration is frozen the selection is remembered; the
+    // requester is part of the key because self-exclusion makes the answer
+    // depend on who asks.
+    final asking = requester ?? _currentBean;
+    final cacheable = _frozen;
+    final key = (T, qualifier, name, asking);
     final definition = cacheable && _resolved.containsKey(key)
         ? _resolved[key]
         : _select(
             T,
-            _candidates(T, qualifier, requester: _currentBean, single: true),
+            _candidates(T, qualifier, requester: asking, single: true),
             qualifier: qualifier,
             name: name,
-            requiredBy: _currentBean,
+            requiredBy: asking,
           );
     if (definition != null && cacheable) {
       _resolved[key] = definition;
@@ -564,7 +567,7 @@ class DefaultListableBeanFactory
       throw NoSuchBeanDefinitionException(
         T,
         qualifier: qualifier,
-        requiredBy: _currentBean,
+        requiredBy: asking,
       );
     }
     return null;
@@ -828,6 +831,22 @@ class DefaultListableBeanFactory
   @override
   ObjectProvider<T> provider<T extends Object>({String? qualifier}) =>
       getBeanProvider<T>(qualifier: qualifier);
+
+  @override
+  T Function() lazyDependency<T extends Object>({
+    String? qualifier,
+    String? name,
+  }) {
+    // Resolved later on behalf of the bean being created now, so a lazy
+    // `Greeter` in a `@Primary` Greeter decorator still gets the other one.
+    final requester = _currentBean;
+    return () => _find<T>(
+      qualifier: qualifier,
+      name: name,
+      required: true,
+      requester: requester,
+    )!;
+  }
 
   @override
   T value<T>(String expression) => _value<T>(expression, optional: false) as T;
@@ -1160,6 +1179,18 @@ class DefaultListableBeanFactory
           );
         }
         return [for (final candidate in candidates) candidate.name];
+      case DependencyKind.lazy:
+        // Checked like a single dependency, but resolved on first use: no
+        // edge, so `@Lazy` breaks cycles (including self-injection).
+        _validateDependency(
+          definition,
+          Dependency(
+            dependency.type,
+            qualifier: dependency.qualifier,
+            name: dependency.name,
+          ),
+        );
+        return const [];
       case DependencyKind.single:
         final target = _select(
           dependency.type,

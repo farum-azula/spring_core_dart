@@ -1053,6 +1053,64 @@ abstract class Base { void base(); }
   });
 
   group('review fixes', () {
+    test('@Lazy injection points get a generated lazy proxy', () async {
+      final output = await _generate(r'''
+abstract interface class Pricing {
+  double price(String isbn, {int quantity = 1});
+  T convert<T extends num>(T value);
+  int get count;
+  set count(int value);
+}
+
+@Service()
+class DefaultPricing implements Pricing {
+  DefaultPricing(@Lazy() this.self);
+  final Pricing self;
+
+  @Lazy()
+  @Autowired()
+  late final Pricing other;
+
+  @override
+  double price(String isbn, {int quantity = 1}) => 10.0 * quantity;
+  @override
+  T convert<T extends num>(T value) => value;
+  @override
+  int count = 0;
+}
+''');
+      // Independent of aop_proxies (none here).
+      expect(
+        output,
+        _has(
+          'class _\$PricingLazy implements _i1.Pricing { '
+          '_\$PricingLazy(this._resolve); '
+          'final _i1.Pricing Function() _resolve; '
+          '@override String toString() => _resolve().toString(); '
+          '@override double price(String isbn, {int quantity = 1}) => '
+          '_resolve().price(isbn, quantity: quantity); '
+          '@override T convert<T extends num>(T value) => '
+          '_resolve().convert<T>(value); '
+          '@override int get count => _resolve().count; '
+          '@override set count(int value) { _resolve().count = value; } }',
+        ),
+      );
+      // One class per type, shared by both injection points.
+      expect(RegExp(r'class_\$PricingLazy').allMatches(output), hasLength(1));
+      expect(
+        output,
+        _has("_\$PricingLazy(r.lazyDependency<_i1.Pricing>(name: r'self'))"),
+      );
+      expect(
+        output,
+        _has(
+          "bean.other = _\$PricingLazy(r.lazyDependency<_i1.Pricing>(name: r'other'));",
+        ),
+      );
+      expect(output, _has("_i2.Dependency.lazy(_i1.Pricing, name: r'self')"));
+      expect(output, _has("_i2.Dependency.lazy(_i1.Pricing, name: r'other')"));
+    });
+
     test('parameter defaults are kept when nothing is found', () async {
       final output = await _generate(r'''
 abstract interface class Clock {}
@@ -1409,6 +1467,34 @@ class DbProps { String url = ''; }
       'alias clash': (
         "class B {}\n@Configuration() class C { @Bean(aliases: ['c']) B b() => B(); }",
         "Bean name 'c' is used by both",
+      ),
+      'lazy nullable': (
+        'abstract interface class G {}\n'
+            '@Component() class S { S(@Lazy() this.g); final G? g; }',
+        'a lazy dependency cannot be nullable',
+      ),
+      'lazy collection': (
+        'abstract interface class G {}\n'
+            '@Component() class S { S(@Lazy() this.g); final List<G> g; }',
+        'only a single bean can be injected lazily',
+      ),
+      'lazy value': (
+        "@Component() class S { S(@Lazy() @Value('x') this.v); final String v; }",
+        'only beans can be injected lazily',
+      ),
+      'lazy class with private members': (
+        'class P { int _n = 0; }\n'
+            '@Component() class S { S(@Lazy() this.p); final P p; }',
+        'the lazy proxy must implement P',
+      ),
+      'lazy generic type': (
+        'abstract interface class Repo<T> {}\n'
+            '@Component() class S { S(@Lazy() this.r); final Repo<int> r; }',
+        'generic types (Repo<...>) cannot be injected lazily',
+      ),
+      'lazy SDK type': (
+        '@Component() class S { S(@Lazy() this.s); final StringBuffer s; }',
+        'the lazy proxy must implement StringBuffer',
       ),
       'private constant condition': (
         'class _P implements Condition { const _P(); @override bool matches(ConditionContext c) => true; }\n'

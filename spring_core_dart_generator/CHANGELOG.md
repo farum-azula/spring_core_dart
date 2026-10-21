@@ -1,5 +1,9 @@
 ## Unreleased
 
+- `@Lazy` on constructor parameters, fields and setters generates one
+  lazy proxy class per type (`_$BookServiceLazy`, independent of
+  `aop_proxies`) and `Dependency.lazy`; clear build errors for nullable,
+  collection, `@Value`, generic, SDK and non-implementable types.
 - Constructor and `@Bean` method parameters keep their Dart default value
   when no bean or property is found; required collections there resolve to
   an empty collection (Spring's single-constructor fallback).

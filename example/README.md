@@ -24,7 +24,7 @@ dart test                        # asserts the tour's output
 | `messages` | `messageSource` bean with `classpath:messages/messages*.properties`, locale fallback, `MessageFormat` choice/number | `lib/resources/messages/` |
 | `spel` | arithmetic, selection/projection, safe navigation, Elvis, functions, `T(...)`, templates, `SimpleEvaluationContext`, `@Introspected` objects | `lib/tour.dart` |
 | `validation` | `DataBinder` with type mismatches and `disallowedFields`, constraints, a class-level constraint, `@Valid` cascade, groups, localized messages, `BeanWrapper` | `lib/src/validation/` |
-| `aop` | `@Aspect` with a named `@Pointcut`, all advice kinds and their order, `@annotation(Timed)`, `within()`, `bean()`, async methods, an advisor bean, `AopUtils.getTarget` | `lib/src/aop/` |
+| `aop` | `@Aspect` with a named `@Pointcut`, all advice kinds and their order, `@annotation(Timed)`, `within()`, `bean()`, async methods, an advisor bean, `AopUtils.getTarget`, self-invocation: `this` vs a `@Lazy` self reference | `lib/src/aop/` |
 | `hierarchy` | parent and child contexts from hand-written `BeanModule`s, events reaching the parent | `lib/tour.dart` |
 | `failures` | startup validation: a missing dependency and a cycle reported before anything is created | `lib/tour.dart` |
 | `shutdown` | `ContextClosedEvent`, lifecycle stop, destroy callbacks in reverse creation order | — |
