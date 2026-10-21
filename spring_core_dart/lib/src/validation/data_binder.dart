@@ -137,8 +137,10 @@ class DataBinder {
   /// Keys are property paths (`name`, `address.city`, `items[0].sku`).
   /// Disallowed keys are skipped (see [suppressedFields]); missing
   /// [requiredFields] get `required` errors; conversion failures get
-  /// `typeMismatch` errors; unknown or unreachable fields throw unless
-  /// [ignoreUnknownFields] / [ignoreInvalidFields] allow skipping them.
+  /// `typeMismatch` errors; setters that throw get `methodInvocation`
+  /// errors; unknown fields and malformed keys (`items[`) are skipped
+  /// while [ignoreUnknownFields] is on (the default), unreachable nested
+  /// paths throw unless [ignoreInvalidFields] is on.
   ///
   /// ```dart
   /// binder.bind({'age': 'old'});
@@ -185,6 +187,11 @@ class DataBinder {
           fieldType: error.requiredType,
         );
       } on NotWritablePropertyException {
+        if (!ignoreUnknownFields) {
+          rethrow;
+        }
+      } on InvalidPropertyException {
+        // A malformed key (`items[`) is an unknown field, not a crash.
         if (!ignoreUnknownFields) {
           rethrow;
         }

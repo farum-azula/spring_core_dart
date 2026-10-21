@@ -94,10 +94,10 @@ class ServiceProxy implements Service, Advised {
   ];
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<PointcutAdvisor> get advisors => _invoker.advisors;
+  List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   int price(int amount) =>
@@ -294,7 +294,7 @@ void main() {
       expect(AopUtils.isAopProxy(proxy), isTrue);
       expect(AopUtils.getTarget(proxy), same(target));
       expect(AopUtils.isAopProxy(target), isFalse);
-      expect((proxy as Advised).advisors, isEmpty);
+      expect((proxy as Advised).aopAdvisors, isEmpty);
     });
 
     test('advice kinds in Spring order', () {
@@ -583,6 +583,50 @@ void main() {
         );
       },
     );
+
+    test('advice matching a bean that cannot be proxied fails the start', () {
+      BeanDefinition<PriceService> unproxyable(String name) =>
+          BeanDefinition<PriceService>(
+            name: name,
+            create: (_) => PriceService(),
+            aopProxy: AopProxyFactory.unavailable(
+              signatures: const [
+                MethodSignature(
+                  name: 'price',
+                  declaringType: 'PriceService',
+                  targetType: 'PriceService',
+                  returnType: 'int',
+                  parameterTypes: ['int'],
+                ),
+              ],
+              reason: 'PriceService has private members and no interface.',
+            ),
+          );
+      expect(
+        () => AnnotationConfigApplicationContext([
+          BeanModule('aop', [unproxyable('priceService'), aspect()]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))..refresh(),
+        throwsA(
+          isA<BeanCreationException>().having(
+            (e) => '${e.cause}',
+            'cause',
+            allOf(
+              contains("Advice matches bean 'priceService'"),
+              contains('PriceService has private members and no interface.'),
+            ),
+          ),
+        ),
+      );
+      // Without matching advice the bean is simply not proxied.
+      final context = AnnotationConfigApplicationContext([
+        BeanModule('aop', [
+          unproxyable('priceService'),
+          aspect(expression: 'bean(nothing)'),
+        ]),
+      ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
+      expect(context.getBean<PriceService>(), isNot(isA<Advised>()));
+      context.close();
+    });
 
     test('post-processor directly', () {
       final beanFactory = DefaultListableBeanFactory()

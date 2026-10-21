@@ -64,6 +64,10 @@ void main() {
     expectLine(
       'motto (optional @Value: null unless SHOP_MOTTO is set): Read more',
     );
+    expectLine(
+      'slogan (optional @Value, no shop.slogan: initializer kept): '
+      'Books for night owls',
+    );
     expectLine('clock (setter injection): SystemClock');
     expectLine('prototype ids: [');
     expectLine('lazy pool created yet?: false');

@@ -124,6 +124,10 @@ class CatalogService {
   @Value(r'${shop.motto}')
   String? motto;
 
+  /// Optional with an initializer: kept when the property is missing.
+  @Value(r'${shop.slogan}')
+  String? slogan = 'Books for night owls';
+
   Clock? _clock;
 
   /// Setter injection.

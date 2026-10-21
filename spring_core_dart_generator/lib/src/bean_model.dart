@@ -878,6 +878,8 @@ class ProxyModel {
     required this.members,
     required this.classAnnotations,
     required this.targetTypeNames,
+    this.customToString = false,
+    this.unavailableReason,
   });
 
   /// Name of the generated class, e.g. `_$EnglishGreeterProxy` or
@@ -899,6 +901,15 @@ class ProxyModel {
 
   /// Simple names of the target type and all its supertypes.
   final List<String> targetTypeNames;
+
+  /// Whether the target's `toString` takes parameters, so it is forwarded
+  /// like any other member instead of the generated `toString()`.
+  final bool customToString;
+
+  /// Why no proxy class can be generated; then only the signatures are
+  /// emitted (`AopProxyFactory.unavailable`) so matching advice fails the
+  /// startup with this reason instead of being skipped silently.
+  final String? unavailableReason;
 }
 
 /// Everything needed to emit one `BeanDefinition`.
@@ -1388,9 +1399,55 @@ class ModuleModel {
   /// Lazy proxies for `@Lazy` injection points, one per type (keyed by
   /// library URI and type name).
   final lazyProxies = <String, ProxyModel>{};
+
+  final _proxyNames = <String>{};
+
+  /// [name], or `name2`, `name3`... if a generated class of the module
+  /// already uses it (two classes with the same name in different
+  /// directories).
+  String uniqueClassName(String name) {
+    if (_proxyNames.add(name)) {
+      return name;
+    }
+    for (var i = 2; ; i++) {
+      final candidate = '$name$i';
+      if (_proxyNames.add(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
   final _sources = <String>{};
 
   /// Records [classSource] and returns `false` if that class was already
   /// scanned (component scan and `@Import` may meet the same class).
   bool markScanned(String classSource) => _sources.add(classSource);
+}
+
+/// The public `dart:` library imported by [context]'s library that exports
+/// [name] (for declarations of internal libraries such as `dart:_http`),
+/// else `dart:core` if it exports it, else `null`.
+Uri? publicSdkLibrary(String name, Element context) {
+  final library = context.library;
+  if (library == null) {
+    return null;
+  }
+  final candidates = [
+    for (final fragment in library.fragments) ...fragment.importedLibraries,
+  ];
+  for (final candidate in candidates) {
+    final uri = candidate.uri;
+    if (uri.scheme == 'dart' &&
+        !uri.path.startsWith('_') &&
+        candidate.exportNamespace.get2(name) != null) {
+      return uri;
+    }
+  }
+  return null;
+}
+
+/// Whether [type] is declared in an internal SDK library (`dart:_...`).
+bool isInternalSdkType(InterfaceType type) {
+  final uri = type.element.library.uri;
+  return uri.scheme == 'dart' && uri.path.startsWith('_');
 }

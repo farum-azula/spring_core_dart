@@ -139,8 +139,14 @@ void main() {
       () => wrapper.getPropertyValue('byLabel[none].city'),
       throwsA(isA<NullValueInNestedPathException>()),
     );
-    expect(() => wrapper.getPropertyValue('a[0'), throwsArgumentError);
-    expect(() => wrapper.getPropertyValue('a..b'), throwsArgumentError);
+    expect(
+      () => wrapper.getPropertyValue('a[0'),
+      throwsA(isA<InvalidPropertyException>()),
+    );
+    expect(
+      () => wrapper.getPropertyValue('a..b'),
+      throwsA(isA<InvalidPropertyException>()),
+    );
     expect(
       () => BeanWrapper(Object()).getPropertyValue('x'),
       throwsA(isA<NotReadablePropertyException>()),

@@ -54,6 +54,13 @@ final _proceedingJoinPoint = _spring('ProceedingJoinPoint');
 ///
 /// Like Spring's `AbstractAutoProxyCreator.isInfrastructureClass`, which
 /// skips `Advice`, `Pointcut`, `Advisor` and `AopInfrastructureBean`.
+/// Members every generated AOP proxy declares (from `Advised`).
+const _advisedMembers = {'aopTarget', 'aopAdvisors'};
+
+String _reservedMessage(String? type, String member) =>
+    '$type.$member has the name of a member every proxy declares '
+    '(Advised.$member). Rename it.';
+
 final _notProxied = [
   _spring('BeanPostProcessor'),
   _spring('BeanFactoryPostProcessor'),
@@ -738,8 +745,115 @@ class BeanScanner {
       !_configuration.hasAnnotationOf(element) &&
       !_notProxied.any((c) => c.isAssignableFromType(element.thisType));
 
-  /// The proxy of [targetType], or `null` when it cannot be generated.
+  /// The proxy of [targetType]; `null` when proxies are off or the type is
+  /// from the SDK. A type that cannot be proxied gets a signature-only
+  /// model with [ProxyModel.unavailableReason].
   ProxyModel? _proxyModel(
+    InterfaceType targetType,
+    String className, {
+    required bool implementSelf,
+    ProxyMode? mode,
+  }) {
+    _proxyFailure = null;
+    final model = _buildProxyModel(
+      targetType,
+      className,
+      implementSelf: implementSelf,
+      mode: mode,
+    );
+    final failure = _proxyFailure;
+    if (model != null || failure == null) {
+      return model;
+    }
+    return _signatureOnlyModel(targetType, className, failure);
+  }
+
+  String? _proxyFailure;
+
+  // Signatures of the public members, for pointcut matching only.
+  ProxyModel _signatureOnlyModel(
+    InterfaceType targetType,
+    String className,
+    String reason,
+  ) {
+    const objectMembers = {
+      'toString',
+      'hashCode',
+      'noSuchMethod',
+      'runtimeType',
+      '==',
+    };
+    final members = <ProxyMember>[];
+    final seen = <String>{};
+    for (final element in _hierarchy(targetType)) {
+      final declaring = element.name!;
+      for (final method in element.methods) {
+        final name = method.name;
+        if (method.isStatic ||
+            method.isPrivate ||
+            name == null ||
+            objectMembers.contains(name) ||
+            !seen.add('m:$name')) {
+          continue;
+        }
+        members.add(
+          ProxyMember(
+            kind: ProxyMemberKind.method,
+            name: name,
+            declaringType: declaring,
+            returnType: method.returnType,
+            typeParameters: const [],
+            parameters: [
+              for (final parameter in method.formalParameters)
+                ProxyParameter(
+                  name: parameter.name ?? 'p',
+                  type: parameter.type,
+                  isNamed: parameter.isNamed,
+                  isRequired: parameter.isRequired,
+                ),
+            ],
+            annotations: _userAnnotations(method),
+          ),
+        );
+      }
+      for (final getter in element.getters) {
+        final name = getter.name;
+        if (getter.isStatic ||
+            getter.isPrivate ||
+            name == null ||
+            objectMembers.contains(name) ||
+            !seen.add('g:$name')) {
+          continue;
+        }
+        members.add(
+          ProxyMember(
+            kind: ProxyMemberKind.getter,
+            name: name,
+            declaringType: declaring,
+            returnType: getter.returnType,
+            typeParameters: const [],
+            parameters: const [],
+            annotations: _userAnnotations(getter),
+          ),
+        );
+      }
+    }
+    return ProxyModel(
+      className: className,
+      targetType: targetType,
+      interfaces: const [],
+      members: members,
+      classAnnotations: _userAnnotations(targetType.element),
+      targetTypeNames: [
+        targetType.element.name!,
+        for (final supertype in targetType.allSupertypes)
+          if (!supertype.isDartCoreObject) supertype.element.name!,
+      ],
+      unavailableReason: reason,
+    );
+  }
+
+  ProxyModel? _buildProxyModel(
     InterfaceType targetType,
     String className, {
     required bool implementSelf,
@@ -749,6 +863,7 @@ class BeanScanner {
     if (proxyMode == ProxyMode.none || targetType.element.library.isInSdk) {
       return null;
     }
+    final typeName = targetType.element.name;
     // Types the proxy implements: the target class itself only in `all`
     // mode (CGLIB style); supertypes that can be implemented, restricted to
     // abstract ones in `interfaces` mode (JDK style).
@@ -769,6 +884,14 @@ class BeanScanner {
       interfaces.insert(0, targetType);
     }
     if (interfaces.isEmpty) {
+      _proxyFailure = proxyMode == ProxyMode.interfaces
+          ? '$typeName implements no interface (aop_proxies: interfaces '
+                'proxies interfaces only). Add an interface with the advised '
+                'methods and inject the bean by it.'
+          : '$typeName cannot be implemented by a generated class (it has '
+                'private members, or is final, base or sealed) and implements '
+                'no interface. Add an interface with the advised methods and '
+                'inject the bean by it, or make its members public.';
       return null;
     }
     // Every member of every implemented type must be forwarded, otherwise
@@ -796,20 +919,40 @@ class BeanScanner {
             continue;
           }
           if (method.isOperator) {
+            _proxyFailure =
+                '$typeName declares the operator $name, which a proxy cannot '
+                'forward. Move the advised methods to an interface without '
+                'operators.';
             return null;
           }
-          // `toString` is forwarded without advice by the proxy class;
+          // A plain `toString()` is forwarded without advice by the proxy
+          // class; one with parameters is proxied like any method.
           // `noSuchMethod` must not be overridden.
-          if (name == 'noSuchMethod' ||
-              name == 'toString' ||
-              !seen.add('m:$name')) {
+          if (name == 'toString' &&
+              (targetType
+                      .lookUpMethod(name, library)
+                      ?.formalParameters
+                      .isEmpty ??
+                  true)) {
             continue;
+          }
+          if (name == 'noSuchMethod' || !seen.add('m:$name')) {
+            continue;
+          }
+          // Members of `Advised` cannot also be target members.
+          if (_advisedMembers.contains(name)) {
+            _proxyFailure = _reservedMessage(typeName, name);
+            return null;
           }
           final implementation = targetType.lookUpMethod(name, library);
           final member = implementation == null
               ? null
               : _proxyMethod(implementation, method, declaring);
           if (member == null) {
+            _proxyFailure =
+                'the method $typeName.$name cannot be forwarded by a proxy: '
+                'a parameter default value is not a literal, or a signature '
+                'uses a private type.';
             return null;
           }
           members.add(member);
@@ -824,9 +967,16 @@ class BeanScanner {
               !seen.add('g:$name')) {
             continue;
           }
+          if (_advisedMembers.contains(name)) {
+            _proxyFailure = _reservedMessage(typeName, name);
+            return null;
+          }
           final implementation = targetType.lookUpGetter(name, library);
           if (implementation == null ||
               !_isEmittable(implementation.returnType)) {
+            _proxyFailure =
+                'the getter $typeName.$name uses a private type, which '
+                'generated code cannot name.';
             return null;
           }
           members.add(
@@ -855,6 +1005,9 @@ class BeanScanner {
           final implementation = targetType.lookUpSetter(name, library);
           final parameterType = implementation?.formalParameters.single.type;
           if (parameterType == null || !_isEmittable(parameterType)) {
+            _proxyFailure =
+                'the setter $typeName.$name uses a private type, which '
+                'generated code cannot name.';
             return null;
           }
           members.add(
@@ -947,8 +1100,10 @@ class BeanScanner {
           );
         }(),
     ];
+    final toString = targetType.lookUpMethod('toString', library);
     return ProxyModel(
-      className: className,
+      className: module.uniqueClassName(className),
+      customToString: toString != null && toString.formalParameters.isNotEmpty,
       targetType: targetType,
       interfaces: interfaces,
       members: withDeclaring,
@@ -1376,25 +1531,17 @@ class BeanScanner {
         element,
       );
     }
-    var className = '_\$${typeName}Lazy';
-    for (
-      var i = 2;
-      module.lazyProxies.values.any((p) => p.className == className);
-      i++
-    ) {
-      className = '_\$$typeName${i}Lazy';
-    }
+    final className = '_\$${typeName}Lazy';
     final proxy = _proxyModel(
       type,
       className,
       implementSelf: true,
       mode: ProxyMode.all,
     );
-    if (proxy == null) {
+    if (proxy == null || proxy.unavailableReason != null) {
       _fail(
-        '@Lazy on ${element.displayName}: $typeName has members a proxy '
-        'cannot forward (operators, non-literal default values or private '
-        'types in signatures). $hint',
+        '@Lazy on ${element.displayName}: no lazy proxy can be generated: '
+        '${proxy?.unavailableReason ?? '$typeName is an SDK type.'} $hint',
         element,
       );
     }
@@ -1469,10 +1616,15 @@ class BeanScanner {
 
   // The types a bean can be looked up by: its own type and every public
   // supertype (a private type cannot be written in generated code).
+  // Supertypes from internal SDK libraries (`EfficientLengthIterable` of
+  // `dart:_internal`) are left out: generated code cannot import them.
   List<InterfaceType> _exposedTypes(InterfaceType type) => [
     type,
     for (final supertype in type.allSupertypes)
-      if (!supertype.isDartCoreObject && _isPublicType(supertype)) supertype,
+      if (!supertype.isDartCoreObject &&
+          _isPublicType(supertype) &&
+          !isInternalSdkType(supertype))
+        supertype,
   ];
 
   // For a `FactoryBean<T>`, the exposed types of the product `T`; `null`

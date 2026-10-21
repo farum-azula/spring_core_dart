@@ -209,6 +209,10 @@ class _Tour {
       'motto (optional @Value: null unless SHOP_MOTTO is set)',
       catalog.motto,
     );
+    show(
+      'slogan (optional @Value, no shop.slogan: initializer kept)',
+      catalog.slogan,
+    );
     show('clock (setter injection)', catalog.clock.runtimeType);
     show('wire (method injection)', catalog.wiredWith);
     show('Map<String, Discount>', context.getBeansOfType<Discount>().keys);

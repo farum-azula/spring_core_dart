@@ -1,3 +1,5 @@
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/builder.dart';
@@ -71,6 +73,44 @@ Future<void> _expectError(
   expect(result.errors.join('\n'), contains(message));
 }
 
+/// Builds [files] (with the scan root) and returns the analyzer errors of
+/// the generated library, resolved together with the real runtime: the
+/// generated code must compile, not just look right.
+Future<List<String>> _compileErrors(
+  Map<String, String> files, {
+  ProxyMode proxyMode = ProxyMode.all,
+}) async {
+  final sources = {
+    'lib/src/beans.dart': _scan,
+    for (final MapEntry(:key, :value) in files.entries) key: '$_header$value',
+  };
+  final result = await _build(sources, proxyMode: proxyMode);
+  expect(result.errors, isEmpty);
+  final output = result.readerWriter.testing.readString(result.outputs.single);
+  return resolveSources<List<String>>(
+    {
+      for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
+      'pkg|lib/src/beans.beans.dart': output,
+    },
+    (resolver) async {
+      final library = await resolver.libraryFor(
+        AssetId('pkg', 'lib/src/beans.beans.dart'),
+      );
+      final errors = await library.session.getErrors(
+        library.firstFragment.source.fullName,
+      );
+      return [
+        if (errors case ErrorsResult(:final diagnostics))
+          for (final diagnostic in diagnostics)
+            if (diagnostic.severity == Severity.error) diagnostic.message,
+      ];
+    },
+    rootPackage: 'pkg',
+    resolverFor: 'pkg|lib/src/beans.beans.dart',
+    readAllSourcesFromFilesystem: true,
+  );
+}
+
 void main() {
   test('builder factory', () {
     expect(
@@ -80,6 +120,194 @@ void main() {
     expect(const SpringBuilder().buildExtensions, {
       '.dart': ['.beans.dart'],
     });
+  });
+
+  group('generated code compiles', () {
+    test('SDK types as beans (internal dart:_http, dart:_internal)', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/s.dart': '''
+import 'dart:io';
+import 'dart:typed_data';
+@Configuration()
+class C {
+  @Bean() HttpClient client() => HttpClient();
+  @Bean() Uint8List bytes() => Uint8List(4);
+  @Bean() List<String> names() => ['a'];
+}
+''',
+        }),
+        isEmpty,
+      );
+    });
+
+    test('Future<T>? members of proxied beans', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/s.dart': '''
+@Component()
+class S {
+  Future<int>? maybe() => null;
+  Future<int> sure() async => 1;
+}
+''',
+        }),
+        isEmpty,
+      );
+    });
+
+    test(
+      'members named like Spring Advised (advisors, targetObject)',
+      () async {
+        expect(
+          await _compileErrors({
+            'lib/src/s.dart': '''
+@Component()
+class Advisory {
+  List<String> advisors() => ['ada'];
+  Object get targetObject => 2;
+}
+''',
+          }),
+          isEmpty,
+        );
+      },
+    );
+
+    test('toString with parameters', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/s.dart': '''
+@Component()
+class S {
+  @override
+  String toString({bool full = false}) => full ? 'S(full)' : 'S';
+}
+abstract interface class Named { String name(); }
+@Component()
+class N implements Named {
+  N(@Lazy() this.self);
+  final Named self;
+  @override
+  String name() => 'n';
+  @override
+  String toString([String prefix = '']) => '\${prefix}N';
+}
+''',
+        }),
+        isEmpty,
+      );
+    });
+
+    test('classes with the same name in two directories', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/a/service.dart':
+              "@Component('a') class Service { int x() => 1; }",
+          'lib/src/b/service.dart':
+              "@Component('b') class Service { int y() => 2; }",
+        }),
+        isEmpty,
+      );
+    });
+
+    test('covariant parameters', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/s.dart': '''
+class Animal {}
+class Dog extends Animal {}
+class Base { void feed(Animal a) {} }
+@Component()
+class Kennel extends Base {
+  @override
+  void feed(covariant Dog a) {}
+}
+''',
+        }),
+        isEmpty,
+      );
+    });
+  });
+
+  test(
+    'optional fields and setters keep their value when nothing is found',
+    () async {
+      final output = await _generate(r'''
+abstract interface class Clock {}
+
+class SystemClock implements Clock {
+  const SystemClock();
+}
+
+@Component()
+class Report {
+  @Autowired()
+  Clock? clock = const SystemClock();
+
+  @Value(r'${report.title}')
+  String? title = 'Untitled';
+
+  @Autowired()
+  set audit(Clock? value) => audited = value;
+  Clock? audited;
+
+  @Value(r'${report.size:10}')
+  late final int size;
+}
+''');
+      expect(
+        output,
+        _has(
+          "if (r.optionalDependency<_i2.Clock>(name: r'clock') case final value?) "
+          '{ bean.clock = value; }',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "if (r.optionalValue<String>(r'\${report.title}') case final value?) "
+          '{ bean.title = value; }',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "if (r.optionalDependency<_i2.Clock>(name: r'audit') case final value?) "
+          '{ bean.audit = value; }',
+        ),
+      );
+      // Required points are assigned as before.
+      expect(output, _has("bean.size = r.value<int>(r'\${report.size:10}');"));
+    },
+  );
+
+  test('a bean that cannot be proxied keeps its signatures and the reason', () async {
+    final output = await _generate(r'''
+@Component()
+class Counter {
+  int _n = 0;
+  @Timed()
+  int next() => _n++;
+}
+
+class Timed {
+  const Timed();
+}
+''', proxyMode: ProxyMode.all);
+    expect(output, isNot(contains('class_\$CounterProxy')));
+    expect(output, _has('aopProxy: _i1.AopProxyFactory.unavailable('));
+    expect(output, _has("name: r'next'"));
+    expect(output, _has("annotationTypes: [r'Timed']"));
+    expect(
+      output,
+      _has(
+        "reason: r'Counter cannot be implemented by a generated class (it has "
+        'private members, or is final, base or sealed) and implements no '
+        'interface. Add an interface with the advised methods and inject the '
+        "bean by it, or make its members public.')",
+      ),
+    );
   });
 
   group('generates', () {
@@ -250,7 +478,9 @@ class Child extends Base {
       expect(output, _has(r"bean.name = r.value<String>(r'${name}');"));
       expect(
         output,
-        _has("bean.dep = r.optionalDependency<_i2.Dep>(name: r'dep');"),
+        _has(
+          "if (r.optionalDependency<_i2.Dep>(name: r'dep') case final value?) { bean.dep = value; }",
+        ),
       );
       expect(
         output,
@@ -859,10 +1089,10 @@ class Impl implements Api {
         _has('class _\$ImplProxy implements _i1.Impl, _i1.Api, _i2.Advised {'),
       );
       expect(output, _has('_\$ImplProxy(this._target, this._invoker);'));
-      expect(output, _has('Object get targetObject => _target;'));
+      expect(output, _has('Object get aopTarget => _target;'));
       expect(
         output,
-        _has('List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;'),
+        _has('List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;'),
       );
       expect(output, _has('String toString() => _target.toString();'));
       expect(

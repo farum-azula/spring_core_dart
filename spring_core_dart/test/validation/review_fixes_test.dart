@@ -3,6 +3,36 @@ import 'package:test/test.dart';
 
 import 'fixtures.dart';
 
+class Account {
+  String owner = '';
+  String _iban = '';
+  String get iban => _iban;
+  set iban(String value) {
+    if (!value.startsWith('UA')) {
+      throw ArgumentError.value(value, 'iban', 'must start with UA');
+    }
+    _iban = value;
+  }
+}
+
+final accountIntrospection = BeanIntrospection<Account>(
+  properties: [
+    BeanProperty<Account>(
+      'owner',
+      type: String,
+      get: (b) => b.owner,
+      set: (b, v) => b.owner = v! as String,
+    ),
+    BeanProperty<Account>(
+      'iban',
+      type: String,
+      get: (b) => b.iban,
+      set: (b, v) => b.iban = v! as String,
+    ),
+  ],
+  instantiate: Account.new,
+);
+
 class Code {
   String value = '';
 }
@@ -112,6 +142,73 @@ void main() {
       expect(
         StaticMessageSource().getMessageFromResolvable(error),
         'value is required',
+      );
+    });
+  });
+
+  group('DataBinder.bind records errors instead of throwing', () {
+    DataBinder binder(Object target) => DataBinder(
+      target,
+      objectName: 'form',
+      introspector: BeanIntrospector(
+        introspections: [
+          personIntrospection,
+          addressIntrospection,
+          accountIntrospection,
+        ],
+      ),
+    );
+
+    test('malformed keys are skipped like unknown fields', () {
+      final person = Person();
+      final b = binder(person)
+        ..bind({
+          'items[': 'x',
+          'address..city': 'y',
+          'tags[': 'z',
+          'name': 'Ada',
+        });
+      expect(person.name, 'Ada'); // the rest is still bound
+      expect(b.bindingResult.hasErrors, isFalse);
+    });
+
+    test('malformed keys throw when unknown fields are not ignored', () {
+      final b = binder(Person())..ignoreUnknownFields = false;
+      expect(
+        () => b.bind({'items[': 'x'}),
+        throwsA(
+          isA<InvalidPropertyException>().having(
+            (e) => e.propertyName,
+            'propertyName',
+            'items[',
+          ),
+        ),
+      );
+    });
+
+    test('a throwing setter becomes a methodInvocation error', () {
+      final account = Account();
+      final b = binder(account)..bind({'iban': 'DE00', 'owner': 'Ada'});
+      final error = b.bindingResult.fieldError('iban')!;
+      expect(error.codes.first, 'methodInvocation.form.iban');
+      expect(error.rejectedValue, 'DE00');
+      expect(error.defaultMessage, contains('must start with UA'));
+      expect(account.owner, 'Ada'); // binding went on
+      expect(account.iban, '');
+    });
+
+    test('BeanWrapper wraps setter errors in MethodInvocationException', () {
+      final wrapper = BeanWrapper(
+        Account(),
+        introspector: BeanIntrospector(introspections: [accountIntrospection]),
+      );
+      expect(
+        () => wrapper.setPropertyValue('iban', 'DE00'),
+        throwsA(
+          isA<MethodInvocationException>()
+              .having((e) => e.propertyName, 'propertyName', 'iban')
+              .having((e) => e.cause, 'cause', isArgumentError),
+        ),
       );
     });
   });

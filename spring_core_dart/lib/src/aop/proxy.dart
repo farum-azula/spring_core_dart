@@ -6,8 +6,8 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// ```dart
 /// final calculator = context.getBean<Calculator>();
 /// if (calculator is Advised) {
-///   print(calculator.targetObject); // the SimpleCalculator
-///   print(calculator.advisors);
+///   print(calculator.aopTarget); // the SimpleCalculator
+///   print(calculator.aopAdvisors);
 /// }
 /// ```
 ///
@@ -21,10 +21,10 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// ```
 abstract interface class Advised {
   /// The proxied bean.
-  Object get targetObject;
+  Object get aopTarget;
 
   /// Advisors that apply to the proxy.
-  List<PointcutAdvisor> get advisors;
+  List<PointcutAdvisor> get aopAdvisors;
 }
 
 /// Unwraps AOP proxies, like Spring's `AopUtils` / `AopProxyUtils`.
@@ -49,7 +49,7 @@ abstract final class AopUtils {
   static Object getTarget(Object object) {
     var current = object;
     while (current is Advised) {
-      current = current.targetObject;
+      current = current.aopTarget;
     }
     return current;
   }
@@ -86,12 +86,27 @@ final class AopProxyFactory {
   /// instantiates the generated proxy class.
   AopProxyFactory({
     required List<MethodSignature> signatures,
-    required this._create,
-  }) : signatures = List.unmodifiable(signatures);
+    required Object Function(Object target, ProxyInvoker invoker) this._create,
+  }) : signatures = List.unmodifiable(signatures),
+       unavailableReason = null;
+
+  /// The members of a bean that cannot be proxied, and why: advice that
+  /// matches one of [signatures] makes the bean fail to start with
+  /// [reason] instead of being silently skipped (Spring fails the same way
+  /// when it cannot create a proxy).
+  AopProxyFactory.unavailable({
+    required List<MethodSignature> signatures,
+    required String reason,
+  }) : signatures = List.unmodifiable(signatures),
+       _create = null,
+       unavailableReason = reason;
 
   /// Proxied members, indexed like the generated proxy calls them.
   final List<MethodSignature> signatures;
-  final Object Function(Object target, ProxyInvoker invoker) _create;
+  final Object Function(Object target, ProxyInvoker invoker)? _create;
+
+  /// Why no proxy can be generated for the bean; `null` when it can.
+  final String? unavailableReason;
 
   /// Advisors among [advisors] that match at least one member.
   List<PointcutAdvisor> eligibleAdvisors(
@@ -107,7 +122,28 @@ final class AopProxyFactory {
     Object target,
     List<PointcutAdvisor> advisors, {
     String beanName = '',
-  }) => _create(target, ProxyInvoker(signatures, advisors, beanName));
+  }) {
+    final create = _create;
+    if (create == null) {
+      throw AopConfigException(
+        "Advice matches bean '$beanName', but it cannot be proxied: "
+        '$unavailableReason',
+      );
+    }
+    return create(target, ProxyInvoker(signatures, advisors, beanName));
+  }
+}
+
+/// A proxy could not be created, like Spring's `AopConfigException`.
+class AopConfigException implements Exception {
+  /// Creates the exception.
+  const AopConfigException(this.message);
+
+  /// What went wrong and how to fix it.
+  final String message;
+
+  @override
+  String toString() => 'AopConfigException: $message';
 }
 
 /// Runs calls of a generated proxy through the matching advice.
@@ -124,10 +160,10 @@ final class AopProxyFactory {
 ///   final ProxyInvoker _invoker;
 ///
 ///   @override
-///   Object get targetObject => _target;
+///   Object get aopTarget => _target;
 ///
 ///   @override
-///   List<PointcutAdvisor> get advisors => _invoker.advisors;
+///   List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 ///
 ///   @override
 ///   int add(int a, int b) => _invoker.invoke(this, _target, 0, [a, b],

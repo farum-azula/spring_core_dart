@@ -191,8 +191,35 @@ a=2
     write('application-pool.properties', 'pool=yes');
     final e = env();
     config(e).processAndApplySync();
-    expect(e.activeProfiles, ['prod', 'db', 'pool', 'cache', 'metrics']);
+    // Included profiles come first, as in Spring Boot.
+    expect(e.activeProfiles, ['metrics', 'prod', 'db', 'pool', 'cache']);
     expect(e.getProperty('pool'), 'yes');
+  });
+
+  test('active profile files override included profile files', () {
+    write(
+      'application.properties',
+      'spring.profiles.active=dev\n'
+          'spring.profiles.include=common',
+    );
+    write('application-common.properties', 'mode=common\nshared=common');
+    write('application-dev.properties', 'mode=dev');
+    final e = env();
+    config(e).processAndApplySync();
+    expect(e.activeProfiles, ['common', 'dev']);
+    expect(e.getProperty('mode'), 'dev'); // the active profile wins
+    expect(e.getProperty('shared'), 'common');
+  });
+
+  test('a profile both included and active keeps the included position', () {
+    write(
+      'application.properties',
+      'spring.profiles.active=dev,common\n'
+          'spring.profiles.include=common',
+    );
+    final e = env();
+    config(e).processAndApplySync();
+    expect(e.activeProfiles, ['common', 'dev']);
   });
 
   test('include alone activates profiles; includes merge across files', () {

@@ -82,6 +82,59 @@ class NotWritablePropertyException extends BeansException {
   final String propertyName;
 }
 
+/// A property path is malformed (`items[`, `address..city`), like Spring's
+/// `InvalidPropertyException`.
+///
+/// `DataBinder` treats it like an unknown field: skipped while
+/// `ignoreUnknownFields` is on, so hostile request keys cannot break
+/// binding.
+///
+/// ```dart
+/// try {
+///   BeanWrapper(person).setPropertyValue('items[', 'x');
+/// } on InvalidPropertyException catch (e) {
+///   print(e.propertyName); // items[
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// } catch (InvalidPropertyException e) { ... }
+/// ```
+class InvalidPropertyException extends BeansException {
+  /// The path [propertyName] is malformed for [reason].
+  InvalidPropertyException(this.propertyName, String reason)
+    : super("Invalid property path '$propertyName': $reason");
+
+  /// The malformed path.
+  final String propertyName;
+}
+
+/// A property setter threw, like Spring's `MethodInvocationException`.
+///
+/// `DataBinder` records it as a `methodInvocation` field error.
+///
+/// ```dart
+/// try {
+///   BeanWrapper(account).setPropertyValue('iban', 'nope');
+/// } on MethodInvocationException catch (e) {
+///   print(e.cause); // what the setter threw
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// } catch (MethodInvocationException e) { ... }
+/// ```
+class MethodInvocationException extends BeansException {
+  /// The setter of [propertyName] threw [cause].
+  MethodInvocationException(this.propertyName, Object cause)
+    : super("Property '$propertyName' threw exception: $cause", cause: cause);
+
+  /// The property whose setter threw.
+  final String propertyName;
+}
+
 /// A nested path is `null` (e.g. `address` in `address.city`), like
 /// Spring's `NullValueInNestedPathException`.
 ///
@@ -483,10 +536,15 @@ class BeanWrapper {
             : 'read-only',
       );
     }
-    property.setValue(
-      target,
-      _convert(value, property.type, property.nullable, path),
-    );
+    final converted = _convert(value, property.type, property.nullable, path);
+    try {
+      property.setValue(target, converted);
+    } on BeansException {
+      rethrow;
+    } catch (error) {
+      // Whatever the setter throws (validation in a setter, ...).
+      throw MethodInvocationException(path, error);
+    }
   }
 
   /// Converts [value] for a property of [type]; non-[BeansException]
@@ -610,7 +668,7 @@ class BeanWrapper {
       } else if (c == '[') {
         final end = path.indexOf(']', i);
         if (end < 0) {
-          throw ArgumentError.value(path, 'path', "Missing ']'");
+          throw InvalidPropertyException(path, "missing ']'");
         }
         var key = path.substring(i + 1, end).trim();
         if (key.length >= 2 &&
@@ -627,7 +685,7 @@ class BeanWrapper {
     }
     segments.add(_Segment(name.toString(), keys));
     if (segments.any((s) => s.name.isEmpty && s.keys.isEmpty)) {
-      throw ArgumentError.value(path, 'path', 'Invalid property path');
+      throw InvalidPropertyException(path, 'empty property name');
     }
     return segments;
   }

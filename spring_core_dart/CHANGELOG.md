@@ -1,5 +1,17 @@
 ## Unreleased
 
+- `Advised` members are `aopTarget` and `aopAdvisors` (were `targetObject`
+  and `advisors`), so domain methods named `advisors` can be proxied.
+- `AopProxyFactory.unavailable` and `AopConfigException`: advice that
+  matches a bean the generator could not proxy fails the startup with the
+  reason instead of being skipped silently.
+- `DataBinder.bind`: malformed keys (`items[`, `a..b`) are skipped like
+  unknown fields (`InvalidPropertyException` when `ignoreUnknownFields` is
+  off); setters that throw become `methodInvocation` field errors
+  (`MethodInvocationException`), and binding continues.
+- Config data: `spring.profiles.include` profiles come before the active
+  ones, so `application-{active}` files override included profile files,
+  as in Spring Boot.
 - `@Lazy` on injection points (constructor parameters, fields, setters):
   a generated lazy proxy resolves the bean on every call, on behalf of the
   injecting bean (self-exclusion still applies). Breaks cycles and allows

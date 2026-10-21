@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Generated code compiles for SDK types as beans (`HttpClient` imported
+  from `dart:io`, internal supertypes such as `EfficientLengthIterable`
+  left out), `Future<T>?` members, `toString` with parameters, members
+  named `advisors` / `targetObject`, and classes with the same name in two
+  directories (unique proxy class names). Tests now compile the generated
+  code against the runtime.
+- Beans that cannot be proxied get `AopProxyFactory.unavailable` with the
+  reason (private members without an interface, operators, ...).
+- Optional fields and setters are only assigned when a bean or value is
+  found, so initializers are kept.
 - `@Lazy` on constructor parameters, fields and setters generates one
   lazy proxy class per type (`_$BookServiceLazy`, independent of
   `aop_proxies`) and `Dependency.lazy`; clear build errors for nullable,

@@ -409,21 +409,13 @@ final class _Run {
         ]),
       );
 
-  // Active profiles: programmatic ones, else `spring.profiles.active`; then
-  // includes from every source; then expanded profile groups.
+  // Active profiles, like Spring Boot's `Profiles`: included profiles
+  // first (from every source), then programmatic ones or
+  // `spring.profiles.active`, then expanded profile groups. Later profiles
+  // win, so `application-{active}` overrides `application-{included}`.
   List<String> _resolveProfiles() {
     final resolver = _resolver();
-    final active = <String>[..._env.activeProfiles];
-    if (active.isEmpty) {
-      active.addAll(
-        _list(
-              resolver.getProperty(
-                StandardEnvironment.activeProfilesPropertyName,
-              ),
-            ) ??
-            const [],
-      );
-    }
+    final active = <String>[];
     // Includes from every source are combined.
     for (final source in [
       ..._env.propertySources,
@@ -437,6 +429,19 @@ final class _Run {
         if (!active.contains(profile)) {
           active.add(profile);
         }
+      }
+    }
+    final declared = _env.activeProfiles.isNotEmpty
+        ? _env.activeProfiles
+        : _list(
+                resolver.getProperty(
+                  StandardEnvironment.activeProfilesPropertyName,
+                ),
+              ) ??
+              const <String>[];
+    for (final profile in declared) {
+      if (!active.contains(profile)) {
+        active.add(profile);
       }
     }
     // Expand groups (members follow their group; nested groups allowed).

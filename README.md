@@ -495,8 +495,14 @@ methods, `@Bean` products processed like components, `@PropertySource` /
 documents, relative import cycles, self-references (composites,
 decorators), early events reaching the parent twice, exception-safe and
 re-entrant `close()`, violation messages mangled by `MessageFormat`,
-`disallowedFields` bypasses, release-safe `@annotation` matching and
-package-qualified AOP wildcards.
+`disallowedFields` bypasses, release-safe `@annotation` matching,
+package-qualified AOP wildcards, SDK types as beans (`HttpClient`,
+`Uint8List`, `List<String>`), proxies for `Future<T>?` members,
+`toString` with parameters, members named like `Advised`'s and classes
+with the same name in two directories, advice silently skipped for beans
+that cannot be proxied, optional fields and setters overwritten with
+`null`, `DataBinder.bind` throwing on malformed keys and failing setters,
+and the order of `spring.profiles.include`.
 
 ### Container (`beans`)
 - [ ] Exclude beans produced by a configuration's own `@Bean` methods from its collections (`factoryBeanName`, Spring's `isSelfReference`).
@@ -534,7 +540,6 @@ package-qualified AOP wildcards.
 - [ ] Asynchronous lifecycle: `refreshAsync()` / `closeAsync()`, async init/destroy and `SmartLifecycle.stop` with per-phase timeouts.
 
 ### Configuration (`core`)
-- [ ] `spring.profiles.include` before active profiles (active profile files win).
 - [ ] Location groups (`,` = separate groups, `;` = one group) and the `config/*/` default location.
 - [ ] `spring.config.import` from the command line / environment; directory imports; missing non-optional directories fail.
 - [ ] `spring.profiles.default` from config files (load `application-{default}.properties`, expand groups).
@@ -560,7 +565,6 @@ package-qualified AOP wildcards.
 - [ ] Parser configuration (auto-grow), Java type names (`T(Integer)`), varargs, missing String/List/Map methods.
 
 ### Validation, binding, messages (`validation`)
-- [ ] `bind()` must record errors instead of throwing on unknown or malformed keys and failing setters.
 - [ ] No constraint error on top of a binding failure (`typeMismatch` only).
 - [ ] Collection auto-grow and element/key conversion in `BeanWrapper`.
 - [ ] Full `DefaultMessageCodesResolver` codes (`NotBlank.city` for `address.city`) and Spring's error arguments.
@@ -572,8 +576,7 @@ package-qualified AOP wildcards.
 - [ ] Class-level violations attached to a property; `{key}` messages from a `MessageSource`; `DecimalMin`/`DecimalMax`.
 
 ### AOP (`aop`)
-- [ ] Proxy classes with private members, operators and non-literal default values (today silently not proxied).
-- [ ] Generated code that does not compile: `covariant` parameters, `Future<T>?`, `toString({...})`, members named `advisors`/`targetObject`, same class name in two directories.
+- [ ] Proxies for classes with private members, operators or non-literal default values and no interface (today: a clear startup error when advice matches such a bean, instead of skipping it).
 - [ ] Named pointcuts resolved per aspect; advisor beans that depend on proxied beans; plain `Advisor` beans; ancestor contexts' advisors.
 - [ ] `@AfterReturning(Object result)` on `void` methods; `Future` methods throwing synchronously; async non-around advice; `FutureOr`.
 - [ ] Argument binding (`@annotation(timed)`, `args(...)`); inherited advice; pointcut holder classes.
@@ -581,9 +584,7 @@ package-qualified AOP wildcards.
 - [ ] Build-time validation of pointcut expressions; a smaller default than `aop_proxies: all`; `AopContext.currentProxy()`.
 
 ### Generator
-- [ ] SDK types (`List<String>`, `Uint8List`, `HttpClient` beans) importing `dart:_internal`/`dart:_http`.
 - [ ] Private types/functions in generated code: clear build errors instead of compile errors.
-- [ ] Optional field/setter injection must not overwrite initializers with `null`.
 - [ ] Annotations on primary-constructor fields lost when a library is resolved twice in one build.
 - [ ] Inherited `@Bean` methods and mixin lifecycle methods; generic superclasses (`BaseService<R>`).
 - [ ] Reject extension types and other unsupported targets (`@ComponentScan` on a class, `@Component` on mixins/enums).
@@ -743,7 +744,7 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 374 (runtime), 79 (generator), 12 (Spring Boot), 29 (logging
+Tests: 381 (runtime), 87 (generator), 12 (Spring Boot), 29 (logging
 starter), 25 (test starter), 16 end-to-end over the generated code of the
 example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,

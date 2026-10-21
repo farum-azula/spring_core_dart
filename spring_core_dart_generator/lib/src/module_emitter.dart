@@ -153,7 +153,9 @@ class ModuleEmitter {
       (b) => b
         ..body.addAll([
           for (final bean in module.beans)
-            if (bean.proxy case final proxy?) _proxyClass(proxy, bean.element),
+            if (bean.proxy case final proxy?
+                when proxy.unavailableReason == null)
+              _proxyClass(proxy, bean.element),
           for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
         ])
         ..body.add(
@@ -274,10 +276,21 @@ class ModuleEmitter {
     Element element,
   ) => Block.of([
     for (final property in properties)
-      bean
-          .property(property.name)
-          .assign(_lookup(property.point, element))
-          .statement,
+      // An optional field or setter is left alone when nothing is found
+      // (keeps its initializer; Spring does not call the setter either).
+      if (property.point.optional && property.point.defaultValue == null)
+        Block.of([
+          const Code('if ('),
+          _lookup(property.point, element).code,
+          const Code(' case final value?) {'),
+          bean.property(property.name).assign(refer('value')).statement,
+          const Code('}'),
+        ])
+      else
+        bean
+            .property(property.name)
+            .assign(_lookup(property.point, element))
+            .statement,
     for (final method in methods)
       () {
         final (positional, named) = _arguments(method.arguments, element);
@@ -457,21 +470,28 @@ class ModuleEmitter {
 
   // The runtime decides whether to proxy (any advisor matching one of the
   // signatures) and then calls `create` with the target and an invoker.
-  Expression _proxyFactory(ProxyModel proxy, Element element) =>
-      _spring('AopProxyFactory').newInstance([], {
-        'signatures': literalConstList([
-          for (final member in proxy.members)
-            _signature(proxy, member, element),
-        ]),
-        'create': _closure(
-          ['target', 'invoker'],
-          refer(proxy.className).newInstance([
-            refer('target').asA(_type(proxy.targetType, element)),
-            refer('invoker'),
-          ]).code,
-          lambda: true,
-        ),
+  Expression _proxyFactory(ProxyModel proxy, Element element) {
+    final signatures = literalConstList([
+      for (final member in proxy.members) _signature(proxy, member, element),
+    ]);
+    if (proxy.unavailableReason case final reason?) {
+      return _spring('AopProxyFactory').newInstanceNamed('unavailable', [], {
+        'signatures': signatures,
+        'reason': _str(reason),
       });
+    }
+    return _spring('AopProxyFactory').newInstance([], {
+      'signatures': signatures,
+      'create': _closure(
+        ['target', 'invoker'],
+        refer(proxy.className).newInstance([
+          refer('target').asA(_type(proxy.targetType, element)),
+          refer('invoker'),
+        ]).code,
+        lambda: true,
+      ),
+    });
+  }
 
   // Const metadata that pointcuts are matched against (names, types and
   // annotations as plain values, since there is no reflection).
@@ -577,7 +597,7 @@ class ModuleEmitter {
             (m) => m
               ..annotations.add(refer('override'))
               ..type = MethodType.getter
-              ..name = 'targetObject'
+              ..name = 'aopTarget'
               ..returns = refer('Object')
               ..lambda = true
               ..body = refer('_target').code,
@@ -586,7 +606,7 @@ class ModuleEmitter {
             (m) => m
               ..annotations.add(refer('override'))
               ..type = MethodType.getter
-              ..name = 'advisors'
+              ..name = 'aopAdvisors'
               ..returns = TypeReference(
                 (t) => t
                   ..symbol = 'List'
@@ -595,14 +615,15 @@ class ModuleEmitter {
               ..lambda = true
               ..body = refer('_invoker').property('advisors').code,
           ),
-          Method(
-            (m) => m
-              ..annotations.add(refer('override'))
-              ..name = 'toString'
-              ..returns = refer('String')
-              ..lambda = true
-              ..body = refer('_target').property('toString').call([]).code,
-          ),
+          if (!proxy.customToString)
+            Method(
+              (m) => m
+                ..annotations.add(refer('override'))
+                ..name = 'toString'
+                ..returns = refer('String')
+                ..lambda = true
+                ..body = refer('_target').property('toString').call([]).code,
+            ),
           for (final (index, member) in proxy.members.indexed)
             _proxyMember(member, index, element),
         ]),
@@ -654,14 +675,15 @@ class ModuleEmitter {
           ),
         )
         ..methods.addAll([
-          Method(
-            (m) => m
-              ..annotations.add(refer('override'))
-              ..name = 'toString'
-              ..returns = refer('String')
-              ..lambda = true
-              ..body = resolve.property('toString').call([]).code,
-          ),
+          if (!proxy.customToString)
+            Method(
+              (m) => m
+                ..annotations.add(refer('override'))
+                ..name = 'toString'
+                ..returns = refer('String')
+                ..lambda = true
+                ..body = resolve.property('toString').call([]).code,
+            ),
           for (final member in proxy.members)
             switch (member.kind) {
               ProxyMemberKind.getter => Method(
@@ -834,7 +856,10 @@ class ModuleEmitter {
             ),
           ).statement;
         } else if (returnType is InterfaceType &&
-            returnType.isDartAsyncFuture) {
+            returnType.isDartAsyncFuture &&
+            returnType.nullabilitySuffix == NullabilitySuffix.none) {
+          // `Future<T>?` is an ordinary value (advice sees the future or
+          // null); only a non-nullable Future is awaited by the advice.
           final valueType = returnType.typeArguments.single;
           body = refer('_invoker')
               .property('invokeAsync')
@@ -1370,7 +1395,11 @@ class ModuleEmitter {
     return TypeReference(
       (t) => t
         ..symbol = type.element.name
-        ..url = _importUrl(type.element.library.uri, element)
+        ..url = _importUrl(
+          type.element.library.uri,
+          element,
+          name: type.element.name,
+        )
         ..isNullable = type.nullabilitySuffix == NullabilitySuffix.question
         ..types.addAll([
           // Type arguments may be type parameters, functions or records.
@@ -1385,10 +1414,23 @@ class ModuleEmitter {
   // `package:` and `dart:` URIs are kept, `asset:` URIs under `lib/` become
   // `package:` URIs and other files of the same package (e.g. `test/`)
   // become relative paths. Anything else cannot be imported.
-  String? _importUrl(Uri uri, Element element) {
+  String? _importUrl(Uri uri, Element element, {String? name}) {
     switch (uri.scheme) {
       case 'dart' when uri.path == 'core':
         return null;
+      // `HttpClient` is declared in `dart:_http`, which cannot be imported:
+      // use the public library the user's code imports it from (`dart:io`).
+      case 'dart' when uri.path.startsWith('_'):
+        final public = name == null ? null : publicSdkLibrary(name, element);
+        if (public != null) {
+          return public.path == 'core' ? null : public.toString();
+        }
+        throw InvalidGenerationSource(
+          'Cannot reference ${name ?? 'a declaration'} of the internal '
+          'library $uri: import the public library that exports it '
+          '(for example dart:io) in the file that uses it.',
+          element: element,
+        );
       case 'package' when uri.pathSegments.first == 'spring_core_dart':
         // Public library instead of the runtime's src/ files.
         return _springUrl;

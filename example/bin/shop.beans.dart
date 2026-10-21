@@ -43,10 +43,10 @@ class _$LegacyConfig_legacyGreeterProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -66,10 +66,10 @@ class _$DefaultPricingServiceProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -107,10 +107,10 @@ class _$DefaultSlogansProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -129,10 +129,10 @@ class _$DefaultBasketPricingProxy implements _i5.BasketPricing, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -162,10 +162,10 @@ class _$ConsoleLogScreenProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -192,10 +192,10 @@ class _$ShopPropertiesProxy implements _i9.ShopProperties, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -262,10 +262,10 @@ class _$OpeningAnnouncementProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -303,10 +303,10 @@ class _$InMemoryBookRepositoryProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -331,10 +331,10 @@ class _$LoyaltyDiscountProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -359,10 +359,10 @@ class _$PoetryDiscountProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -387,10 +387,10 @@ class _$BestDiscountProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -419,10 +419,10 @@ class _$WelcomeLetterProxy implements _i12.WelcomeLetter, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -461,10 +461,10 @@ class _$ShopConfig_appInfoProxy implements _i13.AppInfo, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -488,10 +488,10 @@ class _$ShopConfig_clockProxy implements _i10.Clock, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -510,10 +510,10 @@ class _$ShopConfig_idsProxy implements _i13.IdGenerator, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -531,10 +531,10 @@ class _$ShopConfig_poolProxy implements _i13.ConnectionPool, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -582,10 +582,10 @@ class _$ShopConfig_searchIndexProxy implements _i13.SearchIndex, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -632,10 +632,10 @@ class _$OrderServiceProxy implements _i14.OrderService, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -662,10 +662,10 @@ class _$ShippingProxy implements _i14.Shipping, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -708,10 +708,10 @@ class _$ShipmentNotifierProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -734,10 +734,10 @@ class _$InvoiceServiceProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -756,10 +756,10 @@ class _$ReportConfig_salesReportProxy implements _i15.SalesReport, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -773,10 +773,10 @@ class _$BasketProxy implements _i15.Basket, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -795,10 +795,10 @@ class _$BasketServiceProxy implements _i15.BasketService, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -830,10 +830,10 @@ class _$RecommendationsProxy implements _i16.Recommendations, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -852,10 +852,10 @@ class _$WeekendSaleProxy implements _i16.WeekendSale, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -879,10 +879,10 @@ class _$LifecycleConfig_probeProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -985,10 +985,10 @@ class _$WarehouseProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1042,10 +1042,10 @@ class _$CourierProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1099,10 +1099,10 @@ class _$StartupReportProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1125,10 +1125,10 @@ class _$SandboxGatewayProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1148,10 +1148,10 @@ class _$LiveGatewayProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1171,10 +1171,10 @@ class _$OfflineGatewayProxy
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1193,10 +1193,10 @@ class _$DebugToolbarProxy implements _i11.DebugToolbar, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1210,10 +1210,10 @@ class _$CheckoutProxy implements _i11.Checkout, _i2.Advised {
   final _i2.ProxyInvoker _invoker;
 
   @override
-  Object get targetObject => _target;
+  Object get aopTarget => _target;
 
   @override
-  List<_i2.PointcutAdvisor> get advisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
   String toString() => _target.toString();
@@ -1886,6 +1886,7 @@ final _i2.BeanModule $application = _i2.BeanModule(
           r'#{appInfo.name.toUpperCase()} (${payment.mode})',
         ),
         _i2.Dependency.value(r'${shop.motto}', optional: true),
+        _i2.Dependency.value(r'${shop.slogan}', optional: true),
         _i2.Dependency(_i10.Clock, name: r'clock'),
         _i2.Dependency(_i2.Environment, name: r'environment'),
         _i2.Dependency(_i2.ApplicationEventPublisher, name: r'publisher'),
@@ -1904,13 +1905,182 @@ final _i2.BeanModule $application = _i2.BeanModule(
         bean.banner = r.value<String>(
           r'#{appInfo.name.toUpperCase()} (${payment.mode})',
         );
-        bean.motto = r.optionalValue<String>(r'${shop.motto}');
+        if (r.optionalValue<String>(r'${shop.motto}') case final value?) {
+          bean.motto = value;
+        }
+        if (r.optionalValue<String>(r'${shop.slogan}') case final value?) {
+          bean.slogan = value;
+        }
         bean.clock = r.dependency<_i10.Clock>(name: r'clock');
         bean.wire(
           r.dependency<_i2.Environment>(name: r'environment'),
           r.dependency<_i2.ApplicationEventPublisher>(name: r'publisher'),
         );
       },
+      aopProxy: _i2.AopProxyFactory.unavailable(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'wire',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            returnType: r'void',
+            parameterTypes: [r'Environment', r'ApplicationEventPublisher'],
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'priceOf',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            returnType: r'double',
+            parameterTypes: [r'Book'],
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'firstPage',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            returnType: r'List',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'books',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'BookRepository',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'discount',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'Discount',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'plugins',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'List',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'pageSize',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'int',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'currency',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'retries',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'int',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'deliveryTime',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'Duration',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'tags',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'List',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'banner',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'motto',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'slogan',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'clock',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'Clock',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'wiredWith',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            kind: _i2.MemberKind.getter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+        ],
+        reason: r'CatalogService cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
+      ),
     ),
     _i2.BeanDefinition<_i12.WelcomeLetter>(
       name: r'welcomeLetter',
