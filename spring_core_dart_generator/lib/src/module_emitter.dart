@@ -114,8 +114,20 @@ class ModuleEmitter {
     required String variableName,
     required String scannedDirectory,
     required ModuleModel module,
+    List<Spec> extra = const [],
+    Map<String, ({String? text, String? base64})> resources = const {},
   }) {
     final arguments = <String, Expression>{
+      if (resources.isNotEmpty)
+        'resources': literalConstMap({
+          for (final MapEntry(key: path, value: (:text, :base64))
+              in resources.entries)
+            _str(path): text != null
+                ? _spring('EmbeddedResource')
+                      .constInstanceNamed('text', [_str(text)])
+                : _spring('EmbeddedResource')
+                      .constInstanceNamed('base64', [_str(base64!)]),
+        }),
       if (module.propertySources.isNotEmpty)
         'propertySources': literalList([
           for (final source in module.propertySources) _propertySource(source),
@@ -147,14 +159,15 @@ class ModuleEmitter {
           Field(
             (f) => f
               ..docs.add(
-                '/// Beans found by `@ComponentScan` in `$scannedDirectory/`.',
+                '/// Beans found by `@ComponentScan` in `$scannedDirectory`.',
               )
               ..modifier = FieldModifier.final$
               ..type = _spring('BeanModule')
               ..name = variableName
               ..assignment = moduleExpression.code,
           ),
-        ),
+        )
+        ..body.addAll(extra),
     );
     final emitter = DartEmitter(
       allocator: Allocator.simplePrefixing(),
@@ -849,6 +862,11 @@ class ModuleEmitter {
           ]),
         TypeConditionModel(:final type) => _type(type, element).newInstance([]),
         AnnotationConditionModel(:final value) => _constant(value, element),
+        GroupConditionModel(:final key, :final conditions) =>
+          _spring('ConditionGroup').newInstance([
+            _str(key),
+            literalList([for (final c in conditions) _condition(c, element)]),
+          ]),
       };
 
   // Declarative description of an injection point; the runtime uses it

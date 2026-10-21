@@ -229,7 +229,9 @@ Problems the framework recovers from are logged through `SpringLog`
 - Profiles: `spring.profiles.active` / `.default`, expressions
   `dev & (eu | us) & !prod`.
 - `ConfigDataEnvironment` (Spring Boot config data): `application.properties`
-  and `application-{profile}.properties` from `file:./` and `file:./config/`
+  and `application-{profile}.properties` from `classpath:/` and
+  `classpath:/config/` (= `lib/resources/`), overridden by `file:./` and
+  `file:./config/`
   (or `spring.config.location` / `additional-location` / `name`), multi-doc
   files with `#---` and `spring.config.activate.on-profile`,
   `spring.config.import`, `spring.profiles.include` / `group.*`,
@@ -286,7 +288,10 @@ propagate to the parent context.
   (`messages_ru_RU.properties` → `messages_ru` → base), locale fallback,
   `MessageFormat` placeholders, quotes, `number`, `choice`. Define a bean
   named `messageSource`; the context delegates to it.
-- Resources: `ResourceLoader` with `file:` and custom protocols
+- Resources: `lib/resources/` is the classpath — the generator embeds its
+  files, so `classpath:...` works in CLI, AOT, Flutter and web without asset
+  declarations; `@Value('classpath:templates/mail.txt') Resource template`.
+  `ResourceLoader` with `classpath:`, `file:` and custom protocols
   (`ProtocolResolver`), `PathMatchingResourcePatternResolver` with
   `AntPathMatcher`.
 - `DefaultConversionService` with Spring Boot duration syntax (`10s`,

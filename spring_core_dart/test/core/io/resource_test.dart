@@ -131,7 +131,7 @@ void main() {
     });
 
     test('unknown protocol does not exist', () {
-      final resource = DefaultResourceLoader().getResource('classpath:x');
+      final resource = DefaultResourceLoader().getResource('ftp:x');
       expect(resource.exists(), isFalse);
       expect(resource.description, contains('unsupported protocol'));
     });

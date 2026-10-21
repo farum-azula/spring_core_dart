@@ -95,6 +95,12 @@ class DefaultListableBeanFactory
 
   BeanFactory? _parent;
   final _definitions = <String, BeanDefinition<Object>>{};
+  // Type -> definitions declaring it, like Spring's `allBeanNamesByType`;
+  // filled on demand and cleared whenever definitions change.
+  final _byType = <Type, List<BeanDefinition<Object>>>{};
+  // (type, qualifier, parameter name) -> selected definition, for lookups
+  // after the configuration is frozen (the answer can no longer change).
+  final _resolved = <(Type, String?, String?), BeanDefinition<Object>>{};
   // alias -> name (which may itself be an alias).
   final _aliases = <String, String>{};
   // Names registered with registerSingleton; they survive destroySingletons.
@@ -173,6 +179,7 @@ class DefaultListableBeanFactory
       throw BeanDefinitionOverrideException(name, definition.source);
     }
     _definitions[name] = definition;
+    _clearByTypeCache();
     for (final alias in definition.aliases) {
       registerAlias(name, alias);
     }
@@ -188,6 +195,7 @@ class DefaultListableBeanFactory
     _destroySingleton(canonical);
     _forgetManualSingleton(canonical);
     _definitions.remove(canonical);
+    _clearByTypeCache();
     _aliases.removeWhere((_, target) => target == canonical);
   }
 
@@ -324,6 +332,7 @@ class DefaultListableBeanFactory
       create: (_) => singleton,
       source: 'registerSingleton',
     );
+    _clearByTypeCache();
     _manualSingletons.add(name);
     _singletons[name] = singleton;
     _rawSingletons[name] = singleton;
@@ -450,11 +459,10 @@ class DefaultListableBeanFactory
     bool single = false,
   }) {
     final all = [
-      for (final definition in _definitions.values)
-        if (definition.matchesType(type) &&
-            (qualifier == null
-                ? definition.autowireCandidate
-                : definition.isQualifiedBy(qualifier)))
+      for (final definition in _definitionsOf(type))
+        if ((qualifier == null
+            ? definition.autowireCandidate
+            : definition.isQualifiedBy(qualifier)))
           definition,
     ];
     if (requester == null) {
@@ -465,6 +473,17 @@ class DefaultListableBeanFactory
         if (definition.name != requester) definition,
     ];
     return single && others.isEmpty ? all : others;
+  }
+
+  /// Definitions declaring [type] (through the type index).
+  List<BeanDefinition<Object>> _definitionsOf(Type type) => _byType[type] ??= [
+    for (final definition in _definitions.values)
+      if (definition.matchesType(type)) definition,
+  ];
+
+  void _clearByTypeCache() {
+    _byType.clear();
+    _resolved.clear();
   }
 
   /// Picks one definition: the only one, the primary one, the only
@@ -512,13 +531,24 @@ class DefaultListableBeanFactory
   }) {
     // Resolution order: local definitions, then resolvable dependencies
     // (the factory, the context, ...), then the parent factory.
-    final definition = _select(
-      T,
-      _candidates(T, qualifier, requester: _currentBean, single: true),
-      qualifier: qualifier,
-      name: name,
-      requiredBy: _currentBean,
-    );
+    //
+    // Once the configuration is frozen the selection for a lookup from
+    // outside bean creation is remembered (with a requester, self-exclusion
+    // makes the answer depend on who asks).
+    final cacheable = _frozen && _currentBean == null;
+    final key = (T, qualifier, name);
+    final definition = cacheable && _resolved.containsKey(key)
+        ? _resolved[key]
+        : _select(
+            T,
+            _candidates(T, qualifier, requester: _currentBean, single: true),
+            qualifier: qualifier,
+            name: name,
+            requiredBy: _currentBean,
+          );
+    if (definition != null && cacheable) {
+      _resolved[key] = definition;
+    }
     if (definition != null) {
       return _castTo<T>(_objectFor(definition, T), definition.name);
     }
@@ -668,10 +698,8 @@ class DefaultListableBeanFactory
     Type type, {
     bool includeNonSingletons = true,
   }) => [
-    for (final definition in _definitions.values)
-      if (definition.matchesType(type) &&
-          (includeNonSingletons || definition.isSingleton))
-        definition.name,
+    for (final definition in _definitionsOf(type))
+      if (includeNonSingletons || definition.isSingleton) definition.name,
   ];
 
   @override

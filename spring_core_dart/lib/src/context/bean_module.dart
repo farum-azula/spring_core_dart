@@ -2,6 +2,7 @@ import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
+import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 
 /// A `@PropertySource` declaration recorded in a [BeanModule].
@@ -102,11 +103,21 @@ final class BeanModule {
     List<BeanModule> imports = const [],
     Map<Type, BeanConfigurer> configurers = const {},
     List<BeanIntrospection<Object>> introspections = const [],
+    Map<String, EmbeddedResource> resources = const {},
   }) : definitions = List.unmodifiable(definitions),
        introspections = List.unmodifiable(introspections),
        propertySources = List.unmodifiable(propertySources),
        imports = List.unmodifiable(imports),
-       configurers = Map.unmodifiable(configurers);
+       configurers = Map.unmodifiable(configurers),
+       resources = Map.unmodifiable(resources) {
+    // Embedded `lib/resources/` files become `classpath:` resources as soon
+    // as the module exists (before config files are read).
+    ClasspathResources.registerAll(resources);
+  }
+
+  /// Files of `lib/resources/` embedded by the generator, by path; served
+  /// as `classpath:` resources (see [ClasspathResources]).
+  final Map<String, EmbeddedResource> resources;
 
   /// Module name, by convention the name of the annotated variable.
   final String name;

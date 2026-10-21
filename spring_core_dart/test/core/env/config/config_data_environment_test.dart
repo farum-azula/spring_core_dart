@@ -125,6 +125,8 @@ a=2
     final e = env();
     ConfigDataEnvironment(e).processAndApplySync();
     expect(ConfigDataEnvironment.defaultSearchLocations, [
+      'optional:classpath:/',
+      'optional:classpath:/config/',
       'optional:file:./',
       'optional:file:./config/',
     ]);

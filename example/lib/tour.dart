@@ -3,11 +3,13 @@
 /// actually happened.
 library;
 
+import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/external/legacy_config.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
 import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
+import 'package:spring_core_dart_example/src/catalog/welcome_letter.dart';
 import 'package:spring_core_dart_example/src/config/shop_config.dart';
 import 'package:spring_core_dart_example/src/events/orders.dart';
 import 'package:spring_core_dart_example/src/extension/extension_points.dart';
@@ -27,12 +29,16 @@ ConfigurableApplicationContext startShop(
   List<String> args, {
   Map<String, String>? systemEnvironment,
 }) {
+  // Created first: the module registers the embedded lib/resources/ files
+  // (classpath:) that the config files below are read from.
+  final modules = [shopBeans, springBootAutoConfiguration];
   final environment = StandardEnvironment(systemEnvironment: systemEnvironment)
     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
   ConfigDataEnvironment(environment).processAndApplySync();
-  final context = AnnotationConfigApplicationContext([
-    shopBeans,
-  ], environment: environment);
+  final context = AnnotationConfigApplicationContext(
+    modules,
+    environment: environment,
+  );
   context.beanFactory.registerScope('basket', SimpleMapScope());
   context.refresh();
   return context;
@@ -226,6 +232,10 @@ class _Tour {
       context.getBean<SearchIndex>().size,
     );
     show('legacy bean (@Import)', context.getBean<LegacyGreeter>().greeting);
+    final letter = context.getBean<WelcomeLetter>();
+    show('classpath:templates/welcome.txt (@Value Resource)', letter.compose());
+    show('classpath:logo.png (binary, embedded)', '${letter.logoSize} bytes');
+    show('embedded resources', ClasspathResources.paths.length);
 
     final screen = CatalogScreen();
     context.autowireCapableBeanFactory.autowireBean(screen);
@@ -295,6 +305,10 @@ class _Tour {
     show(
       'default message',
       context.getMessage('missing', defaultMessage: 'n/a'),
+    );
+    show(
+      'messageSource (Spring Boot MessageSourceAutoConfiguration)',
+      context.beanFactory.getBeanDefinition('messageSource').source,
     );
   }
 

@@ -8,6 +8,7 @@ environment:
 workspace:
   - spring_core_dart
   - spring_core_dart_generator
+  - spring_boot_dart
   - example
 
 dev_dependencies:
@@ -34,9 +35,16 @@ melos:
       exec: dart run coverage:test_with_coverage
       packageFilters:
         dependsOn: coverage
+    version:
+      description: "Lockstep version for the whole family: melos run version -- 0.2.0"
+      run: dart run tool/version.dart
+    check:versions:
+      description: Every package has the same version and sibling constraints.
+      run: dart run tool/version.dart --check
     check:
       description: gen + analyze + format + test.
       steps:
+        - check:versions
         - gen
         - analyze
         - format

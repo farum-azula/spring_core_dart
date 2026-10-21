@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
@@ -14,7 +15,8 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 /// Resource resource = loader.getResource("file:config/app.properties");
 /// ```
 ///
-/// There is no `classpath:` prefix; register a [ProtocolResolver] for other
+/// `classpath:` reads `lib/resources/` (see [ClasspathResources]); register a
+/// [ProtocolResolver] for other
 /// sources (e.g. Flutter assets).
 abstract interface class ResourceLoader {
   /// Prefix for file system locations.
@@ -149,8 +151,9 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 
 /// Default [ResourceLoader], like Spring's `DefaultResourceLoader`.
 ///
-/// Order: registered [ProtocolResolver]s, then `file:` and plain paths as
-/// file system resources. Other `scheme:` locations resolve to a resource
+/// Order: registered [ProtocolResolver]s, then `classpath:` (the files of
+/// `lib/resources/`, see [ClasspathResources]), then `file:` and plain
+/// paths as file system resources. Other `scheme:` locations resolve to a resource
 /// that does not exist.
 ///
 /// ```dart
@@ -190,6 +193,9 @@ class DefaultResourceLoader implements ResourceLoader {
       if (resource != null) {
         return resource;
       }
+    }
+    if (location.startsWith(ClasspathResources.prefix)) {
+      return ClasspathResources.resolve(location);
     }
     if (location.startsWith(ResourceLoader.filePrefix)) {
       return FileSystemResource(_filePath(location));

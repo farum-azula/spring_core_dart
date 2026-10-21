@@ -16,7 +16,7 @@ final BeanModule pkgBeans = $pkgBeans;
 const _header = "import 'package:spring_core_dart/spring_core_dart.dart';\n";
 
 Future<TestBuilderResult> _build(
-  Map<String, String> sources, {
+  Map<String, Object> sources, {
   ProxyMode proxyMode = ProxyMode.none,
 }) async {
   final readerWriter = TestReaderWriter(
@@ -37,7 +37,7 @@ Future<TestBuilderResult> _build(
 /// whitespace (the formatter may wrap lines).
 Future<String> _generate(
   String beans, {
-  Map<String, String> extra = const {},
+  Map<String, Object> extra = const {},
   ProxyMode proxyMode = ProxyMode.none,
 }) async {
   final result = await _build({
@@ -492,7 +492,7 @@ class Screen {
         // The declaring class's conditions gate its property sources.
         _has(
           "_i1.PropertySourceDeclaration(const [r'file:a.properties'], "
-          'conditions: [const _i2.OnMode(',
+          "conditions: [_i1.ConditionGroup(r'package:pkg/src/service.dart#Config', [const _i2.OnMode(",
         ),
       );
       expect(
@@ -1159,17 +1159,93 @@ class CloudConfig {}
         _has(
           "_i1.BeanDefinition<_i2.CloudData>(name: r'cloudData', "
           "source: r'package:pkg/src/service.dart#CloudData', "
-          "types: const [_i2.CloudData], conditions: [const _i1.ProfileCondition([r'cloud'])]",
+          "types: const [_i2.CloudData], conditions: [_i1.ConditionGroup(r'package:pkg/src/service.dart#CloudData', "
+          "[_i1.ConditionGroup(r'package:pkg/src/service.dart#CloudConfig', [const _i1.ProfileCondition([r'cloud'])])])]",
         ),
       );
       expect(
         output,
         _has(
           "_i1.PropertySourceDeclaration(const [r'file:cloud.properties'], "
-          "conditions: [const _i1.ProfileCondition([r'cloud'])])",
+          "conditions: [_i1.ConditionGroup(r'package:pkg/src/service.dart#CloudConfig', [const _i1.ProfileCondition([r'cloud'])])])",
         ),
       );
     });
+  });
+
+  test('lib/resources files are embedded as classpath resources', () async {
+    final output = await _generate(
+      '@Component() class A {}',
+      extra: {
+        'lib/resources/application.properties': "app.name='NEON' \$x\nb=2",
+        'lib/resources/img/logo.bin': const [0xff, 0xfe, 0x00],
+      },
+    );
+    expect(
+      output,
+      contains("r'application.properties':_i1.EmbeddedResource.text("),
+    );
+    expect(output, contains("r'img/logo.bin':_i1.EmbeddedResource.base64("));
+  });
+
+  group('@SpringBootApplication', () {
+    test(
+      'scans lib/ and the directory of main, declares runApplication',
+      () async {
+        final result = await _build({
+          'bin/main.dart': r'''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'main.beans.dart';
+
+@SpringBootApplication()
+void main(List<String> args) => runApplication(args);
+
+@Component()
+class CliRunner {}
+''',
+          'lib/src/deep/service.dart': '$_header@Service() class Deep {}',
+          'lib/props.dart': r'''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+@ConfigurationProperties('db')
+class DbProps { String url = ''; }
+''',
+        });
+        expect(result.errors, isEmpty);
+        final output = _normalize(
+          result.readerWriter.testing.readString(result.outputs.single),
+        );
+        expect(result.outputs.single.path, 'bin/main.beans.dart');
+        // spring_boot_dart's lib/spring_auto_configuration.dart is discovered
+        // in the dependencies.
+        expect(output, contains('autoConfigurations:['));
+        expect(output, contains('.springBootAutoConfiguration]'));
+        expect(
+          output,
+          contains(
+            'runApplicationAsync(List<String>args)=>springApplication.runAsync(args)',
+          ),
+        );
+        expect(
+          output,
+          _has("BeanDefinition<_i2.CliRunner>(name: r'cliRunner'"),
+        );
+        expect(output, _has("name: r'deep'"));
+        // @ConfigurationProperties: a bean plus introspection metadata.
+        expect(output, _has("name: r'dbProps'"));
+        expect(output, _has('BeanIntrospection<'));
+        expect(output, contains("ConfigurationProperties(r'db')"));
+        expect(
+          output,
+          _has(r"BeanModule $application = _i1.BeanModule(r'application'"),
+        );
+        expect(
+          output,
+          _has(
+            'runApplication(List<String> args) => springApplication.run(args);',
+          ),
+        );
+      },
+    );
   });
 
   group('rejects', () {

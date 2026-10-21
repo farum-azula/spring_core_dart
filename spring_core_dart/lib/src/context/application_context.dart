@@ -1016,10 +1016,16 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
 }
 
 /// The [ConditionContext] handed to conditions while modules load.
-final class _ConditionContext implements ConditionContext {
+final class _ConditionContext
+    implements ConditionContext, ConditionEvaluationCache {
   _ConditionContext(this._context);
 
   final AnnotationConfigApplicationContext _context;
+  final _results = <String, bool>{};
+
+  @override
+  bool evaluateOnce(String key, bool Function() evaluate) =>
+      _results[key] ??= evaluate();
 
   @override
   ConfigurableListableBeanFactory get beanFactory => _context._factory;

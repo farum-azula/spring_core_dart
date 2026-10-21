@@ -14,6 +14,7 @@ separate library.
 | Package | Path | What it is |
 |---|---|---|
 | `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. No dependencies. |
+| `spring_boot_dart` | [`spring_boot_dart/`](spring_boot_dart/README.md) | Spring Boot on top of the core: `@SpringBootApplication` on `main`, `SpringApplication.run`, `@ConfigurationProperties`, auto-configuration conditions, runners, failure reports. A separate package (depends only on the core) so it can move to its own repository. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
@@ -54,8 +55,21 @@ targets:
 
 ## Quick start
 
+With Spring Boot (`spring_boot_dart`) the entry point is all you write —
+see [`spring_boot_dart/`](spring_boot_dart/README.md):
+
+```dart
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'main.beans.dart';
+
+@SpringBootApplication()
+void main(List<String> args) => runApplication(args);
+```
+
+With the core only:
+
 ```properties
-# config/application.properties
+# lib/resources/application.properties (the classpath)
 app.title=NEON
 spring.profiles.active=dev
 ```
@@ -231,7 +245,9 @@ Problems the framework recovers from are logged through `SpringLog`
 - Profiles: `spring.profiles.active` / `.default`, expressions
   `dev & (eu | us) & !prod`.
 - `ConfigDataEnvironment` (Spring Boot config data): `application.properties`
-  and `application-{profile}.properties` from `file:./` and `file:./config/`
+  and `application-{profile}.properties` from `classpath:/` and
+  `classpath:/config/` (= `lib/resources/`), overridden by `file:./` and
+  `file:./config/`
   (or `spring.config.location` / `additional-location` / `name`), multi-doc
   files with `#---` and `spring.config.activate.on-profile`,
   `spring.config.import`, `spring.profiles.include` / `group.*`,
@@ -288,7 +304,10 @@ propagate to the parent context.
   (`messages_ru_RU.properties` → `messages_ru` → base), locale fallback,
   `MessageFormat` placeholders, quotes, `number`, `choice`. Define a bean
   named `messageSource`; the context delegates to it.
-- Resources: `ResourceLoader` with `file:` and custom protocols
+- Resources: `lib/resources/` is the classpath — the generator embeds its
+  files, so `classpath:...` works in CLI, AOT, Flutter and web without asset
+  declarations; `@Value('classpath:templates/mail.txt') Resource template`.
+  `ResourceLoader` with `classpath:`, `file:` and custom protocols
   (`ProtocolResolver`), `PathMatchingResourcePatternResolver` with
   `AntPathMatcher`.
 - `DefaultConversionService` with Spring Boot duration syntax (`10s`,
@@ -427,12 +446,11 @@ package-qualified AOP wildcards.
 - [ ] Keep `registerSingleton` objects out of `beanDefinitionNames`; dereference registered `FactoryBean`s.
 - [ ] Alias overriding when `allowBeanDefinitionOverriding` is on; dangling alias chains after removal.
 - [ ] `ObjectProvider.toString()`/`isEmpty` must not create beans; clearer cycle message for re-entrant `FactoryBean` products.
-- [ ] Type → bean-name index instead of scanning all definitions per lookup; linear shutdown.
+- [ ] Linear shutdown (destroy order bookkeeping is O(n²)).
 - [ ] `@Value` with a custom SpEL template prefix (always delegate to the expression resolver).
 - [ ] Missing APIs: `beanNamesForTypeIncludingAncestors`, `destroyBean`, `SmartFactoryBean`, `isFactoryBean`, `isTypeMatch`, annotation lookups (`getBeansWithAnnotation`).
 
 ### Context, events, lifecycle (`context`)
-- [ ] Evaluate a configuration class's conditions once for all its `@Bean` methods (all-or-nothing).
 - [ ] `Future`-returning `@EventListener`s: republish the result, route errors to the error handler.
 - [ ] Detect listener beans created by `@Bean` methods or `registerSingleton`; de-duplicate listeners.
 - [ ] Lifecycle: start dependencies first / stop dependents first; stop already started beans when refresh fails.
@@ -440,7 +458,7 @@ package-qualified AOP wildcards.
 - [ ] `PayloadApplicationEvent<T>` listeners; `Ordered` on listener beans; `@EventListener` methods on `FactoryBean` classes.
 - [ ] Listener conditions inside the error handler; lifecycle discovery by instance type.
 - [ ] Phased creation of post-processors (`PriorityOrdered` → `Ordered` → rest, re-querying names).
-- [ ] `ConditionContext` access to the definition being evaluated; deferred (auto-configuration) modules.
+- [ ] `ConditionContext` access to the definition being evaluated (auto-configuration ordering exists in `spring_boot_dart`).
 - [ ] `EmbeddedValueResolverAware` evaluating SpEL; descriptive errors for infrastructure misuse; `publishEvent` after `close()` throws.
 - [ ] Child message lookups use the parent's message source, not the parent context; unique context ids; `conversionService` from ancestors.
 - [ ] Template hooks (`postProcessBeanFactory`, `onRefresh`, `onClose`), `registerShutdownHook()`.
@@ -522,7 +540,8 @@ with or endorsed by the Spring team.
 
 ```bash
 dart pub get
-dart run melos run check   # gen + analyze + format + test
+dart run melos run check   # versions + gen + analyze + format + test
+dart run melos run version -- 0.2.0   # release train: one version for every package
 dart run melos run coverage
 ```
 
@@ -530,7 +549,7 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 353 (runtime), 67 (generator), 10 end-to-end over the generated code
-of the example tour. Generated `*.beans.dart` files are committed. CI
+Tests: 362 (runtime), 69 (generator), 9 (Spring Boot), 12 end-to-end over
+the generated code of the example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

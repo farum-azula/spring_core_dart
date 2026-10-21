@@ -104,6 +104,8 @@ class ConfigDataEnvironment {
   /// Spring Boot also searches `classpath:/` and `classpath:/config/`;
   /// Dart has no classpath.
   static const defaultSearchLocations = [
+    'optional:classpath:/',
+    'optional:classpath:/config/',
     'optional:file:./',
     'optional:file:./config/',
   ];

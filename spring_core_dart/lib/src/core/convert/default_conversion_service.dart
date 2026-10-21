@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/convert/duration_style.dart';
 import 'package:spring_core_dart/src/core/convert/generic_conversion_service.dart';
 
@@ -58,6 +60,11 @@ class DefaultConversionService extends GenericConversionService {
     }
 
     service
+      // `@Value('classpath:banner.txt') Resource banner`, like Spring's
+      // ResourceEditor.
+      ..addConverter<String, Resource>(
+        (location) => DefaultResourceLoader().getResource(location.trim()),
+      )
       ..addConverter<Object, String>((source) => source.toString())
       ..addConverter<Duration, String>(DurationStyle.format)
       ..addConverter<DateTime, String>((source) => source.toIso8601String())

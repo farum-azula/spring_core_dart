@@ -82,15 +82,10 @@ class ShopConfig {
 
   @Bean()
   SearchIndex searchIndex() => SearchIndex();
-
-  /// The bean named `messageSource` is used by `context.getMessage`.
-  @Bean()
-  MessageSource messageSource() =>
-      PropertiesMessageSource(basenames: ['file:messages/messages']);
 }
 
 /// Only in prod: its @PropertySource is loaded only when the class is.
 @Configuration()
 @Profile(['prod'])
-@PropertySource(['file:config/prod-only.properties'])
+@PropertySource(['classpath:prod-only.properties'])
 class ProdOnlyConfig {}

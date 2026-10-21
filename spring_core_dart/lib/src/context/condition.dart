@@ -110,3 +110,49 @@ final class ProfileCondition implements Condition {
   bool matches(ConditionContext context) =>
       context.environment.matchesProfiles(profiles);
 }
+
+/// A [ConditionContext] that remembers results while modules load (see
+/// [ConditionGroup]). The application context's condition context
+/// implements it.
+abstract interface class ConditionEvaluationCache {
+  /// The cached result for [key], computing it with [evaluate] once.
+  bool evaluateOnce(String key, bool Function() evaluate);
+}
+
+/// The conditions of one configuration class, evaluated once for the class
+/// and all of its `@Bean` methods (and its `@PropertySource`s), like
+/// Spring's per-class condition evaluation: the class is registered all or
+/// nothing.
+///
+/// Without the group, a class condition such as "no `Foo` bean yet" would
+/// be re-checked for every `@Bean` method and drop the methods registered
+/// after the class's own `Foo`. Generated code wraps class conditions in a
+/// group keyed by the class.
+///
+/// ```dart
+/// const group = ConditionGroup('package:app/cache.dart#CacheConfig', [
+///   OnMissingCache(),
+/// ]);
+/// BeanDefinition<CacheConfig>(name: 'cacheConfig', conditions: const [group], ...);
+/// BeanDefinition<Cache>(name: 'cache', conditions: const [group], ...);
+/// ```
+///
+/// Spring (Java): `ConditionEvaluator` tracking configuration classes.
+class ConditionGroup implements Condition {
+  /// Groups [conditions] under [key] (usually `library#Class`).
+  const ConditionGroup(this.key, this.conditions);
+
+  /// Identifies the group within one refresh.
+  final String key;
+
+  /// All must match.
+  final List<Condition> conditions;
+
+  @override
+  bool matches(ConditionContext context) {
+    bool evaluate() => conditions.every((c) => c.matches(context));
+    return context is ConditionEvaluationCache
+        ? (context as ConditionEvaluationCache).evaluateOnce(key, evaluate)
+        : evaluate();
+  }
+}

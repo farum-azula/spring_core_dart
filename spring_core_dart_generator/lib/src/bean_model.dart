@@ -484,6 +484,24 @@ class TypeConditionModel extends ConditionModel {
 /// @Conditional(OnModeCondition.class)
 /// @interface OnMode { Mode value(); }
 /// ```
+/// The conditions of a configuration class, evaluated once for the class,
+/// its `@Bean` methods and its `@PropertySource`s.
+///
+/// ```dart
+/// // Output: ConditionGroup(r'package:a/b.dart#Config', [ ... ])
+/// ```
+class GroupConditionModel extends ConditionModel {
+  /// Groups [conditions] under [key].
+  GroupConditionModel(this.key, this.conditions);
+
+  /// `library#Class`.
+  final String key;
+
+  /// The grouped conditions.
+  final List<ConditionModel> conditions;
+}
+
+/// A condition annotation re-created as a constant (see above).
 class AnnotationConditionModel extends ConditionModel {
   /// Creates a condition re-created from the constant [value].
   AnnotationConditionModel(this.value);

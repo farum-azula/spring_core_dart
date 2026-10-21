@@ -70,6 +70,12 @@ void main() {
     expectLine('pool open (initMethod connect): true');
     expectLine('search index (@Bean product with @PostConstruct): 3');
     expectLine('@Configurable screen: NEON Books, page 2');
+    // lib/resources/ as the classpath.
+    expectLine(
+      'classpath:templates/welcome.txt (@Value Resource): Dear reader, '
+      'welcome to NEON Books — 3 titles are waiting for you.',
+    );
+    expectLine('classpath:logo.png (binary, embedded): 16 bytes');
   });
 
   test('lifecycle callbacks run in Spring order', () {
@@ -135,6 +141,10 @@ void main() {
     expectLine('de_AT (falls back to de): Willkommen bei NEON Books!');
     expectLine('choice 0: Your cart has no books.');
     expectLine('choice 7: Your cart has 7 books.');
+    expectLine(
+      'messageSource (Spring Boot MessageSourceAutoConfiguration): '
+      'package:spring_boot_dart#MessageSourceAutoConfiguration',
+    );
   });
 
   test('SpEL', () {

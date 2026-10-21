@@ -342,7 +342,12 @@ class BeanScanner {
       _fail('Generic bean class $className is not supported.', element);
     }
 
-    final classConditions = [...inheritedConditions, ..._conditions(element)];
+    // Evaluated once for the class, its @Bean methods, its property
+    // sources and the classes it imports (Spring: all or nothing).
+    final ownConditions = [...inheritedConditions, ..._conditions(element)];
+    final classConditions = ownConditions.isEmpty
+        ? const <ConditionModel>[]
+        : [GroupConditionModel(source, ownConditions)];
     for (final imported in _importedClasses(element)) {
       scanClass(
         imported,

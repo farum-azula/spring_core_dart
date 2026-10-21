@@ -22,7 +22,17 @@
   work in minified and obfuscated release builds; package-qualified
   wildcards and argument binding are rejected instead of matching every or
   no bean.
+- `ConditionGroup`: a configuration class's conditions are evaluated once
+  for the class, its `@Bean` methods and property sources (all or nothing).
+- Type index like Spring's `allBeanNamesByType` (cleared when definitions
+  change) and a cache of resolved lookups once the configuration is frozen:
+  `getBean<T>()` no longer scans every definition (~0.1 µs regardless of the
+  number of beans).
 - New `SpringLog` logger for problems the framework recovers from.
+- `classpath:` resources: files of `lib/resources/` embedded by the
+  generator (`BeanModule.resources`, `ClasspathResources`), read from disk
+  as a fallback; config data looks in `classpath:/` and `classpath:/config/`
+  first; `@Value('classpath:...') Resource` injection.
 
 ## 0.1.0
 

@@ -8,7 +8,7 @@ class LegacyGreeter {
 }
 
 @Configuration()
-@PropertySource(['file:config/legacy.properties'], ignoreResourceNotFound: true)
+@PropertySource(['classpath:legacy.properties'])
 class LegacyConfig {
   @Bean()
   LegacyGreeter legacyGreeter(@Value(r'${legacy.greeting}') String greeting) =>

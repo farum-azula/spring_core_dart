@@ -9,6 +9,17 @@
 - `@Import`ed classes keep their explicit name and inherit the importer's
   conditions; `@PropertySource` declarations carry their class's
   conditions.
+- `@SpringBootApplication` on `main`: scans `lib/` and the directory of
+  `main`, and generates `springApplication` / `runApplication(args)`.
+- Starters' `requires` ranges are checked against the `spring_boot_dart`
+  version in use; an incompatible starter stops the build with an
+  explanation.
+- Class conditions are emitted as one `ConditionGroup` per class.
+- `@SpringBootApplication`: auto-configuration modules of all dependencies
+  (`lib/spring_auto_configuration.dart`) are discovered and passed to the
+  generated `springApplication`; `runApplicationAsync` is generated too.
+- Files under `lib/resources/` are embedded into generated modules as
+  `classpath:` resources (text as-is, binaries base64, > 1 MB skipped).
 - Proxy signatures include annotation type names (`annotationTypes`,
   `targetAnnotationTypes`) for release-safe `@annotation` matching.
 
