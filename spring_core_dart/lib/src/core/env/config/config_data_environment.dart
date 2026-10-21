@@ -266,7 +266,10 @@ final class _Run {
     for (final location in locations) {
       _documents.addAll(_loadLocation(location, names, profile: null));
     }
-    _activate(const []);
+    // Documents guarded by on-profile stay inactive until the profiles are
+    // known (like Spring Boot), so `!prod` is not applied before we know
+    // whether prod is active.
+    _activate(const [], profilesKnown: false);
 
     // 2. Profiles from the environment and the active documents.
     final profiles = _resolveProfiles();
@@ -289,13 +292,16 @@ final class _Run {
   // Activates documents whose on-profile matches and loads their imports
   // until nothing changes. Imports are inserted right after the importing
   // document, i.e. with higher precedence than it.
-  void _activate(List<String> profiles) {
+  void _activate(List<String> profiles, {bool profilesKnown = true}) {
     var changed = true;
     while (changed) {
       changed = false;
       for (var i = 0; i < _documents.length; i++) {
         final document = _documents[i];
         if (!document.active) {
+          if (!profilesKnown && document.onProfile != null) {
+            continue;
+          }
           document.active = _matchesProfiles(document, profiles);
           if (!document.active) {
             continue;
@@ -520,7 +526,9 @@ final class _Run {
       }
       throw ConfigDataResourceNotFoundException(location, resource.description);
     }
-    if (!_loaded.add(location)) {
+    // Deduplicated on the normalized location, so `./application.properties`
+    // or `config/../config/a.properties` cannot import themselves forever.
+    if (!_loaded.add(_normalized(location))) {
       return const []; // Already loaded (import cycle or duplicate).
     }
     return [
@@ -575,6 +583,31 @@ final class _Run {
 
   // Directory part of [location] (with trailing `/`), or just its prefix
   // (`file:`) when there is no slash.
+  // [location] with `.` and `dir/..` path segments removed (the scheme
+  // prefix such as `file:` is kept).
+  static String _normalized(String location) {
+    final match = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*:').firstMatch(location);
+    final scheme =
+        match == null ||
+            match.end == 2 && location.length > 2 && location[2] == r'\'
+        ? ''
+        : match.group(0)!;
+    final path = location.substring(scheme.length).replaceAll(r'\', '/');
+    final absolute = path.startsWith('/');
+    final segments = <String>[];
+    for (final segment in path.split('/')) {
+      if (segment.isEmpty || segment == '.') {
+        continue;
+      }
+      if (segment == '..' && segments.isNotEmpty && segments.last != '..') {
+        segments.removeLast();
+      } else {
+        segments.add(segment);
+      }
+    }
+    return '$scheme${absolute ? '/' : ''}${segments.join('/')}';
+  }
+
   static String _parent(String location) {
     final slash = math.max(
       location.lastIndexOf('/'),

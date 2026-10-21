@@ -1,12 +1,16 @@
+// Outside the @ComponentScan root (lib/src/): registered only because
+// ShopConfig imports it with @Import.
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-class LegacyService {
-  String get name => 'legacy';
+class LegacyGreeter {
+  LegacyGreeter(this.greeting);
+  final String greeting;
 }
 
-/// Outside the scanned directory; registered through `@Import`.
 @Configuration()
+@PropertySource(['file:config/legacy.properties'], ignoreResourceNotFound: true)
 class LegacyConfig {
   @Bean()
-  LegacyService legacyService() => LegacyService();
+  LegacyGreeter legacyGreeter(@Value(r'${legacy.greeting}') String greeting) =>
+      LegacyGreeter(greeting);
 }

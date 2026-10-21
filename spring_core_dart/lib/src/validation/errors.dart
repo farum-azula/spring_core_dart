@@ -24,7 +24,7 @@ import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 /// ObjectError error = result.getGlobalError();
 /// messageSource.getMessage(error, Locale.getDefault());
 /// ```
-class ObjectError implements MessageSourceResolvable {
+class ObjectError implements MessageSourceResolvable, DefaultMessageRendering {
   /// Creates an error of [objectName] with message [codes] (most specific
   /// first), optional message [arguments] and a [defaultMessage].
   ObjectError(
@@ -32,8 +32,15 @@ class ObjectError implements MessageSourceResolvable {
     List<String> codes, {
     List<Object?> arguments = const [],
     this.defaultMessage,
+    this.shouldRenderDefaultMessage = true,
   }) : codes = List.unmodifiable(codes),
        arguments = List.unmodifiable(arguments);
+
+  /// Whether [defaultMessage] is formatted with [arguments]; `false` for
+  /// Bean Validation messages without `{0}`-style placeholders (Spring's
+  /// `ViolationFieldError`).
+  @override
+  final bool shouldRenderDefaultMessage;
 
   /// Name of the validated object, e.g. `signup`.
   final String objectName;
@@ -86,6 +93,7 @@ class FieldError extends ObjectError {
     super.codes, {
     super.arguments,
     super.defaultMessage,
+    super.shouldRenderDefaultMessage,
     this.bindingFailure = false,
   });
 
@@ -270,7 +278,15 @@ abstract interface class Errors {
   void popNestedPath();
 
   /// Adds a global error.
-  void reject(String errorCode, {List<Object?> args, String? defaultMessage});
+  ///
+  /// With [renderDefaultMessage] `false` the default message is shown
+  /// as-is instead of being formatted with [args].
+  void reject(
+    String errorCode, {
+    List<Object?> args,
+    String? defaultMessage,
+    bool renderDefaultMessage,
+  });
 
   /// Adds an error for [field] (relative to [nestedPath]).
   ///
@@ -280,6 +296,7 @@ abstract interface class Errors {
     String errorCode, {
     List<Object?> args,
     String? defaultMessage,
+    bool renderDefaultMessage,
   });
 
   /// Adds every error of [errors], which must have the same [objectName].
@@ -455,12 +472,14 @@ abstract class AbstractBindingResult implements BindingResult {
     String errorCode, {
     List<Object?> args = const [],
     String? defaultMessage,
+    bool renderDefaultMessage = true,
   }) => addError(
     ObjectError(
       objectName,
       messageCodesResolver.resolveMessageCodes(errorCode, objectName),
       arguments: args,
       defaultMessage: defaultMessage,
+      shouldRenderDefaultMessage: renderDefaultMessage,
     ),
   );
 
@@ -470,9 +489,15 @@ abstract class AbstractBindingResult implements BindingResult {
     String errorCode, {
     List<Object?> args = const [],
     String? defaultMessage,
+    bool renderDefaultMessage = true,
   }) {
     if (field.isEmpty && _nestedPath.isEmpty) {
-      reject(errorCode, args: args, defaultMessage: defaultMessage);
+      reject(
+        errorCode,
+        args: args,
+        defaultMessage: defaultMessage,
+        renderDefaultMessage: renderDefaultMessage,
+      );
       return;
     }
     final fixed = _fixedField(field);
@@ -489,6 +514,7 @@ abstract class AbstractBindingResult implements BindingResult {
         ),
         arguments: args,
         defaultMessage: defaultMessage,
+        shouldRenderDefaultMessage: renderDefaultMessage,
       ),
     );
   }

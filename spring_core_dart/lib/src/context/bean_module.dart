@@ -1,6 +1,7 @@
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
+import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 
 /// A `@PropertySource` declaration recorded in a [BeanModule].
@@ -35,7 +36,13 @@ final class PropertySourceDeclaration {
     this.name,
     this.ignoreResourceNotFound = false,
     this.factory = const DefaultPropertySourceFactory(),
+    this.conditions = const [],
   });
+
+  /// The file is loaded only when all conditions match — the conditions of
+  /// the declaring class, so a `@Profile(['prod'])` class does not load its
+  /// `@PropertySource` in other profiles (as in Spring).
+  final List<Condition> conditions;
 
   /// Resource locations; may contain `${...}` placeholders.
   final List<String> locations;

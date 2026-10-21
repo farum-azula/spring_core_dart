@@ -64,6 +64,8 @@ final class MethodSignature {
     this.annotations = const [],
     this.targetTypes = const [],
     this.targetAnnotations = const [],
+    this.annotationTypes = const [],
+    this.targetAnnotationTypes = const [],
   });
 
   /// The member name, e.g. `add`.
@@ -96,6 +98,15 @@ final class MethodSignature {
 
   /// Const annotations on the bean class.
   final List<Object> targetAnnotations;
+
+  /// Class names of [annotations], written by the generator. Pointcuts
+  /// such as `@annotation(Timed)` match these names, because
+  /// `runtimeType.toString()` is minified in release builds (dart2js,
+  /// `--obfuscate`).
+  final List<String> annotationTypes;
+
+  /// Class names of [targetAnnotations] (see [annotationTypes]).
+  final List<String> targetAnnotationTypes;
 
   /// `Greeter.greet(..)`.
   String toShortString() => '$declaringType.$name(..)';

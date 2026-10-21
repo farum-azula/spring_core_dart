@@ -1,59 +1,99 @@
+// AOP: @Aspect, @Pointcut, every advice kind, @annotation, within(),
+// bean(), ordering between aspects, async methods, advisor beans.
+//
+// Spring (Java): @Aspect classes with AspectJ pointcut expressions.
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:spring_core_dart_example/src/aop/calculator.dart';
+import 'package:spring_core_dart_example/src/tour_log.dart';
 
-/// Shared record of advice calls.
-final adviceLog = <String>[];
+/// Marks methods whose duration is logged.
+class Timed {
+  const Timed();
+}
 
-/// Like Spring, `@Aspect` needs `@Component` to be picked up by the scan.
+abstract interface class PricingService {
+  @Timed()
+  double quote(String isbn, int quantity);
+
+  double refund(String isbn);
+
+  Future<String> reserve(String isbn);
+}
+
+@Service()
+class DefaultPricingService implements PricingService {
+  @override
+  double quote(String isbn, int quantity) => 10.0 * quantity;
+
+  @override
+  double refund(String isbn) => throw StateError('refunds are closed');
+
+  @override
+  Future<String> reserve(String isbn) async => 'reserved $isbn';
+}
+
 @Aspect()
 @Component()
 @Order(1)
 class AuditAspect {
-  @Pointcut('execution(* Calculator.*(..))')
-  void calculator() {}
+  @Pointcut('within(DefaultPricingService)')
+  void pricing() {}
 
-  @Before('calculator()')
-  void before(JoinPoint joinPoint) => adviceLog.add(
-    'audit:before ${joinPoint.signature.name}${joinPoint.args}',
-  );
+  @Before('pricing()')
+  void before(JoinPoint joinPoint) =>
+      tourLog.add('audit: before ${joinPoint.signature.name}${joinPoint.args}');
 
-  @AfterReturning('calculator() && !execution(* *.slowAdd(..))')
-  void returned(JoinPoint joinPoint, int result) =>
-      adviceLog.add('audit:returned ${joinPoint.signature.name}=$result');
+  @AfterReturning('pricing() && execution(double *(..))')
+  void returned(JoinPoint joinPoint, double result) =>
+      tourLog.add('audit: ${joinPoint.signature.name} returned $result');
 
-  @AfterReturning('execution(Future slowAdd(int, int))')
-  void asyncReturned(int result) => adviceLog.add('audit:async=$result');
+  @AfterReturning('execution(Future reserve(..))')
+  void reserved(String result) => tourLog.add('audit: async "$result"');
 
-  @AfterThrowing('AuditAspect.calculator()')
-  void failed(UnsupportedError error) => adviceLog.add('audit:unsupported');
+  @AfterThrowing('pricing()')
+  void failed(StateError error) =>
+      tourLog.add('audit: failed ${error.message}');
 
-  @AfterThrowing('calculator()')
-  void anyFailure(JoinPoint joinPoint, Object error) =>
-      adviceLog.add('audit:failed ${error.runtimeType}');
-
-  @After('calculator()')
-  void after() => adviceLog.add('audit:after');
+  @After('pricing()')
+  void after(JoinPoint joinPoint) =>
+      tourLog.add('audit: after ${joinPoint.signature.name}');
 }
 
 @Aspect()
 @Component()
 @Order(2)
 class TimingAspect {
+  /// Around advice for every @Timed method; may change the arguments.
   @Around('@annotation(Timed)')
   Object? time(ProceedingJoinPoint joinPoint) {
-    adviceLog.add('timing:start ${joinPoint.toShortString()}');
-    // Arguments can be replaced before proceeding.
-    final result = joinPoint.proceed([...joinPoint.args.take(1), 10]);
-    adviceLog.add('timing:end');
+    tourLog.add('timing: start ${joinPoint.toShortString()}');
+    final result = joinPoint.proceed();
+    tourLog.add('timing: end');
     return result;
   }
+}
+
+/// An advisor written by hand: upper-cases what the `slogans` bean returns.
+class UpperCaseInterceptor implements MethodInterceptor {
+  @override
+  Object? invoke(MethodInvocation invocation) =>
+      (invocation.proceed()! as String).toUpperCase();
+}
+
+abstract interface class Slogans {
+  String today();
+}
+
+@Component('slogans')
+class DefaultSlogans implements Slogans {
+  @override
+  String today() => 'read more books';
 }
 
 @Configuration()
 class AopConfig {
   @Bean()
   PointcutAdvisor upperCaseAdvisor() => DefaultPointcutAdvisor(
-    ExpressionPointcut('bean(echoShouter)'),
+    ExpressionPointcut('bean(slogans)'),
     UpperCaseInterceptor(),
   );
 }

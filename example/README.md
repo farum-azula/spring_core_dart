@@ -1,40 +1,32 @@
-# spring_core_dart_example
+# NEON Books — a runnable tour of spring_core_dart
 
-Every spring_core_dart feature in one small package, plus end-to-end tests
-that run the real generated code.
-
-Full guide: [../README.md](../README.md).
-
-## Structure
-
-```
-config/example.properties       loaded with @PropertySource
-lib/src/
-  beans.dart                    @ComponentScan root
-  beans.beans.dart              generated (committed)
-  greeting/                     stereotypes, @Primary, @Qualifier, @Named/@Inject,
-                                prototype scope, every injection style, @Value,
-                                collections, ObjectProvider, @PostConstruct/@PreDestroy
-  data/                         generic Store<User>, @Lazy, @Autowired constructor,
-                                FactoryBean
-  config/app_config.dart        @Configuration, @Bean options, inferred destroy,
-                                @PropertySource, @Import, @DependsOn, SpEL @Value
-  events/orders.dart            @EventListener (payloads, conditions, classes,
-                                returned events), ApplicationListener
-  conditions/features.dart      annotation conditions, @Conditional, @Profile, @Fallback
-  forms/signup_form.dart        @Introspected form with constraints, groups, @Valid
-  aop/                          aspects, pointcuts, all advice kinds, advisor bean
-  modern/inventory.dart         Dart 3.13 syntax: primary constructors, class const,
-                                new/factory constructors, private named parameters
-  ui/screen_state.dart          @Configurable + autowireBean
-external/legacy_config.dart     outside the scan, pulled in by @Import
-test/example_test.dart          20 end-to-end tests
-test/modern_syntax_test.dart    5 end-to-end tests of the new syntax
-```
-
-## Usage
+Every feature of the library used in one small bookstore app. Run it and
+read what each feature actually did:
 
 ```bash
-dart run build_runner build
-dart test
+dart run build_runner build      # regenerate lib/src/app.beans.dart (committed)
+dart run bin/main.dart           # the whole tour
+dart run bin/main.dart --section=aop
+dart run bin/main.dart --spring.profiles.active=prod --app.name=Demo
+DB_PASSWORD=s3cret SHOP_MOTTO="Read more" dart run bin/main.dart --section=config
+dart test                        # asserts the tour's output
 ```
+
+| Section | What you see | Where |
+|---|---|---|
+| `config` | environment variables in property files (`db.password=${DB_PASSWORD:changeme}`) and as relaxed overrides (`SHOP_MOTTO` → `shop.motto`), `config/application*.properties`, profile files, a `!prod` multi-document guard, `spring.config.import`, profile groups, `@PropertySource` (gated by `@Profile`, pulled in by `@Import`), placeholders, typed properties, `@Profile` beans and expressions, condition annotations, `@Conditional`; the same module started again with `prod` | `config/`, `lib/src/payments/`, `lib/src/features/`, `lib/src/config/` |
+| `beans` | stereotypes, `@Configuration`/`@Bean` (static, prototype, alias, lazy, `initMethod`, inferred destroy), constructor/field/setter/method injection, Dart default values, `List`/`Map` injection ordered by `@Order`, an empty list for a missing collection, a `@Primary` composite that gets the *other* beans of its type, `@Qualifier`, `@Fallback`, `@Value` with conversion, SpEL and nullable values, a `@Bean` product with its own `@PostConstruct`/`@Autowired`, `@Import`, `@Configurable` + `autowireBean` | `lib/src/catalog/`, `lib/src/config/`, `lib/external/`, `lib/src/ui/` |
+| `lifecycle` | every callback in order (aware interfaces, `@PostConstruct`, `afterPropertiesSet`, `initMethod`), `SmartInitializingSingleton`, `SmartLifecycle` phases, `stop()`/`start()` | `lib/src/lifecycle/` |
+| `extensions` | your own `BeanPostProcessor`, `DestructionAwareBeanPostProcessor`, `BeanFactoryPostProcessor`, a registry post-processor registering a hand-written `BeanDefinition`, a custom scope used through `ObjectProvider` | `lib/src/extension/` |
+| `events` | payload events, `ApplicationEvent`s, `@EventListener` with `condition`/`@Order`/`classes`, returned events republished, `ApplicationListener`, removable lambda listeners | `lib/src/events/` |
+| `messages` | `messageSource` bean with `messages*.properties`, locale fallback, `MessageFormat` choice/number | `messages/` |
+| `spel` | arithmetic, selection/projection, safe navigation, Elvis, functions, `T(...)`, templates, `SimpleEvaluationContext`, `@Introspected` objects | `lib/tour.dart` |
+| `validation` | `DataBinder` with type mismatches and `disallowedFields`, constraints, a class-level constraint, `@Valid` cascade, groups, localized messages, `BeanWrapper` | `lib/src/validation/` |
+| `aop` | `@Aspect` with a named `@Pointcut`, all advice kinds and their order, `@annotation(Timed)`, `within()`, `bean()`, async methods, an advisor bean, `AopUtils.getTarget` | `lib/src/aop/` |
+| `hierarchy` | parent and child contexts from hand-written `BeanModule`s, events reaching the parent | `lib/tour.dart` |
+| `failures` | startup validation: a missing dependency and a cycle reported before anything is created | `lib/tour.dart` |
+| `shutdown` | `ContextClosedEvent`, lifecycle stop, destroy callbacks in reverse creation order | — |
+
+`tool/release_check.dart` runs the AOP part as minified JavaScript
+(`dart compile js -O4`) to make sure nothing depends on class names that
+release builds rename.

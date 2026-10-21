@@ -1,3 +1,29 @@
+## Unreleased
+
+- A bean is no longer injected into itself: `@Primary` composites and
+  decorators receive the other beans of their type (Spring's
+  self-reference rule).
+- `@PropertySource` declarations carry the declaring class's conditions and
+  are loaded only when they match.
+- Config data: documents guarded by `spring.config.activate.on-profile`
+  (including negated guards such as `!prod`) are evaluated only once the
+  profiles are known; relative import cycles terminate.
+- `close()` is exception-safe and re-entrant like Spring's `doClose`: a
+  failing `ContextClosedEvent` listener or lifecycle bean is logged and the
+  shutdown continues.
+- Events published during `refresh()` reach the parent context once.
+- Bean Validation messages are shown as written (no `MessageFormat`
+  mangling of `can't` or `[A-Z]{2,3}`) unless they contain `{0}`
+  placeholders; invalid `MessageFormat` patterns are returned raw.
+- `DataBinder` canonicalizes property names (`roles['admin']` →
+  `roles[admin]`) and matches `disallowedFields` case-insensitively, also
+  against dotted map access.
+- AOP: `@annotation` / `@within` match generated annotation names, so they
+  work in minified and obfuscated release builds; package-qualified
+  wildcards and argument binding are rejected instead of matching every or
+  no bean.
+- New `SpringLog` logger for problems the framework recovers from.
+
 ## 0.1.0
 
 Initial release.

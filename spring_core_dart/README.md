@@ -37,7 +37,9 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.17.0
   spring_core_dart_generator: ^0.1.0
-``` Generator option (in your `build.yaml`):
+```
+
+Generator option (in your `build.yaml`):
 
 ```yaml
 targets:
@@ -176,7 +178,13 @@ class StockForm(@NotBlank() var String sku, {@Min(1) var int quantity = 1});
 
 Selection when several beans match: the only candidate, else the single
 `@Primary`, else the only non-`@Fallback`, else the one named like the
-parameter. `List<T>` / `Set<T>` / `Map<String, T>` receive every candidate
+parameter. A bean is never injected into itself (Spring's self-reference
+rule), so a `@Primary` composite or decorator of `Greeter` receives the
+*other* greeters. A constructor or `@Bean` parameter with a Dart default
+value keeps the default when no bean (or property) is found, and a required
+`List`/`Set`/`Map` there is empty when nothing matches (Spring's
+single-constructor fallback; field and setter injection still require a
+bean). `List<T>` / `Set<T>` / `Map<String, T>` receive every candidate
 (also from parent contexts) sorted by `PriorityOrdered` → `Ordered` →
 `@Order`. `BeanFactory`, `ApplicationContext`, `ApplicationEventPublisher`,
 `ResourceLoader` and `Environment` can be injected.
@@ -186,9 +194,11 @@ converts the result to the target type (`int`, `Duration`, `List<String>`,
 enums with `addEnum`, ...). A nullable target gets `null` when a placeholder
 has no value.
 
-`refresh()` validates the whole graph before creating anything (missing and
-ambiguous dependencies, unresolvable placeholders, `@DependsOn` names,
-cycles), so configuration errors fail at startup.
+`refresh()` validates the whole graph before creating the application's
+beans (missing and ambiguous dependencies, unresolvable placeholders,
+`@DependsOn` names, cycles), so configuration errors fail at startup. Only
+post-processors and infrastructure beans (`messageSource`, ...) are created
+before that check.
 
 ### Lifecycle
 
@@ -202,7 +212,14 @@ first): `DestructionAwareBeanPostProcessor` → `@PreDestroy` →
 
 `SmartInitializingSingleton` runs after all eager singletons;
 `Lifecycle` / `SmartLifecycle` beans are started by phase (auto-startup at
-refresh) and stopped in reverse on `stop()` / `close()`.
+refresh) and stopped in reverse on `stop()` / `close()`. Like Spring's
+`doClose`, `close()` never throws because of a failing `ContextClosedEvent`
+listener or a bean that fails to stop: the error is logged and shutdown
+continues (a `close()` from inside a listener is ignored).
+
+Problems the framework recovers from are logged through `SpringLog`
+(warnings are printed by default): set `SpringLog.level` and
+`SpringLog.handler` to route them, e.g. to `package:logging`.
 
 ### Environment and configuration
 
@@ -219,7 +236,9 @@ refresh) and stopped in reverse on `stop()` / `close()`.
   `optional:` locations. Works with async-only resources (Flutter assets)
   via `processAndApply()`.
 - `@PropertySource([...], factory: ...)` on a component adds files; the
-  last declared wins.
+  last declared wins. It is loaded only when the declaring class's
+  conditions (`@Profile`, `@Conditional`, ...) match; classes pulled in with
+  `@Import` inherit the importer's conditions.
 - YAML: implement `PropertySourceLoader` (`yml`, `yaml`) for config data and
   `PropertySourceFactory` for `@PropertySource` — the core needs no change.
 
@@ -338,7 +357,13 @@ class Auditing {
 ```
 
 Pointcuts: `execution`, `within`, `target`, `bean`, `@annotation`,
-`@within`, named pointcuts, `&&` `||` `!`. Advice order follows Spring
+`@within`, named pointcuts, `&&` `||` `!`. Type patterns use simple names
+(Dart has no packages): `com.x.Service` means `Service`, and a qualified
+wildcard such as `within(com.x.service..*)` is rejected instead of
+silently matching every bean. Argument binding (`@annotation(timed)`) is not
+supported yet and is rejected too. Annotations are matched by names the
+generator writes, so `@annotation(Timed)` also works in minified/obfuscated
+release builds. Advice order follows Spring
 (aspect `@Order`, then around → before → after → afterReturning →
 afterThrowing). Methods returning `Future` are advised when the future
 completes. `PointcutAdvisor` beans work as well.
@@ -367,6 +392,8 @@ objects created elsewhere (e.g. Flutter `State`).
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
 | Asynchronous initialization | Synchronous `refresh()`; load config first with `processAndApply()` | Predictable startup |
+| Package-qualified AOP type patterns, argument binding | Simple type names; qualified wildcards and binding are rejected | No packages in Dart; binding not implemented yet |
+| Optional `@Value` with `${x:#{null}}` | A nullable target gets `null` when a placeholder is missing | Dart null safety |
 
 ## Roadmap
 

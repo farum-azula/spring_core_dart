@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Generated code is up to date
+        working-directory: example
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- .
+
+      - name: Analyze
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator example
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Runtime tests (VM)
+        working-directory: spring_core_dart
+        run: dart test
+
+      - name: Generator tests
+        working-directory: spring_core_dart_generator
+        run: dart test
+
+      - name: Example tests
+        working-directory: example
+        run: dart test
+
+      - name: Example runs
+        working-directory: example
+        run: dart run bin/main.dart
+
+      - name: Release-mode check (minified JavaScript)
+        working-directory: example
+        run: |
+          dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
+          node /tmp/release_check.js

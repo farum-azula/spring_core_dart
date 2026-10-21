@@ -486,6 +486,11 @@ class ModuleEmitter {
         for (final annotation in member.annotations)
           _constant(annotation, element),
       ]),
+    if (member.annotations.isNotEmpty)
+      'annotationTypes': literalConstList([
+        for (final annotation in member.annotations)
+          _str(annotation.type!.element!.name!),
+      ]),
     'targetTypes': literalConstList([
       for (final name in proxy.targetTypeNames) _str(name),
     ]),
@@ -493,6 +498,11 @@ class ModuleEmitter {
       'targetAnnotations': literalConstList([
         for (final annotation in proxy.classAnnotations)
           _constant(annotation, element),
+      ]),
+    if (proxy.classAnnotations.isNotEmpty)
+      'targetAnnotationTypes': literalConstList([
+        for (final annotation in proxy.classAnnotations)
+          _str(annotation.type!.element!.name!),
       ]),
   });
 
@@ -821,6 +831,11 @@ class ModuleEmitter {
             'ignoreResourceNotFound': literalTrue,
           if (source.factoryType case final factory?)
             'factory': _type(factory, factory.element).newInstance([]),
+          if (source.conditions.isNotEmpty)
+            'conditions': literalList([
+              for (final condition in source.conditions)
+                _condition(condition, source.element!),
+            ]),
         },
       );
 
@@ -842,7 +857,7 @@ class ModuleEmitter {
   Expression _dependency(InjectionPoint point, Element element) {
     final named = <String, Expression>{
       if (point.qualifier case final qualifier?) 'qualifier': _str(qualifier),
-      if (point.optional) 'optional': literalTrue,
+      if (point.optional || point.allowEmpty) 'optional': literalTrue,
     };
     final dependency = _spring('Dependency');
     return switch (point.kind) {
@@ -913,11 +928,32 @@ class ModuleEmitter {
 
   /// The resolver call that supplies [point].
   // Optional points use the `optional...` variants (returning `null`);
-  // sets are built from the list lookup.
+  // sets are built from the list lookup. A Dart default value or an
+  // allowed-empty collection is applied with `??`.
   Expression _lookup(InjectionPoint point, Element element) {
+    final lookup = _rawLookup(point, element);
+    if (point.defaultValue case final value?) {
+      return lookup.ifNullThen(_constant(value, element));
+    }
+    if (point.allowEmpty) {
+      return lookup.ifNullThen(switch (point.kind) {
+        PointKind.set => literalSet(const [], _type(point.type, element)),
+        PointKind.map => literalMap(
+          const {},
+          refer('String'),
+          _type(point.type, element),
+        ),
+        _ => literalList(const [], _type(point.type, element)),
+      });
+    }
+    return lookup;
+  }
+
+  Expression _rawLookup(InjectionPoint point, Element element) {
     final r = refer('r');
     final type = _type(point.type, element);
     final qualifier = {if (point.qualifier case final q?) 'qualifier': _str(q)};
+    final lenient = point.optional || point.allowEmpty;
     switch (point.kind) {
       case PointKind.single:
         return r
@@ -932,25 +968,19 @@ class ModuleEmitter {
             );
       case PointKind.list:
         return r
-            .property(
-              point.optional ? 'optionalDependencyList' : 'dependencyList',
-            )
+            .property(lenient ? 'optionalDependencyList' : 'dependencyList')
             .call([], qualifier, [type]);
       case PointKind.set:
         final list = r
-            .property(
-              point.optional ? 'optionalDependencyList' : 'dependencyList',
-            )
+            .property(lenient ? 'optionalDependencyList' : 'dependencyList')
             .call([], qualifier, [type]);
-        return (point.optional
+        return (lenient
                 ? list.nullSafeProperty('toSet')
                 : list.property('toSet'))
             .call([]);
       case PointKind.map:
         return r
-            .property(
-              point.optional ? 'optionalDependencyMap' : 'dependencyMap',
-            )
+            .property(lenient ? 'optionalDependencyMap' : 'dependencyMap')
             .call([], qualifier, [type]);
       case PointKind.provider:
         return r.property('provider').call([], qualifier, [type]);

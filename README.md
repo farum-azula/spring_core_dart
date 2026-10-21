@@ -15,7 +15,7 @@ separate library.
 |---|---|---|
 | `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. No dependencies. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
-| `spring_core_dart_example` | [`example/`](example/README.md) | Every feature in use, with end-to-end tests over the generated code. |
+| `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
 Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_dart.dart` for all):
 
@@ -180,7 +180,13 @@ class StockForm(@NotBlank() var String sku, {@Min(1) var int quantity = 1});
 
 Selection when several beans match: the only candidate, else the single
 `@Primary`, else the only non-`@Fallback`, else the one named like the
-parameter. `List<T>` / `Set<T>` / `Map<String, T>` receive every candidate
+parameter. A bean is never injected into itself (Spring's self-reference
+rule), so a `@Primary` composite or decorator of `Greeter` receives the
+*other* greeters. A constructor or `@Bean` parameter with a Dart default
+value keeps the default when no bean (or property) is found, and a required
+`List`/`Set`/`Map` there is empty when nothing matches (Spring's
+single-constructor fallback; field and setter injection still require a
+bean). `List<T>` / `Set<T>` / `Map<String, T>` receive every candidate
 (also from parent contexts) sorted by `PriorityOrdered` → `Ordered` →
 `@Order`. `BeanFactory`, `ApplicationContext`, `ApplicationEventPublisher`,
 `ResourceLoader` and `Environment` can be injected.
@@ -190,9 +196,11 @@ converts the result to the target type (`int`, `Duration`, `List<String>`,
 enums with `addEnum`, ...). A nullable target gets `null` when a placeholder
 has no value.
 
-`refresh()` validates the whole graph before creating anything (missing and
-ambiguous dependencies, unresolvable placeholders, `@DependsOn` names,
-cycles), so configuration errors fail at startup.
+`refresh()` validates the whole graph before creating the application's
+beans (missing and ambiguous dependencies, unresolvable placeholders,
+`@DependsOn` names, cycles), so configuration errors fail at startup. Only
+post-processors and infrastructure beans (`messageSource`, ...) are created
+before that check.
 
 ### Lifecycle
 
@@ -206,7 +214,14 @@ first): `DestructionAwareBeanPostProcessor` → `@PreDestroy` →
 
 `SmartInitializingSingleton` runs after all eager singletons;
 `Lifecycle` / `SmartLifecycle` beans are started by phase (auto-startup at
-refresh) and stopped in reverse on `stop()` / `close()`.
+refresh) and stopped in reverse on `stop()` / `close()`. Like Spring's
+`doClose`, `close()` never throws because of a failing `ContextClosedEvent`
+listener or a bean that fails to stop: the error is logged and shutdown
+continues (a `close()` from inside a listener is ignored).
+
+Problems the framework recovers from are logged through `SpringLog`
+(warnings are printed by default): set `SpringLog.level` and
+`SpringLog.handler` to route them, e.g. to `package:logging`.
 
 ### Environment and configuration
 
@@ -223,7 +238,9 @@ refresh) and stopped in reverse on `stop()` / `close()`.
   `optional:` locations. Works with async-only resources (Flutter assets)
   via `processAndApply()`.
 - `@PropertySource([...], factory: ...)` on a component adds files; the
-  last declared wins.
+  last declared wins. It is loaded only when the declaring class's
+  conditions (`@Profile`, `@Conditional`, ...) match; classes pulled in with
+  `@Import` inherit the importer's conditions.
 - YAML: implement `PropertySourceLoader` (`yml`, `yaml`) for config data and
   `PropertySourceFactory` for `@PropertySource` — the core needs no change.
 
@@ -342,7 +359,13 @@ class Auditing {
 ```
 
 Pointcuts: `execution`, `within`, `target`, `bean`, `@annotation`,
-`@within`, named pointcuts, `&&` `||` `!`. Advice order follows Spring
+`@within`, named pointcuts, `&&` `||` `!`. Type patterns use simple names
+(Dart has no packages): `com.x.Service` means `Service`, and a qualified
+wildcard such as `within(com.x.service..*)` is rejected instead of
+silently matching every bean. Argument binding (`@annotation(timed)`) is not
+supported yet and is rejected too. Annotations are matched by names the
+generator writes, so `@annotation(Timed)` also works in minified/obfuscated
+release builds. Advice order follows Spring
 (aspect `@Order`, then around → before → after → afterReturning →
 afterThrowing). Methods returning `Future` are advised when the future
 completes. `PointcutAdvisor` beans work as well.
@@ -371,6 +394,116 @@ objects created elsewhere (e.g. Flutter `State`).
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
 | Asynchronous initialization | Synchronous `refresh()`; load config first with `processAndApply()` | Predictable startup |
+| Package-qualified AOP type patterns, argument binding | Simple type names; qualified wildcards and binding are rejected | No packages in Dart; binding not implemented yet |
+| Optional `@Value` with `${x:#{null}}` | A nullable target gets `null` when a placeholder is missing | Dart null safety |
+
+## Fix plan
+
+Findings of a review against Spring Framework 6.2 / Spring Boot 3 that are
+still open. Already fixed (with regression tests): Dart default values of
+constructor parameters, empty collections for constructors and `@Bean`
+methods, `@Bean` products processed like components, `@PropertySource` /
+`@Import` gated by the declaring class's conditions, negated `on-profile`
+documents, relative import cycles, self-references (composites,
+decorators), early events reaching the parent twice, exception-safe and
+re-entrant `close()`, violation messages mangled by `MessageFormat`,
+`disallowedFields` bypasses, release-safe `@annotation` matching and
+package-qualified AOP wildcards.
+
+### Container (`beans`)
+- [ ] Exclude beans produced by a configuration's own `@Bean` methods from its collections (`factoryBeanName`, Spring's `isSelfReference`).
+- [ ] Parent contexts: collections should see grandparent beans; keep the parent beans' `@Order`, qualifiers and `autowireCandidate=false`; shadow by `containsLocalBean`.
+- [ ] Single dependencies: merge local and parent candidates (parent `@Primary` may win), pass the parameter name to the parent, validate ambiguity in the parent.
+- [ ] `autowireCandidate=false` must be excluded from qualified injection too; `getBean<T>()` should still return the only non-candidate bean.
+- [ ] Aliases from `registerAlias` must count for `@Qualifier` and parameter-name matching.
+- [ ] `determineAutowireCandidate` details: two `@Primary` beans always ambiguous; parameter name matches bean names/aliases only; Spring 6.2 "qualifier-suggested name" step.
+- [ ] De-duplicate init/destroy callbacks (`initMethod: 'afterPropertiesSet'` on an `InitializingBean`, inferred `close()` on a `DisposableBean`).
+- [ ] Clean dependency bookkeeping on `removeBeanDefinition`; forbid bean creation while singletons are being destroyed.
+- [ ] Log destroy-callback errors with `SpringLog` and expose them on the factory interface.
+- [ ] Warn when a custom-scoped bean is injected directly into a singleton; scoped proxies.
+- [ ] Wrap runtime resolution errors in `UnsatisfiedDependencyException` with the bean chain and injection point.
+- [ ] `Map`/`Set` injection in registration order (Spring sorts only `List`); definition `@Order` beats `Ordered.getOrder()`.
+- [ ] Generic lookups: raw/erased types (`Store<dynamic>`), `Object` lookups returning all beans.
+- [ ] Keep `registerSingleton` objects out of `beanDefinitionNames`; dereference registered `FactoryBean`s.
+- [ ] Alias overriding when `allowBeanDefinitionOverriding` is on; dangling alias chains after removal.
+- [ ] `ObjectProvider.toString()`/`isEmpty` must not create beans; clearer cycle message for re-entrant `FactoryBean` products.
+- [ ] Type → bean-name index instead of scanning all definitions per lookup; linear shutdown.
+- [ ] `@Value` with a custom SpEL template prefix (always delegate to the expression resolver).
+- [ ] Missing APIs: `beanNamesForTypeIncludingAncestors`, `destroyBean`, `SmartFactoryBean`, `isFactoryBean`, `isTypeMatch`, annotation lookups (`getBeansWithAnnotation`).
+
+### Context, events, lifecycle (`context`)
+- [ ] Evaluate a configuration class's conditions once for all its `@Bean` methods (all-or-nothing).
+- [ ] `Future`-returning `@EventListener`s: republish the result, route errors to the error handler.
+- [ ] Detect listener beans created by `@Bean` methods or `registerSingleton`; de-duplicate listeners.
+- [ ] Lifecycle: start dependencies first / stop dependents first; stop already started beans when refresh fails.
+- [ ] `isActive` during refresh; `close()` from a `ContextRefreshedEvent` listener.
+- [ ] `PayloadApplicationEvent<T>` listeners; `Ordered` on listener beans; `@EventListener` methods on `FactoryBean` classes.
+- [ ] Listener conditions inside the error handler; lifecycle discovery by instance type.
+- [ ] Phased creation of post-processors (`PriorityOrdered` → `Ordered` → rest, re-querying names).
+- [ ] `ConditionContext` access to the definition being evaluated; deferred (auto-configuration) modules.
+- [ ] `EmbeddedValueResolverAware` evaluating SpEL; descriptive errors for infrastructure misuse; `publishEvent` after `close()` throws.
+- [ ] Child message lookups use the parent's message source, not the parent context; unique context ids; `conversionService` from ancestors.
+- [ ] Template hooks (`postProcessBeanFactory`, `onRefresh`, `onClose`), `registerShutdownHook()`.
+- [ ] Asynchronous lifecycle: `refreshAsync()` / `closeAsync()`, async init/destroy and `SmartLifecycle.stop` with per-phase timeouts.
+
+### Configuration (`core`)
+- [ ] `spring.profiles.include` before active profiles (active profile files win).
+- [ ] Location groups (`,` = separate groups, `;` = one group) and the `config/*/` default location.
+- [ ] `spring.config.import` from the command line / environment; directory imports; missing non-optional directories fail.
+- [ ] `spring.profiles.default` from config files (load `application-{default}.properties`, expand groups).
+- [ ] Lenient placeholders in optional imports; command line beats a file's own placeholders in imports and guards.
+- [ ] `.properties` beats YAML in the same location; `defaultProperties` stays below config data.
+- [ ] Reject legacy `spring.profiles`; support indexed keys (`spring.profiles.include[0]`); empty `on-profile`.
+- [ ] Merge programmatic active profiles with the file's `spring.profiles.active`; profile variants of imported files.
+- [ ] Encoding option (Latin-1) for `.properties`; `--` end of options on the command line.
+- [ ] `AntPathMatcher.extractUriTemplateVariables` on backtracking `**` paths; `FileSystemResource` directories.
+- [ ] Placeholder parser details (`${a ${b}`, `key:default` tried as a key); `containsProperty` for null values; list values as `a,b`.
+- [ ] `Duration` (`P-1D`, ISO output), lenient enum names (`my-value`); pattern resolver pruning; `file:` URL decoding.
+- [ ] Relaxed binding (`${app.my-prop}` finds `app.myProp`), `random.*`, `package:` resources, async `@PropertySource` for Flutter assets.
+
+### SpEL (`expression`)
+- [ ] Web: real literals (`7.0 / 2`) and int/double semantics under dart2js.
+- [ ] Limits: maximum expression length and nesting depth, regex length 256, overflow in `'x' * n`, catastrophic regexes.
+- [ ] Subtypes accepted by introspected properties and methods (`#{svc.process(@english)}` with an interface parameter).
+- [ ] `split`/`replaceAll` as regular expressions; Java regex syntax (`(?i)`, `\p{Alpha}`, `\A`).
+- [ ] Deep `==` for collections; `^` saturation like Java; `T(Math)` returning doubles; numeric edge cases.
+- [ ] `systemEnvironment` / `systemProperties` / `environment.getProperty(...)` in `@Value`; the factory's `ConversionService`.
+- [ ] Map selection `.^[`/`.$[` returning `null`; indexes evaluated against the root; selection result types.
+- [ ] Safe navigation per step (Spring 6.2); user exceptions rethrown unwrapped; better diagnostics; caching.
+- [ ] Parser configuration (auto-grow), Java type names (`T(Integer)`), varargs, missing String/List/Map methods.
+
+### Validation, binding, messages (`validation`)
+- [ ] `bind()` must record errors instead of throwing on unknown or malformed keys and failing setters.
+- [ ] No constraint error on top of a binding failure (`typeMismatch` only).
+- [ ] Collection auto-grow and element/key conversion in `BeanWrapper`.
+- [ ] Full `DefaultMessageCodesResolver` codes (`NotBlank.city` for `address.city`) and Spring's error arguments.
+- [ ] `BigInt` and numeric strings in `@Min`/`@Positive`/...; correct `@Digits`; Hibernate's `@Email`; `NotBlank` whitespace.
+- [ ] Parent `MessageSource` with resolved arguments; locales with a script (`zh_Hant_TW`); basename-by-basename lookup.
+- [ ] `@Valid` validating shared objects on every path; the most specific introspection for subclasses.
+- [ ] Date constraints for date-only values, injectable clock; `getFieldValue` returning the rejected value.
+- [ ] `MessageFormat` details (lone `}`, negative subpatterns, quoted literals, HALF_EVEN, locale symbols).
+- [ ] Class-level violations attached to a property; `{key}` messages from a `MessageSource`; `DecimalMin`/`DecimalMax`.
+
+### AOP (`aop`)
+- [ ] Proxy classes with private members, operators and non-literal default values (today silently not proxied).
+- [ ] Generated code that does not compile: `covariant` parameters, `Future<T>?`, `toString({...})`, members named `advisors`/`targetObject`, same class name in two directories.
+- [ ] Named pointcuts resolved per aspect; advisor beans that depend on proxied beans; plain `Advisor` beans; ancestor contexts' advisors.
+- [ ] `@AfterReturning(Object result)` on `void` methods; `Future` methods throwing synchronously; async non-around advice; `FutureOr`.
+- [ ] Argument binding (`@annotation(timed)`, `args(...)`); inherited advice; pointcut holder classes.
+- [ ] `JoinPoint.args` as a copy and validated `proceed(args)`; `Ordered` aspects; getters/setters not advised by default.
+- [ ] Build-time validation of pointcut expressions; a smaller default than `aop_proxies: all`; `AopContext.currentProxy()`.
+
+### Generator
+- [ ] SDK types (`List<String>`, `Uint8List`, `HttpClient` beans) importing `dart:_internal`/`dart:_http`.
+- [ ] Private types/functions in generated code: clear build errors instead of compile errors.
+- [ ] Optional field/setter injection must not overwrite initializers with `null`.
+- [ ] Annotations on primary-constructor fields lost when a library is resolved twice in one build.
+- [ ] Inherited `@Bean` methods and mixin lifecycle methods; generic superclasses (`BaseService<R>`).
+- [ ] Reject extension types and other unsupported targets (`@ComponentScan` on a class, `@Component` on mixins/enums).
+- [ ] Subclasses of `Profile`/`Conditional`; class-level `@Lazy` on lite configuration classes.
+- [ ] Nested `@ComponentScan` roots duplicating beans; escaping the scan glob; validating explicit names.
+- [ ] `@Value` on super-constructor parameters; async `initMethod`/`destroyMethod`; constructor selection like Spring.
+- [ ] Warning-free generated code; better error messages (several errors, library URIs).
 
 ## Roadmap
 
@@ -397,6 +530,7 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 325 (runtime, ~99.9% line coverage), 64 (generator, ~99%),
-25 end-to-end over generated code. Generated `*.beans.dart` files are
-committed.
+Tests: 353 (runtime), 67 (generator), 10 end-to-end over the generated code
+of the example tour. Generated `*.beans.dart` files are committed. CI
+(`.github/workflows/ci.yml`) also checks that generated code is up to date,
+runs the tour, and runs the AOP release check as minified JavaScript.

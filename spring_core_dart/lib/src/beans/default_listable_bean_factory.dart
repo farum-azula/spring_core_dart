@@ -437,14 +437,35 @@ class DefaultListableBeanFactory
   // ---------------------------------------------------------------------
 
   /// Autowire candidates of [type], filtered by [qualifier].
-  List<BeanDefinition<Object>> _candidates(Type type, String? qualifier) => [
-    for (final definition in _definitions.values)
-      if (definition.matchesType(type) &&
-          (qualifier == null
-              ? definition.autowireCandidate
-              : definition.isQualifiedBy(qualifier)))
-        definition,
-  ];
+  ///
+  /// Like Spring's `isSelfReference`, the bean being created
+  /// ([requester]) is never a candidate for its own collections, and for a
+  /// single dependency only when nothing else matches — so composites and
+  /// decorators (`Composite(List<Greeter>)`, `Caching(Greeter delegate)`)
+  /// get the other beans of their own type.
+  List<BeanDefinition<Object>> _candidates(
+    Type type,
+    String? qualifier, {
+    String? requester,
+    bool single = false,
+  }) {
+    final all = [
+      for (final definition in _definitions.values)
+        if (definition.matchesType(type) &&
+            (qualifier == null
+                ? definition.autowireCandidate
+                : definition.isQualifiedBy(qualifier)))
+          definition,
+    ];
+    if (requester == null) {
+      return all;
+    }
+    final others = [
+      for (final definition in all)
+        if (definition.name != requester) definition,
+    ];
+    return single && others.isEmpty ? all : others;
+  }
 
   /// Picks one definition: the only one, the primary one, the only
   /// non-fallback one, or the one named like the injection point.
@@ -493,7 +514,7 @@ class DefaultListableBeanFactory
     // (the factory, the context, ...), then the parent factory.
     final definition = _select(
       T,
-      _candidates(T, qualifier),
+      _candidates(T, qualifier, requester: _currentBean, single: true),
       qualifier: qualifier,
       name: name,
       requiredBy: _currentBean,
@@ -743,7 +764,11 @@ class DefaultListableBeanFactory
   @override
   Map<String, T>? optionalDependencyMap<T extends Object>({String? qualifier}) {
     final entries = <(String, T, int?)>[
-      for (final definition in _candidates(T, qualifier))
+      for (final definition in _candidates(
+        T,
+        qualifier,
+        requester: _currentBean,
+      ))
         (
           definition.name,
           _castTo<T>(_objectFor(definition, T), definition.name),
@@ -1088,7 +1113,11 @@ class DefaultListableBeanFactory
         }
         return const [];
       case DependencyKind.collection || DependencyKind.map:
-        final candidates = _candidates(dependency.type, dependency.qualifier);
+        final candidates = _candidates(
+          dependency.type,
+          dependency.qualifier,
+          requester: definition.name,
+        );
         if (candidates.isEmpty &&
             !dependency.optional &&
             !(_parent?.containsBeanOfType(
@@ -1106,7 +1135,12 @@ class DefaultListableBeanFactory
       case DependencyKind.single:
         final target = _select(
           dependency.type,
-          _candidates(dependency.type, dependency.qualifier),
+          _candidates(
+            dependency.type,
+            dependency.qualifier,
+            requester: definition.name,
+            single: true,
+          ),
           qualifier: dependency.qualifier,
           name: dependency.name,
           requiredBy: definition.name,

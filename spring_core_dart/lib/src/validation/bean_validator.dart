@@ -131,12 +131,16 @@ class BeanValidator implements SmartValidator {
           ], defaultMessage: violation.propertyPath),
         for (final name in attributes.keys.toList()..sort()) attributes[name],
       ];
+      // Like Spring's ViolationFieldError: the violation message is shown
+      // as-is unless it contains `{0}`-style placeholders.
+      final render = _springPlaceholder.hasMatch(violation.message);
       // Class-level violations have no path and become global errors.
       if (violation.propertyPath.isEmpty) {
         errors.reject(
           constraint.name,
           args: args,
           defaultMessage: violation.message,
+          renderDefaultMessage: render,
         );
       } else {
         errors.rejectValue(
@@ -144,6 +148,7 @@ class BeanValidator implements SmartValidator {
           constraint.name,
           args: args,
           defaultMessage: violation.message,
+          renderDefaultMessage: render,
         );
       }
     }
@@ -359,3 +364,6 @@ class BeanValidator implements SmartValidator {
     }
   }
 }
+
+// `{0}` or `{0,number,...}` — not a regex quantifier such as `{2,3}`.
+final _springPlaceholder = RegExp(r'\{\d+(\}|,\s*[a-zA-Z])');

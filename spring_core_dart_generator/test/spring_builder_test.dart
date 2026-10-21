@@ -183,19 +183,26 @@ class Host {
   );
 }
 ''');
-      expect(output, _has('r.dependencyList<_i2.Plugin>()'));
+      // A single constructor gets an empty collection when nothing matches
+      // (Spring's ConstructorResolver fallback).
+      expect(
+        output,
+        _has('r.optionalDependencyList<_i2.Plugin>() ?? <_i2.Plugin>[]'),
+      );
       expect(output, _has('r.optionalDependencyList<_i2.Plugin>()?.toSet()'));
-      expect(output, _has('r.dependencyMap<_i2.Plugin>()'));
+      expect(
+        output,
+        _has('r.optionalDependencyMap<_i2.Plugin>() ?? <String, _i2.Plugin>{}'),
+      );
       expect(output, _has('r.optionalDependencyMap<_i2.Plugin>()'));
       expect(output, _has('r.provider<_i2.Plugin>()'));
       expect(output, _has(r"r.value<int>(r'${port:80}')"));
       expect(output, _has(r"r.optionalValue<Duration>(r'${maybe}')"));
-      expect(output, _has('_i1.Dependency.collection(_i2.Plugin)'));
       expect(
         output,
         _has('_i1.Dependency.collection(_i2.Plugin, optional: true)'),
       );
-      expect(output, _has('_i1.Dependency.map(_i2.Plugin)'));
+      expect(output, _has('_i1.Dependency.map(_i2.Plugin, optional: true)'));
       expect(output, _has('_i1.Dependency.provider(_i2.Plugin)'));
       expect(output, _has(r"_i1.Dependency.value(r'${port:80}')"));
       expect(
@@ -252,7 +259,7 @@ class Child extends Base {
       expect(
         output,
         _has(
-          r"bean.wire(r.dependency<_i2.Dep>(name: r'dep'), x: r.value<int>(r'${x:1}'),);",
+          r"bean.wire(r.dependency<_i2.Dep>(name: r'dep'), x: r.optionalValue<int>(r'${x:1}') ?? 0,);",
         ),
       );
       expect(
@@ -482,13 +489,17 @@ class Screen {
       );
       expect(
         output,
-        _has("_i1.PropertySourceDeclaration(const [r'file:a.properties'])"),
+        // The declaring class's conditions gate its property sources.
+        _has(
+          "_i1.PropertySourceDeclaration(const [r'file:a.properties'], "
+          'conditions: [const _i2.OnMode(',
+        ),
       );
       expect(
         output,
         _has(
           r"_i1.PropertySourceDeclaration(const [r'${dir}/b.yml'], name: r'b', "
-          'ignoreResourceNotFound: true, factory: _i2.YamlFactory(),)',
+          'ignoreResourceNotFound: true, factory: _i2.YamlFactory(), conditions: [',
         ),
       );
       expect(
@@ -902,7 +913,7 @@ class Impl implements Api {
       expect(
         output,
         _has(
-          "_i2.MethodSignature(name: r'plain', declaringType: r'Api', targetType: r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', parameterTypes: [r'int', r'int', r'String'], annotations: [_i1.Note()], targetTypes: [r'Impl', r'Api'], targetAnnotations: [_i2.Service(), _i1.Note()])",
+          "_i2.MethodSignature(name: r'plain', declaringType: r'Api', targetType: r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', parameterTypes: [r'int', r'int', r'String'], annotations: [_i1.Note()], annotationTypes: [r'Note'], targetTypes: [r'Impl', r'Api'], targetAnnotations: [_i2.Service(), _i1.Note()], targetAnnotationTypes: [r'Service', r'Note'])",
         ),
       );
       expect(output, _has('kind: _i2.MemberKind.getter'));
@@ -1037,6 +1048,126 @@ abstract class Base { void base(); }
           const BuilderOptions({'aop_proxies': 'bogus'}),
         ),
         throwsArgumentError,
+      );
+    });
+  });
+
+  group('review fixes', () {
+    test('parameter defaults are kept when nothing is found', () async {
+      final output = await _generate(r'''
+abstract interface class Clock {}
+
+class SystemClock implements Clock {
+  const SystemClock();
+}
+
+@Component()
+class Retrying {
+  Retrying({
+    this.clock = const SystemClock(),
+    this.retries = 3,
+    @Value(r'${retry.delay}') this.delay = const Duration(seconds: 5),
+  });
+  final Clock clock;
+  final int retries;
+  final Duration delay;
+}
+''');
+      expect(
+        output,
+        _has(
+          "clock: r.optionalDependency<_i2.Clock>(name: r'clock') ?? "
+          'const _i2.SystemClock()',
+        ),
+      );
+      expect(
+        output,
+        _has("retries: r.optionalDependency<int>(name: r'retries') ?? 3"),
+      );
+      expect(
+        output,
+        _has(
+          r"delay: r.optionalValue<Duration>(r'${retry.delay}') ?? "
+          'const Duration(seconds: 5)',
+        ),
+      );
+      expect(
+        output,
+        _has("_i1.Dependency(int, optional: true, name: r'retries')"),
+      );
+    });
+
+    test('objects returned from @Bean methods are processed', () async {
+      final output = await _generate(r'''
+abstract interface class Clock {}
+
+@Component()
+class SystemClock implements Clock {}
+
+class Pool {
+  @Autowired()
+  late final Clock clock;
+
+  @PostConstruct()
+  void start() {}
+
+  @PreDestroy()
+  void close() {}
+
+  @EventListener()
+  void onRefresh(ContextRefreshedEvent event) {}
+}
+
+@Configuration()
+class PoolConfig {
+  @Bean()
+  Pool pool() => Pool();
+}
+''');
+      expect(
+        output,
+        _has("bean.clock = r.dependency<_i2.Clock>(name: r'clock');"),
+      );
+      expect(output, _has('postConstruct: (bean) { bean.start(); }'));
+      // `close` is both @PreDestroy and the inferred destroy method: it
+      // runs once.
+      expect(output, _has('preDestroy: (bean) { bean.close(); }'));
+      expect(output, isNot(_has('destroyMethod: (bean)')));
+      expect(output, _has('eventListeners:'));
+    });
+
+    test('imported classes inherit the importer conditions', () async {
+      // CloudData is not a component itself: it is reachable only through
+      // the import (a component in the scan root is registered regardless
+      // of importers, as in Spring).
+      final output = await _generate(r'''
+class CloudData {
+  @Bean()
+  String store() => 'cloud';
+}
+
+@Configuration()
+@Profile(['cloud'])
+@Import([CloudData])
+@PropertySource(['file:cloud.properties'])
+class CloudConfig {}
+''');
+      // The importer's profile gates the imported class, its @Bean methods
+      // and the property source.
+      expect(
+        output,
+        _has(
+          "_i1.BeanDefinition<_i2.CloudData>(name: r'cloudData', "
+          "source: r'package:pkg/src/service.dart#CloudData', "
+          "types: const [_i2.CloudData], conditions: [const _i1.ProfileCondition([r'cloud'])]",
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "_i1.PropertySourceDeclaration(const [r'file:cloud.properties'], "
+          "conditions: [const _i1.ProfileCondition([r'cloud'])])",
+        ),
       );
     });
   });

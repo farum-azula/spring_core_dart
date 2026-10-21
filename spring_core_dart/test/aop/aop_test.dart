@@ -174,9 +174,11 @@ void main() {
         isTrue,
       );
       expect(matches('execution(* PriceService.*(..))', price), isTrue);
+      // Package qualification can't be honoured in Dart; a qualified
+      // wildcard is rejected instead of silently ignoring the package.
       expect(
-        matches('execution(* com.example..*Service.pri*(..))', price),
-        isTrue,
+        () => matches('execution(* com.example..*Service.pri*(..))', price),
+        throwsA(isA<FormatException>()),
       );
       expect(matches('execution(* Other.*(..))', price), isFalse);
       expect(matches('execution(String *(..))', price), isFalse);

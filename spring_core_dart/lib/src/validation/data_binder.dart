@@ -146,7 +146,11 @@ class DataBinder {
   /// ```
   void bind(Map<String, Object?> values) {
     final accepted = <String, Object?>{};
-    for (final MapEntry(:key, :value) in values.entries) {
+    for (final MapEntry(key: raw, :value) in values.entries) {
+      // Matched and bound under one canonical name, so `roles['admin']`,
+      // `roles["admin"]` or `roles[ admin ]` cannot slip past a
+      // `roles[admin]` rule (Spring's canonicalPropertyName).
+      final key = canonicalPropertyName(raw);
       if (_isAllowed(key)) {
         accepted[key] = value;
       } else {
@@ -237,11 +241,51 @@ class DataBinder {
 
   // Allowed when it matches an allowed pattern (or none are set) and no
   // disallowed pattern; disallowed wins.
+  //
+  // Disallowed patterns are matched case-insensitively (Spring's fix for
+  // CVE-2022-22968) and also against the bracket form of dotted paths, so
+  // `roles.admin` (a map value reached as a property) is caught by
+  // `roles[admin]`.
   bool _isAllowed(String field) {
     final allowed = allowedFields;
-    return (allowed == null || allowed.any((p) => simpleMatch(p, field))) &&
-        !disallowedFields.any((p) => simpleMatch(p, field));
+    if (allowed != null && !allowed.any((p) => simpleMatch(p, field))) {
+      return false;
+    }
+    final candidates = {field.toLowerCase(), _bracketForm(field).toLowerCase()};
+    return !disallowedFields.any((pattern) {
+      final lower = pattern.toLowerCase();
+      return candidates.any((c) => simpleMatch(lower, c));
+    });
   }
+
+  // `a.b.c` → `a[b][c]` (keys inside brackets are kept).
+  static String _bracketForm(String path) {
+    final first = path.indexOf('.');
+    if (first < 0) {
+      return path;
+    }
+    final head = path.substring(0, first);
+    final rest = path.substring(first + 1).split('.');
+    return '$head${rest.map((segment) => '[$segment]').join()}';
+  }
+
+  /// [name] with quotes and surrounding blanks removed from map keys and
+  /// indexes: `map['key']`, `map["key"]` and `map[ key ]` all become
+  /// `map[key]`, like Spring's `PropertyAccessorUtils.canonicalPropertyName`.
+  ///
+  /// ```dart
+  /// DataBinder.canonicalPropertyName("roles['admin']"); // roles[admin]
+  /// ```
+  static String canonicalPropertyName(String name) =>
+      name.replaceAllMapped(RegExp(r'\[([^\]]*)\]'), (match) {
+        var key = match.group(1)!.trim();
+        if (key.length >= 2 &&
+            (key.startsWith("'") && key.endsWith("'") ||
+                key.startsWith('"') && key.endsWith('"'))) {
+          key = key.substring(1, key.length - 1);
+        }
+        return '[$key]';
+      });
 
   /// `*` wildcard matching, like Spring's `PatternMatchUtils.simpleMatch`.
   ///
@@ -251,6 +295,7 @@ class DataBinder {
   static bool simpleMatch(String pattern, String text) {
     final regex = RegExp(
       '^${pattern.split('*').map(RegExp.escape).join('.*')}\$',
+      dotAll: true,
     );
     return regex.hasMatch(text);
   }

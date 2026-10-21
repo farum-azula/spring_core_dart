@@ -41,6 +41,19 @@ abstract interface class MessageSourceResolvable {
   String? get defaultMessage;
 }
 
+/// A [MessageSourceResolvable] that can opt out of formatting its default
+/// message, like Spring's `DefaultMessageSourceResolvable
+/// .shouldRenderDefaultMessage()`.
+///
+/// Errors created from Bean Validation violations implement it: their
+/// default message (`can't be blank`, `must match "[A-Z]{2,3}"`) is shown
+/// as-is unless it contains `{0}`-style placeholders.
+abstract interface class DefaultMessageRendering {
+  /// Whether the default message is run through `MessageFormat` with the
+  /// arguments; `false` returns it unchanged.
+  bool get shouldRenderDefaultMessage;
+}
+
 /// Plain [MessageSourceResolvable], like Spring's
 /// `DefaultMessageSourceResolvable`.
 ///

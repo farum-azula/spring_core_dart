@@ -67,6 +67,53 @@ void main() {
     loaders: loaders ?? const [PropertiesPropertySourceLoader()],
   );
 
+  group('review fixes', () {
+    test('a negated on-profile document is not applied when the profile is '
+        'active', () {
+      write('application.properties', '''
+level=INFO
+#---
+spring.config.activate.on-profile=!prod
+level=DEBUG
+''');
+      final prod = env({'spring.profiles.active': 'prod'});
+      config(prod).processAndApplySync();
+      expect(prod.getProperty('level'), 'INFO');
+
+      final dev = env({'spring.profiles.active': 'dev'});
+      config(dev).processAndApplySync();
+      expect(dev.getProperty('level'), 'DEBUG');
+    });
+
+    test('a guard may use a property defined in a later document', () {
+      write('application.properties', '''
+#---
+spring.config.activate.on-profile=\${target}
+mode=targeted
+#---
+target=dev
+''');
+      final e = env({'spring.profiles.active': 'dev'});
+      config(e).processAndApplySync();
+      expect(e.getProperty('mode'), 'targeted');
+    });
+
+    test('a relative import cycle terminates', () {
+      write('application.properties', '''
+spring.config.import=./application.properties,config/a.properties
+base=1
+''');
+      write('config/a.properties', '''
+spring.config.import=../config/a.properties
+a=2
+''');
+      final e = env();
+      config(e).processAndApplySync();
+      expect(e.getProperty('base'), '1');
+      expect(e.getProperty('a'), '2');
+    });
+  });
+
   test('no files: nothing changes', () {
     final e = env();
     config(e).processAndApplySync();

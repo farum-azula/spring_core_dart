@@ -1,4 +1,5 @@
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
+import 'package:spring_core_dart/src/core/log.dart';
 
 /// A component that can be started and stopped, like Spring's `Lifecycle`.
 ///
@@ -212,11 +213,23 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
     }
   }
 
+  // Like Spring's DefaultLifecycleProcessor: a bean that fails to stop is
+  // logged and the remaining beans are still stopped.
   void _stopBeans() {
     for (final bean in _byPhase(descending: true)) {
-      if (bean.isRunning) {
-        bean.stop();
+      try {
+        if (bean.isRunning) {
+          bean.stop();
+        }
+      } catch (error, stackTrace) {
+        _log.warning(
+          'Failed to stop lifecycle bean ${bean.runtimeType}',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
   }
 }
+
+const _log = SpringLog('spring_core_dart.context');

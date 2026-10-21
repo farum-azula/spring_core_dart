@@ -280,11 +280,13 @@ final class _PointcutParser {
         final pattern = body.trim();
         return (_, beanName) => wildcardMatch(pattern, beanName);
       case '@annotation':
-        final name = _simple(body);
-        return (s, _) => s.annotations.any((a) => _typeName(a) == name);
+        final name = _annotationName(body);
+        return (s, _) =>
+            _names(s.annotationTypes, s.annotations).contains(name);
       case '@within':
-        final name = _simple(body);
-        return (s, _) => s.targetAnnotations.any((a) => _typeName(a) == name);
+        final name = _annotationName(body);
+        return (s, _) =>
+            _names(s.targetAnnotationTypes, s.targetAnnotations).contains(name);
       default:
         if (body.trim().isNotEmpty) {
           throw _error("unknown designator '$token'");
@@ -386,12 +388,45 @@ final class _PointcutParser {
         _matchParams(patterns.sublist(1), types.sublist(1));
   }
 
-  /// Last segment of a dotted (or `..`) type pattern, without generics.
-  static String _simple(String pattern) {
+  /// Last segment of a dotted type pattern, without generics.
+  ///
+  /// Dart has no Java packages: `com.x.Service` is reduced to `Service`,
+  /// but a qualified wildcard such as `com.x.service..*` is rejected —
+  /// reducing it to `*` would silently match every bean.
+  String _simple(String pattern) {
     final cleaned = _stripGenerics(pattern.trim()).replaceAll(' ', '');
-    final parts = cleaned.split('.').where((p) => p.isNotEmpty);
-    return parts.isEmpty ? cleaned : parts.last;
+    final parts = cleaned.split('.').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) {
+      return cleaned;
+    }
+    if (parts.length > 1 && parts.last.contains('*')) {
+      throw _error(
+        "package-qualified type pattern '$cleaned' is not supported (Dart "
+        'has no packages); use a simple type name pattern such as '
+        "'*Service'",
+      );
+    }
+    return parts.last;
   }
+
+  // The annotation type of `@annotation(X)` / `@within(X)`. A lower-case
+  // name is Spring's argument binding (`@annotation(timed)`), which is not
+  // supported: rejected instead of silently matching nothing.
+  String _annotationName(String body) {
+    final name = _simple(body);
+    if (name.isNotEmpty && name[0] != name[0].toUpperCase()) {
+      throw _error(
+        "argument binding '$name' is not supported; use the annotation "
+        'type name, e.g. @annotation(Timed), and read it from '
+        'joinPoint.signature.annotations',
+      );
+    }
+    return name;
+  }
+
+  // Generated names when present (release-safe), else runtime type names.
+  static List<String> _names(List<String> generated, List<Object> values) =>
+      generated.isNotEmpty ? generated : [for (final a in values) _typeName(a)];
 
   // `Future<int>` → `Future`; `?` is dropped so `int?` matches `int`.
   static String _stripGenerics(String type) {

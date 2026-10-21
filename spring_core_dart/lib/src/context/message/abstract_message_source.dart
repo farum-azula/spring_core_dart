@@ -98,6 +98,17 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
     }
     final defaultMessage = resolvable.defaultMessage;
     if (defaultMessage != null) {
+      // Like Spring's getDefaultMessage: violation messages without `{0}`
+      // placeholders and a code used as default message are not formatted.
+      final plain = switch (resolvable) {
+        DefaultMessageRendering(shouldRenderDefaultMessage: false) => true,
+        _ =>
+          resolvable.codes.isNotEmpty &&
+              defaultMessage == resolvable.codes.first,
+      };
+      if (plain) {
+        return defaultMessage;
+      }
       return renderDefaultMessage(defaultMessage, resolvable.arguments, locale);
     }
     if (useCodeAsDefaultMessage && resolvable.codes.isNotEmpty) {
@@ -163,10 +174,23 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
 
   /// Applies [MessageFormat] unless there are no arguments (and
   /// [alwaysUseMessageFormat] is off), like Spring.
-  String formatMessage(String pattern, List<Object?> args) =>
-      args.isEmpty && !alwaysUseMessageFormat
-      ? pattern
-      : MessageFormat.format(pattern, args);
+  ///
+  /// A pattern that is not a valid `MessageFormat` (for example a message
+  /// containing a regular expression such as `[A-Z]{2,3}`) is returned
+  /// unchanged unless [alwaysUseMessageFormat] is on — Spring's behaviour.
+  String formatMessage(String pattern, List<Object?> args) {
+    if (args.isEmpty && !alwaysUseMessageFormat) {
+      return pattern;
+    }
+    try {
+      return MessageFormat.format(pattern, args);
+    } on FormatException {
+      if (alwaysUseMessageFormat) {
+        rethrow;
+      }
+      return pattern;
+    }
+  }
 
   /// Formats a default message with [args].
   String renderDefaultMessage(

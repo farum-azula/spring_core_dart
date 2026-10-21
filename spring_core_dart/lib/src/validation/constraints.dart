@@ -95,11 +95,15 @@ abstract class Constraint {
   /// // 'size must be between 0 and 20'
   /// ```
   String interpolatedMessage() {
-    var text = message ?? defaultMessage;
-    attributes.forEach(
-      (key, value) => text = text.replaceAll('{$key}', '$value'),
+    // One pass, so an attribute value containing braces (a regular
+    // expression such as `[A-Z]{2,3}`) is not interpolated again.
+    final attributes = this.attributes;
+    return (message ?? defaultMessage).replaceAllMapped(
+      RegExp(r'\{(\w+)\}'),
+      (match) => attributes.containsKey(match.group(1))
+          ? '${attributes[match.group(1)]}'
+          : match.group(0)!,
     );
-    return text;
   }
 
   /// Whether the constraint applies when validating [requested] groups.

@@ -1,3 +1,17 @@
+## Unreleased
+
+- Constructor and `@Bean` method parameters keep their Dart default value
+  when no bean or property is found; required collections there resolve to
+  an empty collection (Spring's single-constructor fallback).
+- Objects returned from `@Bean` methods get their `@Autowired` / `@Value`
+  members, `@PostConstruct` / `@PreDestroy` methods and event listeners
+  processed; an init or destroy method that is also annotated runs once.
+- `@Import`ed classes keep their explicit name and inherit the importer's
+  conditions; `@PropertySource` declarations carry their class's
+  conditions.
+- Proxy signatures include annotation type names (`annotationTypes`,
+  `targetAnnotationTypes`) for release-safe `@annotation` matching.
+
 ## 0.1.0
 
 Initial release.

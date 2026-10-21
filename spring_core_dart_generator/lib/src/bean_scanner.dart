@@ -319,7 +319,14 @@ class BeanScanner {
   ///   @Bean(name = "main", initMethod = "open") Pool pool() { ... }
   /// }
   /// ```
-  void scanClass(ClassElement element, {DartObject? annotation}) {
+  // [inheritedConditions] are the conditions of the class that imports
+  // [element] with `@Import`: an imported class is registered only when
+  // its importer is (first importer wins when several import it).
+  void scanClass(
+    ClassElement element, {
+    DartObject? annotation,
+    List<ConditionModel> inheritedConditions = const [],
+  }) {
     final className = _requireName(element);
     final source = '${element.library.uri}#$className';
     if (!module.markScanned(source)) {
@@ -335,10 +342,15 @@ class BeanScanner {
       _fail('Generic bean class $className is not supported.', element);
     }
 
+    final classConditions = [...inheritedConditions, ..._conditions(element)];
     for (final imported in _importedClasses(element)) {
-      scanClass(imported);
+      scanClass(
+        imported,
+        annotation: _component.firstAnnotationOf(imported),
+        inheritedConditions: classConditions,
+      );
     }
-    module.propertySources.addAll(_propertySources(element));
+    module.propertySources.addAll(_propertySources(element, classConditions));
 
     final type = element.thisType;
     final name =
@@ -347,7 +359,6 @@ class BeanScanner {
             : ConstantReader(annotation).peek('name')?.stringValue) ??
         _decapitalize(className);
     final constructor = _selectConstructor(element);
-    final classConditions = _conditions(element);
     final classLazy = _isLazy(element);
     final owner = BeanModel(
       element: element,
@@ -358,7 +369,7 @@ class BeanScanner {
       factoryObjectTypes: _factoryObjectTypes(type),
       creation: ConstructorCreation(
         _constructorName(constructor),
-        _arguments(constructor.formalParameters),
+        _arguments(constructor.formalParameters, creation: true),
       ),
       scope: _scopeOf(element),
       lazy: classLazy ?? false,
@@ -572,7 +583,7 @@ class BeanScanner {
         ownerName: owner.name,
         methodName: methodName,
         isStatic: method.isStatic,
-        arguments: _arguments(method.formalParameters),
+        arguments: _arguments(method.formalParameters, creation: true),
       ),
       scope: _scopeOf(method),
       lazy: _isLazy(method) ?? classLazy ?? false,
@@ -585,10 +596,29 @@ class BeanScanner {
       dependsOn: _dependsOnOf(method),
       qualifiers: _qualifiersOf(method),
       conditions: [...classConditions, ..._conditions(method)],
+      // Like Spring, the returned object is processed like any bean:
+      // its `@Autowired`/`@Value` members, lifecycle methods and listeners
+      // (declared on the return type) apply too. An init/destroy method
+      // that is also annotated runs once.
+      properties: _propertyInjections(returnType),
+      methods: _methodInjections(returnType),
+      postConstruct: [
+        for (final name in _lifecycleMethods(
+          returnType,
+          _postConstruct,
+          superFirst: true,
+        ))
+          if (name != initMethod) name,
+      ],
+      preDestroy: _lifecycleMethods(returnType, _preDestroy, superFirst: false),
+      listeners: switch (returnType.element) {
+        final ClassElement element => _listeners(element),
+        _ => const [],
+      },
       initMethod: initMethod == null
           ? null
           : _requireNoArgMethod(returnType, initMethod, method, 'initMethod'),
-      destroyMethod: _destroyMethod(returnType, destroyMethod, method),
+      destroyMethod: _beanDestroyMethod(returnType, destroyMethod, method),
       // The proxy class is named after owner and method, because two
       // `@Bean` methods may return the same type.
       proxy:
@@ -1082,10 +1112,27 @@ class BeanScanner {
   }
 
   // One argument per parameter; named parameters keep their name.
-  List<Argument> _arguments(List<FormalParameterElement> parameters) => [
+  //
+  // For constructors and `@Bean` methods ([creation]) a parameter's Dart
+  // default value is kept when nothing is found, and a required collection
+  // may be empty (Spring's single-constructor fallback).
+  List<Argument> _arguments(
+    List<FormalParameterElement> parameters, {
+    bool creation = false,
+  }) => [
     for (final parameter in parameters)
       Argument(
-        _injectionPoint(parameter, parameter.type),
+        _injectionPoint(parameter, parameter.type).forParameter(
+          defaultValue: parameter.hasDefaultValue
+              ? (parameter.computeConstantValue() ??
+                    _fail(
+                      'Cannot evaluate the default value of '
+                      '${parameter.displayName}.',
+                      parameter,
+                    ))
+              : null,
+          collectionsMayBeEmpty: creation,
+        ),
         namedAs: parameter.isNamed ? _requireName(parameter) : null,
       ),
   ];
@@ -1468,7 +1515,10 @@ class BeanScanner {
     }
   }
 
-  List<PropertySourceModel> _propertySources(ClassElement element) => [
+  List<PropertySourceModel> _propertySources(
+    ClassElement element,
+    List<ConditionModel> conditions,
+  ) => [
     for (final annotation in _propertySource.annotationsOf(element))
       () {
         final reader = ConstantReader(annotation);
@@ -1492,6 +1542,8 @@ class BeanScanner {
           name: reader.peek('name')?.stringValue,
           ignoreResourceNotFound:
               reader.peek('ignoreResourceNotFound')?.boolValue ?? false,
+          conditions: conditions,
+          element: element,
           factoryType: factory as InterfaceType?,
         );
       }(),
@@ -1519,6 +1571,24 @@ class BeanScanner {
       );
     }
     return name;
+  }
+
+  // The destroy method of a `@Bean`, unless the same method is already a
+  // `@PreDestroy` method of the returned type (it must run only once).
+  String? _beanDestroyMethod(
+    InterfaceType type,
+    String? name,
+    Element element,
+  ) {
+    final destroy = _destroyMethod(type, name, element);
+    return destroy != null &&
+            _lifecycleMethods(
+              type,
+              _preDestroy,
+              superFirst: false,
+            ).contains(destroy)
+        ? null
+        : destroy;
   }
 
   // `''` disables the destroy method; `'(inferred)'` (Spring's

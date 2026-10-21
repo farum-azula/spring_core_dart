@@ -21,6 +21,7 @@ import 'package:spring_core_dart/src/core/env/config/property_source_factory.dar
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_resolver.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/log.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
 import 'package:spring_core_dart/src/core/order.dart';
@@ -242,7 +243,7 @@ abstract interface class ConfigurableApplicationContext
 // created → refreshing → active → closed; a throwing refresh() ends in
 // failed. Only `active` (and `refreshing`, for beans created during
 // refresh) allows bean lookups.
-enum _State { created, refreshing, active, failed, closed }
+enum _State { created, refreshing, active, closing, failed, closed }
 
 /// The standard context for generated modules, like Spring's
 /// `AnnotationConfigApplicationContext`.
@@ -431,7 +432,7 @@ class AnnotationConfigApplicationContext
 
   void _checkActive() {
     switch (_state) {
-      case _State.active || _State.refreshing:
+      case _State.active || _State.refreshing || _State.closing:
         return;
       case _State.created:
         throw StateError(
@@ -533,6 +534,9 @@ class AnnotationConfigApplicationContext
       }
       module.imports.forEach(load);
       for (final declaration in module.propertySources) {
+        if (!declaration.conditions.every((c) => c.matches(conditionContext))) {
+          continue;
+        }
         processor.processPropertySource(
           declaration.locations,
           name: declaration.name,
@@ -714,9 +718,11 @@ class AnnotationConfigApplicationContext
 
   void _finishRefresh() {
     // Clear the buffer first so the replayed events are really dispatched.
+    // Replayed locally only: the parent already received them when they
+    // were published (like Spring's registerListeners).
     final events = _earlyEvents!;
     _earlyEvents = null;
-    events.forEach(publishEvent);
+    events.forEach(_multicaster!.multicastEvent);
     final processor = _factory.containsLocalBean(lifecycleProcessorBeanName)
         ? _factory.getBeanByName(lifecycleProcessorBeanName)
               as LifecycleProcessor
@@ -755,14 +761,31 @@ class AnnotationConfigApplicationContext
     if (_state != _State.active) {
       return;
     }
+    // Like Spring's doClose: each step is guarded so a failing listener or
+    // lifecycle bean neither stops the shutdown nor escapes from close().
+    // The state changes first, so a close() from a listener is a no-op.
+    _state = _State.closing;
     try {
       publishEvent(ContextClosedEvent(this));
-      _lifecycleProcessor?.onClose();
-    } finally {
-      _factory.destroySingletons();
-      _multicaster?.removeAllListeners();
-      _state = _State.closed;
+    } catch (error, stackTrace) {
+      _log.warning(
+        'Exception thrown from a listener handling ContextClosedEvent',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
+    try {
+      _lifecycleProcessor?.onClose();
+    } catch (error, stackTrace) {
+      _log.warning(
+        'Exception thrown from the LifecycleProcessor on context close',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    _factory.destroySingletons();
+    _multicaster?.removeAllListeners();
+    _state = _State.closed;
   }
 
   // ---------------------------------------------------------------------
@@ -1010,3 +1033,5 @@ final class _ConditionContext implements ConditionContext {
   @override
   ResourceLoader get resourceLoader => _context;
 }
+
+const _log = SpringLog('spring_core_dart.context');

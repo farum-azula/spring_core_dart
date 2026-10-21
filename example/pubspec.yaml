@@ -1,5 +1,5 @@
 name: spring_core_dart_example
-description: "Example and end-to-end tests for spring_core_dart."
+description: "A runnable tour of every spring_core_dart feature (NEON Books)."
 publish_to: none
 
 environment:
@@ -11,6 +11,6 @@ dependencies:
   spring_core_dart: ^0.1.0
 
 dev_dependencies:
-  spring_core_dart_generator: ^0.1.0
   build_runner: ^2.17.0
+  spring_core_dart_generator: ^0.1.0
   test: ^1.25.0

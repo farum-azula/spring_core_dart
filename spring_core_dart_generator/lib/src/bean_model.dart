@@ -112,7 +112,33 @@ class InjectionPoint {
     this.qualifier,
     this.name,
     this.expression,
+    this.defaultValue,
+    this.allowEmpty = false,
   });
+
+  /// A copy for a constructor or `@Bean` method parameter: a Dart default
+  /// value makes the point optional (the default is used when nothing is
+  /// found), and a required collection may be empty, like Spring's
+  /// `ConstructorResolver` fallback for single constructors.
+  InjectionPoint forParameter({
+    DartObject? defaultValue,
+    bool collectionsMayBeEmpty = false,
+  }) => InjectionPoint(
+    kind: kind,
+    type: type,
+    optional: optional || defaultValue != null,
+    qualifier: qualifier,
+    name: name,
+    expression: expression,
+    defaultValue: defaultValue,
+    allowEmpty:
+        collectionsMayBeEmpty &&
+        defaultValue == null &&
+        !optional &&
+        (kind == PointKind.list ||
+            kind == PointKind.set ||
+            kind == PointKind.map),
+  );
 
   /// How the value is looked up (single bean, collection, value, ...).
   final PointKind kind;
@@ -135,6 +161,14 @@ class InjectionPoint {
 
   /// The `@Value` expression.
   final String? expression;
+
+  /// The parameter's Dart default value, used when no bean (or property)
+  /// is found.
+  final DartObject? defaultValue;
+
+  /// A required collection that resolves to an empty collection when no
+  /// bean matches (constructor and `@Bean` method parameters).
+  final bool allowEmpty;
 }
 
 /// A constructor or method argument.
@@ -1108,7 +1142,17 @@ class PropertySourceModel {
     this.name,
     this.ignoreResourceNotFound = false,
     this.factoryType,
+    this.conditions = const [],
+    this.element,
   });
+
+  /// Conditions of the declaring class (and of the classes importing it):
+  /// the file is loaded only when they match, like Spring skipping a
+  /// `@PropertySource` of a configuration class that is not registered.
+  final List<ConditionModel> conditions;
+
+  /// The declaring class (for imports of condition types).
+  final Element? element;
 
   /// Resource locations (may contain `${...}` placeholders).
   final List<String> locations;
