@@ -609,6 +609,57 @@ Starters (each a separate package, discovered by the generator like
 - **HTTP client** (`spring_boot_starter_http`): a configured `http.Client`
   or `Dio` bean from `spring.http.*` (base URL, timeouts, interceptors),
   declarative clients like Spring's `@HttpExchange`.
+- **Data** (`spring_boot_starter_data_*`, like Spring Data JPA/JDBC):
+  entities and repositories generated at build time, no reflection.
+  `@Entity` classes get generated row mapping; repository interfaces get a
+  generated implementation; method names (`findBy...And...OrderBy...`) are
+  parsed by the generator, so a typo in a property name is a build error.
+  `@Transactional` runs on the existing AOP proxies
+  (`PlatformTransactionManager`); `DataSource` and transactions come from
+  `spring.datasource.*`. SQLite first (Flutter and server), then
+  PostgreSQL.
+  ```dart
+  @Entity()
+  @Table('books')
+  class Book {
+    @Id() @GeneratedValue()
+    int? id;
+    @Column(nullable: false)
+    String title;
+    int year;
+    @ManyToOne()
+    Author? author;
+  }
+
+  @Repository()
+  abstract interface class BookRepository extends CrudRepository<Book, int> {
+    List<Book> findByTitleContainingAndYearGreaterThan(String title, int year);
+    Page<Book> findByAuthorName(String name, Pageable page);
+
+    @Query('select * from books where year = :year')
+    List<Book> byYear(int year);
+
+    // SpEL in queries, evaluated by the existing engine: the entity name,
+    // properties of parameters, beans and ${...} properties.
+    @Query('select * from #{#entityName} where title = :#{#book.title}')
+    List<Book> sameTitle(Book book);
+
+    @Query('select * from books where year >= :#{@clock.now().year - 1}')
+    List<Book> recent();
+
+    @Query(r'select * from books limit ${books.page-size:20}')
+    List<Book> firstPage();
+  }
+
+  @Service()
+  class Library {
+    Library(this.books);
+    final BookRepository books;
+
+    @Transactional()
+    void publish(Book book) => books.save(book);
+  }
+  ```
 - **Flutter** (`flutter_spring`): the whole family for Flutter apps —
   bean builders and event listener widgets, `@Configurable` `State`
   injection, `runApplicationAsync` from `main`, log files in the app's
@@ -631,6 +682,41 @@ Starters (each a separate package, discovered by the generator like
   @Profile(['ios'])
   class ApnsPushService implements PushService { ... }
   ```
+
+Tooling:
+
+- **Zed extension** (`zed-spring`): editor support for everything the
+  framework does today. Its version always equals the framework version
+  (part of the release train, set by `tool/version.dart` and checked in CI),
+  so extension 0.4.0 understands spring_core_dart 0.4.0.
+  - SpEL highlighting and completion inside `@Value`, `@Query`,
+    `@ConditionalOnExpression`, pointcut and `@EventListener(condition:)`
+    strings; errors in expressions shown while typing.
+  - Bean markers next to components, `@Bean` methods and injection points
+    (gutter icons where Zed allows it, otherwise inlay hints), with the
+    bean name, scope, profile and conditions.
+  - Navigation: from an injection point to the bean(s) it receives (and
+    back: where a bean is injected); from `@Value(r'${shop.name}')` to the
+    key in `application*.properties` (every profile file that defines it)
+    and from a key to its usages, `@ConfigurationProperties` fields
+    included; from `classpath:...` / `@PropertySource` locations to the
+    file in `lib/resources/`; from `@annotation(Timed)` and pointcuts to the
+    advised methods; from an event to its listeners.
+  - Navigation and completion in every string that names a bean or a
+    key: `@Qualifier`, `@DependsOn`, `@Component('name')`,
+    `@ConditionalOnBean` / `@ConditionalOnMissingBean.named`,
+    `@ConditionalOnProperty`, `@ConfigurationProperties('prefix')`,
+    `@Profile`, `@Value`, `@Query`.
+  - Completion and diagnostics for property keys (unknown key, wrong type,
+    deprecated), profile names, bean names in `@Qualifier`, and missing or
+    ambiguous beans before running the app.
+  - Placeholders and raw strings: in Dart `"${shop.name}"` is string
+    interpolation (a compile error), so placeholders need `r'${shop.name}'`
+    or `'\${shop.name}'`. Typing `${` in `@Value` / `@Query` adds the `r`,
+    and a quick fix turns `@Value("${shop.name}")` into a raw string;
+    navigation works for both spellings.
+  - Built as a Dart language server on top of the generator's analysis, so
+    the same server can later back VS Code and IntelliJ plugins.
 
 Framework:
 
