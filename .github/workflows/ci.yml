@@ -33,26 +33,16 @@ jobs:
           test -z "$(git status --porcelain -- .)"
 
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart example
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_test example
 
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
 
-      - name: Runtime tests (VM)
-        working-directory: spring_core_dart
-        run: dart test
-
-      - name: Spring Boot tests
-        working-directory: spring_boot_dart
-        run: dart test
-
-      - name: Generator tests
-        working-directory: spring_core_dart_generator
-        run: dart test
-
-      - name: Example tests
-        working-directory: example
-        run: dart test
+      # Every workspace package (runtime, generator, Boot, starters, example),
+      # read from the root pubspec.yaml: from each package directory and from
+      # the workspace root (IDEs run tests from there).
+      - name: Tests of all packages
+        run: dart run tool/test_all.dart
 
       - name: Example runs (tour and Spring Boot app)
         working-directory: example
@@ -77,4 +67,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_test

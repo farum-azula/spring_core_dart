@@ -15,6 +15,8 @@ separate library.
 |---|---|---|
 | `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. No dependencies. |
 | `spring_boot_dart` | [`spring_boot_dart/`](spring_boot_dart/README.md) | Spring Boot on top of the core: `@SpringBootApplication` on `main`, `SpringApplication.run`, `@ConfigurationProperties`, auto-configuration conditions, runners, failure reports. A separate package (depends only on the core) so it can move to its own repository. |
+| `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Logging backend: console with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` (filters, streams, export) for an in-app log screen. Add the dependency, nothing else. |
+| `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
@@ -64,6 +66,25 @@ import 'main.beans.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
+```
+
+Tested with `spring_boot_starter_test` (a dev dependency):
+
+```dart
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
+import 'package:test/test.dart';
+import '../bin/main.beans.dart';
+
+void main() {
+  final app = springBootTest(
+    springApplication,
+    profiles: ['test'], // + test/resources/application-test.properties
+    properties: {'app.title': 'Test'},
+    overrides: [BeanOverride<Greeter>(FakeGreeter())],
+  );
+
+  test('greets', () => expect(app.getBean<Greeter>().greet('Ada'), 'fake'));
+}
 ```
 
 With the core only:
@@ -393,6 +414,26 @@ Proxies are generated classes that implement the bean class (when it has
 no private members) and its interfaces, so they can be injected by either;
 `AopUtils.getTarget` unwraps them.
 
+### Logging
+
+`SpringLog` is the logging facade (Spring's commons-logging / SLF4J): the
+framework, starters and applications log through it; a backend such as
+`spring_boot_starter_logging` decides where records go. Without one,
+warnings and errors are printed.
+
+```dart
+const log = SpringLog('neon.checkout');
+
+log.info('order placed', fields: {'order': 42});
+log.debug(() => 'basket: ${basket.dump()}');   // built only if enabled
+log.error('payment failed', error: e, stackTrace: s);
+
+SpringLog.setLevel('neon.checkout', SpringLogLevel.debug); // and below
+SpringLog.withFields({'request': id}, () => handle(request)); // like MDC
+```
+
+With Spring Boot, levels come from `logging.level.*` properties.
+
 ### Other extension points
 
 `BeanFactoryPostProcessor` / `BeanDefinitionRegistryPostProcessor`,
@@ -527,7 +568,8 @@ package-qualified AOP wildcards.
 
 - Flutter library: bean builders, event listener widgets, `@Configurable`
   `State` injection, asset resources.
-- Spring Web and a Boot starter with auto-configuration (`@ConditionalOn...`).
+- Spring Web; more starters (HTTP client, scheduling, cache); a Flutter log
+  viewer screen over `LogBuffer`.
 - Rust bridge over rinf: Dart beans in Rust and Rust beans in Dart.
 
 ## License
@@ -541,6 +583,7 @@ with or endorsed by the Spring team.
 ```bash
 dart pub get
 dart run melos run check   # versions + gen + analyze + format + test
+dart run tool/test_all.dart   # tests of every package (also the example), from each package and from the root
 dart run melos run version -- 0.2.0   # release train: one version for every package
 dart run melos run coverage
 ```
@@ -549,7 +592,8 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 362 (runtime), 69 (generator), 9 (Spring Boot), 12 end-to-end over
-the generated code of the example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
+Tests: 368 (runtime), 72 (generator), 12 (Spring Boot), 29 (logging
+starter), 25 (test starter), 16 end-to-end over the generated code of the
+example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

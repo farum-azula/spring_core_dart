@@ -1215,10 +1215,13 @@ class DbProps { String url = ''; }
           result.readerWriter.testing.readString(result.outputs.single),
         );
         expect(result.outputs.single.path, 'bin/main.beans.dart');
-        // spring_boot_dart's lib/spring_auto_configuration.dart is discovered
-        // in the dependencies.
-        expect(output, contains('autoConfigurations:['));
-        expect(output, contains('.springBootAutoConfiguration]'));
+        // lib/spring_auto_configuration.dart of the dependencies is
+        // discovered: spring_boot_dart's first (order 0, then by package).
+        expect(
+          output,
+          contains('autoConfigurations:[_i7.springBootAutoConfiguration,'),
+        );
+        expect(output, contains('.springBootStarterLoggingAutoConfiguration]'));
         expect(
           output,
           contains(

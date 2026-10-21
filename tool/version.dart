@@ -12,6 +12,8 @@ const family = [
   'spring_core_dart',
   'spring_core_dart_generator',
   'spring_boot_dart',
+  'spring_boot_starter_logging',
+  'spring_boot_starter_test',
 ];
 
 /// Packages that only depend on the family (not published).

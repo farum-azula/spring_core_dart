@@ -11,7 +11,9 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///    sources;
 /// 2. `config/application.properties` and `application-{profile}` files
 ///    (Spring Boot config data: profiles, imports, groups, ...);
-/// 3. `logging.level.root` / `logging.level` applied to [SpringLog];
+/// 3. `logging.level.root` and `logging.level.<logger>` (also
+///    `logging.group.<name>=a,b` and `LOGGING_LEVEL_<LOGGER>` variables)
+///    applied to [SpringLog];
 /// 4. the context: the application's modules, then [autoConfigurations]
 ///    (so `@ConditionalOnMissingBean` sees the application's beans),
 ///    `@ConfigurationProperties` binding, `ApplicationArguments` as a bean;
@@ -36,10 +38,12 @@ class SpringApplication {
   SpringApplication(
     List<BeanModule> modules, {
     List<BeanModule> autoConfigurations = const [],
+    List<ApplicationContextInitializer> initializers = const [],
     this.resourceLoader,
     void Function(String line)? out,
   }) : modules = List.unmodifiable(modules),
        autoConfigurations = List.unmodifiable(autoConfigurations),
+       initializers = List.unmodifiable(initializers),
        out = out ?? print;
 
   /// The application's own modules.
@@ -47,6 +51,11 @@ class SpringApplication {
 
   /// Library modules registered after [modules].
   final List<BeanModule> autoConfigurations;
+
+  /// Called with the context before it is refreshed, in order (Spring's
+  /// `ApplicationContextInitializer`): add post-processors, register
+  /// singletons, ...
+  final List<ApplicationContextInitializer> initializers;
 
   /// Reads config files; defaults to a `DefaultResourceLoader`. Use an
   /// asset-aware loader (and [runAsync]) in Flutter.
@@ -56,13 +65,17 @@ class SpringApplication {
   final void Function(String line) out;
 
   /// Starts the application synchronously (config files read with
-  /// `dart:io`). [systemEnvironment] replaces the OS environment (tests).
+  /// `dart:io`). [systemEnvironment] replaces the OS environment and
+  /// [properties] take precedence over every other property source,
+  /// command line included (both for tests, like
+  /// `@SpringBootTest(properties = ...)`).
   ConfigurableApplicationContext run(
     List<String> args, {
     Map<String, String>? systemEnvironment,
+    Map<String, Object?> properties = const {},
   }) {
     final watch = Stopwatch()..start();
-    final environment = _environment(args, systemEnvironment);
+    final environment = _environment(args, systemEnvironment, properties);
     return _guard(() {
       ConfigDataEnvironment(
         environment,
@@ -76,9 +89,10 @@ class SpringApplication {
   Future<ConfigurableApplicationContext> runAsync(
     List<String> args, {
     Map<String, String>? systemEnvironment,
+    Map<String, Object?> properties = const {},
   }) async {
     final watch = Stopwatch()..start();
-    final environment = _environment(args, systemEnvironment);
+    final environment = _environment(args, systemEnvironment, properties);
     try {
       await ConfigDataEnvironment(
         environment,
@@ -94,9 +108,18 @@ class SpringApplication {
   StandardEnvironment _environment(
     List<String> args,
     Map<String, String>? systemEnvironment,
-  ) =>
-      StandardEnvironment(systemEnvironment: systemEnvironment)
-        ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
+    Map<String, Object?> properties,
+  ) {
+    final environment = StandardEnvironment(
+      systemEnvironment: systemEnvironment,
+    )..propertySources.addFirst(SimpleCommandLinePropertySource(args));
+    if (properties.isNotEmpty) {
+      environment.propertySources.addFirst(
+        MapPropertySource('inlinedProperties', Map.of(properties)),
+      );
+    }
+    return environment;
+  }
 
   T _guard<T>(T Function() body) {
     try {
@@ -119,7 +142,7 @@ class SpringApplication {
     StandardEnvironment environment,
     Stopwatch watch,
   ) {
-    _applyLogging(environment);
+    applyLoggingLevels(environment);
     final context = AnnotationConfigApplicationContext(
       [...modules, ...autoConfigurations],
       environment: environment,
@@ -135,14 +158,12 @@ class SpringApplication {
       ..addBeanPostProcessor(
         ConfigurationPropertiesBinder(environment, context.introspector),
       );
+    for (final initializer in initializers) {
+      initializer(context);
+    }
     try {
       context.refresh();
-      for (final runner in context.getSortedBeans<ApplicationRunner>()) {
-        runner.run(arguments);
-      }
-      for (final runner in context.getSortedBeans<CommandLineRunner>()) {
-        runner.run(args);
-      }
+      _callRunners(context, arguments);
     } catch (_) {
       if (context.isActive) {
         context.close();
@@ -163,24 +184,98 @@ class SpringApplication {
     return context;
   }
 
-  // `logging.level.root` (or `logging.level`) sets SpringLog's threshold.
-  static void _applyLogging(Environment environment) {
-    final value =
-        (environment.getProperty('logging.level.root') ??
-                environment.getProperty('logging.level'))
-            ?.trim()
-            .toLowerCase();
-    final level = switch (value) {
-      'trace' => SpringLogLevel.trace,
-      'debug' => SpringLogLevel.debug,
-      'info' => SpringLogLevel.info,
-      'warn' || 'warning' => SpringLogLevel.warning,
-      'error' => SpringLogLevel.error,
-      'off' => SpringLogLevel.off,
-      _ => null,
+  // Both kinds sorted together by order, as in Spring Boot's callRunners.
+  static void _callRunners(
+    ConfigurableApplicationContext context,
+    ApplicationArguments arguments,
+  ) {
+    // Bean -> its @Order value; Ordered / PriorityOrdered beans win.
+    final orders = <Object, int?>{
+      for (final type in const [ApplicationRunner, CommandLineRunner])
+        for (final name in context.getBeanNamesForType(type))
+          context.getBeanByName(name): context.beanFactory
+              .getBeanDefinition(name)
+              .order,
     };
-    if (level != null) {
-      SpringLog.level = level;
+    final beans = OrderComparator.sort(orders.keys, (bean) => orders[bean]);
+    for (final runner in beans) {
+      // A bean implementing both is called as both, like in Spring Boot.
+      if (runner is ApplicationRunner) {
+        runner.run(arguments);
+      }
+      if (runner is CommandLineRunner) {
+        runner.run(arguments.sourceArgs);
+      }
     }
   }
+
+  /// Applies `logging.level.*` from [environment] to [SpringLog], like
+  /// Spring Boot's `LoggingApplicationListener`:
+  ///
+  /// ```properties
+  /// logging.level.root=info
+  /// logging.level.neon.checkout=debug
+  /// logging.group.payments=neon.payments,neon.checkout
+  /// logging.level.payments=trace
+  /// ```
+  ///
+  /// `LOGGING_LEVEL_NEON_CHECKOUT=debug` (environment variable) is the
+  /// same as `logging.level.neon.checkout`. Levels of an earlier run are
+  /// replaced.
+  static void applyLoggingLevels(ConfigurableEnvironment environment) {
+    final root = parseSpringLogLevel(
+      environment.getProperty('logging.level.root') ??
+          environment.getProperty('logging.level'),
+    );
+    if (root != null) {
+      SpringLog.level = root;
+    }
+    final groups = <String, List<String>>{};
+    final levels = <String, String>{};
+    for (final source in environment.propertySources) {
+      if (source is! EnumerablePropertySource<Object>) {
+        continue;
+      }
+      for (final key in source.propertyNames) {
+        final name = _loggingKey(key, 'logging.group.', 'LOGGING_GROUP_');
+        if (name != null && !groups.containsKey(name)) {
+          groups[name] = [
+            for (final logger in '${source.getProperty(key)}'.split(','))
+              if (logger.trim().isNotEmpty) logger.trim(),
+          ];
+          continue;
+        }
+        final logger = _loggingKey(key, 'logging.level.', 'LOGGING_LEVEL_');
+        if (logger != null && logger != 'root' && !levels.containsKey(logger)) {
+          // Earlier sources win, as in the environment itself.
+          levels[logger] = '${source.getProperty(key)}';
+        }
+      }
+    }
+    SpringLog.resetLevels();
+    for (final MapEntry(key: logger, value: value) in levels.entries) {
+      final level = parseSpringLogLevel(value);
+      if (level != null) {
+        for (final name in groups[logger] ?? [logger]) {
+          SpringLog.setLevel(name, level);
+        }
+      }
+    }
+  }
+
+  static String? _loggingKey(String key, String prefix, String envPrefix) {
+    if (key.startsWith(prefix) && key.length > prefix.length) {
+      return key.substring(prefix.length);
+    }
+    if (key.startsWith(envPrefix) && key.length > envPrefix.length) {
+      return key.substring(envPrefix.length).toLowerCase().replaceAll('_', '.');
+    }
+    return null;
+  }
 }
+
+/// Prepares a context before it is refreshed, like Spring's
+/// `ApplicationContextInitializer`; see [SpringApplication.initializers].
+typedef ApplicationContextInitializer = void Function(
+  ConfigurableApplicationContext context,
+);

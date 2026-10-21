@@ -126,6 +126,39 @@ registers a `messageSource` for `classpath:<spring.messages.basename>`
 (default `messages`) when the application has no bean named
 `messageSource`.
 
+Starters of this repository:
+
+| Starter | What adding the dependency gives |
+|---|---|
+| [`spring_boot_starter_logging`](../spring_boot_starter_logging/README.md) | Console output with patterns, `logging.*` properties, an in-memory `LogBuffer` for an in-app log screen. |
+| [`spring_boot_starter_test`](../spring_boot_starter_test/README.md) (dev) | `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, bean matchers, `captureLogs`. |
+
+Test a starter's auto-configuration with `ApplicationContextRunner` from
+`spring_boot_starter_test`.
+
+## Logging levels
+
+`SpringApplication` applies `logging.level.*` to the `SpringLog` facade
+(Spring Boot's `LoggingApplicationListener`), with or without the logging
+starter:
+
+```properties
+logging.level.root=info
+logging.level.neon.checkout=debug          # and every neon.checkout.* logger
+logging.group.payments=neon.card,neon.cash # a log group
+logging.level.payments=trace
+```
+
+`LOGGING_LEVEL_NEON_CHECKOUT=debug` (an environment variable) works too.
+
+## Context initializers and test properties
+
+`SpringApplication(..., initializers: [(context) => ...])` runs callbacks
+before the refresh (Spring's `ApplicationContextInitializer`), and
+`run(args, properties: {...})` adds properties above every other source
+(what `@SpringBootTest(properties = ...)` does). `spring_boot_starter_test`
+is built on both.
+
 ## Versions and starter compatibility
 
 Java solves library conflicts with a BOM. pub resolves exactly one version
@@ -133,8 +166,9 @@ of every package per application, so conflicts cannot hide at runtime —
 `pub get` fails and names the culprits. What remains is keeping the family
 consistent and making incompatibilities readable:
 
-- **Release train.** `spring_core_dart`, `spring_core_dart_generator` and
-  `spring_boot_dart` always share one version and depend on each other with
+- **Release train.** `spring_core_dart`, `spring_core_dart_generator`,
+  `spring_boot_dart` and the `spring_boot_starter_*` packages always share
+  one version and depend on each other with
   `^<version>` (`dart run tool/version.dart 0.2.0`, checked in CI).
 - **Starters declare the Boot versions they support:**
   ```dart
@@ -159,6 +193,6 @@ declarations are needed for them.
 
 ## Not yet
 
-`@SpringBootTest`-style test support (next), `@AutoConfigureAfter` /
-`@AutoConfigureBefore` (only `AutoConfigurationModule(order:)`), Actuator,
-Web.
+`@AutoConfigureAfter` / `@AutoConfigureBefore` (only
+`AutoConfigurationModule(order:)`), test slices (`@WebMvcTest`-like),
+Actuator, Web.

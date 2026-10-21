@@ -35,10 +35,21 @@ class OfflineGateway implements PaymentGateway {
 @Profile(['dev-tools & !prod'])
 class DebugToolbar {}
 
+/// The logging facade: a named logger, levels from `logging.level.*`.
+const _log = SpringLog('neon.checkout');
+
 @Service()
 class Checkout {
   Checkout(this.gateway, @Qualifier('offline') this.backup);
 
   final PaymentGateway gateway;
   final PaymentGateway backup;
+
+  /// Charges [amount], logging the result with structured fields.
+  String pay(double amount) {
+    final result = gateway.charge(amount);
+    _log.info('paid $amount', fields: {'gateway': gateway.runtimeType});
+    _log.debug(() => 'gateway answered: $result'); // built only if enabled
+    return result;
+  }
 }

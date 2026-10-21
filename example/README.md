@@ -35,6 +35,19 @@ dart test                        # asserts the tour's output
 (`lib/src/boot/`). Try `dart run bin/shop.dart --shop.max-basket-size=0` for
 the startup failure report.
 
+The Boot app also shows the two starters:
+
+- `spring_boot_starter_logging` is only a dependency: the generator finds
+  its auto-configuration. `Checkout.pay` and the runner log through
+  `SpringLog` (levels and pattern in `application.properties`, fields via
+  `SpringLog.withFields`), and `ConsoleLogScreen` prints the injected
+  `LogBuffer` to the console the way a Flutter log screen would show it. Try
+  `LOGGING_LEVEL_NEON=info dart run bin/shop.dart`.
+- `spring_boot_starter_test` drives `test/boot_test.dart`: `springBootTest`
+  with the `test` profile reading `test/resources/application-test.properties`
+  (test-only config, not embedded), arguments and environment, a `BeanOverride` replacing the sandbox
+  payment gateway with a fake, and `captureLogs`.
+
 `tool/release_check.dart` runs the AOP part as minified JavaScript
 (`dart compile js -O4`) to make sure nothing depends on class names that
 release builds rename.

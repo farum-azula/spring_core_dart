@@ -377,6 +377,26 @@ Proxies are generated classes that implement the bean class (when it has
 no private members) and its interfaces, so they can be injected by either;
 `AopUtils.getTarget` unwraps them.
 
+### Logging
+
+`SpringLog` is the logging facade (Spring's commons-logging / SLF4J): the
+framework, starters and applications log through it; a backend such as
+`spring_boot_starter_logging` decides where records go. Without one,
+warnings and errors are printed.
+
+```dart
+const log = SpringLog('neon.checkout');
+
+log.info('order placed', fields: {'order': 42});
+log.debug(() => 'basket: ${basket.dump()}');   // built only if enabled
+log.error('payment failed', error: e, stackTrace: s);
+
+SpringLog.setLevel('neon.checkout', SpringLogLevel.debug); // and below
+SpringLog.withFields({'request': id}, () => handle(request)); // like MDC
+```
+
+With Spring Boot, levels come from `logging.level.*` properties.
+
 ### Other extension points
 
 `BeanFactoryPostProcessor` / `BeanDefinitionRegistryPostProcessor`,

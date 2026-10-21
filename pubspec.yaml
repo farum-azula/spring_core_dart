@@ -9,6 +9,8 @@ workspace:
   - spring_core_dart
   - spring_core_dart_generator
   - spring_boot_dart
+  - spring_boot_starter_test
+  - spring_boot_starter_logging
   - example
 
 dev_dependencies:
@@ -27,9 +29,8 @@ melos:
     format:
       exec: dart format --set-exit-if-changed .
     test:
-      exec: dart test
-      packageFilters:
-        dirExists: test
+      description: Tests of every workspace package, from each package and from the root.
+      run: dart run tool/test_all.dart
     coverage:
       description: Line coverage into coverage/lcov.info of each package.
       exec: dart run coverage:test_with_coverage

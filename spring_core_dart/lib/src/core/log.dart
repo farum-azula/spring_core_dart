@@ -1,3 +1,5 @@
+import 'dart:async';
+
 /// Severity of a [SpringLogRecord], like the levels of Spring's
 /// (commons-)logging.
 ///
@@ -28,7 +30,12 @@ enum SpringLogLevel {
   off,
 }
 
-/// One message emitted by the framework through [SpringLog].
+/// One message emitted through [SpringLog].
+///
+/// Records are immutable and carry everything a console line or a log
+/// viewer screen needs: [time], a unique increasing [sequence] (a stable
+/// list key), [level], [loggerName], [message], structured [fields] and the
+/// [error] with its [stackTrace].
 ///
 /// ```dart
 /// SpringLog.handler = (record) =>
@@ -36,13 +43,19 @@ enum SpringLogLevel {
 /// ```
 final class SpringLogRecord {
   /// Creates a record of [level] from the logger [loggerName].
-  const SpringLogRecord(
+  SpringLogRecord(
     this.level,
     this.loggerName,
     this.message, {
     this.error,
     this.stackTrace,
-  });
+    this.fields = const {},
+    DateTime? time,
+    int? sequence,
+  }) : time = time ?? DateTime.now(),
+       sequence = sequence ?? _nextSequence++;
+
+  static int _nextSequence = 0;
 
   /// Severity.
   final SpringLogLevel level;
@@ -59,36 +72,54 @@ final class SpringLogRecord {
   /// Stack trace of [error], if any.
   final StackTrace? stackTrace;
 
+  /// Structured data: the [SpringLog.withFields] context of the caller
+  /// merged with the fields passed to the log call (like SLF4J's MDC and
+  /// key-value pairs). Never `null`.
+  final Map<String, Object?> fields;
+
+  /// When the record was created.
+  final DateTime time;
+
+  /// Increasing number, unique within the process.
+  final int sequence;
+
   @override
   String toString() =>
       '[$loggerName] ${level.name.toUpperCase()}: $message'
       '${error == null ? '' : ': $error'}';
 }
 
-/// Receives the records that pass [SpringLog.level].
+/// Receives the records that pass the logger's level.
 typedef SpringLogHandler = void Function(SpringLogRecord record);
 
-/// A named framework logger, like the `Log` instances Spring obtains from
-/// `LogFactory`.
+/// A named logger, like the `Log` instances Spring obtains from
+/// `LogFactory` (or SLF4J's `Logger`).
 ///
-/// The framework logs problems it recovers from (for example a destroy
-/// callback that throws while the context closes) instead of hiding them.
-/// By default records of [SpringLogLevel.warning] and above are printed;
-/// route them elsewhere with [handler] (for example to `package:logging`)
-/// and change the threshold with [level].
+/// This is the logging facade of the whole family: the framework, starters
+/// and applications log through it, and a logging backend (for example
+/// `spring_boot_starter_logging`) decides where records go via [handler].
+/// Without a backend, records of [SpringLogLevel.warning] and above are
+/// printed.
 ///
 /// ```dart
-/// SpringLog.level = SpringLogLevel.debug;
-/// SpringLog.handler = (record) => stderr.writeln(record);
+/// const log = SpringLog('neon.checkout');
 ///
-/// const log = SpringLog('my_app.startup');
-/// log.info('ready');
+/// log.info('order placed');
+/// log.debug(() => 'basket: ${basket.dump()}'); // built only if enabled
+/// log.error('payment failed', error: e, stackTrace: s, fields: {'order': 42});
+///
+/// SpringLog.level = SpringLogLevel.info;                   // root level
+/// SpringLog.setLevel('neon.checkout', SpringLogLevel.debug); // and below
 /// ```
+///
+/// Levels are hierarchical by dots: `neon.checkout.payment` uses the level
+/// of `neon.checkout.payment`, else `neon.checkout`, else `neon`, else the
+/// root [level].
 ///
 /// Spring (Java):
 /// ```java
-/// private static final Log log = LogFactory.getLog(MyBean.class);
-/// log.info("ready");
+/// private static final Log log = LogFactory.getLog(Checkout.class);
+/// log.info("order placed");
 /// ```
 final class SpringLog {
   /// Creates a logger named [name].
@@ -97,59 +128,170 @@ final class SpringLog {
   /// Logger name, e.g. `spring_core_dart.context`.
   final String name;
 
-  /// Minimum level that reaches [handler]; [SpringLogLevel.warning] by
-  /// default.
-  static SpringLogLevel level = SpringLogLevel.warning;
+  static SpringLogLevel _level = SpringLogLevel.warning;
+  static final _levels = <String, SpringLogLevel>{};
+  static final _effective = <String, SpringLogLevel>{};
+  static final _listeners = <SpringLogHandler>[];
+  static final _fieldsKey = Object();
 
-  /// Receives every record that passes [level]; [printLogHandler] by
-  /// default.
+  /// The root level: the minimum level of loggers without a level of
+  /// their own ([setLevel]); [SpringLogLevel.warning] by default.
+  static SpringLogLevel get level => _level;
+
+  static set level(SpringLogLevel value) {
+    _level = value;
+    _effective.clear();
+  }
+
+  /// Sets the level of the logger [name] and its descendants
+  /// (`a.b` also applies to `a.b.c`); `null` inherits again.
+  static void setLevel(String name, SpringLogLevel? level) {
+    if (level == null) {
+      _levels.remove(name);
+    } else {
+      _levels[name] = level;
+    }
+    _effective.clear();
+  }
+
+  /// Levels set with [setLevel], by logger name.
+  static Map<String, SpringLogLevel> get configuredLevels =>
+      Map.unmodifiable(_levels);
+
+  /// Removes every [setLevel] level (the root [level] stays).
+  static void resetLevels() {
+    _levels.clear();
+    _effective.clear();
+  }
+
+  /// The level that applies to the logger [name].
+  static SpringLogLevel levelOf(String name) =>
+      _effective[name] ??= _resolveLevel(name);
+
+  static SpringLogLevel _resolveLevel(String name) {
+    for (var current = name; ;) {
+      final own = _levels[current];
+      if (own != null) {
+        return own;
+      }
+      final dot = current.lastIndexOf('.');
+      if (dot < 0) {
+        return _level;
+      }
+      current = current.substring(0, dot);
+    }
+  }
+
+  /// The backend: receives every record that passes its logger's level;
+  /// [printLogHandler] by default.
   static SpringLogHandler handler = printLogHandler;
 
-  /// Whether records of [level] are currently emitted. Check it before
-  /// building expensive messages.
-  bool isEnabled(SpringLogLevel level) =>
-      level != SpringLogLevel.off && level.index >= SpringLog.level.index;
+  /// Also sends every emitted record to [listener] (after [handler]), for
+  /// example to capture logs in a test. Call the returned function to
+  /// stop. Errors thrown by listeners are ignored.
+  static void Function() listen(SpringLogHandler listener) {
+    // A wrapper, so the same function can be registered twice.
+    void wrapper(SpringLogRecord record) => listener(record);
+    _listeners.add(wrapper);
+    return () => _listeners.remove(wrapper);
+  }
 
-  /// Emits [message] at [level] if enabled.
+  /// Runs [body] with [fields] added to every record logged inside it,
+  /// also asynchronously (like SLF4J's MDC, but scoped by zones).
+  ///
+  /// ```dart
+  /// SpringLog.withFields({'request': id}, () => handle(request));
+  /// ```
+  static R withFields<R>(Map<String, Object?> fields, R Function() body) =>
+      runZoned(
+        body,
+        zoneValues: {
+          _fieldsKey: {...currentFields, ...fields},
+        },
+      );
+
+  /// The [withFields] context of the current zone.
+  static Map<String, Object?> get currentFields =>
+      (Zone.current[_fieldsKey] as Map<String, Object?>?) ?? const {};
+
+  /// Whether records of [level] are currently emitted by this logger.
+  /// Check it before building expensive messages (or pass a closure as
+  /// the message).
+  bool isEnabled(SpringLogLevel level) =>
+      level != SpringLogLevel.off && level.index >= levelOf(name).index;
+
+  /// Emits [message] at [level] if enabled. [message] may be a
+  /// `String Function()`, called only when the record is emitted.
   void log(
     SpringLogLevel level,
-    String message, {
+    Object? message, {
     Object? error,
     StackTrace? stackTrace,
+    Map<String, Object?> fields = const {},
   }) {
-    if (isEnabled(level)) {
-      handler(
-        SpringLogRecord(
-          level,
-          name,
-          message,
-          error: error,
-          stackTrace: stackTrace,
-        ),
-      );
+    if (!isEnabled(level)) {
+      return;
+    }
+    final context = currentFields;
+    final record = SpringLogRecord(
+      level,
+      name,
+      '${message is Object? Function() ? message() : message}',
+      error: error,
+      stackTrace: stackTrace,
+      fields: context.isEmpty
+          ? Map.unmodifiable(fields)
+          : Map.unmodifiable({...context, ...fields}),
+    );
+    handler(record);
+    for (final listener in List.of(_listeners)) {
+      try {
+        listener(record);
+      } catch (_) {
+        // A broken listener must not break the caller.
+      }
     }
   }
 
   /// Emits a [SpringLogLevel.trace] message.
-  void trace(String message) => log(SpringLogLevel.trace, message);
+  void trace(Object? message, {Map<String, Object?> fields = const {}}) =>
+      log(SpringLogLevel.trace, message, fields: fields);
 
   /// Emits a [SpringLogLevel.debug] message.
-  void debug(String message) => log(SpringLogLevel.debug, message);
+  void debug(Object? message, {Map<String, Object?> fields = const {}}) =>
+      log(SpringLogLevel.debug, message, fields: fields);
 
   /// Emits a [SpringLogLevel.info] message.
-  void info(String message) => log(SpringLogLevel.info, message);
+  void info(Object? message, {Map<String, Object?> fields = const {}}) =>
+      log(SpringLogLevel.info, message, fields: fields);
 
   /// Emits a [SpringLogLevel.warning] message.
-  void warning(String message, {Object? error, StackTrace? stackTrace}) => log(
+  void warning(
+    Object? message, {
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, Object?> fields = const {},
+  }) => log(
     SpringLogLevel.warning,
     message,
     error: error,
     stackTrace: stackTrace,
+    fields: fields,
   );
 
   /// Emits a [SpringLogLevel.error] message.
-  void error(String message, {Object? error, StackTrace? stackTrace}) =>
-      log(SpringLogLevel.error, message, error: error, stackTrace: stackTrace);
+  void error(
+    Object? message, {
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, Object?> fields = const {},
+  }) => log(
+    SpringLogLevel.error,
+    message,
+    error: error,
+    stackTrace: stackTrace,
+    fields: fields,
+  );
 
   @override
   String toString() => 'SpringLog($name)';
@@ -160,3 +302,17 @@ void printLogHandler(SpringLogRecord record) {
   // ignore: avoid_print
   print(record);
 }
+
+/// Parses a level name as used in properties (`logging.level.*`):
+/// `trace`, `debug`, `info`, `warn`/`warning`, `error`, `off`
+/// (case-insensitive); `null` for anything else.
+SpringLogLevel? parseSpringLogLevel(String? value) =>
+    switch (value?.trim().toLowerCase()) {
+      'trace' => SpringLogLevel.trace,
+      'debug' => SpringLogLevel.debug,
+      'info' => SpringLogLevel.info,
+      'warn' || 'warning' => SpringLogLevel.warning,
+      'error' || 'fatal' => SpringLogLevel.error,
+      'off' => SpringLogLevel.off,
+      _ => null,
+    };

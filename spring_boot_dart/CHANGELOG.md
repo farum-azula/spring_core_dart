@@ -15,5 +15,11 @@ Initial version.
 - `AutoConfigurationModule(requires:)` with a build-time compatibility
   check against `springBootVersion`.
 - Generated `runApplicationAsync` for asynchronous config (Flutter assets).
-- `ApplicationArguments`, `ApplicationRunner`, `CommandLineRunner`,
-  `logging.level.root`, startup line and failure analysis reports.
+- `ApplicationArguments`, `ApplicationRunner`, `CommandLineRunner` (both
+  kinds sorted together by order, a bean implementing both called as
+  both), startup line and failure analysis reports.
+- `logging.level.root`, `logging.level.<logger>`, `logging.group.*` and
+  `LOGGING_LEVEL_*` variables applied to `SpringLog`
+  (`SpringApplication.applyLoggingLevels`).
+- `SpringApplication(initializers:)` (`ApplicationContextInitializer`) and
+  `run(args, properties:)` with the highest precedence.

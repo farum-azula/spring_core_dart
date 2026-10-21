@@ -153,6 +153,29 @@ void main() {
     context.close();
   });
 
+  test('both runner kinds are sorted together by order', () {
+    final calls = <String>[];
+    final context = SpringApplication([
+      appModule(),
+      BeanModule('runners', [
+        BeanDefinition<_AppRunner>(
+          name: 'lateApp',
+          types: const [_AppRunner, ApplicationRunner],
+          order: 2,
+          create: (_) => _AppRunner(() => calls.add('app@2')),
+        ),
+        BeanDefinition<_CliRunner>(
+          name: 'earlyCli',
+          types: const [_CliRunner, CommandLineRunner],
+          order: 1,
+          create: (_) => _CliRunner(() => calls.add('cli@1')),
+        ),
+      ]),
+    ], out: lines.add).run(['--db.url=x'], systemEnvironment: const {});
+    addTearDown(context.close);
+    expect(calls, ['cli@1', 'app@2']);
+  });
+
   test('ConditionalOnProperty', () {
     final env = StandardEnvironment(systemEnvironment: {})
       ..propertySources.addFirst(
@@ -179,6 +202,64 @@ void main() {
     run(['--db.url=x', '--logging.level.root=debug']).close();
     expect(SpringLog.level, SpringLogLevel.debug);
   });
+
+  test('logging.level.<logger>, groups and LOGGING_LEVEL_ variables', () {
+    final saved = SpringLog.level;
+    addTearDown(() {
+      SpringLog.level = saved;
+      SpringLog.resetLevels();
+    });
+    SpringLog.setLevel('stale.from.earlier.run', SpringLogLevel.trace);
+    run(
+      [
+        '--db.url=x',
+        '--logging.level.root=warn',
+        '--logging.level.neon.checkout=debug',
+        '--logging.group.payments=neon.card, neon.cash',
+        '--logging.level.payments=trace',
+        '--logging.level.neon.catalog=loud', // unknown: ignored
+      ],
+      env: {
+        'LOGGING_LEVEL_NEON_CHECKOUT': 'error', // command line wins
+        'LOGGING_LEVEL_NEON_SHIPPING': 'info',
+      },
+    ).close();
+    expect(SpringLog.level, SpringLogLevel.warning);
+    expect(SpringLog.configuredLevels, {
+      'neon.checkout': SpringLogLevel.debug,
+      'neon.card': SpringLogLevel.trace,
+      'neon.cash': SpringLogLevel.trace,
+      'neon.shipping': SpringLogLevel.info,
+    });
+    expect(SpringLog.levelOf('neon.card.visa'), SpringLogLevel.trace);
+  });
+
+  test('properties win over the command line; initializers run first', () {
+    final seen = <String>[];
+    final context =
+        SpringApplication(
+          [appModule()],
+          autoConfigurations: [autoModule],
+          initializers: [
+            (context) => seen.add('active: ${context.isActive}'),
+            (context) => context.beanFactory.registerSingleton(
+              'fromInitializer',
+              'hello',
+              types: const [String],
+            ),
+          ],
+          out: lines.add,
+        ).run(
+          ['--db.url=from-args'],
+          systemEnvironment: const {},
+          properties: {'db.url': 'from-test', 'db.max-size': 3},
+        );
+    addTearDown(context.close);
+    expect(context.getBean<Pool>().url, 'from-test');
+    expect(context.getBean<Pool>().maxSize, 3);
+    expect(context.getBeanByName('fromInitializer'), 'hello');
+    expect(seen, ['active: false']);
+  });
 }
 
 class _Ctx implements ConditionContext {
@@ -193,4 +274,18 @@ class _Ctx implements ConditionContext {
       context.beanFactory as BeanDefinitionRegistry;
   @override
   ResourceLoader get resourceLoader => context;
+}
+
+class _AppRunner implements ApplicationRunner {
+  _AppRunner(this.call);
+  final void Function() call;
+  @override
+  void run(ApplicationArguments args) => call();
+}
+
+class _CliRunner implements CommandLineRunner {
+  _CliRunner(this.call);
+  final void Function() call;
+  @override
+  void run(List<String> args) => call();
 }

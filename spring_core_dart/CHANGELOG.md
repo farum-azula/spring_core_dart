@@ -1,5 +1,13 @@
 ## Unreleased
 
+- `ClasspathResources.addDirectory`: directories searched before the
+  embedded `lib/resources/` files (the test classpath).
+- `SpringLog` is the logging facade of the family: per-logger levels
+  inherited by dots (`setLevel`, `levelOf`), lazy messages
+  (`log.debug(() => ...)`), structured `fields`, zone-scoped context
+  (`SpringLog.withFields`, like MDC), `listen` for extra listeners, and
+  records with `time` and `sequence`. `parseSpringLogLevel` reads property
+  values.
 - A bean is no longer injected into itself: `@Primary` composites and
   decorators receive the other beans of their type (Spring's
   self-reference rule).
