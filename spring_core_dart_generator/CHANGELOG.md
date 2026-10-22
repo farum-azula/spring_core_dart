@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0
 
 - Generated code compiles for SDK types as beans (`HttpClient` imported
   from `dart:io`, internal supertypes such as `EfficientLengthIterable`
@@ -37,7 +37,6 @@
 - Proxy signatures include annotation type names (`annotationTypes`,
   `targetAnnotationTypes`) for release-safe `@annotation` matching.
 
-## 0.1.0
 
 Initial release.
 

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0
 
 - `Advised` members are `aopTarget` and `aopAdvisors` (were `targetObject`
   and `advisors`), so domain methods named `advisors` can be proxied.
@@ -61,7 +61,6 @@
   as a fallback; config data looks in `classpath:/` and `classpath:/config/`
   first; `@Value('classpath:...') Resource` injection.
 
-## 0.1.0
 
 Initial release.
 
