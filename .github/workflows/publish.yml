@@ -1,34 +1,83 @@
-name: Publish to pub.dev
+name: 'Release: publish to pub.dev'
 
-# Publishes every package when a `v<version>` tag is pushed (by release.yml
-# or by hand). No password or token: pub.dev trusts this repository through
-# GitHub's OpenID Connect token once automated publishing is enabled on each
-# package's admin page (repository farum-azula/spring_core_dart, tag pattern
-# `v{{version}}`).
+# Step 2 of a release: runs when a `v<version>` tag is pushed (by
+# "Release: bump version" or by hand) and publishes every package as its own
+# job, dependencies first, so each package's progress is visible:
+#
+#   tests → spring_core_dart → spring_core_dart_generator, spring_boot_dart
+#         → spring_boot_starter_logging, spring_boot_starter_test
+#
+# No password or token: pub.dev trusts this repository through GitHub's
+# OpenID Connect token once automated publishing is enabled on each package's
+# admin page (repository farum-azula/spring_core_dart, tag pattern
+# `v{{version}}`). Versions already on pub.dev are skipped, so a failed run
+# can simply be re-run.
 
 on:
   push:
     tags: ['v[0-9]+.[0-9]+.[0-9]+*']
 
+permissions:
+  contents: read
+
 jobs:
-  publish:
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write # the OIDC token pub.dev accepts
-      contents: read
     steps:
       - uses: actions/checkout@v4
-
-      # With id-token permission, setup-dart signs `dart pub publish` in with
-      # the OIDC token.
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-
       - run: dart pub get
+      - run: dart run tool/test_all.dart --packages
 
-      - name: Tests before publishing
-        run: dart run tool/test_all.dart --packages
+  core:
+    name: Publish spring_core_dart
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # the OIDC token pub.dev accepts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package spring_core_dart
 
-      - name: Publish (dependencies first, already published versions skipped)
-        run: dart run tool/publish.dart
+  on-core:
+    name: Publish ${{ matrix.package }}
+    needs: core
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [spring_core_dart_generator, spring_boot_dart]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package ${{ matrix.package }}
+
+  starters:
+    name: Publish ${{ matrix.package }}
+    needs: on-core
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [spring_boot_starter_logging, spring_boot_starter_test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package ${{ matrix.package }}

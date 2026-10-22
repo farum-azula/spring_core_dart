@@ -4,8 +4,9 @@
 // `v<version>` tag is pushed; locally (after `dart pub login`) for the first
 // release, before automated publishing can be enabled on pub.dev.
 //
-//   dart run tool/publish.dart            # publish
-//   dart run tool/publish.dart --dry-run  # validate only
+//   dart run tool/publish.dart                     # publish every package
+//   dart run tool/publish.dart --package <name>    # only one (one CI job each)
+//   dart run tool/publish.dart --dry-run           # validate only
 import 'dart:io';
 
 import 'version.dart' as family;
@@ -13,6 +14,15 @@ import 'version.dart' as family;
 Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final dryRun = args.contains('--dry-run');
+  final only = args.contains('--package')
+      ? args[args.indexOf('--package') + 1]
+      : null;
+  if (only != null && !family.family.contains(only)) {
+    stderr.writeln(
+      'Unknown package $only; one of ${family.family.join(', ')}.',
+    );
+    exit(64);
+  }
   final problems = family.check();
   if (problems.isNotEmpty) {
     problems.forEach(stderr.writeln);
@@ -26,7 +36,7 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
   // `family` is already in dependency order: core, generator, Boot, starters.
-  for (final package in family.family) {
+  for (final package in [?only, if (only == null) ...family.family]) {
     if (!dryRun && await _isPublished(package, version)) {
       stdout.writeln('$package $version is already on pub.dev, skipped.');
       continue;

@@ -1,9 +1,10 @@
-name: Release
+name: 'Release: bump version'
 
-# After CI passes on a push to main: bump the version of every package
-# (tool/release.dart), commit it and push a `v<version>` tag, which starts
-# publish.yml. The tag is pushed with RELEASE_TOKEN: tags pushed with the
-# default GITHUB_TOKEN do not start other workflows.
+# Step 1 of a release. After CI passes on a push to main: bump the version
+# of every package (tool/release.dart), commit it and push a `v<version>`
+# tag, which starts step 2, publish.yml ("Release: publish to pub.dev").
+# The tag is pushed with RELEASE_TOKEN: tags pushed with the default
+# GITHUB_TOKEN do not start other workflows.
 #
 # The release commit runs CI again; this workflow then finds no commits
 # since the tag and stops, so there is no loop.
