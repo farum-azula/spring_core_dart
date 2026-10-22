@@ -1,3 +1,8 @@
+## 0.1.2
+
+- ci: release only from the release branch; fix version-dependent test; Node 24 actions
+- fix tests
+
 ## 0.1.1
 
 - Example on pub.dev (`example/`) and a description within 180 characters.

@@ -1,3 +1,8 @@
+## 0.1.2
+
+- ci: release only from the release branch; fix version-dependent test; Node 24 actions
+- fix tests
+
 ## 0.1.1
 
 - Generated modules and `springApplication` are getters (a hot reload replaces their bodies), with a `fingerprint` of the generated code and `reloadApplication` / `reloadApplicationAsync` (with `runners:`).
