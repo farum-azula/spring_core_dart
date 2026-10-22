@@ -5,6 +5,9 @@ library;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
+    show FeignNotFound;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
     show ScheduledAnnotationBeanPostProcessor;
@@ -22,6 +25,8 @@ import 'package:spring_core_dart_example/src/events/orders.dart';
 import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
 import 'package:spring_core_dart_example/src/extension/extension_points.dart';
 import 'package:spring_core_dart_example/src/payments/payments.dart';
+import 'package:spring_core_dart_example/src/remote/catalog_api.dart';
+import 'package:spring_core_dart_example/src/remote/demo_catalog_server.dart';
 import 'package:spring_core_dart_example/src/tour_log.dart';
 import 'package:spring_core_dart_example/src/ui/screen.dart';
 import 'package:spring_core_dart_example/src/validation/forms.dart';
@@ -46,6 +51,7 @@ ConfigurableApplicationContext startShop(
     springBootAutoConfiguration,
     springBootStarterSchedulingAutoConfiguration,
     springBootStarterCacheAutoConfiguration,
+    springBootStarterFeignAutoConfiguration,
   ];
   final environment = StandardEnvironment(systemEnvironment: systemEnvironment)
     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
@@ -73,6 +79,7 @@ const tourSections = [
   'scheduling',
   'cache',
   'json',
+  'feign',
   'hierarchy',
   'failures',
   'shutdown',
@@ -86,7 +93,12 @@ Future<void> runTour(
   Map<String, String>? systemEnvironment,
 }) async {
   tourLog.clear();
-  final context = startShop(args, systemEnvironment: systemEnvironment);
+  // The remote catalog the Feign client of the 'feign' section calls.
+  final catalogServer = await DemoCatalogServer.start();
+  final context = startShop([
+    ...args,
+    '--neon.catalog-api.url=${catalogServer.url}',
+  ], systemEnvironment: systemEnvironment);
   // What the beans recorded while the context started (lifecycle order).
   final startup = [...tourLog];
   tourLog.clear();
@@ -105,6 +117,7 @@ Future<void> runTour(
   if (context.isActive) {
     context.close();
   }
+  await catalogServer.close();
 }
 
 class _Tour {
@@ -129,6 +142,7 @@ class _Tour {
     'scheduling' => await scheduling(),
     'cache' => await cache(),
     'json' => json(),
+    'feign' => await feign(),
     'hierarchy' => hierarchy(),
     'failures' => failures(),
     'shutdown' => shutdown(),
@@ -527,6 +541,42 @@ class _Tour {
     } on JsonMappingException catch (error) {
       show('error', error);
     }
+  }
+
+  // A @FeignClient against a local HTTP service (spring_boot_starter_feign).
+  Future<void> feign() async {
+    final api = context.getBean<CatalogApi>();
+    final dune = await api.find('978-0');
+    show('find (GET /books/{isbn})', '${dune.title} by ${dune.author.name}');
+    final before = DemoCatalogServer.requests;
+    await api.find('978-0');
+    show(
+      'find again (@Cacheable on the client): requests sent',
+      DemoCatalogServer.requests - before,
+    );
+    final found = await api.search('messiah');
+    show('search (GET /books?q=)', [for (final book in found) book.title]);
+    final created = await api.create(
+      const BookDto(
+        isbn: '978-2',
+        title: 'Children of Dune',
+        author: AuthorDto('Frank Herbert'),
+      ),
+    );
+    show(
+      'create (POST, ResponseEntity)',
+      '${created.statusCode} ${created.headers['location']} '
+          '${created.body!.title}',
+    );
+    try {
+      await api.find('404');
+    } on FeignNotFound catch (error) {
+      show('find unknown → FeignNotFound', error.status);
+    }
+    show(
+      'motd (server error → fallback)',
+      await context.getBean<MotdApi>().messageOfTheDay(),
+    );
   }
 
   // Parent and child contexts built from hand-written modules.

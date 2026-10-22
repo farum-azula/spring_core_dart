@@ -764,6 +764,36 @@ With Spring Boot, levels come from `logging.level.*` properties.
 `BeanModule`s, `registerSingleton`, `@Configurable` + `autowireBean` for
 objects created elsewhere (e.g. Flutter `State`).
 
+Your own interface implementations: mark an annotation class with
+`@InterfaceProxy()` and every abstract class carrying that annotation
+becomes a bean whose implementation the generator writes — each method hands
+the call, with its annotations, parameter names and types, to an
+`InvocationHandler` that an `InvocationHandlerFactory` bean creates (Java's
+dynamic proxies, without reflection). This is how `@FeignClient` works, and
+how Spring Data repositories will:
+
+```dart
+@InterfaceProxy()
+class Remote {
+  const Remote(this.name);
+  final String name;
+}
+
+@Remote('greetings')
+abstract interface class Greeter {
+  Future<String> greet(String name);
+}
+
+final class RemoteHandlers implements InvocationHandlerFactory {
+  @override
+  bool supports(InterfaceMetadata<Object> metadata) =>
+      metadata.annotation<Remote>() != null;
+
+  @override
+  InvocationHandler create(InterfaceMetadata<Object> metadata) => MyHandler(metadata);
+}
+```
+
 Your own method annotations: mark the annotation class with
 `@BeanMethodAnnotation()` and the generator lists every bean method that
 carries it in `BeanDefinition.annotatedMethods`, with its annotations and a

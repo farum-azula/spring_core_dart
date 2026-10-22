@@ -10,6 +10,7 @@
 // `runtimeType.toString()` would silently stop working here.
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
     show Scheduled, ScheduledAnnotationBeanPostProcessor;
@@ -19,6 +20,7 @@ import 'package:spring_core_dart_example/src/api/book_dto.dart';
 import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/cache/price_list.dart';
 import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
+import 'package:spring_core_dart_example/src/remote/catalog_api.dart';
 import 'package:spring_core_dart_example/src/tour_log.dart';
 
 void main() {
@@ -29,6 +31,7 @@ void main() {
     springBootAutoConfiguration,
     springBootStarterSchedulingAutoConfiguration,
     springBootStarterCacheAutoConfiguration,
+    springBootStarterFeignAutoConfiguration,
   ];
   final environment = StandardEnvironment(systemEnvironment: {});
   ConfigDataEnvironment(environment).processAndApplySync();
@@ -93,6 +96,12 @@ void main() {
       book.availability != Availability.soldOut ||
       book.formats.single != BookFormat.paperback) {
     throw StateError('ObjectMapper round trip failed');
+  }
+  // Feign: the generated client implementation, created through the
+  // starter's factory (with the fetch transport under JavaScript).
+  context.getBean<CatalogApi>();
+  if (context.getBean<MotdApi>() is OfflineMotd) {
+    throw StateError('the Feign client should be primary over its fallback');
   }
   context.close();
   print('release check passed');

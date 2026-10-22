@@ -31,6 +31,8 @@ const repositoryOnly = {
   'spring_boot_starter_logging',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
+  'spring_web_dart',
+  'spring_boot_starter_feign',
 };
 
 /// A package allowed although it is not published by the Dart team.

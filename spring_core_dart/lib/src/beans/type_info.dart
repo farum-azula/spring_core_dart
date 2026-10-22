@@ -67,6 +67,10 @@ abstract interface class TypeInfoVisitor<R> {
   /// An enum.
   R visitEnum<E extends Enum>(EnumType<E> type);
 
+  /// Another generic class with its type arguments, e.g.
+  /// `ResponseEntity<Book>`.
+  R visitGeneric<T>(GenericType<T> type);
+
   /// `dynamic`, `Object` or a type that is not described further.
   R visitDynamic(DynamicType type);
 }
@@ -162,6 +166,26 @@ final class EnumType<E extends Enum> extends TypeInfo<E> {
 
   @override
   String toString() => '$E${nullable ? '?' : ''}';
+}
+
+/// A generic class other than the collections, with its type [arguments]:
+/// `GenericType<ResponseEntity<Book>>([ClassType<Book>()])`. [T] is the
+/// whole type; [arguments] describe its type arguments in order.
+final class GenericType<T> extends TypeInfo<T> {
+  /// Describes [T] with the descriptions of its type [arguments].
+  const GenericType(this.arguments, {super.nullable});
+
+  /// The type arguments, in order.
+  final List<TypeInfo<Object?>> arguments;
+
+  /// Whether [T] is a subtype of [S] (e.g. `ResponseEntity<Object?>`).
+  bool isSubtypeOf<S>() => <T>[] is List<S>;
+
+  @override
+  R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitGeneric<T>(this);
+
+  @override
+  String toString() => '$T${nullable ? '?' : ''}';
 }
 
 /// `dynamic`, `Object?` or a type that is not described further: values

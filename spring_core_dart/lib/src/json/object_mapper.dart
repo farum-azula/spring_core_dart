@@ -521,6 +521,12 @@ final class _Reader implements TypeInfoVisitor<Object?> {
   Object? visitEnum<E extends Enum>(EnumType<E> type) =>
       mapper._readEnum<E>(type, json, path);
 
+  // Generic classes are read by a JsonDeserializer or their own fromJson;
+  // generic introspected classes are not supported yet.
+  @override
+  Object? visitGeneric<T>(GenericType<T> type) =>
+      mapper._readClass<T>(json, path);
+
   @override
   Object? visitList<E>(ListType<E> type) => type.create(_items(type.element));
 
