@@ -67,6 +67,10 @@ class ConfigurationProperties extends Component implements Introspected {
   /// Whether constraint annotations are checked after binding (Boot's
   /// `@Validated`).
   final bool validate;
+
+  /// No extra classes to introspect (see `Introspected.classes`).
+  @override
+  List<Type> get classes => const [];
 }
 
 /// A configuration class provided by a library ("starter"), like Spring

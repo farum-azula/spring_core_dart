@@ -16,6 +16,7 @@ import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_core_dart_example/external/legacy_config.dart' as _i13;
 import 'package:spring_core_dart_example/src/aop/aspects.dart' as _i1;
 import 'package:spring_core_dart_example/src/aop/self_invocation.dart' as _i4;
+import 'package:spring_core_dart_example/src/api/book_dto.dart' as _i23;
 import 'package:spring_core_dart_example/src/boot/console_log_screen.dart'
     as _i5;
 import 'package:spring_core_dart_example/src/boot/shop_properties.dart' as _i8;
@@ -31,8 +32,8 @@ import 'package:spring_core_dart_example/src/features/features.dart' as _i17;
 import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart' as _i18;
 import 'package:spring_core_dart_example/src/lifecycle/lifecycle.dart' as _i19;
 import 'package:spring_core_dart_example/src/payments/payments.dart' as _i10;
-import 'package:spring_core_dart_example/src/ui/screen.dart' as _i24;
-import 'package:spring_core_dart_example/src/validation/forms.dart' as _i23;
+import 'package:spring_core_dart_example/src/ui/screen.dart' as _i25;
+import 'package:spring_core_dart_example/src/validation/forms.dart' as _i24;
 
 class _$DefaultPricingServiceProxy
     implements _i1.DefaultPricingService, _i1.PricingService, _i2.Advised {
@@ -3630,7 +3631,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       'payment.mode=live\ndb.url=postgres://prod/books\n',
     ),
     r'application.properties': _i2.EmbeddedResource.text(
-      '# lib/resources/ is the classpath (like src/main/resources): this file is\n# found as classpath:application.properties (Spring Boot config data).\napp.name=NEON Books\napp.currency=EUR\n# Spring Boot\'s MessageSourceAutoConfiguration: classpath:messages/messages*.properties\nspring.messages.basename=messages/messages\nspring.profiles.active=dev\nspring.profiles.group.dev=dev-tools\nspring.config.import=optional:classpath:extra.properties\n\n# Environment variables in property values, like Spring: \${NAME} or\n# \${NAME:default}. Run e.g. `DB_PASSWORD=s3cret dart run bin/main.dart`.\ndb.user=\${DB_USER:books}\ndb.password=\${DB_PASSWORD:changeme}\ndb.connection=\${db.user}@\${db.url}\n\ncatalog.page-size=2\nspring.application.name=neon-books\nshop.delivery-time=2d\nshop.opening-hours=9-21\nshop.tags=fiction,science,poetry\nfeature.recommendations=true\n# @Scheduled(fixedDelayString: r\'\${shop.stock-refresh:1m}\') in StockJobs.\nshop.stock-refresh=20ms\n\n# spring_boot_starter_logging (bin/shop.dart): levels per logger (also\n# LOGGING_LEVEL_NEON_CHECKOUT=trace), console pattern, buffer size.\nlogging.level.neon=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m%X\nlogging.buffer.capacity=500\n# Also a log file (relative to the working directory; build/ is ignored by\n# git), rolled over at 1 MB into neon-books.log.1, .2, .3.\nlogging.file.name=build/logs/neon-books.log\nlogging.file.max-size=1MB\nlogging.file.max-history=3\n\n#---\n# A negated guard: applies to every profile except prod.\nspring.config.activate.on-profile=!prod\nlog.level=DEBUG\n',
+      '# lib/resources/ is the classpath (like src/main/resources): this file is\n# found as classpath:application.properties (Spring Boot config data).\napp.name=NEON Books\napp.currency=EUR\n# Spring Boot\'s MessageSourceAutoConfiguration: classpath:messages/messages*.properties\nspring.messages.basename=messages/messages\nspring.profiles.active=dev\nspring.profiles.group.dev=dev-tools\nspring.config.import=optional:classpath:extra.properties\n\n# Environment variables in property values, like Spring: \${NAME} or\n# \${NAME:default}. Run e.g. `DB_PASSWORD=s3cret dart run bin/main.dart`.\ndb.user=\${DB_USER:books}\ndb.password=\${DB_PASSWORD:changeme}\ndb.connection=\${db.user}@\${db.url}\n\ncatalog.page-size=2\nspring.application.name=neon-books\nshop.delivery-time=2d\nshop.opening-hours=9-21\nshop.tags=fiction,science,poetry\nfeature.recommendations=true\n# @Scheduled(fixedDelayString: r\'\${shop.stock-refresh:1m}\') in StockJobs.\nshop.stock-refresh=20ms\n# ObjectMapper (JSON): null values are left out.\nspring.jackson.default-property-inclusion=non_null\n\n# spring_boot_starter_logging (bin/shop.dart): levels per logger (also\n# LOGGING_LEVEL_NEON_CHECKOUT=trace), console pattern, buffer size.\nlogging.level.neon=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m%X\nlogging.buffer.capacity=500\n# Also a log file (relative to the working directory; build/ is ignored by\n# git), rolled over at 1 MB into neon-books.log.1, .2, .3.\nlogging.file.name=build/logs/neon-books.log\nlogging.file.max-size=1MB\nlogging.file.max-history=3\n\n#---\n# A negated guard: applies to every profile except prod.\nspring.config.activate.on-profile=!prod\nlog.level=DEBUG\n',
     ),
     r'extra.properties': _i2.EmbeddedResource.text(
       '# Pulled in with spring.config.import.\nsupport.email=help@neon.books\n',
@@ -3670,11 +3671,151 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
     ),
   ],
   introspections: [
+    _i2.BeanIntrospection<_i23.BookDto>(
+      properties: [
+        _i2.BeanProperty<_i23.BookDto>(
+          r'isbn',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+          get: (bean) => bean.isbn,
+        ),
+        _i2.BeanProperty<_i23.BookDto>(
+          r'title',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+          get: (bean) => bean.title,
+        ),
+        _i2.BeanProperty<_i23.BookDto>(
+          r'author',
+          type: _i23.AuthorDto,
+          typeInfo: const _i2.ClassType<_i23.AuthorDto>(),
+          get: (bean) => bean.author,
+        ),
+        _i2.BeanProperty<_i23.BookDto>(
+          r'formats',
+          type: List<_i23.BookFormat>,
+          typeInfo: const _i2.ListType<_i23.BookFormat>(
+            _i2.EnumType<_i23.BookFormat>(_i23.BookFormat.values),
+          ),
+          get: (bean) => bean.formats,
+        ),
+        _i2.BeanProperty<_i23.BookDto>(
+          r'availability',
+          type: _i23.Availability,
+          typeInfo: _i2.EnumType<_i23.Availability>(
+            _i23.Availability.values,
+            jsonValue: (value) => value.json,
+          ),
+          get: (bean) => bean.availability,
+        ),
+        _i2.BeanProperty<_i23.BookDto>(
+          r'publishedAt',
+          type: DateTime,
+          nullable: true,
+          typeInfo: const _i2.ClassType<DateTime>(nullable: true),
+          get: (bean) => bean.publishedAt,
+          annotations: const [_i2.JsonProperty(r'published_at')],
+        ),
+        _i2.BeanProperty<_i23.BookDto>(
+          r'price',
+          type: double,
+          nullable: true,
+          typeInfo: const _i2.ClassType<double>(nullable: true),
+          get: (bean) => bean.price,
+        ),
+      ],
+      annotations: const [_i2.JsonIgnoreProperties(ignoreUnknown: true)],
+      constructor: _i2.BeanConstructor<_i23.BookDto>(
+        parameters: [
+          _i2.BeanParameter(
+            r'isbn',
+            type: const _i2.ClassType<String>(),
+            symbol: #isbn,
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'title',
+            type: const _i2.ClassType<String>(),
+            symbol: #title,
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'author',
+            type: const _i2.ClassType<_i23.AuthorDto>(),
+            symbol: #author,
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'formats',
+            type: const _i2.ListType<_i23.BookFormat>(
+              _i2.EnumType<_i23.BookFormat>(_i23.BookFormat.values),
+            ),
+            symbol: #formats,
+          ),
+          _i2.BeanParameter(
+            r'availability',
+            type: _i2.EnumType<_i23.Availability>(
+              _i23.Availability.values,
+              jsonValue: (value) => value.json,
+            ),
+            symbol: #availability,
+          ),
+          _i2.BeanParameter(
+            r'publishedAt',
+            type: const _i2.ClassType<DateTime>(nullable: true),
+            symbol: #publishedAt,
+          ),
+          _i2.BeanParameter(
+            r'price',
+            type: const _i2.ClassType<double>(nullable: true),
+            symbol: #price,
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i23.BookDto.new, positional, named)
+                as _i23.BookDto),
+      ),
+    ),
+    _i2.BeanIntrospection<_i23.AuthorDto>(
+      properties: [
+        _i2.BeanProperty<_i23.AuthorDto>(
+          r'name',
+          type: String,
+          typeInfo: const _i2.ClassType<String>(),
+          get: (bean) => bean.name,
+        ),
+        _i2.BeanProperty<_i23.AuthorDto>(
+          r'born',
+          type: int,
+          nullable: true,
+          typeInfo: const _i2.ClassType<int>(nullable: true),
+          get: (bean) => bean.born,
+        ),
+      ],
+      constructor: _i2.BeanConstructor<_i23.AuthorDto>(
+        parameters: [
+          _i2.BeanParameter(
+            r'name',
+            type: const _i2.ClassType<String>(),
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'born',
+            type: const _i2.ClassType<int>(nullable: true),
+            symbol: #born,
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i23.AuthorDto.new, positional, named)
+                as _i23.AuthorDto),
+      ),
+    ),
     _i2.BeanIntrospection<_i8.ShopProperties>(
       properties: [
         _i2.BeanProperty<_i8.ShopProperties>(
           r'name',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
           set: (bean, value) => bean.name = (value as String),
           annotations: const [_i2.NotBlank()],
@@ -3682,18 +3823,21 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         _i2.BeanProperty<_i8.ShopProperties>(
           r'openingHours',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.openingHours,
           set: (bean, value) => bean.openingHours = (value as String),
         ),
         _i2.BeanProperty<_i8.ShopProperties>(
           r'deliveryTime',
           type: Duration,
+          typeInfo: const _i2.ClassType<Duration>(),
           get: (bean) => bean.deliveryTime,
           set: (bean, value) => bean.deliveryTime = (value as Duration),
         ),
         _i2.BeanProperty<_i8.ShopProperties>(
           r'maxBasketSize',
           type: int,
+          typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.maxBasketSize,
           set: (bean, value) => bean.maxBasketSize = (value as int),
           annotations: const [_i2.Min(1)],
@@ -3701,27 +3845,37 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       ],
       annotations: const [_i20.ConfigurationProperties(r'shop')],
       instantiate: () => _i8.ShopProperties(),
+      constructor: _i2.BeanConstructor<_i8.ShopProperties>(
+        parameters: [],
+        create: (positional, named) =>
+            (Function.apply(_i8.ShopProperties.new, positional, named)
+                as _i8.ShopProperties),
+      ),
     ),
     _i2.BeanIntrospection<_i9.Book>(
       properties: [
         _i2.BeanProperty<_i9.Book>(
           r'isbn',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.isbn,
         ),
         _i2.BeanProperty<_i9.Book>(
           r'title',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.title,
         ),
         _i2.BeanProperty<_i9.Book>(
           r'price',
           type: double,
+          typeInfo: const _i2.ClassType<double>(),
           get: (bean) => bean.price,
         ),
         _i2.BeanProperty<_i9.Book>(
           r'tags',
           type: List<String>,
+          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
           get: (bean) => bean.tags,
         ),
       ],
@@ -3732,34 +3886,81 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
         ),
       ],
+      constructor: _i2.BeanConstructor<_i9.Book>(
+        parameters: [
+          _i2.BeanParameter(
+            r'isbn',
+            type: const _i2.ClassType<String>(),
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'title',
+            type: const _i2.ClassType<String>(),
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'price',
+            type: const _i2.ClassType<double>(),
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'tags',
+            type: const _i2.ListType<String>(_i2.ClassType<String>()),
+            symbol: #tags,
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i9.Book.new, positional, named) as _i9.Book),
+      ),
     ),
     _i2.BeanIntrospection<_i14.AppInfo>(
       properties: [
         _i2.BeanProperty<_i14.AppInfo>(
           r'name',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
         ),
         _i2.BeanProperty<_i14.AppInfo>(
           r'currency',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.currency,
         ),
       ],
+      constructor: _i2.BeanConstructor<_i14.AppInfo>(
+        parameters: [
+          _i2.BeanParameter(
+            r'name',
+            type: const _i2.ClassType<String>(),
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'currency',
+            type: const _i2.ClassType<String>(),
+            isRequired: true,
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i14.AppInfo.new, positional, named)
+                as _i14.AppInfo),
+      ),
     ),
-    _i2.BeanIntrospection<_i23.Address>(
+    _i2.BeanIntrospection<_i24.Address>(
       properties: [
-        _i2.BeanProperty<_i23.Address>(
+        _i2.BeanProperty<_i24.Address>(
           r'city',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.city,
           set: (bean, value) => bean.city = (value as String),
           annotations: const [_i2.NotBlank()],
         ),
-        _i2.BeanProperty<_i23.Address>(
+        _i2.BeanProperty<_i24.Address>(
           r'zip',
           type: String,
           nullable: true,
+          typeInfo: const _i2.ClassType<String>(nullable: true),
           get: (bean) => bean.zip,
           set: (bean, value) => bean.zip = (value as String?),
           annotations: const [
@@ -3767,13 +3968,20 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           ],
         ),
       ],
-      instantiate: () => _i23.Address(),
+      instantiate: () => _i24.Address(),
+      constructor: _i2.BeanConstructor<_i24.Address>(
+        parameters: [],
+        create: (positional, named) =>
+            (Function.apply(_i24.Address.new, positional, named)
+                as _i24.Address),
+      ),
     ),
-    _i2.BeanIntrospection<_i23.CheckoutForm>(
+    _i2.BeanIntrospection<_i24.CheckoutForm>(
       properties: [
-        _i2.BeanProperty<_i23.CheckoutForm>(
+        _i2.BeanProperty<_i24.CheckoutForm>(
           r'name',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
           set: (bean, value) => bean.name = (value as String),
           annotations: const [
@@ -3781,52 +3989,63 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             _i2.Size(max: 20),
           ],
         ),
-        _i2.BeanProperty<_i23.CheckoutForm>(
+        _i2.BeanProperty<_i24.CheckoutForm>(
           r'email',
           type: String,
           nullable: true,
+          typeInfo: const _i2.ClassType<String>(nullable: true),
           get: (bean) => bean.email,
           set: (bean, value) => bean.email = (value as String?),
           annotations: const [_i2.NotNull(), _i2.Email()],
         ),
-        _i2.BeanProperty<_i23.CheckoutForm>(
+        _i2.BeanProperty<_i24.CheckoutForm>(
           r'confirmEmail',
           type: String,
           nullable: true,
+          typeInfo: const _i2.ClassType<String>(nullable: true),
           get: (bean) => bean.confirmEmail,
           set: (bean, value) => bean.confirmEmail = (value as String?),
         ),
-        _i2.BeanProperty<_i23.CheckoutForm>(
+        _i2.BeanProperty<_i24.CheckoutForm>(
           r'quantity',
           type: int,
+          typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.quantity,
           set: (bean, value) => bean.quantity = (value as int),
           annotations: const [_i2.Min(1)],
         ),
-        _i2.BeanProperty<_i23.CheckoutForm>(
+        _i2.BeanProperty<_i24.CheckoutForm>(
           r'giftNote',
           type: String,
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.giftNote,
           set: (bean, value) => bean.giftNote = (value as String),
           annotations: const [
-            _i2.NotBlank(groups: [_i23.OnGift]),
+            _i2.NotBlank(groups: [_i24.OnGift]),
           ],
         ),
-        _i2.BeanProperty<_i23.CheckoutForm>(
+        _i2.BeanProperty<_i24.CheckoutForm>(
           r'address',
-          type: _i23.Address,
+          type: _i24.Address,
+          typeInfo: const _i2.ClassType<_i24.Address>(),
           get: (bean) => bean.address,
-          set: (bean, value) => bean.address = (value as _i23.Address),
+          set: (bean, value) => bean.address = (value as _i24.Address),
           annotations: const [_i2.Valid()],
         ),
       ],
-      annotations: const [_i23.SameEmails()],
-      instantiate: () => _i23.CheckoutForm(),
+      annotations: const [_i24.SameEmails()],
+      instantiate: () => _i24.CheckoutForm(),
+      constructor: _i2.BeanConstructor<_i24.CheckoutForm>(
+        parameters: [],
+        create: (positional, named) =>
+            (Function.apply(_i24.CheckoutForm.new, positional, named)
+                as _i24.CheckoutForm),
+      ),
     ),
   ],
   configurers: {
-    _i24.CatalogScreen: (bean, r) {
-      final target = (bean as _i24.CatalogScreen);
+    _i25.CatalogScreen: (bean, r) {
+      final target = (bean as _i25.CatalogScreen);
       target.catalog = r.dependency<_i9.CatalogService>(name: r'catalog');
       target.title = r.value<String>(r'${app.name}');
     },

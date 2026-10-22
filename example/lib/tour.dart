@@ -11,6 +11,7 @@ import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.da
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/external/legacy_config.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
+import 'package:spring_core_dart_example/src/api/book_dto.dart';
 import 'package:spring_core_dart_example/src/aop/self_invocation.dart';
 import 'package:spring_core_dart_example/src/cache/price_list.dart';
 import 'package:spring_core_dart_example/src/app.dart';
@@ -71,6 +72,7 @@ const tourSections = [
   'aop',
   'scheduling',
   'cache',
+  'json',
   'hierarchy',
   'failures',
   'shutdown',
@@ -126,6 +128,7 @@ class _Tour {
     'aop' => await aop(),
     'scheduling' => await scheduling(),
     'cache' => await cache(),
+    'json' => json(),
     'hierarchy' => hierarchy(),
     'failures' => failures(),
     'shutdown' => shutdown(),
@@ -491,6 +494,39 @@ class _Tour {
       'async covers: real lookups (null not stored, unless)',
       prices.lookups,
     );
+  }
+
+  // ObjectMapper: JSON on generated metadata (spring.jackson.* properties).
+  void json() {
+    final mapper = context.getBean<ObjectMapper>();
+    const dune = BookDto(
+      isbn: '978-0',
+      title: 'Dune',
+      author: AuthorDto('Frank Herbert', born: 1920),
+      formats: [BookFormat.paperback, BookFormat.ebook],
+      availability: Availability.soldOut,
+    );
+    show('writeValueAsString', mapper.writeValueAsString(dune));
+    final read = mapper.readValue<BookDto>(
+      '{"isbn":"1","title":"Solaris","author":{"name":"Stanislaw Lem"},'
+      '"published_at":"1961-01-01T00:00:00.000Z","rating":5}',
+    );
+    show(
+      'readValue (defaults kept, unknown "rating" ignored)',
+      '${read.title} by ${read.author.name}, ${read.formats}, '
+          '${read.availability}, ${read.publishedAt!.year}',
+    );
+    final books = mapper.readList<BookDto>(
+      '[{"isbn":"2","title":"Ubik","author":{"name":"Philip K. Dick"}}]',
+    );
+    show('readList', [for (final book in books) book.title]);
+    try {
+      mapper.readValue<BookDto>(
+        '{"isbn":"3","title":"X","author":{"name":"Y","born":"long ago"}}',
+      );
+    } on JsonMappingException catch (error) {
+      show('error', error);
+    }
   }
 
   // Parent and child contexts built from hand-written modules.

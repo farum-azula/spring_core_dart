@@ -11,6 +11,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 
 // Runtime types are always imported from the public library, never from
 // `src/`.
@@ -340,6 +341,7 @@ class ModuleEmitter {
               {
                 'type': _type(property.type, element),
                 if (property.nullable) 'nullable': literalTrue,
+                'typeInfo': _typeInfo(property.declaredType, element).$1,
                 'get': _closure(
                   ['bean'],
                   refer('bean').property(property.name).code,
@@ -410,10 +412,151 @@ class ModuleEmitter {
             beanType.newInstance([]).code,
             lambda: true,
           ),
+        if (model.constructor case final constructor?)
+          'constructor': _spring('BeanConstructor').newInstance(
+            [],
+            {
+              'parameters': literalList([
+                for (final parameter in constructor.parameters)
+                  _spring('BeanParameter').newInstance(
+                    [_str(parameter.name)],
+                    {
+                      'type': _typeInfo(parameter.type, element).$1,
+                      if (parameter.isNamed)
+                        'symbol': CodeExpression(Code('#${parameter.name}')),
+                      if (parameter.isRequired) 'isRequired': literalTrue,
+                      if (parameter.annotations.isNotEmpty)
+                        'annotations': literalConstList([
+                          for (final annotation in parameter.annotations)
+                            _constant(annotation, element),
+                        ]),
+                    },
+                  ),
+              ]),
+              'create': _closure(
+                ['positional', 'named'],
+                refer('Function')
+                    .property('apply')
+                    .call([
+                      beanType.property(
+                        constructor.name.isEmpty ? 'new' : constructor.name,
+                      ),
+                      refer('positional'),
+                      refer('named'),
+                    ])
+                    .asA(beanType)
+                    .code,
+                lambda: true,
+              ),
+            },
+            [beanType],
+          ),
+        if (model.fromJson case final fromJson?)
+          'fromJson': _closure(
+            ['json'],
+            beanType.property('fromJson').call([
+              refer('json').asA(_anyType(fromJson.parameterType, element)),
+            ]).code,
+            lambda: true,
+          ),
+        if (model.hasToJson)
+          'toJson': _closure(
+            ['bean'],
+            refer('bean').property('toJson').call([]).code,
+            lambda: true,
+          ),
       },
       [beanType],
     );
   }
+
+  // `TypeInfo` of a declared type: `ClassType<T>`, `ListType<E>(...)`,
+  // `SetType`, `MapType`, `EnumType<E>(E.values)` or `DynamicType`;
+  // `$2` says whether the expression is const (an enum with `@JsonValue`
+  // needs a closure).
+  (Expression, bool) _typeInfo(DartType type, Element element) {
+    final named = <String, Expression>{
+      if (type.nullabilitySuffix == NullabilitySuffix.question)
+        'nullable': literalTrue,
+    };
+    (Expression, bool) kind(
+      String name,
+      List<DartType> arguments,
+      Map<String, Expression> extra,
+    ) {
+      final infos = [for (final a in arguments) _typeInfo(a, element)];
+      final isConst = infos.every((info) => info.$2);
+      final typeArguments = [
+        for (final argument in arguments)
+          _isDynamicInfo(argument)
+              ? refer('dynamic')
+              : _type(argument, element),
+      ];
+      final positional = [for (final info in infos) info.$1];
+      return (
+        isConst
+            ? _spring(
+                name,
+              ).constInstance(positional, {...named, ...extra}, typeArguments)
+            : _spring(name)
+                  .newInstance(positional, {...named, ...extra}, typeArguments),
+        isConst,
+      );
+    }
+
+    if (type is InterfaceType && !_isDynamicInfo(type)) {
+      final arguments = type.typeArguments;
+      if ((type.isDartCoreList || type.isDartCoreIterable) &&
+          arguments.length == 1) {
+        return kind('ListType', arguments, const {});
+      }
+      if (type.isDartCoreSet && arguments.length == 1) {
+        return kind('SetType', arguments, const {});
+      }
+      if (type.isDartCoreMap && arguments.length == 2) {
+        return kind('MapType', arguments, const {});
+      }
+      final self = _type(type, element).rebuild((t) => t..isNullable = false);
+      if (type.element case final EnumElement enumElement) {
+        final field = BeanScanner.jsonValueField(enumElement);
+        final values = self.property('values');
+        if (field == null) {
+          return (
+            _spring('EnumType').constInstance([values], named, [self]),
+            true,
+          );
+        }
+        return (
+          _spring('EnumType').newInstance(
+            [values],
+            {
+              ...named,
+              'jsonValue': _closure(
+                ['value'],
+                refer('value').property(field).code,
+                lambda: true,
+              ),
+            },
+            [self],
+          ),
+          false,
+        );
+      }
+      return (_spring('ClassType').constInstance([], named, [self]), true);
+    }
+    return (_spring('DynamicType').constInstance([]), true);
+  }
+
+  // Types described as `DynamicType`: `Object`, generic classes other than
+  // the collections (their arguments cannot be rebuilt), functions, ...
+  static bool _isDynamicInfo(DartType type) =>
+      type is! InterfaceType ||
+      type.isDartCoreObject ||
+      (type.typeArguments.isNotEmpty &&
+          !(type.isDartCoreList ||
+              type.isDartCoreIterable ||
+              type.isDartCoreSet ||
+              type.isDartCoreMap));
 
   // `BeanMethod<T>('name', invoke: ..., annotations: [...])` for a method
   // with a `@BeanMethodAnnotation()` annotation.

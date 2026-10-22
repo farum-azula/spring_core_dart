@@ -791,20 +791,21 @@ class NoCtor {
       expect(
         output,
         _has(
-          "_i1.BeanProperty<_i2.Form>(r'nick', type: String, nullable: true, get: (bean) => bean.nick, "
+          "_i1.BeanProperty<_i2.Form>(r'nick', type: String, nullable: true, "
+          'typeInfo: const _i1.ClassType<String>(nullable: true), get: (bean) => bean.nick, '
           'set: (bean, value) => bean.nick = (value as String?), annotations: const [_i1.Size(max: 3)])',
         ),
       );
       expect(
         output,
         _has(
-          "_i1.BeanProperty<_i2.Form>(r'id', type: int, get: (bean) => bean.id)",
+          "_i1.BeanProperty<_i2.Form>(r'id', type: int, typeInfo: const _i1.ClassType<int>(), get: (bean) => bean.id)",
         ),
       );
       expect(
         output,
         _has(
-          "r'computed', type: int, get: (bean) => bean.computed, set: (bean, value) => bean.computed = (value as int)",
+          "r'computed', type: int, typeInfo: const _i1.ClassType<int>(), get: (bean) => bean.computed, set: (bean, value) => bean.computed = (value as int)",
         ),
       );
       expect(output, _has("annotations: const [_i2.Marker()]"));
@@ -972,6 +973,7 @@ class Form(var String email, {var int age = 0});
         output,
         _has(
           "_i2.BeanProperty<_i1.Form>(r'email', type: String, "
+          'typeInfo: const _i2.ClassType<String>(), '
           'get: (bean) => bean.email, '
           'set: (bean, value) => bean.email = (value as String))',
         ),
@@ -1939,5 +1941,153 @@ class Books {
         "parameterTypes: [r'String', r'int'], parameterNames: [r'isbn', r'page']",
       ),
     );
+  });
+
+  group('@Introspected for JSON', () {
+    const source = r"""
+enum Genre { fiction, science }
+
+enum Stock {
+  inStock('in_stock');
+
+  const Stock(this.json);
+  @JsonValue()
+  final String json;
+}
+
+class Author {
+  const Author(this.name, [this.born]);
+  final String name;
+  final int? born;
+}
+
+@Introspected()
+class Book {
+  const Book({
+    required this.isbn,
+    this.tags = const [],
+    this.author,
+    this.genre = Genre.fiction,
+    this.stock = Stock.inStock,
+    this.ratings = const {},
+    this.extra = const {},
+  });
+  @JsonProperty('id')
+  final String isbn;
+  final List<String> tags;
+  final Author? author;
+  final Genre genre;
+  final Stock stock;
+  final Map<String, int> ratings;
+  final Map<String, dynamic> extra;
+}
+
+class Money {
+  Money(this.cents);
+  @JsonCreator()
+  Money.of({required int cents}) : this(cents);
+  final int cents;
+}
+
+@Introspected(classes: [Money])
+class Wallet {
+  List<Money?> monies = [];
+}
+
+class Legacy {
+  Legacy(this.v);
+  factory Legacy.fromJson(Map<String, dynamic> json) => Legacy(json['v'] as String);
+  final String v;
+  Map<String, dynamic> toJson() => {'v': v};
+}
+
+@Introspected()
+class Holder {
+  Legacy? legacy;
+}
+""";
+
+    test('types, constructors, JSON hints and used classes', () async {
+      final output = await _generate(source);
+      expect(
+        output,
+        _has(
+          "_i1.BeanProperty<_i2.Book>(r'tags', type: List<String>, "
+          'typeInfo: const _i1.ListType<String>(_i1.ClassType<String>()),',
+        ),
+      );
+      expect(
+        output,
+        _has('typeInfo: const _i1.ClassType<_i2.Author>(nullable: true)'),
+      );
+      expect(
+        output,
+        _has(
+          'typeInfo: _i1.EnumType<_i2.Stock>(_i2.Stock.values, '
+          'jsonValue: (value) => value.json)',
+        ),
+      );
+      expect(
+        output,
+        _has('typeInfo: const _i1.EnumType<_i2.Genre>(_i2.Genre.values)'),
+      );
+      expect(
+        output,
+        _has(
+          'typeInfo: const _i1.MapType<String, dynamic>('
+          '_i1.ClassType<String>(), _i1.DynamicType())',
+        ),
+      );
+      // The constructor, with symbols for named parameters.
+      expect(
+        output,
+        _has(
+          "_i1.BeanParameter(r'isbn', type: const _i1.ClassType<String>(), "
+          'symbol: #isbn, isRequired: true)',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          'create: (positional, named) => '
+          '(Function.apply(_i2.Book.new, positional, named) as _i2.Book)',
+        ),
+      );
+      // Author (used by Book, same package) is introspected automatically,
+      // with positional parameters.
+      expect(output, _has('_i1.BeanIntrospection<_i2.Author>('));
+      expect(
+        output,
+        _has(
+          "_i1.BeanParameter(r'born', type: const _i1.ClassType<int>(nullable: true))",
+        ),
+      );
+      // @Introspected(classes:) and @JsonCreator.
+      expect(
+        output,
+        _has(
+          'typeInfo: const _i1.ListType<_i2.Money?>('
+          '_i1.ClassType<_i2.Money>(nullable: true))',
+        ),
+      );
+      expect(
+        output,
+        _has('Function.apply(_i2.Money.of, positional, named) as _i2.Money'),
+      );
+      // A class with its own fromJson / toJson.
+      expect(
+        output,
+        _has(
+          'fromJson: (json) => _i2.Legacy.fromJson((json as Map<String, dynamic>))',
+        ),
+      );
+      expect(output, _has('toJson: (bean) => bean.toJson()'));
+      // Enums are described by EnumType, not introspected.
+      expect(output, isNot(contains('BeanIntrospection<_i2.Genre>')));
+    });
+
+    test('the generated code compiles', () async {
+      expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
+    });
   });
 }

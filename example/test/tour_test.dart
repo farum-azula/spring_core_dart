@@ -206,6 +206,23 @@ void main() {
     expectLine('async covers: real lookups (null not stored, unless): 3');
   });
 
+  test('json', () {
+    expectLine(
+      'writeValueAsString: {"isbn":"978-0","title":"Dune",'
+      '"author":{"name":"Frank Herbert","born":1920},'
+      '"formats":["paperback","ebook"],"availability":"sold_out"}',
+    );
+    expectLine(
+      'readValue (defaults kept, unknown "rating" ignored): Solaris by '
+      'Stanislaw Lem, [BookFormat.paperback], Availability.inStock, 1961',
+    );
+    expectLine('readList: [Ubik]');
+    expectLine(
+      'error: JsonMappingException: author.born: expected an integer, got '
+      '"long ago"',
+    );
+  });
+
   test('hierarchy and startup failures', () {
     expectLine('child bean using a parent bean: hello from the parent context');
     expectLine('event propagated to the parent: [parent heard order 42]');

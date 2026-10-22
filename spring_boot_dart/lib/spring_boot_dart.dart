@@ -5,6 +5,8 @@
 library;
 
 export 'package:spring_boot_dart/src/annotations.dart';
+export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.dart'
+    show objectMapperFromProperties;
 export 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart'
     show MessagesBundleCondition;
 export 'package:spring_boot_dart/src/conditions.dart';
