@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.1
 
 - Generated modules and `springApplication` are getters (a hot reload replaces their bodies), with a `fingerprint` of the generated code and `reloadApplication` / `reloadApplicationAsync` (with `runners:`).
 - Example guide on pub.dev (`example/README.md`): setup, what is generated, build-time errors, options.

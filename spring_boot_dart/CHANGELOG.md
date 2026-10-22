@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.1
 
 - Hot reload: `SpringApplication(fingerprint:)`, `reload` / `reloadAsync` keep the running context when the generated code is unchanged and restart it with the same arguments otherwise; `runners: false` skips `ApplicationRunner` / `CommandLineRunner` beans after such a restart.
 - Example on pub.dev (`example/`) and a description within 180 characters.

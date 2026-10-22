@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.1
 
 - Example on pub.dev (`example/`) and a description within 180 characters.
 
