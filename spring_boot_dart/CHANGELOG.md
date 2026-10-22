@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.5
 
 - Runners as in Spring Boot: `ApplicationRunner` / `CommandLineRunner` may return a `Future`; runners run one after another (a runner's `Future` completes before the next starts), `runAsync` / `runApplicationAsync` complete after the last one, a failing runner is reported (`Application run failed`) and closes the context. The startup line now comes before the runners, as in Spring Boot.
 
