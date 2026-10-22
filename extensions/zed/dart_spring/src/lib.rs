@@ -1,8 +1,8 @@
-//! Starts the flutter_spring language server for Dart files.
+//! Starts the dart_spring language server for Dart files.
 //!
 //! The server is looked up in this order:
-//! 1. `lsp.flutter-spring.binary` in Zed settings (`path` and `arguments`);
-//! 2. a `flutter_spring_lsp` executable on the PATH (for development:
+//! 1. `lsp.dart-spring.binary` in Zed settings (`path` and `arguments`);
+//! 2. a `dart_spring_lsp` executable on the PATH (for development:
 //!    `dart run tool/install_language_server.dart`);
 //! 3. the binary of this extension's version, downloaded once from the
 //!    GitHub release `v<version>` of farum-azula/spring_core_dart (the
@@ -19,7 +19,7 @@ use zed_extension_api::{
 };
 
 const REPOSITORY: &str = "farum-azula/spring_core_dart";
-const EXECUTABLE: &str = "flutter_spring_lsp";
+const EXECUTABLE: &str = "dart_spring_lsp";
 
 struct FlutterSpring {
     /// Path of the downloaded server, once known.
@@ -73,7 +73,7 @@ impl FlutterSpring {
     }
 }
 
-/// `flutter_spring_lsp-macos-arm64.tar.gz`, ... as built by
+/// `dart_spring_lsp-macos-arm64.tar.gz`, ... as built by
 /// `.github/workflows/language-server.yml`.
 fn asset_name(os: Os, arch: Architecture) -> Result<String> {
     let name = match (os, arch) {
@@ -83,7 +83,7 @@ fn asset_name(os: Os, arch: Architecture) -> Result<String> {
         (Os::Windows, Architecture::X8664) => "windows-x64.zip",
         _ => {
             return Err(format!(
-                "flutter_spring: no prebuilt language server for this platform. \
+                "dart_spring: no prebuilt language server for this platform. \
                  Build it with `dart run tool/install_language_server.dart` in the \
                  {REPOSITORY} repository and put {EXECUTABLE} on the PATH."
             ))

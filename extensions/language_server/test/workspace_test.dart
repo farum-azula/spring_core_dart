@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter_spring_language_server/src/dart_index.dart';
-import 'package:flutter_spring_language_server/src/workspace.dart';
+import 'package:dart_spring_language_server/src/dart_index.dart';
+import 'package:dart_spring_language_server/src/workspace.dart';
 import 'package:test/test.dart';
 
 const _shop = r'''

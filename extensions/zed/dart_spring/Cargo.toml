@@ -1,5 +1,5 @@
 [package]
-name = "flutter_spring"
+name = "dart_spring"
 version = "0.1.2"
 edition = "2021"
 publish = false

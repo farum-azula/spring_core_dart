@@ -1,4 +1,4 @@
-# flutter_spring for Zed
+# dart_spring for Zed
 
 Editor support for [`spring_core_dart`](https://pub.dev/packages/spring_core_dart),
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) and the
@@ -61,7 +61,7 @@ operators, numbers, strings, `#variables`, `@beans`, methods, properties,
 ## Setup
 
 1. **Install the extension** in Zed: command palette →
-   `zed: install dev extension` → choose `extensions/zed/flutter_spring`
+   `zed: install dev extension` → choose `extensions/zed/dart_spring`
    (Zed builds the Rust part itself; it needs Rust from rustup).
 2. **Turn on semantic highlighting** for Dart (for the SpEL colours) in
    Zed's `settings.json`:
@@ -82,8 +82,8 @@ status bar. Navigation, hover and checks work without step 2.
 The server is looked up in this order, so a local build wins during
 development:
 
-1. `lsp.flutter-spring.binary.path` in Zed settings;
-2. `flutter_spring_lsp` on the PATH — build it from this repository with
+1. `lsp.dart-spring.binary.path` in Zed settings;
+2. `dart_spring_lsp` on the PATH — build it from this repository with
    `dart run tool/install_language_server.dart` (into `~/.pub-cache/bin`;
    also the way to go on platforms without a prebuilt binary, such as Intel
    Macs);
@@ -92,8 +92,8 @@ development:
 ```json
 {
   "lsp": {
-    "flutter-spring": {
-      "binary": { "path": "/path/to/flutter_spring_lsp" }
+    "dart-spring": {
+      "binary": { "path": "/path/to/dart_spring_lsp" }
     }
   }
 }

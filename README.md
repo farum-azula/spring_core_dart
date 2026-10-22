@@ -760,7 +760,7 @@ Starters (each a separate package, discovered by the generator like
 
 Tooling:
 
-- **Zed extension** (`flutter_spring`, in `extensions/zed/flutter_spring`,
+- **Zed extension** (`dart_spring`, in `extensions/zed/dart_spring`,
   with the language server in `extensions/language_server`): editor
   support for everything the framework does today. Available now:
   navigation from injection points to beans and from `@Value`
@@ -800,6 +800,10 @@ Tooling:
     navigation works for both spellings.
   - Built as a Dart language server on top of the generator's analysis, so
     the same server can later back VS Code and IntelliJ plugins.
+- **Zed extension for Flutter** (`flutter_spring`): everything `dart_spring`
+  does (it uses the same language server under the hood) plus support for
+  the `flutter_spring` starter: platform profiles, widget wrappers, hot
+  reload helpers and Flutter snippets.
 
 Framework:
 

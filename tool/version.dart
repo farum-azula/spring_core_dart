@@ -24,8 +24,8 @@ const _versionFile = 'spring_boot_dart/lib/src/version.dart';
 /// Editor extensions: same version as the family they support (not
 /// published to pub.dev).
 const extensions = [
-  'extensions/zed/flutter_spring/extension.toml',
-  'extensions/zed/flutter_spring/Cargo.toml',
+  'extensions/zed/dart_spring/extension.toml',
+  'extensions/zed/dart_spring/Cargo.toml',
   'extensions/language_server/pubspec.yaml',
 ];
 

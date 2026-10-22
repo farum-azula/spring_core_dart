@@ -1,14 +1,14 @@
 name: 'Release: language server binaries'
 
-# Builds the flutter_spring language server (extensions/language_server) as
+# Builds the dart_spring language server (extensions/language_server) as
 # native executables and attaches them to the GitHub release of the tag, where
 # the editor extensions download them (the Zed extension takes the release of
 # its own version):
 #
-#   flutter_spring_lsp-macos-arm64.tar.gz
-#   flutter_spring_lsp-linux-x64.tar.gz
-#   flutter_spring_lsp-linux-arm64.tar.gz
-#   flutter_spring_lsp-windows-x64.zip
+#   dart_spring_lsp-macos-arm64.tar.gz
+#   dart_spring_lsp-linux-x64.tar.gz
+#   dart_spring_lsp-linux-arm64.tar.gz
+#   dart_spring_lsp-windows-x64.zip
 #
 # Runs for every `vX.Y.Z` tag (pushed by "Release: bump version"), or by hand
 # (Run workflow) to rebuild the server from the selected branch and replace
@@ -35,16 +35,16 @@ jobs:
       matrix:
         include:
           - runner: macos-15
-            asset: flutter_spring_lsp-macos-arm64.tar.gz
+            asset: dart_spring_lsp-macos-arm64.tar.gz
             target: ''
           - runner: ubuntu-26.04
-            asset: flutter_spring_lsp-linux-x64.tar.gz
+            asset: dart_spring_lsp-linux-x64.tar.gz
             target: ''
           - runner: ubuntu-26.04
-            asset: flutter_spring_lsp-linux-arm64.tar.gz
+            asset: dart_spring_lsp-linux-arm64.tar.gz
             target: --target-os=linux --target-arch=arm64
           - runner: windows-latest
-            asset: flutter_spring_lsp-windows-x64.zip
+            asset: dart_spring_lsp-windows-x64.zip
             target: ''
     steps:
       - uses: actions/checkout@v7
@@ -57,19 +57,19 @@ jobs:
         shell: bash
         run: |
           mkdir -p out
-          name=flutter_spring_lsp
-          if [[ "${{ matrix.asset }}" == *.zip ]]; then name=flutter_spring_lsp.exe; fi
+          name=dart_spring_lsp
+          if [[ "${{ matrix.asset }}" == *.zip ]]; then name=dart_spring_lsp.exe; fi
           dart compile exe ${{ matrix.target }} \
-            extensions/language_server/bin/flutter_spring_lsp.dart -o "out/$name"
+            extensions/language_server/bin/dart_spring_lsp.dart -o "out/$name"
 
       - name: Archive
         shell: bash
         run: |
           cd out
           if [[ "${{ matrix.asset }}" == *.zip ]]; then
-            7z a "../${{ matrix.asset }}" flutter_spring_lsp.exe
+            7z a "../${{ matrix.asset }}" dart_spring_lsp.exe
           else
-            tar -czf "../${{ matrix.asset }}" flutter_spring_lsp
+            tar -czf "../${{ matrix.asset }}" dart_spring_lsp
           fi
 
       - uses: actions/upload-artifact@v7
@@ -95,6 +95,6 @@ jobs:
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
               --title "$TAG" \
-              --notes "Packages: https://pub.dev/packages/spring_core_dart — language server binaries for the flutter_spring editor extensions are attached."
+              --notes "Packages: https://pub.dev/packages/spring_core_dart — language server binaries for the dart_spring editor extensions are attached."
           fi
           gh release upload "$TAG" assets/* --repo "$GITHUB_REPOSITORY" --clobber

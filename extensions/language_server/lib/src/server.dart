@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_spring_language_server/src/workspace.dart';
+import 'package:dart_spring_language_server/src/workspace.dart';
 
 /// A minimal Language Server Protocol server over a byte stream
 /// (stdin/stdout in production, in-memory streams in tests).
@@ -155,7 +155,7 @@ final class SpringLanguageServer {
           }
       }
     } on Object catch (error, stackTrace) {
-      stderr.writeln('flutter_spring_lsp: $method failed: $error\n$stackTrace');
+      stderr.writeln('dart_spring_lsp: $method failed: $error\n$stackTrace');
       if (id != null) {
         _error(id, -32603, '$error');
       }
@@ -195,7 +195,7 @@ final class SpringLanguageServer {
           'full': true,
         },
       },
-      'serverInfo': {'name': 'flutter_spring_lsp'},
+      'serverInfo': {'name': 'dart_spring_lsp'},
     };
   }
 
@@ -290,7 +290,7 @@ final class SpringLanguageServer {
               {
                 'range': _range(problem.range),
                 'severity': problem.error ? 1 : 2,
-                'source': 'flutter_spring',
+                'source': 'dart_spring',
                 'message': problem.message,
               },
           ],

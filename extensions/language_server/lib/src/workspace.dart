@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:flutter_spring_language_server/src/dart_index.dart';
-import 'package:flutter_spring_language_server/src/properties_index.dart';
-import 'package:flutter_spring_language_server/src/templates.dart';
+import 'package:dart_spring_language_server/src/dart_index.dart';
+import 'package:dart_spring_language_server/src/properties_index.dart';
+import 'package:dart_spring_language_server/src/templates.dart';
 import 'package:spring_core_dart/expression.dart';
 // ignore: implementation_imports
 import 'package:spring_core_dart/src/expression/tokenizer.dart';

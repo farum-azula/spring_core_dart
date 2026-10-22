@@ -1,5 +1,5 @@
-id = "flutter-spring"
-name = "flutter_spring"
+id = "dart-spring"
+name = "dart_spring"
 description = "Spring for Dart and Flutter (spring_core_dart, spring_boot_dart): navigation from injection points to beans and from @Value to properties, SpEL highlighting and checks, snippets."
 # Always the version of the spring_core_dart family it supports
 # (set by tool/version.dart together with the packages).
@@ -9,6 +9,6 @@ authors = ["NeonMaliket"]
 repository = "https://github.com/farum-azula/spring_core_dart"
 snippets = "./snippets/dart.json"
 
-[language_servers.flutter-spring]
-name = "flutter_spring"
+[language_servers.dart-spring]
+name = "dart_spring"
 languages = ["Dart"]

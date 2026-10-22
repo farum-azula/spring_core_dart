@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:test/test.dart';
 
@@ -100,10 +101,15 @@ class Shop {
     File('${root.path}/lib/resources/application.properties')
       ..createSync(recursive: true)
       ..writeAsStringSync('shop.name=NEON\n');
+    // The package directory, wherever the tests are run from.
+    final lib = await Isolate.resolvePackageUri(
+      Uri.parse('package:dart_spring_language_server/'),
+    );
+    final package = Directory.fromUri(lib!).parent.path;
     process = await Process.start(Platform.resolvedExecutable, [
       'run',
-      'bin/flutter_spring_lsp.dart',
-    ]);
+      '$package/bin/dart_spring_lsp.dart',
+    ], workingDirectory: package);
     client = _Client(process);
   });
 

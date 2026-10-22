@@ -26,15 +26,15 @@ jobs:
       - name: Lockstep versions (packages and editor extensions)
         run: dart run tool/version.dart --check
 
-      - name: Zed extension flutter_spring builds
-        working-directory: extensions/zed/flutter_spring
+      - name: Zed extension dart_spring builds
+        working-directory: extensions/zed/dart_spring
         run: |
           jq empty snippets/dart.json
           rustup target add wasm32-wasip2
           cargo build --release --target wasm32-wasip2
 
       - name: Language server compiles to a native executable
-        run: dart compile exe extensions/language_server/bin/flutter_spring_lsp.dart -o /tmp/flutter_spring_lsp
+        run: dart compile exe extensions/language_server/bin/dart_spring_lsp.dart -o /tmp/dart_spring_lsp
 
       - name: Generated code is up to date
         working-directory: example
