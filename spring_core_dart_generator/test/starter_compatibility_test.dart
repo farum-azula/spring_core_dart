@@ -2,6 +2,7 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart' show springBootVersion;
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
@@ -54,7 +55,7 @@ Future<TestBuilderResult> _build(String requires) async {
 
 void main() {
   test('a compatible starter is discovered', () async {
-    final result = await _build('>=0.1.0 <0.2.0');
+    final result = await _build('^$springBootVersion');
     expect(result.errors, isEmpty);
     final output = result.readerWriter.testing.readString(
       result.outputs.single,
@@ -72,7 +73,7 @@ void main() {
         'Incompatible starter: neon_cache requires spring_boot_dart ^0.4.0',
       ),
     );
-    expect(errors, contains('but 0.1.0 is used'));
+    expect(errors, contains('but $springBootVersion is used'));
   });
 
   test('an invalid range is reported', () async {

@@ -23,9 +23,9 @@ permissions:
 jobs:
   tests:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
@@ -35,11 +35,11 @@ jobs:
   core:
     name: Publish spring_core_dart
     needs: tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write # the OIDC token pub.dev accepts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
@@ -49,7 +49,7 @@ jobs:
   on-core:
     name: Publish ${{ matrix.package }}
     needs: core
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
     strategy:
@@ -57,7 +57,7 @@ jobs:
       matrix:
         package: [spring_core_dart_generator, spring_boot_dart]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
@@ -67,7 +67,7 @@ jobs:
   starters:
     name: Publish ${{ matrix.package }}
     needs: on-core
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
     strategy:
@@ -75,7 +75,7 @@ jobs:
       matrix:
         package: [spring_boot_starter_logging, spring_boot_starter_test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable

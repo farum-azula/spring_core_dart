@@ -7,17 +7,17 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install dependencies
         run: dart pub get
@@ -60,9 +60,9 @@ jobs:
   # them and analyze (transitive test tooling at its minimum does not run on
   # the current SDK, so only the analysis is checked here).
   minimum-versions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
