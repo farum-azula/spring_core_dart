@@ -23,8 +23,11 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
-      - name: Lockstep versions
+      - name: Lockstep versions (packages and editor extensions)
         run: dart run tool/version.dart --check
+
+      - name: Zed extension flutter_spring is valid
+        run: jq empty extensions/zed/flutter_spring/snippets/dart.json
 
       - name: Generated code is up to date
         working-directory: example

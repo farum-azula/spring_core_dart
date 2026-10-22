@@ -1,0 +1,10 @@
+id = "flutter-spring"
+name = "flutter_spring"
+description = "Spring for Dart and Flutter (spring_core_dart, spring_boot_dart): snippets for beans, injection, configuration, AOP, events and tests."
+# Always the version of the spring_core_dart family it supports
+# (set by tool/version.dart together with the packages).
+version = "0.1.1"
+schema_version = 1
+authors = ["NeonMaliket"]
+repository = "https://github.com/farum-azula/spring_core_dart"
+snippets = "./snippets/dart.json"

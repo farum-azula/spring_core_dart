@@ -21,6 +21,12 @@ const dependents = ['example'];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';
 
+/// Editor extensions: same version as the family they support (not
+/// published to pub.dev).
+const extensions = ['extensions/zed/flutter_spring/extension.toml'];
+
+final _extensionVersion = RegExp(r'^version = "(.*)"$', multiLine: true);
+
 void main(List<String> args) {
   if (args.length != 1) {
     stderr.writeln('usage: dart run tool/version.dart <version> | --check');
@@ -85,6 +91,12 @@ void setVersion(String version) {
       "const springBootVersion = '$version';",
     ),
   );
+  for (final manifest in extensions) {
+    _edit(
+      manifest,
+      (text) => text.replaceFirst(_extensionVersion, 'version = "$version"'),
+    );
+  }
 }
 
 /// Problems with the current versions (empty when consistent).
@@ -117,6 +129,15 @@ List<String> check() {
       ?.group(1);
   if (constant != version) {
     problems.add('springBootVersion is $constant, expected $version');
+  }
+  for (final manifest in extensions) {
+    final file = File(manifest);
+    final own = file.existsSync()
+        ? _extensionVersion.firstMatch(file.readAsStringSync())?.group(1)
+        : null;
+    if (own != version) {
+      problems.add('$manifest is $own, expected $version (lockstep)');
+    }
   }
   return problems;
 }

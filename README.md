@@ -760,8 +760,10 @@ Starters (each a separate package, discovered by the generator like
 
 Tooling:
 
-- **Zed extension** (`zed-spring`): editor support for everything the
-  framework does today. Its version always equals the framework version
+- **Zed extension** (`flutter_spring`, in `extensions/zed/flutter_spring`):
+  editor support for everything the framework does today. Available now:
+  snippets for beans, injection, configuration, AOP, events, hot reload
+  and tests. Planned below: the language server features. Its version always equals the framework version
   (part of the release train, set by `tool/version.dart` and checked in CI),
   so extension 0.4.0 understands spring_core_dart 0.4.0.
   - SpEL highlighting and completion inside `@Value`, `@Query`,
