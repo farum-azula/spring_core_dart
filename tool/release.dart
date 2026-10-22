@@ -5,8 +5,8 @@
 //   dart run tool/release.dart --dry-run  # only print what would happen
 //
 // The next version follows the commits since the last `v*` tag that change
-// a published package (commits touching only extensions/, .github/, tool/
-// or the repository README are ignored):
+// a published package (commits touching only extensions/, .github/, tool/,
+// roadmap/ or the repository README are ignored):
 // - a breaking change (`feat!:`, `BREAKING CHANGE`) bumps the major version
 //   (the minor one before 1.0.0, where minor releases may break);
 // - a feature (`feat:` or a subject starting with "Add") bumps the minor

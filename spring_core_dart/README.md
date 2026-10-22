@@ -841,10 +841,8 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 
 ## Roadmap
 
-- Flutter library: bean builders, event listener widgets, `@Configurable`
-  `State` injection, asset resources.
-- Spring Web and a Boot starter with auto-configuration (`@ConditionalOn...`).
-- Rust bridge over rinf: Dart beans in Rust and Rust beans in Dart.
+Plans and sketches of coming features, one file per package:
+[roadmap/](https://github.com/farum-azula/spring_core_dart/tree/main/roadmap).
 
 ## License
 
