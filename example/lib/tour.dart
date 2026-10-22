@@ -6,6 +6,7 @@ library;
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
     show FeignNotFound;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
@@ -27,6 +28,7 @@ import 'package:spring_core_dart_example/src/extension/extension_points.dart';
 import 'package:spring_core_dart_example/src/payments/payments.dart';
 import 'package:spring_core_dart_example/src/remote/catalog_api.dart';
 import 'package:spring_core_dart_example/src/remote/demo_catalog_server.dart';
+import 'package:spring_core_dart_example/src/remote/live_feeds.dart';
 import 'package:spring_core_dart_example/src/tour_log.dart';
 import 'package:spring_core_dart_example/src/ui/screen.dart';
 import 'package:spring_core_dart_example/src/validation/forms.dart';
@@ -52,6 +54,7 @@ ConfigurableApplicationContext startShop(
     springBootStarterSchedulingAutoConfiguration,
     springBootStarterCacheAutoConfiguration,
     springBootStarterFeignAutoConfiguration,
+    springBootStarterWebsocketAutoConfiguration,
   ];
   final environment = StandardEnvironment(systemEnvironment: systemEnvironment)
     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
@@ -80,6 +83,7 @@ const tourSections = [
   'cache',
   'json',
   'feign',
+  'streams',
   'hierarchy',
   'failures',
   'shutdown',
@@ -98,6 +102,7 @@ Future<void> runTour(
   final context = startShop([
     ...args,
     '--neon.catalog-api.url=${catalogServer.url}',
+    '--neon.chat.url=${catalogServer.chatUrl}',
   ], systemEnvironment: systemEnvironment);
   // What the beans recorded while the context started (lifecycle order).
   final startup = [...tourLog];
@@ -143,6 +148,7 @@ class _Tour {
     'cache' => await cache(),
     'json' => json(),
     'feign' => await feign(),
+    'streams' => await streams(),
     'hierarchy' => hierarchy(),
     'failures' => failures(),
     'shutdown' => shutdown(),
@@ -577,6 +583,29 @@ class _Tour {
       'motd (server error → fallback)',
       await context.getBean<MotdApi>().messageOfTheDay(),
     );
+  }
+
+  // Server-sent events through a Feign client and a declarative WebSocket
+  // client, against the same local service.
+  Future<void> streams() async {
+    final feed = context.getBean<StockFeed>();
+    final changes = [
+      await for (final change in feed.changes())
+        '${change.isbn}=${change.copies}',
+    ];
+    show('EventStream<StockEvent> (reconnects, 204 ends it)', changes);
+    final first = await feed.changes().events.first;
+    show(
+      '.events: id, event, retry',
+      '${first.id} ${first.event} '
+          '${first.retry!.inMilliseconds} ms',
+    );
+
+    final chat = context.getBean<SupportChat>();
+    final reply = chat.lines().first;
+    await chat.say(const ChatLine(from: 'ann', text: 'where is my order?'));
+    final line = await reply;
+    show('@WebSocketClient reply', '${line.from}: ${line.text}');
   }
 
   // Parent and child contexts built from hand-written modules.

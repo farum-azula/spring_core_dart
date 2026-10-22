@@ -37,7 +37,11 @@ enum FeignLoggerLevel {
 /// spring.cloud.openfeign.client.config.catalog.logger-level=basic
 /// spring.cloud.openfeign.client.config.catalog.dismiss404=true
 /// spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
+/// spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=1s
 /// ```
+///
+/// The `event-stream.*` keys (reconnection of `EventStream<T>` methods)
+/// are additions of this starter: Spring Cloud OpenFeign cannot stream.
 final class FeignClientConfig {
   /// Settings with these values.
   const FeignClientConfig({
@@ -46,6 +50,9 @@ final class FeignClientConfig {
     this.loggerLevel = FeignLoggerLevel.none,
     this.dismiss404 = false,
     this.defaultRequestHeaders = const {},
+    this.eventStreamReconnect = true,
+    this.eventStreamReconnectDelay = const Duration(seconds: 3),
+    this.eventStreamMaxAttempts,
   });
 
   /// The base URL (when `@FeignClient` has none).
@@ -63,6 +70,18 @@ final class FeignClientConfig {
 
   /// Headers sent with every request.
   final Map<String, String> defaultRequestHeaders;
+
+  /// Whether an event stream connects again after its connection ended or
+  /// broke (`event-stream.reconnect`, default `true`).
+  final bool eventStreamReconnect;
+
+  /// The wait before reconnecting, until the server sends `retry:`
+  /// (`event-stream.reconnect-delay`, default 3 s).
+  final Duration eventStreamReconnectDelay;
+
+  /// The connections in a row without an event before an event stream
+  /// gives up (`event-stream.max-attempts`; default: no limit).
+  final int? eventStreamMaxAttempts;
 
   static const _prefix = 'spring.cloud.openfeign.client.config.';
 
@@ -91,6 +110,15 @@ final class FeignClientConfig {
           : FeignLoggerLevel.parse(level),
       dismiss404: get('dismiss404')?.trim().toLowerCase() == 'true',
       defaultRequestHeaders: headers,
+      eventStreamReconnect:
+          get('event-stream.reconnect')?.trim().toLowerCase() != 'false',
+      eventStreamReconnectDelay:
+          duration('event-stream.reconnect-delay') ??
+          const Duration(seconds: 3),
+      eventStreamMaxAttempts: switch (get('event-stream.max-attempts')) {
+        final value? => int.parse(value.trim()),
+        null => null,
+      },
     );
   }
 

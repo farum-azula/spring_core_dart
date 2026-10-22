@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -18,6 +19,11 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// Every method is checked when the client bean is created, so a path
 /// variable without a parameter or a method without a mapping stops the
 /// application at startup with the reason.
+///
+/// Methods returning `EventStream<T>` (or `Stream<T>`) read
+/// `text/event-stream` responses: each listener opens a connection, every
+/// event's data is decoded into `T`, and lost connections are opened again
+/// with `Last-Event-ID` (see `FeignClientConfig.eventStreamReconnect`).
 ///
 /// Spring (Java): Feign's `SynchronousMethodHandler` behind the proxy that
 /// `FeignClientFactoryBean` creates.
@@ -103,8 +109,100 @@ final class FeignInvocationHandler implements InvocationHandler {
   }
 
   @override
-  Object? invoke(ProxyMethod method, List<Object?> arguments) =>
-      _execute(_plans[method]!, method, arguments);
+  Object? invoke(ProxyMethod method, List<Object?> arguments) {
+    final plan = _plans[method]!;
+    final eventType = plan.eventType;
+    if (eventType != null) {
+      return eventType.accept(
+        _EventStreamFactory(this, plan, method, arguments),
+      );
+    }
+    return _execute(plan, method, arguments);
+  }
+
+  // The raw events of one listener of an event stream method.
+  Stream<ServerSentEvent<String>> _openEvents(
+    _Plan plan,
+    List<Object?> arguments,
+  ) => connectServerSentEvents(
+    (lastEventId) => _connectEvents(plan, arguments, lastEventId),
+    reconnect: SseReconnect(
+      enabled: config.eventStreamReconnect,
+      delay: config.eventStreamReconnectDelay,
+      maxAttempts: config.eventStreamMaxAttempts,
+      retryIf: (error) =>
+          error is RetryableException || error is HttpTransportException,
+    ),
+    onReconnect: (error, delay, attempt) {
+      if (config.loggerLevel != FeignLoggerLevel.none) {
+        _log.debug(
+          '---> RECONNECTING ${plan.methodKey} (attempt $attempt) in '
+          '${delay.inMilliseconds} ms${error == null ? '' : ' after $error'}',
+          fields: {'client': client.name},
+        );
+      }
+    },
+  );
+
+  Future<StreamedHttpResponse> _connectEvents(
+    _Plan plan,
+    List<Object?> arguments,
+    String? lastEventId,
+  ) async {
+    final template = plan.template(arguments);
+    if (lastEventId != null) {
+      template.header('Last-Event-ID', lastEventId);
+    }
+    for (final interceptor in interceptors) {
+      await interceptor.apply(template);
+    }
+    final request = HttpRequest(
+      method: template.method,
+      url: template.url,
+      headers: template.headers,
+      body: template.body,
+      timeout: config.readTimeout,
+    );
+    final watch = Stopwatch()..start();
+    _logRequest(request);
+    final StreamedHttpResponse response;
+    try {
+      response = await transport.stream(request);
+    } on HttpTransportException catch (error) {
+      _log.debug(
+        '<--- ERROR ${error.message} (${watch.elapsedMilliseconds} ms)',
+        fields: {'client': client.name},
+      );
+      throw RetryableException(
+        -1,
+        '${error.message} executing ${request.method.value} ${request.url}',
+        request: request,
+        cause: error,
+      );
+    }
+    final status = response.statusCode;
+    if (response.isSuccess) {
+      if (config.loggerLevel != FeignLoggerLevel.none) {
+        _log.debug(
+          '<--- $status ${HttpStatus.reasonPhrase(status)} '
+          '(${watch.elapsedMilliseconds} ms, event stream)',
+          fields: {'client': client.name},
+        );
+      }
+      return response;
+    }
+    final whole = await response.read();
+    _logResponse(whole, watch.elapsed);
+    if (status == 404 && config.dismiss404) {
+      // Like an empty result: the stream ends.
+      return StreamedHttpResponse(
+        HttpStatus.noContent,
+        body: const Stream.empty(),
+        request: request,
+      );
+    }
+    throw errorDecoder.decode(plan.methodKey, whole);
+  }
 
   Future<Object?> _execute(
     _Plan plan,
@@ -253,6 +351,7 @@ final class _Plan {
     this.produces,
     this.consumes,
     this.parameters,
+    this.eventType,
   );
 
   static final _variable = RegExp(r'\{([^{}/]+)\}');
@@ -274,8 +373,17 @@ final class _Plan {
       );
       return null;
     }
-    if (!method.isFuture) {
-      problems.add('$name must return a Future (HTTP calls are asynchronous)');
+    final eventType = _eventType(method.returnType);
+    if (eventType != null && method.isFuture) {
+      problems.add(
+        '$name returns a Future of a stream: return EventStream<T> directly '
+        '(it connects when listened to)',
+      );
+    } else if (eventType == null && !method.isFuture) {
+      problems.add(
+        '$name must return a Future (HTTP calls are asynchronous) or an '
+        'EventStream<T> (server-sent events)',
+      );
     }
     final mapping = mappings.single;
     final path = _join(
@@ -383,8 +491,15 @@ final class _Plan {
       mapping.produces,
       mapping.consumes,
       method.parameters,
+      method.isFuture ? null : eventType,
     );
   }
+
+  // The data type T of `EventStream<T>` / `Stream<T>`, or null.
+  static TypeInfo<Object?>? _eventType(TypeInfo<Object?> type) =>
+      type is GenericType<Object?> && type.isSubtypeOf<Stream<Object?>>()
+      ? type.arguments.firstOrNull ?? const DynamicType()
+      : null;
 
   final FeignInvocationHandler handler;
   final String methodKey;
@@ -398,6 +513,9 @@ final class _Plan {
   final String? produces;
   final String? consumes;
   final List<BeanParameter> parameters;
+
+  /// The data type of an event stream method (`null`: a normal call).
+  final TypeInfo<Object?>? eventType;
 
   ObjectMapper get mapper => handler.mapper;
 
@@ -457,11 +575,16 @@ final class _Plan {
     for (final (name, value) in staticHeaders) {
       requestHeaders.set(name, value);
     }
+    final stream = eventType != null;
     if (!requestHeaders.contains(HttpHeaders.accept)) {
       requestHeaders.set(
         HttpHeaders.accept,
-        produces ?? MediaType.applicationJson,
+        produces ??
+            (stream ? MediaType.textEventStream : MediaType.applicationJson),
       );
+    }
+    if (stream && !requestHeaders.contains('Cache-Control')) {
+      requestHeaders.set('Cache-Control', 'no-cache');
     }
     for (final (name, index) in headers) {
       final value = arguments[index];
@@ -531,6 +654,34 @@ final class _Plan {
       String() || num() || bool() => '$tree',
       _ => jsonEncode(tree),
     };
+  }
+
+  static final _skip = Object();
+
+  // The value of one event's [data] ([_skip] for empty data of a non-text
+  // type); throws DecodeException.
+  Object? decodeEvent(String data, TypeInfo<Object?> type) {
+    if (type.type == String) {
+      return data;
+    }
+    if (data.isEmpty) {
+      return _skip;
+    }
+    try {
+      return mapper.treeToValue<Object?>(jsonDecode(data), type);
+    } on JsonMappingException catch (error) {
+      throw DecodeException(
+        200,
+        'cannot read an event of $methodKey: $error',
+        cause: error,
+      );
+    } on FormatException catch (error) {
+      throw DecodeException(
+        200,
+        'an event of $methodKey is not JSON: ${error.message}',
+        cause: error,
+      );
+    }
   }
 
   Object? decode(HttpResponse response, ProxyMethod method) {
@@ -647,4 +798,119 @@ final class _EntityFactory implements TypeInfoVisitor<ResponseEntity<Object?>> {
   @override
   ResponseEntity<Object?> visitDynamic(DynamicType type) =>
       ResponseEntity<Object?>(status, body: body, headers: headers);
+}
+
+/// Builds the `EventStream<T>` of an event stream method with the data
+/// type's type argument, so the generated cast succeeds.
+final class _EventStreamFactory
+    implements TypeInfoVisitor<EventStream<Object?>> {
+  _EventStreamFactory(this.handler, this.plan, this.method, this.arguments);
+
+  final FeignInvocationHandler handler;
+  final _Plan plan;
+  final ProxyMethod method;
+  final List<Object?> arguments;
+
+  EventStream<T> _create<T>(TypeInfo<Object?> type) => EventStream<T>(
+    () => _withFallback<T>(
+      handler
+          ._openEvents(plan, arguments)
+          .transform(
+            StreamTransformer<
+              ServerSentEvent<String>,
+              ServerSentEvent<T>
+            >.fromHandlers(
+              handleData: (event, sink) {
+                try {
+                  final value = plan.decodeEvent(event.data, type);
+                  if (!identical(value, _Plan._skip)) {
+                    sink.add(event.withData<T>(value as T));
+                  }
+                } on Object catch (error, stackTrace) {
+                  sink.addError(error, stackTrace);
+                }
+              },
+            ),
+          ),
+    ),
+  );
+
+  // When the stream fails before its first event, the fallback's stream
+  // takes over (decoding errors do not count).
+  Stream<ServerSentEvent<T>> _withFallback<T>(
+    Stream<ServerSentEvent<T>> source,
+  ) {
+    final fallback = handler.fallback;
+    if (fallback == null) {
+      return source;
+    }
+    return Stream<ServerSentEvent<T>>.multi((controller) {
+      var received = false;
+      StreamSubscription<ServerSentEvent<T>>? current;
+      void follow(Stream<ServerSentEvent<T>> stream, {required bool primary}) {
+        current = stream.listen(
+          (event) {
+            received = true;
+            controller.add(event);
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (primary && !received && error is! DecodeException) {
+              final failed = current;
+              current = null;
+              unawaited(failed?.cancel());
+              handler._log.debug(
+                'fallback for ${plan.methodKey} after $error',
+                fields: {'client': handler.client.name},
+              );
+              final Stream<ServerSentEvent<T>> backup;
+              try {
+                final result = method.callOn(fallback(), arguments);
+                backup = result is EventStream<T>
+                    ? result.events
+                    : (result! as Stream<T>).map(ServerSentEvent<T>.new);
+              } on Object catch (fallbackError, fallbackStack) {
+                controller
+                  ..addError(fallbackError, fallbackStack)
+                  ..close();
+                return;
+              }
+              follow(backup, primary: false);
+              return;
+            }
+            controller.addError(error, stackTrace);
+          },
+          onDone: controller.close,
+        );
+      }
+
+      follow(source, primary: true);
+      controller
+        ..onPause = (() => current?.pause())
+        ..onResume = (() => current?.resume())
+        ..onCancel = (() => current?.cancel());
+    });
+  }
+
+  @override
+  EventStream<Object?> visitClass<T>(ClassType<T> type) => _create<T>(type);
+
+  @override
+  EventStream<Object?> visitList<E>(ListType<E> type) => _create<List<E>>(type);
+
+  @override
+  EventStream<Object?> visitSet<E>(SetType<E> type) => _create<Set<E>>(type);
+
+  @override
+  EventStream<Object?> visitMap<K, V>(MapType<K, V> type) =>
+      _create<Map<K, V>>(type);
+
+  @override
+  EventStream<Object?> visitEnum<E extends Enum>(EnumType<E> type) =>
+      _create<E>(type);
+
+  @override
+  EventStream<Object?> visitGeneric<T>(GenericType<T> type) => _create<T>(type);
+
+  @override
+  EventStream<Object?> visitDynamic(DynamicType type) => _create<Object?>(type);
 }

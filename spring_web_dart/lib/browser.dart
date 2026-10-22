@@ -1,6 +1,7 @@
-/// `FetchHttpTransport`: the HTTP transport on the browser's `fetch`
-/// (Flutter web, Dart on the web). `platformHttpTransport()` from
-/// `package:spring_web_dart/spring_web_dart.dart` picks it by itself.
+/// `FetchHttpTransport` and `BrowserWebSocketTransport`: the HTTP and
+/// WebSocket transports of the browser (Flutter web, Dart on the web).
+/// `platformHttpTransport()` / `platformWebSocketTransport()` from
+/// `package:spring_web_dart/spring_web_dart.dart` pick them by themselves.
 ///
 /// ```dart
 /// import 'package:spring_web_dart/browser.dart';
@@ -12,3 +13,4 @@
 library;
 
 export 'package:spring_web_dart/src/client/fetch_transport.dart';
+export 'package:spring_web_dart/src/websocket/browser_web_socket_transport.dart';

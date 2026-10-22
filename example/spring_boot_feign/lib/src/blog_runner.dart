@@ -5,6 +5,7 @@ import 'package:spring_boot_feign_example/src/models.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 
 @Component()
+@Order(1)
 class BlogRunner implements ApplicationRunner {
   BlogRunner(this.api);
 

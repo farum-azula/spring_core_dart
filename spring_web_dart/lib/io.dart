@@ -1,6 +1,7 @@
-/// `IoHttpTransport`: the HTTP transport on `dart:io` (VM, Flutter mobile
-/// and desktop). `platformHttpTransport()` from
-/// `package:spring_web_dart/spring_web_dart.dart` picks it by itself.
+/// `IoHttpTransport` and `IoWebSocketTransport`: the HTTP and WebSocket
+/// transports on `dart:io` (VM, Flutter mobile and desktop).
+/// `platformHttpTransport()` / `platformWebSocketTransport()` from
+/// `package:spring_web_dart/spring_web_dart.dart` pick them by themselves.
 ///
 /// ```dart
 /// import 'package:spring_web_dart/io.dart';
@@ -12,3 +13,4 @@
 library;
 
 export 'package:spring_web_dart/src/client/io_transport.dart';
+export 'package:spring_web_dart/src/websocket/io_web_socket_transport.dart';

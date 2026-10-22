@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:test/test.dart';
 
@@ -176,6 +178,161 @@ void main() {
     expect(calls, ['cli@1', 'app@2']);
   });
 
+  group('asynchronous runners: one after another, as in Spring Boot', () {
+    late List<String> calls;
+    late _Flag flag;
+
+    setUp(() {
+      calls = [];
+      flag = _Flag();
+    });
+
+    SpringApplication app(List<BeanDefinition<Object>> runners) =>
+        SpringApplication(
+          [
+            appModule(),
+            BeanModule('runners', [
+              BeanDefinition<_Flag>(
+                name: 'flag',
+                create: (_) => flag,
+                destroyMethod: (flag) => flag.closed = true,
+              ),
+              ...runners,
+            ]),
+          ],
+          out: (line) {
+            lines.add(line);
+            calls.add(line.split(' ').first); // 'Started', 'Application'
+          },
+        );
+
+    BeanDefinition<Object> later(
+      String name,
+      int order,
+      void Function() body,
+    ) => BeanDefinition<_AppRunner>(
+      name: name,
+      types: const [_AppRunner, ApplicationRunner],
+      order: order,
+      create: (_) => _AppRunner(body),
+    );
+
+    BeanDefinition<Object> async(
+      String name,
+      int order,
+      Future<void> Function() body,
+    ) => BeanDefinition<_AsyncRunner>(
+      name: name,
+      types: const [_AsyncRunner, CommandLineRunner],
+      order: order,
+      create: (_) => _AsyncRunner(body),
+    );
+
+    Future<void> slow(String name) async {
+      calls.add('$name start');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      calls.add('$name end');
+    }
+
+    test(
+      'runAsync: each runner finishes before the next, then it completes',
+      () async {
+        final context = await app([
+          async('first', 1, () => slow('first')),
+          later('second', 2, () => calls.add('second')),
+          async('third', 3, () => slow('third')),
+        ]).runAsync(['--db.url=x'], systemEnvironment: const {});
+        addTearDown(context.close);
+        // The startup line comes before the runners (Spring Boot: logStarted,
+        // then callRunners).
+        expect(calls, [
+          'Started',
+          'first start',
+          'first end',
+          'second',
+          'third start',
+          'third end',
+        ]);
+      },
+    );
+
+    test(
+      'run: returns at once, the runners still go one after another',
+      () async {
+        final done = Completer<void>();
+        final context = app([
+          async('first', 1, () => slow('first')),
+          later('second', 2, () {
+            calls.add('second');
+            done.complete();
+          }),
+        ]).run(['--db.url=x'], systemEnvironment: const {});
+        addTearDown(context.close);
+        expect(calls, ['Started', 'first start']); // up to its first await
+        await done.future;
+        expect(calls, ['Started', 'first start', 'first end', 'second']);
+      },
+    );
+
+    test('runAsync: a failing runner is reported, the context closed, the '
+        'next runners skipped', () async {
+      await expectLater(
+        app([
+          async('migrations', 1, () async {
+            await Future<void>.delayed(Duration.zero);
+            throw StateError('migration failed');
+          }),
+          later('next', 2, () => calls.add('next')),
+        ]).runAsync(['--db.url=x'], systemEnvironment: const {}),
+        throwsA(isA<StateError>()),
+      );
+      expect(lines.last, 'Application run failed: Bad state: migration failed');
+      expect(flag.closed, isTrue);
+      expect(calls, isNot(contains('next')));
+    });
+
+    test('run: a failing asynchronous runner closes the context and is '
+        'rethrown (uncaught, like a failed run)', () async {
+      final errors = <Object>[];
+      runZonedGuarded(
+        () => app([
+          async('migrations', 1, () async {
+            await Future<void>.delayed(Duration.zero);
+            throw StateError('migration failed');
+          }),
+        ]).run(['--db.url=x'], systemEnvironment: const {}),
+        (error, _) => errors.add(error),
+      );
+      await pumpEventQueue();
+      expect(errors, [isA<StateError>()]);
+      expect(lines.last, 'Application run failed: Bad state: migration failed');
+      expect(flag.closed, isTrue);
+    });
+
+    test('run: a synchronous runner that throws fails the start', () {
+      expect(
+        () =>
+            app([later('broken', 1, () => throw StateError('no config'))])
+                .run(['--db.url=x'], systemEnvironment: const {}),
+        throwsA(isA<StateError>()),
+      );
+      expect(lines.last, 'Application run failed: Bad state: no config');
+      expect(flag.closed, isTrue);
+    });
+
+    test('closing the context stops the remaining runners', () async {
+      final release = Completer<void>();
+      final context = app([
+        async('first', 1, () => release.future),
+        later('second', 2, () => calls.add('second')),
+      ]).run(['--db.url=x'], systemEnvironment: const {});
+      context.close();
+      release.complete();
+      await pumpEventQueue();
+      expect(calls, isNot(contains('second')));
+    });
+  });
+
   test('ConditionalOnProperty', () {
     final env = StandardEnvironment(systemEnvironment: {})
       ..propertySources.addFirst(
@@ -288,4 +445,15 @@ class _CliRunner implements CommandLineRunner {
   final void Function() call;
   @override
   void run(List<String> args) => call();
+}
+
+class _AsyncRunner implements CommandLineRunner {
+  _AsyncRunner(this.body);
+  final Future<void> Function() body;
+  @override
+  Future<void> run(List<String> args) => body();
+}
+
+class _Flag {
+  bool closed = false;
 }

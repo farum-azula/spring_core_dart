@@ -30,6 +30,9 @@ abstract final class MediaType {
   /// `text/html`.
   static const textHtml = 'text/html';
 
+  /// `text/event-stream`: server-sent events.
+  static const textEventStream = 'text/event-stream';
+
   /// `*/*`.
   static const all = '*/*';
 }

@@ -18,11 +18,12 @@ separate library.
 | `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Logging backend: console with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` (filters, streams, export) for an in-app log screen. Add the dependency, nothing else. |
 | `spring_boot_starter_scheduling` | [`spring_boot_starter_scheduling/`](spring_boot_starter_scheduling/README.md) | `@Scheduled` methods with a fixed rate, a fixed delay or a cron expression (placeholders from properties), a `TaskScheduler` bean; tasks stop with the context. Add the dependency, nothing else. |
 | `spring_boot_starter_cache` | [`spring_boot_starter_cache/`](spring_boot_starter_cache/README.md) | `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching` on bean methods (sync and async) with SpEL keys and conditions; an in-memory `CacheManager` with TTL and size limits from `spring.cache.*`. |
-| `spring_web_dart` | [`spring_web_dart/`](spring_web_dart/README.md) | Spring Web basics: `@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`, `@RequestBody`, `ResponseEntity`, `HttpHeaders`, and an HTTP client transport (`dart:io`, `fetch` on the web) with `MockHttpTransport` for tests. |
+| `spring_web_dart` | [`spring_web_dart/`](spring_web_dart/README.md) | Spring Web basics: `@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`, `@RequestBody`, `ResponseEntity`, `HttpHeaders`, HTTP and WebSocket client transports (`dart:io`; `fetch` and `WebSocket` on the web), server-sent events as `EventStream<T>` (also the return type of Feign methods), and mocks for tests. |
 | `spring_boot_starter_feign` | [`spring_boot_starter_feign/`](spring_boot_starter_feign/README.md) | Feign clients: an abstract class with `@FeignClient` and mapping annotations becomes an injectable HTTP client; JSON via `ObjectMapper`, interceptors, retries, fallbacks, `spring.cloud.openfeign.client.config.*`. |
+| `spring_boot_starter_websocket` | [`spring_boot_starter_websocket/`](spring_boot_starter_websocket/README.md) | Declarative WebSocket clients: an abstract class with `@WebSocketClient`, `@OnMessage` (`Stream<T>`) and `@SendMessage` methods becomes an injectable socket; JSON via `ObjectMapper`, one shared connection opened on demand, reconnection with backoff, handshake interceptors. Spring has no declarative WebSocket client: this follows the `@FeignClient` style. |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
-| `spring_boot_feign_example` | [`example/spring_boot_feign/`](example/spring_boot_feign/README.md) | A small Spring Boot app with a Feign client calling a real public REST API (JSONPlaceholder): run it with `dart run bin/main.dart`. |
+| `spring_boot_feign_example` | [`example/spring_boot_feign/`](example/spring_boot_feign/README.md) | A small Spring Boot app against real public servers: a Feign client (REST, JSONPlaceholder), server-sent events (Wikimedia, `EventStream<T>`) and a `@WebSocketClient` (an echo server): run it with `dart run bin/main.dart`. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
 Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_dart.dart` for all):
@@ -1020,8 +1021,13 @@ Starters (each a separate package, discovered by the generator like
 - **Feign, next steps** (for `spring_boot_starter_feign`, the clients are
   done): form and multipart bodies, `@SpringQueryMap`, a `FallbackFactory`
   that sees the error, circuit breaker integration, per-client connection
-  timeouts, response streaming, and editor checks of `{variables}` against
+  timeouts, and editor checks of `{variables}` against
   `@PathVariable` parameters in the Zed extension.
+- **WebSocket, next steps** (for `spring_boot_starter_websocket`, the
+  declarative clients are done): STOMP (`@SubscribeMapping`-style
+  destinations on one connection), a connection state stream for UIs,
+  message filters by a JSON field, and the server side together with the
+  coming web server starter.
 - **Data** (`spring_boot_starter_data_*`, like Spring Data JPA/JDBC):
   entities and repositories generated at build time, no reflection.
   `@Entity` classes get generated row mapping; repository interfaces get a

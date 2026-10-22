@@ -71,7 +71,8 @@ JSON automatically when they are in the same package.
 
 ## Methods
 
-Every method needs one mapping annotation and must return a `Future`.
+Every method needs one mapping annotation and must return a `Future` —
+or an `EventStream<T>` for server-sent events (see below).
 
 | Annotation | Request |
 |---|---|
@@ -104,19 +105,96 @@ Results:
 | `Future<void>` | nothing (the status must be 2xx) |
 | `Future<String>`, `Future<Uint8List>` | the body as text, as bytes |
 | `Future<ResponseEntity<Book>>` | status, headers and the body |
+| `EventStream<OrderEvent>`, `Stream<OrderEvent>` | the events of a `text/event-stream` response (see Server-sent events) |
 
 Enums, `DateTime` and other values in paths, query parameters and headers
 are written like in JSON (an enum's name or `@JsonValue`, ISO-8601 dates).
 
 Every client is checked when it is created: a `{variable}` without a
 `@PathVariable` parameter (or the other way round), a method without a
-mapping or a synchronous method stops the application at startup with the
-reason, for instance:
+mapping or a synchronous method (other than an event stream) stops the
+application at startup with the reason, for instance:
 
 ```text
 Invalid Feign client CatalogClient:
   - CatalogClient.find: the path variable {isbn} of "/books/{isbn}" has no @PathVariable parameter
 ```
+
+## Server-sent events
+
+A method returning `EventStream<T>` reads a `text/event-stream` response.
+`EventStream<T>` **is** a `Stream<T>` of the decoded data, so the type stays
+short; the whole events (with `id`, `event`, `retry`) are there through
+`.events` when you need them:
+
+```dart
+@FeignClient('orders', url: r'${orders.url}')
+abstract interface class OrdersClient {
+  @GetMapping('/shops/{shop}/orders/events')
+  EventStream<OrderEvent> events(@PathVariable() String shop);
+}
+
+// the data:
+await for (final order in orders.events('neon')) {
+  print(order.status);
+}
+
+// the whole events:
+orders.events('neon').events.listen((e) {
+  print('${e.id} ${e.event}: ${e.data.status}');
+});
+```
+
+- Each event's data is read like a JSON body (through the `ObjectMapper`);
+  `EventStream<String>` gives the data as sent. An event that cannot be read
+  is an error on the stream (a `DecodeException`), the stream goes on.
+- The stream is cold: every listener opens its own connection, cancelling the
+  subscription (or `break` in `await for`) closes it.
+- `Accept: text/event-stream` and `Cache-Control: no-cache` are sent
+  (`produces` changes `Accept`); interceptors run for every connection, so a
+  refreshed token is used on reconnect. `read-timeout` covers the wait for
+  the response headers only.
+- `Stream<T>` works as a return type too (you get an `EventStream<T>`).
+  `Future<EventStream<T>>` is rejected at startup: return the stream
+  directly, it connects when listened to.
+
+Reconnection works like the browser's `EventSource`: when the response ends
+or the connection breaks, the client connects again after a delay (the
+server's `retry:` wins), sending the last event id in `Last-Event-ID`. A
+`204 No Content` ends the stream; an error status ends it with the
+`FeignException` of the `ErrorDecoder` (a `RetryableException` reconnects).
+
+```properties
+spring.cloud.openfeign.client.config.orders.event-stream.reconnect=true
+spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=3s
+spring.cloud.openfeign.client.config.orders.event-stream.max-attempts=10
+```
+
+| Property | Meaning |
+|---|---|
+| `event-stream.reconnect` | connect again after the connection ended or broke (default `true`) |
+| `event-stream.reconnect-delay` | the wait before connecting again, until the server sends `retry:` (default `3s`) |
+| `event-stream.max-attempts` | connections in a row without an event before the stream gives up (default: no limit) |
+
+With a `fallback`, the fallback's stream takes over when the stream fails
+before its first event; later failures reach the listener.
+
+In tests, `MockHttpTransport` answers with events:
+
+```dart
+server
+  ..when(HttpMethod.get, '/shops/neon/orders/events').respondEvents([
+    ServerSentEvent({'id': 1, 'status': 'NEW'}, id: '1'),
+  ])
+  ..when(HttpMethod.get, '/shops/neon/orders/events').respond(204); // then stop
+```
+
+**This differs from Spring.** Spring Cloud OpenFeign cannot stream at all;
+Spring's own answer is `Flux<ServerSentEvent<OrderEvent>>` (or
+`Flux<OrderEvent>`) from `WebClient` or an `@HttpExchange` interface, with
+reconnection left to `retryWhen`. Here `EventStream<T>` folds the event
+wrapper into the stream, reconnects by itself, and the `event-stream.*`
+properties are additions of this starter.
 
 ## Configuration
 
@@ -306,4 +384,7 @@ the responses.
   client.
 - The fallback answers every failure, without a circuit breaker; there is no
   `FallbackFactory` yet.
-- Not yet: form and multipart bodies, `@SpringQueryMap`, response streaming.
+- Server-sent events (`EventStream<T>`, `event-stream.*` properties) are an
+  addition: OpenFeign has no streaming.
+- Not yet: form and multipart bodies, `@SpringQueryMap`, streaming of other
+  response bodies (downloads).

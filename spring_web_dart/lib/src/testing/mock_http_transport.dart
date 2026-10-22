@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
+import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 import 'package:spring_web_dart/src/media_type.dart';
+import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 
 /// An [HttpTransport] for tests: answers with prepared responses and
 /// records every request, like Spring's `MockRestServiceServer`. Several
@@ -21,6 +23,9 @@ import 'package:spring_web_dart/src/media_type.dart';
 /// transport.when(HttpMethod.post, 'https://api.neon.books/books')
 ///     .respondWith((request) => HttpResponse(201, request: request));
 /// transport.when(HttpMethod.get, '/flaky').fail(HttpTransportException('down'));
+/// transport.when(HttpMethod.get, '/orders/events').respondEvents([
+///   ServerSentEvent({'id': 1, 'status': 'NEW'}, id: '1'),
+/// ]);
 ///
 /// // In a Spring Boot test: BeanOverride<HttpTransport>(transport)
 /// expect(transport.lastRequest.headers['Accept'], 'application/json');
@@ -63,7 +68,13 @@ class MockHttpTransport implements HttpTransport {
   }
 
   @override
-  Future<HttpResponse> send(HttpRequest request) async {
+  Future<HttpResponse> send(HttpRequest request) async =>
+      (await _answer(request)).read();
+
+  @override
+  Future<StreamedHttpResponse> stream(HttpRequest request) => _answer(request);
+
+  Future<StreamedHttpResponse> _answer(HttpRequest request) async {
     _requests.add(request);
     final matching = [
       for (final expectation in _expectations)
@@ -124,10 +135,10 @@ class MockResponseBuilder {
     } else {
       content = bytes ?? const [];
     }
-    _expectation.answer = (request) async => HttpResponse(
+    _expectation.answer = (request) async => StreamedHttpResponse(
       status,
       headers: responseHeaders.copy(),
-      body: content,
+      body: Stream.value(content),
       request: request,
     );
   }
@@ -135,7 +146,54 @@ class MockResponseBuilder {
   /// Answers with what [handler] returns for the request.
   void respondWith(
     FutureOr<HttpResponse> Function(HttpRequest request) handler,
-  ) => _expectation.answer = (request) async => handler(request);
+  ) => _expectation.answer = (request) async {
+    final response = await handler(request);
+    return StreamedHttpResponse(
+      response.statusCode,
+      headers: response.headers,
+      body: Stream.value(response.bodyBytes),
+      request: response.request ?? request,
+    );
+  };
+
+  /// Answers with a `text/event-stream` body of [events], one chunk each;
+  /// data that is not a `String` is written as JSON. The response ends
+  /// after the last event unless [keepOpen] (then it stays open until the
+  /// client cancels).
+  void respondEvents(
+    List<ServerSentEvent<Object?>> events, {
+    int status = 200,
+    bool keepOpen = false,
+    Map<String, String> headers = const {},
+  }) {
+    final responseHeaders = HttpHeaders(headers);
+    if (!responseHeaders.contains(HttpHeaders.contentType)) {
+      responseHeaders.set(HttpHeaders.contentType, MediaType.textEventStream);
+    }
+    respondStream(status, () async* {
+      for (final event in events) {
+        yield utf8.encode(
+          event.encode((data) => data is String ? data : jsonEncode(data)),
+        );
+      }
+      if (keepOpen) {
+        await Completer<void>().future;
+      }
+    }, headers: responseHeaders.toMap());
+  }
+
+  /// Answers with [status] and a body streamed from what [body] returns
+  /// (called for every request).
+  void respondStream(
+    int status,
+    Stream<List<int>> Function() body, {
+    Map<String, String> headers = const {},
+  }) => _expectation.answer = (request) async => StreamedHttpResponse(
+    status,
+    headers: HttpHeaders(headers),
+    body: body(),
+    request: request,
+  );
 
   /// Fails the request with [error] (e.g. an `HttpTransportException` to
   /// test retries).
@@ -153,7 +211,7 @@ final class _Expectation {
   final Uri _uri;
   final bool _hasQuery;
   bool used = false;
-  Future<HttpResponse> Function(HttpRequest request)? answer;
+  Future<StreamedHttpResponse> Function(HttpRequest request)? answer;
 
   bool matches(HttpRequest request) {
     if (request.method != method) {

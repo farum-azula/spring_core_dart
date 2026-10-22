@@ -295,7 +295,10 @@ class SpringBuilder implements Builder {
           (m) => m
             ..docs.add(
               '/// Starts the application: config files, environment, '
-              'context, runners.',
+              'context, runners\n'
+              '/// (asynchronous runners go on one after another after it '
+              'returns;\n'
+              '/// [runApplicationAsync] waits for them).',
             )
             ..returns = refer('ConfigurableApplicationContext', _bootUrl)
             ..name = 'runApplication'
@@ -315,7 +318,8 @@ class SpringBuilder implements Builder {
           (m) => m
             ..docs.add(
               '/// Like [runApplication], reading config files '
-              'asynchronously (Flutter assets).',
+              'asynchronously (Flutter assets)\n'
+              '/// and completing once every runner has finished.',
             )
             ..returns = TypeReference(
               (t) => t

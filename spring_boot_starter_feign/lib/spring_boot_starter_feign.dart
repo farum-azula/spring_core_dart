@@ -9,6 +9,9 @@
 /// abstract interface class CatalogClient {
 ///   @GetMapping('/books/{isbn}')
 ///   Future<Book> find(@PathVariable() String isbn);
+///
+///   @GetMapping('/books/events')
+///   EventStream<BookEvent> events(); // server-sent events
 /// }
 /// ```
 ///

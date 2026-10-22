@@ -3,8 +3,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// Serves `/books/{isbn}`, `/books?q=`, `POST /books` and a failing
-/// `/motd` on `http://127.0.0.1:<port>`.
+/// Serves `/books/{isbn}`, `/books?q=`, `POST /books`, a failing `/motd`,
+/// stock events (`/stock/events`, server-sent) and an echoing support chat
+/// (`/chat`, WebSocket) on `http://127.0.0.1:<port>`.
 class DemoCatalogServer {
   DemoCatalogServer._(this._server);
 
@@ -33,6 +34,9 @@ class DemoCatalogServer {
   /// The base URL.
   String get url => 'http://127.0.0.1:${_server.port}';
 
+  /// The address of the support chat.
+  String get chatUrl => 'ws://127.0.0.1:${_server.port}/chat';
+
   /// Requests served so far.
   static int requests = 0;
 
@@ -43,6 +47,37 @@ class DemoCatalogServer {
     requests++;
     final response = request.response;
     final path = request.uri.path;
+    if (path == '/chat' && WebSocketTransformer.isUpgradeRequest(request)) {
+      final socket = await WebSocketTransformer.upgrade(request);
+      socket.listen((message) {
+        final line = jsonDecode(message as String) as Map<String, Object?>;
+        socket.add(
+          jsonEncode({'from': 'support', 'text': 're: ${line['text']}'}),
+        );
+      });
+      return;
+    }
+    if (path == '/stock/events') {
+      // Three events, then the stream ends; the client reconnects with
+      // Last-Event-ID and gets "no more" (204).
+      if (request.headers.value('Last-Event-ID') == '3') {
+        response.statusCode = HttpStatus.noContent;
+      } else {
+        response.headers.contentType = ContentType('text', 'event-stream');
+        for (final (id, isbn, copies) in [
+          (1, '978-0', 4),
+          (2, '978-1', 0),
+          (3, '978-0', 3),
+        ]) {
+          response.write(
+            'id: $id\nevent: stock\nretry: 10\n'
+            'data: ${jsonEncode({'isbn': isbn, 'copies': copies})}\n\n',
+          );
+        }
+      }
+      await response.close();
+      return;
+    }
     void json(int status, Object? body) {
       response
         ..statusCode = status

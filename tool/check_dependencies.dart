@@ -33,6 +33,7 @@ const repositoryOnly = {
   'spring_boot_starter_cache',
   'spring_web_dart',
   'spring_boot_starter_feign',
+  'spring_boot_starter_websocket',
 };
 
 /// A package allowed although it is not published by the Dart team.

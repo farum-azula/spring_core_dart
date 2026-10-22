@@ -34,6 +34,9 @@ abstract interface class CatalogClient {
 
   @PostMapping('/books')
   Future<ResponseEntity<Book>> create(@RequestBody() Book book);
+
+  @GetMapping('/stock/events')
+  EventStream<StockChange> stock();    // server-sent events, see 5
 }
 
 @Introspected()
@@ -79,7 +82,30 @@ RequestInterceptor auth(TokenStore tokens) =>
     BearerTokenRequestInterceptor(() => tokens.accessToken);
 ```
 
-## 5. Test without a server
+## 5. Server-sent events
+
+A method returning `EventStream<T>` reads a `text/event-stream` response.
+`EventStream<T>` is a `Stream<T>` of the decoded data, so no wrapper type
+in the usual case; the whole events (id, event name, retry) are in
+`.events`. A lost connection is opened again with `Last-Event-ID`; a
+`204` from the server ends the stream.
+
+```dart
+await for (final change in catalog.stock()) {
+  print('${change.isbn}: ${change.copies} left');
+}
+
+catalog.stock().events.listen((e) => print('${e.id} ${e.event} ${e.data.copies}'));
+```
+
+```properties
+spring.cloud.openfeign.client.config.catalog.event-stream.reconnect-delay=1s
+```
+
+Not in Spring: OpenFeign cannot stream; Spring reads events as
+`Flux<ServerSentEvent<T>>` from `WebClient`.
+
+## 6. Test without a server
 
 ```dart
 final server = MockHttpTransport();               // package:spring_web_dart/testing.dart
@@ -90,9 +116,19 @@ test('reads a book', () async {
   server.when(HttpMethod.get, '/books/1').respond(200, json: {'isbn': '1', 'title': 'Dune'});
   expect(await app.getBean<Shop>().title('1'), 'Dune');
 });
+
+test('reads stock changes', () async {
+  server
+    ..when(HttpMethod.get, '/stock/events').respondEvents([
+      ServerSentEvent({'isbn': '1', 'copies': 3}, id: '1'),
+    ])
+    ..when(HttpMethod.get, '/stock/events').respond(204);   // ends the stream
+  final changes = await app.getBean<CatalogClient>().stock().toList();
+  expect(changes.single.copies, 3);
+});
 ```
 
 [`example.dart`](example.dart) runs the pieces that need no generated code
-(errors, retries, interceptors). Everything else — configuration, retries,
+(errors, retries, interceptors, an event stream). Everything else — configuration, retries,
 fallbacks, logging: the package
 [README](https://pub.dev/packages/spring_boot_starter_feign).

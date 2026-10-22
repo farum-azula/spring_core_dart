@@ -82,3 +82,31 @@ class Comment {
   final String email;
   final String body;
 }
+
+/// One change of a Wikimedia wiki (only the fields used here; the rest of
+/// the JSON is ignored).
+class RecentChange {
+  const RecentChange({
+    required this.type,
+    required this.wiki,
+    this.title,
+    this.user,
+    this.bot = false,
+  });
+
+  /// `edit`, `new`, `log`, `categorize`, ...
+  final String type;
+
+  /// e.g. `enwiki`, `commonswiki`, `wikidatawiki`.
+  final String wiki;
+  final String? title;
+  final String? user;
+  final bool bot;
+}
+
+/// A chat message sent to the echo server and read back.
+class ChatMessage {
+  const ChatMessage({required this.from, required this.text});
+  final String from;
+  final String text;
+}

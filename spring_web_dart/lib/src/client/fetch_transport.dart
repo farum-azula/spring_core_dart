@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
+import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 
 /// An [HttpTransport] on the browser's `fetch` (Flutter web, Dart on the
@@ -31,15 +32,82 @@ class FetchHttpTransport implements HttpTransport {
 
   @override
   Future<HttpResponse> send(HttpRequest request) async {
+    final (response, headers, timer, _) = await _fetchResponse(request);
+    try {
+      final buffer = await response.arrayBuffer().toDart;
+      return HttpResponse(
+        response.status,
+        headers: headers,
+        body: buffer.toDart.asUint8List(),
+        request: request,
+      );
+    } catch (error) {
+      throw HttpTransportException(
+        'request failed: $error',
+        request: request,
+        cause: error,
+        isTimeout: timer.timedOut,
+      );
+    } finally {
+      timer.cancel();
+    }
+  }
+
+  @override
+  Future<StreamedHttpResponse> stream(HttpRequest request) async {
+    final (response, headers, timer, abort) = await _fetchResponse(request);
+    // The timeout covers the headers only.
+    timer.cancel();
+    final reader = response.body?.getReader();
+    var cancelled = false;
+    late final StreamController<List<int>> body;
+    body = StreamController<List<int>>(
+      onListen: () async {
+        try {
+          while (reader != null && !cancelled) {
+            final chunk = await reader.read().toDart;
+            if (chunk.done) {
+              break;
+            }
+            final value = chunk.value;
+            if (value != null && !cancelled) {
+              body.add(value.toDart);
+            }
+          }
+        } catch (error) {
+          if (!cancelled) {
+            body.addError(
+              HttpTransportException(
+                'response broke: $error',
+                request: request,
+                cause: error,
+              ),
+            );
+          }
+        }
+        if (!cancelled) {
+          await body.close();
+        }
+      },
+      onCancel: () {
+        cancelled = true;
+        abort.abort();
+      },
+    );
+    return StreamedHttpResponse(
+      response.status,
+      headers: headers,
+      body: body.stream,
+      request: request,
+    );
+  }
+
+  // Starts [request]; returns when the status and headers have arrived.
+  Future<(_Response, HttpHeaders, _Deadline, _AbortController)> _fetchResponse(
+    HttpRequest request,
+  ) async {
     final controller = _AbortController();
-    var timedOut = false;
-    final timeout = request.timeout;
-    final timer = timeout == null
-        ? null
-        : Timer(timeout, () {
-            timedOut = true;
-            controller.abort();
-          });
+    final timer = _Deadline(request.timeout, () => controller.abort());
     try {
       final headers = JSObject();
       request.headers.toMap().forEach(
@@ -66,26 +134,18 @@ class FetchHttpTransport implements HttpTransport {
           value.toDart,
         )).toJS,
       );
-      final buffer = await response.arrayBuffer().toDart;
-      return HttpResponse(
-        response.status,
-        headers: responseHeaders,
-        body: buffer.toDart.asUint8List(),
-        request: request,
-      );
-    } on HttpTransportException {
-      rethrow;
+      return (response, responseHeaders, timer, controller);
     } catch (error) {
+      timer.cancel();
+      final timeout = request.timeout;
       throw HttpTransportException(
-        timedOut
+        timer.timedOut
             ? 'no response within ${timeout!.inMilliseconds} ms'
             : 'request failed: $error',
         request: request,
         cause: error,
-        isTimeout: timedOut,
+        isTimeout: timer.timedOut,
       );
-    } finally {
-      timer?.cancel();
     }
   }
 
@@ -117,7 +177,40 @@ extension type _AbortSignal._(JSObject _) implements JSObject {}
 extension type _Response._(JSObject _) implements JSObject {
   external int get status;
   external _Headers get headers;
+  external _ReadableStream? get body;
   external JSPromise<JSArrayBuffer> arrayBuffer();
+}
+
+extension type _ReadableStream._(JSObject _) implements JSObject {
+  external _Reader getReader();
+}
+
+extension type _Reader._(JSObject _) implements JSObject {
+  external JSPromise<_ReadResult> read();
+}
+
+extension type _ReadResult._(JSObject _) implements JSObject {
+  external bool get done;
+  external JSUint8Array? get value;
+}
+
+/// Aborts a request when its timeout runs out.
+final class _Deadline {
+  _Deadline(Duration? timeout, void Function() abort) {
+    if (timeout != null) {
+      _timer = Timer(timeout, () {
+        timedOut = true;
+        abort();
+      });
+    }
+  }
+
+  Timer? _timer;
+
+  /// Whether the timeout ran out.
+  bool timedOut = false;
+
+  void cancel() => _timer?.cancel();
 }
 
 extension type _Headers._(JSObject _) implements JSObject {

@@ -2124,6 +2124,8 @@ abstract interface class CatalogClient {
   String version();
 
   void ping();
+
+  Stream<Book> changes();
 }
 """;
 
@@ -2187,6 +2189,21 @@ abstract interface class CatalogClient {
         output,
         _has(
           '@override void ping() { _handler.invoke(_metadata.methods[5], const []); }',
+        ),
+      );
+      // A sync generic result (e.g. a Feign EventStream<T>): described with
+      // its type argument and cast.
+      expect(
+        output,
+        _has(
+          'returnType: const _i2.GenericType<_i3.Stream<_i1.Book>>([_i2.ClassType<_i1.Book>()])',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          '@override _i3.Stream<_i1.Book> changes() => '
+          '(_handler.invoke(_metadata.methods[6], const []) as _i3.Stream<_i1.Book>);',
         ),
       );
       // The bean: primary (from @InterfaceProxy(primary: true)), created by

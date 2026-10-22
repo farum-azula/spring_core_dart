@@ -8,7 +8,7 @@ name: 'Release: publish to pub.dev'
 #           spring_web_dart
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
 #           spring_boot_starter_cache, spring_boot_starter_feign,
-#           spring_boot_starter_test
+#           spring_boot_starter_websocket, spring_boot_starter_test
 #
 # No password or token: pub.dev trusts this repository through GitHub's
 # OpenID Connect token once automated publishing is enabled on each package's
@@ -81,6 +81,7 @@ jobs:
           - spring_boot_starter_scheduling
           - spring_boot_starter_cache
           - spring_boot_starter_feign
+          - spring_boot_starter_websocket
           - spring_boot_starter_test
     steps:
       - uses: actions/checkout@v7

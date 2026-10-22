@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
+import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 
@@ -40,17 +41,85 @@ class IoHttpTransport implements HttpTransport {
   final io.HttpClient _client;
 
   @override
-  Future<HttpResponse> send(HttpRequest request) async {
+  Future<HttpResponse> send(HttpRequest request) =>
+      _exchange(request, (incoming, _) async {
+        final bytes = await incoming.fold<BytesBuilder>(
+          BytesBuilder(copy: false),
+          (builder, chunk) => builder..add(chunk),
+        );
+        return HttpResponse(
+          incoming.statusCode,
+          headers: _headers(incoming),
+          body: bytes.takeBytes(),
+          request: request,
+        );
+      });
+
+  @override
+  Future<StreamedHttpResponse> stream(HttpRequest request) =>
+      _exchange(request, (incoming, outgoing) async {
+        late final StreamSubscription<List<int>> subscription;
+        late final StreamController<List<int>> body;
+        body = StreamController<List<int>>(
+          onListen: () => subscription = incoming.listen(
+            body.add,
+            onError: (Object error, StackTrace stackTrace) => body.addError(
+              error is io.IOException
+                  ? HttpTransportException(
+                      'response broke: $error',
+                      request: request,
+                      cause: error,
+                    )
+                  : error,
+              stackTrace,
+            ),
+            onDone: body.close,
+          ),
+          onPause: () => subscription.pause(),
+          onResume: () => subscription.resume(),
+          // Cancelling alone would keep the connection open to drain it.
+          onCancel: () async {
+            await subscription.cancel();
+            outgoing.abort();
+          },
+        );
+        return StreamedHttpResponse(
+          incoming.statusCode,
+          headers: _headers(incoming),
+          body: body.stream,
+          request: request,
+        );
+      });
+
+  // Sends [request] and hands the response to [read]; the request's timeout
+  // covers both, and failures become HttpTransportException.
+  Future<T> _exchange<T>(
+    HttpRequest request,
+    Future<T> Function(
+      io.HttpClientResponse incoming,
+      io.HttpClientRequest outgoing,
+    )
+    read,
+  ) async {
     io.HttpClientRequest? pending;
-    Future<HttpResponse> exchange() async {
+    Future<T> exchange() async {
       final outgoing = pending = await _client.openUrl(
         request.method.value,
         request.url,
       );
       outgoing.followRedirects =
           request.method == HttpMethod.get || request.method == HttpMethod.head;
+      // The request's headers replace HttpClient's defaults (User-Agent,
+      // Accept-Encoding); further values of the same name are added.
+      final seen = <String>{};
       request.headers.forEach((name, value) {
-        if (name.toLowerCase() != 'content-length') {
+        final key = name.toLowerCase();
+        if (key == 'content-length') {
+          return;
+        }
+        if (seen.add(key)) {
+          outgoing.headers.set(name, value, preserveHeaderCase: true);
+        } else {
           outgoing.headers.add(name, value, preserveHeaderCase: true);
         }
       });
@@ -60,23 +129,7 @@ class IoHttpTransport implements HttpTransport {
           ..contentLength = body.length
           ..add(body);
       }
-      final incoming = await outgoing.close();
-      final bytes = await incoming.fold<BytesBuilder>(
-        BytesBuilder(copy: false),
-        (builder, chunk) => builder..add(chunk),
-      );
-      final headers = HttpHeaders();
-      incoming.headers.forEach((name, values) {
-        for (final value in values) {
-          headers.add(name, value);
-        }
-      });
-      return HttpResponse(
-        incoming.statusCode,
-        headers: headers,
-        body: bytes.takeBytes(),
-        request: request,
-      );
+      return read(await outgoing.close(), outgoing);
     }
 
     final timeout = request.timeout;
@@ -106,6 +159,16 @@ class IoHttpTransport implements HttpTransport {
         cause: error,
       );
     }
+  }
+
+  static HttpHeaders _headers(io.HttpClientResponse incoming) {
+    final headers = HttpHeaders();
+    incoming.headers.forEach((name, values) {
+      for (final value in values) {
+        headers.add(name, value);
+      }
+    });
+    return headers;
   }
 
   @override

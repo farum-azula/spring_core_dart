@@ -1,0 +1,140 @@
+import 'dart:async';
+import 'dart:io' as io;
+import 'dart:typed_data';
+
+import 'package:spring_web_dart/src/http_headers.dart';
+import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
+
+/// A [WebSocketTransport] on `dart:io`'s `WebSocket`: the VM, Flutter
+/// mobile and desktop. Sends handshake headers (e.g. `Authorization`).
+///
+/// ```dart
+/// import 'package:spring_web_dart/io.dart';
+///
+/// final transport = IoWebSocketTransport();
+/// final socket = await transport.connect(
+///   Uri.parse('wss://chat.neon.books/ws'),
+///   headers: HttpHeaders({'Authorization': 'Bearer $token'}),
+/// );
+/// ```
+///
+/// Spring (Java): `StandardWebSocketClient`.
+class IoWebSocketTransport implements WebSocketTransport {
+  /// A transport; `client` is used for the handshakes (proxy, TLS
+  /// settings).
+  IoWebSocketTransport({this._client});
+
+  // The client for the handshakes (`null`: a default one).
+  final io.HttpClient? _client;
+
+  @override
+  Future<WebSocketConnection> connect(
+    Uri url, {
+    HttpHeaders? headers,
+    List<String> protocols = const [],
+    Duration? timeout,
+  }) async {
+    final handshake = io.WebSocket.connect(
+      url.toString(),
+      protocols: protocols.isEmpty ? null : protocols,
+      headers: headers?.toMap(),
+      customClient: _client,
+    );
+    try {
+      final socket = timeout == null
+          ? await handshake
+          : await handshake.timeout(
+              timeout,
+              onTimeout: () {
+                // Close the socket if the handshake completes late.
+                unawaited(
+                  handshake.then((s) => s.close(), onError: (Object _) {}),
+                );
+                throw TimeoutException('handshake', timeout);
+              },
+            );
+      return _IoConnection(socket, url);
+    } on TimeoutException catch (error) {
+      throw WebSocketException(
+        'no handshake within ${timeout!.inMilliseconds} ms',
+        url: url,
+        cause: error,
+        isTimeout: true,
+      );
+    } on Object catch (error) {
+      if (error is WebSocketException) {
+        rethrow;
+      }
+      throw WebSocketException(
+        'cannot connect: $error',
+        url: url,
+        cause: error,
+      );
+    }
+  }
+}
+
+final class _IoConnection implements WebSocketConnection {
+  _IoConnection(this._socket, this._url);
+
+  final io.WebSocket _socket;
+  final Uri _url;
+
+  @override
+  late final Stream<Object> messages = _socket
+      .map<Object>(
+        (message) => switch (message) {
+          final String text => text,
+          final Uint8List bytes => bytes,
+          final List<int> bytes => Uint8List.fromList(bytes),
+          _ => '$message',
+        },
+      )
+      .handleError(
+        (Object error) => throw WebSocketException(
+          'connection broke: $error',
+          url: _url,
+          cause: error,
+        ),
+        test: (error) => error is! WebSocketException,
+      );
+
+  @override
+  String? get protocol => _socket.protocol;
+
+  @override
+  void send(Object message) {
+    if (_socket.readyState != io.WebSocket.open) {
+      throw WebSocketException('the connection is closed', url: _url);
+    }
+    switch (message) {
+      case String():
+        _socket.add(message);
+      case List<int>():
+        _socket.add(message);
+      default:
+        throw ArgumentError.value(
+          message,
+          'message',
+          'a String or a List<int>',
+        );
+    }
+  }
+
+  @override
+  Future<void> close([int? code, String? reason]) {
+    _localCode ??= code ?? WebSocketStatus.noStatusReceived;
+    _localReason ??= reason;
+    return _socket.close(code, reason);
+  }
+
+  // What the client closed with (the server's answer may come later).
+  int? _localCode;
+  String? _localReason;
+
+  @override
+  int? get closeCode => _socket.closeCode ?? _localCode;
+
+  @override
+  String? get closeReason => _socket.closeReason ?? _localReason;
+}

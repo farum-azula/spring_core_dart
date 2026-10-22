@@ -7,25 +7,33 @@
 
 import 'dart:async' as _i4;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i14;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i20;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i19;
 import 'package:spring_boot_dart/src/runners.dart' as _i2;
 import 'package:spring_boot_feign_example/src/blog_runner.dart' as _i1;
-import 'package:spring_boot_feign_example/src/feign_config.dart' as _i13;
+import 'package:spring_boot_feign_example/src/echo_socket.dart' as _i6;
+import 'package:spring_boot_feign_example/src/feign_config.dart' as _i18;
 import 'package:spring_boot_feign_example/src/jsonplaceholder_client.dart'
     as _i5;
-import 'package:spring_boot_feign_example/src/models.dart' as _i9;
+import 'package:spring_boot_feign_example/src/live_runners.dart' as _i12;
+import 'package:spring_boot_feign_example/src/models.dart' as _i7;
+import 'package:spring_boot_feign_example/src/wikimedia_client.dart' as _i13;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i16;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i11;
-import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i8;
-import 'package:spring_boot_starter_feign/src/request_template.dart' as _i6;
-import 'package:spring_boot_starter_feign/src/retryer.dart' as _i7;
+    as _i21;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i16;
+import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i10;
+import 'package:spring_boot_starter_feign/src/request_template.dart' as _i8;
+import 'package:spring_boot_starter_feign/src/retryer.dart' as _i9;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i17;
+    as _i22;
+import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
+    as _i23;
+import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
+    as _i15;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
-import 'package:spring_web_dart/src/annotations.dart' as _i12;
-import 'package:spring_web_dart/src/response_entity.dart' as _i10;
+import 'package:spring_web_dart/src/annotations.dart' as _i17;
+import 'package:spring_web_dart/src/response_entity.dart' as _i11;
+import 'package:spring_web_dart/src/sse/event_stream.dart' as _i14;
 
 class _$BlogRunnerProxy
     implements _i1.BlogRunner, _i2.ApplicationRunner, _i3.Advised {
@@ -56,11 +64,10 @@ class _$BlogRunnerProxy
           as _i5.JsonPlaceholderClient);
 }
 
-class _$FeignConfig_clientNameProxy
-    implements _i6.RequestInterceptor, _i3.Advised {
-  _$FeignConfig_clientNameProxy(this._target, this._invoker);
+class _$EchoSocketProxy implements _i6.EchoSocket, _i3.Advised {
+  _$EchoSocketProxy(this._target, this._invoker);
 
-  final _i6.RequestInterceptor _target;
+  final _i6.EchoSocket _target;
 
   final _i3.ProxyInvoker _invoker;
 
@@ -74,19 +81,51 @@ class _$FeignConfig_clientNameProxy
   String toString() => _target.toString();
 
   @override
-  _i4.FutureOr<void> apply(_i6.RequestTemplate template) => (_invoker.invoke(
+  _i4.Stream<_i7.ChatMessage> messages() =>
+      (_invoker.invoke(this, _target, 0, const [], (args) => _target.messages())
+          as _i4.Stream<_i7.ChatMessage>);
+
+  @override
+  _i4.Future<void> send(_i7.ChatMessage message) => _invoker.invokeAsync<void>(
+    this,
+    _target,
+    1,
+    [message],
+    (args) => _target.send((args[0] as _i7.ChatMessage)),
+  );
+}
+
+class _$FeignConfig_clientNameProxy
+    implements _i8.RequestInterceptor, _i3.Advised {
+  _$FeignConfig_clientNameProxy(this._target, this._invoker);
+
+  final _i8.RequestInterceptor _target;
+
+  final _i3.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i4.FutureOr<void> apply(_i8.RequestTemplate template) => (_invoker.invoke(
     this,
     _target,
     0,
     [template],
-    (args) => _target.apply((args[0] as _i6.RequestTemplate)),
+    (args) => _target.apply((args[0] as _i8.RequestTemplate)),
   ) as _i4.FutureOr<void>);
 }
 
-class _$FeignConfig_retryerProxy implements _i7.Retryer, _i3.Advised {
+class _$FeignConfig_retryerProxy implements _i9.Retryer, _i3.Advised {
   _$FeignConfig_retryerProxy(this._target, this._invoker);
 
-  final _i7.Retryer _target;
+  final _i9.Retryer _target;
 
   final _i3.ProxyInvoker _invoker;
 
@@ -100,7 +139,7 @@ class _$FeignConfig_retryerProxy implements _i7.Retryer, _i3.Advised {
   String toString() => _target.toString();
 
   @override
-  Duration? nextDelay(int attempt, _i8.RetryableException error) =>
+  Duration? nextDelay(int attempt, _i10.RetryableException error) =>
       (_invoker.invoke(
         this,
         _target,
@@ -108,7 +147,7 @@ class _$FeignConfig_retryerProxy implements _i7.Retryer, _i3.Advised {
         [attempt, error],
         (args) => _target.nextDelay(
           (args[0] as int),
-          (args[1] as _i8.RetryableException),
+          (args[1] as _i10.RetryableException),
         ),
       ) as Duration?);
 }
@@ -131,7 +170,7 @@ class _$JsonPlaceholderClientProxy
   String toString() => _target.toString();
 
   @override
-  _i4.Future<_i9.User> user(int id) => _invoker.invokeAsync<_i9.User>(
+  _i4.Future<_i7.User> user(int id) => _invoker.invokeAsync<_i7.User>(
     this,
     _target,
     0,
@@ -140,13 +179,13 @@ class _$JsonPlaceholderClientProxy
   );
 
   @override
-  _i4.Future<List<_i9.Post>> postsOf(int userId) =>
-      _invoker.invokeAsync<List<_i9.Post>>(this, _target, 1, [
+  _i4.Future<List<_i7.Post>> postsOf(int userId) =>
+      _invoker.invokeAsync<List<_i7.Post>>(this, _target, 1, [
         userId,
       ], (args) => _target.postsOf((args[0] as int)));
 
   @override
-  _i4.Future<_i9.Post> post(int id) => _invoker.invokeAsync<_i9.Post>(
+  _i4.Future<_i7.Post> post(int id) => _invoker.invokeAsync<_i7.Post>(
     this,
     _target,
     2,
@@ -155,16 +194,156 @@ class _$JsonPlaceholderClientProxy
   );
 
   @override
-  _i4.Future<List<_i9.Comment>> comments(int id) =>
-      _invoker.invokeAsync<List<_i9.Comment>>(this, _target, 3, [
+  _i4.Future<List<_i7.Comment>> comments(int id) =>
+      _invoker.invokeAsync<List<_i7.Comment>>(this, _target, 3, [
         id,
       ], (args) => _target.comments((args[0] as int)));
 
   @override
-  _i4.Future<_i10.ResponseEntity<_i9.Post>> create(_i9.NewPost post) =>
-      _invoker.invokeAsync<_i10.ResponseEntity<_i9.Post>>(this, _target, 4, [
+  _i4.Future<_i11.ResponseEntity<_i7.Post>> create(_i7.NewPost post) =>
+      _invoker.invokeAsync<_i11.ResponseEntity<_i7.Post>>(this, _target, 4, [
         post,
-      ], (args) => _target.create((args[0] as _i9.NewPost)));
+      ], (args) => _target.create((args[0] as _i7.NewPost)));
+}
+
+class _$WikipediaRunnerProxy
+    implements _i12.WikipediaRunner, _i2.ApplicationRunner, _i3.Advised {
+  _$WikipediaRunnerProxy(this._target, this._invoker);
+
+  final _i12.WikipediaRunner _target;
+
+  final _i3.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i4.Future<void> run(_i2.ApplicationArguments args) =>
+      _invoker.invokeAsync<void>(this, _target, 0, [
+        args,
+      ], (args) => _target.run((args[0] as _i2.ApplicationArguments)));
+
+  @override
+  _i13.WikimediaStreams get streams =>
+      (_invoker.invoke(this, _target, 1, const [], (_) => _target.streams)
+          as _i13.WikimediaStreams);
+}
+
+class _$EchoRunnerProxy
+    implements _i12.EchoRunner, _i2.ApplicationRunner, _i3.Advised {
+  _$EchoRunnerProxy(this._target, this._invoker);
+
+  final _i12.EchoRunner _target;
+
+  final _i3.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i4.Future<void> run(_i2.ApplicationArguments args) =>
+      _invoker.invokeAsync<void>(this, _target, 0, [
+        args,
+      ], (args) => _target.run((args[0] as _i2.ApplicationArguments)));
+
+  @override
+  _i6.EchoSocket get socket =>
+      (_invoker.invoke(this, _target, 1, const [], (_) => _target.socket)
+          as _i6.EchoSocket);
+}
+
+class _$WikimediaStreamsProxy implements _i13.WikimediaStreams, _i3.Advised {
+  _$WikimediaStreamsProxy(this._target, this._invoker);
+
+  final _i13.WikimediaStreams _target;
+
+  final _i3.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i14.EventStream<_i7.RecentChange> recentChanges() => (_invoker.invoke(
+    this,
+    _target,
+    0,
+    const [],
+    (args) => _target.recentChanges(),
+  ) as _i14.EventStream<_i7.RecentChange>);
+}
+
+/// Implements `EchoSocket` through an `InvocationHandler`.
+class _$EchoSocketImpl implements _i6.EchoSocket {
+  _$EchoSocketImpl(this._handler, this._metadata);
+
+  final _i3.InvocationHandler _handler;
+
+  final _i3.InterfaceMetadata<_i6.EchoSocket> _metadata;
+
+  static _$EchoSocketImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i6.EchoSocket>(
+      typeName: r'EchoSocket',
+      annotations: const [_i15.WebSocketClient(r'echo', url: r'${echo.url}')],
+      methods: [
+        _i3.ProxyMethod(
+          r'messages',
+          returnType: const _i3.GenericType<_i4.Stream<_i7.ChatMessage>>([
+            _i3.ClassType<_i7.ChatMessage>(),
+          ]),
+          annotations: const [_i15.OnMessage()],
+          call: (target, arguments) => (target as _i6.EchoSocket).messages(),
+        ),
+        _i3.ProxyMethod(
+          r'send',
+          parameters: [
+            _i3.BeanParameter(
+              r'message',
+              type: const _i3.ClassType<_i7.ChatMessage>(),
+              isRequired: true,
+            ),
+          ],
+          returnType: const _i3.DynamicType(),
+          isFuture: true,
+          isVoid: true,
+          annotations: const [_i15.SendMessage()],
+          call: (target, arguments) => (target as _i6.EchoSocket).send(
+            (arguments[0] as _i7.ChatMessage),
+          ),
+        ),
+      ],
+    );
+    return _$EchoSocketImpl(
+      _i3.InterfaceProxies.handlerFor(r, metadata),
+      metadata,
+    );
+  }
+
+  @override
+  _i4.Stream<_i7.ChatMessage> messages() =>
+      (_handler.invoke(_metadata.methods[0], const [])
+          as _i4.Stream<_i7.ChatMessage>);
+
+  @override
+  _i4.Future<void> send(_i7.ChatMessage message) =>
+      _i3.retypeFuture<void>(_handler.invoke(_metadata.methods[1], [message]));
 }
 
 /// Implements `JsonPlaceholderClient` through an `InvocationHandler`.
@@ -179,7 +358,7 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
     final metadata = _i3.InterfaceMetadata<_i5.JsonPlaceholderClient>(
       typeName: r'JsonPlaceholderClient',
       annotations: const [
-        _i11.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
+        _i16.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
       ],
       methods: [
         _i3.ProxyMethod(
@@ -189,12 +368,12 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'id',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i12.PathVariable()],
+              annotations: const [_i17.PathVariable()],
             ),
           ],
-          returnType: const _i3.ClassType<_i9.User>(),
+          returnType: const _i3.ClassType<_i7.User>(),
           isFuture: true,
-          annotations: const [_i12.GetMapping(r'/users/{id}')],
+          annotations: const [_i17.GetMapping(r'/users/{id}')],
           call: (target, arguments) =>
               (target as _i5.JsonPlaceholderClient).user((arguments[0] as int)),
         ),
@@ -205,12 +384,12 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'userId',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i12.RequestParam(r'userId')],
+              annotations: const [_i17.RequestParam(r'userId')],
             ),
           ],
-          returnType: const _i3.ListType<_i9.Post>(_i3.ClassType<_i9.Post>()),
+          returnType: const _i3.ListType<_i7.Post>(_i3.ClassType<_i7.Post>()),
           isFuture: true,
-          annotations: const [_i12.GetMapping(r'/posts')],
+          annotations: const [_i17.GetMapping(r'/posts')],
           call: (target, arguments) => (target as _i5.JsonPlaceholderClient)
               .postsOf((arguments[0] as int)),
         ),
@@ -221,12 +400,12 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'id',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i12.PathVariable()],
+              annotations: const [_i17.PathVariable()],
             ),
           ],
-          returnType: const _i3.ClassType<_i9.Post>(),
+          returnType: const _i3.ClassType<_i7.Post>(),
           isFuture: true,
-          annotations: const [_i12.GetMapping(r'/posts/{id}')],
+          annotations: const [_i17.GetMapping(r'/posts/{id}')],
           call: (target, arguments) =>
               (target as _i5.JsonPlaceholderClient).post((arguments[0] as int)),
         ),
@@ -237,14 +416,14 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'id',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i12.PathVariable()],
+              annotations: const [_i17.PathVariable()],
             ),
           ],
-          returnType: const _i3.ListType<_i9.Comment>(
-            _i3.ClassType<_i9.Comment>(),
+          returnType: const _i3.ListType<_i7.Comment>(
+            _i3.ClassType<_i7.Comment>(),
           ),
           isFuture: true,
-          annotations: const [_i12.GetMapping(r'/posts/{id}/comments')],
+          annotations: const [_i17.GetMapping(r'/posts/{id}/comments')],
           call: (target, arguments) => (target as _i5.JsonPlaceholderClient)
               .comments((arguments[0] as int)),
         ),
@@ -253,18 +432,18 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
           parameters: [
             _i3.BeanParameter(
               r'post',
-              type: const _i3.ClassType<_i9.NewPost>(),
+              type: const _i3.ClassType<_i7.NewPost>(),
               isRequired: true,
-              annotations: const [_i12.RequestBody()],
+              annotations: const [_i17.RequestBody()],
             ),
           ],
-          returnType: const _i3.GenericType<_i10.ResponseEntity<_i9.Post>>([
-            _i3.ClassType<_i9.Post>(),
+          returnType: const _i3.GenericType<_i11.ResponseEntity<_i7.Post>>([
+            _i3.ClassType<_i7.Post>(),
           ]),
           isFuture: true,
-          annotations: const [_i12.PostMapping(r'/posts')],
+          annotations: const [_i17.PostMapping(r'/posts')],
           call: (target, arguments) => (target as _i5.JsonPlaceholderClient)
-              .create((arguments[0] as _i9.NewPost)),
+              .create((arguments[0] as _i7.NewPost)),
         ),
       ],
     );
@@ -275,30 +454,73 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
   }
 
   @override
-  _i4.Future<_i9.User> user(int id) =>
-      _i3.retypeFuture<_i9.User>(_handler.invoke(_metadata.methods[0], [id]));
+  _i4.Future<_i7.User> user(int id) =>
+      _i3.retypeFuture<_i7.User>(_handler.invoke(_metadata.methods[0], [id]));
 
   @override
-  _i4.Future<List<_i9.Post>> postsOf(int userId) =>
-      _i3.retypeFuture<List<_i9.Post>>(
+  _i4.Future<List<_i7.Post>> postsOf(int userId) =>
+      _i3.retypeFuture<List<_i7.Post>>(
         _handler.invoke(_metadata.methods[1], [userId]),
       );
 
   @override
-  _i4.Future<_i9.Post> post(int id) =>
-      _i3.retypeFuture<_i9.Post>(_handler.invoke(_metadata.methods[2], [id]));
+  _i4.Future<_i7.Post> post(int id) =>
+      _i3.retypeFuture<_i7.Post>(_handler.invoke(_metadata.methods[2], [id]));
 
   @override
-  _i4.Future<List<_i9.Comment>> comments(int id) =>
-      _i3.retypeFuture<List<_i9.Comment>>(
+  _i4.Future<List<_i7.Comment>> comments(int id) =>
+      _i3.retypeFuture<List<_i7.Comment>>(
         _handler.invoke(_metadata.methods[3], [id]),
       );
 
   @override
-  _i4.Future<_i10.ResponseEntity<_i9.Post>> create(_i9.NewPost post) =>
-      _i3.retypeFuture<_i10.ResponseEntity<_i9.Post>>(
+  _i4.Future<_i11.ResponseEntity<_i7.Post>> create(_i7.NewPost post) =>
+      _i3.retypeFuture<_i11.ResponseEntity<_i7.Post>>(
         _handler.invoke(_metadata.methods[4], [post]),
       );
+}
+
+/// Implements `WikimediaStreams` through an `InvocationHandler`.
+class _$WikimediaStreamsImpl implements _i13.WikimediaStreams {
+  _$WikimediaStreamsImpl(this._handler, this._metadata);
+
+  final _i3.InvocationHandler _handler;
+
+  final _i3.InterfaceMetadata<_i13.WikimediaStreams> _metadata;
+
+  static _$WikimediaStreamsImpl $create(_i3.DependencyResolver r) {
+    final metadata = _i3.InterfaceMetadata<_i13.WikimediaStreams>(
+      typeName: r'WikimediaStreams',
+      annotations: const [
+        _i16.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
+      ],
+      methods: [
+        _i3.ProxyMethod(
+          r'recentChanges',
+          returnType: const _i3.GenericType<_i14.EventStream<_i7.RecentChange>>(
+            [_i3.ClassType<_i7.RecentChange>()],
+          ),
+          annotations: const [
+            _i17.GetMapping(
+              r'/v2/stream/recentchange',
+              headers: [r'User-Agent: ${wikimedia.user-agent}'],
+            ),
+          ],
+          call: (target, arguments) =>
+              (target as _i13.WikimediaStreams).recentChanges(),
+        ),
+      ],
+    );
+    return _$WikimediaStreamsImpl(
+      _i3.InterfaceProxies.handlerFor(r, metadata),
+      metadata,
+    );
+  }
+
+  @override
+  _i14.EventStream<_i7.RecentChange> recentChanges() =>
+      (_handler.invoke(_metadata.methods[0], const [])
+          as _i14.EventStream<_i7.RecentChange>);
 }
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
@@ -310,6 +532,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source:
           r'package:spring_boot_feign_example/src/blog_runner.dart#BlogRunner',
       types: const [_i1.BlogRunner, _i2.ApplicationRunner],
+      order: 1,
       dependencies: const [
         _i3.Dependency(_i5.JsonPlaceholderClient, name: r'api'),
       ],
@@ -345,22 +568,66 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _$BlogRunnerProxy((target as _i1.BlogRunner), invoker),
       ),
     ),
-    _i3.BeanDefinition<_i13.FeignConfig>(
+    _i3.BeanDefinition<_i6.EchoSocket>(
+      name: r'echoSocket',
+      source:
+          r'package:spring_boot_feign_example/src/echo_socket.dart#EchoSocket',
+      types: const [_i6.EchoSocket],
+      primary: true,
+      create: (r) => _$EchoSocketImpl.$create(r),
+      aopProxy: _i3.AopProxyFactory(
+        signatures: const [
+          _i3.MethodSignature(
+            name: r'messages',
+            declaringType: r'EchoSocket',
+            targetType: r'EchoSocket',
+            declaringTypes: [r'EchoSocket'],
+            returnType: r'Stream',
+            annotations: [_i15.OnMessage()],
+            annotationTypes: [r'OnMessage'],
+            targetTypes: [r'EchoSocket'],
+            targetAnnotations: [
+              _i15.WebSocketClient(r'echo', url: r'${echo.url}'),
+            ],
+            targetAnnotationTypes: [r'WebSocketClient'],
+          ),
+          _i3.MethodSignature(
+            name: r'send',
+            declaringType: r'EchoSocket',
+            targetType: r'EchoSocket',
+            declaringTypes: [r'EchoSocket'],
+            returnType: r'Future',
+            parameterTypes: [r'ChatMessage'],
+            parameterNames: [r'message'],
+            annotations: [_i15.SendMessage()],
+            annotationTypes: [r'SendMessage'],
+            targetTypes: [r'EchoSocket'],
+            targetAnnotations: [
+              _i15.WebSocketClient(r'echo', url: r'${echo.url}'),
+            ],
+            targetAnnotationTypes: [r'WebSocketClient'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$EchoSocketProxy((target as _i6.EchoSocket), invoker),
+      ),
+    ),
+    _i3.BeanDefinition<_i18.FeignConfig>(
       name: r'feignConfig',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig',
-      types: const [_i13.FeignConfig],
-      create: (r) => _i13.FeignConfig(),
+      types: const [_i18.FeignConfig],
+      create: (r) => _i18.FeignConfig(),
     ),
-    _i3.BeanDefinition<_i6.RequestInterceptor>(
+    _i3.BeanDefinition<_i8.RequestInterceptor>(
       name: r'clientName',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig.clientName',
-      types: const [_i6.RequestInterceptor],
+      types: const [_i8.RequestInterceptor],
       dependencies: const [
-        _i3.Dependency(_i13.FeignConfig, qualifier: r'feignConfig'),
+        _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
         _i3.Dependency.value(r'${spring.application.name}'),
       ],
       create: (r) => r
-          .dependency<_i13.FeignConfig>(qualifier: r'feignConfig')
+          .dependency<_i18.FeignConfig>(qualifier: r'feignConfig')
           .clientName(r.value<String>(r'${spring.application.name}')),
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
@@ -376,20 +643,20 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (target, invoker) => _$FeignConfig_clientNameProxy(
-          (target as _i6.RequestInterceptor),
+          (target as _i8.RequestInterceptor),
           invoker,
         ),
       ),
     ),
-    _i3.BeanDefinition<_i7.Retryer>(
+    _i3.BeanDefinition<_i9.Retryer>(
       name: r'retryer',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig.retryer',
-      types: const [_i7.Retryer],
+      types: const [_i9.Retryer],
       dependencies: const [
-        _i3.Dependency(_i13.FeignConfig, qualifier: r'feignConfig'),
+        _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
       ],
       create: (r) =>
-          r.dependency<_i13.FeignConfig>(qualifier: r'feignConfig').retryer(),
+          r.dependency<_i18.FeignConfig>(qualifier: r'feignConfig').retryer(),
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -404,7 +671,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (target, invoker) =>
-            _$FeignConfig_retryerProxy((target as _i7.Retryer), invoker),
+            _$FeignConfig_retryerProxy((target as _i9.Retryer), invoker),
       ),
     ),
     _i3.BeanDefinition<_i5.JsonPlaceholderClient>(
@@ -423,11 +690,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
-            annotations: [_i12.GetMapping(r'/users/{id}')],
+            annotations: [_i17.GetMapping(r'/users/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i11.FeignClient(
+              _i16.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -442,11 +709,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'userId'],
-            annotations: [_i12.GetMapping(r'/posts')],
+            annotations: [_i17.GetMapping(r'/posts')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i11.FeignClient(
+              _i16.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -461,11 +728,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
-            annotations: [_i12.GetMapping(r'/posts/{id}')],
+            annotations: [_i17.GetMapping(r'/posts/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i11.FeignClient(
+              _i16.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -480,11 +747,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
-            annotations: [_i12.GetMapping(r'/posts/{id}/comments')],
+            annotations: [_i17.GetMapping(r'/posts/{id}/comments')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i11.FeignClient(
+              _i16.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -499,11 +766,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'NewPost'],
             parameterNames: [r'post'],
-            annotations: [_i12.PostMapping(r'/posts')],
+            annotations: [_i17.PostMapping(r'/posts')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i11.FeignClient(
+              _i16.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -517,52 +784,199 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ),
     ),
+    _i3.BeanDefinition<_i12.WikipediaRunner>(
+      name: r'wikipediaRunner',
+      source: r'package:spring_boot_feign_example/src/live_runners.dart#WikipediaRunner',
+      types: const [_i12.WikipediaRunner, _i2.ApplicationRunner],
+      order: 2,
+      dependencies: const [
+        _i3.Dependency(_i13.WikimediaStreams, name: r'streams'),
+      ],
+      create: (r) => _i12.WikipediaRunner(
+        r.dependency<_i13.WikimediaStreams>(name: r'streams'),
+      ),
+      aopProxy: _i3.AopProxyFactory(
+        signatures: const [
+          _i3.MethodSignature(
+            name: r'run',
+            declaringType: r'ApplicationRunner',
+            targetType: r'WikipediaRunner',
+            declaringTypes: [r'WikipediaRunner', r'ApplicationRunner'],
+            returnType: r'Future',
+            parameterTypes: [r'ApplicationArguments'],
+            parameterNames: [r'args'],
+            targetTypes: [r'WikipediaRunner', r'ApplicationRunner'],
+            targetAnnotations: [_i3.Component()],
+            targetAnnotationTypes: [r'Component'],
+          ),
+          _i3.MethodSignature(
+            name: r'streams',
+            declaringType: r'WikipediaRunner',
+            targetType: r'WikipediaRunner',
+            declaringTypes: [r'WikipediaRunner'],
+            kind: _i3.MemberKind.getter,
+            returnType: r'WikimediaStreams',
+            targetTypes: [r'WikipediaRunner', r'ApplicationRunner'],
+            targetAnnotations: [_i3.Component()],
+            targetAnnotationTypes: [r'Component'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$WikipediaRunnerProxy((target as _i12.WikipediaRunner), invoker),
+      ),
+    ),
+    _i3.BeanDefinition<_i12.EchoRunner>(
+      name: r'echoRunner',
+      source:
+          r'package:spring_boot_feign_example/src/live_runners.dart#EchoRunner',
+      types: const [_i12.EchoRunner, _i2.ApplicationRunner],
+      order: 3,
+      dependencies: const [_i3.Dependency(_i6.EchoSocket, name: r'socket')],
+      create: (r) =>
+          _i12.EchoRunner(r.dependency<_i6.EchoSocket>(name: r'socket')),
+      aopProxy: _i3.AopProxyFactory(
+        signatures: const [
+          _i3.MethodSignature(
+            name: r'run',
+            declaringType: r'ApplicationRunner',
+            targetType: r'EchoRunner',
+            declaringTypes: [r'EchoRunner', r'ApplicationRunner'],
+            returnType: r'Future',
+            parameterTypes: [r'ApplicationArguments'],
+            parameterNames: [r'args'],
+            targetTypes: [r'EchoRunner', r'ApplicationRunner'],
+            targetAnnotations: [_i3.Component()],
+            targetAnnotationTypes: [r'Component'],
+          ),
+          _i3.MethodSignature(
+            name: r'socket',
+            declaringType: r'EchoRunner',
+            targetType: r'EchoRunner',
+            declaringTypes: [r'EchoRunner'],
+            kind: _i3.MemberKind.getter,
+            returnType: r'EchoSocket',
+            targetTypes: [r'EchoRunner', r'ApplicationRunner'],
+            targetAnnotations: [_i3.Component()],
+            targetAnnotationTypes: [r'Component'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$EchoRunnerProxy((target as _i12.EchoRunner), invoker),
+      ),
+    ),
+    _i3.BeanDefinition<_i13.WikimediaStreams>(
+      name: r'wikimediaStreams',
+      source: r'package:spring_boot_feign_example/src/wikimedia_client.dart#WikimediaStreams',
+      types: const [_i13.WikimediaStreams],
+      primary: true,
+      create: (r) => _$WikimediaStreamsImpl.$create(r),
+      aopProxy: _i3.AopProxyFactory(
+        signatures: const [
+          _i3.MethodSignature(
+            name: r'recentChanges',
+            declaringType: r'WikimediaStreams',
+            targetType: r'WikimediaStreams',
+            declaringTypes: [r'WikimediaStreams'],
+            returnType: r'EventStream',
+            annotations: [
+              _i17.GetMapping(
+                r'/v2/stream/recentchange',
+                headers: [r'User-Agent: ${wikimedia.user-agent}'],
+              ),
+            ],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'WikimediaStreams'],
+            targetAnnotations: [
+              _i16.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
+            ],
+            targetAnnotationTypes: [r'FeignClient'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$WikimediaStreamsProxy((target as _i13.WikimediaStreams), invoker),
+      ),
+    ),
   ],
   resources: const {
     r'application.properties': _i3.EmbeddedResource.text(
-      'spring.application.name=spring-boot-feign-example\n\n# The real public API (https://jsonplaceholder.typicode.com): a free fake\n# REST API, no key needed.\njsonplaceholder.url=https://jsonplaceholder.typicode.com\n\n# Feign: how long a call may take, and a log line per request.\nspring.cloud.openfeign.client.config.jsonplaceholder.read-timeout=15s\nspring.cloud.openfeign.client.config.jsonplaceholder.logger-level=basic\n\n# spring_boot_starter_logging: the Feign log is written at debug level.\nlogging.level.root=info\nlogging.level.feign=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m\n',
+      "spring.application.name=spring-boot-feign-example\n\n# The real public API (https://jsonplaceholder.typicode.com): a free fake\n# REST API, no key needed.\njsonplaceholder.url=https://jsonplaceholder.typicode.com\n\n# Feign: how long a call may take, and a log line per request.\nspring.cloud.openfeign.client.config.jsonplaceholder.read-timeout=15s\nspring.cloud.openfeign.client.config.jsonplaceholder.logger-level=basic\n\n# Server-sent events: every edit on Wikimedia wikis\n# (https://stream.wikimedia.org). Wikimedia asks for a User-Agent naming\n# the client. For event streams the read timeout covers the headers only.\nwikimedia.url=https://stream.wikimedia.org\nwikimedia.user-agent=spring-boot-feign-example/0.1 (https://github.com/farum-azula/spring_core_dart)\nspring.cloud.openfeign.client.config.wikimedia.read-timeout=15s\nspring.cloud.openfeign.client.config.wikimedia.logger-level=basic\n\n# WebSocket: Postman's public echo server.\necho.url=wss://ws.postman-echo.com/raw\nspring.websocket.client.config.echo.connect-timeout=10s\n\n# spring_boot_starter_logging: the Feign log is written at debug level.\nlogging.level.root=info\nlogging.level.feign=debug\nlogging.level.websocket=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m\n",
     ),
   },
   introspections: [
-    _i3.BeanIntrospection<_i9.User>(
+    _i3.BeanIntrospection<_i7.ChatMessage>(
       properties: [
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.ChatMessage>(
+          r'from',
+          type: String,
+          typeInfo: const _i3.ClassType<String>(),
+          get: (bean) => bean.from,
+        ),
+        _i3.BeanProperty<_i7.ChatMessage>(
+          r'text',
+          type: String,
+          typeInfo: const _i3.ClassType<String>(),
+          get: (bean) => bean.text,
+        ),
+      ],
+      constructor: _i3.BeanConstructor<_i7.ChatMessage>(
+        parameters: [
+          _i3.BeanParameter(
+            r'from',
+            type: const _i3.ClassType<String>(),
+            symbol: #from,
+            isRequired: true,
+          ),
+          _i3.BeanParameter(
+            r'text',
+            type: const _i3.ClassType<String>(),
+            symbol: #text,
+            isRequired: true,
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i7.ChatMessage.new, positional, named)
+                as _i7.ChatMessage),
+      ),
+    ),
+    _i3.BeanIntrospection<_i7.User>(
+      properties: [
+        _i3.BeanProperty<_i7.User>(
           r'id',
           type: int,
           typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.id,
         ),
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.User>(
           r'name',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.name,
         ),
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.User>(
           r'username',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.username,
         ),
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.User>(
           r'email',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.email,
         ),
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.User>(
           r'address',
-          type: _i9.Address,
-          typeInfo: const _i3.ClassType<_i9.Address>(),
+          type: _i7.Address,
+          typeInfo: const _i3.ClassType<_i7.Address>(),
           get: (bean) => bean.address,
         ),
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.User>(
           r'company',
-          type: _i9.Company,
-          typeInfo: const _i3.ClassType<_i9.Company>(),
+          type: _i7.Company,
+          typeInfo: const _i3.ClassType<_i7.Company>(),
           get: (bean) => bean.company,
         ),
-        _i3.BeanProperty<_i9.User>(
+        _i3.BeanProperty<_i7.User>(
           r'website',
           type: String,
           nullable: true,
@@ -570,7 +984,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           get: (bean) => bean.website,
         ),
       ],
-      constructor: _i3.BeanConstructor<_i9.User>(
+      constructor: _i3.BeanConstructor<_i7.User>(
         parameters: [
           _i3.BeanParameter(
             r'id',
@@ -598,13 +1012,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
           _i3.BeanParameter(
             r'address',
-            type: const _i3.ClassType<_i9.Address>(),
+            type: const _i3.ClassType<_i7.Address>(),
             symbol: #address,
             isRequired: true,
           ),
           _i3.BeanParameter(
             r'company',
-            type: const _i3.ClassType<_i9.Company>(),
+            type: const _i3.ClassType<_i7.Company>(),
             symbol: #company,
             isRequired: true,
           ),
@@ -615,31 +1029,31 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i9.User.new, positional, named) as _i9.User),
+            (Function.apply(_i7.User.new, positional, named) as _i7.User),
       ),
     ),
-    _i3.BeanIntrospection<_i9.Address>(
+    _i3.BeanIntrospection<_i7.Address>(
       properties: [
-        _i3.BeanProperty<_i9.Address>(
+        _i3.BeanProperty<_i7.Address>(
           r'street',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.street,
         ),
-        _i3.BeanProperty<_i9.Address>(
+        _i3.BeanProperty<_i7.Address>(
           r'city',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.city,
         ),
-        _i3.BeanProperty<_i9.Address>(
+        _i3.BeanProperty<_i7.Address>(
           r'zipcode',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.zipcode,
         ),
       ],
-      constructor: _i3.BeanConstructor<_i9.Address>(
+      constructor: _i3.BeanConstructor<_i7.Address>(
         parameters: [
           _i3.BeanParameter(
             r'street',
@@ -661,25 +1075,25 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i9.Address.new, positional, named) as _i9.Address),
+            (Function.apply(_i7.Address.new, positional, named) as _i7.Address),
       ),
     ),
-    _i3.BeanIntrospection<_i9.Company>(
+    _i3.BeanIntrospection<_i7.Company>(
       properties: [
-        _i3.BeanProperty<_i9.Company>(
+        _i3.BeanProperty<_i7.Company>(
           r'name',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.name,
         ),
-        _i3.BeanProperty<_i9.Company>(
+        _i3.BeanProperty<_i7.Company>(
           r'catchPhrase',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.catchPhrase,
         ),
       ],
-      constructor: _i3.BeanConstructor<_i9.Company>(
+      constructor: _i3.BeanConstructor<_i7.Company>(
         parameters: [
           _i3.BeanParameter(
             r'name',
@@ -695,37 +1109,37 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i9.Company.new, positional, named) as _i9.Company),
+            (Function.apply(_i7.Company.new, positional, named) as _i7.Company),
       ),
     ),
-    _i3.BeanIntrospection<_i9.Post>(
+    _i3.BeanIntrospection<_i7.Post>(
       properties: [
-        _i3.BeanProperty<_i9.Post>(
+        _i3.BeanProperty<_i7.Post>(
           r'id',
           type: int,
           typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.id,
         ),
-        _i3.BeanProperty<_i9.Post>(
+        _i3.BeanProperty<_i7.Post>(
           r'userId',
           type: int,
           typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.userId,
         ),
-        _i3.BeanProperty<_i9.Post>(
+        _i3.BeanProperty<_i7.Post>(
           r'title',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.title,
         ),
-        _i3.BeanProperty<_i9.Post>(
+        _i3.BeanProperty<_i7.Post>(
           r'body',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.body,
         ),
       ],
-      constructor: _i3.BeanConstructor<_i9.Post>(
+      constructor: _i3.BeanConstructor<_i7.Post>(
         parameters: [
           _i3.BeanParameter(
             r'id',
@@ -753,43 +1167,43 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i9.Post.new, positional, named) as _i9.Post),
+            (Function.apply(_i7.Post.new, positional, named) as _i7.Post),
       ),
     ),
-    _i3.BeanIntrospection<_i9.Comment>(
+    _i3.BeanIntrospection<_i7.Comment>(
       properties: [
-        _i3.BeanProperty<_i9.Comment>(
+        _i3.BeanProperty<_i7.Comment>(
           r'id',
           type: int,
           typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.id,
         ),
-        _i3.BeanProperty<_i9.Comment>(
+        _i3.BeanProperty<_i7.Comment>(
           r'postId',
           type: int,
           typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.postId,
         ),
-        _i3.BeanProperty<_i9.Comment>(
+        _i3.BeanProperty<_i7.Comment>(
           r'name',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.name,
         ),
-        _i3.BeanProperty<_i9.Comment>(
+        _i3.BeanProperty<_i7.Comment>(
           r'email',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.email,
         ),
-        _i3.BeanProperty<_i9.Comment>(
+        _i3.BeanProperty<_i7.Comment>(
           r'body',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.body,
         ),
       ],
-      constructor: _i3.BeanConstructor<_i9.Comment>(
+      constructor: _i3.BeanConstructor<_i7.Comment>(
         parameters: [
           _i3.BeanParameter(
             r'id',
@@ -823,31 +1237,31 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i9.Comment.new, positional, named) as _i9.Comment),
+            (Function.apply(_i7.Comment.new, positional, named) as _i7.Comment),
       ),
     ),
-    _i3.BeanIntrospection<_i9.NewPost>(
+    _i3.BeanIntrospection<_i7.NewPost>(
       properties: [
-        _i3.BeanProperty<_i9.NewPost>(
+        _i3.BeanProperty<_i7.NewPost>(
           r'userId',
           type: int,
           typeInfo: const _i3.ClassType<int>(),
           get: (bean) => bean.userId,
         ),
-        _i3.BeanProperty<_i9.NewPost>(
+        _i3.BeanProperty<_i7.NewPost>(
           r'title',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.title,
         ),
-        _i3.BeanProperty<_i9.NewPost>(
+        _i3.BeanProperty<_i7.NewPost>(
           r'body',
           type: String,
           typeInfo: const _i3.ClassType<String>(),
           get: (bean) => bean.body,
         ),
       ],
-      constructor: _i3.BeanConstructor<_i9.NewPost>(
+      constructor: _i3.BeanConstructor<_i7.NewPost>(
         parameters: [
           _i3.BeanParameter(
             r'userId',
@@ -869,7 +1283,77 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (positional, named) =>
-            (Function.apply(_i9.NewPost.new, positional, named) as _i9.NewPost),
+            (Function.apply(_i7.NewPost.new, positional, named) as _i7.NewPost),
+      ),
+    ),
+    _i3.BeanIntrospection<_i7.RecentChange>(
+      properties: [
+        _i3.BeanProperty<_i7.RecentChange>(
+          r'type',
+          type: String,
+          typeInfo: const _i3.ClassType<String>(),
+          get: (bean) => bean.type,
+        ),
+        _i3.BeanProperty<_i7.RecentChange>(
+          r'wiki',
+          type: String,
+          typeInfo: const _i3.ClassType<String>(),
+          get: (bean) => bean.wiki,
+        ),
+        _i3.BeanProperty<_i7.RecentChange>(
+          r'title',
+          type: String,
+          nullable: true,
+          typeInfo: const _i3.ClassType<String>(nullable: true),
+          get: (bean) => bean.title,
+        ),
+        _i3.BeanProperty<_i7.RecentChange>(
+          r'user',
+          type: String,
+          nullable: true,
+          typeInfo: const _i3.ClassType<String>(nullable: true),
+          get: (bean) => bean.user,
+        ),
+        _i3.BeanProperty<_i7.RecentChange>(
+          r'bot',
+          type: bool,
+          typeInfo: const _i3.ClassType<bool>(),
+          get: (bean) => bean.bot,
+        ),
+      ],
+      constructor: _i3.BeanConstructor<_i7.RecentChange>(
+        parameters: [
+          _i3.BeanParameter(
+            r'type',
+            type: const _i3.ClassType<String>(),
+            symbol: #type,
+            isRequired: true,
+          ),
+          _i3.BeanParameter(
+            r'wiki',
+            type: const _i3.ClassType<String>(),
+            symbol: #wiki,
+            isRequired: true,
+          ),
+          _i3.BeanParameter(
+            r'title',
+            type: const _i3.ClassType<String>(nullable: true),
+            symbol: #title,
+          ),
+          _i3.BeanParameter(
+            r'user',
+            type: const _i3.ClassType<String>(nullable: true),
+            symbol: #user,
+          ),
+          _i3.BeanParameter(
+            r'bot',
+            type: const _i3.ClassType<bool>(),
+            symbol: #bot,
+          ),
+        ],
+        create: (positional, named) =>
+            (Function.apply(_i7.RecentChange.new, positional, named)
+                as _i7.RecentChange),
       ),
     ),
   ],
@@ -877,35 +1361,39 @@ _i3.BeanModule get $application => _i3.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i14.SpringApplication get springApplication => _i14.SpringApplication(
+_i19.SpringApplication get springApplication => _i19.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i15.springBootAutoConfiguration,
-    _i16.springBootStarterFeignAutoConfiguration,
-    _i17.springBootStarterLoggingAutoConfiguration,
+    _i20.springBootAutoConfiguration,
+    _i21.springBootStarterFeignAutoConfiguration,
+    _i22.springBootStarterLoggingAutoConfiguration,
+    _i23.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '77e98f37',
+  fingerprint: '64f16b99',
 );
 
-/// Starts the application: config files, environment, context, runners.
-_i14.ConfigurableApplicationContext runApplication(List<String> args) =>
+/// Starts the application: config files, environment, context, runners
+/// (asynchronous runners go on one after another after it returns;
+/// [runApplicationAsync] waits for them).
+_i19.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args);
 
-/// Like [runApplication], reading config files asynchronously (Flutter assets).
-Future<_i14.ConfigurableApplicationContext> runApplicationAsync(
+/// Like [runApplication], reading config files asynchronously (Flutter assets)
+/// and completing once every runner has finished.
+Future<_i19.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i14.ConfigurableApplicationContext reloadApplication(
-  _i14.ConfigurableApplicationContext running, {
+_i19.ConfigurableApplicationContext reloadApplication(
+  _i19.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i14.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i14.ConfigurableApplicationContext running, {
+Future<_i19.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i19.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

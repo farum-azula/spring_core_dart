@@ -1,5 +1,6 @@
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
+import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/client/platform_transport_stub.dart'
     if (dart.library.io) 'package:spring_web_dart/src/client/platform_transport_io.dart'
     if (dart.library.js_interop) 'package:spring_web_dart/src/client/platform_transport_web.dart'
@@ -30,6 +31,13 @@ abstract interface class HttpTransport {
   /// response; network failures and timeouts throw
   /// [HttpTransportException].
   Future<HttpResponse> send(HttpRequest request);
+
+  /// Sends [request] and returns as soon as the status and headers arrive;
+  /// the body is read from [StreamedHttpResponse.body] as it comes (e.g.
+  /// server-sent events). The request's timeout covers only the wait for
+  /// the headers. Network failures throw (or, later, arrive in the body
+  /// stream as) [HttpTransportException].
+  Future<StreamedHttpResponse> stream(HttpRequest request);
 
   /// Releases connections; the transport is not used afterwards.
   void close();

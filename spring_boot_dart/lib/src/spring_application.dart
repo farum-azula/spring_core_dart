@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_dart/src/configuration_properties.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/runners.dart';
@@ -18,10 +20,13 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// 4. the context: the application's modules, then [autoConfigurations]
 ///    (so `@ConditionalOnMissingBean` sees the application's beans),
 ///    `@ConfigurationProperties` binding, `ApplicationArguments` as a bean;
-/// 5. `ApplicationRunner` / `CommandLineRunner` beans, in order;
-/// 6. a startup line (`Started app in 42 ms (profiles: dev)`), or a
+/// 5. a startup line (`Started app in 42 ms (profiles: dev)`), or a
 ///    readable `APPLICATION FAILED TO START` report before the error is
-///    rethrown.
+///    rethrown;
+/// 6. `ApplicationRunner` / `CommandLineRunner` beans, one after another
+///    in order: a runner's `Future` completes before the next starts. A
+///    failing runner is reported (`Application run failed`) and the
+///    context is closed. [runAsync] completes after the last runner.
 ///
 /// With `@SpringBootApplication` the generator creates `runApplication`
 /// for you; written by hand:
@@ -76,6 +81,11 @@ class SpringApplication {
   /// [properties] take precedence over every other property source,
   /// command line included (both for tests, like
   /// `@SpringBootTest(properties = ...)`).
+  ///
+  /// Returns once the synchronous part is done: asynchronous runners keep
+  /// running one after another, and if one fails the context is closed and
+  /// the error is rethrown (uncaught, it ends the program). Use [runAsync]
+  /// to wait for the runners, as Spring Boot's `run` does.
   ConfigurableApplicationContext run(
     List<String> args, {
     Map<String, String>? systemEnvironment,
@@ -90,19 +100,41 @@ class SpringApplication {
   }) {
     final watch = Stopwatch()..start();
     final environment = _environment(args, systemEnvironment, properties);
-    return _guard(() {
+    final (context, arguments) = _guard(() {
       ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
       ).processAndApplySync();
-      return _start(args, environment, watch, (
-        systemEnvironment,
-        properties,
-      ), runners: runners);
+      return _start(args, environment, watch, (systemEnvironment, properties));
     });
+    if (!runners) {
+      return context;
+    }
+    final FutureOr<void> called;
+    try {
+      called = _callRunners(context, arguments);
+    } catch (error) {
+      _runFailed(context, error);
+      rethrow;
+    }
+    if (called is Future<void>) {
+      // run() cannot wait: the remaining runners still run in order, and a
+      // failure closes the context and is rethrown (uncaught, it ends the
+      // program, as a failed run does in Spring Boot).
+      unawaited(
+        called.catchError((Object error, StackTrace stackTrace) {
+          _runFailed(context, error);
+          Error.throwWithStackTrace(error, stackTrace);
+        }),
+      );
+    }
+    return context;
   }
 
-  /// Like [run], reading config files asynchronously (e.g. Flutter assets).
+  /// Like [run], reading config files asynchronously (e.g. Flutter assets),
+  /// and completing once every runner has finished — like Spring Boot's
+  /// `SpringApplication.run`, which returns after the runners. A failing
+  /// runner fails the returned `Future` (the context is closed).
   Future<ConfigurableApplicationContext> runAsync(
     List<String> args, {
     Map<String, String>? systemEnvironment,
@@ -126,12 +158,18 @@ class SpringApplication {
       _report(error);
       rethrow;
     }
-    return _guard(
-      () => _start(args, environment, watch, (
-        systemEnvironment,
-        properties,
-      ), runners: runners),
+    final (context, arguments) = _guard(
+      () => _start(args, environment, watch, (systemEnvironment, properties)),
     );
+    if (runners) {
+      try {
+        await _callRunners(context, arguments);
+      } catch (error) {
+        _runFailed(context, error);
+        rethrow;
+      }
+    }
+    return context;
   }
 
   /// Restarts [running] with this application if the generated code
@@ -238,13 +276,15 @@ class SpringApplication {
     }
   }
 
-  ConfigurableApplicationContext _start(
+  // Creates and refreshes the context and prints the startup line; the
+  // runners are called by the caller afterwards (Spring Boot: logStarted,
+  // then callRunners).
+  (ConfigurableApplicationContext, ApplicationArguments) _start(
     List<String> args,
     StandardEnvironment environment,
     Stopwatch watch,
-    (Map<String, String>?, Map<String, Object?>) launch, {
-    required bool runners,
-  }) {
+    (Map<String, String>?, Map<String, Object?>) launch,
+  ) {
     applyLoggingLevels(environment);
     final context = AnnotationConfigApplicationContext(
       [...modules, ...autoConfigurations],
@@ -272,9 +312,6 @@ class SpringApplication {
     }
     try {
       context.refresh();
-      if (runners) {
-        _callRunners(context, arguments);
-      }
     } catch (_) {
       if (context.isActive) {
         context.close();
@@ -292,11 +329,22 @@ class SpringApplication {
         '(profiles: ${profiles.join(', ')})',
       );
     }
-    return context;
+    return (context, arguments);
   }
 
-  // Both kinds sorted together by order, as in Spring Boot's callRunners.
-  static void _callRunners(
+  // A runner failed: reported like Spring Boot's "Application run failed",
+  // and the context is closed.
+  void _runFailed(ConfigurableApplicationContext context, Object error) {
+    out(analyzeFailure(error)?.report ?? 'Application run failed: $error');
+    if (context.isActive) {
+      context.close();
+    }
+  }
+
+  // Both kinds sorted together by order, as in Spring Boot's callRunners;
+  // each runner finishes (its Future completes) before the next starts.
+  // Synchronous while every runner is.
+  static FutureOr<void> _callRunners(
     ConfigurableApplicationContext context,
     ApplicationArguments arguments,
   ) {
@@ -309,13 +357,25 @@ class SpringApplication {
               .order,
     };
     final beans = OrderComparator.sort(orders.keys, (bean) => orders[bean]);
-    for (final runner in beans) {
-      // A bean implementing both is called as both, like in Spring Boot.
-      if (runner is ApplicationRunner) {
-        runner.run(arguments);
-      }
-      if (runner is CommandLineRunner) {
-        runner.run(arguments.sourceArgs);
+    final calls = <FutureOr<void> Function()>[
+      for (final runner in beans) ...[
+        // A bean implementing both is called as both, like in Spring Boot.
+        if (runner is ApplicationRunner) () => runner.run(arguments),
+        if (runner is CommandLineRunner) () => runner.run(arguments.sourceArgs),
+      ],
+    ];
+    return _inOrder(context, calls.iterator);
+  }
+
+  static FutureOr<void> _inOrder(
+    ConfigurableApplicationContext context,
+    Iterator<FutureOr<void> Function()> calls,
+  ) {
+    // Stops when the context was closed meanwhile.
+    while (context.isActive && calls.moveNext()) {
+      final result = calls.current();
+      if (result is Future<Object?>) {
+        return result.then<void>((_) => _inOrder(context, calls));
       }
     }
   }

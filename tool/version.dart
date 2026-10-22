@@ -17,6 +17,7 @@ const family = [
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
   'spring_boot_starter_feign',
+  'spring_boot_starter_websocket',
   'spring_boot_starter_test',
 ];
 
