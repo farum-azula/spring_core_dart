@@ -17,15 +17,23 @@ const family = [
 ];
 
 /// Packages that only depend on the family (not published).
-const dependents = ['example'];
+const dependents = ['example', 'extensions/language_server'];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';
 
 /// Editor extensions: same version as the family they support (not
 /// published to pub.dev).
-const extensions = ['extensions/zed/flutter_spring/extension.toml'];
+const extensions = [
+  'extensions/zed/flutter_spring/extension.toml',
+  'extensions/zed/flutter_spring/Cargo.toml',
+  'extensions/language_server/pubspec.yaml',
+];
 
 final _extensionVersion = RegExp(r'^version = "(.*)"$', multiLine: true);
+final _pubspecVersion = RegExp(r'^version: (.*)$', multiLine: true);
+
+RegExp _versionPattern(String path) =>
+    path.endsWith('pubspec.yaml') ? _pubspecVersion : _extensionVersion;
 
 void main(List<String> args) {
   if (args.length != 1) {
@@ -94,7 +102,12 @@ void setVersion(String version) {
   for (final manifest in extensions) {
     _edit(
       manifest,
-      (text) => text.replaceFirst(_extensionVersion, 'version = "$version"'),
+      (text) => text.replaceFirst(
+        _versionPattern(manifest),
+        manifest.endsWith('pubspec.yaml')
+            ? 'version: $version'
+            : 'version = "$version"',
+      ),
     );
   }
 }
@@ -133,7 +146,10 @@ List<String> check() {
   for (final manifest in extensions) {
     final file = File(manifest);
     final own = file.existsSync()
-        ? _extensionVersion.firstMatch(file.readAsStringSync())?.group(1)
+        ? _versionPattern(manifest)
+              .firstMatch(file.readAsStringSync())
+              ?.group(1)
+              ?.trim()
         : null;
     if (own != version) {
       problems.add('$manifest is $own, expected $version (lockstep)');

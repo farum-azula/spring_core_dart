@@ -760,10 +760,16 @@ Starters (each a separate package, discovered by the generator like
 
 Tooling:
 
-- **Zed extension** (`flutter_spring`, in `extensions/zed/flutter_spring`):
-  editor support for everything the framework does today. Available now:
-  snippets for beans, injection, configuration, AOP, events, hot reload
-  and tests. Planned below: the language server features. Its version always equals the framework version
+- **Zed extension** (`flutter_spring`, in `extensions/zed/flutter_spring`,
+  with the language server in `extensions/language_server`): editor
+  support for everything the framework does today. Available now:
+  navigation from injection points to beans and from `@Value`
+  placeholders to properties files, SpEL and placeholder highlighting,
+  checks for invalid SpEL, unknown keys and non-raw placeholder strings,
+  hovers with property values and candidate beans, and snippets. Still
+  planned from the list below: bean markers, completion, reverse
+  navigation (from a key or a bean to its usages), pointcut and event
+  navigation, beans of dependencies. Its version always equals the framework version
   (part of the release train, set by `tool/version.dart` and checked in CI),
   so extension 0.4.0 understands spring_core_dart 0.4.0.
   - SpEL highlighting and completion inside `@Value`, `@Query`,

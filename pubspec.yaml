@@ -12,6 +12,7 @@ workspace:
   - spring_boot_starter_test
   - spring_boot_starter_logging
   - example
+  - extensions/language_server
 
 dev_dependencies:
   lints: ^6.0.0

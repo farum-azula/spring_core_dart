@@ -26,8 +26,15 @@ jobs:
       - name: Lockstep versions (packages and editor extensions)
         run: dart run tool/version.dart --check
 
-      - name: Zed extension flutter_spring is valid
-        run: jq empty extensions/zed/flutter_spring/snippets/dart.json
+      - name: Zed extension flutter_spring builds
+        working-directory: extensions/zed/flutter_spring
+        run: |
+          jq empty snippets/dart.json
+          rustup target add wasm32-wasip2
+          cargo build --release --target wasm32-wasip2
+
+      - name: Language server compiles to a native executable
+        run: dart compile exe extensions/language_server/bin/flutter_spring_lsp.dart -o /tmp/flutter_spring_lsp
 
       - name: Generated code is up to date
         working-directory: example
@@ -37,7 +44,7 @@ jobs:
           test -z "$(git status --porcelain -- .)"
 
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_test example
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_test example extensions/language_server tool
 
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
