@@ -1,8 +1,18 @@
 // Publishes every package of the family to pub.dev, dependencies first, and
 // skips versions that are already there (a re-run after a partial failure
 // continues where it stopped). Run by .github/workflows/publish.yml when a
-// `v<version>` tag is pushed; locally (after `dart pub login`) for the first
-// release, before automated publishing can be enabled on pub.dev.
+// `v<version>` tag is pushed.
+//
+// pub.dev lets only a person publish the first version of a new package, so
+// on GitHub a package that is not on pub.dev yet is skipped with a warning.
+// Publish such packages from your machine (after `dart pub login`), from the
+// release tag — everything missing is published in order:
+//
+//   git fetch --tags && git checkout v<version>
+//   dart run tool/publish.dart
+//
+// then enable automated publishing on each new package's admin page
+// (repository farum-azula/spring_core_dart, tag pattern v{{version}}).
 //
 //   dart run tool/publish.dart                     # publish every package
 //   dart run tool/publish.dart --package <name>    # only one (one CI job each)
@@ -29,10 +39,18 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
   final version = _version('spring_core_dart');
-  // On GitHub the tag must match the version in the pubspecs.
+  // On GitHub the tag must match the version in the pubspecs; locally the
+  // checkout must be that tag (never publish unreleased code from main).
   final ref = Platform.environment['GITHUB_REF_NAME'];
   if (ref != null && ref != 'v$version') {
     stderr.writeln('Tag $ref does not match the version $version.');
+    exit(1);
+  }
+  if (ref == null && !dryRun && !_isCheckedOutTag('v$version')) {
+    stderr.writeln(
+      'Publish from the release tag: git fetch --tags && git checkout '
+      'v$version (the checkout is not at v$version).',
+    );
     exit(1);
   }
   // `family` is already in dependency order: core, generator, Boot, starters.
@@ -41,16 +59,11 @@ Future<void> main(List<String> args) async {
       stdout.writeln('$package $version is already on pub.dev, skipped.');
       continue;
     }
-    // pub.dev accepts GitHub's token only for packages that exist already.
+    // pub.dev accepts GitHub's token only for packages that exist already:
+    // a new one is skipped, the others are still published.
     if (!dryRun && ref != null && !await _exists(package)) {
-      stderr.writeln(
-        '$package is not on pub.dev yet. A new package must be published '
-        'by hand once: `git checkout $ref`, then `dart pub publish` in '
-        '$package/, then enable automated publishing on its admin page '
-        '(repository farum-azula/spring_core_dart, tag pattern '
-        'v{{version}}) and re-run this job.',
-      );
-      exit(1);
+      _skipNew(package, ref);
+      continue;
     }
     stdout.writeln(
       '\n=== ${dryRun ? 'Validating' : 'Publishing'} $package $version ===',
@@ -83,6 +96,35 @@ Future<bool> _isPublished(String package, String version) async {
   } finally {
     client.close();
   }
+}
+
+// A warning on the run, and the steps in its summary.
+void _skipNew(String package, String ref) {
+  stdout.writeln(
+    '::warning title=$package is new::$package is not on pub.dev yet: '
+    'skipped. Publish it from your machine: git checkout $ref && '
+    'dart run tool/publish.dart',
+  );
+  final summary = Platform.environment['GITHUB_STEP_SUMMARY'];
+  if (summary != null) {
+    File(summary).writeAsStringSync(
+      '### $package: not on pub.dev yet, skipped\n\n'
+      'pub.dev lets only a person publish the first version. From your '
+      'machine (after `dart pub login`):\n\n'
+      '```bash\ngit fetch --tags && git checkout $ref\n'
+      'dart run tool/publish.dart\n```\n\n'
+      'Then enable automated publishing on '
+      'https://pub.dev/packages/$package/admin (repository '
+      '`farum-azula/spring_core_dart`, tag pattern `v{{version}}`).\n\n',
+      mode: FileMode.append,
+    );
+  }
+}
+
+bool _isCheckedOutTag(String tag) {
+  final result = Process.runSync('git', ['tag', '--points-at', 'HEAD']);
+  return result.exitCode == 0 &&
+      (result.stdout as String).split('\n').map((t) => t.trim()).contains(tag);
 }
 
 Future<bool> _exists(String package) async {

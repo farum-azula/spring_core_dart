@@ -1,6 +1,6 @@
 name: spring_boot_starter_websocket
 description: >-
-  Declarative WebSocket clients for spring_boot_dart: annotate an interface with @WebSocketClient, @OnMessage and @SendMessage, inject it as a bean; JSON via ObjectMapper, reconnection, handshake interceptors.
+  Declarative WebSocket clients for spring_boot_dart: an interface with @WebSocketClient, @OnMessage and @SendMessage becomes a bean; JSON via ObjectMapper, reconnection.
 version: 0.1.5
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_websocket
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues

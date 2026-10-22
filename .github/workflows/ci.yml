@@ -1,9 +1,9 @@
 name: CI
 
-# Tests and checks on main (development) and on release (before a release).
+# Tests and checks on main and on pull requests.
 on:
   push:
-    branches: [main, release]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
-      - name: Lockstep versions (packages and editor extensions)
+      - name: Lockstep versions and pubspec descriptions
         run: dart run tool/version.dart --check
 
       - name: Dependencies only from this repository and the Dart team

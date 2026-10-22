@@ -1,8 +1,8 @@
 name: 'Release: publish to pub.dev'
 
-# Step 2 of a release: runs when a `v<version>` tag is pushed (by
-# "Release: bump version" or by hand) and publishes every package as its own
-# job, dependencies first, so each package's progress is visible:
+# Step 2 of a release: runs when a `v<version>` tag is pushed (by the
+# "Release" workflow or by hand) and publishes every package as its own job,
+# dependencies first, so each package's progress is visible:
 #
 #   tests → spring_core_dart → spring_core_dart_generator, spring_boot_dart,
 #           spring_web_dart
@@ -15,6 +15,11 @@ name: 'Release: publish to pub.dev'
 # admin page (repository farum-azula/spring_core_dart, tag pattern
 # `v{{version}}`). Versions already on pub.dev are skipped, so a failed run
 # can simply be re-run.
+#
+# A package that is not on pub.dev yet is skipped with a warning (pub.dev
+# lets only a person publish a package's first version): the rest is
+# published, and the run's summary says to publish the new ones with
+# `git checkout v<version> && dart run tool/publish.dart`.
 
 on:
   push:

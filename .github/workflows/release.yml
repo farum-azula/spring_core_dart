@@ -1,24 +1,18 @@
-name: 'Release: bump version'
+name: 'Release'
 
-# Step 1 of a release. Releases come only from the `release` branch: merge
-# main into it (a pull request main → release, or `git merge` + push).
-# After CI passes there, this workflow bumps the version of every package
-# (tool/release.dart), tests again, commits `chore(release): vX.Y.Z` on
-# release, pushes the `vX.Y.Z` tag — which starts step 2, publish.yml
-# ("Release: publish to pub.dev") — and merges the release commit back into
-# main, so the next merge into release has no version conflicts.
+# Step 1 of a release, started by hand: Actions → "Release" → Run workflow
+# (on main). Bumps the version of every package from the commits since the
+# last tag (tool/release.dart), runs the tests with it, then pushes the
+# commit `chore(release): vX.Y.Z` to main together with the tag `vX.Y.Z` —
+# which starts step 2, publish.yml ("Release: publish to pub.dev").
 #
-# Pushes to main only run CI. The tag and the pushes use RELEASE_TOKEN: those
-# made with the default GITHUB_TOKEN do not start other workflows.
-#
-# The release commit runs CI on release again; this workflow then finds no
-# commits since the tag and stops, so there is no loop.
+# No release branch and no merges: main is the only branch, a release is a
+# commit and a tag on it. Pushes to main only run CI. The push uses
+# RELEASE_TOKEN: pushes made with the default GITHUB_TOKEN do not start
+# other workflows (the tag must start publish.yml).
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [release]
+  workflow_dispatch:
 
 concurrency:
   group: release
@@ -26,16 +20,14 @@ concurrency:
 
 jobs:
   release:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: release
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
 
@@ -49,12 +41,14 @@ jobs:
         id: release
         run: dart run tool/release.dart
 
-      # The new version can break tests that check it (e.g. compatibility
-      # messages): test before tagging, so a failure leaves no tag behind.
+      # Test with the new version before tagging (tests may check it, e.g.
+      # compatibility messages): a failure leaves no tag behind.
       - name: Tests with the new version
         if: steps.release.outputs.version != ''
         run: dart run tool/test_all.dart --packages
 
+      # Atomic: the commit and the tag land together or not at all (e.g. when
+      # main moved meanwhile; then run the workflow again).
       - name: Commit, tag and push
         if: steps.release.outputs.version != ''
         env:
@@ -64,18 +58,14 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "chore(release): v$VERSION"
           git tag "v$VERSION"
-          git push origin HEAD:release
-          git push origin "v$VERSION"
+          git push --atomic origin HEAD:main "v$VERSION"
 
-      # A conflict here (rare: both branches changed the same changelog
-      # lines) stops the job; then merge release into main by hand.
-      - name: Merge the release back into main
-        if: steps.release.outputs.version != ''
+      - name: Summary
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          git fetch origin main
-          git checkout -B main origin/main
-          git merge --no-ff --no-edit "v$VERSION" \
-            -m "chore(release): merge v$VERSION into main"
-          git push origin main
+          if [ -z "$VERSION" ]; then
+            echo "Nothing to release: no package changed since the last tag." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Released v$VERSION: \"Release: publish to pub.dev\" publishes it now." >> "$GITHUB_STEP_SUMMARY"
+          fi

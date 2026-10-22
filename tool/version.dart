@@ -5,6 +5,9 @@
 //
 //   dart run tool/version.dart 0.2.0   # set the version everywhere
 //   dart run tool/version.dart --check # verify (CI)
+//
+// The check also keeps each published package's description within the
+// 60–180 characters pub.dev asks for (otherwise it costs 10 pub points).
 import 'dart:io';
 
 /// Published packages released together.
@@ -164,7 +167,40 @@ List<String> check() {
       problems.add('$manifest is $own, expected $version (lockstep)');
     }
   }
+  for (final package in family) {
+    final length = description(package).length;
+    if (length < 60 || length > 180) {
+      problems.add(
+        '$package: the pubspec description has $length characters; pub.dev '
+        'wants 60-180 (10 pub points)',
+      );
+    }
+  }
   return problems;
+}
+
+/// The `description:` of [package]'s pubspec as pub.dev reads it: a plain,
+/// quoted or folded (`>-`) value, whitespace collapsed.
+String description(String package) {
+  final lines = File('$package/pubspec.yaml').readAsLinesSync();
+  final start = lines.indexWhere((line) => line.startsWith('description:'));
+  if (start < 0) {
+    return '';
+  }
+  var value = lines[start].substring('description:'.length).trim();
+  if (value.startsWith('>') || value.startsWith('|')) {
+    value = lines
+        .skip(start + 1)
+        .takeWhile((line) => line.startsWith(' ') || line.trim().isEmpty)
+        .join(' ');
+  }
+  value = value.trim();
+  if (value.length >= 2 &&
+      (value.startsWith('"') && value.endsWith('"') ||
+          value.startsWith("'") && value.endsWith("'"))) {
+    value = value.substring(1, value.length - 1);
+  }
+  return value.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).join(' ');
 }
 
 String _version(String package) => RegExp(r'^version: (.*)$', multiLine: true)

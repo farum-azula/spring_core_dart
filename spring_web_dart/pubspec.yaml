@@ -1,6 +1,6 @@
 name: spring_web_dart
 description: >-
-  Spring Web for Dart: @GetMapping, @PostMapping, @PathVariable, @RequestParam, @RequestBody, ResponseEntity, server-sent events and HTTP/WebSocket client transports for the VM, Flutter and the web.
+  Spring Web for Dart: @GetMapping, @PathVariable, @RequestBody, ResponseEntity, server-sent events and HTTP/WebSocket client transports for the VM, Flutter and the web.
 version: 0.1.5
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_web_dart
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues

@@ -1,5 +1,5 @@
-// Prepares a release of the whole family (run by .github/workflows/release.yml
-// after CI passes on main; works locally too):
+// Prepares a release of the whole family (run by .github/workflows/release.yml,
+// the "Release" button on main; works locally too):
 //
 //   dart run tool/release.dart            # bump, write versions and changelogs
 //   dart run tool/release.dart --dry-run  # only print what would happen
