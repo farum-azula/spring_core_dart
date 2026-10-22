@@ -1,19 +1,24 @@
 name: 'Release: bump version'
 
-# Step 1 of a release. After CI passes on a push to main: bump the version
-# of every package (tool/release.dart), commit it and push a `v<version>`
-# tag, which starts step 2, publish.yml ("Release: publish to pub.dev").
-# The tag is pushed with RELEASE_TOKEN: tags pushed with the default
-# GITHUB_TOKEN do not start other workflows.
+# Step 1 of a release. Releases come only from the `release` branch: merge
+# main into it (a pull request main → release, or `git merge` + push).
+# After CI passes there, this workflow bumps the version of every package
+# (tool/release.dart), tests again, commits `chore(release): vX.Y.Z` on
+# release, pushes the `vX.Y.Z` tag — which starts step 2, publish.yml
+# ("Release: publish to pub.dev") — and merges the release commit back into
+# main, so the next merge into release has no version conflicts.
 #
-# The release commit runs CI again; this workflow then finds no commits
-# since the tag and stops, so there is no loop.
+# Pushes to main only run CI. The tag and the pushes use RELEASE_TOKEN: those
+# made with the default GITHUB_TOKEN do not start other workflows.
+#
+# The release commit runs CI on release again; this workflow then finds no
+# commits since the tag and stops, so there is no loop.
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
+    branches: [release]
 
 concurrency:
   group: release
@@ -30,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: release
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
 
@@ -59,5 +64,18 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "chore(release): v$VERSION"
           git tag "v$VERSION"
-          git push origin HEAD:main
+          git push origin HEAD:release
           git push origin "v$VERSION"
+
+      # A conflict here (rare: both branches changed the same changelog
+      # lines) stops the job; then merge release into main by hand.
+      - name: Merge the release back into main
+        if: steps.release.outputs.version != ''
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          git merge --no-ff --no-edit "v$VERSION" \
+            -m "chore(release): merge v$VERSION into main"
+          git push origin main
