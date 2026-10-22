@@ -1,3 +1,8 @@
+## 0.1.6
+
+- update road map
+- ci: release with a button on main, skip new packages when publishing; shorter pubspec descriptions
+
 ## 0.1.5
 
 - Initial version: @FeignClient interfaces with request mapping annotations, JSON through ObjectMapper, interceptors, error decoding, retries, fallbacks, spring.cloud.openfeign.client.config.* properties.

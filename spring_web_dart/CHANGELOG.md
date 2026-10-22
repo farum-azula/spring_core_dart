@@ -1,3 +1,8 @@
+## 0.1.6
+
+- update road map
+- ci: release with a button on main, skip new packages when publishing; shorter pubspec descriptions
+
 ## 0.1.5
 
 - Initial version: Request mapping annotations, ResponseEntity, HttpHeaders, HTTP client transport (dart:io and fetch), MockHttpTransport.
