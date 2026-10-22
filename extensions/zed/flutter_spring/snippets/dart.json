@@ -1,6 +1,5 @@
 {
   "Spring Boot application": {
-    "scope": "dart",
     "prefix": "spboot",
     "description": "main with @SpringBootApplication; run build_runner to generate main.beans.dart",
     "body": [
@@ -13,7 +12,6 @@
     ]
   },
   "Component scan module": {
-    "scope": "dart",
     "prefix": "spscan",
     "description": "A scanned bean module (spring_core_dart without Boot)",
     "body": [
@@ -26,7 +24,6 @@
     ]
   },
   "Service": {
-    "scope": "dart",
     "prefix": "spservice",
     "description": "@Service class with constructor injection",
     "body": [
@@ -41,7 +38,6 @@
     ]
   },
   "Component": {
-    "scope": "dart",
     "prefix": "spcomponent",
     "description": "@Component class",
     "body": [
@@ -52,7 +48,6 @@
     ]
   },
   "Repository": {
-    "scope": "dart",
     "prefix": "sprepository",
     "description": "@Repository class",
     "body": [
@@ -63,7 +58,6 @@
     ]
   },
   "Interface and implementation": {
-    "scope": "dart",
     "prefix": "spiface",
     "description": "An interface and its @Service implementation",
     "body": [
@@ -81,7 +75,6 @@
     ]
   },
   "Configuration with @Bean": {
-    "scope": "dart",
     "prefix": "spconfig",
     "description": "@Configuration class with a @Bean method",
     "body": [
@@ -93,7 +86,6 @@
     ]
   },
   "@Bean method": {
-    "scope": "dart",
     "prefix": "spbean",
     "description": "@Bean method inside a @Configuration class",
     "body": [
@@ -102,7 +94,6 @@
     ]
   },
   "@Value field": {
-    "scope": "dart",
     "prefix": "spvalue",
     "description": "Field filled from a property (raw string placeholder)",
     "body": [
@@ -111,7 +102,6 @@
     ]
   },
   "@Value parameter": {
-    "scope": "dart",
     "prefix": "spvalueparam",
     "description": "Constructor parameter filled from a property",
     "body": [
@@ -119,7 +109,6 @@
     ]
   },
   "@Autowired field": {
-    "scope": "dart",
     "prefix": "spautowired",
     "description": "Field injection",
     "body": [
@@ -128,7 +117,6 @@
     ]
   },
   "@Autowired setter": {
-    "scope": "dart",
     "prefix": "spsetter",
     "description": "Setter injection",
     "body": [
@@ -138,7 +126,6 @@
     ]
   },
   "@Lazy self-injection": {
-    "scope": "dart",
     "prefix": "spself",
     "description": "Inject the bean into itself through its proxy (advice applies to self-calls)",
     "body": [
@@ -148,7 +135,6 @@
     ]
   },
   "@Qualifier parameter": {
-    "scope": "dart",
     "prefix": "spqualifier",
     "description": "Choose a bean by name",
     "body": [
@@ -156,7 +142,6 @@
     ]
   },
   "@Primary bean": {
-    "scope": "dart",
     "prefix": "spprimary",
     "description": "The default choice among several implementations",
     "body": [
@@ -168,7 +153,6 @@
     ]
   },
   "@Profile bean": {
-    "scope": "dart",
     "prefix": "spprofile",
     "description": "A bean only in some profiles",
     "body": [
@@ -180,7 +164,6 @@
     ]
   },
   "@PostConstruct": {
-    "scope": "dart",
     "prefix": "sppost",
     "description": "Runs after the dependencies are injected",
     "body": [
@@ -191,7 +174,6 @@
     ]
   },
   "@PreDestroy": {
-    "scope": "dart",
     "prefix": "sppre",
     "description": "Runs when the context closes",
     "body": [
@@ -202,7 +184,6 @@
     ]
   },
   "@EventListener": {
-    "scope": "dart",
     "prefix": "splistener",
     "description": "Reacts to an event published with publishEvent",
     "body": [
@@ -213,7 +194,6 @@
     ]
   },
   "Publish an event": {
-    "scope": "dart",
     "prefix": "sppublish",
     "description": "Inject the publisher and publish an event",
     "body": [
@@ -225,7 +205,6 @@
     ]
   },
   "Aspect": {
-    "scope": "dart",
     "prefix": "spaspect",
     "description": "@Aspect with @Around advice for an annotation",
     "body": [
@@ -245,7 +224,6 @@
     ]
   },
   "@ConfigurationProperties": {
-    "scope": "dart",
     "prefix": "spprops",
     "description": "Typed, validated settings bound from a prefix (Spring Boot)",
     "body": [
@@ -258,7 +236,6 @@
     ]
   },
   "@ConditionalOnProperty": {
-    "scope": "dart",
     "prefix": "spcondprop",
     "description": "A bean only when a property is true (Spring Boot)",
     "body": [
@@ -270,7 +247,6 @@
     ]
   },
   "CommandLineRunner": {
-    "scope": "dart",
     "prefix": "sprunner",
     "description": "Code that runs once the application has started (Spring Boot)",
     "body": [
@@ -284,7 +260,6 @@
     ]
   },
   "Logger": {
-    "scope": "dart",
     "prefix": "splog",
     "description": "A named SpringLog logger",
     "body": [
@@ -292,7 +267,6 @@
     ]
   },
   "Hot reload in Flutter": {
-    "scope": "dart",
     "prefix": "spreload",
     "description": "Rebuild the beans after a hot reload (root widget State)",
     "body": [
@@ -304,7 +278,6 @@
     ]
   },
   "springBootTest": {
-    "scope": "dart",
     "prefix": "sptest",
     "description": "Test file starting the whole application (spring_boot_starter_test)",
     "body": [
