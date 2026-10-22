@@ -90,4 +90,26 @@ void main() {
     expect(read('classpath:app/greeting.txt'), isNot('from test resources'));
     expect(ClasspathResources.resolve('only-in-test.txt').exists(), isFalse);
   });
+
+  test('an owner registering again replaces its own files only', () {
+    String read(String path) =>
+        ClasspathResources.resolve(path).readAsStringSync();
+    ClasspathResources.registerAll(const {
+      'reload/app.properties': EmbeddedResource.text('v=1'),
+      'reload/old.txt': EmbeddedResource.text('old'),
+    }, owner: 'app');
+    ClasspathResources.registerAll(const {
+      'reload/app.properties': EmbeddedResource.text('starter'),
+      'reload/starter.txt': EmbeddedResource.text('s'),
+    }, owner: 'starter');
+    expect(read('reload/app.properties'), 'v=1'); // first owner wins
+
+    // The app module rebuilt after a hot reload: changed and removed files.
+    ClasspathResources.registerAll(const {
+      'reload/app.properties': EmbeddedResource.text('v=2'),
+    }, owner: 'app');
+    expect(read('reload/app.properties'), 'v=2');
+    expect(ClasspathResources.resolve('reload/old.txt').exists(), isFalse);
+    expect(read('reload/starter.txt'), 's'); // other owners untouched
+  });
 }

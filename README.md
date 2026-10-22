@@ -712,6 +712,35 @@ Starters (each a separate package, discovered by the generator like
   directory (`LoggingSystem.fileDirectory` via `path_provider`), a log
   viewer screen over `LogBuffer`, `shared_preferences` as a property
   source.
+- **Hot reload without code** (in `flutter_spring`): a root `SpringApp`
+  widget calls `reloadApplication` from its `reassemble()` itself, gives the
+  context to the widget tree, and rebuilds widgets that use beans after a
+  restart, so cached beans never point to a closed context. When a reload
+  cannot apply a change (e.g. `build_runner watch` has not finished), it
+  shows "beans changed, hot restart required" instead of a
+  `NoSuchBeanDefinitionException`. Today the same works with two lines in
+  `reassemble()` (see `spring_boot_dart`'s README, *Hot reload*).
+- **Beans that survive hot reload even when kept in a field** (in
+  `flutter_spring`): widgets get a generated wrapper instead of the bean,
+  built like the `@Lazy` proxies — every call looks the bean up in the
+  *current* context. A reference saved once in `initState` stays valid
+  after the context is rebuilt:
+  ```dart
+  class _ShopState extends State<Shop> {
+    late final Checkout checkout;
+
+    @override
+    void initState() {
+      super.initState();
+      checkout = context.bean<Checkout>(); // a wrapper, not the object itself
+    }
+
+    // after a hot reload checkout.pay() already calls the new Checkout bean
+  }
+  ```
+  The type must be an interface or a class without private members (the
+  same rule as for `@Lazy`); for other types the plain bean is returned
+  and the widget is rebuilt instead.
 - **Platform profiles** (in `flutter_spring`): the running platform is an
   active profile — `android`, `ios`, `web`, `macos`, `windows`, `linux` —
   plus the groups `mobile` (android, ios) and `desktop` (macos, windows,
@@ -789,7 +818,7 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 381 (runtime), 87 (generator), 12 (Spring Boot), 29 (logging
+Tests: 382 (runtime), 88 (generator), 19 (Spring Boot), 29 (logging
 starter), 25 (test starter), 16 end-to-end over the generated code of the
 example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,

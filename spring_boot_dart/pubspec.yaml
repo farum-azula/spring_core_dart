@@ -1,6 +1,6 @@
 name: spring_boot_dart
 description: >-
-  Spring Boot for Dart on top of spring_core_dart: @SpringBootApplication, SpringApplication.run, @ConfigurationProperties, auto-configuration conditions, runners and startup failure reports.
+  Spring Boot for Dart and Flutter: @SpringBootApplication, SpringApplication.run, @ConfigurationProperties, auto-configuration and starters, runners, failure reports.
 version: 0.1.0
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_dart
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues

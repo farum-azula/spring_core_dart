@@ -58,6 +58,7 @@ abstract final class ClasspathResources {
   static const directory = 'lib/resources';
 
   static final _embedded = <String, EmbeddedResource>{};
+  static final _owners = <String, String>{};
   static final _directories = <String>[];
 
   /// Searches [directory] (on disk) before the embedded files, until the
@@ -88,9 +89,32 @@ abstract final class ClasspathResources {
 
   /// Registers embedded files (path relative to `lib/resources/`); the
   /// first registration of a path wins, like the first classpath entry.
-  static void registerAll(Map<String, EmbeddedResource> resources) {
+  ///
+  /// With an [owner] (the module name), registering again replaces that
+  /// owner's previous files — how a module rebuilt after a hot reload
+  /// brings its changed `application.properties`.
+  static void registerAll(
+    Map<String, EmbeddedResource> resources, {
+    String? owner,
+  }) {
+    if (owner != null) {
+      _owners.removeWhere((path, previous) {
+        final mine = previous == owner;
+        if (mine) {
+          _embedded.remove(path);
+        }
+        return mine;
+      });
+    }
     for (final MapEntry(:key, :value) in resources.entries) {
-      _embedded.putIfAbsent(_normalize(key), () => value);
+      final path = _normalize(key);
+      if (_embedded.containsKey(path)) {
+        continue;
+      }
+      _embedded[path] = value;
+      if (owner != null) {
+        _owners[path] = owner;
+      }
     }
   }
 

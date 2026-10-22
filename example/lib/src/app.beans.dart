@@ -1249,7 +1249,7 @@ class _$BasketPricingLazy implements _i4.BasketPricing {
 }
 
 /// Beans found by `@ComponentScan` in `lib/src`.
-final _i2.BeanModule $shopBeans = _i2.BeanModule(
+_i2.BeanModule get $shopBeans => _i2.BeanModule(
   r'shopBeans',
   [
     _i2.BeanDefinition<_i1.DefaultPricingService>(

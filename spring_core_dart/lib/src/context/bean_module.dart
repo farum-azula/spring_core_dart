@@ -112,7 +112,7 @@ final class BeanModule {
        resources = Map.unmodifiable(resources) {
     // Embedded `lib/resources/` files become `classpath:` resources as soon
     // as the module exists (before config files are read).
-    ClasspathResources.registerAll(resources);
+    ClasspathResources.registerAll(resources, owner: name);
   }
 
   /// Files of `lib/resources/` embedded by the generator, by path; served

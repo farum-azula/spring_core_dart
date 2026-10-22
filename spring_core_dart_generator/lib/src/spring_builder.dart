@@ -261,85 +261,151 @@ class SpringBuilder implements Builder {
     final autoConfigurations = await _autoConfigurations(buildStep);
     final springApplication = refer('springApplication');
     final output = input.changeExtension(_outputExtension);
-    await buildStep.writeAsString(
-      output,
-      ModuleEmitter(output).emit(
-        moduleName: 'application',
-        variableName: r'$application',
-        scannedDirectory: roots.map((r) => '$r/').join(' and '),
-        module: module,
-        resources: await _resources(buildStep),
-        extra: [
-          Field(
-            (f) => f
-              ..docs.add(
-                '/// The `@SpringBootApplication`; customise it before '
-                '[runApplication].',
+    final source = ModuleEmitter(output).emit(
+      moduleName: 'application',
+      variableName: r'$application',
+      scannedDirectory: roots.map((r) => '$r/').join(' and '),
+      module: module,
+      resources: await _resources(buildStep),
+      extra: [
+        Method(
+          (m) => m
+            ..docs.add(
+              '/// The `@SpringBootApplication` of the current code (a '
+              'getter, so it is\n/// up to date after a hot reload).',
+            )
+            ..type = MethodType.getter
+            ..returns = refer('SpringApplication', _bootUrl)
+            ..name = 'springApplication'
+            ..lambda = true
+            ..body = refer('SpringApplication', _bootUrl)
+                .newInstance(
+                  [
+                    literalList([refer(r'$application')]),
+                  ],
+                  {
+                    if (autoConfigurations.isNotEmpty)
+                      'autoConfigurations': literalList(autoConfigurations),
+                    'fingerprint': literalString(_fingerprintPlaceholder),
+                  },
+                )
+                .code,
+        ),
+        Method(
+          (m) => m
+            ..docs.add(
+              '/// Starts the application: config files, environment, '
+              'context, runners.',
+            )
+            ..returns = refer('ConfigurableApplicationContext', _bootUrl)
+            ..name = 'runApplication'
+            ..requiredParameters.add(
+              Parameter(
+                (p) => p
+                  ..name = 'args'
+                  ..type = refer('List<String>'),
+              ),
+            )
+            ..lambda = true
+            ..body = springApplication.property('run').call([
+              refer('args'),
+            ]).code,
+        ),
+        Method(
+          (m) => m
+            ..docs.add(
+              '/// Like [runApplication], reading config files '
+              'asynchronously (Flutter assets).',
+            )
+            ..returns = TypeReference(
+              (t) => t
+                ..symbol = 'Future'
+                ..types.add(refer('ConfigurableApplicationContext', _bootUrl)),
+            )
+            ..name = 'runApplicationAsync'
+            ..requiredParameters.add(
+              Parameter(
+                (p) => p
+                  ..name = 'args'
+                  ..type = refer('List<String>'),
+              ),
+            )
+            ..lambda = true
+            ..body = springApplication.property('runAsync').call([
+              refer('args'),
+            ]).code,
+        ),
+        for (final (name, call, doc) in const [
+          (
+            'reloadApplication',
+            'reload',
+            '/// For hot reload: [running] if the generated code is '
+                'unchanged, else a\n/// restarted application with the '
+                'new beans and the same arguments;\n/// [runners]: whether '
+                'ApplicationRunner / CommandLineRunner beans run again.',
+          ),
+          (
+            'reloadApplicationAsync',
+            'reloadAsync',
+            '/// Like [reloadApplication], reading config files '
+                'asynchronously.',
+          ),
+        ])
+          Method(
+            (m) => m
+              ..docs.add(doc)
+              ..returns = call == 'reload'
+                  ? refer('ConfigurableApplicationContext', _bootUrl)
+                  : TypeReference(
+                      (t) => t
+                        ..symbol = 'Future'
+                        ..types.add(
+                          refer('ConfigurableApplicationContext', _bootUrl),
+                        ),
+                    )
+              ..name = name
+              ..requiredParameters.add(
+                Parameter(
+                  (p) => p
+                    ..name = 'running'
+                    ..type = refer('ConfigurableApplicationContext', _bootUrl),
+                ),
               )
-              ..modifier = FieldModifier.final$
-              ..type = refer('SpringApplication', _bootUrl)
-              ..name = 'springApplication'
-              ..assignment = refer('SpringApplication', _bootUrl)
-                  .newInstance(
-                    [
-                      literalList([refer(r'$application')]),
-                    ],
-                    {
-                      if (autoConfigurations.isNotEmpty)
-                        'autoConfigurations': literalList(autoConfigurations),
-                    },
-                  )
+              ..optionalParameters.add(
+                Parameter(
+                  (p) => p
+                    ..name = 'runners'
+                    ..type = refer('bool')
+                    ..named = true
+                    ..defaultTo = literalTrue.code,
+                ),
+              )
+              ..lambda = true
+              ..body = springApplication
+                  .property(call)
+                  .call([refer('running')], {'runners': refer('runners')})
                   .code,
           ),
-          Method(
-            (m) => m
-              ..docs.add(
-                '/// Starts the application: config files, environment, '
-                'context, runners.',
-              )
-              ..returns = refer('ConfigurableApplicationContext', _bootUrl)
-              ..name = 'runApplication'
-              ..requiredParameters.add(
-                Parameter(
-                  (p) => p
-                    ..name = 'args'
-                    ..type = refer('List<String>'),
-                ),
-              )
-              ..lambda = true
-              ..body = springApplication.property('run').call([
-                refer('args'),
-              ]).code,
-          ),
-          Method(
-            (m) => m
-              ..docs.add(
-                '/// Like [runApplication], reading config files '
-                'asynchronously (Flutter assets).',
-              )
-              ..returns = TypeReference(
-                (t) => t
-                  ..symbol = 'Future'
-                  ..types.add(
-                    refer('ConfigurableApplicationContext', _bootUrl),
-                  ),
-              )
-              ..name = 'runApplicationAsync'
-              ..requiredParameters.add(
-                Parameter(
-                  (p) => p
-                    ..name = 'args'
-                    ..type = refer('List<String>'),
-                ),
-              )
-              ..lambda = true
-              ..body = springApplication.property('runAsync').call([
-                refer('args'),
-              ]).code,
-          ),
-        ],
-      ),
+      ],
     );
+    // The hash of the generated code (with the placeholder in it) replaces
+    // the placeholder; same length, so the formatting is unchanged.
+    await buildStep.writeAsString(
+      output,
+      source.replaceFirst(_fingerprintPlaceholder, _fnv1a(source)),
+    );
+  }
+
+  static const _fingerprintPlaceholder = '00000000';
+
+  // FNV-1a (32 bit) as 8 hex digits: stable across runs and platforms,
+  // unlike String.hashCode.
+  static String _fnv1a(String text) {
+    var hash = 0x811c9dc5;
+    for (final unit in text.codeUnits) {
+      hash = ((hash ^ unit) * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
   }
 
   // Auto-configuration modules of every dependency (direct or transitive):

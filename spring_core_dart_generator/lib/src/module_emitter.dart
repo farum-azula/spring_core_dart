@@ -158,16 +158,19 @@ class ModuleEmitter {
               _proxyClass(proxy, bean.element),
           for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
         ])
+        // A getter, not a final variable: a hot reload replaces its body,
+        // so the next call returns the beans of the new code.
         ..body.add(
-          Field(
-            (f) => f
+          Method(
+            (m) => m
               ..docs.add(
                 '/// Beans found by `@ComponentScan` in `$scannedDirectory`.',
               )
-              ..modifier = FieldModifier.final$
-              ..type = _spring('BeanModule')
+              ..type = MethodType.getter
+              ..returns = _spring('BeanModule')
               ..name = variableName
-              ..assignment = moduleExpression.code,
+              ..lambda = true
+              ..body = moduleExpression.code,
           ),
         )
         ..body.addAll(extra),

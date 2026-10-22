@@ -1,3 +1,8 @@
+## Unreleased
+
+- `ClasspathResources.registerAll(owner:)`: a module registering again (after a hot reload) replaces its own embedded files; `BeanModule` passes its name.
+- Example guide on pub.dev (`example/README.md`): every feature in short blocks with the annotations to write.
+
 ## 0.1.0
 
 - `Advised` members are `aopTarget` and `aopAdvisors` (were `targetObject`

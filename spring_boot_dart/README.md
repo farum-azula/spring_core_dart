@@ -262,6 +262,105 @@ consistent and making incompatibilities readable:
 - **Escape hatch:** `dependency_overrides` in the application's
   `pubspec.yaml`, like overriding a managed version in Maven.
 
+## Hot reload (Flutter)
+
+A hot reload does not run `main` again, so the running context would keep
+the old beans. The generator writes `springApplication` and the bean module
+as getters plus a fingerprint of the generated code, and
+`reloadApplication(context)` decides what to do:
+
+- only method bodies changed (same fingerprint): the context is kept, beans
+  keep their state and already run the new code;
+- beans, annotations or `lib/resources/` changed (with `build_runner watch`
+  running): the context is closed and started again with the same
+  arguments.
+
+Call it from `reassemble()` of the root widget's `State`, which Flutter
+calls on every hot reload:
+
+```dart
+late ConfigurableApplicationContext context;
+
+@SpringBootApplication()
+Future<void> main() async {
+  context = await runApplicationAsync(const []);
+  runApp(const App());
+}
+
+class _AppState extends State<App> {
+  @override
+  void reassemble() {
+    super.reassemble();
+    context = reloadApplication(context); // generated next to main
+  }
+
+  @override
+  Widget build(BuildContext context) => ... // look beans up here, not in initState
+}
+```
+
+Objects you keep in fields (a bean fetched once in `initState`) still point
+to the old context after a restart; look beans up in `build` or after
+`reassemble`. A hot restart always starts from scratch.
+
+### Runners after a restart (`runners:`)
+
+*Runners* are beans whose code runs once, right after the application has
+started — the place for "on startup" work:
+
+```dart
+@Component()
+class StartupTasks implements CommandLineRunner {
+  StartupTasks(this.db, this.analytics);
+  final Database db;
+  final Analytics analytics;
+
+  @override
+  void run(List<String> args) {
+    db.migrate();                    // update the database schema
+    analytics.track('app_started');  // "the app was opened"
+    print('Shop is open!');
+  }
+}
+```
+
+When a hot reload restarts the context (beans, annotations or properties
+changed), the context starts like a fresh launch, so by default the runners
+run **again**:
+
+```text
+hot reload after adding a bean
+  → old context closed, new one started
+  → StartupTasks.run(): migrate() again, a second 'app_started' event,
+    "Shop is open!" printed again
+```
+
+The app was not really opened twice, so this is often unwanted. Pass
+`runners: false` to restart the beans without repeating the startup work:
+
+```dart
+@override
+void reassemble() {
+  super.reassemble();
+  context = reloadApplication(context, runners: false);
+}
+```
+
+| | `runners: true` (default) | `runners: false` |
+|---|---|---|
+| Beans after a restart | new | new |
+| `CommandLineRunner` / `ApplicationRunner` | run again | skipped |
+| Good for | runners that only prepare in-memory state the new beans need | migrations, analytics events, notifications, network calls |
+
+Notes:
+
+- When only method bodies changed, the context is not restarted, so
+  runners never run on such a reload, whatever the flag says.
+- `runApplication` / `runApplicationAsync` (a real start) always run the
+  runners.
+- The default matches Spring Boot DevTools, which runs the runners after
+  every automatic restart.
+
 ## Flutter
 
 `runApplicationAsync(args)` (also generated) reads the config files

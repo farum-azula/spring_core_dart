@@ -1,3 +1,8 @@
+## Unreleased
+
+- Generated modules and `springApplication` are getters (a hot reload replaces their bodies), with a `fingerprint` of the generated code and `reloadApplication` / `reloadApplicationAsync` (with `runners:`).
+- Example guide on pub.dev (`example/README.md`): setup, what is generated, build-time errors, options.
+
 ## 0.1.0
 
 - Generated code compiles for SDK types as beans (`HttpClient` imported

@@ -1,3 +1,9 @@
+## Unreleased
+
+- Hot reload: `SpringApplication(fingerprint:)`, `reload` / `reloadAsync` keep the running context when the generated code is unchanged and restart it with the same arguments otherwise; `runners: false` skips `ApplicationRunner` / `CommandLineRunner` beans after such a restart.
+- Example on pub.dev (`example/`) and a description within 180 characters.
+- Failure reports point to `lib/resources/application.properties` and suggest `@Lazy()` for dependency cycles.
+
 ## 0.1.0
 
 Initial version.

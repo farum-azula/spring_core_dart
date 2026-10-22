@@ -1,3 +1,7 @@
+## Unreleased
+
+- Example on pub.dev (`example/`) and a description within 180 characters.
+
 ## 0.1.0
 
 Initial version.

@@ -1,6 +1,6 @@
 name: spring_boot_starter_test
 description: >-
-  Testing support for spring_boot_dart applications and starters: springBootTest (like @SpringBootTest), bean overrides for fakes and mocks, ApplicationContextRunner, bean matchers and log capture. Works with package:test and flutter_test.
+  Testing for spring_boot_dart apps and starters: springBootTest, bean overrides for mocks, ApplicationContextRunner, matchers and log capture. Works with flutter_test.
 version: 0.1.0
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_test
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues

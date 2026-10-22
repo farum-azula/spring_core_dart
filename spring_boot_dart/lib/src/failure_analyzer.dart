@@ -98,14 +98,16 @@ FailureAnalysis? _analyze(Object error, List<Object> chain) => switch (error) {
   BeanCurrentlyInCreationException(:final cycle) => FailureAnalysis(
     'The dependencies of some of the beans form a cycle:\n\n'
         '${cycle.join(' → ')}',
-    'Break the cycle: inject an ObjectProvider<T> on one side, or move the '
-        'shared logic into a third bean.',
+    'Break the cycle: mark one injection point @Lazy() or inject an '
+        'ObjectProvider<T> on one side, or move the shared logic into a third '
+        'bean.',
     error,
   ),
   PlaceholderResolutionException(:final placeholder) => FailureAnalysis(
     "Could not resolve placeholder '$placeholder'${_creationPath(chain)}.",
-    "Define '$placeholder' in config/application.properties, on the command "
-        'line (--$placeholder=...) or as an environment variable, or give '
+    "Define '$placeholder' in lib/resources/application.properties, on the "
+        'command line (--$placeholder=...) or as an environment variable, or '
+        'give '
         r'it a default: ${'
         '$placeholder:default}.',
     error,
@@ -115,7 +117,8 @@ FailureAnalysis? _analyze(Object error, List<Object> chain) => switch (error) {
       "Binding to target properties under '$prefix' failed:\n\n"
           '${errors.map((e) => '  - $e').join('\n')}',
       "Update the application's configuration "
-          '(config/application.properties, command line or environment).',
+          '(lib/resources/application.properties, command line or '
+          'environment).',
       error,
     ),
   _ => null,

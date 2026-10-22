@@ -9,8 +9,9 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///
 /// 1. command-line arguments and OS environment variables as property
 ///    sources;
-/// 2. `config/application.properties` and `application-{profile}` files
-///    (Spring Boot config data: profiles, imports, groups, ...);
+/// 2. `lib/resources/application.properties` (`classpath:`) and
+///    `application-{profile}` files (Spring Boot config data: profiles,
+///    imports, groups, ...);
 /// 3. `logging.level.root` and `logging.level.<logger>` (also
 ///    `logging.group.<name>=a,b` and `LOGGING_LEVEL_<LOGGER>` variables)
 ///    applied to [SpringLog];
@@ -40,6 +41,7 @@ class SpringApplication {
     List<BeanModule> autoConfigurations = const [],
     List<ApplicationContextInitializer> initializers = const [],
     this.resourceLoader,
+    this.fingerprint,
     void Function(String line)? out,
   }) : modules = List.unmodifiable(modules),
        autoConfigurations = List.unmodifiable(autoConfigurations),
@@ -57,6 +59,11 @@ class SpringApplication {
   /// singletons, ...
   final List<ApplicationContextInitializer> initializers;
 
+  /// Identifies the generated code the application was built from (a hash
+  /// written by the generator). [reload] keeps a running context when it
+  /// is unchanged.
+  final String? fingerprint;
+
   /// Reads config files; defaults to a `DefaultResourceLoader`. Use an
   /// asset-aware loader (and [runAsync]) in Flutter.
   final ResourceLoader? resourceLoader;
@@ -73,6 +80,13 @@ class SpringApplication {
     List<String> args, {
     Map<String, String>? systemEnvironment,
     Map<String, Object?> properties = const {},
+  }) => _run(args, systemEnvironment, properties, runners: true);
+
+  ConfigurableApplicationContext _run(
+    List<String> args,
+    Map<String, String>? systemEnvironment,
+    Map<String, Object?> properties, {
+    required bool runners,
   }) {
     final watch = Stopwatch()..start();
     final environment = _environment(args, systemEnvironment, properties);
@@ -81,7 +95,10 @@ class SpringApplication {
         environment,
         resourceLoader: resourceLoader,
       ).processAndApplySync();
-      return _start(args, environment, watch);
+      return _start(args, environment, watch, (
+        systemEnvironment,
+        properties,
+      ), runners: runners);
     });
   }
 
@@ -90,6 +107,13 @@ class SpringApplication {
     List<String> args, {
     Map<String, String>? systemEnvironment,
     Map<String, Object?> properties = const {},
+  }) => _runAsync(args, systemEnvironment, properties, runners: true);
+
+  Future<ConfigurableApplicationContext> _runAsync(
+    List<String> args,
+    Map<String, String>? systemEnvironment,
+    Map<String, Object?> properties, {
+    required bool runners,
   }) async {
     final watch = Stopwatch()..start();
     final environment = _environment(args, systemEnvironment, properties);
@@ -102,8 +126,85 @@ class SpringApplication {
       _report(error);
       rethrow;
     }
-    return _guard(() => _start(args, environment, watch));
+    return _guard(
+      () => _start(args, environment, watch, (
+        systemEnvironment,
+        properties,
+      ), runners: runners),
+    );
   }
+
+  /// Restarts [running] with this application if the generated code
+  /// changed, for hot reload: a hot reload does not run `main` again, but
+  /// the generated `springApplication` getter returns the new beans.
+  ///
+  /// - Same [fingerprint] (only method bodies changed): [running] is
+  ///   returned as it is, beans keep their state.
+  /// - Different (beans, annotations or `lib/resources/` changed):
+  ///   [running] is closed and the application starts again with the same
+  ///   arguments.
+  ///
+  /// [runners]: whether `ApplicationRunner` / `CommandLineRunner` beans run
+  /// again after such a restart. They hold "on startup" work (migrations,
+  /// an `app_started` analytics event, a welcome log line); the app did not
+  /// really start again, so pass `false` to skip them. The default `true`
+  /// matches Spring Boot DevTools, which runs them after every restart.
+  ///
+  /// ```dart
+  /// // Flutter, in the root widget's State:
+  /// @override
+  /// void reassemble() {
+  ///   super.reassemble();
+  ///   context = reloadApplication(context); // generated
+  /// }
+  /// ```
+  ConfigurableApplicationContext reload(
+    ConfigurableApplicationContext running, {
+    bool runners = true,
+  }) {
+    final previous = _launches[running];
+    if (_isCurrent(running, previous)) {
+      return running;
+    }
+    if (running.isActive) {
+      running.close();
+    }
+    return _run(
+      previous?.args ?? const [],
+      previous?.systemEnvironment,
+      previous?.properties ?? const {},
+      runners: runners,
+    );
+  }
+
+  /// Like [reload], reading config files asynchronously.
+  Future<ConfigurableApplicationContext> reloadAsync(
+    ConfigurableApplicationContext running, {
+    bool runners = true,
+  }) async {
+    final previous = _launches[running];
+    if (_isCurrent(running, previous)) {
+      return running;
+    }
+    if (running.isActive) {
+      running.close();
+    }
+    return _runAsync(
+      previous?.args ?? const [],
+      previous?.systemEnvironment,
+      previous?.properties ?? const {},
+      runners: runners,
+    );
+  }
+
+  bool _isCurrent(ConfigurableApplicationContext running, _Launch? previous) =>
+      running.isActive &&
+      previous != null &&
+      fingerprint != null &&
+      previous.fingerprint == fingerprint;
+
+  // How each context was started, for [reload].
+  static final _launches = Expando<_Launch>('SpringApplication launches');
 
   StandardEnvironment _environment(
     List<String> args,
@@ -141,12 +242,20 @@ class SpringApplication {
     List<String> args,
     StandardEnvironment environment,
     Stopwatch watch,
-  ) {
+    (Map<String, String>?, Map<String, Object?>) launch, {
+    required bool runners,
+  }) {
     applyLoggingLevels(environment);
     final context = AnnotationConfigApplicationContext(
       [...modules, ...autoConfigurations],
       environment: environment,
       resourceLoader: resourceLoader,
+    );
+    _launches[context] = _Launch(
+      fingerprint,
+      List.unmodifiable(args),
+      launch.$1,
+      launch.$2,
     );
     final arguments = ApplicationArguments(args);
     context.beanFactory
@@ -163,7 +272,9 @@ class SpringApplication {
     }
     try {
       context.refresh();
-      _callRunners(context, arguments);
+      if (runners) {
+        _callRunners(context, arguments);
+      }
     } catch (_) {
       if (context.isActive) {
         context.close();
@@ -279,3 +390,12 @@ class SpringApplication {
 typedef ApplicationContextInitializer = void Function(
   ConfigurableApplicationContext context,
 );
+
+final class _Launch {
+  _Launch(this.fingerprint, this.args, this.systemEnvironment, this.properties);
+
+  final String? fingerprint;
+  final List<String> args;
+  final Map<String, String>? systemEnvironment;
+  final Map<String, Object?> properties;
+}

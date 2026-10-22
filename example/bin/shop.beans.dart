@@ -1254,7 +1254,7 @@ class _$BasketPricingLazy implements _i5.BasketPricing {
 }
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
-final _i2.BeanModule $application = _i2.BeanModule(
+_i2.BeanModule get $application => _i2.BeanModule(
   r'application',
   [
     _i2.BeanDefinition<_i1.LegacyConfig>(
@@ -3553,13 +3553,15 @@ final _i2.BeanModule $application = _i2.BeanModule(
   },
 );
 
-/// The `@SpringBootApplication`; customise it before [runApplication].
-final _i21.SpringApplication springApplication = _i21.SpringApplication(
+/// The `@SpringBootApplication` of the current code (a getter, so it is
+/// up to date after a hot reload).
+_i21.SpringApplication get springApplication => _i21.SpringApplication(
   [$application],
   autoConfigurations: [
     _i22.springBootAutoConfiguration,
     _i23.springBootStarterLoggingAutoConfiguration,
   ],
+  fingerprint: '54bbeced',
 );
 
 /// Starts the application: config files, environment, context, runners.
@@ -3570,3 +3572,17 @@ _i21.ConfigurableApplicationContext runApplication(List<String> args) =>
 Future<_i21.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args);
+
+/// For hot reload: [running] if the generated code is unchanged, else a
+/// restarted application with the new beans and the same arguments;
+/// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
+_i21.ConfigurableApplicationContext reloadApplication(
+  _i21.ConfigurableApplicationContext running, {
+  bool runners = true,
+}) => springApplication.reload(running, runners: runners);
+
+/// Like [reloadApplication], reading config files asynchronously.
+Future<_i21.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i21.ConfigurableApplicationContext running, {
+  bool runners = true,
+}) => springApplication.reloadAsync(running, runners: runners);

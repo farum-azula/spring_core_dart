@@ -334,7 +334,7 @@ class Other {}
 ''');
       expect(
         output,
-        _has(r"final _i1.BeanModule $pkgBeans = _i1.BeanModule(r'pkgBeans',"),
+        _has(r"_i1.BeanModule get $pkgBeans => _i1.BeanModule(r'pkgBeans',"),
       );
       expect(output, _has("name: r'apiImpl'"));
       expect(output, _has("source: r'package:pkg/src/service.dart#ApiImpl'"));
@@ -1525,18 +1525,72 @@ class DbProps { String url = ''; }
         expect(output, _has("name: r'dbProps'"));
         expect(output, _has('BeanIntrospection<'));
         expect(output, contains("ConfigurationProperties(r'db')"));
+        // Getters, so a hot reload sees the beans of the new code.
         expect(
           output,
-          _has(r"BeanModule $application = _i1.BeanModule(r'application'"),
+          _has(r"BeanModule get $application => _i1.BeanModule(r'application'"),
         );
+        expect(output, _has('SpringApplication get springApplication =>'));
+        expect(output, matches(RegExp("fingerprint:'[0-9a-f]{8}'")));
         expect(
           output,
           _has(
             'runApplication(List<String> args) => springApplication.run(args);',
           ),
         );
+        expect(
+          output,
+          _has(
+            'reloadApplication(_i6.ConfigurableApplicationContext running, '
+            '{bool runners = true}) => '
+            'springApplication.reload(running, runners: runners);',
+          ),
+        );
+        expect(
+          output,
+          _has(
+            'reloadApplicationAsync(_i6.ConfigurableApplicationContext '
+            'running, {bool runners = true}) => '
+            'springApplication.reloadAsync(running, runners: runners);',
+          ),
+        );
       },
     );
+
+    test('the fingerprint is stable and changes with the beans', () async {
+      Future<String> fingerprint(String beans) async {
+        final result = await _build({
+          'bin/main.dart': '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'main.beans.dart';
+
+@SpringBootApplication()
+void main(List<String> args) => runApplication(args);
+''',
+          'lib/beans.dart': '$_header$beans',
+        });
+        expect(result.errors, isEmpty);
+        return RegExp("fingerprint: '([0-9a-f]{8})'")
+            .firstMatch(
+              result.readerWriter.testing.readString(result.outputs.single),
+            )!
+            .group(1)!;
+      }
+
+      const one = '@Service() class A {}';
+      final first = await fingerprint(one);
+      expect(await fingerprint(one), first); // same code, same fingerprint
+      expect(
+        await fingerprint('$one\n@Service() class B {}'), // a new bean
+        isNot(first),
+      );
+      expect(
+        await fingerprint(
+          "@Service() class A { A(@Value(r'\${x:1}') this.x); final String x; }",
+        ),
+        isNot(first), // a changed injection point
+      );
+    });
   });
 
   group('rejects', () {
