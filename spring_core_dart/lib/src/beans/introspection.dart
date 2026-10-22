@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/beans/type_info.dart';
+
 /// Marks a class for compile-time introspection: the generator emits its
 /// properties, methods and annotations, so data binding, validation and
 /// SpEL can use it without reflection (like Micronaut's `@Introspected`).
@@ -24,9 +26,17 @@
 ///   public void setCity(String city) { this.city = city; }
 /// }
 /// ```
+///
+/// Classes of other packages (a shared DTO package, ...) are introspected
+/// by listing them: `@Introspected(classes: [ExternalDto])` on any class of
+/// the scanned package. Classes of the same package used by an introspected
+/// class (property and constructor types) are introspected automatically.
 class Introspected {
-  /// Marks the annotated class.
-  const Introspected();
+  /// Marks the annotated class; [classes] are introspected too.
+  const Introspected({this.classes = const []});
+
+  /// More classes to introspect, e.g. from another package.
+  final List<Type> classes;
 }
 
 /// A property of an introspected class.
@@ -61,6 +71,7 @@ final class BeanProperty<T extends Object> {
     required this._get,
     this._set,
     this.nullable = false,
+    this.typeInfo,
     List<Object> annotations = const [],
   }) : annotations = List.unmodifiable(annotations);
 
@@ -72,6 +83,10 @@ final class BeanProperty<T extends Object> {
 
   /// Whether the declared type is nullable.
   final bool nullable;
+
+  /// The full declared type (element types, enum values, nullability);
+  /// written by the generator, `null` in hand-written introspections.
+  final TypeInfo<Object?>? typeInfo;
 
   /// Const annotations on the field or getter (e.g. constraints).
   final List<Object> annotations;
@@ -160,6 +175,95 @@ final class BeanMethod<T extends Object> {
   String toString() => 'BeanMethod<$T>($name)';
 }
 
+/// A parameter of a [BeanConstructor].
+///
+/// ```dart
+/// // Book({required this.isbn, this.tags = const []})
+/// const isbn = BeanParameter('isbn', type: ClassType<String>(),
+///     symbol: #isbn, isRequired: true);
+/// const tags = BeanParameter('tags',
+///     type: ListType<String>(ClassType<String>()), symbol: #tags);
+/// ```
+///
+/// Spring (Java): `java.lang.reflect.Parameter` (with `-parameters`).
+final class BeanParameter {
+  /// Describes parameter [name] of [type]. Named parameters carry their
+  /// [symbol] (a const symbol literal, safe in minified builds).
+  const BeanParameter(
+    this.name, {
+    required this.type,
+    this.symbol,
+    this.isRequired = false,
+    this.annotations = const [],
+  });
+
+  /// The parameter name.
+  final String name;
+
+  /// The declared type.
+  final TypeInfo<Object?> type;
+
+  /// `#name` for a named parameter; `null` for a positional one.
+  final Symbol? symbol;
+
+  /// Whether a value must be passed (positional without default, or
+  /// `required`).
+  final bool isRequired;
+
+  /// Const annotations on the parameter.
+  final List<Object> annotations;
+
+  /// Whether the parameter is named.
+  bool get isNamed => symbol != null;
+
+  @override
+  String toString() => 'BeanParameter($name: $type)';
+}
+
+/// The constructor an introspected class is created with: the unnamed one,
+/// or the one marked `@JsonCreator()`. Lets immutable classes (final
+/// fields, `required` and default values) be created from data.
+///
+/// ```dart
+/// final constructor = BeanConstructor<Book>(
+///   parameters: const [
+///     BeanParameter('isbn', type: ClassType<String>(), symbol: #isbn,
+///         isRequired: true),
+///   ],
+///   create: (positional, named) =>
+///       Function.apply(Book.new, positional, named) as Book,
+/// );
+/// constructor.newInstance(const [], {#isbn: '978-0'});
+/// ```
+///
+/// Spring (Java): `java.lang.reflect.Constructor`:
+/// ```java
+/// Book book = Book.class.getConstructor(String.class).newInstance("978-0");
+/// ```
+final class BeanConstructor<T extends Object> {
+  /// A constructor with [parameters], called through [create].
+  BeanConstructor({
+    required List<BeanParameter> parameters,
+    required this._create,
+  }) : parameters = List.unmodifiable(parameters);
+
+  /// The parameters, in declaration order.
+  final List<BeanParameter> parameters;
+
+  final T Function(List<Object?> positional, Map<Symbol, Object?> named)
+  _create;
+
+  /// Creates an instance; omitted optional parameters keep their default
+  /// values.
+  T newInstance(
+    List<Object?> positional, [
+    Map<Symbol, Object?> named = const {},
+  ]) => _create(positional, named);
+
+  @override
+  String toString() => 'BeanConstructor<$T>(${parameters.join(', ')})';
+}
+
 /// Compile-time metadata of a class, like Micronaut's `BeanIntrospection`.
 ///
 /// Generated for `@Introspected` classes and registered in a
@@ -197,6 +301,9 @@ final class BeanIntrospection<T extends Object> {
     List<BeanMethod<T>> methods = const [],
     List<Object> annotations = const [],
     this._instantiate,
+    this.constructor,
+    this._fromJson,
+    this._toJson,
   }) : _properties = {for (final p in properties) p.name: p},
        _methods = {for (final m in methods) m.name: m},
        annotations = List.unmodifiable(annotations);
@@ -204,6 +311,30 @@ final class BeanIntrospection<T extends Object> {
   final Map<String, BeanProperty<T>> _properties;
   final Map<String, BeanMethod<T>> _methods;
   final T Function()? _instantiate;
+  final T Function(Object? json)? _fromJson;
+  final Object? Function(T bean)? _toJson;
+
+  /// The constructor to create instances from data (`ObjectMapper`), when
+  /// the class has a usable one.
+  final BeanConstructor<T>? constructor;
+
+  /// Whether the class has its own `fromJson` constructor (e.g. from
+  /// `json_serializable` or `freezed`), which `ObjectMapper` then uses.
+  bool get hasFromJson => _fromJson != null;
+
+  /// Whether the class has its own `toJson()` method.
+  bool get hasToJson => _toJson != null;
+
+  /// Calls the class's own `fromJson` with [json].
+  T fromJson(Object? json) =>
+      (_fromJson ?? (throw StateError('$T has no fromJson constructor')))(json);
+
+  /// Calls the class's own `toJson()` on [bean].
+  Object? toJson(Object bean) =>
+      (_toJson ?? (throw StateError('$T has no toJson method')))(bean as T);
+
+  /// Whether [S] is [T] or `T?`.
+  bool describes<S>() => S == T || (<S>[] is List<T?> && <T?>[] is List<S>);
 
   /// Const annotations on the class.
   final List<Object> annotations;
@@ -290,6 +421,20 @@ class BeanIntrospector {
   /// The introspection registered for exactly [type].
   BeanIntrospection<Object>? forType(Type type) =>
       _byType[type] ?? parent?.forType(type);
+
+  /// The introspection of [T] (also when [T] is a nullable `Book?`).
+  BeanIntrospection<Object>? forTypeArgument<T>() {
+    final exact = _byType[T];
+    if (exact != null) {
+      return exact;
+    }
+    for (final introspection in _byType.values) {
+      if (introspection.describes<T>()) {
+        return introspection;
+      }
+    }
+    return parent?.forTypeArgument<T>();
+  }
 
   /// The introspection for [bean]: its exact runtime type, else the first
   /// registered supertype.

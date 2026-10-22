@@ -40,4 +40,5 @@ export 'package:spring_core_dart/beans.dart';
 export 'package:spring_core_dart/context.dart';
 export 'package:spring_core_dart/core.dart';
 export 'package:spring_core_dart/expression.dart';
+export 'package:spring_core_dart/json.dart';
 export 'package:spring_core_dart/validation.dart';

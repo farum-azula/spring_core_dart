@@ -15,6 +15,7 @@ import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.da
     show Scheduled, ScheduledAnnotationBeanPostProcessor;
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
+import 'package:spring_core_dart_example/src/api/book_dto.dart';
 import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/cache/price_list.dart';
 import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
@@ -73,6 +74,25 @@ void main() {
       .invoke(jobs, const []);
   if (jobs.refreshes == 0) {
     throw StateError('@Scheduled method was not called');
+  }
+  // ObjectMapper: constructors called with named arguments (symbols) and
+  // property names from the metadata, not from minified class members.
+  final mapper = context.getBean<ObjectMapper>();
+  final book = mapper.readValue<BookDto>(
+    mapper.writeValueAsString(
+      const BookDto(
+        isbn: '1',
+        title: 'Dune',
+        author: AuthorDto('Herbert', born: 1920),
+        availability: Availability.soldOut,
+      ),
+    ),
+  );
+  if (book.title != 'Dune' ||
+      book.author.born != 1920 ||
+      book.availability != Availability.soldOut ||
+      book.formats.single != BookFormat.paperback) {
+    throw StateError('ObjectMapper round trip failed');
   }
   context.close();
   print('release check passed');

@@ -32,6 +32,7 @@ Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_d
 | `expression.dart` | `spring-expression` (SpEL) |
 | `validation.dart` | `org.springframework.validation` + Bean Validation style constraints |
 | `aop.dart` | `spring-aop`: aspects, advice, pointcut expressions, advisors |
+| `json.dart` | Jackson's `ObjectMapper`: JSON on generated metadata, Jackson-style annotations |
 
 ## Installation
 
@@ -429,6 +430,103 @@ subclasses. Error codes and arguments follow Spring
 (`NotBlank.signup.name`, `NotBlank.name`, `NotBlank.String`, `NotBlank`), so
 messages come from a `MessageSource`.
 
+### JSON (`ObjectMapper`)
+
+`ObjectMapper` converts objects to JSON and back, like Jackson — on metadata
+the generator writes, so no reflection and no `fromJson` / `toJson`
+boilerplate. One `@Introspected()` on a model is enough: classes of the same
+package that it uses (property and constructor types) are introspected
+automatically.
+
+```dart
+enum Availability {
+  inStock('in_stock'),
+  soldOut('sold_out');
+
+  const Availability(this.json);
+  @JsonValue()                     // "in_stock" instead of "inStock"
+  final String json;
+}
+
+class Author {                     // no annotation needed: used by Book
+  const Author(this.name, {this.born});
+  final String name;
+  final int? born;
+}
+
+@Introspected()
+class Book {
+  const Book({
+    required this.isbn,
+    required this.title,
+    required this.author,
+    this.tags = const [],
+    this.availability = Availability.inStock,
+    this.publishedAt,
+  });
+  final String isbn;
+  final String title;
+  final Author author;
+  final List<String> tags;
+  final Availability availability;
+  @JsonProperty('published_at')
+  final DateTime? publishedAt;
+}
+
+final mapper = context.getBean<ObjectMapper>();   // Spring Boot: auto-configured
+final json = mapper.writeValueAsString(book);
+// {"isbn":"1","title":"Dune","author":{"name":"Herbert","born":1920},
+//  "tags":[],"availability":"in_stock","published_at":null}
+final again = mapper.readValue<Book>(json);
+final books = mapper.readList<Book>('[{"isbn":"2","title":"Ubik","author":{"name":"Dick"}}]');
+```
+
+Immutable classes are created through their constructor: `final` fields,
+`required` and default values (a missing optional property keeps its
+default). Classes with setters and a no-argument constructor work too. The
+constructor is the unnamed one, or the one marked `@JsonCreator()`.
+
+| Method | Does |
+|---|---|
+| `writeValueAsString(value)` | JSON text |
+| `valueToTree(value)` | maps / lists / scalars (what `jsonDecode` returns) |
+| `readValue<T>(json)` | a `T` from JSON text |
+| `readList<E>(json)`, `readMap<V>(json)` | `List<E>`, `Map<String, V>` |
+| `readValue(json, const ListType<Book>(ClassType<Book>()))` | any generic type, described with `TypeInfo` |
+| `treeToValue<T>(tree)`, `convertValue<T>(value)` | from decoded JSON; from another object |
+
+| Annotation | Meaning |
+|---|---|
+| `@JsonProperty('published_at')` | the JSON name |
+| `@JsonIgnore()` | left out in both directions |
+| `@JsonInclude(JsonInclusion.nonNull)` | on a property or class: skip `null` (or empty: `nonEmpty`) values |
+| `@JsonIgnoreProperties(value: ['x'], ignoreUnknown: true)` | on a class: names to ignore; accept unknown properties |
+| `@JsonCreator()` | the constructor to read with |
+| `@JsonValue()` | on an enum field: the JSON form of each value |
+
+Built in: `String`, `int`, `double`, `num`, `bool` (numbers and booleans in
+strings are accepted), `DateTime` (ISO-8601; epoch milliseconds with
+`writeDatesAsTimestamps`), `Duration` (ISO-8601 `PT1M30S`; also reads `90s`
+and milliseconds), `Uri`, `BigInt` (as a string), enums, `List`, `Set`,
+`Map`, nullable types and nested objects. A class that already has
+`fromJson` / `toJson` (`json_serializable`, `freezed`) is converted with
+them. Anything else: a `JsonSerializer<T>` / `JsonDeserializer<T>`, passed to
+`ObjectMapper(serializers:, deserializers:)` or grouped in a `JsonModule`
+bean (Spring Boot adds every `JsonModule` bean, like Jackson `Module`s).
+
+Settings: `namingStrategy` (`snakeCase`, `kebabCase`, `upperCamelCase`,
+...), `inclusion`, `failOnUnknownProperties` (off, like Spring Boot),
+`writeDatesAsTimestamps`, `indentOutput` — in Spring Boot from
+`spring.jackson.*` (see `spring_boot_dart`).
+
+Errors name the place: `items[2].price: expected a number, got "abc"`,
+`missing property "isbn" (required by Book)`.
+
+Classes of other packages are introspected with
+`@Introspected(classes: [ExternalDto])`. Not supported yet: polymorphic
+types (`@JsonTypeInfo` / `@JsonSubTypes`), date patterns (`@JsonFormat`),
+getters without a field, generic model classes.
+
 ### AOP
 
 AOP (aspect-oriented programming) runs your code before, after or around
@@ -753,6 +851,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
 | Asynchronous initialization | Synchronous `refresh()`; load config first with `processAndApply()` | Predictable startup |
 | Package-qualified AOP type patterns, argument binding | Simple type names; qualified wildcards and binding are rejected | No packages in Dart; binding not implemented yet |
+| Jackson `ObjectMapper` (reflection) | `ObjectMapper` on generated metadata; a model needs `@Introspected()` (its classes of the same package are included) | No reflection |
 | Optional `@Value` with `${x:#{null}}` | A nullable target gets `null` when a placeholder is missing | Dart null safety |
 
 ## Fix plan
@@ -871,6 +970,10 @@ Starters (each a separate package, discovered by the generator like
 - **`@Async`** (in `spring_boot_starter_scheduling`): methods that return
   at once and run later, on a separate isolate for CPU-heavy work, with a
   configurable executor. (`@Scheduled` itself is done.)
+- **JSON, next steps** (for the core's `ObjectMapper`): polymorphic types
+  (`sealed` hierarchies with `@JsonTypeInfo` / `@JsonSubTypes`), date and
+  number patterns (`@JsonFormat`), `@JsonAlias`, getters as properties,
+  streaming of large documents, editor checks of `@JsonProperty` names.
 - **Cache stores** (for `spring_boot_starter_cache`): persistent stores
   (SQLite, files, `shared_preferences` in Flutter) behind the same `Cache`
   interface, cache statistics. (The annotations and the in-memory
@@ -909,8 +1012,9 @@ Starters (each a separate package, discovered by the generator like
     final CatalogClient catalog;
   }
   ```
-  - JSON (de)serialization from `@Introspected` / `toJson`-`fromJson`
-    classes, pluggable encoders and decoders.
+  - Bodies and results through the core's `ObjectMapper` (`@Introspected`
+    models, or classes with their own `fromJson` / `toJson`), pluggable
+    encoders and decoders.
   - Per-client configuration from properties, like
     `spring.cloud.openfeign.client.config.<name>.*`: URL, connect/read
     timeouts, default headers, logger level (through `SpringLog`).
@@ -1130,9 +1234,9 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 382 (runtime), 92 (generator), 19 (Spring Boot), 29 (logging
-starter), 62 (scheduling starter), 40 (cache starter), 25 (test starter),
-18 end-to-end over the generated code of the example (tour and Spring
+Tests: 395 (runtime), 94 (generator), 21 (Spring Boot), 29 (logging
+starter), 62 (scheduling starter), 43 (cache starter), 25 (test starter),
+19 end-to-end over the generated code of the example (tour and Spring
 Boot app), 29 (language server). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

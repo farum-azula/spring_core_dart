@@ -88,6 +88,35 @@ Bound from `shop.max-basket-size` (or `shop.maxBasketSize`,
 types and validated at startup. The class is a bean and introspected
 automatically.
 
+## JSON: the `ObjectMapper` bean
+
+An `objectMapper` bean (the core's `ObjectMapper`) is configured from
+`spring.jackson.*`, like Spring Boot's `JacksonAutoConfiguration`. It knows
+every `@Introspected` class of the application and adds every `JsonModule`
+bean (custom serializers). Declare your own `ObjectMapper` bean to replace
+it.
+
+```dart
+@Service()
+class Catalog {
+  Catalog(this.mapper);
+  final ObjectMapper mapper;
+
+  String export(List<Book> books) => mapper.writeValueAsString(books);
+  List<Book> import(String json) => mapper.readList<Book>(json);
+}
+```
+
+| Property | Default | Meaning |
+|---|---|---|
+| `spring.jackson.property-naming-strategy` | `LOWER_CAMEL_CASE` | `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `KEBAB_CASE`, `LOWER_CASE`, `LOWER_DOT_CASE` |
+| `spring.jackson.default-property-inclusion` | `always` | `non_null`, `non_empty` |
+| `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
+| `spring.jackson.serialization.write-dates-as-timestamps` | `false` | `DateTime` / `Duration` as milliseconds |
+| `spring.jackson.serialization.indent-output` | `false` | pretty-print |
+
+`objectMapperFromProperties(environment)` builds the same mapper by hand.
+
 ## Auto-configuration and starters
 
 A library ("starter") ships auto-configuration in

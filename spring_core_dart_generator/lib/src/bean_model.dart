@@ -1239,10 +1239,15 @@ class IntrospectedProperty {
   IntrospectedProperty({
     required this.name,
     required this.type,
+    required this.declaredType,
     required this.nullable,
     required this.writable,
     required this.annotations,
   });
+
+  /// The declared type as written (nullability and type arguments), for
+  /// `BeanProperty.typeInfo`.
+  final DartType declaredType;
 
   /// The property name.
   final String name;
@@ -1341,7 +1346,20 @@ class IntrospectionModel {
     required this.methods,
     required this.annotations,
     required this.instantiable,
+    this.constructor,
+    this.fromJson,
+    this.hasToJson = false,
   });
+
+  /// The constructor instances are created with from data (the unnamed one
+  /// or the `@JsonCreator` one), when usable.
+  final ConstructorModel? constructor;
+
+  /// The class's own `fromJson` (constructor or static method).
+  final FromJsonModel? fromJson;
+
+  /// Whether the class has its own `toJson()` method.
+  final bool hasToJson;
 
   /// Source element, for error messages.
   final Element element;
@@ -1490,4 +1508,69 @@ class AnnotatedMethodModel {
 
   /// All user annotations of the method.
   final List<DartObject> annotations;
+}
+
+/// The constructor of an introspected class, written as
+/// `BeanIntrospection.constructor`.
+///
+/// ```dart
+/// // Input: Book({required this.isbn, this.tags = const []})
+/// // Output:
+/// constructor: BeanConstructor<Book>(
+///   parameters: [
+///     BeanParameter(r'isbn', type: const ClassType<String>(), symbol: #isbn,
+///         isRequired: true),
+///     BeanParameter(r'tags',
+///         type: const ListType<String>(ClassType<String>()), symbol: #tags),
+///   ],
+///   create: (positional, named) =>
+///       Function.apply(Book.new, positional, named) as Book,
+/// ),
+/// ```
+class ConstructorModel {
+  /// Creates the model.
+  ConstructorModel({required this.name, required this.parameters});
+
+  /// The constructor name; empty for the unnamed constructor.
+  final String name;
+
+  /// Its parameters, in declaration order.
+  final List<ConstructorParameterModel> parameters;
+}
+
+/// A parameter of a [ConstructorModel].
+class ConstructorParameterModel {
+  /// Creates the model.
+  ConstructorParameterModel({
+    required this.name,
+    required this.type,
+    required this.isNamed,
+    required this.isRequired,
+    required this.annotations,
+  });
+
+  /// The parameter name.
+  final String name;
+
+  /// The declared type.
+  final DartType type;
+
+  /// Whether it is named.
+  final bool isNamed;
+
+  /// Whether a value must be passed.
+  final bool isRequired;
+
+  /// User annotations on the parameter.
+  final List<DartObject> annotations;
+}
+
+/// The `fromJson` of an introspected class (`factory Book.fromJson(Map
+/// json)` or a static method), written as `BeanIntrospection.fromJson`.
+class FromJsonModel {
+  /// Creates the model.
+  FromJsonModel({required this.parameterType});
+
+  /// The type of its JSON parameter (`Map<String, dynamic>`, ...).
+  final DartType parameterType;
 }

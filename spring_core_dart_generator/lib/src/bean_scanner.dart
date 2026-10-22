@@ -35,6 +35,8 @@ final _propertySource = _spring('PropertySource');
 final _configurable = _spring('Configurable');
 final _eventListener = _spring('EventListener');
 final _beanMethodAnnotation = _spring('BeanMethodAnnotation');
+final _jsonCreator = _spring('JsonCreator');
+final _jsonValue = _spring('JsonValue');
 final _factoryBean = _spring('FactoryBean');
 final _applicationListener = _spring('ApplicationListener');
 final _objectProvider = _spring('ObjectProvider');
@@ -242,6 +244,9 @@ class BeanScanner {
   /// Which beans get a [ProxyModel].
   final ProxyMode proxyMode;
 
+  // Classes introspected so far (explicitly or automatically).
+  final _introspectedClasses = <ClassElement>{};
+
   /// Adds the components, configurables and property sources of [library].
   ///
   /// Every class annotated with `@Component` (or a stereotype such as
@@ -445,13 +450,24 @@ class BeanScanner {
     );
   }
 
-  void _scanIntrospected(ClassElement element) {
+  // [automatic]: a class of the same package used by an introspected class
+  // (a property or constructor parameter type); skipped silently when it
+  // cannot be introspected.
+  void _scanIntrospected(ClassElement element, {bool automatic = false}) {
     final name = _requireName(element);
-    if (element.isPrivate) {
-      _fail('@Introspected class $name must be public.', element);
+    if (element.isPrivate || element.typeParameters.isNotEmpty) {
+      if (automatic) {
+        return;
+      }
+      _fail(
+        element.isPrivate
+            ? '@Introspected class $name must be public.'
+            : 'Generic @Introspected class $name is not supported.',
+        element,
+      );
     }
-    if (element.typeParameters.isNotEmpty) {
-      _fail('Generic @Introspected class $name is not supported.', element);
+    if (!_introspectedClasses.add(element)) {
+      return;
     }
     final type = element.thisType;
     // Subclass first, so overriding declarations win (first one kept).
@@ -477,6 +493,7 @@ class BeanScanner {
         properties[fieldName] = IntrospectedProperty(
           name: fieldName,
           type: _requireInterfaceType(fieldType, field, stripNullable: true),
+          declaredType: fieldType,
           nullable: fieldType.nullabilitySuffix == NullabilitySuffix.question,
           writable: field.setter != null,
           annotations: [
@@ -517,6 +534,7 @@ class BeanScanner {
       }
     }
     final constructor = element.unnamedConstructor;
+    final dataConstructor = _dataConstructor(element);
     module.introspections.add(
       IntrospectionModel(
         element: element,
@@ -530,9 +548,127 @@ class BeanScanner {
             constructor.isPublic &&
             !constructor.isFactory &&
             !constructor.formalParameters.any((p) => p.isRequired),
+        constructor: dataConstructor,
+        fromJson: _fromJson(element),
+        hasToJson: _hasToJson(type),
       ),
     );
+    // Classes of the same package it is made of are introspected too, so
+    // one `@Introspected()` on the root of a model is enough.
+    for (final property in properties.values) {
+      _introspectUsed(property.declaredType, element);
+    }
+    for (final parameter
+        in dataConstructor?.parameters ?? const <ConstructorParameterModel>[]) {
+      _introspectUsed(parameter.type, element);
+    }
+    // `@Introspected(classes: [ExternalDto])`.
+    for (final annotation in element.metadata.annotations) {
+      final value = annotation.computeConstantValue();
+      if (value == null || !_introspected.isAssignableFromType(value.type!)) {
+        continue;
+      }
+      for (final listed
+          in ConstantReader(value).peek('classes')?.listValue ?? const []) {
+        if (listed.toTypeValue() case final InterfaceType listedType
+            when listedType.element is ClassElement) {
+          _scanIntrospected(listedType.element as ClassElement);
+        }
+      }
+    }
   }
+
+  void _introspectUsed(DartType type, ClassElement user) {
+    if (type is! InterfaceType) {
+      return;
+    }
+    for (final argument in type.typeArguments) {
+      _introspectUsed(argument, user);
+    }
+    final element = type.element;
+    if (element is! ClassElement ||
+        element.library.isInSdk ||
+        _packageOf(element) != _packageOf(user)) {
+      return;
+    }
+    _scanIntrospected(element, automatic: true);
+  }
+
+  static String? _packageOf(Element element) {
+    final uri = element.library?.uri;
+    return uri != null && (uri.isScheme('package') || uri.isScheme('asset'))
+        ? uri.pathSegments.firstOrNull
+        : null;
+  }
+
+  // The constructor data is turned into instances with: the one marked
+  // @JsonCreator, else the unnamed one (public; generative only on concrete
+  // classes).
+  ConstructorModel? _dataConstructor(ClassElement element) {
+    final constructors = element.constructors.where(
+      (c) => c.isPublic && (c.isFactory || !element.isAbstract),
+    );
+    final constructor =
+        constructors.where(_jsonCreator.hasAnnotationOf).firstOrNull ??
+        constructors.where((c) => (c.name ?? 'new') == 'new').firstOrNull;
+    if (constructor == null) {
+      return null;
+    }
+    final name = constructor.name;
+    return ConstructorModel(
+      name: name == null || name == 'new' ? '' : name,
+      parameters: [
+        for (final parameter in constructor.formalParameters)
+          ConstructorParameterModel(
+            name: _requireName(parameter),
+            type: parameter.type,
+            isNamed: parameter.isNamed,
+            isRequired: parameter.isRequired,
+            annotations: _userAnnotations(parameter),
+          ),
+      ],
+    );
+  }
+
+  // `factory Book.fromJson(Map<String, dynamic> json)` (or a static method)
+  // with one required positional parameter.
+  FromJsonModel? _fromJson(ClassElement element) {
+    final candidates = <ExecutableElement>[
+      ...element.constructors.where((c) => c.name == 'fromJson'),
+      ...element.methods.where((m) => m.isStatic && m.name == 'fromJson'),
+    ];
+    for (final candidate in candidates) {
+      final parameters = candidate.formalParameters;
+      if (!candidate.isPublic ||
+          parameters.isEmpty ||
+          !parameters.first.isRequiredPositional ||
+          parameters.skip(1).any((p) => p.isRequired)) {
+        continue;
+      }
+      return FromJsonModel(parameterType: parameters.first.type);
+    }
+    return null;
+  }
+
+  bool _hasToJson(InterfaceType type) {
+    for (final element in _hierarchy(type)) {
+      for (final method in element.methods) {
+        if (method.name == 'toJson' &&
+            !method.isStatic &&
+            method.isPublic &&
+            !method.formalParameters.any((p) => p.isRequired)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// The field of [element] marked `@JsonValue()`, if any (for emitters).
+  static String? jsonValueField(EnumElement element) => element.fields
+      .where((f) => !f.isStatic && _jsonValue.hasAnnotationOf(f))
+      .firstOrNull
+      ?.name;
 
   /// Const annotations worth keeping at runtime: user annotations and
   /// constraints, not `dart:` ones or Spring's DI annotations.
