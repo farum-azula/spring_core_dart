@@ -299,10 +299,15 @@ final class SpringLanguageServer {
     }
   }
 
-  static Map<String, Object?> _location(SourceRange range) => {
-    'uri': Uri.file(range.path).toString(),
-    'range': _range(range),
-  };
+  // An empty range at the start of the target: the editor moves the cursor
+  // there without selecting the name or key.
+  static Map<String, Object?> _location(SourceRange range) {
+    final start = {'line': range.startLine, 'character': range.startColumn};
+    return {
+      'uri': Uri.file(range.path).toString(),
+      'range': {'start': start, 'end': start},
+    };
+  }
 
   static Map<String, Object?> _range(SourceRange range) => {
     'start': {'line': range.startLine, 'character': range.startColumn},

@@ -190,6 +190,163 @@ void main() {
     });
   });
 
+  group('resources', () {
+    test('classpath: and file: locations go to the file', () {
+      const config = r'''
+@Configuration()
+@PropertySource(['classpath:legacy.properties', 'optional:classpath:none.properties'])
+class LegacyConfig {
+  @Value('file:config/extra.properties')
+  late final Resource extra;
+}
+''';
+      final path = '${root.path}/lib/external/legacy_config.dart';
+      File(path)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(config);
+      File('${root.path}/lib/resources/legacy.properties')
+          .writeAsStringSync('legacy.greeting=Hello\n');
+      File('${root.path}/config/extra.properties')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('');
+      workspace.refresh(force: true);
+
+      List<String> targets(String marker) => [
+        for (final range in workspace.definition(
+          path,
+          config.indexOf(marker) + 3,
+        ))
+          '${range.path.substring(root.path.length)}:${range.startLine}',
+      ];
+      expect(targets('classpath:legacy'), [
+        '/lib/resources/legacy.properties:0',
+      ]);
+      expect(targets('file:config'), ['/config/extra.properties:0']);
+      expect(targets('optional:classpath:none'), isEmpty);
+      expect(
+        workspace.hover(path, config.indexOf('classpath:legacy') + 3),
+        contains('lib/resources/legacy.properties'),
+      );
+      expect(
+        workspace.hover(path, config.indexOf('optional:classpath:none') + 3),
+        contains('not found'),
+      );
+    });
+
+    test('test files see test/resources first', () {
+      final path = '${root.path}/test/app_test.dart';
+      File(path)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(
+          "final r = loader.getResource('classpath:data.txt');\n",
+        );
+      File('${root.path}/test/resources/data.txt')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('test');
+      File('${root.path}/lib/resources/data.txt').writeAsStringSync('main');
+      workspace.refresh(force: true);
+      final targets = workspace.definition(path, 35);
+      expect(
+        [for (final range in targets) range.path.substring(root.path.length)],
+        ['/test/resources/data.txt', '/lib/resources/data.txt'],
+      );
+    });
+  });
+
+  group('pointcuts', () {
+    const aspects = r'''
+class Timed {
+  const Timed();
+}
+
+@Service()
+class OrderService {
+  @Timed()
+  void place() {}
+  void cancel() {}
+}
+
+@Aspect()
+@Component()
+class AuditAspect {
+  @Pointcut('within(OrderService)')
+  void orders() {}
+
+  @Before('orders() && !bean(cash*)')
+  void before(JoinPoint joinPoint) {}
+
+  @Around('@annotation(Timed) || execution(* OrderService.can*(..))')
+  Object? time(ProceedingJoinPoint joinPoint) => joinPoint.proceed();
+
+  @After('AuditAspect.orders() and ordrs()')
+  void after(JoinPoint joinPoint) {}
+}
+''';
+    late String path;
+
+    setUp(() {
+      path = '${root.path}/lib/src/aspects.dart';
+      File(path).writeAsStringSync(aspects);
+      workspace.refresh(force: true);
+    });
+
+    List<String> targets(String marker, [int shift = 1]) => [
+      for (final range in workspace.definition(
+        path,
+        aspects.indexOf(marker) + shift,
+      ))
+        '${range.path.split('/').last}:${range.startLine}',
+    ];
+
+    test('types, annotations, beans and named pointcuts navigate', () {
+      final aspectsFile = 'aspects.dart';
+      expect(targets('OrderService)'), [
+        '$aspectsFile:${line('class OrderService', aspects)}',
+      ]);
+      expect(targets('Timed)'), ['$aspectsFile:0']);
+      expect(targets("orders() &&"), [
+        '$aspectsFile:${line('void orders()', aspects)}',
+      ]);
+      expect(targets('AuditAspect.orders()', 13), [
+        '$aspectsFile:${line('void orders()', aspects)}',
+      ]);
+      expect(targets('cash*'), ['shop.dart:${line('class CashPayments')}']);
+      expect(targets('can*('), [
+        '$aspectsFile:${line('void cancel()', aspects)}',
+      ]);
+      expect(
+        workspace.hover(path, aspects.indexOf('orders() &&') + 1),
+        contains('`AuditAspect.orders()`: `within(OrderService)`'),
+      );
+    });
+
+    test('highlighting and the runtime check', () {
+      final tokens = workspace.semanticTokens(path);
+      String typeAt(String marker) {
+        final at = aspects.indexOf(marker);
+        final row = line(marker, aspects);
+        final column = at - aspects.lastIndexOf('\n', at) - 1;
+        final token = tokens.firstWhere(
+          (t) => t.line == row && t.column == column,
+        );
+        return semanticTokenTypes[token.type];
+      }
+
+      expect(typeAt("within(OrderService)"), 'keyword');
+      expect(typeAt('OrderService)'), 'type');
+      expect(typeAt('&& !bean'), 'operator');
+      expect(typeAt('cash*'), 'variable');
+      expect(typeAt('Timed) ||'), 'class');
+      expect(typeAt('can*('), 'method');
+      expect(typeAt('ordrs()'), 'method');
+
+      final problems = workspace.problems(path);
+      expect(problems, hasLength(1));
+      expect(problems.single.message, contains("unknown pointcut 'ordrs'"));
+      expect(problems.single.range.startLine, line('ordrs()', aspects));
+    });
+  });
+
   group('checks and highlighting', () {
     test('unknown keys without default and invalid SpEL are reported', () {
       final problems = workspace.problems(shopPath);

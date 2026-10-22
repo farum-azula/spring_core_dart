@@ -21,21 +21,32 @@ to those of the Dart language server:
 | `${shop.name}` in `@Value` (and `getProperty('shop.name')`, `@ConditionalOnProperty`) | the key in every `application*.properties` that defines it |
 | `@ConfigurationProperties('shop')` | the `shop.*` keys |
 | a bean name in SpEL: `#{appConfig.name}`, `#{@clock.now()}` | that bean |
+| `classpath:legacy.properties` (in `@PropertySource`, `@Value`, `getResource`), `file:config/app.properties` | the file: `lib/resources/` of the package (`test/resources/` first in tests), `file:` relative to the package |
+| in a pointcut (`@Pointcut`, `@Before`, `@Around`, ...): a type in `within(...)` / `execution(...)`, `@annotation(Timed)` | the class (wildcards like `*Service` give every match) |
+| `pricing()`, `AuditAspect.pricing()` in a pointcut | the `@Pointcut` method |
+| `bean(order*)`, the method of `execution(* OrderService.place*(..))` | the matching beans, methods |
 
-**Hover** shows the value of a property in every profile file, and the
-candidate beans of an injection point.
+Navigation puts the cursor at the target without selecting it.
+
+**Hover** shows the value of a property in every profile file, the
+candidate beans of an injection point, the file a `classpath:` location
+resolves to and the expression of a named pointcut.
 
 **Checks**, while typing:
 
 - invalid SpEL (`#{1 +}`) — an error at the position the parser reports;
+- invalid pointcuts — checked by the runtime's own parser, with the
+  project's `@Pointcut` methods: an unknown `ordrs()` is underlined;
 - `${key}` without a default that no properties file defines — a warning;
 - `@Value('${key}')` in a normal (non-raw) string — an error: in Dart that
   is string interpolation; write `r'${key}'`.
 
-**SpEL and placeholder highlighting** inside annotation strings: keywords,
-operators, numbers, strings, `#variables`, `@beans`, methods, properties,
-`T(Types)` and placeholder keys get their own colours (needs the
-`semantic_tokens` setting below).
+**SpEL, placeholder and pointcut highlighting** inside annotation
+strings: keywords, operators, numbers, strings, `#variables`, `@beans`,
+methods, properties, `T(Types)` and placeholder keys; in pointcuts the
+designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
+types, annotations, bean patterns, method names and named pointcuts
+(needs the `semantic_tokens` setting below).
 
 **Snippets**: type the prefix in a Dart file and press Tab.
 

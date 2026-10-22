@@ -168,6 +168,11 @@ class Shop {
       (toProperty.single as Map)['uri'],
       endsWith('lib/resources/application.properties'),
     );
+    // Navigation only moves the cursor: nothing gets selected.
+    for (final location in [...toBean, ...toProperty]) {
+      final range = (location as Map)['range'] as Map;
+      expect(range['end'], range['start']);
+    }
 
     final hover = await client.request('textDocument/hover', {
       'textDocument': {'uri': uri},

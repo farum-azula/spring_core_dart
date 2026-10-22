@@ -338,6 +338,10 @@ A call through `this` inside the class is not intercepted. To call
 yourself through the aspect, inject yourself lazily:
 `Search(@Lazy() this.self)`.
 
+All kinds of advice (`@Before`, `@After`, `@AfterReturning`,
+`@AfterThrowing`, `@Around`), the pointcut syntax with a table of
+examples, and advice order: [AOP guide](https://pub.dev/packages/spring_core_dart#aop).
+
 ## 10. Validate forms and input
 
 ```dart

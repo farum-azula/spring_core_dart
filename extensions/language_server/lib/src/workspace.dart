@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
+import 'package:dart_spring_language_server/src/pointcuts.dart';
 import 'package:dart_spring_language_server/src/properties_index.dart';
 import 'package:dart_spring_language_server/src/templates.dart';
+import 'package:spring_core_dart/aop.dart' show ExpressionPointcut;
 import 'package:spring_core_dart/expression.dart';
 // ignore: implementation_imports
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
@@ -441,6 +443,26 @@ final class SpringWorkspace {
       if (bean.matches(name)) bean,
   ];
 
+  /// The `@Pointcut` methods of `@Aspect` classes.
+  List<PointcutMethod> get pointcutMethods => [
+    for (final file in _files.values)
+      for (final info in file.classes)
+        if (info.annotationNames.contains('Aspect'))
+          for (final member in info.declaration.body.members)
+            if (member is MethodDeclaration)
+              for (final annotation in member.metadata)
+                if (annotationName(annotation) == 'Pointcut')
+                  if (stringValue(positionalArgument(annotation))
+                      case final expression?)
+                    PointcutMethod(
+                      info.name,
+                      member.name.lexeme,
+                      expression,
+                      info.path,
+                      member.name.offset,
+                    ),
+  ];
+
   // ---------------------------------------------------------------------
   // Properties
   // ---------------------------------------------------------------------
@@ -498,6 +520,18 @@ final class SpringWorkspace {
             entry.keyEnd,
           ),
       ],
+      _ResourceTarget(:final files) => [
+        for (final file in files) SourceRange(file, 0, 0, 0, 0),
+      ],
+      _DeclarationTarget(:final declarations) => [
+        for (final declaration in declarations)
+          if (this.file(declaration.path) case final file?)
+            rangeOf(
+              file,
+              declaration.offset,
+              declaration.offset + declaration.length,
+            ),
+      ],
       null => const [],
     };
   }
@@ -529,6 +563,26 @@ final class SpringWorkspace {
           '',
           for (final entry in entries)
             '- `${entry.fileName}`: `${entry.value}`',
+        ].join('\n');
+      case _DeclarationTarget(:final description, :final declarations):
+        if (declarations.isEmpty) {
+          return '**$description**: nothing found in this project';
+        }
+        return [
+          '**$description**',
+          '',
+          for (final declaration in declarations)
+            '- ${declaration.summary} — `${_shortPath(declaration.path)}`',
+        ].join('\n');
+      case _ResourceTarget(:final location, :final files, :final searched):
+        if (files.isEmpty) {
+          return '**`$location`**: not found (looked in '
+              '${searched.map((path) => '`${_shortPath(path)}`').join(', ')})';
+        }
+        return [
+          '**`$location`**',
+          '',
+          for (final file in files) '- `${_shortPath(file)}`',
         ].join('\n');
       case null:
         return null;
@@ -616,6 +670,12 @@ final class SpringWorkspace {
   _Target? _stringTarget(DartFile file, _StringRef ref, int offset) {
     final value = ref.literal.value;
     final annotation = ref.annotation;
+    if (_resourceTarget(file.path, value) case final target?) {
+      return target;
+    }
+    if (annotation != null && pointcutAnnotations.contains(annotation)) {
+      return _pointcutTarget(file, ref, offset);
+    }
     if (annotation != null && _beanNameAnnotations.contains(annotation)) {
       return _BeanTarget(beansNamed(value), "Bean '$value'");
     }
@@ -645,6 +705,193 @@ final class SpringWorkspace {
       return _PropertyTarget(value, property(value));
     }
     return null;
+  }
+
+  // In a pointcut: types and annotations go to their classes, `bean(...)`
+  // to the beans, `pricing()` to the `@Pointcut` method, the method of
+  // `execution(* Type.name(..))` to the matching methods.
+  _Target? _pointcutTarget(DartFile file, _StringRef ref, int offset) {
+    final source = file.text.substring(ref.contentStart, ref.contentEnd);
+    final relative = offset - ref.contentStart;
+    final parts = scanPointcut(source);
+    final index = parts.indexWhere(
+      (part) => relative >= part.start && relative <= part.end,
+    );
+    if (index < 0) {
+      return null;
+    }
+    final part = parts[index];
+    // The part right before, joined by a dot: `Aspect.name`, `Type.method`.
+    final qualifier =
+        index > 0 &&
+            parts[index - 1].end == part.start - 1 &&
+            source[part.start - 1] == '.'
+        ? parts[index - 1].text
+        : null;
+    switch (part.kind) {
+      case PointcutPartKind.type ||
+          PointcutPartKind.declaringType ||
+          PointcutPartKind.aspect:
+        return _classesTarget(
+          file.path,
+          part.text,
+          'Classes matching `${part.text}`',
+        );
+      case PointcutPartKind.annotation:
+        return _classesTarget(
+          file.path,
+          part.text,
+          'Annotation `${part.text}`',
+        );
+      case PointcutPartKind.bean:
+        return _BeanTarget([
+          for (final bean in beans)
+            if (wildcardMatches(part.text, bean.name) ||
+                bean.aliases.any((alias) => wildcardMatches(part.text, alias)))
+              bean,
+        ], "Beans matching '${part.text}'");
+      case PointcutPartKind.reference:
+        final owner = ref.literal
+            .thisOrAncestorOfType<ClassDeclaration>()
+            ?.namePart
+            .typeName
+            .lexeme;
+        final named = [
+          for (final method in pointcutMethods)
+            if (method.name == part.text &&
+                (qualifier == null || method.className == qualifier))
+              method,
+        ];
+        final own = [
+          for (final method in named)
+            if (method.className == owner) method,
+        ];
+        return _DeclarationTarget('Pointcut `${part.text}()`', [
+          for (final method
+              in qualifier == null && own.isNotEmpty ? own : named)
+            _Declaration(
+              method.path,
+              method.offset,
+              method.name.length,
+              '`${method.className}.${method.name}()`: `${method.expression}`',
+            ),
+        ]);
+      case PointcutPartKind.member:
+        final classes = qualifier == null
+            ? _samePackageFirst(file.path, [
+                for (final bean in beans)
+                  if (bean.kind == BeanKind.component)
+                    ...?_classIndex[bean.typeName],
+              ])
+            : _classesMatching(file.path, qualifier);
+        return _DeclarationTarget('Methods matching `${part.text}`', [
+          for (final info in classes)
+            for (final member in info.declaration.body.members)
+              if (member is MethodDeclaration &&
+                  wildcardMatches(part.text, member.name.lexeme))
+                _Declaration(
+                  info.path,
+                  member.name.offset,
+                  member.name.length,
+                  '`${info.name}.${member.name.lexeme}`',
+                ),
+        ]);
+      case PointcutPartKind.designator ||
+          PointcutPartKind.operator ||
+          PointcutPartKind.wildcard:
+        return null;
+    }
+  }
+
+  // Classes whose name matches [pattern]; those of the package of [from]
+  // when it has any (a test class elsewhere may have the same name).
+  List<ClassInfo> _classesMatching(String from, String pattern) =>
+      _samePackageFirst(from, [
+        for (final MapEntry(:key, :value) in _classIndex.entries)
+          if (wildcardMatches(pattern, key)) ...value,
+      ]);
+
+  List<ClassInfo> _samePackageFirst(String from, List<ClassInfo> classes) {
+    final package = _packageRoot(from);
+    final local = [
+      for (final info in classes)
+        if (_packageRoot(info.path) == package) info,
+    ];
+    return local.isNotEmpty ? local : classes;
+  }
+
+  _Target _classesTarget(String from, String pattern, String description) =>
+      _DeclarationTarget(description, [
+        for (final info in _classesMatching(from, pattern))
+          _Declaration(
+            info.path,
+            info.nameOffset,
+            info.name.length,
+            'class `${info.name}`',
+          ),
+      ]);
+
+  static final _resourceLocation = RegExp(
+    r'^(?:optional:)?(classpath\*?|file):(.+)$',
+  );
+
+  // `classpath:legacy.properties` (in `@PropertySource`, `@Value`,
+  // `getResource(...)`, ...): the file in `lib/resources/` of the package,
+  // `test/resources/` first for test files, like the test classpath.
+  // `file:` paths are relative to the package directory (where the app is
+  // run).
+  _Target? _resourceTarget(String path, String value) {
+    final match = _resourceLocation.firstMatch(value.trim());
+    if (match == null) {
+      return null;
+    }
+    final location = match.group(2)!;
+    if (location.endsWith('/')) {
+      return null; // a directory, like `classpath:/config/`
+    }
+    final package = _packageRoot(path);
+    final List<String> searched;
+    if (match.group(1) == 'file') {
+      searched = [
+        if (File(location).isAbsolute) location else '$package/$location',
+      ];
+    } else {
+      final relative = location.replaceFirst(RegExp(r'^/+'), '');
+      searched = [
+        if (path
+            .substring(package.length)
+            .replaceAll(r'\', '/')
+            .startsWith('/test/'))
+          '$package/test/resources/$relative',
+        '$package/lib/resources/$relative',
+      ];
+    }
+    return _ResourceTarget(value.trim(), [
+      for (final candidate in searched)
+        if (File(candidate).existsSync()) candidate,
+    ], searched);
+  }
+
+  final _packageRoots = <String, String>{};
+
+  // The nearest directory with a pubspec.yaml (else the workspace root).
+  String _packageRoot(String path) {
+    final directory = File(path).parent.path;
+    return _packageRoots[directory] ??= () {
+      var current = Directory(directory);
+      while (true) {
+        if (File('${current.path}/pubspec.yaml').existsSync()) {
+          return current.path;
+        }
+        final parent = current.parent;
+        if (parent.path == current.path ||
+            !roots.any((root) => parent.path.startsWith(root))) {
+          break;
+        }
+        current = parent;
+      }
+      return roots.firstWhere(path.startsWith, orElse: () => directory);
+    }();
   }
 
   // In `#{...}`: `@name` and a leading `name` refer to beans.
@@ -855,10 +1102,38 @@ final class SpringWorkspace {
         }
       }
     }
+    for (final ref in _pointcutStrings(file)) {
+      final base = ref.contentStart;
+      final source = file.text.substring(ref.contentStart, ref.contentEnd);
+      for (final part in scanPointcut(source)) {
+        add(base + part.start, base + part.end, switch (part.kind) {
+          PointcutPartKind.designator => 'keyword',
+          PointcutPartKind.operator || PointcutPartKind.wildcard => 'operator',
+          PointcutPartKind.type ||
+          PointcutPartKind.declaringType ||
+          PointcutPartKind.aspect => 'type',
+          PointcutPartKind.annotation => 'class',
+          PointcutPartKind.bean => 'variable',
+          PointcutPartKind.member || PointcutPartKind.reference => 'method',
+        });
+      }
+    }
     tokens.sort(
       (a, b) => a.line != b.line ? a.line - b.line : a.column - b.column,
     );
     return tokens;
+  }
+
+  Iterable<_StringRef> _pointcutStrings(DartFile file) sync* {
+    final strings = <SimpleStringLiteral>[];
+    file.unit.accept(_StringCollector(strings));
+    for (final literal in strings) {
+      final ref = _stringRef(literal);
+      if (ref.annotation != null &&
+          pointcutAnnotations.contains(ref.annotation)) {
+        yield ref;
+      }
+    }
   }
 
   void _expressionTokens(
@@ -1038,7 +1313,45 @@ final class SpringWorkspace {
         }
       }
     }
+    _pointcutProblems(file, problems);
     return problems;
+  }
+
+  // Pointcuts are parsed by the runtime's ExpressionPointcut, with the
+  // `@Pointcut` methods of the project as named pointcuts, so the editor
+  // rejects exactly what the application would.
+  void _pointcutProblems(DartFile file, List<Problem> problems) {
+    final strings = _pointcutStrings(file).toList();
+    if (strings.isEmpty) {
+      return;
+    }
+    final named = <String, String>{};
+    for (final method in pointcutMethods) {
+      named[method.name] = method.expression;
+      named['${method.className}.${method.name}'] = method.expression;
+    }
+    for (final ref in strings) {
+      try {
+        ExpressionPointcut(ref.literal.value, namedPointcuts: named);
+      } on FormatException catch (error) {
+        // Point at the quoted name of the message when it is in this
+        // string (`unknown pointcut 'audit'`), else at the whole string.
+        final source = file.text.substring(ref.contentStart, ref.contentEnd);
+        final quoted = RegExp("'([^']+)'").firstMatch(error.message)?[1];
+        var start = ref.contentStart;
+        var end = ref.contentEnd;
+        for (final part in scanPointcut(source)) {
+          if (part.text == quoted) {
+            start = ref.contentStart + part.start;
+            end = ref.contentStart + part.end;
+            break;
+          }
+        }
+        problems.add(
+          Problem(rangeOf(file, start, end), error.message, error: true),
+        );
+      }
+    }
   }
 
   // `@Value(...) String? motto`: a missing key gives `null`, not an error.
@@ -1087,6 +1400,57 @@ final class _PropertyTarget extends _Target {
 
   final String key;
   final List<PropertyEntry> entries;
+}
+
+/// A `@Pointcut` method of an `@Aspect` class.
+final class PointcutMethod {
+  /// Creates a pointcut method.
+  const PointcutMethod(
+    this.className,
+    this.name,
+    this.expression,
+    this.path,
+    this.offset,
+  );
+
+  /// The aspect class.
+  final String className;
+
+  /// Method name (the pointcut's name).
+  final String name;
+
+  /// The expression of `@Pointcut(...)`.
+  final String expression;
+
+  /// File path.
+  final String path;
+
+  /// Offset of the method name.
+  final int offset;
+}
+
+final class _Declaration {
+  _Declaration(this.path, this.offset, this.length, this.summary);
+
+  final String path;
+  final int offset;
+  final int length;
+  final String summary;
+}
+
+final class _DeclarationTarget extends _Target {
+  _DeclarationTarget(this.description, this.declarations);
+
+  final String description;
+  final List<_Declaration> declarations;
+}
+
+final class _ResourceTarget extends _Target {
+  _ResourceTarget(this.location, this.files, this.searched);
+
+  final String location;
+  final List<String> files;
+  final List<String> searched;
 }
 
 final class _StringCollector extends RecursiveAstVisitor<void> {
