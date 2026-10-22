@@ -26,6 +26,9 @@ jobs:
       - name: Lockstep versions (packages and editor extensions)
         run: dart run tool/version.dart --check
 
+      - name: Dependencies only from this repository and the Dart team
+        run: dart run tool/check_dependencies.dart
+
       - name: Zed extension dart_spring builds
         working-directory: extensions/zed/dart_spring
         run: |

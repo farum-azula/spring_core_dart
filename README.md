@@ -1077,11 +1077,24 @@ with or endorsed by the Spring team.
 
 ```bash
 dart pub get
-dart run melos run check   # versions + gen + analyze + format + test
+dart run melos run check   # versions + dependencies + gen + analyze + format + test
+dart run tool/check_dependencies.dart   # only this repository, the Dart SDK and Dart-team packages
 dart run tool/test_all.dart   # tests of every package (also the example), from each package and from the root
 dart run melos run version -- 0.2.0   # release train: one version for every package
 dart run melos run coverage
 ```
+
+Dependency policy: the packages use only each other, the Dart SDK and
+packages published on pub.dev by the Dart and Google teams (`dart.dev`,
+`tools.dart.dev`, `labs.dart.dev`, `google.dev`, `flutter.dev`),
+transitive dependencies included; the packages that end up in
+applications (`spring_core_dart`, `spring_boot_dart`,
+`spring_boot_starter_logging`) depend on nothing outside this repository
+at all. CI enforces it with
+`tool/check_dependencies.dart`; any other package needs an exception there
+with a reason and the packages allowed to use it (today: `melos` for the
+workspace scripts, `node_preamble` pulled by `package:test`; database
+drivers will be added the same way).
 
 The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
