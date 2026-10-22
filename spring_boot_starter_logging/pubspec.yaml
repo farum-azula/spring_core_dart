@@ -2,7 +2,7 @@ name: spring_boot_starter_logging
 description: >-
   Logging for spring_boot_dart applications: console output with patterns, levels from properties, and an in-memory log buffer with filtering and streams for an in-app log viewer (Flutter).
 version: 0.1.0
-repository: https://github.com/farum-azula/spring_core_dart
+repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_logging
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - logging

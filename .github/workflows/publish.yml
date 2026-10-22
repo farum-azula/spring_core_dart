@@ -1,0 +1,34 @@
+name: Publish to pub.dev
+
+# Publishes every package when a `v<version>` tag is pushed (by release.yml
+# or by hand). No password or token: pub.dev trusts this repository through
+# GitHub's OpenID Connect token once automated publishing is enabled on each
+# package's admin page (repository farum-azula/spring_core_dart, tag pattern
+# `v{{version}}`).
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # the OIDC token pub.dev accepts
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # With id-token permission, setup-dart signs `dart pub publish` in with
+      # the OIDC token.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - name: Tests before publishing
+        run: dart run tool/test_all.dart --packages
+
+      - name: Publish (dependencies first, already published versions skipped)
+        run: dart run tool/publish.dart

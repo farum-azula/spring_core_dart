@@ -2,7 +2,7 @@ name: spring_core_dart_generator
 description: >-
   Code generator for spring_core_dart: turns @Component, @Bean, @Value, @Aspect and other annotations into bean definitions, metadata and AOP proxies.
 version: 0.1.0
-repository: https://github.com/farum-azula/spring_core_dart
+repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_core_dart_generator
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
   - dependency-injection

@@ -1,0 +1,56 @@
+name: Release
+
+# After CI passes on a push to main: bump the version of every package
+# (tool/release.dart), commit it and push a `v<version>` tag, which starts
+# publish.yml. The tag is pushed with RELEASE_TOKEN: tags pushed with the
+# default GITHUB_TOKEN do not start other workflows.
+#
+# The release commit runs CI again; this workflow then finds no commits
+# since the tag and stops, so there is no loop.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - name: Bump versions and changelogs
+        id: release
+        run: dart run tool/release.dart
+
+      - name: Commit, tag and push
+        if: steps.release.outputs.version != ''
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(release): v$VERSION"
+          git tag "v$VERSION"
+          git push origin HEAD:main
+          git push origin "v$VERSION"
