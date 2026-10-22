@@ -23,8 +23,21 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
-      - name: Lockstep versions
+      - name: Lockstep versions (packages and editor extensions)
         run: dart run tool/version.dart --check
+
+      - name: Dependencies only from this repository and the Dart team
+        run: dart run tool/check_dependencies.dart
+
+      - name: Zed extension dart_spring builds
+        working-directory: extensions/zed/dart_spring
+        run: |
+          jq empty snippets/dart.json
+          rustup target add wasm32-wasip2
+          cargo build --release --target wasm32-wasip2
+
+      - name: Language server compiles to a native executable
+        run: dart compile exe extensions/language_server/bin/dart_spring_lsp.dart -o /tmp/dart_spring_lsp
 
       - name: Generated code is up to date
         working-directory: example
@@ -34,7 +47,7 @@ jobs:
           test -z "$(git status --porcelain -- .)"
 
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_test example
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_test example extensions/language_server tool
 
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
@@ -49,13 +62,15 @@ jobs:
         working-directory: example
         run: |
           dart run bin/main.dart
-          dart run bin/shop.dart
+          # @Scheduled tasks keep a Boot app running; switched off to exit.
+          dart run bin/shop.dart --spring.task.scheduling.enabled=false
 
       - name: Release-mode check (minified JavaScript)
         working-directory: example
         run: |
           dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
-          node /tmp/release_check.js
+          # dart2js code expects the browser's `self` (timers of @Scheduled).
+          node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 
   # The lowest versions allowed by our constraints must still work: resolve
   # them and analyze (transitive test tooling at its minimum does not run on
@@ -68,4 +83,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_test
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_test

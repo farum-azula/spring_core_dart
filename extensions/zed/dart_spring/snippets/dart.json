@@ -1,0 +1,302 @@
+{
+  "Spring Boot application": {
+    "prefix": "spboot",
+    "description": "main with @SpringBootApplication; run build_runner to generate main.beans.dart",
+    "body": [
+      "import 'package:spring_boot_dart/spring_boot_dart.dart';",
+      "",
+      "import '${1:main}.beans.dart';",
+      "",
+      "@SpringBootApplication()",
+      "void main(List<String> args) => runApplication(args);$0"
+    ]
+  },
+  "Component scan module": {
+    "prefix": "spscan",
+    "description": "A scanned bean module (spring_core_dart without Boot)",
+    "body": [
+      "import 'package:spring_core_dart/spring_core_dart.dart';",
+      "",
+      "import '${1:app}.beans.dart';",
+      "",
+      "@ComponentScan()",
+      "final BeanModule ${2:appBeans} = \\$${2:appBeans};$0"
+    ]
+  },
+  "Service": {
+    "prefix": "spservice",
+    "description": "@Service class with constructor injection",
+    "body": [
+      "@Service()",
+      "class ${1:Name}Service {",
+      "  ${1:Name}Service(this.${2:repository});",
+      "",
+      "  final ${3:Repository} ${2:repository};",
+      "",
+      "  $0",
+      "}"
+    ]
+  },
+  "Component": {
+    "prefix": "spcomponent",
+    "description": "@Component class",
+    "body": [
+      "@Component()",
+      "class ${1:Name} {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Repository": {
+    "prefix": "sprepository",
+    "description": "@Repository class",
+    "body": [
+      "@Repository()",
+      "class ${1:Name}Repository {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Interface and implementation": {
+    "prefix": "spiface",
+    "description": "An interface and its @Service implementation",
+    "body": [
+      "abstract interface class ${1:Payments} {",
+      "  ${2:String} ${3:pay}(${4:double amount});",
+      "}",
+      "",
+      "@Service()",
+      "class ${5:Card}${1:Payments} implements ${1:Payments} {",
+      "  @override",
+      "  ${2:String} ${3:pay}(${4:double amount}) {",
+      "    $0",
+      "  }",
+      "}"
+    ]
+  },
+  "Configuration with @Bean": {
+    "prefix": "spconfig",
+    "description": "@Configuration class with a @Bean method",
+    "body": [
+      "@Configuration()",
+      "class ${1:Http}Config {",
+      "  @Bean()",
+      "  ${2:Client} ${3:client}() => ${2:Client}($0);",
+      "}"
+    ]
+  },
+  "@Bean method": {
+    "prefix": "spbean",
+    "description": "@Bean method inside a @Configuration class",
+    "body": [
+      "@Bean()",
+      "${1:Type} ${2:name}() => ${1:Type}($0);"
+    ]
+  },
+  "@Value field": {
+    "prefix": "spvalue",
+    "description": "Field filled from a property (raw string placeholder)",
+    "body": [
+      "@Value(r'\\${${1:app.key}${2::default}}')",
+      "late final ${3:String} ${4:name};$0"
+    ]
+  },
+  "@Value parameter": {
+    "prefix": "spvalueparam",
+    "description": "Constructor parameter filled from a property",
+    "body": [
+      "@Value(r'\\${${1:app.key}}') this.${2:name}$0"
+    ]
+  },
+  "@Autowired field": {
+    "prefix": "spautowired",
+    "description": "Field injection",
+    "body": [
+      "@Autowired()",
+      "late final ${1:Type} ${2:name};$0"
+    ]
+  },
+  "@Autowired setter": {
+    "prefix": "spsetter",
+    "description": "Setter injection",
+    "body": [
+      "@Autowired()",
+      "set ${1:name}(${2:Type} value) => _${1:name} = value;",
+      "${2:Type}? _${1:name};$0"
+    ]
+  },
+  "@Lazy self-injection": {
+    "prefix": "spself",
+    "description": "Inject the bean into itself through its proxy (advice applies to self-calls)",
+    "body": [
+      "${1:Name}(@Lazy() this._self);",
+      "",
+      "final ${2:${1:Name}} _self;$0"
+    ]
+  },
+  "@Qualifier parameter": {
+    "prefix": "spqualifier",
+    "description": "Choose a bean by name",
+    "body": [
+      "@Qualifier('${1:name}') this.${2:field}$0"
+    ]
+  },
+  "@Primary bean": {
+    "prefix": "spprimary",
+    "description": "The default choice among several implementations",
+    "body": [
+      "@Service()",
+      "@Primary()",
+      "class ${1:Name} implements ${2:Interface} {",
+      "  $0",
+      "}"
+    ]
+  },
+  "@Profile bean": {
+    "prefix": "spprofile",
+    "description": "A bean only in some profiles",
+    "body": [
+      "@Service()",
+      "@Profile(['${1:dev}'])",
+      "class ${2:Name} implements ${3:Interface} {",
+      "  $0",
+      "}"
+    ]
+  },
+  "@PostConstruct": {
+    "prefix": "sppost",
+    "description": "Runs after the dependencies are injected",
+    "body": [
+      "@PostConstruct()",
+      "void ${1:init}() {",
+      "  $0",
+      "}"
+    ]
+  },
+  "@PreDestroy": {
+    "prefix": "sppre",
+    "description": "Runs when the context closes",
+    "body": [
+      "@PreDestroy()",
+      "void ${1:close}() {",
+      "  $0",
+      "}"
+    ]
+  },
+  "@EventListener": {
+    "prefix": "splistener",
+    "description": "Reacts to an event published with publishEvent",
+    "body": [
+      "@EventListener()",
+      "void on${1:Event}(${1:Event} event) {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Publish an event": {
+    "prefix": "sppublish",
+    "description": "Inject the publisher and publish an event",
+    "body": [
+      "${1:Name}(this.events);",
+      "",
+      "final ApplicationEventPublisher events;",
+      "",
+      "void ${2:notify}() => events.publishEvent(${3:Event}($0));"
+    ]
+  },
+  "Aspect": {
+    "prefix": "spaspect",
+    "description": "@Aspect with @Around advice for an annotation",
+    "body": [
+      "class ${1:Timed} {",
+      "  const ${1:Timed}();",
+      "}",
+      "",
+      "@Aspect()",
+      "@Component()",
+      "class ${1:Timed}Aspect {",
+      "  @Around('@annotation(${1:Timed})')",
+      "  Object? around(ProceedingJoinPoint call) {",
+      "    $0",
+      "    return call.proceed();",
+      "  }",
+      "}"
+    ]
+  },
+  "@ConfigurationProperties": {
+    "prefix": "spprops",
+    "description": "Typed, validated settings bound from a prefix (Spring Boot)",
+    "body": [
+      "@ConfigurationProperties('${1:shop}')",
+      "class ${2:Shop}Properties {",
+      "  @NotBlank()",
+      "  String ${3:name} = '${4:default}';",
+      "  $0",
+      "}"
+    ]
+  },
+  "@ConditionalOnProperty": {
+    "prefix": "spcondprop",
+    "description": "A bean only when a property is true (Spring Boot)",
+    "body": [
+      "@Service()",
+      "@ConditionalOnProperty('${1:features.name}')",
+      "class ${2:Name} {",
+      "  $0",
+      "}"
+    ]
+  },
+  "CommandLineRunner": {
+    "prefix": "sprunner",
+    "description": "Code that runs once the application has started (Spring Boot)",
+    "body": [
+      "@Component()",
+      "class ${1:Startup} implements CommandLineRunner {",
+      "  @override",
+      "  void run(List<String> args) {",
+      "    $0",
+      "  }",
+      "}"
+    ]
+  },
+  "Logger": {
+    "prefix": "splog",
+    "description": "A named SpringLog logger",
+    "body": [
+      "const _log = SpringLog('${1:app.name}');$0"
+    ]
+  },
+  "Hot reload in Flutter": {
+    "prefix": "spreload",
+    "description": "Rebuild the beans after a hot reload (root widget State)",
+    "body": [
+      "@override",
+      "void reassemble() {",
+      "  super.reassemble();",
+      "  ${1:context} = reloadApplication(${1:context}${2:, runners: false});$0",
+      "}"
+    ]
+  },
+  "springBootTest": {
+    "prefix": "sptest",
+    "description": "Test file starting the whole application (spring_boot_starter_test)",
+    "body": [
+      "import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';",
+      "import 'package:test/test.dart';",
+      "",
+      "import '${1:../bin/main}.beans.dart';",
+      "",
+      "void main() {",
+      "  final app = springBootTest(",
+      "    springApplication,",
+      "    profiles: ['test'],",
+      "    overrides: [BeanOverride<${2:Service}>(${3:Fake}${2:Service}())],",
+      "  );",
+      "",
+      "  test('${4:works}', () {",
+      "    expect(app.getBean<${5:Type}>(), isNotNull);$0",
+      "  });",
+      "}"
+    ]
+  }
+}

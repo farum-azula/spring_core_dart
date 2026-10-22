@@ -1,20 +1,34 @@
 // Release-mode check, run in CI as minified JavaScript:
 //
 //   dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
-//   node /tmp/release_check.js
+//   node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
+//
+// (dart2js output uses the browser's `self`, e.g. for the timers of
+// @Scheduled tasks; plain node does not define it.)
 //
 // Minification renames classes, so anything that matched annotations by
 // `runtimeType.toString()` would silently stop working here.
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
+    show Scheduled, ScheduledAnnotationBeanPostProcessor;
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
 import 'package:spring_core_dart_example/src/app.dart';
+import 'package:spring_core_dart_example/src/cache/price_list.dart';
+import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
 import 'package:spring_core_dart_example/src/tour_log.dart';
 
 void main() {
   // Config comes from the embedded classpath resources (lib/resources/),
   // so it works without any file system — here under node.
-  final modules = [shopBeans, springBootAutoConfiguration];
+  final modules = [
+    shopBeans,
+    springBootAutoConfiguration,
+    springBootStarterSchedulingAutoConfiguration,
+    springBootStarterCacheAutoConfiguration,
+  ];
   final environment = StandardEnvironment(systemEnvironment: {});
   ConfigDataEnvironment(environment).processAndApplySync();
   final context = AnnotationConfigApplicationContext(
@@ -31,6 +45,34 @@ void main() {
   if (context.getMessage('greeting', args: ['x'], locale: 'ru') !=
       'Добро пожаловать в x!') {
     throw StateError('classpath messages were not found');
+  }
+  // @Cacheable is found by type checks on the annotation objects.
+  final prices = context.getBean<PriceList>()
+    ..price('1')
+    ..price('1');
+  if (prices.lookups != 1) {
+    throw StateError('@Cacheable did not cache: ${prices.lookups} lookups');
+  }
+  // @Scheduled methods are found and called through the generated
+  // BeanDefinition.annotatedMethods.
+  final tasks = context
+      .getBean<ScheduledAnnotationBeanPostProcessor>()
+      .scheduledTasks;
+  if (tasks.length != 2) {
+    throw StateError('expected 2 @Scheduled tasks, got $tasks');
+  }
+  final jobs = context.getBean<StockJobs>();
+  context.beanFactory
+      .getBeanDefinition('stockJobs')
+      .annotatedMethods
+      .firstWhere(
+        (m) => m.annotations.whereType<Scheduled>().any(
+          (s) => s.fixedDelayString != null,
+        ),
+      )
+      .invoke(jobs, const []);
+  if (jobs.refreshes == 0) {
+    throw StateError('@Scheduled method was not called');
   }
   context.close();
   print('release check passed');

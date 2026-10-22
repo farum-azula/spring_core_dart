@@ -4,7 +4,9 @@
 //   dart run tool/release.dart            # bump, write versions and changelogs
 //   dart run tool/release.dart --dry-run  # only print what would happen
 //
-// The next version follows the commits since the last `v*` tag:
+// The next version follows the commits since the last `v*` tag that change
+// a published package (commits touching only extensions/, .github/, tool/
+// or the repository README are ignored):
 // - a breaking change (`feat!:`, `BREAKING CHANGE`) bumps the major version
 //   (the minor one before 1.0.0, where minor releases may break);
 // - a feature (`feat:` or a subject starting with "Add") bumps the minor
@@ -73,6 +75,8 @@ final class _Commit {
       RegExp(r'^add\b', caseSensitive: false).hasMatch(subject);
 }
 
+// Only commits that change a published package count: editor extensions,
+// CI, tools and the repository README do not make a new pub.dev release.
 List<_Commit> _commitsSince(String? tag) {
   const separator = '\x1e';
   final log = _git([
@@ -80,6 +84,8 @@ List<_Commit> _commitsSince(String? tag) {
     '--no-merges',
     '--format=%s%x1f%b$separator',
     if (tag != null) '$tag..HEAD',
+    '--',
+    ...family.family,
   ]);
   return [
     for (final entry in log.split(separator))

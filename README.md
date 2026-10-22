@@ -16,6 +16,8 @@ separate library.
 | `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. No dependencies. |
 | `spring_boot_dart` | [`spring_boot_dart/`](spring_boot_dart/README.md) | Spring Boot on top of the core: `@SpringBootApplication` on `main`, `SpringApplication.run`, `@ConfigurationProperties`, auto-configuration conditions, runners, failure reports. A separate package (depends only on the core) so it can move to its own repository. |
 | `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Logging backend: console with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` (filters, streams, export) for an in-app log screen. Add the dependency, nothing else. |
+| `spring_boot_starter_scheduling` | [`spring_boot_starter_scheduling/`](spring_boot_starter_scheduling/README.md) | `@Scheduled` methods with a fixed rate, a fixed delay or a cron expression (placeholders from properties), a `TaskScheduler` bean; tasks stop with the context. Add the dependency, nothing else. |
+| `spring_boot_starter_cache` | [`spring_boot_starter_cache/`](spring_boot_starter_cache/README.md) | `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching` on bean methods (sync and async) with SpEL keys and conditions; an in-memory `CacheManager` with TTL and size limits from `spring.cache.*`. |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
@@ -361,6 +363,26 @@ propagate to the parent context.
   `ResourceLoader` with `classpath:`, `file:` and custom protocols
   (`ProtocolResolver`), `PathMatchingResourcePatternResolver` with
   `AntPathMatcher`.
+
+  Why `lib/resources/` and not `bin/` or the project root: `lib/` is the
+  only part of a Dart package that other packages can use, so a starter
+  keeps its defaults and messages in its own `lib/resources/` and they
+  join the application's classpath exactly like the application's files
+  (its generated module embeds them). Files elsewhere would stay invisible
+  for dependencies and would be missing in AOT executables, Flutter apps
+  and the web, which have no project folder at runtime. An app with only
+  `bin/main.dart` still keeps its resources in `lib/resources/`; `lib/`
+  may contain nothing else:
+
+  ```text
+  my_app/
+    bin/main.dart              # @SpringBootApplication
+    lib/resources/
+      application.properties   # classpath:application.properties
+  ```
+
+  Tests see `test/resources/` first (`spring_boot_starter_test`), like
+  `src/test/resources` before `src/main/resources` in Java.
 - `DefaultConversionService` with Spring Boot duration syntax (`10s`,
   `PT5M`), collections and enums.
 
@@ -409,44 +431,258 @@ messages come from a `MessageSource`.
 
 ### AOP
 
+AOP (aspect-oriented programming) runs your code before, after or around
+methods of other beans without editing them. Use it for things that cut
+across many classes: logging, timing, auditing, permission checks,
+retries, caching.
+
+| Term | What it is | In code |
+|---|---|---|
+| Aspect | A bean holding the extra code | a class with `@Aspect()` and `@Component()` |
+| Advice | One piece of extra code and when it runs | a method with `@Before`, `@After`, `@AfterReturning`, `@AfterThrowing` or `@Around` |
+| Pointcut | Which methods the advice applies to | the string in the annotation: `'@annotation(Timed)'`, `'execution(* OrderService.*(..))'` |
+| Join point | One intercepted call | the `JoinPoint` / `ProceedingJoinPoint` parameter |
+| Proxy | The generated wrapper that calls the advice | written by the generator, injected instead of the bean |
+
+#### A first aspect
+
+Time every method marked `@Timed()`:
+
+```dart
+// An annotation is a plain class with a const constructor.
+class Timed {
+  const Timed();
+}
+
+@Aspect()
+@Component()
+class TimingAspect {
+  @Around('@annotation(Timed)')
+  Object? time(ProceedingJoinPoint call) {
+    final watch = Stopwatch()..start();
+    try {
+      return call.proceed(); // runs the real method
+    } finally {
+      print('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
+    }
+  }
+}
+
+@Service()
+class Search {
+  @Timed()
+  List<String> find(String text) => ['dart', 'spring'];
+}
+
+// context.getBean<Search>().find('d'); // prints "find: 0 ms"
+```
+
+How it works: the generator (`spring_core_dart_generator`, required)
+writes a proxy class for each bean. When the context starts, every bean
+that some pointcut matches is replaced by its proxy, and the proxy is what
+other beans and `getBean` receive. A call to `search.find(...)` goes
+through the proxy, which runs the advice. Beans that no pointcut matches
+are not wrapped and cost nothing.
+
+Rules to remember:
+
+- The aspect must be a bean: `@Aspect()` plus `@Component()` (or a
+  `@Bean` method). Aspects can inject other beans as usual; they are never
+  proxied themselves.
+- Only calls from outside go through the proxy. A call through `this`
+  inside the bean (`find` calling `count`) skips the advice, exactly as in
+  Spring. Call through another bean, or inject the bean into itself with
+  `@Lazy()` (see Injection) or `ObjectProvider<T>`.
+- The proxy implements the bean class or its interfaces, so the bean
+  needs public members or an interface with the advised methods (the error
+  message says which). See "Proxies" below.
+
+#### Kinds of advice
+
+| Annotation | Runs | Parameters (all optional unless noted) | Can change the result |
+|---|---|---|---|
+| `@Before` | before the method | `JoinPoint` | no; throwing stops the call |
+| `@After` | after the method, whether it returned or threw (like `finally`) | `JoinPoint` | no |
+| `@AfterReturning` | after it returned normally | `JoinPoint`, then the result | no |
+| `@AfterThrowing` | after it threw; the error is rethrown afterwards | `JoinPoint`, then the error | no |
+| `@Around` | instead of the method; you decide if and how to call it | `ProceedingJoinPoint` (required) | yes |
+
 ```dart
 @Aspect()
 @Component()
-@Order(1)
-class Auditing {
-  @Pointcut('execution(* Calculator.*(..))')
-  void calculator() {}
+class AuditAspect {
+  // A named pointcut: the method body is empty, its name is the pointcut.
+  @Pointcut('within(OrderService)')
+  void orders() {}
 
-  @Before('calculator()')
-  void before(JoinPoint joinPoint) {}
+  @Before('orders()')
+  void before(JoinPoint call) => print('calling ${call.toShortString()} '
+      'with ${call.args}');
 
-  @AfterReturning('calculator()')
-  void returned(JoinPoint joinPoint, int result) {}
+  // Runs only when the result is a double: the parameter type filters.
+  @AfterReturning('orders()')
+  void returned(JoinPoint call, double total) => print('total: $total');
 
-  @Around('@annotation(Timed)')
-  Object? time(ProceedingJoinPoint joinPoint) => joinPoint.proceed();
+  // Runs only for StateError; other errors pass by.
+  @AfterThrowing('orders()')
+  void failed(StateError error) => print('failed: ${error.message}');
+
+  @After('orders()')
+  void after() => print('done');
+
+  // Change arguments, the result, or skip the call entirely.
+  @Around('execution(* OrderService.discount(..))')
+  Object? clamp(ProceedingJoinPoint call) {
+    final [percent] = call.args;
+    return call.proceed([(percent! as int).clamp(0, 50)]);
+  }
 }
 ```
 
-Pointcuts: `execution`, `within`, `target`, `bean`, `@annotation`,
-`@within`, named pointcuts, `&&` `||` `!`. Type patterns use simple names
-(Dart has no packages): `com.x.Service` means `Service`, and a qualified
-wildcard such as `within(com.x.service..*)` is rejected instead of
-silently matching every bean. Argument binding (`@annotation(timed)`) is not
-supported yet and is rejected too. Annotations are matched by names the
-generator writes, so `@annotation(Timed)` also works in minified/obfuscated
-release builds. Advice order follows Spring
-(aspect `@Order`, then around → before → after → afterReturning →
-afterThrowing). Methods returning `Future` are advised when the future
-completes. `PointcutAdvisor` beans work as well.
+Parameters are positional and matched by type: `JoinPoint` /
+`ProceedingJoinPoint` by exact type, and in `@AfterReturning` /
+`@AfterThrowing` the first other parameter gets the result or the error.
+Anything else is a build error.
+
+Async methods: for a method returning a `Future`, `@After`,
+`@AfterReturning` and `@AfterThrowing` run when the future completes
+(with its value or error), not when the method returns. In `@Around`,
+`proceed()` returns the future; make the advice `async` and `await` it to
+work with the value:
+
+```dart
+@Around('execution(Future *(..))')
+Future<Object?> timeAsync(ProceedingJoinPoint call) async {
+  final watch = Stopwatch()..start();
+  try {
+    return await (call.proceed()! as Future<Object?>);
+  } finally {
+    print('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
+  }
+}
+```
+
+What a `JoinPoint` gives you:
+
+| Member | Example value |
+|---|---|
+| `signature.name` | `find` |
+| `signature.declaringType` | `Search` |
+| `signature.targetType` | the bean class, e.g. `DefaultSearch` |
+| `signature.returnType`, `signature.parameterTypes` | `List`, `[String]` |
+| `signature.kind` | `MemberKind.method`, `getter` or `setter` |
+| `signature.annotations` | the method's annotation objects, e.g. `[Timed()]` |
+| `args` | the arguments, `['d']` |
+| `target`, `proxy` | the bean, the proxy |
+| `toShortString()` | `execution(Search.find(..))` |
+| `proceed([args])` (`ProceedingJoinPoint` only) | calls the next advice or the method; `args` replaces the arguments |
+
+#### Pointcut syntax
+
+A pointcut is one or more designators combined with operators:
+
+```text
+designator(pattern)  [&& | || | !  designator(pattern) ...]
+```
+
+| Designator | Matches | Example |
+|---|---|---|
+| `execution(ret Type.name(params))` | methods by return type, declaring type, name and parameters | `execution(* OrderService.find*(..))` |
+| `within(TypePattern)` | every member of beans whose class matches | `within(*Repository)` |
+| `target(Type)` | every member of beans of that type or a subtype (interfaces too) | `target(PaymentGateway)` |
+| `bean(namePattern)` | every member of beans with that name | `bean(order*)` |
+| `@annotation(Annotation)` | methods carrying the annotation (also when it is on the interface method they implement) | `@annotation(Timed)` |
+| `@within(Annotation)` | every member of beans whose class carries the annotation | `@within(Service)` |
+| `name()` | a named pointcut: a `@Pointcut` method of any aspect | `orders()`, `AuditAspect.orders()` |
+
+Patterns:
+
+- `*` in a name matches any characters: `find*`, `*Service`, `*`.
+- In `execution` parameters, `..` matches any number of parameters
+  (including none) and `*` exactly one: `(..)`, `()`, `(String, ..)`,
+  `(*, int)`.
+- The return type comes first; `*` means any: `execution(* *(..))`,
+  `execution(void *(..))`, `execution(Future *(..))`. The type before the
+  method name is optional: `execution(* find*(..))` matches `find*`
+  methods of every bean.
+- Generics and `?` are ignored when matching: `Future<int>` matches
+  `Future`, `int?` matches `int`.
+- Type names are simple names. Dart has no packages, so `com.x.Service`
+  means `Service`, and a package wildcard like `within(com.x..*)` is an
+  error instead of silently matching everything.
+
+Operators: `&&` / `and`, `||` / `or`, `!` / `not`, and parentheses.
+
+Examples:
+
+| Pointcut | Advises |
+|---|---|
+| `execution(* *(..))` | every method of every bean (methods only, not getters/setters) |
+| `within(OrderService)` | everything of the `OrderService` bean, getters and setters included |
+| `execution(* OrderService.*(..))` | the methods of `OrderService` |
+| `execution(* find*(..))` | methods whose name starts with `find`, in any bean |
+| `execution(Future *(..))` | async methods |
+| `execution(void *(String, ..))` | `void` methods whose first parameter is a `String` |
+| `target(PaymentGateway)` | every bean implementing `PaymentGateway` |
+| `bean(order*)` | beans named `order…` |
+| `@annotation(Timed)` | methods marked `@Timed()` |
+| `@within(Service)` | every member of `@Service` classes |
+| `within(*Service) && !execution(* get*(..))` | services, except `get…` methods |
+| `orders() \|\| bean(payments)` | a named pointcut or the `payments` bean |
+
+Named pointcuts are shared by all aspects: refer to them as `orders()` or,
+to be explicit, `AuditAspect.orders()`.
+
+Not supported yet: argument binding (`args(...)`, `@annotation(timed)`
+with a parameter name). Read annotations from `joinPoint.signature.annotations`
+instead. An invalid pointcut fails when the context starts, with the
+reason; the Zed extension (`dart_spring`) underlines it while you type.
+
+#### Order of advice
+
+- Several aspects: `@Order` on the aspect class decides; the lower value
+  is the outer one (its `@Before` runs first, its `@After` last). Aspects
+  without `@Order` come last.
+- Inside one aspect: around → before → after → afterReturning →
+  afterThrowing, as in Spring.
+
+```dart
+@Aspect() @Component() @Order(1) class SecurityAspect { ... } // outer
+@Aspect() @Component() @Order(2) class TimingAspect { ... }   // inner
+```
+
+#### Advice without annotations
+
+A `PointcutAdvisor` bean is applied like an aspect. Write the pointcut as
+an `ExpressionPointcut` (same syntax) or as your own `AopPointcut` class:
+
+```dart
+class UpperCase implements MethodInterceptor {
+  @override
+  Object? invoke(MethodInvocation invocation) =>
+      (invocation.proceed()! as String).toUpperCase();
+}
+
+@Configuration()
+class AopConfig {
+  @Bean()
+  PointcutAdvisor upperCase() =>
+      DefaultPointcutAdvisor(ExpressionPointcut('bean(slogans)'), UpperCase());
+}
+```
+
+#### Proxies
 
 Proxies are generated classes that implement the bean class (when it has
-no private members) and its interfaces, so they can be injected by either;
-`AopUtils.getTarget` unwraps them.
-
-As in Spring, a call through `this` inside the bean skips the proxy, so no
-advice runs. Call through another bean, or inject the bean into itself
-with `@Lazy()` (see Injection) or `ObjectProvider<T>`.
+no private members and is not `final`, `base` or `sealed`) and its
+interfaces, so the bean can be injected by either. If advice matches a bean
+that cannot be proxied, the context fails at startup and says why; add an
+interface with the advised methods and inject the bean by it.
+`AopUtils.getTarget(bean)` unwraps a proxy. The generator option
+`aop_proxies` (`all` by default, `interfaces`, `none`) controls which
+proxies are generated (see `spring_core_dart_generator`). Annotations are
+matched by names the generator writes, so `@annotation(Timed)` also works in
+minified and obfuscated release builds.
 
 ### Logging
 
@@ -474,6 +710,34 @@ With Spring Boot, levels come from `logging.level.*` properties.
 `BeanPostProcessor`, custom scopes, hand-written `BeanDefinition`s and
 `BeanModule`s, `registerSingleton`, `@Configurable` + `autowireBean` for
 objects created elsewhere (e.g. Flutter `State`).
+
+Your own method annotations: mark the annotation class with
+`@BeanMethodAnnotation()` and the generator lists every bean method that
+carries it in `BeanDefinition.annotatedMethods`, with its annotations and a
+closure that calls it — what Spring does with reflection
+(`MethodIntrospector`). This is how `@Scheduled` finds its methods:
+
+```dart
+@BeanMethodAnnotation()
+class Poll {
+  const Poll(this.every);
+  final Duration every;
+}
+
+@Component()
+class Inbox {
+  @Poll(Duration(seconds: 30))
+  void check() { ... }
+}
+
+// In a BeanPostProcessor (with BeanFactoryAware) or after refresh:
+for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
+  final poll = method.annotations.whereType<Poll>().firstOrNull;
+  if (poll != null) {
+    Timer.periodic(poll.every, (_) => method.invoke(bean, const []));
+  }
+}
+```
 
 ## Differences from Spring
 
@@ -604,13 +868,13 @@ and the order of `spring.profiles.include`.
 Starters (each a separate package, discovered by the generator like
 `spring_boot_starter_logging`):
 
-- **Scheduling** (`spring_boot_starter_scheduling`): `@EnableScheduling`,
-  `@Scheduled(fixedRate: ..., fixedDelay: ..., initialDelay: ...)` and cron
-  expressions, stopped with the context; `@Async` methods.
-- **Cache** (`spring_boot_starter_cache`): `@Cacheable`, `@CachePut`,
-  `@CacheEvict`, `@Caching` over the existing AOP proxies; `CacheManager`
-  with an in-memory default, `spring.cache.*` properties (TTL, size),
-  pluggable stores.
+- **`@Async`** (in `spring_boot_starter_scheduling`): methods that return
+  at once and run later, on a separate isolate for CPU-heavy work, with a
+  configurable executor. (`@Scheduled` itself is done.)
+- **Cache stores** (for `spring_boot_starter_cache`): persistent stores
+  (SQLite, files, `shared_preferences` in Flutter) behind the same `Cache`
+  interface, cache statistics. (The annotations and the in-memory
+  `CacheManager` are done.)
 - **Retry**: `@Retryable(maxAttempts:, backoff:)` / `@Recover`, like
   spring-retry, on the AOP proxies.
 - **HTTP client** (`spring_boot_starter_http`): a configured `http.Client`
@@ -757,11 +1021,42 @@ Starters (each a separate package, discovered by the generator like
   @Profile(['ios'])
   class ApnsPushService implements PushService { ... }
   ```
+- **`--dart-define` as a property source** (in `flutter_spring`): a
+  Flutter app has no environment variables at runtime (almost empty on
+  Android/iOS, none on the web), so `${API_URL}` placeholders cannot come
+  from the OS there. Values passed at build time become properties
+  instead, above the properties files:
+  ```sh
+  flutter build apk --dart-define=SPRING_PROFILES_ACTIVE=prod \
+    --dart-define=API_URL=https://api.neon.books
+  # or --dart-define-from-file=config/prod.json
+  ```
+  `SPRING_PROFILES_ACTIVE` picks `application-prod.properties` (Spring
+  profiles instead of flavors) and `@Value(r'${API_URL}')` gets the build's
+  value. `String.fromEnvironment` works only as `const` with a literal key
+  in AOT and web builds, so the generator writes a
+  `const String.fromEnvironment('API_URL')` / `bool.hasEnvironment(...)`
+  pair for every key it finds in placeholders and properties files.
+  Documented with it: a client app holds no secrets. `--dart-define`
+  values, properties and assets all end up in the APK / IPA /
+  `main.dart.js` and can be read; passwords and private keys stay on a
+  server, the app gets tokens from it.
 
 Tooling:
 
-- **Zed extension** (`zed-spring`): editor support for everything the
-  framework does today. Its version always equals the framework version
+- **Zed extension** (`dart_spring`, in `extensions/zed/dart_spring`,
+  with the language server in `extensions/language_server`): editor
+  support for everything the framework does today. Available now:
+  navigation from injection points to beans and from `@Value`
+  placeholders to properties files, SpEL and placeholder highlighting,
+  checks for invalid SpEL, unknown keys and non-raw placeholder strings,
+  hovers with property values and candidate beans, navigation to
+  `classpath:` / `file:` resources, and pointcut highlighting, navigation
+  (types, annotations, beans, named pointcuts) and checks, snippets, and
+  new Spring Boot projects (`dart_spring_lsp create my_app`).
+  Still planned from the list below: bean markers, completion, reverse
+  navigation (from a key or a bean to its usages, from a pointcut to the
+  methods it advises), event navigation, beans of dependencies. Its version always equals the framework version
   (part of the release train, set by `tool/version.dart` and checked in CI),
   so extension 0.4.0 understands spring_core_dart 0.4.0.
   - SpEL highlighting and completion inside `@Value`, `@Query`,
@@ -792,6 +1087,10 @@ Tooling:
     navigation works for both spellings.
   - Built as a Dart language server on top of the generator's analysis, so
     the same server can later back VS Code and IntelliJ plugins.
+- **Zed extension for Flutter** (`flutter_spring`): everything `dart_spring`
+  does (it uses the same language server under the hood) plus support for
+  the `flutter_spring` starter: platform profiles, widget wrappers, hot
+  reload helpers and Flutter snippets.
 
 Framework:
 
@@ -808,18 +1107,32 @@ with or endorsed by the Spring team.
 
 ```bash
 dart pub get
-dart run melos run check   # versions + gen + analyze + format + test
+dart run melos run check   # versions + dependencies + gen + analyze + format + test
+dart run tool/check_dependencies.dart   # only this repository, the Dart SDK and Dart-team packages
 dart run tool/test_all.dart   # tests of every package (also the example), from each package and from the root
 dart run melos run version -- 0.2.0   # release train: one version for every package
 dart run melos run coverage
 ```
 
+Dependency policy: the packages use only each other, the Dart SDK and
+packages published on pub.dev by the Dart and Google teams (`dart.dev`,
+`tools.dart.dev`, `labs.dart.dev`, `google.dev`, `flutter.dev`),
+transitive dependencies included; the packages that end up in
+applications (`spring_core_dart`, `spring_boot_dart`,
+`spring_boot_starter_logging`) depend on nothing outside this repository
+at all. CI enforces it with
+`tool/check_dependencies.dart`; any other package needs an exception there
+with a reason and the packages allowed to use it (today: `melos` for the
+workspace scripts, `node_preamble` pulled by `package:test`; database
+drivers will be added the same way).
+
 The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 382 (runtime), 88 (generator), 19 (Spring Boot), 29 (logging
-starter), 25 (test starter), 16 end-to-end over the generated code of the
-example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
+Tests: 382 (runtime), 92 (generator), 19 (Spring Boot), 29 (logging
+starter), 62 (scheduling starter), 40 (cache starter), 25 (test starter),
+18 end-to-end over the generated code of the example (tour and Spring
+Boot app), 29 (language server). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

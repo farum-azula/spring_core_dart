@@ -913,3 +913,40 @@ class EventListener {
   /// Listener id; defaults to `Class.method`.
   final String? id;
 }
+
+/// Marks an annotation class whose methods the runtime looks up on beans.
+///
+/// There is no reflection, so the generator writes, for every bean method
+/// carrying such an annotation, a `BeanMethod` in
+/// `BeanDefinition.annotatedMethods`: its name, annotations and a closure
+/// calling it. Starters use this to find their methods, e.g. `@Scheduled`
+/// of `spring_boot_starter_scheduling`.
+///
+/// ```dart
+/// @BeanMethodAnnotation()
+/// class Poll {
+///   const Poll(this.every);
+///   final Duration every;
+/// }
+///
+/// @Component()
+/// class Inbox {
+///   @Poll(Duration(seconds: 30))
+///   void check() { ... }
+/// }
+///
+/// // A BeanPostProcessor, a lifecycle bean, ...:
+/// for (final method in context.beanFactory
+///     .getBeanDefinition('inbox')
+///     .annotatedMethods) {
+///   final poll = method.annotations.whereType<Poll>().first;
+///   method.invoke(context.getBeanByName('inbox'), const []);
+/// }
+/// ```
+///
+/// Spring finds such methods by reflection
+/// (`MethodIntrospector.selectMethods`), so it has no equivalent.
+class BeanMethodAnnotation {
+  /// Creates the marker.
+  const BeanMethodAnnotation();
+}

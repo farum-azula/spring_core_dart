@@ -25,6 +25,8 @@ dart test                        # asserts the tour's output
 | `spel` | arithmetic, selection/projection, safe navigation, Elvis, functions, `T(...)`, templates, `SimpleEvaluationContext`, `@Introspected` objects | `lib/tour.dart` |
 | `validation` | `DataBinder` with type mismatches and `disallowedFields`, constraints, a class-level constraint, `@Valid` cascade, groups, localized messages, `BeanWrapper` | `lib/src/validation/` |
 | `aop` | `@Aspect` with a named `@Pointcut`, all advice kinds and their order, `@annotation(Timed)`, `within()`, `bean()`, async methods, an advisor bean, `AopUtils.getTarget`, self-invocation: `this` vs a `@Lazy` self reference | `lib/src/aop/` |
+| `scheduling` | `@Scheduled` with a fixed delay from properties (`${shop.stock-refresh}`) and a cron expression, the registered tasks and the next cron run (`spring_boot_starter_scheduling`) | `lib/src/jobs/` |
+| `cache` | `@Cacheable` with a SpEL key, `@CacheEvict`, an async method whose `null` result is not stored (`unless`) (`spring_boot_starter_cache`) | `lib/src/cache/` |
 | `hierarchy` | parent and child contexts from hand-written `BeanModule`s, events reaching the parent | `lib/tour.dart` |
 | `failures` | startup validation: a missing dependency and a cycle reported before anything is created | `lib/tour.dart` |
 | `shutdown` | `ContextClosedEvent`, lifecycle stop, destroy callbacks in reverse creation order | — |
@@ -48,6 +50,10 @@ The Boot app also shows the two starters:
   (test-only config, not embedded), arguments and environment, a `BeanOverride` replacing the sandbox
   payment gateway with a fake, and `captureLogs`.
 
-`tool/release_check.dart` runs the AOP part as minified JavaScript
-(`dart compile js -O4`) to make sure nothing depends on class names that
-release builds rename.
+`tool/release_check.dart` runs the AOP part, `@Cacheable` and the
+`@Scheduled` methods as minified JavaScript (`dart compile js -O4`) to make
+sure nothing depends on class names that release builds rename.
+
+`bin/shop.dart` keeps running because of its `@Scheduled` tasks, like any
+Spring Boot application with scheduling; stop it with Ctrl+C, or start it
+with `--spring.task.scheduling.enabled=false`.

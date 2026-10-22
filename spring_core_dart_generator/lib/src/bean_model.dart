@@ -982,6 +982,7 @@ class BeanModel {
     this.initMethod,
     this.destroyMethod,
     this.listeners = const [],
+    this.annotatedMethods = const [],
     this.aspect,
     this.proxy,
   });
@@ -1064,6 +1065,9 @@ class BeanModel {
 
   /// Event listener methods of the bean.
   final List<ListenerModel> listeners;
+
+  /// Methods carrying an annotation marked `@BeanMethodAnnotation()`.
+  final List<AnnotatedMethodModel> annotatedMethods;
 
   /// Set for `@Aspect` beans.
   final AspectModel? aspect;
@@ -1450,4 +1454,40 @@ Uri? publicSdkLibrary(String name, Element context) {
 bool isInternalSdkType(InterfaceType type) {
   final uri = type.element.library.uri;
   return uri.scheme == 'dart' && uri.path.startsWith('_');
+}
+
+/// A bean method carrying an annotation marked `@BeanMethodAnnotation()`,
+/// written as a `BeanMethod` into `BeanDefinition.annotatedMethods`.
+///
+/// ```dart
+/// // Input:
+/// @Component()
+/// class Reports {
+///   @Scheduled(cron: '0 0 * * * *')
+///   void hourly() { ... }
+/// }
+///
+/// // Output (in the BeanDefinition):
+/// annotatedMethods: [
+///   BeanMethod<Reports>('hourly',
+///     invoke: (bean, arguments) => Function.apply(bean.hourly, arguments),
+///     annotations: const [Scheduled(cron: '0 0 * * * *')]),
+/// ],
+/// ```
+class AnnotatedMethodModel {
+  /// Creates the model.
+  AnnotatedMethodModel({
+    required this.name,
+    required this.parameterTypes,
+    required this.annotations,
+  });
+
+  /// The method name.
+  final String name;
+
+  /// Types of the positional parameters (`Object` for non-class types).
+  final List<InterfaceType?> parameterTypes;
+
+  /// All user annotations of the method.
+  final List<DartObject> annotations;
 }

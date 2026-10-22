@@ -11,6 +11,8 @@ dependencies:
   spring_boot_dart: ^0.1.2
   # Discovered by the generator: installs the logging system (no code).
   spring_boot_starter_logging: ^0.1.2
+  spring_boot_starter_scheduling: ^0.1.2
+  spring_boot_starter_cache: ^0.1.2
   spring_core_dart: ^0.1.2
 
 dev_dependencies:

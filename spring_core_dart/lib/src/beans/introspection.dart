@@ -151,6 +151,11 @@ final class BeanMethod<T extends Object> {
   Object? invoke(Object bean, List<Object?> arguments) =>
       _invoke(bean as T, arguments);
 
+  /// Whether [bean] can be passed to [invoke]: an instance of `T`. A proxy
+  /// that implements only the bean's interfaces (`aop_proxies: interfaces`)
+  /// is not; call the method on `AopUtils.getTarget(bean)` then.
+  bool appliesTo(Object bean) => bean is T;
+
   @override
   String toString() => 'BeanMethod<$T>($name)';
 }

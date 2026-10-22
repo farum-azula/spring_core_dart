@@ -1,6 +1,7 @@
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
+import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/beans/scope.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/context/event/event_listener_method.dart';
@@ -233,6 +234,7 @@ final class BeanDefinition<T extends Object> {
     List<Dependency> dependencies = const [],
     List<Condition> conditions = const [],
     List<EventListenerMethod<T>> eventListeners = const [],
+    List<BeanMethod<T>> annotatedMethods = const [],
     List<Type>? factoryObjectTypes,
     this.aopProxy,
     this.aspect,
@@ -243,6 +245,7 @@ final class BeanDefinition<T extends Object> {
        dependencies = List.unmodifiable(dependencies),
        conditions = List.unmodifiable(conditions),
        eventListeners = List.unmodifiable(eventListeners),
+       annotatedMethods = List.unmodifiable(annotatedMethods),
        factoryObjectTypes = factoryObjectTypes == null
            ? null
            : List.unmodifiable(factoryObjectTypes);
@@ -296,6 +299,19 @@ final class BeanDefinition<T extends Object> {
 
   /// `@EventListener` methods (and `ApplicationListener` implementations).
   final List<EventListenerMethod<T>> eventListeners;
+
+  /// Methods carrying an annotation marked with `@BeanMethodAnnotation()`
+  /// (e.g. `@Scheduled`), with all their annotations and a closure that
+  /// calls them; written by the generator.
+  ///
+  /// ```dart
+  /// for (final method in definition.annotatedMethods) {
+  ///   if (method.annotations.whereType<Scheduled>().isNotEmpty) {
+  ///     method.invoke(bean, const []);
+  ///   }
+  /// }
+  /// ```
+  final List<BeanMethod<T>> annotatedMethods;
 
   /// For a `FactoryBean`: the product type and its supertypes. Lookups by
   /// these types (and by [name]) return the product.

@@ -11,7 +11,10 @@ workspace:
   - spring_boot_dart
   - spring_boot_starter_test
   - spring_boot_starter_logging
+  - spring_boot_starter_scheduling
+  - spring_boot_starter_cache
   - example
+  - extensions/language_server
 
 dev_dependencies:
   lints: ^6.0.0
@@ -42,10 +45,14 @@ melos:
     check:versions:
       description: Every package has the same version and sibling constraints.
       run: dart run tool/version.dart --check
+    check:dependencies:
+      description: Only packages of this repository, the Dart SDK and the Dart team (transitive included).
+      run: dart run tool/check_dependencies.dart
     check:
-      description: gen + analyze + format + test.
+      description: versions + dependencies + gen + analyze + format + test.
       steps:
         - check:versions
+        - check:dependencies
         - gen
         - analyze
         - format

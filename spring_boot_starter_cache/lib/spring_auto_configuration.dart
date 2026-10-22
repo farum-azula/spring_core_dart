@@ -1,0 +1,14 @@
+/// Discovered by the generator of every application that depends on
+/// `spring_boot_starter_cache` (see `AutoConfigurationModule`).
+library;
+
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_cache/src/cache_auto_configuration.dart';
+
+/// Turns caching on: a `CacheManager` from `spring.cache.*` and the
+/// interceptor behind `@Cacheable`, `@CachePut` and `@CacheEvict`.
+@AutoConfigurationModule()
+final BeanModule springBootStarterCacheAutoConfiguration = BeanModule(
+  'springBootStarterCacheAutoConfiguration',
+  [...cacheAutoConfiguration],
+);

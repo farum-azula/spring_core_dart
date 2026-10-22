@@ -13,13 +13,29 @@ const family = [
   'spring_core_dart_generator',
   'spring_boot_dart',
   'spring_boot_starter_logging',
+  'spring_boot_starter_scheduling',
+  'spring_boot_starter_cache',
   'spring_boot_starter_test',
 ];
 
 /// Packages that only depend on the family (not published).
-const dependents = ['example'];
+const dependents = ['example', 'extensions/language_server'];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';
+
+/// Editor extensions: same version as the family they support (not
+/// published to pub.dev).
+const extensions = [
+  'extensions/zed/dart_spring/extension.toml',
+  'extensions/zed/dart_spring/Cargo.toml',
+  'extensions/language_server/pubspec.yaml',
+];
+
+final _extensionVersion = RegExp(r'^version = "(.*)"$', multiLine: true);
+final _pubspecVersion = RegExp(r'^version: (.*)$', multiLine: true);
+
+RegExp _versionPattern(String path) =>
+    path.endsWith('pubspec.yaml') ? _pubspecVersion : _extensionVersion;
 
 void main(List<String> args) {
   if (args.length != 1) {
@@ -85,6 +101,17 @@ void setVersion(String version) {
       "const springBootVersion = '$version';",
     ),
   );
+  for (final manifest in extensions) {
+    _edit(
+      manifest,
+      (text) => text.replaceFirst(
+        _versionPattern(manifest),
+        manifest.endsWith('pubspec.yaml')
+            ? 'version: $version'
+            : 'version = "$version"',
+      ),
+    );
+  }
 }
 
 /// Problems with the current versions (empty when consistent).
@@ -117,6 +144,18 @@ List<String> check() {
       ?.group(1);
   if (constant != version) {
     problems.add('springBootVersion is $constant, expected $version');
+  }
+  for (final manifest in extensions) {
+    final file = File(manifest);
+    final own = file.existsSync()
+        ? _versionPattern(manifest)
+              .firstMatch(file.readAsStringSync())
+              ?.group(1)
+              ?.trim()
+        : null;
+    if (own != version) {
+      problems.add('$manifest is $own, expected $version (lockstep)');
+    }
   }
   return problems;
 }
