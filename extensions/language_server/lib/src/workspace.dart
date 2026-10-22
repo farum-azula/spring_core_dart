@@ -34,7 +34,20 @@ const templateAnnotations = {
   'CachePut',
   'CacheEvict',
   'Query',
+  'Scheduled',
 };
+
+/// Annotation arguments that are one whole SpEL expression (no `#{}`),
+/// like the keys and conditions of the cache annotations. Also inside
+/// `@Caching(cacheable: [Cacheable(key: ...)])`.
+const spelArguments = {
+  'Cacheable': {'key', 'condition', 'unless'},
+  'CachePut': {'key', 'condition', 'unless'},
+  'CacheEvict': {'key', 'condition'},
+};
+
+/// SpEL variables that are always there in cache expressions.
+final _builtinSpelVariable = RegExp(r'^(root|this|result|[pa]\d+)$');
 
 /// Annotations whose string arguments are bean names.
 const _beanNameAnnotations = {
@@ -676,6 +689,9 @@ final class SpringWorkspace {
     if (annotation != null && pointcutAnnotations.contains(annotation)) {
       return _pointcutTarget(file, ref, offset);
     }
+    if (_isSpelArgument(ref.literal)) {
+      return _spelArgumentTarget(file, ref, offset);
+    }
     if (annotation != null && _beanNameAnnotations.contains(annotation)) {
       return _BeanTarget(beansNamed(value), "Bean '$value'");
     }
@@ -830,6 +846,70 @@ final class SpringWorkspace {
             'class `${info.name}`',
           ),
       ]);
+
+  // `key: '#isbn'` of a cache annotation: `#isbn` goes to the parameter.
+  _Target? _spelArgumentTarget(DartFile file, _StringRef ref, int offset) {
+    final expression = file.text.substring(ref.contentStart, ref.contentEnd);
+    final at = offset - ref.contentStart;
+    final List<Token> tokens;
+    try {
+      tokens = Tokenizer(expression).process();
+    } on Object {
+      return null;
+    }
+    for (var i = 1; i < tokens.length; i++) {
+      final token = tokens[i];
+      if (token.kind != TokenKind.identifier ||
+          tokens[i - 1].kind != TokenKind.hash ||
+          at < token.start - 1 ||
+          at > token.end) {
+        continue;
+      }
+      final name = expression.substring(token.start, token.end);
+      return _DeclarationTarget('Parameter `$name`', [
+        for (final parameter in _parametersOf(ref.literal))
+          if (parameter.name?.lexeme == name)
+            _Declaration(
+              file.path,
+              parameter.name!.offset,
+              name.length,
+              '`${parameter.toSource()}`',
+            ),
+      ]);
+    }
+    return null;
+  }
+
+  // Whether [literal] is the value of a SpEL argument ([spelArguments]) of
+  // an annotation or of a `Cacheable(...)` inside `@Caching`.
+  static bool _isSpelArgument(SimpleStringLiteral literal) {
+    final named = literal.parent;
+    if (named is! NamedArgument) {
+      return false;
+    }
+    final owner = named.parent?.parent;
+    final callee = switch (owner) {
+      final Annotation annotation => annotationName(annotation),
+      final InstanceCreationExpression creation =>
+        creation.constructorName.type.name.lexeme,
+      // `Cacheable(...)`, or `Cacheable.of(...)` (unresolved syntax).
+      final MethodInvocation invocation => switch (invocation.target) {
+        final SimpleIdentifier type => type.name,
+        _ => invocation.methodName.name,
+      },
+      _ => null,
+    };
+    return spelArguments[callee]?.contains(named.name.lexeme) ?? false;
+  }
+
+  // The parameters of the method [node] annotates.
+  static List<FormalParameter> _parametersOf(AstNode node) =>
+      node
+          .thisOrAncestorOfType<MethodDeclaration>()
+          ?.parameters
+          ?.parameters
+          .toList() ??
+      const [];
 
   static final _resourceLocation = RegExp(
     r'^(?:optional:)?(classpath\*?|file):(.+)$',
@@ -1102,6 +1182,13 @@ final class SpringWorkspace {
         }
       }
     }
+    for (final ref in _spelArgumentStrings(file)) {
+      _spelTokens(
+        file.text.substring(ref.contentStart, ref.contentEnd),
+        ref.contentStart,
+        add,
+      );
+    }
     for (final ref in _pointcutStrings(file)) {
       final base = ref.contentStart;
       final source = file.text.substring(ref.contentStart, ref.contentEnd);
@@ -1122,6 +1209,16 @@ final class SpringWorkspace {
       (a, b) => a.line != b.line ? a.line - b.line : a.column - b.column,
     );
     return tokens;
+  }
+
+  Iterable<_StringRef> _spelArgumentStrings(DartFile file) sync* {
+    final strings = <SimpleStringLiteral>[];
+    file.unit.accept(_StringCollector(strings));
+    for (final literal in strings) {
+      if (_isSpelArgument(literal)) {
+        yield _stringRef(literal);
+      }
+    }
   }
 
   Iterable<_StringRef> _pointcutStrings(DartFile file) sync* {
@@ -1146,13 +1243,21 @@ final class SpringWorkspace {
     if (expression.contains(r'${')) {
       return; // placeholders are resolved first; tokens would be wrong
     }
+    _spelTokens(expression, base + part.innerStart, add);
+  }
+
+  // Tokens of the SpEL [expression] that starts at [offset] in the file.
+  void _spelTokens(
+    String expression,
+    int offset,
+    void Function(int start, int end, String type) add,
+  ) {
     final List<Token> tokens;
     try {
       tokens = Tokenizer(expression).process();
     } on Object {
       return;
     }
-    final offset = base + part.innerStart;
     const keywords = {
       'true',
       'false',
@@ -1314,7 +1419,59 @@ final class SpringWorkspace {
       }
     }
     _pointcutProblems(file, problems);
+    _spelArgumentProblems(file, problems);
     return problems;
+  }
+
+  // Cache keys and conditions: SpEL syntax, and `#name` must be a
+  // parameter of the method (or `#root`, `#result`, `#p0`, `#a0`, ...).
+  void _spelArgumentProblems(DartFile file, List<Problem> problems) {
+    for (final ref in _spelArgumentStrings(file)) {
+      final expression = file.text.substring(ref.contentStart, ref.contentEnd);
+      final start = ref.contentStart;
+      try {
+        SpelExpressionParser().parseExpression(expression);
+      } on SpelParseException catch (error) {
+        final at = start + (error.position < 0 ? 0 : error.position);
+        problems.add(
+          Problem(
+            rangeOf(
+              file,
+              at.clamp(start, ref.contentEnd),
+              (at + 1).clamp(start, ref.contentEnd),
+            ),
+            'SpEL: ${error.message}',
+            error: true,
+          ),
+        );
+        continue;
+      } on Object {
+        continue;
+      }
+      final parameters = {
+        for (final parameter in _parametersOf(ref.literal))
+          ?parameter.name?.lexeme,
+      };
+      final tokens = Tokenizer(expression).process();
+      for (var i = 1; i < tokens.length; i++) {
+        final token = tokens[i];
+        if (token.kind != TokenKind.identifier ||
+            tokens[i - 1].kind != TokenKind.hash) {
+          continue;
+        }
+        final name = expression.substring(token.start, token.end);
+        if (parameters.contains(name) || _builtinSpelVariable.hasMatch(name)) {
+          continue;
+        }
+        problems.add(
+          Problem(
+            rangeOf(file, start + token.start - 1, start + token.end),
+            "Unknown variable '#$name'"
+            '${parameters.isEmpty ? '' : '; parameters: ${parameters.map((p) => '#$p').join(', ')}'}',
+          ),
+        );
+      }
+    }
   }
 
   // Pointcuts are parsed by the runtime's ExpressionPointcut, with the

@@ -41,6 +41,17 @@ Future<void> main(List<String> args) async {
       stdout.writeln('$package $version is already on pub.dev, skipped.');
       continue;
     }
+    // pub.dev accepts GitHub's token only for packages that exist already.
+    if (!dryRun && ref != null && !await _exists(package)) {
+      stderr.writeln(
+        '$package is not on pub.dev yet. A new package must be published '
+        'by hand once: `git checkout $ref`, then `dart pub publish` in '
+        '$package/, then enable automated publishing on its admin page '
+        '(repository farum-azula/spring_core_dart, tag pattern '
+        'v{{version}}) and re-run this job.',
+      );
+      exit(1);
+    }
     stdout.writeln(
       '\n=== ${dryRun ? 'Validating' : 'Publishing'} $package $version ===',
     );
@@ -69,6 +80,22 @@ Future<bool> _isPublished(String package, String version) async {
   } on Object catch (error) {
     stderr.writeln('Could not ask pub.dev about $package: $error');
     return false;
+  } finally {
+    client.close();
+  }
+}
+
+Future<bool> _exists(String package) async {
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(
+      Uri.https('pub.dev', '/api/packages/$package'),
+    );
+    final response = await request.close();
+    await response.drain<void>();
+    return response.statusCode != 404;
+  } on Object {
+    return true; // unknown: let `dart pub publish` report the real error
   } finally {
     client.close();
   }

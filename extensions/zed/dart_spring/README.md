@@ -24,6 +24,7 @@ to those of the Dart language server:
 | `classpath:legacy.properties` (in `@PropertySource`, `@Value`, `getResource`), `file:config/app.properties` | the file: `lib/resources/` of the package (`test/resources/` first in tests), `file:` relative to the package |
 | in a pointcut (`@Pointcut`, `@Before`, `@Around`, ...): a type in `within(...)` / `execution(...)`, `@annotation(Timed)` | the class (wildcards like `*Service` give every match) |
 | `pricing()`, `AuditAspect.pricing()` in a pointcut | the `@Pointcut` method |
+| `#isbn` in a cache key or condition: `@Cacheable('books', key: '#isbn')` | the method parameter |
 | `bean(order*)`, the method of `execution(* OrderService.place*(..))` | the matching beans, methods |
 
 Navigation puts the cursor at the target without selecting it.
@@ -37,13 +38,18 @@ resolves to and the expression of a named pointcut.
 - invalid SpEL (`#{1 +}`) — an error at the position the parser reports;
 - invalid pointcuts — checked by the runtime's own parser, with the
   project's `@Pointcut` methods: an unknown `ordrs()` is underlined;
+- cache keys and conditions (`key:`, `condition:`, `unless:` of
+  `@Cacheable`, `@CachePut`, `@CacheEvict`, also inside `@Caching`):
+  SpEL syntax, and `#isbm` that is not a parameter (nor `#root`,
+  `#result`, `#p0`) is a warning listing the parameters;
 - `${key}` without a default that no properties file defines — a warning;
 - `@Value('${key}')` in a normal (non-raw) string — an error: in Dart that
   is string interpolation; write `r'${key}'`.
 
 **SpEL, placeholder and pointcut highlighting** inside annotation
 strings: keywords, operators, numbers, strings, `#variables`, `@beans`,
-methods, properties, `T(Types)` and placeholder keys; in pointcuts the
+methods, properties, `T(Types)` and placeholder keys (also in `@Scheduled`
+cron and interval strings, and the plain-SpEL cache keys); in pointcuts the
 designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
 types, annotations, bean patterns, method names and named pointcuts
 (needs the `semantic_tokens` setting below).

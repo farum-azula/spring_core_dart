@@ -247,6 +247,11 @@ class ModuleEmitter {
             for (final listener in bean.listeners)
               _listener(bean.type, listener, element),
           ]),
+        if (bean.annotatedMethods.isNotEmpty)
+          'annotatedMethods': literalList([
+            for (final method in bean.annotatedMethods)
+              _annotatedMethod(bean.type, method, element),
+          ]),
         if (bean.proxy case final proxy?)
           'aopProxy': _proxyFactory(proxy, element),
         if (bean.aspect case final aspect?)
@@ -410,6 +415,37 @@ class ModuleEmitter {
     );
   }
 
+  // `BeanMethod<T>('name', invoke: ..., annotations: [...])` for a method
+  // with a `@BeanMethodAnnotation()` annotation.
+  Expression _annotatedMethod(
+    InterfaceType beanType,
+    AnnotatedMethodModel method,
+    Element element,
+  ) => _spring('BeanMethod').newInstance(
+    [_str(method.name)],
+    {
+      if (method.parameterTypes.isNotEmpty)
+        'parameterTypes': literalConstList([
+          for (final type in method.parameterTypes)
+            type == null ? refer('Object') : _type(type, element),
+        ]),
+      'invoke': _closure(
+        ['bean', 'arguments'],
+        refer('Function')
+            .property('apply')
+            .call([refer('bean').property(method.name), refer('arguments')])
+            .code,
+        lambda: true,
+      ),
+      if (method.annotations.isNotEmpty)
+        'annotations': literalConstList([
+          for (final annotation in method.annotations)
+            _constant(annotation, element),
+        ]),
+    },
+    [_type(beanType, element)],
+  );
+
   // -----------------------------------------------------------------------
   // AOP
   // -----------------------------------------------------------------------
@@ -517,6 +553,10 @@ class ModuleEmitter {
       'parameterTypes': literalConstList([
         for (final parameter in member.parameters)
           _str(_simpleName(parameter.type)),
+      ]),
+    if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
+      'parameterNames': literalConstList([
+        for (final parameter in member.parameters) _str(parameter.name),
       ]),
     if (member.annotations.isNotEmpty)
       'annotations': literalConstList([

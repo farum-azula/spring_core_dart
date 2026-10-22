@@ -16,6 +16,8 @@ separate library.
 | `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. No dependencies. |
 | `spring_boot_dart` | [`spring_boot_dart/`](spring_boot_dart/README.md) | Spring Boot on top of the core: `@SpringBootApplication` on `main`, `SpringApplication.run`, `@ConfigurationProperties`, auto-configuration conditions, runners, failure reports. A separate package (depends only on the core) so it can move to its own repository. |
 | `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Logging backend: console with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` (filters, streams, export) for an in-app log screen. Add the dependency, nothing else. |
+| `spring_boot_starter_scheduling` | [`spring_boot_starter_scheduling/`](spring_boot_starter_scheduling/README.md) | `@Scheduled` methods with a fixed rate, a fixed delay or a cron expression (placeholders from properties), a `TaskScheduler` bean; tasks stop with the context. Add the dependency, nothing else. |
+| `spring_boot_starter_cache` | [`spring_boot_starter_cache/`](spring_boot_starter_cache/README.md) | `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching` on bean methods (sync and async) with SpEL keys and conditions; an in-memory `CacheManager` with TTL and size limits from `spring.cache.*`. |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
@@ -709,6 +711,34 @@ With Spring Boot, levels come from `logging.level.*` properties.
 `BeanModule`s, `registerSingleton`, `@Configurable` + `autowireBean` for
 objects created elsewhere (e.g. Flutter `State`).
 
+Your own method annotations: mark the annotation class with
+`@BeanMethodAnnotation()` and the generator lists every bean method that
+carries it in `BeanDefinition.annotatedMethods`, with its annotations and a
+closure that calls it — what Spring does with reflection
+(`MethodIntrospector`). This is how `@Scheduled` finds its methods:
+
+```dart
+@BeanMethodAnnotation()
+class Poll {
+  const Poll(this.every);
+  final Duration every;
+}
+
+@Component()
+class Inbox {
+  @Poll(Duration(seconds: 30))
+  void check() { ... }
+}
+
+// In a BeanPostProcessor (with BeanFactoryAware) or after refresh:
+for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
+  final poll = method.annotations.whereType<Poll>().firstOrNull;
+  if (poll != null) {
+    Timer.periodic(poll.every, (_) => method.invoke(bean, const []));
+  }
+}
+```
+
 ## Differences from Spring
 
 | Spring | Here | Why |
@@ -838,13 +868,13 @@ and the order of `spring.profiles.include`.
 Starters (each a separate package, discovered by the generator like
 `spring_boot_starter_logging`):
 
-- **Scheduling** (`spring_boot_starter_scheduling`): `@EnableScheduling`,
-  `@Scheduled(fixedRate: ..., fixedDelay: ..., initialDelay: ...)` and cron
-  expressions, stopped with the context; `@Async` methods.
-- **Cache** (`spring_boot_starter_cache`): `@Cacheable`, `@CachePut`,
-  `@CacheEvict`, `@Caching` over the existing AOP proxies; `CacheManager`
-  with an in-memory default, `spring.cache.*` properties (TTL, size),
-  pluggable stores.
+- **`@Async`** (in `spring_boot_starter_scheduling`): methods that return
+  at once and run later, on a separate isolate for CPU-heavy work, with a
+  configurable executor. (`@Scheduled` itself is done.)
+- **Cache stores** (for `spring_boot_starter_cache`): persistent stores
+  (SQLite, files, `shared_preferences` in Flutter) behind the same `Cache`
+  interface, cache statistics. (The annotations and the in-memory
+  `CacheManager` are done.)
 - **Retry**: `@Retryable(maxAttempts:, backoff:)` / `@Recover`, like
   spring-retry, on the AOP proxies.
 - **HTTP client** (`spring_boot_starter_http`): a configured `http.Client`
@@ -1100,8 +1130,9 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 382 (runtime), 88 (generator), 19 (Spring Boot), 29 (logging
-starter), 25 (test starter), 16 end-to-end over the generated code of the
-example (tour and Spring Boot app). Generated `*.beans.dart` files are committed. CI
+Tests: 382 (runtime), 92 (generator), 19 (Spring Boot), 29 (logging
+starter), 62 (scheduling starter), 40 (cache starter), 25 (test starter),
+18 end-to-end over the generated code of the example (tour and Spring
+Boot app), 29 (language server). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

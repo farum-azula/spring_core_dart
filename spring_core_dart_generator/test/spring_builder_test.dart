@@ -1143,7 +1143,7 @@ class Impl implements Api {
       expect(
         output,
         _has(
-          "_i2.MethodSignature(name: r'plain', declaringType: r'Api', targetType: r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', parameterTypes: [r'int', r'int', r'String'], annotations: [_i1.Note()], annotationTypes: [r'Note'], targetTypes: [r'Impl', r'Api'], targetAnnotations: [_i2.Service(), _i1.Note()], targetAnnotationTypes: [r'Service', r'Note'])",
+          "_i2.MethodSignature(name: r'plain', declaringType: r'Api', targetType: r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', parameterTypes: [r'int', r'int', r'String'], parameterNames: [r'a', r'b', r'c'], annotations: [_i1.Note()], annotationTypes: [r'Note'], targetTypes: [r'Impl', r'Api'], targetAnnotations: [_i2.Service(), _i1.Note()], targetAnnotationTypes: [r'Service', r'Note'])",
         ),
       );
       expect(output, _has('kind: _i2.MemberKind.getter'));
@@ -1509,7 +1509,14 @@ class DbProps { String url = ''; }
           output,
           contains('autoConfigurations:[_i7.springBootAutoConfiguration,'),
         );
-        expect(output, contains('.springBootStarterLoggingAutoConfiguration]'));
+        // Every starter of the workspace is discovered.
+        for (final starter in [
+          'springBootStarterLoggingAutoConfiguration',
+          'springBootStarterSchedulingAutoConfiguration',
+          'springBootStarterCacheAutoConfiguration',
+        ]) {
+          expect(output, contains('.$starter'));
+        }
         expect(
           output,
           contains(
@@ -1811,5 +1818,126 @@ import 'package:spring_core_dart/spring_core_dart.dart';
         expect(result.errors.join(), contains('must be public'), reason: name);
       }
     });
+  });
+
+  group('@BeanMethodAnnotation', () {
+    const source = r"""
+@BeanMethodAnnotation()
+class Every {
+  const Every(this.period, {this.name});
+  final Duration period;
+  final String? name;
+}
+
+class Plain {
+  const Plain();
+}
+
+abstract interface class Job {
+  @Every(Duration(minutes: 1))
+  void tick();
+}
+
+@Component()
+class Poller implements Job {
+  @override
+  void tick() {}
+
+  @Every(Duration(seconds: 30), name: 'inbox')
+  @Plain()
+  Future<void> check(int attempt, [String? label]) async {}
+
+  @Plain()
+  void notMarked() {}
+}
+
+class Report {
+  @Every(Duration(hours: 1))
+  void hourly() {}
+}
+
+@Configuration()
+class Config {
+  @Bean()
+  Report report() => Report();
+}
+""";
+
+    test('marked methods become BeanDefinition.annotatedMethods', () async {
+      final output = await _generate(source);
+      expect(
+        output,
+        _has(
+          "annotatedMethods: [_i1.BeanMethod<_i2.Poller>(r'check', "
+          'parameterTypes: const [int, String], '
+          'invoke: (bean, arguments) => Function.apply(bean.check, arguments), '
+          'annotations: const [_i2.Every(Duration(seconds: 30), name: r\'inbox\'), _i2.Plain()])',
+        ),
+      );
+      // Declared on the interface, implemented by the bean.
+      expect(
+        output,
+        _has(
+          "_i1.BeanMethod<_i2.Poller>(r'tick', "
+          'invoke: (bean, arguments) => Function.apply(bean.tick, arguments), '
+          'annotations: const [_i2.Every(Duration(minutes: 1))])',
+        ),
+      );
+      expect(output, isNot(contains('notMarked')));
+      // The return type of a @Bean method is scanned too.
+      expect(
+        output,
+        _has(
+          "annotatedMethods: [_i1.BeanMethod<_i2.Report>(r'hourly', "
+          'invoke: (bean, arguments) => Function.apply(bean.hourly, arguments), '
+          'annotations: const [_i2.Every(Duration(hours: 1))])]',
+        ),
+      );
+    });
+
+    test('the generated code compiles', () async {
+      expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
+    });
+
+    test('private, static and required named methods are rejected', () async {
+      const every = r"""
+@BeanMethodAnnotation()
+class Every {
+  const Every();
+}
+""";
+      await _expectError(
+        '$every@Component() class A { @Every() void _run() {} }',
+        'must be a public instance method',
+      );
+      await _expectError(
+        '$every@Component() class A { @Every() static void run() {} }',
+        'must be a public instance method',
+      );
+      await _expectError(
+        '$every@Component() class A { @Every() void run({required int n}) {} }',
+        'must not have required named parameters',
+      );
+    });
+  });
+
+  test('proxy signatures carry the parameter names', () async {
+    final output = await _generate(r"""
+class Timed {
+  const Timed();
+}
+
+@Service()
+class Books {
+  @Timed()
+  String find(String isbn, {int page = 0}) => isbn;
+}
+""", proxyMode: ProxyMode.all);
+    expect(
+      output,
+      _has(
+        "parameterTypes: [r'String', r'int'], parameterNames: [r'isbn', r'page']",
+      ),
+    );
   });
 }

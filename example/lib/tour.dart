@@ -4,15 +4,21 @@
 library;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
+import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
+    show ScheduledAnnotationBeanPostProcessor;
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/external/legacy_config.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
 import 'package:spring_core_dart_example/src/aop/self_invocation.dart';
+import 'package:spring_core_dart_example/src/cache/price_list.dart';
 import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
 import 'package:spring_core_dart_example/src/catalog/welcome_letter.dart';
 import 'package:spring_core_dart_example/src/config/shop_config.dart';
 import 'package:spring_core_dart_example/src/events/orders.dart';
+import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
 import 'package:spring_core_dart_example/src/extension/extension_points.dart';
 import 'package:spring_core_dart_example/src/payments/payments.dart';
 import 'package:spring_core_dart_example/src/tour_log.dart';
@@ -32,7 +38,14 @@ ConfigurableApplicationContext startShop(
 }) {
   // Created first: the module registers the embedded lib/resources/ files
   // (classpath:) that the config files below are read from.
-  final modules = [shopBeans, springBootAutoConfiguration];
+  // Starters' auto-configuration is listed by hand here; bin/shop.dart
+  // (@SpringBootApplication) finds it by itself.
+  final modules = [
+    shopBeans,
+    springBootAutoConfiguration,
+    springBootStarterSchedulingAutoConfiguration,
+    springBootStarterCacheAutoConfiguration,
+  ];
   final environment = StandardEnvironment(systemEnvironment: systemEnvironment)
     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
   ConfigDataEnvironment(environment).processAndApplySync();
@@ -56,6 +69,8 @@ const tourSections = [
   'spel',
   'validation',
   'aop',
+  'scheduling',
+  'cache',
   'hierarchy',
   'failures',
   'shutdown',
@@ -109,6 +124,8 @@ class _Tour {
     'spel' => spel(),
     'validation' => validation(),
     'aop' => await aop(),
+    'scheduling' => await scheduling(),
+    'cache' => await cache(),
     'hierarchy' => hierarchy(),
     'failures' => failures(),
     'shutdown' => shutdown(),
@@ -426,6 +443,53 @@ class _Tour {
     show(
       'self-invocation through @Lazy self: timed calls',
       timed(() => basket.total(['1', '2'])),
+    );
+  }
+
+  // @Scheduled methods (spring_boot_starter_scheduling).
+  Future<void> scheduling() async {
+    // Runs every 20ms; wait (up to 5s on a busy machine) for the first run.
+    final jobs = context.getBean<StockJobs>();
+    final waited = Stopwatch()..start();
+    while (jobs.refreshes == 0 && waited.elapsed < const Duration(seconds: 5)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    show(
+      'stock refreshed (fixedDelay 20ms from properties)',
+      jobs.refreshes > 0,
+    );
+    final tasks = context
+        .getBean<ScheduledAnnotationBeanPostProcessor>()
+        .scheduledTasks;
+    show('scheduled tasks', [for (final task in tasks) task.name]..sort());
+    final nightly = tasks.firstWhere((t) => t.name.endsWith('nightlyReport'));
+    final next = nightly.nextExecution!;
+    show(
+      'next nightly report (cron 0 0 3 * * *)',
+      '${next.hour.toString().padLeft(2, '0')}:'
+          '${next.minute.toString().padLeft(2, '0')}',
+    );
+  }
+
+  // @Cacheable / @CacheEvict (spring_boot_starter_cache).
+  Future<void> cache() async {
+    final prices = context.getBean<PriceList>();
+    prices
+      ..price('1')
+      ..price('1');
+    show('price twice, real lookups', prices.lookups);
+    prices
+      ..changePrice('1')
+      ..price('1');
+    show('after @CacheEvict, real lookups', prices.lookups);
+    prices.lookups = 0;
+    await prices.cover('1');
+    await prices.cover('1');
+    await prices.cover('2');
+    await prices.cover('2');
+    show(
+      'async covers: real lookups (null not stored, unless)',
+      prices.lookups,
     );
   }
 

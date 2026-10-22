@@ -13,6 +13,8 @@ const family = [
   'spring_core_dart_generator',
   'spring_boot_dart',
   'spring_boot_starter_logging',
+  'spring_boot_starter_scheduling',
+  'spring_boot_starter_cache',
   'spring_boot_starter_test',
 ];
 

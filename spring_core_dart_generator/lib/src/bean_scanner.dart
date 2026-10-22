@@ -34,6 +34,7 @@ final _import = _spring('Import');
 final _propertySource = _spring('PropertySource');
 final _configurable = _spring('Configurable');
 final _eventListener = _spring('EventListener');
+final _beanMethodAnnotation = _spring('BeanMethodAnnotation');
 final _factoryBean = _spring('FactoryBean');
 final _applicationListener = _spring('ApplicationListener');
 final _objectProvider = _spring('ObjectProvider');
@@ -397,6 +398,7 @@ class BeanScanner {
       postConstruct: _lifecycleMethods(type, _postConstruct, superFirst: true),
       preDestroy: _lifecycleMethods(type, _preDestroy, superFirst: false),
       listeners: _listeners(element),
+      annotatedMethods: _annotatedMethods(type),
       aspect: _aspectModel(element),
       proxy: _isProxyCandidate(element)
           ? _proxyModel(type, '_\$${className}Proxy', implementSelf: true)
@@ -627,6 +629,7 @@ class BeanScanner {
         final ClassElement element => _listeners(element),
         _ => const [],
       },
+      annotatedMethods: _annotatedMethods(returnType),
       initMethod: initMethod == null
           ? null
           : _requireNoArgMethod(returnType, initMethod, method, 'initMethod'),
@@ -1957,6 +1960,61 @@ class BeanScanner {
       order: _orderOf(method),
       condition: condition,
     );
+  }
+
+  // ---------------------------------------------------------------------
+  // Annotated methods (`@BeanMethodAnnotation`)
+  // ---------------------------------------------------------------------
+
+  // Methods of the class and its supertypes carrying an annotation whose
+  // class is marked `@BeanMethodAnnotation()` (subclass declarations win,
+  // one per method name).
+  List<AnnotatedMethodModel> _annotatedMethods(InterfaceType type) {
+    final result = <String, AnnotatedMethodModel>{};
+    for (final element in _hierarchy(type)) {
+      for (final method in element.methods) {
+        final name = method.name;
+        if (name == null || result.containsKey(name)) {
+          continue;
+        }
+        final marked = [
+          for (final annotation in method.metadata.annotations)
+            if (annotation.computeConstantValue()?.type
+                case final InterfaceType annotationType
+                when _beanMethodAnnotation.hasAnnotationOf(
+                  annotationType.element,
+                ))
+              annotationType.element.name,
+        ];
+        if (marked.isEmpty) {
+          continue;
+        }
+        final what = '@${marked.first} method ${element.name}.$name';
+        if (method.isStatic || method.isPrivate) {
+          _fail('$what must be a public instance method.', method);
+        }
+        if (method.formalParameters.any((p) => p.isNamed && p.isRequired)) {
+          _fail('$what must not have required named parameters.', method);
+        }
+        result[name] = AnnotatedMethodModel(
+          name: name,
+          parameterTypes: [
+            for (final parameter in method.formalParameters)
+              if (parameter.isPositional)
+                switch (parameter.type) {
+                  final InterfaceType t => _requireInterfaceType(
+                    t,
+                    method,
+                    stripNullable: true,
+                  ),
+                  _ => null,
+                },
+          ],
+          annotations: _userAnnotations(method),
+        );
+      }
+    }
+    return result.values.toList();
   }
 
   // ---------------------------------------------------------------------

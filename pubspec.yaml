@@ -11,6 +11,8 @@ workspace:
   - spring_boot_dart
   - spring_boot_starter_test
   - spring_boot_starter_logging
+  - spring_boot_starter_scheduling
+  - spring_boot_starter_cache
   - example
   - extensions/language_server
 

@@ -347,6 +347,76 @@ class AuditAspect {
     });
   });
 
+  group('cache expressions and @Scheduled', () {
+    const books = r'''
+@Service()
+class Books {
+  @Cacheable('books', key: '#isbn', condition: '#isbn.length > 3', unless: '#result == null')
+  String? find(String isbn, {int page = 0}) => isbn;
+
+  @Caching(evict: [CacheEvict('books', key: '#isbm')])
+  void remove(String isbn) {}
+
+  @CachePut('books', key: '#p0 + ')
+  String save(String isbn) => isbn;
+
+  @Cacheable.of(cacheNames: ['books'], key: '#code')
+  @Caching(put: [CachePut.of(key: '#cod')])
+  String byCode(String code) => code;
+
+  @Scheduled(cron: r'${jobs.cron:0 0 * * * *}', fixedDelayString: r'${jobs.delay}')
+  void refresh() {}
+}
+''';
+    late String path;
+
+    setUp(() {
+      path = '${root.path}/lib/src/books.dart';
+      File(path).writeAsStringSync(books);
+      workspace.refresh(force: true);
+    });
+
+    test('#parameter goes to the parameter', () {
+      final at = books.indexOf("'#isbn'") + 3;
+      final targets = workspace.definition(path, at);
+      expect(targets, hasLength(1));
+      expect(targets.single.startLine, line('String? find', books));
+      expect(
+        targets.single.startColumn,
+        books.split('\n')[line('String? find', books)].indexOf('isbn,'),
+      );
+      expect(workspace.hover(path, at), contains('`String isbn`'));
+    });
+
+    test('highlighting, syntax errors and unknown variables', () {
+      final tokens = workspace.semanticTokens(path);
+      final keyLine = line("@Cacheable('books'", books);
+      final keyColumn = books.split('\n')[keyLine].indexOf('#isbn');
+      final variable = tokens.firstWhere(
+        (t) => t.line == keyLine && t.column == keyColumn,
+      );
+      expect(semanticTokenTypes[variable.type], 'variable');
+      expect(variable.length, '#isbn'.length);
+
+      final problems = workspace.problems(path);
+      final messages = [for (final problem in problems) problem.message];
+      expect(messages, contains("Unknown variable '#isbm'; parameters: #isbn"));
+      expect(messages.where((m) => m.startsWith('SpEL:')), hasLength(1));
+      // #result, #p0 and real parameters are fine; ${jobs.delay} has no
+      // default and no properties file defines it.
+      // `.of(...)` constructors are recognised too: only `#cod` is wrong.
+      expect(messages, contains("Unknown variable '#cod'; parameters: #code"));
+      expect(
+        messages.where((m) => m.contains('Unknown variable')),
+        hasLength(2),
+      );
+      expect(
+        messages,
+        contains("Cannot resolve property 'jobs.delay' in any properties file"),
+      );
+    });
+  });
+
   group('checks and highlighting', () {
     test('unknown keys without default and invalid SpEL are reported', () {
       final problems = workspace.problems(shopPath);

@@ -192,6 +192,20 @@ void main() {
     }
   });
 
+  test('scheduling', () {
+    expectLine('stock refreshed (fixedDelay 20ms from properties): true');
+    expectLine(
+      'scheduled tasks: [StockJobs.nightlyReport, StockJobs.refreshStock]',
+    );
+    expectLine('next nightly report (cron 0 0 3 * * *): 03:00');
+  });
+
+  test('cache', () {
+    expectLine('price twice, real lookups: 1');
+    expectLine('after @CacheEvict, real lookups: 2');
+    expectLine('async covers: real lookups (null not stored, unless): 3');
+  });
+
   test('hierarchy and startup failures', () {
     expectLine('child bean using a parent bean: hello from the parent context');
     expectLine('event propagated to the parent: [parent heard order 42]');

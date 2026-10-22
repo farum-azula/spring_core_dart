@@ -666,6 +666,34 @@ With Spring Boot, levels come from `logging.level.*` properties.
 `BeanModule`s, `registerSingleton`, `@Configurable` + `autowireBean` for
 objects created elsewhere (e.g. Flutter `State`).
 
+Your own method annotations: mark the annotation class with
+`@BeanMethodAnnotation()` and the generator lists every bean method that
+carries it in `BeanDefinition.annotatedMethods`, with its annotations and a
+closure that calls it — what Spring does with reflection
+(`MethodIntrospector`). This is how `@Scheduled` finds its methods:
+
+```dart
+@BeanMethodAnnotation()
+class Poll {
+  const Poll(this.every);
+  final Duration every;
+}
+
+@Component()
+class Inbox {
+  @Poll(Duration(seconds: 30))
+  void check() { ... }
+}
+
+// In a BeanPostProcessor (with BeanFactoryAware) or after refresh:
+for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
+  final poll = method.annotations.whereType<Poll>().firstOrNull;
+  if (poll != null) {
+    Timer.periodic(poll.every, (_) => method.invoke(bean, const []));
+  }
+}
+```
+
 ## Differences from Spring
 
 | Spring | Here | Why |

@@ -194,11 +194,17 @@ final class BeanInfo {
       '${profiles.isEmpty ? '' : ' @Profile($profiles)'}';
 }
 
-/// The name of an annotation (`Service` for `@Service()` or `@s.Service()`).
+/// The name of an annotation (`Service` for `@Service()` or `@s.Service()`,
+/// `Cacheable` for `@Cacheable.of()`). Without resolution `A.b` is
+/// ambiguous; a lower-case last part is a named constructor, not a type.
 String annotationName(Annotation annotation) => switch (annotation.name) {
-  PrefixedIdentifier(:final identifier) => identifier.name,
+  PrefixedIdentifier(:final prefix, :final identifier) =>
+    _isTypeName(identifier.name) ? identifier.name : prefix.name,
   final Identifier name => name.name,
 };
+
+bool _isTypeName(String name) =>
+    name.isNotEmpty && name[0].toUpperCase() == name[0] && name[0] != '_';
 
 /// The string value of an expression, if it is a plain string literal.
 String? stringValue(Expression? expression) => switch (expression) {
