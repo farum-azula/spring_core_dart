@@ -12,14 +12,21 @@ const family = [
   'spring_core_dart',
   'spring_core_dart_generator',
   'spring_boot_dart',
+  'spring_web_dart',
   'spring_boot_starter_logging',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
+  'spring_boot_starter_feign',
+  'spring_boot_starter_websocket',
   'spring_boot_starter_test',
 ];
 
 /// Packages that only depend on the family (not published).
-const dependents = ['example', 'extensions/language_server'];
+const dependents = [
+  'example',
+  'example/spring_boot_feign',
+  'extensions/language_server',
+];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';
 

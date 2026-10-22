@@ -223,6 +223,26 @@ void main() {
     );
   });
 
+  test('feign', () {
+    expectLine('find (GET /books/{isbn}): Dune by Frank Herbert');
+    expectLine('find again (@Cacheable on the client): requests sent: 0');
+    expectLine('search (GET /books?q=): [Dune Messiah]');
+    expectLine(
+      'create (POST, ResponseEntity): 201 /books/978-2 Children of Dune',
+    );
+    expectLine('find unknown → FeignNotFound: 404');
+    expectLine('motd (server error → fallback): motd offline, try later');
+  });
+
+  test('streams', () {
+    expectLine(
+      'EventStream<StockEvent> (reconnects, 204 ends it): '
+      '[978-0=4, 978-1=0, 978-0=3]',
+    );
+    expectLine('.events: id, event, retry: 1 stock 10 ms');
+    expectLine('@WebSocketClient reply: support: re: where is my order?');
+  });
+
   test('hierarchy and startup failures', () {
     expectLine('child bean using a parent bean: hello from the parent context');
     expectLine('event propagated to the parent: [parent heard order 42]');

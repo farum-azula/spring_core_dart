@@ -18,8 +18,12 @@ separate library.
 | `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Logging backend: console with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` (filters, streams, export) for an in-app log screen. Add the dependency, nothing else. |
 | `spring_boot_starter_scheduling` | [`spring_boot_starter_scheduling/`](spring_boot_starter_scheduling/README.md) | `@Scheduled` methods with a fixed rate, a fixed delay or a cron expression (placeholders from properties), a `TaskScheduler` bean; tasks stop with the context. Add the dependency, nothing else. |
 | `spring_boot_starter_cache` | [`spring_boot_starter_cache/`](spring_boot_starter_cache/README.md) | `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching` on bean methods (sync and async) with SpEL keys and conditions; an in-memory `CacheManager` with TTL and size limits from `spring.cache.*`. |
+| `spring_web_dart` | [`spring_web_dart/`](spring_web_dart/README.md) | Spring Web basics: `@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`, `@RequestBody`, `ResponseEntity`, `HttpHeaders`, HTTP and WebSocket client transports (`dart:io`; `fetch` and `WebSocket` on the web), server-sent events as `EventStream<T>` (also the return type of Feign methods), and mocks for tests. |
+| `spring_boot_starter_feign` | [`spring_boot_starter_feign/`](spring_boot_starter_feign/README.md) | Feign clients: an abstract class with `@FeignClient` and mapping annotations becomes an injectable HTTP client; JSON via `ObjectMapper`, interceptors, retries, fallbacks, `spring.cloud.openfeign.client.config.*`. |
+| `spring_boot_starter_websocket` | [`spring_boot_starter_websocket/`](spring_boot_starter_websocket/README.md) | Declarative WebSocket clients: an abstract class with `@WebSocketClient`, `@OnMessage` (`Stream<T>`) and `@SendMessage` methods becomes an injectable socket; JSON via `ObjectMapper`, one shared connection opened on demand, reconnection with backoff, handshake interceptors. Spring has no declarative WebSocket client: this follows the `@FeignClient` style. |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
+| `spring_boot_feign_example` | [`example/spring_boot_feign/`](example/spring_boot_feign/README.md) | A small Spring Boot app against real public servers: a Feign client (REST, JSONPlaceholder), server-sent events (Wikimedia, `EventStream<T>`) and a `@WebSocketClient` (an echo server): run it with `dart run bin/main.dart`. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
 Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_dart.dart` for all):
@@ -809,6 +813,36 @@ With Spring Boot, levels come from `logging.level.*` properties.
 `BeanModule`s, `registerSingleton`, `@Configurable` + `autowireBean` for
 objects created elsewhere (e.g. Flutter `State`).
 
+Your own interface implementations: mark an annotation class with
+`@InterfaceProxy()` and every abstract class carrying that annotation
+becomes a bean whose implementation the generator writes — each method hands
+the call, with its annotations, parameter names and types, to an
+`InvocationHandler` that an `InvocationHandlerFactory` bean creates (Java's
+dynamic proxies, without reflection). This is how `@FeignClient` works, and
+how Spring Data repositories will:
+
+```dart
+@InterfaceProxy()
+class Remote {
+  const Remote(this.name);
+  final String name;
+}
+
+@Remote('greetings')
+abstract interface class Greeter {
+  Future<String> greet(String name);
+}
+
+final class RemoteHandlers implements InvocationHandlerFactory {
+  @override
+  bool supports(InterfaceMetadata<Object> metadata) =>
+      metadata.annotation<Remote>() != null;
+
+  @override
+  InvocationHandler create(InterfaceMetadata<Object> metadata) => MyHandler(metadata);
+}
+```
+
 Your own method annotations: mark the annotation class with
 `@BeanMethodAnnotation()` and the generator lists every bean method that
 carries it in `BeanDefinition.annotatedMethods`, with its annotations and a
@@ -980,49 +1014,20 @@ Starters (each a separate package, discovered by the generator like
   `CacheManager` are done.)
 - **Retry**: `@Retryable(maxAttempts:, backoff:)` / `@Recover`, like
   spring-retry, on the AOP proxies.
-- **HTTP client** (`spring_boot_starter_http`): a configured `http.Client`
-  or `Dio` bean from `spring.http.*` (base URL, timeouts, interceptors),
-  declarative clients like Spring's `@HttpExchange`.
-- **Feign clients** (`spring_boot_starter_feign`, like Spring Cloud
-  OpenFeign): an annotated interface becomes an injectable bean whose
-  implementation the generator writes, so wrong paths, missing
-  `@PathVariable`s or unsupported types are build errors.
-  ```dart
-  @FeignClient('catalog', url: r'${catalog.url}')
-  abstract interface class CatalogClient {
-    @GetMapping('/books/{isbn}')
-    Future<Book> find(@PathVariable('isbn') String isbn);
-
-    @GetMapping('/books')
-    Future<List<Book>> search(
-      @RequestParam('q') String query, {
-      @RequestParam('page') int page = 0,
-    });
-
-    @PostMapping('/books')
-    Future<Book> create(
-      @RequestBody() Book book,
-      @RequestHeader('X-Request-Id') String requestId,
-    );
-  }
-
-  @Service()
-  class Shop {
-    Shop(this.catalog); // injected like any bean
-    final CatalogClient catalog;
-  }
-  ```
-  - Bodies and results through the core's `ObjectMapper` (`@Introspected`
-    models, or classes with their own `fromJson` / `toJson`), pluggable
-    encoders and decoders.
-  - Per-client configuration from properties, like
-    `spring.cloud.openfeign.client.config.<name>.*`: URL, connect/read
-    timeouts, default headers, logger level (through `SpringLog`).
-  - Beans for request interceptors (auth tokens), an `ErrorDecoder`
-    (HTTP status to exceptions), a `Retryer`, and a `fallback` class used
-    when the call fails (with the retry and circuit-breaker starters).
-  - `@SpringBootTest` support: replace a client with `BeanOverride`, or
-    point it at a local stub server through properties.
+- **HTTP client** (`spring_boot_starter_http`): a `RestClient`-style
+  fluent client on the `HttpTransport` of `spring_web_dart`, configured from
+  `spring.http.*` (base URL, timeouts, interceptors), and `@HttpExchange`
+  interfaces next to `@FeignClient`.
+- **Feign, next steps** (for `spring_boot_starter_feign`, the clients are
+  done): form and multipart bodies, `@SpringQueryMap`, a `FallbackFactory`
+  that sees the error, circuit breaker integration, per-client connection
+  timeouts, and editor checks of `{variables}` against
+  `@PathVariable` parameters in the Zed extension.
+- **WebSocket, next steps** (for `spring_boot_starter_websocket`, the
+  declarative clients are done): STOMP (`@SubscribeMapping`-style
+  destinations on one connection), a connection state stream for UIs,
+  message filters by a JSON field, and the server side together with the
+  coming web server starter.
 - **Data** (`spring_boot_starter_data_*`, like Spring Data JPA/JDBC):
   entities and repositories generated at build time, no reflection.
   `@Entity` classes get generated row mapping; repository interfaces get a
@@ -1234,9 +1239,9 @@ The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
 analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 
-Tests: 395 (runtime), 94 (generator), 21 (Spring Boot), 29 (logging
-starter), 62 (scheduling starter), 43 (cache starter), 25 (test starter),
-19 end-to-end over the generated code of the example (tour and Spring
-Boot app), 29 (language server). Generated `*.beans.dart` files are committed. CI
+Tests: 398 (runtime), 97 (generator), 21 (Spring Boot), 14 (web), 29
+(logging starter), 62 (scheduling starter), 43 (cache starter), 13 (Feign
+starter), 25 (test starter), 20 end-to-end over the generated code of the
+example (tour and Spring Boot app), 29 (language server). Generated `*.beans.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

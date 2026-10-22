@@ -28,6 +28,8 @@ dart test                        # asserts the tour's output
 | `scheduling` | `@Scheduled` with a fixed delay from properties (`${shop.stock-refresh}`) and a cron expression, the registered tasks and the next cron run (`spring_boot_starter_scheduling`) | `lib/src/jobs/` |
 | `cache` | `@Cacheable` with a SpEL key, `@CacheEvict`, an async method whose `null` result is not stored (`unless`) (`spring_boot_starter_cache`) | `lib/src/cache/` |
 | `json` | `ObjectMapper` from `spring.jackson.*`: an immutable `@Introspected` class with a nested class (introspected automatically), enums with `@JsonValue`, `@JsonProperty`, default values, `readList`, an error with its path | `lib/src/api/` |
+| `feign` | `@FeignClient` against a local HTTP service started by the tour: GET with a path variable, a query parameter, POST with `ResponseEntity`, `FeignNotFound`, a fallback for a failing call, and `@Cacheable` on a client method | `lib/src/remote/` |
+| `streams` | Server-sent events through a Feign method returning `EventStream<StockEvent>` (reconnects with `Last-Event-ID`, `204` ends it; `.events` for id/event/retry) and a declarative `@WebSocketClient` chat — both this project's own, not Spring's API | `lib/src/remote/live_feeds.dart` |
 | `hierarchy` | parent and child contexts from hand-written `BeanModule`s, events reaching the parent | `lib/tour.dart` |
 | `failures` | startup validation: a missing dependency and a cycle reported before anything is created | `lib/tour.dart` |
 | `shutdown` | `ContextClosedEvent`, lifecycle stop, destroy callbacks in reverse creation order | — |
@@ -50,6 +52,11 @@ The Boot app also shows the two starters:
   with the `test` profile reading `test/resources/application-test.properties`
   (test-only config, not embedded), arguments and environment, a `BeanOverride` replacing the sandbox
   payment gateway with a fake, and `captureLogs`.
+
+[`spring_boot_feign/`](spring_boot_feign/README.md) is a separate, small
+Spring Boot application against real public servers: a Feign client
+(REST, JSONPlaceholder), server-sent events (Wikimedia) and a WebSocket
+client (an echo server): `cd spring_boot_feign && dart run bin/main.dart`.
 
 `tool/release_check.dart` runs the AOP part, `@Cacheable`, the
 `@Scheduled` methods and an `ObjectMapper` round trip as minified JavaScript (`dart compile js -O4`) to make

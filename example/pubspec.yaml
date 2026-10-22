@@ -13,6 +13,8 @@ dependencies:
   spring_boot_starter_logging: ^0.1.4
   spring_boot_starter_scheduling: ^0.1.4
   spring_boot_starter_cache: ^0.1.4
+  spring_boot_starter_feign: ^0.1.4
+  spring_boot_starter_websocket: ^0.1.4
   spring_core_dart: ^0.1.4
 
 dev_dependencies:

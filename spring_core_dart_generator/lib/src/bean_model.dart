@@ -266,6 +266,27 @@ class ConstructorCreation extends Creation {
   final List<Argument> arguments;
 }
 
+/// An interface proxy: the generated `_$XImpl.$create(r)`, which asks an
+/// `InvocationHandlerFactory` bean for the handler of interface `X`.
+///
+/// ```dart
+/// // Input:
+/// @FeignClient('catalog')
+/// abstract interface class CatalogClient { ... }
+/// // Output:
+/// create: (r) => _$CatalogClientImpl.$create(r),
+/// ```
+class InterfaceProxyCreation extends Creation {
+  /// Creates the interface proxy of [model].
+  InterfaceProxyCreation(this.model);
+
+  /// The interface and its methods.
+  final InterfaceProxyModel model;
+
+  @override
+  List<Argument> get arguments => const [];
+}
+
 /// A `@Bean` method on another bean (or a static one).
 ///
 /// Instance methods are called on the owning bean, looked up by its name;
@@ -1573,4 +1594,82 @@ class FromJsonModel {
 
   /// The type of its JSON parameter (`Map<String, dynamic>`, ...).
   final DartType parameterType;
+}
+
+/// An abstract class with an annotation marked `@InterfaceProxy()`: the
+/// generator writes an implementation forwarding every method to an
+/// `InvocationHandler`.
+///
+/// ```dart
+/// // Input:
+/// @FeignClient('catalog')
+/// abstract interface class CatalogClient {
+///   @GetMapping('/books/{isbn}')
+///   Future<Book> find(@PathVariable() String isbn);
+/// }
+///
+/// // Output:
+/// class _$CatalogClientImpl implements CatalogClient {
+///   _$CatalogClientImpl(this._handler, this._metadata);
+///   static _$CatalogClientImpl $create(DependencyResolver r) { ... }
+///   @override
+///   Future<Book> find(String isbn) => retypeFuture<Book>(
+///       _handler.invoke(_metadata.methods[0], [isbn]));
+/// }
+/// ```
+class InterfaceProxyModel {
+  /// Creates the model.
+  InterfaceProxyModel({
+    required this.className,
+    required this.type,
+    required this.signatures,
+    required this.methods,
+    required this.annotations,
+  });
+
+  /// The generated class, e.g. `_$CatalogClientImpl`.
+  final String className;
+
+  /// The interface.
+  final InterfaceType type;
+
+  /// The members to implement (signatures as for AOP proxies).
+  final ProxyModel signatures;
+
+  /// One per member of [signatures], same order.
+  final List<InterfaceMethodModel> methods;
+
+  /// User annotations on the interface.
+  final List<DartObject> annotations;
+}
+
+/// A method of an [InterfaceProxyModel].
+class InterfaceMethodModel {
+  /// Creates the model.
+  InterfaceMethodModel({
+    required this.name,
+    required this.valueType,
+    required this.isFuture,
+    required this.isVoid,
+    required this.parameters,
+    required this.annotations,
+  });
+
+  /// The method name.
+  final String name;
+
+  /// The result type; for `Future<T>` the type `T`.
+  final DartType valueType;
+
+  /// Whether the method returns a non-nullable `Future`.
+  final bool isFuture;
+
+  /// Whether the result (or the future's value) is `void`.
+  final bool isVoid;
+
+  /// The parameters, positional first, then named.
+  final List<ConstructorParameterModel> parameters;
+
+  /// User annotations of the method.
+  final List<DartObject> annotations;
 }

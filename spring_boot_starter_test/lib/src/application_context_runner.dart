@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_test/src/bean_override.dart';
 
@@ -123,8 +125,37 @@ final class ApplicationContextRunner {
 
   /// Starts a context, passes it to [body] and closes it. A context that
   /// failed to start is passed too: check it with `hasFailed()` or
-  /// [AssertableApplicationContext.startupFailure].
+  /// [AssertableApplicationContext.startupFailure]. For asynchronous
+  /// checks use [runAsync] (this closes the context when [body] returns).
   R run<R>(R Function(AssertableApplicationContext context) body) {
+    final assertable = _start();
+    try {
+      return body(assertable);
+    } finally {
+      assertable._close();
+    }
+  }
+
+  /// Like [run], for an asynchronous [body]: the context is closed once
+  /// the returned future completes.
+  ///
+  /// ```dart
+  /// await runner.runAsync((context) async {
+  ///   expect(await context.getBean<CatalogClient>().find('1'), isNotNull);
+  /// });
+  /// ```
+  Future<R> runAsync<R>(
+    FutureOr<R> Function(AssertableApplicationContext context) body,
+  ) async {
+    final assertable = _start();
+    try {
+      return await body(assertable);
+    } finally {
+      assertable._close();
+    }
+  }
+
+  AssertableApplicationContext _start() {
     final environment = StandardEnvironment(
       systemEnvironment: systemEnvironment,
     );
@@ -155,14 +186,7 @@ final class ApplicationContextRunner {
         context.close();
       }
     }
-    final assertable = AssertableApplicationContext._(context, failure);
-    try {
-      return body(assertable);
-    } finally {
-      if (context.isActive) {
-        context.close();
-      }
-    }
+    return AssertableApplicationContext._(context, failure);
   }
 }
 
@@ -172,6 +196,12 @@ final class AssertableApplicationContext {
   AssertableApplicationContext._(this._context, this.startupFailure);
 
   final ConfigurableApplicationContext _context;
+
+  void _close() {
+    if (_context.isActive) {
+      _context.close();
+    }
+  }
 
   /// Why the context failed to start; `null` when it started.
   final Object? startupFailure;

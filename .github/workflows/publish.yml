@@ -4,9 +4,11 @@ name: 'Release: publish to pub.dev'
 # "Release: bump version" or by hand) and publishes every package as its own
 # job, dependencies first, so each package's progress is visible:
 #
-#   tests → spring_core_dart → spring_core_dart_generator, spring_boot_dart
+#   tests → spring_core_dart → spring_core_dart_generator, spring_boot_dart,
+#           spring_web_dart
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
-#           spring_boot_starter_cache, spring_boot_starter_test
+#           spring_boot_starter_cache, spring_boot_starter_feign,
+#           spring_boot_starter_websocket, spring_boot_starter_test
 #
 # No password or token: pub.dev trusts this repository through GitHub's
 # OpenID Connect token once automated publishing is enabled on each package's
@@ -56,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [spring_core_dart_generator, spring_boot_dart]
+        package: [spring_core_dart_generator, spring_boot_dart, spring_web_dart]
     steps:
       - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
@@ -78,6 +80,8 @@ jobs:
           - spring_boot_starter_logging
           - spring_boot_starter_scheduling
           - spring_boot_starter_cache
+          - spring_boot_starter_feign
+          - spring_boot_starter_websocket
           - spring_boot_starter_test
     steps:
       - uses: actions/checkout@v7

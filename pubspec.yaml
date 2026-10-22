@@ -13,7 +13,11 @@ workspace:
   - spring_boot_starter_logging
   - spring_boot_starter_scheduling
   - spring_boot_starter_cache
+  - spring_web_dart
+  - spring_boot_starter_feign
+  - spring_boot_starter_websocket
   - example
+  - example/spring_boot_feign
   - extensions/language_server
 
 dev_dependencies:

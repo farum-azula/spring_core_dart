@@ -39,10 +39,33 @@ auto-configuration of the dependencies and `runApplication` /
 3. `logging.level.root=debug` → `SpringLog`;
 4. the context, with `ApplicationArguments` as a bean and
    `@ConfigurationProperties` binding;
-5. `ApplicationRunner` / `CommandLineRunner` beans;
-6. `Started neon-books in 70 ms (profiles: dev)` — or an
+5. `Started neon-books in 70 ms (profiles: dev)` — or an
    `APPLICATION FAILED TO START` report explaining a missing bean, an
-   ambiguity, a cycle, an unresolved placeholder or invalid properties.
+   ambiguity, a cycle, an unresolved placeholder or invalid properties;
+6. `ApplicationRunner` / `CommandLineRunner` beans, one after another in
+   `@Order` order, as in Spring Boot: a runner returning a `Future` is
+   finished before the next starts; a failing runner is reported
+   (`Application run failed`) and the context is closed.
+
+```dart
+@Component()
+@Order(1)
+class Migrations implements ApplicationRunner {
+  Migrations(this.db);
+  final Database db;
+
+  @override
+  Future<void> run(ApplicationArguments args) => db.migrate(); // awaited
+}
+
+@Component()
+@Order(2)
+class Warmup implements ApplicationRunner { ... }       // starts after Migrations
+```
+
+`runApplication` returns once the synchronous part is done (the runners
+then go on one after another); `await runApplicationAsync(args)`
+completes after the last runner, like Spring Boot's `run`.
 
 ## Resources (`lib/resources/` = the classpath)
 

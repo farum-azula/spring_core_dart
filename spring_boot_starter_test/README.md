@@ -134,6 +134,17 @@ test('needs a size', () {
 Also `withUserConfiguration(module)` (registered before the
 auto-configuration), `withSystemEnvironment`, `withInitializer`.
 
+For asynchronous checks use `runAsync`: the context stays open until the
+returned future completes (`run` closes it as soon as the body returns).
+
+```dart
+test('calls the client', () async {
+  await runner.runAsync((context) async {
+    expect(await context.getBean<CatalogClient>().find('1'), isNotNull);
+  });
+});
+```
+
 ## Matchers
 
 `hasSingleBean<T>()`, `hasBean<T>()`, `doesNotHaveBean<T>()`,

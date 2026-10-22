@@ -46,8 +46,17 @@ jobs:
           git diff --exit-code -- .
           test -z "$(git status --porcelain -- .)"
 
+      # The app itself is not run here (it calls real public servers); its
+      # tests run with all the others, against local servers.
+      - name: Generated code is up to date (Spring Boot + Feign example)
+        working-directory: example/spring_boot_feign
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- .
+          test -z "$(git status --porcelain -- .)"
+
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_test example extensions/language_server tool
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_test example extensions/language_server tool
 
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
@@ -83,4 +92,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_test
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_test

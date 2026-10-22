@@ -158,6 +158,9 @@ class ModuleEmitter {
                 when proxy.unavailableReason == null)
               _proxyClass(proxy, bean.element),
           for (final proxy in module.lazyProxies.values) _lazyClass(proxy),
+          for (final bean in module.beans)
+            if (bean.creation case InterfaceProxyCreation(:final model))
+              _interfaceImplClass(model),
         ])
         // A getter, not a final variable: a hot reload replaces its body,
         // so the next call returns the beans of the new code.
@@ -516,6 +519,26 @@ class ModuleEmitter {
       if (type.isDartCoreMap && arguments.length == 2) {
         return kind('MapType', arguments, const {});
       }
+      // Other generic classes (`ResponseEntity<Book>`): the whole type plus
+      // the description of each type argument.
+      if (arguments.isNotEmpty) {
+        final infos = [
+          for (final argument in arguments) _typeInfo(argument, element),
+        ];
+        final isConst = infos.every((info) => info.$2);
+        final whole = _type(
+          type,
+          element,
+        ).rebuild((t) => t..isNullable = false);
+        final described = literalList([for (final info in infos) info.$1]);
+        return (
+          isConst
+              ? _spring('GenericType')
+                    .constInstance([described], named, [whole])
+              : _spring('GenericType').newInstance([described], named, [whole]),
+          isConst,
+        );
+      }
       final self = _type(type, element).rebuild((t) => t..isNullable = false);
       if (type.element case final EnumElement enumElement) {
         final field = BeanScanner.jsonValueField(enumElement);
@@ -547,16 +570,10 @@ class ModuleEmitter {
     return (_spring('DynamicType').constInstance([]), true);
   }
 
-  // Types described as `DynamicType`: `Object`, generic classes other than
-  // the collections (their arguments cannot be rebuilt), functions, ...
+  // Types described as `DynamicType`: `dynamic`, `Object`, functions,
+  // records, type parameters.
   static bool _isDynamicInfo(DartType type) =>
-      type is! InterfaceType ||
-      type.isDartCoreObject ||
-      (type.typeArguments.isNotEmpty &&
-          !(type.isDartCoreList ||
-              type.isDartCoreIterable ||
-              type.isDartCoreSet ||
-              type.isDartCoreMap));
+      type is! InterfaceType || type.isDartCoreObject;
 
   // `BeanMethod<T>('name', invoke: ..., annotations: [...])` for a method
   // with a `@BeanMethodAnnotation()` annotation.
@@ -812,6 +829,202 @@ class ModuleEmitter {
             ),
           for (final (index, member) in proxy.members.indexed)
             _proxyMember(member, index, element),
+        ]),
+    );
+  }
+
+  // The implementation of an interface proxy: every method hands its call
+  // to the `InvocationHandler` with the method's `ProxyMethod`; `$create`
+  // builds the metadata and asks the factory beans for the handler.
+  Class _interfaceImplClass(InterfaceProxyModel model) {
+    final element = model.type.element;
+    final interfaceType = _type(model.type, element);
+    final self = refer(model.className);
+    Expression method(InterfaceMethodModel method) {
+      final arguments = [
+        for (final (index, parameter) in method.parameters.indexed)
+          refer('arguments')
+              .index(literalNum(index))
+              .asA(_anyType(parameter.type, element)),
+      ];
+      final call = refer('target')
+          .asA(interfaceType)
+          .property(method.name)
+          .call(
+            [
+              for (final (index, parameter) in method.parameters.indexed)
+                if (!parameter.isNamed) arguments[index],
+            ],
+            {
+              for (final (index, parameter) in method.parameters.indexed)
+                if (parameter.isNamed) parameter.name: arguments[index],
+            },
+          );
+      return _spring('ProxyMethod').newInstance(
+        [_str(method.name)],
+        {
+          if (method.parameters.isNotEmpty)
+            'parameters': literalList([
+              for (final parameter in method.parameters)
+                _spring('BeanParameter').newInstance(
+                  [_str(parameter.name)],
+                  {
+                    'type': _typeInfo(parameter.type, element).$1,
+                    if (parameter.isNamed)
+                      'symbol': CodeExpression(Code('#${parameter.name}')),
+                    if (parameter.isRequired) 'isRequired': literalTrue,
+                    if (parameter.annotations.isNotEmpty)
+                      'annotations': literalConstList([
+                        for (final annotation in parameter.annotations)
+                          _constant(annotation, element),
+                      ]),
+                  },
+                ),
+            ]),
+          'returnType': method.isVoid
+              ? _spring('DynamicType').constInstance([])
+              : _typeInfo(method.valueType, element).$1,
+          if (method.isFuture) 'isFuture': literalTrue,
+          if (method.isVoid) 'isVoid': literalTrue,
+          if (method.annotations.isNotEmpty)
+            'annotations': literalConstList([
+              for (final annotation in method.annotations)
+                _constant(annotation, element),
+            ]),
+          'call': method.isVoid && !method.isFuture
+              ? _closure([
+                  'target',
+                  'arguments',
+                ], Block.of([call.statement, literalNull.returned.statement]))
+              : _closure(['target', 'arguments'], call.code, lambda: true),
+        },
+      );
+    }
+
+    final metadata = _spring('InterfaceMetadata').newInstance(
+      [],
+      {
+        'typeName': _str(element.name!),
+        if (model.annotations.isNotEmpty)
+          'annotations': literalConstList([
+            for (final annotation in model.annotations)
+              _constant(annotation, element),
+          ]),
+        'methods': literalList([for (final m in model.methods) method(m)]),
+      },
+      [interfaceType],
+    );
+    return Class(
+      (c) => c
+        ..docs.add(
+          '/// Implements `${element.name}` through an `InvocationHandler`.',
+        )
+        ..name = model.className
+        ..implements.add(interfaceType)
+        ..fields.addAll([
+          Field(
+            (f) => f
+              ..name = '_handler'
+              ..modifier = FieldModifier.final$
+              ..type = _spring('InvocationHandler'),
+          ),
+          Field(
+            (f) => f
+              ..name = '_metadata'
+              ..modifier = FieldModifier.final$
+              ..type = TypeReference(
+                (t) => t
+                  ..symbol = 'InterfaceMetadata'
+                  ..url = _spring('InterfaceMetadata').url
+                  ..types.add(interfaceType),
+              ),
+          ),
+        ])
+        ..constructors.add(
+          Constructor(
+            (k) => k.requiredParameters.addAll([
+              Parameter(
+                (p) => p
+                  ..name = '_handler'
+                  ..toThis = true,
+              ),
+              Parameter(
+                (p) => p
+                  ..name = '_metadata'
+                  ..toThis = true,
+              ),
+            ]),
+          ),
+        )
+        ..methods.addAll([
+          Method(
+            (m) => m
+              ..static = true
+              ..name = r'$create'
+              ..returns = self
+              ..requiredParameters.add(
+                Parameter(
+                  (p) => p
+                    ..name = 'r'
+                    ..type = _spring('DependencyResolver'),
+                ),
+              )
+              ..body = Block.of([
+                declareFinal('metadata').assign(metadata).statement,
+                self
+                    .newInstance([
+                      _spring('InterfaceProxies')
+                          .property('handlerFor')
+                          .call([refer('r'), refer('metadata')]),
+                      refer('metadata'),
+                    ])
+                    .returned
+                    .statement,
+              ]),
+          ),
+          for (final (index, member) in model.signatures.members.indexed)
+            () {
+              final info = model.methods[index];
+              final invoke = refer('_handler').property('invoke').call([
+                refer('_metadata').property('methods').index(literalNum(index)),
+                member.parameters.isEmpty
+                    ? literalConstList([])
+                    : literalList([
+                        for (final parameter in member.parameters)
+                          refer(parameter.name),
+                      ]),
+              ]);
+              final Code body;
+              var lambda = true;
+              if (info.isFuture) {
+                body = _spring('retypeFuture')
+                    .call([invoke], {}, [_anyType(info.valueType, element)])
+                    .code;
+              } else if (info.isVoid) {
+                lambda = false;
+                body = invoke.statement;
+              } else {
+                body = invoke.asA(_anyType(member.returnType, element)).code;
+              }
+              return Method(
+                (m) => m
+                  ..annotations.add(refer('override'))
+                  ..name = member.name
+                  ..returns = _anyType(member.returnType, element)
+                  ..requiredParameters.addAll([
+                    for (final parameter in member.parameters)
+                      if (!parameter.isNamed && parameter.isRequired)
+                        _proxyParameter(parameter, element),
+                  ])
+                  ..optionalParameters.addAll([
+                    for (final parameter in member.parameters)
+                      if (parameter.isNamed || !parameter.isRequired)
+                        _proxyParameter(parameter, element),
+                  ])
+                  ..lambda = lambda
+                  ..body = body,
+              );
+            }(),
         ]),
     );
   }
@@ -1274,6 +1487,8 @@ class ModuleEmitter {
                     [_type(creation.ownerType, bean.element)],
                   );
         return owner.property(creation.methodName).call(positional, named);
+      case InterfaceProxyCreation(:final model):
+        return refer(model.className).property(r'$create').call([refer('r')]);
     }
   }
 

@@ -36,6 +36,7 @@ final _configurable = _spring('Configurable');
 final _eventListener = _spring('EventListener');
 final _beanMethodAnnotation = _spring('BeanMethodAnnotation');
 final _jsonCreator = _spring('JsonCreator');
+final _interfaceProxy = _spring('InterfaceProxy');
 final _jsonValue = _spring('JsonValue');
 final _factoryBean = _spring('FactoryBean');
 final _applicationListener = _spring('ApplicationListener');
@@ -279,6 +280,10 @@ class BeanScanner {
       }
       if (_introspected.hasAnnotationOf(element)) {
         _scanIntrospected(element);
+      }
+      if (_interfaceProxyPrimary(element) case final primary?) {
+        _scanInterfaceProxy(element, primary: primary);
+        continue;
       }
       final annotation = _component.firstAnnotationOf(element);
       if (annotation != null) {
@@ -2095,6 +2100,154 @@ class BeanScanner {
           !returnType.isDartAsyncFutureOr,
       order: _orderOf(method),
       condition: condition,
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Interface proxies (`@InterfaceProxy`)
+  // ---------------------------------------------------------------------
+
+  // `primary` of the `@InterfaceProxy()` on the class of one of
+  // [element]'s annotations, or `null` when it has none.
+  bool? _interfaceProxyPrimary(ClassElement element) {
+    for (final annotation in element.metadata.annotations) {
+      final type = annotation.computeConstantValue()?.type;
+      if (type is! InterfaceType) {
+        continue;
+      }
+      final marker = _interfaceProxy.firstAnnotationOf(type.element);
+      if (marker != null) {
+        return ConstantReader(marker).peek('primary')?.boolValue ?? false;
+      }
+    }
+    return null;
+  }
+
+  // The interface becomes a bean created by `_$XImpl.create(r)`; every
+  // method forwards to the `InvocationHandler` of a factory bean.
+  void _scanInterfaceProxy(ClassElement element, {required bool primary}) {
+    final name = _requireName(element);
+    final source = '${element.library.uri}#$name';
+    if (!module.markScanned(source)) {
+      return;
+    }
+    if (element.isPrivate) {
+      _fail('Interface $name must be public.', element);
+    }
+    if (element.typeParameters.isNotEmpty) {
+      _fail('Generic interface $name is not supported.', element);
+    }
+    if (!element.isAbstract) {
+      _fail(
+        '$name must be abstract (an interface) to get a generated '
+        'implementation.',
+        element,
+      );
+    }
+    final type = element.thisType;
+    final className = module.uniqueClassName('_\$${name}Impl');
+    final signatures = _proxyModel(
+      type,
+      className,
+      implementSelf: true,
+      mode: ProxyMode.all,
+    );
+    if (signatures == null || signatures.unavailableReason != null) {
+      _fail(
+        'Cannot implement $name: '
+        '${signatures?.unavailableReason ?? 'unsupported type'}',
+        element,
+      );
+    }
+    final methods = <InterfaceMethodModel>[];
+    for (final member in signatures.members) {
+      final method = _hierarchy(type)
+          .expand((e) => e.methods)
+          .where((m) => m.name == member.name)
+          .firstOrNull;
+      if (member.kind != ProxyMemberKind.method || method == null) {
+        _fail(
+          '$name.${member.name}: only methods are supported in an interface '
+          'with a generated implementation (no getters or setters).',
+          element,
+        );
+      }
+      if (!method.isAbstract) {
+        _fail(
+          '$name.${member.name} has a body: every method of the interface is '
+          'implemented by the generated class.',
+          method,
+        );
+      }
+      if (member.typeParameters.isNotEmpty) {
+        _fail('$name.${member.name} must not be generic.', method);
+      }
+      final returnType = member.returnType;
+      final isFuture =
+          returnType is InterfaceType &&
+          returnType.isDartAsyncFuture &&
+          returnType.nullabilitySuffix == NullabilitySuffix.none;
+      final valueType = isFuture ? returnType.typeArguments.single : returnType;
+      final parameterElements = {
+        for (final parameter in method.formalParameters)
+          parameter.name: parameter,
+      };
+      final parameters = [
+        for (final parameter in member.parameters)
+          ConstructorParameterModel(
+            name: parameter.name,
+            type: parameter.type,
+            isNamed: parameter.isNamed,
+            isRequired: parameter.isRequired,
+            annotations: [
+              if (parameterElements[parameter.name] case final element?)
+                ..._userAnnotations(element),
+            ],
+          ),
+      ];
+      methods.add(
+        InterfaceMethodModel(
+          name: member.name,
+          valueType: valueType,
+          isFuture: isFuture,
+          isVoid: valueType is VoidType,
+          parameters: parameters,
+          annotations: member.annotations,
+        ),
+      );
+      // Request and response classes of the same package are introspected,
+      // so they can be (de)serialized without annotations of their own.
+      _introspectUsed(valueType, element);
+      for (final parameter in parameters) {
+        _introspectUsed(parameter.type, element);
+      }
+    }
+    final model = InterfaceProxyModel(
+      className: className,
+      type: type,
+      signatures: signatures,
+      methods: methods,
+      annotations: _userAnnotations(element),
+    );
+    module.beans.add(
+      BeanModel(
+        element: element,
+        source: source,
+        name: _decapitalize(name),
+        type: type,
+        exposedTypes: _exposedTypes(type),
+        creation: InterfaceProxyCreation(model),
+        primary: primary || _primary.hasAnnotationOf(element),
+        qualifiers: _qualifiersOf(element),
+        conditions: [
+          if (_conditions(element) case final own when own.isNotEmpty)
+            GroupConditionModel(source, own),
+        ],
+        // Advice (e.g. @Cacheable on interface methods) wraps the client.
+        proxy: proxyMode == ProxyMode.none
+            ? null
+            : _proxyModel(type, '_\$${name}Proxy', implementSelf: true),
+      ),
     );
   }
 

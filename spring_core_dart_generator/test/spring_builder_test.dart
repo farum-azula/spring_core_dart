@@ -2090,4 +2090,164 @@ class Holder {
       expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
     });
   });
+
+  group('@InterfaceProxy', () {
+    const source = r"""
+@InterfaceProxy(primary: true)
+class Remote {
+  const Remote(this.name);
+  final String name;
+}
+
+class Tag {
+  const Tag(this.value);
+  final String value;
+}
+
+class Book {
+  const Book(this.isbn, {this.title = ''});
+  final String isbn;
+  final String title;
+}
+
+@Remote('catalog')
+abstract interface class CatalogClient {
+  @Tag('find')
+  Future<Book> find(@Tag('isbn') String isbn, {int page = 0});
+
+  Future<List<Book>> all();
+
+  Future<Book> create(Book book);
+
+  Future<void> remove(String isbn);
+
+  String version();
+
+  void ping();
+
+  Stream<Book> changes();
+}
+""";
+
+    test('a generated implementation forwarding to the handler', () async {
+      final output = await _generate(source);
+      expect(
+        output,
+        _has(r'class _$CatalogClientImpl implements _i1.CatalogClient {'),
+      );
+      expect(
+        output,
+        _has(r'static _$CatalogClientImpl $create(_i2.DependencyResolver r) {'),
+      );
+      expect(
+        output,
+        _has(
+          r"final metadata = _i2.InterfaceMetadata<_i1.CatalogClient>(typeName: r'CatalogClient', "
+          r"annotations: const [_i1.Remote(r'catalog')],",
+        ),
+      );
+      expect(
+        output,
+        _has(
+          '@override _i3.Future<_i1.Book> find(String isbn, {int page = 0}) => '
+          '_i2.retypeFuture<_i1.Book>(_handler.invoke(_metadata.methods[0], [isbn, page]));',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "_i2.BeanParameter(r'isbn', type: const _i2.ClassType<String>(), isRequired: true, "
+          "annotations: const [_i1.Tag(r'isbn')])",
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "_i2.BeanParameter(r'page', type: const _i2.ClassType<int>(), symbol: #page)",
+        ),
+      );
+      expect(
+        output,
+        _has(
+          'call: (target, arguments) => (target as _i1.CatalogClient).find('
+          '(arguments[0] as String), page: (arguments[1] as int))',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          'returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()), isFuture: true',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          '@override String version() => (_handler.invoke(_metadata.methods[4], const []) as String);',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          '@override void ping() { _handler.invoke(_metadata.methods[5], const []); }',
+        ),
+      );
+      // A sync generic result (e.g. a Feign EventStream<T>): described with
+      // its type argument and cast.
+      expect(
+        output,
+        _has(
+          'returnType: const _i2.GenericType<_i3.Stream<_i1.Book>>([_i2.ClassType<_i1.Book>()])',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          '@override _i3.Stream<_i1.Book> changes() => '
+          '(_handler.invoke(_metadata.methods[6], const []) as _i3.Stream<_i1.Book>);',
+        ),
+      );
+      // The bean: primary (from @InterfaceProxy(primary: true)), created by
+      // the implementation.
+      expect(
+        output,
+        _has(
+          "_i2.BeanDefinition<_i1.CatalogClient>(name: r'catalogClient', "
+          "source: r'package:pkg/src/service.dart#CatalogClient', "
+          'types: const [_i1.CatalogClient], primary: true,',
+        ),
+      );
+      expect(output, _has(r'create: (r) => _$CatalogClientImpl.$create(r)'));
+      // Book, used by the interface, is introspected for JSON.
+      expect(output, _has('_i2.BeanIntrospection<_i1.Book>('));
+    });
+
+    test('the generated code compiles', () async {
+      expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
+    });
+
+    test('rejects what cannot be implemented', () async {
+      const remote = r"""
+@InterfaceProxy()
+class Remote {
+  const Remote();
+}
+""";
+      await _expectError(
+        '$remote@Remote() class NotAbstract {}',
+        'must be abstract',
+      );
+      await _expectError(
+        '$remote@Remote() abstract class WithBody { int count() => 1; }',
+        'has a body',
+      );
+      await _expectError(
+        '$remote@Remote() abstract class WithGetter { int get count; }',
+        'only methods are supported',
+      );
+      await _expectError(
+        '$remote@Remote() abstract class Generic { T read<T>(); }',
+        'must not be generic',
+      );
+    });
+  });
 }

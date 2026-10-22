@@ -25,6 +25,7 @@ export 'package:spring_core_dart/src/beans/bean_wrapper.dart';
 export 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 export 'package:spring_core_dart/src/beans/exceptions.dart';
 export 'package:spring_core_dart/src/beans/factory_bean.dart';
+export 'package:spring_core_dart/src/beans/interface_proxy.dart';
 export 'package:spring_core_dart/src/beans/introspection.dart';
 export 'package:spring_core_dart/src/beans/lifecycle_callbacks.dart';
 export 'package:spring_core_dart/src/beans/object_provider.dart';
