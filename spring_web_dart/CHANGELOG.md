@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.5
 
 - Initial version: Request mapping annotations, ResponseEntity, HttpHeaders, HTTP client transport (dart:io and fetch), MockHttpTransport.
 - Streaming responses: `HttpTransport.stream` and `StreamedHttpResponse` (dart:io and fetch).

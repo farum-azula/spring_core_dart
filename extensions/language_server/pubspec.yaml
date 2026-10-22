@@ -1,7 +1,7 @@
 name: dart_spring_language_server
 description: >-
   Language server behind the dart_spring editor extensions: navigation from injection points to beans and from @Value placeholders to properties, SpEL and pointcut highlighting and checks; creates Spring Boot projects.
-version: 0.1.4
+version: 0.1.5
 publish_to: none
 
 environment:
@@ -14,8 +14,8 @@ executables:
 
 dependencies:
   analyzer: ">=14.0.0 <15.0.0"
-  spring_boot_dart: ^0.1.4
-  spring_core_dart: ^0.1.4
+  spring_boot_dart: ^0.1.5
+  spring_core_dart: ^0.1.5
 
 dev_dependencies:
   test: ^1.33.0
