@@ -10,7 +10,7 @@ name: 'Release: language server binaries'
 #   dart_spring_lsp-linux-arm64.tar.gz
 #   dart_spring_lsp-windows-x64.zip
 #
-# Runs for every `vX.Y.Z` tag (pushed by "Release: bump version"), or by hand
+# Runs for every `vX.Y.Z` tag (pushed by the "Release" workflow), or by hand
 # (Run workflow) to rebuild the server from the selected branch and replace
 # the binaries of a release without releasing the packages again.
 
