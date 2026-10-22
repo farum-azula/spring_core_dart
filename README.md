@@ -991,6 +991,26 @@ Starters (each a separate package, discovered by the generator like
   @Profile(['ios'])
   class ApnsPushService implements PushService { ... }
   ```
+- **`--dart-define` as a property source** (in `flutter_spring`): a
+  Flutter app has no environment variables at runtime (almost empty on
+  Android/iOS, none on the web), so `${API_URL}` placeholders cannot come
+  from the OS there. Values passed at build time become properties
+  instead, above the properties files:
+  ```sh
+  flutter build apk --dart-define=SPRING_PROFILES_ACTIVE=prod \
+    --dart-define=API_URL=https://api.neon.books
+  # or --dart-define-from-file=config/prod.json
+  ```
+  `SPRING_PROFILES_ACTIVE` picks `application-prod.properties` (Spring
+  profiles instead of flavors) and `@Value(r'${API_URL}')` gets the build's
+  value. `String.fromEnvironment` works only as `const` with a literal key
+  in AOT and web builds, so the generator writes a
+  `const String.fromEnvironment('API_URL')` / `bool.hasEnvironment(...)`
+  pair for every key it finds in placeholders and properties files.
+  Documented with it: a client app holds no secrets. `--dart-define`
+  values, properties and assets all end up in the APK / IPA /
+  `main.dart.js` and can be read; passwords and private keys stay on a
+  server, the app gets tokens from it.
 
 Tooling:
 
@@ -1002,7 +1022,8 @@ Tooling:
   checks for invalid SpEL, unknown keys and non-raw placeholder strings,
   hovers with property values and candidate beans, navigation to
   `classpath:` / `file:` resources, and pointcut highlighting, navigation
-  (types, annotations, beans, named pointcuts) and checks, and snippets.
+  (types, annotations, beans, named pointcuts) and checks, snippets, and
+  new Spring Boot projects (`dart_spring_lsp create my_app`).
   Still planned from the list below: bean markers, completion, reverse
   navigation (from a key or a bean to its usages, from a pointcut to the
   methods it advises), event navigation, beans of dependencies. Its version always equals the framework version

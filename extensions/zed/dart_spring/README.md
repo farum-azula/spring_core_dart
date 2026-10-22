@@ -69,6 +69,64 @@ types, annotations, bean patterns, method names and named pointcuts
 | `spreload` | rebuilding the beans after a Flutter hot reload |
 | `sptest` | a test file with `springBootTest` and a `BeanOverride` |
 
+## New project
+
+The language server also creates Spring Boot applications, like Spring
+Initializr. Run it in a terminal (Zed's too: `` ctrl-` ``):
+
+```sh
+# macOS
+"$HOME/Library/Application Support/Zed/extensions/work/dart-spring/bin/dart_spring_lsp" create my_app
+
+# Linux
+~/.local/share/zed/extensions/work/dart-spring/bin/dart_spring_lsp create my_app
+
+# Windows (PowerShell)
+& "$env:LOCALAPPDATA\Zed\extensions\work\dart-spring\bin\dart_spring_lsp.exe" create my_app
+
+# a server on the PATH (dart run tool/install_language_server.dart)
+dart_spring_lsp create my_app
+```
+
+The extension keeps the server it downloaded at that path; it is there
+once a Dart file has been opened with the extension installed.
+
+| Command | Does |
+|---|---|
+| `create my_app` | a new folder `my_app` with the project |
+| `create .` | the project in the current, empty folder |
+| `--name=shop` | the package name (default: from the folder name) |
+| `--no-pub` | skip `dart pub get` and `build_runner build` |
+| `--force` | write into a folder that is not empty |
+| `--help` | the options |
+
+What you get:
+
+```text
+my_app/
+  bin/main.dart                               @SpringBootApplication + runApplication
+  bin/main.beans.dart                         generated
+  lib/src/greeting/app_properties.dart        @ConfigurationProperties('app')
+  lib/src/greeting/greeting_service.dart      @Service
+  lib/src/greeting/greeting_runner.dart       ApplicationRunner
+  lib/resources/application.properties        configuration (the classpath)
+  lib/resources/application-dev.properties    --spring.profiles.active=dev
+  test/main_test.dart                         springBootTest
+  test/resources/application-test.properties  test-only settings
+  pubspec.yaml                                spring_boot_dart, logging and test starters, the generator
+```
+
+Then:
+
+```sh
+cd my_app
+dart run bin/main.dart     # my_app says: Hello, world!
+dart test
+```
+
+Zed extensions cannot add commands to the command palette yet, so there
+is no palette entry for this.
+
 ## Setup
 
 1. **Install the extension** in Zed: command palette →

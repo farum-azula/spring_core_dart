@@ -8,6 +8,10 @@
 //!    GitHub release `v<version>` of farum-azula/spring_core_dart (the
 //!    latest release if that one has no binaries).
 //!
+//! A copy of the downloaded server is kept at `bin/dart_spring_lsp` in the
+//! extension's folder, a path that does not change between versions, so
+//! `dart_spring_lsp create my_app` can be run by hand (see the README).
+//!
 //! It must be a native executable: `dart pub global run` prints resolution
 //! messages to stdout, which is the channel LSP uses.
 
@@ -66,6 +70,9 @@ impl FlutterSpring {
                 .map_err(|error| format!("downloading {asset_name} failed: {error}"))?;
             zed::make_file_executable(&binary)?;
             remove_other_versions(&directory);
+            publish_stable_copy(&binary, os);
+        } else if !fs::metadata(stable_path(os)).is_ok_and(|stat| stat.is_file()) {
+            publish_stable_copy(&binary, os);
         }
         zed::set_language_server_installation_status(id, &LanguageServerInstallationStatus::None);
         self.cached = Some(binary.clone());
@@ -108,6 +115,23 @@ fn release_with(asset_name: &str) -> Result<GithubRelease> {
             pre_release: false,
         },
     )
+}
+
+/// `bin/dart_spring_lsp` in the extension's folder: the same server at a
+/// path that does not change between versions, to run
+/// `dart_spring_lsp create my_app` by hand (see the README).
+fn stable_path(os: Os) -> String {
+    format!(
+        "bin/{EXECUTABLE}{}",
+        if os == Os::Windows { ".exe" } else { "" }
+    )
+}
+
+fn publish_stable_copy(binary: &str, os: Os) {
+    let stable = stable_path(os);
+    if fs::create_dir_all("bin").is_ok() && fs::copy(binary, &stable).is_ok() {
+        let _ = zed::make_file_executable(&stable);
+    }
 }
 
 fn remove_other_versions(keep: &str) {
