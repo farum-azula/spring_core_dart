@@ -1,3 +1,8 @@
+## 0.1.3
+
+- add scheduling + cache starters
+- fix extension add aop docs
+
 ## 0.1.2
 
 - ci: release only from the release branch; fix version-dependent test; Node 24 actions
