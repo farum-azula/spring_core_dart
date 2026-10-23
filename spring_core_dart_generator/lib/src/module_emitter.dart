@@ -13,6 +13,8 @@ import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 
+part 'configuration_emitter.dart';
+
 // Runtime types are always imported from the public library, never from
 // `src/`.
 const _springUrl = 'package:spring_core_dart/spring_core_dart.dart';
@@ -175,6 +177,11 @@ class ModuleEmitter {
           for (final bean in module.beans)
             if (bean.creation case InterfaceProxyCreation(:final model))
               _interfaceImplClass(model),
+          for (final bean in module.beans)
+            if (bean.creation case ConstructorCreation(
+              configuration: final model?,
+            ))
+              configurationClass(model),
         ])
         // A getter, not a final variable: a hot reload replaces its body,
         // so the next call returns the beans of the new code.
@@ -1560,24 +1567,49 @@ class ModuleEmitter {
     final creation = bean.creation;
     final (positional, named) = _arguments(creation.arguments, bean.element);
     switch (creation) {
+      // A full-mode @Configuration class: its generated subclass.
+      case ConstructorCreation(configuration: final model?):
+        return refer(model.className)
+            .newInstance([refer('r'), ...positional], named);
       case ConstructorCreation(:final constructorName):
         final type = _type(bean.type, bean.element);
         return constructorName == null
             ? type.newInstance(positional, named)
             : type.newInstanceNamed(constructorName, positional, named);
       case BeanMethodCreation():
-        final owner = creation.isStatic
-            ? _type(creation.ownerType, bean.element)
-            : refer('r')
-                  .property('dependency')
-                  .call(
-                    [],
-                    {'qualifier': _str(creation.ownerName)},
-                    [_type(creation.ownerType, bean.element)],
-                  );
-        return owner.property(creation.methodName).call(positional, named);
+        final Expression call;
+        if (creation.enhanced case final enhanced?) {
+          call = enhancedBeanMethodCall(creation, enhanced, bean.element);
+        } else {
+          final owner = creation.isStatic
+              ? _type(creation.ownerType, bean.element)
+              : refer('r')
+                    .property('dependency')
+                    .call(
+                      [],
+                      {'qualifier': _str(creation.ownerName)},
+                      [_type(creation.ownerType, bean.element)],
+                    );
+          call = owner.property(creation.methodName).call(positional, named);
+        }
+        // The bean type was inferred from the method body: more specific
+        // than the declared return type.
+        return creation.declaredType == null
+            ? call
+            : call.asA(_type(bean.type, bean.element));
       case InterfaceProxyCreation(:final model):
         return refer(model.className).property(r'$create').call([refer('r')]);
+      case ConfigurationPropertiesCreation():
+        return refer(
+              'ConstructorBound',
+              'package:spring_boot_dart/spring_boot_dart.dart',
+            )
+            .property('from')
+            .call(
+              [refer('r'), _str(bean.name)],
+              {},
+              [_type(bean.type, bean.element)],
+            );
     }
   }
 

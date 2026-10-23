@@ -17,7 +17,7 @@ separate library.
 
 | Package | Path | What it is |
 |---|---|---|
-| `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. No dependencies. |
+| `spring_core_dart` | [`spring_core_dart/`](spring_core_dart/README.md) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. Only the Dart team's `package:yaml`. |
 | `spring_boot_dart` | [`spring_boot_dart/`](spring_boot_dart/README.md) | Spring Boot on top of the core: `@SpringBootApplication` on `main`, `SpringApplication.run`, `@ConfigurationProperties`, auto-configuration conditions, runners, failure reports. A separate package (depends only on the core) so it can move to its own repository. |
 | `spring_boot_starter_logging` | [`spring_boot_starter_logging/`](spring_boot_starter_logging/README.md) | Logging backend: console with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` (filters, streams, export) for an in-app log screen. Add the dependency, nothing else. |
 | `spring_boot_starter_scheduling` | [`spring_boot_starter_scheduling/`](spring_boot_starter_scheduling/README.md) | `@Scheduled` methods with a fixed rate, a fixed delay or a cron expression (placeholders from properties), a `TaskScheduler` bean; tasks stop with the context. Add the dependency, nothing else. |
@@ -160,8 +160,8 @@ Future<void> main(List<String> args) async {
 | Annotation | Meaning |
 |---|---|
 | `@Component([name])`, `@Service`, `@Repository`, `@Controller`, `@Named` | A bean. Default name: lowerCamelCase class name (`URLService` stays). Subclass `Component` for your own stereotypes. |
-| `@Configuration([name])` | A bean whose `@Bean` methods declare more beans. `@Lazy` / `@Profile` / conditions on it apply to its `@Bean` methods. |
-| `@Bean(name:, aliases:, initMethod:, destroyMethod:, autowireCandidate:)` | A bean produced by a method; type = declared return type; parameters are injected. Destroy method is inferred (`close`, `shutdown`, `dispose`) unless `destroyMethod: ''`. |
+| `@Configuration(name:, proxyBeanMethods:)` | A bean whose `@Bean` methods declare more beans. Like Spring's default (`proxyBeanMethods: true`), the container creates a generated subclass whose `@Bean` methods return its beans, so a `@Bean` method calling another one gets the singleton (a prototype: a new instance; static methods are not intercepted); `proxyBeanMethods: false` ("lite", also `@Component` classes and `@AutoConfiguration`) calls them as written. `@Lazy` / `@Profile` / conditions on it apply to its `@Bean` methods. |
+| `@Bean(name:, aliases:, initMethod:, destroyMethod:, autowireCandidate:)` | A bean produced by a method; type = what the method body returns (`DataSource ds() => HikariDataSource()` is a `HikariDataSource`, also found as `DataSource`); parameters are injected. Destroy method is inferred (`close`, `shutdown`, `dispose`) unless `destroyMethod: ''`. |
 | `@Scope('prototype')` / `ScopeType.*` / custom name | Scope; custom scopes via `registerScope(name, CustomScope)` (e.g. `SimpleMapScope`). |
 | `@Lazy()` | Singletons are eager by default; lazy ones are created on first use. |
 | `@Primary()`, `@Fallback()`, `@Qualifier('x')` | Choosing between candidates. |
@@ -310,20 +310,33 @@ Problems the framework recovers from are logged through `SpringLog`
 - Profiles: `spring.profiles.active` / `.default`, expressions
   `dev & (eu | us) & !prod`.
 - `ConfigDataEnvironment` (Spring Boot config data): `application.properties`
-  and `application-{profile}.properties` from `classpath:/` and
-  `classpath:/config/` (= `lib/resources/`), overridden by `file:./` and
-  `file:./config/`
-  (or `spring.config.location` / `additional-location` / `name`), multi-doc
-  files with `#---` and `spring.config.activate.on-profile`,
+  / `application.yml` / `application.yaml` and their
+  `application-{profile}` variants, in Boot's two location groups:
+  `classpath:/;classpath:/config/` (= `lib/resources/`), overridden by
+  `file:./;file:./config/;file:./config/*/` (profile-specific files win
+  within a group, so `./application.properties` beats a packaged
+  `application-prod.properties`; `.properties` beats YAML in one
+  location). Also `spring.config.location` / `additional-location` (`,`
+  separates groups, `;` joins locations into one) / `name`, multi-doc files
+  (`#---`, YAML `---`) with `spring.config.activate.on-profile`,
   `spring.config.import`, `spring.profiles.include` / `group.*`,
   `optional:` locations. Works with async-only resources (Flutter assets)
   via `processAndApply()`.
+- YAML is flattened like Boot's `YamlPropertySourceLoader`: `app.hosts[0]`,
+  `app.servers[0].name`, empty values and `~` as `''`. `@Value` and
+  `getProperty('app.hosts[0]')` see list items; `@ConfigurationProperties`
+  binds only comma-separated lists so far.
+- Relaxed names (Boot's attached `ConfigurationPropertySources`, added by
+  `ConfigDataEnvironment` / `SpringApplication`): `app.read-timeout` in
+  `getProperty`, `${...}` and `@Value` also finds `app.readTimeout`,
+  `app.read_timeout` or `APP_READTIMEOUT`; the first property source with
+  any form wins.
 - `@PropertySource([...], factory: ...)` on a component adds files; the
   last declared wins. It is loaded only when the declaring class's
   conditions (`@Profile`, `@Conditional`, ...) match; classes pulled in with
-  `@Import` inherit the importer's conditions.
-- YAML: implement `PropertySourceLoader` (`yml`, `yaml`) for config data and
-  `PropertySourceFactory` for `@PropertySource` — the core needs no change.
+  `@Import` inherit the importer's conditions. As in Spring it reads
+  `.properties`; for YAML pass a `PropertySourceFactory` that uses
+  `YamlPropertySourceLoader`.
 
 There is no `.env` support by design: configuration lives in property files.
 
@@ -942,7 +955,9 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `Scope` SPI, `Pointcut` interface | `CustomScope`, `AopPointcut` | `@Scope`, `@Pointcut` are the annotations |
 | `@Null`, `@Pattern`, `@Future` | `MustBeNull`, `Matches`, `FutureDate` (codes unchanged) | Clash with Dart's `Null`, `Pattern` and `Future` |
 | `Validator.supports(Class)` | `supports(Object target)` | Dart cannot test subtypes on a `Type` |
-| CGLIB `@Configuration` proxies | Call other `@Bean`s through parameters | No subclass proxies |
+| CGLIB-enhanced `@Configuration` classes | A generated subclass in the `.beans.dart` file: a class with instance `@Bean` methods must be extendable from another library (not `final`, `sealed` or `interface`, public generative constructor) or use `proxyBeanMethods: false`, else the build fails; an inter-bean call of a `FactoryBean` method returns the container's factory itself (Spring: an enhanced factory whose `getObject()` returns the container's product) | No runtime bytecode generation |
+| `@Bean` definitions know only the declared return type until the bean is created (`beanClassName` is `null`) | The type of the returned expression(s) is known at build time and the definition is registered under it and its supertypes: `getBean<HikariDataSource>()`, `getBeanNamesForType`, `@ConditionalOnBean` / `@ConditionalOnMissingBean` and AOP (`within(Impl)`, annotations on implementation methods) see it before the bean exists | Deliberately better: the generator sees the method body |
+| Duplicate bean names are found at startup (Boot disables overriding) | Two unconditional declarations of one name fail the build; declarations with conditions (`@Profile`, `@Conditional...`) may share a name and are checked at refresh (`BeanDefinitionOverrideException` when both match) | Fail early when the clash is certain |
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
 | Asynchronous initialization | Synchronous `refresh()`; load config first with `processAndApply()` | Predictable startup |
@@ -998,7 +1013,8 @@ packages published on pub.dev by the Dart and Google teams (`dart.dev`,
 transitive dependencies included; the packages that end up in
 applications (`spring_core_dart`, `spring_boot_dart`,
 `spring_boot_starter_logging`) depend on nothing outside this repository
-at all. CI enforces it with
+except the Dart team's `package:yaml` (for `application.yml`). CI enforces
+it with
 `tool/check_dependencies.dart`; any other package needs an exception there
 with a reason and the packages allowed to use it (today: `melos` for the
 workspace scripts, `node_preamble` pulled by `package:test`; database

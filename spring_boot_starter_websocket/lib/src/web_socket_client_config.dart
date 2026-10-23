@@ -80,19 +80,35 @@ final class WebSocketClientConfig {
     );
   }
 
+  // The entries under [prefix] with relaxed names, like Boot's map
+  // binding: `default-request-headers.X-Shop`,
+  // `defaultRequestHeaders.X-Shop` or `default-request-headers[X.Shop]`;
+  // the first source with an entry wins.
   static Map<String, String> _headers(Environment environment, String prefix) {
     final result = <String, String>{};
     if (environment is! ConfigurableEnvironment) {
       return result;
     }
+    final parent = ConfigurationPropertyName.adapt(prefix, '.');
     for (final source in environment.propertySources) {
-      if (source is! EnumerablePropertySource) {
+      if (source is! EnumerablePropertySource<Object>) {
         continue;
       }
-      for (final key in source.propertyNames) {
-        if (key.startsWith(prefix) && key.length > prefix.length) {
-          final header = key.substring(prefix.length);
-          result.putIfAbsent(header, () => environment.getProperty(key) ?? '');
+      final names = ConfigurationPropertySources.propertyNames(source);
+      for (final MapEntry(key: name, value: keys) in names.entries) {
+        if (parent.isAncestorOf(name)) {
+          final header = [
+            for (
+              var i = parent.numberOfElements;
+              i < name.numberOfElements;
+              i++
+            )
+              name.getElement(i),
+          ].join('.');
+          result.putIfAbsent(
+            header,
+            () => environment.getProperty(keys.first) ?? '',
+          );
         }
       }
     }

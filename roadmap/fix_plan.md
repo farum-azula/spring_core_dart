@@ -39,7 +39,11 @@ startup logging, `spring.main.*`, dotted basenames; SpEL assignment in
 `SimpleEvaluationContext`, enum order, boolean selection, `+` conversion,
 map selection; JSON dates with offsets and `spring.jackson.time-zone`,
 serializer beans, naming acronyms, raw maps/lists, `NaN`; the HTTP types,
-Feign and WebSocket items except relaxed config keys and optional paths.
+Feign and WebSocket items except optional paths. Third batch: YAML out of
+the box, location groups and `config/*/`, relaxed binding in the
+environment (camelCase Feign/WebSocket keys), `@ConfigurationProperties`
+lists, maps and constructor binding, application events, full-mode
+`@Configuration`, conditional beans sharing a name, inferred `@Bean` types.
 
 ## How close to Spring (October 2026)
 
@@ -71,7 +75,6 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 
 ## Container (`beans`)
 
-- [ ] **High.** `@Bean` definitions carry the type the generator infers from the method body (`DataSource dataSource() => HikariDataSource(url)` is a `HikariDataSource`), with full generic arguments: lookups, `@ConditionalOnBean` / `@ConditionalOnMissingBean` and AOP see the concrete class before the bean exists. Better than Spring, whose definition has no class (`beanClassName` is `null`) and knows only the declared return type until the bean is created — state it as a deliberate difference.
 - [ ] Exclude beans produced by a configuration's own `@Bean` methods from its collections (`factoryBeanName`, Spring's `isSelfReference`).
 - [ ] Parent contexts: collections should see grandparent beans; keep the parent beans' `@Order` and `autowireCandidate=false`; shadow by `containsLocalBean`.
 - [ ] Single dependencies: merge local and parent candidates (parent `@Primary` may win, local wins a tie), pass the parameter name to the parent, validate ambiguity in the parent.
@@ -111,12 +114,10 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 
 ## Configuration (`core`)
 
-- [ ] **High.** Load `application.yml` / `.yaml` by default: a `YamlPropertySourceLoader` (`package:yaml`, Dart team) in `ConfigDataEnvironment` — today YAML files are silently ignored unless the application adds a loader.
-- [ ] **High.** Location groups (`,` = separate groups, `;` = one group) and the `config/*/` default location. The defaults are two groups (`classpath:/;classpath:/config/` and `file:./;file:./config/;file:./config/*/`); today all act as one, so a packaged `application-prod.properties` beats `./application.properties`.
 - [ ] `spring.config.import` from the command line / environment; directory imports; missing non-optional directories fail.
 - [ ] `spring.profiles.default` from config files (load `application-{default}.properties`, expand groups).
 - [ ] Lenient placeholders in optional imports; command line beats a file's own placeholders in imports and guards.
-- [ ] `.properties` beats YAML in the same location; `defaultProperties` stays below config data.
+- [ ] `defaultProperties` stays below config data.
 - [ ] Indexed keys (`spring.profiles.include[0]`).
 - [ ] Merge programmatic active profiles with the file's `spring.profiles.active`; profile variants of imported files.
 - [ ] Encoding option (Latin-1) for `.properties`.
@@ -125,14 +126,10 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 - [ ] `AntPathMatcher.extractUriTemplateVariables` on backtracking `**` paths; `FileSystemResource` directories.
 - [ ] Placeholder parser details (`${a ${b}`, `key:default` tried as a key).
 - [ ] Pattern resolver pruning; `file:` URL decoding.
-- [ ] Relaxed binding (`${app.my-prop}` finds `app.myProp`), `random.*`, `package:` resources, async `@PropertySource` for Flutter assets.
+- [ ] `random.*`, `package:` resources, async `@PropertySource` for Flutter assets; a non-optional `config/*/` location without subdirectories fails.
 
 ## Spring Boot (`spring_boot_dart`)
 
-- [ ] **High.** `@ConfigurationProperties`: bind indexed lists (`app.hosts[0]`, `APP_HOSTS_0_`), map entries (`app.headers.*`) and lists/maps of nested objects — today only comma lists bind, the rest stays empty without an error (and YAML lists arrive as indexed keys).
-- [ ] **High.** Constructor binding for `@ConfigurationProperties` (final fields, one constructor with parameters) with `@DefaultValue`.
-- [ ] **High.** Application events: `ApplicationStartingEvent` … `ApplicationStartedEvent`, `ApplicationReadyEvent`, `ApplicationFailedEvent`; listeners on `SpringApplication` for the early ones.
-- [ ] Relaxed names resolved by property source precedence, not by form (today the kebab form wins over a camelCase key in a higher source); accept the underscore form (`app.max_size`).
 - [ ] Auto-configuration ordering (`@AutoConfiguration(before:, after:)`, `@AutoConfigureOrder`) and exclusion (`@SpringBootApplication(exclude:)`, `spring.autoconfigure.exclude`).
 - [ ] `SpringApplication.exit(context)` with `ExitCodeGenerator` beans; close the context on SIGINT/SIGTERM by default (`spring.main.register-shutdown-hook`).
 
@@ -164,8 +161,6 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 
 ## Generator
 
-- [ ] **High.** Full-mode `@Configuration`: a generated subclass whose `@Bean` methods return the container's bean, so `other()` calling `calculator()` gets the singleton; `proxyBeanMethods: false` = today's lite mode; a `final` configuration class fails the build with a clear message.
-- [ ] **High.** The same bean name on declarations with conditions (`@Profile('dev')` / `@Profile('prod')` both declaring `dataSource`) must build; leave clashes to the runtime override check.
 - [ ] Private types/functions in generated code: clear build errors instead of compile errors.
 - [ ] Annotations on primary-constructor fields lost when a library is resolved twice in one build.
 - [ ] Inherited `@Bean` methods and mixin lifecycle methods; generic superclasses (`BaseService<R>`).
@@ -181,10 +176,6 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 - [ ] Optional `path` in `@RequestMapping` / `@GetMapping` / … (`@GetMapping()`), needed by the planned web starter.
 - [ ] `required` / `defaultValue` on `@RequestParam` / `@RequestHeader`, `required` on `@PathVariable`.
 - [ ] `HttpHeaders`: `toSingleValueMap()` (first value), `setBearerAuth` / `setBasicAuth` / `contentType` / `location` / `contentLength` (if still missing).
-
-## Feign starter
-
-- [ ] **High.** Config keys in camelCase as in the Spring Cloud docs (`readTimeout`, `loggerLevel`, `defaultRequestHeaders`) under `spring.cloud.openfeign.client.config.*` and `spring.websocket.client.config.*` — today silently ignored (part of relaxed binding).
 
 ## Scheduling starter
 

@@ -21,6 +21,7 @@ import 'package:spring_core_dart_example/src/cache/price_list.dart';
 import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
 import 'package:spring_core_dart_example/src/catalog/welcome_letter.dart';
+import 'package:spring_core_dart_example/src/config/data_config.dart';
 import 'package:spring_core_dart_example/src/config/shop_config.dart';
 import 'package:spring_core_dart_example/src/events/orders.dart';
 import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
@@ -215,6 +216,18 @@ class _Tour {
       'WeekendSale (@Conditional never)',
       context.containsBean('weekendSale'),
     );
+    // Both profiles declare `dataSource`; the @Bean type is inferred from
+    // the method body, so the lazy bean is found by its concrete type
+    // before it exists.
+    show(
+      'EmbeddedDataSource beans before creation (inferred @Bean type)',
+      context.getBeanNamesForType(EmbeddedDataSource),
+    );
+    show(
+      'dataSource created yet?',
+      context.beanFactory.containsSingleton('dataSource'),
+    );
+    show('dataSource (@Profile dev)', context.getBean<DataSource>().url);
 
     final prod = startShop([
       '--spring.profiles.active=prod',
@@ -229,6 +242,18 @@ class _Tour {
       prod.getBean<Checkout>().gateway.charge(9.99),
     );
     show('DebugToolbar', prod.containsBean('debugToolbar'));
+    show(
+      'dataSource (@Profile prod, same bean name)',
+      prod.getBean<DataSource>().url,
+    );
+    show(
+      'getBean<PooledDataSource>().maxSize',
+      prod.getBean<PooledDataSource>().maxSize,
+    );
+    show(
+      'EmbeddedDataSource beans',
+      prod.getBeanNamesForType(EmbeddedDataSource),
+    );
     prod.close();
     tourLog.clear(); // the second context's own lifecycle noise
   }
@@ -276,6 +301,20 @@ class _Tour {
       'search index (@Bean product with @PostConstruct)',
       context.getBean<SearchIndex>().size,
     );
+    final report = context.getBean<IndexReport>();
+    show(
+      'inter-bean call searchIndex() is the singleton (full @Configuration)',
+      identical(report.index, context.getBean<SearchIndex>()),
+    );
+    show(
+      'inter-bean calls ids() give new prototypes',
+      report.firstId.id != report.secondId.id,
+    );
+    show(
+      "inter-bean call label('index report') (prototype with arguments)",
+      report.label.text,
+    );
+    show('label bean (injected @Value)', context.getBean<Label>().text);
     show('legacy bean (@Import)', context.getBean<LegacyGreeter>().greeting);
     final letter = context.getBean<WelcomeLetter>();
     show('classpath:templates/welcome.txt (@Value Resource)', letter.compose());
@@ -663,6 +702,15 @@ class _Tour {
         create: (r) => Banner(r.dependency<LegacyGreeter>().greeting),
       ),
     ]);
+    // Two declarations of `dataSource` whose conditions both match.
+    try {
+      startShop([
+        '--spring.profiles.active=dev,prod',
+      ], systemEnvironment: const {}).close();
+      show('dev and prod dataSource', 'started?!');
+    } on BeanDefinitionOverrideException catch (error) {
+      show('dev and prod dataSource', error);
+    }
     attempt('cycle', [
       BeanDefinition<Banner>(
         name: 'a',

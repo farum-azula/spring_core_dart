@@ -36,6 +36,14 @@ const repositoryOnly = {
   'spring_boot_starter_websocket',
 };
 
+/// Dart-team packages that [repositoryOnly] packages may depend on anyway,
+/// with the reason (their own dependencies must still be the Dart team's).
+const repositoryOnlyExceptions = {
+  'yaml':
+      "application.yml config files out of the box, like Spring Boot's "
+      'SnakeYAML; the Dart team\'s YAML parser (spring_core_dart).',
+};
+
 /// A package allowed although it is not published by the Dart team.
 final class AllowedPackage {
   /// Allows a package for [reason]; only the workspace packages in [onlyIn]
@@ -136,7 +144,8 @@ Future<void> main() async {
     for (final dependency
         in ((package['directDependencies'] as List?) ?? const [])
             .cast<String>()) {
-      if (!workspace.contains(dependency)) {
+      if (!workspace.contains(dependency) &&
+          !repositoryOnlyExceptions.containsKey(dependency)) {
         problems.add(
           '$dependency: a dependency of $name, which may depend only on '
           'packages of this repository (repositoryOnly)',
@@ -182,7 +191,7 @@ Future<void> main() async {
   }
   stdout.writeln(
     'Dependencies ok: ${repositoryOnly.join(', ')} depend only on this '
-    'repository; ${hosted.length} packages from pub.dev, all published by '
+    'repository (and ${repositoryOnlyExceptions.keys.join(', ')}); ${hosted.length} packages from pub.dev, all published by '
     'the Dart team; exceptions: ${allowedPackages.keys.join(', ')}.',
   );
   if (unusedExceptions.isNotEmpty) {

@@ -1,3 +1,13 @@
+import 'package:analyzer/dart/ast/ast.dart'
+    show
+        AstNode,
+        BlockFunctionBody,
+        ExpressionFunctionBody,
+        FunctionDeclarationStatement,
+        FunctionExpression,
+        MethodDeclaration,
+        ReturnStatement;
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -5,6 +15,9 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/constraint_checker.dart';
+
+part 'bean_type_inference.dart';
+part 'configuration_scanning.dart';
 
 // Annotations are matched by name in `package:spring_core_dart`, so the
 // generator does not depend on the runtime package (consumers can pull both
@@ -37,6 +50,12 @@ final _configurable = _spring('Configurable');
 final _eventListener = _spring('EventListener');
 final _beanMethodAnnotation = _spring('BeanMethodAnnotation');
 final _jsonCreator = _spring('JsonCreator');
+
+// `@ConfigurationProperties` from spring_boot_dart (matched by URL, so the
+// generator does not depend on that package): constructor binding.
+const _configurationProperties = TypeChecker.fromUrl(
+  'package:spring_boot_dart/src/annotations.dart#ConfigurationProperties',
+);
 final _interfaceProxy = _spring('InterfaceProxy');
 final _jsonValue = _spring('JsonValue');
 final _factoryBean = _spring('FactoryBean');
@@ -257,6 +276,29 @@ class BeanScanner {
   // Classes introspected so far (explicitly or automatically).
   final _introspectedClasses = <ClassElement>{};
 
+  // Resolved `@Bean` method declarations by `library#Class.method`, for
+  // the bean type inferred from the method body (bean_type_inference.dart).
+  final _beanMethodDeclarations = <String, MethodDeclaration>{};
+
+  /// Resolves the bodies of the `@Bean` methods of [library]'s classes
+  /// (and of the classes they `@Import`), so that [scanLibrary] can
+  /// register each bean under the type its method really returns. Call it
+  /// before [scanLibrary]; [astNodeFor] is the build resolver's
+  /// `astNodeFor(fragment, resolve: true)`. Without it, beans get the
+  /// declared return type.
+  ///
+  /// ```dart
+  /// await scanner.resolveBeanMethods(
+  ///   library,
+  ///   (fragment) => resolver.astNodeFor(fragment, resolve: true),
+  /// );
+  /// scanner.scanLibrary(library);
+  /// ```
+  Future<void> resolveBeanMethods(
+    LibraryElement library,
+    Future<AstNode?> Function(Fragment fragment) astNodeFor,
+  ) => resolveBeanMethodDeclarations(library, astNodeFor);
+
   /// Adds the components, configurables and property sources of [library].
   ///
   /// Every class annotated with `@Component` (or a stereotype such as
@@ -325,7 +367,8 @@ class BeanScanner {
   ///   types: const [Pool],
   ///   conditions: [const ProfileCondition([r'cloud'])],
   ///   dependencies: const [Dependency(AppConfig, qualifier: r'appConfig')],
-  ///   create: (r) => r.dependency<AppConfig>(qualifier: r'appConfig').pool(),
+  ///   create: (r) => (r.dependency<AppConfig>(qualifier: r'appConfig')
+  ///       as _$AppConfigConfiguration)._$pool(r), // full-mode subclass
   ///   initMethod: (bean) {
   ///     bean.open();
   ///   },
@@ -390,8 +433,21 @@ class BeanScanner {
             ? null
             : ConstantReader(annotation).peek('name')?.stringValue) ??
         _decapitalize(className);
-    final constructor = _selectConstructor(element);
+    // A constructor-bound @ConfigurationProperties class is created from
+    // properties, not beans (see _boundConstructor).
+    final constructor = _boundConstructor(element) == null
+        ? _selectConstructor(element)
+        : null;
     final classLazy = _isLazy(element);
+    // A full-mode @Configuration class is created as its generated
+    // subclass, which intercepts the instance @Bean methods (without any,
+    // there is nothing to intercept).
+    final configuration =
+        constructor != null &&
+            isFullConfiguration(element) &&
+            element.methods.any((m) => !m.isStatic && _bean.hasAnnotationOf(m))
+        ? configurationClassModel(element, constructor)
+        : null;
     final owner = BeanModel(
       element: element,
       source: source,
@@ -399,10 +455,13 @@ class BeanScanner {
       type: type,
       exposedTypes: _exposedTypes(type),
       factoryObjectTypes: _factoryObjectTypes(type),
-      creation: ConstructorCreation(
-        _constructorName(constructor),
-        _arguments(constructor.formalParameters, creation: true),
-      ),
+      creation: constructor == null
+          ? ConfigurationPropertiesCreation()
+          : ConstructorCreation(
+              _constructorName(constructor),
+              _arguments(constructor.formalParameters, creation: true),
+              configuration: configuration,
+            ),
       scope: _scopeOf(element),
       lazy: classLazy ?? false,
       primary: _primary.hasAnnotationOf(element),
@@ -440,6 +499,7 @@ class BeanScanner {
             ConstantReader(beanAnnotation),
             classConditions: classConditions,
             classLazy: isConfiguration ? classLazy : null,
+            configuration: configuration,
           ),
         );
       }
@@ -636,6 +696,7 @@ class BeanScanner {
       (c) => c.isPublic && (c.isFactory || !element.isAbstract),
     );
     final constructor =
+        _boundConstructor(element) ??
         constructors.where(_jsonCreator.hasAnnotationOf).firstOrNull ??
         constructors.where((c) => (c.name ?? 'new') == 'new').firstOrNull;
     if (constructor == null) {
@@ -797,12 +858,16 @@ class BeanScanner {
 
   // One bean per `@Bean` method. Class conditions are inherited; the bean
   // is created by calling the method on the owner bean (or statically).
+  // [configuration]: the owner is a full-mode configuration class, whose
+  // generated subclass overrides the instance `@Bean` methods. The bean
+  // type is inferred from the method body (bean_type_inference.dart).
   BeanModel _scanBeanMethod(
     BeanModel owner,
     MethodElement method,
     ConstantReader annotation, {
     required List<ConditionModel> classConditions,
     required bool? classLazy,
+    ConfigurationClassModel? configuration,
   }) {
     final methodName = _requireName(method);
     if (method.isPrivate) {
@@ -811,39 +876,60 @@ class BeanScanner {
     if (method.typeParameters.isNotEmpty) {
       _fail('Generic @Bean method $methodName is not supported.', method);
     }
-    final returnType = method.returnType;
-    if (returnType is! InterfaceType ||
-        returnType.nullabilitySuffix != NullabilitySuffix.none) {
+    final declaredType = method.returnType;
+    if (declaredType is! InterfaceType ||
+        declaredType.nullabilitySuffix != NullabilitySuffix.none) {
       _fail(
         '@Bean method $methodName must return a non-nullable class type.',
         method,
       );
     }
-    if (returnType.isDartAsyncFuture || returnType.isDartAsyncFutureOr) {
+    if (declaredType.isDartAsyncFuture || declaredType.isDartAsyncFutureOr) {
       _fail('@Bean method $methodName must not be async.', method);
     }
+    final returnType = inferredBeanType(method, declaredType);
+    final inferred = returnType != declaredType;
     final initMethod = annotation.peek('initMethod')?.stringValue;
     final destroyMethod = annotation.peek('destroyMethod')?.stringValue;
+    final name = annotation.peek('name')?.stringValue ?? methodName;
+    final scope = _scopeOf(method);
+    final arguments = _arguments(method.formalParameters, creation: true);
+    final factoryObjectTypes = _factoryObjectTypes(returnType);
     return BeanModel(
       element: method,
       source: '${owner.source}.$methodName',
-      name: annotation.peek('name')?.stringValue ?? methodName,
+      name: name,
       aliases: [
         for (final alias
             in annotation.peek('aliases')?.listValue ?? const <DartObject>[])
           alias.toStringValue()!,
       ],
       type: returnType,
-      exposedTypes: _exposedTypes(returnType),
-      factoryObjectTypes: _factoryObjectTypes(returnType),
+      exposedTypes: inferred
+          ? exposedInferredTypes(returnType, declaredType)
+          : _exposedTypes(returnType),
+      factoryObjectTypes: factoryObjectTypes,
       creation: BeanMethodCreation(
         ownerType: owner.type,
         ownerName: owner.name,
         methodName: methodName,
         isStatic: method.isStatic,
-        arguments: _arguments(method.formalParameters, creation: true),
+        arguments: arguments,
+        // Static methods are not intercepted, as in Spring.
+        enhanced: configuration == null || method.isStatic
+            ? null
+            : enhancedBeanMethod(
+                configuration,
+                method,
+                beanName: name,
+                declaredType: declaredType,
+                isFactoryBean: factoryObjectTypes != null,
+                isSingleton: scope == 'singleton',
+                arguments: arguments,
+              ),
+        declaredType: inferred ? declaredType : null,
       ),
-      scope: _scopeOf(method),
+      scope: scope,
       lazy: _isLazy(method) ?? classLazy ?? false,
       primary: _primary.hasAnnotationOf(method),
       fallback: _fallback.hasAnnotationOf(method),
@@ -1597,6 +1683,29 @@ class BeanScanner {
   // ---------------------------------------------------------------------
   // Construction and injection
   // ---------------------------------------------------------------------
+
+  // Spring Boot's constructor binding: a `@ConfigurationProperties` class
+  // whose only public generative constructor has parameters (and is not
+  // `@Autowired`). The bean is created by `ConstructorBound.from`, which
+  // binds the parameters from properties through the introspection's
+  // `BeanConstructor` (this same constructor, see _dataConstructor).
+  ConstructorElement? _boundConstructor(ClassElement element) {
+    if (!_configurationProperties.hasAnnotationOf(element)) {
+      return null;
+    }
+    final generative = [
+      for (final constructor in element.constructors)
+        if (constructor.isPublic && !constructor.isFactory) constructor,
+    ];
+    if (generative.length != 1) {
+      return null;
+    }
+    final constructor = generative.single;
+    return constructor.formalParameters.isEmpty ||
+            _autowired.hasAnnotationOf(constructor)
+        ? null
+        : constructor;
+  }
 
   // Constructor selection, like Spring's: the single `@Autowired`
   // constructor, else the public unnamed constructor, else the only public

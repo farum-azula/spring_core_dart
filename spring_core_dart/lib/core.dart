@@ -28,6 +28,9 @@ export 'package:spring_core_dart/src/core/env/config/config_data_environment.dar
 export 'package:spring_core_dart/src/core/env/config/config_data_exceptions.dart';
 export 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 export 'package:spring_core_dart/src/core/env/config/property_source_loader.dart';
+export 'package:spring_core_dart/src/core/env/config/yaml_property_source_loader.dart';
+export 'package:spring_core_dart/src/core/env/configuration_property_name.dart';
+export 'package:spring_core_dart/src/core/env/configuration_property_sources.dart';
 export 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 export 'package:spring_core_dart/src/core/env/environment.dart';
 export 'package:spring_core_dart/src/core/env/mutable_property_sources.dart';

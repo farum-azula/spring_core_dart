@@ -59,6 +59,22 @@ class SearchIndex {
   }
 }
 
+class Label {
+  Label(this.text);
+  final String text;
+}
+
+/// Built from other @Bean methods of the same configuration class.
+class IndexReport {
+  IndexReport(this.index, this.firstId, this.secondId, this.label);
+  final SearchIndex index;
+  final IdGenerator firstId;
+  final IdGenerator secondId;
+  final Label label;
+}
+
+/// Full mode (Spring's default `proxyBeanMethods = true`): the container
+/// creates a generated subclass whose @Bean methods return its beans.
 @Configuration()
 @Import([LegacyConfig])
 class ShopConfig {
@@ -82,6 +98,18 @@ class ShopConfig {
 
   @Bean()
   SearchIndex searchIndex() => SearchIndex();
+
+  /// A prototype: injected with `app.name`, or created with the arguments
+  /// of an inter-bean call (Spring's `getBean(name, args)`).
+  @Bean()
+  @Scope(ScopeType.prototype)
+  Label label(@Value(r'${app.name}') String text) => Label(text);
+
+  /// `searchIndex()` returns the container's singleton, each `ids()` a new
+  /// prototype instance (Spring's inter-bean method calls).
+  @Bean()
+  IndexReport indexReport() =>
+      IndexReport(searchIndex(), ids(), ids(), label('index report'));
 }
 
 /// Only in prod: its @PropertySource is loaded only when the class is.

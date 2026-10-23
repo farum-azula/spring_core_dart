@@ -1,9 +1,11 @@
 import 'package:spring_boot_dart/src/annotations.dart';
+import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// Binding or validation of a `@ConfigurationProperties` bean failed.
+/// Binding or validation of a `@ConfigurationProperties` bean (or a
+/// [Binder.bind] call) failed.
 ///
-/// Spring (Java): `BindValidationException` / `BindException` at startup.
+/// Spring (Java): `BindException` / `BindValidationException` at startup.
 class ConfigurationPropertiesBindException implements Exception {
   /// Creates the exception for [prefix] with the binding [errors].
   ConfigurationPropertiesBindException(this.prefix, this.beanName, this.errors);
@@ -11,21 +13,30 @@ class ConfigurationPropertiesBindException implements Exception {
   /// The property prefix, e.g. `db`.
   final String prefix;
 
-  /// The bean being bound.
-  final String beanName;
+  /// The bean being bound; `null` for a [Binder.bind] call.
+  final String? beanName;
 
-  /// One line per failed property, e.g. `db.max-size: must be at least 1`.
+  /// One line per failed property, e.g. `db.max-size: must be at least 1`
+  /// or `db.hosts[0]: failed to convert to int (was "x")`.
   final List<String> errors;
 
   @override
   String toString() =>
-      "Binding to '$prefix' properties of bean '$beanName' failed: "
+      "Binding to '$prefix' properties"
+      "${beanName == null ? '' : " of bean '$beanName'"} failed: "
       '${errors.join('; ')}';
 }
 
-/// Binds `@ConfigurationProperties` beans to the environment before their
-/// init callbacks run, like Spring Boot's
-/// `ConfigurationPropertiesBindingPostProcessor`.
+/// Binds `@ConfigurationProperties` beans to the environment, like Spring
+/// Boot's `ConfigurationPropertiesBinder` and
+/// `ConfigurationPropertiesBindingPostProcessor`, with a [Binder]: relaxed
+/// names, lists, maps and nested objects.
+///
+/// Mutable classes are bound through their setters before their init
+/// callbacks run; classes with a constructor that has parameters are
+/// created bound by [bindOrCreate] (constructor binding, called by the
+/// generated code through [ConstructorBound]). Constraints are checked when
+/// the class is annotated `@Validated()`.
 ///
 /// Registered by `SpringApplication`; see [ConfigurationProperties] for the
 /// naming rules.
@@ -48,8 +59,16 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
   /// Renders validation errors.
   final MessageSource messageSource;
 
+  // Beans created by bindOrCreate, already bound and validated.
+  static final _constructed = Expando<bool>('constructor-bound');
+
+  Binder get _binder => Binder(environment, introspector: introspector);
+
   @override
   Object postProcessBeforeInitialization(Object bean, String beanName) {
+    if (_constructed[bean] ?? false) {
+      return bean;
+    }
     final introspection = introspector.findIntrospection(bean);
     final annotation = introspection?.annotations
         .whereType<ConfigurationProperties>()
@@ -58,74 +77,109 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
       return bean;
     }
     final prefix = annotation.prefix;
-    final values = <String, Object?>{};
-    _collect(introspection, prefix, '', values, depth: 0);
+    BindContext(_binder)
+      ..bindProperties(
+        bean,
+        introspection,
+        ConfigurationPropertyName.of(prefix),
+      )
+      ..throwIfFailed(prefix, beanName);
+    _validate(bean, introspection, prefix, beanName);
+    return bean;
+  }
 
+  /// Creates the `@ConfigurationProperties` class [T] through its
+  /// constructor, each parameter bound from its property (constructor
+  /// binding), and validates it.
+  ///
+  /// Throws a [ConfigurationPropertiesBindException] when a property
+  /// cannot be converted, a required parameter has no value or a
+  /// constraint is violated.
+  T bindOrCreate<T extends Object>(String beanName) {
+    final introspection = introspector.forTypeArgument<T>();
+    final annotation = introspection?.annotations
+        .whereType<ConfigurationProperties>()
+        .firstOrNull;
+    if (introspection == null ||
+        annotation == null ||
+        introspection.constructor == null) {
+      throw StateError(
+        '$T is not a constructor-bound @ConfigurationProperties class '
+        '(or its module is not registered).',
+      );
+    }
+    final prefix = annotation.prefix;
+    final context = BindContext(_binder);
+    final bean = context.bindConstructor(
+      introspection,
+      ConfigurationPropertyName.of(prefix),
+      context.sources,
+      requireAny: false,
+    );
+    context.throwIfFailed(prefix, beanName);
+    if (bean is! T) {
+      throw ConfigurationPropertiesBindException(prefix, beanName, [
+        '$prefix: could not create $T',
+      ]);
+    }
+    _validate(bean, introspection, prefix, beanName);
+    _constructed[bean] = true;
+    return bean;
+  }
+
+  // Only `@Validated` classes are validated, like Spring Boot.
+  void _validate(
+    Object bean,
+    BeanIntrospection<Object> introspection,
+    String prefix,
+    String beanName,
+  ) {
+    if (!introspection.annotations.any((a) => a is Validated)) {
+      return;
+    }
     final binder = DataBinder(
       bean,
       objectName: prefix,
       introspector: introspector,
       conversionService: environment.conversionService,
     );
-    // Only `@Validated` classes are validated, like Spring Boot.
-    if (introspection.annotations.any((a) => a is Validated)) {
-      binder.validators.add(BeanValidator(introspector: introspector));
-    }
-    binder
-      ..bind(values)
-      ..validate();
+    binder.validators.add(BeanValidator(introspector: introspector));
+    binder.validate();
     final result = binder.bindingResult;
     if (result.hasErrors) {
       throw ConfigurationPropertiesBindException(prefix, beanName, [
         for (final error in result.allErrors)
-          '${error is FieldError ? '$prefix.${_kebabPath(error.field)}' : prefix}: '
+          '${error is FieldError ? '$prefix.${_dashedPath(error.field)}' : prefix}: '
               '${messageSource.getMessageFromResolvable(error)}'
               '${error is FieldError && error.rejectedValue != null ? ' (was "${error.rejectedValue}")' : ''}',
       ]);
     }
-    return bean;
   }
 
-  // Walks the writable properties (and nested introspected objects) and
-  // records the values present in the environment, keyed by property path.
-  void _collect(
-    BeanIntrospection<Object> introspection,
-    String keyPrefix,
-    String pathPrefix,
-    Map<String, Object?> values, {
-    required int depth,
-  }) {
-    for (final property in introspection.properties) {
-      final key = '$keyPrefix.${kebabCase(property.name)}';
-      final path = '$pathPrefix${property.name}';
-      final nested = introspector.forType(property.type);
-      if (nested != null && depth < 8) {
-        _collect(nested, key, '$path.', values, depth: depth + 1);
-        continue;
-      }
-      if (!property.isWritable) {
-        continue;
-      }
-      final value = _lookup(key, '$keyPrefix.${property.name}');
-      if (value != null) {
-        values[path] = value;
-      }
-    }
-  }
-
-  String? _lookup(String kebabKey, String camelKey) =>
-      environment.getProperty(kebabKey) ??
-      environment.getProperty(camelKey) ??
-      environment.getProperty(
-        kebabKey.replaceAll('.', '_').replaceAll('-', '').toUpperCase(),
-      );
-
-  static String _kebabPath(String path) =>
-      path.split('.').map(kebabCase).join('.');
-
-  /// `maxSize` → `max-size`, like Spring Boot's canonical property names.
-  static String kebabCase(String name) => name.replaceAllMapped(
-    RegExp('[A-Z]'),
-    (match) => '-${match.group(0)!.toLowerCase()}',
+  // `servers[0].maxSize` → `servers[0].max-size`.
+  static String _dashedPath(String path) => path.replaceAllMapped(
+    RegExp(r'[^.\[\]]+(?![^\[]*\])'),
+    (match) => dashedForm(match[0]!),
   );
+}
+
+/// Creates constructor-bound `@ConfigurationProperties` beans: the
+/// generated `create` of such a bean calls [from] (Spring Boot's
+/// `ConstructorBound`).
+///
+/// ```dart
+/// // Generated for `@ConfigurationProperties('db') class DbProperties`
+/// // whose only constructor has parameters:
+/// create: (r) => ConstructorBound.from<DbProperties>(r, r'dbProperties'),
+/// ```
+abstract final class ConstructorBound {
+  /// The bean [beanName] of type [T], created bound from the context's
+  /// environment.
+  static T from<T extends Object>(
+    DependencyResolver resolver,
+    String beanName,
+  ) => ConfigurationPropertiesBinder(
+    resolver.dependency<ConfigurableEnvironment>(),
+    resolver.dependency<BeanIntrospector>(),
+  ).bindOrCreate<T>(beanName);
 }

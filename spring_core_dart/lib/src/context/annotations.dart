@@ -124,9 +124,15 @@ class Controller extends Component {
 /// A bean that declares other beans through [Bean] methods, like Spring's
 /// `@Configuration`.
 ///
-/// Unlike Spring, configuration classes are not proxied: calling one `@Bean`
-/// method from another creates a new object. Take other beans as method
-/// parameters instead.
+/// Like Spring's default (`proxyBeanMethods = true`), the container creates
+/// a generated subclass of the class whose `@Bean` methods return the
+/// container's bean, so one `@Bean` method calling another gets the
+/// singleton (a prototype-scoped `@Bean` gives a new instance per call), as
+/// with Spring's CGLIB enhancement. Static `@Bean` methods are not
+/// intercepted. A class with instance `@Bean` methods must be extendable
+/// (not `final`, `sealed` or `interface`) with a public generative
+/// constructor; otherwise the build fails. With [proxyBeanMethods] `false` ("lite" mode) the methods are
+/// called as written: take other beans as method parameters instead.
 ///
 /// ```dart
 /// @Configuration()
@@ -137,6 +143,18 @@ class Controller extends Component {
 ///
 ///   @Bean()
 ///   UserStore userStore(Connection connection) => UserStore(connection);
+///
+///   @Bean()
+///   Clock clock() => SystemClock();
+///
+///   @Bean()
+///   Scheduler scheduler() => Scheduler(clock()); // the clock singleton
+/// }
+///
+/// @Configuration(proxyBeanMethods: false)
+/// class LiteConfig {
+///   @Bean()
+///   Clock clock() => SystemClock();
 /// }
 /// ```
 ///
@@ -153,11 +171,26 @@ class Controller extends Component {
 ///   UserStore userStore(Connection connection) {
 ///     return new UserStore(connection);
 ///   }
+///
+///   @Bean Clock clock() { return new SystemClock(); }
+///
+///   @Bean Scheduler scheduler() { return new Scheduler(clock()); }
+/// }
+///
+/// @Configuration(proxyBeanMethods = false)
+/// class LiteConfig {
+///   @Bean Clock clock() { return new SystemClock(); }
 /// }
 /// ```
 class Configuration extends Component {
   /// Creates the annotation; [name] overrides the default bean name.
-  const Configuration([super.name]);
+  const Configuration({String? name, this.proxyBeanMethods = true})
+    : super(name);
+
+  /// Whether `@Bean` methods are intercepted by a generated subclass that
+  /// returns the container's beans (Spring's `proxyBeanMethods`, default
+  /// `true`); `false` calls them as written ("lite" mode).
+  final bool proxyBeanMethods;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,8 +200,12 @@ class Configuration extends Component {
 /// Declares a bean produced by a method, like Spring's `@Bean`:
 /// `@Bean()`, `@Bean(name: 'x', initMethod: 'open')`.
 ///
-/// The bean type is the method's declared return type, the name defaults
-/// to the method name, and method parameters are injected. Methods may be
+/// The bean type is what the method returns: the static type of the
+/// returned expression(s) when it is more specific than the declared return
+/// type (`DataSource dataSource() => HikariDataSource()` is registered as
+/// `HikariDataSource` and all its supertypes; Spring only knows the
+/// declared type until the bean is created). The name defaults to the
+/// method name, and method parameters are injected. Methods may be
 /// instance methods of a [Configuration] class or static methods.
 ///
 /// ```dart

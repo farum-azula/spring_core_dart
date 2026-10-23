@@ -9,7 +9,9 @@ import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 /// `PropertySourceFactory` used by `@PropertySource(factory: ...)`.
 ///
 /// The factory type needs a no-argument constructor so generated code can
-/// instantiate it.
+/// instantiate it. As in Spring, `@PropertySource` reads `.properties`
+/// files unless a factory says otherwise; for YAML, use
+/// `YamlPropertySourceLoader` in a factory:
 ///
 /// ```dart
 /// class YamlPropertySourceFactory implements PropertySourceFactory {
@@ -19,14 +21,17 @@ import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 ///   AbstractPropertySource<Object> createPropertySource(
 ///     String? name,
 ///     Resource resource,
-///   ) => MapPropertySource(
-///     name ?? resource.description,
-///     flattenYaml(resource.readAsStringSync()),
-///   );
+///   ) => MapPropertySource(name ?? resource.description, {
+///     for (final document in const YamlPropertySourceLoader().load(
+///       resource.description,
+///       resource.readAsStringSync(),
+///     ))
+///       ...(document as MapPropertySource).source,
+///   });
 /// }
 ///
 /// @Configuration()
-/// @PropertySource(['file:app.yml'], factory: YamlPropertySourceFactory)
+/// @PropertySource(['classpath:app.yml'], factory: YamlPropertySourceFactory)
 /// class AppConfig {}
 /// ```
 ///
@@ -45,7 +50,7 @@ import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 /// }
 ///
 /// @Configuration
-/// @PropertySource(value = "file:app.yml",
+/// @PropertySource(value = "classpath:app.yml",
 ///     factory = YamlPropertySourceFactory.class)
 /// class AppConfig {}
 /// ```

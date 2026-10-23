@@ -37,9 +37,12 @@ auto-configuration of the dependencies and `runApplication` /
 `runApplication(args)` (`SpringApplication.run`):
 
 1. command-line arguments (`--key=value`) and OS environment variables;
-2. config data: `classpath:application.properties` (= `lib/resources/`),
-   `application-{profile}.properties`, `./config/` overrides, imports,
-   profile groups, `${ENV_VAR:default}` placeholders;
+2. config data: `classpath:application.properties` / `application.yml`
+   (= `lib/resources/`), `application-{profile}` files, then the external
+   group `./`, `./config/`, `./config/*/` overriding the packaged files
+   (Boot's location groups), imports, profile groups,
+   `${ENV_VAR:default}` placeholders; relaxed names (`app.read-timeout`
+   also finds `app.readTimeout`, `app.read_timeout`, `APP_READTIMEOUT`);
 3. `logging.level.root=debug` → `SpringLog`;
 4. the context, with `ApplicationArguments` as a bean and
    `@ConfigurationProperties` binding;
@@ -55,6 +58,9 @@ auto-configuration of the dependencies and `runApplication` /
    `@Order` order, as in Spring Boot: a runner returning a `Future` is
    finished before the next starts; a failing runner is reported
    (`Application run failed`) and the context is closed.
+
+Application events are published along the way (see
+[Application events](#application-events)).
 
 ```dart
 @Component()
@@ -80,7 +86,7 @@ completes after the last runner, like Spring Boot's `run`.
 
 ```
 lib/resources/
-  application.properties
+  application.properties     (or application.yml)
   application-prod.properties
   messages/messages.properties
   templates/welcome.txt
@@ -120,6 +126,68 @@ Bound from `shop.max-basket-size` (or `shop.maxBasketSize`,
 `--shop.max-basket-size=…`, `SHOP_MAX_BASKET_SIZE`) and converted to the
 field types; with `@Validated()` the constraints are checked at startup, as
 in Spring Boot. The class is a bean and introspected automatically.
+
+Collections and nested objects bind like Boot's `Binder`:
+
+```dart
+@ConfigurationProperties('app')
+class AppProperties {
+  List<String> hosts = [];               // app.hosts=a,b  or  app.hosts[0]=a
+  List<Server> servers = [];             // app.servers[0].name=eu-1
+  Map<String, String> headers = {};      // app.headers.X-Shop=1, app.headers[x.y]=2
+  Map<String, Backend> backends = {};    // app.backends.eu.url=https://...
+}
+```
+
+```yaml
+app:
+  hosts: [a, b]          # YAML lists are indexed keys: app.hosts[0], ...
+  servers:
+    - name: eu-1
+```
+
+- A list comes whole from the highest-precedence source that has it (a
+  comma value or indexed keys, `APP_HOSTS_0_` as an environment variable):
+  `--app.hosts[0]=x` replaces a three-element list from
+  `application.yml`, it does not change its first element. Indexes start
+  at 0 without gaps.
+- Map entries are merged across sources, the higher source winning per
+  key; keys keep the form they are written in (`X-Shop`), `[x.y]` keeps
+  the dots, and for scalar values the rest of the name is the key
+  (`app.headers.a.b=1` → `a.b`).
+- Elements, keys and values are converted through the conversion service
+  (`List<Duration>`, `Map<String, int>`, enums by lenient name); a value
+  that cannot be converted fails the start naming the property
+  (`app.ports[0]: failed to convert to int (was "x")`).
+
+A class whose only constructor has parameters is bound through it
+(constructor binding, Boot 3's default for immutable classes), also for
+nested classes:
+
+```dart
+@ConfigurationProperties('pool')
+class PoolProperties {
+  const PoolProperties(
+    this.url, {                          // required: pool.url must be set
+    @DefaultValue('10') required this.maxSize,
+    this.timeout = const Duration(seconds: 5),
+    this.owner,                          // nullable: null when not set
+    this.replicas = const [],            // pool.replicas[0].host=...
+  });
+  final String url;
+  final int maxSize;
+  final Duration timeout;
+  final String? owner;
+  final List<Endpoint> replicas;
+}
+```
+
+A parameter without a property takes its `@DefaultValue` (Boot's), its
+Dart default value, or `null` when nullable; a required non-nullable one
+without any of them fails the start (`pool.url: no value bound for the
+required constructor parameter 'url' of PoolProperties ...`).
+`Binder.get(environment).bind('app.hosts', ListType<String>(...))` binds
+outside of a properties class.
 
 A `Validator` (`defaultValidator`, a `BeanValidator`) and a
 `methodValidationPostProcessor` (method validation of `@Validated` beans)
@@ -309,6 +377,41 @@ before the refresh (Spring's `ApplicationContextInitializer`), and
 (what `@SpringBootTest(properties = ...)` does). `spring_boot_starter_test`
 is built on both.
 
+## Application events
+
+Like Spring Boot, `run` / `runAsync` publish, in this order:
+`ApplicationStartingEvent`, `ApplicationEnvironmentPreparedEvent`,
+`ApplicationContextInitializedEvent`, `ApplicationPreparedEvent`, (the
+context's `ContextRefreshedEvent`), `ApplicationStartedEvent`, the
+runners, `ApplicationReadyEvent` — or `ApplicationFailedEvent` (with the
+`exception`) before the failure report and the rethrow.
+
+The early events happen before any bean exists, so their listeners are
+registered on the application:
+
+```dart
+void main(List<String> args) => (springApplication
+      ..addListener<ApplicationEnvironmentPreparedEvent>(
+        (event) => print(event.environment.activeProfiles),
+      ))
+    .run(args);
+
+// or SpringApplication([...], listeners: [ApplicationListenerAdapter.of<ApplicationStartingEvent>(...)])
+```
+
+From `ApplicationPreparedEvent` on these listeners are also listeners of
+the context. `ApplicationStartedEvent`, `ApplicationReadyEvent` and the
+`ApplicationFailedEvent` of a failing runner go through the context, so
+`@EventListener` methods and `ApplicationListener` beans receive them:
+
+```dart
+@Component()
+class Warmup {
+  @EventListener()
+  void onReady(ApplicationReadyEvent event) => cache.fill();
+}
+```
+
 ## Versions and starter compatibility
 
 Java solves library conflicts with a BOM. pub resolves exactly one version
@@ -444,9 +547,9 @@ declarations are needed for them.
 
 | Spring Boot | Here | Why |
 |---|---|---|
-| Default locations in two groups: packaged (`classpath:`) files, then external (`file:`) files override them; profile-specific files win only within their group (`file:./application.properties` beats `classpath:application-dev.properties`) | All default locations act as one group: every profile-specific file overrides every non-profile file | Simpler resolution; differs only when a key is in both a packaged profile file and an external non-profile file |
-| `@ConfigurationProperties` binds indexed lists (`app.hosts[0]`), maps (`app.headers.*`) and lists of objects | Comma-separated lists only | Not implemented yet |
-| YAML config files out of the box | `PropertySourceLoader` for YAML provided by the application (`ConfigDataEnvironment(loaders:)`) | No YAML dependency in the package |
+| Constructor binding passes `null` for a missing property without `@DefaultValue` | A missing non-nullable scalar fails the start; a missing collection is empty and a missing nested object is created with its own defaults (what Boot does with an empty `@DefaultValue`) | Dart's non-nullable types |
+| `@ConstructorBinding` picks one of several constructors | Constructor binding only for a class whose only public generative constructor has parameters | Not implemented yet |
+| YAML 1.1 (SnakeYAML) | YAML 1.2 (`package:yaml`): `on`, `off`, `yes`, `no` stay strings (converting them to `bool` still works), `0777` is 777 | The Dart team's YAML parser |
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |
 | `spring.task.scheduling.shutdown.await-termination` | Not supported: running tasks are not awaited on close | `close()` is synchronous |
@@ -454,5 +557,5 @@ declarations are needed for them.
 ## Not yet
 
 `@AutoConfigureAfter` / `@AutoConfigureBefore` (only
-`AutoConfigurationModule(order:)`), test slices (`@WebMvcTest`-like),
+`AutoConfigurationModule(order:)`), `AvailabilityChangeEvent`, test slices (`@WebMvcTest`-like),
 Actuator, Web.

@@ -245,6 +245,8 @@ final class ApplicationContextRunner {
         MapPropertySource('test', Map.of(properties)),
       );
     }
+    // Relaxed names, as in an application started by SpringApplication.
+    ConfigurationPropertySources.attach(environment);
     final context = AnnotationConfigApplicationContext([
       // Like Boot: registered beans first, then the configurations.
       if (beans.isNotEmpty) BeanModule('ApplicationContextRunner.beans', beans),

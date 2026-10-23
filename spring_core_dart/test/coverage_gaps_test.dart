@@ -47,7 +47,7 @@ void main() {
       Service('s'),
       Repository('r'),
       Controller('ctl'),
-      Configuration('cfg'),
+      Configuration(name: 'cfg', proxyBeanMethods: false),
       Bean(
         name: 'b',
         aliases: ['a'],

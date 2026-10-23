@@ -38,4 +38,17 @@ abstract final class FileAccess {
     for (final entity in Directory(directory).listSync(recursive: true))
       if (entity is File) entity.path.replaceAll(r'\', '/'),
   ]..sort();
+
+  /// Paths of the directories directly in [directory], using `/`
+  /// separators, sorted; empty if [directory] is not a directory.
+  static List<String> listDirectories(String directory) {
+    final dir = Directory(directory);
+    if (!dir.existsSync()) {
+      return const [];
+    }
+    return [
+      for (final entity in dir.listSync())
+        if (entity is Directory) entity.path.replaceAll(r'\', '/'),
+    ]..sort();
+  }
 }

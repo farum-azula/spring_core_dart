@@ -43,6 +43,15 @@ void main() {
     expectLine('DebugToolbar (dev-tools & !prod): true');
     expectLine('Recommendations (condition on property): true');
     expectLine('WeekendSale (@Conditional never): false');
+    expectLine(
+      'EmbeddedDataSource beans before creation (inferred @Bean type): '
+      '[dataSource]',
+    );
+    expectLine('dataSource created yet?: false');
+    expectLine('dataSource (@Profile dev): mem:books');
+    expectLine('dataSource (@Profile prod, same bean name): pool:books');
+    expectLine('getBean<PooledDataSource>().maxSize: 8');
+    expectLine('EmbeddedDataSource beans: []');
     // The second context with --spring.profiles.active=prod.
     expectLine('log.level (!prod guard): null');
     expectLine('prod.secret: 42');
@@ -73,6 +82,16 @@ void main() {
     expectLine('lazy pool created yet?: false');
     expectLine('pool open (initMethod connect): true');
     expectLine('search index (@Bean product with @PostConstruct): 3');
+    expectLine(
+      'inter-bean call searchIndex() is the singleton (full @Configuration): '
+      'true',
+    );
+    expectLine('inter-bean calls ids() give new prototypes: true');
+    expectLine(
+      "inter-bean call label('index report') (prototype with arguments): "
+      'index report',
+    );
+    expectLine('label bean (injected @Value): NEON Books');
     expectLine('@Configurable screen: NEON Books, page 2');
     // lib/resources/ as the classpath.
     expectLine(
@@ -249,6 +268,14 @@ void main() {
     expectLine('missing dependency: NoSuchBeanDefinitionException');
     expectLine(
       'cycle: BeanCurrentlyInCreationException: Circular dependency: a -> b -> a.',
+    );
+    // Conditional declarations of one name build; both matching is the
+    // container's override error.
+    expectLine(
+      "dev and prod dataSource: BeanDefinitionOverrideException: Bean name "
+      "'dataSource' is already in use (registering package:"
+      'spring_core_dart_example/src/config/data_config.dart#'
+      'ProdDataConfig.dataSource).',
     );
   });
 }

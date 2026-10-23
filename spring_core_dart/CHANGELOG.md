@@ -1,5 +1,11 @@
 ## Unreleased
 
+- breaking: `@Configuration({name, proxyBeanMethods = true})` (the name is a named argument now): full mode by default, the generated subclass makes inter-bean `@Bean` method calls return the container's beans; `proxyBeanMethods: false` keeps the methods as written (needs the matching `spring_core_dart_generator`)
+- config data: YAML out of the box (`YamlPropertySourceLoader` on `package:yaml`, flattened like Boot: `a.b`, `a.hosts[0]`, `a.servers[0].name`, `~` / empty as `''`); `application.yml` / `.yaml`, profile variants, `---` documents and YAML lists for `spring.config.import`, `spring.profiles.include` / `active` / `group.*` and `on-profile`; invalid files fail with a `ConfigDataLoadException`
+- breaking: config locations come in Boot's groups (`,` separates groups, `;` joins locations into one); `defaultSearchLocations` is `optional:classpath:/;optional:classpath:/config/` and `optional:file:./;optional:file:./config/;optional:file:./config/*/`, so external non-profile files beat packaged profile files; `ConfigDataEnvironment(defaultLocations:)` entries are groups
+- breaking: in one location `.properties` beats `.yml` / `.yaml` (an earlier loader's files win, like Boot's; they lost before)
+- config data: `*/` wildcard locations (`file:./config/*/`, `file:./etc/*/app.properties`): each subdirectory in alphabetical order, `..x` ones skipped; classpath wildcards are rejected
+- relaxed names like Boot's attached `ConfigurationPropertySources` (attached by `ConfigDataEnvironment`): `getProperty('app.read-timeout')`, `${app.read-timeout}` and `@Value` find `app.readTimeout`, `app.read_timeout`, `APP_READTIMEOUT`, `APP_HOSTS_0_`; precedence decides, not the form. New `ConfigurationPropertyName`; breaking: the environment's first property source is now `configurationProperties`
 - AOP: `Type+` subtype patterns in `within` / `execution`, `@target`, `this`, `args(...)`; `bean()` also matches aliases and qualifier values
 - AOP: named pointcuts resolved per aspect (`orders()` in its own aspect, `AuditAspect.orders()` for another's)
 - AOP: aspects ordered by `Ordered` as well as `@Order`; plain `Advisor` beans; aspects and advisors of parent contexts apply

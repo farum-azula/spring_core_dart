@@ -2,22 +2,29 @@ import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 
 /// Turns the content of a config file into property sources, like Spring
-/// Boot's `PropertySourceLoader`. Selected by file extension; add a loader
-/// for `yaml`/`yml` to support YAML files.
+/// Boot's `PropertySourceLoader`. Selected by file extension; `.properties`
+/// ([PropertiesPropertySourceLoader]) and `.yml` / `.yaml`
+/// (`YamlPropertySourceLoader`) are built in, add a loader for other
+/// formats.
 ///
 /// Unlike Spring Boot, loaders get the file content as a string (resources
 /// may be async-only), not a `Resource`.
 ///
 /// ```dart
-/// class YamlPropertySourceLoader implements PropertySourceLoader {
-///   const YamlPropertySourceLoader();
+/// class JsonPropertySourceLoader implements PropertySourceLoader {
+///   const JsonPropertySourceLoader();
 ///
 ///   @override
-///   List<String> get fileExtensions => const ['yml', 'yaml'];
+///   List<String> get fileExtensions => const ['json'];
 ///
 ///   @override
 ///   List<AbstractPropertySource<Object>> load(String name, String content) =>
-///       [MapPropertySource(name, flattenYaml(content))];
+///       [
+///         MapPropertySource(
+///           name,
+///           YamlPropertySourceLoader.flatten(jsonDecode(content) as Object),
+///         ),
+///       ];
 /// }
 ///
 /// ConfigDataEnvironment(
@@ -25,21 +32,22 @@ import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 ///   loaders: const [
 ///     PropertiesPropertySourceLoader(),
 ///     YamlPropertySourceLoader(),
+///     JsonPropertySourceLoader(),
 ///   ],
 /// );
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// public class MyYamlLoader implements PropertySourceLoader {
+/// public class JsonPropertySourceLoader implements PropertySourceLoader {
 ///   @Override
 ///   public String[] getFileExtensions() {
-///     return new String[] {"yml", "yaml"};
+///     return new String[] {"json"};
 ///   }
 ///
 ///   @Override
 ///   public List<PropertySource<?>> load(String name, Resource resource) {
-///     return List.of(new MapPropertySource(name, flattenYaml(resource)));
+///     return List.of(new MapPropertySource(name, flattenJson(resource)));
 ///   }
 /// }
 /// // registered in META-INF/spring.factories

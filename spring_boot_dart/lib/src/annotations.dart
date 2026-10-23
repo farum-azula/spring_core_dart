@@ -33,11 +33,18 @@ class SpringBootApplication {
 ///
 /// The class becomes a bean and gets introspection metadata (no separate
 /// `@Component` / `@Introspected` needed). Property `maxSize` is read from
-/// `prefix.max-size` (or `prefix.maxSize`, or the environment variables
-/// `PREFIX_MAX_SIZE` / `PREFIX_MAXSIZE`); nested `@Introspected` objects are
-/// bound from `prefix.nested.*`. Values are converted to the field types;
-/// with `@Validated()` on the class they are also validated with the
-/// constraint annotations (`@NotBlank`, `@Min`, ...), as in Spring Boot.
+/// `prefix.max-size` in any relaxed form (`prefix.maxSize`,
+/// `prefix.max_size`, the environment variable `PREFIX_MAXSIZE`), from the
+/// first property source that has it. Values are converted to the field
+/// types; lists and sets bind from comma lists or indexed keys
+/// (`prefix.hosts[0]`, YAML lists, `PREFIX_HOSTS_0_`), maps from the keys
+/// below them (`prefix.headers.x-a`, `prefix.headers[x.y]`), nested
+/// `@Introspected` objects from `prefix.nested.*` — also inside lists and
+/// maps (`prefix.servers[0].name`, `prefix.backends.eu.url`). A list from a
+/// higher-precedence source replaces the whole list; map entries are
+/// merged per key (see `Binder`).
+///
+/// Mutable classes are bound through their setters:
 ///
 /// ```dart
 /// @ConfigurationProperties('db')
@@ -47,24 +54,83 @@ class SpringBootApplication {
 ///   String url = '';
 ///   int maxSize = 10;
 ///   Duration timeout = const Duration(seconds: 5);
+///   List<String> hosts = [];
 /// }
 /// ```
+///
+/// A class whose only constructor has parameters is bound through that
+/// constructor (constructor binding): a parameter without a property takes
+/// its [DefaultValue], else its Dart default value, else `null` when it is
+/// nullable; otherwise the start fails naming the property.
+///
+/// ```dart
+/// @ConfigurationProperties('db')
+/// class DbProperties {
+///   const DbProperties(this.url, {@DefaultValue('10') required this.maxSize,
+///       this.timeout = const Duration(seconds: 5)});
+///   final String url;
+///   final int maxSize;
+///   final Duration timeout;
+/// }
+/// ```
+///
+/// With `@Validated()` on the class the constraint annotations
+/// (`@NotBlank`, `@Min`, ...) are checked after binding, as in Spring Boot.
 ///
 /// Spring (Java):
 /// ```java
 /// @ConfigurationProperties("db") @Validated
 /// public class DbProperties { String url; int maxSize = 10; Duration timeout; }
+///
+/// @ConfigurationProperties("db")
+/// public record DbProperties(String url, @DefaultValue("10") int maxSize) {}
 /// ```
 class ConfigurationProperties extends Component implements Introspected {
   /// Binds the properties under [prefix]; [name] overrides the bean name.
   const ConfigurationProperties(this.prefix, {String? name}) : super(name);
 
-  /// Property prefix, e.g. `db` for `db.url`.
+  /// Property prefix in canonical form (lower case, `-` between words),
+  /// e.g. `db` for `db.url` or `my-app`.
   final String prefix;
 
   /// No extra classes to introspect (see `Introspected.classes`).
   @override
   List<Type> get classes => const [];
+}
+
+/// The value a constructor-bound `@ConfigurationProperties` parameter
+/// takes when its property is not set, like Spring Boot's `@DefaultValue`:
+/// a `String` (converted like a property value), a `List<String>` for
+/// collections, or nothing — an empty collection, or a nested object
+/// created with its own defaults.
+///
+/// ```dart
+/// @ConfigurationProperties('app')
+/// class AppProperties {
+///   AppProperties(
+///     @DefaultValue('8080') this.port,
+///     @DefaultValue(['a', 'b']) this.hosts,
+///     @DefaultValue() this.pool,
+///   );
+///   final int port;
+///   final List<String> hosts;
+///   final Pool pool;
+/// }
+/// ```
+///
+/// A Dart default value (`{this.port = 8080}`) works the same.
+///
+/// Spring (Java):
+/// ```java
+/// public record AppProperties(@DefaultValue("8080") int port,
+///     @DefaultValue({"a", "b"}) List<String> hosts, @DefaultValue Pool pool) {}
+/// ```
+class DefaultValue {
+  /// The default: a `String`, a `List<String>` or nothing.
+  const DefaultValue([this.value = const <String>[]]);
+
+  /// The default value(s), converted like a property value.
+  final Object value;
 }
 
 /// A configuration class provided by a library ("starter"), like Spring
@@ -73,10 +139,12 @@ class ConfigurationProperties extends Component implements Introspected {
 /// Auto-configuration modules are registered after the application's own
 /// beans (see `SpringApplication.autoConfigurations`), so conditions such as
 /// [ConditionalOnMissingBean] back off when the application declares its own
-/// bean.
+/// bean. Like Boot's, its `@Bean` methods are not intercepted
+/// (`proxyBeanMethods: false`): take other beans as method parameters.
 class AutoConfiguration extends Configuration {
   /// Marks an auto-configuration class.
-  const AutoConfiguration([super.name]);
+  const AutoConfiguration([String? name])
+    : super(name: name, proxyBeanMethods: false);
 }
 
 /// Marks a top-level `BeanModule` of a library as its auto-configuration,

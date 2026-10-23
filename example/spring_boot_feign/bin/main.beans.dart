@@ -122,10 +122,11 @@ class _$FeignConfig_clientNameProxy
   ) as _i4.FutureOr<void>);
 }
 
-class _$FeignConfig_retryerProxy implements _i9.Retryer, _i3.Advised {
+class _$FeignConfig_retryerProxy
+    implements _i9.DefaultRetryer, _i9.Retryer, _i3.Advised {
   _$FeignConfig_retryerProxy(this._target, this._invoker);
 
-  final _i9.Retryer _target;
+  final _i9.DefaultRetryer _target;
 
   final _i3.ProxyInvoker _invoker;
 
@@ -150,6 +151,21 @@ class _$FeignConfig_retryerProxy implements _i9.Retryer, _i3.Advised {
           (args[1] as _i10.RetryableException),
         ),
       ) as Duration?);
+
+  @override
+  Duration get period =>
+      (_invoker.invoke(this, _target, 1, const [], (_) => _target.period)
+          as Duration);
+
+  @override
+  Duration get maxPeriod =>
+      (_invoker.invoke(this, _target, 2, const [], (_) => _target.maxPeriod)
+          as Duration);
+
+  @override
+  int get maxAttempts =>
+      (_invoker.invoke(this, _target, 3, const [], (_) => _target.maxAttempts)
+          as int);
 }
 
 class _$JsonPlaceholderClientProxy
@@ -523,6 +539,42 @@ class _$WikimediaStreamsImpl implements _i13.WikimediaStreams {
           as _i14.EventStream<_i7.RecentChange>);
 }
 
+/// `FeignConfig` whose `@Bean` methods return the beans of the container
+/// (full-mode `@Configuration`).
+class _$FeignConfigConfiguration extends _i18.FeignConfig {
+  _$FeignConfigConfiguration(this._$beanFactory);
+
+  final _i3.BeanFactory _$beanFactory;
+
+  final _$arguments = <String, List<Object?>>{};
+
+  @override
+  _i8.RequestInterceptor clientName(String application) {
+    final arguments = <Object?>[application];
+    _$arguments[r'clientName'] = arguments;
+    try {
+      return (_$beanFactory.getBeanByName(r'clientName')
+          as _i8.RequestInterceptor);
+    } finally {
+      _$arguments.remove(r'clientName');
+    }
+  }
+
+  _i8.RequestInterceptor _$clientName(_i3.DependencyResolver r) {
+    final arguments = _$arguments.remove(r'clientName');
+    if (arguments != null) {
+      return super.clientName((arguments[0] as String));
+    }
+    return super.clientName(r.value<String>(r'${spring.application.name}'));
+  }
+
+  @override
+  _i9.Retryer retryer() =>
+      (_$beanFactory.getBeanByName(r'retryer') as _i9.Retryer);
+
+  _i9.Retryer _$retryer(_i3.DependencyResolver r) => super.retryer();
+}
+
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
@@ -618,7 +670,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       name: r'feignConfig',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig',
       types: const [_i18.FeignConfig],
-      create: (r) => _i18.FeignConfig(),
+      create: (r) => _$FeignConfigConfiguration(r),
       annotations: const [_i3.Configuration()],
     ),
     _i3.BeanDefinition<_i8.RequestInterceptor>(
@@ -631,9 +683,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
         _i3.Dependency.value(r'${spring.application.name}'),
       ],
-      create: (r) => r
-          .dependency<_i18.FeignConfig>(qualifier: r'feignConfig')
-          .clientName(r.value<String>(r'${spring.application.name}')),
+      create: (r) => (r.dependency<_i18.FeignConfig>(
+        qualifier: r'feignConfig',
+      ) as _$FeignConfigConfiguration)._$clientName(r),
       annotations: const [_i3.Bean()],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
@@ -654,33 +706,61 @@ _i3.BeanModule get $application => _i3.BeanModule(
         ),
       ),
     ),
-    _i3.BeanDefinition<_i9.Retryer>(
+    _i3.BeanDefinition<_i9.DefaultRetryer>(
       name: r'retryer',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig.retryer',
-      types: const [_i9.Retryer],
+      types: const [_i9.DefaultRetryer, _i9.Retryer],
       factoryBeanName: r'feignConfig',
       factoryMethodName: r'retryer',
       dependencies: const [
         _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
       ],
-      create: (r) =>
-          r.dependency<_i18.FeignConfig>(qualifier: r'feignConfig').retryer(),
+      create: (r) => ((r.dependency<_i18.FeignConfig>(
+        qualifier: r'feignConfig',
+      ) as _$FeignConfigConfiguration)._$retryer(r) as _i9.DefaultRetryer),
       annotations: const [_i3.Bean()],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
             name: r'nextDelay',
             declaringType: r'Retryer',
-            targetType: r'Retryer',
-            declaringTypes: [r'Retryer'],
+            targetType: r'DefaultRetryer',
+            declaringTypes: [r'DefaultRetryer', r'Retryer'],
             returnType: r'Duration',
             parameterTypes: [r'int', r'RetryableException'],
             parameterNames: [r'attempt', r'error'],
-            targetTypes: [r'Retryer'],
+            targetTypes: [r'DefaultRetryer', r'Retryer'],
+          ),
+          _i3.MethodSignature(
+            name: r'period',
+            declaringType: r'DefaultRetryer',
+            targetType: r'DefaultRetryer',
+            declaringTypes: [r'DefaultRetryer'],
+            kind: _i3.MemberKind.getter,
+            returnType: r'Duration',
+            targetTypes: [r'DefaultRetryer', r'Retryer'],
+          ),
+          _i3.MethodSignature(
+            name: r'maxPeriod',
+            declaringType: r'DefaultRetryer',
+            targetType: r'DefaultRetryer',
+            declaringTypes: [r'DefaultRetryer'],
+            kind: _i3.MemberKind.getter,
+            returnType: r'Duration',
+            targetTypes: [r'DefaultRetryer', r'Retryer'],
+          ),
+          _i3.MethodSignature(
+            name: r'maxAttempts',
+            declaringType: r'DefaultRetryer',
+            targetType: r'DefaultRetryer',
+            declaringTypes: [r'DefaultRetryer'],
+            kind: _i3.MemberKind.getter,
+            returnType: r'int',
+            targetTypes: [r'DefaultRetryer', r'Retryer'],
           ),
         ],
         create: (target, invoker) =>
-            _$FeignConfig_retryerProxy((target as _i9.Retryer), invoker),
+            _$FeignConfig_retryerProxy((target as _i9.DefaultRetryer), invoker),
       ),
     ),
     _i3.BeanDefinition<_i5.JsonPlaceholderClient>(
@@ -1401,7 +1481,7 @@ _i19.SpringApplication get springApplication => _i19.SpringApplication(
     _i22.springBootStarterLoggingAutoConfiguration,
     _i23.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '3913c26f',
+  fingerprint: '46c5bc8e',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -62,7 +62,8 @@ void main() {
     ResourceLoader? resourceLoader,
   }) => ConfigDataEnvironment(
     environment,
-    defaultLocations: ['optional:file:$root/', 'optional:file:$root/config/'],
+    // One group, like Boot's default `classpath:/;classpath:/config/`.
+    defaultLocations: ['optional:file:$root/;optional:file:$root/config/'],
     resourceLoader: resourceLoader,
     loaders: loaders ?? const [PropertiesPropertySourceLoader()],
   );
@@ -117,18 +118,21 @@ a=2
   test('no files: nothing changes', () {
     final e = env();
     config(e).processAndApplySync();
-    expect(e.propertySources.map((s) => s.name), ['cli', 'systemEnvironment']);
+    expect(e.propertySources.map((s) => s.name), [
+      'configurationProperties',
+      'cli',
+      'systemEnvironment',
+    ]);
     expect(e.activeProfiles, isEmpty);
   });
 
   test('default locations of the real constructor are optional', () {
     final e = env();
     ConfigDataEnvironment(e).processAndApplySync();
+    // Boot's two groups.
     expect(ConfigDataEnvironment.defaultSearchLocations, [
-      'optional:classpath:/',
-      'optional:classpath:/config/',
-      'optional:file:./',
-      'optional:file:./config/',
+      'optional:classpath:/;optional:classpath:/config/',
+      'optional:file:./;optional:file:./config/;optional:file:./config/*/',
     ]);
   });
 
@@ -144,9 +148,10 @@ a=2
     expect(e.getProperty('c'), 'root-dev');
     expect(e.getProperty('d'), 'root');
     expect(e.activeProfiles, ['dev']);
-    expect(e.propertySources.first.name, 'cli');
+    expect(e.propertySources.first.name, 'configurationProperties');
+    expect(e.propertySources.elementAt(1).name, 'cli');
     expect(
-      e.propertySources.elementAt(2).name,
+      e.propertySources.elementAt(3).name,
       "Config resource 'file:$root/config/application-dev.properties'",
     );
   });
@@ -487,7 +492,8 @@ a=2
       e,
       loaders: [const PropertiesPropertySourceLoader(), _ColonLoader()],
     ).processAndApplySync();
-    expect(e.getProperty('name'), 'from-yml', reason: 'later loader wins');
+    // Boot: an earlier loader's files take precedence in one location.
+    expect(e.getProperty('name'), 'from-properties');
     expect(e.getProperty('only'), 'yml');
   });
 

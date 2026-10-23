@@ -27,6 +27,9 @@ abstract final class FileAccess {
   /// Always empty.
   static List<String> listFilesRecursively(String directory) => const [];
 
+  /// Always empty.
+  static List<String> listDirectories(String directory) => const [];
+
   /// Throws [UnsupportedError].
   static int length(String path) => _unsupported();
 

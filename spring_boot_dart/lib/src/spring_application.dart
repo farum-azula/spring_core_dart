@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/src/configuration_properties.dart';
+import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
@@ -13,28 +14,35 @@ const _log = SpringLog('spring_boot_dart.SpringApplication');
 ///
 /// `run` does what an application would otherwise write by hand:
 ///
-/// 1. command-line arguments and OS environment variables as property
-///    sources;
+/// 1. [ApplicationStartingEvent]; command-line arguments and OS
+///    environment variables as property sources;
 /// 2. `lib/resources/application.properties` (`classpath:`) and
 ///    `application-{profile}` files (Spring Boot config data: profiles,
-///    imports, groups, ...);
+///    imports, groups, ...); [ApplicationEnvironmentPreparedEvent];
 /// 3. `logging.level.root` and `logging.level.<logger>` (also
 ///    `logging.group.<name>=a,b` and `LOGGING_LEVEL_<LOGGER>` variables)
 ///    applied to [SpringLog];
 /// 4. the context: the application's modules, then [autoConfigurations]
 ///    (so `@ConditionalOnMissingBean` sees the application's beans),
 ///    `@ConfigurationProperties` binding, `ApplicationArguments` as a bean;
+///    the [initializers], [ApplicationContextInitializedEvent],
+///    [ApplicationPreparedEvent], then the refresh;
 /// 5. startup info logged through [SpringLog] at INFO like Spring Boot's
 ///    (`Starting app using Dart 3.9.0 with PID 42`, the active profiles,
 ///    `Started app in 0.042 seconds`; off with
-///    `spring.main.log-startup-info=false`), or a readable
+///    `spring.main.log-startup-info=false`) and [ApplicationStartedEvent];
+///    or [ApplicationFailedEvent] and a readable
 ///    `APPLICATION FAILED TO START` report (from [failureAnalyzers] and
 ///    `FailureAnalyzer` beans first, then the built-in analysis) before
 ///    the error is rethrown;
 /// 6. `ApplicationRunner` / `CommandLineRunner` beans, one after another
-///    in order: a runner's `Future` completes before the next starts. A
-///    failing runner is reported (`Application run failed`) and the
-///    context is closed. [runAsync] completes after the last runner.
+///    in order: a runner's `Future` completes before the next starts, then
+///    [ApplicationReadyEvent]. A failing runner publishes
+///    [ApplicationFailedEvent], is reported (`Application run failed`) and
+///    the context is closed. [runAsync] completes after the last runner.
+///
+/// The events go to [listeners] (Spring Boot's `addListeners`); see
+/// [SpringApplicationEvent] for which of them `@EventListener` beans see.
 ///
 /// `spring.main.lazy-initialization=true` makes every singleton lazy
 /// (see [LazyInitializationBeanFactoryPostProcessor]);
@@ -59,6 +67,7 @@ class SpringApplication {
     List<BeanModule> autoConfigurations = const [],
     List<ApplicationContextInitializer> initializers = const [],
     List<FailureAnalyzer> failureAnalyzers = const [],
+    List<GenericApplicationListener> listeners = const [],
     this.resourceLoader,
     this.fingerprint,
     void Function(String line)? out,
@@ -66,6 +75,7 @@ class SpringApplication {
        autoConfigurations = List.unmodifiable(autoConfigurations),
        initializers = List.unmodifiable(initializers),
        failureAnalyzers = List.unmodifiable(failureAnalyzers),
+       _listeners = [...listeners],
        out = out ?? print;
 
   /// The application's own modules.
@@ -83,6 +93,38 @@ class SpringApplication {
   /// before the built-in analysis when the start fails (Spring Boot's
   /// `FailureAnalyzers` from `spring.factories`).
   final List<FailureAnalyzer> failureAnalyzers;
+
+  final List<GenericApplicationListener> _listeners;
+
+  /// The listeners of the application events ([SpringApplicationEvent]s),
+  /// like Spring Boot's `getListeners`.
+  List<GenericApplicationListener> get listeners =>
+      List.unmodifiable(_listeners);
+
+  /// Adds listeners of the application events, like Spring Boot's
+  /// `addListeners`. They receive every [SpringApplicationEvent] — also
+  /// the ones published before the context exists, which `@EventListener`
+  /// beans cannot see — and, from [ApplicationPreparedEvent] on, the
+  /// events of the context as its listeners.
+  ///
+  /// ```dart
+  /// SpringApplication([appBeans])
+  ///   ..addListeners([
+  ///     ApplicationListenerAdapter.of<ApplicationStartingEvent>(
+  ///       (event) => print('starting'),
+  ///     ),
+  ///   ])
+  ///   ..run(args);
+  /// ```
+  void addListeners(Iterable<GenericApplicationListener> listeners) =>
+      _listeners.addAll(listeners);
+
+  /// Adds a listener for events of type [E] (see [addListeners]).
+  void addListener<E>(
+    void Function(E event) listener, {
+    int order = Ordered.lowestPrecedence,
+  }) =>
+      _listeners.add(ApplicationListenerAdapter.of<E>(listener, order: order));
 
   /// Identifies the generated code the application was built from (a hash
   /// written by the generator). [reload] keeps a running context when it
@@ -120,22 +162,25 @@ class SpringApplication {
     required bool runners,
   }) {
     final watch = Stopwatch()..start();
+    final run = _RunListeners(this, args)..starting();
     final environment = _environment(args, systemEnvironment, properties);
-    final (context, arguments) = _guard(() {
+    final (context, arguments) = _guard(run, () {
       ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
       ).processAndApplySync();
-      return _start(args, environment, watch, (systemEnvironment, properties));
+      run.environmentPrepared(environment);
+      return _start(run, args, environment, watch, (
+        systemEnvironment,
+        properties,
+      ));
     });
-    if (!runners) {
-      return context;
-    }
     final FutureOr<void> called;
     try {
-      called = _callRunners(context, arguments);
+      run.started(context, watch.elapsed);
+      called = runners ? _callRunners(context, arguments) : null;
     } catch (error) {
-      _runFailed(context, error);
+      _runFailed(run, context, error);
       rethrow;
     }
     if (called is Future<void>) {
@@ -143,13 +188,37 @@ class SpringApplication {
       // failure closes the context and is rethrown (uncaught, it ends the
       // program, as a failed run does in Spring Boot).
       unawaited(
-        called.catchError((Object error, StackTrace stackTrace) {
-          _runFailed(context, error);
-          Error.throwWithStackTrace(error, stackTrace);
-        }),
+        called.then(
+          (_) => _ready(run, context, watch),
+          onError: (Object error, StackTrace stackTrace) {
+            _runFailed(run, context, error);
+            Error.throwWithStackTrace(error, stackTrace);
+          },
+        ),
       );
+    } else {
+      _ready(run, context, watch);
     }
     return context;
+  }
+
+  // ApplicationReadyEvent, unless the context was closed meanwhile; a
+  // failing listener fails the run (without ApplicationFailedEvent, as in
+  // Spring Boot).
+  void _ready(
+    _RunListeners run,
+    ConfigurableApplicationContext context,
+    Stopwatch watch,
+  ) {
+    if (!context.isActive) {
+      return;
+    }
+    try {
+      run.ready(context, watch.elapsed);
+    } catch (error) {
+      _runFailed(run, context, error, failedEvent: false);
+      rethrow;
+    }
   }
 
   /// Like [run], reading config files asynchronously (e.g. Flutter assets),
@@ -169,27 +238,35 @@ class SpringApplication {
     required bool runners,
   }) async {
     final watch = Stopwatch()..start();
+    final run = _RunListeners(this, args)..starting();
     final environment = _environment(args, systemEnvironment, properties);
     try {
       await ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
       ).processAndApply();
+      run.environmentPrepared(environment);
     } catch (error) {
-      _report(error);
+      _report(run, error);
       rethrow;
     }
     final (context, arguments) = _guard(
-      () => _start(args, environment, watch, (systemEnvironment, properties)),
+      run,
+      () => _start(run, args, environment, watch, (
+        systemEnvironment,
+        properties,
+      )),
     );
-    if (runners) {
-      try {
+    try {
+      run.started(context, watch.elapsed);
+      if (runners) {
         await _callRunners(context, arguments);
-      } catch (error) {
-        _runFailed(context, error);
-        rethrow;
       }
+    } catch (error) {
+      _runFailed(run, context, error);
+      rethrow;
     }
+    _ready(run, context, watch);
     return context;
   }
 
@@ -281,11 +358,11 @@ class SpringApplication {
     return environment;
   }
 
-  T _guard<T>(T Function() body) {
+  T _guard<T>(_RunListeners run, T Function() body) {
     try {
       return body();
     } catch (error) {
-      _report(error);
+      _report(run, error);
       rethrow;
     }
   }
@@ -294,10 +371,17 @@ class SpringApplication {
   // beans), so the outer catch does not report them again.
   final Set<Object> _reported = Set.identity();
 
-  void _report(Object error, [ConfigurableApplicationContext? context]) {
+  // ApplicationFailedEvent, then the failure report (Spring Boot's
+  // handleRunFailure).
+  void _report(
+    _RunListeners run,
+    Object error, [
+    ConfigurableApplicationContext? context,
+  ]) {
     if (_reported.remove(error)) {
       return;
     }
+    run.failed(context, error);
     final analysis = analyzeFailure(error, analyzers: _analyzers(context));
     if (analysis != null) {
       out(analysis.report);
@@ -331,6 +415,7 @@ class SpringApplication {
   // runners are called by the caller afterwards (Spring Boot: logStarted,
   // then callRunners).
   (ConfigurableApplicationContext, ApplicationArguments) _start(
+    _RunListeners run,
     List<String> args,
     StandardEnvironment environment,
     Stopwatch watch,
@@ -394,10 +479,13 @@ class SpringApplication {
     for (final initializer in initializers) {
       initializer(context);
     }
+    run
+      ..contextPrepared(context)
+      ..contextLoaded(context);
     try {
       context.refresh();
     } catch (error) {
-      _report(error, context);
+      _report(run, error, context);
       if (context.isActive) {
         context.close();
       }
@@ -411,9 +499,17 @@ class SpringApplication {
     return (context, arguments);
   }
 
-  // A runner failed: reported like Spring Boot's "Application run failed",
-  // and the context is closed.
-  void _runFailed(ConfigurableApplicationContext context, Object error) {
+  // A runner failed: ApplicationFailedEvent, reported like Spring Boot's
+  // "Application run failed", and the context is closed.
+  void _runFailed(
+    _RunListeners run,
+    ConfigurableApplicationContext context,
+    Object error, {
+    bool failedEvent = true,
+  }) {
+    if (failedEvent) {
+      run.failed(context, error);
+    }
     out(
       analyzeFailure(error, analyzers: _analyzers(context))?.report ??
           'Application run failed: $error',
@@ -605,6 +701,73 @@ final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
 typedef ApplicationContextInitializer = void Function(
   ConfigurableApplicationContext context,
 );
+
+// Spring Boot's EventPublishingRunListener: the application's listeners
+// get the early events through their own multicaster, the later ones
+// through the context.
+final class _RunListeners {
+  _RunListeners(this.application, this.args) {
+    for (final listener in application._listeners) {
+      _multicaster.addApplicationListener(listener);
+    }
+  }
+
+  final SpringApplication application;
+  final List<String> args;
+  final _multicaster = SimpleApplicationEventMulticaster();
+
+  void starting() =>
+      _multicaster.multicastEvent(ApplicationStartingEvent(application, args));
+
+  void environmentPrepared(ConfigurableEnvironment environment) =>
+      _multicaster.multicastEvent(
+        ApplicationEnvironmentPreparedEvent(application, args, environment),
+      );
+
+  void contextPrepared(ConfigurableApplicationContext context) =>
+      _multicaster.multicastEvent(
+        ApplicationContextInitializedEvent(application, args, context),
+      );
+
+  void contextLoaded(ConfigurableApplicationContext context) {
+    for (final listener in application._listeners) {
+      context.addApplicationListener(listener);
+    }
+    _multicaster.multicastEvent(
+      ApplicationPreparedEvent(application, args, context),
+    );
+  }
+
+  void started(ConfigurableApplicationContext context, Duration timeTaken) =>
+      context.publishEvent(
+        ApplicationStartedEvent(application, args, context, timeTaken),
+      );
+
+  void ready(ConfigurableApplicationContext context, Duration timeTaken) =>
+      context.publishEvent(
+        ApplicationReadyEvent(application, args, context, timeTaken),
+      );
+
+  // Through the context when it runs (the application's listeners are
+  // among its listeners by then), else to the application's listeners; a
+  // failing listener is logged, the original failure goes on.
+  void failed(ConfigurableApplicationContext? context, Object error) {
+    final event = ApplicationFailedEvent(application, args, context, error);
+    try {
+      if (context != null && context.isActive) {
+        context.publishEvent(event);
+      } else {
+        _multicaster.multicastEvent(event);
+      }
+    } catch (listenerError, stackTrace) {
+      _log.warning(
+        'Error handling failed',
+        error: listenerError,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+}
 
 final class _Launch {
   _Launch(this.fingerprint, this.args, this.systemEnvironment, this.properties);

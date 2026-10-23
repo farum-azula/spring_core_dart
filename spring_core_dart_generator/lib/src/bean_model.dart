@@ -257,13 +257,21 @@ sealed class Creation {
 class ConstructorCreation extends Creation {
   /// Creates a constructor call; [constructorName] is `null` for the
   /// unnamed constructor.
-  ConstructorCreation(this.constructorName, this.arguments);
+  ConstructorCreation(
+    this.constructorName,
+    this.arguments, {
+    this.configuration,
+  });
 
   /// `null` for the unnamed constructor.
   final String? constructorName;
 
   @override
   final List<Argument> arguments;
+
+  /// For a full-mode `@Configuration` class: the generated subclass that is
+  /// created instead (its constructor takes the bean factory first).
+  final ConfigurationClassModel? configuration;
 }
 
 /// An interface proxy: the generated `_$XImpl.$create(r)`, which asks an
@@ -287,14 +295,39 @@ class InterfaceProxyCreation extends Creation {
   List<Argument> get arguments => const [];
 }
 
-/// A `@Bean` method on another bean (or a static one).
-///
-/// Instance methods are called on the owning bean, looked up by its name;
-/// static methods are called on the class.
+/// A constructor-bound `@ConfigurationProperties` class: Spring Boot's
+/// `ConstructorBound.from`, which binds the constructor parameters from
+/// properties (through the class's introspection) instead of beans.
 ///
 /// ```dart
 /// // Input:
-/// @Configuration()
+/// @ConfigurationProperties('db')
+/// class DbProperties {
+///   const DbProperties(this.url, {this.maxSize = 10});
+///   final String url;
+///   final int maxSize;
+/// }
+/// // Output:
+/// create: (r) => ConstructorBound.from<DbProperties>(r, r'dbProperties'),
+/// ```
+class ConfigurationPropertiesCreation extends Creation {
+  /// Creates the constructor-bound creation.
+  ConfigurationPropertiesCreation();
+
+  @override
+  List<Argument> get arguments => const [];
+}
+
+/// A `@Bean` method on another bean (or a static one).
+///
+/// Instance methods are called on the owning bean, looked up by its name
+/// (through `_$method(r)` of the generated subclass for a full-mode
+/// `@Configuration`, see [enhanced]); static methods are called on the
+/// class.
+///
+/// ```dart
+/// // Input:
+/// @Configuration(proxyBeanMethods: false)
 /// class Config {
 ///   @Bean()
 ///   Clock clock() => SystemClock();
@@ -327,10 +360,21 @@ class BeanMethodCreation extends Creation {
     required this.methodName,
     required this.isStatic,
     required this.arguments,
+    this.enhanced,
+    this.declaredType,
   });
 
   /// The class that declares the `@Bean` method.
   final InterfaceType ownerType;
+
+  /// For an instance method of a full-mode `@Configuration` class: its
+  /// override in the generated subclass. The container then calls
+  /// `_$method(r)`, which runs the original method.
+  final EnhancedBeanMethod? enhanced;
+
+  /// The method's declared return type when the bean type (inferred from
+  /// the method body) is more specific; the call is cast to the bean type.
+  final InterfaceType? declaredType;
 
   /// The bean name of the owner (used as qualifier to look it up).
   final String ownerName;
@@ -343,6 +387,121 @@ class BeanMethodCreation extends Creation {
 
   @override
   final List<Argument> arguments;
+}
+
+/// The generated subclass of a full-mode `@Configuration` class whose
+/// `@Bean` methods return the container's bean, like Spring's CGLIB
+/// enhancement: a `@Bean` method calling `calculator()` gets the singleton
+/// (a prototype: a new instance created by the container).
+///
+/// ```dart
+/// // Input:
+/// @Configuration()
+/// class AppConfig {
+///   @Bean()
+///   Calculator calculator() => Calculator();
+///
+///   @Bean()
+///   Pricing pricing() => Pricing(calculator()); // the singleton
+/// }
+///
+/// // Output:
+/// final class _$AppConfigConfiguration extends AppConfig {
+///   _$AppConfigConfiguration(this._$beanFactory) : super();
+///   final BeanFactory _$beanFactory;
+///
+///   @override
+///   Calculator calculator() =>
+///       _$beanFactory.getBeanByName(r'calculator') as Calculator;
+///
+///   Calculator _$calculator(DependencyResolver r) => super.calculator();
+///   // ...
+/// }
+/// ```
+///
+/// Spring (Java):
+///
+/// ```java
+/// // ConfigurationClassEnhancer subclasses AppConfig with CGLIB at
+/// // startup; its BeanMethodInterceptor calls beanFactory.getBean(...)
+/// // unless the container itself is invoking the factory method.
+/// ```
+class ConfigurationClassModel {
+  /// Creates the model.
+  ConfigurationClassModel({
+    required this.className,
+    required this.type,
+    required this.constructorName,
+    required this.constructorParameters,
+    required this.isBase,
+  });
+
+  /// The generated subclass, e.g. `_$AppConfigConfiguration`.
+  final String className;
+
+  /// The configuration class.
+  final InterfaceType type;
+
+  /// The super constructor; `null` for the unnamed one.
+  final String? constructorName;
+
+  /// Parameters of the super constructor, forwarded as super parameters
+  /// (they keep their types and default values).
+  final List<ProxyParameter> constructorParameters;
+
+  /// Whether the configuration class is `base` (the subclass must then be
+  /// `base`, `final` or `sealed`; it is always emitted `final`).
+  final bool isBase;
+
+  /// The overridden `@Bean` methods.
+  final List<EnhancedBeanMethod> beanMethods = [];
+}
+
+/// One `@Bean` method overridden by a [ConfigurationClassModel].
+class EnhancedBeanMethod {
+  /// Creates the model.
+  EnhancedBeanMethod({
+    required this.className,
+    required this.methodName,
+    required this.beanName,
+    required this.returnType,
+    required this.parameters,
+    required this.defaults,
+    required this.arguments,
+    required this.isFactoryBean,
+    required this.isSingleton,
+  });
+
+  /// The generated subclass that overrides the method.
+  final String className;
+
+  /// The method name.
+  final String methodName;
+
+  /// The bean the override returns.
+  final String beanName;
+
+  /// The declared return type.
+  final InterfaceType returnType;
+
+  /// The method's parameters (types and kinds).
+  final List<ProxyParameter> parameters;
+
+  /// The default value of each optional parameter (by name), re-created as
+  /// a constant in the override.
+  final Map<String, DartObject> defaults;
+
+  /// How the container resolves each parameter (same order as
+  /// [parameters]).
+  final List<Argument> arguments;
+
+  /// Whether the bean is a `FactoryBean`: inter-bean calls get the factory
+  /// itself (`&name`).
+  final bool isFactoryBean;
+
+  /// Whether the bean is a singleton: like Spring, the arguments of an
+  /// inter-bean call are not used when one of them is `null`.
+  final bool isSingleton;
 }
 
 /// `bean.name = value` after construction (field or setter).

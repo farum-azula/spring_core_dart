@@ -168,11 +168,7 @@ class SpringBuilder implements Builder {
 
     final module = ModuleModel();
     final scanner = BeanScanner(module, proxyMode: proxyMode);
-    for (final asset in assets) {
-      if (await resolver.isLibrary(asset)) {
-        scanner.scanLibrary(await resolver.libraryFor(asset));
-      }
-    }
+    await _scanLibraries(buildStep, scanner, assets);
     _checkUniqueNames(module.beans);
 
     final output = input.changeExtension(_outputExtension);
@@ -250,12 +246,7 @@ class SpringBuilder implements Builder {
 
     final module = ModuleModel();
     final scanner = BeanScanner(module, proxyMode: proxyMode);
-    final resolver = buildStep.resolver;
-    for (final asset in assets) {
-      if (await resolver.isLibrary(asset)) {
-        scanner.scanLibrary(await resolver.libraryFor(asset));
-      }
-    }
+    await _scanLibraries(buildStep, scanner, assets);
     _checkUniqueNames(module.beans);
 
     final autoConfigurations = await _autoConfigurations(buildStep);
@@ -513,12 +504,39 @@ class SpringBuilder implements Builder {
     return value == null ? null : Version.parse(value);
   }
 
+  /// Scans the libraries among [assets] with [scanner], resolving the
+  /// bodies of their `@Bean` methods first (for the inferred bean types).
+  Future<void> _scanLibraries(
+    BuildStep buildStep,
+    BeanScanner scanner,
+    List<AssetId> assets,
+  ) async {
+    final resolver = buildStep.resolver;
+    for (final asset in assets) {
+      if (await resolver.isLibrary(asset)) {
+        final library = await resolver.libraryFor(asset);
+        await scanner.resolveBeanMethods(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
+        scanner.scanLibrary(library);
+      }
+    }
+  }
+
   // Bean names and aliases share one namespace (like Spring's registry,
-  // which forbids overriding by default), so a clash is a build error that
-  // names both declarations.
+  // which forbids overriding by default), so a clash of two unconditional
+  // declarations is a build error that names both. Declarations with
+  // conditions (`@Profile('dev')` / `@Profile('prod')` both declaring
+  // `dataSource`) may share a name: the container registers those whose
+  // conditions match, and its override check reports a real clash at
+  // refresh (BeanDefinitionOverrideException).
   void _checkUniqueNames(List<BeanModel> beans) {
     final byName = <String, Element>{};
     for (final bean in beans) {
+      if (bean.conditions.isNotEmpty) {
+        continue;
+      }
       for (final name in [bean.name, ...bean.aliases]) {
         final previous = byName[name];
         if (previous != null) {
