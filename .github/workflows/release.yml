@@ -1,10 +1,12 @@
 name: 'Release'
 
 # Step 1 of a release, started by hand: Actions → "Release" → Run workflow
-# (on main). Bumps the version of every package from the commits since the
-# last tag (tool/release.dart), runs the tests with it, then pushes the
-# commit `chore(release): vX.Y.Z` to main together with the tag `vX.Y.Z` —
-# which starts step 2, publish.yml ("Release: publish to pub.dev").
+# (on main), choosing the bump: `patch` (0.1.6 → 0.1.7) or `minor`
+# (0.1.6 → 0.2.0, for breaking changes before 1.0.0); there is no major
+# release. tool/release.dart sets the version of every package, turns the
+# `## Unreleased` changelog sections into it, the tests run with it, and the
+# commit `chore(release): vX.Y.Z` is pushed to main together with the tag
+# `vX.Y.Z` — which starts step 2, publish.yml ("Release: publish to pub.dev").
 #
 # No release branch and no merges: main is the only branch, a release is a
 # commit and a tag on it. Pushes to main only run CI. The push uses
@@ -13,6 +15,15 @@ name: 'Release'
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump: patch (0.1.6 → 0.1.7) or minor (0.1.6 → 0.2.0, breaking changes)'
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
 
 concurrency:
   group: release
@@ -39,7 +50,7 @@ jobs:
 
       - name: Bump versions and changelogs
         id: release
-        run: dart run tool/release.dart
+        run: dart run tool/release.dart --bump="${{ inputs.bump }}"
 
       # Test with the new version before tagging (tests may check it, e.g.
       # compatibility messages): a failure leaves no tag behind.

@@ -1,18 +1,18 @@
 // Prepares a release of the whole family (run by .github/workflows/release.yml,
 // the "Release" button on main; works locally too):
 //
-//   dart run tool/release.dart            # bump, write versions and changelogs
-//   dart run tool/release.dart --dry-run  # only print what would happen
+//   dart run tool/release.dart --bump=patch  # 0.1.6 -> 0.1.7
+//   dart run tool/release.dart --bump=minor  # 0.1.6 -> 0.2.0
+//   dart run tool/release.dart --bump=... --dry-run  # only print
 //
-// The next version follows the commits since the last `v*` tag that change
-// a published package (commits touching only extensions/, .github/, tool/,
-// roadmap/ or the repository README are ignored):
-// - a breaking change (`feat!:`, `BREAKING CHANGE`) bumps the major version
-//   (the minor one before 1.0.0, where minor releases may break);
-// - a feature (`feat:` or a subject starting with "Add") bumps the minor
-//   version (the patch one before 1.0.0);
-// - anything else bumps the patch version.
-// Without a tag yet, the current version is released as it is.
+// The bump is chosen by hand (the Release button asks for it): `patch` or
+// `minor`; there is no major release before 1.0.0, so none can be made by
+// accident. The commits since the last `v*` tag that change a published
+// package (commits touching only extensions/, .github/, tool/, roadmap/ or
+// the repository README are ignored) are listed and go into the changelogs
+// of packages without an `## Unreleased` section; when there are none,
+// nothing is released. Without a tag yet, the current version is released
+// as it is.
 //
 // Every package gets the version (tool/version.dart). Changelogs: an
 // `## Unreleased` section becomes `## <version>`; packages without one get
@@ -26,6 +26,16 @@ import 'version.dart' as family;
 void main(List<String> args) {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final dryRun = args.contains('--dry-run');
+  final bump = args
+      .where((a) => a.startsWith('--bump='))
+      .map((a) => a.substring('--bump='.length))
+      .firstOrNull;
+  if (bump == null || (bump != 'patch' && bump != 'minor')) {
+    stderr.writeln(
+      'usage: dart run tool/release.dart --bump=patch|minor [--dry-run]',
+    );
+    exit(64);
+  }
 
   final current = _currentVersion();
   final lastTag = _git(['tag', '--list', 'v[0-9]*', '--sort=-v:refname'])
@@ -38,7 +48,7 @@ void main(List<String> args) {
     _output('');
     return;
   }
-  final next = lastTag == null ? current : _bump(current, commits);
+  final next = lastTag == null ? current : _bump(current, bump);
   stdout.writeln(
     'Release $next '
     '(${lastTag == null ? 'first release' : '${commits.length} commits since $lastTag'})',
@@ -65,14 +75,6 @@ final class _Commit {
   _Commit(this.subject, this.body);
   final String subject;
   final String body;
-
-  bool get breaking =>
-      RegExp(r'^\w+(\([^)]*\))?!:').hasMatch(subject) ||
-      body.contains('BREAKING CHANGE');
-
-  bool get feature =>
-      RegExp(r'^feat(\([^)]*\))?:', caseSensitive: false).hasMatch(subject) ||
-      RegExp(r'^add\b', caseSensitive: false).hasMatch(subject);
 }
 
 // Only commits that change a published package count: editor extensions,
@@ -97,27 +99,15 @@ List<_Commit> _commitsSince(String? tag) {
   ].where((c) => !c.subject.startsWith('chore(release)')).toList();
 }
 
-String _bump(String version, List<_Commit> commits) {
+String _bump(String version, String bump) {
   final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(version)!;
-  var [major, minor, patch] = [
+  final [major, minor, patch] = [
     for (var i = 1; i <= 3; i++) int.parse(match.group(i)!),
   ];
-  final breaking = commits.any((c) => c.breaking);
-  final feature = commits.any((c) => c.feature);
-  if (major == 0) {
-    // Before 1.0.0 a minor release may break (pub's caret: ^0.2.0 < 0.3.0).
-    if (breaking) {
-      return '0.${minor + 1}.0';
-    }
-    return '0.$minor.${patch + 1}';
-  }
-  if (breaking) {
-    return '${major + 1}.0.0';
-  }
-  if (feature) {
-    return '$major.${minor + 1}.0';
-  }
-  return '$major.$minor.${patch + 1}';
+  // Before 1.0.0 a minor release may break (pub's caret: ^0.2.0 < 0.3.0).
+  return bump == 'minor'
+      ? '$major.${minor + 1}.0'
+      : '$major.$minor.${patch + 1}';
 }
 
 // After setVersion an `## Unreleased` section is already `## <version>`;
