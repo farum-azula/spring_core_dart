@@ -166,8 +166,13 @@ abstract interface class MessageCodesResolver {
 /// Spring's `DefaultMessageCodesResolver`: for code `NotBlank`, object
 /// `user`, field `orders[0].sku` of type `String`:
 /// `NotBlank.user.orders[0].sku`, `NotBlank.user.orders.sku`,
-/// `NotBlank.orders[0].sku`, `NotBlank.orders.sku`, `NotBlank.String`,
-/// `NotBlank`.
+/// `NotBlank.orders[0].sku`, `NotBlank.orders.sku`, `NotBlank.sku`,
+/// `NotBlank.String`, `NotBlank`.
+///
+/// Keys are removed one at a time from the last (`a[0][1].b` also gives
+/// `a[0].b` and `a.b`), and the last path segment is a code of its own
+/// (`NotBlank.city` for `address.city`), exactly as in Spring. The field
+/// type is the Dart type name (`String`, not `java.lang.String`).
 ///
 /// Global errors get `NotBlank.user` and `NotBlank`.
 ///
@@ -211,21 +216,43 @@ final class DefaultMessageCodesResolver implements MessageCodesResolver {
     String field,
     Type? fieldType,
   ) {
-    // Like Spring, an indexed path (`orders[0].sku`) also yields its
-    // index-free form (`orders.sku`) so one message covers every element.
-    final fields = [field];
-    final stripped = field.replaceAll(RegExp(r'\[[^\]]*\]'), '');
-    if (stripped != field) {
-      fields.add(stripped);
-    }
-    // Order: object-qualified paths, plain paths, field type, bare code.
-    // A set drops duplicates while keeping that order.
-    return {
+    // Spring's algorithm: the field and its key-free forms qualified by
+    // the object name, then unqualified plus the last path segment (and
+    // its key-free forms), the field type and the bare code. A set drops
+    // duplicates while keeping that order.
+    final fields = _fieldList(field);
+    final codes = <String>{
       for (final f in fields) _code(errorCode, '$objectName.$f'),
-      for (final f in fields) _code(errorCode, f),
-      if (fieldType != null) _code(errorCode, '$fieldType'),
-      _code(errorCode, null),
-    }.toList();
+    };
+    final dot = field.lastIndexOf('.');
+    if (dot >= 0) {
+      fields.addAll(_fieldList(field.substring(dot + 1)));
+    }
+    codes
+      ..addAll([for (final f in fields) _code(errorCode, f)])
+      ..addAll([
+        if (fieldType != null) _code(errorCode, '$fieldType'),
+        _code(errorCode, null),
+      ]);
+    return codes.toList();
+  }
+
+  // `a[0][1].b` → [a[0][1].b, a[0].b, a.b]: keys removed from the last
+  // (Spring's buildFieldList).
+  static List<String> _fieldList(String field) {
+    final fields = [field];
+    var plain = field;
+    var open = plain.lastIndexOf('[');
+    while (open >= 0) {
+      final close = plain.indexOf(']', open);
+      if (close < 0) {
+        break;
+      }
+      plain = plain.substring(0, open) + plain.substring(close + 1);
+      fields.add(plain);
+      open = plain.lastIndexOf('[');
+    }
+    return fields;
   }
 
   String _code(String errorCode, String? suffix) {
@@ -330,8 +357,8 @@ abstract interface class Errors {
   /// The first error of [field] (or of any field when omitted).
   FieldError? fieldError([String? field]);
 
-  /// The current value of [field] (or the rejected value after a binding
-  /// failure).
+  /// The current value of [field], or the rejected value of its first
+  /// error (binding failure or validation error), like Spring.
   Object? getFieldValue(String field);
 }
 
@@ -371,6 +398,15 @@ abstract interface class BindingResult implements Errors {
 
   /// The field value without the rejected-value fallback.
   Object? getRawFieldValue(String field);
+
+  /// Message codes for [errorCode], of [field] (relative to the nested
+  /// path) when given, like Spring's `BindingResult.resolveMessageCodes`.
+  ///
+  /// ```dart
+  /// result.resolveMessageCodes('NotBlank', 'name');
+  /// // [NotBlank.signup.name, NotBlank.name, NotBlank.String, NotBlank]
+  /// ```
+  List<String> resolveMessageCodes(String errorCode, [String? field]);
 
   /// Records a binding failure (e.g. type mismatch) for [field].
   void recordFieldError(
@@ -466,6 +502,20 @@ abstract class AbstractBindingResult implements BindingResult {
 
   /// Declared type of [field], for message codes.
   Type? getFieldType(String field);
+
+  @override
+  List<String> resolveMessageCodes(String errorCode, [String? field]) {
+    if (field == null) {
+      return messageCodesResolver.resolveMessageCodes(errorCode, objectName);
+    }
+    final fixed = _fixedField(field);
+    return messageCodesResolver.resolveFieldMessageCodes(
+      errorCode,
+      objectName,
+      fixed,
+      getFieldType(fixed),
+    );
+  }
 
   @override
   void reject(
@@ -611,10 +661,11 @@ abstract class AbstractBindingResult implements BindingResult {
 
   @override
   Object? getFieldValue(String field) {
-    // After a binding failure the property kept its old value; show the
-    // user's rejected input instead (like Spring re-rendering a form).
+    // Like Spring: a field with an error shows the rejected value (the
+    // user's input after a binding failure, the invalid value after a
+    // validation error), so a form is re-rendered with what was entered.
     final error = fieldError(field);
-    if (error != null && error.bindingFailure) {
+    if (error != null) {
       return error.rejectedValue;
     }
     return getRawFieldValue(_fixedField(field));
@@ -658,29 +709,47 @@ abstract class AbstractBindingResult implements BindingResult {
 class BeanPropertyBindingResult extends AbstractBindingResult {
   /// Creates an empty result for [target] named [objectName].
   ///
-  /// [introspector] and [conversionService] configure the [wrapper].
+  /// [introspector] and [conversionService] configure the [wrapper]. The
+  /// target is `null` while `DataBinder.construct` failed to create it;
+  /// field values and types then come from [recordFieldValue].
   BeanPropertyBindingResult(
-    Object this.target,
+    this.target,
     super.objectName, {
-    BeanIntrospector? introspector,
-    ConversionService? conversionService,
+    this._introspector,
+    this._conversionService,
     super.messageCodesResolver,
-  }) : wrapper = BeanWrapper(
-         target,
-         introspector: introspector,
-         conversionService: conversionService,
-       );
+  });
 
   @override
   final Object? target;
 
-  /// Access to the target's properties.
-  final BeanWrapper wrapper;
+  final BeanIntrospector? _introspector;
+  final ConversionService? _conversionService;
+  final _fieldValues = <String, Object?>{};
+  final _fieldTypes = <String, Type?>{};
+
+  /// Access to the target's properties; throws a [StateError] when there
+  /// is no target.
+  late final BeanWrapper wrapper = BeanWrapper(
+    target ?? (throw StateError('No target object for $objectName')),
+    introspector: _introspector,
+    conversionService: _conversionService,
+  );
+
+  /// Remembers [value] (of [type]) for [field] when there is no target,
+  /// like Spring's `recordFieldValue` (constructor binding).
+  void recordFieldValue(String field, Type? type, Object? value) {
+    _fieldValues[field] = value;
+    _fieldTypes[field] = type;
+  }
 
   // Unknown or unreadable paths have no value rather than failing the
   // error recording.
   @override
   Object? getRawFieldValue(String field) {
+    if (target == null) {
+      return _fieldValues[field];
+    }
     try {
       return wrapper.getPropertyValue(field);
     } on BeansException {
@@ -689,7 +758,8 @@ class BeanPropertyBindingResult extends AbstractBindingResult {
   }
 
   @override
-  Type? getFieldType(String field) => wrapper.getPropertyType(field);
+  Type? getFieldType(String field) =>
+      target == null ? _fieldTypes[field] : wrapper.getPropertyType(field);
 }
 
 /// Binding result for a map target, like Spring's `MapBindingResult`.

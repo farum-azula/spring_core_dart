@@ -1,5 +1,6 @@
 import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
+import 'package:spring_core_dart/src/beans/type_info.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 
@@ -253,13 +254,21 @@ class PropertyBatchUpdateException extends BeansException {
 ///
 /// Paths: `name`, `address.city`, `tags[0]`, `scores['math']`,
 /// `orders[1].items[0].sku`. Written values are converted to the property
-/// type with the conversion service. Plain `Map`s can be wrapped too
-/// (keys act as properties).
+/// type with the conversion service — also list elements and map keys and
+/// values, whose types come from the generated `TypeInfo` of the property
+/// (`scores[3]` of a `Map<int, double>` puts the key `3`). Plain `Map`s can
+/// be wrapped too (keys act as properties).
+///
+/// With [autoGrowNestedPaths], writes create what the path needs: `null`
+/// nested objects, lists and maps, and list elements up to the index
+/// (`items[2].sku` on an empty list adds three items, below
+/// [autoGrowCollectionLimit]).
 ///
 /// ```dart
 /// final wrapper = BeanWrapper(person, autoGrowNestedPaths: true)
 ///   ..setPropertyValue('age', '42') // converted to int
 ///   ..setPropertyValue('address.city', 'Lyon') // creates the Address
+///   ..setPropertyValue('previous[1].city', 'Oslo') // grows the list
 ///   ..setPropertyValue('tags[0]', 'admin');
 /// wrapper.getPropertyValue('address.city'); // 'Lyon'
 /// wrapper.getPropertyType('age'); // int
@@ -271,13 +280,15 @@ class PropertyBatchUpdateException extends BeansException {
 /// wrapper.setAutoGrowNestedPaths(true);
 /// wrapper.setPropertyValue("age", "42");
 /// wrapper.setPropertyValue("address.city", "Lyon");
+/// wrapper.setPropertyValue("previous[1].city", "Oslo");
 /// wrapper.setPropertyValue("tags[0]", "admin");
 /// wrapper.getPropertyValue("address.city");
 /// ```
 ///
 /// Unlike Spring, the classes involved must be `@Introspected` (no
-/// reflection), and element types of lists and maps are not known, so
-/// indexed values are stored without conversion.
+/// reflection); without generated `TypeInfo` (hand-written
+/// introspections) element types are unknown and indexed values are stored
+/// as they are. Reads never grow anything.
 class BeanWrapper {
   /// Wraps [wrappedInstance]; [introspector] defaults to
   /// [BeanIntrospector.shared] and [conversionService] to the shared
@@ -287,6 +298,7 @@ class BeanWrapper {
     BeanIntrospector? introspector,
     ConversionService? conversionService,
     this.autoGrowNestedPaths = false,
+    this.autoGrowCollectionLimit = 0x7FFFFFFF,
   }) : introspector = introspector ?? BeanIntrospector.shared,
        conversionService =
            conversionService ?? DefaultConversionService.sharedInstance;
@@ -301,8 +313,13 @@ class BeanWrapper {
   final ConversionService conversionService;
 
   /// Instantiate `null` nested introspected objects (with a no-argument
-  /// constructor) instead of failing.
+  /// constructor), lists and maps, and missing list elements, instead of
+  /// failing.
   final bool autoGrowNestedPaths;
+
+  /// Lists are grown up to (not including) this index, like Spring's
+  /// `autoGrowCollectionLimit`.
+  final int autoGrowCollectionLimit;
 
   /// Whether [path] can be read (all its segments exist and are not
   /// `null`).
@@ -319,7 +336,16 @@ class BeanWrapper {
   /// index into an existing collection.
   bool isWritableProperty(String path) {
     try {
-      final (target, last) = _resolveParent(path, grow: false);
+      final segments = _parse(path);
+      final last = segments.last;
+      var target = wrappedInstance;
+      for (final segment in segments.take(segments.length - 1)) {
+        final (value, _) = _readSegment(target, segment, path, null);
+        if (value == null) {
+          return false;
+        }
+        target = value;
+      }
       // Indexed writes are only checked when performed.
       if (last.keys.isNotEmpty) {
         return true;
@@ -331,15 +357,25 @@ class BeanWrapper {
     }
   }
 
-  /// The declared type of the property at [path] (the runtime type for map
-  /// and list elements), or `null` if unknown.
+  /// The declared type of the property at [path] (for list elements and
+  /// map values: the generated element type, else the runtime type of the
+  /// value), or `null` if unknown.
   Type? getPropertyType(String path) {
     try {
-      final (target, last) = _resolveParent(path, grow: false);
-      if (last.keys.isEmpty) {
-        return _property(target, last.name)?.type;
+      final segments = _parse(path);
+      Object? current = wrappedInstance;
+      TypeInfo<Object?>? type;
+      for (var i = 0; i < segments.length; i++) {
+        final segment = segments[i];
+        if (current == null) {
+          return null;
+        }
+        if (i == segments.length - 1 && segment.keys.isEmpty) {
+          return _property(current, segment.name)?.type;
+        }
+        (current, type) = _readSegment(current, segment, path, type);
       }
-      return getPropertyValue(path)?.runtimeType;
+      return type?.type ?? current?.runtimeType;
     } on BeansException {
       return null;
     }
@@ -357,6 +393,7 @@ class BeanWrapper {
   /// value is `null`.
   Object? getPropertyValue(String path) {
     Object? current = wrappedInstance;
+    TypeInfo<Object?>? type;
     final segments = _parse(path);
     for (var i = 0; i < segments.length; i++) {
       if (current == null) {
@@ -365,36 +402,73 @@ class BeanWrapper {
           _join(segments.take(i)),
         );
       }
-      current = _readSegment(current, segments[i], path);
+      (current, type) = _readSegment(current, segments[i], path, type);
     }
     return current;
   }
 
-  /// Writes [value] at [path], converting it to the property type.
+  /// Writes [value] at [path], converting it to the property type (or the
+  /// element / map value type).
   ///
   /// ```dart
   /// wrapper.setPropertyValue('score', '9.5'); // double 9.5
-  /// wrapper.setPropertyValue("counts['math']", 3);
+  /// wrapper.setPropertyValue("counts['math']", '3'); // int 3
   /// wrapper.setPropertyValue('tags[2]', 'x'); // index == length appends
   /// ```
   ///
   /// Throws [NotWritablePropertyException], [TypeMismatchException] or
   /// [NullValueInNestedPathException].
   void setPropertyValue(String path, Object? value) {
-    final (target, last) = _resolveParent(path, grow: autoGrowNestedPaths);
-    if (last.keys.isEmpty) {
-      _writeProperty(target, last.name, value, path);
-      return;
+    final segments = _parse(path);
+    Object current = wrappedInstance;
+    TypeInfo<Object?>? currentType;
+    for (var i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      final isLast = i == segments.length - 1;
+      if (isLast && segment.keys.isEmpty) {
+        _writeProperty(current, segment.name, value, path);
+        return;
+      }
+      // The named property (if any), grown when `null`.
+      Object? container;
+      TypeInfo<Object?>? type;
+      if (segment.name.isEmpty) {
+        (container, type) = (current, currentType);
+      } else {
+        (container, type) = _readProperty(current, segment.name, path);
+        if (container == null && autoGrowNestedPaths) {
+          container = _growProperty(current, segment.name, path);
+        }
+      }
+      // Then its keys; the last key of the path is written.
+      for (var k = 0; k < segment.keys.length; k++) {
+        if (container == null) {
+          throw NullValueInNestedPathException(
+            wrappedInstance.runtimeType,
+            _prefix(segments, i, k),
+          );
+        }
+        if (isLast && k == segment.keys.length - 1) {
+          _writeIndex(container, type, segment.keys[k], value, path);
+          return;
+        }
+        (container, type) = _index(
+          container,
+          type,
+          segment.keys[k],
+          path,
+          grow: autoGrowNestedPaths,
+        );
+      }
+      if (container == null) {
+        throw NullValueInNestedPathException(
+          wrappedInstance.runtimeType,
+          _join(segments.take(i + 1)),
+        );
+      }
+      current = container;
+      currentType = type;
     }
-    // Indexed write such as `a.b[0]['k']`: read `b`, follow all keys but
-    // the last, then write the element.
-    var container = last.name.isEmpty
-        ? target
-        : _readProperty(target, last.name, path);
-    for (var i = 0; i < last.keys.length - 1; i++) {
-      container = _index(container, last.keys[i], path);
-    }
-    _writeIndex(container, last.keys.last, value, path);
   }
 
   /// Sets every entry; failures are collected into a
@@ -438,66 +512,66 @@ class BeanWrapper {
 
   // ---------------------------------------------------------------------
 
-  /// The object holding the last segment of [path], and that segment.
-  /// With [grow], `null` intermediate properties are instantiated.
-  (Object, _Segment) _resolveParent(String path, {required bool grow}) {
-    final segments = _parse(path);
-    Object current = wrappedInstance;
-    for (var i = 0; i < segments.length - 1; i++) {
-      final segment = segments[i];
-      var next = _readSegment(current, segment, path);
-      if (next == null && grow && segment.keys.isEmpty) {
-        next = _grow(current, segment.name, path);
-      }
-      if (next == null) {
-        throw NullValueInNestedPathException(
-          wrappedInstance.runtimeType,
-          _join(segments.take(i + 1)),
-        );
-      }
-      current = next;
-    }
-    return (current, segments.last);
-  }
-
-  /// Creates and assigns a new instance for the `null` property [name],
-  /// using its type's introspection (no-argument constructor required).
-  Object _grow(Object target, String name, String path) {
+  /// Creates and assigns a new value for the `null` property [name]: an
+  /// introspected object (no-argument constructor required), a list, a set
+  /// or a map.
+  Object _growProperty(Object target, String name, String path) {
     final property = _property(target, name);
-    final introspection = property == null
+    final created = property == null
         ? null
-        : introspector.forType(property.type);
-    if (property == null ||
-        introspection == null ||
-        !introspection.isInstantiable) {
+        : (property.typeInfo == null
+              ? _instantiate(property.type)
+              : _newValue(property.typeInfo!));
+    if (property == null || created == null || !property.isWritable) {
       throw NullValueInNestedPathException(wrappedInstance.runtimeType, name);
     }
-    final created = introspection.instantiate();
     property.setValue(target, created);
     return created;
   }
 
-  /// Reads one segment: the named property (if any) and then its keys.
-  Object? _readSegment(Object target, _Segment segment, String path) {
-    Object? value = segment.name.isEmpty
-        ? target
+  /// A new instance of the introspected [type], or `null`.
+  Object? _instantiate(Type type) {
+    final introspection = introspector.forType(type);
+    return introspection != null && introspection.isInstantiable
+        ? introspection.instantiate()
+        : null;
+  }
+
+  /// A new empty value of [type] (introspected object, list, set, map), or
+  /// `null` when it cannot be created.
+  Object? _newValue(TypeInfo<Object?> type) => type.accept(_NewValue(this));
+
+  /// Reads one segment: the named property (if any) and then its keys,
+  /// with the declared type of the result when known.
+  (Object?, TypeInfo<Object?>?) _readSegment(
+    Object target,
+    _Segment segment,
+    String path,
+    TypeInfo<Object?>? targetType,
+  ) {
+    var (value, type) = segment.name.isEmpty
+        ? (target, targetType)
         : _readProperty(target, segment.name, path);
     for (final key in segment.keys) {
       if (value == null) {
         throw NullValueInNestedPathException(wrappedInstance.runtimeType, path);
       }
-      value = _index(value, key, path);
+      (value, type) = _index(value, type, key, path, grow: false);
     }
-    return value;
+    return (value, type);
   }
 
   BeanProperty<Object>? _property(Object target, String name) =>
       introspector.findIntrospection(target)?.getProperty(name);
 
-  Object? _readProperty(Object target, String name, String path) {
+  (Object?, TypeInfo<Object?>?) _readProperty(
+    Object target,
+    String name,
+    String path,
+  ) {
     // Maps expose their keys as properties (like Spring's map access).
     if (target is Map) {
-      return target[name];
+      return (target[name], null);
     }
     final introspection = introspector.findIntrospection(target);
     if (introspection == null) {
@@ -515,7 +589,7 @@ class BeanWrapper {
         "no property '$name'",
       );
     }
-    return property.getValue(target);
+    return (property.getValue(target), property.typeInfo);
   }
 
   void _writeProperty(Object target, String name, Object? value, String path) {
@@ -569,13 +643,46 @@ class BeanWrapper {
     }
   }
 
-  /// Reads element [key] of a map, list or other iterable.
-  Object? _index(Object? container, String key, String path) {
+  /// [value] converted to the element type [type] (as it is when unknown
+  /// or `dynamic`).
+  Object? _convertElement(Object? value, TypeInfo<Object?>? type, String path) {
+    if (type == null || type is DynamicType || type.isInstance(value)) {
+      return value;
+    }
+    return _convert(value, type.type, type.nullable, path);
+  }
+
+  /// Element [key] of a map, list or other iterable, with its declared
+  /// type; with [grow], missing map values and list elements are created.
+  (Object?, TypeInfo<Object?>?) _index(
+    Object container,
+    TypeInfo<Object?>? type,
+    String key,
+    String path, {
+    required bool grow,
+  }) {
     switch (container) {
       case Map<Object?, Object?>():
-        return container[_mapKey(container, key)];
+        final mapType = type is MapType ? type : null;
+        final mapKey = _mapKey(container, key, mapType?.key, path);
+        var value = container[mapKey];
+        if (value == null && grow && mapType != null) {
+          value = _newValue(mapType.value);
+          if (value != null) {
+            _put(container, mapKey, value, path);
+          }
+        }
+        return (value, mapType?.value);
       case List<Object?>():
+        final elementType = type is ListType ? type.element : null;
         final index = int.tryParse(key);
+        if (index != null &&
+            index >= container.length &&
+            grow &&
+            elementType != null &&
+            index < autoGrowCollectionLimit) {
+          _growList(container, elementType, index + 1, path);
+        }
         if (index == null || index < 0 || index >= container.length) {
           throw NotReadablePropertyException(
             wrappedInstance.runtimeType,
@@ -583,7 +690,7 @@ class BeanWrapper {
             'index $key out of bounds for length ${container.length}',
           );
         }
-        return container[index];
+        return (container[index], elementType);
       case Iterable<Object?>():
         final index = int.tryParse(key);
         if (index == null || index < 0 || index >= container.length) {
@@ -593,7 +700,10 @@ class BeanWrapper {
             'index $key out of bounds',
           );
         }
-        return container.elementAt(index);
+        return (
+          container.elementAt(index),
+          type is SetType ? type.element : null,
+        );
       default:
         throw NotReadablePropertyException(
           wrappedInstance.runtimeType,
@@ -603,42 +713,123 @@ class BeanWrapper {
     }
   }
 
-  /// Writes element [key] of a map or list; writing at `length` appends.
-  void _writeIndex(Object? container, String key, Object? value, String path) {
-    try {
-      switch (container) {
-        case Map<Object?, Object?>():
-          container[_mapKey(container, key)] = value;
-        case List<Object?>():
-          final index = int.tryParse(key);
-          if (index == null || index < 0 || index > container.length) {
-            throw NotWritablePropertyException(
-              wrappedInstance.runtimeType,
-              path,
-              'index $key out of bounds',
-            );
-          }
-          if (index == container.length) {
-            container.add(value);
-          } else {
-            container[index] = value;
-          }
-        default:
-          throw NotWritablePropertyException(
-            wrappedInstance.runtimeType,
-            path,
-            'cannot index into ${container.runtimeType}',
-          );
+  /// Adds new elements of [elementType] to [list] until it has [length].
+  void _growList(
+    List<Object?> list,
+    TypeInfo<Object?> elementType,
+    int length,
+    String path,
+  ) {
+    while (list.length < length) {
+      final element = _newValue(elementType);
+      if (element == null) {
+        throw NotReadablePropertyException(
+          wrappedInstance.runtimeType,
+          path,
+          'cannot create a $elementType to grow the list',
+        );
       }
-    } on TypeError catch (error) {
-      // Element types are not known at runtime; the collection rejected it.
-      throw TypeMismatchException(path, value, container.runtimeType, error);
+      _add(list, element, path);
     }
   }
 
-  /// Map keys are strings unless the map has non-string keys parseable as
-  /// integers.
-  Object? _mapKey(Map<Object?, Object?> map, String key) {
+  /// Writes element [key] of a map or list, converting the key and the
+  /// value to the declared types; writing at `length` appends, and with
+  /// [autoGrowNestedPaths] an index beyond it pads the list (with `null`
+  /// for nullable elements, else new elements).
+  void _writeIndex(
+    Object container,
+    TypeInfo<Object?>? type,
+    String key,
+    Object? value,
+    String path,
+  ) {
+    switch (container) {
+      case Map<Object?, Object?>():
+        final mapType = type is MapType ? type : null;
+        _put(
+          container,
+          _mapKey(container, key, mapType?.key, path),
+          _convertElement(value, mapType?.value, path),
+          path,
+        );
+      case List<Object?>():
+        final elementType = type is ListType ? type.element : null;
+        final index = int.tryParse(key);
+        if (index == null ||
+            index < 0 ||
+            (index > container.length &&
+                !(autoGrowNestedPaths && index < autoGrowCollectionLimit))) {
+          throw NotWritablePropertyException(
+            wrappedInstance.runtimeType,
+            path,
+            'index $key out of bounds',
+          );
+        }
+        final converted = _convertElement(value, elementType, path);
+        while (container.length < index) {
+          final padding = elementType == null || elementType.nullable
+              ? null
+              : _newValue(elementType);
+          _add(container, padding, path);
+        }
+        if (index == container.length) {
+          _add(container, converted, path);
+        } else {
+          try {
+            container[index] = converted;
+          } on TypeError catch (error) {
+            throw TypeMismatchException(
+              path,
+              converted,
+              container.runtimeType,
+              error,
+            );
+          }
+        }
+      default:
+        throw NotWritablePropertyException(
+          wrappedInstance.runtimeType,
+          path,
+          'cannot index into ${container.runtimeType}',
+        );
+    }
+  }
+
+  // Element types are not always known; the collection rejects a value of
+  // the wrong type with a TypeError.
+  void _add(List<Object?> list, Object? value, String path) {
+    try {
+      list.add(value);
+    } on TypeError catch (error) {
+      throw TypeMismatchException(path, value, list.runtimeType, error);
+    }
+  }
+
+  void _put(
+    Map<Object?, Object?> map,
+    Object? key,
+    Object? value,
+    String path,
+  ) {
+    try {
+      map[key] = value;
+    } on TypeError catch (error) {
+      throw TypeMismatchException(path, value, map.runtimeType, error);
+    }
+  }
+
+  /// The map key for [key]: converted to the declared [keyType] when
+  /// known; otherwise a string unless the map has an integer key like it.
+  Object? _mapKey(
+    Map<Object?, Object?> map,
+    String key,
+    TypeInfo<Object?>? keyType,
+    String path,
+  ) {
+    if (keyType != null && keyType is! DynamicType) {
+      return _convertElement(key, keyType, path);
+    }
     if (map.containsKey(key)) {
       return key;
     }
@@ -647,6 +838,15 @@ class BeanWrapper {
   }
 
   static String _join(Iterable<_Segment> segments) => segments.join('.');
+
+  // The path up to key [key] of segment [segment] (exclusive).
+  static String _prefix(List<_Segment> segments, int segment, int key) {
+    final current = segments[segment];
+    return [
+      ...segments.take(segment),
+      _Segment(current.name, current.keys.take(key).toList()),
+    ].join('.');
+  }
 
   /// Splits `a.b[0]['k'].c` into segments with index keys.
   ///
@@ -689,6 +889,40 @@ class BeanWrapper {
     }
     return segments;
   }
+}
+
+/// Creates empty values for auto-growing: introspected objects with a
+/// no-argument constructor, lists, sets and maps of the right static type.
+final class _NewValue implements TypeInfoVisitor<Object?> {
+  _NewValue(this.wrapper);
+
+  final BeanWrapper wrapper;
+
+  @override
+  Object? visitClass<T>(ClassType<T> type) {
+    final introspection = wrapper.introspector.forTypeArgument<T>();
+    return introspection != null && introspection.isInstantiable
+        ? introspection.instantiate()
+        : null;
+  }
+
+  @override
+  Object? visitList<E>(ListType<E> type) => type.create(const []);
+
+  @override
+  Object? visitSet<E>(SetType<E> type) => type.create(const []);
+
+  @override
+  Object? visitMap<K, V>(MapType<K, V> type) => type.create(const []);
+
+  @override
+  Object? visitEnum<E extends Enum>(EnumType<E> type) => null;
+
+  @override
+  Object? visitGeneric<T>(GenericType<T> type) => null;
+
+  @override
+  Object? visitDynamic(DynamicType type) => null;
 }
 
 /// One `.`-separated part of a property path: `name[key1][key2]`.

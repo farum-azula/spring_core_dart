@@ -118,12 +118,28 @@ void main() {
     });
 
     test('export', () {
+      // The error follows even without %ex, as in Logback.
       expect(
         buffer.export(
           const LogQuery(minLevel: SpringLogLevel.warning),
           LogPattern('%-5p %logger: %m%X'),
         ),
-        'WARN  neon.shop.pay: slow {order=42}\nERROR neonx: failed',
+        'WARN  neon.shop.pay: slow {order=42}\n'
+        'ERROR neonx: failed\nBad state: Card declined',
+      );
+      expect(
+        buffer.export(
+          const LogQuery(minLevel: SpringLogLevel.warning),
+          LogPattern('%-5p %logger: %m%nopex'),
+        ),
+        'WARN  neon.shop.pay: slow\nERROR neonx: failed',
+      );
+      expect(
+        buffer.export(const LogQuery(minLevel: SpringLogLevel.error)),
+        matches(
+          r'^\d\d:\d\d:\d\d\.\d{3} ERROR \[neonx\] failed\n'
+          r'Bad state: Card declined$',
+        ),
       );
     });
   });

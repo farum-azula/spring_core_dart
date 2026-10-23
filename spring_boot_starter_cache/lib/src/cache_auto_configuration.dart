@@ -68,9 +68,11 @@ CacheManager cacheManagerFromProperties(Environment environment) {
 }
 
 /// The beans of the starter: a `cacheManager` from `spring.cache.*` (only
-/// when the application declares no [CacheManager]), the
-/// [CacheInterceptor] and the advisor that applies it to members with
-/// cache annotations.
+/// when the application declares no [CacheManager] and no bean named
+/// `cacheResolver`, as in Spring Boot), the [CacheInterceptor], the
+/// [CacheOperationValidator] that checks the cache annotations of proxied
+/// beans at startup and the advisor that applies the interceptor to
+/// members with cache annotations.
 final cacheAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<CacheManager>(
     name: 'cacheManager',
@@ -78,6 +80,7 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
     conditions: const [
       ConditionGroup('$_source.cacheManager', [
         ConditionalOnMissingBean(CacheManager),
+        ConditionalOnMissingBean.named('cacheResolver'),
       ]),
     ],
     create: (r) => cacheManagerFromProperties(r.dependency<Environment>()),
@@ -90,6 +93,12 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
       beanFactory: r.dependency<BeanFactory>(),
       introspector: r.dependency<BeanIntrospector>(),
     ),
+  ),
+  BeanDefinition<CacheOperationValidator>(
+    name: 'cacheOperationValidator',
+    types: const [CacheOperationValidator, BeanPostProcessor, BeanFactoryAware],
+    source: _source,
+    create: (r) => CacheOperationValidator(r.dependency<CacheInterceptor>()),
   ),
   BeanDefinition<DefaultPointcutAdvisor>(
     name: 'cacheAdvisor',

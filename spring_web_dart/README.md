@@ -1,5 +1,9 @@
 # spring_web_dart
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Spring's `spring-web` for Dart: the **request mapping annotations**
 (`@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`,
 `@RequestHeader`, `@RequestBody`), **HTTP types** (`ResponseEntity`,

@@ -9,11 +9,12 @@ class FileAppender extends LogAppender {
   FileAppender(
     this.path, {
     LogPattern? pattern,
-    this.maxSize = 10 * 1024 * 1024,
+    this.maxFileSize = 10 * 1024 * 1024,
     this.maxHistory = 7,
+    this.totalSizeCap = 0,
     bool cleanHistoryOnStart = false,
     super.threshold,
-  }) : pattern = pattern ?? LogPattern(LogPattern.defaultPattern) {
+  }) : pattern = pattern ?? LogPattern(LogPattern.defaultFilePattern) {
     throw UnsupportedError('Log files need dart:io');
   }
 
@@ -27,10 +28,13 @@ class FileAppender extends LogAppender {
   LogPattern pattern;
 
   /// Size that triggers a rollover, in bytes; `0` never rolls over.
-  final int maxSize;
+  final int maxFileSize;
 
   /// Number of rolled-over files kept.
   final int maxHistory;
+
+  /// Total size of the rolled-over files, in bytes; `0` sets no limit.
+  final int totalSizeCap;
 
   @override
   void write(SpringLogRecord record) {}

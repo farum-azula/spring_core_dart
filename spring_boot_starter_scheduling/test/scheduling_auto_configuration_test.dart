@@ -141,6 +141,46 @@ void main() {
     });
   });
 
+  test('scheduler: picks a TaskScheduler bean by name or qualifier', () {
+    final other = TimerTaskScheduler(now: clock.now, createTimer: clock.timer);
+    runner([
+      BeanDefinition<TaskScheduler>(
+        name: 'reportsScheduler',
+        qualifiers: const {'reports'},
+        create: (_) => other,
+      ),
+      reportsDefinition({
+        'refresh': [const Scheduled(fixedRate: Duration(minutes: 1))],
+        'hourly': [
+          const Scheduled(cron: '@hourly', scheduler: 'reportsScheduler'),
+        ],
+        'cleanup': [
+          const Scheduled(
+            fixedDelay: Duration(minutes: 1),
+            scheduler: r'${reports.scheduler}',
+          ),
+        ],
+        'twice': [
+          const Scheduled(fixedDelay: Duration(minutes: 1), scheduler: ''),
+        ],
+      }),
+    ]).withPropertyValues(['reports.scheduler=reports']).run((context) {
+      expect(context.hasFailed, isFalse, reason: '${context.startupFailure}');
+      // The default: the TaskScheduler named `taskScheduler`.
+      expect(scheduler.tasks.map((t) => t.name), [
+        'Reports.refresh',
+        'Reports.twice',
+      ]);
+      expect(other.tasks.map((t) => t.name), [
+        'Reports.hourly',
+        'Reports.cleanup',
+      ]);
+      clock.elapse(const Duration(hours: 1));
+      expect(reportsOf(context).calls, contains('hourly'));
+    });
+    expect(clock.pendingTimers, 0);
+  });
+
   test('a lazy bean is scheduled when it is created', () {
     runner([
       reportsDefinition({
@@ -271,6 +311,10 @@ void main() {
       'negative delay': (
         const Scheduled(fixedDelay: Duration(seconds: -1)),
         'must not be negative',
+      ),
+      'unknown scheduler': (
+        const Scheduled(fixedRate: Duration(seconds: 1), scheduler: 'nope'),
+        "scheduler 'nope': no TaskScheduler bean",
       ),
     };
     for (final MapEntry(key: name, value: (scheduled, message))

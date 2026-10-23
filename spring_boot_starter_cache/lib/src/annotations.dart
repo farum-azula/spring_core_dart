@@ -48,6 +48,7 @@ class Cacheable {
     this.sync = false,
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   });
 
   /// Caches in [cacheNames], or in those of the class's `@CacheConfig`
@@ -61,6 +62,7 @@ class Cacheable {
     this.sync = false,
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   }) : value = null;
 
   /// A cache name (Spring's `value`, an alias of `cacheNames`).
@@ -86,8 +88,12 @@ class Cacheable {
   /// Name of a `KeyGenerator` bean to compute the key (instead of [key]).
   final String? keyGenerator;
 
-  /// Name of the `CacheManager` bean to use.
+  /// Name of the `CacheManager` bean to use (not with [cacheResolver]).
   final String? cacheManager;
+
+  /// Name of a `CacheResolver` bean that picks the caches (instead of
+  /// [cacheManager]).
+  final String? cacheResolver;
 }
 
 /// Always runs the method and stores its result, like Spring's
@@ -116,6 +122,7 @@ class CachePut {
     this.unless,
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   });
 
   /// Stores the result in [cacheNames], or in those of `@CacheConfig`.
@@ -126,6 +133,7 @@ class CachePut {
     this.unless,
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   }) : value = null;
 
   /// A cache name (Spring's `value`).
@@ -147,8 +155,11 @@ class CachePut {
   /// Name of a `KeyGenerator` bean.
   final String? keyGenerator;
 
-  /// Name of the `CacheManager` bean.
+  /// Name of the `CacheManager` bean (not with [cacheResolver]).
   final String? cacheManager;
+
+  /// Name of a `CacheResolver` bean (instead of [cacheManager]).
+  final String? cacheResolver;
 }
 
 /// Removes entries from caches, like Spring's `@CacheEvict`.
@@ -184,6 +195,7 @@ class CacheEvict {
     this.beforeInvocation = false,
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   });
 
   /// Evicts from [cacheNames], or from those of `@CacheConfig`.
@@ -195,6 +207,7 @@ class CacheEvict {
     this.beforeInvocation = false,
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   }) : value = null;
 
   /// A cache name (Spring's `value`).
@@ -218,8 +231,11 @@ class CacheEvict {
   /// Name of a `KeyGenerator` bean.
   final String? keyGenerator;
 
-  /// Name of the `CacheManager` bean.
+  /// Name of the `CacheManager` bean (not with [cacheResolver]).
   final String? cacheManager;
+
+  /// Name of a `CacheResolver` bean (instead of [cacheManager]).
+  final String? cacheResolver;
 }
 
 /// Several cache annotations of the same kind on one method, like
@@ -262,8 +278,12 @@ class Caching {
 }
 
 /// Defaults for the cache annotations of a class, like Spring's
-/// `@CacheConfig`: an operation without cache names, key generator or
-/// cache manager takes them from here.
+/// `@CacheConfig`. As in Spring, an operation takes from here
+///
+/// - the cache names, when it names none;
+/// - the key generator, when it sets neither `key` nor `keyGenerator`;
+/// - the cache resolver (or else the cache manager), when it sets neither
+///   `cacheManager` nor `cacheResolver`.
 ///
 /// ```dart
 /// @Service()
@@ -292,6 +312,7 @@ class CacheConfig {
     this.cacheNames = const [],
     this.keyGenerator,
     this.cacheManager,
+    this.cacheResolver,
   });
 
   /// Default cache names.
@@ -302,4 +323,7 @@ class CacheConfig {
 
   /// Default `CacheManager` bean name.
   final String? cacheManager;
+
+  /// Default `CacheResolver` bean name (wins over [cacheManager]).
+  final String? cacheResolver;
 }

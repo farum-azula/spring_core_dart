@@ -1,3 +1,7 @@
+## Unreleased
+
+- `logging.level.ROOT` (any case) sets the root level instead of a logger named "ROOT"
+
 ## 0.1.6
 
 - update road map

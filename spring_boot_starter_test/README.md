@@ -1,5 +1,9 @@
 # spring_boot_starter_test
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Testing support for [`spring_boot_dart`](../spring_boot_dart) applications
 and starters, like `spring-boot-starter-test`. Built on `test_api` and
 `matcher` (not `package:test` itself), so it works with both `package:test`
@@ -48,6 +52,8 @@ void main() {
   (config files, auto-configuration, runners: all of `runApplication`) and
   closes after the last one.
 - `properties` win over every other source, the command line included.
+- `dynamicProperties` (`@DynamicPropertySource`) adds properties whose
+  values are known only when the context starts (see below).
 - `systemEnvironment` is empty by default, so tests do not depend on the
   machine.
 - `SpringLog` levels and handler are restored afterwards.
@@ -90,6 +96,27 @@ final app = springBootTest(
   (the first listed comes first). In browser tests there is no file system,
   so the directories are simply not found.
 
+## Dynamic properties (`@DynamicPropertySource`)
+
+Values known only when the tests run (a server's port, a temporary
+directory) go through `dynamicProperties`. It is called whenever the
+context starts (again after `markDirty`), and each supplier whenever the
+property is read; these properties win over `properties`:
+
+```dart
+late HttpServer server;
+setUpAll(() async => server = await HttpServer.bind('localhost', 0));
+
+final app = springBootTest(
+  springApplication,
+  dynamicProperties: (registry) => registry
+    ..add('catalog.url', () => 'http://localhost:${server.port}'),
+);
+```
+
+Declare the `setUpAll` that provides the value before `springBootTest`, so
+it runs first.
+
 ## `BeanOverride`: fakes and mocks (`@MockitoBean`, `@TestBean`)
 
 ```dart
@@ -120,6 +147,7 @@ test('default cache', () {
 
 test('backs off for the application cache', () {
   runner.withBean<Cache>(AppCache()).run((context) {
+    expect(context, hasSingleBean<Cache>()); // a missing back-off: two beans
     expect(context.getBean<Cache>(), isA<AppCache>());
   });
 });
@@ -131,8 +159,19 @@ test('needs a size', () {
 });
 ```
 
-Also `withUserConfiguration(module)` (registered before the
-auto-configuration), `withSystemEnvironment`, `withInitializer`.
+- `withBean<T>(instance, name: ...)` registers an extra bean before the
+  configurations are processed, like Boot's `withBean`: a
+  `@ConditionalOnMissingBean` backs off, and a missing back-off shows up as
+  a second bean (or, with the same name, a failed start). It never
+  replaces a bean.
+- `withBeanOverride<T>(instance, name: ...)` replaces a bean after the
+  configurations were processed, like a `BeanOverride` (not in Boot's
+  runner; prefer `withBean` to test back-offs).
+- `withPropertyValues(['a=b', 'c: d', 'flag'])` takes `key=value` and
+  `key:value` like Boot's `TestPropertyValues` (trimmed; no separator: an
+  empty value).
+- Also `withUserConfiguration(module)` (registered before the
+  auto-configuration), `withSystemEnvironment`, `withInitializer`.
 
 For asynchronous checks use `runAsync`: the context stays open until the
 returned future completes (`run` closes it as soon as the body returns).
@@ -166,6 +205,25 @@ test('warns about slow payments', () {
 ```
 
 Every test starts with an empty capture.
+
+## Differences from Spring
+
+- `springBootTest` is a function for the tests of a `main` or `group`, not
+  an annotation on a test class; no `webEnvironment` (there is no embedded
+  web server), no test slices (`@WebMvcTest`, `@DataJpaTest`, ...) and no
+  `@TestConfiguration`: pass extra modules to the `SpringApplication`.
+- `BeanOverride` replaces the bean definition with a ready-made object of
+  your own (like `@TestBean`); there are no generated mocks or spies and no
+  automatic reset between tests (`@MockitoBean(reset)`): use any mock
+  library and reset in `setUp`. Without an existing bean, the instance is
+  registered.
+- `ApplicationContextRunner.withBean` takes an instance instead of a class
+  or supplier; `withBeanOverride` has no Boot counterpart.
+- No context caching across test files: each `springBootTest` starts its
+  own context (shared by the tests of its `main` / `group`).
+- `dynamicProperties` is a parameter, not an annotated static method; no
+  `DynamicPropertyRegistrar` beans.
+- `captureLogs` replaces `OutputCaptureExtension` for `SpringLog` output.
 
 ## Name clash
 

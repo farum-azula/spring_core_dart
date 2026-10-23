@@ -4,7 +4,12 @@ import 'package:spring_core_dart/src/context/message/message_source.dart';
 /// Shared logic of message sources, like Spring's `AbstractMessageSource`.
 ///
 /// Lookup for code `c` and locale `ru_RU`: `ru_RU` → `ru` → [defaultLocale]
-/// chain → base (no locale) → [commonMessages] → parent.
+/// chain → base (no locale) → [commonMessages] → parent. Locales with a
+/// script follow Java's `ResourceBundle`: `zh_Hant_TW` → `zh_Hant` →
+/// `zh_TW` → `zh`. Arguments that are [MessageSourceResolvable]s are
+/// resolved by this source before the parent is asked (so a message of
+/// the parent can use arguments only the child knows), and messages are
+/// formatted with the number symbols of the requested locale.
 ///
 /// Subclasses only implement [resolveCode]; formatting, fallbacks and
 /// argument resolution are shared.
@@ -65,6 +70,22 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   /// `null`. [locale] is already normalized (see `Locales.normalize`).
   String? resolveCode(String code, String locale);
 
+  /// The raw message for [code] in the first of [locales] (most specific
+  /// first, ending with `''`) that has one, or `null`.
+  ///
+  /// Calls [resolveCode] locale by locale; sources with several bundles
+  /// override it to search bundle by bundle (see
+  /// `PropertiesMessageSource`).
+  String? resolveCodeInLocales(String code, List<String> locales) {
+    for (final locale in locales) {
+      final pattern = resolveCode(code, locale);
+      if (pattern != null) {
+        return pattern;
+      }
+    }
+    return null;
+  }
+
   @override
   String getMessage(
     String code, {
@@ -122,28 +143,27 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
 
   /// The formatted message, or `null` when no source has [code].
   String? getMessageInternal(String code, List<Object?> args, String? locale) {
-    // Arguments are resolved once with this source; the locale chain,
-    // common messages and finally the parent are tried in that order.
+    // Arguments are resolved once with this source (also for the parent,
+    // like Spring); the locale chain, common messages and finally the
+    // parent are tried in that order.
     final resolvedArgs = resolveArguments(args, locale);
-    for (final candidate in localeChain(locale)) {
-      final pattern = resolveCode(code, candidate);
-      if (pattern != null) {
-        return formatMessage(pattern, resolvedArgs);
-      }
+    final pattern = resolveCodeInLocales(code, localeChain(locale));
+    if (pattern != null) {
+      return formatMessage(pattern, resolvedArgs, locale);
     }
     final common = commonMessages?[code];
     if (common != null) {
-      return formatMessage(common, resolvedArgs);
+      return formatMessage(common, resolvedArgs, locale);
     }
     final parent = parentMessageSource;
     // An abstract parent is asked without exceptions or default handling,
     // so its own useCodeAsDefaultMessage does not short-circuit the lookup.
     if (parent is AbstractMessageSource) {
-      return parent.getMessageInternal(code, args, locale);
+      return parent.getMessageInternal(code, resolvedArgs, locale);
     }
     if (parent != null) {
       try {
-        return parent.getMessage(code, args: args, locale: locale);
+        return parent.getMessage(code, args: resolvedArgs, locale: locale);
       } on NoSuchMessageException {
         return null;
       }
@@ -178,12 +198,18 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   /// A pattern that is not a valid `MessageFormat` (for example a message
   /// containing a regular expression such as `[A-Z]{2,3}`) is returned
   /// unchanged unless [alwaysUseMessageFormat] is on — Spring's behaviour.
-  String formatMessage(String pattern, List<Object?> args) {
+  ///
+  /// Numbers use the symbols of [locale] (else of [defaultLocale]).
+  String formatMessage(String pattern, List<Object?> args, [String? locale]) {
     if (args.isEmpty && !alwaysUseMessageFormat) {
       return pattern;
     }
     try {
-      return MessageFormat.format(pattern, args);
+      return MessageFormat.format(
+        pattern,
+        args,
+        locale: locale ?? defaultLocale,
+      );
     } on FormatException {
       if (alwaysUseMessageFormat) {
         rethrow;
@@ -197,7 +223,7 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
     String defaultMessage,
     List<Object?> args,
     String? locale,
-  ) => formatMessage(defaultMessage, resolveArguments(args, locale));
+  ) => formatMessage(defaultMessage, resolveArguments(args, locale), locale);
 }
 
 /// Messages registered in code, like Spring's `StaticMessageSource`.

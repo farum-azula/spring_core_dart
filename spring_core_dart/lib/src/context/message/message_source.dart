@@ -223,36 +223,98 @@ final class NoSuchMessageException implements Exception {
 
 /// Locale helpers for string locales.
 ///
+/// Locales are `language[_Script][_REGION][_variant]`, the form of
+/// resource bundle file names (`messages_zh_Hant_TW.properties`).
+///
 /// ```dart
 /// Locales.normalize('ru-ru'); // 'ru_RU'
+/// Locales.normalize('zh-hant-tw'); // 'zh_Hant_TW'
 /// Locales.candidates('de_CH'); // ['de_CH', 'de']
+/// Locales.candidates('zh_Hant_TW'); // ['zh_Hant_TW', 'zh_Hant', 'zh_TW', 'zh']
 /// ```
 ///
 /// Spring (Java) uses `java.util.Locale` objects instead:
 /// ```java
-/// Locale locale = Locale.forLanguageTag("ru-RU"); // ru_RU
+/// Locale locale = Locale.forLanguageTag("zh-Hant-TW"); // zh_TW_#Hant
+/// ResourceBundle.Control.getControl(FORMAT_DEFAULT)
+///     .getCandidateLocales("messages", locale);
 /// ```
 abstract final class Locales {
-  /// `ru-RU` / `ru_ru` → `ru_RU`; `null`/empty → `''`.
+  /// `ru-RU` / `ru_ru` → `ru_RU`; `zh-hant-tw` (or Java's `zh_TW_#Hant`)
+  /// → `zh_Hant_TW`; `null`/empty → `''`.
   static String normalize(String? locale) {
-    if (locale == null || locale.trim().isEmpty) {
+    final parsed = _parse(locale);
+    if (parsed == null) {
       return '';
     }
-    final parts = locale.trim().replaceAll('-', '_').split('_');
+    final (:language, :script, :region, :variants) = parsed;
     return [
-      parts.first.toLowerCase(),
-      if (parts.length > 1) parts[1].toUpperCase(),
-      ...parts.skip(2),
+      language,
+      ?script,
+      if (region != null || variants.isNotEmpty) region ?? '',
+      ...variants,
     ].join('_');
   }
 
-  /// `ru_RU_x` → `[ru_RU_x, ru_RU, ru]`.
+  /// The locales a bundle is looked up in, most specific first, like
+  /// Java's `ResourceBundle.Control.getCandidateLocales` (without the
+  /// root): `ru_RU_x` → `[ru_RU_x, ru_RU, ru]`; `zh_Hant_TW` →
+  /// `[zh_Hant_TW, zh_Hant, zh_TW, zh]`.
   static List<String> candidates(String locale) {
-    final normalized = normalize(locale);
-    if (normalized.isEmpty) {
+    final parsed = _parse(locale);
+    if (parsed == null) {
       return const [];
     }
-    final parts = normalized.split('_');
-    return [for (var i = parts.length; i > 0; i--) parts.take(i).join('_')];
+    final (:language, :script, :region, :variants) = parsed;
+    // language_[script_]region_variants..., dropping variants from the end,
+    // then the region, then the script.
+    List<String> chain(String? script) => [
+      for (var i = variants.length; i > 0; i--)
+        [language, ?script, region ?? '', ...variants.take(i)].join('_'),
+      if (region != null) [language, ?script, region].join('_'),
+      [language, ?script].join('_'),
+    ];
+    return {...chain(script), if (script != null) ...chain(null)}.toList();
   }
+
+  static ({
+    String language,
+    String? script,
+    String? region,
+    List<String> variants,
+  })?
+  _parse(String? locale) {
+    if (locale == null || locale.trim().isEmpty) {
+      return null;
+    }
+    final parts = locale.trim().replaceAll('-', '_').split('_');
+    // Java's toString puts the script last, after `#`: `zh_TW_#Hant`.
+    String? script;
+    final hashed = parts.indexWhere((p) => p.startsWith('#'));
+    if (hashed > 0) {
+      script = _titleCase(parts.removeAt(hashed).substring(1));
+    }
+    var i = 1;
+    if (script == null &&
+        i < parts.length &&
+        RegExp(r'^[A-Za-z]{4}$').hasMatch(parts[i])) {
+      script = _titleCase(parts[i]);
+      i++;
+    }
+    String? region;
+    if (i < parts.length) {
+      region = parts[i].isEmpty ? null : parts[i].toUpperCase();
+      i++;
+    }
+    return (
+      language: parts.first.toLowerCase(),
+      script: script,
+      region: region,
+      variants: parts.skip(i).toList(),
+    );
+  }
+
+  static String _titleCase(String text) => text.isEmpty
+      ? text
+      : text[0].toUpperCase() + text.substring(1).toLowerCase();
 }

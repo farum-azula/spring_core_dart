@@ -1,3 +1,10 @@
+## Unreleased
+
+- Breaking: Spring Boot's default console and file lines (`LogPattern.defaultConsolePattern` / `defaultFilePattern`, replacing `LogPattern.defaultPattern`): ISO-8601 time with offset, PID, `--- [app]`, `[isolate]`, `%-40.40logger{39} :`; `logging.pattern.dateformat`, `logging.pattern.level`, `logging.pattern.correlation`, `logging.exception-conversion-word`, `logging.include-application-name` / `-group`, `spring.output.ansi.enabled`
+- Breaking: `LogPattern` follows Logback: format modifiers (`%-40.40`, `%.-10`), `%logger{n}` abbreviation, `%t` / `%thread`, Java date patterns (`'T'`, `XXX`; `%d` alone is `yyyy-MM-dd HH:mm:ss,SSS`), `%ex` without a leading line break (write `%n%ex`), errors printed also without `%ex` (`%nopex` turns that off), Boot's `%clr(...)`, `%esb`, `%wEx`, `${PID}` / `${NAME:-default}`; anything it cannot parse fails the start; appenders use `LogPattern.formatLine`
+- Breaking: `logging.logback.rollingpolicy.max-file-size`, `.max-history`, `.clean-history-on-start` and the new `.total-size-cap` replace `logging.file.max-size`, `logging.file.max-history`, `logging.file.clean-history-on-start` (now ignored with a warning); `FileAppender(maxSize:)` is `maxFileSize:`, new `totalSizeCap:`
+- Breaking: `LoggingSystem.setLevel` is `setLogLevel` (Boot's name); `ROOT` in any case (or `null`) is the root logger, also in `logging.level.ROOT`
+
 ## 0.1.6
 
 - update road map

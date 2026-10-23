@@ -3,6 +3,7 @@ import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/file_appender.dart';
 import 'package:spring_boot_starter_logging/src/log_buffer.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
+import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 
 const _log = SpringLog('spring_boot_starter_logging');
 
@@ -40,8 +41,14 @@ int parseDataSize(String value) {
 /// ```dart
 /// final logging = LoggingSystem.instance; // or inject LoggingSystem
 /// logging.console.out = debugPrint;       // Flutter
-/// logging.setLevel('neon.checkout', SpringLogLevel.debug);
+/// logging.setLogLevel('neon.checkout', SpringLogLevel.debug);
 /// logging.buffer.watch();                 // the log screen
+/// ```
+///
+/// Spring Boot (Java):
+/// ```java
+/// LoggingSystem logging = LoggingSystem.get(classLoader);
+/// logging.setLogLevel("neon.checkout", LogLevel.DEBUG);
 /// ```
 ///
 /// Properties (`lib/resources/application.properties`):
@@ -49,18 +56,23 @@ int parseDataSize(String value) {
 /// ```properties
 /// logging.level.root=info                 # handled by spring_boot_dart
 /// logging.level.neon.checkout=debug
-/// logging.pattern.console=%d{HH:mm:ss} %-5p [%logger] %m%X%ex
+/// logging.pattern.console=%d{HH:mm:ss} %-5p [%logger] %m%X%n%ex
+/// logging.pattern.dateformat=yyyy-MM-dd HH:mm:ss.SSS
+/// logging.pattern.level=%5p
+/// logging.include-application-name=true   # [spring.application.name] in lines
 /// logging.threshold.console=warn          # console: warnings only
+/// spring.output.ansi.enabled=detect       # %clr colours: detect, always, never
 /// logging.console.enabled=true
 /// logging.buffer.enabled=true
 /// logging.buffer.capacity=2000
 /// logging.threshold.buffer=debug
 /// logging.file.name=logs/shop.log         # or logging.file.path=logs (spring.log)
-/// logging.pattern.file=%d %5p [%logger] %m%X%ex
+/// logging.pattern.file=%d %5p [%logger] %m%X%n%ex
 /// logging.threshold.file=info
-/// logging.file.max-size=10MB              # roll over: shop.log.1, .2, ...
-/// logging.file.max-history=7              # rolled-over files kept
-/// logging.file.clean-history-on-start=false
+/// logging.logback.rollingpolicy.max-file-size=10MB   # shop.log.1, .2, ...
+/// logging.logback.rollingpolicy.max-history=7        # rolled-over files kept
+/// logging.logback.rollingpolicy.total-size-cap=0B    # their total (0B: no limit)
+/// logging.logback.rollingpolicy.clean-history-on-start=false
 /// logging.enabled=false                   # leave SpringLog alone
 /// ```
 ///
@@ -156,29 +168,124 @@ final class LoggingSystem {
 
   /// Applies the `logging.*` properties of [environment] (see the class
   /// documentation). The root level becomes `info`, Spring Boot's default,
-  /// unless `logging.level.root` is set.
+  /// unless `logging.level.root` (in any case) is set. The console gets
+  /// `logging.pattern.console` or Spring Boot's pattern
+  /// ([LogPattern.defaultConsolePattern]).
   void configure(PropertyResolver environment) {
-    if (environment.getProperty('logging.level.root') == null &&
-        environment.getProperty('logging.level') == null) {
+    if (!_rootLevelConfigured(environment)) {
       SpringLog.level = SpringLogLevel.info;
     }
     consoleEnabled =
         environment.getProperty('logging.console.enabled') != 'false';
     bufferEnabled =
         environment.getProperty('logging.buffer.enabled') != 'false';
-    if (environment.getProperty('logging.pattern.console')
-        case final pattern?) {
-      console.pattern = LogPattern(pattern);
-    }
+    final variables = _variables(environment);
+    String? lookup(String name) => environment.getProperty(name);
+    console.pattern = LogPattern(
+      _rawProperty(environment, 'logging.pattern.console') ??
+          LogPattern.defaultConsolePattern,
+      variables: variables,
+      lookup: lookup,
+      ansi: _ansi(environment),
+    );
     console.threshold = _threshold(environment, 'logging.threshold.console');
     buffer.threshold = _threshold(environment, 'logging.threshold.buffer');
     if (_int(environment, 'logging.buffer.capacity') case final capacity?) {
       buffer.capacity = capacity;
     }
-    _configureFile(environment);
+    _configureFile(environment, variables, lookup);
   }
 
-  void _configureFile(PropertyResolver environment) {
+  // `logging.level.root`, `logging.level.ROOT`, ... or `logging.level`.
+  static bool _rootLevelConfigured(PropertyResolver environment) {
+    if (environment.getProperty('logging.level.root') != null ||
+        environment.getProperty('logging.level') != null) {
+      return true;
+    }
+    if (environment is! ConfigurableEnvironment) {
+      return false;
+    }
+    return environment.propertySources.any(
+      (source) =>
+          source is EnumerablePropertySource<Object> &&
+          source.propertyNames.any(
+            (name) => name.toLowerCase() == 'logging.level.root',
+          ),
+    );
+  }
+
+  // The values of Spring Boot's logging system properties, as pattern
+  // variables (`${LOG_LEVEL_PATTERN:-%5p}` in the default patterns).
+  static Map<String, String> _variables(PropertyResolver environment) {
+    String? raw(String key) => _blankToNull(_rawProperty(environment, key));
+    String? value(String key) => _blankToNull(environment.getProperty(key));
+    bool include(String key) => environment.getProperty(key) != 'false';
+    return {
+      'LOG_LEVEL_PATTERN': ?raw('logging.pattern.level'),
+      'LOG_DATEFORMAT_PATTERN': ?raw('logging.pattern.dateformat'),
+      'LOG_EXCEPTION_CONVERSION_WORD': ?raw(
+        'logging.exception-conversion-word',
+      ),
+      'LOG_CORRELATION_PATTERN': ?raw('logging.pattern.correlation'),
+      if (include('logging.include-application-name'))
+        'APPLICATION_NAME': ?value('spring.application.name'),
+      if (include('logging.include-application-group'))
+        'APPLICATION_GROUP': ?value('spring.application.group'),
+      'LOG_FILE': ?value('logging.file.name'),
+      'LOG_PATH': ?value('logging.file.path'),
+    };
+  }
+
+  // A pattern property as written: Spring's placeholder resolution would
+  // reject `${PID}` and read `${LOG_LEVEL_PATTERN:-%5p}` as a default of
+  // `-%5p`; LogPattern resolves the variables itself, as Logback does.
+  static String? _rawProperty(PropertyResolver environment, String key) {
+    if (environment is ConfigurableEnvironment) {
+      for (final source in environment.propertySources) {
+        if (source.getProperty(key) case final value?) {
+          return '$value';
+        }
+      }
+      return null;
+    }
+    return environment.getProperty(key);
+  }
+
+  // `spring.output.ansi.enabled`: the colours of `%clr` on the console.
+  static bool _ansi(PropertyResolver environment) {
+    final value = environment.getProperty('spring.output.ansi.enabled');
+    return switch (value?.trim().toLowerCase()) {
+      null || '' || 'detect' => platform.stdoutSupportsAnsi,
+      'always' => true,
+      'never' => false,
+      _ => throw FormatException(
+        'spring.output.ansi.enabled must be detect, always or never',
+        value,
+      ),
+    };
+  }
+
+  // The names before Spring Boot's logging.logback.rollingpolicy.*.
+  static const _removedProperties = {
+    'logging.file.max-size': 'logging.logback.rollingpolicy.max-file-size',
+    'logging.file.max-history': 'logging.logback.rollingpolicy.max-history',
+    'logging.file.total-size-cap':
+        'logging.logback.rollingpolicy.total-size-cap',
+    'logging.file.clean-history-on-start':
+        'logging.logback.rollingpolicy.clean-history-on-start',
+  };
+
+  void _configureFile(
+    PropertyResolver environment,
+    Map<String, String> variables,
+    String? Function(String name) lookup,
+  ) {
+    for (final MapEntry(key: removed, value: current)
+        in _removedProperties.entries) {
+      if (environment.containsProperty(removed)) {
+        _log.warning('$removed is not supported (ignored): use $current');
+      }
+    }
     _closeFile();
     final name = _blankToNull(environment.getProperty('logging.file.name'));
     final directory = _blankToNull(
@@ -194,17 +301,24 @@ final class LoggingSystem {
       return;
     }
     final path = _resolve(name ?? '${_trimSlash(directory!)}/spring.log');
-    final pattern = environment.getProperty('logging.pattern.file');
+    const policy = 'logging.logback.rollingpolicy';
     _file = FileAppender(
       path,
-      pattern: pattern == null ? null : LogPattern(pattern),
-      maxSize: parseDataSize(
-        environment.getProperty('logging.file.max-size') ?? '10MB',
+      pattern: LogPattern(
+        _rawProperty(environment, 'logging.pattern.file') ??
+            LogPattern.defaultFilePattern,
+        variables: variables,
+        lookup: lookup,
       ),
-      maxHistory: _int(environment, 'logging.file.max-history') ?? 7,
+      maxFileSize: parseDataSize(
+        environment.getProperty('$policy.max-file-size') ?? '10MB',
+      ),
+      maxHistory: _int(environment, '$policy.max-history') ?? 7,
+      totalSizeCap: parseDataSize(
+        environment.getProperty('$policy.total-size-cap') ?? '0B',
+      ),
       cleanHistoryOnStart:
-          environment.getProperty('logging.file.clean-history-on-start') ==
-          'true',
+          environment.getProperty('$policy.clean-history-on-start') == 'true',
       threshold: _threshold(environment, 'logging.threshold.file'),
     );
   }
@@ -252,17 +366,48 @@ final class LoggingSystem {
         (throw FormatException('$key: unknown level', value));
   }
 
+  /// The name of the root logger, like Spring Boot's
+  /// `LoggingSystem.ROOT_LOGGER_NAME`; matched in any case.
+  static const rootLoggerName = 'ROOT';
+
+  static bool _isRoot(String? logger) =>
+      logger == null ||
+      logger.isEmpty ||
+      logger.toUpperCase() == rootLoggerName;
+
   /// The root level (`logging.level.root`).
   SpringLogLevel get rootLevel => SpringLog.level;
 
   set rootLevel(SpringLogLevel level) => SpringLog.level = level;
 
-  /// Sets the level of [logger] and its descendants; `null` inherits.
-  void setLevel(String logger, SpringLogLevel? level) =>
-      SpringLog.setLevel(logger, level);
+  /// Sets the level of [loggerName] and its descendants, like Spring
+  /// Boot's `LoggingSystem.setLogLevel`; a `null` [level] inherits again.
+  /// `ROOT` (in any case) or `null` is the root logger, which needs a
+  /// level.
+  ///
+  /// ```dart
+  /// logging.setLogLevel('neon.checkout', SpringLogLevel.debug);
+  /// logging.setLogLevel('ROOT', SpringLogLevel.warning);
+  /// ```
+  void setLogLevel(String? loggerName, SpringLogLevel? level) {
+    if (_isRoot(loggerName)) {
+      if (level == null) {
+        throw ArgumentError.value(
+          level,
+          'level',
+          'The root logger needs a level',
+        );
+      }
+      SpringLog.level = level;
+      return;
+    }
+    SpringLog.setLevel(loggerName!, level);
+  }
 
-  /// The level that applies to [logger].
-  SpringLogLevel levelOf(String logger) => SpringLog.levelOf(logger);
+  /// The level that applies to [logger] (`ROOT` in any case: the root
+  /// level).
+  SpringLogLevel levelOf(String logger) =>
+      _isRoot(logger) ? SpringLog.level : SpringLog.levelOf(logger);
 
   /// Levels set per logger.
   Map<String, SpringLogLevel> get loggerLevels => SpringLog.configuredLevels;

@@ -145,7 +145,7 @@ AspectAdviceInterceptor interceptor(
     kind: kind,
     pointcut: 'execution(* *(..))',
     methodName: kind.name,
-    invoke: invoke,
+    invoke: (a, jp, v, _) => invoke(a, jp, v),
     accepts: accepts,
   ),
   Recorder.new,
@@ -227,10 +227,11 @@ void main() {
       };
       expect(matches('timed()', price, 'b', named), isTrue);
       expect(matches('Aspect.prices()', price, 'priceService', named), isTrue);
+      // A qualified reference names its type, like Spring's fully
+      // qualified pointcut references: no fallback to another type's.
       expect(
-        matches('Other.timed()', price, 'b', named),
-        isTrue,
-        reason: 'simple name fallback',
+        () => matches('Other.timed()', price, 'b', named),
+        throwsFormatException,
       );
     });
 
@@ -476,7 +477,7 @@ void main() {
           kind: AdviceKind.before,
           pointcut: 'p',
           methodName: 'm',
-          invoke: (_, _, _) => null,
+          invoke: (_, _, _, _) => null,
         ).toString(),
         '@before(p) m',
       );
@@ -507,7 +508,7 @@ void main() {
             kind: AdviceKind.afterReturning,
             pointcut: 'prices()',
             methodName: 'returned',
-            invoke: (a, jp, v) {
+            invoke: (a, jp, v, _) {
               a.record('$name:returned $v');
               return null;
             },
@@ -516,7 +517,7 @@ void main() {
             kind: AdviceKind.before,
             pointcut: 'Recorder.prices()',
             methodName: 'before',
-            invoke: (a, jp, v) {
+            invoke: (a, jp, v, _) {
               a.record('$name:before');
               return null;
             },
@@ -634,7 +635,7 @@ void main() {
         ..registerBeanDefinition(aspect())
         ..registerSingleton('manual', PriceService());
       final creator = AspectAutoProxyCreator(beanFactory);
-      expect(creator.order, Ordered.lowestPrecedence);
+      expect(creator.order, Ordered.highestPrecedence);
       expect(
         creator.postProcessAfterInitialization(PriceService(), 'manual'),
         isA<PriceService>(),

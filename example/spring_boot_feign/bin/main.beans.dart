@@ -690,6 +690,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
+            parameterAnnotations: [
+              [_i17.PathVariable()],
+            ],
             annotations: [_i17.GetMapping(r'/users/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
@@ -709,6 +712,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'userId'],
+            parameterAnnotations: [
+              [_i17.RequestParam(r'userId')],
+            ],
             annotations: [_i17.GetMapping(r'/posts')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
@@ -728,6 +734,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
+            parameterAnnotations: [
+              [_i17.PathVariable()],
+            ],
             annotations: [_i17.GetMapping(r'/posts/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
@@ -747,6 +756,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
+            parameterAnnotations: [
+              [_i17.PathVariable()],
+            ],
             annotations: [_i17.GetMapping(r'/posts/{id}/comments')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
@@ -766,6 +778,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'NewPost'],
             parameterNames: [r'post'],
+            parameterAnnotations: [
+              [_i17.RequestBody()],
+            ],
             annotations: [_i17.PostMapping(r'/posts')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
@@ -1369,7 +1384,7 @@ _i19.SpringApplication get springApplication => _i19.SpringApplication(
     _i22.springBootStarterLoggingAutoConfiguration,
     _i23.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '64f16b99',
+  fingerprint: '240a98f7',
 );
 
 /// Starts the application: config files, environment, context, runners

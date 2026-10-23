@@ -1,5 +1,9 @@
 # spring_boot_starter_cache
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Caching for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications, like `spring-boot-starter-cache`: put `@Cacheable` on a bean
 method and repeated calls with the same arguments return the stored result
@@ -74,7 +78,7 @@ class Books implements BookService {
 | `@CachePut('books', key: '#isbn')` | Always runs the method and stores the result (refreshes the entry). |
 | `@CacheEvict('books', key: '#isbn')` | Removes the entry after the method returned. `allEntries: true` clears the cache, `beforeInvocation: true` evicts before the call (also when it throws). |
 | `@Caching(cacheable: [...], put: [...], evict: [...])` | Several operations on one method. Repeating an annotation works too. |
-| `@CacheConfig(cacheNames: ['books'])` | On the class: default cache names, `keyGenerator`, `cacheManager` for its methods. |
+| `@CacheConfig(cacheNames: ['books'])` | On the class: default cache names, `keyGenerator`, `cacheManager`, `cacheResolver` for its methods. |
 
 `@Cacheable('books')` names one cache. For several caches, or to take them
 from `@CacheConfig`, use `.of`: `@Cacheable.of(cacheNames: ['books', 'isbn'])`,
@@ -88,8 +92,21 @@ Options of `@Cacheable` (and, where they make sense, of the others):
 | `condition` | SpEL; the cache is used only when it is `true`. |
 | `unless` | SpEL with `#result`; the result is not stored when it is `true`. |
 | `sync` | For `Future` methods: concurrent calls with the same key share one call. |
-| `keyGenerator` | Name of a `KeyGenerator` bean computing the key. |
+| `keyGenerator` | Name of a `KeyGenerator` bean computing the key (not with `key`). |
 | `cacheManager` | Name of the `CacheManager` bean to use. |
+| `cacheResolver` | Name of a `CacheResolver` bean that picks the caches (not with `cacheManager`). |
+
+As in Spring, `@CacheConfig` fills in only what an operation leaves open:
+its cache names when the operation names none, its `keyGenerator` when the
+operation sets neither `key` nor `keyGenerator`, its `cacheResolver` (else
+its `cacheManager`) when the operation sets neither of those.
+
+The annotations of every proxied bean are checked when the bean is
+created, so a wrong combination fails the startup with the member's name
+(not the first call): `key` with `keyGenerator`, `cacheManager` with
+`cacheResolver`, `sync` with other operations, several caches or
+`unless`, an operation without cache names (unless a cache resolver picks
+them), `@Cacheable` / `@CachePut` on a method returning a `Stream`.
 
 ## Keys
 
@@ -154,6 +171,16 @@ With `sync: true`, calls that arrive while the first one is still running
 wait for it instead of calling `api.price` again. Like in Spring, a `sync`
 operation must be the only cache annotation of the method, use one cache
 and no `unless`.
+
+A `Stream` cannot be cached — it can be listened to once, so the cached
+stream would fail every later caller. `@Cacheable` and `@CachePut` on a
+method returning a `Stream` fail the build (and the startup, for
+hand-written proxies); collect the values instead:
+
+```dart
+@Cacheable('events')
+Future<List<Event>> recent() => api.events().toList();
+```
 
 ## The default: caches in memory
 
@@ -418,6 +445,99 @@ class Keys {
 Book find(String isbn) => ...;
 ```
 
+### 6. Choosing caches per call: `CacheResolver`
+
+A `CacheResolver` decides at each call which caches an operation uses —
+for example one cache per tenant. It sees the operation (its cache names,
+key, ...), the bean, the method and the arguments. Declare it as a bean
+and name it with `cacheResolver:` (in the annotation or in
+`@CacheConfig`):
+
+```dart
+final class TenantCacheResolver implements CacheResolver {
+  TenantCacheResolver(this.manager, this.tenants);
+  final CacheManager manager;
+  final TenantContext tenants;
+
+  @override
+  Iterable<Cache> resolveCaches(CacheOperationInvocationContext context) => [
+    for (final name in context.operation.cacheNames)
+      manager.getCache('${tenants.current}.$name')!,
+  ];
+}
+
+@Configuration()
+class CacheSetup {
+  @Bean()
+  CacheResolver tenantCacheResolver(CacheManager manager, TenantContext tenants) =>
+      TenantCacheResolver(manager, tenants);
+}
+
+@Cacheable('books', cacheResolver: 'tenantCacheResolver')
+Book find(String isbn) => ...;
+```
+
+Spring (Java):
+
+```java
+@Cacheable(cacheNames = "books", cacheResolver = "tenantCacheResolver")
+Book find(String isbn) { ... }
+```
+
+Built in: `SimpleCacheResolver(manager)` (the default: the operation's
+names in the cache manager) and `NamedCacheResolver(manager, ['audit'])`
+(always the same caches; the operations need no names then). Like Spring
+Boot, the starter's `cacheManager` backs off when a bean named
+`cacheResolver` exists.
+
+### 7. Defaults for everything: `CachingConfigurer`
+
+One bean implementing `CachingConfigurer` sets the defaults of all cache
+operations; a method returning `null` (the default) keeps the starter's:
+
+| Method | Default |
+|---|---|
+| `cacheManager()` | the `CacheManager` bean |
+| `cacheResolver()` | `SimpleCacheResolver` of the cache manager |
+| `keyGenerator()` | `SimpleKeyGenerator` |
+| `errorHandler()` | `SimpleCacheErrorHandler`: cache errors reach the caller |
+
+```dart
+@Configuration()
+class CacheSetup with CachingConfigurer {
+  @override
+  KeyGenerator keyGenerator() => const IsbnKeys();
+
+  // A cache that is down: log, run the method, carry on.
+  @override
+  CacheErrorHandler errorHandler() => const LoggingCacheErrorHandler();
+}
+```
+
+Spring (Java):
+
+```java
+@Configuration
+@EnableCaching
+class CacheSetup implements CachingConfigurer {
+  @Override
+  public KeyGenerator keyGenerator() { return new IsbnKeys(); }
+
+  @Override
+  public CacheErrorHandler errorHandler() { return new LoggingCacheErrorHandler(); }
+}
+```
+
+The methods are called once, when caching is first used. Return objects
+(or beans injected into the configuration) rather than marking the
+methods `@Bean`: Dart does not proxy `@Configuration` classes, so calling
+a `@Bean` method creates a second instance.
+
+With a `CacheErrorHandler` that does not rethrow, a failed `get` counts as
+a miss (the method runs) and a failed `put`, `evict` or `clear` is
+skipped. `LoggingCacheErrorHandler` logs them at warning level to
+`spring.cache` (`logStackTraces: true` adds the stack trace).
+
 ## Testing
 
 Cached results carry over between calls, which can hide behavior in
@@ -445,5 +565,25 @@ Or keep it on and check the cache through the `CacheManager` bean
   `CompletableFuture`).
 - Built-in store: memory, with time to live and size limit (Spring's
   `ConcurrentMapCacheManager` has neither; it needs Caffeine for that).
-- Errors thrown by a cache propagate to the caller (Spring's default
-  `SimpleCacheErrorHandler`); there is no `CacheErrorHandler` yet.
+- `spring.cache.simple.time-to-live`, `spring.cache.simple.max-size` and
+  `spring.cache.simple.caches.<name>.*` are this starter's: Spring Boot's
+  `simple` type has no settings (time to live and size come from Caffeine
+  or Redis there, under `spring.cache.caffeine.*` / `spring.cache.redis.*`).
+  `spring.cache.type` knows `simple` and `none` only.
+- `SimpleKeyGenerator` wraps a single collection argument in a `SimpleKey`
+  (Dart lists, sets and maps compare by identity; the key compares by
+  content); Spring wraps only arrays.
+- `Stream` results cannot be cached: `@Cacheable` / `@CachePut` on a
+  method returning a `Stream` fail the build (Spring 6.1 collects a `Flux`
+  into a list and replays it; a generic interceptor cannot create a
+  `Stream<T>` of the right type without reflection). Return a
+  `Future<List<T>>`.
+- The `Cache` API is a subset of Spring's: `name`, `get`, `put`,
+  `putIfAbsent`, `evict`, `evictIfPresent`, `clear`, `invalidate`; there is
+  no `get(key, Class)`, `get(key, Callable)` (value loader),
+  `retrieve` (asynchronous) or `getNativeCache`.
+- `CachingConfigurer` methods are called once; they must not be `@Bean`
+  methods (no `@Configuration` proxies in Dart). `CacheErrorHandler`
+  methods receive the stack trace next to the error.
+- Annotations are checked when the bean is created, for every member; the
+  `sync` rules too (Spring checks those at the first call).

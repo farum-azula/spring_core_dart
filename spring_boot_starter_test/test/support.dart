@@ -45,6 +45,8 @@ class Counter {
   int value = 0;
 }
 
+class URLService {}
+
 class Notifier {
   Notifier(this.greeter, this.mailer);
 
@@ -96,6 +98,15 @@ final greeterAutoConfiguration = BeanModule('greeterAuto', [
       ConditionalOnProperty('greeter.enabled', matchIfMissing: true),
     ],
     create: (r) => RealGreeter(r.value<String>(r'${greeting.prefix:Hi}')),
+  ),
+]);
+
+/// A starter that forgot `@ConditionalOnMissingBean`.
+final greeterWithoutBackOff = BeanModule('greeterEager', [
+  BeanDefinition<RealGreeter>(
+    name: 'eagerGreeter',
+    types: const [RealGreeter, Greeter],
+    create: (r) => RealGreeter('Hi'),
   ),
 ]);
 

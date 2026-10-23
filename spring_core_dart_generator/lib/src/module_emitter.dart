@@ -610,8 +610,9 @@ class ModuleEmitter {
   // AOP
   // -----------------------------------------------------------------------
 
-  // Advice is invoked through a closure taking the aspect, the join point
-  // and the return value/error; the parameters are mapped as recorded in
+  // Advice is invoked through a closure taking the aspect, the join point,
+  // the return value/error and the pointcut's bindings (not used by
+  // generated advice yet); the parameters are mapped as recorded in
   // `AdviceModel.parameters`. `accepts` filters by the value's type so a
   // typed after-returning/after-throwing advice only sees matching values.
   Expression _aspect(InterfaceType type, AspectModel aspect, Element element) {
@@ -635,7 +636,7 @@ class ModuleEmitter {
               'pointcut': _str(advice.pointcut),
               'methodName': _str(advice.methodName),
               'invoke': _closure(
-                ['aspect', 'joinPoint', 'value'],
+                ['aspect', 'joinPoint', 'value', 'bindings'],
                 refer('aspect').property(advice.methodName).call([
                   for (final parameter in advice.parameters)
                     switch (parameter) {
@@ -717,6 +718,15 @@ class ModuleEmitter {
     if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
       'parameterNames': literalConstList([
         for (final parameter in member.parameters) _str(parameter.name),
+      ]),
+    if (member.kind == ProxyMemberKind.method &&
+        member.parameters.any((p) => p.annotations.isNotEmpty))
+      'parameterAnnotations': literalConstList([
+        for (final parameter in member.parameters)
+          literalConstList([
+            for (final annotation in parameter.annotations)
+              _constant(annotation, element),
+          ]),
       ]),
     if (member.annotations.isNotEmpty)
       'annotations': literalConstList([

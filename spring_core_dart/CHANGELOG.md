@@ -1,3 +1,17 @@
+## Unreleased
+
+- AOP: `Type+` subtype patterns in `within` / `execution`, `@target`, `this`, `args(...)`; `bean()` also matches aliases and qualifier values
+- AOP: named pointcuts resolved per aspect (`orders()` in its own aspect, `AuditAspect.orders()` for another's)
+- AOP: aspects ordered by `Ordered` as well as `@Order`; plain `Advisor` beans; aspects and advisors of parent contexts apply
+- AOP: `AopContext.currentProxy()`; the auto proxy creator runs first among ordered post-processors (later post-processors see the proxy)
+- AOP: `JoinPoint.args` is a copy, `proceed(args)` checks the argument count; async non-around advice is awaited on `Future` methods and rejected on synchronous ones
+- AOP runtime: advice binding (`@annotation(timed)`, `args(id, ..)`, `@AfterReturning(returning:)`, `@AfterThrowing(throwing:)`) and subclass proxies (`AopProxyFactory.subclass`); the generator does not emit them yet
+- breaking: `@PastDate`, `@PastOrPresentDate`, `@FutureOrPresentDate` are renamed to Jakarta's `@Past`, `@PastOrPresent`, `@FutureOrPresent` (`@FutureDate` stays: `@Future` clashes with Dart's `Future`)
+- validation: `DecimalMin` / `DecimalMax`, `BigInt` and numeric strings in number constraints, `@Digits` like `BigDecimal`, Hibernate's `@Email`, `@NotBlank` trimming like Java, `@Pattern` flags, date-only values and an injectable clock (`ClockProvider`)
+- validation: method validation (`@Validated`, `MethodValidationPostProcessor`, `ConstraintViolationException`); class-level violations on a property; `{key}` messages from a `MessageSource`; shared `@Valid` objects validated on every path
+- binding: no constraint error on top of a binding failure; `DataBinder.construct` (constructor binding); collection auto-grow and element/key conversion in `BeanWrapper`; full `DefaultMessageCodesResolver` codes and Spring's error arguments
+- messages: the parent `MessageSource` gets resolved arguments; locales with a script (`zh_Hant_TW`); basename-by-basename lookup; `MessageFormat` details (quotes, lone `}`, negative subpatterns, HALF_EVEN, locale symbols)
+
 ## 0.1.6
 
 - update road map

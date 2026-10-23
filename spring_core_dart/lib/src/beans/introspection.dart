@@ -345,6 +345,12 @@ final class BeanIntrospection<T extends Object> {
   /// Whether [value] is a [T] (or a subtype).
   bool isInstance(Object? value) => value is T;
 
+  /// Whether [T] is a subtype of the class [other] describes.
+  bool isSubtypeOf(BeanIntrospection<Object> other) =>
+      other._isSupertypeOf<T>();
+
+  bool _isSupertypeOf<S>() => <S>[] is List<T>;
+
   /// All properties, in declaration order.
   Iterable<BeanProperty<T>> get properties => _properties.values;
 
@@ -436,22 +442,28 @@ class BeanIntrospector {
     return parent?.forTypeArgument<T>();
   }
 
-  /// The introspection for [bean]: its exact runtime type, else the first
-  /// registered supertype.
-  BeanIntrospection<Object>? findIntrospection(Object bean) {
-    // Exact runtime type first (fast); otherwise a linear scan with `is`
-    // checks so subclasses of introspected classes are handled too. Local
-    // registrations, including supertypes, win over the parent.
-    final exact = _byType[bean.runtimeType];
-    if (exact != null) {
-      return exact;
-    }
+  /// The introspection for [bean]: its exact runtime type (here or in a
+  /// parent), else the most specific registered supertype (here, then in
+  /// the parent).
+  BeanIntrospection<Object>? findIntrospection(Object bean) =>
+      _exact(bean.runtimeType) ?? _mostSpecific(bean);
+
+  BeanIntrospection<Object>? _exact(Type type) =>
+      _byType[type] ?? parent?._exact(type);
+
+  // A linear scan with `is` checks, so subclasses of introspected classes
+  // are handled too: the most specific match wins (a `Manager extends
+  // Employee extends Person` instance uses Employee's metadata, not
+  // Person's).
+  BeanIntrospection<Object>? _mostSpecific(Object bean) {
+    BeanIntrospection<Object>? best;
     for (final introspection in _byType.values) {
-      if (introspection.isInstance(bean)) {
-        return introspection;
+      if (introspection.isInstance(bean) &&
+          (best == null || introspection.isSubtypeOf(best))) {
+        best = introspection;
       }
     }
-    return parent?.findIntrospection(bean);
+    return best ?? parent?._mostSpecific(bean);
   }
 
   /// Like [findIntrospection], but throws when [bean] is not introspected.

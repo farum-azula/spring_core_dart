@@ -18,9 +18,9 @@ class BrokenAppender extends LogAppender {
 const log = SpringLog('neon.shop');
 
 void main() {
-  final runner = const ApplicationContextRunner().withAutoConfiguration(
-    springBootStarterLoggingAutoConfiguration,
-  );
+  final runner = const ApplicationContextRunner()
+      .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
+      .withPropertyValues(['logging.pattern.console=%-5p [%logger] %m%X']);
   final system = LoggingSystem.instance;
   final console = <String>[];
   late SpringLogLevel savedLevel;
@@ -30,7 +30,6 @@ void main() {
     console.clear();
     system
       ..console.out = console.add
-      ..console.pattern = LogPattern('%-5p [%logger] %m%X')
       ..buffer.clear();
   });
   tearDown(() {
@@ -108,7 +107,13 @@ void main() {
 
   test('bad configuration fails the start', () {
     runner
-        .withPropertyValues(['logging.pattern.console=%m %thread'])
+        .withPropertyValues(['logging.pattern.console=%m %bogus'])
+        .run((context) => expect(context, hasFailed()));
+    runner
+        .withPropertyValues([r'logging.pattern.console=${NOPE} %m'])
+        .run((context) => expect(context, hasFailed()));
+    runner
+        .withPropertyValues(['spring.output.ansi.enabled=sometimes'])
         .run((context) => expect(context, hasFailed()));
     runner
         .withPropertyValues(['logging.buffer.capacity=many'])
@@ -140,7 +145,7 @@ void main() {
   test('runtime level changes (like /actuator/loggers)', () {
     runner.run((context) {
       final logging = context.getBean<LoggingSystem>();
-      logging.setLevel('neon', SpringLogLevel.debug);
+      logging.setLogLevel('neon', SpringLogLevel.debug);
       expect(logging.levelOf('neon.shop'), SpringLogLevel.debug);
       expect(logging.loggerLevels, {'neon': SpringLogLevel.debug});
       log.debug('now visible');
@@ -153,7 +158,10 @@ void main() {
   test('without Boot: configure and install by hand', () {
     final environment = StandardEnvironment(systemEnvironment: const {})
       ..propertySources.addFirst(
-        MapPropertySource('p', {'logging.level.root': 'debug'}),
+        MapPropertySource('p', {
+          'logging.level.root': 'debug',
+          'logging.pattern.console': '%-5p [%logger] %m%X',
+        }),
       );
     SpringLog.level = SpringLogLevel.debug;
     system
@@ -164,5 +172,95 @@ void main() {
     log.debug('by hand');
     expect(SpringLog.level, SpringLogLevel.debug); // root configured: kept
     expect(console, ['DEBUG [neon.shop] by hand']);
+  });
+
+  group("Spring Boot's console line", () {
+    final boot = const ApplicationContextRunner()
+        .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
+        .withPropertyValues(['spring.output.ansi.enabled=never']);
+
+    test('the default pattern, with spring.application.name', () {
+      boot
+          .withPropertyValues(['spring.application.name=shop'])
+          .run((context) => log.info('order placed', fields: {'order': 7}));
+      expect(
+        console.single,
+        matches(
+          RegExp(
+            r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}(Z|[+-]\d\d:\d\d)  INFO '
+            r'\d+ --- \[shop\] \[.{15}\] neon\.shop {32}: order placed '
+            r'\{order=7\}$',
+          ),
+        ),
+      );
+    });
+
+    test('logging.pattern.dateformat, logging.pattern.level and '
+        'logging.include-application-name', () {
+      boot
+          .withPropertyValues([
+            'spring.application.name=shop',
+            'logging.include-application-name=false',
+            'logging.pattern.dateformat=HH:mm',
+            'logging.pattern.level=%-5level',
+          ])
+          .run((context) => log.info('x'));
+      expect(
+        console.single,
+        matches(
+          RegExp(r'^\d\d:\d\d INFO  \d+ --- \[.{15}\] neon\.shop {32}: x$'),
+        ),
+      );
+    });
+
+    test(r'patterns are read as written: ${PID}, ${spring...}, %clr', () {
+      boot
+          .withPropertyValues([
+            'spring.application.name=shop',
+            r'logging.pattern.console=${PID:-} ${spring.application.name} '
+                '%clr(%m){red}',
+          ])
+          .run((context) => log.info('x'));
+      expect(console.single, matches(RegExp(r'^\d+ shop x$')));
+      console.clear();
+      boot
+          .withPropertyValues([
+            'spring.output.ansi.enabled=always',
+            'logging.pattern.console=%clr(%m){red}',
+          ])
+          .run((context) => log.info('x'));
+      expect(console.single, '\x1B[31mx\x1B[0;39m');
+    });
+  });
+
+  test('ROOT in any case is the root logger; setLogLevel', () {
+    final environment = StandardEnvironment(systemEnvironment: const {})
+      ..propertySources.addFirst(
+        MapPropertySource('p', {
+          'logging.level.ROOT': 'error',
+          'logging.level.neon': 'debug',
+        }),
+      );
+    SpringApplication.applyLoggingLevels(environment);
+    expect(SpringLog.level, SpringLogLevel.error);
+    expect(SpringLog.configuredLevels, {'neon': SpringLogLevel.debug});
+    system.configure(environment); // root configured: not reset to info
+    expect(SpringLog.level, SpringLogLevel.error);
+
+    system.setLogLevel('root', SpringLogLevel.warning);
+    expect(SpringLog.level, SpringLogLevel.warning);
+    system.setLogLevel('Root', SpringLogLevel.trace);
+    expect(system.levelOf('ROOT'), SpringLogLevel.trace);
+    system.setLogLevel(null, SpringLogLevel.info);
+    expect(system.rootLevel, SpringLogLevel.info);
+    expect(
+      () => system.setLogLevel(LoggingSystem.rootLoggerName, null),
+      throwsArgumentError,
+    );
+    system
+      ..setLogLevel('neon.shop', SpringLogLevel.error)
+      ..setLogLevel('neon.shop', null); // inherits again
+    expect(system.levelOf('neon.shop'), SpringLogLevel.debug);
+    expect(system.loggerLevels, {'neon': SpringLogLevel.debug});
   });
 }

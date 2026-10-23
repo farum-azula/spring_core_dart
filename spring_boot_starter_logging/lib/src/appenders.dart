@@ -38,18 +38,19 @@ abstract class LogAppender {
 }
 
 /// Writes formatted records to [out] (`print` by default; pass
-/// `debugPrint` in Flutter).
+/// `debugPrint` in Flutter), one call per record: [LogPattern.formatLine],
+/// since `print` adds the line break the pattern ends with (`%n`).
 ///
 /// ```dart
 /// ConsoleAppender(pattern: LogPattern('%-5p %logger: %m'), out: debugPrint)
 /// ```
 class ConsoleAppender extends LogAppender {
-  /// A console appender with [pattern] ([LogPattern.defaultPattern]).
+  /// A console appender with [pattern] ([LogPattern.defaultConsolePattern]).
   ConsoleAppender({
     LogPattern? pattern,
     void Function(String line)? out,
     super.threshold,
-  }) : pattern = pattern ?? LogPattern(LogPattern.defaultPattern),
+  }) : pattern = pattern ?? LogPattern(LogPattern.defaultConsolePattern),
        out = out ?? print;
 
   /// The line format.
@@ -59,5 +60,5 @@ class ConsoleAppender extends LogAppender {
   void Function(String line) out;
 
   @override
-  void write(SpringLogRecord record) => out(pattern.format(record));
+  void write(SpringLogRecord record) => out(pattern.formatLine(record));
 }

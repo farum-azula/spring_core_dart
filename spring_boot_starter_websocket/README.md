@@ -1,5 +1,9 @@
 # spring_boot_starter_websocket
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Declarative WebSocket clients for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications: describe a socket as an abstract class with `@OnMessage` and

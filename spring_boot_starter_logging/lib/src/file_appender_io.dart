@@ -8,17 +8,19 @@ import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 
 /// Writes formatted records to the file [path], rolling it over by size,
-/// like Logback's rolling file appender (`logging.file.*`).
+/// like Logback's rolling file appender (`logging.file.*`,
+/// `logging.logback.rollingpolicy.*`).
 ///
 /// Lines logged in one synchronous burst are written together at the end
 /// of the current microtask (one write instead of one per record); [flush]
 /// writes immediately and [close] writes the rest. When the file would grow
-/// past [maxSize], it is renamed to `<path>.1` (older files shift to `.2`,
-/// `.3`, ...) and only [maxHistory] such files are kept.
+/// past [maxFileSize], it is renamed to `<path>.1` (older files shift to
+/// `.2`, `.3`, ...); only [maxHistory] such archives are kept, and the
+/// oldest are deleted while together they exceed [totalSizeCap].
 ///
 /// ```dart
 /// LoggingSystem.instance.addAppender(
-///   FileAppender('/var/log/neon/shop.log', maxSize: 5 * 1024 * 1024),
+///   FileAppender('/var/log/neon/shop.log', maxFileSize: 5 * 1024 * 1024),
 /// );
 /// ```
 class FileAppender extends LogAppender {
@@ -26,13 +28,16 @@ class FileAppender extends LogAppender {
   FileAppender(
     this.path, {
     LogPattern? pattern,
-    this.maxSize = 10 * 1024 * 1024,
+    this.maxFileSize = 10 * 1024 * 1024,
     this.maxHistory = 7,
+    this.totalSizeCap = 0,
     bool cleanHistoryOnStart = false,
     super.threshold,
-  }) : pattern = pattern ?? LogPattern(LogPattern.defaultPattern) {
-    if (maxSize < 0 || maxHistory < 0) {
-      throw ArgumentError('maxSize and maxHistory must not be negative');
+  }) : pattern = pattern ?? LogPattern(LogPattern.defaultFilePattern) {
+    if (maxFileSize < 0 || maxHistory < 0 || totalSizeCap < 0) {
+      throw ArgumentError(
+        'maxFileSize, maxHistory and totalSizeCap must not be negative',
+      );
     }
     final file = File(path);
     file.parent.createSync(recursive: true);
@@ -58,10 +63,14 @@ class FileAppender extends LogAppender {
   LogPattern pattern;
 
   /// Size that triggers a rollover, in bytes; `0` never rolls over.
-  final int maxSize;
+  final int maxFileSize;
 
   /// Number of rolled-over files kept (`<path>.1` is the newest).
   final int maxHistory;
+
+  /// Total size of the rolled-over files, in bytes: the oldest are deleted
+  /// while they exceed it; `0` sets no limit.
+  final int totalSizeCap;
 
   RandomAccessFile? _file;
   int _size = 0;
@@ -79,7 +88,7 @@ class FileAppender extends LogAppender {
     if (_file == null) {
       return;
     }
-    _pending.add(utf8.encode('${pattern.format(record)}\n'));
+    _pending.add(utf8.encode('${pattern.formatLine(record)}\n'));
     if (!_flushScheduled) {
       _flushScheduled = true;
       scheduleMicrotask(flush);
@@ -98,7 +107,7 @@ class FileAppender extends LogAppender {
     var current = file;
     final chunk = BytesBuilder(copy: false);
     for (final line in lines) {
-      if (maxSize > 0 && _size > 0 && _size + line.length > maxSize) {
+      if (maxFileSize > 0 && _size > 0 && _size + line.length > maxFileSize) {
         current.writeFromSync(chunk.takeBytes());
         current = _rollOver();
       }
@@ -125,8 +134,28 @@ class FileAppender extends LogAppender {
     } else {
       File(path).deleteSync();
     }
+    _capTotalSize();
     _open();
     return _file!;
+  }
+
+  // Deletes the oldest archives while all of them exceed totalSizeCap.
+  void _capTotalSize() {
+    if (totalSizeCap <= 0) {
+      return;
+    }
+    final archives = [
+      for (var i = 1; i <= maxHistory; i++)
+        if (File('$path.$i') case final file when file.existsSync()) file,
+    ];
+    var total = archives.fold(0, (sum, file) => sum + file.lengthSync());
+    for (final file in archives.reversed) {
+      if (total <= totalSizeCap) {
+        break;
+      }
+      total -= file.lengthSync();
+      file.deleteSync();
+    }
   }
 
   /// Writes the rest and closes the file; later records are ignored.

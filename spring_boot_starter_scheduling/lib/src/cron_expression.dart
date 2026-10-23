@@ -7,15 +7,22 @@
 /// │ │ ┌───────────── hour (0-23)
 /// │ │ │ ┌───────────── day of month (1-31)
 /// │ │ │ │ ┌───────────── month (1-12 or JAN-DEC)
-/// │ │ │ │ │ ┌───────────── day of week (0-7 or SUN-SAT; 0 and 7 are Sunday)
+/// │ │ │ │ │ ┌───────────── day of week (0-7 or MON-SUN; 0 and 7 are Sunday)
 /// │ │ │ │ │ │
 /// * * * * * *
 /// ```
 ///
 /// Every field takes `*`, a value, a list (`1,15,30`), a range (`9-17`)
 /// and a step (`*/5`, `0-30/10`, `5/15` = from 5 every 15). Names are
-/// case-insensitive. `?` means "any" in the day fields. The day fields also
-/// take Quartz-style specials (one per field, not in a list):
+/// case-insensitive. `?` means "any" in the day fields.
+///
+/// Days of the week are numbered like in Spring (and `DateTime.weekday`):
+/// MON = 1 ... SAT = 6, SUN = 7, and 0 is Sunday too. Sunday at the start
+/// of a range counts as 0, so `SAT-SUN`, `MON-SUN` and `SUN-TUE` all work;
+/// `*/2` is MON, WED, FRI, SUN.
+///
+/// The day fields also take Quartz-style specials, alone or in a list
+/// (`1,L`, `MON#1,MON#3`, `MON-FRI,SATL`):
 ///
 /// | In | Means |
 /// |---|---|
@@ -31,7 +38,7 @@
 ///
 /// As in Spring, a day must match both day fields (they are combined with
 /// "and", unlike Unix cron's "or"), and ranges must not wrap around
-/// (`FRI-MON` is rejected; write `FRI-SAT,SUN-MON`).
+/// (`FRI-MON` is rejected; write `FRI-SUN,MON`).
 ///
 /// ```dart
 /// final everyQuarter = CronExpression.parse('0 */15 * * * *');
@@ -116,9 +123,13 @@ final class CronExpression {
       field(0, 'second', 0, 59),
       field(1, 'minute', 0, 59),
       field(2, 'hour', 0, 23),
-      special('day-of-month', fields[3], () => _DayOfMonth.parse(fields[3])),
+      special(
+        'day-of-month',
+        fields[3],
+        () => _DayField.daysOfMonth(fields[3]),
+      ),
       field(4, 'month', 1, 12, _monthNames),
-      special('day-of-week', fields[5], () => _DayOfWeek.parse(fields[5])),
+      special('day-of-week', fields[5], () => _DayField.daysOfWeek(fields[5])),
     );
   }
 
@@ -143,9 +154,9 @@ final class CronExpression {
   final _Bits _seconds;
   final _Bits _minutes;
   final _Bits _hours;
-  final _DayOfMonth _daysOfMonth;
+  final _DayField _daysOfMonth;
   final _Bits _months;
-  final _DayOfWeek _daysOfWeek;
+  final _DayField _daysOfWeek;
 
   static const _macros = {
     '@yearly': '0 0 0 1 1 *',
@@ -293,15 +304,16 @@ const _monthNames = {
   'DEC': 12,
 };
 
-// Cron day-of-week values: 0 and 7 are Sunday.
+// Day-of-week names as in Spring's `CronField`: MON = 1 ... SUN = 7 (the
+// numbers of java.time and of `DateTime.weekday`); 0 is Sunday too.
 const _dayNames = {
-  'SUN': 0,
   'MON': 1,
   'TUE': 2,
   'WED': 3,
   'THU': 4,
   'FRI': 5,
   'SAT': 6,
+  'SUN': 7,
 };
 
 int _daysIn(int year, int month) => DateTime.utc(year, month + 1, 0).day;
@@ -357,12 +369,17 @@ int _value(String text, int min, int max, Map<String, int> names) {
 }
 
 /// `*`, `?`, values, lists, ranges and steps of [min]..[max].
+///
+/// With [dayOfWeek] the rules of Spring's `BitsCronField` for the day of
+/// week apply: `*` and `?` are 1-7 (so `*/2` is MON, WED, FRI, SUN), 0 is
+/// Sunday like 7, and 7 at the start of a range means 0 (`SUN-TUE`).
 _Bits _parseBits(
   String field,
   int min,
   int max,
   Map<String, int> names, {
   bool allowQuestionMark = false,
+  bool dayOfWeek = false,
 }) {
   var bits = 0;
   for (final part in field.split(',')) {
@@ -384,7 +401,7 @@ _Bits _parseBits(
     int from;
     int to;
     if (range == '*' || (range == '?' && allowQuestionMark)) {
-      from = min;
+      from = dayOfWeek ? 1 : min;
       to = max;
     } else if (range.contains('-')) {
       final [start, end, ...rest] = range.split('-');
@@ -393,6 +410,9 @@ _Bits _parseBits(
       }
       from = _value(start, min, max, names);
       to = _value(end, min, max, names);
+      if (dayOfWeek && from == 7) {
+        from = 0; // Sunday at the start of a range: `SUN-TUE`, `7-2`
+      }
       if (from > to) {
         throw FormatException(
           "range '$range' goes backwards (ranges cannot wrap around)",
@@ -407,54 +427,139 @@ _Bits _parseBits(
       bits |= 1 << v;
     }
   }
+  if (dayOfWeek && bits & 1 == 1) {
+    bits = (bits | 1 << 7) & ~1; // 0 is Sunday, like 7
+  }
   return _Bits(bits, min, max);
 }
 
-/// The day-of-month field: values or one special (`L`, `L-n`, `nW`, `LW`).
-sealed class _DayOfMonth {
-  static _DayOfMonth parse(String field) {
-    final upper = field.toUpperCase();
-    if (upper == 'L') {
+/// A day field (day of month or day of week): values and Quartz-style
+/// specials, also mixed in a list (`1,L`, `MON#1,MON#3`), like Spring's
+/// `CompositeCronField`. A day matches when any element does.
+final class _DayField {
+  _DayField(this._values, this._specials, this._valueOf);
+
+  final _Bits? _values;
+  final List<_DaySpecial> _specials;
+  // The value of a date in this field: the day of month or the weekday.
+  final int Function(int year, int month, int day) _valueOf;
+
+  bool matches(int year, int month, int day) =>
+      (_values?.contains(_valueOf(year, month, day)) ?? false) ||
+      _specials.any((special) => special.matches(year, month, day));
+
+  /// The day-of-month field: values and `L`, `L-n`, `nW`, `LW`.
+  static _DayField daysOfMonth(String field) => _parse(
+    field.toUpperCase(),
+    isSpecial: (element) => element.contains('L') || element.contains('W'),
+    parseSpecial: _dayOfMonthSpecial,
+    parseValues: (values) =>
+        _parseBits(values, 1, 31, const {}, allowQuestionMark: true),
+    valueOf: (year, month, day) => day,
+  );
+
+  /// The day-of-week field: values (MON = 1 ... SUN = 7, 0 = Sunday) and
+  /// `nL`, `n#k`.
+  static _DayField daysOfWeek(String field) => _parse(
+    field.toUpperCase(),
+    isSpecial: (element) => element.contains('L') || element.contains('#'),
+    parseSpecial: _dayOfWeekSpecial,
+    parseValues: (values) => _parseBits(
+      values,
+      0,
+      7,
+      _dayNames,
+      allowQuestionMark: true,
+      dayOfWeek: true,
+    ),
+    valueOf: _weekday,
+  );
+
+  // Without specials the field is one set of values; with them, every
+  // list element is parsed on its own (Spring's `CronField.parseList`).
+  static _DayField _parse(
+    String field, {
+    required bool Function(String element) isSpecial,
+    required _DaySpecial Function(String element) parseSpecial,
+    required _Bits Function(String values) parseValues,
+    required int Function(int year, int month, int day) valueOf,
+  }) {
+    if (!isSpecial(field)) {
+      return _DayField(parseValues(field), const [], valueOf);
+    }
+    _Bits? values;
+    final specials = <_DaySpecial>[];
+    for (final element in field.split(',')) {
+      if (element.isEmpty) {
+        throw const FormatException('empty list element');
+      }
+      if (isSpecial(element)) {
+        specials.add(parseSpecial(element));
+      } else {
+        final bits = parseValues(element);
+        values = _Bits((values?._bits ?? 0) | bits._bits, bits.min, bits.max);
+      }
+    }
+    return _DayField(values, specials, valueOf);
+  }
+
+  static _DaySpecial _dayOfMonthSpecial(String element) {
+    if (element == 'L') {
       return const _LastDay(0);
     }
-    if (upper == 'LW') {
+    if (element == 'LW') {
       return const _LastWeekday();
     }
-    final lastMinus = RegExp(r'^L-(\d+)$').firstMatch(upper);
+    final lastMinus = RegExp(r'^L-(\d+)$').firstMatch(element);
     if (lastMinus != null) {
       final offset = int.parse(lastMinus[1]!);
-      if (offset > 30) {
-        throw FormatException('offset $offset is out of range 0-30');
+      if (offset < 1 || offset > 30) {
+        throw FormatException("'$element': the offset after L- must be 1-30");
       }
       return _LastDay(offset);
     }
-    final weekday = RegExp(r'^(\d+)W$').firstMatch(upper);
+    final weekday = RegExp(r'^(\d+)W$').firstMatch(element);
     if (weekday != null) {
       return _NearestWeekday(_value(weekday[1]!, 1, 31, const {}));
     }
-    if (upper.contains('L') || upper.contains('W') || upper.contains('#')) {
-      throw const FormatException(
-        "'L', 'W' and '#' are allowed as L, L-n, nW or LW only, not in lists",
-      );
-    }
-    return _DayValues(
-      _parseBits(field, 1, 31, const {}, allowQuestionMark: true),
+    throw FormatException(
+      "'$element' is not one of the day-of-month specials L, L-n, nW, LW",
     );
   }
 
+  static _DaySpecial _dayOfWeekSpecial(String element) {
+    final last = RegExp(r'^(\w+)L$').firstMatch(element);
+    if (last != null) {
+      return _LastOfMonth(_isoDay(last[1]!));
+    }
+    final nth = RegExp(r'^(\w+)#(\d+)$').firstMatch(element);
+    if (nth != null) {
+      final ordinal = int.parse(nth[2]!);
+      if (ordinal < 1 || ordinal > 5) {
+        throw FormatException('#$ordinal: the ordinal must be 1-5');
+      }
+      return _NthOfMonth(_isoDay(nth[1]!), ordinal);
+    }
+    throw FormatException(
+      "'$element' is not one of the day-of-week specials nL (FRIL) or n#k "
+      '(MON#2)',
+    );
+  }
+
+  // The day of week before `L` / `#` (0-7 or a name) as ISO weekday.
+  static int _isoDay(String text) {
+    final day = _value(text, 0, 7, _dayNames);
+    return day == 0 ? DateTime.sunday : day;
+  }
+}
+
+/// A Quartz-style special of a day field (`L`, `LW`, `15W`, `FRIL`,
+/// `MON#2`): matches certain days of each month.
+sealed class _DaySpecial {
   bool matches(int year, int month, int day);
 }
 
-final class _DayValues implements _DayOfMonth {
-  _DayValues(this.bits);
-
-  final _Bits bits;
-
-  @override
-  bool matches(int year, int month, int day) => bits.contains(day);
-}
-
-final class _LastDay implements _DayOfMonth {
+final class _LastDay implements _DaySpecial {
   const _LastDay(this.offset);
 
   final int offset;
@@ -464,7 +569,7 @@ final class _LastDay implements _DayOfMonth {
       day == _daysIn(year, month) - offset;
 }
 
-final class _LastWeekday implements _DayOfMonth {
+final class _LastWeekday implements _DaySpecial {
   const _LastWeekday();
 
   @override
@@ -477,7 +582,7 @@ final class _LastWeekday implements _DayOfMonth {
   }
 }
 
-final class _NearestWeekday implements _DayOfMonth {
+final class _NearestWeekday implements _DaySpecial {
   const _NearestWeekday(this.target);
 
   final int target;
@@ -501,51 +606,7 @@ final class _NearestWeekday implements _DayOfMonth {
   }
 }
 
-/// The day-of-week field: values or one special (`nL`, `n#k`).
-sealed class _DayOfWeek {
-  static _DayOfWeek parse(String field) {
-    final upper = field.toUpperCase();
-    final last = RegExp(r'^([0-7]|[A-Z]{3})L$').firstMatch(upper);
-    if (last != null) {
-      return _LastOfMonth(_isoDay(_value(last[1]!, 0, 7, _dayNames)));
-    }
-    final nth = RegExp(r'^([0-7]|[A-Z]{3})#(\d+)$').firstMatch(upper);
-    if (nth != null) {
-      final ordinal = int.parse(nth[2]!);
-      if (ordinal < 1 || ordinal > 5) {
-        throw FormatException('#$ordinal: the ordinal must be 1-5');
-      }
-      return _NthOfMonth(_isoDay(_value(nth[1]!, 0, 7, _dayNames)), ordinal);
-    }
-    if (upper.contains('#') || RegExp('L').hasMatch(upper)) {
-      throw const FormatException(
-        "'L' and '#' are allowed as 5L / FRIL or MON#2 only, not in lists",
-      );
-    }
-    final bits = _parseBits(field, 0, 7, _dayNames, allowQuestionMark: true);
-    return _WeekdayValues({
-      for (var cron = 0; cron <= 7; cron++)
-        if (bits.contains(cron)) _isoDay(cron),
-    });
-  }
-
-  // Cron day (0 or 7 = Sunday, 1 = Monday) → ISO weekday (7 = Sunday).
-  static int _isoDay(int cron) => cron == 0 ? 7 : cron;
-
-  bool matches(int year, int month, int day);
-}
-
-final class _WeekdayValues implements _DayOfWeek {
-  _WeekdayValues(this.days);
-
-  final Set<int> days;
-
-  @override
-  bool matches(int year, int month, int day) =>
-      days.contains(_weekday(year, month, day));
-}
-
-final class _LastOfMonth implements _DayOfWeek {
+final class _LastOfMonth implements _DaySpecial {
   const _LastOfMonth(this.weekday);
 
   final int weekday;
@@ -555,7 +616,7 @@ final class _LastOfMonth implements _DayOfWeek {
       _weekday(year, month, day) == weekday && day + 7 > _daysIn(year, month);
 }
 
-final class _NthOfMonth implements _DayOfWeek {
+final class _NthOfMonth implements _DaySpecial {
   const _NthOfMonth(this.weekday, this.ordinal);
 
   final int weekday;

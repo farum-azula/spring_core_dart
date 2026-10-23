@@ -138,7 +138,7 @@ void main() {
           '/ticks',
         ).respondEvents([const ServerSentEvent('only')]);
       await runner
-          .withBean<HttpTransport>(once)
+          .withBeanOverride<HttpTransport>(once) // replaces `server`
           .withPropertyValues([
             'spring.cloud.openfeign.client.config.orders.event-stream.reconnect=false',
           ])

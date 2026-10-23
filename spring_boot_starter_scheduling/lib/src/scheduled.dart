@@ -43,6 +43,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// }
 /// ```
 ///
+/// [scheduler] picks another `TaskScheduler` bean than the default one
+/// (Spring 6.1).
+///
 /// The `*String` attributes and [cron] resolve `${...}` placeholders and
 /// take Spring Boot durations (`10s`, `5m`, `PT1H`; a plain number is
 /// milliseconds).
@@ -58,6 +61,7 @@ class Scheduled {
     this.fixedRateString,
     this.fixedDelayString,
     this.initialDelayString,
+    this.scheduler,
   });
 
   /// Spring's value of [cron] that switches the task off.
@@ -97,4 +101,15 @@ class Scheduled {
 
   /// [initialDelay] as text: `'30s'`, `r'${jobs.initial-delay:0}'`.
   final String? initialDelayString;
+
+  /// The `TaskScheduler` bean to run the method on, by qualifier or bean
+  /// name (`${...}` allowed); `null` for the default scheduler (the only
+  /// `TaskScheduler` bean, the primary one, or the one named
+  /// `taskScheduler`).
+  ///
+  /// ```dart
+  /// @Scheduled(fixedDelay: Duration(minutes: 1), scheduler: 'reportsScheduler')
+  /// void export() { ... }
+  /// ```
+  final String? scheduler;
 }

@@ -1,3 +1,10 @@
+## Unreleased
+
+- breaking: a constraint on a type it cannot check (`@Size` on an `int`, `@Past` on a `String`) fails the build
+- validation proxies for `@Validated` beans carry the parameter annotations (method validation)
+- generated advice closures take the pointcut's bindings (needs the matching `spring_core_dart`)
+- Breaking: `@Cacheable` / `@CachePut` (spring_boot_starter_cache) on a method returning a `Stream` fail the build: a stream can be listened to once; return a `Future<List<T>>`.
+
 ## 0.1.6
 
 - update road map

@@ -74,10 +74,14 @@ void main() {
     final file = LoggingSystem.instance.file!;
     expect(file.path, 'build/logs/neon-books-test.log'); // test profile
     file.flush();
+    // Spring Boot's file pattern.
     expect(
       File(file.path).readAsStringSync(),
-      contains(
-        'INFO --- [neon.checkout] paid 12.5 {order=1, gateway=FakeGateway}',
+      matches(
+        RegExp(
+          r' INFO \d+ --- \[neon-books\] \[[^\]]+\] neon\.checkout {28}: '
+          r'paid 12\.5 \{order=1, gateway=FakeGateway\}',
+        ),
       ),
     );
   });

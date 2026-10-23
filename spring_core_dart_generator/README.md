@@ -1,5 +1,9 @@
 # spring_core_dart_generator
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 `build_runner` builder for spring_core_dart. For every library with a
 `@ComponentScan` variable it scans the library's directory recursively and
 writes `<file>.beans.dart` with a `BeanModule`.

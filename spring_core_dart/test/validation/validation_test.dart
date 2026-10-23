@@ -38,7 +38,11 @@ void main() {
         (const NegativeOrZero(), 1, false),
         (const Matches(r'[a-z]+'), 'abc', true),
         (const Matches(r'[a-z]+'), 'abc1', false),
-        (const Matches(r'[a-z]+', caseSensitive: false), 'ABC', true),
+        (
+          const Matches(r'[a-z]+', flags: [PatternFlag.caseInsensitive]),
+          'ABC',
+          true,
+        ),
         (const Matches('x'), null, true),
         (const Email(), 'a.b+c@example.co', true),
         (const Email(), '', true),
@@ -55,19 +59,15 @@ void main() {
         (const AssertTrue(), false, false),
         (const AssertFalse(), false, true),
         (const AssertFalse(), true, false),
-        (const PastDate(), now.subtract(const Duration(days: 1)), true),
-        (const PastDate(), now.add(const Duration(days: 1)), false),
-        (const PastDate(), 'not a date', true),
-        (const PastOrPresentDate(), now, true),
-        (const PastOrPresentDate(), now.add(const Duration(days: 1)), false),
+        (const Past(), now.subtract(const Duration(days: 1)), true),
+        (const Past(), now.add(const Duration(days: 1)), false),
+        (const Past(), 'not a date', true),
+        (const PastOrPresent(), now, true),
+        (const PastOrPresent(), now.add(const Duration(days: 1)), false),
         (const FutureDate(), now.add(const Duration(days: 1)), true),
         (const FutureDate(), now.subtract(const Duration(days: 1)), false),
-        (const FutureOrPresentDate(), now, true),
-        (
-          const FutureOrPresentDate(),
-          now.subtract(const Duration(days: 1)),
-          false,
-        ),
+        (const FutureOrPresent(), now.add(const Duration(days: 1)), true),
+        (const FutureOrPresent(), now.subtract(const Duration(days: 1)), false),
       ];
       for (final (constraint, value, valid) in cases) {
         expect(
@@ -92,7 +92,10 @@ void main() {
         'fraction': 2,
         'integer': 1,
       });
-      expect(const Matches('x').attributes, {'regexp': 'x'});
+      expect(const Matches('x').attributes, {
+        'flags': const <PatternFlag>[],
+        'regexp': 'x',
+      });
       expect(const Max(1).attributes, {'value': 1});
       expect(const NotNull().appliesTo([]), isTrue);
       expect(const NotNull().appliesTo([Default]), isTrue);
@@ -271,7 +274,9 @@ void main() {
       final c = MapBindingResult({}, 'a')..rejectValue('x', 'e');
       a.addAllErrors(c);
       expect(a.errorCount, 1);
-      expect(a.getFieldValue('x'), 1);
+      // Like Spring, a field with an error shows its rejected value.
+      expect(a.getFieldValue('x'), isNull);
+      expect(a.getRawFieldValue('x'), 1);
       expect(a.target, {'x': 1});
     });
 
@@ -296,6 +301,7 @@ void main() {
           'v.user.items.sku.required',
           'v.items[0].sku.required',
           'v.items.sku.required',
+          'v.sku.required',
           'v.String.required',
           'v.required',
         ],
@@ -383,7 +389,10 @@ void main() {
       expect(error.bindingFailure, isTrue);
       expect(error.codes.first, 'typeMismatch.person.age');
       expect(error.codes, contains('typeMismatch.int'));
-      expect(error.arguments, [int]);
+      final argument =
+          error.arguments.single! as DefaultMessageSourceResolvable;
+      expect(argument.codes, ['person.age', 'age']);
+      expect(argument.defaultMessage, 'age');
       expect(dataBinder.bindingResult.getFieldValue('age'), 'x');
       expect(dataBinder.objectName, 'person');
       expect(
@@ -434,6 +443,8 @@ void main() {
             ..autoGrowNestedPaths = false
             ..ignoreInvalidFields = true)
           .bind({'address.city': 'x', 'previous[3].city': 'y'});
+      // Without TypeInfo the element type is unknown, so the list cannot
+      // grow (see bean_wrapper_test for generated metadata).
       expect(
         () => binder(Person()).bind({'previous[3].city': 'y'}),
         throwsA(isA<NotReadablePropertyException>()),

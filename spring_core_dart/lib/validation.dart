@@ -32,4 +32,5 @@ export 'package:spring_core_dart/src/validation/bean_validator.dart';
 export 'package:spring_core_dart/src/validation/constraints.dart';
 export 'package:spring_core_dart/src/validation/data_binder.dart';
 export 'package:spring_core_dart/src/validation/errors.dart';
+export 'package:spring_core_dart/src/validation/method_validation.dart';
 export 'package:spring_core_dart/src/validation/validator.dart';

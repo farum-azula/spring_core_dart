@@ -1,4 +1,3 @@
-import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
@@ -629,19 +628,17 @@ class AnnotationConfigApplicationContext
         rest.add(name);
       }
     }
+    // AOP is on as soon as an aspect or advisor exists (here or in an
+    // ancestor); its proxy creator is the first Ordered processor (Spring:
+    // HIGHEST_PRECEDENCE), so later processors see the proxies.
+    final usesAop = AspectAutoProxyCreator.isRequiredFor(_factory);
     for (final group in [priority, ordered, rest]) {
+      if (usesAop && identical(group, ordered)) {
+        _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
+      }
       for (final processor in _sortedBeans<BeanPostProcessor>(group)) {
         _factory.addBeanPostProcessor(processor);
       }
-    }
-    // AOP is on as soon as an aspect or advisor exists.
-    final usesAop = _factory.beanDefinitionNames.any((name) {
-      final definition = _factory.getBeanDefinition(name);
-      return definition.aspect != null ||
-          definition.types.contains(PointcutAdvisor);
-    });
-    if (usesAop) {
-      _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
     }
   }
 

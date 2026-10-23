@@ -118,7 +118,10 @@ test('provides a cache', () {
 });
 
 test('steps aside when the app has its own cache', () {
+  // Registered before the auto-configuration, like Boot's withBean:
+  // a missing @ConditionalOnMissingBean would give two caches.
   runner.withBean<Cache>(AppCache()).run((context) {
+    expect(context, hasSingleBean<Cache>());
     expect(context.getBean<Cache>(), isA<AppCache>());
   });
 });

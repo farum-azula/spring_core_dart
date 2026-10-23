@@ -1,5 +1,9 @@
 # spring_core_dart
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Spring Core for Dart: IoC container, environment and `application.properties`
 configuration, events, messages, resources, type conversion, SpEL, validation
 with data binding, and AOP. Pure Dart, works in Flutter (no `dart:mirrors`):
@@ -378,12 +382,39 @@ binder.bindingResult.fieldError('age');   // typeMismatch / Min ... with Spring 
 ```
 
 Constraints: `NotNull`, `MustBeNull`, `NotEmpty`, `NotBlank`, `Size`, `Min`,
-`Max`, `Positive(OrZero)`, `Negative(OrZero)`, `Matches` (`@Pattern`),
-`Email`, `Digits`, `AssertTrue/False`, `PastDate`, `FutureDate` and
-`...OrPresentDate`, groups, `@Valid` cascade, custom `Constraint`
-subclasses. Error codes and arguments follow Spring
-(`NotBlank.signup.name`, `NotBlank.name`, `NotBlank.String`, `NotBlank`), so
-messages come from a `MessageSource`.
+`Max`, `DecimalMin`, `DecimalMax`, `Positive(OrZero)`, `Negative(OrZero)`,
+`Matches` (`@Pattern`), `Email`, `Digits`, `AssertTrue/False`, `Past`,
+`PastOrPresent`, `FutureDate` (`@Future`), `FutureOrPresent`, groups,
+`@Valid` cascade, custom `Constraint` subclasses. A constraint on a type it
+cannot check (`@Size` on an `int`) fails the build, like Hibernate
+Validator's `UnexpectedTypeException`. Error codes and arguments follow
+Spring (`NotBlank.signup.name`, `NotBlank.name`, `NotBlank.String`,
+`NotBlank`), so messages come from a `MessageSource`.
+
+Method validation works like Spring's `@Validated`: with a
+`MethodValidationPostProcessor` bean, constraints on the parameters and the
+return value of a `@Validated` bean's methods are checked through the
+generated proxy, and a violation throws `ConstraintViolationException`:
+
+```dart
+@Service()
+@Validated()
+class Registration {
+  @NotBlank()
+  String register(@Email() @NotBlank() String email) => 'id-$email';
+}
+
+@Configuration()
+class ValidationConfig {
+  @Bean()
+  MethodValidationPostProcessor methodValidationPostProcessor(
+    BeanIntrospector introspector,
+  ) => MethodValidationPostProcessor(BeanValidator(introspector: introspector));
+}
+```
+
+Immutable classes are bound through their constructor with
+`DataBinder.construct` (Spring 6.1's constructor binding).
 
 ### JSON (`ObjectMapper`)
 
@@ -601,7 +632,9 @@ Async methods: for a method returning a `Future`, `@After`,
 `@AfterReturning` and `@AfterThrowing` run when the future completes
 (with its value or error), not when the method returns. In `@Around`,
 `proceed()` returns the future; make the advice `async` and `await` it to
-work with the value:
+work with the value. Other advice may be `async` too: on a method returning
+a `Future` it is awaited before the call goes on; on a synchronous method
+an `async` advice is an error:
 
 ```dart
 @Around('execution(Future *(..))')
@@ -641,12 +674,13 @@ designator(pattern)  [&& | || | !  designator(pattern) ...]
 | Designator | Matches | Example |
 |---|---|---|
 | `execution(ret Type.name(params))` | methods by return type, declaring type, name and parameters | `execution(* OrderService.find*(..))` |
-| `within(TypePattern)` | every member of beans whose class matches | `within(*Repository)` |
-| `target(Type)` | every member of beans of that type or a subtype (interfaces too) | `target(PaymentGateway)` |
-| `bean(namePattern)` | every member of beans with that name | `bean(order*)` |
+| `within(TypePattern)` | every member of beans whose class matches; `Type+` also subtypes | `within(*Repository)`, `within(Repository+)` |
+| `target(Type)`, `this(Type)` | every member of beans of that type or a subtype (interfaces too) | `target(PaymentGateway)` |
+| `args(types)` | methods whose parameters have these declared types (`..` any number) | `args(String, ..)` |
+| `bean(namePattern)` | every member of beans with that name, an alias or a qualifier value | `bean(order*)` |
 | `@annotation(Annotation)` | methods carrying the annotation (also when it is on the interface method they implement) | `@annotation(Timed)` |
-| `@within(Annotation)` | every member of beans whose class carries the annotation | `@within(Service)` |
-| `name()` | a named pointcut: a `@Pointcut` method of any aspect | `orders()`, `AuditAspect.orders()` |
+| `@within(Annotation)`, `@target(Annotation)` | every member of beans whose class carries the annotation | `@within(Service)` |
+| `name()` | a named pointcut: a `@Pointcut` method of the same aspect; another aspect's as `Type.name()` | `orders()`, `AuditAspect.orders()` |
 
 Patterns:
 
@@ -663,6 +697,8 @@ Patterns:
 - Type names are simple names. Dart has no packages, so `com.x.Service`
   means `Service`, and a package wildcard like `within(com.x..*)` is an
   error instead of silently matching everything.
+- `Type+` in `within` and `execution` means the type and its subtypes:
+  `execution(* Repository+.*(..))`.
 
 Operators: `&&` / `and`, `||` / `or`, `!` / `not`, and parentheses.
 
@@ -722,6 +758,19 @@ class AopConfig {
   PointcutAdvisor upperCase() =>
       DefaultPointcutAdvisor(ExpressionPointcut('bean(slogans)'), UpperCase());
 }
+```
+
+Aspects and advisors are ordered by `@Order` or by implementing `Ordered`
+(lower runs outside); those of parent contexts apply too.
+
+A call a bean makes to its own method skips the advice, as in Spring. Call
+through `AopContext.currentProxy()` to get it; unlike Spring the proxy is
+always exposed (no `exposeProxy` flag), also in the asynchronous code an
+advised `Future` method starts:
+
+```dart
+Future<Book> refresh(String isbn) =>
+    (AopContext.currentProxy() as Books).find(isbn);   // advised
 ```
 
 #### Proxies
@@ -829,7 +878,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Reflection, runtime classpath scanning | `build_runner` code generation, `@ComponentScan` per directory | No reflection in Flutter/AOT |
 | `PropertySource` class | `AbstractPropertySource` | `@PropertySource` is the annotation |
 | `Scope` SPI, `Pointcut` interface | `CustomScope`, `AopPointcut` | `@Scope`, `@Pointcut` are the annotations |
-| `@Null`, `@Pattern`, `@Past`, `@Future` | `MustBeNull`, `Matches`, `PastDate`, `FutureDate` (codes unchanged) | Clashes with Dart core types |
+| `@Null`, `@Pattern`, `@Future` | `MustBeNull`, `Matches`, `FutureDate` (codes unchanged) | Clash with Dart's `Null`, `Pattern` and `Future` |
 | `Validator.supports(Class)` | `supports(Object target)` | Dart cannot test subtypes on a `Type` |
 | CGLIB `@Configuration` proxies | Call other `@Bean`s through parameters | No subclass proxies |
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |

@@ -225,8 +225,10 @@ void main() {
         '.0000001',
       );
       expect(
+        // The double 1.5e-10 is 1.4999...e-10: rounded on its exact value,
+        // like Java's DecimalFormat.
         MessageFormat.format('{0,number,#.##########}', [1.5e-10]),
-        '.0000000002',
+        '.0000000001',
       );
     });
 

@@ -10,8 +10,10 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 /// For basename `i18n/messages` and locale `ru_RU` the files
 /// `i18n/messages_ru_RU.properties`, `i18n/messages_ru.properties` and
 /// `i18n/messages.properties` are consulted. Basenames are locations for
-/// the [resourceLoader] (`file:`, plain paths, custom protocols). Earlier
-/// basenames win. Resources that cannot be read synchronously (such as
+/// the [resourceLoader] (`file:`, plain paths, custom protocols). Lookup
+/// goes basename by basename, like Spring: every locale file of the first
+/// basename (requested locale, default locale, base file) before the
+/// second basename, so `messages.properties` wins over `errors_de`. Resources that cannot be read synchronously (such as
 /// Flutter assets) must be loaded with [preload] first.
 ///
 /// ```dart
@@ -96,11 +98,19 @@ class PropertiesMessageSource extends AbstractMessageSource {
   void clearCache() => _cache.clear();
 
   @override
-  String? resolveCode(String code, String locale) {
+  String? resolveCode(String code, String locale) =>
+      resolveCodeInLocales(code, [locale]);
+
+  // Basename by basename, each with its whole locale chain (Spring's
+  // calculateAllFilenames).
+  @override
+  String? resolveCodeInLocales(String code, List<String> locales) {
     for (final basename in _basenames) {
-      final message = _properties(_path(basename, locale))[code];
-      if (message != null) {
-        return message;
+      for (final locale in locales) {
+        final message = _properties(_path(basename, locale))[code];
+        if (message != null) {
+          return message;
+        }
       }
     }
     return null;

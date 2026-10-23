@@ -9,10 +9,9 @@ void main() {
     test('normalize and candidates', () {
       expect(Locales.normalize('ru-ru'), 'ru_RU');
       expect(Locales.normalize('EN'), 'en');
-      expect(
-        Locales.normalize('sr_latn_RS'.replaceAll('latn', 'Latn')),
-        'sr_LATN_RS',
-      );
+      // A four-letter second part is a script (Java's resource bundle
+      // names: messages_sr_Latn_RS.properties).
+      expect(Locales.normalize('sr_latn_RS'), 'sr_Latn_RS');
       expect(Locales.normalize(null), '');
       expect(Locales.normalize(' '), '');
       expect(Locales.candidates('ru_RU'), ['ru_RU', 'ru']);

@@ -78,7 +78,6 @@ void main() {
     expect(() => f('{x}', ['a']), throwsFormatException);
     expect(() => f('{0,unknown}', ['a']), throwsFormatException);
     expect(() => f('{0', ['a']), throwsFormatException);
-    expect(() => f('a } b'), throwsFormatException);
     expect(() => f('{0,choice,0#a}', ['x']), throwsFormatException);
     expect(() => f('{0,choice,zero}', [1]), throwsFormatException);
     expect(() => f('{0,choice,x#a}', [1]), throwsFormatException);

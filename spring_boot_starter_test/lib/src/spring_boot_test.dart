@@ -1,5 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_test/src/bean_override.dart';
+import 'package:spring_boot_starter_test/src/dynamic_property_registry.dart';
 import 'package:test_api/scaffolding.dart';
 
 /// Starts [application] for the tests of the enclosing `main` or `group`,
@@ -18,6 +19,11 @@ import 'package:test_api/scaffolding.dart';
 ///   (`@TestPropertySource(locations = ...)`; later files win);
 /// - [properties] win over every other property source, [propertyFiles]
 ///   included (`@SpringBootTest(properties = ...)`);
+/// - [dynamicProperties] adds properties whose values are known only when
+///   the context starts, e.g. the port of a server started in an earlier
+///   `setUpAll` (`@DynamicPropertySource`): it is called at every start
+///   and each value supplier whenever the property is read; these win
+///   over [properties];
 /// - [profiles] become `spring.profiles.active` (`@ActiveProfiles`);
 /// - [systemEnvironment] replaces the OS environment (empty by default, so
 ///   tests do not depend on the machine);
@@ -56,6 +62,7 @@ SpringBootTestContext springBootTest(
   SpringApplication application, {
   List<String> args = const [],
   Map<String, Object?> properties = const {},
+  void Function(DynamicPropertyRegistry registry)? dynamicProperties,
   List<String> propertyFiles = const [],
   List<String> resourceDirectories = const ['test/resources'],
   List<String> profiles = const [],
@@ -76,6 +83,12 @@ SpringBootTestContext springBootTest(
       _resolveAgainst(_packageRootOf(StackTrace.current), resourceDirectories),
     ),
     initializers: [
+      if (dynamicProperties != null)
+        (context) {
+          final source = DynamicValuesPropertySource();
+          dynamicProperties(source);
+          context.environment.propertySources.addFirst(source);
+        },
       if (overrides.isNotEmpty)
         (context) => context.addBeanFactoryPostProcessor(
           BeanOverrideProcessor(overrides),

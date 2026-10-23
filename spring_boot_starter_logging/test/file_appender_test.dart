@@ -63,7 +63,7 @@ void main() {
       final appender = FileAppender(
         '${dir.path}/r.log',
         pattern: LogPattern('%m'),
-        maxSize: 30,
+        maxFileSize: 30,
         maxHistory: 2,
       );
       for (var i = 1; i <= 10; i++) {
@@ -85,8 +85,27 @@ void main() {
       expect(exists('c.log.1') || exists('c.log.2'), isFalse);
     });
 
-    test('maxSize 0 never rolls over; negative values are rejected', () {
-      final appender = FileAppender('${dir.path}/n.log', maxSize: 0);
+    test('totalSizeCap deletes the oldest archives', () {
+      // 30-byte files of three 10-byte lines; archives may total 60 bytes.
+      final appender = FileAppender(
+        '${dir.path}/s.log',
+        pattern: LogPattern('%m'),
+        maxFileSize: 30,
+        maxHistory: 5,
+        totalSizeCap: 60,
+      );
+      for (var i = 1; i <= 13; i++) {
+        appender.append(record('line-${'$i'.padLeft(4, '0')}'));
+      }
+      appender.close();
+      expect(read('s.log'), 'line-0013\n');
+      expect(read('s.log.1'), 'line-0010\nline-0011\nline-0012\n');
+      expect(read('s.log.2'), 'line-0007\nline-0008\nline-0009\n');
+      expect(exists('s.log.3'), isFalse); // within maxHistory, over the cap
+    });
+
+    test('maxFileSize 0 never rolls over; negative values are rejected', () {
+      final appender = FileAppender('${dir.path}/n.log', maxFileSize: 0);
       for (var i = 0; i < 50; i++) {
         appender.append(record('x' * 100));
       }
@@ -94,6 +113,10 @@ void main() {
       expect(exists('n.log.1'), isFalse);
       expect(
         () => FileAppender('${dir.path}/x.log', maxHistory: -1),
+        throwsArgumentError,
+      );
+      expect(
+        () => FileAppender('${dir.path}/x.log', totalSizeCap: -1),
         throwsArgumentError,
       );
       expect(FileAppender.isSupported, isTrue);
@@ -110,7 +133,7 @@ void main() {
     expect(() => parseDataSize('1.5MB'), throwsFormatException);
   });
 
-  group('logging.file.* properties', () {
+  group('logging.file.* and logging.logback.rollingpolicy.* properties', () {
     final runner = const ApplicationContextRunner()
         .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
         .withPropertyValues([
@@ -150,14 +173,16 @@ void main() {
             'logging.file.name=app/shop.log',
             'logging.file.path=ignored',
             'logging.threshold.file=warn',
-            'logging.file.max-size=1KB',
-            'logging.file.max-history=1',
+            'logging.logback.rollingpolicy.max-file-size=1KB',
+            'logging.logback.rollingpolicy.max-history=1',
+            'logging.logback.rollingpolicy.total-size-cap=2KB',
           ])
           .run((context) {
             final file = LoggingSystem.instance.file!;
             expect(file.path, '${dir.path}/app/shop.log');
-            expect(file.maxSize, 1024);
+            expect(file.maxFileSize, 1024);
             expect(file.maxHistory, 1);
+            expect(file.totalSizeCap, 2048);
             log
               ..info('console only')
               ..warning('kept');
@@ -188,15 +213,66 @@ void main() {
       runner
           .withPropertyValues([
             'logging.file.path=${dir.path}',
-            'logging.file.max-size=big',
+            'logging.logback.rollingpolicy.max-file-size=big',
           ])
           .run((context) => expect(context, hasFailed()));
       runner
           .withPropertyValues([
             'logging.file.path=${dir.path}',
-            'logging.file.max-history=all',
+            'logging.logback.rollingpolicy.max-history=all',
           ])
           .run((context) => expect(context, hasFailed()));
+    });
+
+    test('the logging.file.* rolling names are gone: a warning, no effect', () {
+      final warnings = <String>[];
+      final stop = SpringLog.listen((record) {
+        if (record.level == SpringLogLevel.warning) {
+          warnings.add(record.message);
+        }
+      });
+      addTearDown(stop);
+      runner
+          .withPropertyValues([
+            'logging.file.path=${dir.path}',
+            'logging.file.max-size=1KB',
+            'logging.file.max-history=1',
+            'logging.file.clean-history-on-start=true',
+          ])
+          .run((context) {
+            final file = LoggingSystem.instance.file!;
+            expect(file.maxFileSize, 10 * 1024 * 1024); // the defaults
+            expect(file.maxHistory, 7);
+            expect(file.totalSizeCap, 0);
+          });
+      expect(warnings, [
+        'logging.file.max-size is not supported (ignored): use '
+            'logging.logback.rollingpolicy.max-file-size',
+        'logging.file.max-history is not supported (ignored): use '
+            'logging.logback.rollingpolicy.max-history',
+        'logging.file.clean-history-on-start is not supported (ignored): use '
+            'logging.logback.rollingpolicy.clean-history-on-start',
+      ]);
+    });
+
+    test("without logging.pattern.file: Spring Boot's file pattern", () {
+      const ApplicationContextRunner()
+          .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
+          .withPropertyValues([
+            'logging.console.enabled=false',
+            'logging.file.name=${dir.path}/boot.log',
+            'spring.application.name=shop',
+          ])
+          .run((context) => log.info('to the file'));
+      expect(
+        read('boot.log'),
+        matches(
+          RegExp(
+            r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}(Z|[+-]\d\d:\d\d)  INFO '
+            r'\d+ --- \[shop\] \[[^\]]+\] neon\.shop {32}: to the file\n$',
+          ),
+        ),
+      );
     });
   });
 }

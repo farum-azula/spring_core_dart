@@ -113,15 +113,19 @@ class After {
   final String pointcut;
 }
 
-/// Advice run after the method returns, like `@AfterReturning`. A
-/// parameter after the optional `JoinPoint` receives the return value
-/// (or the completed value of a `Future`); the advice only runs when the
-/// value has that parameter's type.
+/// Advice run after the method returns, like `@AfterReturning`. The
+/// parameter named [returning] (by default the first parameter that is
+/// neither the `JoinPoint` nor bound by the pointcut) receives the return
+/// value (or the completed value of a `Future`); the advice only runs when
+/// the value has that parameter's type.
 ///
 /// ```dart
 /// @AfterReturning('execution(* Calculator.*(..))')
 /// void returned(JoinPoint joinPoint, int result) =>
 ///     log.add('${joinPoint.signature.name}=$result');
+///
+/// @AfterReturning('@annotation(timed)', returning: 'result')
+/// void timed(Timed timed, Object? result) => log.add('$timed: $result');
 /// ```
 ///
 /// Spring (Java):
@@ -134,15 +138,20 @@ class After {
 /// ```
 class AfterReturning {
   /// Creates `@AfterReturning` advice for the [pointcut] expression.
-  const AfterReturning(this.pointcut);
+  const AfterReturning(this.pointcut, {this.returning});
 
   /// The pointcut expression selecting the advised methods.
   final String pointcut;
+
+  /// Name of the advice parameter that receives the return value.
+  final String? returning;
 }
 
-/// Advice run when the method throws, like `@AfterThrowing`. A parameter
-/// after the optional `JoinPoint` receives the error; the advice only runs
-/// for errors of that type. The error is rethrown afterwards.
+/// Advice run when the method throws, like `@AfterThrowing`. The
+/// parameter named [throwing] (by default the first parameter that is
+/// neither the `JoinPoint` nor bound by the pointcut) receives the error;
+/// the advice only runs for errors of that type. The error is rethrown
+/// afterwards.
 ///
 /// For methods returning a `Future`, it runs when the future fails.
 ///
@@ -162,10 +171,13 @@ class AfterReturning {
 /// ```
 class AfterThrowing {
   /// Creates `@AfterThrowing` advice for the [pointcut] expression.
-  const AfterThrowing(this.pointcut);
+  const AfterThrowing(this.pointcut, {this.throwing});
 
   /// The pointcut expression selecting the advised methods.
   final String pointcut;
+
+  /// Name of the advice parameter that receives the error.
+  final String? throwing;
 }
 
 /// Advice that wraps the method, like `@Around`. The method takes a

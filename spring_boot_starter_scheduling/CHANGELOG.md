@@ -1,3 +1,10 @@
+## Unreleased
+
+- cron day of week like Spring's: MON-SUN are 1-7 and Sunday at the start of a range is 0, so `SAT-SUN`, `MON-SUN`, `FRI-SUN` parse
+- breaking: `*` and `?` in the cron day of week are 1-7, so `*/2` is MON, WED, FRI, SUN (was SUN, TUE, THU, SAT); `L-0` is rejected
+- cron lists of Quartz specials and values: `MON#1,MON#3`, `1,L`, `MON-FRI,SATL`
+- `@Scheduled(scheduler:)` picks a `TaskScheduler` bean by qualifier or name; with several schedulers the default is the primary one or `taskScheduler`
+
 ## 0.1.6
 
 - update road map

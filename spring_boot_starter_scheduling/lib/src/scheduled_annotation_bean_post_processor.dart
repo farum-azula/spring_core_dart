@@ -93,7 +93,15 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
       for (final annotation in method.annotations.whereType<Scheduled>()) {
         final trigger = _trigger(annotation, name);
         if (trigger != null) {
-          found.add(_ScheduledMethod(name, beanName, method, trigger));
+          found.add(
+            _ScheduledMethod(
+              name,
+              beanName,
+              method,
+              trigger,
+              _schedulerName(annotation, name),
+            ),
+          );
         }
       }
     }
@@ -102,6 +110,34 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
       found.forEach(_start);
     }
     return bean;
+  }
+
+  // The qualifier (or bean name) of `scheduler:`, checked against the bean
+  // definitions now; the bean itself is looked up when the task starts.
+  String? _schedulerName(Scheduled scheduled, String method) {
+    final text = scheduled.scheduler;
+    if (text == null) {
+      return null;
+    }
+    final String name;
+    try {
+      name = environment.resolveRequiredPlaceholders(text).trim();
+    } on Object catch (error) {
+      throw StateError(
+        'Invalid @Scheduled on $method: scheduler "$text": '
+        '$error',
+      );
+    }
+    if (name.isEmpty) {
+      return null; // like Spring's default "": the default scheduler
+    }
+    if (!_beanFactory!.containsBeanOfType(TaskScheduler, qualifier: name)) {
+      throw StateError(
+        "Invalid @Scheduled on $method: scheduler '$name': no TaskScheduler "
+        'bean with this qualifier or name',
+      );
+    }
+    return name;
   }
 
   // The trigger of one @Scheduled, or null when its cron is `-`.
@@ -201,6 +237,10 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
 
   void _start(_ScheduledMethod scheduled) {
     Object? target;
+    final scheduler = switch (scheduled.schedulerName) {
+      final name? => _beanFactory!.getBean<TaskScheduler>(qualifier: name),
+      null => this.scheduler,
+    };
     _tasks.add(
       scheduler.schedule(
         () {
@@ -263,10 +303,18 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
 }
 
 final class _ScheduledMethod {
-  _ScheduledMethod(this.name, this.beanName, this.method, this.trigger);
+  _ScheduledMethod(
+    this.name,
+    this.beanName,
+    this.method,
+    this.trigger,
+    this.schedulerName,
+  );
 
   final String name;
   final String beanName;
   final BeanMethod<Object> method;
   final Trigger trigger;
+  // `@Scheduled(scheduler:)`; null: the default scheduler.
+  final String? schedulerName;
 }

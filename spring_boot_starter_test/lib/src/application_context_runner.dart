@@ -46,6 +46,7 @@ final class ApplicationContextRunner {
     this.systemEnvironment = const {},
     this.initializers = const [],
     this.beans = const [],
+    this.overrides = const [],
   });
 
   /// Application modules, registered before [autoConfigurations].
@@ -63,8 +64,11 @@ final class ApplicationContextRunner {
   /// Called before each refresh.
   final List<ApplicationContextInitializer> initializers;
 
-  /// Extra beans registered with [withBean].
-  final List<BeanOverride<Object>> beans;
+  /// Beans registered with [withBean], before the configurations.
+  final List<BeanDefinition<Object>> beans;
+
+  /// Bean replacements added with [withBeanOverride].
+  final List<BeanOverride<Object>> overrides;
 
   ApplicationContextRunner _copy({
     List<BeanModule>? userConfigurations,
@@ -72,7 +76,8 @@ final class ApplicationContextRunner {
     Map<String, Object?>? properties,
     Map<String, String>? systemEnvironment,
     List<ApplicationContextInitializer>? initializers,
-    List<BeanOverride<Object>>? beans,
+    List<BeanDefinition<Object>>? beans,
+    List<BeanOverride<Object>>? overrides,
   }) => ApplicationContextRunner._(
     userConfigurations: userConfigurations ?? this.userConfigurations,
     autoConfigurations: autoConfigurations ?? this.autoConfigurations,
@@ -80,6 +85,7 @@ final class ApplicationContextRunner {
     systemEnvironment: systemEnvironment ?? this.systemEnvironment,
     initializers: initializers ?? this.initializers,
     beans: beans ?? this.beans,
+    overrides: overrides ?? this.overrides,
   );
 
   /// Adds an application module (`withUserConfiguration`).
@@ -90,33 +96,108 @@ final class ApplicationContextRunner {
   ApplicationContextRunner withAutoConfiguration(BeanModule module) =>
       _copy(autoConfigurations: [...autoConfigurations, module]);
 
-  /// Adds `key=value` properties (`withPropertyValues`).
+  /// Adds `key=value` or `key:value` properties (`withPropertyValues`),
+  /// split at the first `=` or `:` like Boot's `TestPropertyValues`; name
+  /// and value are trimmed, a pair without a separator has an empty value.
+  ///
+  /// ```dart
+  /// runner.withPropertyValues(['shop.name=Books', 'shop.url: http://x', 'flag'])
+  /// ```
   ApplicationContextRunner withPropertyValues(List<String> pairs) => _copy(
     properties: {
       ...properties,
       for (final pair in pairs)
-        if (pair.indexOf('=') case final index when index > 0)
-          pair.substring(0, index).trim(): pair.substring(index + 1)
+        if (_separatorIndex(pair) case final index when index > 0)
+          pair.substring(0, index).trim(): pair.substring(index + 1).trim()
         else
           pair.trim(): '',
     },
   );
 
+  // The first `=` or `:` (Boot's `TestPropertyValues.Pair.parse`).
+  static int _separatorIndex(String pair) {
+    final colon = pair.indexOf(':');
+    final equals = pair.indexOf('=');
+    if (colon < 0) {
+      return equals;
+    }
+    return equals < 0 || colon < equals ? colon : equals;
+  }
+
   /// Replaces the OS environment (`withSystemProperties`, for variables).
   ApplicationContextRunner withSystemEnvironment(Map<String, String> env) =>
       _copy(systemEnvironment: {...systemEnvironment, ...env});
 
-  /// Registers [instance] as a bean of [T], replacing an existing one
-  /// (`withBean`).
+  /// Registers [instance] as an extra bean of [T] called [name] (default:
+  /// the type name in lower camel case), like Boot's `withBean`.
+  ///
+  /// The bean is registered before the configurations are processed, so
+  /// auto-configuration sees it: a `@ConditionalOnMissingBean` backs off,
+  /// and a missing back-off shows up as a second bean (`hasSingleBean`
+  /// fails) or, with the same name, as a failed start. It never replaces a
+  /// bean; use [withBeanOverride] for that.
+  ///
+  /// ```dart
+  /// runner.withBean<HttpClient>(FakeClient()).run((context) {
+  ///   expect(context, hasSingleBean<HttpClient>()); // the starter backed off
+  /// });
+  /// ```
+  ///
+  /// Spring Boot (Java):
+  /// ```java
+  /// runner.withBean(HttpClient.class, FakeClient::new)
+  ///     .run(context -> assertThat(context).hasSingleBean(HttpClient.class));
+  /// ```
   ApplicationContextRunner withBean<T extends Object>(
     T instance, {
     String? name,
   }) => _copy(
     beans: [
       ...beans,
+      BeanDefinition<T>(
+        name: name ?? _beanName('$T'),
+        types: [T],
+        create: (_) => instance,
+        // Unique: definitions of the same source are taken as one.
+        source: 'ApplicationContextRunner.withBean<$T>#${beans.length}',
+      ),
+    ],
+  );
+
+  /// Replaces the bean of type [T] (or the bean called [name]) with
+  /// [instance] after the configurations were processed, like Spring's
+  /// `@TestBean` / `@MockitoBean`; see [BeanOverride]. Not in Boot's
+  /// runner: to check auto-configuration, prefer [withBean].
+  ///
+  /// ```dart
+  /// runner.withBeanOverride<Clock>(FixedClock(at)).run((context) { ... });
+  /// ```
+  ApplicationContextRunner withBeanOverride<T extends Object>(
+    T instance, {
+    String? name,
+  }) => _copy(
+    overrides: [
+      ...overrides,
       BeanOverride<T>(instance, name: name),
     ],
   );
+
+  // Spring's bean name of a class: `HttpClient` → `httpClient`, while
+  // `URLService` stays (Introspector.decapitalize).
+  static String _beanName(String type) {
+    final generic = type.indexOf('<');
+    final simple = generic < 0 ? type : type.substring(0, generic);
+    if (simple.isEmpty) {
+      return 'bean';
+    }
+    if (simple.length > 1 &&
+        simple[1].toUpperCase() == simple[1] &&
+        simple[1].toLowerCase() != simple[1] &&
+        simple[0].toUpperCase() == simple[0]) {
+      return simple;
+    }
+    return simple[0].toLowerCase() + simple.substring(1);
+  }
 
   /// Adds an initializer (`withInitializer`).
   ApplicationContextRunner withInitializer(
@@ -165,14 +246,16 @@ final class ApplicationContextRunner {
       );
     }
     final context = AnnotationConfigApplicationContext([
+      // Like Boot: registered beans first, then the configurations.
+      if (beans.isNotEmpty) BeanModule('ApplicationContextRunner.beans', beans),
       ...userConfigurations,
       ...autoConfigurations,
     ], environment: environment);
     context.beanFactory.addBeanPostProcessor(
       ConfigurationPropertiesBinder(environment, context.introspector),
     );
-    if (beans.isNotEmpty) {
-      context.addBeanFactoryPostProcessor(BeanOverrideProcessor(beans));
+    if (overrides.isNotEmpty) {
+      context.addBeanFactoryPostProcessor(BeanOverrideProcessor(overrides));
     }
     Object? failure;
     try {

@@ -49,7 +49,9 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
       ConditionGroup(_source, [_enabled]),
     ],
     create: (r) => ScheduledAnnotationBeanPostProcessor(
-      r.dependency<TaskScheduler>(),
+      // Like Spring: the only TaskScheduler, the primary one, or the one
+      // named `taskScheduler` (others are picked with @Scheduled(scheduler:)).
+      r.dependency<TaskScheduler>(name: 'taskScheduler'),
       r.dependency<Environment>(),
     ),
   ),

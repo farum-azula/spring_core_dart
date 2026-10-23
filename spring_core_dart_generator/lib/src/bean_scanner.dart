@@ -4,6 +4,7 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/constraint_checker.dart';
 
 // Annotations are matched by name in `package:spring_core_dart`, so the
 // generator does not depend on the runtime package (consumers can pull both
@@ -53,6 +54,13 @@ final _adviceAnnotations = {
 };
 final _joinPoint = _spring('JoinPoint');
 final _proceedingJoinPoint = _spring('ProceedingJoinPoint');
+
+// spring_boot_starter_cache annotations, matched by URL (no dependency).
+const _cacheAnnotations =
+    'package:spring_boot_starter_cache/src/annotations.dart';
+const _cacheable = TypeChecker.fromUrl('$_cacheAnnotations#Cacheable');
+const _cachePut = TypeChecker.fromUrl('$_cacheAnnotations#CachePut');
+const _caching = TypeChecker.fromUrl('$_cacheAnnotations#Caching');
 
 /// Infrastructure types that are never proxied.
 ///
@@ -506,6 +514,12 @@ class BeanScanner {
             if (field.getter case final getter?) ..._userAnnotations(getter),
           ],
         );
+        _checkConstraints(
+          properties[fieldName]!.annotations,
+          fieldType,
+          '$name.$fieldName',
+          field,
+        );
       }
       for (final method in current.methods) {
         final methodName = method.name;
@@ -618,6 +632,14 @@ class BeanScanner {
         constructors.where((c) => (c.name ?? 'new') == 'new').firstOrNull;
     if (constructor == null) {
       return null;
+    }
+    for (final parameter in constructor.formalParameters) {
+      _checkConstraints(
+        _userAnnotations(parameter),
+        parameter.type,
+        '${element.name}(${parameter.name})',
+        parameter,
+      );
     }
     final name = constructor.name;
     return ConstructorModel(
@@ -907,12 +929,56 @@ class BeanScanner {
     );
     final failure = _proxyFailure;
     if (model != null || failure == null) {
-      return model;
+      return _rejectCachedStreams(model);
     }
-    return _signatureOnlyModel(targetType, className, failure);
+    return _rejectCachedStreams(
+      _signatureOnlyModel(targetType, className, failure),
+    );
   }
 
   String? _proxyFailure;
+
+  // `@Cacheable` / `@CachePut` of spring_boot_starter_cache (matched by
+  // URL, so the generator does not depend on it) on a member returning a
+  // Stream: a stream can be listened to once, so the cached one would fail
+  // every later caller.
+  ProxyModel? _rejectCachedStreams(ProxyModel? model) {
+    if (model == null) {
+      return null;
+    }
+    for (final member in model.members) {
+      if (member.kind != ProxyMemberKind.method ||
+          !member.returnType.isDartAsyncStream) {
+        continue;
+      }
+      for (final annotation in member.annotations) {
+        final type = annotation.type;
+        if (type is! InterfaceType) {
+          continue;
+        }
+        final caches =
+            _cacheable.isExactlyType(type) ||
+            _cachePut.isExactlyType(type) ||
+            (_caching.isExactlyType(type) &&
+                ['cacheable', 'put'].any(
+                  (field) =>
+                      annotation.getField(field)?.toListValue()?.isNotEmpty ??
+                      false,
+                ));
+        if (caches) {
+          final target = model.targetType;
+          _fail(
+            '@${type.element.name} on ${target.element.name}.${member.name} '
+            'cannot cache a Stream: a stream can be listened to only once. '
+            'Return a Future<List<T>> instead.',
+            target.lookUpMethod(member.name, target.element.library) ??
+                target.element,
+          );
+        }
+      }
+    }
+    return model;
+  }
 
   // Signatures of the public members, for pointcut matching only.
   ProxyModel _signatureOnlyModel(
@@ -1271,6 +1337,10 @@ class BeanScanner {
       return null;
     }
     final parameters = <ProxyParameter>[];
+    final declared = {
+      for (final parameter in declaration.formalParameters)
+        parameter.name: parameter,
+    };
     for (final parameter in implementation.formalParameters) {
       final type = parameter.type;
       final defaultValue = parameter.defaultValueCode;
@@ -1278,6 +1348,19 @@ class BeanScanner {
           (defaultValue != null && !_literalDefault.hasMatch(defaultValue))) {
         return null;
       }
+      // Constraints and @Valid of the parameter (implementation and
+      // interface), for method validation.
+      final annotations = _parameterAnnotations(
+        parameter,
+        declared[parameter.name],
+      );
+      _checkConstraints(
+        annotations,
+        type,
+        '${implementation.enclosingElement?.name}.${implementation.name}'
+        '(${parameter.name})',
+        parameter,
+      );
       parameters.add(
         ProxyParameter(
           name: parameter.name!,
@@ -1285,6 +1368,7 @@ class BeanScanner {
           isNamed: parameter.isNamed,
           isRequired: parameter.isRequired,
           defaultValueCode: defaultValue,
+          annotations: annotations,
         ),
       );
     }
@@ -1301,12 +1385,65 @@ class BeanScanner {
       returnType: implementation.returnType,
       typeParameters: implementation.typeParameters,
       parameters: parameters,
-      annotations: [
-        ..._userAnnotations(implementation),
-        if (!identical(implementation, declaration))
-          ..._userAnnotations(declaration),
-      ],
+      annotations: _checkedReturnAnnotations(implementation, declaration),
     );
+  }
+
+  // ---------------------------------------------------------------------
+  // Method validation and constraint types
+  // ---------------------------------------------------------------------
+
+  // Annotations of a parameter and of the same parameter of the interface
+  // declaration (without duplicates).
+  List<DartObject> _parameterAnnotations(
+    FormalParameterElement parameter,
+    FormalParameterElement? declared,
+  ) {
+    final annotations = _userAnnotations(parameter);
+    if (declared != null && !identical(declared, parameter)) {
+      for (final annotation in _userAnnotations(declared)) {
+        if (!annotations.contains(annotation)) {
+          annotations.add(annotation);
+        }
+      }
+    }
+    return annotations;
+  }
+
+  // The method's annotations; constraints among them apply to the return
+  // value, so they must fit the return type.
+  List<DartObject> _checkedReturnAnnotations(
+    MethodElement implementation,
+    MethodElement declaration,
+  ) {
+    final annotations = [
+      ..._userAnnotations(implementation),
+      if (!identical(implementation, declaration))
+        ..._userAnnotations(declaration),
+    ];
+    _checkConstraints(
+      annotations,
+      implementation.returnType,
+      '${implementation.enclosingElement?.name}.${implementation.name} '
+      '(return value)',
+      implementation,
+    );
+    return annotations;
+  }
+
+  // Built-in constraints must fit the type they validate, like Hibernate
+  // Validator's UnexpectedTypeException (see constraint_checker.dart).
+  static void _checkConstraints(
+    List<DartObject> annotations,
+    DartType type,
+    String target,
+    Element element,
+  ) {
+    for (final annotation in annotations) {
+      if (unsupportedConstraint(annotation, type, target) case final problem?) {
+        _fail(problem, element);
+      }
+    }
   }
 
   /// Whether generated code can name [type].

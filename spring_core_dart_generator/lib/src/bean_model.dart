@@ -754,6 +754,7 @@ class ProxyParameter {
     required this.isNamed,
     required this.isRequired,
     this.defaultValueCode,
+    this.annotations = const [],
   });
 
   /// The parameter name.
@@ -761,6 +762,10 @@ class ProxyParameter {
 
   /// The declared parameter type.
   final DartType type;
+
+  /// User annotations of the parameter (implementation and interface),
+  /// e.g. constraints for method validation.
+  final List<DartObject> annotations;
 
   /// Whether the parameter is named.
   final bool isNamed;

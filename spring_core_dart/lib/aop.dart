@@ -22,6 +22,7 @@
 library;
 
 export 'package:spring_core_dart/src/aop/advisor.dart';
+export 'package:spring_core_dart/src/aop/aop_context.dart' show AopContext;
 export 'package:spring_core_dart/src/aop/annotations.dart';
 export 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 export 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';

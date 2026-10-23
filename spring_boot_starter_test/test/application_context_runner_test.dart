@@ -38,27 +38,121 @@ void main() {
     });
   });
 
-  test('withBean adds or replaces a bean; runners are immutable', () {
-    final withFake = runner.withBean<Greeter>(FakeGreeter());
-    withFake.run((context) {
-      expect(context, hasSingleBean<Greeter>());
-      expect(context.getBean<Greeter>(), isA<FakeGreeter>());
+  test('properties as key:value, trimmed, like TestPropertyValues', () {
+    runner
+        .withPropertyValues([
+          'greeting.prefix: Hey ',
+          'app.url=http://localhost:8080',
+          'app.time:12:30',
+          ' app.flag ',
+        ])
+        .run((context) {
+          expect(context.getBean<Greeter>().greet('Ada'), 'Hey, Ada');
+          final environment = context.environment;
+          expect(environment.getProperty('app.url'), 'http://localhost:8080');
+          expect(environment.getProperty('app.time'), '12:30');
+          expect(environment.getProperty('app.flag'), '');
+        });
+  });
+
+  group('withBean registers a bean before the configurations', () {
+    test('auto-configuration backs off; runners are immutable', () {
+      final withFake = runner.withBean<Greeter>(FakeGreeter());
+      withFake.run((context) {
+        expect(context, hasSingleBean<Greeter>());
+        expect(context, hasBeanNamed('greeter'));
+        expect(context.containsBean('defaultGreeter'), isFalse);
+        expect(context.getBean<Greeter>(), isA<FakeGreeter>());
+      });
+      runner.run((context) {
+        expect(context.getBean<Greeter>(), isA<RealGreeter>());
+      });
+      base.withBean(Counter()..value = 3).run((context) {
+        expect(context.getBean<Counter>().value, 3);
+        expect(context, hasBeanNamed('counter'));
+      });
+      // Spring's names: `URLService` stays as it is.
+      base.withBean(URLService()).run((context) {
+        expect(context, hasBeanNamed('URLService'));
+      });
     });
-    runner.run((context) {
-      expect(context.getBean<Greeter>(), isA<RealGreeter>());
+
+    test('also when the configuration was added first', () {
+      base
+          .withAutoConfiguration(greeterAutoConfiguration)
+          .withBean<Greeter>(FakeGreeter(), name: 'fake')
+          .run((context) {
+            expect(context, hasSingleBean<Greeter>());
+            expect(context.getBeanNamesForType<Greeter>(), ['fake']);
+          });
     });
-    base.withBean(Counter()..value = 3).run((context) {
-      expect(context.getBean<Counter>().value, 3);
-      expect(context, hasBeanNamed('counter'));
+
+    test('a missing back-off shows up as a second bean', () {
+      base
+          .withAutoConfiguration(greeterWithoutBackOff)
+          .withBean<Greeter>(FakeGreeter())
+          .run((context) {
+            expect(context, isNot(hasSingleBean<Greeter>()));
+            expect(context.getBeanNamesForType<Greeter>(), [
+              'greeter',
+              'eagerGreeter',
+            ]);
+          });
+    });
+
+    test('it never replaces a bean', () {
+      base
+          .withUserConfiguration(appModule())
+          .withBean<Mailer>(FakeMailer())
+          .run((context) {
+            expect(context.getBeanNamesForType<Mailer>(), [
+              'mailer',
+              'smtpMailer',
+              'sesMailer',
+            ]);
+          });
+      // The same name as a bean of the configurations: the start fails.
+      base
+          .withUserConfiguration(appModule())
+          .withBean<Greeter>(FakeGreeter())
+          .run((context) {
+            expect(context, hasFailed(isA<BeanDefinitionOverrideException>()));
+          });
     });
   });
 
-  test('an ambiguous override fails clearly', () {
-    base.withUserConfiguration(appModule()).withBean<Mailer>(FakeMailer()).run((
-      context,
-    ) {
-      expect(context, hasFailed());
-      expect('${context.startupFailure}', contains('smtpMailer, sesMailer'));
+  group('withBeanOverride replaces a bean (like @TestBean)', () {
+    test('keeps the name and qualifiers', () {
+      base
+          .withUserConfiguration(appModule())
+          .withBeanOverride<Mailer>(FakeMailer(), name: 'smtpMailer')
+          .run((context) {
+            expect(context.getBeanNamesForType<Mailer>(), [
+              'sesMailer',
+              'smtpMailer',
+            ]);
+            expect(
+              context.getBean<Mailer>(qualifier: 'primaryMail'),
+              isA<FakeMailer>(),
+            );
+            expect(
+              context.getBean<Notifier>().notify('Ada'),
+              'fake: Hello, Ada',
+            );
+          });
+    });
+
+    test('an ambiguous override fails clearly', () {
+      base
+          .withUserConfiguration(appModule())
+          .withBeanOverride<Mailer>(FakeMailer())
+          .run((context) {
+            expect(context, hasFailed());
+            expect(
+              '${context.startupFailure}',
+              contains('smtpMailer, sesMailer'),
+            );
+          });
     });
   });
 

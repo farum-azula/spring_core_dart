@@ -1,5 +1,9 @@
 # spring_boot_dart
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Spring Boot for Dart, on top of [`spring_core_dart`](../spring_core_dart)
 (re-exported: one import is enough). A separate package so it can live in its
 own repository later; it depends only on `spring_core_dart`.

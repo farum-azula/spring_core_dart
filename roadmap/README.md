@@ -19,7 +19,7 @@ Rules every plan follows:
 | File | Package | Status |
 |---|---|---|
 | [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart` | JSON next steps |
-| [fix_plan.md](fix_plan.md) | core, Boot, generator | open differences from Spring found in reviews |
+| [fix_plan.md](fix_plan.md) | all packages | open differences from Spring 7 / Boot 4 found in reviews, how close each area is |
 | [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | planned: controllers, SSE, WebSocket endpoints, `MockMvc` |
 | [spring_security_core.md](spring_security_core.md) | `spring_security_core` | planned: security context, `@PreAuthorize` (server and app) |
 | [spring_boot_starter_security.md](spring_boot_starter_security.md) | `spring_boot_starter_security` | planned: incoming requests — filter chain, Basic, sessions, JWT |

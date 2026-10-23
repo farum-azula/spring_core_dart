@@ -1,7 +1,8 @@
 # spring_boot_starter_scheduling
 
 Done: `@Scheduled` (cron, fixed rate and delay, placeholders), the task
-scheduler and `spring.task.scheduling.*`.
+scheduler and `spring.task.scheduling.enabled`. Differences from Spring to
+fix: [fix_plan.md](fix_plan.md#scheduling-starter).
 
 ## `TaskExecutor`: a pool of worker isolates
 

@@ -145,11 +145,12 @@ class LogBuffer extends LogAppender {
   }
 
   /// The records matching [query] as text, one record per [pattern]
-  /// (without the date by default), for sharing or copying.
+  /// (without the date by default; [LogPattern.formatLine], joined by line
+  /// breaks), for sharing or copying.
   String export([LogQuery query = const LogQuery(), LogPattern? pattern]) {
     final format =
-        pattern ?? LogPattern('%d{HH:mm:ss.SSS} %5p [%logger] %m%X%ex');
-    return [for (final record in this.query(query)) format.format(record)]
+        pattern ?? LogPattern('%d{HH:mm:ss.SSS} %5p [%logger] %m%X%n%ex');
+    return [for (final record in this.query(query)) format.formatLine(record)]
         .join('\n');
   }
 

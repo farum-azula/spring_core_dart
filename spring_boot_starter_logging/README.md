@@ -1,5 +1,9 @@
 # spring_boot_starter_logging
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Logging for [`spring_boot_dart`](../spring_boot_dart) applications, like
 `spring-boot-starter-logging`. Add the dependency; the generator discovers
 the auto-configuration and a `LoggingSystem` is installed behind the
@@ -17,36 +21,74 @@ const log = SpringLog('neon.checkout');
 log.info('paid 12.5', fields: {'order': 1});
 ```
 
+Spring Boot's console line (with `spring.application.name=shop`):
+
 ```text
-23:08:01.580  INFO [neon.checkout] paid 12.5 {order=1}
+2026-10-23T23:08:01.580+02:00  INFO 4711 --- [shop] [           main] neon.checkout                            : paid 12.5 {order=1}
 ```
 
 ## Properties
 
 ```properties
-logging.level.root=info                  # Boot's default with this starter
+logging.level.root=info                  # Boot's default with this starter (ROOT in any case)
 logging.level.neon.checkout=debug        # a logger and its descendants
 logging.group.payments=neon.card,neon.cash
 logging.level.payments=trace
-logging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m%X%ex
+logging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger{20}] %m%X%n%ex   # default: Boot's
+logging.pattern.dateformat=yyyy-MM-dd'T'HH:mm:ss.SSSXXX  # %d of the default patterns
+logging.pattern.level=%5p                # the level of the default patterns
+logging.pattern.correlation=             # after [thread] in the default patterns
+logging.exception-conversion-word=%wEx   # the error of the default patterns
+logging.include-application-name=true    # [spring.application.name] in the default patterns
+logging.include-application-group=true   # [spring.application.group]
+spring.output.ansi.enabled=detect        # %clr colours: detect (a terminal), always, never
 logging.threshold.console=warn           # console: warnings and errors only
 logging.console.enabled=true
 logging.buffer.enabled=true
 logging.buffer.capacity=1000
 logging.threshold.buffer=debug
 logging.file.name=logs/shop.log          # a log file (or logging.file.path=logs → logs/spring.log)
-logging.pattern.file=%d %5p [%logger] %m%X%ex
+logging.pattern.file=%d %5p [%logger] %m%X%n%ex   # default: Boot's
 logging.threshold.file=info
-logging.file.max-size=10MB               # roll over into shop.log.1, .2, ...
-logging.file.max-history=7               # rolled-over files kept
-logging.file.clean-history-on-start=false
+logging.logback.rollingpolicy.max-file-size=10MB  # roll over into shop.log.1, .2, ...
+logging.logback.rollingpolicy.max-history=7       # rolled-over files kept
+logging.logback.rollingpolicy.total-size-cap=0B   # their total size; 0B: no limit
+logging.logback.rollingpolicy.clean-history-on-start=false
 logging.enabled=false                    # turn the starter off
 ```
 
-Pattern tokens: `%d{yyyy-MM-dd HH:mm:ss.SSS}`, `%p`/`%level`,
-`%c`/`%logger`, `%m`/`%msg`, `%X{key}` (one field), `%X` (all fields),
-`%ex` (error and stack trace), `%seq`, `%n`, `%%`; widths pad (`%5p`,
-`%-20logger`). An unknown token fails the start.
+## Patterns
+
+Logback's `PatternLayout` syntax with Spring Boot's converters
+(`LogPattern`):
+
+| Conversion | Output |
+|---|---|
+| `%d`, `%date{pattern[, UTC]}` | time; Java pattern letters (`yyyy-MM-dd'T'HH:mm:ss.SSSXXX`, `EEE`, `MMM`, `a`, ...), `ISO8601` (the default: `yyyy-MM-dd HH:mm:ss,SSS`) |
+| `%p`, `%le`, `%level` | `TRACE DEBUG INFO WARN ERROR` |
+| `%c`, `%lo`, `%logger{n}` | logger name, shortened like Logback (`%logger{15}`: `n.c.Payments`; `{0}`: the last segment) |
+| `%m`, `%msg`, `%message` | message |
+| `%t`, `%thread` | isolate name (`main`) |
+| `%X{key}`, `%X{key:-default}`, `%X` | one field; all fields as ` {k=v, ...}` |
+| `%ex`, `%exception`, `%throwable{short\|full\|n}`, `%xEx`, `%rEx` | error and stack trace |
+| `%wEx` | the same between line breaks (Boot) |
+| `%nopex` | no error output |
+| `%clr(...){color}` | colours (Boot): `faint`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `black`, `white`, `bright_*`; none: by level |
+| `%esb(...){VAR}` | `[value] ` of its content or a variable, nothing when empty (Boot) |
+| `%(...)` | groups content for a format modifier |
+| `%r`, `%relative` | milliseconds since logging started |
+| `%seq` | record sequence number |
+| `%n`, `%%`, `\%`, `\(`, `\)` | line break, `%`, `(`, `)` |
+
+Format modifiers as in Logback: `%5p` pads left, `%-5p` right, `%.10c`
+keeps the last 10 characters, `%.-10c` the first 10, `%-40.40logger{39}`
+all of it. `${PID}`, `${LOG_LEVEL_PATTERN:-%5p}` and other `${NAME}` /
+`${NAME:-default}` are replaced first: Boot's logging variables (`PID`,
+`APPLICATION_NAME`, `LOG_DATEFORMAT_PATTERN`, ...), then properties
+(`${spring.application.name}`). As in Logback, a pattern without an error
+conversion still prints errors after the line. Anything the parser
+cannot read (an unknown word, an unclosed `(`, an unknown colour, date
+letter or variable) fails the start.
 
 ## Log files
 
@@ -54,9 +96,9 @@ Pattern tokens: `%d{yyyy-MM-dd HH:mm:ss.SSS}`, `%p`/`%level`,
 `spring.log`) turns on a `FileAppender`. Lines logged in one synchronous
 burst are written together at the end of the microtask; the rest is
 written when the context closes. When the file would grow past
-`max-size` it becomes `shop.log.1` (older ones shift to `.2`, `.3`, ...) and
-only `max-history` of them are kept. Differences from Logback: the history
-counts files, not days, and archives are not compressed.
+`max-file-size` it becomes `shop.log.1` (older ones shift to `.2`, `.3`,
+...); only `max-history` of them are kept, and the oldest are deleted while
+together they exceed `total-size-cap`.
 
 Relative locations are resolved against `LoggingSystem.instance.fileDirectory`
 when it is set, else against the working directory. In Flutter the
@@ -117,7 +159,7 @@ class _LogScreenState extends State<LogScreen> {
 | Share / copy | `buffer.export(query)` (or with a `LogPattern`) |
 | Clear | `buffer.clear()` |
 | Filters | `LogQuery(minLevel, levels, logger, text, fields, since)`, immutable, `copyWith` (`null` removes a criterion) |
-| Change levels at runtime | `loggingSystem.setLevel('neon', SpringLogLevel.debug)`, `rootLevel` |
+| Change levels at runtime | `loggingSystem.setLogLevel('neon', SpringLogLevel.debug)`, `setLogLevel('ROOT', ...)`, `rootLevel` |
 
 Records are immutable and carry `time`, `sequence` (a stable list key),
 `level`, `loggerName`, `message`, `fields`, `error`, `stackTrace`.
@@ -148,3 +190,23 @@ LoggingSystem.instance
   ..configure(environment) // the logging.* properties
   ..install();
 ```
+
+## Differences from Spring
+
+- One line per record: patterns are Logback's, but the console (`print`)
+  and the file add the line break, so a pattern's final `%n` is dropped
+  (`LogPattern.formatLine`). Boot's default patterns are used as they are
+  (`%m%n%wEx`), with the record's fields (`%X`) after the message.
+- `%thread` is the isolate name; `%X` prints ` {k=v, ...}` (with a leading
+  space, nothing without fields) instead of `k=v, k=v`.
+- Not supported: caller data (`%C`, `%M`, `%L`, `%F`, `%caller`),
+  `%marker`, `%property`, `%replace`, `%contextName`, Logback's colour
+  words (`%red`, `%highlight`, ...), `%d` time zones other than UTC (Dart
+  has no time zone database), `logback.xml` / `logback-spring.xml`.
+- `%clr` colours are on when `spring.output.ansi.enabled` says so; `detect`
+  means a terminal on standard output (never on the web or in a file).
+- Rolling is by size into numbered files (`shop.log.1`, `.2`, ...), not
+  `logging.logback.rollingpolicy.file-name-pattern` with dates;
+  `max-history` counts files, not days; archives are not compressed.
+- No structured logging (`logging.structured.*`), no `logging.config`,
+  no predefined `web` / `sql` logger groups, no `logging.charset.*`.

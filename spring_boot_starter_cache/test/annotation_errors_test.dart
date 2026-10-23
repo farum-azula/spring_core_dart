@@ -104,6 +104,9 @@ final class _Factory implements BeanFactory {
       name == 'region' ? 'eu' : throw StateError('no bean $name');
 
   @override
+  T? findBean<T extends Object>({String? qualifier}) => null;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

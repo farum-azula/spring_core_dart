@@ -62,6 +62,7 @@ final class MethodSignature {
     this.returnType = 'dynamic',
     this.parameterTypes = const [],
     this.parameterNames = const [],
+    this.parameterAnnotations = const [],
     this.annotations = const [],
     this.targetTypes = const [],
     this.targetAnnotations = const [],
@@ -94,6 +95,12 @@ final class MethodSignature {
   /// Parameter names, in the order of `JoinPoint.args` (positional, then
   /// named); used e.g. by cache keys such as `key: '#isbn'`.
   final List<String> parameterNames;
+
+  /// Const annotations of each parameter, in the order of [parameterNames]
+  /// (interface and implementation); used e.g. by method validation
+  /// (constraints and `@Valid` on parameters). Empty when no parameter
+  /// has annotations.
+  final List<List<Object>> parameterAnnotations;
 
   /// Const annotations on the member (interface and implementation).
   final List<Object> annotations;

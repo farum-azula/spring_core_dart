@@ -41,8 +41,11 @@ class Checkout {
 }
 ```
 
+Spring Boot's line (`[shop]` is `spring.application.name`, `[main]` the
+isolate):
+
 ```text
-2026-10-22 12:00:01.120  INFO --- [shop.checkout] paid 12.5
+2026-10-22T12:00:01.120+02:00  INFO 4711 --- [shop] [           main] shop.checkout                            : paid 12.5
 ```
 
 ## 2. Choose what is shown
@@ -59,7 +62,7 @@ Or without editing files: `LOGGING_LEVEL_SHOP_CHECKOUT=debug dart run bin/main.d
 
 ```dart
 log.info('order placed', fields: {'order': 42});
-// ... INFO --- [shop.checkout] order placed {order=42}
+// ... shop.checkout                            : order placed {order=42}
 
 // Everything logged inside gets the field (also in async code):
 SpringLog.withFields({'request': requestId}, () => handle(request));
@@ -68,19 +71,24 @@ SpringLog.withFields({'request': requestId}, () => handle(request));
 ## 4. Console format
 
 ```properties
-logging.pattern.console=%d{HH:mm:ss} %-5p [%logger] %m%X%ex
+logging.pattern.console=%d{HH:mm:ss} %-5p [%logger{20}] %m%X%n%ex
 logging.threshold.console=warn       # console shows only warnings and errors
+# or keep Spring Boot's line and change parts of it:
+logging.pattern.dateformat=HH:mm:ss.SSS
+logging.pattern.level=%-5p
 ```
 
-`%d` time, `%p` level, `%logger` name, `%m` message, `%X` fields,
-`%ex` error with stack trace.
+Logback's pattern syntax: `%d` time, `%p` level, `%logger{20}` name
+(shortened to about 20 characters), `%m` message, `%X` fields, `%t`
+isolate, `%ex` error with stack trace, `%clr(...)` colours, `%-20` /
+`%.20` widths. A pattern it cannot read stops the start.
 
 ## 5. Log files
 
 ```properties
 logging.file.name=logs/app.log
-logging.file.max-size=10MB           # then app.log.1, app.log.2, ...
-logging.file.max-history=7           # how many old files to keep
+logging.logback.rollingpolicy.max-file-size=10MB   # then app.log.1, app.log.2, ...
+logging.logback.rollingpolicy.max-history=7        # how many old files to keep
 ```
 
 In Flutter, set the writable folder before starting:
@@ -131,7 +139,8 @@ LoggingSystem.instance.addAppender(CrashReports());
 ## 8. Change levels while the app runs
 
 ```dart
-context.getBean<LoggingSystem>().setLevel('shop', SpringLogLevel.debug);
+context.getBean<LoggingSystem>().setLogLevel('shop', SpringLogLevel.debug);
+context.getBean<LoggingSystem>().setLogLevel('ROOT', SpringLogLevel.warning);
 ```
 
 ## Try it

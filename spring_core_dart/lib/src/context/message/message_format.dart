@@ -1,13 +1,23 @@
+import 'dart:typed_data';
+
 /// Formats messages with the `MessageFormat` syntax Spring message sources
-/// use (locale-neutral).
+/// use.
 ///
 /// Supported: `{0}` placeholders; quoting (`''` is a quote, text inside
-/// single quotes is literal); `{0,number}` (`#,##0.###`), `{0,number,integer}`,
-/// `{0,number,percent}`, `{0,number,<pattern>}` with `#`, `0`, `,`, `.`
-/// and literal prefix/suffix; `{0,date}`, `{0,time}` (ISO-8601 parts);
-/// `{0,choice,0#none|1#one|1<{0} many}`. Numbers without a format are
-/// grouped like Spring's default output (`1,234`). Missing arguments stay
-/// as `{n}`.
+/// single quotes is literal, a `}` outside a placeholder is literal);
+/// `{0,number}` (`#,##0.###`), `{0,number,integer}`,
+/// `{0,number,percent}`, `{0,number,<pattern>}` (`DecimalFormat` patterns:
+/// `#`, `0`, `,` grouping, `.` fraction, quoted and plain literal prefixes
+/// and suffixes, `%`, a `;negative` subpattern such as
+/// `#,##0.00;(#,##0.00)`); `{0,date}`, `{0,time}` (ISO-8601 parts);
+/// `{0,choice,0#none|1#one|1<{0} many}`. Numbers are rounded half-even on
+/// their exact binary value, like Java's `DecimalFormat` (`0.15` with
+/// `#.#` gives `0.1`: the double is slightly below 0.15). Missing arguments
+/// stay as `{n}`.
+///
+/// With a [format] `locale` (`de`, `fr_CA`, ...), numbers use its decimal
+/// and grouping separators (`1.234,5` in German, `1 234,5` in French);
+/// without one, US symbols.
 ///
 /// ```dart
 /// MessageFormat.format('Hello {0}, {1}!', ['Ada', 'Linus']);
@@ -17,6 +27,7 @@
 ///   'There {0,choice,0#are no files|1#is one file|1<are {0} files}.',
 ///   [1234],
 /// ); // There are 1,234 files.
+/// MessageFormat.format('{0,number}', [1234.5], locale: 'de'); // 1.234,5
 /// ```
 ///
 /// Spring (Java) uses `java.text.MessageFormat`:
@@ -26,16 +37,20 @@
 ///     .format(new Object[] {3.14159});
 /// ```
 ///
-/// Differences from Java: output is always US-style (`,` grouping, `.`
-/// decimals); `{0,number,currency}` gives two decimals without a symbol;
-/// dates and times use ISO-8601 parts instead of locale styles, and date
-/// styles (`short`, `long`, custom patterns) are ignored.
+/// Differences from Java: `{0,number,percent}` and `currency` keep the US
+/// layout (`26%`; currency gives two decimals without a symbol); the minus
+/// sign is always `-`; dates and times use ISO-8601 parts instead of locale
+/// styles, and date styles (`short`, `long`, custom patterns) are ignored;
+/// no scientific notation (`0.##E0`).
 abstract final class MessageFormat {
-  /// Formats [pattern] with [args].
+  /// Formats [pattern] with [args], with the number symbols of [locale].
   ///
-  /// Throws a `FormatException` for unmatched braces, a bad argument index,
+  /// Throws a `FormatException` for an unclosed `{`, a bad argument index,
   /// an unknown format type or an invalid number/choice pattern.
-  static String format(String pattern, List<Object?> args) {
+  static String format(String pattern, List<Object?> args, {String? locale}) =>
+      _format(pattern, args, _symbolsFor(locale));
+
+  static String _format(String pattern, List<Object?> args, _Symbols symbols) {
     final out = StringBuffer();
     var i = 0;
     var quoted = false;
@@ -53,16 +68,16 @@ abstract final class MessageFormat {
         i++;
         continue;
       }
+      // Outside a placeholder `}` is plain text, as in Java.
       if (quoted || c != '{') {
-        if (!quoted && c == '}') {
-          throw FormatException('Unmatched braces in the pattern', pattern, i);
-        }
         out.write(c);
         i++;
         continue;
       }
       final end = _closingBrace(pattern, i);
-      out.write(_formatArgument(pattern.substring(i + 1, end), args, pattern));
+      out.write(
+        _formatArgument(pattern.substring(i + 1, end), args, pattern, symbols),
+      );
       i = end + 1;
     }
     // An unterminated quote makes the rest literal (same as Spring).
@@ -95,6 +110,7 @@ abstract final class MessageFormat {
     String spec,
     List<Object?> args,
     String pattern,
+    _Symbols symbols,
   ) {
     final parts = _splitSpec(spec);
     final index = int.tryParse(parts.first.trim());
@@ -109,9 +125,9 @@ abstract final class MessageFormat {
     final style = parts.length > 2 ? parts[2] : null;
     switch (type) {
       case null:
-        return _plain(value);
+        return _plain(value, symbols);
       case 'number':
-        return _number(value, style?.trim(), pattern);
+        return _number(value, style?.trim(), pattern, symbols);
       case 'date':
         return value is DateTime
             ? value.toIso8601String().split('T').first
@@ -121,7 +137,7 @@ abstract final class MessageFormat {
             ? value.toIso8601String().split('T').last.substring(0, 8)
             : '$value';
       case 'choice':
-        return _choice(value, style ?? '', args, pattern);
+        return _choice(value, style ?? '', args, pattern, symbols);
       default:
         throw FormatException("Unknown format type '$type'", pattern);
     }
@@ -167,94 +183,82 @@ abstract final class MessageFormat {
 
   // `{n}` without a type: numbers like `{n,number}`, dates as
   // `yyyy-MM-dd HH:mm`, everything else via toString.
-  static String _plain(Object? value) => switch (value) {
+  static String _plain(Object? value, _Symbols symbols) => switch (value) {
     null => 'null',
-    num() => _decimal(value, minFraction: 0, maxFraction: 3, grouping: true),
+    num() => _decimal(value, _NumberPattern.standard, symbols),
     DateTime() =>
       value.toIso8601String().replaceFirst('T', ' ').substring(0, 16),
     _ => value.toString(),
   };
 
   // `{n,number[,style]}`; non-numbers are formatted as plain values.
-  static String _number(Object? value, String? style, String pattern) {
+  static String _number(
+    Object? value,
+    String? style,
+    String pattern,
+    _Symbols symbols,
+  ) {
     if (value is! num) {
-      return _plain(value);
+      return _plain(value, symbols);
     }
-    switch (style) {
-      case null || '':
-        return _decimal(value, minFraction: 0, maxFraction: 3, grouping: true);
-      case 'integer':
-        return _decimal(value, minFraction: 0, maxFraction: 0, grouping: true);
-      case 'percent':
-        return '${_decimal(value * 100, minFraction: 0, maxFraction: 0, grouping: true)}%';
-      case 'currency':
-        return _decimal(value, minFraction: 2, maxFraction: 2, grouping: true);
-      default:
-        return _customDecimal(value, style, pattern);
-    }
+    return switch (style) {
+      null || '' => _decimal(value, _NumberPattern.standard, symbols),
+      'integer' => _decimal(value, _NumberPattern.integer, symbols),
+      'percent' => _decimal(value, _NumberPattern.percent, symbols),
+      'currency' => _decimal(value, _NumberPattern.currency, symbols),
+      _ => _decimal(value, _NumberPattern.parse(style, pattern), symbols),
+    };
   }
 
-  /// Decimal pattern subset: optional literal prefix/suffix, `#`/`0`
-  /// digits, `,` grouping, `.` fraction, `%` multiplies by 100.
-  static String _customDecimal(num value, String style, String pattern) {
-    // Groups: literal prefix, integer digits, fraction digits, suffix.
-    final match = RegExp(r'^([^#0,.]*)([#0,]*)(?:\.([#0]*))?(.*)$')
-        .firstMatch(style);
-    if (match == null || (match[2]!.isEmpty && (match[3] ?? '').isEmpty)) {
-      throw FormatException("Invalid number pattern '$style'", pattern);
-    }
-    final prefix = match[1]!;
-    final integer = match[2]!;
-    final fraction = match[3] ?? '';
-    final suffix = match[4]!;
-    final percent = suffix.contains('%') || prefix.contains('%');
-    final minInteger = '0'.allMatches(integer).length;
-    final text = _decimal(
-      percent ? value * 100 : value,
-      minFraction: '0'.allMatches(fraction).length,
-      maxFraction: fraction.length,
-      grouping: integer.contains(','),
-      minInteger: minInteger,
-    );
-    return '$prefix$text$suffix';
-  }
-
-  /// Half-even rounding, as Spring's number formatting does.
-  static String _decimal(
-    num value, {
-    required int minFraction,
-    required int maxFraction,
-    required bool grouping,
-    int minInteger = 1,
-  }) {
+  /// Formats [value] with [format]: half-even rounding on the exact value,
+  /// prefixes/suffixes of the positive or negative subpattern.
+  static String _decimal(num value, _NumberPattern format, _Symbols symbols) {
     if (value is double && (value.isNaN || value.isInfinite)) {
       return value.isNaN ? 'NaN' : (value > 0 ? '∞' : '-∞');
     }
     final negative = value < 0;
-    // Round the magnitude to maxFraction digits, then drop trailing zeros
-    // down to minFraction and pad the integer part to minInteger.
-    final scaled = _roundHalfEven(value.abs(), maxFraction);
-    var text = scaled;
-    var integerPart = text.contains('.') ? text.split('.').first : text;
-    var fractionPart = text.contains('.') ? text.split('.').last : '';
-    while (fractionPart.length > minFraction && fractionPart.endsWith('0')) {
+    final magnitude = format.multiplier == 1
+        ? value.abs()
+        : value.abs() * format.multiplier;
+    // Round to maxFraction digits, then drop trailing zeros down to
+    // minFraction and pad the integer part to minInteger.
+    final rounded = _roundHalfEven(magnitude, format.maxFraction);
+    var integerPart = rounded.contains('.')
+        ? rounded.split('.').first
+        : rounded;
+    var fractionPart = rounded.contains('.') ? rounded.split('.').last : '';
+    while (fractionPart.length > format.minFraction &&
+        fractionPart.endsWith('0')) {
       fractionPart = fractionPart.substring(0, fractionPart.length - 1);
     }
-    integerPart = integerPart.padLeft(minInteger, '0');
+    integerPart = integerPart.padLeft(format.minInteger, '0');
     // `#.#` style patterns print `.5` rather than `0.5`, like Java.
-    if (minInteger == 0 && integerPart == '0' && fractionPart.isNotEmpty) {
+    if (format.minInteger == 0 &&
+        integerPart == '0' &&
+        fractionPart.isNotEmpty) {
       integerPart = '';
     }
-    if (grouping) {
-      integerPart = integerPart.replaceAllMapped(
-        RegExp(r'\B(?=(\d{3})+(?!\d))'),
-        (_) => ',',
-      );
+    if (format.groupingSize > 0 && integerPart.length > format.groupingSize) {
+      final groups = <String>[];
+      var end = integerPart.length;
+      while (end > 0) {
+        final start = end - format.groupingSize < 0
+            ? 0
+            : end - format.groupingSize;
+        groups.insert(0, integerPart.substring(start, end));
+        end = start;
+      }
+      integerPart = groups.join(symbols.grouping);
     }
-    text = fractionPart.isEmpty ? integerPart : '$integerPart.$fractionPart';
+    final digits = fractionPart.isEmpty
+        ? integerPart
+        : '$integerPart${symbols.decimal}$fractionPart';
     // No `-0`: values that round to zero lose their sign.
-    final isZero = RegExp(r'^[0.,]*$').hasMatch(text);
-    return negative && !isZero ? '-$text' : text;
+    final isZero = !rounded.contains(RegExp('[1-9]'));
+    if (negative && !isZero) {
+      return '${format.negativePrefix}$digits${format.negativeSuffix}';
+    }
+    return '${format.prefix}$digits${format.suffix}';
   }
 
   // [value] (non-negative) rounded half-even to exactly [digits] fraction
@@ -265,8 +269,7 @@ abstract final class MessageFormat {
     }
     final factor = BigInt.from(10).pow(digits);
     // Exact decimal expansion of the double, then banker's rounding.
-    final exact = _exactDecimal(value.toDouble());
-    final (whole, frac) = exact;
+    final (whole, frac) = _exactDecimal(value.toDouble());
     final kept = frac.padRight(digits + 1, '0');
     var units =
         BigInt.parse(whole) * factor +
@@ -288,25 +291,38 @@ abstract final class MessageFormat {
         : '${text.substring(0, text.length - digits)}.${text.substring(text.length - digits)}';
   }
 
-  /// Integer and fraction digits of [value] as written by `toString`,
-  /// expanded from exponent notation.
+  /// Integer and fraction digits of the exact binary value of [value]
+  /// (non-negative and finite): `0.15` is
+  /// `0.1499999999999999944488848768742172978818416595458984375`.
   static (String, String) _exactDecimal(double value) {
-    var text = value.toString();
-    if (text.contains('e') || text.contains('E')) {
-      final [mantissa, exponentText] = text.toLowerCase().split('e');
-      final exponent = int.parse(exponentText);
-      final [whole, fraction] = mantissa.contains('.')
-          ? mantissa.split('.')
-          : [mantissa, ''];
-      final digits = whole + fraction;
-      final point = whole.length + exponent;
-      // Dart only uses exponents below 1e-6 (point <= 0) and from 1e21 on
-      // (point beyond the digits).
-      text = point <= 0
-          ? '0.${'0' * -point}$digits'
-          : digits + '0' * (point - digits.length);
+    if (value == 0) {
+      return ('0', '');
     }
-    final [whole, fraction] = text.contains('.') ? text.split('.') : [text, ''];
+    final bytes = ByteData(8)..setFloat64(0, value);
+    final high = bytes.getUint32(0);
+    final low = bytes.getUint32(4);
+    final exponentBits = (high >> 20) & 0x7FF;
+    var mantissa = (BigInt.from(high & 0xFFFFF) << 32) | BigInt.from(low);
+    final int exponent;
+    if (exponentBits == 0) {
+      exponent = -1074; // subnormal
+    } else {
+      mantissa |= BigInt.one << 52;
+      exponent = exponentBits - 1075;
+    }
+    // value = mantissa × 2^exponent = mantissa × 5^k / 10^k for k = -exponent.
+    if (exponent >= 0) {
+      return ((mantissa << exponent).toString(), '');
+    }
+    final k = -exponent;
+    final digits = (mantissa * BigInt.from(5).pow(k)).toString().padLeft(
+      k + 1,
+      '0',
+    );
+    final whole = digits.substring(0, digits.length - k);
+    final fraction = digits
+        .substring(digits.length - k)
+        .replaceFirst(RegExp(r'0+$'), '');
     return (whole, fraction);
   }
 
@@ -317,6 +333,7 @@ abstract final class MessageFormat {
     String style,
     List<Object?> args,
     String pattern,
+    _Symbols symbols,
   ) {
     if (value is! num) {
       throw FormatException('choice format requires a number', pattern);
@@ -334,19 +351,19 @@ abstract final class MessageFormat {
     }
     // The chosen text is formatted again, which resolves nested arguments
     // (as in Java) and removes the quoting of literal `|`, `#` and `{`.
-    return format(options[index].$3, args);
+    return _format(options[index].$3, args, symbols);
   }
 
   // `limit#text`, `limit<text` or `limit≤text` → (limit, strict, text).
   static (double, bool, String) _parseChoice(String option, String pattern) {
-    final separator = RegExp('[#<\u2264]').firstMatch(option);
+    final separator = RegExp('[#<≤]').firstMatch(option);
     if (separator == null) {
       throw FormatException("Invalid choice '$option'", pattern);
     }
     final limitText = option.substring(0, separator.start).trim();
     final limit = switch (limitText) {
-      '\u221E' || 'Infinity' => double.infinity,
-      '-\u221E' || '-Infinity' => double.negativeInfinity,
+      '∞' || 'Infinity' => double.infinity,
+      '-∞' || '-Infinity' => double.negativeInfinity,
       _ =>
         double.tryParse(limitText) ??
             (throw FormatException(
@@ -360,4 +377,248 @@ abstract final class MessageFormat {
   // Splits choice options at top-level `|` (not inside nested `{...}` or
   // quotes, so `'|'` is a literal bar).
   static List<String> _splitChoices(String style) => _splitTopLevel(style, '|');
+
+  // Decimal and grouping separators of [locale] (CLDR, as Java uses them);
+  // US symbols for other and missing locales.
+  static _Symbols _symbolsFor(String? locale) {
+    if (locale == null || locale.trim().isEmpty) {
+      return _us;
+    }
+    final parts = locale.trim().replaceAll('-', '_').split('_');
+    final language = parts.first.toLowerCase();
+    final region = parts
+        .skip(1)
+        .where((p) => p.length == 2 || p.length == 3 && int.tryParse(p) != null)
+        .firstOrNull
+        ?.toUpperCase();
+    if (_regionSymbols['${language}_$region'] case final symbols?) {
+      return symbols;
+    }
+    return _languageSymbols[language] ?? _us;
+  }
+
+  static const _us = (decimal: '.', grouping: ',');
+  static const _dotGrouping = (decimal: ',', grouping: '.');
+  static const _spaceGrouping = (decimal: ',', grouping: ' ');
+
+  static const _languageSymbols = <String, _Symbols>{
+    'de': _dotGrouping,
+    'es': _dotGrouping,
+    'it': _dotGrouping,
+    'nl': _dotGrouping,
+    'pt': _dotGrouping,
+    'id': _dotGrouping,
+    'tr': _dotGrouping,
+    'da': _dotGrouping,
+    'el': _dotGrouping,
+    'ro': _dotGrouping,
+    'hr': _dotGrouping,
+    'sl': _dotGrouping,
+    'sr': _dotGrouping,
+    'vi': _dotGrouping,
+    'ca': _dotGrouping,
+    'fr': (decimal: ',', grouping: ' '),
+    'ru': _spaceGrouping,
+    'uk': _spaceGrouping,
+    'be': _spaceGrouping,
+    'pl': _spaceGrouping,
+    'cs': _spaceGrouping,
+    'sk': _spaceGrouping,
+    'sv': _spaceGrouping,
+    'nb': _spaceGrouping,
+    'no': _spaceGrouping,
+    'fi': _spaceGrouping,
+    'hu': _spaceGrouping,
+    'bg': _spaceGrouping,
+    'et': _spaceGrouping,
+    'lt': _spaceGrouping,
+    'lv': _spaceGrouping,
+    'kk': _spaceGrouping,
+  };
+
+  static const _regionSymbols = <String, _Symbols>{
+    'de_CH': (decimal: '.', grouping: '’'),
+    'de_LI': (decimal: '.', grouping: '’'),
+    'it_CH': (decimal: '.', grouping: '’'),
+    'pt_PT': _spaceGrouping,
+    'es_MX': _us,
+    'es_US': _us,
+    'fr_CH': (decimal: ',', grouping: ' '),
+  };
+}
+
+typedef _Symbols = ({String decimal, String grouping});
+
+/// A parsed `DecimalFormat` pattern: digit counts, grouping, and the
+/// literal prefix/suffix of the positive and negative subpatterns.
+final class _NumberPattern {
+  const _NumberPattern({
+    required this.minInteger,
+    required this.minFraction,
+    required this.maxFraction,
+    required this.groupingSize,
+    this.prefix = '',
+    this.suffix = '',
+    this.negativePrefix = '-',
+    this.negativeSuffix = '',
+    this.multiplier = 1,
+  });
+
+  final int minInteger;
+  final int minFraction;
+  final int maxFraction;
+
+  /// Digits per group; 0 for no grouping.
+  final int groupingSize;
+  final String prefix;
+  final String suffix;
+  final String negativePrefix;
+  final String negativeSuffix;
+
+  /// 100 for `%`, 1000 for `‰`.
+  final int multiplier;
+
+  /// `#,##0.###`.
+  static const standard = _NumberPattern(
+    minInteger: 1,
+    minFraction: 0,
+    maxFraction: 3,
+    groupingSize: 3,
+  );
+
+  /// `#,##0` with half-even rounding.
+  static const integer = _NumberPattern(
+    minInteger: 1,
+    minFraction: 0,
+    maxFraction: 0,
+    groupingSize: 3,
+  );
+
+  /// `#,##0%`.
+  static const percent = _NumberPattern(
+    minInteger: 1,
+    minFraction: 0,
+    maxFraction: 0,
+    groupingSize: 3,
+    suffix: '%',
+    negativeSuffix: '%',
+    multiplier: 100,
+  );
+
+  /// `#,##0.00` (no currency symbol).
+  static const currency = _NumberPattern(
+    minInteger: 1,
+    minFraction: 2,
+    maxFraction: 2,
+    groupingSize: 3,
+  );
+
+  static const _digitChars = '#0123456789,.';
+
+  /// Parses a `DecimalFormat` pattern such as `#,##0.00;(#,##0.00)` or
+  /// `'#'0 units`.
+  static _NumberPattern parse(String style, String pattern) {
+    final subpatterns = _splitNegative(style);
+    final positive = _parseSubpattern(subpatterns.first, style, pattern);
+    final negative = subpatterns.length > 1
+        ? _parseSubpattern(subpatterns[1], style, pattern)
+        : null;
+    final number = positive.number;
+    final dot = number.indexOf('.');
+    final integerPart = dot < 0 ? number : number.substring(0, dot);
+    final fractionPart = dot < 0 ? '' : number.substring(dot + 1);
+    if (integerPart.replaceAll(',', '').isEmpty && fractionPart.isEmpty) {
+      throw FormatException("Invalid number pattern '$style'", pattern);
+    }
+    final lastComma = integerPart.lastIndexOf(',');
+    final multiplier = positive.multiplier;
+    return _NumberPattern(
+      minInteger: RegExp('[0-9]').allMatches(integerPart).length,
+      minFraction: RegExp('[0-9]').allMatches(fractionPart).length,
+      maxFraction: fractionPart.length,
+      groupingSize: lastComma < 0 ? 0 : integerPart.length - lastComma - 1,
+      prefix: positive.prefix,
+      suffix: positive.suffix,
+      // Without a negative subpattern: a minus before the positive one.
+      negativePrefix: negative?.prefix ?? '-${positive.prefix}',
+      negativeSuffix: negative?.suffix ?? positive.suffix,
+      multiplier: multiplier,
+    );
+  }
+
+  // Splits at the `;` outside quotes.
+  static List<String> _splitNegative(String style) {
+    var quoted = false;
+    for (var i = 0; i < style.length; i++) {
+      if (style[i] == "'") {
+        quoted = !quoted;
+      } else if (!quoted && style[i] == ';') {
+        return [style.substring(0, i), style.substring(i + 1)];
+      }
+    }
+    return [style];
+  }
+
+  // Prefix (literal), number part (digits, `,`, `.`) and suffix (literal)
+  // of one subpattern; quotes make special characters literal (`''` is a
+  // quote).
+  static ({String prefix, String number, String suffix, int multiplier})
+  _parseSubpattern(String subpattern, String style, String pattern) {
+    final prefix = StringBuffer();
+    final number = StringBuffer();
+    final suffix = StringBuffer();
+    var multiplier = 1;
+    var phase = 0; // 0 prefix, 1 number, 2 suffix
+    var i = 0;
+    while (i < subpattern.length) {
+      final c = subpattern[i];
+      final literal = phase == 0 ? prefix : suffix;
+      if (c == "'") {
+        final end = subpattern.indexOf("'", i + 1);
+        if (end == i + 1) {
+          (phase == 1 ? suffix : literal).write("'");
+          if (phase == 1) {
+            phase = 2;
+          }
+          i += 2;
+          continue;
+        }
+        if (end < 0) {
+          throw FormatException("Unterminated quote in '$style'", pattern);
+        }
+        if (phase == 1) {
+          phase = 2;
+        }
+        (phase == 0 ? prefix : suffix).write(subpattern.substring(i + 1, end));
+        i = end + 1;
+        continue;
+      }
+      if (phase < 2 && _digitChars.contains(c)) {
+        phase = 1;
+        number.write(c);
+      } else {
+        if (phase == 1) {
+          phase = 2;
+        }
+        if (c == '%') {
+          multiplier = 100;
+        } else if (c == '‰') {
+          multiplier = 1000;
+        } else if (c == 'E' && phase == 2 && suffix.isEmpty) {
+          throw FormatException(
+            "Scientific notation is not supported: '$style'",
+            pattern,
+          );
+        }
+        (phase == 0 ? prefix : suffix).write(c);
+      }
+      i++;
+    }
+    return (
+      prefix: prefix.toString(),
+      number: number.toString(),
+      suffix: suffix.toString(),
+      multiplier: multiplier,
+    );
+  }
 }

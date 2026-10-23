@@ -1813,13 +1813,14 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.AdviceKind.before,
             pointcut: r'pricing()',
             methodName: r'before',
-            invoke: (aspect, joinPoint, value) => aspect.before(joinPoint),
+            invoke: (aspect, joinPoint, value, bindings) =>
+                aspect.before(joinPoint),
           ),
           _i2.AspectAdvice<_i1.AuditAspect>(
             kind: _i2.AdviceKind.afterReturning,
             pointcut: r'pricing() && execution(double *(..))',
             methodName: r'returned',
-            invoke: (aspect, joinPoint, value) =>
+            invoke: (aspect, joinPoint, value, bindings) =>
                 aspect.returned(joinPoint, (value as double)),
             accepts: (value) => value is double,
           ),
@@ -1827,7 +1828,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.AdviceKind.afterReturning,
             pointcut: r'execution(Future reserve(..))',
             methodName: r'reserved',
-            invoke: (aspect, joinPoint, value) =>
+            invoke: (aspect, joinPoint, value, bindings) =>
                 aspect.reserved((value as String)),
             accepts: (value) => value is String,
           ),
@@ -1835,7 +1836,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.AdviceKind.afterThrowing,
             pointcut: r'pricing()',
             methodName: r'failed',
-            invoke: (aspect, joinPoint, value) =>
+            invoke: (aspect, joinPoint, value, bindings) =>
                 aspect.failed((value as StateError)),
             accepts: (value) => value is StateError,
           ),
@@ -1843,7 +1844,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.AdviceKind.after,
             pointcut: r'pricing()',
             methodName: r'after',
-            invoke: (aspect, joinPoint, value) => aspect.after(joinPoint),
+            invoke: (aspect, joinPoint, value, bindings) =>
+                aspect.after(joinPoint),
           ),
         ],
         pointcuts: {r'pricing': r'within(DefaultPricingService)'},
@@ -1862,7 +1864,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.AdviceKind.around,
             pointcut: r'@annotation(Timed)',
             methodName: r'time',
-            invoke: (aspect, joinPoint, value) =>
+            invoke: (aspect, joinPoint, value, bindings) =>
                 aspect.time((joinPoint as _i2.ProceedingJoinPoint)),
           ),
         ],
@@ -4031,6 +4033,9 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
+            parameterAnnotations: [
+              [_i26.PathVariable()],
+            ],
             annotations: [
               _i26.GetMapping(r'/books/{isbn}'),
               _i27.Cacheable(r'remote-books', key: r'#isbn'),
@@ -4053,6 +4058,9 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'query'],
+            parameterAnnotations: [
+              [_i26.RequestParam(r'q')],
+            ],
             annotations: [_i26.GetMapping(r'/books')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'CatalogApi'],
@@ -4072,6 +4080,9 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'BookDto'],
             parameterNames: [r'book'],
+            parameterAnnotations: [
+              [_i26.RequestBody()],
+            ],
             annotations: [_i26.PostMapping(r'/books')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'CatalogApi'],
@@ -4231,7 +4242,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       'payment.mode=live\ndb.url=postgres://prod/books\n',
     ),
     r'application.properties': _i2.EmbeddedResource.text(
-      '# lib/resources/ is the classpath (like src/main/resources): this file is\n# found as classpath:application.properties (Spring Boot config data).\napp.name=NEON Books\napp.currency=EUR\n# Spring Boot\'s MessageSourceAutoConfiguration: classpath:messages/messages*.properties\nspring.messages.basename=messages/messages\nspring.profiles.active=dev\nspring.profiles.group.dev=dev-tools\nspring.config.import=optional:classpath:extra.properties\n\n# Environment variables in property values, like Spring: \${NAME} or\n# \${NAME:default}. Run e.g. `DB_PASSWORD=s3cret dart run bin/main.dart`.\ndb.user=\${DB_USER:books}\ndb.password=\${DB_PASSWORD:changeme}\ndb.connection=\${db.user}@\${db.url}\n\ncatalog.page-size=2\nspring.application.name=neon-books\nshop.delivery-time=2d\nshop.opening-hours=9-21\nshop.tags=fiction,science,poetry\nfeature.recommendations=true\n# @Scheduled(fixedDelayString: r\'\${shop.stock-refresh:1m}\') in StockJobs.\nshop.stock-refresh=20ms\n# ObjectMapper (JSON): null values are left out.\nspring.jackson.default-property-inclusion=non_null\n\n# spring_boot_starter_logging (bin/shop.dart): levels per logger (also\n# LOGGING_LEVEL_NEON_CHECKOUT=trace), console pattern, buffer size.\nlogging.level.neon=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m%X\nlogging.buffer.capacity=500\n# Also a log file (relative to the working directory; build/ is ignored by\n# git), rolled over at 1 MB into neon-books.log.1, .2, .3.\nlogging.file.name=build/logs/neon-books.log\nlogging.file.max-size=1MB\nlogging.file.max-history=3\n\n#---\n# A negated guard: applies to every profile except prod.\nspring.config.activate.on-profile=!prod\nlog.level=DEBUG\n',
+      '# lib/resources/ is the classpath (like src/main/resources): this file is\n# found as classpath:application.properties (Spring Boot config data).\napp.name=NEON Books\napp.currency=EUR\n# Spring Boot\'s MessageSourceAutoConfiguration: classpath:messages/messages*.properties\nspring.messages.basename=messages/messages\nspring.profiles.active=dev\nspring.profiles.group.dev=dev-tools\nspring.config.import=optional:classpath:extra.properties\n\n# Environment variables in property values, like Spring: \${NAME} or\n# \${NAME:default}. Run e.g. `DB_PASSWORD=s3cret dart run bin/main.dart`.\ndb.user=\${DB_USER:books}\ndb.password=\${DB_PASSWORD:changeme}\ndb.connection=\${db.user}@\${db.url}\n\ncatalog.page-size=2\nspring.application.name=neon-books\nshop.delivery-time=2d\nshop.opening-hours=9-21\nshop.tags=fiction,science,poetry\nfeature.recommendations=true\n# @Scheduled(fixedDelayString: r\'\${shop.stock-refresh:1m}\') in StockJobs.\nshop.stock-refresh=20ms\n# ObjectMapper (JSON): null values are left out.\nspring.jackson.default-property-inclusion=non_null\n\n# spring_boot_starter_logging (bin/shop.dart): levels per logger (also\n# LOGGING_LEVEL_NEON_CHECKOUT=trace), console pattern, buffer size.\nlogging.level.neon=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m%X\nlogging.buffer.capacity=500\n# Also a log file (relative to the working directory; build/ is ignored by\n# git), rolled over at 1 MB into neon-books.log.1, .2, .3.\nlogging.file.name=build/logs/neon-books.log\nlogging.logback.rollingpolicy.max-file-size=1MB\nlogging.logback.rollingpolicy.max-history=3\n\n#---\n# A negated guard: applies to every profile except prod.\nspring.config.activate.on-profile=!prod\nlog.level=DEBUG\n',
     ),
     r'extra.properties': _i2.EmbeddedResource.text(
       '# Pulled in with spring.config.import.\nsupport.email=help@neon.books\n',

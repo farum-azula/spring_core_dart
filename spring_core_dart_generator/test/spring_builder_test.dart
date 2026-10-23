@@ -1018,12 +1018,12 @@ class Audit {
       expect(
         output,
         _has(
-          "kind: _i1.AdviceKind.before, pointcut: r'all()', methodName: r'before', invoke: (aspect, joinPoint, value) => aspect.before(joinPoint))",
+          "kind: _i1.AdviceKind.before, pointcut: r'all()', methodName: r'before', invoke: (aspect, joinPoint, value, bindings) => aspect.before(joinPoint))",
         ),
       );
       expect(
         output,
-        _has('invoke: (aspect, joinPoint, value) => aspect.after()'),
+        _has('invoke: (aspect, joinPoint, value, bindings) => aspect.after()'),
       );
       expect(
         output,
@@ -2247,6 +2247,123 @@ class Remote {
       await _expectError(
         '$remote@Remote() abstract class Generic { T read<T>(); }',
         'must not be generic',
+      );
+    });
+  });
+
+  group('validation', () {
+    test('constraints on unsupported types fail the build', () async {
+      final cases = <String, (String, String)>{
+        'Size on int': (
+          '@Introspected() class Form { @Size(max: 3) int age = 0; }',
+          '@Size on Form.age: it validates String, Iterable, Map values, not '
+              'int',
+        ),
+        'NotBlank on a list': (
+          '@Introspected() class Form { @NotBlank() List<String> tags = []; }',
+          '@NotBlank on Form.tags',
+        ),
+        'Past on a string': (
+          '@Introspected() class Form { @Past() String? day; }',
+          '@Past on Form.day: it validates DateTime values, not String',
+        ),
+        'AssertTrue on an int': (
+          '@Introspected() class Form { @AssertTrue() int? ok; }',
+          '@AssertTrue on Form.ok',
+        ),
+        'Min on an Object': (
+          '@Introspected() class Form { @Min(1) Object? any; }',
+          '@Min on Form.any',
+        ),
+        'constructor parameter': (
+          '@Introspected() class Form { Form(@Email() this.id); final int id; }',
+          '@Email on Form(id)',
+        ),
+        'method parameter': (
+          '@Service() @Validated() class Users { '
+              'void save(@NotBlank() int id) {} }',
+          '@NotBlank on Users.save(id)',
+        ),
+        'return value': (
+          '@Service() @Validated() class Users { '
+              '@Size(max: 2) int count() => 1; }',
+          '@Size on Users.count (return value)',
+        ),
+      };
+      for (final MapEntry(key: name, value: (source, message))
+          in cases.entries) {
+        final result = await _build({
+          'lib/src/beans.dart': _scan,
+          'lib/src/service.dart': '$_header$source',
+        }, proxyMode: ProxyMode.all);
+        expect(result.succeeded, isFalse, reason: name);
+        expect(result.errors.join('\n'), contains(message), reason: name);
+      }
+    });
+
+    test('supported types build', () async {
+      final output = await _generate(r'''
+@Introspected()
+class Form {
+  @NotBlank() @Matches('[a-z]+') @Email() String? name;
+  @Size(max: 3) @NotEmpty() Map<String, int> scores = {};
+  @Size(max: 3) Set<int> ids = {};
+  @Min(1) @Digits(integer: 3, fraction: 0) int age = 1;
+  @DecimalMax('9.5') double rate = 0;
+  @Positive() BigInt big = BigInt.one;
+  @Max(10) String numeric = '1';
+  @FutureOrPresent() DateTime? start;
+  @AssertFalse() bool locked = false;
+  @NotNull() Object? any;
+  @Size(max: 1) dynamic loose;
+}
+
+@Service()
+@Validated()
+class Users {
+  @NotBlank()
+  Future<String> find(@Min(1) int id) async => 'x';
+}
+''', proxyMode: ProxyMode.all);
+      expect(output, contains('Form'));
+    });
+
+    test('proxy signatures carry the parameter annotations', () async {
+      final output = await _generate(r"""
+@Service()
+@Validated()
+class Users {
+  @NotBlank()
+  String register(@NotBlank() @Email() String email, int age, {@Valid() Object? extra}) => email;
+}
+""", proxyMode: ProxyMode.all);
+      expect(
+        output,
+        _has(
+          'parameterAnnotations: [[_i2.NotBlank(), _i2.Email()], [], '
+          '[_i2.Valid()]]',
+        ),
+      );
+    });
+
+    test('the generated code compiles', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/service.dart': r"""
+abstract interface class Registration {
+  String register(@NotBlank() String email, {@Min(18) int age = 18});
+}
+
+@Service()
+@Validated()
+class DefaultRegistration implements Registration {
+  @override
+  @Size(max: 20)
+  String register(String email, {int age = 18}) => email;
+}
+""",
+        }),
+        isEmpty,
       );
     });
   });

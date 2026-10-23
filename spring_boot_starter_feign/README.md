@@ -1,5 +1,9 @@
 # spring_boot_starter_feign
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Feign clients for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications, like Spring Cloud OpenFeign: describe an HTTP API as an
 abstract class with `@GetMapping`, `@PostMapping`, ... and inject it like

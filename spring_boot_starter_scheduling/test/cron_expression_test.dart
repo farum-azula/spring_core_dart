@@ -141,6 +141,39 @@ void main() {
       expect(next('0 0 0 ? * MON#5', utc(2026, 1, 1)), utc(2026, 3, 30));
     });
 
+    test('specials in lists, mixed with values', () {
+      expect(times('0 0 0 ? * MON#1,MON#3', utc(2026, 1, 1), 4), [
+        utc(2026, 1, 5),
+        utc(2026, 1, 19),
+        utc(2026, 2, 2),
+        utc(2026, 2, 16),
+      ]);
+      expect(times('0 0 0 1,L * *', utc(2026, 1, 1), 4), [
+        utc(2026, 1, 31),
+        utc(2026, 2, 1),
+        utc(2026, 2, 28),
+        utc(2026, 3, 1),
+      ]);
+      expect(times('0 0 0 L,15 * *', utc(2026, 1, 1), 3), [
+        utc(2026, 1, 15),
+        utc(2026, 1, 31),
+        utc(2026, 2, 15),
+      ]);
+      // 2026-02-01 and 2026-02-15 are Sundays.
+      expect(times('0 0 0 1W,15W * *', utc(2025, 12, 31), 4), [
+        utc(2026, 1, 1),
+        utc(2026, 1, 15),
+        utc(2026, 2, 2),
+        utc(2026, 2, 16),
+      ]);
+      // Saturdays and the last Friday of the month.
+      expect(times('0 0 0 ? * sat,FriL', utc(2026, 1, 24), 3), [
+        utc(2026, 1, 30),
+        utc(2026, 1, 31),
+        utc(2026, 2, 7),
+      ]);
+    });
+
     test('macros', () {
       expect(next('@yearly', utc(2026, 3, 1)), utc(2027));
       expect(next('@annually', utc(2026, 3, 1)), utc(2027));
@@ -149,7 +182,160 @@ void main() {
       expect(next('@daily', utc(2026, 1, 1, 5)), utc(2026, 1, 2));
       expect(next('@midnight', utc(2026, 1, 1, 5)), utc(2026, 1, 2));
       expect(next('@hourly', utc(2026, 1, 1, 5, 1)), utc(2026, 1, 1, 6));
+      expect(next('@DAILY', utc(2026, 1, 1, 5)), utc(2026, 1, 2));
     });
+  });
+
+  // Spring's CronField numbers the days like java.time: MON = 1 ... SUN = 7
+  // (0 is Sunday too, and 7 at the start of a range means 0).
+  group("Spring's day-of-week numbering", () {
+    // 2026-01-01 is a Thursday.
+    final cases = {
+      'SAT-SUN': [utc(2026, 1, 3), utc(2026, 1, 4), utc(2026, 1, 10)],
+      'sat-sun': [utc(2026, 1, 3), utc(2026, 1, 4), utc(2026, 1, 10)],
+      'MON-SUN': [utc(2026, 1, 2), utc(2026, 1, 3), utc(2026, 1, 4)],
+      'FRI-SUN': [utc(2026, 1, 2), utc(2026, 1, 3), utc(2026, 1, 4)],
+      'Fri-Sun': [utc(2026, 1, 2), utc(2026, 1, 3), utc(2026, 1, 4)],
+      'SUN-TUE': [utc(2026, 1, 4), utc(2026, 1, 5), utc(2026, 1, 6)],
+      '7-1': [utc(2026, 1, 4), utc(2026, 1, 5), utc(2026, 1, 11)],
+      'SUN-SAT': [utc(2026, 1, 2), utc(2026, 1, 3), utc(2026, 1, 4)],
+      '6-7': [utc(2026, 1, 3), utc(2026, 1, 4), utc(2026, 1, 10)],
+      '0-7': [utc(2026, 1, 2), utc(2026, 1, 3), utc(2026, 1, 4)],
+      '1-5': [utc(2026, 1, 2), utc(2026, 1, 5), utc(2026, 1, 6)],
+      'MON,SUN': [utc(2026, 1, 4), utc(2026, 1, 5), utc(2026, 1, 11)],
+      // `*` is 1-7: MON, WED, FRI, SUN.
+      '*/2': [utc(2026, 1, 2), utc(2026, 1, 4), utc(2026, 1, 5)],
+      '1/2': [utc(2026, 1, 2), utc(2026, 1, 4), utc(2026, 1, 5)],
+      // From 0 (Sunday): SUN, TUE, THU, SAT.
+      '0/2': [utc(2026, 1, 3), utc(2026, 1, 4), utc(2026, 1, 6)],
+      '?': [utc(2026, 1, 2), utc(2026, 1, 3), utc(2026, 1, 4)],
+    };
+    for (final MapEntry(key: days, value: expected) in cases.entries) {
+      test(days, () {
+        expect(times('0 0 0 * * $days', utc(2026, 1, 1), 3), expected);
+      });
+    }
+  });
+
+  // The examples of Spring's CronExpression javadoc and reference docs.
+  group("Spring's documented examples", () {
+    // 2026-01-01 is a Thursday; February 1st and March 1st are Sundays.
+    final cases = <(String, String, DateTime, List<DateTime>)>[
+      (
+        '0 0 * * * *',
+        'the top of every hour of every day',
+        utc(2026, 1, 1, 10, 30),
+        [utc(2026, 1, 1, 11), utc(2026, 1, 1, 12)],
+      ),
+      (
+        '*/10 * * * * *',
+        'every ten seconds',
+        utc(2026, 1, 1, 10, 0, 5),
+        [utc(2026, 1, 1, 10, 0, 10), utc(2026, 1, 1, 10, 0, 20)],
+      ),
+      (
+        '0 0 8-10 * * *',
+        "8, 9 and 10 o'clock of every day",
+        utc(2026, 1, 1),
+        [
+          utc(2026, 1, 1, 8),
+          utc(2026, 1, 1, 9),
+          utc(2026, 1, 1, 10),
+          utc(2026, 1, 2, 8),
+        ],
+      ),
+      (
+        '0 0 6,19 * * *',
+        '6:00 AM and 7:00 PM every day',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 1, 6), utc(2026, 1, 1, 19), utc(2026, 1, 2, 6)],
+      ),
+      (
+        '0 0/30 8-10 * * *',
+        '8:00, 8:30, 9:00, 9:30, 10:00 and 10:30 every day',
+        utc(2026, 1, 1),
+        [
+          utc(2026, 1, 1, 8),
+          utc(2026, 1, 1, 8, 30),
+          utc(2026, 1, 1, 9),
+          utc(2026, 1, 1, 9, 30),
+          utc(2026, 1, 1, 10),
+          utc(2026, 1, 1, 10, 30),
+          utc(2026, 1, 2, 8),
+        ],
+      ),
+      (
+        '0 0 9-17 * * MON-FRI',
+        'on the hour nine-to-five weekdays',
+        utc(2026, 1, 2, 17),
+        [utc(2026, 1, 5, 9), utc(2026, 1, 5, 10)],
+      ),
+      (
+        '0 0 0 25 12 ?',
+        'every Christmas Day at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 12, 25), utc(2027, 12, 25)],
+      ),
+      (
+        '0 0 0 25 DEC ?',
+        'every Christmas Day at midnight (month name)',
+        utc(2026, 1, 1),
+        [utc(2026, 12, 25), utc(2027, 12, 25)],
+      ),
+      (
+        '0 0 0 L * *',
+        'last day of the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 31), utc(2026, 2, 28), utc(2026, 3, 31)],
+      ),
+      (
+        '0 0 0 L-3 * *',
+        'third-to-last day of the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 28), utc(2026, 2, 25), utc(2026, 3, 28)],
+      ),
+      (
+        '0 0 0 1W * *',
+        'first weekday of the month at midnight',
+        utc(2025, 12, 31),
+        [utc(2026, 1, 1), utc(2026, 2, 2), utc(2026, 3, 2)],
+      ),
+      (
+        '0 0 0 LW * *',
+        'last weekday of the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 30), utc(2026, 2, 27), utc(2026, 3, 31)],
+      ),
+      (
+        '0 0 0 * * 5L',
+        'last Friday of the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 30), utc(2026, 2, 27), utc(2026, 3, 27)],
+      ),
+      (
+        '0 0 0 * * THUL',
+        'last Thursday of the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 29), utc(2026, 2, 26), utc(2026, 3, 26)],
+      ),
+      (
+        '0 0 0 ? * 5#2',
+        'the second Friday in the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 9), utc(2026, 2, 13), utc(2026, 3, 13)],
+      ),
+      (
+        '0 0 0 ? * MON#1',
+        'the first Monday in the month at midnight',
+        utc(2026, 1, 1),
+        [utc(2026, 1, 5), utc(2026, 2, 2), utc(2026, 3, 2)],
+      ),
+    ];
+    for (final (cron, meaning, after, expected) in cases) {
+      test('$cron: $meaning', () {
+        expect(times(cron, after, expected.length), expected);
+      });
+    }
   });
 
   test('local time stays local', () {
@@ -174,10 +360,16 @@ void main() {
       '* * * * FOO *': "'FOO' is not a number or a name",
       '* * * * * 8': 'day-of-week field "8"',
       '* * * * * FRI-MON': 'goes backwards',
+      '* * * * * SAT-FRI': 'goes backwards',
       '*/0 * * * * *': 'step',
-      '* * * 1,L * *': 'not in lists',
+      '* * * L-0 * *': 'the offset after L- must be 1-30',
+      '* * * L3 * *': 'day-of-month field "L3"',
+      '* * * W * *': 'day-of-month specials',
+      '* * * 1,L,X * *': "'X' is not a number",
       '* * * * * MON#6': 'ordinal',
       '* * * * * L': 'day-of-week',
+      '* * * * * 5L3': 'day-of-week specials',
+      '* * * * * MON#1,XYZ': "'XYZ' is not a number or a name",
       '1,,2 * * * * *': 'empty list element',
       '1-2-3 * * * * *': 'not a range',
     };

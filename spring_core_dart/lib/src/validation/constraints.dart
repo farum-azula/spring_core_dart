@@ -88,17 +88,48 @@ abstract class Constraint {
   /// class-level constraints it is the annotated object itself.
   bool isValid(Object? value);
 
+  /// Whether [value] satisfies the constraint, with access to the
+  /// validation [context] (its clock, custom violations), like Jakarta's
+  /// `ConstraintValidator.isValid(value, context)`.
+  ///
+  /// `BeanValidator` calls this method; by default it calls [isValid].
+  /// Override it to read the injectable clock or to report violations on
+  /// a property of a class-level constraint:
+  ///
+  /// ```dart
+  /// @override
+  /// bool isValidWithContext(Object? value, ConstraintValidatorContext context) {
+  ///   if (isValid(value)) return true;
+  ///   context
+  ///     ..disableDefaultConstraintViolation()
+  ///     ..buildConstraintViolationWithTemplate(context.defaultConstraintMessageTemplate)
+  ///         .addPropertyNode('confirm')
+  ///         .addConstraintViolation();
+  ///   return false;
+  /// }
+  /// ```
+  bool isValidWithContext(Object? value, ConstraintValidatorContext context) =>
+      isValid(value);
+
   /// [message] or [defaultMessage] with attributes interpolated.
   ///
   /// ```dart
   /// const Size(max: 20).interpolatedMessage();
   /// // 'size must be between 0 and 20'
   /// ```
-  String interpolatedMessage() {
+  String interpolatedMessage() => interpolate(message ?? defaultMessage);
+
+  /// [template] with `{attribute}` placeholders replaced by the attribute
+  /// values; other placeholders are kept.
+  ///
+  /// ```dart
+  /// const Size(max: 20).interpolate('at most {max}'); // 'at most 20'
+  /// ```
+  String interpolate(String template) {
     // One pass, so an attribute value containing braces (a regular
     // expression such as `[A-Z]{2,3}`) is not interpolated again.
     final attributes = this.attributes;
-    return (message ?? defaultMessage).replaceAllMapped(
+    return template.replaceAllMapped(
       RegExp(r'\{(\w+)\}'),
       (match) => attributes.containsKey(match.group(1))
           ? '${attributes[match.group(1)]}'
@@ -118,6 +149,129 @@ abstract class Constraint {
       return requested.contains(Default);
     }
     return groups.any(requested.contains);
+  }
+}
+
+/// The current time for the date constraints, like Jakarta's
+/// `ClockProvider` (here the time itself; Dart has no `Clock` type).
+///
+/// ```dart
+/// final class FixedClock implements ClockProvider {
+///   const FixedClock(this.time);
+///   final DateTime time;
+///   @override
+///   DateTime now() => time;
+/// }
+///
+/// BeanValidator(clockProvider: FixedClock(DateTime.utc(2026, 1, 1)));
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+/// validator.setClockProvider(() -> Clock.fixed(instant, ZoneOffset.UTC));
+/// ```
+abstract interface class ClockProvider {
+  /// The current time.
+  DateTime now();
+}
+
+/// The system clock (`DateTime.now()`), Jakarta's default `ClockProvider`.
+final class DefaultClockProvider implements ClockProvider {
+  /// Creates the system clock provider.
+  const DefaultClockProvider();
+
+  @override
+  DateTime now() => DateTime.now();
+}
+
+/// What a constraint can use and report while validating a value, like
+/// Jakarta's `ConstraintValidatorContext` (see
+/// [Constraint.isValidWithContext]).
+///
+/// ```dart
+/// // A class-level constraint reporting on the `confirm` property.
+/// context
+///   ..disableDefaultConstraintViolation()
+///   ..buildConstraintViolationWithTemplate('{passwords.mismatch}')
+///       .addPropertyNode('confirm')
+///       .addConstraintViolation();
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// context.disableDefaultConstraintViolation();
+/// context.buildConstraintViolationWithTemplate("{passwords.mismatch}")
+///     .addPropertyNode("confirm")
+///     .addConstraintViolation();
+/// ```
+final class ConstraintValidatorContext {
+  /// A context for a constraint whose message template is
+  /// [defaultConstraintMessageTemplate]; [clockProvider] gives the time.
+  ConstraintValidatorContext({
+    required this.defaultConstraintMessageTemplate,
+    this.clockProvider = const DefaultClockProvider(),
+  });
+
+  /// The clock of the validator, for date constraints.
+  final ClockProvider clockProvider;
+
+  /// The constraint's message template (`message` or its default).
+  final String defaultConstraintMessageTemplate;
+
+  bool _defaultDisabled = false;
+  final _violations = <({String messageTemplate, List<String> nodes})>[];
+
+  /// Whether [disableDefaultConstraintViolation] was called (read by the
+  /// validator).
+  bool get defaultConstraintViolationDisabled => _defaultDisabled;
+
+  /// The violations added with [buildConstraintViolationWithTemplate], in
+  /// order: their message template and property nodes (read by the
+  /// validator).
+  List<({String messageTemplate, List<String> nodes})> get customViolations =>
+      List.unmodifiable(_violations);
+
+  /// Leaves out the violation the validator reports when the constraint
+  /// fails, so only custom ones are reported.
+  void disableDefaultConstraintViolation() => _defaultDisabled = true;
+
+  /// Starts a custom violation with [messageTemplate] (`{key}` and
+  /// attribute placeholders are interpolated).
+  ConstraintViolationBuilder buildConstraintViolationWithTemplate(
+    String messageTemplate,
+  ) => ConstraintViolationBuilder._(this, messageTemplate);
+}
+
+/// Builds a custom violation, like Jakarta's `ConstraintViolationBuilder`.
+///
+/// ```dart
+/// context
+///     .buildConstraintViolationWithTemplate('must match the password')
+///     .addPropertyNode('confirm')
+///     .addConstraintViolation();
+/// ```
+final class ConstraintViolationBuilder {
+  ConstraintViolationBuilder._(this._context, this._template);
+
+  final ConstraintValidatorContext _context;
+  final String _template;
+  final _nodes = <String>[];
+
+  /// Reports the violation on property [name] (relative to the validated
+  /// object; call again for nested properties).
+  ConstraintViolationBuilder addPropertyNode(String name) {
+    _nodes.add(name);
+    return this;
+  }
+
+  /// Adds the violation to the context.
+  ConstraintValidatorContext addConstraintViolation() {
+    _context._violations.add((
+      messageTemplate: _template,
+      nodes: List.unmodifiable(_nodes),
+    ));
+    return _context;
   }
 }
 
@@ -257,7 +411,9 @@ class NotEmpty extends Constraint {
   bool isValid(Object? value) => value != null && (_length(value) ?? 1) > 0;
 }
 
-/// Not null and with at least one non-whitespace character.
+/// Not null and with at least one character above U+0020, like Hibernate
+/// Validator (Java's `String.trim()`: a no-break space counts as text,
+/// control characters do not).
 ///
 /// ```dart
 /// @Introspected()
@@ -286,7 +442,7 @@ class NotBlank extends Constraint {
 
   @override
   bool isValid(Object? value) =>
-      value != null && value.toString().trim().isNotEmpty;
+      value != null && '$value'.codeUnits.any((unit) => unit > 0x20);
 }
 
 /// Length of a string, collection or map within [min]..[max].
@@ -340,8 +496,101 @@ class Size extends Constraint {
   }
 }
 
-/// A number greater than or equal to [value]; `null` and non-numbers are
-/// valid.
+/// An exact decimal number (`unscaled × 10^-scale`), like `BigDecimal`, so
+/// numeric constraints compare `int`, `double`, `BigInt` and numeric
+/// strings without rounding.
+final class _Decimal implements Comparable<_Decimal> {
+  const _Decimal(this.unscaled, this.scale);
+
+  final BigInt unscaled;
+  final int scale;
+
+  static final _syntax = RegExp(
+    r'^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$',
+  );
+
+  /// `BigDecimal(text)`: `12`, `-1.50`, `1e3`; `null` when malformed.
+  static _Decimal? parse(String text) {
+    final match = _syntax.firstMatch(text);
+    if (match == null) {
+      return null;
+    }
+    final whole = match[2]!;
+    final fraction = match[3] ?? '';
+    if (whole.isEmpty && fraction.isEmpty) {
+      return null;
+    }
+    final digits = BigInt.parse('$whole$fraction');
+    final exponent = int.parse(match[4] ?? '0');
+    return _Decimal(
+      match[1] == '-' ? -digits : digits,
+      fraction.length - exponent,
+    );
+  }
+
+  /// [value] as a decimal: a finite `num`, a `BigInt` or a numeric string.
+  static _Decimal? of(Object? value) => switch (value) {
+    final int value => _Decimal(BigInt.from(value), 0),
+    final double value when value.isFinite => parse('$value'),
+    final BigInt value => _Decimal(value, 0),
+    final String value => parse(value),
+    _ => null,
+  };
+
+  int get signum => unscaled.sign;
+
+  /// Number of significant digits of [unscaled] (`BigDecimal.precision()`).
+  int get precision =>
+      unscaled == BigInt.zero ? 1 : unscaled.abs().toString().length;
+
+  _Decimal stripTrailingZeros() {
+    if (unscaled == BigInt.zero) {
+      return _Decimal(BigInt.zero, 0);
+    }
+    var digits = unscaled;
+    var scale = this.scale;
+    final ten = BigInt.from(10);
+    while (digits % ten == BigInt.zero) {
+      digits ~/= ten;
+      scale--;
+    }
+    return _Decimal(digits, scale);
+  }
+
+  @override
+  int compareTo(_Decimal other) {
+    final scale = this.scale > other.scale ? this.scale : other.scale;
+    BigInt scaled(_Decimal d) =>
+        d.unscaled * BigInt.from(10).pow(scale - d.scale);
+    return scaled(this).compareTo(scaled(other));
+  }
+}
+
+// The sign of [value] − [bound] for numeric constraints: `null` (valid)
+// for `null` and values that are not numbers, `BigInt`s or strings; `NaN`
+// (never valid) for `double.nan` and malformed numeric strings, like
+// Hibernate Validator.
+num? _compare(Object? value, _Decimal bound) {
+  if (value is double && !value.isFinite) {
+    return value.isNaN ? double.nan : value.sign;
+  }
+  if (value is! num && value is! BigInt && value is! String) {
+    return null;
+  }
+  return _Decimal.of(value)?.compareTo(bound) ?? double.nan;
+}
+
+final _zero = _Decimal(BigInt.zero, 0);
+
+_Decimal _bound(num value) =>
+    _Decimal.of(value) ??
+    (throw ArgumentError.value(value, 'value', 'not a finite number'));
+
+/// A number greater than or equal to [value]; `null` is valid.
+///
+/// Checks `int`, `double`, `BigInt` and numeric strings (exactly, like
+/// Hibernate Validator; a string that is not a number fails); other value
+/// types are valid.
 ///
 /// ```dart
 /// @Introspected()
@@ -375,11 +624,15 @@ class Min extends Constraint {
   Map<String, Object?> get attributes => {'value': value};
 
   @override
-  bool isValid(Object? value) => value is! num || value >= this.value;
+  bool isValid(Object? value) {
+    final sign = _compare(value, _bound(this.value));
+    return sign == null || sign >= 0;
+  }
 }
 
-/// A number less than or equal to [value]; `null` and non-numbers are
-/// valid.
+/// A number less than or equal to [value]; `null` is valid.
+///
+/// Checks `int`, `double`, `BigInt` and numeric strings like [Min].
 ///
 /// ```dart
 /// @Introspected()
@@ -413,10 +666,130 @@ class Max extends Constraint {
   Map<String, Object?> get attributes => {'value': value};
 
   @override
-  bool isValid(Object? value) => value is! num || value <= this.value;
+  bool isValid(Object? value) {
+    final sign = _compare(value, _bound(this.value));
+    return sign == null || sign <= 0;
+  }
 }
 
-/// A number strictly greater than 0; `null` and non-numbers are valid.
+/// A decimal number greater than (or equal to, when [inclusive]) [value],
+/// like Jakarta's `@DecimalMin`; `null` is valid.
+///
+/// [value] is a decimal string (`'0.01'`), compared exactly with `int`,
+/// `double`, `BigInt` and numeric strings. Error arguments are
+/// `[field, inclusive, value]`.
+///
+/// ```dart
+/// @Introspected()
+/// class Product {
+///   @DecimalMin('0.01')
+///   double price = 1;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class Product {
+///   @DecimalMin("0.01")
+///   private BigDecimal price;
+/// }
+/// ```
+class DecimalMin extends Constraint {
+  /// Creates a `@DecimalMin` constraint with the lower bound [value].
+  const DecimalMin(
+    this.value, {
+    this.inclusive = true,
+    super.message,
+    super.groups,
+  });
+
+  /// The lower bound, as a decimal string.
+  final String value;
+
+  /// Whether [value] itself is valid.
+  final bool inclusive;
+
+  @override
+  String get name => 'DecimalMin';
+
+  @override
+  String get defaultMessage => inclusive
+      ? 'must be greater than or equal to {value}'
+      : 'must be greater than {value}';
+
+  @override
+  Map<String, Object?> get attributes => {
+    'inclusive': inclusive,
+    'value': value,
+  };
+
+  @override
+  bool isValid(Object? value) {
+    final sign = _compare(value, _decimalBound(this.value));
+    return sign == null || (inclusive ? sign >= 0 : sign > 0);
+  }
+}
+
+/// A decimal number less than (or equal to, when [inclusive]) [value],
+/// like Jakarta's `@DecimalMax`; `null` is valid.
+///
+/// ```dart
+/// @Introspected()
+/// class Discount {
+///   @DecimalMax('100', inclusive: false)
+///   double percent = 0;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class Discount {
+///   @DecimalMax(value = "100", inclusive = false)
+///   private BigDecimal percent;
+/// }
+/// ```
+class DecimalMax extends Constraint {
+  /// Creates a `@DecimalMax` constraint with the upper bound [value].
+  const DecimalMax(
+    this.value, {
+    this.inclusive = true,
+    super.message,
+    super.groups,
+  });
+
+  /// The upper bound, as a decimal string.
+  final String value;
+
+  /// Whether [value] itself is valid.
+  final bool inclusive;
+
+  @override
+  String get name => 'DecimalMax';
+
+  @override
+  String get defaultMessage => inclusive
+      ? 'must be less than or equal to {value}'
+      : 'must be less than {value}';
+
+  @override
+  Map<String, Object?> get attributes => {
+    'inclusive': inclusive,
+    'value': value,
+  };
+
+  @override
+  bool isValid(Object? value) {
+    final sign = _compare(value, _decimalBound(this.value));
+    return sign == null || (inclusive ? sign <= 0 : sign < 0);
+  }
+}
+
+_Decimal _decimalBound(String value) =>
+    _Decimal.parse(value.trim()) ??
+    (throw ArgumentError.value(value, 'value', 'not a decimal number'));
+
+/// A number strictly greater than 0; `null` is valid (numbers, `BigInt`s
+/// and numeric strings are checked, like [Min]).
 ///
 /// ```dart
 /// @Introspected()
@@ -444,10 +817,13 @@ class Positive extends Constraint {
   String get defaultMessage => 'must be greater than 0';
 
   @override
-  bool isValid(Object? value) => value is! num || value > 0;
+  bool isValid(Object? value) {
+    final sign = _compare(value, _zero);
+    return sign == null || sign > 0;
+  }
 }
 
-/// A number greater than or equal to 0; `null` and non-numbers are valid.
+/// A number greater than or equal to 0; `null` is valid (see [Positive]).
 ///
 /// ```dart
 /// @Introspected()
@@ -475,10 +851,13 @@ class PositiveOrZero extends Constraint {
   String get defaultMessage => 'must be greater than or equal to 0';
 
   @override
-  bool isValid(Object? value) => value is! num || value >= 0;
+  bool isValid(Object? value) {
+    final sign = _compare(value, _zero);
+    return sign == null || sign >= 0;
+  }
 }
 
-/// A number strictly less than 0; `null` and non-numbers are valid.
+/// A number strictly less than 0; `null` is valid (see [Positive]).
 ///
 /// ```dart
 /// @Introspected()
@@ -506,10 +885,13 @@ class Negative extends Constraint {
   String get defaultMessage => 'must be less than 0';
 
   @override
-  bool isValid(Object? value) => value is! num || value < 0;
+  bool isValid(Object? value) {
+    final sign = _compare(value, _zero);
+    return sign == null || sign < 0;
+  }
 }
 
-/// A number less than or equal to 0; `null` and non-numbers are valid.
+/// A number less than or equal to 0; `null` is valid (see [Positive]).
 ///
 /// ```dart
 /// @Introspected()
@@ -537,19 +919,54 @@ class NegativeOrZero extends Constraint {
   String get defaultMessage => 'must be less than or equal to 0';
 
   @override
-  bool isValid(Object? value) => value is! num || value <= 0;
+  bool isValid(Object? value) {
+    final sign = _compare(value, _zero);
+    return sign == null || sign <= 0;
+  }
 }
+
+/// Regular expression flags of [Matches] and [Email], like Jakarta's
+/// `Pattern.Flag` (the ones Dart's `RegExp` supports).
+enum PatternFlag {
+  /// `CASE_INSENSITIVE`: letters match regardless of case.
+  caseInsensitive,
+
+  /// `MULTILINE`: `^` and `$` also match at line breaks.
+  multiline,
+
+  /// `DOTALL`: `.` also matches line breaks.
+  dotall,
+
+  /// `UNICODE_CASE`: Unicode-aware matching (Dart's `unicode: true`).
+  unicodeCase,
+}
+
+// Whether the whole of [text] matches [regexp] (Java's `Matcher.matches()`;
+// the end is asserted with a lookahead so `multiline` keeps the meaning).
+bool _fullMatch(String regexp, List<PatternFlag> flags, String text) =>
+    RegExp(
+      '(?:$regexp)(?![\\s\\S])',
+      caseSensitive: !flags.contains(PatternFlag.caseInsensitive),
+      multiLine: flags.contains(PatternFlag.multiline),
+      dotAll: flags.contains(PatternFlag.dotall),
+      unicode: flags.contains(PatternFlag.unicodeCase),
+    ).matchAsPrefix(text) !=
+    null;
 
 /// A string fully matching [regexp]; error code `Pattern` (renamed: `Pattern`
 /// is a Dart core type).
 ///
-/// The whole value must match (the pattern is anchored); `null` is valid.
+/// The whole value must match (Java's `Matcher.matches()`); `null` is
+/// valid. Error arguments are `[field, flags, regexp]`, as in Spring.
 ///
 /// ```dart
 /// @Introspected()
 /// class Address {
 ///   @Matches(r'\d{5}', message: 'must be 5 digits')
 ///   String? zip;
+///
+///   @Matches('[a-z]+', flags: [PatternFlag.caseInsensitive])
+///   String code = 'abc';
 /// }
 /// ```
 ///
@@ -558,13 +975,16 @@ class NegativeOrZero extends Constraint {
 /// class Address {
 ///   @Pattern(regexp = "\\d{5}", message = "must be 5 digits")
 ///   private String zip;
+///
+///   @Pattern(regexp = "[a-z]+", flags = Pattern.Flag.CASE_INSENSITIVE)
+///   private String code;
 /// }
 /// ```
 class Matches extends Constraint {
   /// Creates a `@Matches` constraint for the regular expression [regexp].
   const Matches(
     this.regexp, {
-    this.caseSensitive = true,
+    this.flags = const [],
     super.message,
     super.groups,
   });
@@ -572,9 +992,8 @@ class Matches extends Constraint {
   /// The regular expression the whole value must match.
   final String regexp;
 
-  /// Whether matching is case-sensitive (Jakarta's
-  /// `flags = Pattern.Flag.CASE_INSENSITIVE` when `false`).
-  final bool caseSensitive;
+  /// How [regexp] is matched (Jakarta's `flags`).
+  final List<PatternFlag> flags;
 
   @override
   String get name => 'Pattern';
@@ -583,18 +1002,23 @@ class Matches extends Constraint {
   String get defaultMessage => 'must match "{regexp}"';
 
   @override
-  Map<String, Object?> get attributes => {'regexp': regexp};
+  Map<String, Object?> get attributes => {'flags': flags, 'regexp': regexp};
 
   @override
   bool isValid(Object? value) =>
-      value == null ||
-      RegExp('^(?:$regexp)\$', caseSensitive: caseSensitive).hasMatch('$value');
+      value == null || _fullMatch(regexp, flags, '$value');
 }
 
-/// A well-formed email address (pragmatic check like Hibernate Validator).
+/// A well-formed email address, checked like Hibernate Validator's
+/// `@Email`: a local part of at most 64 characters (dot-separated atoms or
+/// quoted strings), `@`, and a domain name (labels without leading or
+/// trailing `-`, at most 63 characters each and 255 in total) or an IP
+/// address literal (`[192.168.0.1]`, `[IPv6:::1]`).
 ///
 /// `null` and the empty string are valid; combine with [NotBlank] to
-/// require an address.
+/// require an address. [regexp] (with [flags]) is an additional pattern
+/// the whole address must match. Error arguments are
+/// `[field, flags, regexp]`.
 ///
 /// ```dart
 /// @Introspected()
@@ -602,6 +1026,9 @@ class Matches extends Constraint {
 ///   @NotNull()
 ///   @Email()
 ///   String? email;
+///
+///   @Email(regexp: r'.+@example\.com')
+///   String? work;
 /// }
 /// ```
 ///
@@ -611,15 +1038,56 @@ class Matches extends Constraint {
 ///   @NotNull
 ///   @Email
 ///   private String email;
+///
+///   @Email(regexp = ".+@example\\.com")
+///   private String work;
 /// }
 /// ```
 class Email extends Constraint {
   /// Creates the `@Email()` constraint.
-  const Email({super.message, super.groups});
+  const Email({
+    this.regexp = '.*',
+    this.flags = const [],
+    super.message,
+    super.groups,
+  });
 
-  static final _pattern = RegExp(
-    r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
-    r'(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*$',
+  /// An additional pattern the whole address must match (`.*`: any).
+  final String regexp;
+
+  /// How [regexp] is matched.
+  final List<PatternFlag> flags;
+
+  static const _atom = r"[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-￿-]";
+  static const _quotedAtom =
+      r"(?:[a-z0-9!#$%&'*.(),<>\[\]:; @+/=?^_`{|}~\u0080-￿-]|\\\\|"
+      r'\\")';
+  static const _word = '(?:$_atom+|"$_quotedAtom+")';
+  static final _localPart = RegExp(
+    '^$_word(?:\\.$_word)*\$',
+    caseSensitive: false,
+  );
+  static final _label = RegExp(
+    r"^[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-￿]"
+    r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-￿-]*"
+    r"[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-￿])?$",
+    caseSensitive: false,
+  );
+  static final _ipLiteral = RegExp(
+    r'^\[(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|IPv6:'
+    r'(?:([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|'
+    r'([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|'
+    r'([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|'
+    r'([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|'
+    r'([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|'
+    r'([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|'
+    r'[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}|:)|'
+    r'fe80:(:[0-9a-f]{0,4}){0,4}%[0-9a-z]{1,}|'
+    r'::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}'
+    r'[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|'
+    r'([0-9a-f]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.)'
+    r'{3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])))\]$',
+    caseSensitive: false,
   );
 
   @override
@@ -629,22 +1097,51 @@ class Email extends Constraint {
   String get defaultMessage => 'must be a well-formed email address';
 
   @override
+  Map<String, Object?> get attributes => {'flags': flags, 'regexp': regexp};
+
+  @override
   bool isValid(Object? value) {
     if (value == null || value == '') {
       return true;
     }
     final text = '$value';
-    // The pattern allows dots in the local part; reject the forms RFC 5322
-    // forbids (consecutive or leading dots) separately.
-    return _pattern.hasMatch(text) &&
-        !text.contains('..') &&
-        !text.startsWith('.');
+    final at = text.lastIndexOf('@');
+    if (at < 0) {
+      return false;
+    }
+    final local = text.substring(0, at);
+    final domain = text.substring(at + 1);
+    if (local.length > 64 || !_localPart.hasMatch(local)) {
+      return false;
+    }
+    if (!_isValidDomain(domain)) {
+      return false;
+    }
+    return (regexp == '.*' && flags.isEmpty) || _fullMatch(regexp, flags, text);
+  }
+
+  // Hibernate's DomainNameUtil: a domain name (IDN labels of at most 63
+  // characters) or an IP address literal.
+  static bool _isValidDomain(String domain) {
+    if (domain.isEmpty || domain.length > 255 || domain.endsWith('.')) {
+      return false;
+    }
+    if (domain.startsWith('[')) {
+      return _ipLiteral.hasMatch(domain);
+    }
+    return domain
+        .split('.')
+        .every((label) => label.length <= 63 && _label.hasMatch(label));
   }
 }
 
-/// At most [integer] integer digits and [fraction] fraction digits.
+/// At most [integer] integer digits and [fraction] fraction digits, like
+/// Hibernate Validator's `@Digits`.
 ///
-/// Accepts numbers and numeric strings; `null` is valid.
+/// Numbers and `BigInt`s are counted without trailing zeros (`1.50` has one
+/// fraction digit, `1000` four integer digits); numeric strings as written
+/// (`'1.50'` has two, like `new BigDecimal("1.50")`), and a string that is
+/// not a number fails. `null` and other value types are valid.
 ///
 /// ```dart
 /// @Introspected()
@@ -691,21 +1188,20 @@ class Digits extends Constraint {
 
   @override
   bool isValid(Object? value) {
-    if (value == null) {
-      return true;
+    final _Decimal? number;
+    switch (value) {
+      case final String text:
+        number = _Decimal.parse(text);
+      case num() || BigInt():
+        number = _Decimal.of(value)?.stripTrailingZeros();
+      default:
+        return true;
     }
-    final text = (value is num ? value.abs() : '$value')
-        .toString()
-        .replaceFirst('-', '');
-    final parts = text.split('.');
-    // Leading zeros of the integer part and trailing zeros of the fraction
-    // are not significant (`007.50` has 1 integer and 1 fraction digit).
-    final integerDigits = parts.first
-        .replaceFirst(RegExp('^0+(?=.)'), '')
-        .length;
-    final fractionDigits = parts.length > 1
-        ? parts[1].replaceFirst(RegExp(r'0+$'), '').length
-        : 0;
+    if (number == null) {
+      return false;
+    }
+    final integerDigits = number.precision - number.scale;
+    final fractionDigits = number.scale < 0 ? 0 : number.scale;
     return integerDigits <= integer && fractionDigits <= fraction;
   }
 }
@@ -772,17 +1268,45 @@ class AssertFalse extends Constraint {
   bool isValid(Object? value) => value == null || value == false;
 }
 
-// Date constraints only check `DateTime` values; others count as valid.
-DateTime? _date(Object? value) => value is DateTime ? value : null;
+// The sign of [value] − now for the date constraints; `null` for values
+// that are not `DateTime`s (valid). A `DateTime` without a time of day
+// (midnight to the microsecond) is a date and is compared by day, like a
+// `LocalDate`: today is neither past nor future. Other values are compared
+// as instants.
+int? _compareToNow(Object? value, DateTime now) {
+  if (value is! DateTime) {
+    return null;
+  }
+  final isDate =
+      value.hour == 0 &&
+      value.minute == 0 &&
+      value.second == 0 &&
+      value.millisecond == 0 &&
+      value.microsecond == 0;
+  if (!isDate) {
+    return value.compareTo(now).sign;
+  }
+  final today = value.isUtc ? now.toUtc() : now.toLocal();
+  return switch (value.year.compareTo(today.year)) {
+    0 => switch (value.month.compareTo(today.month)) {
+      0 => value.day.compareTo(today.day).sign,
+      final month => month.sign,
+    },
+    final year => year.sign,
+  };
+}
 
-/// A `DateTime` in the past; error code `Past`.
+/// A `DateTime` in the past, like Jakarta's `@Past`.
 ///
-/// `null` and non-`DateTime` values are valid.
+/// A `DateTime` without a time of day (`DateTime(2026, 5, 1)`, what
+/// `DateTime.parse('2026-05-01')` gives) is a date compared by day, like a
+/// `LocalDate`: today is not in the past. "Now" comes from the validator's
+/// `ClockProvider`. `null` and non-`DateTime` values are valid.
 ///
 /// ```dart
 /// @Introspected()
 /// class Person {
-///   @PastDate()
+///   @Past()
 ///   DateTime? birthday;
 /// }
 /// ```
@@ -794,9 +1318,9 @@ DateTime? _date(Object? value) => value is DateTime ? value : null;
 ///   private LocalDate birthday;
 /// }
 /// ```
-class PastDate extends Constraint {
-  /// Creates the `@PastDate()` constraint.
-  const PastDate({super.message, super.groups});
+class Past extends Constraint {
+  /// Creates the `@Past()` constraint.
+  const Past({super.message, super.groups});
 
   @override
   String get name => 'Past';
@@ -805,17 +1329,28 @@ class PastDate extends Constraint {
   String get defaultMessage => 'must be a past date';
 
   @override
-  bool isValid(Object? value) => _date(value)?.isBefore(DateTime.now()) ?? true;
+  bool isValid(Object? value) => _valid(value, DateTime.now());
+
+  @override
+  bool isValidWithContext(Object? value, ConstraintValidatorContext context) =>
+      _valid(value, context.clockProvider.now());
+
+  bool _valid(Object? value, DateTime now) {
+    final sign = _compareToNow(value, now);
+    return sign == null || sign < 0;
+  }
 }
 
-/// A `DateTime` in the past or now; error code `PastOrPresent`.
+/// A `DateTime` in the past or the present, like Jakarta's
+/// `@PastOrPresent`; dates without a time of day are compared by day (see
+/// [Past]).
 ///
 /// `null` and non-`DateTime` values are valid.
 ///
 /// ```dart
 /// @Introspected()
 /// class Payment {
-///   @PastOrPresentDate()
+///   @PastOrPresent()
 ///   DateTime? paidAt;
 /// }
 /// ```
@@ -827,9 +1362,9 @@ class PastDate extends Constraint {
 ///   private Instant paidAt;
 /// }
 /// ```
-class PastOrPresentDate extends Constraint {
-  /// Creates the `@PastOrPresentDate()` constraint.
-  const PastOrPresentDate({super.message, super.groups});
+class PastOrPresent extends Constraint {
+  /// Creates the `@PastOrPresent()` constraint.
+  const PastOrPresent({super.message, super.groups});
 
   @override
   String get name => 'PastOrPresent';
@@ -838,12 +1373,21 @@ class PastOrPresentDate extends Constraint {
   String get defaultMessage => 'must be a date in the past or in the present';
 
   @override
-  bool isValid(Object? value) =>
-      !(_date(value)?.isAfter(DateTime.now()) ?? false);
+  bool isValid(Object? value) => _valid(value, DateTime.now());
+
+  @override
+  bool isValidWithContext(Object? value, ConstraintValidatorContext context) =>
+      _valid(value, context.clockProvider.now());
+
+  bool _valid(Object? value, DateTime now) {
+    final sign = _compareToNow(value, now);
+    return sign == null || sign <= 0;
+  }
 }
 
 /// A `DateTime` in the future; error code `Future` (renamed: `Future` is a
-/// Dart core type).
+/// Dart core type). Dates without a time of day are compared by day (see
+/// [Past]).
 ///
 /// `null` and non-`DateTime` values are valid.
 ///
@@ -873,18 +1417,29 @@ class FutureDate extends Constraint {
   String get defaultMessage => 'must be a future date';
 
   @override
-  bool isValid(Object? value) => _date(value)?.isAfter(DateTime.now()) ?? true;
+  bool isValid(Object? value) => _valid(value, DateTime.now());
+
+  @override
+  bool isValidWithContext(Object? value, ConstraintValidatorContext context) =>
+      _valid(value, context.clockProvider.now());
+
+  bool _valid(Object? value, DateTime now) {
+    final sign = _compareToNow(value, now);
+    return sign == null || sign > 0;
+  }
 }
 
-/// A `DateTime` now or in the future; error code `FutureOrPresent`.
+/// A `DateTime` in the present or the future, like Jakarta's
+/// `@FutureOrPresent`; dates without a time of day are compared by day
+/// (today is present, see [Past]).
 ///
 /// `null` and non-`DateTime` values are valid.
 ///
 /// ```dart
 /// @Introspected()
 /// class Reminder {
-///   @FutureOrPresentDate()
-///   DateTime? dueAt;
+///   @FutureOrPresent()
+///   DateTime? dueOn;
 /// }
 /// ```
 ///
@@ -892,12 +1447,12 @@ class FutureDate extends Constraint {
 /// ```java
 /// class Reminder {
 ///   @FutureOrPresent
-///   private Instant dueAt;
+///   private LocalDate dueOn;
 /// }
 /// ```
-class FutureOrPresentDate extends Constraint {
-  /// Creates the `@FutureOrPresentDate()` constraint.
-  const FutureOrPresentDate({super.message, super.groups});
+class FutureOrPresent extends Constraint {
+  /// Creates the `@FutureOrPresent()` constraint.
+  const FutureOrPresent({super.message, super.groups});
 
   @override
   String get name => 'FutureOrPresent';
@@ -905,11 +1460,15 @@ class FutureOrPresentDate extends Constraint {
   @override
   String get defaultMessage => 'must be a date in the present or in the future';
 
-  // A one-second tolerance keeps "now" (captured slightly earlier by the
-  // caller) counting as present.
   @override
-  bool isValid(Object? value) =>
-      !(_date(value)
-              ?.isBefore(DateTime.now().subtract(const Duration(seconds: 1))) ??
-          false);
+  bool isValid(Object? value) => _valid(value, DateTime.now());
+
+  @override
+  bool isValidWithContext(Object? value, ConstraintValidatorContext context) =>
+      _valid(value, context.clockProvider.now());
+
+  bool _valid(Object? value, DateTime now) {
+    final sign = _compareToNow(value, now);
+    return sign == null || sign >= 0;
+  }
 }

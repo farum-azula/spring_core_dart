@@ -47,6 +47,37 @@ void main() {
     });
   });
 
+  group('dynamicProperties (@DynamicPropertySource)', () {
+    var port = 0;
+    var registrations = 0;
+    // Known only once the tests run, after springBootTest() was called.
+    setUpAll(() => port = 8080);
+    final app = springBootTest(
+      SpringApplication([appModule()]),
+      properties: {'greeting.prefix': 'static', 'app.port': '1'},
+      dynamicProperties: (registry) {
+        registrations++;
+        registry
+          ..add('greeting.prefix', () => 'port $port')
+          ..add('app.port', () => port);
+      },
+    );
+
+    test('evaluated when the context starts, over properties', () {
+      expect(registrations, 1);
+      expect(app.getBean<Greeter>().greet('Ada'), 'port 8080, Ada');
+      expect(app.environment.getProperty('app.port'), '8080');
+      port = 9090; // a supplier is called at each read
+      expect(app.environment.getProperty('app.port'), '9090');
+      app.markDirty();
+    });
+
+    test('registered again at every start', () {
+      expect(registrations, 2);
+      expect(app.getBean<Greeter>().greet('Ada'), 'port 9090, Ada');
+    });
+  });
+
   group('overriding the only bean of a type', () {
     final app = springBootTest(
       SpringApplication([appModule()]),

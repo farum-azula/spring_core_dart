@@ -394,13 +394,7 @@ class SpringApplication {
   /// same as `logging.level.neon.checkout`. Levels of an earlier run are
   /// replaced.
   static void applyLoggingLevels(ConfigurableEnvironment environment) {
-    final root = parseSpringLogLevel(
-      environment.getProperty('logging.level.root') ??
-          environment.getProperty('logging.level'),
-    );
-    if (root != null) {
-      SpringLog.level = root;
-    }
+    String? rootValue; // `root` in any case, like Spring Boot
     final groups = <String, List<String>>{};
     final levels = <String, String>{};
     for (final source in environment.propertySources) {
@@ -417,11 +411,21 @@ class SpringApplication {
           continue;
         }
         final logger = _loggingKey(key, 'logging.level.', 'LOGGING_LEVEL_');
-        if (logger != null && logger != 'root' && !levels.containsKey(logger)) {
+        if (logger != null && logger.toLowerCase() == 'root') {
+          rootValue ??= environment.getProperty(key);
+        } else if (logger != null && !levels.containsKey(logger)) {
           // Earlier sources win, as in the environment itself.
           levels[logger] = '${source.getProperty(key)}';
         }
       }
+    }
+    final root = parseSpringLogLevel(
+      rootValue ??
+          environment.getProperty('logging.level.root') ??
+          environment.getProperty('logging.level'),
+    );
+    if (root != null) {
+      SpringLog.level = root;
     }
     SpringLog.resetLevels();
     for (final MapEntry(key: logger, value: value) in levels.entries) {

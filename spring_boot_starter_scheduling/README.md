@@ -1,5 +1,9 @@
 # spring_boot_starter_scheduling
 
+> **No backward compatibility before 1.0.** Any release may rename or
+> change APIs, properties and behaviour; the breaking changes are listed
+> in each package's CHANGELOG.
+
 Scheduled tasks for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 applications, like Spring's `@Scheduled`: annotate a bean method and it runs
 every few seconds, after each run with a pause, or at cron times. Tasks stop
@@ -58,6 +62,7 @@ Give exactly one of `cron`, `fixedRate` or `fixedDelay`.
 | `initialDelay` | wait before the first run (not with `cron`) | `initialDelay: Duration(seconds: 10)` |
 | `cron` | run at cron times; `-` switches the task off | `cron: '0 */15 * * * *'` |
 | `zone` | time zone of `cron`: leave out for local time, or `'UTC'` | `zone: 'UTC'` |
+| `scheduler` | the `TaskScheduler` bean to run on, by qualifier or bean name (`${...}` allowed); default: the only one, the primary one or `taskScheduler` | `scheduler: 'reportsScheduler'` |
 | `fixedRateString`, `fixedDelayString`, `initialDelayString` | the same as text, with `${...}` placeholders and Spring Boot durations | `fixedRateString: r'${reports.rate:5m}'` |
 
 Rules:
@@ -67,8 +72,9 @@ Rules:
 - Several `@Scheduled` on one method give several schedules.
 - Only singleton beans are scheduled (`@Scope('prototype')` beans are
   ignored with a warning).
-- A wrong attribute (two kinds, a bad cron, an unknown zone, a missing
-  property) stops the startup with a message naming `Class.method`.
+- A wrong attribute (two kinds, a bad cron, an unknown zone or
+  `scheduler`, a missing property) stops the startup with a message naming
+  `Class.method`.
 - The method is called on the bean as other beans see it, so AOP advice
   (`@Around`, `@Cacheable`, ...) applies.
 
@@ -94,14 +100,22 @@ second minute hour day-of-month month day-of-week
 | `0 0 10 15W * *` | 10:00 on the working day nearest to the 15th |
 | `0 0 20 ? * FRIL` | 20:00 on the last Friday of the month |
 | `0 0 9 ? * MON#1` | 9:00 on the first Monday of the month |
+| `0 0 9 ? * MON#1,MON#3` | 9:00 on the first and the third Monday |
+| `0 0 0 1,L * *` | midnight on the first and the last day of the month |
+| `0 0 10 * * SAT-SUN` | 10:00 at the weekend |
 | `0 0 0 25 DEC *` | midnight on December 25th |
 | `@hourly`, `@daily` (`@midnight`), `@weekly`, `@monthly`, `@yearly` (`@annually`) | the usual macros |
 
 - Values: `*`, `5`, lists `1,15,30`, ranges `9-17`, steps `*/5`, `0-30/10`,
-  `5/15` (from 5, every 15). Months `JAN`-`DEC`, days `SUN`-`SAT` (0 and 7
-  are Sunday), case-insensitive. `?` means "any" in the day fields.
+  `5/15` (from 5, every 15). Months `JAN`-`DEC`, case-insensitive. `?`
+  means "any" in the day fields.
+- Days of the week as in Spring: `MON`-`SUN` are 1-7 and 0 is Sunday too;
+  Sunday at the start of a range is 0, so `SAT-SUN`, `MON-SUN` and
+  `SUN-TUE` all work. `*/2` is MON, WED, FRI, SUN.
+- The specials `L`, `L-n`, `nW`, `LW`, `nL`, `n#k` may be combined in lists
+  with each other and with values (`1,L`, `MON-FRI,SATL`).
 - As in Spring, a day must match both day fields, and ranges cannot wrap
-  around (`FRI-MON` is an error: write `FRI-SAT,SUN-MON`).
+  around (`FRI-MON` is an error: write `FRI-SUN,MON`).
 - Local time follows the wall clock: a time inside the hour skipped when
   clocks go forward runs at the first valid time after it; a time inside
   the hour repeated when clocks go back runs once.
@@ -165,7 +179,9 @@ task.cancel();
 
 Triggers: `PeriodicTrigger` (fixed rate or delay), `CronTrigger`,
 `OneShotTrigger`, or your own `Trigger`. Declare your own `TaskScheduler`
-bean to replace the default `TimerTaskScheduler`.
+bean to replace the default `TimerTaskScheduler`. With several
+`TaskScheduler` beans, `@Scheduled` methods run on the primary one or the
+one named `taskScheduler`, unless they name another with `scheduler:`.
 
 ## Asynchronous tasks and overlapping
 
@@ -214,5 +230,20 @@ every task) and the new context schedules the methods of the new code.
   `spring.task.scheduling.enabled=false` switches it off.
 - Time zones: local time or UTC only (Dart has no time zone database).
 - Durations are `Duration`s instead of numbers plus `timeUnit`.
+- `fixedRate` tasks never overlap and do not catch up missed runs: when a
+  run takes longer than the period, the next one starts right after it,
+  once (Spring's single-threaded scheduler runs the missed executions back
+  to back).
+- A method returning a `Future` is awaited before its run counts as
+  finished, with `fixedRate` and `cron` too, so a slow run delays the next
+  one instead of overlapping it (Spring does not wait for a returned
+  `CompletableFuture`, and waits for a reactive result only with
+  `fixedDelay`).
+- `#k` in the day of week takes 1-5 (Spring accepts larger ordinals that
+  never match).
+- No `spring.task.scheduling.shutdown.await-termination[-period]`: closing
+  a context is synchronous in Dart, so it cannot wait for a running task.
+  A run that is going on is never interrupted; it finishes after the close
+  (no further runs start).
 - Not yet: `@Async`, `SchedulingConfigurer`, scheduling of prototype
   beans.
