@@ -69,7 +69,9 @@ interface with typed streams, created and configured by the container.
 `@WebSocketClient`, `@OnMessage`, `@SendMessage`, `WebSocketHandshakeInterceptor`
 and the `spring.websocket.client.config.*` properties are this project's
 own; they have no Spring counterpart with the same names. STOMP is not
-supported yet.
+supported yet. The connection is kept by a `WebSocketConnectionManager`
+like Spring's, but unlike Spring's it reconnects (`reconnect.*`, named
+after Spring 7's `RetryPolicy`).
 
 ## Setup
 
@@ -113,11 +115,13 @@ a missing URL or one that does not start with `ws://` / `wss://`.
   or the first message sent (or `connect()`).
 - **Reconnection.** While someone listens, a lost connection (close codes
   none, 1001, 1005, 1006, 1011–1014) or a failed attempt is opened again
-  after `reconnect-delay`, doubled after each failure up to
-  `max-reconnect-delay`; listeners stay subscribed. Sends during the
-  outage wait for the new connection. A normal close by the server (1000)
-  ends the streams; other codes (1008 policy violation, ...) end them with
-  a `WebSocketException`.
+  after `reconnect.delay`, multiplied by `reconnect.multiplier` after each
+  failure up to `reconnect.max-delay`, give or take `reconnect.jitter`;
+  listeners stay subscribed. Sends during the outage wait for the new
+  connection. A normal close by the server (1000) ends the streams; other
+  codes (1008 policy violation, ...) end them with a `WebSocketException`.
+  The connection is managed by a `WebSocketConnectionManager` (Spring's
+  name), the open connection is a `WebSocketSession` of `spring_web_dart`.
 - **Without listeners** a failed attempt fails the send at once.
 - **Shutdown.** Connections are closed when the application stops.
 
@@ -130,17 +134,27 @@ a missing URL or one that does not start with `ws://` / `wss://`.
 |---|---|---|
 | `url` | — | The address when `@WebSocketClient` has no `url` |
 | `connect-timeout` | `10s` | The longest a handshake may take |
-| `reconnect` | `true` | Open lost connections again while someone listens |
-| `reconnect-delay` | `1s` | The first wait before reconnecting (doubled after each failure) |
-| `max-reconnect-delay` | `30s` | The longest wait |
-| `max-attempts` | none | Failed attempts in a row before giving up |
+| `reconnect.enabled` | `true` | Open lost connections again while someone listens |
+| `reconnect.delay` | `1s` | The wait before the first attempt |
+| `reconnect.multiplier` | `2` | What each further wait is multiplied by (`1`: a fixed delay) |
+| `reconnect.max-delay` | `30s` | The longest wait |
+| `reconnect.jitter` | `0` | A random part added to or taken from each wait (scaled by the multiplier too; never below `delay` nor above `max-delay`) |
+| `reconnect.max-retries` | none | Attempts in a row before giving up |
 | `default-request-headers.<Name>` | — | Headers sent with every handshake (not in browsers) |
 
 ```properties
 spring.websocket.client.config.default.connect-timeout=5s
-spring.websocket.client.config.chat.reconnect-delay=500ms
-spring.websocket.client.config.chat.max-attempts=10
+spring.websocket.client.config.chat.reconnect.delay=500ms
+spring.websocket.client.config.chat.reconnect.jitter=100ms
+spring.websocket.client.config.chat.reconnect.max-retries=10
 ```
+
+The `reconnect.*` names are those of Spring Framework 7's `RetryPolicy`
+(`delay`, `multiplier`, `maxDelay`, `jitter`, `maxRetries`) and the
+waits are computed like its `ExponentialBackOff`; the defaults suit
+reconnecting (a doubling delay, no limit) rather than `RetryPolicy`'s (a
+fixed 1 s delay, 3 retries). The policy is `WebSocketClientConfig.reconnect`
+(a `WebSocketReconnectPolicy`).
 
 ## Tokens: handshake interceptors
 

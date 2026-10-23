@@ -133,16 +133,18 @@ void main() {
       );
     });
 
-    test('frozen configuration', () {
-      final factory = factoryWith([])..freezeConfiguration();
+    test('frozen configuration is a cache hint, like Spring', () {
+      final factory = factoryWith([french()])..freezeConfiguration();
       expect(factory.isConfigurationFrozen, isTrue);
-      expect(
-        () => factory.registerBeanDefinition(english()),
-        throwsA(isA<BeanDefinitionStoreException>()),
-      );
+      expect(factory.getBean<Greeter>(), isA<French>());
+      // Registering and removing still work and clear the lookup caches.
+      factory.registerBeanDefinition(english(primary: true));
+      expect(factory.getBean<Greeter>(), isA<English>());
+      factory.removeBeanDefinition('english');
+      expect(factory.getBean<Greeter>(), isA<French>());
       expect(
         () => factory.removeBeanDefinition('x'),
-        throwsA(isA<BeanDefinitionStoreException>()),
+        throwsA(isA<NoSuchBeanDefinitionException>()),
       );
     });
   });
@@ -313,7 +315,9 @@ void main() {
         factory.getSortedBeans<Greeter>(qualifier: 'french'),
         hasLength(1),
       );
-      expect(factory.dependencyMap<Greeter>().keys.first, 'priority');
+      // Like Spring, only lists are sorted; maps keep registration order.
+      expect(factory.dependencyList<Greeter>().first, isA<PriorityGreeter>());
+      expect(factory.dependencyMap<Greeter>().keys.first, 'ordered');
     });
   });
 
@@ -622,7 +626,7 @@ void main() {
         'hello',
         'bonjour',
       ]);
-      expect(factory.dependencyMap<Greeter>().keys, ['english', 'french']);
+      expect(factory.dependencyMap<Greeter>().keys, ['french', 'english']);
       expect(factory.optionalDependencyList<Counter>(), isNull);
       expect(factory.optionalDependencyMap<Counter>(), isNull);
       expect(
@@ -749,14 +753,20 @@ void main() {
           },
         ),
       ]);
+      // Like Spring, the cycle is wrapped in the creation errors of the
+      // beans being created.
       expect(
         () => factory.getBeanByName('a'),
         throwsA(
-          isA<BeanCurrentlyInCreationException>().having(
-            (e) => e.cycle,
-            'cycle',
-            ['a', 'b', 'a'],
-          ),
+          isA<BeanCreationException>()
+              .having((e) => e.beanName, 'bean', 'a')
+              .having(
+                (e) => e.rootCause,
+                'root cause',
+                isA<BeanCurrentlyInCreationException>()
+                    .having((e) => e.cycle, 'cycle', ['a', 'b', 'a'])
+                    .having((e) => e.beanName, 'bean', 'a'),
+              ),
         ),
       );
       expect(factory.isCurrentlyInCreation('a'), isFalse);

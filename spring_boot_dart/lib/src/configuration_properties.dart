@@ -67,7 +67,8 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
       introspector: introspector,
       conversionService: environment.conversionService,
     );
-    if (annotation.validate) {
+    // Only `@Validated` classes are validated, like Spring Boot.
+    if (introspection.annotations.any((a) => a is Validated)) {
       binder.validators.add(BeanValidator(introspector: introspector));
     }
     binder

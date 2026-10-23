@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:spring_boot_dart/src/configuration_properties.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/runners.dart';
+import 'package:spring_boot_dart/src/startup_info_stub.dart'
+    if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
+
+const _log = SpringLog('spring_boot_dart.SpringApplication');
 
 /// Bootstraps an application, like Spring Boot's `SpringApplication`.
 ///
@@ -20,13 +24,22 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// 4. the context: the application's modules, then [autoConfigurations]
 ///    (so `@ConditionalOnMissingBean` sees the application's beans),
 ///    `@ConfigurationProperties` binding, `ApplicationArguments` as a bean;
-/// 5. a startup line (`Started app in 42 ms (profiles: dev)`), or a
-///    readable `APPLICATION FAILED TO START` report before the error is
-///    rethrown;
+/// 5. startup info logged through [SpringLog] at INFO like Spring Boot's
+///    (`Starting app using Dart 3.9.0 with PID 42`, the active profiles,
+///    `Started app in 0.042 seconds`; off with
+///    `spring.main.log-startup-info=false`), or a readable
+///    `APPLICATION FAILED TO START` report (from [failureAnalyzers] and
+///    `FailureAnalyzer` beans first, then the built-in analysis) before
+///    the error is rethrown;
 /// 6. `ApplicationRunner` / `CommandLineRunner` beans, one after another
 ///    in order: a runner's `Future` completes before the next starts. A
 ///    failing runner is reported (`Application run failed`) and the
 ///    context is closed. [runAsync] completes after the last runner.
+///
+/// `spring.main.lazy-initialization=true` makes every singleton lazy
+/// (see [LazyInitializationBeanFactoryPostProcessor]);
+/// `spring.main.allow-bean-definition-overriding=true` lets a definition
+/// replace another of the same name (off by default, as in Spring Boot).
 ///
 /// With `@SpringBootApplication` the generator creates `runApplication`
 /// for you; written by hand:
@@ -45,12 +58,14 @@ class SpringApplication {
     List<BeanModule> modules, {
     List<BeanModule> autoConfigurations = const [],
     List<ApplicationContextInitializer> initializers = const [],
+    List<FailureAnalyzer> failureAnalyzers = const [],
     this.resourceLoader,
     this.fingerprint,
     void Function(String line)? out,
   }) : modules = List.unmodifiable(modules),
        autoConfigurations = List.unmodifiable(autoConfigurations),
        initializers = List.unmodifiable(initializers),
+       failureAnalyzers = List.unmodifiable(failureAnalyzers),
        out = out ?? print;
 
   /// The application's own modules.
@@ -64,6 +79,11 @@ class SpringApplication {
   /// singletons, ...
   final List<ApplicationContextInitializer> initializers;
 
+  /// Consulted, together with the `FailureAnalyzer` beans of the context,
+  /// before the built-in analysis when the start fails (Spring Boot's
+  /// `FailureAnalyzers` from `spring.factories`).
+  final List<FailureAnalyzer> failureAnalyzers;
+
   /// Identifies the generated code the application was built from (a hash
   /// written by the generator). [reload] keeps a running context when it
   /// is unchanged.
@@ -73,7 +93,8 @@ class SpringApplication {
   /// asset-aware loader (and [runAsync]) in Flutter.
   final ResourceLoader? resourceLoader;
 
-  /// Where the startup line and failure reports go.
+  /// Where failure reports go (the startup info is logged through
+  /// [SpringLog]).
   final void Function(String line) out;
 
   /// Starts the application synchronously (config files read with
@@ -269,11 +290,41 @@ class SpringApplication {
     }
   }
 
-  void _report(Object error) {
-    final analysis = analyzeFailure(error);
+  // Errors reported where the failed context was known (its analyzer
+  // beans), so the outer catch does not report them again.
+  final Set<Object> _reported = Set.identity();
+
+  void _report(Object error, [ConfigurableApplicationContext? context]) {
+    if (_reported.remove(error)) {
+      return;
+    }
+    final analysis = analyzeFailure(error, analyzers: _analyzers(context));
     if (analysis != null) {
       out(analysis.report);
     }
+    if (context != null) {
+      _reported.add(error);
+    }
+  }
+
+  // [failureAnalyzers], then the `FailureAnalyzer` beans of [context] (if
+  // they can still be created), sorted by order.
+  List<FailureAnalyzer> _analyzers(ConfigurableApplicationContext? context) {
+    final beans = <FailureAnalyzer>[];
+    if (context != null) {
+      final factory = context.beanFactory;
+      try {
+        for (final name in factory.getBeanNamesForType(FailureAnalyzer)) {
+          beans.add(factory.getBeanByName(name) as FailureAnalyzer);
+        }
+      } catch (_) {
+        // A context that failed early cannot provide them.
+      }
+      if (!context.isActive) {
+        factory.destroySingletons();
+      }
+    }
+    return [...failureAnalyzers, ...OrderComparator.sort(beans, (_) => null)];
   }
 
   // Creates and refreshes the context and prints the startup line; the
@@ -286,10 +337,17 @@ class SpringApplication {
     (Map<String, String>?, Map<String, Object?>) launch,
   ) {
     applyLoggingLevels(environment);
+    // Spring Boot's ContextIdApplicationContextInitializer.
+    final applicationName = environment
+        .getProperty('spring.application.name')
+        ?.trim();
     final context = AnnotationConfigApplicationContext(
       [...modules, ...autoConfigurations],
       environment: environment,
       resourceLoader: resourceLoader,
+      id: applicationName == null || applicationName.isEmpty
+          ? 'application'
+          : applicationName,
     );
     _launches[context] = _Launch(
       fingerprint,
@@ -298,6 +356,16 @@ class SpringApplication {
       launch.$2,
     );
     final arguments = ApplicationArguments(args);
+    final logStartupInfo =
+        environment.getPropertyAs<bool>('spring.main.log-startup-info') ?? true;
+    final name =
+        environment.getProperty('spring.application.name') ?? 'application';
+    (context.beanFactory as DefaultListableBeanFactory)
+            .allowBeanDefinitionOverriding =
+        environment.getPropertyAs<bool>(
+          'spring.main.allow-bean-definition-overriding',
+        ) ??
+        false;
     context.beanFactory
       ..registerSingleton(
         'springApplicationArguments',
@@ -307,27 +375,38 @@ class SpringApplication {
       ..addBeanPostProcessor(
         ConfigurationPropertiesBinder(environment, context.introspector),
       );
+    if (environment.getPropertyAs<bool>('spring.main.lazy-initialization') ??
+        false) {
+      context.addBeanFactoryPostProcessor(
+        LazyInitializationBeanFactoryPostProcessor(),
+      );
+    }
+    if (logStartupInfo) {
+      // Spring Boot logs this before the refresh; here the logging system
+      // is set up by a post-processor during the refresh, so this one runs
+      // after the other post-processors, before any bean is created.
+      context.beanFactory.registerSingleton(
+        'springApplicationStartupInfoLogger',
+        _StartupInfoLogger(name, environment),
+        types: const [BeanFactoryPostProcessor, Ordered],
+      );
+    }
     for (final initializer in initializers) {
       initializer(context);
     }
     try {
       context.refresh();
-    } catch (_) {
+    } catch (error) {
+      _report(error, context);
       if (context.isActive) {
         context.close();
       }
       rethrow;
     }
-    if (environment.getProperty('spring.main.log-startup-info') != 'false') {
-      final name =
-          environment.getProperty('spring.application.name') ?? 'application';
-      final profiles = environment.activeProfiles.isEmpty
-          ? environment.defaultProfiles
-          : environment.activeProfiles;
-      out(
-        'Started $name in ${watch.elapsedMilliseconds} ms '
-        '(profiles: ${profiles.join(', ')})',
-      );
+    if (logStartupInfo) {
+      // Spring Boot's StartupInfoLogger.logStarted (without the process
+      // uptime, which Dart does not know).
+      _log.info('Started $name in ${watch.elapsedMilliseconds / 1000} seconds');
     }
     return (context, arguments);
   }
@@ -335,7 +414,10 @@ class SpringApplication {
   // A runner failed: reported like Spring Boot's "Application run failed",
   // and the context is closed.
   void _runFailed(ConfigurableApplicationContext context, Object error) {
-    out(analyzeFailure(error)?.report ?? 'Application run failed: $error');
+    out(
+      analyzeFailure(error, analyzers: _analyzers(context))?.report ??
+          'Application run failed: $error',
+    );
     if (context.isActive) {
       context.close();
     }
@@ -447,6 +529,75 @@ class SpringApplication {
     }
     return null;
   }
+}
+
+/// Makes every singleton lazy (created on first use), like Spring Boot's
+/// `LazyInitializationBeanFactoryPostProcessor`; [SpringApplication] adds
+/// it for `spring.main.lazy-initialization=true`.
+///
+/// Beans with their own `@Lazy(...)` and `SmartInitializingSingleton`
+/// beans are left alone.
+///
+/// Spring (Java):
+/// ```java
+/// context.addBeanFactoryPostProcessor(
+///     new LazyInitializationBeanFactoryPostProcessor());
+/// ```
+class LazyInitializationBeanFactoryPostProcessor
+    implements BeanFactoryPostProcessor, Ordered {
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    for (final name in beanFactory.beanDefinitionNames) {
+      final definition = beanFactory.getBeanDefinition(name);
+      if (definition.annotations.any((a) => a is Lazy) ||
+          definition.types.contains(SmartInitializingSingleton)) {
+        continue;
+      }
+      definition.lazy = true;
+    }
+  }
+
+  @override
+  int get order => Ordered.highestPrecedence;
+}
+
+// Logs "Starting ..." and the profiles like Spring Boot's
+// StartupInfoLogger.logStarting and SpringApplication.logStartupProfileInfo.
+final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
+  _StartupInfoLogger(this.name, this.environment);
+
+  final String name;
+  final Environment environment;
+
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    final version = dartVersion();
+    final pid = processId();
+    _log.info(
+      'Starting $name'
+      '${version == null ? '' : ' using Dart $version'}'
+      '${pid == null ? '' : ' with PID $pid'}',
+    );
+    String quoted(List<String> profiles) =>
+        profiles.map((p) => '"$p"').join(', ');
+    final active = environment.activeProfiles;
+    if (active.isEmpty) {
+      final defaults = environment.defaultProfiles;
+      _log.info(
+        'No active profile set, falling back to ${defaults.length} default '
+        '${defaults.length <= 1 ? 'profile' : 'profiles'}: ${quoted(defaults)}',
+      );
+    } else {
+      _log.info(
+        'The following '
+        '${active.length == 1 ? '1 profile is' : '${active.length} profiles are'}'
+        ' active: ${quoted(active)}',
+      );
+    }
+  }
+
+  @override
+  int get order => Ordered.lowestPrecedence;
 }
 
 /// Prepares a context before it is refreshed, like Spring's

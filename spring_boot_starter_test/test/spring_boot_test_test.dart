@@ -18,7 +18,7 @@ void main() {
       expect(app.environment.activeProfiles, ['test', 'fast']);
       expect(app.environment.getProperty('app.mode'), 'test');
       expect(app.args, ['--greeting.prefix=from-args']);
-      expect(app.output.single, startsWith('Started application in '));
+      expect(app.output, isEmpty); // no failure report
       expect(app, hasSingleBean<Greeter>());
     });
 

@@ -558,7 +558,8 @@ final class MethodReference extends SpelNode {
 /// active object) and `#root` (the root object).
 ///
 /// Unset variables evaluate to `null`. `#name = value` assigns through
-/// `EvaluationContext.setVariable`; `#this` and `#root` are read-only.
+/// `EvaluationContext.assignVariable` (which `SimpleEvaluationContext`
+/// rejects); `#this` and `#root` are read-only.
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()..setVariable('n', 2);
@@ -596,7 +597,7 @@ final class VariableReference extends SpelNode {
     }
     return _FunctionRef(
       () => getValue(state),
-      (value) => state.context.setVariable(name, value),
+      (value) => state.context.assignVariable(name, () => value),
     );
   }
 
@@ -902,8 +903,10 @@ enum SelectionKind {
 /// `a?.?[cond]`.
 ///
 /// [condition] is evaluated with each element as `#this` (a `MapEntry`
-/// for maps, with `key` and `value` properties) and must yield a boolean.
-/// Selecting all keeps the collection kind: list, set or map.
+/// for maps, with `key` and `value` properties) and must yield a boolean
+/// (otherwise [SpelMessage.resultOfSelectionCriteriaIsNotBoolean]).
+/// Selecting all keeps the collection kind: list, set or map; first/last
+/// of a map is a one-entry map, or `null` when nothing matches.
 ///
 /// ```dart
 /// SpelExpressionParser()
@@ -949,18 +952,27 @@ final class Selection extends SpelNode {
         start,
       );
     }
+    // Like Spring, the criterion must be a boolean (no conversion).
     bool matches(Object? element) =>
-        state.asBool(state.withThis(element, condition), condition.start);
+        switch (state.withThis(element, condition)) {
+          final bool result => result,
+          _ => throw state.error(
+            SpelMessage.resultOfSelectionCriteriaIsNotBoolean,
+            'Result of selection criteria is not boolean',
+            condition.start,
+          ),
+        };
     switch (target) {
       case Map<Object?, Object?>():
         final entries = target.entries.where(matches).toList();
-        final chosen = switch (kind) {
+        if (kind != SelectionKind.all && entries.isEmpty) {
+          return null;
+        }
+        return Map<Object?, Object?>.fromEntries(switch (kind) {
           SelectionKind.all => entries,
-          SelectionKind.first => entries.take(1),
-          SelectionKind.last =>
-            entries.isEmpty ? <MapEntry<Object?, Object?>>[] : [entries.last],
-        };
-        return Map<Object?, Object?>.fromEntries(chosen);
+          SelectionKind.first => [entries.first],
+          SelectionKind.last => [entries.last],
+        });
       case Iterable<Object?>():
         final selected = target.where(matches);
         return switch (kind) {
@@ -1517,6 +1529,20 @@ final class BinaryOperator extends SpelNode {
     }
   }
 
+  // A `+` operand as text: strings as they are, `null` as `null`, other
+  // values through the context's TypeConverter when it can convert them
+  // (Spring's OpPlus.convertTypedValueToString).
+  static String _concatPart(ExpressionState state, Object? value) {
+    if (value is String) {
+      return value;
+    }
+    final converter = state.context.typeConverter;
+    if (value != null && converter.canConvert(value, String)) {
+      return '${converter.convertValue(value, String)}';
+    }
+    return '$value';
+  }
+
   /// Applies this arithmetic operator to the evaluated operands [l] and
   /// [r]: numbers natively, then string concatenation (`+`) and
   /// repetition (`string * int`), then the context's
@@ -1584,7 +1610,8 @@ final class BinaryOperator extends SpelNode {
       }
     }
     if (operation == Operation.add && (l is String || r is String)) {
-      final text = '$l$r';
+      // Spring's OpPlus converts the other operand with the TypeConverter.
+      final text = '${_concatPart(state, l)}${_concatPart(state, r)}';
       if (text.length > SpelLimits.maxConcatenatedStringLength) {
         throw state.error(
           SpelMessage.maxConcatenatedStringLengthExceeded,
@@ -1819,6 +1846,15 @@ final class Assign extends SpelNode {
         SpelMessage.notAssignable,
         'Assignment is disabled in this context',
         start,
+      );
+    }
+    final target = this.target;
+    if (target is VariableReference && target.isAssignable) {
+      // Like Spring, the value is only evaluated when the context allows
+      // the assignment.
+      return state.context.assignVariable(
+        target.name,
+        () => value.getValue(state),
       );
     }
     final newValue = value.getValue(state);

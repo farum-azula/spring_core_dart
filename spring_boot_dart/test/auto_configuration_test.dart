@@ -16,6 +16,24 @@ final class OrderIdSerializer extends JsonSerializer<Uri> {
   Object? serialize(Uri value, ObjectMapper mapper) => 'uri:$value';
 }
 
+class Money {
+  const Money(this.cents);
+  final int cents;
+}
+
+final class MoneySerializer extends JsonSerializer<Money> {
+  const MoneySerializer();
+  @override
+  Object? serialize(Money value, ObjectMapper mapper) => '${value.cents}c';
+}
+
+final class MoneyDeserializer extends JsonDeserializer<Money> {
+  const MoneyDeserializer();
+  @override
+  Money deserialize(Object json, ObjectMapper mapper) =>
+      Money(int.parse((json as String).replaceAll('c', '')));
+}
+
 final _orderIntrospection = BeanIntrospection<Order>(
   properties: [
     BeanProperty<Order>(
@@ -73,8 +91,92 @@ void main() {
       context.getMessage('hello', args: ['Ada'], locale: 'ru'),
       'Привет Ada',
     );
-    expect(context.getBean<MessageSource>(), isA<PropertiesMessageSource>());
+    expect(
+      context.getBean<MessageSource>(),
+      isA<ReloadableResourceBundleMessageSource>()
+          .having((s) => s.cacheSeconds, 'cacheSeconds', -1)
+          .having((s) => s.fallbackToSystemLocale, 'fallback', isTrue),
+    );
     context.close();
+  });
+
+  test('spring.messages cache-duration and fallback-to-system-locale', () {
+    final context = run([], [
+      '--spring.messages.basename=i18n/messages',
+      '--spring.messages.cache-duration=10',
+      '--spring.messages.fallback-to-system-locale=false',
+    ]);
+    final source =
+        context.getBean<MessageSource>()
+            as ReloadableResourceBundleMessageSource;
+    expect(source.cacheSeconds, 10);
+    expect(source.fallbackToSystemLocale, isFalse);
+    context.close();
+    final minutes = run([], [
+      '--spring.messages.basename=i18n/messages',
+      '--spring.messages.cache-duration=2m',
+    ]);
+    expect(
+      (minutes.getBean<MessageSource>()
+              as ReloadableResourceBundleMessageSource)
+          .cacheSeconds,
+      120,
+    );
+    minutes.close();
+  });
+
+  test('the context id is spring.application.name, else application', () {
+    final named = run([], ['--spring.application.name=shop']);
+    expect(named.id, 'shop');
+    named.close();
+    final plain = run([], []);
+    expect(plain.id, 'application');
+    plain.close();
+  });
+
+  test('dotted basenames are paths, like Boot', () {
+    final context = run([], ['--spring.messages.basename=i18n.messages']);
+    expect(context.getMessage('hello', args: ['Ada']), 'Hello Ada');
+    context.close();
+  });
+
+  group('ValidationAutoConfiguration', () {
+    test('defaultValidator and methodValidationPostProcessor', () {
+      final context = run([], []);
+      expect(context.getBeanByName('defaultValidator'), isA<BeanValidator>());
+      expect(context.getBean<Validator>(), isA<BeanValidator>());
+      final processor = context.getBean<MethodValidationPostProcessor>();
+      expect(processor.excludeFilters.single(const [Validated()]), isFalse);
+      expect(
+        processor.excludeFilters.single(const [
+          ConfigurationProperties('db'),
+          Validated(),
+        ]),
+        isTrue,
+        reason: '@ConfigurationProperties beans are not proxied',
+      );
+      context.close();
+    });
+
+    test('backs off for an application Validator', () {
+      final mine = BeanValidator();
+      final context = run([
+        BeanModule('app', [
+          BeanDefinition<BeanValidator>(
+            name: 'myValidator',
+            types: const [BeanValidator, Validator],
+            create: (_) => mine,
+          ),
+        ]),
+      ], []);
+      expect(context.containsBean('defaultValidator'), isFalse);
+      expect(context.getBean<Validator>(), same(mine));
+      expect(
+        context.getBean<MethodValidationPostProcessor>().advice.validator,
+        same(mine),
+      );
+      context.close();
+    });
   });
 
   test('backs off without a bundle or with an application messageSource', () {
@@ -132,6 +234,47 @@ void main() {
       );
       // JsonModule beans are added.
       expect(mapper.writeValueAsString(Uri.parse('a')), '"uri:a"');
+      context.close();
+    });
+
+    test('JsonSerializer / JsonDeserializer beans (@JsonComponent)', () {
+      final context = run([
+        BeanModule('json', [
+          // The types the generator lists for these beans.
+          BeanDefinition<MoneySerializer>(
+            name: 'moneySerializer',
+            types: const [
+              MoneySerializer,
+              JsonSerializer<Money>,
+              JsonSerializer<Object>,
+            ],
+            create: (_) => const MoneySerializer(),
+          ),
+          BeanDefinition<MoneyDeserializer>(
+            name: 'moneyDeserializer',
+            types: const [
+              MoneyDeserializer,
+              JsonDeserializer<Money>,
+              JsonDeserializer<Object>,
+            ],
+            create: (_) => const MoneyDeserializer(),
+          ),
+        ]),
+      ], []);
+      final mapper = context.getBean<ObjectMapper>();
+      expect(mapper.writeValueAsString(const Money(250)), '"250c"');
+      expect(mapper.readValue<Money>('"99c"').cents, 99);
+      context.close();
+    });
+
+    test('spring.jackson.time-zone', () {
+      final context = run([app], ['--spring.jackson.time-zone=+02:00']);
+      final mapper = context.getBean<ObjectMapper>();
+      expect(mapper.timeZone, '+02:00');
+      expect(
+        mapper.writeValueAsString(DateTime.utc(2026, 1, 1, 10)),
+        '"2026-01-01T12:00:00.000+02:00"',
+      );
       context.close();
     });
 

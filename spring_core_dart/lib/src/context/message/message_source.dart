@@ -1,3 +1,6 @@
+import 'package:spring_core_dart/src/core/env/platform_environment_stub.dart'
+    if (dart.library.io) 'package:spring_core_dart/src/core/env/platform_environment_io.dart';
+
 /// Something that can be resolved to a message, like Spring's
 /// `MessageSourceResolvable`.
 ///
@@ -122,7 +125,9 @@ final class DefaultMessageSourceResolvable implements MessageSourceResolvable {
 /// class I18nConfig {
 ///   @Bean()
 ///   MessageSource messageSource() =>
-///       PropertiesMessageSource(basenames: ['file:i18n/messages']);
+///       ReloadableResourceBundleMessageSource(
+///         basenames: ['file:i18n/messages'],
+///       );
 /// }
 ///
 /// final context = ApplicationContext.run([appBeans]);
@@ -240,6 +245,28 @@ final class NoSuchMessageException implements Exception {
 ///     .getCandidateLocales("messages", locale);
 /// ```
 abstract final class Locales {
+  static String? _systemLocale;
+
+  /// The locale of the platform, like Java's `Locale.getDefault()`:
+  /// `Platform.localeName` normalized (`en_US.UTF-8` → `en_US`; `C` /
+  /// `POSIX` and the web give `''`). Assign a locale to override it (like
+  /// `Locale.setDefault`), `null` to detect it again.
+  ///
+  /// ```dart
+  /// Locales.systemLocale = 'de_DE';
+  /// ```
+  static String get systemLocale =>
+      _systemLocale ??= _platformLocale(platformLocaleName());
+
+  static set systemLocale(String? locale) =>
+      _systemLocale = locale == null ? null : _platformLocale(locale);
+
+  static String _platformLocale(String name) {
+    // POSIX form: language_REGION.codeset@modifier.
+    final plain = name.split(RegExp('[.@]')).first;
+    return plain == 'C' || plain == 'POSIX' ? '' : normalize(plain);
+  }
+
   /// `ru-RU` / `ru_ru` → `ru_RU`; `zh-hant-tw` (or Java's `zh_TW_#Hant`)
   /// → `zh_Hant_TW`; `null`/empty → `''`.
   static String normalize(String? locale) {

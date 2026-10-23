@@ -5,12 +5,12 @@ import 'dart:typed_data';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client_config.dart';
+import 'package:spring_boot_starter_websocket/src/web_socket_connection_manager.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
-import 'package:spring_boot_starter_websocket/src/web_socket_session.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 /// Performs the calls of one `@WebSocketClient` interface on its
-/// [WebSocketSession]: `@OnMessage` methods give typed streams of the
+/// [WebSocketConnectionManager]: `@OnMessage` methods give typed streams of the
 /// incoming messages, `@SendMessage` methods send, `connect()` and
 /// `close()` open and close. Created by `WebSocketClientFactory`.
 ///
@@ -45,7 +45,7 @@ final class WebSocketInvocationHandler implements InvocationHandler {
         '${problems.map((p) => '  - $p').join('\n')}',
       );
     }
-    session = WebSocketSession(
+    connectionManager = WebSocketConnectionManager(
       clientName: client.name,
       url: url!,
       protocols: client.protocols,
@@ -69,7 +69,7 @@ final class WebSocketInvocationHandler implements InvocationHandler {
   final ObjectMapper mapper;
 
   /// The shared connection.
-  late final WebSocketSession session;
+  late final WebSocketConnectionManager connectionManager;
 
   final _plans = Map<ProxyMethod, Object? Function(List<Object?>)>.identity();
 
@@ -138,16 +138,17 @@ final class WebSocketInvocationHandler implements InvocationHandler {
         ListType(:final element) => element.type == int,
         _ => false,
       };
-      return (arguments) =>
-          session.send(_frame(arguments.single, binaryList: binaryList));
+      return (arguments) => connectionManager.sendMessage(
+        _frame(arguments.single, binaryList: binaryList),
+      );
     }
     final lifecycle =
         method.isFuture && method.isVoid && method.parameters.isEmpty;
     if (lifecycle && method.name == 'connect') {
-      return (_) => session.connect();
+      return (_) => connectionManager.connect();
     }
     if (lifecycle && method.name == 'close') {
-      return (_) => session.close();
+      return (_) => connectionManager.close();
     }
     problems.add(
       '$name: mark it @OnMessage (Stream<T> name()) or @SendMessage '
@@ -179,7 +180,7 @@ final class WebSocketInvocationHandler implements InvocationHandler {
   // The incoming messages as a Stream<T>.
   Stream<T> _messages<T>(TypeInfo<T> type) {
     final raw = type.type;
-    return session.messages().transform(
+    return connectionManager.messages().transform(
       StreamTransformer<Object, T>.fromHandlers(
         handleData: (message, sink) {
           if (type is DynamicType) {

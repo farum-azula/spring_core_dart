@@ -61,7 +61,7 @@ final class FeignClientFactory
     return FeignInvocationHandler(
       metadata: metadata,
       client: client,
-      config: FeignClientConfig.of(environment, client.name),
+      config: FeignClientConfig.of(environment, client.configKey),
       environment: environment,
       mapper: mapper,
       transport: transport,

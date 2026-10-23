@@ -20,7 +20,9 @@ dart run bin/main.dart
 ```
 
 ```text
-Started spring-boot-feign-example in 82 ms (profiles: default)
+ INFO [spring_boot_dart.SpringApplication] Starting spring-boot-feign-example using Dart 3.9.0 with PID 4242
+ INFO [spring_boot_dart.SpringApplication] No active profile set, falling back to 1 default profile: "default"
+ INFO [spring_boot_dart.SpringApplication] Started spring-boot-feign-example in 0.082 seconds
 DEBUG [feign.JsonPlaceholderClient] ---> GET https://jsonplaceholder.typicode.com/users/1
 DEBUG [feign.JsonPlaceholderClient] <--- 200 OK (143 ms)
  INFO [blog] user 1: Leanne Graham <Sincere@april.biz>, Gwenborough, works at Romaguera-Crona

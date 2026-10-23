@@ -82,7 +82,9 @@ abstract interface class ConverterRegistry {
   /// ```
   void addConverter<S, T>(T? Function(S source) converter);
 
-  /// Adds `String` → [E] (by name, case-insensitive) and [E] → `String`.
+  /// Adds `String` → [E] and [E] → `String`. Names match leniently, like
+  /// Boot's `LenientObjectToEnumConverterFactory`: `my-value`, `MY_VALUE`
+  /// and `myValue` all find `myValue`.
   ///
   /// Spring converts enums generically (`StringToEnumConverterFactory`);
   /// without reflection Dart needs the [values] list.

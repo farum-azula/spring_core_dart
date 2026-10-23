@@ -3,6 +3,7 @@
 - breaking: `ApplicationContextRunner.withBean` registers an extra bean before the configurations are processed, like Boot's (a `@ConditionalOnMissingBean` backs off; a missing back-off gives a second bean), instead of replacing definitions; `withBeanOverride` replaces a bean like `BeanOverride`; `ApplicationContextRunner.beans` holds bean definitions, the overrides moved to `overrides`
 - `withPropertyValues` accepts `key:value` like `TestPropertyValues`; breaking: values are trimmed
 - `springBootTest(dynamicProperties:)` with `DynamicPropertyRegistry`: properties evaluated when the context starts (`@DynamicPropertySource`)
+- `app.output` no longer holds the startup line (Spring Boot's startup info is now logged through `SpringLog`)
 
 ## 0.1.6
 

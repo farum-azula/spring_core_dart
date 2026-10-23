@@ -152,14 +152,15 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 /// Default [ResourceLoader], like Spring's `DefaultResourceLoader`.
 ///
 /// Order: registered [ProtocolResolver]s, then `classpath:` (the files of
-/// `lib/resources/`, see [ClasspathResources]), then `file:` and plain
-/// paths as file system resources. Other `scheme:` locations resolve to a resource
-/// that does not exist.
+/// `lib/resources/`, see [ClasspathResources]), then `file:` as file system
+/// resources. Plain paths (`app.properties`, `/config/x.txt`) are classpath
+/// resources too, like Spring's `getResourceByPath`. Other `scheme:`
+/// locations resolve to a resource that does not exist.
 ///
 /// ```dart
 /// final loader = DefaultResourceLoader()
 ///   ..addProtocolResolver(InMemoryProtocolResolver('memory:', {}));
-/// loader.getResource('config/app.properties'); // FileSystemResource
+/// loader.getResource('config/app.properties'); // lib/resources/config/...
 /// loader.getResource('file:///etc/app.properties'); // FileSystemResource
 /// loader.getResource('https://example.com/x').exists(); // false
 /// ```
@@ -168,8 +169,8 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 /// ```java
 /// var loader = new DefaultResourceLoader();
 /// loader.addProtocolResolver(myResolver);
-/// // Plain paths are classpath resources in Spring, files here.
-/// Resource resource = loader.getResource("file:config/app.properties");
+/// Resource onClasspath = loader.getResource("config/app.properties");
+/// Resource file = loader.getResource("file:config/app.properties");
 /// ```
 class DefaultResourceLoader implements ResourceLoader {
   /// Creates a loader that tries [protocolResolvers] first, in order.
@@ -205,7 +206,9 @@ class DefaultResourceLoader implements ResourceLoader {
     if (RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location)) {
       return DescriptiveResource('resource [$location] (unsupported protocol)');
     }
-    return FileSystemResource(location);
+    // A plain path is a classpath resource, like Spring's getResourceByPath
+    // (a leading `/` is ignored).
+    return ClasspathResources.resolve(location);
   }
 
   static String _filePath(String location) {

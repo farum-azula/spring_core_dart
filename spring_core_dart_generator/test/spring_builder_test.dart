@@ -417,13 +417,18 @@ class Host {
         output,
         _has('r.optionalDependencyList<_i2.Plugin>() ?? <_i2.Plugin>[]'),
       );
-      expect(output, _has('r.optionalDependencyList<_i2.Plugin>()?.toSet()'));
+      // A Set keeps registration order, like Spring (only lists are sorted).
+      expect(
+        output,
+        _has('r.optionalDependencyMap<_i2.Plugin>()?.values.toSet()'),
+      );
       expect(
         output,
         _has('r.optionalDependencyMap<_i2.Plugin>() ?? <String, _i2.Plugin>{}'),
       );
       expect(output, _has('r.optionalDependencyMap<_i2.Plugin>()'));
-      expect(output, _has('r.provider<_i2.Plugin>()'));
+      // The provider resolves for the injection point, named like it.
+      expect(output, _has("r.provider<_i2.Plugin>(name: r'provider')"));
       expect(output, _has(r"r.value<int>(r'${port:80}')"));
       expect(output, _has(r"r.optionalValue<Duration>(r'${maybe}')"));
       expect(
@@ -431,7 +436,10 @@ class Host {
         _has('_i1.Dependency.collection(_i2.Plugin, optional: true)'),
       );
       expect(output, _has('_i1.Dependency.map(_i2.Plugin, optional: true)'));
-      expect(output, _has('_i1.Dependency.provider(_i2.Plugin)'));
+      expect(
+        output,
+        _has("_i1.Dependency.provider(_i2.Plugin, name: r'provider')"),
+      );
       expect(output, _has(r"_i1.Dependency.value(r'${port:80}')"));
       expect(
         output,
@@ -552,7 +560,10 @@ class Config {
         final noDestroy = output.substring(output.indexOf("name:r'noDestroy'"));
         expect(
           noDestroy.substring(0, noDestroy.indexOf('_i1.BeanDefinition')),
-          isNot(contains('destroyMethod')),
+          allOf(
+            isNot(contains('destroyMethod:(')),
+            isNot(contains('destroyMethodName')),
+          ),
         );
         final other = output.substring(output.indexOf("name:r'other'"));
         expect(
@@ -606,9 +617,13 @@ class Listener implements ApplicationListener<Shipped> {
 }
 ''');
       expect(output, _has('factoryObjectTypes: const [_i2.Product]'));
+      // The raw `FactoryBean` (instantiated to bounds) finds every factory.
       expect(
         output,
-        _has('types: const [_i2.ProductFactory, _i1.FactoryBean<_i2.Product>]'),
+        _has(
+          'types: const [_i2.ProductFactory, _i1.FactoryBean<_i2.Product>, '
+          '_i1.FactoryBean<Object>]',
+        ),
       );
       expect(
         output,
@@ -1007,6 +1022,9 @@ class Audit {
   @AfterReturning('all()')
   void anyResult(Object? result) {}
 
+  @AfterReturning('all()')
+  void someResult(Object result) {}
+
   @AfterThrowing('all()')
   void failed(StateError error) {}
 
@@ -1032,6 +1050,14 @@ class Audit {
         ),
       );
       expect(output, _has('aspect.anyResult((value as Object?))'));
+      // A void method returns null: a non-nullable Object skips it.
+      expect(
+        output,
+        _has(
+          'aspect.someResult((value as Object)), '
+          'accepts: (value) => value is Object',
+        ),
+      );
       expect(
         output,
         _has(
@@ -2225,6 +2251,46 @@ abstract interface class CatalogClient {
       expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
     });
 
+    test('primary and qualifiers of the annotation itself, like '
+        '@FeignClient(primary: false, qualifiers: [...])', () async {
+      final output = await _generate(r"""
+@InterfaceProxy(primary: true)
+class Remote {
+  const Remote(this.name, {this.primary = true, this.qualifiers = const []});
+  final String name;
+  final bool primary;
+  final List<String> qualifiers;
+}
+
+@Remote('catalog', primary: false, qualifiers: ['books', 'catalogFeign'])
+abstract interface class CatalogClient {
+  Future<String> ping();
+}
+
+@Remote('stock')
+abstract interface class StockClient {
+  Future<String> ping();
+}
+""");
+      expect(
+        output,
+        _has(
+          "_i2.BeanDefinition<_i1.CatalogClient>(name: r'catalogClient', "
+          "source: r'package:pkg/src/service.dart#CatalogClient', "
+          'types: const [_i1.CatalogClient], qualifiers: const {',
+        ),
+      );
+      expect(output, _has("r'books', r'catalogFeign'"));
+      expect(
+        output,
+        _has(
+          "_i2.BeanDefinition<_i1.StockClient>(name: r'stockClient', "
+          "source: r'package:pkg/src/service.dart#StockClient', "
+          'types: const [_i1.StockClient], primary: true,',
+        ),
+      );
+    });
+
     test('rejects what cannot be implemented', () async {
       const remote = r"""
 @InterfaceProxy()
@@ -2365,6 +2431,170 @@ class DefaultRegistration implements Registration {
         }),
         isEmpty,
       );
+    });
+  });
+
+  group('container metadata', () {
+    const source = r'''
+abstract interface class Store<T> {}
+class User {}
+
+class Closable {
+  void close() {}
+  void open() {}
+}
+
+class Marker {
+  const Marker(this.level);
+  final int level;
+}
+
+class _Hidden {
+  const _Hidden();
+}
+
+const _hidden = Marker(0);
+
+@Component()
+@Marker(1)
+@_Hidden()
+class UserStore implements Store<User> {}
+
+@Component()
+@Marker(2)
+@_hidden
+class Holder {
+  Holder(this.stores, this.factory);
+  final List<Store> stores;
+  final ObjectFactory<UserStore> factory;
+}
+
+@Configuration()
+class Config {
+  @Bean(defaultCandidate: false, initMethod: 'open')
+  @Marker(3)
+  Closable audit() => Closable();
+
+  @Bean(destroyMethod: 'close')
+  static Closable plain() => Closable();
+}
+
+class Base {
+  @Autowired()
+  late UserStore baseField;
+
+  @Autowired()
+  void baseMethod(UserStore store) {}
+}
+
+@Component()
+class Child extends Base {
+  @Autowired()
+  late UserStore childField;
+
+  @Autowired()
+  set childSetter(UserStore store) {}
+}
+
+@Configurable()
+class Screen {
+  @Autowired()
+  late UserStore store;
+
+  @PostConstruct()
+  void init() {}
+
+  @PreDestroy()
+  void dispose() {}
+}
+''';
+
+    test('raw generic types, ObjectFactory and named providers', () async {
+      final output = await _generate(source);
+      // `Store` (a raw type) means `Store<dynamic>`: every Store bean.
+      expect(
+        output,
+        _has(
+          'types: const [_i2.UserStore, _i2.Store<_i2.User>, '
+          '_i2.Store<dynamic>]',
+        ),
+      );
+      expect(output, _has('r.optionalDependencyList<_i2.Store<dynamic>>()'));
+      expect(output, _has("r.provider<_i2.UserStore>(name: r'factory')"));
+    });
+
+    test('@Bean factory method, candidacy and lifecycle names', () async {
+      final output = await _generate(source);
+      expect(output, _has('defaultCandidate: false'));
+      expect(
+        output,
+        _has("factoryBeanName: r'config', factoryMethodName: r'audit'"),
+      );
+      expect(output, _has("initMethodName: r'open'"));
+      expect(output, _has("destroyMethodName: r'(inferred)'"));
+      // A static @Bean method has no factory bean, like in Spring.
+      final plain = output.substring(output.indexOf("name:r'plain'"));
+      expect(
+        plain.substring(0, plain.indexOf('create:')),
+        allOf(
+          contains("factoryMethodName:r'plain'"),
+          isNot(contains('factoryBeanName')),
+        ),
+      );
+      expect(output, _has("destroyMethodName: r'close'"));
+    });
+
+    test('annotations that can be re-created', () async {
+      final output = await _generate(source);
+      expect(
+        output,
+        _has('annotations: const [_i1.Component(), _i2.Marker(1)]'),
+      );
+      // A top-level constant is re-created through its constructor.
+      expect(
+        output,
+        _has(
+          'annotations: const [_i1.Component(), _i2.Marker(2), _i2.Marker(0)]',
+        ),
+      );
+      expect(output, _has('_i2.Marker(3)'));
+      expect(output, isNot(contains('_Hidden')));
+    });
+
+    test('superclass members first, fields before methods', () async {
+      final output = await _generate(source);
+      final child = output.substring(output.indexOf("name:r'child'"));
+      final inject = child.substring(child.indexOf('inject:'));
+      final order = [
+        'bean.baseField=',
+        'bean.baseMethod(',
+        'bean.childField=',
+        'bean.childSetter=',
+      ].map(inject.indexOf).toList();
+      expect(order, everyElement(greaterThanOrEqualTo(0)));
+      expect(order, orderedEquals([...order]..sort()));
+    });
+
+    test('@Configurable lifecycle methods', () async {
+      final output = await _generate(source);
+      expect(
+        output,
+        _has(
+          'configurablePostConstruct: {_i2.Screen: (bean) {'
+          'final target = (bean as _i2.Screen); target.init();}}',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          'configurablePreDestroy: {_i2.Screen: (bean) {'
+          'final target = (bean as _i2.Screen); target.dispose();}}',
+        ),
+      );
+    });
+
+    test('the generated code compiles', () async {
+      expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
     });
   });
 }

@@ -6,8 +6,9 @@
 
 Spring's `spring-web` for Dart: the **request mapping annotations**
 (`@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`,
-`@RequestHeader`, `@RequestBody`), **HTTP types** (`ResponseEntity`,
-`HttpHeaders`, `HttpStatus`, `HttpMethod`, `MediaType`), **HTTP and
+`@RequestHeader`, `@CookieValue`, `@RequestBody`), **HTTP types**
+(`ResponseEntity`, `HttpHeaders`, `HttpStatus`, `HttpMethod`, `MediaType`),
+**HTTP and
 WebSocket client transports** for the VM, Flutter and the web, and
 **server-sent events** (`EventStream<T>`). Only `spring_core_dart` as a
 dependency.
@@ -35,6 +36,9 @@ abstract interface class CatalogClient {
   @GetMapping('/books')
   Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int page = 0});
 
+  @GetMapping('/books', headers: ['X-Api-Version=2'])
+  Future<List<Book>> filter(@RequestParam() Map<String, Object?> filters);  // ?author=...&year=...
+
   @PostMapping('/books', consumes: MediaType.applicationJson)
   Future<ResponseEntity<Book>> create(
     @RequestBody() Book book,
@@ -48,28 +52,44 @@ abstract interface class CatalogClient {
 
 | Annotation | On | Meaning |
 |---|---|---|
-| `@GetMapping(path)`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | HTTP method and path (`/books/{isbn}`); options `headers: ['Name: value']`, `produces` (Accept), `consumes` (Content-Type) |
+| `@GetMapping(path)`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | HTTP method and path (`/books/{isbn}`; `''` for none); options `headers: ['Name=value']` (Spring's syntax), `produces` (Accept), `consumes` (Content-Type) |
 | `@RequestMapping(path, method: HttpMethod.head)` | method | any method |
 | `@PathVariable(['name'])` | parameter | fills `{name}` of the path (URL-encoded) |
-| `@RequestParam(['name'])` | parameter | a query parameter; `null` is left out, a list repeats it |
-| `@RequestHeader(['name'])` | parameter | a header; `null` is left out |
-| `@RequestBody()` | parameter | the body (JSON) |
+| `@RequestParam(['name'])` | parameter | a query parameter; `null` is left out, a list repeats it, a `Map` gives one per entry |
+| `@RequestHeader(['name'])` | parameter | a header; `null` is left out, a list gives several values, a `Map` one header per entry |
+| `@CookieValue(['name'])` | parameter | a cookie (`Cookie: name=value; ...`); `null` is left out |
+| `@RequestBody({required})` | parameter | the body (JSON) |
 
-Without a name, `@PathVariable()`, `@RequestParam()` and `@RequestHeader()`
-use the parameter name (the generator keeps parameter names). All mapping
-annotations implement `Mapping` (`method`, `path`, `headers`, `produces`,
-`consumes`), so code that reads them can use
-`annotations.whereType<Mapping>()`.
+Without a name, `@PathVariable()`, `@RequestParam()`, `@RequestHeader()` and
+`@CookieValue()` use the parameter name (the generator keeps parameter
+names). Whether a parameter is required and its default come from the Dart
+parameter, as Spring does for Kotlin: `String? q` is optional,
+`{int page = 0}` defaults to 0. All mapping annotations implement `Mapping`
+(`method`, `path`, `headers`, `produces`, `consumes`), so code that reads
+them can use `annotations.whereType<Mapping>()`.
 
 ## HTTP types
 
 | Type | Spring | What |
 |---|---|---|
 | `ResponseEntity<T>` | `ResponseEntity<T>` | status code, headers and body; `ResponseEntity.ok(body)` |
-| `HttpHeaders` | `HttpHeaders` | case-insensitive, several values per name, order and casing kept |
-| `HttpStatus` | `HttpStatus` | `HttpStatus.notFound` (an `int`), `reasonPhrase(404)`, `isSuccess` / `isClientError` / `isServerError` |
+| `HttpHeaders` | `HttpHeaders` | case-insensitive, several values per name, order and casing kept; `forEach((name, values))`, `toSingleValueMap()`, `contentType`, `location`, `contentLength`, `setBearerAuth`, `setBasicAuth`; name constants `HttpHeaders.contentTypeHeader`, ... |
+| `HttpStatus` | `HttpStatus` | every Spring 7 constant (`notFound`, `unprocessableContent`, `contentTooLarge`, ...) as an `int`; `reasonPhrase`, `series`, `is2xxSuccessful`, `is4xxClientError`, `isError`, ...; `valueOf(404)`, `resolve(599)` |
+| `HttpStatusCode` | `HttpStatusCode` | any code (`statusCode` of responses): `HttpStatusCode.valueOf(599).is5xxServerError` |
+| `HttpStatusSeries` | `HttpStatus.Series` | `informational`, `successful`, `redirection`, `clientError`, `serverError` |
 | `HttpMethod` | `HttpMethod` | `get`, `post`, ...; `value` is `GET`, `parse('post')` |
 | `MediaType` | `MediaType` | `applicationJson`, `textPlain`, ... |
+
+```dart
+final headers = HttpHeaders()
+  ..contentType = MediaType.applicationJson
+  ..setBearerAuth(token);
+headers.forEach((name, values) => print('$name: ${values.join(', ')}'));
+
+if (response.statusCode.is2xxSuccessful) { ... }
+if (response.statusCode == HttpStatus.notFound) { ... }
+HttpStatus.valueOf(503).reasonPhrase;   // 'Service Unavailable'
+```
 
 `HttpHeaders`, `HttpStatus`, `HttpRequest` and `HttpResponse` share their
 names with `dart:io` classes; in a file that needs both, import `dart:io`
@@ -87,14 +107,21 @@ final response = await transport.send(
   HttpRequest(
     method: HttpMethod.post,
     url: Uri.parse('https://api.neon.books/books'),
-    headers: HttpHeaders({HttpHeaders.contentType: MediaType.applicationJson}),
+    headers: HttpHeaders({HttpHeaders.contentTypeHeader: MediaType.applicationJson}),
     body: utf8.encode('{"isbn":"1"}'),
-    timeout: const Duration(seconds: 5),   // the whole exchange
+    readTimeout: const Duration(seconds: 60),   // each wait for data
   ),
 );
-if (response.isSuccess) print(response.bodyText);
+if (response.statusCode.is2xxSuccessful) print(response.bodyText);
 transport.close();
 ```
+
+Two optional timeouts: `readTimeout` is the longest wait for data — for
+the response, then between two chunks of the body (Spring's and Feign's
+read timeout); `timeout` is a deadline for the whole exchange. When one
+runs out the request is aborted with an `HttpTransportException`
+(`isTimeout`). `followRedirects: false` returns a `3xx` response instead of
+following it.
 
 | Transport | Platforms | Import |
 |---|---|---|
@@ -104,17 +131,19 @@ transport.close();
 | `MockHttpTransport` | tests | `package:spring_web_dart/testing.dart` |
 | your own | e.g. on Dio or `package:http` | implement `HttpTransport` (`send`, `stream`, `close`) |
 
-`IoHttpTransport` follows redirects for `GET` and `HEAD` and aborts the
-request when its timeout runs out. `FetchHttpTransport` follows redirects
-and aborts through an `AbortController`; on the web the server must allow
-the request (CORS) — a blocked request is an `HttpTransportException`.
+`IoHttpTransport` follows redirects as far as `HttpClient` does (`GET` and
+`HEAD`, `303` after a `POST`) and aborts the request when a timeout runs
+out. `FetchHttpTransport` follows redirects (`followRedirects: false`
+gives the browser's opaque redirect, status 0) and aborts through an
+`AbortController`; on the web the server must allow the request (CORS) — a
+blocked request is an `HttpTransportException`.
 
 ### Streaming responses
 
 `transport.stream(request)` returns as soon as the status and headers
 arrive; the body comes as byte chunks (`StreamedHttpResponse.body`). The
-request's timeout covers only the wait for the headers. Cancelling the
-subscription closes the connection.
+request's `timeout` and `readTimeout` cover only the wait for the headers.
+Cancelling the subscription closes the connection.
 
 ```dart
 final response = await transport.stream(request);
@@ -161,21 +190,25 @@ Both work on any `HttpTransport`, Feign or not.
 
 ## WebSocket transport
 
-`WebSocketTransport.connect(url)` opens a `WebSocketConnection`: incoming
-`messages` (`String` for text frames, `Uint8List` for binary), `send`,
-`close(code, reason)`, `closeCode`. The declarative client on top is
+`WebSocketTransport.connect(url)` opens a `WebSocketSession` (Spring's
+name): incoming `messages` (`String` for text frames, `Uint8List` for
+binary), `sendMessage`, `acceptedProtocol`, `isOpen`, `close([status])` and
+`closeStatus`, with `CloseStatus` and Spring's constants
+(`CloseStatus.normal`, `goingAway`, `policyViolation`, ...;
+`withReason`, `equalsCode`). The declarative client on top is
 `@WebSocketClient` in `spring_boot_starter_websocket`.
 
 ```dart
 final sockets = platformWebSocketTransport();
-final socket = await sockets.connect(
+final session = await sockets.connect(
   Uri.parse('wss://chat.neon.books/ws'),
   headers: HttpHeaders({'Authorization': 'Bearer $token'}),
   timeout: const Duration(seconds: 5),
 );
-socket.messages.listen(print);
-socket.send('{"text":"hi"}');
-await socket.close(WebSocketStatus.normalClosure);
+session.messages.listen(print);
+session.sendMessage('{"text":"hi"}');
+await session.close();          // CloseStatus.normal; or e.g.
+// await session.close(CloseStatus.policyViolation.withReason('no token'));
 ```
 
 | Transport | Platforms | Import |
@@ -245,3 +278,42 @@ expect(server.sentJson, [{'text': 'hello'}]);   // what the client sent
 server.drop();                                   // connection lost (1006)
 sockets.failNextConnect();                       // the next connect fails
 ```
+
+## Differences from Spring
+
+- **Mapping `headers`** use Spring's `'Name=value'`. A client sends them;
+  entries that are only conditions for a server (`'Name'`, `'!Name'`,
+  `'Name!=value'`) are ignored, as Spring Cloud OpenFeign does. Feign's
+  `'Name: value'` is rejected at startup.
+- **`path` is required** in the mapping annotations (`@GetMapping('')` for
+  none): Dart cannot combine an optional positional parameter with named
+  ones, so `@GetMapping()` with `headers:` / `produces:` is not possible.
+  `produces` and `consumes` take one media type, not a list.
+- **No `required:` / `defaultValue:`** on `@RequestParam`,
+  `@RequestHeader`, `@CookieValue` and `@PathVariable` (for the same
+  reason: their name is an optional positional parameter). The Dart
+  parameter says it, like Kotlin parameters do in Spring: a nullable type
+  is optional, a default value is the default. `@RequestBody(required:)`
+  exists.
+- **`HttpStatus` constants are `int`s** (an extension type), not enum
+  values: they compare with status codes directly, `toString()` is the
+  number (no `name()`), `100 Continue` is `HttpStatus.continue_` (as in
+  `dart:io`), and the deprecated aliases (`PAYLOAD_TOO_LARGE`,
+  `UNPROCESSABLE_ENTITY`) are left out. The `statusCode` of responses is an
+  `HttpStatusCode` (also an `int`).
+- **`HttpHeaders` name constants end in `Header`**
+  (`HttpHeaders.contentTypeHeader`, as in `dart:io`), because the typed
+  accessors use the plain names (`headers.contentType`); `contentType` is a
+  `String` (`MediaType` holds string constants, not parsed media types).
+  `operator []` gives the first value, `getAll` all of them, and `toMap()`
+  joins several values with `, ` (`toSingleValueMap()` keeps the first).
+- **`HttpMethod.parse`** throws on an unknown method (Spring's
+  `HttpMethod.valueOf` creates one).
+- **Timeouts:** an `HttpRequest` has a `readTimeout` (the longest wait for
+  data, Spring's read timeout) and a `timeout` (a deadline for the whole
+  exchange, which Spring's request factories do not have).
+- **`WebSocketSession`** hands out the incoming messages as a `Stream`
+  (Spring calls a `WebSocketHandler`), `sendMessage` takes a `String` (text)
+  or a `List<int>` (binary) instead of `TextMessage` / `BinaryMessage`, and
+  `closeStatus` tells how it closed (Spring passes it to
+  `afterConnectionClosed`).

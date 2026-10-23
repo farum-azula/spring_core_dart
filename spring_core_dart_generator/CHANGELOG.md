@@ -4,6 +4,8 @@
 - validation proxies for `@Validated` beans carry the parameter annotations (method validation)
 - generated advice closures take the pointcut's bindings (needs the matching `spring_core_dart`)
 - Breaking: `@Cacheable` / `@CachePut` (spring_boot_starter_cache) on a method returning a `Stream` fail the build: a stream can be listened to once; return a `Future<List<T>>`.
+- `@InterfaceProxy` annotations: a `bool primary` field of the annotation itself overrides the marker's default and a `List<String> qualifiers` field adds bean qualifiers (`@FeignClient(primary: false, qualifiers: [...])`).
+- `@AfterReturning` with a non-nullable `Object` parameter no longer throws for a `void` method (or a `null` result): the advice is skipped; declare `Object?` to receive `null`
 
 ## 0.1.6
 

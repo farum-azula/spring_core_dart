@@ -72,6 +72,21 @@ void main() {
         case '/slow':
           await Future<void>.delayed(const Duration(milliseconds: 500));
           response.write('late');
+        case '/trickle':
+          // Steady data, slower in total than a short deadline.
+          response.bufferOutput = false;
+          for (var i = 0; i < 6; i++) {
+            response.write('$i');
+            await response.flush();
+            await Future<void>.delayed(const Duration(milliseconds: 40));
+          }
+        case '/stall':
+          // Headers and a first chunk, then silence.
+          response.bufferOutput = false;
+          response.write('first');
+          await response.flush();
+          await Future<void>.delayed(const Duration(milliseconds: 600));
+          response.write('late');
       }
       await response.close();
     });
@@ -178,6 +193,80 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('readTimeout is the longest wait for data, not a deadline', () async {
+    // 6 chunks 40 ms apart: never 150 ms without data...
+    final steady = await transport.send(
+      HttpRequest(
+        method: HttpMethod.get,
+        url: base.resolve('/trickle'),
+        readTimeout: const Duration(milliseconds: 150),
+      ),
+    );
+    expect(steady.bodyText, '012345');
+    // ... but longer than a 150 ms deadline for the whole exchange.
+    await expectLater(
+      transport.send(
+        HttpRequest(
+          method: HttpMethod.get,
+          url: base.resolve('/trickle'),
+          timeout: const Duration(milliseconds: 150),
+        ),
+      ),
+      throwsA(
+        isA<HttpTransportException>().having(
+          (e) => e.isTimeout,
+          'isTimeout',
+          isTrue,
+        ),
+      ),
+    );
+    // Silence in the middle of the body.
+    await expectLater(
+      transport.send(
+        HttpRequest(
+          method: HttpMethod.get,
+          url: base.resolve('/stall'),
+          readTimeout: const Duration(milliseconds: 100),
+        ),
+      ),
+      throwsA(
+        isA<HttpTransportException>()
+            .having((e) => e.isTimeout, 'isTimeout', isTrue)
+            .having((e) => e.message, 'message', contains('read timeout')),
+      ),
+    );
+    // No response at all.
+    await expectLater(
+      transport.send(
+        HttpRequest(
+          method: HttpMethod.get,
+          url: base.resolve('/slow'),
+          readTimeout: const Duration(milliseconds: 50),
+        ),
+      ),
+      throwsA(
+        isA<HttpTransportException>().having(
+          (e) => e.isTimeout,
+          'isTimeout',
+          isTrue,
+        ),
+      ),
+    );
+  });
+
+  test('followRedirects: false returns the redirect', () async {
+    final moved = await transport.send(
+      HttpRequest(
+        method: HttpMethod.get,
+        url: base.resolve('/old'),
+        followRedirects: false,
+      ),
+    );
+    expect(moved.statusCode, HttpStatus.found);
+    expect(moved.statusCode.is3xxRedirection, isTrue);
+    expect(moved.headers.location, base.resolve('/json'));
   });
 
   test('stream reads the body as it arrives', () async {

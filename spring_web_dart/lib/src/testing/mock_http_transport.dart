@@ -127,8 +127,11 @@ class MockResponseBuilder {
     final List<int> content;
     if (json != null) {
       content = utf8.encode(jsonEncode(json));
-      if (!responseHeaders.contains(HttpHeaders.contentType)) {
-        responseHeaders.set(HttpHeaders.contentType, MediaType.applicationJson);
+      if (!responseHeaders.contains(HttpHeaders.contentTypeHeader)) {
+        responseHeaders.set(
+          HttpHeaders.contentTypeHeader,
+          MediaType.applicationJson,
+        );
       }
     } else if (body != null) {
       content = utf8.encode(body);
@@ -167,8 +170,11 @@ class MockResponseBuilder {
     Map<String, String> headers = const {},
   }) {
     final responseHeaders = HttpHeaders(headers);
-    if (!responseHeaders.contains(HttpHeaders.contentType)) {
-      responseHeaders.set(HttpHeaders.contentType, MediaType.textEventStream);
+    if (!responseHeaders.contains(HttpHeaders.contentTypeHeader)) {
+      responseHeaders.set(
+        HttpHeaders.contentTypeHeader,
+        MediaType.textEventStream,
+      );
     }
     respondStream(status, () async* {
       for (final event in events) {

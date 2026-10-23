@@ -102,6 +102,8 @@ final class BeanModule {
     List<PropertySourceDeclaration> propertySources = const [],
     List<BeanModule> imports = const [],
     Map<Type, BeanConfigurer> configurers = const {},
+    Map<Type, void Function(Object bean)> configurablePostConstruct = const {},
+    Map<Type, void Function(Object bean)> configurablePreDestroy = const {},
     List<BeanIntrospection<Object>> introspections = const [],
     Map<String, EmbeddedResource> resources = const {},
   }) : definitions = List.unmodifiable(definitions),
@@ -109,6 +111,8 @@ final class BeanModule {
        propertySources = List.unmodifiable(propertySources),
        imports = List.unmodifiable(imports),
        configurers = Map.unmodifiable(configurers),
+       configurablePostConstruct = Map.unmodifiable(configurablePostConstruct),
+       configurablePreDestroy = Map.unmodifiable(configurablePreDestroy),
        resources = Map.unmodifiable(resources) {
     // Embedded `lib/resources/` files become `classpath:` resources as soon
     // as the module exists (before config files are read).
@@ -133,6 +137,15 @@ final class BeanModule {
 
   /// Injectors for `@Configurable` classes, keyed by class.
   final Map<Type, BeanConfigurer> configurers;
+
+  /// The `@PostConstruct` methods of `@Configurable` classes, keyed by
+  /// class; run by `initializeBean` (Spring's
+  /// `CommonAnnotationBeanPostProcessor`).
+  final Map<Type, void Function(Object bean)> configurablePostConstruct;
+
+  /// The `@PreDestroy` methods of `@Configurable` classes, keyed by class;
+  /// run by `destroyBean`.
+  final Map<Type, void Function(Object bean)> configurablePreDestroy;
 
   /// Metadata of `@Introspected` classes (data binding, validation, SpEL).
   final List<BeanIntrospection<Object>> introspections;

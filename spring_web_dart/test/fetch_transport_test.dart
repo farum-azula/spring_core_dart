@@ -52,6 +52,18 @@ void main() {
         });
         return;
       }
+      if (request.uri.path == '/stall') {
+        // A first chunk, then silence: the read timeout runs out.
+        final response = request.response
+          ..headers.set('Access-Control-Allow-Origin', '*')
+          ..bufferOutput = false
+          ..write('first');
+        await response.flush();
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        response.write('late');
+        await response.close();
+        return;
+      }
       final response = request.response
         ..headers.set('Access-Control-Allow-Origin', '*')
         ..headers.contentType = ContentType('text', 'event-stream')
@@ -81,6 +93,8 @@ void main() {
       'contentType': 'application/json',
       'refused': 'error',
       'events': ['1:tick 1', '2:tick 2', '3:tick 3'],
+      'readTimeout': 'timeout',
+      'steady': 'tick 3',
       'webSocket': {
         'platform': true,
         'echo': ['hello', '[1,2,3]'],

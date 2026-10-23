@@ -45,12 +45,12 @@ Future<void> main() async {
     socket.listen((message) => socket.add('echo: $message'));
   });
 
-  final connection = await IoWebSocketTransport().connect(
+  final session = await IoWebSocketTransport().connect(
     Uri.parse('ws://127.0.0.1:${server.port}/ws'),
   );
-  final reply = connection.messages.first;
-  connection.send(jsonEncode({'from': 'me', 'text': 'hello'}));
+  final reply = session.messages.first;
+  session.sendMessage(jsonEncode({'from': 'me', 'text': 'hello'}));
   print(await reply); // echo: {"from":"me","text":"hello"}
-  await connection.close(WebSocketStatus.normalClosure);
+  await session.close(CloseStatus.normal);
   await server.close(force: true);
 }

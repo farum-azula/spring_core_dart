@@ -63,7 +63,7 @@ class LifecycleConfig {
 
 /// Started at refresh (phase 0) and stopped on close.
 @Component()
-class Warehouse implements SmartLifecycle {
+class Warehouse with SmartLifecycle {
   @override
   bool isRunning = false;
 
@@ -88,7 +88,7 @@ class Warehouse implements SmartLifecycle {
 
 /// Started after the warehouse (higher phase), stopped before it.
 @Component()
-class Courier implements SmartLifecycle {
+class Courier with SmartLifecycle {
   @override
   bool isRunning = false;
 

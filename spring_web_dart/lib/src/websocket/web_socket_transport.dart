@@ -15,26 +15,26 @@ import 'package:spring_web_dart/src/websocket/platform_web_socket_stub.dart'
 ///
 /// ```dart
 /// final transport = platformWebSocketTransport();
-/// final socket = await transport.connect(Uri.parse('wss://chat.neon.books/ws'));
-/// socket.messages.listen(print);
-/// socket.send('hello');
-/// await socket.close();
+/// final session = await transport.connect(Uri.parse('wss://chat.neon.books/ws'));
+/// session.messages.listen(print);
+/// session.sendMessage('hello');
+/// await session.close();
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// WebSocketClient client = new StandardWebSocketClient();
-/// client.execute(handler, "wss://chat.neon.books/ws");
+/// WebSocketSession session = client.execute(handler, "wss://chat.neon.books/ws").get();
 /// ```
 abstract interface class WebSocketTransport {
-  /// Opens a connection to [url] (`ws:` or `wss:`), sending [headers] and
+  /// Opens a session with [url] (`ws:` or `wss:`), sending [headers] and
   /// asking for one of [protocols]; [timeout] limits the handshake. Fails
   /// with [WebSocketException].
   ///
   /// Browsers cannot send headers with the handshake: on the web a
   /// non-empty [headers] fails — pass a token as a query parameter or a
   /// protocol instead.
-  Future<WebSocketConnection> connect(
+  Future<WebSocketSession> connect(
     Uri url, {
     HttpHeaders? headers,
     List<String> protocols = const [],
@@ -42,38 +42,47 @@ abstract interface class WebSocketTransport {
   });
 }
 
-/// One open WebSocket connection.
+/// One open WebSocket connection, like Spring's `WebSocketSession`. The
+/// incoming messages are a stream (Spring calls a `WebSocketHandler`).
 ///
 /// ```dart
-/// socket.messages.listen((message) {
+/// session.messages.listen((message) {
 ///   if (message is String) { ... } // a text frame
 ///   if (message is Uint8List) { ... } // a binary frame
 /// });
-/// socket.send('{"text":"hi"}');
-/// await socket.close(1000, 'bye');
+/// session.sendMessage('{"text":"hi"}');
+/// await session.close(CloseStatus.goingAway);
 /// ```
 ///
-/// Spring (Java): `WebSocketSession`.
-abstract interface class WebSocketConnection {
+/// Spring (Java):
+/// ```java
+/// session.sendMessage(new TextMessage("{\"text\":\"hi\"}"));
+/// session.close(CloseStatus.GOING_AWAY);
+/// ```
+abstract interface class WebSocketSession {
+  /// The address of the session.
+  Uri get uri;
+
   /// The incoming messages: `String` for text frames, `Uint8List` for
-  /// binary ones. Single subscription; done when the connection closes.
+  /// binary ones. Single subscription; done when the session closes.
   Stream<Object> get messages;
 
-  /// The protocol the server picked, if any.
-  String? get protocol;
+  /// The subprotocol the server accepted, if any.
+  String? get acceptedProtocol;
 
-  /// Sends a text frame (`String`) or a binary frame (`List<int>`); throws
-  /// [WebSocketException] when the connection is closed.
-  void send(Object message);
+  /// Whether the session is open.
+  bool get isOpen;
 
-  /// Closes the connection with [code] and [reason].
-  Future<void> close([int? code, String? reason]);
+  /// Sends a text message (`String`) or a binary one (`List<int>`); throws
+  /// [WebSocketException] when the session is closed.
+  void sendMessage(Object message);
 
-  /// The close code, once closed (e.g. 1000 normal, 1006 lost).
-  int? get closeCode;
+  /// Closes the session with [status] ([CloseStatus.normal] by default).
+  Future<void> close([CloseStatus status = CloseStatus.normal]);
 
-  /// The close reason, once closed.
-  String? get closeReason;
+  /// How the session was closed (by either side), once it is closed;
+  /// `null` while it is open.
+  CloseStatus? get closeStatus;
 }
 
 /// The WebSocket transport of the current platform:
@@ -123,41 +132,89 @@ class WebSocketException implements Exception {
       'WebSocketException: $message${url == null ? '' : ' ($url)'}';
 }
 
-/// WebSocket close codes (RFC 6455).
-abstract final class WebSocketStatus {
-  /// 1000: done.
-  static const normalClosure = 1000;
+/// The code and optional reason of a WebSocket close frame (RFC 6455),
+/// like Spring's `CloseStatus`, with its constants.
+///
+/// ```dart
+/// await session.close(CloseStatus.policyViolation.withReason('no token'));
+/// if (session.closeStatus?.equalsCode(CloseStatus.normal) ?? false) { ... }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// session.close(CloseStatus.POLICY_VIOLATION.withReason("no token"));
+/// ```
+final class CloseStatus {
+  /// A status with [code] (1000–4999) and an optional [reason].
+  const CloseStatus(this.code, [this.reason])
+    : assert(code >= 1000 && code < 5000, 'Invalid status code');
 
-  /// 1001: the server is going down or the page is leaving.
-  static const goingAway = 1001;
+  /// 1000: the purpose of the connection was fulfilled.
+  static const normal = CloseStatus(1000);
+
+  /// 1001: the endpoint is going away (a server going down, a page
+  /// leaving).
+  static const goingAway = CloseStatus(1001);
 
   /// 1002: a protocol error.
-  static const protocolError = 1002;
+  static const protocolError = CloseStatus(1002);
 
-  /// 1003: a kind of data the endpoint does not accept.
-  static const unsupportedData = 1003;
+  /// 1003: a kind of data the endpoint cannot accept.
+  static const notAcceptable = CloseStatus(1003);
 
-  /// 1005: closed without a code.
-  static const noStatusReceived = 1005;
+  /// 1005: closed without a status code (never sent in a close frame).
+  static const noStatusCode = CloseStatus(1005);
 
-  /// 1006: the connection was lost without a close frame.
-  static const abnormalClosure = 1006;
+  /// 1006: the connection was lost without a close frame (never sent).
+  static const noCloseFrame = CloseStatus(1006);
 
   /// 1007: data that does not fit the message type.
-  static const invalidPayload = 1007;
+  static const badData = CloseStatus(1007);
 
   /// 1008: a policy violation (often: not authorized).
-  static const policyViolation = 1008;
+  static const policyViolation = CloseStatus(1008);
 
-  /// 1009: a message too big.
-  static const messageTooBig = 1009;
+  /// 1009: a message too big to process.
+  static const tooBigToProcess = CloseStatus(1009);
+
+  /// 1010: the client expected an extension the server did not offer.
+  static const requiredExtension = CloseStatus(1010);
 
   /// 1011: the server failed.
-  static const internalError = 1011;
+  static const serverError = CloseStatus(1011);
 
   /// 1012: the server is restarting.
-  static const serviceRestart = 1012;
+  static const serviceRestarted = CloseStatus(1012);
 
-  /// 1013: try again later.
-  static const tryAgainLater = 1013;
+  /// 1013: the server is overloaded; try again later.
+  static const serviceOverload = CloseStatus(1013);
+
+  /// 1015: the TLS handshake failed (never sent).
+  static const tlsHandshakeFailure = CloseStatus(1015);
+
+  /// 4500: Spring's code for a session that cannot be relied on any more
+  /// (e.g. a send timed out).
+  static const sessionNotReliable = CloseStatus(4500);
+
+  /// The status code.
+  final int code;
+
+  /// The reason, if any.
+  final String? reason;
+
+  /// This code with [reason].
+  CloseStatus withReason(String reason) => CloseStatus(code, reason);
+
+  /// Whether [other] has the same code (the reason may differ).
+  bool equalsCode(CloseStatus other) => code == other.code;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CloseStatus && other.code == code && other.reason == reason;
+
+  @override
+  int get hashCode => Object.hash(code, reason);
+
+  @override
+  String toString() => 'CloseStatus[code=$code, reason=$reason]';
 }

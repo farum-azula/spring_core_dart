@@ -5,6 +5,7 @@ import 'package:spring_core_dart/src/beans/type_info.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
+import 'package:spring_core_dart/src/core/convert/lenient_enum.dart';
 import 'package:spring_core_dart/src/validation/errors.dart';
 import 'package:spring_core_dart/src/validation/validator.dart';
 
@@ -471,14 +472,12 @@ class DataBinder {
       return value;
     }
     if (type is EnumType<Enum>) {
-      final text = '$value'.toLowerCase();
-      for (final candidate in type.values) {
-        if (candidate.name.toLowerCase() == text ||
-            '${type.toJsonValue(candidate)}'.toLowerCase() == text) {
-          return candidate;
-        }
-      }
-      throw TypeMismatchException(path, value, type.type);
+      return findLenientEnum(
+            type.values,
+            '$value'.trim(),
+            alias: type.toJsonValue,
+          ) ??
+          (throw TypeMismatchException(path, value, type.type));
     }
     try {
       final converted = conversionService.convertTo(value, type.type);

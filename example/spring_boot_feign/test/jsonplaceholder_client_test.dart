@@ -35,7 +35,10 @@ void main() {
       });
       final request = server.lastRequest;
       expect('${request.url}', 'https://jsonplaceholder.typicode.com/users/1');
-      expect(request.headers[HttpHeaders.accept], MediaType.applicationJson);
+      expect(
+        request.headers[HttpHeaders.acceptHeader],
+        MediaType.applicationJson,
+      );
       // The RequestInterceptor bean of FeignConfig.
       expect(request.headers['X-Client'], 'spring-boot-feign-example');
     },
@@ -67,7 +70,7 @@ void main() {
           (request) => HttpResponse(
             201,
             headers: HttpHeaders({
-              HttpHeaders.contentType: MediaType.applicationJson,
+              HttpHeaders.contentTypeHeader: MediaType.applicationJson,
             }),
             body: utf8.encode(
               jsonEncode(
@@ -89,7 +92,10 @@ void main() {
       expect(created.body!.title, 'Spring in Dart');
     });
     final request = server.lastRequest;
-    expect(request.headers[HttpHeaders.contentType], MediaType.applicationJson);
+    expect(
+      request.headers[HttpHeaders.contentTypeHeader],
+      MediaType.applicationJson,
+    );
     expect(jsonDecode(utf8.decode(request.body!)), {
       'userId': 1,
       'title': 'Spring in Dart',

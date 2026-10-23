@@ -12,7 +12,7 @@ HttpRequest _get(String url, [String? lastEventId]) => HttpRequest(
   method: HttpMethod.get,
   url: Uri.parse(url),
   headers: HttpHeaders({
-    HttpHeaders.accept: MediaType.textEventStream,
+    HttpHeaders.acceptHeader: MediaType.textEventStream,
     'Last-Event-ID': ?lastEventId,
   }),
 );
@@ -247,7 +247,7 @@ void main() {
       ).respondEvents([const ServerSentEvent('x', event: 'e')]);
     final response = await server.send(_get('http://h/e'));
     expect(
-      response.headers[HttpHeaders.contentType],
+      response.headers[HttpHeaders.contentTypeHeader],
       MediaType.textEventStream,
     );
     expect(response.bodyText, 'event: e\ndata: x\n\n');

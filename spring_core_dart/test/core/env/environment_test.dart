@@ -43,6 +43,18 @@ void main() {
       expect(e.containsProperty('nope'), isFalse);
     });
 
+    test('containsProperty for null and empty values; lists read as a,b', () {
+      final e = env({
+        'app.null': null,
+        'app.empty': '',
+        'app.list': ['a', 'b'],
+      });
+      expect(e.containsProperty('app.null'), isTrue);
+      expect(e.containsProperty('app.empty'), isTrue);
+      expect(e.containsProperty('app.none'), isFalse);
+      expect(e.getProperty('app.list'), 'a,b');
+    });
+
     test('required property missing', () {
       final e = env({});
       expect(

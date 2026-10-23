@@ -305,6 +305,12 @@ class PropertySourcesPropertyResolver extends AbstractPropertyResolver {
   /// The sources searched in order, first wins.
   final MutablePropertySources propertySources;
 
+  /// Whether any source defines [key], even with a `null` or empty value,
+  /// like Spring's `PropertySourcesPropertyResolver.containsProperty`.
+  @override
+  bool containsProperty(String key) =>
+      propertySources.any((source) => source.containsProperty(key));
+
   @override
   Object? getRawProperty(String key) {
     for (final source in propertySources) {

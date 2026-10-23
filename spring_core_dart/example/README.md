@@ -384,7 +384,7 @@ greeting=Добро пожаловать в {0}!
 class MessagesConfig {
   @Bean()
   MessageSource messageSource() =>
-      PropertiesMessageSource(basenames: ['classpath:messages']);
+      ReloadableResourceBundleMessageSource(basenames: ['classpath:messages']);
 }
 
 context.getMessage('greeting', args: ['NEON'], locale: 'ru');

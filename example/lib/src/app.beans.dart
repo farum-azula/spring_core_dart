@@ -1137,6 +1137,14 @@ class _$WarehouseProxy
       return null;
     });
   }
+
+  @override
+  void stopWithCallback(void Function() callback) {
+    _invoker.invoke(this, _target, 6, [callback], (args) {
+      _target.stopWithCallback((args[0] as void Function()));
+      return null;
+    });
+  }
 }
 
 class _$CourierProxy
@@ -1191,6 +1199,14 @@ class _$CourierProxy
   set isRunning(bool value) {
     _invoker.invoke(this, _target, 5, [value], (args) {
       _target.isRunning = (args[0] as bool);
+      return null;
+    });
+  }
+
+  @override
+  void stopWithCallback(void Function() callback) {
+    _invoker.invoke(this, _target, 6, [callback], (args) {
+      _target.stopWithCallback((args[0] as void Function()));
       return null;
     });
   }
@@ -1753,6 +1769,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/aop/aspects.dart#DefaultPricingService',
       types: const [_i1.DefaultPricingService, _i1.PricingService],
       create: (r) => _i1.DefaultPricingService(),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1807,6 +1824,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i1.AuditAspect],
       order: 1,
       create: (r) => _i1.AuditAspect(),
+      annotations: const [_i2.Aspect(), _i2.Component(), _i2.Order(1)],
       aspect: _i2.AspectMetadata<_i1.AuditAspect>(
         advice: [
           _i2.AspectAdvice<_i1.AuditAspect>(
@@ -1858,6 +1876,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i1.TimingAspect],
       order: 2,
       create: (r) => _i1.TimingAspect(),
+      annotations: const [_i2.Aspect(), _i2.Component(), _i2.Order(2)],
       aspect: _i2.AspectMetadata<_i1.TimingAspect>(
         advice: [
           _i2.AspectAdvice<_i1.TimingAspect>(
@@ -1875,6 +1894,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/aop/aspects.dart#DefaultSlogans',
       types: const [_i1.DefaultSlogans, _i1.Slogans],
       create: (r) => _i1.DefaultSlogans(),
+      annotations: const [_i2.Component(r'slogans')],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1898,17 +1918,21 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           r'package:spring_core_dart_example/src/aop/aspects.dart#AopConfig',
       types: const [_i1.AopConfig],
       create: (r) => _i1.AopConfig(),
+      annotations: const [_i2.Configuration()],
     ),
     _i2.BeanDefinition<_i2.PointcutAdvisor>(
       name: r'upperCaseAdvisor',
       source: r'package:spring_core_dart_example/src/aop/aspects.dart#AopConfig.upperCaseAdvisor',
       types: const [_i2.PointcutAdvisor, _i2.Advisor],
+      factoryBeanName: r'aopConfig',
+      factoryMethodName: r'upperCaseAdvisor',
       dependencies: const [
         _i2.Dependency(_i1.AopConfig, qualifier: r'aopConfig'),
       ],
       create: (r) => r
           .dependency<_i1.AopConfig>(qualifier: r'aopConfig')
           .upperCaseAdvisor(),
+      annotations: const [_i2.Bean()],
     ),
     _i2.BeanDefinition<_i4.DefaultBasketPricing>(
       name: r'defaultBasketPricing',
@@ -1922,6 +1946,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           r.lazyDependency<_i4.BasketPricing>(name: r'_self'),
         ),
       ),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1980,6 +2005,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       create: (r) => _i5.ConsoleLogScreen(
         r.optionalDependency<_i7.LogBuffer>(name: r'buffer'),
       ),
+      annotations: const [_i2.Component(), _i2.Order(2147483647)],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2015,6 +2041,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/boot/shop_properties.dart#ShopProperties',
       types: const [_i8.ShopProperties],
       create: (r) => _i8.ShopProperties(),
+      annotations: const [
+        _i29.ConfigurationProperties(r'shop'),
+        _i2.Validated(),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2025,8 +2055,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'openingHours',
@@ -2036,8 +2069,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'deliveryTime',
@@ -2047,8 +2083,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Duration',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'maxBasketSize',
@@ -2058,8 +2097,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'int',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'name',
@@ -2069,8 +2111,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.setter,
             returnType: r'String',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'openingHours',
@@ -2080,8 +2125,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.setter,
             returnType: r'String',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'deliveryTime',
@@ -2091,8 +2139,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.setter,
             returnType: r'Duration',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
           _i2.MethodSignature(
             name: r'maxBasketSize',
@@ -2102,8 +2153,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.setter,
             returnType: r'int',
             targetTypes: [r'ShopProperties'],
-            targetAnnotations: [_i29.ConfigurationProperties(r'shop')],
-            targetAnnotationTypes: [r'ConfigurationProperties'],
+            targetAnnotations: [
+              _i29.ConfigurationProperties(r'shop'),
+              _i2.Validated(),
+            ],
+            targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
           ),
         ],
         create: (target, invoker) =>
@@ -2125,6 +2179,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         r.dependency<_i9.CatalogService>(name: r'catalog'),
         r.dependency<_i10.Checkout>(name: r'checkout'),
       ),
+      annotations: const [_i2.Component(), _i2.Order(1)],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2184,6 +2239,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/cache/price_list.dart#PriceList',
       types: const [_i11.PriceList],
       create: (r) => _i11.PriceList(),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2262,6 +2318,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/catalog/catalog.dart#InMemoryBookRepository',
       types: const [_i9.InMemoryBookRepository, _i9.BookRepository],
       create: (r) => _i9.InMemoryBookRepository(),
+      annotations: const [_i2.Repository()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2299,6 +2356,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i9.LoyaltyDiscount, _i9.Discount],
       order: 2,
       create: (r) => _i9.LoyaltyDiscount(),
+      annotations: const [_i2.Component(), _i2.Order(2)],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2335,6 +2393,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i9.PoetryDiscount, _i9.Discount],
       order: 1,
       create: (r) => _i9.PoetryDiscount(),
+      annotations: const [_i2.Component(), _i2.Order(1)],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2376,6 +2435,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       create: (r) => _i9.BestDiscount(
         r.optionalDependencyList<_i9.Discount>() ?? <_i9.Discount>[],
       ),
+      annotations: const [_i2.Component(), _i2.Primary()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2465,6 +2525,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           r.dependency<_i2.ApplicationEventPublisher>(name: r'publisher'),
         );
       },
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory.unavailable(
         signatures: const [
           _i2.MethodSignature(
@@ -2646,6 +2707,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         r.value<_i2.Resource>(r'classpath:templates/welcome.txt'),
         r.value<_i2.Resource>(r'classpath:logo.png'),
       ),
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2712,11 +2774,17 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/external/legacy_config.dart#LegacyConfig',
       types: const [_i13.LegacyConfig],
       create: (r) => _i13.LegacyConfig(),
+      annotations: const [
+        _i2.Configuration(),
+        _i2.PropertySource([r'classpath:legacy.properties']),
+      ],
     ),
     _i2.BeanDefinition<_i13.LegacyGreeter>(
       name: r'legacyGreeter',
       source: r'package:spring_core_dart_example/external/legacy_config.dart#LegacyConfig.legacyGreeter',
       types: const [_i13.LegacyGreeter],
+      factoryBeanName: r'legacyConfig',
+      factoryMethodName: r'legacyGreeter',
       dependencies: const [
         _i2.Dependency(_i13.LegacyConfig, qualifier: r'legacyConfig'),
         _i2.Dependency.value(r'${legacy.greeting}'),
@@ -2724,6 +2792,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       create: (r) => r
           .dependency<_i13.LegacyConfig>(qualifier: r'legacyConfig')
           .legacyGreeter(r.value<String>(r'${legacy.greeting}')),
+      annotations: const [_i2.Bean()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2747,11 +2816,17 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/config/shop_config.dart#ShopConfig',
       types: const [_i14.ShopConfig],
       create: (r) => _i14.ShopConfig(),
+      annotations: const [
+        _i2.Configuration(),
+        _i2.Import([_i13.LegacyConfig]),
+      ],
     ),
     _i2.BeanDefinition<_i14.AppInfo>(
       name: r'appInfo',
       source: r'package:spring_core_dart_example/src/config/shop_config.dart#ShopConfig.appInfo',
       types: const [_i14.AppInfo],
+      factoryBeanName: r'shopConfig',
+      factoryMethodName: r'appInfo',
       dependencies: const [
         _i2.Dependency(_i14.ShopConfig, qualifier: r'shopConfig'),
         _i2.Dependency.value(r'${app.name}'),
@@ -2763,6 +2838,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             r.value<String>(r'${app.name}'),
             r.value<String>(r'${app.currency}'),
           ),
+      annotations: const [_i2.Bean(), _i2.Introspected()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2792,7 +2868,9 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       name: r'clock',
       source: r'package:spring_core_dart_example/src/config/shop_config.dart#ShopConfig.clock',
       types: const [_i9.Clock],
+      factoryMethodName: r'clock',
       create: (r) => _i14.ShopConfig.clock(),
+      annotations: const [_i2.Bean()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2814,11 +2892,17 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i14.IdGenerator],
       aliases: const [r'idGenerator'],
       scope: r'prototype',
+      factoryBeanName: r'shopConfig',
+      factoryMethodName: r'ids',
       dependencies: const [
         _i2.Dependency(_i14.ShopConfig, qualifier: r'shopConfig'),
       ],
       create: (r) =>
           r.dependency<_i14.ShopConfig>(qualifier: r'shopConfig').ids(),
+      annotations: const [
+        _i2.Bean(name: r'ids', aliases: [r'idGenerator']),
+        _i2.Scope(r'prototype'),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2840,6 +2924,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/config/shop_config.dart#ShopConfig.pool',
       types: const [_i14.ConnectionPool],
       lazy: true,
+      factoryBeanName: r'shopConfig',
+      factoryMethodName: r'pool',
       dependencies: const [
         _i2.Dependency(_i14.ShopConfig, qualifier: r'shopConfig'),
         _i2.Dependency.value(r'${db.url}'),
@@ -2850,9 +2936,15 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       initMethod: (bean) {
         bean.connect();
       },
+      initMethodName: r'connect',
       destroyMethod: (bean) {
         bean.close();
       },
+      destroyMethodName: r'(inferred)',
+      annotations: const [
+        _i2.Bean(initMethod: r'connect'),
+        _i2.Lazy(),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2907,6 +2999,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       name: r'searchIndex',
       source: r'package:spring_core_dart_example/src/config/shop_config.dart#ShopConfig.searchIndex',
       types: const [_i14.SearchIndex],
+      factoryBeanName: r'shopConfig',
+      factoryMethodName: r'searchIndex',
       dependencies: const [
         _i2.Dependency(_i14.ShopConfig, qualifier: r'shopConfig'),
         _i2.Dependency(_i9.BookRepository, name: r'books'),
@@ -2919,6 +3013,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       postConstruct: (bean) {
         bean.build();
       },
+      annotations: const [_i2.Bean()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -2985,6 +3080,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i14.ProdOnlyConfig(),
+      annotations: const [
+        _i2.Configuration(),
+        _i2.Profile([r'prod']),
+        _i2.PropertySource([r'classpath:prod-only.properties']),
+      ],
     ),
     _i2.BeanDefinition<_i15.OrderService>(
       name: r'orderService',
@@ -2996,6 +3096,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       create: (r) => _i15.OrderService(
         r.dependency<_i2.ApplicationEventPublisher>(name: r'publisher'),
       ),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3065,6 +3166,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           },
         ),
       ],
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3114,6 +3216,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [
         _i15.ShipmentNotifier,
         _i2.ApplicationListener<_i15.OrderShipped>,
+        _i2.ApplicationListener<Object>,
       ],
       create: (r) => _i15.ShipmentNotifier(),
       eventListeners: [
@@ -3125,6 +3228,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           },
         ),
       ],
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3149,6 +3253,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/extension/extension_points.dart#AuditingPostProcessor',
       types: const [_i16.AuditingPostProcessor, _i2.BeanPostProcessor],
       create: (r) => _i16.AuditingPostProcessor(),
+      annotations: const [_i2.Component()],
     ),
     _i2.BeanDefinition<_i16.ShutdownWatcher>(
       name: r'shutdownWatcher',
@@ -3159,12 +3264,14 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         _i2.BeanPostProcessor,
       ],
       create: (r) => _i16.ShutdownWatcher(),
+      annotations: const [_i2.Component()],
     ),
     _i2.BeanDefinition<_i16.InvoiceService>(
       name: r'invoiceService',
       source: r'package:spring_core_dart_example/src/extension/extension_points.dart#InvoiceService',
       types: const [_i16.InvoiceService, _i16.Audited],
       create: (r) => _i16.InvoiceService(),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3191,23 +3298,28 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         _i2.BeanFactoryPostProcessor,
       ],
       create: (r) => _i16.ReportsLazyPostProcessor(),
+      annotations: const [_i2.Component()],
     ),
     _i2.BeanDefinition<_i16.ReportConfig>(
       name: r'reportConfig',
       source: r'package:spring_core_dart_example/src/extension/extension_points.dart#ReportConfig',
       types: const [_i16.ReportConfig],
       create: (r) => _i16.ReportConfig(),
+      annotations: const [_i2.Configuration()],
     ),
     _i2.BeanDefinition<_i16.SalesReport>(
       name: r'salesReport',
       source: r'package:spring_core_dart_example/src/extension/extension_points.dart#ReportConfig.salesReport',
       types: const [_i16.SalesReport],
+      factoryBeanName: r'reportConfig',
+      factoryMethodName: r'salesReport',
       dependencies: const [
         _i2.Dependency(_i16.ReportConfig, qualifier: r'reportConfig'),
       ],
       create: (r) => r
           .dependency<_i16.ReportConfig>(qualifier: r'reportConfig')
           .salesReport(),
+      annotations: const [_i2.Bean()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [],
         create: (target, invoker) => _$ReportConfig_salesReportProxy(
@@ -3225,6 +3337,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         _i2.BeanFactoryPostProcessor,
       ],
       create: (r) => _i16.BannerRegistrar(),
+      annotations: const [_i2.Component()],
     ),
     _i2.BeanDefinition<_i16.Basket>(
       name: r'basket',
@@ -3232,6 +3345,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i16.Basket],
       scope: r'basket',
       create: (r) => _i16.Basket(),
+      annotations: const [_i2.Component(), _i2.Scope(r'basket')],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3254,8 +3368,12 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       name: r'basketService',
       source: r'package:spring_core_dart_example/src/extension/extension_points.dart#BasketService',
       types: const [_i16.BasketService],
-      dependencies: const [_i2.Dependency.provider(_i16.Basket)],
-      create: (r) => _i16.BasketService(r.provider<_i16.Basket>()),
+      dependencies: const [
+        _i2.Dependency.provider(_i16.Basket, name: r'basket'),
+      ],
+      create: (r) =>
+          _i16.BasketService(r.provider<_i16.Basket>(name: r'basket')),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3308,6 +3426,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i17.Recommendations(),
+      annotations: const [
+        _i2.Service(),
+        _i17.ConditionalOnProperty(r'feature.recommendations'),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3341,6 +3463,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i17.WeekendSale(),
+      annotations: const [
+        _i2.Service(),
+        _i2.Conditional([_i17.OnWeekendsOnly]),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [],
         create: (target, invoker) =>
@@ -3368,6 +3494,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           annotations: const [_i30.Scheduled(cron: r'0 0 3 * * *')],
         ),
       ],
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3428,6 +3555,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/lifecycle/lifecycle.dart#LifecycleConfig',
       types: const [_i19.LifecycleConfig],
       create: (r) => _i19.LifecycleConfig(),
+      annotations: const [_i2.Configuration()],
     ),
     _i2.BeanDefinition<_i19.LifecycleProbe>(
       name: r'probe',
@@ -3442,6 +3570,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         _i2.InitializingBean,
         _i2.DisposableBean,
       ],
+      factoryBeanName: r'lifecycleConfig',
+      factoryMethodName: r'probe',
       dependencies: const [
         _i2.Dependency(_i19.LifecycleConfig, qualifier: r'lifecycleConfig'),
         _i2.Dependency(_i2.Environment, name: r'clockName'),
@@ -3458,12 +3588,17 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       initMethod: (bean) {
         bean.customInit();
       },
+      initMethodName: r'customInit',
       preDestroy: (bean) {
         bean.preDestroy();
       },
       destroyMethod: (bean) {
         bean.customDestroy();
       },
+      destroyMethodName: r'customDestroy',
+      annotations: const [
+        _i2.Bean(initMethod: r'customInit', destroyMethod: r'customDestroy'),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3674,6 +3809,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/lifecycle/lifecycle.dart#Warehouse',
       types: const [_i19.Warehouse, _i2.SmartLifecycle, _i2.Lifecycle],
       create: (r) => _i19.Warehouse(),
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3740,6 +3876,18 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             targetAnnotations: [_i2.Component()],
             targetAnnotationTypes: [r'Component'],
           ),
+          _i2.MethodSignature(
+            name: r'stopWithCallback',
+            declaringType: r'SmartLifecycle',
+            targetType: r'Warehouse',
+            declaringTypes: [r'SmartLifecycle'],
+            returnType: r'void',
+            parameterTypes: [r'Function'],
+            parameterNames: [r'callback'],
+            targetTypes: [r'Warehouse', r'SmartLifecycle', r'Lifecycle'],
+            targetAnnotations: [_i2.Component()],
+            targetAnnotationTypes: [r'Component'],
+          ),
         ],
         create: (target, invoker) =>
             _$WarehouseProxy((target as _i19.Warehouse), invoker),
@@ -3750,6 +3898,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/lifecycle/lifecycle.dart#Courier',
       types: const [_i19.Courier, _i2.SmartLifecycle, _i2.Lifecycle],
       create: (r) => _i19.Courier(),
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3816,6 +3965,18 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             targetAnnotations: [_i2.Component()],
             targetAnnotationTypes: [r'Component'],
           ),
+          _i2.MethodSignature(
+            name: r'stopWithCallback',
+            declaringType: r'SmartLifecycle',
+            targetType: r'Courier',
+            declaringTypes: [r'SmartLifecycle'],
+            returnType: r'void',
+            parameterTypes: [r'Function'],
+            parameterNames: [r'callback'],
+            targetTypes: [r'Courier', r'SmartLifecycle', r'Lifecycle'],
+            targetAnnotations: [_i2.Component()],
+            targetAnnotationTypes: [r'Component'],
+          ),
         ],
         create: (target, invoker) =>
             _$CourierProxy((target as _i19.Courier), invoker),
@@ -3826,6 +3987,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/lifecycle/lifecycle.dart#StartupReport',
       types: const [_i19.StartupReport, _i2.SmartInitializingSingleton],
       create: (r) => _i19.StartupReport(),
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3856,6 +4018,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i10.SandboxGateway(),
+      annotations: const [
+        _i2.Component(r'sandbox'),
+        _i2.Profile([r'dev']),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3891,6 +4057,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i10.LiveGateway(),
+      annotations: const [
+        _i2.Component(r'live'),
+        _i2.Profile([r'prod']),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3919,6 +4089,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i10.OfflineGateway, _i10.PaymentGateway],
       fallback: true,
       create: (r) => _i10.OfflineGateway(),
+      annotations: const [_i2.Component(r'offline'), _i2.Fallback()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -3951,6 +4122,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
       ],
       create: (r) => _i10.DebugToolbar(),
+      annotations: const [
+        _i2.Component(),
+        _i2.Profile([r'dev-tools & !prod']),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [],
         create: (target, invoker) =>
@@ -3976,6 +4151,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           name: r'backup',
         ),
       ),
+      annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4023,6 +4199,12 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i20.CatalogApi],
       primary: true,
       create: (r) => _$CatalogApiImpl.$create(r),
+      annotations: const [
+        _i25.FeignClient(
+          r'catalog-api',
+          url: r'${neon.catalog-api.url:http://localhost:8080}',
+        ),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4105,6 +4287,13 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i20.MotdApi],
       primary: true,
       create: (r) => _$MotdApiImpl.$create(r),
+      annotations: const [
+        _i25.FeignClient(
+          r'motd-api',
+          url: r'${neon.catalog-api.url:http://localhost:8080}',
+          fallback: _i20.OfflineMotd,
+        ),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4135,6 +4324,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/remote/catalog_api.dart#OfflineMotd',
       types: const [_i20.OfflineMotd, _i20.MotdApi],
       create: (r) => _i20.OfflineMotd(),
+      annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4160,6 +4350,12 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i23.StockFeed],
       primary: true,
       create: (r) => _$StockFeedImpl.$create(r),
+      annotations: const [
+        _i25.FeignClient(
+          r'stock-feed',
+          url: r'${neon.catalog-api.url:http://localhost:8080}',
+        ),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4190,6 +4386,12 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       types: const [_i23.SupportChat],
       primary: true,
       create: (r) => _$SupportChatImpl.$create(r),
+      annotations: const [
+        _i28.WebSocketClient(
+          r'support-chat',
+          url: r'${neon.chat.url:ws://localhost:8080/chat}',
+        ),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4454,7 +4656,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           annotations: const [_i2.Min(1)],
         ),
       ],
-      annotations: const [_i29.ConfigurationProperties(r'shop')],
+      annotations: const [
+        _i29.ConfigurationProperties(r'shop'),
+        _i2.Validated(),
+      ],
       instantiate: () => _i8.ShopProperties(),
       constructor: _i2.BeanConstructor<_i8.ShopProperties>(
         parameters: [],

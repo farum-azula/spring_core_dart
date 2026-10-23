@@ -327,7 +327,7 @@ void main() {
       expect(eval('members.?[value > 1]', root), {'b': 2, 'c': 3});
       expect(eval('members.^[value > 1]', root), {'b': 2});
       expect(eval(r'members.$[value > 1]', root), {'c': 3});
-      expect(eval(r'members.$[value > 9]', root), isEmpty);
+      expect(eval(r'members.$[value > 9]', root), isNull);
       expect(eval('members.![key + value]', root), ['a1', 'b2', 'c3']);
     });
 
@@ -361,7 +361,10 @@ void main() {
         () => eval("'x'.![1]"),
         spelError(SpelMessage.projectionNotSupported),
       );
-      expect(() => eval('{1}.?[#this]'), spelError(SpelMessage.notBoolean));
+      expect(
+        () => eval('{1}.?[#this]'),
+        spelError(SpelMessage.resultOfSelectionCriteriaIsNotBoolean),
+      );
     });
   });
 
@@ -998,7 +1001,93 @@ void main() {
       );
     }, skip: false);
   });
+
+  group('Spring parity', () {
+    test('SimpleEvaluationContext forbids variable assignment (EL1080E)', () {
+      final context = SimpleEvaluationContext.forReadWriteDataBinding().build()
+        ..setVariable('v', 1);
+      for (final expression in ['#v = 5', '#v++', '#v--', '++#v']) {
+        expect(
+          () => eval(expression, null, context),
+          throwsA(
+            isA<SpelEvaluationException>()
+                .having(
+                  (e) => e.code,
+                  'code',
+                  SpelMessage.variableAssignmentNotSupported,
+                )
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains("Assignment to variable '#v' is not supported"),
+                ),
+          ),
+        );
+      }
+      expect(
+        () => parser.parseExpression('#v').setValue(context, null, 2),
+        spelError(SpelMessage.variableAssignmentNotSupported),
+      );
+      expect(eval('#v', null, context), 1);
+      final standard = StandardEvaluationContext()..setVariable('v', 1);
+      expect(eval('#v = 5', null, standard), 5);
+      expect(eval('#v++', null, standard), 5);
+      expect(standard.lookupVariable('v'), 6);
+      expect(standard.assignVariable('w', () => 7), 7);
+      expect(standard.lookupVariable('w'), 7);
+    });
+
+    test('enums of the same type compare by index (Java ordinal)', () {
+      final context = StandardEvaluationContext()
+        ..setVariable('lo', _Level.low)
+        ..setVariable('hi', _Level.high);
+      expect(eval('#lo < #hi', null, context), isTrue);
+      expect(eval('#hi >= #lo', null, context), isTrue);
+      expect(eval('#lo > #hi', null, context), isFalse);
+      expect(
+        const StandardTypeComparator().canCompare(_Level.low, _Shade.dark),
+        isFalse,
+      );
+    });
+
+    test('selection criteria must be boolean', () {
+      for (final expression in [
+        "{1,2,3}.?['true']",
+        '{1,2,3}.^[null]',
+        "{a: 1}.?['true']",
+      ]) {
+        expect(
+          () => eval(expression),
+          spelError(SpelMessage.resultOfSelectionCriteriaIsNotBoolean),
+        );
+      }
+    });
+
+    test('+ converts the non-String operand with the TypeConverter', () {
+      expect(eval("'a' + {1,2}"), 'a1,2');
+      expect(eval("{1,2} + 'a'"), '1,2a');
+      expect(eval("'a' + null"), 'anull');
+      expect(
+        parser
+            .parseExpression('list: #{ {1,2} }!', ParserContext.template)
+            .getValue(),
+        'list: 1,2!',
+      );
+    });
+
+    test('map selection first/last without a match is null', () {
+      expect(eval('{a: 1, b: 2}.^[value > 5]'), isNull);
+      expect(eval(r'{a: 1, b: 2}.$[value > 5]'), isNull);
+      expect(eval('{a: 1, b: 2}.^[value > 0]'), {'a': 1});
+      expect(eval(r'{a: 1, b: 2}.$[value > 0]'), {'b': 2});
+      expect(eval('{a: 1, b: 2}.?[value > 5]'), <Object?, Object?>{});
+    });
+  });
 }
+
+enum _Level { low, high }
+
+enum _Shade { dark }
 
 SpelParseException _catch(void Function() body) {
   try {

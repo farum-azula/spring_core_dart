@@ -37,8 +37,13 @@ dart run bin/main.dart
 ```
 
 ```text
-Started my-app in 42 ms (profiles: default)
+Starting my-app using Dart 3.9.0 with PID 4242
+No active profile set, falling back to 1 default profile: "default"
+Started my-app in 0.042 seconds
 ```
+
+(INFO lines through `SpringLog`: shown with `spring_boot_starter_logging`
+or `logging.level.root=info`.)
 
 Every `@Service` / `@Component` in `lib/` is found automatically — no lists
 of classes, no setup code.
@@ -68,10 +73,12 @@ dart run bin/main.dart --spring.profiles.active=prod
 
 ## 3. Settings as a typed object (`@ConfigurationProperties`)
 
-All `shop.*` keys go into one class, converted and validated at start:
+All `shop.*` keys go into one class, converted and (with `@Validated()`,
+as in Spring Boot) validated at start:
 
 ```dart
 @ConfigurationProperties('shop')
+@Validated()
 class ShopProperties {
   @NotBlank()
   String name = 'NEON Books';

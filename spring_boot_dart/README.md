@@ -43,9 +43,14 @@ auto-configuration of the dependencies and `runApplication` /
 3. `logging.level.root=debug` → `SpringLog`;
 4. the context, with `ApplicationArguments` as a bean and
    `@ConfigurationProperties` binding;
-5. `Started neon-books in 70 ms (profiles: dev)` — or an
-   `APPLICATION FAILED TO START` report explaining a missing bean, an
-   ambiguity, a cycle, an unresolved placeholder or invalid properties;
+5. startup info through `SpringLog` at INFO, like Spring Boot's
+   (`Starting neon-books using Dart 3.9.0 with PID 4242`,
+   `The following 1 profile is active: "dev"`,
+   `Started neon-books in 0.07 seconds`; `spring.main.log-startup-info=false`
+   turns it off) — or an `APPLICATION FAILED TO START` report explaining a
+   missing bean, an ambiguity, a cycle, an unresolved placeholder or
+   invalid properties (your own `FailureAnalyzer`s, as beans or on
+   `SpringApplication(failureAnalyzers:)`, are asked first);
 6. `ApplicationRunner` / `CommandLineRunner` beans, one after another in
    `@Order` order, as in Spring Boot: a runner returning a `Future` is
    finished before the next starts; a failing runner is reported
@@ -101,6 +106,7 @@ sees `lib/`, `bin/`, `test/`, ... without extra configuration.
 
 ```dart
 @ConfigurationProperties('shop')
+@Validated()
 class ShopProperties {
   @NotBlank()
   String name = 'NEON Books';
@@ -111,17 +117,27 @@ class ShopProperties {
 ```
 
 Bound from `shop.max-basket-size` (or `shop.maxBasketSize`,
-`--shop.max-basket-size=…`, `SHOP_MAX_BASKET_SIZE`), converted to the field
-types and validated at startup. The class is a bean and introspected
-automatically.
+`--shop.max-basket-size=…`, `SHOP_MAX_BASKET_SIZE`) and converted to the
+field types; with `@Validated()` the constraints are checked at startup, as
+in Spring Boot. The class is a bean and introspected automatically.
+
+A `Validator` (`defaultValidator`, a `BeanValidator`) and a
+`methodValidationPostProcessor` (method validation of `@Validated` beans)
+are auto-configured, like Boot's `ValidationAutoConfiguration`; your own
+`Validator` bean replaces the default one.
+
+`spring.main.lazy-initialization=true` makes all singletons lazy;
+`spring.main.allow-bean-definition-overriding=true` lets a definition
+replace another of the same name (off by default).
 
 ## JSON: the `ObjectMapper` bean
 
 An `objectMapper` bean (the core's `ObjectMapper`) is configured from
 `spring.jackson.*`, like Spring Boot's `JacksonAutoConfiguration`. It knows
-every `@Introspected` class of the application and adds every `JsonModule`
-bean (custom serializers). Declare your own `ObjectMapper` bean to replace
-it.
+every `@Introspected` class of the application and adds every
+`JsonSerializer` / `JsonDeserializer` bean (Boot's `@JsonComponent`) and every
+`JsonModule` bean (custom serializers). Declare your own `ObjectMapper` bean
+to replace it.
 
 ```dart
 @Service()
@@ -141,6 +157,7 @@ class Catalog {
 | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
 | `spring.jackson.serialization.write-dates-as-timestamps` | `false` | `DateTime` / `Duration` as milliseconds |
 | `spring.jackson.serialization.indent-output` | `false` | pretty-print |
+| `spring.jackson.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` (no named zones: Dart has no tz database) |
 
 `objectMapperFromProperties(environment)` builds the same mapper by hand.
 
@@ -422,6 +439,17 @@ Notes:
 `runApplicationAsync(args)` (also generated) reads the config files
 asynchronously; resources from `lib/resources/` are embedded, so no asset
 declarations are needed for them.
+
+## Differences from Spring
+
+| Spring Boot | Here | Why |
+|---|---|---|
+| Default locations in two groups: packaged (`classpath:`) files, then external (`file:`) files override them; profile-specific files win only within their group (`file:./application.properties` beats `classpath:application-dev.properties`) | All default locations act as one group: every profile-specific file overrides every non-profile file | Simpler resolution; differs only when a key is in both a packaged profile file and an external non-profile file |
+| `@ConfigurationProperties` binds indexed lists (`app.hosts[0]`), maps (`app.headers.*`) and lists of objects | Comma-separated lists only | Not implemented yet |
+| YAML config files out of the box | `PropertySourceLoader` for YAML provided by the application (`ConfigDataEnvironment(loaders:)`) | No YAML dependency in the package |
+| No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
+| `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |
+| `spring.task.scheduling.shutdown.await-termination` | Not supported: running tasks are not awaited on close | `close()` is synchronous |
 
 ## Not yet
 

@@ -47,7 +47,10 @@ void main() {
       expect(statuses, ['NEW', 'PAID']);
       final request = server.requests.first;
       expect('${request.url}', 'http://orders.test/shops/neon/orders/events');
-      expect(request.headers[HttpHeaders.accept], MediaType.textEventStream);
+      expect(
+        request.headers[HttpHeaders.acceptHeader],
+        MediaType.textEventStream,
+      );
       expect(request.headers['Cache-Control'], 'no-cache');
     });
   });

@@ -27,14 +27,15 @@ final class StreamedHttpResponse {
   /// A response with [statusCode] and [headers] whose [body] is still
   /// arriving.
   StreamedHttpResponse(
-    this.statusCode, {
+    int statusCode, {
     required this.body,
     HttpHeaders? headers,
     this.request,
-  }) : headers = headers ?? HttpHeaders();
+  }) : statusCode = HttpStatusCode(statusCode),
+       headers = headers ?? HttpHeaders();
 
-  /// The status code.
-  final int statusCode;
+  /// The status code (an `int` with `is2xxSuccessful`, ...).
+  final HttpStatusCode statusCode;
 
   /// The response headers.
   final HttpHeaders headers;
@@ -47,7 +48,7 @@ final class StreamedHttpResponse {
   final HttpRequest? request;
 
   /// Whether the status is 2xx.
-  bool get isSuccess => HttpStatus.isSuccess(statusCode);
+  bool get isSuccess => statusCode.is2xxSuccessful;
 
   /// Reads the whole body into an [HttpResponse] (e.g. to decode an error).
   Future<HttpResponse> read() async {
@@ -68,6 +69,11 @@ final class StreamedHttpResponse {
 
   @override
   String toString() =>
-      'StreamedHttpResponse($statusCode ${HttpStatus.reasonPhrase(statusCode)}'
+      'StreamedHttpResponse($statusCode${_phrase(statusCode)}'
       '${request == null ? '' : ' for $request'})';
+
+  static String _phrase(int code) => switch (HttpStatus.resolve(code)) {
+    final status? => ' ${status.reasonPhrase}',
+    null => '',
+  };
 }

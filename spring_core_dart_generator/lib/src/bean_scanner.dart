@@ -42,6 +42,7 @@ final _jsonValue = _spring('JsonValue');
 final _factoryBean = _spring('FactoryBean');
 final _applicationListener = _spring('ApplicationListener');
 final _objectProvider = _spring('ObjectProvider');
+final _objectFactory = _spring('ObjectFactory');
 final _introspected = _spring('Introspected');
 final _aspectAnnotation = _spring('Aspect');
 final _pointcutAnnotation = _spring('Pointcut');
@@ -417,6 +418,7 @@ class BeanScanner {
       preDestroy: _lifecycleMethods(type, _preDestroy, superFirst: false),
       listeners: _listeners(element),
       annotatedMethods: _annotatedMethods(type),
+      annotations: _beanAnnotations(element),
       aspect: _aspectModel(element),
       proxy: _isProxyCandidate(element)
           ? _proxyModel(type, '_\$${className}Proxy', implementSelf: true)
@@ -459,6 +461,12 @@ class BeanScanner {
         type,
         _propertyInjections(type),
         _methodInjections(type),
+        postConstruct: _lifecycleMethods(
+          type,
+          _postConstruct,
+          superFirst: true,
+        ),
+        preDestroy: _lifecycleMethods(type, _preDestroy, superFirst: false),
       ),
     );
   }
@@ -710,6 +718,79 @@ class BeanScanner {
           value,
   ];
 
+  /// The annotations of a bean class or `@Bean` method for
+  /// `BeanDefinition.annotations` (`findAnnotationOnBean`,
+  /// `getBeansWithAnnotation`): every const annotation not from the SDK
+  /// that generated code can re-create; others are left out silently.
+  List<DartObject> _beanAnnotations(Element element) => [
+    for (final annotation in element.metadata.annotations)
+      if (annotation.computeConstantValue() case final value?)
+        if (value.type case final InterfaceType type
+            when !type.element.library.isInSdk &&
+                type.element.isPublic &&
+                _isRecreatable(value))
+          value,
+  ];
+
+  // Mirrors `ModuleEmitter._constant`: whether [value] can be written as a
+  // constant expression in generated code.
+  bool _isRecreatable(DartObject value) {
+    final reader = ConstantReader(value);
+    if (reader.isNull ||
+        reader.isBool ||
+        reader.isInt ||
+        reader.isDouble ||
+        reader.isString) {
+      return true;
+    }
+    if (reader.isType) {
+      return _isWritableType(reader.typeValue);
+    }
+    if (reader.isList) {
+      return reader.listValue.every(_isRecreatable);
+    }
+    if (reader.isSet) {
+      return reader.setValue.every(_isRecreatable);
+    }
+    if (reader.isMap) {
+      return reader.mapValue.entries.every(
+        (e) =>
+            e.key != null &&
+            e.value != null &&
+            _isRecreatable(e.key!) &&
+            _isRecreatable(e.value!),
+      );
+    }
+    final function = value.toFunctionValue();
+    if (function != null) {
+      final enclosing = function.enclosingElement;
+      return function.isPublic &&
+          (function is TopLevelFunctionElement ||
+              (function is MethodElement &&
+                  function.isStatic &&
+                  enclosing is InterfaceElement &&
+                  enclosing.isPublic));
+    }
+    try {
+      final revivable = reader.revive();
+      return !revivable.isPrivate &&
+          revivable.positionalArguments.every(_isRecreatable) &&
+          revivable.namedArguments.values.every(_isRecreatable);
+    } on Object {
+      return false;
+    }
+  }
+
+  // A public class type (with writable type arguments), `dynamic` or
+  // `void`.
+  bool _isWritableType(DartType type) =>
+      type is DynamicType ||
+      type is VoidType ||
+      (type is InterfaceType &&
+          type.element.isPublic &&
+          !isInternalSdkType(type) &&
+          type.typeArguments.every(_isWritableType));
+
   // Whether [type] is declared in `package:spring_core_dart`.
   static bool _isSpringType(InterfaceType type) =>
       type.element.library.uri.pathSegments.firstOrNull == 'spring_core_dart';
@@ -768,6 +849,7 @@ class BeanScanner {
       fallback: _fallback.hasAnnotationOf(method),
       autowireCandidate:
           annotation.peek('autowireCandidate')?.boolValue ?? true,
+      defaultCandidate: annotation.peek('defaultCandidate')?.boolValue ?? true,
       order: _orderOf(method),
       description: _descriptionOf(method),
       dependsOn: _dependsOnOf(method),
@@ -793,10 +875,15 @@ class BeanScanner {
         _ => const [],
       },
       annotatedMethods: _annotatedMethods(returnType),
+      annotations: [
+        ..._beanAnnotations(method),
+        ..._beanAnnotations(returnType.element),
+      ],
       initMethod: initMethod == null
           ? null
           : _requireNoArgMethod(returnType, initMethod, method, 'initMethod'),
       destroyMethod: _beanDestroyMethod(returnType, destroyMethod, method),
+      destroyMethodInferred: destroyMethod == '(inferred)',
       // The proxy class is named after owner and method, because two
       // `@Bean` methods may return the same type.
       proxy:
@@ -1581,11 +1668,13 @@ class BeanScanner {
   ];
 
   /// Public `@Autowired` / `@Value` fields and setters of the class and its
-  /// supertypes.
+  /// supertypes, in injection order (see [injectionRank]).
   List<PropertyInjection> _propertyInjections(InterfaceType type) {
     final seen = <String>{};
     final result = <PropertyInjection>[];
+    final depths = _injectionDepths(type);
     for (final element in _hierarchy(type)) {
+      final depth = depths[element] ?? 0;
       for (final field in element.fields) {
         // A field declared by a primary constructor parameter
         // (`class A(@Value('x') final String a)`) shares the parameter's
@@ -1608,7 +1697,11 @@ class BeanScanner {
         }
         if (seen.add(name)) {
           result.add(
-            PropertyInjection(name, _injectionPoint(field, field.type)),
+            PropertyInjection(
+              name,
+              _injectionPoint(field, field.type),
+              rank: injectionRank(depth, field: true),
+            ),
           );
         }
       }
@@ -1629,23 +1722,50 @@ class BeanScanner {
             PropertyInjection(
               name,
               _injectionPoint(setter, setter.formalParameters.single.type),
+              rank: injectionRank(depth, field: false),
             ),
           );
         }
       }
     }
-    return result;
+    return sortedByRank(result, (p) => p.rank);
+  }
+
+  /// Depth of each class of [type]'s hierarchy for [injectionRank]: 0 for
+  /// the topmost one. The superclass chain is linearized like Dart does
+  /// (`class C extends B with M1, M2`: B, M1, M2, C); interfaces count as
+  /// above it.
+  Map<InterfaceElement, int> _injectionDepths(InterfaceType type) {
+    final chain = <InterfaceElement>[];
+    InterfaceType? current = type;
+    while (current != null && !current.isDartCoreObject) {
+      chain.add(current.element);
+      for (final mixin in current.mixins.reversed) {
+        chain.add(mixin.element);
+      }
+      current = current.superclass;
+    }
+    final top = [
+      for (final supertype in type.allSupertypes)
+        if (!supertype.isDartCoreObject && !chain.contains(supertype.element))
+          supertype.element,
+      ...chain.reversed,
+    ];
+    return {for (final (depth, element) in top.indexed) element: depth};
   }
 
   // Fields and setters are injected only when annotated.
   bool _isInjected(Element element) =>
       _autowired.hasAnnotationOf(element) || _value.hasAnnotationOf(element);
 
-  /// Public `@Autowired` methods of the class and its supertypes.
+  /// Public `@Autowired` methods of the class and its supertypes, in
+  /// injection order (see [injectionRank]).
   List<MethodInjection> _methodInjections(InterfaceType type) {
     final seen = <String>{};
     final result = <MethodInjection>[];
+    final depths = _injectionDepths(type);
     for (final element in _hierarchy(type)) {
+      final depth = depths[element] ?? 0;
       for (final method in element.methods) {
         if (method.isStatic || !_autowired.hasAnnotationOf(method)) {
           continue;
@@ -1657,12 +1777,16 @@ class BeanScanner {
         _rejectAsync(method, '@Autowired method $name');
         if (seen.add(name)) {
           result.add(
-            MethodInjection(name, _arguments(method.formalParameters)),
+            MethodInjection(
+              name,
+              _arguments(method.formalParameters),
+              rank: injectionRank(depth, field: false),
+            ),
           );
         }
       }
     }
-    return result;
+    return sortedByRank(result, (m) => m.rank);
   }
 
   /// `@PostConstruct` / `@PreDestroy` method names; superclass methods
@@ -1757,7 +1881,11 @@ class BeanScanner {
       type: beanType,
       optional: optional,
       qualifier: qualifier,
-      name: kind == PointKind.single ? element.name : null,
+      // Providers resolve like a single bean of the injecting bean, so
+      // they get the name too.
+      name: kind == PointKind.single || kind == PointKind.provider
+          ? element.name
+          : null,
       lazy: lazy ? _lazyProxy(beanType, element) : null,
     );
   }
@@ -1854,7 +1982,10 @@ class BeanScanner {
       }
       return (PointKind.map, argument(1));
     }
-    if (_objectProvider.isExactlyType(type)) {
+    // An ObjectFactory<T> point receives the same provider (Spring's
+    // DependencyObjectProvider serves both).
+    if (_objectProvider.isExactlyType(type) ||
+        _objectFactory.isExactlyType(type)) {
       return (PointKind.provider, argument(0));
     }
     return (PointKind.single, type);
@@ -1899,14 +2030,34 @@ class BeanScanner {
   // supertype (a private type cannot be written in generated code).
   // Supertypes from internal SDK libraries (`EfficientLengthIterable` of
   // `dart:_internal`) are left out: generated code cannot import them.
-  List<InterfaceType> _exposedTypes(InterfaceType type) => [
-    type,
-    for (final supertype in type.allSupertypes)
-      if (!supertype.isDartCoreObject &&
-          _isPublicType(supertype) &&
-          !isInternalSdkType(supertype))
-        supertype,
-  ];
+  //
+  // A generic type is also exposed in its raw form, instantiated to bounds
+  // (`Store<User>` also as `Store<dynamic>`, what a raw `Store` means in
+  // Dart): `List<Store>` gets every store, like a raw type in Spring.
+  List<InterfaceType> _exposedTypes(InterfaceType type) {
+    final types = [
+      type,
+      for (final supertype in type.allSupertypes)
+        if (!supertype.isDartCoreObject &&
+            _isPublicType(supertype) &&
+            !isInternalSdkType(supertype))
+          supertype,
+    ];
+    final seen = {for (final t in types) (t.element, t.getDisplayString())};
+    return [
+      ...types,
+      for (final t in types)
+        if (t.typeArguments.isNotEmpty)
+          if (t.element.library.typeSystem.instantiateInterfaceToBounds(
+                element: t.element,
+                nullabilitySuffix: NullabilitySuffix.none,
+              )
+              case final raw
+              when _isWritableType(raw) &&
+                  seen.add((raw.element, raw.getDisplayString())))
+            raw,
+    ];
+  }
 
   // For a `FactoryBean<T>`, the exposed types of the product `T`; `null`
   // for other beans.
@@ -2245,19 +2396,44 @@ class BeanScanner {
   // ---------------------------------------------------------------------
 
   // `primary` of the `@InterfaceProxy()` on the class of one of
-  // [element]'s annotations, or `null` when it has none.
+  // [element]'s annotations, or `null` when it has none. A `bool primary`
+  // field of the annotation itself wins (`@FeignClient(primary: false)`).
   bool? _interfaceProxyPrimary(ClassElement element) {
     for (final annotation in element.metadata.annotations) {
-      final type = annotation.computeConstantValue()?.type;
+      final value = annotation.computeConstantValue();
+      final type = value?.type;
       if (type is! InterfaceType) {
         continue;
       }
       final marker = _interfaceProxy.firstAnnotationOf(type.element);
       if (marker != null) {
+        final own = ConstantReader(value).peek('primary');
+        if (own != null && own.isBool) {
+          return own.boolValue;
+        }
         return ConstantReader(marker).peek('primary')?.boolValue ?? false;
       }
     }
     return null;
+  }
+
+  // The `List<String> qualifiers` field of [element]'s annotation marked
+  // `@InterfaceProxy()`, if it has one (`@FeignClient(qualifiers: [...])`).
+  Set<String> _interfaceProxyQualifiers(ClassElement element) {
+    for (final annotation in element.metadata.annotations) {
+      final value = annotation.computeConstantValue();
+      final type = value?.type;
+      if (type is InterfaceType &&
+          _interfaceProxy.firstAnnotationOf(type.element) != null) {
+        final qualifiers = ConstantReader(value).peek('qualifiers');
+        if (qualifiers != null && qualifiers.isList) {
+          return {
+            for (final item in qualifiers.listValue) ?item.toStringValue(),
+          };
+        }
+      }
+    }
+    return const {};
   }
 
   // The interface becomes a bean created by `_$XImpl.create(r)`; every
@@ -2375,7 +2551,11 @@ class BeanScanner {
         exposedTypes: _exposedTypes(type),
         creation: InterfaceProxyCreation(model),
         primary: primary || _primary.hasAnnotationOf(element),
-        qualifiers: _qualifiersOf(element),
+        qualifiers: {
+          ..._qualifiersOf(element),
+          ..._interfaceProxyQualifiers(element),
+        },
+        annotations: _beanAnnotations(element),
         conditions: [
           if (_conditions(element) case final own when own.isNotEmpty)
             GroupConditionModel(source, own),

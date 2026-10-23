@@ -12,7 +12,7 @@ import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 /// import 'package:spring_web_dart/io.dart';
 ///
 /// final transport = IoWebSocketTransport();
-/// final socket = await transport.connect(
+/// final session = await transport.connect(
 ///   Uri.parse('wss://chat.neon.books/ws'),
 ///   headers: HttpHeaders({'Authorization': 'Bearer $token'}),
 /// );
@@ -28,7 +28,7 @@ class IoWebSocketTransport implements WebSocketTransport {
   final io.HttpClient? _client;
 
   @override
-  Future<WebSocketConnection> connect(
+  Future<WebSocketSession> connect(
     Uri url, {
     HttpHeaders? headers,
     List<String> protocols = const [],
@@ -53,7 +53,7 @@ class IoWebSocketTransport implements WebSocketTransport {
                 throw TimeoutException('handshake', timeout);
               },
             );
-      return _IoConnection(socket, url);
+      return _IoSession(socket, url);
     } on TimeoutException catch (error) {
       throw WebSocketException(
         'no handshake within ${timeout!.inMilliseconds} ms',
@@ -74,11 +74,13 @@ class IoWebSocketTransport implements WebSocketTransport {
   }
 }
 
-final class _IoConnection implements WebSocketConnection {
-  _IoConnection(this._socket, this._url);
+final class _IoSession implements WebSocketSession {
+  _IoSession(this._socket, this.uri);
 
   final io.WebSocket _socket;
-  final Uri _url;
+
+  @override
+  final Uri uri;
 
   @override
   late final Stream<Object> messages = _socket
@@ -93,19 +95,22 @@ final class _IoConnection implements WebSocketConnection {
       .handleError(
         (Object error) => throw WebSocketException(
           'connection broke: $error',
-          url: _url,
+          url: uri,
           cause: error,
         ),
         test: (error) => error is! WebSocketException,
       );
 
   @override
-  String? get protocol => _socket.protocol;
+  String? get acceptedProtocol => _socket.protocol;
 
   @override
-  void send(Object message) {
+  bool get isOpen => _socket.readyState == io.WebSocket.open;
+
+  @override
+  void sendMessage(Object message) {
     if (_socket.readyState != io.WebSocket.open) {
-      throw WebSocketException('the connection is closed', url: _url);
+      throw WebSocketException('the connection is closed', url: uri);
     }
     switch (message) {
       case String():
@@ -122,19 +127,20 @@ final class _IoConnection implements WebSocketConnection {
   }
 
   @override
-  Future<void> close([int? code, String? reason]) {
-    _localCode ??= code ?? WebSocketStatus.noStatusReceived;
-    _localReason ??= reason;
-    return _socket.close(code, reason);
+  Future<void> close([CloseStatus status = CloseStatus.normal]) {
+    _local ??= status;
+    return _socket.close(status.code, status.reason);
   }
 
   // What the client closed with (the server's answer may come later).
-  int? _localCode;
-  String? _localReason;
+  CloseStatus? _local;
 
   @override
-  int? get closeCode => _socket.closeCode ?? _localCode;
-
-  @override
-  String? get closeReason => _socket.closeReason ?? _localReason;
+  CloseStatus? get closeStatus => switch (_socket.closeCode) {
+    final code? => CloseStatus(code, switch (_socket.closeReason) {
+      final reason? when reason.isNotEmpty => reason,
+      _ => null,
+    }),
+    null => _local,
+  };
 }

@@ -368,8 +368,17 @@ abstract interface class EvaluationContext {
   /// Whether `new Type(...)` is allowed.
   bool get isConstructorEnabled;
 
-  /// Sets the variable `#name` to [value].
+  /// Sets the variable `#name` to [value] (from Dart code).
   void setVariable(String name, Object? value);
+
+  /// Assigns the variable `#name` from an expression (`#name = value`,
+  /// `#name++`) and returns the assigned value, like Spring's
+  /// `EvaluationContext.assignVariable`.
+  ///
+  /// [StandardEvaluationContext] sets the value from [valueSupplier];
+  /// [SimpleEvaluationContext] throws
+  /// [SpelMessage.variableAssignmentNotSupported] without calling it.
+  Object? assignVariable(String name, Object? Function() valueSupplier);
 
   /// The value of variable `#name`, or `null` when unset.
   Object? lookupVariable(String name);
@@ -421,8 +430,9 @@ final class StandardTypeConverter implements TypeConverter {
 /// Compares numbers, strings, dates, durations and `Comparable`s; `null`
 /// is smaller than anything, like Spring's `StandardTypeComparator`.
 ///
-/// Numbers compare by value across `int` and `double`; other
-/// `Comparable`s only with values of the same kind.
+/// Numbers compare by value across `int` and `double`; enums of the same
+/// type by index (Java enums by ordinal); other `Comparable`s only with
+/// values of the same kind.
 ///
 /// ```dart
 /// const comparator = StandardTypeComparator();
@@ -445,7 +455,12 @@ final class StandardTypeComparator implements TypeComparator {
       left == null ||
       right == null ||
       (left is num && right is num) ||
-      (left is Comparable && right is Comparable && _sameKind(left, right));
+      (left is Comparable && right is Comparable && _sameKind(left, right)) ||
+      _sameEnum(left, right);
+
+  // Enums of the same type compare by index, like Java enums by ordinal.
+  static bool _sameEnum(Object left, Object right) =>
+      left is Enum && right is Enum && left.runtimeType == right.runtimeType;
 
   // Comparable values only compare with the same kind (a String never
   // compares with a DateTime, even though both are Comparable).
@@ -468,6 +483,9 @@ final class StandardTypeComparator implements TypeComparator {
     }
     if (left is Comparable && right is Comparable && _sameKind(left, right)) {
       return left.compareTo(right);
+    }
+    if (_sameEnum(left, right)) {
+      return (left as Enum).index.compareTo((right as Enum).index);
     }
     throw SpelEvaluationException(
       SpelMessage.notComparable,
@@ -622,6 +640,13 @@ class StandardEvaluationContext implements EvaluationContext {
   void setVariable(String name, Object? value) => _variables[name] = value;
 
   @override
+  Object? assignVariable(String name, Object? Function() valueSupplier) {
+    final value = valueSupplier();
+    setVariable(name, value);
+    return value;
+  }
+
+  @override
   Object? lookupVariable(String name) => _variables[name];
 }
 
@@ -718,6 +743,16 @@ class SimpleEvaluationContext implements EvaluationContext {
 
   @override
   void setVariable(String name, Object? value) => _variables[name] = value;
+
+  /// Always throws [SpelMessage.variableAssignmentNotSupported]: expressions
+  /// cannot assign variables here (Spring 5.2.24+); [setVariable] from Dart
+  /// code still works.
+  @override
+  Object? assignVariable(String name, Object? Function() valueSupplier) =>
+      throw SpelEvaluationException(
+        SpelMessage.variableAssignmentNotSupported,
+        "Assignment to variable '#$name' is not supported",
+      );
 
   @override
   Object? lookupVariable(String name) => _variables[name];

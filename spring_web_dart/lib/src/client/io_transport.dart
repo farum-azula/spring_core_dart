@@ -7,12 +7,14 @@ import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
-import 'package:spring_web_dart/src/http_method.dart';
 
 /// An [HttpTransport] on `dart:io`'s `HttpClient`: the VM, Flutter mobile
-/// and desktop. Follows redirects for `GET` and `HEAD`; the request's
-/// timeout covers the whole exchange (the request is aborted when it runs
-/// out). Like Spring's `JdkClientHttpRequestFactory`.
+/// and desktop. Follows redirects when the request says so
+/// (`HttpRequest.followRedirects`, as far as `HttpClient` does: `GET` and
+/// `HEAD`, and `303` after a `POST`). The request's `readTimeout` limits
+/// each wait for data (the response, then every chunk of the body), its
+/// `timeout` the whole exchange; the request is aborted when one runs out.
+/// Like Spring's `JdkClientHttpRequestFactory`.
 ///
 /// ```dart
 /// import 'package:spring_web_dart/io.dart';
@@ -43,7 +45,14 @@ class IoHttpTransport implements HttpTransport {
   @override
   Future<HttpResponse> send(HttpRequest request) =>
       _exchange(request, (incoming, _) async {
-        final bytes = await incoming.fold<BytesBuilder>(
+        final readTimeout = request.readTimeout;
+        final chunks = readTimeout == null
+            ? incoming
+            : incoming.timeout(
+                readTimeout,
+                onTimeout: (sink) => sink.addError(_ReadTimeout(readTimeout)),
+              );
+        final bytes = await chunks.fold<BytesBuilder>(
           BytesBuilder(copy: false),
           (builder, chunk) => builder..add(chunk),
         );
@@ -92,7 +101,8 @@ class IoHttpTransport implements HttpTransport {
       });
 
   // Sends [request] and hands the response to [read]; the request's timeout
-  // covers both, and failures become HttpTransportException.
+  // covers both, its read timeout the wait for the response, and failures
+  // become HttpTransportException.
   Future<T> _exchange<T>(
     HttpRequest request,
     Future<T> Function(
@@ -107,19 +117,15 @@ class IoHttpTransport implements HttpTransport {
         request.method.value,
         request.url,
       );
-      outgoing.followRedirects =
-          request.method == HttpMethod.get || request.method == HttpMethod.head;
+      outgoing.followRedirects = request.followRedirects;
       // The request's headers replace HttpClient's defaults (User-Agent,
       // Accept-Encoding); further values of the same name are added.
-      final seen = <String>{};
-      request.headers.forEach((name, value) {
-        final key = name.toLowerCase();
-        if (key == 'content-length') {
+      request.headers.forEach((name, values) {
+        if (name.toLowerCase() == 'content-length') {
           return;
         }
-        if (seen.add(key)) {
-          outgoing.headers.set(name, value, preserveHeaderCase: true);
-        } else {
+        outgoing.headers.set(name, values.first, preserveHeaderCase: true);
+        for (final value in values.skip(1)) {
           outgoing.headers.add(name, value, preserveHeaderCase: true);
         }
       });
@@ -129,7 +135,14 @@ class IoHttpTransport implements HttpTransport {
           ..contentLength = body.length
           ..add(body);
       }
-      return read(await outgoing.close(), outgoing);
+      final readTimeout = request.readTimeout;
+      final incoming = readTimeout == null
+          ? await outgoing.close()
+          : await outgoing.close().timeout(
+              readTimeout,
+              onTimeout: () => throw _ReadTimeout(readTimeout),
+            );
+      return read(incoming, outgoing);
     }
 
     final timeout = request.timeout;
@@ -137,6 +150,14 @@ class IoHttpTransport implements HttpTransport {
       return timeout == null
           ? await exchange()
           : await exchange().timeout(timeout);
+    } on _ReadTimeout catch (error) {
+      pending?.abort(error);
+      throw HttpTransportException(
+        'no data within ${error.timeout.inMilliseconds} ms (read timeout)',
+        request: request,
+        cause: error,
+        isTimeout: true,
+      );
     } on TimeoutException catch (error) {
       pending?.abort(error);
       throw HttpTransportException(
@@ -173,4 +194,14 @@ class IoHttpTransport implements HttpTransport {
 
   @override
   void close() => _client.close(force: true);
+}
+
+/// The read timeout of a request ran out: no data for [timeout].
+final class _ReadTimeout implements Exception {
+  _ReadTimeout(this.timeout);
+
+  final Duration timeout;
+
+  @override
+  String toString() => 'no data within ${timeout.inMilliseconds} ms';
 }

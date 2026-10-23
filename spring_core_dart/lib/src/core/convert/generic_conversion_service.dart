@@ -1,5 +1,6 @@
 import 'package:spring_core_dart/src/core/convert/conversion_exceptions.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
+import 'package:spring_core_dart/src/core/convert/lenient_enum.dart';
 
 /// One registered conversion to a fixed target type.
 final class _Converter {
@@ -74,12 +75,12 @@ class GenericConversionService implements ConversionService, ConverterRegistry {
       if (name.isEmpty) {
         return null;
       }
-      for (final value in values) {
-        if (value.name.toLowerCase() == name.toLowerCase()) {
-          return value;
-        }
-      }
-      throw ArgumentError.value(source, 'source', 'No enum constant of $E');
+      return findLenientEnum(values, name) ??
+          (throw ArgumentError.value(
+            source,
+            'source',
+            'No enum constant of $E',
+          ));
     });
     addConverter<E, String>((source) => source.name);
   }

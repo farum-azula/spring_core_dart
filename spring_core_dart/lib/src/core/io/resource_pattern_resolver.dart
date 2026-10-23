@@ -1,5 +1,6 @@
 import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
+import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/path_matcher.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
@@ -28,16 +29,18 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
   List<Resource> getResources(String locationPattern);
 }
 
-/// Ant-style file patterns such as `file:config/**/*.properties`, like
-/// Spring's `PathMatchingResourcePatternResolver`. Patterns are supported
-/// for file system locations; other locations are delegated to
+/// Ant-style patterns such as `file:config/**/*.properties` or
+/// `classpath:i18n/*.properties`, like Spring's
+/// `PathMatchingResourcePatternResolver`. Patterns are supported for
+/// `file:` and classpath locations (`classpath:` or no prefix, as in
+/// [DefaultResourceLoader]); other locations are delegated to
 /// [resourceLoader] without wildcard expansion.
 ///
 /// Results are sorted by path. There is no `classpath*:` support.
 ///
 /// ```dart
 /// final resolver = PathMatchingResourcePatternResolver();
-/// for (final resource in resolver.getResources('config/*.properties')) {
+/// for (final resource in resolver.getResources('file:config/*.properties')) {
 ///   environment.propertySources.addLast(
 ///     ResourcePropertySource.fromResource(resource),
 ///   );
@@ -73,15 +76,22 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
 
   @override
   List<Resource> getResources(String locationPattern) {
-    final isFile =
-        locationPattern.startsWith(ResourceLoader.filePrefix) ||
+    final isFile = locationPattern.startsWith(ResourceLoader.filePrefix);
+    // Plain locations are classpath locations, as in DefaultResourceLoader.
+    final isClasspath =
+        locationPattern.startsWith(ClasspathResources.prefix) ||
         !RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(locationPattern);
-    final path = locationPattern.startsWith(ResourceLoader.filePrefix)
+    final path = isFile
         ? locationPattern.substring(ResourceLoader.filePrefix.length)
+        : locationPattern.startsWith(ClasspathResources.prefix)
+        ? locationPattern.substring(ClasspathResources.prefix.length)
         : locationPattern;
-    if (!isFile || !pathMatcher.isPattern(path)) {
+    if (!(isFile || isClasspath) || !pathMatcher.isPattern(path)) {
       final resource = getResource(locationPattern);
       return resource.exists() ? [resource] : const [];
+    }
+    if (isClasspath) {
+      return _classpathResources(path.replaceFirst(RegExp('^/+'), ''));
     }
     // Walk the directory before the first wildcard segment and match the
     // remaining pattern against paths relative to it.
@@ -97,6 +107,26 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
         if (_relative(file, prefix) case final relative?
             when pathMatcher.match(subPattern, relative))
           FileSystemResource(file),
+    ];
+  }
+
+  // Classpath paths matching [pattern]: the files of the classpath
+  // directories and the embedded resources, each resolved like
+  // `classpath:<path>` (so the first directory having it wins).
+  List<Resource> _classpathResources(String pattern) {
+    final paths = <String>{
+      ...ClasspathResources.paths,
+      for (final directory in {
+        ...ClasspathResources.directories,
+        ClasspathResources.directory,
+      })
+        if (FileAccess.isDirectory(directory))
+          for (final file in FileAccess.listFilesRecursively(directory))
+            ?_relative(file, '$directory/'),
+    };
+    return [
+      for (final path in paths.toList()..sort())
+        if (pathMatcher.match(pattern, path)) ClasspathResources.resolve(path),
     ];
   }
 

@@ -48,7 +48,7 @@ class AwareBean
   }
 }
 
-class Server implements SmartLifecycle {
+class Server with SmartLifecycle {
   Server(this.name, this.phase, {this.isAutoStartup = true});
   final String name;
   @override
@@ -221,14 +221,15 @@ void main() {
       expect(ctx.getBean<BeanFactory>(), same(ctx.beanFactory));
       expect(ctx.getBean<MessageSource>(), isA<DelegatingMessageSource>());
       expect(ctx.autowireCapableBeanFactory, same(ctx.beanFactory));
-      expect(ctx.id, 'application');
+      expect(ctx.id, startsWith('AnnotationConfigApplicationContext@'));
       expect(ctx.toString(), contains('AnnotationConfigApplicationContext'));
     });
 
     test('refresh twice, use before refresh, after close', () {
       final ctx = context([english()]);
       expect(() => ctx.getBean<English>(), throwsStateError);
-      expect(() => ctx.publishEvent('x'), throwsStateError);
+      // Like Spring 7: not delivered, no error.
+      expect(() => ctx.publishEvent('x'), returnsNormally);
       ctx.refresh();
       expect(ctx.refresh, throwsStateError);
       expect(() => ctx.register(module([])), throwsStateError);
@@ -252,7 +253,7 @@ void main() {
         expect(log, contains('ok:destroy'));
         expect(ctx.isActive, isFalse);
         expect(() => ctx.getBean<Counter>(), throwsStateError);
-        expect(() => ctx.publishEvent('late'), throwsStateError);
+        expect(() => ctx.publishEvent('late'), returnsNormally);
         ctx.close();
         expect(ctx.isClosed, isFalse);
       },
@@ -601,7 +602,10 @@ void main() {
         ),
       ])..refresh();
       final events = ctx.getBean<Audit>().events;
-      expect(events, ['first:application', 'second:ContextRefreshedEvent']);
+      expect(events, [
+        startsWith('first:AnnotationConfigApplicationContext@'),
+        'second:ContextRefreshedEvent',
+      ]);
       ctx
         ..start()
         ..stop();
@@ -869,11 +873,16 @@ void main() {
       expect(ctx.isPrototype('proto'), isTrue);
       expect(ctx.getType('english'), English);
       expect(ctx.containsBeanDefinition('english'), isTrue);
-      expect(ctx.beanDefinitionCount, greaterThan(3));
+      // The context's own singletons (environment, messageSource, ...) are
+      // registered objects, not bean definitions, like in Spring.
+      expect(ctx.beanDefinitionCount, 3);
       expect(ctx.getBeanNamesForType(Greeter), ['english', 'french']);
       expect(ctx.getBeansOfType<Greeter>().length, 2);
       expect(ctx.getSortedBeans<Greeter>().first, isA<French>());
-      expect(ctx.displayName, contains('application'));
+      expect(
+        ctx.displayName,
+        startsWith('AnnotationConfigApplicationContext@'),
+      );
     });
   });
 }

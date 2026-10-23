@@ -6,8 +6,10 @@ import 'package:spring_core_dart_example/src/payments/payments.dart';
 const _log = SpringLog('neon.shop');
 
 /// Bound from `shop.*` (config files, `--shop.opening-hours=...`, or the
-/// environment variable `SHOP_OPENING_HOURS`).
+/// environment variable `SHOP_OPENING_HOURS`); validated because of
+/// `@Validated()`, as in Spring Boot.
 @ConfigurationProperties('shop')
+@Validated()
 class ShopProperties {
   @NotBlank()
   String name = 'NEON Books';

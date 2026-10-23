@@ -54,8 +54,9 @@ class FeignException implements Exception {
   /// subclass.
   static FeignException errorStatus(String methodKey, HttpResponse response) {
     final status = response.statusCode;
+    final reason = HttpStatus.resolve(status)?.reasonPhrase;
     final message =
-        '[$status ${HttpStatus.reasonPhrase(status)}] during '
+        '[$status${reason == null ? '' : ' $reason'}] during '
         '[${response.request?.method.value ?? '?'}] to '
         '[${response.request?.url ?? '?'}] [$methodKey]';
     final body = response.bodyText;
@@ -486,8 +487,9 @@ abstract interface class ErrorDecoder {
   Exception decode(String methodKey, HttpResponse response);
 }
 
-/// The default [ErrorDecoder]: a `Retry-After` header makes it a
-/// [RetryableException], otherwise [FeignException.errorStatus].
+/// The default [ErrorDecoder]: a `Retry-After` header (seconds or an HTTP
+/// date) makes it a [RetryableException], otherwise
+/// [FeignException.errorStatus]. Like Feign's `ErrorDecoder.Default`.
 class DefaultErrorDecoder implements ErrorDecoder {
   /// The default decoder.
   const DefaultErrorDecoder();
@@ -495,13 +497,15 @@ class DefaultErrorDecoder implements ErrorDecoder {
   @override
   Exception decode(String methodKey, HttpResponse response) {
     final error = FeignException.errorStatus(methodKey, response);
-    final retryAfter = response.headers['Retry-After'];
-    final seconds = retryAfter == null ? null : int.tryParse(retryAfter.trim());
-    if (seconds != null) {
+    final retryAfter = switch (response.headers[HttpHeaders.retryAfterHeader]) {
+      final value? => _retryAfter(value.trim()),
+      null => null,
+    };
+    if (retryAfter != null) {
       return RetryableException(
         response.statusCode,
         error.message,
-        retryAfter: DateTime.now().add(Duration(seconds: seconds)),
+        retryAfter: retryAfter,
         request: response.request,
         responseBody: error.responseBody,
         responseHeaders: response.headers,
@@ -509,4 +513,49 @@ class DefaultErrorDecoder implements ErrorDecoder {
     }
     return error;
   }
+
+  // `Retry-After: 120` or `Retry-After: Wed, 21 Oct 2015 07:28:00 GMT`
+  // (RFC 1123, like Feign's RetryAfterDecoder); null when unreadable.
+  static DateTime? _retryAfter(String value) {
+    final seconds = int.tryParse(value);
+    if (seconds != null) {
+      return DateTime.now().add(Duration(seconds: seconds));
+    }
+    final match = _httpDate.firstMatch(value);
+    if (match == null) {
+      return null;
+    }
+    final month = _months.indexOf(match[2]!.toLowerCase()) + 1;
+    if (month == 0) {
+      return null;
+    }
+    return DateTime.utc(
+      int.parse(match[3]!),
+      month,
+      int.parse(match[1]!),
+      int.parse(match[4]!),
+      int.parse(match[5]!),
+      int.parse(match[6]!),
+    );
+  }
+
+  static final _httpDate = RegExp(
+    r'^(?:[A-Za-z]{3}, )?(\d{1,2}) ([A-Za-z]{3}) (\d{4}) '
+    r'(\d{2}):(\d{2}):(\d{2}) (?:GMT|UTC|Z|\+0000)$',
+  );
+
+  static const _months = [
+    'jan',
+    'feb',
+    'mar',
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+  ];
 }

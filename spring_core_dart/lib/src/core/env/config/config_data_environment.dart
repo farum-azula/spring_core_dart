@@ -20,9 +20,13 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 /// - `spring.profiles.active` / `spring.profiles.include` /
 ///   `spring.profiles.group.<name>` in config files activate profiles
 ///   (unless profiles were already set programmatically or by a
-///   higher-precedence source such as command-line arguments).
+///   higher-precedence source such as command-line arguments). Profile
+///   names are validated like Boot's (letters, digits, `-_.+@`, starting
+///   and ending with a letter or digit; `spring.profiles.validate=false`
+///   turns this off).
 /// - Multi-document files: documents separated by `#---`, each optionally
-///   guarded by `spring.config.activate.on-profile`.
+///   guarded by `spring.config.activate.on-profile` (an empty guard is no
+///   guard). The legacy `spring.profiles` key is rejected.
 /// - `spring.config.import` imports more files (relative to the importing
 ///   file); imported files override the file that imports them.
 /// - `spring.config.name`, `spring.config.location` and
@@ -132,6 +136,13 @@ class ConfigDataEnvironment {
   /// activates `db` and `mq` whenever `prod` is active.
   static const profileGroupPrefix = 'spring.profiles.group.';
 
+  /// `false` turns off the validation of profile names (Boot's
+  /// `spring.profiles.validate`, default `true`).
+  static const validateProfilesProperty = 'spring.profiles.validate';
+
+  /// The legacy profile guard, rejected like Boot does since 2.4.
+  static const legacyProfilesProperty = 'spring.profiles';
+
   /// Prefix marking a location that may be missing.
   static const optionalPrefix = 'optional:';
 
@@ -223,9 +234,15 @@ final class _NeedsContent implements Exception {
 // One loaded document (a file, or one `#---` section of it).
 final class _Document {
   _Document(this.source, this.location, {required this.profileSpecific})
-    : onProfile = source
-          .getProperty(ConfigDataEnvironment.onProfileProperty)
-          ?.toString();
+    : onProfile = _guard(
+        source.getProperty(ConfigDataEnvironment.onProfileProperty),
+      );
+
+  // An empty on-profile is no guard at all, as in Boot (an empty array).
+  static String? _guard(Object? value) {
+    final text = value?.toString();
+    return text == null || text.trim().isEmpty ? null : text;
+  }
 
   final AbstractPropertySource<Object> source;
   final String location;
@@ -331,11 +348,10 @@ final class _Run {
     if (guard == null) {
       return true;
     }
-    final resolved = _resolver(document).resolveRequiredPlaceholders(guard);
-    return Profiles.of([
-      for (final part in resolved.split(','))
-        if (part.trim().isNotEmpty) part.trim(),
-    ]).matches(profiles.contains);
+    final resolved = _list(
+      _resolver(document).resolveRequiredPlaceholders(guard),
+    );
+    return resolved == null || Profiles.of(resolved).matches(profiles.contains);
   }
 
   // Profile-specific files and on-profile documents must not change the
@@ -415,6 +431,23 @@ final class _Run {
   // win, so `application-{active}` overrides `application-{included}`.
   List<String> _resolveProfiles() {
     final resolver = _resolver();
+    final validate =
+        resolver.getPropertyAs<bool>(
+          ConfigDataEnvironment.validateProfilesProperty,
+        ) ??
+        true;
+    void check(Iterable<String> profiles, String property) {
+      if (validate) {
+        for (final profile in profiles) {
+          _validateProfileName(profile, property);
+        }
+      }
+    }
+
+    check(
+      _env.defaultProfiles,
+      StandardEnvironment.defaultProfilesPropertyName,
+    );
     final active = <String>[];
     // Includes from every source are combined.
     for (final source in [
@@ -425,7 +458,9 @@ final class _Run {
       final include = source.getProperty(
         ConfigDataEnvironment.includeProfilesProperty,
       );
-      for (final profile in _list(include?.toString()) ?? const <String>[]) {
+      final included = _list(include?.toString()) ?? const <String>[];
+      check(included, ConfigDataEnvironment.includeProfilesProperty);
+      for (final profile in included) {
         if (!active.contains(profile)) {
           active.add(profile);
         }
@@ -439,6 +474,7 @@ final class _Run {
                 ),
               ) ??
               const <String>[];
+    check(declared, StandardEnvironment.activeProfilesPropertyName);
     for (final profile in declared) {
       if (!active.contains(profile)) {
         active.add(profile);
@@ -446,11 +482,9 @@ final class _Run {
     }
     // Expand groups (members follow their group; nested groups allowed).
     for (var i = 0; i < active.length; i++) {
-      final members = _list(
-        resolver.getProperty(
-          '${ConfigDataEnvironment.profileGroupPrefix}${active[i]}',
-        ),
-      );
+      final group = '${ConfigDataEnvironment.profileGroupPrefix}${active[i]}';
+      final members = _list(resolver.getProperty(group));
+      check(members ?? const [], group);
       var insertAt = i + 1;
       for (final member in members ?? const <String>[]) {
         if (!active.contains(member)) {
@@ -460,6 +494,30 @@ final class _Run {
     }
     return active;
   }
+
+  // Profile names like Boot's ProfilesValidator: letters, digits and
+  // `-_.+@`, starting and ending with a letter or digit.
+  static void _validateProfileName(String profile, String property) {
+    final chars = profile.runes.map(String.fromCharCode).toList();
+    for (var i = 0; i < chars.length; i++) {
+      final letterOrDigit = _letterOrDigit.hasMatch(chars[i]);
+      if (!letterOrDigit && !'-_.+@'.contains(chars[i])) {
+        throw StateError(
+          "Invalid profile property value found in '$property': Profile "
+          "'$profile' must contain a letter, digit or allowed char "
+          "('-', '_', '.', '+', '@')",
+        );
+      }
+      if (!letterOrDigit && (i == 0 || i == chars.length - 1)) {
+        throw StateError(
+          "Invalid profile property value found in '$property': Profile "
+          "'$profile' must start and end with a letter or digit",
+        );
+      }
+    }
+  }
+
+  static final _letterOrDigit = RegExp(r'^[\p{L}\p{Nd}]$', unicode: true);
 
   // A location ending in `/` is a directory searched for every name and
   // extension; otherwise it is a file, whose profile variant is
@@ -525,7 +583,11 @@ final class _Run {
         "no PropertySourceLoader for extension '$extension'",
       );
     }
-    final resource = owner.resourceLoader.getResource(location);
+    // A location without a prefix is a file, like Boot's
+    // LocationResourceLoader (unlike a plain path in DefaultResourceLoader).
+    final resource = owner.resourceLoader.getResource(
+      _isUrl(location) ? location : '${ResourceLoader.filePrefix}$location',
+    );
     final content = _read(resource, location);
     if (content == null) {
       if (optional) {
@@ -538,8 +600,24 @@ final class _Run {
     if (!_loaded.add(_normalized(location))) {
       return const []; // Already loaded (import cycle or duplicate).
     }
+    final sources = loader.load("Config resource '$location'", content);
+    // Boot rejects the pre-2.4 guard wherever it appears.
+    for (final source in sources) {
+      for (final legacy in [
+        ConfigDataEnvironment.legacyProfilesProperty,
+        '${ConfigDataEnvironment.legacyProfilesProperty}[0]',
+      ]) {
+        if (source.containsProperty(legacy)) {
+          throw InvalidConfigDataPropertyException(
+            legacy,
+            source.name,
+            "it should be replaced with '${ConfigDataEnvironment.onProfileProperty}'",
+          );
+        }
+      }
+    }
     return [
-      for (final source in loader.load("Config resource '$location'", content))
+      for (final source in sources)
         _Document(source, location, profileSpecific: profileSpecific),
     ];
   }
@@ -586,7 +664,11 @@ final class _Run {
       !location.startsWith('/') &&
       !location.startsWith(r'\') &&
       !RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(location) &&
-      !RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location);
+      !_isUrl(location);
+
+  // A `scheme:` prefix of two or more letters (`file:`, `classpath:`).
+  static bool _isUrl(String location) =>
+      RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location);
 
   // Directory part of [location] (with trailing `/`), or just its prefix
   // (`file:`) when there is no slash.

@@ -11,7 +11,7 @@ import 'package:spring_web_dart/src/http_status.dart';
 ///
 /// ```dart
 /// final response = await transport.send(request);
-/// if (response.isSuccess) {
+/// if (response.statusCode.is2xxSuccessful) {
 ///   final json = jsonDecode(response.bodyText);
 /// }
 /// ```
@@ -25,15 +25,16 @@ final class HttpResponse {
   /// A response with [statusCode], [headers] and [body] bytes for
   /// [request].
   HttpResponse(
-    this.statusCode, {
+    int statusCode, {
     HttpHeaders? headers,
     List<int> body = const [],
     this.request,
-  }) : headers = headers ?? HttpHeaders(),
+  }) : statusCode = HttpStatusCode(statusCode),
+       headers = headers ?? HttpHeaders(),
        _body = body is Uint8List ? body : Uint8List.fromList(body);
 
-  /// The status code.
-  final int statusCode;
+  /// The status code (an `int` with `is2xxSuccessful`, ...).
+  final HttpStatusCode statusCode;
 
   /// The response headers.
   final HttpHeaders headers;
@@ -49,7 +50,7 @@ final class HttpResponse {
   /// The body as text: UTF-8 (malformed bytes replaced), or Latin-1 when
   /// the `Content-Type` says `charset=iso-8859-1`.
   String get bodyText {
-    final contentType = headers[HttpHeaders.contentType]?.toLowerCase() ?? '';
+    final contentType = headers.contentType?.toLowerCase() ?? '';
     if (contentType.contains('charset=iso-8859-1') ||
         contentType.contains('charset=latin1')) {
       return latin1.decode(_body);
@@ -58,10 +59,15 @@ final class HttpResponse {
   }
 
   /// Whether the status is 2xx.
-  bool get isSuccess => HttpStatus.isSuccess(statusCode);
+  bool get isSuccess => statusCode.is2xxSuccessful;
 
   @override
   String toString() =>
-      'HttpResponse($statusCode ${HttpStatus.reasonPhrase(statusCode)}'
+      'HttpResponse($statusCode${_phrase(statusCode)}'
       '${request == null ? '' : ' for $request'})';
+
+  static String _phrase(int code) => switch (HttpStatus.resolve(code)) {
+    final status? => ' ${status.reasonPhrase}',
+    null => '',
+  };
 }

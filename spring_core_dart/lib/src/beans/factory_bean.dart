@@ -56,3 +56,39 @@ abstract class FactoryBean<T extends Object> {
   /// every lookup (Spring's `isSingleton()`).
   bool get isSingleton => true;
 }
+
+/// A [FactoryBean] that tells more about its product, like Spring's
+/// `SmartFactoryBean`.
+///
+/// ```dart
+/// class ConnectionFactory extends SmartFactoryBean<Connection> {
+///   @override
+///   Connection getObject() => Connection.open();
+///
+///   @override
+///   bool get isEagerInit => true; // create the product at refresh
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class ConnectionFactory implements SmartFactoryBean<Connection> {
+///   public Connection getObject() { return Connection.open(); }
+///   public Class<?> getObjectType() { return Connection.class; }
+///   public boolean isEagerInit() { return true; }
+/// }
+/// ```
+///
+/// Spring 7's `getObject(Class)` / `supportsType(Class)` have no
+/// counterpart: product types are known at build time.
+abstract class SmartFactoryBean<T extends Object> extends FactoryBean<T> {
+  /// Whether every [getObject] call returns an independent instance, so
+  /// `BeanFactory.isPrototype` is `true` for the product. A plain
+  /// [FactoryBean] is a prototype exactly when it is not a singleton; with
+  /// this getter a non-singleton product may be neither (e.g. scoped).
+  bool get isPrototype => false;
+
+  /// Whether the product of a non-lazy singleton factory is created at
+  /// refresh (`preInstantiateSingletons`) instead of on first use.
+  bool get isEagerInit => false;
+}

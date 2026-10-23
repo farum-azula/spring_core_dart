@@ -51,33 +51,43 @@ void main() {
     tearDownAll(() => server.close(force: true));
 
     test('echoes text and binary, sends headers and protocols', () async {
-      final socket = await transport.connect(
+      final session = await transport.connect(
         base.resolve('/echo'),
         headers: HttpHeaders({'Authorization': 'Bearer t'}),
         protocols: ['chat.v1'],
         timeout: const Duration(seconds: 2),
       );
-      expect(socket.protocol, 'chat.v1');
+      expect(session.acceptedProtocol, 'chat.v1');
+      expect(session.uri, base.resolve('/echo'));
+      expect(session.isOpen, isTrue);
+      expect(session.closeStatus, isNull);
       expect(handshakes.last.value('authorization'), 'Bearer t');
-      final messages = StreamIterator(socket.messages);
-      socket.send('hello');
+      final messages = StreamIterator(session.messages);
+      session.sendMessage('hello');
       expect(await messages.moveNext(), isTrue);
       expect(messages.current, 'hello');
-      socket.send([1, 2, 3]);
+      session.sendMessage([1, 2, 3]);
       expect(await messages.moveNext(), isTrue);
       expect(messages.current, isA<Uint8List>());
       expect(messages.current, [1, 2, 3]);
-      socket.send('bye');
+      session.sendMessage('bye');
       expect(await messages.moveNext(), isFalse);
-      expect(socket.closeCode, 4000);
-      expect(socket.closeReason, 'asked');
-      expect(() => socket.send('late'), throwsA(isA<WebSocketException>()));
+      expect(session.closeStatus, const CloseStatus(4000, 'asked'));
+      expect(session.isOpen, isFalse);
+      expect(
+        () => session.sendMessage('late'),
+        throwsA(isA<WebSocketException>()),
+      );
     });
 
     test('client close, refused, rejected and slow handshakes', () async {
-      final socket = await transport.connect(base.resolve('/echo'));
-      await socket.close(WebSocketStatus.normalClosure, 'done');
-      expect(socket.closeCode, WebSocketStatus.normalClosure);
+      final session = await transport.connect(base.resolve('/echo'));
+      await session.close(CloseStatus.goingAway.withReason('done'));
+      expect(session.closeStatus?.equalsCode(CloseStatus.goingAway), isTrue);
+      // Like Spring, close() without a status is a normal closure.
+      final other = await transport.connect(base.resolve('/echo'));
+      await other.close();
+      expect(other.closeStatus, CloseStatus.normal);
 
       final free = await io.ServerSocket.bind(
         io.InternetAddress.loopbackIPv4,
@@ -113,6 +123,19 @@ void main() {
     });
   });
 
+  test('CloseStatus: Spring\'s constants, withReason, equalsCode', () {
+    expect(CloseStatus.normal.code, 1000);
+    expect(CloseStatus.noCloseFrame.code, 1006);
+    expect(CloseStatus.serverError.code, 1011);
+    expect(CloseStatus.serviceOverload.code, 1013);
+    expect(CloseStatus.sessionNotReliable.code, 4500);
+    final status = CloseStatus.policyViolation.withReason('no token');
+    expect(status, const CloseStatus(1008, 'no token'));
+    expect(status == CloseStatus.policyViolation, isFalse);
+    expect(status.equalsCode(CloseStatus.policyViolation), isTrue);
+    expect('$status', 'CloseStatus[code=1008, reason=no token]');
+  });
+
   group('MockWebSocketTransport', () {
     test('plays the server side', () async {
       final sockets = MockWebSocketTransport();
@@ -125,15 +148,16 @@ void main() {
       final server = await next;
       expect(server, same(sockets.lastConnection));
       expect(server.headers['X-Token'], 't');
-      expect(client.protocol, 'v1');
+      expect(client.acceptedProtocol, 'v1');
+      expect(client.uri, Uri.parse('wss://chat.test/ws'));
 
       final received = <Object>[];
       final done = Completer<void>();
       client.messages.listen(received.add, onDone: done.complete);
       final sent = server.onSent.first;
-      client.send('{"text":"hi"}');
+      client.sendMessage('{"text":"hi"}');
       expect(await sent, '{"text":"hi"}');
-      client.send([7]);
+      client.sendMessage([7]);
       expect(server.sentJson, [
         {'text': 'hi'},
       ]);
@@ -150,9 +174,10 @@ void main() {
         '{"n":1}',
         [1, 2],
       ]);
-      expect(client.closeCode, WebSocketStatus.abnormalClosure);
+      expect(client.closeStatus, CloseStatus.noCloseFrame);
+      expect(client.isOpen, isFalse);
       expect(server.closedByClient, isFalse);
-      expect(() => client.send('x'), throwsA(isA<WebSocketException>()));
+      expect(() => client.sendMessage('x'), throwsA(isA<WebSocketException>()));
     });
 
     test('failures, client close and connection order', () async {
@@ -163,13 +188,15 @@ void main() {
       );
       final first = await sockets.connect(Uri.parse('ws://h/1'));
       final second = await sockets.connect(Uri.parse('ws://h/2'));
-      expect((await sockets.nextConnection).url.path, '/1');
-      expect((await sockets.nextConnection).url.path, '/2');
-      await first.close(1000, 'bye');
+      expect((await sockets.nextConnection).uri.path, '/1');
+      expect((await sockets.nextConnection).uri.path, '/2');
+      await first.close(CloseStatus.normal.withReason('bye'));
       expect(sockets.connections.first.closedByClient, isTrue);
-      expect(first.closeReason, 'bye');
-      await (second as MockWebSocket).closeFromServer(1008);
-      expect(second.closeCode, 1008);
+      expect(first.closeStatus?.reason, 'bye');
+      await (second as MockWebSocket).closeFromServer(
+        CloseStatus.policyViolation,
+      );
+      expect(second.closeStatus?.code, 1008);
       expect(second.closedByClient, isFalse);
     });
   });

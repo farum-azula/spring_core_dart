@@ -16,7 +16,7 @@ abstract interface class WikimediaStreams {
   /// Wikimedia asks every client to say who it is (User-Agent).
   @GetMapping(
     '/v2/stream/recentchange',
-    headers: [r'User-Agent: ${wikimedia.user-agent}'],
+    headers: [r'User-Agent=${wikimedia.user-agent}'],
   )
   EventStream<RecentChange> recentChanges();
 }

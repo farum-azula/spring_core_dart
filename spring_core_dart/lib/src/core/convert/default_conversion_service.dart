@@ -13,8 +13,9 @@ import 'package:spring_core_dart/src/core/convert/generic_conversion_service.dar
 ///   `null`.
 /// - `int` → `Duration` (milliseconds).
 /// - `bool` from `true/on/yes/1` and `false/off/no/0`, case-insensitive.
-/// - `num` → `int`, `double`; anything → `String` (`toString`, `Duration`
-///   and `DateTime` in their parseable forms).
+/// - `num` → `int`, `double`; anything → `String` (`toString`; a list or
+///   set as `a,b`; `Duration` as ISO-8601 `PT10S` and `DateTime` in their
+///   parseable forms).
 /// - `List` / `Set` of `String`, `int`, `double`, `num`, `bool`, `BigInt`,
 ///   `Duration`, `Uri` from comma-separated strings and other iterables.
 ///
@@ -23,7 +24,8 @@ import 'package:spring_core_dart/src/core/convert/generic_conversion_service.dar
 /// service.convert<int>('0x1F'); // 31
 /// service.convert<Duration>('PT1M'); // 0:01:00.000000
 /// service.convert<List<String>>('a, b'); // ['a', 'b']
-/// service.convert<String>(const Duration(seconds: 10)); // '10s'
+/// service.convert<String>(const Duration(seconds: 10)); // 'PT10S'
+/// service.convert<String>(['a', 'b']); // 'a,b'
 /// ```
 ///
 /// Spring (Java):
@@ -66,7 +68,12 @@ class DefaultConversionService extends GenericConversionService {
         (location) => DefaultResourceLoader().getResource(location.trim()),
       )
       ..addConverter<Object, String>((source) => source.toString())
-      ..addConverter<Duration, String>(DurationStyle.format)
+      // `[a, b]` reads as `a,b`, like Spring's CollectionToStringConverter.
+      ..addConverter<Iterable<Object?>, String>(
+        (source) => source.map(service.convert<String?>).join(','),
+      )
+      // ISO-8601 (`PT1H30M`), like Boot's DurationToStringConverter.
+      ..addConverter<Duration, String>(DurationStyle.formatIso)
       ..addConverter<DateTime, String>((source) => source.toIso8601String())
       ..addConverter<num, int>((source) {
         if (source is double && source != source.truncateToDouble()) {

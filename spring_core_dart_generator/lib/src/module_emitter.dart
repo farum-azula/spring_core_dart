@@ -145,6 +145,20 @@ class ModuleEmitter {
               configurable,
             ),
         }),
+      if (module.configurables.any((c) => c.postConstruct.isNotEmpty))
+        'configurablePostConstruct': literalMap({
+          for (final configurable in module.configurables)
+            if (configurable.postConstruct.isNotEmpty)
+              _type(configurable.type, configurable.element):
+                  _configurableCalls(configurable, configurable.postConstruct),
+        }),
+      if (module.configurables.any((c) => c.preDestroy.isNotEmpty))
+        'configurablePreDestroy': literalMap({
+          for (final configurable in module.configurables)
+            if (configurable.preDestroy.isNotEmpty)
+              _type(configurable.type, configurable.element):
+                  _configurableCalls(configurable, configurable.preDestroy),
+        }),
     };
     final moduleExpression = _spring('BeanModule').newInstance([
       _str(moduleName),
@@ -218,6 +232,15 @@ class ModuleEmitter {
         if (bean.primary) 'primary': literalTrue,
         if (bean.fallback) 'fallback': literalTrue,
         if (!bean.autowireCandidate) 'autowireCandidate': literalFalse,
+        if (!bean.defaultCandidate) 'defaultCandidate': literalFalse,
+        if (bean.creation case BeanMethodCreation(
+          :final ownerName,
+          :final methodName,
+          :final isStatic,
+        )) ...{
+          if (!isStatic) 'factoryBeanName': _str(ownerName),
+          'factoryMethodName': _str(methodName),
+        },
         if (bean.order case final order?) 'order': literalNum(order),
         if (bean.description case final description?)
           'description': _str(description),
@@ -242,10 +265,17 @@ class ModuleEmitter {
         'inject': ?injection,
         if (bean.postConstruct.isNotEmpty)
           'postConstruct': _calls(bean.postConstruct),
-        if (bean.initMethod case final method?) 'initMethod': _calls([method]),
+        if (bean.initMethod case final method?) ...{
+          'initMethod': _calls([method]),
+          'initMethodName': _str(method),
+        },
         if (bean.preDestroy.isNotEmpty) 'preDestroy': _calls(bean.preDestroy),
-        if (bean.destroyMethod case final method?)
+        if (bean.destroyMethod case final method?) ...{
           'destroyMethod': _calls([method]),
+          'destroyMethodName': _str(
+            bean.destroyMethodInferred ? '(inferred)' : method,
+          ),
+        },
         if (bean.listeners.isNotEmpty)
           'eventListeners': literalList([
             for (final listener in bean.listeners)
@@ -255,6 +285,11 @@ class ModuleEmitter {
           'annotatedMethods': literalList([
             for (final method in bean.annotatedMethods)
               _annotatedMethod(bean.type, method, element),
+          ]),
+        if (bean.annotations.isNotEmpty)
+          'annotations': literalConstList([
+            for (final annotation in bean.annotations)
+              _constant(annotation, element),
           ]),
         if (bean.proxy case final proxy?)
           'aopProxy': _proxyFactory(proxy, element),
@@ -281,34 +316,69 @@ class ModuleEmitter {
     ], _injectionBody(refer('bean'), properties, methods, element));
   }
 
+  // Members in Spring's order (superclass first; per class fields, then
+  // setters and methods), see `injectionRank`.
   Code _injectionBody(
     Expression bean,
     List<PropertyInjection> properties,
     List<MethodInjection> methods,
     Element element,
   ) => Block.of([
-    for (final property in properties)
+    for (final (_, statement) in sortedByRank([
+      for (final property in properties)
+        (property.rank, _propertyStatement(bean, property, element)),
+      for (final method in methods)
+        (method.rank, _methodStatement(bean, method, element)),
+    ], (entry) => entry.$1))
+      statement,
+  ]);
+
+  Code _propertyStatement(
+    Expression bean,
+    PropertyInjection property,
+    Element element,
+  ) =>
       // An optional field or setter is left alone when nothing is found
       // (keeps its initializer; Spring does not call the setter either).
-      if (property.point.optional && property.point.defaultValue == null)
-        Block.of([
+      property.point.optional && property.point.defaultValue == null
+      ? Block.of([
           const Code('if ('),
           _lookup(property.point, element).code,
           const Code(' case final value?) {'),
           bean.property(property.name).assign(refer('value')).statement,
           const Code('}'),
         ])
-      else
-        bean
+      : bean
             .property(property.name)
             .assign(_lookup(property.point, element))
-            .statement,
-    for (final method in methods)
-      () {
-        final (positional, named) = _arguments(method.arguments, element);
-        return bean.property(method.name).call(positional, named).statement;
-      }(),
-  ]);
+            .statement;
+
+  Code _methodStatement(
+    Expression bean,
+    MethodInjection method,
+    Element element,
+  ) {
+    final (positional, named) = _arguments(method.arguments, element);
+    return bean.property(method.name).call(positional, named).statement;
+  }
+
+  // `(bean) { final target = bean as T; target.a(); }` for lifecycle
+  // methods of a `@Configurable` class.
+  Expression _configurableCalls(
+    ConfigurableModel configurable,
+    List<String> methods,
+  ) => _closure(
+    ['bean'],
+    Block.of([
+      declareFinal('target')
+          .assign(
+            refer('bean').asA(_type(configurable.type, configurable.element)),
+          )
+          .statement,
+      for (final method in methods)
+        refer('target').property(method).call([]).statement,
+    ]),
+  );
 
   // Configurers receive `Object`, hence the cast to the configurable type.
   Expression _configurer(ConfigurableModel configurable) {
@@ -651,8 +721,14 @@ class ModuleEmitter {
                 ]).code,
                 lambda: true,
               ),
+              // Only `dynamic` and `Object?` take every value; a
+              // non-nullable `Object` skips the `null` of a void method
+              // (Spring passes it; Dart cannot).
               if (advice.valueType case final valueType?
-                  when valueType is! DynamicType && !valueType.isDartCoreObject)
+                  when valueType is! DynamicType &&
+                      !(valueType.isDartCoreObject &&
+                          valueType.nullabilitySuffix ==
+                              NullabilitySuffix.question))
                 'accepts': _closure(
                   ['value'],
                   refer('value').isA(_anyType(valueType, element)).code,
@@ -1465,7 +1541,10 @@ class ModuleEmitter {
       PointKind.provider => dependency.newInstanceNamed(
         'provider',
         [_type(point.type, element)],
-        {if (point.qualifier case final q?) 'qualifier': _str(q)},
+        {
+          if (point.qualifier case final q?) 'qualifier': _str(q),
+          if (point.name case final name?) 'name': _str(name),
+        },
       ),
       PointKind.value => dependency.newInstanceNamed(
         'value',
@@ -1575,19 +1654,31 @@ class ModuleEmitter {
             .property(lenient ? 'optionalDependencyList' : 'dependencyList')
             .call([], qualifier, [type]);
       case PointKind.set:
-        final list = r
-            .property(lenient ? 'optionalDependencyList' : 'dependencyList')
+        // From the map: like Spring, a Set keeps registration order (only
+        // lists are sorted).
+        final map = r
+            .property(lenient ? 'optionalDependencyMap' : 'dependencyMap')
             .call([], qualifier, [type]);
         return (lenient
-                ? list.nullSafeProperty('toSet')
-                : list.property('toSet'))
+                ? map.nullSafeProperty('values')
+                : map.property('values'))
+            .property('toSet')
             .call([]);
       case PointKind.map:
         return r
             .property(lenient ? 'optionalDependencyMap' : 'dependencyMap')
             .call([], qualifier, [type]);
       case PointKind.provider:
-        return r.property('provider').call([], qualifier, [type]);
+        return r
+            .property('provider')
+            .call(
+              [],
+              {
+                ...qualifier,
+                if (point.name case final name?) 'name': _str(name),
+              },
+              [type],
+            );
       case PointKind.value:
         return r
             .property(point.optional ? 'optionalValue' : 'value')

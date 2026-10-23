@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// The settings of one WebSocket client from
@@ -7,9 +9,11 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```properties
 /// spring.websocket.client.config.default.connect-timeout=5s
 /// spring.websocket.client.config.chat.url=wss://chat.neon.books/ws
-/// spring.websocket.client.config.chat.reconnect-delay=500ms
-/// spring.websocket.client.config.chat.max-reconnect-delay=1m
-/// spring.websocket.client.config.chat.max-attempts=10
+/// spring.websocket.client.config.chat.reconnect.delay=500ms
+/// spring.websocket.client.config.chat.reconnect.multiplier=1.5
+/// spring.websocket.client.config.chat.reconnect.max-delay=1m
+/// spring.websocket.client.config.chat.reconnect.jitter=200ms
+/// spring.websocket.client.config.chat.reconnect.max-retries=10
 /// spring.websocket.client.config.chat.default-request-headers.X-Shop=neon
 /// ```
 ///
@@ -21,10 +25,7 @@ final class WebSocketClientConfig {
   const WebSocketClientConfig({
     this.url,
     this.connectTimeout = const Duration(seconds: 10),
-    this.reconnect = true,
-    this.reconnectDelay = const Duration(seconds: 1),
-    this.maxReconnectDelay = const Duration(seconds: 30),
-    this.maxAttempts,
+    this.reconnect = const WebSocketReconnectPolicy(),
     this.defaultRequestHeaders = const {},
   });
 
@@ -34,18 +35,9 @@ final class WebSocketClientConfig {
   /// The longest the handshake may take (`null`: no limit).
   final Duration? connectTimeout;
 
-  /// Whether a lost connection is opened again while someone listens.
-  final bool reconnect;
-
-  /// The wait before the first reconnection; doubled after each failure.
-  final Duration reconnectDelay;
-
-  /// The longest wait between reconnections.
-  final Duration maxReconnectDelay;
-
-  /// Failed connection attempts in a row before giving up (`null`: never
-  /// give up).
-  final int? maxAttempts;
+  /// How a lost (or failed) connection is opened again while someone
+  /// listens (`reconnect.*`).
+  final WebSocketReconnectPolicy reconnect;
 
   /// Headers sent with every handshake (not possible in browsers).
   final Map<String, String> defaultRequestHeaders;
@@ -65,15 +57,22 @@ final class WebSocketClientConfig {
     }
 
     const defaults = WebSocketClientConfig();
-    final maxAttempts = get('max-attempts');
+    const policy = WebSocketReconnectPolicy();
+    final multiplier = get('reconnect.multiplier');
+    final maxRetries = get('reconnect.max-retries');
     return WebSocketClientConfig(
       url: get('url'),
       connectTimeout: duration('connect-timeout') ?? defaults.connectTimeout,
-      reconnect: get('reconnect')?.trim().toLowerCase() != 'false',
-      reconnectDelay: duration('reconnect-delay') ?? defaults.reconnectDelay,
-      maxReconnectDelay:
-          duration('max-reconnect-delay') ?? defaults.maxReconnectDelay,
-      maxAttempts: maxAttempts == null ? null : int.parse(maxAttempts.trim()),
+      reconnect: WebSocketReconnectPolicy(
+        enabled: get('reconnect.enabled')?.trim().toLowerCase() != 'false',
+        delay: duration('reconnect.delay') ?? policy.delay,
+        multiplier: multiplier == null
+            ? policy.multiplier
+            : double.parse(multiplier.trim()),
+        maxDelay: duration('reconnect.max-delay') ?? policy.maxDelay,
+        jitter: duration('reconnect.jitter') ?? policy.jitter,
+        maxRetries: maxRetries == null ? null : int.parse(maxRetries.trim()),
+      ),
       defaultRequestHeaders: {
         ..._headers(environment, '${_prefix}default.default-request-headers.'),
         ..._headers(environment, '$_prefix$name.default-request-headers.'),
@@ -99,4 +98,87 @@ final class WebSocketClientConfig {
     }
     return result;
   }
+}
+
+/// How a `@WebSocketClient` opens its connection again after a loss or a
+/// failed attempt, while someone listens: from
+/// `spring.websocket.client.config.<name>.reconnect.*`, with the names of
+/// Spring Framework 7's `RetryPolicy` (`delay`, `multiplier`,
+/// `max-delay`, `jitter`, `max-retries`).
+///
+/// ```properties
+/// spring.websocket.client.config.chat.reconnect.delay=500ms
+/// spring.websocket.client.config.chat.reconnect.multiplier=2
+/// spring.websocket.client.config.chat.reconnect.max-delay=30s
+/// spring.websocket.client.config.chat.reconnect.jitter=100ms
+/// spring.websocket.client.config.chat.reconnect.max-retries=10
+/// spring.websocket.client.config.chat.reconnect.enabled=false
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// RetryPolicy.builder().delay(Duration.ofMillis(500)).multiplier(2)
+///     .maxDelay(Duration.ofSeconds(30)).jitter(Duration.ofMillis(100))
+///     .maxRetries(10).build();
+/// ```
+///
+/// Differs from Spring: the defaults suit reconnecting (a doubling delay
+/// up to 30 s, no limit on retries) rather than `RetryPolicy`'s (a fixed
+/// 1 s delay, 3 retries).
+final class WebSocketReconnectPolicy {
+  /// A policy with these values.
+  const WebSocketReconnectPolicy({
+    this.enabled = true,
+    this.delay = const Duration(seconds: 1),
+    this.multiplier = 2,
+    this.maxDelay = const Duration(seconds: 30),
+    this.jitter = Duration.zero,
+    this.maxRetries,
+  });
+
+  /// Whether to reconnect at all (`reconnect.enabled`, default `true`).
+  final bool enabled;
+
+  /// The wait before the first attempt (`reconnect.delay`, default 1 s).
+  final Duration delay;
+
+  /// What each further wait is multiplied by (`reconnect.multiplier`,
+  /// default 2; 1 for a fixed delay).
+  final double multiplier;
+
+  /// The longest wait (`reconnect.max-delay`, default 30 s).
+  final Duration maxDelay;
+
+  /// A random part added to or taken from each wait, scaled by the
+  /// multiplier like the delay (`reconnect.jitter`, default none).
+  final Duration jitter;
+
+  /// The attempts in a row before giving up (`reconnect.max-retries`;
+  /// default: no limit).
+  final int? maxRetries;
+
+  /// The wait before attempt [retry] (1 for the first), like Spring's
+  /// `ExponentialBackOff`: [delay] × [multiplier]^(retry − 1), at most
+  /// [maxDelay], then ± [jitter] × (that wait / [delay]), but never below
+  /// [delay] nor above [maxDelay].
+  Duration delayFor(int retry, [math.Random? random]) {
+    final base = delay.inMicroseconds;
+    final max = maxDelay.inMicroseconds;
+    final grown = base * math.pow(multiplier, math.max(retry - 1, 0));
+    final interval = math.min(grown, max.toDouble());
+    if (jitter <= Duration.zero) {
+      return Duration(microseconds: interval.round());
+    }
+    final applicable =
+        jitter.inMicroseconds * (base == 0 ? 1 : interval / base);
+    final low = math.max(interval - applicable, base.toDouble());
+    final high = math.min(interval + applicable, max.toDouble());
+    if (high <= low) {
+      return Duration(microseconds: low.round());
+    }
+    final next = (random ?? _random).nextDouble();
+    return Duration(microseconds: (low + next * (high - low)).round());
+  }
+
+  static final _random = math.Random();
 }

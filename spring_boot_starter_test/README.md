@@ -57,8 +57,9 @@ void main() {
 - `systemEnvironment` is empty by default, so tests do not depend on the
   machine.
 - `SpringLog` levels and handler are restored afterwards.
-- `app.output` holds what the application printed (startup line, failure
-  report); it is also printed when a test fails.
+- `app.output` holds what the application printed (a failure report; the
+  startup info goes through `SpringLog`); it is also printed when a test
+  fails.
 
 ## `test/resources/`: config and data for tests only
 

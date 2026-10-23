@@ -5,6 +5,8 @@ import 'package:spring_core_dart/src/core/env/property_source.dart';
 /// `--key=value` defines `key`; `--flag` defines `flag` as an empty string;
 /// a repeated option keeps all values joined with commas. Other arguments
 /// are available as the comma-joined [nonOptionArgsPropertyName] property.
+/// A lone `--` ends the options: every argument after it is a non-option
+/// argument, as in Spring.
 ///
 /// ```dart
 /// Future<void> main(List<String> args) async {
@@ -31,7 +33,7 @@ import 'package:spring_core_dart/src/core/env/property_source.dart';
 class SimpleCommandLinePropertySource
     extends EnumerablePropertySource<Map<String, List<String>>> {
   /// Parses [args]; throws [ArgumentError] for an option without a name
-  /// (`--` or `--=value`).
+  /// (`--=value`).
   SimpleCommandLinePropertySource(
     List<String> args, {
     String name = defaultName,
@@ -77,13 +79,19 @@ class SimpleCommandLinePropertySource
   List<String> get propertyNames => List.unmodifiable(source.keys);
 
   // Splits arguments into `--name[=value]` options (values collected per
-  // name, in order) and everything else. Only the first `=` separates.
+  // name, in order) and everything else. Only the first `=` separates; a
+  // lone `--` ends the options (Spring's SimpleCommandLineArgsParser).
   static _Parsed _parse(List<String> args) {
     final options = <String, List<String>>{};
     final nonOptions = <String>[];
+    var endOfOptions = false;
     for (final arg in args) {
-      if (!arg.startsWith('--')) {
+      if (endOfOptions || !arg.startsWith('--')) {
         nonOptions.add(arg);
+        continue;
+      }
+      if (arg == '--') {
+        endOfOptions = true;
         continue;
       }
       final body = arg.substring(2);

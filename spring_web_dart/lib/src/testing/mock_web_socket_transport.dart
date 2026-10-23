@@ -57,7 +57,7 @@ class MockWebSocketTransport implements WebSocketTransport {
       _failures.add(error ?? WebSocketException('connection refused'));
 
   @override
-  Future<WebSocketConnection> connect(
+  Future<WebSocketSession> connect(
     Uri url, {
     HttpHeaders? headers,
     List<String> protocols = const [],
@@ -82,12 +82,13 @@ class MockWebSocketTransport implements WebSocketTransport {
 }
 
 /// The server side of one connection of a [MockWebSocketTransport] (and
-/// the [WebSocketConnection] the client uses).
-final class MockWebSocket implements WebSocketConnection {
-  MockWebSocket._(this.url, this.headers, this.protocols);
+/// the [WebSocketSession] the client uses).
+final class MockWebSocket implements WebSocketSession {
+  MockWebSocket._(this.uri, this.headers, this.protocols);
 
   /// The address the client connected to.
-  final Uri url;
+  @override
+  final Uri uri;
 
   /// The handshake headers.
   final HttpHeaders headers;
@@ -98,8 +99,7 @@ final class MockWebSocket implements WebSocketConnection {
   final _incoming = StreamController<Object>();
   final _sent = <Object>[];
   final _sentEvents = StreamController<Object>.broadcast();
-  int? _closeCode;
-  String? _closeReason;
+  CloseStatus? _closeStatus;
   bool _closedByClient = false;
 
   /// What the client sent, in order (`String` or `Uint8List`).
@@ -124,7 +124,7 @@ final class MockWebSocket implements WebSocketConnection {
   Stream<Object> get onSent => _sentEvents.stream;
 
   /// Whether the connection is closed.
-  bool get isClosed => _closeCode != null;
+  bool get isClosed => _closeStatus != null;
 
   /// Whether the client closed it.
   bool get closedByClient => _closedByClient;
@@ -144,21 +144,19 @@ final class MockWebSocket implements WebSocketConnection {
   /// Sends the client [json] encoded as a text message.
   void pushJson(Object? json) => push(jsonEncode(json));
 
-  /// Closes from the server side with [code] and [reason].
-  Future<void> closeFromServer([
-    int code = WebSocketStatus.normalClosure,
-    String? reason,
-  ]) => _end(code, reason);
+  /// Closes from the server side with [status].
+  Future<void> closeFromServer([CloseStatus status = CloseStatus.normal]) =>
+      _end(status);
 
-  /// Loses the connection (close code 1006), e.g. to test reconnection.
-  Future<void> drop() => _end(WebSocketStatus.abnormalClosure, null);
+  /// Loses the connection ([CloseStatus.noCloseFrame], 1006), e.g. to test
+  /// reconnection.
+  Future<void> drop() => _end(CloseStatus.noCloseFrame);
 
-  Future<void> _end(int code, String? reason) async {
+  Future<void> _end(CloseStatus status) async {
     if (isClosed) {
       return;
     }
-    _closeCode = code;
-    _closeReason = reason;
+    _closeStatus = status;
     unawaited(_incoming.close());
     unawaited(_sentEvents.close());
   }
@@ -167,12 +165,15 @@ final class MockWebSocket implements WebSocketConnection {
   Stream<Object> get messages => _incoming.stream;
 
   @override
-  String? get protocol => protocols.firstOrNull;
+  String? get acceptedProtocol => protocols.firstOrNull;
 
   @override
-  void send(Object message) {
+  bool get isOpen => !isClosed;
+
+  @override
+  void sendMessage(Object message) {
     if (isClosed) {
-      throw WebSocketException('the connection is closed', url: url);
+      throw WebSocketException('the connection is closed', url: uri);
     }
     final value = switch (message) {
       String() => message,
@@ -189,19 +190,16 @@ final class MockWebSocket implements WebSocketConnection {
   }
 
   @override
-  Future<void> close([int? code, String? reason]) {
+  Future<void> close([CloseStatus status = CloseStatus.normal]) {
     if (!isClosed) {
       _closedByClient = true;
     }
-    return _end(code ?? WebSocketStatus.noStatusReceived, reason);
+    return _end(status);
   }
 
   @override
-  int? get closeCode => _closeCode;
+  CloseStatus? get closeStatus => _closeStatus;
 
   @override
-  String? get closeReason => _closeReason;
-
-  @override
-  String toString() => 'MockWebSocket($url)';
+  String toString() => 'MockWebSocket($uri)';
 }

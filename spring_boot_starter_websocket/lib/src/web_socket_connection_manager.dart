@@ -1,17 +1,21 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client_config.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// The one connection of a `@WebSocketClient`, shared by its streams and
-/// sends: opened on demand, handed to every listener, opened again after a
-/// loss while someone listens. Created by `WebSocketInvocationHandler`.
-final class WebSocketSession {
-  /// A session of client [clientName] to [url].
-  WebSocketSession({
+/// Manages the one connection (a `WebSocketSession`) of a
+/// `@WebSocketClient`, shared by its streams and sends: opened on demand,
+/// handed to every listener, opened again after a loss while someone
+/// listens (see [WebSocketReconnectPolicy]). Created by
+/// `WebSocketInvocationHandler`.
+///
+/// Spring (Java): `WebSocketConnectionManager`, which connects a
+/// `WebSocketHandler` through a `WebSocketClient` (without reconnecting).
+final class WebSocketConnectionManager {
+  /// A manager of client [clientName]'s connection to [url].
+  WebSocketConnectionManager({
     required this.clientName,
     required this.url,
     required this.config,
@@ -23,14 +27,14 @@ final class WebSocketSession {
 
   /// Close codes after which the connection is opened again: none, going
   /// away, no status, lost, and the server's temporary failures.
-  static const retryableCloseCodes = {
+  static final retryableCloseCodes = {
     null,
-    WebSocketStatus.goingAway,
-    WebSocketStatus.noStatusReceived,
-    WebSocketStatus.abnormalClosure,
-    WebSocketStatus.internalError,
-    WebSocketStatus.serviceRestart,
-    WebSocketStatus.tryAgainLater,
+    CloseStatus.goingAway.code,
+    CloseStatus.noStatusCode.code,
+    CloseStatus.noCloseFrame.code,
+    CloseStatus.serverError.code,
+    CloseStatus.serviceRestarted.code,
+    CloseStatus.serviceOverload.code,
     1014, // bad gateway
   };
 
@@ -54,18 +58,19 @@ final class WebSocketSession {
 
   final SpringLog _log;
   final _listeners = <StreamController<Object>>{};
-  WebSocketConnection? _connection;
+  WebSocketSession? _connection;
   StreamSubscription<Object>? _subscription;
-  Completer<WebSocketConnection>? _pending;
+  Completer<WebSocketSession>? _pending;
   Timer? _retry;
-  // Failed attempts in a row (for the backoff and max-attempts).
-  var _failures = 0;
+  // Reconnection attempts since the last connection (for the backoff and
+  // max-retries).
+  var _retries = 0;
   // Bumped by close(): attempts of an older generation are dropped.
   var _generation = 0;
   var _disposed = false;
 
-  /// Whether a connection is open.
-  bool get isOpen => _connection != null;
+  /// Whether a connection is open, like Spring's `isConnected()`.
+  bool get isConnected => _connection != null;
 
   /// The incoming messages (`String` or `Uint8List`); listening opens the
   /// connection. Done when the connection ends for good.
@@ -87,11 +92,11 @@ final class WebSocketSession {
     return controller.stream;
   }
 
-  /// Sends a text (`String`) or binary (`List<int>`) frame, opening the
+  /// Sends a text (`String`) or binary (`List<int>`) message, opening the
   /// connection first when needed.
-  Future<void> send(Object frame) async {
+  Future<void> sendMessage(Object message) async {
     final connection = await _ensure();
-    connection.send(frame);
+    connection.sendMessage(message);
   }
 
   /// Opens the connection now (if it is not open).
@@ -108,7 +113,7 @@ final class WebSocketSession {
     _listeners.clear();
     if (connection != null) {
       _log.debug('closing $url', fields: {'client': clientName});
-      await connection.close(WebSocketStatus.normalClosure);
+      await connection.close();
     }
   }
 
@@ -129,7 +134,7 @@ final class WebSocketSession {
     unawaited(_subscription?.cancel());
     _subscription = null;
     _connection = null;
-    _failures = 0;
+    _retries = 0;
     final pending = _pending;
     _pending = null;
     if (pending != null && !pending.isCompleted) {
@@ -141,7 +146,7 @@ final class WebSocketSession {
     'The WebSocket client $clientName is closed: the application stopped',
   );
 
-  Future<WebSocketConnection> _ensure() {
+  Future<WebSocketSession> _ensure() {
     if (_disposed) {
       return Future.error(_disposedError());
     }
@@ -153,7 +158,7 @@ final class WebSocketSession {
     if (pending != null) {
       return pending.future;
     }
-    final created = _pending = Completer<WebSocketConnection>();
+    final created = _pending = Completer<WebSocketSession>();
     created.future.ignore();
     unawaited(_attempt(_generation));
     return created.future;
@@ -166,7 +171,7 @@ final class WebSocketSession {
       headers: HttpHeaders(config.defaultRequestHeaders),
       protocols: protocols,
     );
-    final WebSocketConnection connection;
+    final WebSocketSession connection;
     try {
       for (final interceptor in interceptors) {
         await interceptor.apply(handshake);
@@ -184,11 +189,11 @@ final class WebSocketSession {
       return;
     }
     if (generation != _generation) {
-      unawaited(connection.close(WebSocketStatus.normalClosure));
+      unawaited(connection.close());
       return;
     }
     _log.debug('connected to ${handshake.url}', fields: {'client': clientName});
-    _failures = 0;
+    _retries = 0;
     _connection = connection;
     _subscription = connection.messages.listen(
       (message) {
@@ -208,18 +213,13 @@ final class WebSocketSession {
 
   // A connection attempt failed.
   void _failed(Object error, StackTrace stackTrace) {
-    _failures++;
     _log.debug('connection failed: $error', fields: {'client': clientName});
-    final max = config.maxAttempts;
-    if (config.reconnect &&
-        _listeners.isNotEmpty &&
-        (max == null || _failures < max)) {
-      _schedule();
+    if (_listeners.isNotEmpty && _schedule()) {
       return;
     }
     final pending = _pending;
     _pending = null;
-    _failures = 0;
+    _retries = 0;
     _end(error, stackTrace);
     if (pending != null && !pending.isCompleted) {
       pending.completeError(error, stackTrace);
@@ -227,27 +227,28 @@ final class WebSocketSession {
   }
 
   // The connection ended without close() from this side.
-  void _closed(WebSocketConnection connection) {
+  void _closed(WebSocketSession connection) {
     if (_connection != connection) {
       return;
     }
     _connection = null;
     _subscription = null;
-    final code = connection.closeCode;
-    final reason = connection.closeReason;
+    final status = connection.closeStatus;
+    final code = status?.code;
+    final reason = status?.reason;
     _log.debug(
       'closed by the server ($code${reason == null || reason.isEmpty ? '' : ' $reason'})',
       fields: {'client': clientName},
     );
-    if (config.reconnect &&
-        _listeners.isNotEmpty &&
-        retryableCloseCodes.contains(code)) {
-      final pending = _pending = Completer<WebSocketConnection>();
+    if (_listeners.isNotEmpty && retryableCloseCodes.contains(code)) {
+      final pending = _pending = Completer<WebSocketSession>();
       pending.future.ignore();
-      _schedule();
-      return;
+      if (_schedule()) {
+        return;
+      }
+      _pending = null;
     }
-    if (code == WebSocketStatus.normalClosure) {
+    if (code == CloseStatus.normal.code) {
       _end();
     } else {
       _end(
@@ -260,16 +261,18 @@ final class WebSocketSession {
     }
   }
 
-  void _schedule() {
-    final factor = math.pow(2, math.min(_failures, 30)).toInt();
-    final delay = Duration(
-      microseconds: math.min(
-        config.reconnectDelay.inMicroseconds * factor,
-        config.maxReconnectDelay.inMicroseconds,
-      ),
-    );
+  // Schedules the next attempt, unless reconnecting is off or max-retries
+  // is reached (false then).
+  bool _schedule() {
+    final policy = config.reconnect;
+    final max = policy.maxRetries;
+    if (!policy.enabled || (max != null && _retries >= max)) {
+      return false;
+    }
+    _retries++;
+    final delay = policy.delayFor(_retries);
     _log.debug(
-      'reconnecting in ${delay.inMilliseconds} ms (attempt ${_failures + 1})',
+      'reconnecting in ${delay.inMilliseconds} ms (attempt $_retries)',
       fields: {'client': clientName},
     );
     final generation = _generation;
@@ -279,6 +282,7 @@ final class WebSocketSession {
         unawaited(_attempt(generation));
       }
     });
+    return true;
   }
 
   // Ends every listener, after [error] when given.

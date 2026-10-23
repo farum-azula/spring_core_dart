@@ -375,14 +375,35 @@ class BeanMethodCreation extends Creation {
 /// ```
 class PropertyInjection {
   /// Creates a property injection for the field or setter [name].
-  PropertyInjection(this.name, this.point);
+  PropertyInjection(this.name, this.point, {this.rank = 0});
 
   /// The field or setter name.
   final String name;
 
   /// What to assign.
   final InjectionPoint point;
+
+  /// Position in the injection order (see [injectionRank]).
+  final int rank;
 }
+
+/// The rank of a member declared by the class at [depth] in the hierarchy
+/// (0 for the topmost superclass): Spring's `buildAutowiringMetadata`
+/// injects superclass members first and, per class, fields before methods
+/// (setters and `@Autowired` methods).
+int injectionRank(int depth, {required bool field}) =>
+    depth * 2 + (field ? 0 : 1);
+
+/// [items] sorted by [rank], keeping their order within a rank (a stable
+/// sort; `List.sort` is not).
+List<T> sortedByRank<T>(Iterable<T> items, int Function(T item) rank) => [
+  for (final (_, item)
+      in items.indexed.toList()..sort((a, b) {
+        final byRank = rank(a.$2) - rank(b.$2);
+        return byRank != 0 ? byRank : a.$1 - b.$1;
+      }))
+    item,
+];
 
 /// `bean.name(args)` after construction.
 ///
@@ -406,13 +427,16 @@ class PropertyInjection {
 /// ```
 class MethodInjection {
   /// Creates a method injection for the method [name].
-  MethodInjection(this.name, this.arguments);
+  MethodInjection(this.name, this.arguments, {this.rank = 0});
 
   /// The `@Autowired` method name.
   final String name;
 
   /// The method's arguments.
   final List<Argument> arguments;
+
+  /// Position in the injection order (see [injectionRank]).
+  final int rank;
 }
 
 /// A condition to emit.
@@ -996,6 +1020,7 @@ class BeanModel {
     this.primary = false,
     this.fallback = false,
     this.autowireCandidate = true,
+    this.defaultCandidate = true,
     this.order,
     this.description,
     this.dependsOn = const [],
@@ -1007,8 +1032,10 @@ class BeanModel {
     this.preDestroy = const [],
     this.initMethod,
     this.destroyMethod,
+    this.destroyMethodInferred = false,
     this.listeners = const [],
     this.annotatedMethods = const [],
+    this.annotations = const [],
     this.aspect,
     this.proxy,
   });
@@ -1054,6 +1081,10 @@ class BeanModel {
   /// type-based injection.
   final bool autowireCandidate;
 
+  /// `false` when `@Bean(defaultCandidate: false)` limits injection to
+  /// points whose qualifier selects the bean.
+  final bool defaultCandidate;
+
   /// The `@Order` value.
   final int? order;
 
@@ -1089,11 +1120,20 @@ class BeanModel {
   /// `dispose`).
   final String? destroyMethod;
 
+  /// Whether [destroyMethod] was inferred (written as
+  /// `destroyMethodName: '(inferred)'`, skipped for a `DisposableBean`).
+  final bool destroyMethodInferred;
+
   /// Event listener methods of the bean.
   final List<ListenerModel> listeners;
 
   /// Methods carrying an annotation marked `@BeanMethodAnnotation()`.
   final List<AnnotatedMethodModel> annotatedMethods;
+
+  /// Annotations of the class (for a `@Bean` method: of the method, then
+  /// of the returned class) that can be re-created as constants, for
+  /// `BeanDefinition.annotations`.
+  final List<DartObject> annotations;
 
   /// Set for `@Aspect` beans.
   final AspectModel? aspect;
@@ -1158,7 +1198,14 @@ class BeanModel {
 /// ```
 class ConfigurableModel {
   /// Creates a configurable model.
-  ConfigurableModel(this.element, this.type, this.properties, this.methods);
+  ConfigurableModel(
+    this.element,
+    this.type,
+    this.properties,
+    this.methods, {
+    this.postConstruct = const [],
+    this.preDestroy = const [],
+  });
 
   /// Source element, for error messages.
   final Element element;
@@ -1171,6 +1218,12 @@ class ConfigurableModel {
 
   /// Injected methods.
   final List<MethodInjection> methods;
+
+  /// `@PostConstruct` methods (run by `initializeBean`), superclass first.
+  final List<String> postConstruct;
+
+  /// `@PreDestroy` methods (run by `destroyBean`), subclass first.
+  final List<String> preDestroy;
 }
 
 /// A `@PropertySource` declaration.

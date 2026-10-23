@@ -38,7 +38,10 @@ void main() {
       expect(book.title, 'Dune');
       final request = server.lastRequest;
       expect('${request.url}', 'https://api.neon.test/v1/books/978-0');
-      expect(request.headers[HttpHeaders.accept], MediaType.applicationJson);
+      expect(
+        request.headers[HttpHeaders.acceptHeader],
+        MediaType.applicationJson,
+      );
     });
   });
 
@@ -91,7 +94,7 @@ void main() {
           'title': 'Ubik',
         });
         expect(
-          request.headers[HttpHeaders.contentType],
+          request.headers[HttpHeaders.contentTypeHeader],
           MediaType.applicationJson,
         );
       });
@@ -161,7 +164,7 @@ void main() {
         .runAsync((context) async {
           await context.getBean<CatalogClient>().find('1');
           final request = server.lastRequest;
-          expect(request.timeout, const Duration(seconds: 3));
+          expect(request.readTimeout, const Duration(seconds: 3));
           expect(request.headers['X-Shop'], 'neon');
           expect(request.headers['X-Client'], 'catalog');
         });

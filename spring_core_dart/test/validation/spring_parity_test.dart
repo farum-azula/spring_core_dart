@@ -914,6 +914,13 @@ void main() {
       expect(advisor.pointcut.matches(unvalidated, 'x'), isFalse);
     });
 
+    test('exclude filters skip classes by their annotations', () {
+      final excluding = MethodValidationPostProcessor(null, [
+        (annotations) => annotations.any((a) => a is Validated),
+      ]);
+      expect(excluding.pointcut.matches(signature, 'x'), isFalse);
+    });
+
     test('parameter constraints and @Valid parameters', () {
       expect(call(signature, ['a@b.c', null], 'ok'), 'ok');
       expect(
@@ -1029,7 +1036,7 @@ void main() {
           'title=Fehler\nonly.errors=Nur',
         ),
       });
-      final source = PropertiesMessageSource(
+      final source = ReloadableResourceBundleMessageSource(
         basenames: ['classpath:parity/messages', 'classpath:parity/errors'],
       );
       expect(source.getMessage('title', locale: 'de'), 'Shop');

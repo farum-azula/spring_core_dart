@@ -48,6 +48,31 @@ Future<void> main() async {
       '${event.id}:${event.data}',
   ];
 
+  try {
+    await transport.send(
+      HttpRequest(
+        method: HttpMethod.get,
+        url: Uri.parse('http://$host/stall'),
+        readTimeout: const Duration(milliseconds: 150),
+      ),
+    );
+    result['readTimeout'] = 'no error';
+  } on HttpTransportException catch (error) {
+    result['readTimeout'] = error.isTimeout ? 'timeout' : 'error: $error';
+  }
+  // Data every 20 ms: a read timeout of 150 ms does not run out.
+  final steady = await transport.send(
+    HttpRequest(
+      method: HttpMethod.get,
+      url: Uri.parse('http://$host/events'),
+      readTimeout: const Duration(milliseconds: 150),
+    ),
+  );
+  result['steady'] = steady.bodyText
+      .split('\n')
+      .lastWhere((line) => line.startsWith('data: '))
+      .substring(6);
+
   final sockets = platformWebSocketTransport();
   final socket = await sockets.connect(
     Uri.parse('ws://$host/ws'),
@@ -55,13 +80,13 @@ Future<void> main() async {
   );
   final messages = StreamIterator(socket.messages);
   final echo = <String>[];
-  socket.send('hello');
+  socket.sendMessage('hello');
   await messages.moveNext();
   echo.add(messages.current as String);
-  socket.send(Uint8List.fromList([1, 2, 3]));
+  socket.sendMessage(Uint8List.fromList([1, 2, 3]));
   await messages.moveNext();
   echo.add(jsonEncode(messages.current as Uint8List));
-  socket.send('bye');
+  socket.sendMessage('bye');
   await messages.moveNext();
   String headers;
   try {
@@ -76,7 +101,7 @@ Future<void> main() async {
   result['webSocket'] = {
     'platform': sockets is BrowserWebSocketTransport,
     'echo': echo,
-    'closeCode': socket.closeCode,
+    'closeCode': socket.closeStatus?.code,
     'headers': headers,
   };
   print('RESULT ${jsonEncode(result)}');

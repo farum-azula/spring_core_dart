@@ -46,7 +46,8 @@ enum DependencyKind {
   /// All beans of a type by name (`Map<String, T>`).
   map,
 
-  /// A lazy `ObjectProvider<T>`; never required, never part of a cycle.
+  /// A lazy `ObjectProvider<T>` (or `ObjectFactory<T>`); never required,
+  /// never part of a cycle.
   provider,
 
   /// A `@Lazy` single bean: checked like [single] (present, unambiguous)
@@ -111,10 +112,10 @@ final class Dependency {
       name = null,
       expression = null;
 
-  /// A lazy provider of [type].
-  const Dependency.provider(this.type, {this.qualifier})
+  /// A lazy provider of [type]; [name] (the parameter or field name)
+  /// selects among several candidates like for a single bean.
+  const Dependency.provider(this.type, {this.qualifier, this.name})
     : kind = DependencyKind.provider,
-      name = null,
       optional = true,
       expression = null;
 
@@ -155,7 +156,8 @@ final class Dependency {
     DependencyKind.value => '@Value("$expression")',
     _ =>
       '${kind == DependencyKind.single ? '' : '${kind.name} of '}$type'
-          '${qualifier == null ? '' : "('$qualifier')"}',
+          '${qualifier == null ? '' : "('$qualifier')"}'
+          '${name == null ? '' : " '$name'"}',
   };
 }
 
@@ -225,9 +227,14 @@ final class BeanDefinition<T extends Object> {
     this.primary = false,
     this.fallback = false,
     this.autowireCandidate = true,
+    this.defaultCandidate = true,
     this.order,
     this.description,
     this.source,
+    this.factoryBeanName,
+    this.factoryMethodName,
+    this.initMethodName,
+    this.destroyMethodName,
     Set<String> qualifiers = const {},
     List<String> aliases = const [],
     List<String> dependsOn = const [],
@@ -235,6 +242,7 @@ final class BeanDefinition<T extends Object> {
     List<Condition> conditions = const [],
     List<EventListenerMethod<T>> eventListeners = const [],
     List<BeanMethod<T>> annotatedMethods = const [],
+    List<Object> annotations = const [],
     List<Type>? factoryObjectTypes,
     this.aopProxy,
     this.aspect,
@@ -246,9 +254,16 @@ final class BeanDefinition<T extends Object> {
        conditions = List.unmodifiable(conditions),
        eventListeners = List.unmodifiable(eventListeners),
        annotatedMethods = List.unmodifiable(annotatedMethods),
+       annotations = List.unmodifiable(annotations),
        factoryObjectTypes = factoryObjectTypes == null
            ? null
            : List.unmodifiable(factoryObjectTypes);
+
+  /// [destroyMethodName] of a definition whose destroy method was inferred
+  /// (`close`, `shutdown` or `dispose`), like Spring's
+  /// `AbstractBeanDefinition.INFER_METHOD`: it is skipped for a
+  /// `DisposableBean`.
+  static const inferMethod = '(inferred)';
 
   /// Unique bean name.
   final String name;
@@ -269,10 +284,22 @@ final class BeanDefinition<T extends Object> {
   /// Whether this bean is used only when no other candidate matches.
   bool fallback;
 
-  /// Whether the bean takes part in injection by type.
+  /// Whether the bean takes part in injection by type at all (also with a
+  /// qualifier). A non-candidate is still returned by lookups by name,
+  /// `getBean<T>(qualifier: name)`, and `getBean<T>()` when it is the only
+  /// bean of `T`.
   bool autowireCandidate;
 
-  /// `@Order` value used when the bean is not `Ordered` itself.
+  /// Whether the bean is injected by its plain type (Spring 6.2's
+  /// `@Bean(defaultCandidate: false)`). When `false` it is injected only
+  /// where a qualifier selects it (bean name, alias or `@Qualifier`), and
+  /// `@ConditionalOnBean` / `@ConditionalOnMissingBean` ignore it.
+  bool defaultCandidate;
+
+  /// The `@Order` value. For a `@Bean` definition ([factoryMethodName]
+  /// set) it is the `@Order` of the method and beats `Ordered.order`, like
+  /// in Spring; otherwise it is the class's `@Order`, used only when the
+  /// bean is not `Ordered` itself.
   int? order;
 
   /// Human-readable description (`@Description`).
@@ -281,6 +308,27 @@ final class BeanDefinition<T extends Object> {
   /// Where the definition comes from (e.g. `package:x/y.dart#Foo`);
   /// registering the same name from the same source twice is a no-op.
   final String? source;
+
+  /// For a `@Bean` instance method: the name of the configuration bean
+  /// that declares it, like Spring's `getFactoryBeanName()`. That bean
+  /// never receives this one in its own collections (Spring's
+  /// self-reference rule: creating it would need the configuration first).
+  final String? factoryBeanName;
+
+  /// For a `@Bean` method: the method name, like Spring's
+  /// `getFactoryMethodName()`.
+  final String? factoryMethodName;
+
+  /// Name of the custom init method (`@Bean(initMethod:)`); an init method
+  /// named `afterPropertiesSet` is not called again for an
+  /// `InitializingBean`.
+  final String? initMethodName;
+
+  /// Name of the custom destroy method (`@Bean(destroyMethod:)`), or
+  /// [inferMethod] when it was inferred. An inferred method, or one named
+  /// `destroy`, is not called for a `DisposableBean` (its `destroy()` runs
+  /// once).
+  final String? destroyMethodName;
 
   /// Extra names the bean can be selected by with `@Qualifier`.
   final Set<String> qualifiers;
@@ -312,6 +360,12 @@ final class BeanDefinition<T extends Object> {
   /// }
   /// ```
   final List<BeanMethod<T>> annotatedMethods;
+
+  /// The annotations of the bean class (for a `@Bean` method: of the method,
+  /// then of the returned class), written by the generator for
+  /// `findAnnotationOnBean` and `getBeansWithAnnotation`. Spring reads them
+  /// by reflection.
+  final List<Object> annotations;
 
   /// For a `FactoryBean`: the product type and its supertypes. Lookups by
   /// these types (and by [name]) return the product.
@@ -352,16 +406,21 @@ final class BeanDefinition<T extends Object> {
       aliases.contains(qualifier) ||
       qualifiers.contains(qualifier);
 
-  /// Whether lookups by [type] match this definition.
+  /// Whether lookups by [type] match this definition. Every bean is an
+  /// `Object`.
   bool matchesType(Type type) =>
-      types.contains(type) || (factoryObjectTypes?.contains(type) ?? false);
+      type == Object ||
+      types.contains(type) ||
+      (factoryObjectTypes?.contains(type) ?? false);
 
   /// Whether lookups by [type] return the product of a factory bean.
   ///
   /// A type listed in both [types] and [factoryObjectTypes] selects the
-  /// factory itself.
+  /// factory itself; `Object` selects the product (like Spring).
   bool isProductType(Type type) =>
-      (factoryObjectTypes?.contains(type) ?? false) && !types.contains(type);
+      isFactoryBean &&
+      (type == Object ||
+          (factoryObjectTypes!.contains(type) && !types.contains(type)));
 
   /// Creates a new instance (calls `create`); used by the container.
   T instantiate(DependencyResolver resolver) => _create(resolver);

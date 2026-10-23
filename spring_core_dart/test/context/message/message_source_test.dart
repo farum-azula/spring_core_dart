@@ -48,7 +48,7 @@ void main() {
     test('default locale fallback', () {
       source.defaultLocale = 'de';
       expect(source.getMessage('only.de', locale: 'fr'), 'Hallo');
-      source.fallbackToDefaultLocale = false;
+      source.defaultLocale = '';
       expect(
         () => source.getMessage('only.de', locale: 'fr'),
         throwsA(isA<NoSuchMessageException>()),
@@ -150,9 +150,11 @@ void main() {
     });
   });
 
-  group('PropertiesMessageSource', () {
+  group('ReloadableResourceBundleMessageSource', () {
     late Directory temp;
+    tearDown(() => Locales.systemLocale = null);
     setUp(() {
+      Locales.systemLocale = 'fr';
       temp = Directory.systemTemp.createTempSync('scd_messages_');
       File('${temp.path}/i18n/messages.properties')
         ..createSync(recursive: true)
@@ -165,7 +167,7 @@ void main() {
     tearDown(() => temp.deleteSync(recursive: true));
 
     test('bundles, locales, basename order, cache', () {
-      final source = PropertiesMessageSource(
+      final source = ReloadableResourceBundleMessageSource(
         basenames: ['file:${temp.path}/i18n/messages'],
       )..addBasenames(['file:${temp.path}/i18n/errors']);
       expect(source.basenames, hasLength(2));
@@ -185,11 +187,82 @@ void main() {
       );
       source.clearCache();
       expect(source.getMessage('hello', args: ['x']), 'Changed x');
-      source.cacheMessages = false;
-      File('${temp.path}/i18n/messages.properties')
-          .writeAsStringSync('hello=Again {0}');
-      expect(source.getMessage('hello', args: ['x']), 'Again x');
       expect(source.toString(), contains('basenames'));
+    });
+
+    test('cacheSeconds: -1 caches forever, 0 re-reads modified files', () {
+      final file = File('${temp.path}/i18n/messages.properties');
+      final source = ReloadableResourceBundleMessageSource(
+        basenames: ['file:${temp.path}/i18n/messages'],
+      );
+      expect(source.cacheSeconds, -1);
+      expect(source.getMessage('only.base'), 'base');
+      file
+        ..writeAsStringSync('only.base=changed')
+        ..setLastModifiedSync(DateTime(2030));
+      expect(source.getMessage('only.base'), 'base', reason: 'cached');
+      source.cacheSeconds = 0;
+      expect(source.getMessage('only.base'), 'changed');
+      // Same modification time: not read again.
+      file
+        ..writeAsStringSync('only.base=unseen')
+        ..setLastModifiedSync(DateTime(2030));
+      expect(source.getMessage('only.base'), 'changed');
+      file.setLastModifiedSync(DateTime(2031));
+      expect(source.getMessage('only.base'), 'unseen');
+      source.cacheSeconds = 3600;
+      file
+        ..writeAsStringSync('only.base=later')
+        ..setLastModifiedSync(DateTime(2032));
+      expect(source.getMessage('only.base'), 'unseen', reason: 'checked now');
+    });
+
+    test('fallbackToSystemLocale only applies without a defaultLocale', () {
+      File('${temp.path}/i18n/messages_de.properties')
+          .writeAsStringSync('only.base=Basis');
+      Locales.systemLocale = 'de_DE.UTF-8';
+      expect(Locales.systemLocale, 'de_DE');
+      final source = ReloadableResourceBundleMessageSource(
+        basenames: ['file:${temp.path}/i18n/messages'],
+      );
+      expect(source.fallbackToSystemLocale, isTrue);
+      expect(source.fallbackLocale, 'de_DE');
+      expect(source.getMessage('only.base', locale: 'fr'), 'Basis');
+      source.fallbackToSystemLocale = false;
+      expect(source.getMessage('only.base', locale: 'fr'), 'base');
+      // Like Spring, a default locale is used either way.
+      source.defaultLocale = 'de';
+      expect(source.getMessage('only.base', locale: 'fr'), 'Basis');
+      source
+        ..defaultLocale = 'ru'
+        ..fallbackToSystemLocale = true;
+      expect(source.fallbackLocale, 'ru');
+    });
+
+    test('MessageSourceAccessor uses its default locale', () {
+      final source = ReloadableResourceBundleMessageSource(
+        basenames: ['file:${temp.path}/i18n/messages'],
+      );
+      final accessor = MessageSourceAccessor(source, defaultLocale: 'ru');
+      expect(accessor.getMessage('hello', args: ['Ada']), 'Привет Ada');
+      expect(
+        accessor.getMessage('hello', args: ['Ada'], locale: 'en'),
+        'Hello Ada',
+      );
+      expect(accessor.getMessage('missing', defaultMessage: 'none'), 'none');
+      expect(
+        accessor.getMessageFromResolvable(
+          DefaultMessageSourceResolvable(
+            const ['hello'],
+            arguments: const ['x'],
+          ),
+        ),
+        'Привет x',
+      );
+      expect(
+        MessageSourceAccessor(source).getMessage('hello', args: ['x']),
+        'Hello x',
+      );
     });
 
     test('async-only resources need preload', () async {
@@ -208,7 +281,7 @@ void main() {
           ),
         ],
       );
-      final source = PropertiesMessageSource(
+      final source = ReloadableResourceBundleMessageSource(
         basenames: ['asset:messages'],
         resourceLoader: loader,
       )..defaultLocale = 'en';

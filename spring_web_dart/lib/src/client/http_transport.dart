@@ -34,9 +34,10 @@ abstract interface class HttpTransport {
 
   /// Sends [request] and returns as soon as the status and headers arrive;
   /// the body is read from [StreamedHttpResponse.body] as it comes (e.g.
-  /// server-sent events). The request's timeout covers only the wait for
-  /// the headers. Network failures throw (or, later, arrive in the body
-  /// stream as) [HttpTransportException].
+  /// server-sent events). The request's `timeout` and `readTimeout` cover
+  /// only the wait for the headers: a stream may stay quiet as long as it
+  /// likes. Network failures throw (or, later, arrive in the body stream
+  /// as) [HttpTransportException].
   Future<StreamedHttpResponse> stream(HttpRequest request);
 
   /// Releases connections; the transport is not used afterwards.
@@ -57,8 +58,8 @@ HttpTransport platformHttpTransport({Duration? connectTimeout}) =>
     platform.createTransport(connectTimeout: connectTimeout);
 
 /// A request that failed without a response: the connection could not be
-/// made, broke, or took longer than the request's timeout. Like Spring's
-/// `ResourceAccessException`.
+/// made, broke, or ran out of time (the request's `timeout` or
+/// `readTimeout`). Like Spring's `ResourceAccessException`.
 ///
 /// ```dart
 /// try {

@@ -2,14 +2,17 @@
 ///
 /// Simple style: an integer with an optional unit `ns`, `us`, `ms`, `s`,
 /// `m`, `h`, `d` (no unit = milliseconds), e.g. `500ms`, `10s`, `-2h`.
-/// ISO-8601 style: `PT10S`, `P1DT2H30M`, `PT0.5S`.
+/// ISO-8601 style: `PT10S`, `P1DT2H30M`, `PT0.5S`, negative `-PT5S` or
+/// `P-1D` (as `java.time.Duration.parse`).
 ///
-/// Used by `DefaultConversionService` for `String` ⇄ `Duration`.
+/// Used by `DefaultConversionService` for `String` ⇄ `Duration`
+/// (formatting with [formatIso], like Boot's `DurationToStringConverter`).
 ///
 /// ```dart
 /// DurationStyle.parse('500ms'); // Duration(milliseconds: 500)
 /// DurationStyle.parse('P1DT2H'); // Duration(days: 1, hours: 2)
 /// DurationStyle.format(const Duration(minutes: 90)); // '90m'
+/// DurationStyle.formatIso(const Duration(minutes: 90)); // 'PT1H30M'
 /// ```
 ///
 /// Spring (Java):
@@ -17,6 +20,7 @@
 /// Duration d = DurationStyle.detectAndParse("500ms");
 /// Duration iso = DurationStyle.detectAndParse("P1DT2H");
 /// String text = DurationStyle.SIMPLE.print(Duration.ofMinutes(90));
+/// String isoText = DurationStyle.ISO8601.print(Duration.ofMinutes(90));
 /// ```
 ///
 /// Differences: Dart's `Duration` has microsecond precision, so `ns` values
@@ -30,7 +34,7 @@ abstract final class DurationStyle {
   // minutes and (fractional, `.` or `,`) seconds. Every component is
   // optional, so degenerate inputs are rejected in [parse].
   static final _iso = RegExp(
-    r'^([+-])?P(?:(\d+)D)?(?:T(?:([+-]?\d+)H)?(?:([+-]?\d+)M)?'
+    r'^([+-])?P(?:([+-]?\d+)D)?(?:T(?:([+-]?\d+)H)?(?:([+-]?\d+)M)?'
     r'(?:([+-]?\d+(?:[.,]\d{0,9})?)S)?)?$',
     caseSensitive: false,
   );
@@ -81,6 +85,49 @@ abstract final class DurationStyle {
       return sign < 0 ? -result : result;
     }
     throw FormatException("'$value' is not a valid duration", value);
+  }
+
+  /// Formats [value] in ISO-8601 like `java.time.Duration.toString` (what
+  /// Boot's `DurationStyle.ISO8601` prints): hours, minutes and seconds,
+  /// no days; zero is `PT0S`, negative parts carry the sign (`PT-1H-30M`).
+  ///
+  /// ```dart
+  /// DurationStyle.formatIso(const Duration(days: 1)); // 'PT24H'
+  /// DurationStyle.formatIso(const Duration(milliseconds: -500)); // 'PT-0.5S'
+  /// ```
+  static String formatIso(Duration value) {
+    final micros = value.inMicroseconds;
+    if (micros == 0) {
+      return 'PT0S';
+    }
+    final sign = micros < 0 ? '-' : '';
+    final total = micros.abs();
+    final hours = total ~/ Duration.microsecondsPerHour;
+    final minutes =
+        total % Duration.microsecondsPerHour ~/ Duration.microsecondsPerMinute;
+    final seconds =
+        total %
+        Duration.microsecondsPerMinute ~/
+        Duration.microsecondsPerSecond;
+    final fraction = total % Duration.microsecondsPerSecond;
+    final buffer = StringBuffer('PT');
+    if (hours != 0) {
+      buffer.write('$sign${hours}H');
+    }
+    if (minutes != 0) {
+      buffer.write('$sign${minutes}M');
+    }
+    if (seconds != 0 || fraction != 0 || buffer.length == 2) {
+      buffer.write('$sign$seconds');
+      if (fraction != 0) {
+        final digits = '$fraction'
+            .padLeft(6, '0')
+            .replaceFirst(RegExp(r'0+$'), '');
+        buffer.write('.$digits');
+      }
+      buffer.write('S');
+    }
+    return buffer.toString();
   }
 
   /// Formats [value] in the simple style with the largest exact unit.

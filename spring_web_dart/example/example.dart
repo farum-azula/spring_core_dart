@@ -41,7 +41,9 @@ Future<void> main() async {
     HttpRequest(
       method: HttpMethod.get,
       url: Uri.parse('http://127.0.0.1:${server.port}/books/978-0'),
-      headers: HttpHeaders({HttpHeaders.accept: MediaType.applicationJson}),
+      headers: HttpHeaders({
+        HttpHeaders.acceptHeader: MediaType.applicationJson,
+      }),
       timeout: const Duration(seconds: 5),
     ),
   );
@@ -60,6 +62,8 @@ Future<void> main() async {
   final missing = await mock.send(
     HttpRequest(method: HttpMethod.get, url: Uri.parse('https://api/books/2')),
   );
-  print('${found.bodyText}, ${HttpStatus.reasonPhrase(missing.statusCode)}');
+  print(
+    '${found.bodyText}, ${HttpStatus.valueOf(missing.statusCode).reasonPhrase}',
+  );
   // {"isbn":"1"}, Not Found
 }

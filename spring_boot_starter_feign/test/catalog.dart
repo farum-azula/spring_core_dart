@@ -30,7 +30,7 @@ abstract interface class CatalogClient {
   @GetMapping('/books/{isbn}/details')
   Future<Book?> maybe(@PathVariable() String isbn);
 
-  @GetMapping('/ping', headers: [r'X-Shop: ${shop.name:neon}'])
+  @GetMapping('/ping', headers: [r'X-Shop=${shop.name:neon}'])
   Future<String> ping();
 }
 
@@ -203,7 +203,7 @@ class CatalogClientImpl implements CatalogClient {
           returnType: const ClassType<String>(),
           isFuture: true,
           annotations: const [
-            GetMapping('/ping', headers: [r'X-Shop: ${shop.name:neon}']),
+            GetMapping('/ping', headers: [r'X-Shop=${shop.name:neon}']),
           ],
           call: (target, arguments) => (target as CatalogClient).ping(),
         ),

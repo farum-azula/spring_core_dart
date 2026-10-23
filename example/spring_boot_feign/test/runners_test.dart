@@ -55,7 +55,7 @@ void main() {
           (request) => HttpResponse(
             201,
             headers: HttpHeaders({
-              HttpHeaders.contentType: MediaType.applicationJson,
+              HttpHeaders.contentTypeHeader: MediaType.applicationJson,
             }),
             body: utf8.encode(
               jsonEncode(
@@ -128,7 +128,7 @@ void main() {
           );
           return body.stream;
         },
-        headers: {HttpHeaders.contentType: MediaType.textEventStream},
+        headers: {HttpHeaders.contentTypeHeader: MediaType.textEventStream},
       );
       await app().runAsync(
         (context) => context.getBean<WikipediaRunner>().run(_args),
@@ -177,7 +177,7 @@ void main() {
 
     test('an unreachable server is logged, not thrown', () async {
       sockets.failNextConnect();
-      await app(['spring.websocket.client.config.echo.reconnect=false'])
+      await app(['spring.websocket.client.config.echo.reconnect.enabled=false'])
           .runAsync((context) => context.getBean<EchoRunner>().run(_args));
       expect(linesOf('echo'), [
         startsWith('the echo server is not reachable:'),

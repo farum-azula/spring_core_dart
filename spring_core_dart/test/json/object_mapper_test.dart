@@ -470,7 +470,7 @@ void main() {
       );
       expect(
         PropertyNamingStrategy.snakeCase.translate('URLValue'),
-        'url_value',
+        'urlvalue',
       );
       expect(PropertyNamingStrategy.snakeCase.translate('isbn13'), 'isbn13');
       expect(
@@ -601,10 +601,125 @@ void main() {
       final node = Node();
       node.next = node;
       expectError(() => mapper.writeValueAsString(node), 'cycle');
-      expectError(
-        () => mapper.writeValueAsString(double.nan),
-        'cannot be written',
+    });
+  });
+
+  group('Jackson parity', () {
+    test('DateTime is written like an OffsetDateTime; UTC with Z', () {
+      final local = DateTime(2026, 1, 1, 12);
+      final written = mapper.valueToTree(local)! as String;
+      expect(
+        written,
+        matches(RegExp(r'^2026-01-01T12:00:00\.000([+-]\d\d:\d\d|Z)$')),
       );
+      expect(DateTime.parse(written).isAtSameMomentAs(local), isTrue);
+      expect(
+        mapper.writeValueAsString(DateTime.utc(2026, 1, 1, 12)),
+        '"2026-01-01T12:00:00.000Z"',
+      );
+      expect(mapper.valueToTree({DateTime.utc(2026): 1}), {
+        '2026-01-01T00:00:00.000Z': 1,
+      });
+    });
+
+    test('timeZone converts to UTC or a fixed offset', () {
+      final instant = DateTime.utc(2026, 1, 1, 10);
+      expect(
+        ObjectMapper(timeZone: '+02:00').valueToTree(instant),
+        '2026-01-01T12:00:00.000+02:00',
+      );
+      expect(
+        ObjectMapper(timeZone: 'GMT-05:30').valueToTree(instant),
+        '2026-01-01T04:30:00.000-05:30',
+      );
+      expect(
+        ObjectMapper(timeZone: 'UTC').valueToTree(instant.toLocal()),
+        '2026-01-01T10:00:00.000Z',
+      );
+      expect(ObjectMapper(timeZone: 'Z').timeZone, 'Z');
+      expect(
+        () => ObjectMapper(timeZone: 'Europe/Berlin'),
+        throwsArgumentError,
+      );
+    });
+
+    test('reads what it writes, and Jackson Instant forms', () {
+      final instant = DateTime.utc(2026, 1, 1, 10);
+      for (final text in [
+        '2026-01-01T12:00:00.000+02:00',
+        '2026-01-01T12:00:00+02:00',
+        '2026-01-01T10:00:00Z',
+        '2026-01-01T10:00:00.000Z',
+      ]) {
+        expect(
+          mapper.readValue<DateTime>('"$text"').isAtSameMomentAs(instant),
+          isTrue,
+          reason: text,
+        );
+      }
+      final local = DateTime(2026, 3, 1, 8, 30);
+      expect(
+        mapper
+            .readValue<DateTime>(mapper.writeValueAsString(local))
+            .isAtSameMomentAs(local),
+        isTrue,
+      );
+    });
+
+    test('naming strategies keep acronyms like Jackson', () {
+      String t(PropertyNamingStrategy s, String name) => s.translate(name);
+      expect(t(PropertyNamingStrategy.snakeCase, 'myURLValue'), 'my_urlvalue');
+      expect(t(PropertyNamingStrategy.snakeCase, 'URLValue'), 'urlvalue');
+      expect(t(PropertyNamingStrategy.snakeCase, '_private'), 'private');
+      expect(
+        t(PropertyNamingStrategy.snakeCase, 'address1Line'),
+        'address1_line',
+      );
+      expect(
+        t(PropertyNamingStrategy.upperSnakeCase, 'myURLValue'),
+        'MY_URLVALUE',
+      );
+      expect(
+        t(PropertyNamingStrategy.upperCamelCase, 'myURLValue'),
+        'MyURLValue',
+      );
+      expect(t(PropertyNamingStrategy.kebabCase, 'myURLValue'), 'my-url-value');
+      expect(
+        t(PropertyNamingStrategy.lowerDotCase, 'myURLValue'),
+        'my.url.value',
+      );
+      expect(t(PropertyNamingStrategy.lowerCase, 'my_URLValue'), 'my_urlvalue');
+    });
+
+    test('Map, List and Object? without a TypeInfo are plain JSON', () {
+      final map = mapper.readValue<Map<String, dynamic>>(
+        '{"a":1,"b":[true,{"c":null}]}',
+      );
+      expect(map, {
+        'a': 1,
+        'b': [
+          true,
+          {'c': null},
+        ],
+      });
+      expect(mapper.readValue<Map<String, Object?>>('{"a":1}'), {'a': 1});
+      expect(mapper.readValue<List<dynamic>>('[1,"x"]'), [1, 'x']);
+      expect(mapper.readValue<List<Object?>>('[null]'), [null]);
+      expect(mapper.readValue<Object?>('{"a":[1]}'), {
+        'a': [1],
+      });
+      expect(mapper.readValue<Object?>('null'), isNull);
+    });
+
+    test('NaN and infinities are written as strings and read back', () {
+      expect(mapper.writeValueAsString(double.nan), '"NaN"');
+      expect(
+        mapper.writeValueAsString([double.infinity, double.negativeInfinity]),
+        '["Infinity","-Infinity"]',
+      );
+      expect(mapper.readValue<double>('"NaN"').isNaN, isTrue);
+      expect(mapper.readValue<double>('"Infinity"'), double.infinity);
+      expect(mapper.readValue<num>('"-Infinity"'), double.negativeInfinity);
     });
   });
 }

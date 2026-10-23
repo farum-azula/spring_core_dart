@@ -153,7 +153,8 @@ final class SpringBootTestContext {
   /// The context's environment.
   ConfigurableEnvironment get environment => context.environment;
 
-  /// What the application printed (startup line, failure reports).
+  /// What the application printed (failure reports; the startup info is
+  /// logged through `SpringLog`).
   List<String> get output => List.unmodifiable(_output);
 
   /// The bean of type [T] (optionally with [qualifier]).

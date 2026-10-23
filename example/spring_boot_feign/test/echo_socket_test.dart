@@ -24,7 +24,7 @@ void main() {
       expect(sockets.connections, isEmpty); // nothing until it is used
       final server = sockets.nextConnection;
       final first = socket.messages().first;
-      expect('${(await server).url}', 'wss://ws.postman-echo.com/raw');
+      expect('${(await server).uri}', 'wss://ws.postman-echo.com/raw');
       (await server).pushJson({'from': 'ann', 'text': 'hi'});
       final message = await first;
       expect(message, isA<ChatMessage>());

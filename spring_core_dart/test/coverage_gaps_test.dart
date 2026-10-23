@@ -171,12 +171,15 @@ void main() {
       context.close();
     });
 
-    test('registered singleton definitions return the singleton', () {
+    test('registered singletons are beans but not definitions', () {
       final factory = DefaultListableBeanFactory()
         ..registerSingleton('x', English());
+      expect(factory.getBeanByName('x'), same(factory.getSingleton('x')));
+      expect(factory.containsBeanDefinition('x'), isFalse);
+      expect(factory.beanDefinitionNames, isEmpty);
       expect(
-        factory.getBeanDefinition('x').instantiate(factory),
-        same(factory.getSingleton('x')),
+        () => factory.getBeanDefinition('x'),
+        throwsA(isA<NoSuchBeanDefinitionException>()),
       );
       factory.registerBeanDefinition(
         lifecycleDefinition('user', onCreate: (r) => r.getBeanByName('x')),

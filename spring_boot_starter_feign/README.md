@@ -86,17 +86,22 @@ or an `EventStream<T>` for server-sent events (see below).
 | `@RequestMapping('/x', method: HttpMethod.head)` | any method |
 
 The path is joined to the client's `url` and `path`. Mapping annotations
-also take `headers: ['X-Shop: ${shop.name}']` (placeholders allowed),
-`produces` (the `Accept` header, `application/json` by default) and
-`consumes` (the `Content-Type` of the body).
+also take `headers: ['X-Shop=${shop.name}']` (Spring's `Name=value`,
+placeholders allowed; server conditions such as `'!X-Debug'` are ignored,
+Feign's `'Name: value'` stops the application), `produces` (the `Accept`
+header, `application/json` by default) and `consumes` (the `Content-Type`
+of the body).
 
 Parameters:
 
 | Parameter | Goes to |
 |---|---|
-| `@PathVariable() String isbn` | `{isbn}` in the path (URL-encoded); `@PathVariable('id')` for another name |
+| `@PathVariable() String isbn` | `{isbn}` in the path (URL-encoded, a `/` stays a `/`: see `decode-slash`); `@PathVariable('id')` for another name |
 | `@RequestParam('q') String query` | `?q=...`; `null` is left out, a `List` repeats the parameter |
-| `@RequestHeader('X-Trace') String? trace` | a header; `null` is left out |
+| `@RequestParam() Map<String, Object?> filters` | one query parameter per entry (`?author=...&year=...`; a `List` value repeats it, `null` is left out) |
+| `@RequestHeader('X-Trace') String? trace` | a header; `null` is left out, a `List` gives several values |
+| `@RequestHeader() Map<String, String> headers` | one header per entry |
+| `@CookieValue('SESSION') String session` | a cookie: the cookies of a call go in one `Cookie: a=1; b=2` header; `null` is left out |
 | `@RequestBody() Book book` | the body: objects as JSON (`ObjectMapper`), `String` as text, `Uint8List` as bytes |
 | a parameter without annotation | the body (only one such parameter) |
 
@@ -111,13 +116,19 @@ Results:
 | `Future<ResponseEntity<Book>>` | status, headers and the body |
 | `EventStream<OrderEvent>`, `Stream<OrderEvent>` | the events of a `text/event-stream` response (see Server-sent events) |
 
-Enums, `DateTime` and other values in paths, query parameters and headers
-are written like in JSON (an enum's name or `@JsonValue`, ISO-8601 dates).
+Enums, `DateTime` and other values in paths, query parameters, headers and
+cookies are written like in JSON (an enum's name or `@JsonValue`, ISO-8601
+dates); they must be single values (or lists of them). An object there —
+a class the `ObjectMapper` writes as a JSON object, e.g. `@RequestParam()
+Book book` — stops the application at startup; pass its fields as
+parameters or a `Map` instead (a value whose type only tells at runtime,
+such as `Object`, fails the call with an `EncodeException`).
 
 Every client is checked when it is created: a `{variable}` without a
 `@PathVariable` parameter (or the other way round), a method without a
-mapping or a synchronous method (other than an event stream) stops the
-application at startup with the reason, for instance:
+mapping, a synchronous method (other than an event stream), an object as
+a parameter value or a header in Feign's syntax stops the application at
+startup with the reason, for instance:
 
 ```text
 Invalid Feign client CatalogClient:
@@ -157,7 +168,7 @@ orders.events('neon').events.listen((e) {
 - `Accept: text/event-stream` and `Cache-Control: no-cache` are sent
   (`produces` changes `Accept`); interceptors run for every connection, so a
   refreshed token is used on reconnect. `read-timeout` covers the wait for
-  the response headers only.
+  the response headers only (a stream may stay quiet as long as it likes).
 - `Stream<T>` works as a return type too (you get an `EventStream<T>`).
   `Future<EventStream<T>>` is rejected at startup: return the stream
   directly, it connects when listened to.
@@ -212,19 +223,32 @@ spring.cloud.openfeign.client.config.catalog.url=https://api.neon.books
 spring.cloud.openfeign.client.config.catalog.logger-level=basic
 spring.cloud.openfeign.client.config.catalog.dismiss404=true
 spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
+spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en
+spring.cloud.openfeign.client.config.catalog.follow-redirects=false
+spring.cloud.openfeign.client.decode-slash=false
 ```
 
-| Property | Meaning |
-|---|---|
-| `url` | base URL when `@FeignClient(url:)` is not given |
-| `read-timeout` | the longest a call may take, reading the response included (`10s`, `PT1M`, milliseconds) |
-| `connect-timeout` | connection timeout of the default transport (`default` only) |
-| `logger-level` | `none`, `basic`, `headers`, `full` (see Logging) |
-| `dismiss404` | a 404 gives `null` (nullable results, `void`) instead of an exception |
-| `default-request-headers.<Name>` | a header sent with every request |
+| Property | Default | Meaning |
+|---|---|---|
+| `url` | — | base URL when `@FeignClient(url:)` is not given |
+| `read-timeout` | `60s` | the longest wait for data — for the response, then between two chunks of the body — not a limit for the whole call, like Feign's (`10s`, `PT1M`, milliseconds; `0` for none) |
+| `connect-timeout` | `10s` | connection timeout of the default transport (`default` only; `0` for none) |
+| `logger-level` | `none` | `none`, `basic`, `headers`, `full` (see Logging) |
+| `dismiss404` | `false` | a 404 gives `null` (nullable results) or a `ResponseEntity` instead of an exception; a `void` method still throws, like Feign |
+| `default-request-headers.<Name>` | — | a header sent with every request that has none of that name (after the interceptors) |
+| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name (after the interceptors; `a,b` gives two) |
+| `follow-redirects` | `true` | whether redirects are followed |
+| `spring.cloud.openfeign.client.decode-slash` | `true` | for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: `%2F`) |
 
 `@FeignClient(url:)` wins over the `url` property; `@FeignClient(path:)`
-prefixes every path.
+prefixes every path. More attributes, as in Spring Cloud OpenFeign:
+
+| Attribute | Meaning |
+|---|---|
+| `contextId: 'catalog-admin'` | the configuration key instead of the name (`...config.catalog-admin.*`), e.g. for two clients of one service |
+| `qualifiers: ['books']` | more names that select the client bean with `@Qualifier('books')` |
+| `primary: false` | the client bean is not `@Primary` (it is by default) |
+| `dismiss404: true` | like the `dismiss404` property |
 
 ## Errors
 
@@ -270,7 +294,9 @@ class FeignSetup {
 
 Like Spring Cloud OpenFeign, nothing is retried by default. A `Retryer`
 bean retries `RetryableException`s: connection errors, timeouts, and
-responses with a `Retry-After` header.
+responses with a `Retry-After` header (seconds or an HTTP date). Every
+attempt is built again from the arguments and goes through the
+interceptors, so a refreshed token reaches the retry.
 
 ```dart
 @Bean()
@@ -302,7 +328,12 @@ final class RequestIds implements RequestInterceptor {
 }
 ```
 
-`BasicAuthRequestInterceptor(user, password)` is built in too.
+`template.header(name, value)` adds a value, like Feign's; to replace a
+header, `removeHeader(name)` first. The interceptors run for every attempt
+of a call (retries too) on a new template; the `default-request-headers`,
+`default-query-parameters` and the default `Accept` come after them, for
+names they did not set. `BasicAuthRequestInterceptor(user, password)` is
+built in too.
 
 ## Fallback
 
@@ -322,8 +353,8 @@ class OfflineMotd implements MotdApi {
 }
 ```
 
-The generated client is `@Primary`, so injecting `MotdApi` gives the
-client, not the fallback. The fallback answers **every** failure — a 404
+The generated client is `@Primary` (unless `@FeignClient(primary: false)`),
+so injecting `MotdApi` gives the client, not the fallback. The fallback answers **every** failure — a 404
 too — after the retries.
 
 ## Logging
@@ -338,6 +369,8 @@ With `logger-level` above `none`, each call is logged under
 ```
 
 `headers` adds the headers (`Authorization` is masked), `full` the bodies.
+Failed connections (`<--- ERROR ...`) and retries (`---> RETRYING ...`) are
+logged only above `none` too, like Feign.
 
 ## Transport
 
@@ -388,6 +421,18 @@ the responses.
   client.
 - The fallback answers every failure, without a circuit breaker; there is no
   `FallbackFactory` yet.
+- `Accept: application/json` is sent by default (`text/event-stream` for
+  event streams); Spring Cloud OpenFeign sends `Accept` only for `produces`.
+- Spaces in query parameters are sent as `+` (form encoding), Feign sends
+  `%20`.
+- `Authorization` is masked (`***`) in the `headers` and `full` logs.
+- The logger is `feign.<Interface>` (`feign.CatalogClient`); Feign's
+  `Slf4jLogger` logs under the interface's fully qualified class name.
+- Each retry starts from a new template (Feign runs the interceptors again
+  on the same one, where header values pile up).
+- `primary` and `qualifiers` are read by the generator; there is no
+  `<contextId>FeignClient` alias. A method may have several `Map`
+  parameters (Feign: one query map and one header map).
 - Server-sent events (`EventStream<T>`, `event-stream.*` properties) are an
   addition: OpenFeign has no streaming.
 - Not yet: form and multipart bodies, `@SpringQueryMap`, streaming of other

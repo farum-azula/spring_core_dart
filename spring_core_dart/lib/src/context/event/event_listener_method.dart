@@ -95,23 +95,33 @@ final class EventListenerMethod<T extends Object> {
     Object event,
     bool Function(Object candidate) accepts,
   ) {
+    // The payload first, like unwrap: a payload is never an
+    // ApplicationEvent, so only a non-event type can have accepted it.
+    if (event is PayloadApplicationEvent &&
+        event.payload is! ApplicationEvent &&
+        accepts(event.payload)) {
+      return (value: event.payload);
+    }
     if (accepts(event)) {
       return (value: event);
-    }
-    if (event is PayloadApplicationEvent && accepts(event.payload)) {
-      return (value: event.payload);
     }
     return null;
   }
 
-  /// [event] itself if it is an [E], else its payload if that is an [E],
-  /// else `null` (boxed so that a `null` payload is distinguishable).
+  /// The value a listener of [E] receives for [event], or `null` when it
+  /// does not handle it (boxed so that a `null` payload is
+  /// distinguishable). Like Spring's `ApplicationListenerMethodAdapter`:
+  /// when [E] is not an [ApplicationEvent] type (e.g. `Object`), the
+  /// payload of a [PayloadApplicationEvent] that is an [E]; else [event]
+  /// itself if it is an [E].
   static ({E value})? unwrap<E>(Object event) {
+    if (event is PayloadApplicationEvent && <E>[] is! List<ApplicationEvent>) {
+      if (event.payload case final E payload) {
+        return (value: payload);
+      }
+    }
     if (event is E) {
       return (value: event as E);
-    }
-    if (event is PayloadApplicationEvent && event.payload is E) {
-      return (value: event.payload as E);
     }
     return null;
   }

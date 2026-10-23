@@ -1,6 +1,15 @@
 ## Unreleased
 
 - `logging.level.ROOT` (any case) sets the root level instead of a logger named "ROOT"
+- breaking: the auto-configured message source is a `ReloadableResourceBundleMessageSource`; `spring.messages.fallback-to-system-locale` (default `true`) and `spring.messages.cache-duration` (seconds without a unit) are supported
+- the context id is `spring.application.name` (or `application`), like Spring Boot's `ContextIdApplicationContextInitializer`
+- breaking: `@ConfigurationProperties` are validated only with `@Validated()` on the class, like Spring Boot; `ConfigurationProperties(validate:)` is removed
+- `ValidationAutoConfiguration`: a `defaultValidator` (`BeanValidator`, backs off for an application `Validator`) and a `methodValidationPostProcessor` (not applied to `@ConfigurationProperties` classes)
+- `FailureAnalyzer` (Boot's interface), registered on `SpringApplication(failureAnalyzers:)` or as beans; consulted before the built-in analysis
+- breaking: startup info is logged through `SpringLog` (`spring_boot_dart.SpringApplication`) at INFO like Boot's: `Starting <app> using Dart <version> with PID <pid>`, the active / default profiles, `Started <app> in <x> seconds` (was a printed `Started <app> in <n> ms (profiles: ...)` line); `out` only gets failure reports
+- `spring.main.lazy-initialization` (`LazyInitializationBeanFactoryPostProcessor`) and `spring.main.allow-bean-definition-overriding` (default `false`)
+- dotted `spring.messages.basename` values are paths (`config.i18n.messages` → `config/i18n/messages`), like Boot
+- `JacksonAutoConfiguration` registers `JsonSerializer` / `JsonDeserializer` beans (Boot's `@JsonComponent`) and reads `spring.jackson.time-zone` (`UTC` or a fixed offset such as `+02:00`)
 
 ## 0.1.6
 

@@ -126,8 +126,30 @@ void main() {
       final loader = DefaultResourceLoader();
       expect(loader.getResource('file:${file.path}').readAsStringSync(), 'A');
       expect(loader.getResource('file://${file.path}').exists(), isTrue);
-      expect(loader.getResource(file.path).exists(), isTrue);
-      expect(loader.getResource(r'C:\windows\path'), isA<FileSystemResource>());
+      expect(loader.getResource(r'file:C:\windows\path').exists(), isFalse);
+    });
+
+    test('plain paths are classpath resources, like Spring', () {
+      write('cp/app.properties', 'a=1');
+      final remove = ClasspathResources.addDirectory('${temp.path}/cp');
+      try {
+        final loader = DefaultResourceLoader();
+        for (final location in ['app.properties', '/app.properties']) {
+          final resource = loader.getResource(location);
+          expect(resource.readAsStringSync(), 'a=1', reason: location);
+          expect(
+            resource.description,
+            loader.getResource('classpath:app.properties').description,
+          );
+        }
+        final resolver = PathMatchingResourcePatternResolver();
+        expect([
+          for (final r in resolver.getResources('*.properties')) r.filename,
+        ], contains('app.properties'));
+        expect(resolver.getResources('classpath:/app.*'), hasLength(1));
+      } finally {
+        remove();
+      }
     });
 
     test('unknown protocol does not exist', () {
@@ -174,12 +196,12 @@ void main() {
         'a.properties',
         'b.properties',
       ]);
-      expect(names('${temp.path}/config/*.properties'), ['a.properties']);
+      expect(names('file:${temp.path}/config/*.properties'), ['a.properties']);
       expect(
-        names('${temp.path}/config/sub/*'),
+        names('file:${temp.path}/config/sub/*'),
         ['c.txt', 'b.properties']..sort(),
       );
-      expect(names('${temp.path}/missing/*.properties'), isEmpty);
+      expect(names('file:${temp.path}/missing/*.properties'), isEmpty);
     });
 
     test('relative patterns', () {
@@ -188,8 +210,8 @@ void main() {
       Directory.current = temp;
       try {
         final resolver = PathMatchingResourcePatternResolver();
-        expect(resolver.getResources('rel/*.properties'), hasLength(1));
-        expect(resolver.getResources('*/x.properties'), hasLength(1));
+        expect(resolver.getResources('file:rel/*.properties'), hasLength(1));
+        expect(resolver.getResources('file:*/x.properties'), hasLength(1));
       } finally {
         Directory.current = previous;
       }
@@ -204,8 +226,8 @@ void main() {
           ],
         ),
       );
-      expect(resolver.getResources(file.path), hasLength(1));
-      expect(resolver.getResources('${temp.path}/none.txt'), isEmpty);
+      expect(resolver.getResources('file:${file.path}'), hasLength(1));
+      expect(resolver.getResources('file:${temp.path}/none.txt'), isEmpty);
       expect(resolver.getResources('mem:a'), hasLength(1));
       expect(resolver.getResources('mem:*'), isEmpty);
       expect(resolver.getResource('mem:a').exists(), isTrue);

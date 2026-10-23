@@ -2,7 +2,7 @@
 /// `MediaType` constants.
 ///
 /// ```dart
-/// headers.set(HttpHeaders.contentType, MediaType.applicationJson);
+/// headers.set(HttpHeaders.contentTypeHeader, MediaType.applicationJson);
 /// @PostMapping('/books', consumes: MediaType.applicationJson)
 /// ```
 ///

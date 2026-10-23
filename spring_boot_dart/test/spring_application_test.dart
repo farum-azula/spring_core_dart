@@ -10,7 +10,7 @@ class Pool {
 }
 
 final poolIntrospection = BeanIntrospection<Pool>(
-  annotations: const [ConfigurationProperties('db')],
+  annotations: const [ConfigurationProperties('db'), Validated()],
   properties: [
     BeanProperty<Pool>(
       'url',
@@ -82,7 +82,24 @@ final autoModule = BeanModule('auto', [
 
 void main() {
   final lines = <String>[];
-  setUp(lines.clear);
+  // INFO records of SpringApplication (the startup info).
+  final logs = <String>[];
+  setUp(() {
+    lines.clear();
+    logs.clear();
+    final level = SpringLog.level;
+    final handler = SpringLog.handler;
+    SpringLog.level = SpringLogLevel.info;
+    SpringLog.handler = (record) {
+      if (record.loggerName == 'spring_boot_dart.SpringApplication') {
+        logs.add(record.message);
+      }
+    };
+    addTearDown(() {
+      SpringLog.level = level;
+      SpringLog.handler = handler;
+    });
+  });
 
   ConfigurableApplicationContext run(
     List<String> args, {
@@ -151,7 +168,123 @@ void main() {
       'cli:[--db.url=x, --mode=batch, file.csv]',
     ]);
     expect(context.getBean<ApplicationArguments>().nonOptionArgs, ['file.csv']);
-    expect(lines.last, startsWith('Started application in '));
+    context.close();
+  });
+
+  test('startup info is logged like Spring Boot', () {
+    run(['--db.url=x']).close();
+    expect(logs, hasLength(3));
+    expect(
+      logs[0],
+      matches(r'^Starting application using Dart \S+ with PID \d+$'),
+    );
+    expect(
+      logs[1],
+      'No active profile set, falling back to 1 default profile: "default"',
+    );
+    expect(logs[2], matches(r'^Started application in \d+\.\d+ seconds$'));
+
+    logs.clear();
+    run(['--db.url=x', '--spring.profiles.active=dev,eu']).close();
+    expect(logs[1], 'The following 2 profiles are active: "dev", "eu"');
+
+    logs.clear();
+    run(['--db.url=x', '--spring.main.log-startup-info=false']).close();
+    expect(logs, isEmpty);
+  });
+
+  test('@ConfigurationProperties are validated only with @Validated', () {
+    final context = SpringApplication([
+      BeanModule(
+        'plain',
+        [BeanDefinition<Pool>(name: 'pool', create: (_) => Pool())],
+        introspections: [
+          BeanIntrospection<Pool>(
+            annotations: const [ConfigurationProperties('db')],
+            properties: poolIntrospection.properties.toList(),
+            instantiate: Pool.new,
+          ),
+        ],
+      ),
+    ], out: lines.add).run(['--db.max-size=0'], systemEnvironment: const {});
+    expect(context.getBean<Pool>().maxSize, 0);
+    context.close();
+  });
+
+  test('FailureAnalyzers on SpringApplication and as beans come first', () {
+    BeanModule failing(List<BeanDefinition<Object>> extra) =>
+        BeanModule('failing', [
+          ...extra,
+          BeanDefinition<Pool>(
+            name: 'broken',
+            create: (_) => throw const FormatException('bad pool'),
+          ),
+        ]);
+    expect(
+      () => SpringApplication(
+        [failing(const [])],
+        failureAnalyzers: [_FormatAnalyzer('from application')],
+        out: lines.add,
+      ).run(const [], systemEnvironment: const {}),
+      throwsA(anything),
+    );
+    expect(lines.single, contains('from application'));
+
+    lines.clear();
+    expect(
+      () => SpringApplication([
+        failing([
+          BeanDefinition<_FormatAnalyzer>(
+            name: 'formatAnalyzer',
+            types: const [_FormatAnalyzer, FailureAnalyzer],
+            create: (_) => _FormatAnalyzer('from a bean'),
+          ),
+        ]),
+      ], out: lines.add).run(const [], systemEnvironment: const {}),
+      throwsA(anything),
+    );
+    expect(lines.single, contains('from a bean'));
+  });
+
+  test('spring.main.lazy-initialization makes singletons lazy', () {
+    var created = 0;
+    BeanModule module() => BeanModule('lazy', [
+      BeanDefinition<Pool>(
+        name: 'counted',
+        create: (_) {
+          created++;
+          return Pool();
+        },
+      ),
+    ]);
+    SpringApplication([
+      module(),
+    ], out: lines.add).run(const [], systemEnvironment: const {}).close();
+    expect(created, 1);
+    final context = SpringApplication([module()], out: lines.add).run(const [
+      '--spring.main.lazy-initialization=true',
+    ], systemEnvironment: const {});
+    expect(created, 1);
+    context.getBean<Pool>();
+    expect(created, 2);
+    context.close();
+  });
+
+  test('spring.main.allow-bean-definition-overriding (default false)', () {
+    BeanModule twice() => BeanModule('twice', [
+      BeanDefinition<Pool>(name: 'pool', create: (_) => Pool()..url = 'a'),
+      BeanDefinition<Pool>(name: 'pool', create: (_) => Pool()..url = 'b'),
+    ]);
+    expect(
+      () => SpringApplication([
+        twice(),
+      ], out: lines.add).run(const [], systemEnvironment: const {}),
+      throwsA(isA<BeanDefinitionOverrideException>()),
+    );
+    final context = SpringApplication([twice()], out: lines.add).run(const [
+      '--spring.main.allow-bean-definition-overriding=true',
+    ], systemEnvironment: const {});
+    expect(context.getBean<Pool>().url, 'b');
     context.close();
   });
 
@@ -185,6 +318,11 @@ void main() {
     setUp(() {
       calls = [];
       flag = _Flag();
+      SpringLog.handler = (record) {
+        if (record.message.startsWith('Started ')) {
+          calls.add('Started');
+        }
+      };
     });
 
     SpringApplication app(List<BeanDefinition<Object>> runners) =>
@@ -202,7 +340,7 @@ void main() {
           ],
           out: (line) {
             lines.add(line);
-            calls.add(line.split(' ').first); // 'Started', 'Application'
+            calls.add(line.split(' ').first); // 'Application'
           },
         );
 
@@ -431,6 +569,21 @@ class _Ctx implements ConditionContext {
       context.beanFactory as BeanDefinitionRegistry;
   @override
   ResourceLoader get resourceLoader => context;
+}
+
+class _FormatAnalyzer implements FailureAnalyzer {
+  _FormatAnalyzer(this.label);
+  final String label;
+  @override
+  FailureAnalysis? analyze(Object failure) {
+    for (Object? cause = failure; cause != null;) {
+      if (cause is FormatException) {
+        return FailureAnalysis(label, 'Fix the pool.', cause);
+      }
+      cause = cause is BeansException ? cause.cause : null;
+    }
+    return null;
+  }
 }
 
 class _AppRunner implements ApplicationRunner {

@@ -406,6 +406,79 @@ a=2
     );
   });
 
+  test('the legacy spring.profiles key is rejected like Boot', () {
+    write('application.properties', 'a=1\n#---\nspring.profiles=dev\nb=2');
+    expect(
+      () => config(env()).processAndApplySync(),
+      throwsA(
+        isA<InvalidConfigDataPropertyException>()
+            .having((e) => e.property, 'property', 'spring.profiles')
+            .having(
+              (e) => e.toString(),
+              'text',
+              contains('spring.config.activate.on-profile'),
+            ),
+      ),
+    );
+  });
+
+  test('an empty on-profile is no guard, like Boot', () {
+    write(
+      'application.properties',
+      'a=1\n#---\nspring.config.activate.on-profile=\nb=2',
+    );
+    final e = env();
+    config(e).processAndApplySync();
+    expect(e.getProperty('b'), '2');
+  });
+
+  group('profile names are validated like Boot 3.5+', () {
+    void fails(Map<String, Object?> props, String file, String message) {
+      write('application.properties', file);
+      expect(
+        () => config(env(props)).processAndApplySync(),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains(message),
+          ),
+        ),
+        reason: '$props $file',
+      );
+    }
+
+    test('active, included, default profiles and group members', () {
+      fails({'spring.profiles.active': 'dev!'}, '', 'allowed char');
+      fails({}, 'spring.profiles.active=-dev', 'start and end');
+      fails({}, 'spring.profiles.include=dev_', 'start and end');
+      fails(
+        {'spring.profiles.active': 'g'},
+        'spring.profiles.group.g=a b',
+        'allowed char',
+      );
+      expect(
+        () => config(env()..setDefaultProfiles(['x/y'])).processAndApplySync(),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('allowed characters and spring.profiles.validate=false', () {
+      write('application.properties', 'spring.profiles.active=a-b_c.d+e@f,é1');
+      final e = env();
+      config(e).processAndApplySync();
+      expect(e.activeProfiles, ['a-b_c.d+e@f', 'é1']);
+
+      write(
+        'application.properties',
+        'spring.profiles.validate=false\nspring.profiles.active=-odd-',
+      );
+      final lenient = env();
+      config(lenient).processAndApplySync();
+      expect(lenient.activeProfiles, ['-odd-']);
+    });
+  });
+
   test('custom loaders (e.g. YAML) are picked by extension', () {
     write('application.yml', 'name: from-yml\nonly: yml');
     write('application.properties', 'name=from-properties');

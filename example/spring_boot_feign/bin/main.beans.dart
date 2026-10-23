@@ -503,7 +503,7 @@ class _$WikimediaStreamsImpl implements _i13.WikimediaStreams {
           annotations: const [
             _i17.GetMapping(
               r'/v2/stream/recentchange',
-              headers: [r'User-Agent: ${wikimedia.user-agent}'],
+              headers: [r'User-Agent=${wikimedia.user-agent}'],
             ),
           ],
           call: (target, arguments) =>
@@ -538,6 +538,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       ],
       create: (r) =>
           _i1.BlogRunner(r.dependency<_i5.JsonPlaceholderClient>(name: r'api')),
+      annotations: const [_i3.Component(), _i3.Order(1)],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -575,6 +576,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i6.EchoSocket],
       primary: true,
       create: (r) => _$EchoSocketImpl.$create(r),
+      annotations: const [_i15.WebSocketClient(r'echo', url: r'${echo.url}')],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -617,11 +619,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig',
       types: const [_i18.FeignConfig],
       create: (r) => _i18.FeignConfig(),
+      annotations: const [_i3.Configuration()],
     ),
     _i3.BeanDefinition<_i8.RequestInterceptor>(
       name: r'clientName',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig.clientName',
       types: const [_i8.RequestInterceptor],
+      factoryBeanName: r'feignConfig',
+      factoryMethodName: r'clientName',
       dependencies: const [
         _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
         _i3.Dependency.value(r'${spring.application.name}'),
@@ -629,6 +634,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       create: (r) => r
           .dependency<_i18.FeignConfig>(qualifier: r'feignConfig')
           .clientName(r.value<String>(r'${spring.application.name}')),
+      annotations: const [_i3.Bean()],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -652,11 +658,14 @@ _i3.BeanModule get $application => _i3.BeanModule(
       name: r'retryer',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig.retryer',
       types: const [_i9.Retryer],
+      factoryBeanName: r'feignConfig',
+      factoryMethodName: r'retryer',
       dependencies: const [
         _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
       ],
       create: (r) =>
           r.dependency<_i18.FeignConfig>(qualifier: r'feignConfig').retryer(),
+      annotations: const [_i3.Bean()],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -680,6 +689,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i5.JsonPlaceholderClient],
       primary: true,
       create: (r) => _$JsonPlaceholderClientImpl.$create(r),
+      annotations: const [
+        _i16.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
+      ],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -810,6 +822,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       create: (r) => _i12.WikipediaRunner(
         r.dependency<_i13.WikimediaStreams>(name: r'streams'),
       ),
+      annotations: const [_i3.Component(), _i3.Order(2)],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -849,6 +862,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       dependencies: const [_i3.Dependency(_i6.EchoSocket, name: r'socket')],
       create: (r) =>
           _i12.EchoRunner(r.dependency<_i6.EchoSocket>(name: r'socket')),
+      annotations: const [_i3.Component(), _i3.Order(3)],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -885,6 +899,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i13.WikimediaStreams],
       primary: true,
       create: (r) => _$WikimediaStreamsImpl.$create(r),
+      annotations: const [
+        _i16.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
+      ],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -896,7 +913,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [
               _i17.GetMapping(
                 r'/v2/stream/recentchange',
-                headers: [r'User-Agent: ${wikimedia.user-agent}'],
+                headers: [r'User-Agent=${wikimedia.user-agent}'],
               ),
             ],
             annotationTypes: [r'GetMapping'],
@@ -914,7 +931,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
   ],
   resources: const {
     r'application.properties': _i3.EmbeddedResource.text(
-      "spring.application.name=spring-boot-feign-example\n\n# The real public API (https://jsonplaceholder.typicode.com): a free fake\n# REST API, no key needed.\njsonplaceholder.url=https://jsonplaceholder.typicode.com\n\n# Feign: how long a call may take, and a log line per request.\nspring.cloud.openfeign.client.config.jsonplaceholder.read-timeout=15s\nspring.cloud.openfeign.client.config.jsonplaceholder.logger-level=basic\n\n# Server-sent events: every edit on Wikimedia wikis\n# (https://stream.wikimedia.org). Wikimedia asks for a User-Agent naming\n# the client. For event streams the read timeout covers the headers only.\nwikimedia.url=https://stream.wikimedia.org\nwikimedia.user-agent=spring-boot-feign-example/0.1 (https://github.com/farum-azula/spring_core_dart)\nspring.cloud.openfeign.client.config.wikimedia.read-timeout=15s\nspring.cloud.openfeign.client.config.wikimedia.logger-level=basic\n\n# WebSocket: Postman's public echo server.\necho.url=wss://ws.postman-echo.com/raw\nspring.websocket.client.config.echo.connect-timeout=10s\n\n# spring_boot_starter_logging: the Feign log is written at debug level.\nlogging.level.root=info\nlogging.level.feign=debug\nlogging.level.websocket=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m\n",
+      "spring.application.name=spring-boot-feign-example\n\n# The real public API (https://jsonplaceholder.typicode.com): a free fake\n# REST API, no key needed.\njsonplaceholder.url=https://jsonplaceholder.typicode.com\n\n# Feign: the longest wait for data (read timeout, 60s by default), and a\n# log line per request.\nspring.cloud.openfeign.client.config.jsonplaceholder.read-timeout=15s\nspring.cloud.openfeign.client.config.jsonplaceholder.logger-level=basic\n\n# Server-sent events: every edit on Wikimedia wikis\n# (https://stream.wikimedia.org). Wikimedia asks for a User-Agent naming\n# the client. For event streams the read timeout covers the headers only.\nwikimedia.url=https://stream.wikimedia.org\nwikimedia.user-agent=spring-boot-feign-example/0.1 (https://github.com/farum-azula/spring_core_dart)\nspring.cloud.openfeign.client.config.wikimedia.read-timeout=15s\nspring.cloud.openfeign.client.config.wikimedia.logger-level=basic\n\n# WebSocket: Postman's public echo server.\necho.url=wss://ws.postman-echo.com/raw\nspring.websocket.client.config.echo.connect-timeout=10s\n\n# spring_boot_starter_logging: the Feign log is written at debug level.\nlogging.level.root=info\nlogging.level.feign=debug\nlogging.level.websocket=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger] %m\n",
     ),
   },
   introspections: [
@@ -1384,7 +1401,7 @@ _i19.SpringApplication get springApplication => _i19.SpringApplication(
     _i22.springBootStarterLoggingAutoConfiguration,
     _i23.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '240a98f7',
+  fingerprint: '3913c26f',
 );
 
 /// Starts the application: config files, environment, context, runners

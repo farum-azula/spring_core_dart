@@ -1,3 +1,17 @@
+## Unreleased
+
+- Breaking: `Map` parameters of `@RequestParam` / `@RequestHeader` give one query parameter / header per entry (they were sent as JSON); an object as the value of a path variable, query parameter, header or cookie (a class written as a JSON object) stops the application at startup, or fails the call with an `EncodeException` when only the value tells.
+- Breaking: mapping `headers` use Spring's `'Name=value'` (as Spring Cloud OpenFeign reads them; server conditions like `'!Name'` are ignored); `'Name: value'` stops the application with the reason.
+- Breaking: `read-timeout` is the longest wait for data (for the response, then between two chunks of the body), not a limit for the whole call; default `read-timeout` 60 s and `connect-timeout` 10 s, like Feign's `Request.Options()` (`0` for none).
+- Breaking: `RequestTemplate.header` adds a value like Feign's (it replaced); new `removeHeader`. Interceptors run for every attempt of a call on a new template (a refreshed token reaches the retry); `default-request-headers` (and the default `Accept`) are applied after the interceptors, for names they did not set.
+- Breaking: `dismiss404` keeps throwing for `void` methods, like Feign.
+- Breaking: the `<--- ERROR` and `---> RETRYING` log lines are written only above `logger-level: none`.
+- `@FeignClient(contextId:, qualifiers:, primary:, dismiss404:)` like Spring Cloud OpenFeign (`primary` and `qualifiers` need the matching generator).
+- `default-query-parameters.<name>`, `follow-redirects`, `spring.cloud.openfeign.client.decode-slash` (default `true`: a `/` in a path variable stays a `/`).
+- `@CookieValue` parameters (one `Cookie` header).
+- `DefaultErrorDecoder` reads `Retry-After` as an HTTP date too.
+- README: more "Differences from Spring Cloud OpenFeign" (default `Accept`, spaces as `+`, masked `Authorization`, logger names).
+
 ## 0.1.6
 
 - update road map

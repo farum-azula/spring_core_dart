@@ -84,7 +84,10 @@ abstract interface class ApplicationContext
     id: id,
   )..refresh();
 
-  /// Unique id of the context (defaults to `application`).
+  /// Unique id of the context; by default the class name and identity
+  /// hash code (`AnnotationConfigApplicationContext@1b2c3d`), like Spring's
+  /// `ObjectUtils.identityToString`. Spring Boot's `SpringApplication`
+  /// uses `spring.application.name` (or `application`).
   String get id;
 
   /// Human-readable name used in error messages and `toString`.
@@ -232,7 +235,9 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void close();
 
-  /// Whether the context is refreshed and not closed.
+  /// Whether the context is active: from the start of [refresh] until
+  /// [close] has finished (`false` again after a failed refresh), like
+  /// Spring's `isActive()`.
   bool get isActive;
 
   /// Whether [close] has completed.
@@ -279,8 +284,8 @@ class AnnotationConfigApplicationContext
   /// Creates a context for [modules]; call [refresh] before using it.
   ///
   /// Defaults: a new `StandardEnvironment`, a `DefaultResourceLoader` and
-  /// the id `application`. With a [parent], its environment is merged
-  /// into [environment].
+  /// a unique id (see [ApplicationContext.id]). With a [parent], its
+  /// environment is merged into [environment].
   AnnotationConfigApplicationContext(
     List<BeanModule> modules, {
     ApplicationContext? parent,
@@ -292,7 +297,7 @@ class AnnotationConfigApplicationContext
        _resources = PathMatchingResourcePatternResolver(
          resourceLoader: resourceLoader ?? DefaultResourceLoader(),
        ),
-       id = id ?? 'application' {
+       _explicitId = id {
     this.parent = parent;
   }
 
@@ -321,11 +326,17 @@ class AnnotationConfigApplicationContext
     parent: BeanIntrospector.shared,
   );
 
-  @override
-  final String id;
+  final String? _explicitId;
 
   @override
-  String get displayName => 'AnnotationConfigApplicationContext($id)';
+  late final String id =
+      _explicitId ??
+      'AnnotationConfigApplicationContext@'
+          '${identityHashCode(this).toRadixString(16)}';
+
+  @override
+  String get displayName =>
+      _explicitId == null ? id : 'AnnotationConfigApplicationContext($id)';
 
   /// When the last refresh started; `null` before.
   @override
@@ -361,7 +372,11 @@ class AnnotationConfigApplicationContext
   @override
   set parent(ApplicationContext? parent) {
     _parent = parent;
-    _factory.parentBeanFactory = parent;
+    // Like Spring's getInternalParentBeanFactory: the parent's bean
+    // factory, so injection sees its definitions (@Primary, @Order, ...).
+    _factory.parentBeanFactory = parent is ConfigurableApplicationContext
+        ? parent.beanFactory
+        : parent;
     final parentEnvironment = parent?.environment;
     if (parentEnvironment is ConfigurableEnvironment) {
       environment.merge(parentEnvironment);
@@ -371,8 +386,13 @@ class AnnotationConfigApplicationContext
   @override
   BeanFactory? get parentBeanFactory => _parent;
 
+  // Spring's `active` flag: set when refresh starts, cleared when refresh
+  // fails or close() has finished.
   @override
-  bool get isActive => _state == _State.active;
+  bool get isActive => switch (_state) {
+    _State.refreshing || _State.active || _State.closing => true,
+    _State.created || _State.failed || _State.closed => false,
+  };
 
   @override
   bool get isClosed => _state == _State.closed;
@@ -471,10 +491,15 @@ class AnnotationConfigApplicationContext
       _factory.validateBeanGraph();
       _finishBeanFactoryInitialization();
       _finishRefresh();
-      _state = _State.active;
+      // A listener of ContextRefreshedEvent may have closed the context.
+      if (_state == _State.refreshing) {
+        _state = _State.active;
+      }
     } catch (_) {
-      _factory.destroySingletons();
-      _state = _State.failed;
+      if (_state != _State.closed) {
+        _factory.destroySingletons();
+        _state = _State.failed;
+      }
       _earlyEvents = null;
       rethrow;
     }
@@ -548,7 +573,14 @@ class AnnotationConfigApplicationContext
           _factory.registerBeanDefinition(definition);
         }
       }
-      module.configurers.forEach(_factory.registerConfigurer);
+      module.configurers.forEach(
+        (type, configurer) => _factory.registerConfigurer(
+          type,
+          configurer,
+          postConstruct: module.configurablePostConstruct[type],
+          preDestroy: module.configurablePreDestroy[type],
+        ),
+      );
       introspector.registerAll(module.introspections);
     }
 
@@ -603,9 +635,9 @@ class AnnotationConfigApplicationContext
   List<T> _sortedBeans<T extends Object>(List<String> names) {
     final beans = <T, int?>{
       for (final name in names)
-        _factory.getBeanByName(name) as T: _factory
-            .getBeanDefinition(name)
-            .order,
+        _factory.getBeanByName(name) as T: _factory.containsBeanDefinition(name)
+            ? _factory.getBeanDefinition(name).order
+            : null,
     };
     return OrderComparator.sort(beans.keys, (bean) => beans[bean]);
   }
@@ -618,11 +650,13 @@ class AnnotationConfigApplicationContext
     final ordered = <String>[];
     final rest = <String>[];
     for (final name in names) {
-      final definition = _factory.getBeanDefinition(name);
-      if (definition.types.contains(PriorityOrdered)) {
+      // Registered singletons have no definition.
+      final order = _factory.containsBeanDefinition(name)
+          ? _factory.getBeanDefinition(name).order
+          : null;
+      if (_factory.isTypeMatch(name, PriorityOrdered)) {
         priority.add(name);
-      } else if (definition.types.contains(Ordered) ||
-          definition.order != null) {
+      } else if (_factory.isTypeMatch(name, Ordered) || order != null) {
         ordered.add(name);
       } else {
         rest.add(name);
@@ -752,10 +786,12 @@ class AnnotationConfigApplicationContext
   @override
   bool get isRunning => _lifecycleProcessor?.isRunning ?? false;
 
-  /// See [ConfigurableApplicationContext.close]; a no-op unless active.
+  /// See [ConfigurableApplicationContext.close]; a no-op unless active
+  /// (like Spring, it also works while refreshing, e.g. from a
+  /// `ContextRefreshedEvent` listener).
   @override
   void close() {
-    if (_state != _State.active) {
+    if (_state != _State.active && _state != _State.refreshing) {
       return;
     }
     // Like Spring's doClose: each step is guarded so a failing listener or
@@ -791,7 +827,9 @@ class AnnotationConfigApplicationContext
 
   /// Dispatches [event] to matching listeners synchronously, then to the
   /// parent context. Non-[ApplicationEvent] objects are wrapped in a
-  /// [PayloadApplicationEvent].
+  /// [PayloadApplicationEvent]. Like Spring 7, before [refresh], after a
+  /// failed refresh and after [close] the event is not delivered locally
+  /// (only to the parent).
   ///
   /// ```dart
   /// context.publishEvent(OrderPlaced(1, 250)); // payload event
@@ -804,23 +842,15 @@ class AnnotationConfigApplicationContext
   /// ```
   @override
   void publishEvent(Object event) {
-    if (_state == _State.failed) {
-      throw StateError('$displayName failed to refresh and is unusable.');
-    }
     final applicationEvent = event is ApplicationEvent
         ? event
         : PayloadApplicationEvent<Object>(this, event);
     final early = _earlyEvents;
     if (early != null) {
       early.add(applicationEvent);
-    } else {
-      final multicaster = _multicaster;
-      if (multicaster == null) {
-        throw StateError(
-          '$displayName cannot publish events before refresh().',
-        );
-      }
-      multicaster.multicastEvent(applicationEvent);
+    } else if (_state != _State.created && _state != _State.failed) {
+      // After close() the multicaster has no listeners left.
+      _multicaster?.multicastEvent(applicationEvent);
     }
     // The parent gets the original object so it wraps it itself.
     _parent?.publishEvent(event);
@@ -934,6 +964,9 @@ class AnnotationConfigApplicationContext
   Type? getType(String name) => _factory.getType(name);
 
   @override
+  bool isTypeMatch(String name, Type type) => _factory.isTypeMatch(name, type);
+
+  @override
   List<String> getAliases(String name) => _factory.getAliases(name);
 
   @override
@@ -972,6 +1005,20 @@ class AnnotationConfigApplicationContext
   }
 
   @override
+  List<String> getBeanNamesForAnnotation<A extends Object>() =>
+      _factory.getBeanNamesForAnnotation<A>();
+
+  @override
+  Map<String, Object> getBeansWithAnnotation<A extends Object>() {
+    _checkActive();
+    return _factory.getBeansWithAnnotation<A>();
+  }
+
+  @override
+  A? findAnnotationOnBean<A extends Object>(String beanName) =>
+      _factory.findAnnotationOnBean<A>(beanName);
+
+  @override
   String toString() => displayName;
 }
 
@@ -984,8 +1031,19 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   final String _beanName;
   final EventListenerMethod<Object> _method;
 
+  // An ApplicationListener bean that is Ordered is ordered by its order
+  // (before its @Order), like Spring's AnnotationAwareOrderComparator; an
+  // @EventListener method only by its own @Order. The bean is not created
+  // for it (a lazy listener not created yet uses its @Order).
   @override
-  int get order => _method.order ?? Ordered.lowestPrecedence;
+  int get order {
+    if (_context._factory.getSingleton(_beanName) case final Ordered bean
+        when bean is ApplicationListener<Object> &&
+            _method.id.endsWith('.onApplicationEvent')) {
+      return bean.order;
+    }
+    return _method.order ?? Ordered.lowestPrecedence;
+  }
 
   @override
   bool supportsEvent(Object event) => _method.supports(event);

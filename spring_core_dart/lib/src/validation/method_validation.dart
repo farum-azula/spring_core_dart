@@ -140,17 +140,26 @@ final class MethodValidationInterceptor implements MethodInterceptor {
 /// ```
 final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
   /// An advisor validating with [validator] (see
-  /// [MethodValidationInterceptor]).
-  MethodValidationPostProcessor([BeanValidator? validator])
-    : advice = MethodValidationInterceptor(validator);
+  /// [MethodValidationInterceptor]); classes whose annotations match one of
+  /// [excludeFilters] are left alone (Spring Boot's
+  /// `MethodValidationExcludeFilter`, which it uses for
+  /// `@ConfigurationProperties` classes).
+  MethodValidationPostProcessor([
+    BeanValidator? validator,
+    List<bool Function(List<Object> classAnnotations)> excludeFilters =
+        const [],
+  ]) : advice = MethodValidationInterceptor(validator),
+       excludeFilters = List.unmodifiable(excludeFilters);
 
   @override
   final MethodValidationInterceptor advice;
 
-  /// Members of `@Validated` bean classes.
+  /// Exclusions by the annotations of the bean class.
+  final List<bool Function(List<Object> classAnnotations)> excludeFilters;
+
+  /// Members of `@Validated` bean classes not excluded by [excludeFilters].
   @override
-  AopPointcut get pointcut =>
-      const AnnotationMatchingPointcut<Validated>(onClass: true);
+  AopPointcut get pointcut => _ValidatedPointcut(excludeFilters);
 
   /// Innermost, like Spring's validation advisor added after the existing
   /// ones.
@@ -159,4 +168,16 @@ final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
 
   @override
   String toString() => 'MethodValidationPostProcessor';
+}
+
+final class _ValidatedPointcut implements AopPointcut {
+  const _ValidatedPointcut(this.excludeFilters);
+
+  final List<bool Function(List<Object> classAnnotations)> excludeFilters;
+
+  @override
+  bool matches(MethodSignature signature, String beanName) =>
+      const AnnotationMatchingPointcut<Validated>(onClass: true)
+          .matches(signature, beanName) &&
+      !excludeFilters.any((exclude) => exclude(signature.targetAnnotations));
 }

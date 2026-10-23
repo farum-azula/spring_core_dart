@@ -109,10 +109,20 @@ void main() {
         () => SimpleCommandLinePropertySource(['--=x']),
         throwsArgumentError,
       );
-      expect(
-        () => SimpleCommandLinePropertySource(['--']),
-        throwsArgumentError,
-      );
+    });
+
+    test('-- ends the options; later args are non-option args', () {
+      final source = SimpleCommandLinePropertySource([
+        '--a=1',
+        'x',
+        '--',
+        '--b=2',
+        '--',
+        'y',
+      ]);
+      expect(source.propertyNames, ['a']);
+      expect(source.containsProperty('b'), isFalse);
+      expect(source.nonOptionArgs, ['x', '--b=2', '--', 'y']);
     });
   });
 

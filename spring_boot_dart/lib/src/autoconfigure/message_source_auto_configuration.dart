@@ -7,18 +7,20 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///
 /// Properties: `spring.messages.basename` (comma-separated, default
 /// `messages`), `spring.messages.use-code-as-default-message`,
-/// `spring.messages.fallback-to-system-locale` (here: to
-/// `spring.messages.default-locale`).
+/// `spring.messages.fallback-to-system-locale` (default `true`),
+/// `spring.messages.cache-duration` (seconds, e.g. `10` or `10s`; cached
+/// forever by default) and `spring.messages.default-locale` (not in Spring
+/// Boot: the locale tried before the system locale).
 ///
 /// ```properties
 /// # lib/resources/application.properties
 /// spring.messages.basename=i18n/messages,i18n/errors
 /// ```
 final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
-  BeanDefinition<PropertiesMessageSource>(
+  BeanDefinition<ReloadableResourceBundleMessageSource>(
     name: 'messageSource',
     types: const [
-      PropertiesMessageSource,
+      ReloadableResourceBundleMessageSource,
       MessageSource,
       HierarchicalMessageSource,
     ],
@@ -34,7 +36,7 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) {
       final environment = r.dependency<Environment>();
-      final source = PropertiesMessageSource(
+      final source = ReloadableResourceBundleMessageSource(
         basenames: [
           for (final basename in MessagesBundleCondition.basenames(environment))
             'classpath:$basename',
@@ -45,6 +47,23 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
             'spring.messages.use-code-as-default-message',
           ) ==
           'true';
+      source.fallbackToSystemLocale =
+          environment.getProperty(
+            'spring.messages.fallback-to-system-locale',
+          ) !=
+          'false';
+      final cacheDuration = environment.getProperty(
+        'spring.messages.cache-duration',
+      );
+      if (cacheDuration != null && cacheDuration.trim().isNotEmpty) {
+        // Seconds without a unit, like Boot's @DurationUnit(SECONDS).
+        final value = cacheDuration.trim();
+        source.cacheSeconds =
+            int.tryParse(value) ??
+            environment
+                .getPropertyAs<Duration>('spring.messages.cache-duration')!
+                .inSeconds;
+      }
       final locale = environment.getProperty('spring.messages.default-locale');
       if (locale != null) {
         source.defaultLocale = locale;
@@ -60,12 +79,15 @@ class MessagesBundleCondition implements Condition {
   /// Creates the condition.
   const MessagesBundleCondition();
 
-  /// The configured bundle basenames (`spring.messages.basename`).
+  /// The configured bundle basenames (`spring.messages.basename`), dots
+  /// read as slashes (`config.i18n.messages` → `config/i18n/messages`).
   static List<String> basenames(Environment environment) => [
     for (final name
         in (environment.getProperty('spring.messages.basename') ?? 'messages')
             .split(','))
-      if (name.trim().isNotEmpty) name.trim(),
+      // `config.i18n.messages` is `config/i18n/messages`, like Boot's
+      // ResourceBundleCondition.
+      if (name.trim().isNotEmpty) name.trim().replaceAll('.', '/'),
   ];
 
   @override

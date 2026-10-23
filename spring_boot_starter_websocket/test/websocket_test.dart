@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
@@ -23,6 +24,22 @@ final class TokenInterceptor implements WebSocketHandshakeInterceptor {
   }
 }
 
+/// A `Random` whose `nextDouble` is always [value].
+final class FixedRandom implements math.Random {
+  FixedRandom(this.value);
+
+  final double value;
+
+  @override
+  double nextDouble() => value;
+
+  @override
+  int nextInt(int max) => (value * max).floor();
+
+  @override
+  bool nextBool() => value >= 0.5;
+}
+
 Future<void> pump([int times = 5]) async {
   for (var i = 0; i < times; i++) {
     await Future<void>.delayed(Duration.zero);
@@ -41,8 +58,8 @@ void main() {
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
         .withPropertyValues([
           'chat.url=ws://chat.test/ws',
-          'spring.websocket.client.config.chat.reconnect-delay=10ms',
-          'spring.websocket.client.config.chat.max-reconnect-delay=40ms',
+          'spring.websocket.client.config.chat.reconnect.delay=10ms',
+          'spring.websocket.client.config.chat.reconnect.max-delay=40ms',
         ])
         .withBean<WebSocketTransport>(sockets);
   });
@@ -60,7 +77,7 @@ void main() {
         chat.raw().listen(raw.add);
         chat.binary().listen(binary.add);
         final server = await sockets.nextConnection;
-        expect('${server.url}', 'ws://chat.test/ws');
+        expect('${server.uri}', 'ws://chat.test/ws');
         expect(server.protocols, ['chat.v1']);
         expect(sockets.connections, hasLength(1), reason: 'one shared socket');
         server
@@ -175,6 +192,119 @@ void main() {
     },
   );
 
+  group('reconnect policy, named like Spring 7\'s RetryPolicy', () {
+    test('delay × multiplier per attempt, at most max-delay', () {
+      const policy = WebSocketReconnectPolicy(
+        delay: Duration(milliseconds: 100),
+        multiplier: 1.5,
+        maxDelay: Duration(milliseconds: 300),
+      );
+      expect(
+        [for (var retry = 1; retry <= 4; retry++) policy.delayFor(retry)],
+        const [
+          Duration(milliseconds: 100),
+          Duration(milliseconds: 150),
+          Duration(milliseconds: 225),
+          Duration(milliseconds: 300),
+        ],
+      );
+      const fixed = WebSocketReconnectPolicy(multiplier: 1);
+      expect(fixed.delayFor(5), const Duration(seconds: 1));
+    });
+
+    test('jitter: ± jitter scaled by the multiplier, within delay and '
+        'max-delay', () {
+      const policy = WebSocketReconnectPolicy(
+        delay: Duration(milliseconds: 100),
+        maxDelay: Duration(seconds: 1),
+        jitter: Duration(milliseconds: 10),
+      );
+      Duration at(int retry, double random) =>
+          policy.delayFor(retry, FixedRandom(random));
+      // Attempt 3: 400 ms ± 10 ms × 4.
+      expect(at(3, 0), const Duration(milliseconds: 360));
+      expect(at(3, 0.5), const Duration(milliseconds: 400));
+      expect(at(3, 1), const Duration(milliseconds: 440));
+      // Never below the delay, never above max-delay.
+      expect(at(1, 0), const Duration(milliseconds: 100));
+      expect(at(1, 1), const Duration(milliseconds: 110));
+      expect(at(5, 1), const Duration(seconds: 1));
+      final random = math.Random(7);
+      for (var i = 0; i < 100; i++) {
+        final delay = policy.delayFor(3, random);
+        expect(delay.inMilliseconds, inInclusiveRange(360, 440));
+      }
+    });
+
+    test('read from reconnect.* properties', () {
+      final config = WebSocketClientConfig.of(
+        StandardEnvironment()
+          ..propertySources.addFirst(
+            MapPropertySource('test', {
+              'spring.websocket.client.config.default.reconnect.delay': '200ms',
+              'spring.websocket.client.config.feed.reconnect.multiplier': '1.5',
+              'spring.websocket.client.config.feed.reconnect.max-delay': '5s',
+              'spring.websocket.client.config.feed.reconnect.jitter': '50ms',
+              'spring.websocket.client.config.feed.reconnect.max-retries': '4',
+              'spring.websocket.client.config.feed.reconnect.enabled': 'false',
+            }),
+          ),
+        'feed',
+      );
+      final policy = config.reconnect;
+      expect(policy.delay, const Duration(milliseconds: 200));
+      expect(policy.multiplier, 1.5);
+      expect(policy.maxDelay, const Duration(seconds: 5));
+      expect(policy.jitter, const Duration(milliseconds: 50));
+      expect(policy.maxRetries, 4);
+      expect(policy.enabled, isFalse);
+      const defaults = WebSocketReconnectPolicy();
+      expect(defaults.delay, const Duration(seconds: 1));
+      expect(defaults.multiplier, 2);
+      expect(defaults.maxDelay, const Duration(seconds: 30));
+      expect(defaults.jitter, Duration.zero);
+      expect(defaults.maxRetries, isNull);
+    });
+
+    test('the client waits as the policy says', () async {
+      final logs = <String>[];
+      final cancel = SpringLog.listen((record) => logs.add(record.message));
+      final saved = SpringLog.level;
+      SpringLog.level = SpringLogLevel.debug;
+      addTearDown(() {
+        cancel();
+        SpringLog.level = saved;
+      });
+      await runner
+          .withPropertyValues([
+            'spring.websocket.client.config.chat.reconnect.multiplier=3',
+            'spring.websocket.client.config.chat.reconnect.max-delay=100ms',
+            'spring.websocket.client.config.chat.reconnect.jitter=2ms',
+          ])
+          .runAsync((context) async {
+            final chat = context.getBean<ChatSocket>();
+            chat.raw().listen(null);
+            final first = await sockets.nextConnection;
+            sockets
+              ..failNextConnect()
+              ..failNextConnect();
+            await first.drop();
+            await sockets.nextConnection;
+          });
+      final delays = [
+        for (final line in logs)
+          if (RegExp(r'^reconnecting in (\d+) ms').firstMatch(line)
+              case final match?)
+            int.parse(match[1]!),
+      ];
+      expect(delays, hasLength(3));
+      // 10 ms, 30 ms, 90 ms, each ± 2 ms × (delay / 10 ms).
+      expect(delays[0], inInclusiveRange(10, 12));
+      expect(delays[1], inInclusiveRange(24, 36));
+      expect(delays[2], inInclusiveRange(72, 100));
+    });
+  });
+
   test(
     'a policy violation (1008) ends the streams without reconnecting',
     () async {
@@ -185,8 +315,7 @@ void main() {
         chat.raw().listen(null, onError: errors.add, onDone: done.complete);
         final server = await sockets.nextConnection;
         await server.closeFromServer(
-          WebSocketStatus.policyViolation,
-          'no token',
+          CloseStatus.policyViolation.withReason('no token'),
         );
         await done.future;
         expect(errors.single, isA<WebSocketException>());
@@ -209,29 +338,28 @@ void main() {
     });
   });
 
-  test(
-    'reconnect=false: a lost connection ends the streams with an error',
-    () async {
-      await runner
-          .withPropertyValues([
-            'spring.websocket.client.config.chat.reconnect=false',
-          ])
-          .runAsync((context) async {
-            final chat = context.getBean<ChatSocket>();
-            final errors = <Object>[];
-            final done = Completer<void>();
-            chat.raw().listen(null, onError: errors.add, onDone: done.complete);
-            await (await sockets.nextConnection).drop();
-            await done.future;
-            expect('${errors.single}', contains('1006'));
-          });
-    },
-  );
-
-  test('max-attempts gives up and reports the connection error', () async {
+  test('reconnect.enabled=false: a lost connection ends the streams with an '
+      'error', () async {
     await runner
         .withPropertyValues([
-          'spring.websocket.client.config.chat.max-attempts=2',
+          'spring.websocket.client.config.chat.reconnect.enabled=false',
+        ])
+        .runAsync((context) async {
+          final chat = context.getBean<ChatSocket>();
+          final errors = <Object>[];
+          final done = Completer<void>();
+          chat.raw().listen(null, onError: errors.add, onDone: done.complete);
+          await (await sockets.nextConnection).drop();
+          await done.future;
+          expect('${errors.single}', contains('1006'));
+        });
+  });
+
+  test('max-retries gives up and reports the connection error', () async {
+    await runner
+        .withPropertyValues([
+          // The first attempt and one retry.
+          'spring.websocket.client.config.chat.reconnect.max-retries=1',
         ])
         .runAsync((context) async {
           final chat = context.getBean<ChatSocket>();
@@ -268,12 +396,12 @@ void main() {
           final chat = context.getBean<ChatSocket>();
           chat.raw().listen(null);
           final first = await sockets.nextConnection;
-          expect(first.url.queryParameters['token'], 't1');
+          expect(first.uri.queryParameters['token'], 't1');
           expect(first.headers['X-Client'], 'chat');
           expect(first.headers['X-Shop'], 'neon');
           await first.drop();
           final second = await sockets.nextConnection;
-          expect(second.url.queryParameters['token'], 't2');
+          expect(second.uri.queryParameters['token'], 't2');
         });
   });
 
@@ -286,7 +414,7 @@ void main() {
     });
     await pump();
     expect(server.isClosed, isTrue);
-    expect(server.closeCode, WebSocketStatus.normalClosure);
+    expect(server.closeStatus, CloseStatus.normal);
   });
 
   test('an invalid client stops the application with the reasons', () {
@@ -326,15 +454,15 @@ void main() {
           MapPropertySource('test', {
             'spring.websocket.client.config.default.connect-timeout': '2s',
             'spring.websocket.client.config.feed.url': 'wss://feed.test',
-            'spring.websocket.client.config.feed.max-attempts': '3',
+            'spring.websocket.client.config.feed.reconnect.max-retries': '3',
           }),
         ),
       'feed',
     );
     expect(config.url, 'wss://feed.test');
     expect(config.connectTimeout, const Duration(seconds: 2));
-    expect(config.maxAttempts, 3);
-    expect(config.reconnect, isTrue);
+    expect(config.reconnect.maxRetries, 3);
+    expect(config.reconnect.enabled, isTrue);
     expect(jsonEncode(config.defaultRequestHeaders), '{}');
   });
 }

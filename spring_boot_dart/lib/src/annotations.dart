@@ -35,11 +35,13 @@ class SpringBootApplication {
 /// `@Component` / `@Introspected` needed). Property `maxSize` is read from
 /// `prefix.max-size` (or `prefix.maxSize`, or the environment variables
 /// `PREFIX_MAX_SIZE` / `PREFIX_MAXSIZE`); nested `@Introspected` objects are
-/// bound from `prefix.nested.*`. Values are converted to the field types
-/// and validated with the constraint annotations (`@NotBlank`, `@Min`, ...).
+/// bound from `prefix.nested.*`. Values are converted to the field types;
+/// with `@Validated()` on the class they are also validated with the
+/// constraint annotations (`@NotBlank`, `@Min`, ...), as in Spring Boot.
 ///
 /// ```dart
 /// @ConfigurationProperties('db')
+/// @Validated()
 /// class DbProperties {
 ///   @NotBlank()
 ///   String url = '';
@@ -55,18 +57,10 @@ class SpringBootApplication {
 /// ```
 class ConfigurationProperties extends Component implements Introspected {
   /// Binds the properties under [prefix]; [name] overrides the bean name.
-  const ConfigurationProperties(
-    this.prefix, {
-    String? name,
-    this.validate = true,
-  }) : super(name);
+  const ConfigurationProperties(this.prefix, {String? name}) : super(name);
 
   /// Property prefix, e.g. `db` for `db.url`.
   final String prefix;
-
-  /// Whether constraint annotations are checked after binding (Boot's
-  /// `@Validated`).
-  final bool validate;
 
   /// No extra classes to introspect (see `Introspected.classes`).
   @override

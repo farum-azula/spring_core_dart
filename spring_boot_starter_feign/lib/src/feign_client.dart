@@ -26,9 +26,13 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```
 ///
 /// [name] keys the configuration
-/// (`spring.cloud.openfeign.client.config.<name>.*`); [url] (placeholders allowed) wins over the configured
-/// `url`; [path] prefixes every method's path; [fallback] is a bean class
-/// implementing the same interface, called when a request fails.
+/// (`spring.cloud.openfeign.client.config.<name>.*`) unless [contextId]
+/// is given; [url] (placeholders allowed) wins over the configured `url`;
+/// [path] prefixes every method's path; [fallback] is a bean class
+/// implementing the same interface, called when a request fails. The
+/// client bean is `@Primary` unless [primary] is `false`, and `@Qualifier`
+/// selects it by each of [qualifiers] too; [dismiss404] turns a 404 into
+/// an empty result like the `dismiss404` property.
 ///
 /// Spring (Java):
 /// ```java
@@ -41,9 +45,19 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 @InterfaceProxy(primary: true)
 class FeignClient {
   /// A client named [name].
-  const FeignClient(this.name, {this.url, this.path = '', this.fallback});
+  const FeignClient(
+    this.name, {
+    this.url,
+    this.path = '',
+    this.fallback,
+    this.contextId,
+    this.qualifiers = const [],
+    this.primary = true,
+    this.dismiss404 = false,
+  });
 
-  /// The client name (configuration key, logger name).
+  /// The client name (configuration key unless [contextId] is set; the
+  /// `clientName` interceptors see).
   final String name;
 
   /// The base URL, e.g. `https://api.neon.books` or `${catalog.url}`.
@@ -54,4 +68,28 @@ class FeignClient {
 
   /// A bean class implementing the interface, used when a call fails.
   final Type? fallback;
+
+  /// The configuration key instead of [name]
+  /// (`spring.cloud.openfeign.client.config.<contextId>.*`), e.g. for two
+  /// clients of one service with different settings.
+  final String? contextId;
+
+  /// Extra names that select the client bean with `@Qualifier(...)`.
+  final List<String> qualifiers;
+
+  /// Whether the client bean is `@Primary` (default `true`, so a fallback
+  /// implementing the same interface does not make injection ambiguous).
+  final bool primary;
+
+  /// Whether a 404 gives an empty result (`null` for a nullable result, a
+  /// `ResponseEntity` with the status) instead of a `FeignNotFound`;
+  /// `void` methods still throw, like Feign. The `dismiss404` property
+  /// turns it on too.
+  final bool dismiss404;
+
+  /// The configuration key: [contextId], or [name] without one.
+  String get configKey => switch (contextId) {
+    final id? when id.isNotEmpty => id,
+    _ => name,
+  };
 }

@@ -96,7 +96,7 @@ final class FeignInvocationHandler implements InvocationHandler {
     if (url == null || url.trim().isEmpty) {
       problems.add(
         'no URL: set @FeignClient(url: ...) or '
-        'spring.cloud.openfeign.client.config.${client.name}.url',
+        'spring.cloud.openfeign.client.config.${client.configKey}.url',
       );
       return '';
     }
@@ -149,19 +149,8 @@ final class FeignInvocationHandler implements InvocationHandler {
     List<Object?> arguments,
     String? lastEventId,
   ) async {
-    final template = plan.template(arguments);
-    if (lastEventId != null) {
-      template.header('Last-Event-ID', lastEventId);
-    }
-    for (final interceptor in interceptors) {
-      await interceptor.apply(template);
-    }
-    final request = HttpRequest(
-      method: template.method,
-      url: template.url,
-      headers: template.headers,
-      body: template.body,
-      timeout: config.readTimeout,
+    final request = _request(
+      await _prepare(plan, arguments, lastEventId: lastEventId),
     );
     final watch = Stopwatch()..start();
     _logRequest(request);
@@ -169,10 +158,7 @@ final class FeignInvocationHandler implements InvocationHandler {
     try {
       response = await transport.stream(request);
     } on HttpTransportException catch (error) {
-      _log.debug(
-        '<--- ERROR ${error.message} (${watch.elapsedMilliseconds} ms)',
-        fields: {'client': client.name},
-      );
+      _logError(error, watch);
       throw RetryableException(
         -1,
         '${error.message} executing ${request.method.value} ${request.url}',
@@ -184,7 +170,7 @@ final class FeignInvocationHandler implements InvocationHandler {
     if (response.isSuccess) {
       if (config.loggerLevel != FeignLoggerLevel.none) {
         _log.debug(
-          '<--- $status ${HttpStatus.reasonPhrase(status)} '
+          '<--- $status${_phrase(status)} '
           '(${watch.elapsedMilliseconds} ms, event stream)',
           fields: {'client': client.name},
         );
@@ -193,7 +179,7 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     final whole = await response.read();
     _logResponse(whole, watch.elapsed);
-    if (status == 404 && config.dismiss404) {
+    if (status == 404 && dismiss404) {
       // Like an empty result: the stream ends.
       return StreamedHttpResponse(
         HttpStatus.noContent,
@@ -203,6 +189,37 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     throw errorDecoder.decode(plan.methodKey, whole);
   }
+
+  /// Whether a 404 gives an empty result: `@FeignClient(dismiss404:)` or
+  /// the `dismiss404` property.
+  bool get dismiss404 => client.dismiss404 || config.dismiss404;
+
+  // A fresh template for a call with [arguments], changed by the
+  // interceptors, then completed with the configured defaults.
+  Future<RequestTemplate> _prepare(
+    _Plan plan,
+    List<Object?> arguments, {
+    String? lastEventId,
+  }) async {
+    final template = plan.template(arguments);
+    if (lastEventId != null) {
+      template.headers.set('Last-Event-ID', lastEventId);
+    }
+    for (final interceptor in interceptors) {
+      await interceptor.apply(template);
+    }
+    plan.applyDefaults(template);
+    return template;
+  }
+
+  HttpRequest _request(RequestTemplate template) => HttpRequest(
+    method: template.method,
+    url: template.url,
+    headers: template.headers,
+    body: template.body,
+    readTimeout: config.readTimeout,
+    followRedirects: config.followRedirects,
+  );
 
   Future<Object?> _execute(
     _Plan plan,
@@ -230,18 +247,10 @@ final class FeignInvocationHandler implements InvocationHandler {
     ProxyMethod method,
     List<Object?> arguments,
   ) async {
-    final template = plan.template(arguments);
-    for (final interceptor in interceptors) {
-      await interceptor.apply(template);
-    }
-    final request = HttpRequest(
-      method: template.method,
-      url: template.url,
-      headers: template.headers,
-      body: template.body,
-      timeout: config.readTimeout,
-    );
     for (var attempt = 1; ; attempt++) {
+      // Like Feign, the interceptors run for every attempt — here on a
+      // fresh template, so a refreshed token reaches the retry.
+      final request = _request(await _prepare(plan, arguments));
       try {
         final response = await _send(request, plan, method);
         return plan.decode(response, method);
@@ -250,11 +259,13 @@ final class FeignInvocationHandler implements InvocationHandler {
         if (delay == null) {
           rethrow;
         }
-        _log.debug(
-          '---> RETRYING ${plan.methodKey} (attempt ${attempt + 1}) in '
-          '${delay.inMilliseconds} ms',
-          fields: {'client': client.name},
-        );
+        if (config.loggerLevel != FeignLoggerLevel.none) {
+          _log.debug(
+            '---> RETRYING ${plan.methodKey} (attempt ${attempt + 1}) in '
+            '${delay.inMilliseconds} ms',
+            fields: {'client': client.name},
+          );
+        }
         await Future<void>.delayed(delay);
       }
     }
@@ -271,10 +282,7 @@ final class FeignInvocationHandler implements InvocationHandler {
     try {
       response = await transport.send(request);
     } on HttpTransportException catch (error) {
-      _log.debug(
-        '<--- ERROR ${error.message} (${watch.elapsedMilliseconds} ms)',
-        fields: {'client': client.name},
-      );
+      _logError(error, watch);
       throw RetryableException(
         -1,
         '${error.message} executing ${request.method.value} ${request.url}',
@@ -284,13 +292,29 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     _logResponse(response, watch.elapsed);
     final status = response.statusCode;
-    if (status >= 200 && status < 300) {
+    if (status.is2xxSuccessful) {
       return response;
     }
-    if (status == 404 && config.dismiss404) {
+    // Like Feign, a void method still throws.
+    if (status == HttpStatus.notFound && dismiss404 && !method.isVoid) {
       return response;
     }
     throw errorDecoder.decode(plan.methodKey, response);
+  }
+
+  static String _phrase(int status) => switch (HttpStatus.resolve(status)) {
+    final known? => ' ${known.reasonPhrase}',
+    null => '',
+  };
+
+  void _logError(HttpTransportException error, Stopwatch watch) {
+    if (config.loggerLevel == FeignLoggerLevel.none) {
+      return;
+    }
+    _log.debug(
+      '<--- ERROR ${error.message} (${watch.elapsedMilliseconds} ms)',
+      fields: {'client': client.name},
+    );
   }
 
   void _logRequest(HttpRequest request) {
@@ -299,10 +323,11 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     final lines = ['---> ${request.method.value} ${request.url}'];
     if (config.loggerLevel.index >= FeignLoggerLevel.headers.index) {
-      request.headers.forEach((name, value) {
-        lines.add(
-          '$name: ${name.toLowerCase() == 'authorization' ? '***' : value}',
-        );
+      request.headers.forEach((name, values) {
+        final masked = name.toLowerCase() == 'authorization';
+        for (final value in values) {
+          lines.add('$name: ${masked ? '***' : value}');
+        }
       });
     }
     final body = request.body;
@@ -320,11 +345,15 @@ final class FeignInvocationHandler implements InvocationHandler {
       return;
     }
     final lines = [
-      '<--- ${response.statusCode} ${HttpStatus.reasonPhrase(response.statusCode)} '
+      '<--- ${response.statusCode}${_phrase(response.statusCode)} '
           '(${elapsed.inMilliseconds} ms)',
     ];
     if (config.loggerLevel.index >= FeignLoggerLevel.headers.index) {
-      response.headers.forEach((name, value) => lines.add('$name: $value'));
+      response.headers.forEach((name, values) {
+        for (final value in values) {
+          lines.add('$name: $value');
+        }
+      });
     }
     if (config.loggerLevel == FeignLoggerLevel.full) {
       lines.add(response.bodyText);
@@ -345,7 +374,10 @@ final class _Plan {
     this.path,
     this.pathVariables,
     this.queries,
+    this.queryMaps,
     this.headers,
+    this.headerMaps,
+    this.cookies,
     this.staticHeaders,
     this.body,
     this.produces,
@@ -392,38 +424,66 @@ final class _Plan {
     );
     final pathVariables = <String, int>{};
     final queries = <(String, int)>[];
+    final queryMaps = <int>[];
     final headers = <(String, int)>[];
+    final headerMaps = <int>[];
+    final cookies = <(String, int)>[];
     int? body;
     final unannotated = <int>[];
+    // Values of path variables, query parameters, headers and cookies must
+    // be single values (or lists of them); maps only for query parameters
+    // and headers, one per entry.
+    void check(BeanParameter parameter, String role, {bool map = false}) {
+      final reason = _unsupported(parameter.type, handler.mapper, map: map);
+      if (reason != null) {
+        problems.add(
+          '$name: the $role parameter ${parameter.name} is $reason '
+          '(${parameter.type}); use a String, number, bool, enum, DateTime '
+          'or a List of them${map ? ', or a Map<String, ...> for one per entry' : ''}',
+        );
+      }
+    }
+
     for (final (index, parameter) in method.parameters.indexed) {
-      final pathVariable = parameter.annotations
-          .whereType<PathVariable>()
-          .firstOrNull;
-      final requestParam = parameter.annotations
-          .whereType<RequestParam>()
-          .firstOrNull;
-      final requestHeader = parameter.annotations
-          .whereType<RequestHeader>()
-          .firstOrNull;
-      final requestBody = parameter.annotations
-          .whereType<RequestBody>()
-          .firstOrNull;
+      final annotations = parameter.annotations;
+      final pathVariable = annotations.whereType<PathVariable>().firstOrNull;
+      final requestParam = annotations.whereType<RequestParam>().firstOrNull;
+      final requestHeader = annotations.whereType<RequestHeader>().firstOrNull;
+      final cookieValue = annotations.whereType<CookieValue>().firstOrNull;
+      final requestBody = annotations.whereType<RequestBody>().firstOrNull;
       final count = [
         pathVariable,
         requestParam,
         requestHeader,
+        cookieValue,
         requestBody,
       ].whereType<Object>().length;
       if (count > 1) {
         problems.add('$name: parameter ${parameter.name} has several roles');
         continue;
       }
+      final isMap = parameter.type is MapType;
       if (pathVariable != null) {
+        check(parameter, '@PathVariable');
         pathVariables[pathVariable.name ?? parameter.name] = index;
       } else if (requestParam != null) {
-        queries.add((requestParam.name ?? parameter.name, index));
+        check(parameter, '@RequestParam', map: true);
+        // Like Spring Cloud OpenFeign: a Map is a query map, its name unused.
+        if (isMap) {
+          queryMaps.add(index);
+        } else {
+          queries.add((requestParam.name ?? parameter.name, index));
+        }
       } else if (requestHeader != null) {
-        headers.add((requestHeader.name ?? parameter.name, index));
+        check(parameter, '@RequestHeader', map: true);
+        if (isMap) {
+          headerMaps.add(index);
+        } else {
+          headers.add((requestHeader.name ?? parameter.name, index));
+        }
+      } else if (cookieValue != null) {
+        check(parameter, '@CookieValue');
+        cookies.add((cookieValue.name ?? parameter.name, index));
       } else if (requestBody != null) {
         if (body != null) {
           problems.add('$name has more than one @RequestBody');
@@ -441,7 +501,8 @@ final class _Plan {
         for (final index in unannotated) {
           problems.add(
             '$name: parameter ${method.parameters[index].name} needs '
-            '@PathVariable, @RequestParam, @RequestHeader or @RequestBody',
+            '@PathVariable, @RequestParam, @RequestHeader, @CookieValue or '
+            '@RequestBody',
           );
         }
       }
@@ -466,15 +527,31 @@ final class _Plan {
     }
     final staticHeaders = <(String, String)>[];
     for (final header in mapping.headers) {
-      final colon = header.indexOf(':');
-      if (colon <= 0) {
-        problems.add('$name: header "$header" must look like "Name: value"');
+      // Spring's syntax, read like Spring Cloud OpenFeign's SpringMvcContract:
+      // "Name=value" is sent; "Name", "!Name" and "Name!=value" are
+      // conditions for a server and are ignored.
+      final equals = header.indexOf('=');
+      if (equals < 0 || (equals > 0 && header[equals - 1] == '!')) {
+        if (header.contains(':')) {
+          problems.add(
+            '$name: header "$header" must look like "Name=value" '
+            "(Spring's syntax)",
+          );
+        }
+        continue;
+      }
+      final headerName = header.substring(0, equals).trim();
+      if (headerName.isEmpty || headerName.contains(RegExp(r'[\s:]'))) {
+        problems.add(
+          '$name: header "$header" must look like "Name=value" '
+          "(Spring's syntax)",
+        );
         continue;
       }
       staticHeaders.add((
-        header.substring(0, colon).trim(),
+        handler.environment.resolvePlaceholders(headerName),
         handler.environment.resolvePlaceholders(
-          header.substring(colon + 1).trim(),
+          header.substring(equals + 1).trim(),
         ),
       ));
     }
@@ -485,7 +562,10 @@ final class _Plan {
       path,
       pathVariables,
       queries,
+      queryMaps,
       headers,
+      headerMaps,
+      cookies,
       staticHeaders,
       body,
       mapping.produces,
@@ -501,13 +581,54 @@ final class _Plan {
       ? type.arguments.firstOrNull ?? const DynamicType()
       : null;
 
+  // Why values of [type] cannot go into a URL, a header or a cookie, or
+  // null when they can (or only the value itself can tell: `Object`,
+  // `dynamic`, classes the mapper writes some other way).
+  static String? _unsupported(
+    TypeInfo<Object?> type,
+    ObjectMapper mapper, {
+    bool map = false,
+  }) {
+    switch (type) {
+      case MapType(:final value) when map:
+        return value is MapType ? 'a Map of Maps' : _unsupported(value, mapper);
+      case MapType():
+        return 'a Map';
+      case ListType(:final element) || SetType(:final element):
+        return element is MapType || element is ListType || element is SetType
+            ? 'a nested collection'
+            : _unsupported(element, mapper);
+      case GenericType():
+        return 'an object';
+      case ClassType():
+        return _isObject(type, mapper) ? 'an object' : null;
+      case EnumType() || DynamicType():
+        return null;
+    }
+  }
+
+  // Whether the mapper writes values of [type] as a JSON object: an
+  // introspected class with properties, without `toJson()` and without a
+  // custom deserializer (which marks a value type with a JSON form of its
+  // own).
+  static bool _isObject(ClassType<Object?> type, ObjectMapper mapper) {
+    final introspection = mapper.introspector.forType(type.type);
+    return introspection != null &&
+        !introspection.hasToJson &&
+        introspection.properties.isNotEmpty &&
+        !type.accept(_HasDeserializer(mapper));
+  }
+
   final FeignInvocationHandler handler;
   final String methodKey;
   final HttpMethod httpMethod;
   final String path;
   final Map<String, int> pathVariables;
   final List<(String, int)> queries;
+  final List<int> queryMaps;
   final List<(String, int)> headers;
+  final List<int> headerMaps;
+  final List<(String, int)> cookies;
   final List<(String, String)> staticHeaders;
   final int? body;
   final String? produces;
@@ -531,7 +652,11 @@ final class _Plan {
     return '$a$b';
   }
 
+  /// A new template for a call with [arguments]: path, query, headers and
+  /// body from the method (the configured defaults come after the
+  /// interceptors, see [applyDefaults]).
   RequestTemplate template(List<Object?> arguments) {
+    final decodeSlash = handler.config.decodeSlash;
     var expanded = path;
     for (final MapEntry(key: name, value: index) in pathVariables.entries) {
       final value = arguments[index];
@@ -540,9 +665,13 @@ final class _Plan {
           'The path variable "$name" of $methodKey must not be null',
         );
       }
+      final encoded = Uri.encodeComponent(
+        _joined(value, parameters[index].type, '@PathVariable "$name"'),
+      );
+      // Spring Cloud OpenFeign's decode-slash: "a/b" stays a path.
       expanded = expanded.replaceAll(
         '{$name}',
-        Uri.encodeComponent(_text(value, parameters[index].type)),
+        decodeSlash ? encoded.replaceAll('%2F', '/') : encoded,
       );
     }
     var url = Uri.parse(_join(handler._baseUrl, expanded));
@@ -550,57 +679,67 @@ final class _Plan {
       for (final MapEntry(:key, :value) in url.queryParametersAll.entries)
         key: [...value],
     };
+    void addQuery(String name, Object? value, TypeInfo<Object?> type) {
+      for (final text in _texts(value, type, '@RequestParam "$name"')) {
+        (query[name] ??= []).add(text);
+      }
+    }
+
     for (final (name, index) in queries) {
-      final value = arguments[index];
-      if (value == null) {
-        continue;
-      }
+      addQuery(name, arguments[index], parameters[index].type);
+    }
+    for (final index in queryMaps) {
       final type = parameters[index].type;
-      final elementType = switch (type) {
-        ListType(:final element) || SetType(:final element) => element,
-        _ => type,
-      };
-      final items = value is Iterable<Object?> ? value : <Object?>[value];
-      for (final item in items) {
-        if (item != null) {
-          (query[name] ??= []).add(_text(item, elementType));
-        }
-      }
+      final valueType = type is MapType ? type.value : const DynamicType();
+      _entries(
+        arguments[index],
+        '@RequestParam ${parameters[index].name}',
+      ).forEach((name, value) => addQuery(name, value, valueType));
     }
     if (query.isNotEmpty) {
       url = url.replace(queryParameters: query);
     }
     final requestHeaders = HttpHeaders();
-    handler.config.defaultRequestHeaders.forEach(requestHeaders.set);
     for (final (name, value) in staticHeaders) {
-      requestHeaders.set(name, value);
+      requestHeaders.add(name, value);
     }
-    final stream = eventType != null;
-    if (!requestHeaders.contains(HttpHeaders.accept)) {
+    void setHeader(String name, Object? value, TypeInfo<Object?> type) {
+      final texts = _texts(value, type, '@RequestHeader "$name"');
+      if (texts.isEmpty) {
+        return;
+      }
+      requestHeaders.remove(name);
+      for (final text in texts) {
+        requestHeaders.add(name, text);
+      }
+    }
+
+    for (final (name, index) in headers) {
+      setHeader(name, arguments[index], parameters[index].type);
+    }
+    for (final index in headerMaps) {
+      final type = parameters[index].type;
+      final valueType = type is MapType ? type.value : const DynamicType();
+      _entries(
+        arguments[index],
+        '@RequestHeader ${parameters[index].name}',
+      ).forEach((name, value) => setHeader(name, value, valueType));
+    }
+    // Like Spring Cloud OpenFeign: the cookies of the call in one header.
+    final cookieValues = [
+      for (final (name, index) in cookies)
+        if (arguments[index] case final value?)
+          '$name=${_joined(value, parameters[index].type, '@CookieValue "$name"')}',
+    ];
+    if (cookieValues.isNotEmpty) {
+      final existing = requestHeaders[HttpHeaders.cookieHeader];
       requestHeaders.set(
-        HttpHeaders.accept,
-        produces ??
-            (stream ? MediaType.textEventStream : MediaType.applicationJson),
+        HttpHeaders.cookieHeader,
+        [?existing, ...cookieValues].join('; '),
       );
     }
-    if (stream && !requestHeaders.contains('Cache-Control')) {
+    if (eventType != null && !requestHeaders.contains('Cache-Control')) {
       requestHeaders.set('Cache-Control', 'no-cache');
-    }
-    for (final (name, index) in headers) {
-      final value = arguments[index];
-      if (value == null) {
-        continue;
-      }
-      if (value is Iterable<Object?>) {
-        requestHeaders.remove(name);
-        for (final item in value) {
-          if (item != null) {
-            requestHeaders.add(name, _text(item, const DynamicType()));
-          }
-        }
-      } else {
-        requestHeaders.set(name, _text(value, parameters[index].type));
-      }
     }
     List<int>? bytes;
     final bodyIndex = body;
@@ -624,8 +763,8 @@ final class _Plan {
         }
         contentType = MediaType.applicationJson;
       }
-      if (!requestHeaders.contains(HttpHeaders.contentType)) {
-        requestHeaders.set(HttpHeaders.contentType, consumes ?? contentType);
+      if (!requestHeaders.contains(HttpHeaders.contentTypeHeader)) {
+        requestHeaders.contentType = consumes ?? contentType;
       }
     }
     return RequestTemplate(
@@ -638,9 +777,77 @@ final class _Plan {
     );
   }
 
-  // A path, query or header value as text: enums by their JSON form,
-  // dates in ISO-8601, objects as JSON.
-  String _text(Object value, TypeInfo<Object?> type) {
+  /// What the configuration adds after the interceptors, for names the
+  /// request does not have yet (like Spring Cloud OpenFeign's
+  /// `default-request-headers` / `default-query-parameters`), and the
+  /// `Accept` header (`produces`, else JSON or `text/event-stream`).
+  void applyDefaults(RequestTemplate template) {
+    final config = handler.config;
+    final headers = template.headers;
+    config.defaultRequestHeaders.forEach((name, value) {
+      if (!headers.contains(name)) {
+        headers.set(name, value);
+      }
+    });
+    final query = template.url.queryParametersAll;
+    config.defaultQueryParameters.forEach((name, values) {
+      if (!query.containsKey(name)) {
+        for (final value in values) {
+          template.query(name, value);
+        }
+      }
+    });
+    if (!headers.contains(HttpHeaders.acceptHeader)) {
+      headers.set(
+        HttpHeaders.acceptHeader,
+        produces ??
+            (eventType != null
+                ? MediaType.textEventStream
+                : MediaType.applicationJson),
+      );
+    }
+  }
+
+  // The entries of a Map argument, keys as text (null: none).
+  Map<String, Object?> _entries(Object? value, String what) => switch (value) {
+    null => const {},
+    final Map<Object?, Object?> map => {
+      for (final MapEntry(:key, :value) in map.entries)
+        if (key != null) _text(key, const DynamicType(), what): value,
+    },
+    _ => throw EncodeException(
+      '$what of $methodKey must be a Map, not ${value.runtimeType}',
+    ),
+  };
+
+  // A query or header value as texts: none for null, one per item of a
+  // list (null items left out).
+  List<String> _texts(Object? value, TypeInfo<Object?> type, String what) {
+    if (value == null) {
+      return const [];
+    }
+    if (value is Iterable<Object?>) {
+      final element = switch (type) {
+        ListType(:final element) || SetType(:final element) => element,
+        _ => const DynamicType(),
+      };
+      return [
+        for (final item in value)
+          if (item != null) _text(item, element, what),
+      ];
+    }
+    return [_text(value, type, what)];
+  }
+
+  // A path variable or cookie value as text: a list joined with commas.
+  String _joined(Object value, TypeInfo<Object?> type, String what) =>
+      value is Iterable<Object?>
+      ? _texts(value, type, what).join(',')
+      : _text(value, type, what);
+
+  // One value as text: enums by their JSON form, dates in ISO-8601; a
+  // value the mapper writes as a JSON object or array is an error.
+  String _text(Object value, TypeInfo<Object?> type, String what) {
     switch (value) {
       case String():
         return value;
@@ -649,10 +856,22 @@ final class _Plan {
       case DateTime():
         return value.toIso8601String();
     }
-    final tree = mapper.valueToTree(value, type);
+    final Object? tree;
+    try {
+      tree = mapper.valueToTree(value, type);
+    } on JsonMappingException catch (error) {
+      throw EncodeException(
+        'cannot write $what of $methodKey: $error',
+        cause: error,
+      );
+    }
     return switch (tree) {
       String() || num() || bool() => '$tree',
-      _ => jsonEncode(tree),
+      _ => throw EncodeException(
+        '$what of $methodKey is ${tree is List ? 'a list' : 'an object'} '
+        '(${value.runtimeType}): it needs a single value such as a String, '
+        'a number or an enum',
+      ),
     };
   }
 
@@ -690,11 +909,12 @@ final class _Plan {
     final entity =
         type is GenericType<Object?> &&
         type.isSubtypeOf<ResponseEntity<Object?>>();
-    if (status == 404 && handler.config.dismiss404) {
+    // A dismissed 404 (never for void methods, see _send).
+    if (status == HttpStatus.notFound && handler.dismiss404) {
       if (entity) {
         return _entity(type, response, null);
       }
-      if (method.isVoid || type.nullable) {
+      if (type.nullable) {
         return null;
       }
       throw FeignException.errorStatus(methodKey, response);
@@ -913,4 +1133,35 @@ final class _EventStreamFactory
 
   @override
   EventStream<Object?> visitDynamic(DynamicType type) => _create<Object?>(type);
+}
+
+/// Whether a custom `JsonDeserializer` of the mapper reads the class: the
+/// sign of a value type with a JSON form of its own (e.g. `Money` as
+/// `"10 EUR"`).
+final class _HasDeserializer implements TypeInfoVisitor<bool> {
+  _HasDeserializer(this.mapper);
+
+  final ObjectMapper mapper;
+
+  @override
+  bool visitClass<T>(ClassType<T> type) =>
+      mapper.deserializers.any((deserializer) => deserializer.handles<T>());
+
+  @override
+  bool visitList<E>(ListType<E> type) => false;
+
+  @override
+  bool visitSet<E>(SetType<E> type) => false;
+
+  @override
+  bool visitMap<K, V>(MapType<K, V> type) => false;
+
+  @override
+  bool visitEnum<E extends Enum>(EnumType<E> type) => false;
+
+  @override
+  bool visitGeneric<T>(GenericType<T> type) => false;
+
+  @override
+  bool visitDynamic(DynamicType type) => false;
 }

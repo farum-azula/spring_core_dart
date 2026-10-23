@@ -33,12 +33,16 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// final books = mapper.readList<Book>('[{"isbn":"1","title":"Dune"}]');
 /// ```
 ///
-/// Built-in conversions: `String`, `int`, `double`, `num`, `bool`,
-/// `DateTime` (ISO-8601, or epoch milliseconds with
+/// Built-in conversions: `String`, `int`, `double`, `num` (`NaN` and
+/// infinities as the strings `"NaN"`, `"Infinity"`, `"-Infinity"`, like
+/// Jackson), `bool`, `DateTime` (ISO-8601 like Jackson writes an
+/// `OffsetDateTime`: `2026-01-01T12:00:00.000+02:00` for a local time, `Z`
+/// for UTC, converted to [timeZone] when set; or epoch milliseconds with
 /// [writeDatesAsTimestamps]), `Duration` (ISO-8601 such as `PT1M30S`; also
 /// reads `90s` or milliseconds), `Uri`, `BigInt` (as a string), enums (by
 /// name or `@JsonValue`), `List`, `Set`, `Map`, nullable types and nested
-/// objects. Anything else: a [JsonSerializer] / [JsonDeserializer].
+/// objects. `Map<String, dynamic>`, `List<dynamic>` and `Object?` read
+/// without a type are the plain decoded JSON. Anything else: a [JsonSerializer] / [JsonDeserializer].
 ///
 /// Spring (Java):
 /// ```java
@@ -55,19 +59,23 @@ class ObjectMapper {
   /// which values are written; [failOnUnknownProperties] rejects JSON
   /// properties a class does not have (off, like Spring Boot);
   /// [writeDatesAsTimestamps] writes `DateTime` / `Duration` as
-  /// milliseconds; [indentOutput] pretty-prints. The serializers and
-  /// deserializers of [modules] come after [serializers] / [deserializers].
+  /// milliseconds; [timeZone] (`UTC`, `Z` or a fixed offset such as
+  /// `+02:00` or `GMT+2`) is the offset dates are written in;
+  /// [indentOutput] pretty-prints. The serializers and deserializers of
+  /// [modules] come after [serializers] / [deserializers].
   ObjectMapper({
     BeanIntrospector? introspector,
     this.namingStrategy = PropertyNamingStrategy.lowerCamelCase,
     this.inclusion = JsonInclusion.always,
     this.failOnUnknownProperties = false,
     this.writeDatesAsTimestamps = false,
+    this.timeZone,
     this.indentOutput = false,
     Iterable<JsonSerializer<Object>> serializers = const [],
     Iterable<JsonDeserializer<Object>> deserializers = const [],
     Iterable<JsonModule> modules = const [],
   }) : introspector = introspector ?? BeanIntrospector.shared,
+       _offset = timeZone == null ? null : _parseTimeZone(timeZone),
        serializers = List.unmodifiable([
          ...serializers,
          for (final module in modules) ...module.serializers,
@@ -91,6 +99,13 @@ class ObjectMapper {
 
   /// Whether `DateTime` and `Duration` are written as milliseconds.
   final bool writeDatesAsTimestamps;
+
+  /// The time zone dates are written in (Jackson's `setTimeZone`,
+  /// `spring.jackson.time-zone`): `UTC`, `Z` or a fixed offset; `null`
+  /// writes each `DateTime` in its own zone (local or UTC).
+  final String? timeZone;
+
+  final Duration? _offset;
 
   /// Whether [writeValueAsString] pretty-prints.
   final bool indentOutput;
@@ -207,17 +222,12 @@ class ObjectMapper {
       case String() || bool() || int():
         return value;
       case double():
-        if (!value.isFinite) {
-          throw JsonMappingException(
-            '$value cannot be written as JSON',
-            path: '$path',
-          );
-        }
-        return value;
+        // Jackson's WRITE_NAN_AS_STRINGS: "NaN", "Infinity", "-Infinity".
+        return value.isFinite ? value : value.toString();
       case DateTime():
         return writeDatesAsTimestamps
             ? value.millisecondsSinceEpoch
-            : value.toIso8601String();
+            : _writeDate(value);
       case Duration():
         return writeDatesAsTimestamps
             ? value.inMilliseconds
@@ -292,13 +302,58 @@ class ObjectMapper {
   String _writeKey(Object? key, _Path path) => switch (key) {
     final String key => key,
     final Enum key => key.name,
-    final DateTime key => key.toIso8601String(),
+    final DateTime key => _writeDate(key),
     null => throw JsonMappingException(
       'null map keys cannot be written as JSON',
       path: '$path',
     ),
     final Object key => key.toString(),
   };
+
+  // ISO-8601 with the offset, like Jackson's OffsetDateTime: in [timeZone]
+  // when set, otherwise in the value's own zone (`Z` for UTC).
+  String _writeDate(DateTime value) {
+    final offset = _offset ?? (value.isUtc ? null : value.timeZoneOffset);
+    if (offset == null || (_offset != null && offset == Duration.zero)) {
+      return value.toUtc().toIso8601String();
+    }
+    final text = (_offset == null ? value : value.toUtc().add(offset))
+        .toIso8601String();
+    final local = text.endsWith('Z')
+        ? text.substring(0, text.length - 1)
+        : text;
+    final minutes = offset.inMinutes.abs();
+    return '$local${offset.isNegative ? '-' : '+'}'
+        '${(minutes ~/ 60).toString().padLeft(2, '0')}:'
+        '${(minutes % 60).toString().padLeft(2, '0')}';
+  }
+
+  // `UTC`, `GMT`, `Z`, or an offset such as `+02:00`, `-0530`, `GMT+2`,
+  // `UTC+02:00`. Named zones (`Europe/Berlin`) need a tz database.
+  static Duration _parseTimeZone(String timeZone) {
+    final match = RegExp(
+      r'^(?:UTC|GMT|UT|Z)?(?:([+-])(\d{1,2})(?::?(\d{2}))?)?$',
+    ).firstMatch(timeZone.trim());
+    if (timeZone.trim().isEmpty || match == null) {
+      throw ArgumentError.value(
+        timeZone,
+        'timeZone',
+        'use UTC or a fixed offset such as +02:00 (named time zones are not '
+            'supported: Dart has no time zone database)',
+      );
+    }
+    if (match[1] == null) {
+      return Duration.zero;
+    }
+    final offset = Duration(
+      hours: int.parse(match[2]!),
+      minutes: int.parse(match[3] ?? '0'),
+    );
+    if (offset > const Duration(hours: 18)) {
+      throw ArgumentError.value(timeZone, 'timeZone', 'offset out of range');
+    }
+    return match[1] == '-' ? -offset : offset;
+  }
 
   static String _isoDuration(Duration duration) {
     final negative = duration.isNegative;
@@ -444,6 +499,11 @@ class ObjectMapper {
     }
     if (<T>[] is List<Iterable<Object?>?> ||
         <T>[] is List<Map<Object?, Object?>?>) {
+      // Map<String, dynamic>, List<dynamic> (Jackson's raw Map / List):
+      // the decoded JSON as it is.
+      if (json is T) {
+        return json;
+      }
       throw JsonMappingException(
         'cannot read $T without its element types: pass a type, e.g. '
         'readValue(json, const ListType<Book>(ClassType<Book>())), or use '

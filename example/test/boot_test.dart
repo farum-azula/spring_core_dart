@@ -45,7 +45,7 @@ void main() {
     expect(properties.openingHours, '9-21'); // application.properties
     expect(properties.deliveryTime, const Duration(days: 2));
     expect(properties.maxBasketSize, 25); // SHOP_MAX_BASKET_SIZE
-    expect(app.output.last, startsWith('Started neon-books in '));
+    expect(app.output, isEmpty); // no failure report
     // Discovered from spring_boot_dart's lib/spring_auto_configuration.dart.
     expect(
       app.context.getMessage('greeting', args: ['NEON'], locale: 'ru'),

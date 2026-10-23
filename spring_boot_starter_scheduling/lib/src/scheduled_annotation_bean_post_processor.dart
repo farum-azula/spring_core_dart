@@ -35,7 +35,8 @@ const _log = SpringLog('spring.scheduling');
 /// processor.getScheduledTasks().forEach(System.out::println);
 /// ```
 final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
-    implements BeanFactoryAware, SmartLifecycle, DisposableBean {
+    with SmartLifecycle
+    implements BeanFactoryAware, DisposableBean {
   /// A processor scheduling through [scheduler], resolving placeholders
   /// with [environment].
   ScheduledAnnotationBeanPostProcessor(this.scheduler, this.environment);

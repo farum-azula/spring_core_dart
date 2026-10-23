@@ -135,6 +135,15 @@ enum SpelMessage {
   /// (Spring: `INVALID_TYPE_FOR_SELECTION`).
   selectionNotSupported,
 
+  /// A selection criterion did not evaluate to a boolean (Spring:
+  /// `RESULT_OF_SELECTION_CRITERIA_IS_NOT_BOOLEAN`).
+  resultOfSelectionCriteriaIsNotBoolean,
+
+  /// An expression assigned a variable (`#v = 1`, `#v++`) in a context
+  /// that does not support it, such as `SimpleEvaluationContext` (Spring:
+  /// `VARIABLE_ASSIGNMENT_NOT_SUPPORTED`).
+  variableAssignmentNotSupported,
+
   /// A feature (types, constructors) is disabled in a
   /// `SimpleEvaluationContext`.
   notSupportedInSimpleContext,

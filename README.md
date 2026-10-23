@@ -290,10 +290,13 @@ first): `DestructionAwareBeanPostProcessor` → `@PreDestroy` →
 
 `SmartInitializingSingleton` runs after all eager singletons;
 `Lifecycle` / `SmartLifecycle` beans are started by phase (auto-startup at
-refresh) and stopped in reverse on `stop()` / `close()`. Like Spring's
-`doClose`, `close()` never throws because of a failing `ContextClosedEvent`
+refresh) and stopped in reverse on `stop()` / `close()`; a lazy plain
+`Lifecycle` bean is not created for that, like Spring. Mix in
+`SmartLifecycle` (`with`) for Spring's defaults (auto-startup, default
+phase). Like Spring's `doClose`, `close()` never throws because of a failing `ContextClosedEvent`
 listener or a bean that fails to stop: the error is logged and shutdown
-continues (a `close()` from inside a listener is ignored).
+continues (a `close()` from a `ContextClosedEvent` listener is ignored; one
+from a `ContextRefreshedEvent` listener closes the context, like Spring).
 
 Problems the framework recovers from are logged through `SpringLog`
 (warnings are printed by default): set `SpringLog.level` and
@@ -362,8 +365,10 @@ propagate to the parent context.
 
 ### Messages, resources, conversion
 
-- `MessageSource`: `StaticMessageSource`, `PropertiesMessageSource`
-  (`messages_ru_RU.properties` → `messages_ru` → base), locale fallback,
+- `MessageSource`: `StaticMessageSource`,
+  `ReloadableResourceBundleMessageSource` (`messages_ru_RU.properties` →
+  `messages_ru` → default or system locale → base, `cacheSeconds`
+  reloading), `MessageSourceAccessor`, locale fallback,
   `MessageFormat` placeholders, quotes, `number`, `choice`. Define a bean
   named `messageSource`; the context delegates to it.
 - Resources: `lib/resources/` is the classpath — the generator embeds its
@@ -409,7 +414,8 @@ statics, constructors, `@bean` references, selection/projection,
 assignment and `++`/`--`, all operators (`div`, `between`, `matches`,
 Elvis, ternary). Dart has no reflection: user classes are reached through
 `@Introspected` metadata, `FunctionPropertyAccessor` / `FunctionMethodResolver`
-or maps. `SimpleEvaluationContext` restricts expressions for data binding.
+or maps. `SimpleEvaluationContext` restricts expressions for data binding
+(no types, constructors, bean references or variable assignment).
 
 ### Validation and data binding
 
@@ -540,18 +546,25 @@ constructor is the unnamed one, or the one marked `@JsonCreator()`.
 | `@JsonValue()` | on an enum field: the JSON form of each value |
 
 Built in: `String`, `int`, `double`, `num`, `bool` (numbers and booleans in
-strings are accepted), `DateTime` (ISO-8601; epoch milliseconds with
+strings are accepted; `NaN` / infinities as `"NaN"`, `"Infinity"`,
+`"-Infinity"`), `DateTime` (ISO-8601 like Jackson writes an
+`OffsetDateTime`: `2026-01-01T12:00:00.000+02:00` for local times, `Z` for
+UTC, so a Spring `Instant` reads it; epoch milliseconds with
 `writeDatesAsTimestamps`), `Duration` (ISO-8601 `PT1M30S`; also reads `90s`
 and milliseconds), `Uri`, `BigInt` (as a string), enums, `List`, `Set`,
-`Map`, nullable types and nested objects. A class that already has
-`fromJson` / `toJson` (`json_serializable`, `freezed`) is converted with
-them. Anything else: a `JsonSerializer<T>` / `JsonDeserializer<T>`, passed to
-`ObjectMapper(serializers:, deserializers:)` or grouped in a `JsonModule`
-bean (Spring Boot adds every `JsonModule` bean, like Jackson `Module`s).
+`Map`, nullable types and nested objects; `readValue<Map<String, dynamic>>`,
+`readValue<List<dynamic>>` and `readValue<Object?>` give the plain decoded
+JSON. A class that already has `fromJson` / `toJson` (`json_serializable`,
+`freezed`) is converted with them. Anything else: a `JsonSerializer<T>` /
+`JsonDeserializer<T>`, passed to `ObjectMapper(serializers:,
+deserializers:)`, declared as a bean or grouped in a `JsonModule` bean
+(Spring Boot adds every serializer, deserializer and `JsonModule` bean, like
+`@JsonComponent`s and Jackson `Module`s).
 
 Settings: `namingStrategy` (`snakeCase`, `kebabCase`, `upperCamelCase`,
 ...), `inclusion`, `failOnUnknownProperties` (off, like Spring Boot),
-`writeDatesAsTimestamps`, `indentOutput` — in Spring Boot from
+`writeDatesAsTimestamps`, `timeZone` (`UTC` or a fixed offset such as
+`+02:00`), `indentOutput` — in Spring Boot from
 `spring.jackson.*` (see `spring_boot_dart`).
 
 Errors name the place: `items[2].price: expected a number, got "abc"`,
@@ -936,6 +949,22 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Package-qualified AOP type patterns, argument binding | Simple type names; qualified wildcards and binding are rejected | No packages in Dart; binding not implemented yet |
 | Jackson `ObjectMapper` (reflection) | `ObjectMapper` on generated metadata; a model needs `@Introspected()` (its classes of the same package are included) | No reflection |
 | Optional `@Value` with `${x:#{null}}` | A nullable target gets `null` when a placeholder is missing | Dart null safety |
+| Lazy beans, prototypes and `@Lazy` injection points fail on first use | `refresh()` validates them too (missing or ambiguous beans, cycles, placeholders) | Fail at startup, not later |
+| `getBean` does not return `registerResolvableDependency` values | `getBean<BeanFactory>()`, `getBean<ApplicationContext>()` return them | Same objects that injection gets |
+| Custom qualifier annotations match by type and attributes | They match by their qualifier value only | Annotations are not read at runtime |
+| `@EventListener(condition = "#event.big")` (SpEL) | `condition:` takes a Dart function | Type-checked, no reflection |
+| Asynchronous multicaster (`setTaskExecutor`), `@Async` listeners | Listeners run synchronously | Not implemented |
+| Events published during refresh reach listeners once they are registered | They arrive after all eager singletons exist | Listener beans are looked up on each event |
+| `@Import` of classes, `ImportSelector`, `ImportBeanDefinitionRegistrar`; fully-qualified names for imported classes | Classes only; imported classes get simple bean names | No reflection, no packages in Dart |
+| `SmartLifecycle.stop(Runnable callback)`, per-phase stop timeouts | `stopWithCallback(callback)`; the processor does not wait for a later callback | No overloading; synchronous shutdown |
+| A `null` result reaches an `@AfterReturning` parameter of any type | Only `Object?` / `dynamic` (and nullable types) get `null` | Dart null safety |
+| Jackson writes Java enums by name (`IN_STOCK`) | Enums go over the wire by their Dart name (`inStock`); use `@JsonValue` to talk to Java peers | Dart naming conventions |
+| Jackson `BigInteger` as a JSON number | `BigInt` as a string | `jsonEncode` has no arbitrary-precision numbers |
+| Jackson's `null` / missing value for a primitive is `0` / `false` (unless `FAIL_ON_NULL_FOR_PRIMITIVES`) | A JSON `null` or missing value for a non-nullable type is an error | Dart null safety |
+| `spring.jackson.time-zone` with any zone ID | `UTC` / `Z` or a fixed offset (`+02:00`, `GMT+2`) | Dart has no time zone database |
+| SpEL `matches` and String methods are Java's | Dart's `RegExp` syntax and Dart's String methods (`replaceAll` with a string is literal) | Dart runtime |
+| SpEL `T(java.lang.Math)` finds any class | `T()` needs registered types and takes Dart type names (`T(int)`) | No reflection |
+| `ReloadableResourceBundleMessageSource` reload checks every resource's timestamp | File resources by modification time; others are re-read; preloaded (async-only) resources change only through `preload()` | Not every resource has a timestamp or sync reads |
 
 ## Roadmap
 

@@ -37,7 +37,10 @@ enum FeignLoggerLevel {
 /// spring.cloud.openfeign.client.config.catalog.logger-level=basic
 /// spring.cloud.openfeign.client.config.catalog.dismiss404=true
 /// spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
+/// spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en
+/// spring.cloud.openfeign.client.config.catalog.follow-redirects=false
 /// spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=1s
+/// spring.cloud.openfeign.client.decode-slash=false
 /// ```
 ///
 /// The `event-stream.*` keys (reconnection of `EventStream<T>` methods)
@@ -46,10 +49,13 @@ final class FeignClientConfig {
   /// Settings with these values.
   const FeignClientConfig({
     this.url,
-    this.readTimeout,
+    this.readTimeout = defaultReadTimeout,
     this.loggerLevel = FeignLoggerLevel.none,
     this.dismiss404 = false,
     this.defaultRequestHeaders = const {},
+    this.defaultQueryParameters = const {},
+    this.followRedirects = true,
+    this.decodeSlash = true,
     this.eventStreamReconnect = true,
     this.eventStreamReconnectDelay = const Duration(seconds: 3),
     this.eventStreamMaxAttempts,
@@ -58,18 +64,42 @@ final class FeignClientConfig {
   /// The base URL (when `@FeignClient` has none).
   final String? url;
 
-  /// The longest a call may take, reading the response included.
+  /// The default `read-timeout`: 60 s, like Feign's `Request.Options()`.
+  static const defaultReadTimeout = Duration(seconds: 60);
+
+  /// The default `connect-timeout`: 10 s, like Feign's `Request.Options()`.
+  static const defaultConnectTimeout = Duration(seconds: 10);
+
+  /// The longest wait for data: for the response after the request was
+  /// sent, then between two chunks of the body — not a limit for the whole
+  /// call, like Feign's read timeout (`read-timeout`, default 60 s; `0`:
+  /// none). For an event stream it covers the wait for the response only.
   final Duration? readTimeout;
 
   /// What is logged.
   final FeignLoggerLevel loggerLevel;
 
-  /// Whether a 404 gives `null` (nullable or `void` results) instead of an
-  /// exception.
+  /// Whether a 404 gives `null` (nullable results) or a `ResponseEntity`
+  /// instead of an exception; `void` methods still throw, like Feign.
+  /// `@FeignClient(dismiss404: true)` turns it on too.
   final bool dismiss404;
 
-  /// Headers sent with every request.
+  /// Headers sent with every request that has none of that name after the
+  /// interceptors ran.
   final Map<String, String> defaultRequestHeaders;
+
+  /// Query parameters added to every request that has none of that name
+  /// after the interceptors ran (`default-query-parameters.<name>`; a
+  /// comma-separated value gives several).
+  final Map<String, List<String>> defaultQueryParameters;
+
+  /// Whether redirects are followed (`follow-redirects`, default `true`).
+  final bool followRedirects;
+
+  /// Whether a `/` in a `@PathVariable` value stays a `/` instead of
+  /// `%2F` (`spring.cloud.openfeign.client.decode-slash`, for all clients;
+  /// default `true`).
+  final bool decodeSlash;
 
   /// Whether an event stream connects again after its connection ended or
   /// broke (`event-stream.reconnect`, default `true`).
@@ -102,14 +132,30 @@ final class FeignClientConfig {
       ..._headers(environment, '${_prefix}default.default-request-headers.'),
       ..._headers(environment, '$_prefix$name.default-request-headers.'),
     };
+    final queries = <String, String>{
+      ..._headers(environment, '${_prefix}default.default-query-parameters.'),
+      ..._headers(environment, '$_prefix$name.default-query-parameters.'),
+    };
+    final readTimeout = duration('read-timeout') ?? defaultReadTimeout;
     return FeignClientConfig(
       url: get('url'),
-      readTimeout: duration('read-timeout'),
+      readTimeout: readTimeout == Duration.zero ? null : readTimeout,
       loggerLevel: level == null
           ? FeignLoggerLevel.none
           : FeignLoggerLevel.parse(level),
       dismiss404: get('dismiss404')?.trim().toLowerCase() == 'true',
       defaultRequestHeaders: headers,
+      defaultQueryParameters: {
+        for (final MapEntry(:key, :value) in queries.entries)
+          key: [for (final item in value.split(',')) item.trim()],
+      },
+      followRedirects: get('follow-redirects')?.trim().toLowerCase() != 'false',
+      decodeSlash:
+          environment
+              .getProperty('spring.cloud.openfeign.client.decode-slash')
+              ?.trim()
+              .toLowerCase() !=
+          'false',
       eventStreamReconnect:
           get('event-stream.reconnect')?.trim().toLowerCase() != 'false',
       eventStreamReconnectDelay:
@@ -123,12 +169,14 @@ final class FeignClientConfig {
   }
 
   /// The connection timeout of the default transport
-  /// (`spring.cloud.openfeign.client.config.default.connect-timeout`).
+  /// (`spring.cloud.openfeign.client.config.default.connect-timeout`;
+  /// [defaultConnectTimeout] when it is not set, `0` for none).
   static Duration? connectTimeout(Environment environment) {
     final value = environment.getProperty('${_prefix}default.connect-timeout');
-    return value == null
-        ? null
+    final timeout = value == null
+        ? defaultConnectTimeout
         : DefaultConversionService().convert<Duration>(value);
+    return timeout == Duration.zero ? null : timeout;
   }
 
   static Map<String, String> _headers(Environment environment, String prefix) {

@@ -35,10 +35,28 @@ void main() {
       expect(factory.getBean<Greeter>(), isA<French>());
     });
 
-    test('removing the definition forgets the singleton', () {
+    test('a definition replaces a registered singleton, like Spring', () {
+      final factory = DefaultListableBeanFactory()
+        ..registerSingleton('greeter', English(), types: [Greeter])
+        ..registerBeanDefinition(
+          BeanDefinition<French>(
+            name: 'greeter',
+            types: const [French, Greeter],
+            create: (_) => French(),
+          ),
+        );
+      expect(factory.getBean<Greeter>(), isA<French>());
+    });
+
+    test('destroySingleton forgets a registered singleton', () {
       final factory = DefaultListableBeanFactory()
         ..registerSingleton('greeter', English(), types: [Greeter]);
-      factory.removeBeanDefinition('greeter');
+      // Not a bean definition, like in Spring.
+      expect(
+        () => factory.removeBeanDefinition('greeter'),
+        throwsA(isA<NoSuchBeanDefinitionException>()),
+      );
+      factory.destroySingleton('greeter');
       expect(factory.containsSingleton('greeter'), isFalse);
       expect(factory.getSingleton('greeter'), isNull);
       factory.registerSingleton('greeter', French(), types: [Greeter]);

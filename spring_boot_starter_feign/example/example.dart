@@ -81,7 +81,7 @@ Future<void> main() async {
     clientName: 'catalog',
   );
   await BearerTokenRequestInterceptor(() => 'secret').apply(template);
-  print(template.headers[HttpHeaders.authorization]); // Bearer secret
+  print(template.headers[HttpHeaders.authorizationHeader]); // Bearer secret
 
   // The pauses of the default retryer.
   const retryer = DefaultRetryer(maxAttempts: 3);

@@ -39,7 +39,7 @@ final response = await transport.send(
   HttpRequest(
     method: HttpMethod.get,
     url: Uri.parse('https://api.neon.books/books/978-0'),
-    headers: HttpHeaders({HttpHeaders.accept: MediaType.applicationJson}),
+    headers: HttpHeaders({HttpHeaders.acceptHeader: MediaType.applicationJson}),
     timeout: const Duration(seconds: 5),
   ),
 );

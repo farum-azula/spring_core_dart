@@ -78,7 +78,9 @@ void main() {
   group('to String and between numbers', () {
     test('toString and readable forms', () {
       expect(service.convert<String>(5), '5');
-      expect(service.convert<String>(const Duration(minutes: 3)), '3m');
+      expect(service.convert<String>(const Duration(minutes: 3)), 'PT3M');
+      expect(service.convert<String>(['a', 'b']), 'a,b');
+      expect(service.convert<String>({1, 2}), '1,2');
       expect(
         service.convert<String>(DateTime.utc(2026)),
         '2026-01-01T00:00:00.000Z',
@@ -161,6 +163,12 @@ void main() {
         throwsA(isA<ConversionFailedException>()),
       );
     });
+
+    test('lenient names like Boot (dashes, underscores, case)', () {
+      for (final name in ['dark-blue', 'DARK_BLUE', 'darkBlue', 'Dark Blue']) {
+        expect(enums.convert<Color>(name), Color.darkBlue, reason: name);
+      }
+    });
   });
 
   group('registry', () {
@@ -241,6 +249,9 @@ void main() {
       expect(DurationStyle.parse('PT1,5S'), const Duration(milliseconds: 1500));
       expect(DurationStyle.parse('-PT1M'), const Duration(minutes: -1));
       expect(DurationStyle.parse('P2D'), const Duration(days: 2));
+      expect(DurationStyle.parse('P-1D'), const Duration(days: -1));
+      expect(DurationStyle.parse('-PT5S'), const Duration(seconds: -5));
+      expect(DurationStyle.parse('-P-1D'), const Duration(days: 1));
       for (final bad in ['P', 'PT', 'abc', '1.5s']) {
         expect(
           () => DurationStyle.parse(bad),
@@ -261,6 +272,25 @@ void main() {
         '1500ms',
       );
       expect(DurationStyle.format(const Duration(microseconds: 3)), '3us');
+    });
+
+    test('formatIso prints like java.time.Duration.toString', () {
+      String iso(Duration d) => DurationStyle.formatIso(d);
+      expect(iso(Duration.zero), 'PT0S');
+      expect(iso(const Duration(days: 1)), 'PT24H');
+      expect(iso(const Duration(minutes: 90)), 'PT1H30M');
+      expect(iso(const Duration(seconds: 61)), 'PT1M1S');
+      expect(iso(const Duration(milliseconds: 500)), 'PT0.5S');
+      expect(iso(const Duration(microseconds: 1)), 'PT0.000001S');
+      expect(iso(const Duration(seconds: -5)), 'PT-5S');
+      expect(iso(const Duration(minutes: -90)), 'PT-1H-30M');
+      expect(iso(const Duration(milliseconds: -1500)), 'PT-1.5S');
+      for (final d in [
+        const Duration(hours: 49, seconds: 3, milliseconds: 20),
+        const Duration(milliseconds: -250),
+      ]) {
+        expect(DurationStyle.parse(iso(d)), d);
+      }
     });
   });
 }

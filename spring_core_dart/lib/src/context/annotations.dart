@@ -201,6 +201,7 @@ class Bean {
     this.initMethod,
     this.destroyMethod = inferMethod,
     this.autowireCandidate = true,
+    this.defaultCandidate = true,
   });
 
   /// Default for [destroyMethod]: call a public no-argument `close()`,
@@ -221,8 +222,21 @@ class Bean {
   /// string disables the inferred method.
   final String? destroyMethod;
 
-  /// Whether the bean is a candidate for injection by type.
+  /// Whether the bean is a candidate for injection by type at all (also
+  /// with a qualifier); lookups by name still find it.
   final bool autowireCandidate;
+
+  /// Whether the bean is injected by its plain type, like Spring 6.2's
+  /// `@Bean(defaultCandidate = false)`: when `false` it is injected only
+  /// where a qualifier (`@Qualifier`, bean name or alias) selects it, and
+  /// `@ConditionalOnBean` / `@ConditionalOnMissingBean` ignore it.
+  ///
+  /// ```dart
+  /// @Bean(defaultCandidate: false)
+  /// @Qualifier('audit')
+  /// Executor auditExecutor() => Executor.single();
+  /// ```
+  final bool defaultCandidate;
 }
 
 /// Sets the bean scope, like Spring's `@Scope`. Without it a bean is a

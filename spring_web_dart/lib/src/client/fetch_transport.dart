@@ -10,10 +10,12 @@ import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 
 /// An [HttpTransport] on the browser's `fetch` (Flutter web, Dart on the
-/// web), through `dart:js_interop`. Follows redirects; the request's
-/// timeout aborts the request (`AbortController`). Non-2xx responses are
-/// ordinary responses; network failures (also CORS) throw
-/// [HttpTransportException].
+/// web), through `dart:js_interop`. Follows redirects unless the request
+/// says not to (`redirect: 'manual'`: the browser then gives an opaque
+/// response with status 0). The request's `timeout` (whole exchange) and
+/// `readTimeout` (each wait for data) abort the request
+/// (`AbortController`). Non-2xx responses are ordinary responses; network
+/// failures (also CORS) throw [HttpTransportException].
 ///
 /// ```dart
 /// import 'package:spring_web_dart/browser.dart';
@@ -32,31 +34,57 @@ class FetchHttpTransport implements HttpTransport {
 
   @override
   Future<HttpResponse> send(HttpRequest request) async {
-    final (response, headers, timer, _) = await _fetchResponse(request);
+    final (response, headers, timer, abort) = await _fetchResponse(request);
+    // The read timeout: the longest wait for each chunk of the body.
+    final idle = _Deadline(request.readTimeout, () => abort.abort());
     try {
-      final buffer = await response.arrayBuffer().toDart;
+      final Uint8List body;
+      // Reading chunk by chunk restarts the read timeout.
+      final reader = request.readTimeout == null
+          ? null
+          : response.body?.getReader();
+      if (reader == null) {
+        body = (await response.arrayBuffer().toDart).toDart.asUint8List();
+      } else {
+        final bytes = BytesBuilder(copy: false);
+        while (true) {
+          final chunk = await reader.read().toDart;
+          if (chunk.done) {
+            break;
+          }
+          idle.restart();
+          if (chunk.value case final value?) {
+            bytes.add(value.toDart);
+          }
+        }
+        body = bytes.takeBytes();
+      }
       return HttpResponse(
         response.status,
         headers: headers,
-        body: buffer.toDart.asUint8List(),
+        body: body,
         request: request,
       );
     } catch (error) {
       throw HttpTransportException(
-        'request failed: $error',
+        idle.timedOut
+            ? 'no data within ${request.readTimeout!.inMilliseconds} ms '
+                  '(read timeout)'
+            : 'request failed: $error',
         request: request,
         cause: error,
-        isTimeout: timer.timedOut,
+        isTimeout: timer.timedOut || idle.timedOut,
       );
     } finally {
       timer.cancel();
+      idle.cancel();
     }
   }
 
   @override
   Future<StreamedHttpResponse> stream(HttpRequest request) async {
     final (response, headers, timer, abort) = await _fetchResponse(request);
-    // The timeout covers the headers only.
+    // The timeouts cover the headers only.
     timer.cancel();
     final reader = response.body?.getReader();
     var cancelled = false;
@@ -108,25 +136,30 @@ class FetchHttpTransport implements HttpTransport {
   ) async {
     final controller = _AbortController();
     final timer = _Deadline(request.timeout, () => controller.abort());
+    final wait = _Deadline(request.readTimeout, () => controller.abort());
     try {
       final headers = JSObject();
       request.headers.toMap().forEach(
         (name, value) => headers.setProperty(name.toJS, value.toJS),
       );
       final body = request.body;
+      final redirect = (request.followRedirects ? 'follow' : 'manual').toJS;
       final init = body == null
           ? _RequestInit(
               method: request.method.value.toJS,
               headers: headers,
               signal: controller.signal,
+              redirect: redirect,
             )
           : _RequestInit(
               method: request.method.value.toJS,
               headers: headers,
               body: (body is Uint8List ? body : Uint8List.fromList(body)).toJS,
               signal: controller.signal,
+              redirect: redirect,
             );
       final response = await _fetch(request.url.toString().toJS, init).toDart;
+      wait.cancel();
       final responseHeaders = HttpHeaders();
       response.headers.forEach(
         ((JSString value, JSString name, JSAny? _) => responseHeaders.add(
@@ -137,14 +170,17 @@ class FetchHttpTransport implements HttpTransport {
       return (response, responseHeaders, timer, controller);
     } catch (error) {
       timer.cancel();
-      final timeout = request.timeout;
+      wait.cancel();
       throw HttpTransportException(
         timer.timedOut
-            ? 'no response within ${timeout!.inMilliseconds} ms'
+            ? 'no response within ${request.timeout!.inMilliseconds} ms'
+            : wait.timedOut
+            ? 'no data within ${request.readTimeout!.inMilliseconds} ms '
+                  '(read timeout)'
             : 'request failed: $error',
         request: request,
         cause: error,
-        isTimeout: timer.timedOut,
+        isTimeout: timer.timedOut || wait.timedOut,
       );
     }
   }
@@ -162,6 +198,7 @@ extension type _RequestInit._(JSObject _) implements JSObject {
     JSObject headers,
     JSAny body,
     _AbortSignal signal,
+    JSString redirect,
   });
 }
 
@@ -196,19 +233,28 @@ extension type _ReadResult._(JSObject _) implements JSObject {
 
 /// Aborts a request when its timeout runs out.
 final class _Deadline {
-  _Deadline(Duration? timeout, void Function() abort) {
-    if (timeout != null) {
-      _timer = Timer(timeout, () {
-        timedOut = true;
-        abort();
-      });
-    }
+  _Deadline(this._timeout, this._abort) {
+    restart();
   }
 
+  final Duration? _timeout;
+  final void Function() _abort;
   Timer? _timer;
 
   /// Whether the timeout ran out.
   bool timedOut = false;
+
+  /// Starts the timeout again (for an idle timeout: data arrived).
+  void restart() {
+    final timeout = _timeout;
+    _timer?.cancel();
+    if (timeout != null && !timedOut) {
+      _timer = Timer(timeout, () {
+        timedOut = true;
+        _abort();
+      });
+    }
+  }
 
   void cancel() => _timer?.cancel();
 }

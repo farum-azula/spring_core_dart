@@ -51,7 +51,10 @@ void main() {
         '${request.url}',
         'https://stream.wikimedia.org/v2/stream/recentchange',
       );
-      expect(request.headers[HttpHeaders.accept], MediaType.textEventStream);
+      expect(
+        request.headers[HttpHeaders.acceptHeader],
+        MediaType.textEventStream,
+      );
       // From wikimedia.user-agent in application.properties.
       expect(
         request.headers['User-Agent'],

@@ -8,9 +8,10 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// ```dart
 /// final response = await catalog.create(book); // ResponseEntity<Book>
 /// if (response.statusCode == HttpStatus.created) {
-///   print(response.headers['Location']);
+///   print(response.headers.location);
 ///   print(response.body!.title);
 /// }
+/// response.statusCode.is2xxSuccessful; // true
 /// ResponseEntity.ok(book);
 /// ```
 ///
@@ -18,20 +19,23 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// ```java
 /// ResponseEntity<Book> response = catalog.create(book);
 /// response.getStatusCode(); response.getHeaders().getLocation(); response.getBody();
+/// response.getStatusCode().is2xxSuccessful();
 /// ResponseEntity.ok(book);
 /// ```
 class ResponseEntity<T> {
   /// A response with [statusCode], [body] and [headers].
-  ResponseEntity(this.statusCode, {this.body, HttpHeaders? headers})
-    : headers = headers ?? HttpHeaders();
+  ResponseEntity(int statusCode, {this.body, HttpHeaders? headers})
+    : statusCode = HttpStatusCode(statusCode),
+      headers = headers ?? HttpHeaders();
 
   /// A `200 OK` response with [body].
   ResponseEntity.ok(T this.body)
     : statusCode = HttpStatus.ok,
       headers = HttpHeaders();
 
-  /// The status code.
-  final int statusCode;
+  /// The status code (an `int` with `is2xxSuccessful`, ...), like
+  /// Spring's `getStatusCode()`.
+  final HttpStatusCode statusCode;
 
   /// The body, if any.
   final T? body;
@@ -40,10 +44,15 @@ class ResponseEntity<T> {
   final HttpHeaders headers;
 
   /// Whether the status is 2xx.
-  bool get isSuccess => HttpStatus.isSuccess(statusCode);
+  bool get isSuccess => statusCode.is2xxSuccessful;
 
   @override
   String toString() =>
-      'ResponseEntity($statusCode ${HttpStatus.reasonPhrase(statusCode)}'
+      'ResponseEntity($statusCode${_phrase(statusCode)}'
       '${body == null ? '' : ', $body'})';
+
+  static String _phrase(int code) => switch (HttpStatus.resolve(code)) {
+    final status? => ' ${status.reasonPhrase}',
+    null => '',
+  };
 }

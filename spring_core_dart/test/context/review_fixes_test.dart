@@ -31,7 +31,7 @@ class Logging implements Notifier {
 
 class Marker {}
 
-class Worker implements SmartLifecycle {
+class Worker with SmartLifecycle {
   Worker(this.name, this.log, {this.failOnStop = false});
   final String name;
   final List<String> log;

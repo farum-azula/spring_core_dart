@@ -3,7 +3,7 @@ import 'package:spring_core_dart/src/context/message/message_source.dart';
 
 /// Shared logic of message sources, like Spring's `AbstractMessageSource`.
 ///
-/// Lookup for code `c` and locale `ru_RU`: `ru_RU` → `ru` → [defaultLocale]
+/// Lookup for code `c` and locale `ru_RU`: `ru_RU` → `ru` → [fallbackLocale]
 /// chain → base (no locale) → [commonMessages] → parent. Locales with a
 /// script follow Java's `ResourceBundle`: `zh_Hant_TW` → `zh_Hant` →
 /// `zh_TW` → `zh`. Arguments that are [MessageSourceResolvable]s are
@@ -60,11 +60,14 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   Map<String, String>? commonMessages;
 
   /// Locale tried after the requested one (like Spring's default locale);
-  /// empty means none.
+  /// empty means none (see [fallbackLocale]).
   String defaultLocale = '';
 
-  /// Whether [defaultLocale] is tried when the requested locale misses.
-  bool fallbackToDefaultLocale = true;
+  /// The locale tried when the requested one misses (`''` = none):
+  /// [defaultLocale] here; `ReloadableResourceBundleMessageSource` falls
+  /// back to the system locale without one, like Spring's
+  /// `AbstractResourceBasedMessageSource.getDefaultLocale()`.
+  String get fallbackLocale => defaultLocale;
 
   /// The raw message for [code] in exactly [locale] (`''` = base), or
   /// `null`. [locale] is already normalized (see `Locales.normalize`).
@@ -75,7 +78,7 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   ///
   /// Calls [resolveCode] locale by locale; sources with several bundles
   /// override it to search bundle by bundle (see
-  /// `PropertiesMessageSource`).
+  /// `ReloadableResourceBundleMessageSource`).
   String? resolveCodeInLocales(String code, List<String> locales) {
     for (final locale in locales) {
       final pattern = resolveCode(code, locale);
@@ -174,11 +177,9 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   /// Locales tried for [locale], most specific first, ending with `''`.
   List<String> localeChain(String? locale) {
     final chain = <String>[...Locales.candidates(locale ?? '')];
-    if (fallbackToDefaultLocale) {
-      for (final candidate in Locales.candidates(defaultLocale)) {
-        if (!chain.contains(candidate)) {
-          chain.add(candidate);
-        }
+    for (final candidate in Locales.candidates(fallbackLocale)) {
+      if (!chain.contains(candidate)) {
+        chain.add(candidate);
       }
     }
     return chain..add('');

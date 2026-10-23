@@ -37,9 +37,57 @@ final class FailureAnalysis {
       'Action:\n\n$action\n';
 }
 
+/// Analyzes a startup failure, like Spring Boot's `FailureAnalyzer`:
+/// returns a [FailureAnalysis] for failures it recognises, else `null`.
+///
+/// Register one on `SpringApplication(failureAnalyzers: ...)` or declare
+/// it as a bean (a starter can put it in its auto-configuration); they are
+/// consulted before the built-in analysis. [analyze] gets the failure as
+/// thrown; walk its causes yourself if needed.
+///
+/// ```dart
+/// class PortInUseFailureAnalyzer implements FailureAnalyzer {
+///   @override
+///   FailureAnalysis? analyze(Object failure) => failure is PortInUseException
+///       ? FailureAnalysis(
+///           'Port ${failure.port} is already in use.',
+///           'Stop the other process or set server.port.',
+///           failure,
+///         )
+///       : null;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class PortInUseFailureAnalyzer
+///     extends AbstractFailureAnalyzer<PortInUseException> {
+///   @Override
+///   protected FailureAnalysis analyze(Throwable root, PortInUseException ex) {
+///     return new FailureAnalysis("Port " + ex.getPort() + " is in use.",
+///         "Stop the other process or set server.port.", ex);
+///   }
+/// }
+/// ```
+abstract interface class FailureAnalyzer {
+  /// The analysis of [failure], or `null` if this analyzer does not know it.
+  FailureAnalysis? analyze(Object failure);
+}
+
 /// Turns startup errors into [FailureAnalysis] reports, like Spring Boot's
 /// `FailureAnalyzers`; returns `null` for errors it does not recognise.
-FailureAnalysis? analyzeFailure(Object error) {
+/// [analyzers] are asked first, in order (the first analysis wins), then
+/// the built-in analysis.
+FailureAnalysis? analyzeFailure(
+  Object error, {
+  Iterable<FailureAnalyzer> analyzers = const [],
+}) {
+  for (final analyzer in analyzers) {
+    final analysis = analyzer.analyze(error);
+    if (analysis != null) {
+      return analysis;
+    }
+  }
   // The most specific cause wins (creation errors wrap the real problem).
   final chain = <Object>[error];
   for (var cause = _causeOf(error); cause != null; cause = _causeOf(cause)) {

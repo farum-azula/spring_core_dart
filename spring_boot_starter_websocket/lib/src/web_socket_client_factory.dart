@@ -63,7 +63,7 @@ final class WebSocketClientFactory
   @override
   void destroy() {
     for (final handler in _handlers) {
-      unawaited(handler.session.dispose());
+      unawaited(handler.connectionManager.dispose());
     }
     _handlers.clear();
   }

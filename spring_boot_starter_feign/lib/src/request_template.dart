@@ -4,17 +4,24 @@ import 'dart:convert';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 /// The request about to be sent, as [RequestInterceptor]s see it (Feign's
-/// `RequestTemplate`): change the URL, headers or body.
+/// `RequestTemplate`): change the URL, headers or body. Every attempt of a
+/// call (retries too) starts from a new template.
+///
+/// [header] and [query] add a value like Feign's; to replace a header,
+/// remove it first (or use [headers]`.set`).
 ///
 /// ```dart
 /// template
 ///   ..header('X-Request-Id', uuid())
-///   ..query('lang', 'en');
+///   ..query('lang', 'en')
+///   ..removeHeader('Authorization')
+///   ..header('Authorization', 'Bearer $token');
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// template.header("X-Request-Id", uuid()).query("lang", "en");
+/// template.header("X-Request-Id", uuid()).query("lang", "en")
+///     .removeHeader("Authorization").header("Authorization", "Bearer " + token);
 /// ```
 class RequestTemplate {
   /// A request of [method] to [url] by the method [methodKey] of client
@@ -46,8 +53,12 @@ class RequestTemplate {
   /// The `@FeignClient` name.
   final String clientName;
 
-  /// Sets header [name] to [value] (replacing it).
-  void header(String name, String value) => headers.set(name, value);
+  /// Adds [value] to the values of header [name], like Feign's
+  /// `header(name, values...)`.
+  void header(String name, String value) => headers.add(name, value);
+
+  /// Removes every value of header [name], like Feign's `removeHeader`.
+  void removeHeader(String name) => headers.remove(name);
 
   /// Adds query parameter [name] = [value].
   void query(String name, String value) {
@@ -98,7 +109,7 @@ class BasicAuthRequestInterceptor implements RequestInterceptor {
 
   @override
   void apply(RequestTemplate template) =>
-      template.header(HttpHeaders.authorization, _value);
+      template.header(HttpHeaders.authorizationHeader, _value);
 }
 
 /// Adds `Authorization: Bearer <token>`, asking [token] for each request
@@ -118,7 +129,7 @@ class BearerTokenRequestInterceptor implements RequestInterceptor {
   Future<void> apply(RequestTemplate template) async {
     final value = await token();
     if (value != null) {
-      template.header(HttpHeaders.authorization, 'Bearer $value');
+      template.header(HttpHeaders.authorizationHeader, 'Bearer $value');
     }
   }
 }

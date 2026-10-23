@@ -382,6 +382,31 @@ void main() {
       expect(log, ['string']);
     });
 
+    test(
+      'afterReturning on a void method: Object? gets null, Object skips',
+      () {
+        // As generated for `@AfterReturning void any(Object? result)` and
+        // `void some(Object result)`.
+        final proxy = factory.createProxy(PriceService(), [
+          advisor(
+            interceptor(
+              AdviceKind.afterReturning,
+              (a, jp, v) => a.record('any:$v'),
+            ),
+          ),
+          advisor(
+            interceptor(
+              AdviceKind.afterReturning,
+              (a, jp, v) => a.record('some:${v as Object}'),
+              accepts: (v) => v is Object,
+            ),
+          ),
+        ]) as Service;
+        proxy.reset();
+        expect(log, ['any:null']);
+      },
+    );
+
     test('around can replace arguments and results; join point info', () {
       final proxy = factory.createProxy(PriceService(), [
         advisor(

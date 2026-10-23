@@ -21,6 +21,7 @@ library;
 export 'package:spring_core_dart/src/beans/aware.dart';
 export 'package:spring_core_dart/src/beans/bean_definition.dart';
 export 'package:spring_core_dart/src/beans/bean_factory.dart';
+export 'package:spring_core_dart/src/beans/bean_factory_utils.dart';
 export 'package:spring_core_dart/src/beans/bean_wrapper.dart';
 export 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 export 'package:spring_core_dart/src/beans/exceptions.dart';
