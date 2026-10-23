@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - `SpringApplication.runAsync` / `reloadAsync` refresh with the context's `refreshAsync()` (asynchronous `@PostConstruct` / init methods are awaited before the runners) and close with `closeAsync()`; `run` fails for an asynchronous init callback
 - breaking: `SpringApplication.run` and `ApplicationFailedEvent.exception` report a missing or ambiguous dependency as an `UnsatisfiedDependencyException` (its `cause` is the `NoSuchBeanDefinitionException` / `NoUniqueBeanDefinitionException`); the failure analysis is unchanged

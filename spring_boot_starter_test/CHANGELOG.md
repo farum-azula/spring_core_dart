@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - `ApplicationContextRunner` attaches relaxed names to its environment, like an application started by `SpringApplication` (`app.read-timeout` finds `app.readTimeout`)
 - breaking: `ApplicationContextRunner.withBean` registers an extra bean before the configurations are processed, like Boot's (a `@ConditionalOnMissingBean` backs off; a missing back-off gives a second bean), instead of replacing definitions; `withBeanOverride` replaces a bean like `BeanOverride`; `ApplicationContextRunner.beans` holds bean definitions, the overrides moved to `overrides`

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - `@ComponentScan(includeFilters:, excludeFilters:, useDefaultFilters:, lazyInit:)` with `Filter` / `FilterType` (`annotation`, `assignableType`, `regex`), like Spring's `@ComponentScan.Filter`; read by the generator at build time (needs the matching `spring_core_dart_generator`)
 - AOP: `ExpressionPointcut` rejects a binding the expression never uses (an advice parameter the pointcut does not bind), like AspectJ's "formal unbound in pointcut", instead of passing `null` to the advice

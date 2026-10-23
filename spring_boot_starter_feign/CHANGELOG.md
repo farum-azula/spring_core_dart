@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - `@GetMapping()` without a path calls the `url` and `path` of the client itself.
 - `required` and `defaultValue` of `@RequestParam` / `@RequestHeader` and `required` of `@PathVariable`: `defaultValue` is sent for a `null` argument; a required `null` fails the call with an `ArgumentError` naming the parameter before anything is sent; a `null` that is not required leaves a query parameter or header out (a path variable becomes an empty string).

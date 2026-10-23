@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - `spring.task.scheduling.shutdown.await-termination` / `await-termination-period`: the context's `closeAsync()` waits for the runs going on (`TimerTaskScheduler(awaitTermination:, awaitTerminationPeriod:)`, `runningTasks`; `destroy()` returns the `Future`)
 - cron day of week like Spring's: MON-SUN are 1-7 and Sunday at the start of a range is 0, so `SAT-SUN`, `MON-SUN`, `FRI-SUN` parse

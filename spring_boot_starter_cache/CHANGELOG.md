@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - `@CacheConfig` defaults apply like Spring's: `keyGenerator` only to operations without `key` and `keyGenerator` (a `key` next to `@CacheConfig(keyGenerator:)` no longer throws), `cacheManager` / `cacheResolver` only to operations without either.
 - Breaking: cache annotations are validated when a proxied bean is created (every member, at startup) instead of at the first call: invalid combinations now fail the start.

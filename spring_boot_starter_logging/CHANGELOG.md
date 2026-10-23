@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.7
 
 - Breaking: Spring Boot's default console and file lines (`LogPattern.defaultConsolePattern` / `defaultFilePattern`, replacing `LogPattern.defaultPattern`): ISO-8601 time with offset, PID, `--- [app]`, `[isolate]`, `%-40.40logger{39} :`; `logging.pattern.dateformat`, `logging.pattern.level`, `logging.pattern.correlation`, `logging.exception-conversion-word`, `logging.include-application-name` / `-group`, `spring.output.ansi.enabled`
 - Breaking: `LogPattern` follows Logback: format modifiers (`%-40.40`, `%.-10`), `%logger{n}` abbreviation, `%t` / `%thread`, Java date patterns (`'T'`, `XXX`; `%d` alone is `yyyy-MM-dd HH:mm:ss,SSS`), `%ex` without a leading line break (write `%n%ex`), errors printed also without `%ex` (`%nopex` turns that off), Boot's `%clr(...)`, `%esb`, `%wEx`, `${PID}` / `${NAME:-default}`; anything it cannot parse fails the start; appenders use `LogPattern.formatLine`
