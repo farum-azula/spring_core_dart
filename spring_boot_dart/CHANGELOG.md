@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `SpringApplication.runAsync` / `reloadAsync` refresh with the context's `refreshAsync()` (asynchronous `@PostConstruct` / init methods are awaited before the runners) and close with `closeAsync()`; `run` fails for an asynchronous init callback
+- breaking: `SpringApplication.run` and `ApplicationFailedEvent.exception` report a missing or ambiguous dependency as an `UnsatisfiedDependencyException` (its `cause` is the `NoSuchBeanDefinitionException` / `NoUniqueBeanDefinitionException`); the failure analysis is unchanged
+- `SpringApplication(defaultProperties:)` / `setDefaultProperties` (Boot's `setDefaultProperties`): the `defaultProperties` source below every other one, config files included; `additionalProfiles:` (Boot's `setAdditionalProfiles`)
 - `@AutoConfiguration` is `proxyBeanMethods: false`, like Boot's: its `@Bean` methods are called as written
 - `@ConfigurationProperties` bind collections like Boot's `Binder`: indexed lists (`app.hosts[0]`, YAML lists, `APP_HOSTS_0_`) next to comma lists, maps (`app.headers.X-Shop`, `app.headers[x.y]`; keys keep their form), lists and maps of nested objects (`app.servers[0].name`, `app.backends.eu.url`); a list from a higher-precedence source replaces the whole list, map entries merge per key; elements are converted through the conversion service and failures name the property (`app.ports[0]: failed to convert to int (was "x")`). `Binder` / `BindResult` bind outside of a properties class
 - constructor binding: a `@ConfigurationProperties` class whose only constructor has parameters is created through it, parameters bound from properties, with `@DefaultValue` (Boot's), Dart defaults, `null` for nullable parameters, nested constructor-bound classes and collections; a missing required value fails the start naming the property (`ConstructorBound`, used by the generated code)
@@ -16,6 +19,12 @@
 - `spring.main.lazy-initialization` (`LazyInitializationBeanFactoryPostProcessor`) and `spring.main.allow-bean-definition-overriding` (default `false`)
 - dotted `spring.messages.basename` values are paths (`config.i18n.messages` → `config/i18n/messages`), like Boot
 - `JacksonAutoConfiguration` registers `JsonSerializer` / `JsonDeserializer` beans (Boot's `@JsonComponent`) and reads `spring.jackson.time-zone` (`UTC` or a fixed offset such as `+02:00`)
+- breaking: the JSON property order is Jackson 3's / Boot 4's (sorted by JSON name, constructor parameters first); `spring.jackson.mapper.sort-properties-alphabetically=false` restores declaration order
+- breaking: auto-configurations are registered in Boot's `AutoConfigurationSorter` order (module name, `AutoConfigurationModule.order`, `before` / `after`; a cycle fails the start), not in the order they are listed
+- `AutoConfigurationModule(before:, after:)`; `SpringApplication(autoConfigurationMetadata:)` carries them from the generated code
+- auto-configuration exclusion: `@SpringBootApplication(exclude:, excludeName:)`, `SpringApplication(exclude:, excludeName:)` and `spring.autoconfigure.exclude` (types, class names or module names), applied before conditions run; excluding a type that is no auto-configuration fails the start
+- `SpringApplication.exit(context, [generators])` with `ExitCodeGenerator` beans (highest non-zero code wins), `ExitCodeEvent`, `ExitCodeExceptionMapper` beans and `SpringApplication.exitCodeOf(error)` for failed runs
+- shutdown hook: with `spring.main.register-shutdown-hook=true` or `SpringApplication(registerShutdownHook: true)` the context is closed on SIGINT / SIGTERM and the process exits with `130` / `143`; off by default, unlike Boot, because the signal listener keeps a Dart program alive until the context closes; nothing on the web
 
 ## 0.1.6
 

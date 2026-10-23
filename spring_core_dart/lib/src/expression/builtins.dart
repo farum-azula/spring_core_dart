@@ -1,4 +1,7 @@
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
+import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/spel_patterns.dart';
+import 'package:spring_core_dart/src/expression/spel_type.dart';
 
 /// Reads and writes map entries as properties (`map.key`), like Spring's
 /// `MapAccessor`.
@@ -242,13 +245,22 @@ final class BuiltinPropertyAccessor implements PropertyAccessor {
 }
 
 /// Common methods of core Dart types, with Dart names and the names
-/// Spring users know (`size()`, `toUpperCase()`, `charAt()`, `equals()`).
+/// Spring users know (`size()`, `toUpperCase()`, `charAt()`, `equals()`,
+/// `getOrDefault()`, `putIfAbsent()`).
 ///
-/// Covers `String`, `List`, `Iterable`, `Map`, `num`, `DateTime` and
-/// `Duration`, plus `toString()`, `hashCode()`, `equals()` and
+/// Covers `String`, `List`, `Set`, `Iterable`, `Map`, `num`, `DateTime`
+/// and `Duration`, plus `toString()`, `hashCode()`, `equals()` and
 /// `compareTo()` on any object. Registered by default in
 /// [StandardEvaluationContext]; in a [SimpleEvaluationContext] only after
-/// `withInstanceMethods()`.
+/// `withInstanceMethods()`. Where Dart and Java share a name, the method
+/// behaves like Dart's: `split`, `replaceAll` and `contains` take plain
+/// strings (not regular expressions), `List.remove(x)` removes an
+/// element; `matches` uses Dart's `RegExp`.
+///
+/// Arguments that do not fit a method are reported as
+/// `SpelMessage.methodNotFound`; errors raised by the method itself
+/// (`RangeError` for `'abc'.charAt(9)`) propagate unchanged, like Java
+/// exceptions from Spring's reflective calls.
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();
@@ -274,21 +286,33 @@ final class BuiltinMethodResolver implements MethodResolver {
     String name,
     List<Object?> arguments,
   ) {
-    final function = _method(target, name, arguments.length);
-    return function == null
-        ? null
-        : (_, _, args) => Function.apply(function, args);
+    final function = _method(target, name);
+    if (function == null ||
+        !VarargsFunction.accepts(function, arguments.length)) {
+      return null;
+    }
+    return (_, _, args) => SpelTypeMethodResolver.callChecked(
+      function,
+      args,
+      () => SpelEvaluationException(
+        SpelMessage.methodNotFound,
+        inserts: [
+          '$name(${args.map((a) => a == null ? 'null' : a.runtimeType).join(',')})',
+          target.runtimeType,
+        ],
+      ),
+    );
   }
 
   // Type-specific methods first, then the universal Object methods.
-  // Arguments are matched by Function.apply, so a wrong count or type
-  // surfaces as a call error (reported as methodNotFound).
-  static Function? _method(Object target, String name, int arity) {
+  static Function? _method(Object target, String name) {
     final specific = switch (target) {
-      String s => _string(s, name, arity),
+      String s => _string(s, name),
       Map<Object?, Object?> m => _map(m, name),
-      List<Object?> l => _list(l, name, arity) ?? _iterable(l, name),
+      List<Object?> l => _list(l, name) ?? _iterable(l, name),
+      Set<Object?> s => _set(s, name) ?? _iterable(s, name),
       Iterable<Object?> i => _iterable(i, name),
+      int n => _int(n, name) ?? _num(n, name),
       num n => _num(n, name),
       DateTime d => _date(d, name),
       Duration d => _duration(d, name),
@@ -304,26 +328,36 @@ final class BuiltinMethodResolver implements MethodResolver {
         };
   }
 
-  static Function? _string(String s, String name, int arity) => switch (name) {
+  static Function? _string(String s, String name) => switch (name) {
     'length' || 'size' => () => s.length,
     'isEmpty' => () => s.isEmpty,
     'isNotEmpty' => () => s.isNotEmpty,
+    'isBlank' => () => s.trim().isEmpty,
     'toUpperCase' => s.toUpperCase,
     'toLowerCase' => s.toLowerCase,
-    'trim' => s.trim,
-    'strip' => s.trim,
-    'trimLeft' => s.trimLeft,
-    'trimRight' => s.trimRight,
+    'trim' || 'strip' => s.trim,
+    'trimLeft' || 'stripLeading' => s.trimLeft,
+    'trimRight' || 'stripTrailing' => s.trimRight,
     'substring' => (int start, [int? end]) => s.substring(start, end),
-    'startsWith' => (String prefix) => s.startsWith(prefix),
+    'startsWith' => (String prefix, [int index = 0]) => s.startsWith(
+      prefix,
+      index,
+    ),
     'endsWith' => (String suffix) => s.endsWith(suffix),
     'contains' => (String other) => s.contains(other),
-    'indexOf' => (String other) => s.indexOf(other),
-    'lastIndexOf' => (String other) => s.lastIndexOf(other),
+    'indexOf' => (String other, [int start = 0]) => s.indexOf(other, start),
+    'lastIndexOf' => (String other, [int? start]) => s.lastIndexOf(
+      other,
+      start,
+    ),
     'charAt' => (int index) => s[index],
+    'codeUnitAt' || 'codePointAt' => (int index) => s.codeUnitAt(index),
+    'toCharArray' => () => s.split(''),
     'split' => (String separator) => s.split(separator),
+    'lines' => () => s.split(RegExp(r'\r\n|\r|\n')),
     'replace' ||
     'replaceAll' => (String from, String to) => s.replaceAll(from, to),
+    'replaceFirst' => (String from, String to) => s.replaceFirst(from, to),
     'concat' => (Object? other) => '$s$other',
     'repeat' => (int times) => s * times,
     'padLeft' => (int width, [String padding = ' ']) => s.padLeft(
@@ -337,26 +371,63 @@ final class BuiltinMethodResolver implements MethodResolver {
     'equalsIgnoreCase' => (
       String other,
     ) => s.toLowerCase() == other.toLowerCase(),
-    'matches' => (String regex) => RegExp('^(?:$regex)\$').hasMatch(s),
-    'isBlank' => () => s.trim().isEmpty,
-    'codeUnitAt' => (int index) => s.codeUnitAt(index),
+    'compareToIgnoreCase' => (String other) => s.toLowerCase().compareTo(
+      other.toLowerCase(),
+    ),
+    'contentEquals' => (Object? other) => s == '$other',
+    'matches' => (String regex) => SpelPatterns.compile(regex).hasMatch(s),
     _ => null,
   };
 
-  static Function? _list(List<Object?> l, String name, int arity) =>
-      switch (name) {
-        'get' || 'elementAt' => (int index) => l[index],
-        'indexOf' => (Object? item) => l.indexOf(item),
-        'lastIndexOf' => (Object? item) => l.lastIndexOf(item),
-        'sublist' ||
-        'subList' => (int start, [int? end]) => l.sublist(start, end),
-        'add' => (Object? item) {
-          l.add(item);
-          return true;
-        },
-        'reversed' => () => l.reversed.toList(),
-        _ => null,
-      };
+  static Function? _list(List<Object?> l, String name) => switch (name) {
+    'get' || 'elementAt' => (int index) => l[index],
+    'set' => (int index, Object? item) {
+      final previous = l[index];
+      l[index] = item;
+      return previous;
+    },
+    'getFirst' => () => l.first,
+    'getLast' => () => l.last,
+    'indexOf' => (Object? item) => l.indexOf(item),
+    'lastIndexOf' => (Object? item) => l.lastIndexOf(item),
+    'sublist' || 'subList' => (int start, [int? end]) => l.sublist(start, end),
+    // add(e) like both; add(index, e) like Java's List.add.
+    'add' => (Object? first, [Object? second = _none]) {
+      if (identical(second, _none)) {
+        l.add(first);
+        return true;
+      }
+      l.insert(first! as int, second);
+      return null;
+    },
+    'insert' => (int index, Object? item) => l.insert(index, item),
+    'addAll' => (Iterable<Object?> items) {
+      l.addAll(items);
+      return items.isNotEmpty;
+    },
+    'remove' => (Object? item) => l.remove(item),
+    'removeAt' => (int index) => l.removeAt(index),
+    'removeFirst' => () => l.removeAt(0),
+    'removeLast' => l.removeLast,
+    'clear' => l.clear,
+    'reversed' => () => l.reversed.toList(),
+    _ => null,
+  };
+
+  static Function? _set(Set<Object?> s, String name) => switch (name) {
+    'add' => (Object? item) => s.add(item),
+    'addAll' => (Iterable<Object?> items) {
+      final before = s.length;
+      s.addAll(items);
+      return s.length != before;
+    },
+    'remove' => (Object? item) => s.remove(item),
+    'clear' => s.clear,
+    'union' => (Set<Object?> other) => s.union(other),
+    'intersection' => (Set<Object?> other) => s.intersection(other),
+    'difference' => (Set<Object?> other) => s.difference(other),
+    _ => null,
+  };
 
   static Function? _iterable(Iterable<Object?> i, String name) =>
       switch (name) {
@@ -364,11 +435,16 @@ final class BuiltinMethodResolver implements MethodResolver {
         'isEmpty' => () => i.isEmpty,
         'isNotEmpty' => () => i.isNotEmpty,
         'contains' => (Object? item) => i.contains(item),
+        'containsAll' => (Iterable<Object?> items) => items.every(i.contains),
         'join' => ([String separator = '']) => i.join(separator),
-        'toList' => () => i.toList(),
+        'toList' || 'toArray' => () => i.toList(),
         'toSet' => () => i.toSet(),
         'first' => () => i.first,
         'last' => () => i.last,
+        'single' => () => i.single,
+        'elementAt' => (int index) => i.elementAt(index),
+        'take' => (int count) => i.take(count).toList(),
+        'skip' => (int count) => i.skip(count).toList(),
         _ => null,
       };
 
@@ -385,11 +461,33 @@ final class BuiltinMethodResolver implements MethodResolver {
     'isNotEmpty' => () => m.isNotEmpty,
     'keySet' || 'keys' => () => m.keys.toSet(),
     'values' => () => m.values.toList(),
+    'entrySet' || 'entries' => () => m.entries.toList(),
     'put' => (Object? key, Object? value) {
       final previous = m[key];
       m[key] = value;
       return previous;
     },
+    // Java's putIfAbsent(key, value): the existing value, or null after
+    // storing the new one.
+    'putIfAbsent' => (Object? key, Object? value) {
+      final existing = m[key];
+      if (existing != null) {
+        return existing;
+      }
+      m[key] = value;
+      return null;
+    },
+    'putAll' || 'addAll' => (Map<Object?, Object?> other) => m.addAll(other),
+    'remove' => (Object? key) => m.remove(key),
+    'clear' => m.clear,
+    _ => null,
+  };
+
+  static Function? _int(int n, String name) => switch (name) {
+    'toRadixString' => (int radix) => n.toRadixString(radix),
+    'isEven' => () => n.isEven,
+    'isOdd' => () => n.isOdd,
+    'gcd' => (int other) => n.gcd(other),
     _ => null,
   };
 
@@ -398,8 +496,9 @@ final class BuiltinMethodResolver implements MethodResolver {
     'round' => n.round,
     'floor' => n.floor,
     'ceil' => n.ceil,
-    'toInt' || 'intValue' => n.toInt,
-    'toDouble' || 'doubleValue' => n.toDouble,
+    'truncate' => n.truncate,
+    'toInt' || 'intValue' || 'longValue' => n.toInt,
+    'toDouble' || 'doubleValue' || 'floatValue' => n.toDouble,
     'toStringAsFixed' => (int digits) => n.toStringAsFixed(digits),
     'clamp' => (num low, num high) => n.clamp(low, high),
     'remainder' => (num other) => n.remainder(other),
@@ -422,6 +521,11 @@ final class BuiltinMethodResolver implements MethodResolver {
     'abs' => d.abs,
     'toMillis' => () => d.inMilliseconds,
     'toSeconds' || 'getSeconds' => () => d.inSeconds,
+    'toMinutes' => () => d.inMinutes,
+    'toHours' => () => d.inHours,
+    'toDays' => () => d.inDays,
     _ => null,
   };
+
+  static const _none = Object();
 }

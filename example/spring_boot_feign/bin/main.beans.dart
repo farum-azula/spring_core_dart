@@ -517,8 +517,8 @@ class _$WikimediaStreamsImpl implements _i13.WikimediaStreams {
             [_i3.ClassType<_i7.RecentChange>()],
           ),
           annotations: const [
-            _i17.GetMapping(
-              r'/v2/stream/recentchange',
+            _i17.GetMapping.of(
+              path: r'/v2/stream/recentchange',
               headers: [r'User-Agent=${wikimedia.user-agent}'],
             ),
           ],
@@ -991,8 +991,8 @@ _i3.BeanModule get $application => _i3.BeanModule(
             declaringTypes: [r'WikimediaStreams'],
             returnType: r'EventStream',
             annotations: [
-              _i17.GetMapping(
-                r'/v2/stream/recentchange',
+              _i17.GetMapping.of(
+                path: r'/v2/stream/recentchange',
                 headers: [r'User-Agent=${wikimedia.user-agent}'],
               ),
             ],
@@ -1481,7 +1481,7 @@ _i19.SpringApplication get springApplication => _i19.SpringApplication(
     _i22.springBootStarterLoggingAutoConfiguration,
     _i23.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '46c5bc8e',
+  fingerprint: '248f981e',
 );
 
 /// Starts the application: config files, environment, context, runners

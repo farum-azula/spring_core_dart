@@ -30,8 +30,8 @@ abstract interface class ContractClient {
     @CookieValue() String? theme,
   ]);
 
-  @GetMapping(
-    '/static',
+  @GetMapping.of(
+    path: '/static',
     headers: [
       'X-Shop=neon',
       r'X-Expr=${shop.name:books}',
@@ -67,7 +67,7 @@ abstract interface class InvalidClient {
   @GetMapping('/d/{id}')
   Future<String> byPathMap(@PathVariable('id') Map<String, String> id);
 
-  @GetMapping('/e', headers: ['X-Old: syntax'])
+  @GetMapping.of(path: '/e', headers: ['X-Old: syntax'])
   Future<String> oldHeaders();
 }
 
@@ -179,8 +179,8 @@ class ContractClientImpl implements ContractClient {
           returnType: const ClassType<String>(),
           isFuture: true,
           annotations: const [
-            GetMapping(
-              '/static',
+            GetMapping.of(
+              path: '/static',
               headers: [
                 'X-Shop=neon',
                 r'X-Expr=${shop.name:books}',
@@ -374,7 +374,7 @@ class InvalidClientImpl implements InvalidClient {
           returnType: const ClassType<String>(),
           isFuture: true,
           annotations: const [
-            GetMapping('/e', headers: ['X-Old: syntax']),
+            GetMapping.of(path: '/e', headers: ['X-Old: syntax']),
           ],
           call: (target, arguments) => (target as InvalidClient).oldHeaders(),
         ),

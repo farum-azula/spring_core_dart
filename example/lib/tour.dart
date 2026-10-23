@@ -485,6 +485,11 @@ class _Tour {
     show('reserve (async)', await pricing.reserve('2'));
     show('slogans (advisor bean)', context.getBean<Slogans>().today());
     show('proxy target', AopUtils.getTarget(pricing).runtimeType);
+    final stock = context.getBean<StockCounter>();
+    show(
+      'subclass proxy',
+      '${AopUtils.isAopProxy(stock)}, reserved ${stock.reserve('3')}',
+    );
 
     // Self-invocation: only calls through the @Lazy self reference are
     // advised.

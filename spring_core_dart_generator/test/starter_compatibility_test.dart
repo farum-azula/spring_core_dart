@@ -14,16 +14,20 @@ import 'main.beans.dart';
 void main(List<String> args) => runApplication(args);
 ''';
 
-String _starter(String requires) =>
+String _starter(String requires, [String arguments = '']) =>
     '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-@AutoConfigurationModule(requires: '$requires')
+@AutoConfigurationModule(requires: '$requires'$arguments)
 final BeanModule neonCacheAutoConfiguration = BeanModule('neonCache', []);
 ''';
 
 /// Builds an application depending on a fake `neon_cache` starter.
-Future<TestBuilderResult> _build(String requires) async {
+Future<TestBuilderResult> _build(
+  String requires, {
+  String app = _app,
+  String arguments = '',
+}) async {
   final isolateConfig = await loadPackageConfigUri(
     (await Isolate.packageConfig)!,
   );
@@ -43,8 +47,11 @@ Future<TestBuilderResult> _build(String requires) async {
   return testBuilder(
     const SpringBuilder(),
     {
-      'pkg|bin/main.dart': _app,
-      'neon_cache|lib/spring_auto_configuration.dart': _starter(requires),
+      'pkg|bin/main.dart': app,
+      'neon_cache|lib/spring_auto_configuration.dart': _starter(
+        requires,
+        arguments,
+      ),
     },
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -83,4 +90,63 @@ void main() {
       contains("invalid requires 'not a range'"),
     );
   });
+
+  test(
+    'order, before and after of a starter reach SpringApplication',
+    () async {
+      final result = await _build(
+        '^$springBootVersion',
+        arguments: ", order: 5, before: ['a'], after: ['b', 'c']",
+      );
+      expect(result.errors, isEmpty);
+      expect(
+        _compact(result),
+        matches(
+          RegExp(
+            r"autoConfigurationMetadata:\{_i\d+\.neonCacheAutoConfiguration:"
+            r"const_i\d+\.AutoConfigurationModule\(order:5,before:\['a'\],"
+            r"after:\['b','c'\],\),\}",
+          ),
+        ),
+      );
+    },
+  );
+
+  test('a starter without constraints adds no metadata', () async {
+    final result = await _build('^$springBootVersion');
+    expect(_compact(result), isNot(contains('autoConfigurationMetadata')));
+  });
+
+  test(
+    'exclude and excludeName of @SpringBootApplication are passed on',
+    () async {
+      final result = await _build(
+        '^$springBootVersion',
+        app: r'''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'main.beans.dart';
+
+class CacheAutoConfiguration {}
+
+@SpringBootApplication(
+  exclude: [CacheAutoConfiguration],
+  excludeName: ['neonCache', 'other'],
+)
+void main(List<String> args) => runApplication(args);
+''',
+      );
+      expect(result.errors, isEmpty);
+      final output = _compact(result);
+      expect(
+        output,
+        matches(RegExp(r'exclude:\[_i\d+\.CacheAutoConfiguration\]')),
+      );
+      expect(output, contains("excludeName:['neonCache','other']"));
+    },
+  );
 }
+
+// The generated source without whitespace.
+String _compact(TestBuilderResult result) => result.readerWriter.testing
+    .readString(result.outputs.single)
+    .replaceAll(RegExp(r'\s+'), '');

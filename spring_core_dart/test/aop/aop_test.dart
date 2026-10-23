@@ -604,8 +604,8 @@ void main() {
         ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
         expect(
           noAop.beanFactory.beanPostProcessorCount,
-          1,
-          reason: 'only the aware processor',
+          2,
+          reason: 'only the aware processor and the listener detector',
         );
       },
     );

@@ -1,9 +1,14 @@
 import 'dart:async';
 
+import 'package:spring_boot_dart/src/annotations.dart';
+import 'package:spring_boot_dart/src/auto_configuration_sorter.dart';
+import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_boot_dart/src/configuration_properties.dart';
 import 'package:spring_boot_dart/src/events.dart';
+import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/runners.dart';
+import 'package:spring_boot_dart/src/shutdown_hook.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -65,24 +70,58 @@ class SpringApplication {
   SpringApplication(
     List<BeanModule> modules, {
     List<BeanModule> autoConfigurations = const [],
+    Map<BeanModule, AutoConfigurationModule> autoConfigurationMetadata =
+        const {},
+    List<Type> exclude = const [],
+    List<String> excludeName = const [],
+    this.registerShutdownHook = false,
     List<ApplicationContextInitializer> initializers = const [],
     List<FailureAnalyzer> failureAnalyzers = const [],
     List<GenericApplicationListener> listeners = const [],
+    Map<String, Object?> defaultProperties = const {},
+    List<String> additionalProfiles = const [],
     this.resourceLoader,
     this.fingerprint,
     void Function(String line)? out,
   }) : modules = List.unmodifiable(modules),
        autoConfigurations = List.unmodifiable(autoConfigurations),
+       autoConfigurationMetadata = Map.unmodifiable(autoConfigurationMetadata),
+       exclude = List.unmodifiable(exclude),
+       excludeName = List.unmodifiable(excludeName),
        initializers = List.unmodifiable(initializers),
        failureAnalyzers = List.unmodifiable(failureAnalyzers),
        _listeners = [...listeners],
+       _defaultProperties = {...defaultProperties},
+       additionalProfiles = List.unmodifiable(additionalProfiles),
        out = out ?? print;
 
   /// The application's own modules.
   final List<BeanModule> modules;
 
-  /// Library modules registered after [modules].
+  /// Library modules registered after [modules], in Boot's
+  /// auto-configuration order (module name, `order`, `before` / `after`),
+  /// not in the order listed.
   final List<BeanModule> autoConfigurations;
+
+  /// The `@AutoConfigurationModule` of each of [autoConfigurations] (what
+  /// the generator passes): its `order`, `before` and `after`.
+  final Map<BeanModule, AutoConfigurationModule> autoConfigurationMetadata;
+
+  /// Auto-configuration classes that are not applied
+  /// (`@SpringBootApplication(exclude:)`); a type that is none is an error.
+  final List<Type> exclude;
+
+  /// Names of auto-configuration classes or modules that are not applied
+  /// (`@SpringBootApplication(excludeName:)`); `spring.autoconfigure.exclude`
+  /// adds more.
+  final List<String> excludeName;
+
+  /// Whether the context is closed on SIGINT / SIGTERM (Spring Boot's
+  /// `setRegisterShutdownHook`); `spring.main.register-shutdown-hook` wins
+  /// when set. Off by default, unlike Boot: a signal listener keeps a Dart
+  /// program alive, so a program that is done would never end. Turn it on
+  /// in programs that run until stopped. Nothing happens without `dart:io`.
+  final bool registerShutdownHook;
 
   /// Called with the context before it is refreshed, in order (Spring's
   /// `ApplicationContextInitializer`): add post-processors, register
@@ -126,6 +165,31 @@ class SpringApplication {
   }) =>
       _listeners.add(ApplicationListenerAdapter.of<E>(listener, order: order));
 
+  final Map<String, Object?> _defaultProperties;
+
+  /// Properties below every other source, config files included (Spring
+  /// Boot's `setDefaultProperties`): the `defaultProperties` source.
+  ///
+  /// ```dart
+  /// SpringApplication(
+  ///   [appBeans],
+  ///   defaultProperties: {'server.port': 8080},
+  /// ).run(args);
+  /// ```
+  Map<String, Object?> get defaultProperties =>
+      Map.unmodifiable(_defaultProperties);
+
+  /// Replaces [defaultProperties] (Spring Boot's `setDefaultProperties`).
+  void setDefaultProperties(Map<String, Object?> properties) =>
+      _defaultProperties
+        ..clear()
+        ..addAll(properties);
+
+  /// Profiles activated on top of the configured ones (Spring Boot's
+  /// `setAdditionalProfiles`); they come first, so their files have the
+  /// lowest precedence of the profile-specific ones.
+  final List<String> additionalProfiles;
+
   /// Identifies the generated code the application was built from (a hash
   /// written by the generator). [reload] keeps a running context when it
   /// is unchanged.
@@ -168,6 +232,7 @@ class SpringApplication {
       ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
+        additionalProfiles: additionalProfiles,
       ).processAndApplySync();
       run.environmentPrepared(environment);
       return _start(run, args, environment, watch, (
@@ -222,9 +287,12 @@ class SpringApplication {
   }
 
   /// Like [run], reading config files asynchronously (e.g. Flutter assets),
-  /// and completing once every runner has finished — like Spring Boot's
+  /// refreshing the context with `refreshAsync()` (asynchronous
+  /// `@PostConstruct` / init methods are awaited before the runners) and
+  /// completing once every runner has finished — like Spring Boot's
   /// `SpringApplication.run`, which returns after the runners. A failing
-  /// runner fails the returned `Future` (the context is closed).
+  /// runner fails the returned `Future` (the context is closed with
+  /// `closeAsync()`).
   Future<ConfigurableApplicationContext> runAsync(
     List<String> args, {
     Map<String, String>? systemEnvironment,
@@ -244,15 +312,16 @@ class SpringApplication {
       await ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
+        additionalProfiles: additionalProfiles,
       ).processAndApply();
       run.environmentPrepared(environment);
     } catch (error) {
       _report(run, error);
       rethrow;
     }
-    final (context, arguments) = _guard(
+    final (context, arguments) = await _guardAsync(
       run,
-      () => _start(run, args, environment, watch, (
+      () => _startAsync(run, args, environment, watch, (
         systemEnvironment,
         properties,
       )),
@@ -263,7 +332,7 @@ class SpringApplication {
         await _callRunners(context, arguments);
       }
     } catch (error) {
-      _runFailed(run, context, error);
+      await _runFailedAsync(run, context, error);
       rethrow;
     }
     _ready(run, context, watch);
@@ -313,7 +382,9 @@ class SpringApplication {
     );
   }
 
-  /// Like [reload], reading config files asynchronously.
+  /// Like [reload], reading config files asynchronously and closing
+  /// [running] with `closeAsync()` (awaiting its asynchronous destroy
+  /// callbacks) before the new application starts with `refreshAsync()`.
   Future<ConfigurableApplicationContext> reloadAsync(
     ConfigurableApplicationContext running, {
     bool runners = true,
@@ -323,7 +394,7 @@ class SpringApplication {
       return running;
     }
     if (running.isActive) {
-      running.close();
+      await running.closeAsync();
     }
     return _runAsync(
       previous?.args ?? const [],
@@ -355,12 +426,29 @@ class SpringApplication {
         MapPropertySource('inlinedProperties', Map.of(properties)),
       );
     }
+    if (_defaultProperties.isNotEmpty) {
+      environment.propertySources.addLast(
+        MapPropertySource(
+          ConfigDataEnvironment.defaultPropertiesSourceName,
+          Map.of(_defaultProperties),
+        ),
+      );
+    }
     return environment;
   }
 
   T _guard<T>(_RunListeners run, T Function() body) {
     try {
       return body();
+    } catch (error) {
+      _report(run, error);
+      rethrow;
+    }
+  }
+
+  Future<T> _guardAsync<T>(_RunListeners run, Future<T> Function() body) async {
+    try {
+      return await body();
     } catch (error) {
       _report(run, error);
       rethrow;
@@ -381,6 +469,7 @@ class SpringApplication {
     if (_reported.remove(error)) {
       return;
     }
+    _handleExitCode(context, error);
     run.failed(context, error);
     final analysis = analyzeFailure(error, analyzers: _analyzers(context));
     if (analysis != null) {
@@ -411,6 +500,25 @@ class SpringApplication {
     return [...failureAnalyzers, ...OrderComparator.sort(beans, (_) => null)];
   }
 
+  // The auto-configurations left after the exclusions (`exclude`,
+  // `excludeName`, `spring.autoconfigure.exclude`), in Boot's order.
+  List<BeanModule> _selectedAutoConfigurations(
+    StandardEnvironment environment,
+  ) => selectAutoConfigurations(
+    autoConfigurations,
+    metadata: autoConfigurationMetadata,
+    excludeTypes: exclude,
+    excludeNames: [
+      ...excludeName,
+      ...Binder.get(environment)
+          .bind(
+            'spring.autoconfigure.exclude',
+            const ListType<String>(ClassType<String>()),
+          )
+          .orElse(const []),
+    ],
+  );
+
   // Creates and refreshes the context and prints the startup line; the
   // runners are called by the caller afterwards (Spring Boot: logStarted,
   // then callRunners).
@@ -421,13 +529,73 @@ class SpringApplication {
     Stopwatch watch,
     (Map<String, String>?, Map<String, Object?>) launch,
   ) {
+    final prepared = _prepare(run, args, environment, launch);
+    final context = prepared.context;
+    try {
+      context.refresh();
+    } catch (error) {
+      _report(run, error, context);
+      if (context.isActive) {
+        context.close();
+      }
+      rethrow;
+    }
+    _registerShutdownHook(environment, context);
+    _logStarted(prepared, watch);
+    return (context, prepared.arguments);
+  }
+
+  // Like [_start] with `refreshAsync()`: asynchronous init callbacks are
+  // awaited, and a failed context is closed with `closeAsync()`.
+  Future<(ConfigurableApplicationContext, ApplicationArguments)> _startAsync(
+    _RunListeners run,
+    List<String> args,
+    StandardEnvironment environment,
+    Stopwatch watch,
+    (Map<String, String>?, Map<String, Object?>) launch,
+  ) async {
+    final prepared = _prepare(run, args, environment, launch);
+    final context = prepared.context;
+    try {
+      await context.refreshAsync();
+    } catch (error) {
+      _report(run, error, context);
+      if (context.isActive) {
+        await context.closeAsync();
+      }
+      rethrow;
+    }
+    _registerShutdownHook(environment, context);
+    _logStarted(prepared, watch);
+    return (context, prepared.arguments);
+  }
+
+  void _logStarted(_Prepared prepared, Stopwatch watch) {
+    if (prepared.logStartupInfo) {
+      // Spring Boot's StartupInfoLogger.logStarted (without the process
+      // uptime, which Dart does not know).
+      _log.info(
+        'Started ${prepared.name} in ${watch.elapsedMilliseconds / 1000} '
+        'seconds',
+      );
+    }
+  }
+
+  // Creates and prepares the context up to the refresh (Spring Boot's
+  // prepareContext).
+  _Prepared _prepare(
+    _RunListeners run,
+    List<String> args,
+    StandardEnvironment environment,
+    (Map<String, String>?, Map<String, Object?>) launch,
+  ) {
     applyLoggingLevels(environment);
     // Spring Boot's ContextIdApplicationContextInitializer.
     final applicationName = environment
         .getProperty('spring.application.name')
         ?.trim();
     final context = AnnotationConfigApplicationContext(
-      [...modules, ...autoConfigurations],
+      [...modules, ..._selectedAutoConfigurations(environment)],
       environment: environment,
       resourceLoader: resourceLoader,
       id: applicationName == null || applicationName.isEmpty
@@ -482,21 +650,24 @@ class SpringApplication {
     run
       ..contextPrepared(context)
       ..contextLoaded(context);
-    try {
-      context.refresh();
-    } catch (error) {
-      _report(run, error, context);
-      if (context.isActive) {
-        context.close();
-      }
-      rethrow;
+    return (
+      context: context,
+      arguments: arguments,
+      name: name,
+      logStartupInfo: logStartupInfo,
+    );
+  }
+
+  // SIGINT / SIGTERM close the context (Spring Boot's shutdown hook), unless
+  // switched off by the property or the constructor.
+  void _registerShutdownHook(
+    StandardEnvironment environment,
+    ConfigurableApplicationContext context,
+  ) {
+    if (environment.getPropertyAs<bool>('spring.main.register-shutdown-hook') ??
+        registerShutdownHook) {
+      addShutdownHook(context);
     }
-    if (logStartupInfo) {
-      // Spring Boot's StartupInfoLogger.logStarted (without the process
-      // uptime, which Dart does not know).
-      _log.info('Started $name in ${watch.elapsedMilliseconds / 1000} seconds');
-    }
-    return (context, arguments);
   }
 
   // A runner failed: ApplicationFailedEvent, reported like Spring Boot's
@@ -507,6 +678,30 @@ class SpringApplication {
     Object error, {
     bool failedEvent = true,
   }) {
+    _reportRunFailure(run, context, error, failedEvent: failedEvent);
+    if (context.isActive) {
+      context.close();
+    }
+  }
+
+  Future<void> _runFailedAsync(
+    _RunListeners run,
+    ConfigurableApplicationContext context,
+    Object error,
+  ) async {
+    _reportRunFailure(run, context, error, failedEvent: true);
+    if (context.isActive) {
+      await context.closeAsync();
+    }
+  }
+
+  void _reportRunFailure(
+    _RunListeners run,
+    ConfigurableApplicationContext context,
+    Object error, {
+    required bool failedEvent,
+  }) {
+    _handleExitCode(context, error);
     if (failedEvent) {
       run.failed(context, error);
     }
@@ -514,9 +709,113 @@ class SpringApplication {
       analyzeFailure(error, analyzers: _analyzers(context))?.report ??
           'Application run failed: $error',
     );
-    if (context.isActive) {
-      context.close();
+  }
+
+  // Boot's handleExitCode: the code from the ExitCodeExceptionMapper beans
+  // (while the context is active), else from the error being an
+  // ExitCodeGenerator; remembered for [exitCodeOf] and published as
+  // ExitCodeEvent.
+  void _handleExitCode(ConfigurableApplicationContext? context, Object error) {
+    final active = context != null && context.isActive;
+    var code = 0;
+    if (active) {
+      try {
+        code =
+            (ExitCodeGenerators()..addMapped(
+                  error,
+                  context.getBeansOfType<ExitCodeExceptionMapper>().values,
+                ))
+                .exitCode;
+      } catch (_) {
+        // Mappers that cannot be created map nothing.
+      }
     }
+    if (code == 0) {
+      for (
+        Object? e = error;
+        e != null;
+        e = e is BeansException ? e.cause : null
+      ) {
+        if (e is ExitCodeGenerator) {
+          code = e.getExitCode();
+          break;
+        }
+      }
+    }
+    if (code == 0) {
+      return;
+    }
+    try {
+      _exitCodes[error] = code;
+    } on ArgumentError {
+      // Strings and numbers cannot be keys; their exit code is not kept.
+    }
+    if (active) {
+      context.publishEvent(ExitCodeEvent(context, code));
+    }
+  }
+
+  static final _exitCodes = Expando<int>('SpringApplication exit codes');
+
+  /// The exit code a failed run chose for [error]: what the
+  /// [ExitCodeExceptionMapper] beans say (they are asked while the context
+  /// is active, so for a failing runner, not for a failed refresh), or
+  /// [error] itself when it is an [ExitCodeGenerator]. `null` when there is
+  /// none. Spring Boot passes the code to its exception handler; here the
+  /// caller ends the process:
+  ///
+  /// ```dart
+  /// try {
+  ///   runApplication(args);
+  /// } catch (error) {
+  ///   exit(SpringApplication.exitCodeOf(error) ?? 1);
+  /// }
+  /// ```
+  static int? exitCodeOf(Object error) {
+    try {
+      return _exitCodes[error];
+    } on ArgumentError {
+      return null;
+    }
+  }
+
+  /// Closes [context] and returns the exit code of the application, like
+  /// Spring Boot's `SpringApplication.exit`: the code of the
+  /// [exitCodeGenerators] and of the [ExitCodeGenerator] beans (the highest
+  /// positive or lowest negative one wins). A code other than `0` is also
+  /// published as an [ExitCodeEvent] before the context closes. A failure
+  /// on the way is logged and gives `1` (unless a code was found).
+  ///
+  /// ```dart
+  /// exit(SpringApplication.exit(context)); // dart:io
+  /// ```
+  static int exit(
+    ConfigurableApplicationContext context, [
+    List<ExitCodeGenerator> exitCodeGenerators = const [],
+  ]) {
+    var exitCode = 0;
+    try {
+      try {
+        exitCode =
+            (ExitCodeGenerators()
+                  ..addAll(exitCodeGenerators)
+                  ..addAll(context.getBeansOfType<ExitCodeGenerator>().values))
+                .exitCode;
+        if (exitCode != 0) {
+          context.publishEvent(ExitCodeEvent(context, exitCode));
+        }
+      } finally {
+        context.close();
+      }
+    } catch (error, stackTrace) {
+      _log.warning(
+        'Failed to exit the application',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      exitCode = exitCode != 0 ? exitCode : 1;
+    }
+    return exitCode;
   }
 
   // Both kinds sorted together by order, as in Spring Boot's callRunners;
@@ -695,6 +994,14 @@ final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
   @override
   int get order => Ordered.lowestPrecedence;
 }
+
+// A context ready to be refreshed, with what the startup line needs.
+typedef _Prepared = ({
+  ConfigurableApplicationContext context,
+  ApplicationArguments arguments,
+  String name,
+  bool logStartupInfo,
+});
 
 /// Prepares a context before it is refreshed, like Spring's
 /// `ApplicationContextInitializer`; see [SpringApplication.initializers].

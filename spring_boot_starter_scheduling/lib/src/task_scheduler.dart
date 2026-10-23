@@ -161,18 +161,40 @@ const _log = SpringLog('spring.scheduling');
 /// scheduler.shutdown();
 /// ```
 final class TimerTaskScheduler implements TaskScheduler, DisposableBean {
-  /// A scheduler using [now] as its clock and [createTimer] for delays.
-  TimerTaskScheduler({DateTime Function()? now, TimerFactory? createTimer})
-    : _now = now ?? DateTime.now,
-      _createTimer = createTimer ?? Timer.new;
+  /// A scheduler using [now] as its clock and [createTimer] for delays;
+  /// see [awaitTermination] and [awaitTerminationPeriod].
+  TimerTaskScheduler({
+    DateTime Function()? now,
+    TimerFactory? createTimer,
+    this.awaitTermination = false,
+    this.awaitTerminationPeriod,
+  }) : _now = now ?? DateTime.now,
+       _createTimer = createTimer ?? Timer.new;
 
   final DateTime Function() _now;
   final TimerFactory _createTimer;
   final _tasks = <_TimerTask>{};
+  final _running = <_TimerTask>{};
+  Completer<void>? _terminated;
   var _shutdown = false;
+
+  /// Whether [destroy] (the context's `closeAsync()`) waits for the runs
+  /// going on when the scheduler shuts down, like Spring Boot's
+  /// `spring.task.scheduling.shutdown.await-termination`; `false` by
+  /// default (the runs finish on their own, after the close).
+  final bool awaitTermination;
+
+  /// How long [destroy] waits at most when [awaitTermination] is on, like
+  /// `spring.task.scheduling.shutdown.await-termination-period`; `null`
+  /// waits until the runs are finished. When it elapses a warning is
+  /// logged and the shutdown goes on.
+  final Duration? awaitTerminationPeriod;
 
   /// Tasks that are not cancelled and not finished.
   List<ScheduledTask> get tasks => List.unmodifiable(_tasks);
+
+  /// The tasks whose run (or its `Future`) is going on right now.
+  List<ScheduledTask> get runningTasks => List.unmodifiable(_running);
 
   /// Whether [shutdown] was called.
   bool get isShutdown => _shutdown;
@@ -227,9 +249,40 @@ final class TimerTaskScheduler implements TaskScheduler, DisposableBean {
     }
   }
 
-  /// Shuts down when the context closes.
+  /// Shuts down when the context closes; with [awaitTermination] the
+  /// returned `Future` (awaited by `closeAsync()`) completes when the runs
+  /// going on are finished, or after [awaitTerminationPeriod].
   @override
-  void destroy() => shutdown();
+  FutureOr<void> destroy() {
+    shutdown();
+    if (!awaitTermination || _running.isEmpty) {
+      return null;
+    }
+    final terminated = (_terminated ??= Completer<void>()).future;
+    final period = awaitTerminationPeriod;
+    if (period == null) {
+      return terminated;
+    }
+    return terminated.timeout(
+      period,
+      onTimeout: () => _log.warning(
+        'Timed out while waiting for the TaskScheduler to terminate: '
+        '${_running.length} task(s) still running after '
+        '${period.inMilliseconds}ms: ${_running.toList()}',
+      ),
+    );
+  }
+
+  void _started(_TimerTask task) => _running.add(task);
+
+  void _finished(_TimerTask task) {
+    _running.remove(task);
+    final terminated = _terminated;
+    if (_running.isEmpty && terminated != null) {
+      _terminated = null;
+      terminated.complete();
+    }
+  }
 }
 
 final class _TimerTask implements ScheduledTask {
@@ -295,6 +348,7 @@ final class _TimerTask implements ScheduledTask {
     _lastScheduled = scheduled;
     _lastActual = _scheduler.now();
     _runs++;
+    _scheduler._started(this);
     Object? result;
     try {
       result = _task();
@@ -325,6 +379,7 @@ final class _TimerTask implements ScheduledTask {
 
   void _completed() {
     _lastCompletion = _scheduler.now();
+    _scheduler._finished(this);
     _scheduleNext();
   }
 

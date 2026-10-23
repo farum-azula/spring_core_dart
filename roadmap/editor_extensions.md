@@ -45,6 +45,17 @@ release train, set by `tool/version.dart` and checked in CI), so extension
 - Built as a Dart language server on top of the generator's analysis, so
   the same server can later back VS Code and IntelliJ plugins.
 
+Bug: **`build_runner watch` deletes and regenerates `*.beans.dart` on every
+keystroke.** While code is being typed the library has syntax errors most of
+the time; the generator then fails, build_runner removes its outputs and the
+whole project is red until the next successful build, which on a large
+project takes seconds each time. Fix on the generator side (tracked in
+[fix_plan.md](fix_plan.md), Generator): when a scanned library does not
+parse, skip the rebuild and keep the previous output instead of failing;
+report the parse error once. On the editor side the Flutter extension's
+watch should debounce longer (see `roadmap/bugs.md` of
+zed_editor_extensions).
+
 ## Zed extension for Flutter (`flutter_spring`)
 
 Everything `dart_spring` does (it uses the same language server under the

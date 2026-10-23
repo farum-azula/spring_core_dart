@@ -215,13 +215,37 @@ final class ExpressionPointcut implements AopPointcut {
     Map<String, AdviceBinding> bindings = const {},
     this.owner,
   }) : bindings = Map.unmodifiable(bindings),
-       _root = _PointcutParser(
-         expression,
-         namedPointcuts,
-         {},
-         owner,
-         bindings,
-       ).parse();
+       _root = _parse(expression, namedPointcuts, owner, bindings);
+
+  // Parses [expression]; every binding must be used by it (AspectJ's
+  // "formal unbound in pointcut"), or the advice would receive `null`.
+  static _Node _parse(
+    String expression,
+    Map<String, String> named,
+    String? owner,
+    Map<String, AdviceBinding> bindings,
+  ) {
+    final used = <String>{};
+    final root = _PointcutParser(
+      expression,
+      named,
+      {},
+      owner,
+      bindings,
+      used,
+    ).parse();
+    final unbound = bindings.keys.where((name) => !used.contains(name));
+    if (unbound.isNotEmpty) {
+      throw FormatException(
+        'Invalid pointcut (advice parameter ${unbound.join(', ')} is not '
+        'bound by the expression; bind it with @annotation(name), '
+        '@within(name), @target(name), this(name), target(name) or '
+        'args(name, ..), or remove the parameter)',
+        expression,
+      );
+    }
+    return root;
+  }
 
   /// The source expression.
   final String expression;
@@ -421,6 +445,7 @@ final class _PointcutParser {
     this.resolving,
     this.owner,
     this.bindings,
+    this.used,
   )
     // Tokens: operators, parentheses, identifiers (optionally `@`-prefixed
     // and dotted, e.g. `@annotation`, `Aspect.name`) and any other run of
@@ -437,6 +462,8 @@ final class _PointcutParser {
   // Whose pointcuts unqualified references refer to.
   final String? owner;
   final Map<String, AdviceBinding> bindings;
+  // Names of [bindings] the expression (and its named pointcuts) binds.
+  final Set<String> used;
   final List<RegExpMatch> _matches;
   int _pos = 0;
 
@@ -658,7 +685,13 @@ final class _PointcutParser {
   }
 
   // The binding named by [body] (an advice parameter), if any.
-  AdviceBinding? _binding(String body) => bindings[body.trim()];
+  AdviceBinding? _binding(String body) {
+    final binding = bindings[body.trim()];
+    if (binding != null) {
+      used.add(body.trim());
+    }
+    return binding;
+  }
 
   // Resolves `name()` / `Type.name()`: an unqualified name in the owner's
   // pointcuts first, then among the unqualified entries; a qualified one
@@ -696,6 +729,7 @@ final class _PointcutParser {
         resolving,
         nestedOwner,
         bindings,
+        used,
       ).parse();
     } finally {
       resolving.remove(key);

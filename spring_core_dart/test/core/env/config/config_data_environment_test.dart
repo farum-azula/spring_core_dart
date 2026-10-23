@@ -60,12 +60,14 @@ void main() {
     StandardEnvironment environment, {
     List<PropertySourceLoader>? loaders,
     ResourceLoader? resourceLoader,
+    List<String> additionalProfiles = const [],
   }) => ConfigDataEnvironment(
     environment,
     // One group, like Boot's default `classpath:/;classpath:/config/`.
     defaultLocations: ['optional:file:$root/;optional:file:$root/config/'],
     resourceLoader: resourceLoader,
     loaders: loaders ?? const [PropertiesPropertySourceLoader()],
+    additionalProfiles: additionalProfiles,
   );
 
   group('review fixes', () {
@@ -175,14 +177,15 @@ a=2
     expect(e.getProperty('region'), 'eu');
   });
 
-  test('programmatic profiles win over the file property', () {
+  test("programmatic profiles are kept and merged with the file's", () {
     write('application.properties', 'spring.profiles.active=dev');
     write('application-prod.properties', 'name=prod');
     write('application-dev.properties', 'name=dev');
     final e = env()..setActiveProfiles(['prod']);
     config(e).processAndApplySync();
-    expect(e.activeProfiles, ['prod']);
-    expect(e.getProperty('name'), 'prod');
+    // Boot's Profiles: the programmatic ones first, the file's after them.
+    expect(e.activeProfiles, ['prod', 'dev']);
+    expect(e.getProperty('name'), 'dev');
   });
 
   test('include and groups', () {
@@ -232,7 +235,8 @@ a=2
     write('config/application.properties', 'spring.profiles.include=b,a');
     final e = env();
     config(e).processAndApplySync();
-    expect(e.activeProfiles, ['a', 'b']);
+    // From the highest-precedence source first, as in Boot.
+    expect(e.activeProfiles, ['b', 'a']);
   });
 
   test('default profile file when no profile is active', () {
@@ -558,5 +562,205 @@ a=2
     final e = env();
     config(e).processAndApplySync();
     expect(e.getProperty('greeting'), 'Hello NEON');
+  });
+
+  group('Boot rules for imports, profiles and defaults', () {
+    test('spring.config.import from the command line and SPRING_CONFIG_IMPORT '
+        'beats every location, with profile variants', () {
+      write('application.properties', 'name=app\nspring.profiles.active=dev');
+      write('config/application.properties', 'name=config');
+      write('extra.properties', 'name=extra\nextra=1');
+      write('extra-dev.properties', 'name=extra-dev');
+      final cli = env({'spring.config.import': 'file:$root/extra.properties'});
+      config(cli).processAndApplySync();
+      expect(cli.getProperty('name'), 'extra-dev');
+      expect(cli.getProperty('extra'), '1');
+
+      final os = StandardEnvironment(
+        systemEnvironment: {
+          'SPRING_CONFIG_IMPORT':
+              'optional:file:$root/nope.properties,file:$root/extra.properties',
+        },
+      );
+      config(os).processAndApplySync();
+      expect(os.getProperty('name'), 'extra-dev');
+    });
+
+    test('directory imports load application* files; a missing non-optional '
+        'directory fails, an empty one is fine', () {
+      write(
+        'application.properties',
+        'spring.profiles.active=dev\nspring.config.import=more/',
+      );
+      write('more/application.properties', 'a=1\nb=plain');
+      write('more/application.yml', 'y: 1\na: yaml');
+      write('more/application-dev.properties', 'b=dev');
+      final e = env();
+      config(
+        e,
+        loaders: [const PropertiesPropertySourceLoader(), _ColonLoader()],
+      ).processAndApplySync();
+      expect(e.getProperty('a'), '1');
+      expect(e.getProperty('y'), '1');
+      expect(e.getProperty('b'), 'dev');
+
+      Directory('$root/empty').createSync();
+      config(env({'spring.config.import': 'file:$root/empty/'}))
+          .processAndApplySync();
+      config(env({'spring.config.import': 'optional:file:$root/missing/'}))
+          .processAndApplySync();
+      expect(
+        () =>
+            config(env({'spring.config.import': 'file:$root/missing/'}))
+                .processAndApplySync(),
+        throwsA(
+          isA<ConfigDataLocationNotFoundException>().having(
+            (e) => e.location,
+            'location',
+            'file:$root/missing/',
+          ),
+        ),
+      );
+      write('application.properties', 'spring.config.import=missing/');
+      expect(
+        () => config(env()).processAndApplySync(),
+        throwsA(isA<ConfigDataLocationNotFoundException>()),
+      );
+      expect(
+        () =>
+            config(env({'spring.config.location': 'file:$root/missing/'}))
+                .processAndApplySync(),
+        throwsA(isA<ConfigDataLocationNotFoundException>()),
+      );
+    });
+
+    test('spring.profiles.default from the main file selects profile files, '
+        'groups expanded', () {
+      write(
+        'application.properties',
+        'spring.profiles.default=local\nspring.profiles.group.local=db',
+      );
+      write('application-local.properties', 'mode=local');
+      write('application-db.properties', 'db=yes');
+      final e = env();
+      config(e).processAndApplySync();
+      expect(e.activeProfiles, isEmpty);
+      expect(e.defaultProfiles, ['local', 'db']);
+      expect(e.getProperty('mode'), 'local');
+      expect(e.getProperty('db'), 'yes');
+      expect(e.isProfileActive('db'), isTrue);
+
+      // Programmatic defaults win over the file's (no merge for defaults).
+      final programmatic = env()..setDefaultProfiles(['other']);
+      config(programmatic).processAndApplySync();
+      expect(programmatic.defaultProfiles, ['other']);
+      expect(programmatic.getProperty('mode'), isNull);
+
+      // The command line wins too; an active profile turns the defaults off.
+      final cli = env({'spring.profiles.default': 'db'});
+      config(cli).processAndApplySync();
+      expect(cli.defaultProfiles, ['db']);
+      expect(cli.getProperty('mode'), isNull);
+      final active = env({'spring.profiles.active': 'prod'});
+      config(active).processAndApplySync();
+      expect(active.getProperty('mode'), isNull);
+      expect(active.defaultProfiles, ['local', 'db']);
+    });
+
+    test('active profiles: the command line replaces the file value, '
+        'programmatic ones are merged, additional ones come first', () {
+      write(
+        'application.properties',
+        'spring.profiles.active=dev\nspring.profiles.include=inc',
+      );
+      final cli = env({'spring.profiles.active': 'prod'});
+      config(cli).processAndApplySync();
+      expect(cli.activeProfiles, ['inc', 'prod']);
+
+      final both = env({'spring.profiles.active': 'qa'})
+        ..setActiveProfiles(['prod']);
+      config(both).processAndApplySync();
+      expect(both.activeProfiles, ['inc', 'prod', 'qa']);
+
+      final additional = env()..setActiveProfiles(['prod']);
+      config(additional, additionalProfiles: ['extra']).processAndApplySync();
+      expect(additional.activeProfiles, ['extra', 'inc', 'prod', 'dev']);
+    });
+
+    test('imported files get their profile variants, above the plain '
+        'subtree of imports', () {
+      write(
+        'application.properties',
+        'spring.profiles.active=dev\n'
+            'spring.config.import=extra.properties\n'
+            'name=app',
+      );
+      write('extra.properties', 'spring.config.import=more.properties');
+      write('more.properties', 'name=more');
+      write('more-dev.properties', 'more=dev');
+      write('extra-dev.properties', 'name=extra-dev\nextra=dev');
+      write('application-dev.properties', 'name=app-dev');
+      final e = env();
+      config(e).processAndApplySync();
+      expect(e.getProperty('name'), 'app-dev');
+      expect(e.getProperty('extra'), 'dev');
+      expect(e.getProperty('more'), 'dev');
+      expect(
+        [
+          for (final source in e.propertySources)
+            if (source.name.startsWith('Config resource'))
+              source.name.substring('Config resource \'file:$root/'.length),
+        ],
+        [
+          "application-dev.properties'",
+          "extra-dev.properties'",
+          "more-dev.properties'",
+          "more.properties'",
+          "extra.properties'",
+          "application.properties'",
+        ],
+      );
+      // An import of a profile-specific file may not set profiles.
+      write('extra-dev.properties', 'spring.profiles.active=x');
+      expect(
+        () => config(env()).processAndApplySync(),
+        throwsA(isA<InvalidConfigDataPropertyException>()),
+      );
+    });
+
+    test('defaultProperties stay below config data; their profiles apply '
+        'when nothing else sets them', () {
+      write(
+        'application.properties',
+        'name=file\nspring.config.import=x.properties',
+      );
+      write('x.properties', 'extra=file');
+      write('application-dev.properties', 'mode=dev');
+      write('application-prod.properties', 'mode=prod');
+      StandardEnvironment withDefaults() => env()
+        ..propertySources.addLast(
+          MapPropertySource(ConfigDataEnvironment.defaultPropertiesSourceName, {
+            'name': 'default',
+            'extra': 'default',
+            'only': 'default',
+            'spring.profiles.active': 'dev',
+          }),
+        );
+      final e = withDefaults();
+      config(e).processAndApplySync();
+      expect(e.getProperty('name'), 'file');
+      expect(e.getProperty('extra'), 'file');
+      expect(e.getProperty('only'), 'default');
+      expect(e.activeProfiles, ['dev']);
+      expect(e.getProperty('mode'), 'dev');
+      expect(e.propertySources.last.name, 'defaultProperties');
+
+      // A file's spring.profiles.active beats the defaults'.
+      write('application.properties', 'spring.profiles.active=prod');
+      final file = withDefaults();
+      config(file).processAndApplySync();
+      expect(file.activeProfiles, ['prod']);
+      expect(file.getProperty('mode'), 'prod');
+    });
   });
 }

@@ -365,6 +365,15 @@ final class FeignInvocationHandler implements InvocationHandler {
   }
 }
 
+/// A parameter bound to a path variable, query parameter or header, with
+/// what Spring's `required` / `defaultValue` make of it.
+typedef _Binding = ({
+  String name,
+  int index,
+  bool required,
+  String? defaultValue,
+});
+
 /// How one method becomes a request, worked out once.
 final class _Plan {
   _Plan._(
@@ -422,10 +431,10 @@ final class _Plan {
       handler.environment.resolvePlaceholders(handler.client.path),
       handler.environment.resolvePlaceholders(mapping.path),
     );
-    final pathVariables = <String, int>{};
-    final queries = <(String, int)>[];
+    final pathVariables = <String, _Binding>{};
+    final queries = <_Binding>[];
     final queryMaps = <int>[];
-    final headers = <(String, int)>[];
+    final headers = <_Binding>[];
     final headerMaps = <int>[];
     final cookies = <(String, int)>[];
     int? body;
@@ -443,6 +452,24 @@ final class _Plan {
         );
       }
     }
+
+    // Like Spring: a value is required unless the annotation says
+    // `required: false`, there is a default value, or the parameter is
+    // nullable (Kotlin, `@Nullable`).
+    _Binding bind(
+      String name,
+      int index,
+      bool required, [
+      String? defaultValue,
+    ]) => (
+      name: name,
+      index: index,
+      required:
+          required &&
+          defaultValue == null &&
+          !method.parameters[index].type.nullable,
+      defaultValue: defaultValue,
+    );
 
     for (final (index, parameter) in method.parameters.indexed) {
       final annotations = parameter.annotations;
@@ -465,21 +492,43 @@ final class _Plan {
       final isMap = parameter.type is MapType;
       if (pathVariable != null) {
         check(parameter, '@PathVariable');
-        pathVariables[pathVariable.name ?? parameter.name] = index;
+        final name = pathVariable.name ?? parameter.name;
+        // Only `required: false` makes a path variable optional: a null
+        // would silently change the URL.
+        pathVariables[name] = (
+          name: name,
+          index: index,
+          required: pathVariable.required,
+          defaultValue: null,
+        );
       } else if (requestParam != null) {
         check(parameter, '@RequestParam', map: true);
         // Like Spring Cloud OpenFeign: a Map is a query map, its name unused.
         if (isMap) {
           queryMaps.add(index);
         } else {
-          queries.add((requestParam.name ?? parameter.name, index));
+          queries.add(
+            bind(
+              requestParam.name ?? parameter.name,
+              index,
+              requestParam.required,
+              requestParam.defaultValue,
+            ),
+          );
         }
       } else if (requestHeader != null) {
         check(parameter, '@RequestHeader', map: true);
         if (isMap) {
           headerMaps.add(index);
         } else {
-          headers.add((requestHeader.name ?? parameter.name, index));
+          headers.add(
+            bind(
+              requestHeader.name ?? parameter.name,
+              index,
+              requestHeader.required,
+              requestHeader.defaultValue,
+            ),
+          );
         }
       } else if (cookieValue != null) {
         check(parameter, '@CookieValue');
@@ -623,10 +672,10 @@ final class _Plan {
   final String methodKey;
   final HttpMethod httpMethod;
   final String path;
-  final Map<String, int> pathVariables;
-  final List<(String, int)> queries;
+  final Map<String, _Binding> pathVariables;
+  final List<_Binding> queries;
   final List<int> queryMaps;
-  final List<(String, int)> headers;
+  final List<_Binding> headers;
   final List<int> headerMaps;
   final List<(String, int)> cookies;
   final List<(String, String)> staticHeaders;
@@ -652,21 +701,45 @@ final class _Plan {
     return '$a$b';
   }
 
+  // The argument of [binding]: for null the default value, else null
+  // (not required) or an error naming the parameter.
+  Object? _valueOf(List<Object?> arguments, _Binding binding, String role) {
+    final value = arguments[binding.index];
+    if (value != null) {
+      return value;
+    }
+    if (binding.defaultValue != null) {
+      return binding.defaultValue;
+    }
+    if (binding.required) {
+      throw _missing(role, binding);
+    }
+    return null;
+  }
+
+  ArgumentError _missing(String role, _Binding binding) => ArgumentError(
+    'The required $role "${binding.name}" of $methodKey must not be null',
+    parameters[binding.index].name,
+  );
+
   /// A new template for a call with [arguments]: path, query, headers and
   /// body from the method (the configured defaults come after the
   /// interceptors, see [applyDefaults]).
   RequestTemplate template(List<Object?> arguments) {
     final decodeSlash = handler.config.decodeSlash;
     var expanded = path;
-    for (final MapEntry(key: name, value: index) in pathVariables.entries) {
-      final value = arguments[index];
+    for (final MapEntry(key: name, value: binding) in pathVariables.entries) {
+      final value = arguments[binding.index];
       if (value == null) {
-        throw ArgumentError(
-          'The path variable "$name" of $methodKey must not be null',
-        );
+        if (binding.required) {
+          throw _missing('@PathVariable', binding);
+        }
+        // Like Spring's URI template expansion: null is an empty string.
+        expanded = expanded.replaceAll('{$name}', '');
+        continue;
       }
       final encoded = Uri.encodeComponent(
-        _joined(value, parameters[index].type, '@PathVariable "$name"'),
+        _joined(value, parameters[binding.index].type, '@PathVariable "$name"'),
       );
       // Spring Cloud OpenFeign's decode-slash: "a/b" stays a path.
       expanded = expanded.replaceAll(
@@ -685,8 +758,12 @@ final class _Plan {
       }
     }
 
-    for (final (name, index) in queries) {
-      addQuery(name, arguments[index], parameters[index].type);
+    for (final binding in queries) {
+      addQuery(
+        binding.name,
+        _valueOf(arguments, binding, '@RequestParam'),
+        parameters[binding.index].type,
+      );
     }
     for (final index in queryMaps) {
       final type = parameters[index].type;
@@ -714,8 +791,12 @@ final class _Plan {
       }
     }
 
-    for (final (name, index) in headers) {
-      setHeader(name, arguments[index], parameters[index].type);
+    for (final binding in headers) {
+      setHeader(
+        binding.name,
+        _valueOf(arguments, binding, '@RequestHeader'),
+        parameters[binding.index].type,
+      );
     }
     for (final index in headerMaps) {
       final type = parameters[index].type;

@@ -65,22 +65,16 @@ extension _ConfigurationScanning on BeanScanner {
       className: module.uniqueClassName('_\$${name}Configuration'),
       type: element.thisType,
       constructorName: _constructorName(constructor),
+      // Parameter types are public: the scanner checks every injection
+      // point before coming here.
       constructorParameters: [
         for (final parameter in constructor.formalParameters)
-          if (BeanScanner._isEmittable(parameter.type))
-            ProxyParameter(
-              name: parameter.name ?? 'p',
-              type: parameter.type,
-              isNamed: parameter.isNamed,
-              isRequired: parameter.isRequired,
-            )
-          else
-            fail(
-              'has a constructor parameter of the private type '
-                  '${parameter.type.getDisplayString()}',
-              'make the type public',
-              parameter,
-            ),
+          ProxyParameter(
+            name: parameter.name ?? 'p',
+            type: parameter.type,
+            isNamed: parameter.isNamed,
+            isRequired: parameter.isRequired,
+          ),
       ],
       isBase: element.isBase,
     );
@@ -106,19 +100,12 @@ extension _ConfigurationScanning on BeanScanner {
       'the methods as written.',
       method,
     );
-    if (!BeanScanner._isEmittable(declaredType)) {
-      fail('returns the private type ${declaredType.getDisplayString()}');
-    }
+    // Return and parameter types are public: the scanner checks them
+    // before coming here.
     final parameters = <ProxyParameter>[];
     final defaults = <String, DartObject>{};
     for (final parameter in method.formalParameters) {
       final parameterName = parameter.name!;
-      if (!BeanScanner._isEmittable(parameter.type)) {
-        fail(
-          'has the parameter $parameterName of the private type '
-          '${parameter.type.getDisplayString()}',
-        );
-      }
       if (parameter.hasDefaultValue) {
         defaults[parameterName] =
             parameter.computeConstantValue() ??

@@ -83,14 +83,19 @@ or an `EventStream<T>` for server-sent events (see below).
 | `@GetMapping('/books/{isbn}')` | `GET` |
 | `@PostMapping('/books')` | `POST` |
 | `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | `PUT`, `PATCH`, `DELETE` |
-| `@RequestMapping('/x', method: HttpMethod.head)` | any method |
+| `@RequestMapping.of(path: '/x', method: HttpMethod.head)` | any method (`GET` by default) |
 
-The path is joined to the client's `url` and `path`. Mapping annotations
+The path is joined to the client's `url` and `path`; without a path
+(`@GetMapping()`) the request goes to the client's `url` and `path` itself
+(`@FeignClient(url: 'https://api.shop.test', path: '/api')` →
+`https://api.shop.test/api`). Mapping annotations
 also take `headers: ['X-Shop=${shop.name}']` (Spring's `Name=value`,
 placeholders allowed; server conditions such as `'!X-Debug'` are ignored,
 Feign's `'Name: value'` stops the application), `produces` (the `Accept`
 header, `application/json` by default) and `consumes` (the `Content-Type`
-of the body).
+of the body). With a path they are written with the `.of` constructor, as
+Dart cannot combine an optional positional parameter with named ones:
+`@GetMapping.of(path: '/books', headers: ['X-Shop=neon'])`.
 
 Parameters:
 
@@ -104,6 +109,21 @@ Parameters:
 | `@CookieValue('SESSION') String session` | a cookie: the cookies of a call go in one `Cookie: a=1; b=2` header; `null` is left out |
 | `@RequestBody() Book book` | the body: objects as JSON (`ObjectMapper`), `String` as text, `Uint8List` as bytes |
 | a parameter without annotation | the body (only one such parameter) |
+
+`@PathVariable`, `@RequestParam` and `@RequestHeader` follow Spring's
+`required` (default `true`) and `defaultValue` (a `String`), written with
+the `.of` constructor: `@RequestParam.of(name: 'sort', defaultValue: 'asc')
+String? sort`.
+
+| Argument `null` | Result |
+|---|---|
+| with `defaultValue` | the default value is sent |
+| required (the default, for a non-nullable parameter) | an `ArgumentError` naming the parameter and the annotation value, before anything is sent |
+| not required (`required: false`, or a nullable parameter) | the query parameter or header is left out; a path variable (required unless `required: false`, whatever its type) becomes an empty string |
+
+As Spring does for Kotlin and `@Nullable` parameters, a nullable Dart
+query parameter or header (`String? q`) is never required, whatever
+`required` says; use a non-nullable parameter to require a value.
 
 Results:
 

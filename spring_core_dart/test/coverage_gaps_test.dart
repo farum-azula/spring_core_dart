@@ -361,7 +361,7 @@ void main() {
       expect(eval("T(double).parse('1.5')"), 1.5);
       expect(eval("T(double).tryParse('x')"), isNull);
       expect(eval("T(String).valueOf(1) + T(String).fromCharCode(65)"), '1A');
-      expect(eval('T(List).of({1, 2})'), [1, 2]);
+      expect(eval('T(List).of(1, 2)'), [1, 2]);
       expect(eval('new Map()'), isEmpty);
       expect(eval('new Set()'), isEmpty);
       expect(eval('new Object()'), isA<Object>());
@@ -381,10 +381,14 @@ void main() {
     test('exception rendering without position', () {
       final error = SpelEvaluationException(
         SpelMessage.typeConversionError,
-        'm',
+        inserts: ['A', 'B'],
         expressionString: 'x',
       );
-      expect(error.toString(), "SpelEvaluationException: m in expression 'x'");
+      expect(
+        error.toString(),
+        'SpelEvaluationException: Expression [x]: EL1001E: Type conversion '
+        'problem, cannot convert from A to B',
+      );
       // An exponent marker without digits belongs to the next token.
       expect(Tokenizer('1e').process().map((t) => t.kind), [
         TokenKind.literalInt,

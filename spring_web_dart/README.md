@@ -36,14 +36,17 @@ abstract interface class CatalogClient {
   @GetMapping('/books')
   Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int page = 0});
 
-  @GetMapping('/books', headers: ['X-Api-Version=2'])
+  @GetMapping.of(path: '/books', headers: ['X-Api-Version=2'])
   Future<List<Book>> filter(@RequestParam() Map<String, Object?> filters);  // ?author=...&year=...
 
-  @PostMapping('/books', consumes: MediaType.applicationJson)
+  @PostMapping.of(path: '/books', consumes: MediaType.applicationJson)
   Future<ResponseEntity<Book>> create(
     @RequestBody() Book book,
     @RequestHeader('X-Request-Id') String requestId,
   );
+
+  @GetMapping()                                       // no path: the base path of the client
+  Future<List<Book>> all(@RequestParam.of(name: 'sort', defaultValue: 'title') String? sort);
 
   @DeleteMapping('/books/{isbn}')
   Future<void> delete(@PathVariable() String isbn);   // {isbn}: the parameter name
@@ -52,21 +55,29 @@ abstract interface class CatalogClient {
 
 | Annotation | On | Meaning |
 |---|---|---|
-| `@GetMapping(path)`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | HTTP method and path (`/books/{isbn}`; `''` for none); options `headers: ['Name=value']` (Spring's syntax), `produces` (Accept), `consumes` (Content-Type) |
-| `@RequestMapping(path, method: HttpMethod.head)` | method | any method |
-| `@PathVariable(['name'])` | parameter | fills `{name}` of the path (URL-encoded) |
-| `@RequestParam(['name'])` | parameter | a query parameter; `null` is left out, a list repeats it, a `Map` gives one per entry |
-| `@RequestHeader(['name'])` | parameter | a header; `null` is left out, a list gives several values, a `Map` one header per entry |
+| `@GetMapping([path])`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | HTTP method and path (`/books/{isbn}`); no path (`@GetMapping()`) maps the base path of the client (or the path of the class) |
+| `@GetMapping.of({path, headers, produces, consumes})` (also `@PostMapping.of`, ...) | method | the same with every attribute by name: `headers: ['Name=value']` (Spring's syntax), `produces` (Accept), `consumes` (Content-Type) |
+| `@RequestMapping([path])`, `@RequestMapping.of({path, method, headers, produces, consumes})` | method | any method (`method: HttpMethod.head`; `GET` by default) |
+| `@PathVariable(['name'])`, `@PathVariable.of({name, required})` | parameter | fills `{name}` of the path (URL-encoded) |
+| `@RequestParam(['name'])`, `@RequestParam.of({name, required, defaultValue})` | parameter | a query parameter; `null` is left out, a list repeats it, a `Map` gives one per entry |
+| `@RequestHeader(['name'])`, `@RequestHeader.of({name, required, defaultValue})` | parameter | a header; `null` is left out, a list gives several values, a `Map` one header per entry |
 | `@CookieValue(['name'])` | parameter | a cookie (`Cookie: name=value; ...`); `null` is left out |
 | `@RequestBody({required})` | parameter | the body (JSON) |
 
 Without a name, `@PathVariable()`, `@RequestParam()`, `@RequestHeader()` and
 `@CookieValue()` use the parameter name (the generator keeps parameter
-names). Whether a parameter is required and its default come from the Dart
-parameter, as Spring does for Kotlin: `String? q` is optional,
-`{int page = 0}` defaults to 0. All mapping annotations implement `Mapping`
-(`method`, `path`, `headers`, `produces`, `consumes`), so code that reads
-them can use `annotations.whereType<Mapping>()`.
+names). All mapping annotations implement `Mapping` (`method`, `path`,
+`headers`, `produces`, `consumes`; `path` is `''` for none), so code that
+reads them can use `annotations.whereType<Mapping>()`.
+
+`required` is `true` by default, as in Spring. A required parameter that is
+`null` is an error naming it, a `defaultValue` (a `String`, sent as is)
+replaces `null` and implies `required: false`, and a `null` that is not
+required is left out. The parameter type counts too, as for Kotlin or
+`@Nullable` parameters in Spring: `String? q` is not required whatever
+`required` says, and a Dart default value (`{int page = 0}`) is simply the
+argument. A path variable is required unless `required: false` (whatever
+its type); then `null` gives an empty string.
 
 ## HTTP types
 
@@ -285,16 +296,16 @@ sockets.failNextConnect();                       // the next connect fails
   entries that are only conditions for a server (`'Name'`, `'!Name'`,
   `'Name!=value'`) are ignored, as Spring Cloud OpenFeign does. Feign's
   `'Name: value'` is rejected at startup.
-- **`path` is required** in the mapping annotations (`@GetMapping('')` for
-  none): Dart cannot combine an optional positional parameter with named
-  ones, so `@GetMapping()` with `headers:` / `produces:` is not possible.
-  `produces` and `consumes` take one media type, not a list.
-- **No `required:` / `defaultValue:`** on `@RequestParam`,
-  `@RequestHeader`, `@CookieValue` and `@PathVariable` (for the same
-  reason: their name is an optional positional parameter). The Dart
-  parameter says it, like Kotlin parameters do in Spring: a nullable type
-  is optional, a default value is the default. `@RequestBody(required:)`
-  exists.
+- **Attributes next to a positional `path` or `name`** are written with the
+  `.of` constructor: Dart cannot combine an optional positional parameter
+  with named ones, so `@GetMapping('/books', produces: ...)` is
+  `@GetMapping.of(path: '/books', produces: ...)` and
+  `@RequestParam('page', required: false)` is
+  `@RequestParam.of(name: 'page', required: false)`. `@GetMapping()` and
+  `@GetMapping('/books')` stay as in Spring. `produces` and `consumes`
+  take one media type, not a list.
+- **`@CookieValue` has no `required:` / `defaultValue:`**: a `null`
+  cookie is left out. `@RequestBody(required:)` exists.
 - **`HttpStatus` constants are `int`s** (an extension type), not enum
   values: they compare with status codes directly, `toString()` is the
   number (no `name()`), `100 Continue` is `HttpStatus.continue_` (as in

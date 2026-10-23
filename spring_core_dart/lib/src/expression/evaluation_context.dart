@@ -131,6 +131,120 @@ abstract interface class MethodResolver {
   );
 }
 
+/// Creates an object with evaluated arguments, like Spring's
+/// `ConstructorExecutor`.
+///
+/// ```dart
+/// ConstructorExecutor executor = (context, args) =>
+///     Point(args[0]! as int, args[1]! as int);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// TypedValue point = executor.execute(context, 1, 2);
+/// ```
+typedef ConstructorExecutor = Object? Function(
+  EvaluationContext context,
+  List<Object?> arguments,
+);
+
+/// Finds constructors for `new Name(...)`, like Spring's
+/// `ConstructorResolver`.
+///
+/// `StandardEvaluationContext` asks `SpelTypeConstructorResolver` (the
+/// constructors registered on a `SpelType`) by default; add your own with
+/// `StandardEvaluationContext.addConstructorResolver`. A
+/// `SimpleEvaluationContext` has none, so `new` always fails there.
+///
+/// ```dart
+/// final class PointResolver implements ConstructorResolver {
+///   @override
+///   ConstructorExecutor? resolve(EvaluationContext context,
+///           String typeName, List<Object?> arguments) =>
+///       typeName == 'Point' && arguments.length == 2
+///           ? (_, args) => Point(args[0]! as int, args[1]! as int)
+///           : null;
+/// }
+///
+/// final context = StandardEvaluationContext()
+///   ..addConstructorResolver(PointResolver());
+/// SpelExpressionParser().parseExpression('new Point(1, 2)')
+///     .getValue(context);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// context.addConstructorResolver(new PointResolver());
+/// parser.parseExpression("new Point(1, 2)").getValue(context);
+/// ```
+abstract interface class ConstructorResolver {
+  /// An executor creating a [typeName] from [arguments], or `null` if not
+  /// handled.
+  ///
+  /// Throwing an `AccessException` is reported as
+  /// `SpelMessage.constructorInvocationProblem`.
+  ConstructorExecutor? resolve(
+    EvaluationContext context,
+    String typeName,
+    List<Object?> arguments,
+  );
+}
+
+/// Reads and writes `target[index]` for custom types, like Spring's
+/// `IndexAccessor` (6.2).
+///
+/// Lists, maps and strings are indexed natively; index accessors are asked
+/// for any other target before the fallbacks (other iterables, property
+/// access by a string index).
+///
+/// ```dart
+/// final class MatrixRowAccessor implements IndexAccessor {
+///   @override
+///   bool canRead(EvaluationContext c, Object target, Object? index) =>
+///       target is Matrix && index is int;
+///
+///   @override
+///   Object? read(EvaluationContext c, Object target, Object? index) =>
+///       (target as Matrix).row(index! as int);
+///
+///   @override
+///   bool canWrite(EvaluationContext c, Object t, Object? i) => false;
+///
+///   @override
+///   void write(EvaluationContext c, Object t, Object? i, Object? v) {}
+/// }
+///
+/// final context = StandardEvaluationContext(matrix)
+///   ..addIndexAccessor(MatrixRowAccessor());
+/// SpelExpressionParser().parseExpression('#root[1]').getValue(context);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// StandardEvaluationContext context = new StandardEvaluationContext(matrix);
+/// context.addIndexAccessor(new MatrixRowAccessor());
+/// ```
+abstract interface class IndexAccessor {
+  /// Whether this accessor can read [index] of [target].
+  bool canRead(EvaluationContext context, Object target, Object? index);
+
+  /// Reads [index] of [target]; only called after [canRead] returned
+  /// `true`.
+  Object? read(EvaluationContext context, Object target, Object? index);
+
+  /// Whether this accessor can write [index] of [target].
+  bool canWrite(EvaluationContext context, Object target, Object? index);
+
+  /// Writes [newValue] to [index] of [target]; only called after
+  /// [canWrite] returned `true`.
+  void write(
+    EvaluationContext context,
+    Object target,
+    Object? index,
+    Object? newValue,
+  );
+}
+
 /// Finds `T(Name)` types, like Spring's `TypeLocator`.
 ///
 /// Dart cannot load classes by name, so types must be registered as
@@ -346,6 +460,14 @@ abstract interface class EvaluationContext {
   /// Resolvers for `obj.method(...)`, asked in order.
   List<MethodResolver> get methodResolvers;
 
+  /// Resolvers for `new Name(...)`, asked in order; empty when
+  /// constructors are not supported.
+  List<ConstructorResolver> get constructorResolvers;
+
+  /// Accessors for `target[index]` on types other than lists, maps and
+  /// strings, asked in order.
+  List<IndexAccessor> get indexAccessors;
+
   /// Finds types for `T(Name)`, `new Name(...)` and `instanceof`.
   TypeLocator get typeLocator;
 
@@ -365,19 +487,15 @@ abstract interface class EvaluationContext {
   /// Whether assignment (`=`, `++`, `--`) is allowed.
   bool get isAssignmentEnabled;
 
-  /// Whether `new Type(...)` is allowed.
-  bool get isConstructorEnabled;
-
-  /// Sets the variable `#name` to [value] (from Dart code).
+  /// Sets the variable `#name` to [value] (programmatic use).
   void setVariable(String name, Object? value);
 
-  /// Assigns the variable `#name` from an expression (`#name = value`,
-  /// `#name++`) and returns the assigned value, like Spring's
-  /// `EvaluationContext.assignVariable`.
+  /// Assigns the value from [valueSupplier] to `#name` for an assignment
+  /// inside an expression (`#name = ...`, `#name++`) and returns it, like
+  /// Spring's `assignVariable`.
   ///
-  /// [StandardEvaluationContext] sets the value from [valueSupplier];
-  /// [SimpleEvaluationContext] throws
-  /// [SpelMessage.variableAssignmentNotSupported] without calling it.
+  /// A `SimpleEvaluationContext` throws
+  /// `SpelMessage.variableAssignmentNotSupported` instead.
   Object? assignVariable(String name, Object? Function() valueSupplier);
 
   /// The value of variable `#name`, or `null` when unset.
@@ -403,11 +521,23 @@ final class StandardTypeConverter implements TypeConverter {
   /// Converts with [conversionService], or the shared
   /// `DefaultConversionService` when omitted.
   StandardTypeConverter([ConversionService? conversionService])
-    : conversionService =
-          conversionService ?? DefaultConversionService.sharedInstance;
+    : _conversionService = _always(
+        conversionService ?? DefaultConversionService.sharedInstance,
+      );
+
+  /// Converts with the service [conversionService] returns, looked up at
+  /// every conversion (Spring's `Supplier` constructor): a bean factory's
+  /// service may be replaced after the evaluation context was created.
+  StandardTypeConverter.lazy(ConversionService Function() conversionService)
+    : _conversionService = conversionService;
+
+  final ConversionService Function() _conversionService;
+
+  static ConversionService Function() _always(ConversionService service) =>
+      () => service;
 
   /// The service doing the conversions.
-  final ConversionService conversionService;
+  ConversionService get conversionService => _conversionService();
 
   @override
   bool canConvert(Object? value, Type targetType) =>
@@ -420,24 +550,25 @@ final class StandardTypeConverter implements TypeConverter {
     } on Exception catch (error) {
       throw SpelEvaluationException(
         SpelMessage.typeConversionError,
-        'Cannot convert ${value.runtimeType} to $targetType',
+        inserts: [value.runtimeType, targetType],
         cause: error,
       );
     }
   }
 }
 
-/// Compares numbers, strings, dates, durations and `Comparable`s; `null`
-/// is smaller than anything, like Spring's `StandardTypeComparator`.
+/// Compares numbers, strings, dates, durations, enums and `Comparable`s;
+/// `null` is smaller than anything, like Spring's `StandardTypeComparator`.
 ///
-/// Numbers compare by value across `int` and `double`; enums of the same
-/// type by index (Java enums by ordinal); other `Comparable`s only with
-/// values of the same kind.
+/// Numbers compare by value across `int` and `double`; values of one enum
+/// type by their index (like Java enums, which are `Comparable` by
+/// ordinal); other `Comparable`s only with values of the same kind.
 ///
 /// ```dart
 /// const comparator = StandardTypeComparator();
 /// comparator.compare(1, 2.5); // negative
 /// comparator.compare(null, 'a'); // negative
+/// comparator.compare(Level.low, Level.high); // negative
 /// comparator.canCompare('a', 1); // false
 /// ```
 ///
@@ -455,12 +586,10 @@ final class StandardTypeComparator implements TypeComparator {
       left == null ||
       right == null ||
       (left is num && right is num) ||
-      (left is Comparable && right is Comparable && _sameKind(left, right)) ||
-      _sameEnum(left, right);
-
-  // Enums of the same type compare by index, like Java enums by ordinal.
-  static bool _sameEnum(Object left, Object right) =>
-      left is Enum && right is Enum && left.runtimeType == right.runtimeType;
+      (left is Enum &&
+          right is Enum &&
+          left.runtimeType == right.runtimeType) ||
+      (left is Comparable && right is Comparable && _sameKind(left, right));
 
   // Comparable values only compare with the same kind (a String never
   // compares with a DateTime, even though both are Comparable).
@@ -484,12 +613,14 @@ final class StandardTypeComparator implements TypeComparator {
     if (left is Comparable && right is Comparable && _sameKind(left, right)) {
       return left.compareTo(right);
     }
-    if (_sameEnum(left, right)) {
-      return (left as Enum).index.compareTo((right as Enum).index);
+    if (left is Enum &&
+        right is Enum &&
+        left.runtimeType == right.runtimeType) {
+      return left.index.compareTo(right.index);
     }
     throw SpelEvaluationException(
       SpelMessage.notComparable,
-      'Cannot compare ${left.runtimeType} and ${right.runtimeType}',
+      inserts: [left.runtimeType, right.runtimeType],
     );
   }
 }
@@ -516,9 +647,8 @@ final class StandardOperatorOverloader implements OperatorOverloader {
   @override
   Object? operate(Operation operation, Object? left, Object? right) =>
       throw SpelEvaluationException(
-        SpelMessage.operatorNotSupported,
-        'Operator ${operation.name} is not supported for '
-        '${left.runtimeType} and ${right.runtimeType}',
+        SpelMessage.operatorNotSupportedBetweenTypes,
+        inserts: [operation.name, left.runtimeType, right.runtimeType],
       );
 }
 
@@ -570,6 +700,14 @@ class StandardEvaluationContext implements EvaluationContext {
   final List<MethodResolver> methodResolvers = [const BuiltinMethodResolver()];
 
   @override
+  final List<ConstructorResolver> constructorResolvers = [
+    const SpelTypeConstructorResolver(),
+  ];
+
+  @override
+  final List<IndexAccessor> indexAccessors = [];
+
+  @override
   TypeLocator typeLocator = StandardTypeLocator();
 
   @override
@@ -586,9 +724,6 @@ class StandardEvaluationContext implements EvaluationContext {
 
   @override
   bool get isAssignmentEnabled => true;
-
-  @override
-  bool get isConstructorEnabled => true;
 
   final _variables = <String, Object?>{};
 
@@ -611,6 +746,19 @@ class StandardEvaluationContext implements EvaluationContext {
     (r) => r is BuiltinMethodResolver,
   );
 
+  /// Adds [resolver] before the default `SpelTypeConstructorResolver`
+  /// (Spring's `addConstructorResolver`).
+  void addConstructorResolver(ConstructorResolver resolver) =>
+      _insertBeforeDefaults(
+        constructorResolvers,
+        resolver,
+        (r) => r is SpelTypeConstructorResolver,
+      );
+
+  /// Adds [accessor] after the existing index accessors (Spring's
+  /// `addIndexAccessor`).
+  void addIndexAccessor(IndexAccessor accessor) => indexAccessors.add(accessor);
+
   static void _insertBeforeDefaults<T>(
     List<T> list,
     T element,
@@ -628,8 +776,10 @@ class StandardEvaluationContext implements EvaluationContext {
   /// parser.parseExpression("#reverse('abc')").getValue(context); // 'cba'
   /// ```
   ///
-  /// Functions share the namespace of variables.
-  void registerFunction(String name, Function function) =>
+  /// Functions share the namespace of variables. [function] is a Dart
+  /// `Function`, or a `VarargsFunction` to accept a variable number of
+  /// trailing arguments.
+  void registerFunction(String name, Object function) =>
       _variables[name] = function;
 
   /// Sets several variables at once.
@@ -652,8 +802,8 @@ class StandardEvaluationContext implements EvaluationContext {
 
 /// A restricted context for data binding, like Spring's
 /// `SimpleEvaluationContext`: no type references, no constructors, no bean
-/// references; assignment only in read-write mode; methods only when
-/// enabled.
+/// references, no assignment to variables; assignment to properties only
+/// in read-write mode; methods only when enabled.
 ///
 /// Created through [SimpleEvaluationContextBuilder]. Safe for expressions
 /// from less trusted sources.
@@ -666,6 +816,8 @@ class StandardEvaluationContext implements EvaluationContext {
 /// // 'Ada'
 /// SpelExpressionParser().parseExpression("name = 'x'").getValue(context);
 /// // throws SpelEvaluationException (notAssignable)
+/// SpelExpressionParser().parseExpression('#v = 1').getValue(context);
+/// // throws SpelEvaluationException (variableAssignmentNotSupported)
 /// ```
 ///
 /// Spring (Java):
@@ -681,6 +833,7 @@ class SimpleEvaluationContext implements EvaluationContext {
     this.rootObject,
     this.propertyAccessors,
     this.methodResolvers,
+    this.indexAccessors,
     this.typeConverter,
     this.isAssignmentEnabled,
   );
@@ -718,12 +871,18 @@ class SimpleEvaluationContext implements EvaluationContext {
   final List<MethodResolver> methodResolvers;
 
   @override
+  final List<IndexAccessor> indexAccessors;
+
+  @override
   final TypeConverter typeConverter;
 
   @override
   final bool isAssignmentEnabled;
 
   final _variables = <String, Object?>{};
+
+  @override
+  List<ConstructorResolver> get constructorResolvers => const [];
 
   @override
   TypeLocator get typeLocator => const _NoTypeLocator();
@@ -739,19 +898,15 @@ class SimpleEvaluationContext implements EvaluationContext {
   BeanResolver? get beanResolver => null;
 
   @override
-  bool get isConstructorEnabled => false;
-
-  @override
   void setVariable(String name, Object? value) => _variables[name] = value;
 
-  /// Always throws [SpelMessage.variableAssignmentNotSupported]: expressions
-  /// cannot assign variables here (Spring 5.2.24+); [setVariable] from Dart
-  /// code still works.
+  /// Always throws: expressions in a simple context cannot assign
+  /// variables (Spring's EL1080E). Use [setVariable] from code.
   @override
   Object? assignVariable(String name, Object? Function() valueSupplier) =>
       throw SpelEvaluationException(
         SpelMessage.variableAssignmentNotSupported,
-        "Assignment to variable '#$name' is not supported",
+        inserts: ['#$name'],
       );
 
   @override
@@ -792,6 +947,7 @@ final class SimpleEvaluationContextBuilder {
   bool _assignment;
   final List<PropertyAccessor> _accessors;
   final _resolvers = <MethodResolver>[];
+  final _indexAccessors = <IndexAccessor>[];
   bool _instanceMethods = false;
   TypeConverter _converter = StandardTypeConverter();
   Object? _root;
@@ -814,6 +970,15 @@ final class SimpleEvaluationContextBuilder {
     List<MethodResolver> resolvers,
   ) {
     _resolvers.addAll(resolvers);
+    return this;
+  }
+
+  /// Adds index accessors for custom indexable types (Spring's
+  /// `withIndexAccessors`).
+  SimpleEvaluationContextBuilder withIndexAccessors(
+    List<IndexAccessor> accessors,
+  ) {
+    _indexAccessors.addAll(accessors);
     return this;
   }
 
@@ -849,18 +1014,20 @@ final class SimpleEvaluationContextBuilder {
       ..._resolvers,
       if (_instanceMethods) const BuiltinMethodResolver(),
     ]),
+    List.unmodifiable(_indexAccessors),
     _converter,
     _assignment,
   );
 }
 
-// SimpleEvaluationContext has no type support: every T(...) fails.
+// SimpleEvaluationContext has no type support: every T(...) fails, like
+// Spring's (TYPE_NOT_FOUND).
 final class _NoTypeLocator implements TypeLocator {
   const _NoTypeLocator();
 
   @override
   SpelType findType(String typeName) => throw SpelEvaluationException(
-    SpelMessage.notSupportedInSimpleContext,
-    'Type references are not supported in a SimpleEvaluationContext',
+    SpelMessage.typeNotFound,
+    inserts: [typeName],
   );
 }

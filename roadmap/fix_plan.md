@@ -78,14 +78,10 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 - [ ] Exclude beans produced by a configuration's own `@Bean` methods from its collections (`factoryBeanName`, Spring's `isSelfReference`).
 - [ ] Parent contexts: collections should see grandparent beans; keep the parent beans' `@Order` and `autowireCandidate=false`; shadow by `containsLocalBean`.
 - [ ] Single dependencies: merge local and parent candidates (parent `@Primary` may win, local wins a tie), pass the parameter name to the parent, validate ambiguity in the parent.
-- [ ] `autowireCandidate=false` must be excluded from qualified injection too, without breaking `getBean<T>(qualifier: name)` (Spring's `getBean(name, Class)` returns non-candidates); `getBean<T>()` should still return the only non-candidate bean.
 - [ ] `defaultCandidate` honoured by `@ConditionalOnBean` / `@ConditionalOnMissingBean` (the definition and injection already follow Spring 6.2).
-- [ ] Aliases from `registerAlias` must count for `@Qualifier` and parameter-name matching.
 - [ ] `determineAutowireCandidate` details: two `@Primary` beans always ambiguous; parameter name matches bean names/aliases only; Spring 6.2 "qualifier-suggested name" step.
-- [ ] Wrap runtime resolution errors in `UnsatisfiedDependencyException` with the bean chain and injection point.
 - [ ] Clean dependency bookkeeping on `removeBeanDefinition`; forbid bean creation while singletons are being destroyed.
 - [ ] Warn when a custom-scoped bean is injected directly into a singleton; scoped proxies.
-- [ ] `Map`/`Set` injection in registration order (Spring sorts only `List`); `@Order` on a `@Bean` method beats `Ordered.getOrder()`, a class-level `@Order` does not (track where `BeanDefinition.order` came from).
 - [ ] Generic lookups: `Object` lookups returning all beans.
 - [ ] Dereference registered `FactoryBean`s (`registerSingleton`).
 - [ ] Alias overriding when `allowBeanDefinitionOverriding` is on; dangling alias chains after removal.
@@ -96,13 +92,9 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 
 ## Context, events, lifecycle (`context`)
 
-- [ ] Detect `GenericApplicationListener` / `SmartApplicationListener` beans (today they get no events, silently), listeners hidden behind a `@Bean` method's declared type and `registerSingleton` objects; de-duplicate listeners.
-- [ ] `Future`-returning `@EventListener`s: republish the result, route errors to the error handler.
 - [ ] Programmatic registration: Spring 7's `BeanRegistrar` (`registerBean<T>(name, spec)`) through `@Import` and `context.register(registrar)`, `ImportSelector` / `ImportBeanDefinitionRegistrar`, `registerBean` on the context.
-- [ ] Lifecycle: start dependencies first / stop dependents first; stop already started beans when refresh fails.
 - [ ] Spring 7 `pause()` / `restart()`: `ContextPausedEvent` / `ContextRestartedEvent`, `LifecycleProcessor.onPause` / `onRestart`, `SmartLifecycle.isPauseable` (maps onto Flutter's paused/resumed).
 - [ ] `PayloadApplicationEvent<T>` listeners; `@EventListener` methods on `FactoryBean` classes.
-- [ ] Early events: replay them when listeners are registered and deliver events published during singleton creation synchronously.
 - [ ] Asynchronous delivery: an executor-like option on `SimpleApplicationEventMulticaster` and `@Async` listeners (with the `TaskExecutor` of the scheduling starter).
 - [ ] Listener conditions inside the error handler; lifecycle discovery by instance type.
 - [ ] Phased creation of post-processors (`PriorityOrdered` → `Ordered` → rest, re-querying names).
@@ -110,73 +102,45 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 - [ ] `EmbeddedValueResolverAware` evaluating SpEL; descriptive errors for infrastructure misuse.
 - [ ] Child message lookups use the parent's message source, not the parent context; `conversionService` from ancestors.
 - [ ] Template hooks (`postProcessBeanFactory`, `onRefresh`, `onClose`), `registerShutdownHook()`.
-- [ ] Asynchronous lifecycle: `refreshAsync()` / `closeAsync()`, async init/destroy and `SmartLifecycle.stop` with per-phase timeouts.
 
 ## Configuration (`core`)
 
-- [ ] `spring.config.import` from the command line / environment; directory imports; missing non-optional directories fail.
-- [ ] `spring.profiles.default` from config files (load `application-{default}.properties`, expand groups).
 - [ ] Lenient placeholders in optional imports; command line beats a file's own placeholders in imports and guards.
-- [ ] `defaultProperties` stays below config data.
 - [ ] Indexed keys (`spring.profiles.include[0]`).
-- [ ] Merge programmatic active profiles with the file's `spring.profiles.active`; profile variants of imported files.
 - [ ] Encoding option (Latin-1) for `.properties`.
-- [ ] `@Value` → `Resource` conversion uses the context's resource loader (protocol resolvers, Flutter assets), not a new `DefaultResourceLoader`.
 - [ ] `classpath:` / `classpath*:` patterns in `PathMatchingResourcePatternResolver` over embedded resources.
 - [ ] `AntPathMatcher.extractUriTemplateVariables` on backtracking `**` paths; `FileSystemResource` directories.
 - [ ] Placeholder parser details (`${a ${b}`, `key:default` tried as a key).
 - [ ] Pattern resolver pruning; `file:` URL decoding.
 - [ ] `random.*`, `package:` resources, async `@PropertySource` for Flutter assets; a non-optional `config/*/` location without subdirectories fails.
 
-## Spring Boot (`spring_boot_dart`)
-
-- [ ] Auto-configuration ordering (`@AutoConfiguration(before:, after:)`, `@AutoConfigureOrder`) and exclusion (`@SpringBootApplication(exclude:)`, `spring.autoconfigure.exclude`).
-- [ ] `SpringApplication.exit(context)` with `ExitCodeGenerator` beans; close the context on SIGINT/SIGTERM by default (`spring.main.register-shutdown-hook`).
 
 ## SpEL (`expression`)
 
 - [ ] Web: real literals (`7.0 / 2`) and int/double semantics under dart2js.
-- [ ] Limits: maximum expression length (10 000), nesting depth, maximum operations per evaluation (10 000, `MAX_OPERATIONS_EXCEEDED`, Spring 6.2.19+), overflow in `'x' * n`; patterns with nested quantifiers (`(a+)+`, the shape of catastrophic backtracking) rejected — Dart's `RegExp` cannot be interrupted the way Spring's `matches` counts accesses. (The regex length limit of 1000 is done.)
 - [ ] Subtypes accepted by introspected properties and methods (`#{svc.process(@english)}` with an interface parameter).
 - [ ] Deep `==` for collections; `^` saturation like Java; `T(Math)` returning doubles; numeric edge cases.
 - [ ] `'d' - 3` is `'a'` (single-character string minus int).
-- [ ] `systemEnvironment` / `systemProperties` / `environment.getProperty(...)` in `@Value`; the factory's `ConversionService`.
 - [ ] Indexes evaluated against the root; selection result types.
-- [ ] Safe navigation per step (Spring 6.2); user exceptions rethrown unwrapped; better diagnostics; caching.
-- [ ] Spring's exception layer (`EvaluationException`, `ParseException`), `SpelMessage` names and `EL1xxxE` codes.
-- [ ] `SpelParserConfiguration` with 7.0's builder (auto-grow, maximum length and operations), Java type names (`T(Integer)`), varargs, array construction (`new int[4]`), missing String/List/Map methods.
-- [ ] Missing APIs: `Expression.getValueType`, `IndexAccessor` (6.2), `ConstructorResolver`, `BeanFactoryAccessor`.
+- [ ] Java type names (`T(Integer)`), array construction (`new int[4]`), missing String/List/Map methods.
+- [ ] Missing APIs: `Expression.getValueType`, `IndexAccessor` (6.2).
 
 ## JSON (`json`, Jackson auto-configuration)
 
 - [ ] Unsupported `spring.jackson.*` keys fail or warn; accept Boot 4's `spring.jackson.datatype.datetime.*`; bean name like Boot (`jacksonJsonMapper`); named time zones (Dart has no tz database: only `UTC` and fixed offsets today).
-- [ ] Pick the baseline: Jackson 3 / Boot 4 defaults (properties sorted alphabetically) or Jackson 2 order (superclass first) — and say which; `@JsonPropertyOrder`.
 
 ## AOP (`aop`)
 
-- [ ] Proxies for classes with private members, operators or non-literal default values and no interface: the runtime has subclass proxies (`AopProxyFactory.subclass`), the generator must emit them; `final` / `sealed` classes fail the build with a message saying what to change.
-- [ ] Argument binding in generated advice (`@annotation(timed)`, `args(id, ..)`, `@AfterReturning(returning:)`): the runtime binds, the generator passes nothing yet; inherited advice.
 - [ ] Implicit field getters/setters not advised (explicit getters are methods, which Spring advises).
 - [ ] Build-time validation of pointcut expressions; smaller generated code than `aop_proxies: all` without changing its meaning (skip beans no pointcut can match).
 
 ## Generator
 
-- [ ] Private types/functions in generated code: clear build errors instead of compile errors.
 - [ ] Annotations on primary-constructor fields lost when a library is resolved twice in one build.
-- [ ] Inherited `@Bean` methods and mixin lifecycle methods; generic superclasses (`BaseService<R>`).
 - [ ] Reject extension types and other unsupported targets (`@ComponentScan` on a class, `@Component` on mixins/enums).
 - [ ] Subclasses of `Profile`/`Conditional`; class-level `@Lazy` on lite configuration classes.
-- [ ] `@ComponentScan(includeFilters:, excludeFilters:, lazyInit:)`, evaluated at build time.
 - [ ] Nested `@ComponentScan` roots duplicating beans; escaping the scan glob; validating explicit names.
-- [ ] `@Value` on super-constructor parameters; async `initMethod`/`destroyMethod`; constructor selection like Spring.
+- [ ] `@Value` on super-constructor parameters; constructor selection like Spring.
 - [ ] Warning-free generated code; better error messages (several errors, library URIs).
+- [ ] `build_runner watch` while typing: a library with syntax errors must not fail the build and lose the generated `*.beans.dart` (build_runner deletes the outputs of a failed step); keep the previous output and report the parse error once, so a large project is not red and rebuilt on every keystroke.
 
-## HTTP types and annotations (`spring_web_dart`)
-
-- [ ] Optional `path` in `@RequestMapping` / `@GetMapping` / … (`@GetMapping()`), needed by the planned web starter.
-- [ ] `required` / `defaultValue` on `@RequestParam` / `@RequestHeader`, `required` on `@PathVariable`.
-- [ ] `HttpHeaders`: `toSingleValueMap()` (first value), `setBearerAuth` / `setBasicAuth` / `contentType` / `location` / `contentLength` (if still missing).
-
-## Scheduling starter
-
-- [ ] `spring.task.scheduling.shutdown.await-termination[-period]`: wait for running tasks on close (needs the asynchronous `closeAsync()` from the context section).

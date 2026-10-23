@@ -278,6 +278,20 @@ void main() {
       context.close();
     });
 
+    test('spring.jackson.mapper.sort-properties-alphabetically=false', () {
+      final context = run(
+        [app],
+        ['--spring.jackson.mapper.sort-properties-alphabetically=false'],
+      );
+      final mapper = context.getBean<ObjectMapper>();
+      expect(mapper.sortPropertiesAlphabetically, isFalse);
+      expect(
+        mapper.writeValueAsString(const Order(orderId: 1)),
+        '{"orderId":1,"note":null}',
+      );
+      context.close();
+    });
+
     test('defaults, and backs off for an application ObjectMapper', () {
       final defaults = run([app], []);
       final mapper = defaults.getBean<ObjectMapper>();
@@ -285,8 +299,9 @@ void main() {
       expect(mapper.failOnUnknownProperties, isFalse);
       expect(
         mapper.writeValueAsString(const Order(orderId: 1)),
-        '{"orderId":1,"note":null}',
+        '{"note":null,"orderId":1}',
       );
+      expect(mapper.sortPropertiesAlphabetically, isTrue);
       defaults.close();
 
       final own = ObjectMapper(indentOutput: true);

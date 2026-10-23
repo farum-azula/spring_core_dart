@@ -14,8 +14,8 @@ import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 @FeignClient('wikimedia', url: r'${wikimedia.url}')
 abstract interface class WikimediaStreams {
   /// Wikimedia asks every client to say who it is (User-Agent).
-  @GetMapping(
-    '/v2/stream/recentchange',
+  @GetMapping.of(
+    path: '/v2/stream/recentchange',
     headers: [r'User-Agent=${wikimedia.user-agent}'],
   )
   EventStream<RecentChange> recentChanges();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
@@ -209,9 +211,11 @@ final class BeanDefinition<T extends Object> {
   ///   dependencies from the resolver (`r.dependency<Foo>()`).
   /// - `inject`: field, setter and method injection after construction.
   /// - `postConstruct` / `initMethod`: init callbacks (`@PostConstruct`,
-  ///   `@Bean(initMethod:)`).
+  ///   `@Bean(initMethod:)`); a returned `Future` is awaited by
+  ///   `refreshAsync()`.
   /// - `preDestroy` / `destroyMethod`: destroy callbacks (`@PreDestroy`,
-  ///   `@Bean(destroyMethod:)`).
+  ///   `@Bean(destroyMethod:)`); a returned `Future` is awaited by
+  ///   `closeAsync()`.
   /// - [types]: lookup types; defaults to `[T]`.
   BeanDefinition({
     required this.name,
@@ -379,10 +383,10 @@ final class BeanDefinition<T extends Object> {
 
   final T Function(DependencyResolver resolver) _create;
   final void Function(T bean, DependencyResolver resolver)? _inject;
-  final void Function(T bean)? _postConstruct;
-  final void Function(T bean)? _initMethod;
-  final void Function(T bean)? _preDestroy;
-  final void Function(T bean)? _destroyMethod;
+  final FutureOr<void> Function(T bean)? _postConstruct;
+  final FutureOr<void> Function(T bean)? _initMethod;
+  final FutureOr<void> Function(T bean)? _preDestroy;
+  final FutureOr<void> Function(T bean)? _destroyMethod;
 
   /// The declared bean type.
   Type get beanType => T;
@@ -429,17 +433,19 @@ final class BeanDefinition<T extends Object> {
   void populate(Object bean, DependencyResolver resolver) =>
       _inject?.call(bean as T, resolver);
 
-  /// Runs `@PostConstruct` methods.
-  void invokePostConstruct(Object bean) => _postConstruct?.call(bean as T);
+  /// Runs `@PostConstruct` methods; a `Future` when they are asynchronous.
+  FutureOr<void> invokePostConstruct(Object bean) =>
+      _postConstruct?.call(bean as T);
 
-  /// Runs the custom init method.
-  void invokeInitMethod(Object bean) => _initMethod?.call(bean as T);
+  /// Runs the custom init method; a `Future` when it is asynchronous.
+  FutureOr<void> invokeInitMethod(Object bean) => _initMethod?.call(bean as T);
 
-  /// Runs `@PreDestroy` methods.
-  void invokePreDestroy(Object bean) => _preDestroy?.call(bean as T);
+  /// Runs `@PreDestroy` methods; a `Future` when they are asynchronous.
+  FutureOr<void> invokePreDestroy(Object bean) => _preDestroy?.call(bean as T);
 
-  /// Runs the custom destroy method.
-  void invokeDestroyMethod(Object bean) => _destroyMethod?.call(bean as T);
+  /// Runs the custom destroy method; a `Future` when it is asynchronous.
+  FutureOr<void> invokeDestroyMethod(Object bean) =>
+      _destroyMethod?.call(bean as T);
 
   @override
   String toString() => "BeanDefinition<$T>('$name', $scope)";

@@ -135,14 +135,14 @@ void main() {
     broken.addListener<ApplicationFailedEvent>((event) => failed = event);
     expect(
       () => broken.run(const [], systemEnvironment: const {}),
-      throwsA(isA<NoSuchBeanDefinitionException>()),
+      throwsA(isA<UnsatisfiedDependencyException>()),
     );
     expect(events.sublist(events.length - 2), [
       'ApplicationFailedEvent',
       'report',
     ]);
     expect(events, isNot(contains('ApplicationStartedEvent')));
-    expect(failed.exception, isA<NoSuchBeanDefinitionException>());
+    expect(failed.exception, isA<UnsatisfiedDependencyException>());
     expect(failed.applicationContext, isNotNull);
     expect(audit.seen, isEmpty); // the context never ran
   });

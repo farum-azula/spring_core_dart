@@ -36,21 +36,31 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///   `a.hosts[0]`) are built in; other formats need a
 ///   [PropertySourceLoader].
 /// - `spring.profiles.active` / `spring.profiles.include` /
-///   `spring.profiles.group.<name>` in config files activate profiles
-///   (unless profiles were already set programmatically or by a
-///   higher-precedence source such as command-line arguments). Profile
-///   names are validated like Boot's (letters, digits, `-_.+@`, starting
-///   and ending with a letter or digit; `spring.profiles.validate=false`
-///   turns this off).
+///   `spring.profiles.group.<name>` in config files activate profiles,
+///   with Boot's rules: a higher-precedence source (command line, OS
+///   environment) wins over a file's `spring.profiles.active`; profiles
+///   set programmatically (`setActiveProfiles`) are kept and the file's
+///   ones are added after them; `include` always adds; [additionalProfiles]
+///   come first. `spring.profiles.default` (environment, command line or a
+///   non-profile document) selects the profile-specific files while no
+///   profile is active, groups expanded. Profile names are validated like
+///   Boot's (letters, digits, `-_.+@`, starting and ending with a letter or
+///   digit; `spring.profiles.validate=false` turns this off).
 /// - Multi-document files: documents separated by `#---` (`---` in YAML),
 ///   each optionally guarded by `spring.config.activate.on-profile` (an
 ///   empty guard is no guard). The legacy `spring.profiles` key is
 ///   rejected.
 /// - `spring.config.import` imports more files (relative to the importing
-///   file); imported files override the file that imports them.
+///   file) or directories (`file:./config/`: `application*` files like a
+///   search location); imported files override the file that imports them
+///   and get their `-{profile}` variants too. On the command line or as
+///   `SPRING_CONFIG_IMPORT` it imports above every location.
 /// - `spring.config.name`, `spring.config.location` and
 ///   `spring.config.additional-location` change what is searched.
-/// - `optional:` locations never fail when missing.
+/// - `optional:` locations never fail when missing; a non-optional file,
+///   or directory that does not exist, fails the start.
+/// - A `defaultProperties` source (`SpringApplication`'s default
+///   properties) stays below the config files.
 /// - Relaxed names: the environment gets Boot's
 ///   [ConfigurationPropertySources] attached, so `app.read-timeout` also
 ///   finds `app.readTimeout`, `app.read_timeout` or `APP_READTIMEOUT`.
@@ -126,9 +136,16 @@ class ConfigDataEnvironment {
       YamlPropertySourceLoader(),
     ],
     List<String> defaultLocations = defaultSearchLocations,
+    List<String> additionalProfiles = const [],
   }) : resourceLoader = resourceLoader ?? DefaultResourceLoader(),
        loaders = List.unmodifiable(loaders),
-       defaultLocations = List.unmodifiable(defaultLocations);
+       defaultLocations = List.unmodifiable(defaultLocations),
+       additionalProfiles = List.unmodifiable(additionalProfiles);
+
+  /// Name of the property source holding `SpringApplication`'s default
+  /// properties; config data is added above it, as in Boot's
+  /// `DefaultPropertiesPropertySource`.
+  static const defaultPropertiesSourceName = 'defaultProperties';
 
   /// Default search locations, Spring Boot's: two groups (lowest
   /// precedence first) of `;`-separated locations. `classpath:` is
@@ -192,6 +209,11 @@ class ConfigDataEnvironment {
   /// set; each entry is a group of `;`-separated locations.
   final List<String> defaultLocations;
 
+  /// Profiles activated on top of the configured ones (Boot's
+  /// `SpringApplication.setAdditionalProfiles`); they come first, so their
+  /// files have the lowest precedence of the profile-specific ones.
+  final List<String> additionalProfiles;
+
   /// Loads the config files, reading async-only resources (such as Flutter
   /// assets) asynchronously, and adds them to [environment].
   ///
@@ -231,26 +253,35 @@ class ConfigDataEnvironment {
       _apply(_Run(this, <String, String?>{}, allowAsync: false).process());
 
   // Config sources go below everything already present (command line, OS
-  // environment), keeping their relative order; then relaxed names are
-  // attached, as SpringApplication does in Spring Boot.
+  // environment) but above `defaultProperties`, keeping their relative
+  // order; then relaxed names are attached, as SpringApplication does in
+  // Spring Boot.
   void _apply(_Result result) {
+    final sources = environment.propertySources;
+    final belowDefaults = sources.containsSource(defaultPropertiesSourceName);
     for (final source in result.sources) {
-      environment.propertySources.addLast(source);
+      if (belowDefaults) {
+        sources.addBefore(defaultPropertiesSourceName, source);
+      } else {
+        sources.addLast(source);
+      }
     }
     if (result.activeProfiles.isNotEmpty) {
       environment.setActiveProfiles(result.activeProfiles);
     }
+    environment.setDefaultProfiles(result.defaultProfiles);
     ConfigurationPropertySources.attach(environment);
   }
 }
 
 // Outcome of one processing pass.
 final class _Result {
-  _Result(this.sources, this.activeProfiles);
+  _Result(this.sources, this.activeProfiles, this.defaultProfiles);
 
   // Highest precedence first.
   final List<AbstractPropertySource<Object>> sources;
   final List<String> activeProfiles;
+  final List<String> defaultProfiles;
 }
 
 // Signals that [resource] must be read asynchronously before retrying.
@@ -282,6 +313,16 @@ final class _Document {
   // Whether its on-profile guard matched; inactive documents are dropped.
   bool active = false;
   bool importsProcessed = false;
+  // Whether the `-{profile}` variants of its imports were loaded.
+  bool profileImportsProcessed = false;
+  // Its resolved `spring.config.import` locations, once computed.
+  List<String>? importLocations;
+  // The documents it imported (directly); they follow it in the group.
+  final children = <_Document>[];
+
+  // Size of its subtree: itself and every (transitive) import.
+  int get subtreeSize =>
+      1 + children.fold(0, (size, child) => size + child.subtreeSize);
 }
 
 // A single processing pass; re-run after async content arrives.
@@ -297,43 +338,38 @@ final class _Run {
   final _groups = <List<_Document>>[];
   // Locations already loaded; guards against import cycles and duplicates.
   final _loaded = <String>{};
+  // Config file base names (`spring.config.name`).
+  late final List<String> _names;
 
   ConfigurableEnvironment get _env => owner.environment;
 
   _Result process() {
-    final names =
+    _names =
         _list(
           _value(_env.getProperty, ConfigDataEnvironment.configNameProperty),
         ) ??
         const ['application'];
     // Like Boot: `,` separates groups, `;` joins locations into a group.
-    List<List<String>> groupsOf(Iterable<String> values) => [
-      for (final value in values)
+    List<List<String>> groupsOf(String property, List<String> defaults) => [
+      for (final value in _list(_value(_env.getProperty, property)) ?? defaults)
         if (_split(value, ';') case final group when group.isNotEmpty) group,
     ];
+    // Boot's initial imports, lowest precedence first: `spring.config.import`
+    // from the environment (command line, `SPRING_CONFIG_IMPORT`) beats
+    // `additional-location`, which beats `location`.
     final locations = [
       ...groupsOf(
-        _list(
-              _value(_env.getProperty, ConfigDataEnvironment.locationProperty),
-            ) ??
-            owner.defaultLocations,
+        ConfigDataEnvironment.locationProperty,
+        owner.defaultLocations,
       ),
-      ...groupsOf(
-        _list(
-              _value(
-                _env.getProperty,
-                ConfigDataEnvironment.additionalLocationProperty,
-              ),
-            ) ??
-            const [],
-      ),
+      ...groupsOf(ConfigDataEnvironment.additionalLocationProperty, const []),
+      ...groupsOf(ConfigDataEnvironment.importProperty, const []),
     ];
 
     // 1. Non-profile files.
     for (final group in locations) {
       _groups.add([
-        for (final location in group)
-          ..._loadLocation(location, names, profile: null),
+        for (final location in group) ..._loadLocation(location, profile: null),
       ]);
     }
     // Documents guarded by on-profile stay inactive until the profiles are
@@ -342,25 +378,30 @@ final class _Run {
     _activate(const [], profilesKnown: false);
 
     // 2. Profiles from the environment and the active documents.
-    final profiles = _resolveProfiles();
-    final effective = profiles.isEmpty ? _env.defaultProfiles : profiles;
+    final (:active, :defaults) = _resolveProfiles();
+    final effective = active.isEmpty ? defaults : active;
 
-    // 3. Profile-specific files, then documents guarded by on-profile. In
-    // a group they override its non-profile files (and their imports); a
-    // later group still overrides an earlier one entirely.
+    // 3. Profile-specific files, then documents guarded by on-profile and
+    // the profile variants of imports. In a group they override its
+    // non-profile files (and their imports); a later group still overrides
+    // an earlier one entirely.
     for (var i = 0; i < locations.length; i++) {
       for (final profile in effective) {
         for (final location in locations[i]) {
-          _groups[i].addAll(_loadLocation(location, names, profile: profile));
+          _groups[i].addAll(_loadLocation(location, profile: profile));
         }
       }
     }
     _activate(effective);
 
-    return _Result([
-      for (final document in _documents.toList().reversed)
-        if (document.active) document.source,
-    ], profiles);
+    return _Result(
+      [
+        for (final document in _documents.toList().reversed)
+          if (document.active) document.source,
+      ],
+      active,
+      defaults,
+    );
   }
 
   // All documents, lowest precedence first.
@@ -368,7 +409,9 @@ final class _Run {
 
   // Activates documents whose on-profile matches and loads their imports
   // until nothing changes. Imports are inserted right after the importing
-  // document, i.e. with higher precedence than it.
+  // document, i.e. with higher precedence than it; once the profiles are
+  // known, the `-{profile}` variants of the imports follow the whole
+  // subtree of the plain ones (Boot's profile-specific import phase).
   void _activate(List<String> profiles, {bool profilesKnown = true}) {
     var changed = true;
     while (changed) {
@@ -389,9 +432,22 @@ final class _Run {
           }
           if (!document.importsProcessed) {
             document.importsProcessed = true;
-            final imported = _imports(document);
+            final imported = _imports(document, profile: null);
             if (imported.isNotEmpty) {
               documents.insertAll(i + 1, imported);
+              document.children.addAll(imported);
+              changed = true;
+            }
+          }
+          if (profilesKnown && !document.profileImportsProcessed) {
+            document.profileImportsProcessed = true;
+            final imported = [
+              for (final profile in profiles)
+                ..._imports(document, profile: profile),
+            ];
+            if (imported.isNotEmpty) {
+              documents.insertAll(i + document.subtreeSize, imported);
+              document.children.addAll(imported);
               changed = true;
             }
           }
@@ -442,39 +498,47 @@ final class _Run {
     }
   }
 
-  // Loads the `spring.config.import` locations of [document]; relative
-  // locations are resolved against the importing file's directory.
-  List<_Document> _imports(_Document document) {
-    final value = _value(
-      document.source.getProperty,
-      ConfigDataEnvironment.importProperty,
-    );
-    final locations = _list(
-      value == null
-          ? null
-          : _resolver(document).resolveRequiredPlaceholders(value),
-    );
-    if (locations == null) {
-      return const [];
-    }
-    final result = <_Document>[];
-    for (final raw in locations) {
-      final optional = raw.startsWith(ConfigDataEnvironment.optionalPrefix);
-      final location = optional
-          ? raw.substring(ConfigDataEnvironment.optionalPrefix.length)
-          : raw;
-      final absolute = _isRelative(location)
-          ? '${_parent(document.location)}$location'
-          : location;
-      result.addAll(
-        _loadFile(
-          absolute,
-          optional: optional,
-          profileSpecific: document.profileSpecific,
-        ),
+  // Loads the `spring.config.import` locations of [document] (their
+  // `-{profile}` variants for a [profile]); relative locations are
+  // resolved against the importing file's directory.
+  List<_Document> _imports(_Document document, {required String? profile}) {
+    final locations = document.importLocations ??= () {
+      final value = _value(
+        document.source.getProperty,
+        ConfigDataEnvironment.importProperty,
       );
-    }
-    return result;
+      return _list(
+            value == null
+                ? null
+                : _resolver(document).resolveRequiredPlaceholders(value),
+          ) ??
+          const <String>[];
+    }();
+    return [
+      for (final location in locations)
+        ..._loadLocation(
+          location,
+          profile: profile,
+          parent: _parent(document.location),
+          fromProfileSpecific: document.profileSpecific,
+        ),
+    ];
+  }
+
+  // The sources bound for profiles, imports and placeholders, highest
+  // precedence first: the environment's own, then the documents active so
+  // far, then `defaultProperties` (below config data, as in Boot).
+  List<AbstractPropertySource<Object>> _boundSources() {
+    final environment = _env.propertySources.where(
+      (s) => s is! ConfigurationPropertySourcesPropertySource,
+    );
+    final defaults = ConfigDataEnvironment.defaultPropertiesSourceName;
+    return [
+      ...environment.where((s) => s.name != defaults),
+      for (final d in _documents.toList().reversed)
+        if (d.active) d.source,
+      ...environment.where((s) => s.name == defaults),
+    ];
   }
 
   // A resolver over the environment and the documents active so far, with
@@ -482,11 +546,7 @@ final class _Run {
   PropertyResolver _resolver([_Document? document]) {
     final sources = [
       ?document?.source,
-      ..._env.propertySources.where(
-        (s) => s is! ConfigurationPropertySourcesPropertySource,
-      ),
-      for (final d in _documents.toList().reversed)
-        if (d.active && d != document) d.source,
+      ..._boundSources().where((s) => s != document?.source),
     ];
     return PropertySourcesPropertyResolver(
       MutablePropertySources([
@@ -499,11 +559,12 @@ final class _Run {
     );
   }
 
-  // Active profiles, like Spring Boot's `Profiles`: included profiles
-  // first (from every source), then programmatic ones or
-  // `spring.profiles.active`, then expanded profile groups. Later profiles
-  // win, so `application-{active}` overrides `application-{included}`.
-  List<String> _resolveProfiles() {
+  // Active and default profiles, like Spring Boot's `Profiles`: the
+  // additional profiles first, then the included ones (from every
+  // source), then the active ones (see [_profiles]), each list with its
+  // profile groups expanded. Later profiles win, so `application-{active}`
+  // overrides `application-{included}`.
+  ({List<String> active, List<String> defaults}) _resolveProfiles() {
     final resolver = _resolver();
     final validate =
         resolver.getPropertyAs<bool>(
@@ -518,20 +579,9 @@ final class _Run {
       }
     }
 
-    check(
-      _env.defaultProfiles,
-      StandardEnvironment.defaultProfilesPropertyName,
-    );
-    final active = <String>[];
-    // Includes from every source are combined.
-    for (final source in [
-      ..._env.propertySources.where(
-        (s) => s is! ConfigurationPropertySourcesPropertySource,
-      ),
-      for (final d in _documents)
-        if (d.active) d.source,
-    ]) {
-      final included =
+    final included = <String>[];
+    for (final source in _boundSources()) {
+      final profiles =
           _list(
             _value(
               source.getProperty,
@@ -539,41 +589,82 @@ final class _Run {
             ),
           ) ??
           const <String>[];
-      check(included, ConfigDataEnvironment.includeProfilesProperty);
-      for (final profile in included) {
-        if (!active.contains(profile)) {
-          active.add(profile);
-        }
-      }
+      check(profiles, ConfigDataEnvironment.includeProfilesProperty);
+      included.addAll(profiles);
     }
-    final declared = _env.activeProfiles.isNotEmpty
-        ? _env.activeProfiles
-        : _list(
-                _value(
-                  resolver.getProperty,
-                  StandardEnvironment.activeProfilesPropertyName,
-                ),
-              ) ??
-              const <String>[];
-    check(declared, StandardEnvironment.activeProfilesPropertyName);
-    for (final profile in declared) {
-      if (!active.contains(profile)) {
-        active.add(profile);
-      }
-    }
+    final active = _profiles(
+      resolver,
+      StandardEnvironment.activeProfilesPropertyName,
+      _env.activeProfiles,
+      const [],
+      merge: true,
+    );
+    check(active, StandardEnvironment.activeProfilesPropertyName);
+    final defaults = _profiles(
+      resolver,
+      StandardEnvironment.defaultProfilesPropertyName,
+      _env.defaultProfiles,
+      const [StandardEnvironment.reservedDefaultProfileName],
+      merge: false,
+    );
+    check(defaults, StandardEnvironment.defaultProfilesPropertyName);
+
     // Expand groups (members follow their group; nested groups allowed).
-    for (var i = 0; i < active.length; i++) {
-      final group = '${ConfigDataEnvironment.profileGroupPrefix}${active[i]}';
-      final members = _list(_value(resolver.getProperty, group));
-      check(members ?? const [], group);
-      var insertAt = i + 1;
-      for (final member in members ?? const <String>[]) {
-        if (!active.contains(member)) {
-          active.insert(insertAt++, member);
+    List<String> expand(Iterable<String> profiles) {
+      final result = _unique(profiles);
+      for (var i = 0; i < result.length; i++) {
+        final group = '${ConfigDataEnvironment.profileGroupPrefix}${result[i]}';
+        final members = _list(_value(resolver.getProperty, group));
+        check(members ?? const [], group);
+        var insertAt = i + 1;
+        for (final member in members ?? const <String>[]) {
+          if (!result.contains(member)) {
+            result.insert(insertAt++, member);
+          }
         }
       }
+      return result;
     }
-    return active;
+
+    return (
+      active: expand([...owner.additionalProfiles, ...included, ...active]),
+      defaults: expand(defaults),
+    );
+  }
+
+  // Boot's `Profiles.getProfiles`: [environmentProfiles] set on the
+  // environment programmatically (not just read from [property]) win over
+  // the property; the active ones are then [merge]d with the bound value
+  // (environment and config files), the default ones are not. Otherwise
+  // the bound value applies, or [defaultValue].
+  List<String> _profiles(
+    PropertyResolver resolver,
+    String property,
+    List<String> environmentProfiles,
+    List<String> defaultValue, {
+    required bool merge,
+  }) {
+    bool same(List<String> a, List<String> b) =>
+        a.toSet().length == b.toSet().length && a.toSet().containsAll(b);
+    final fromProperty = _list(_value(_env.getProperty, property)) ?? const [];
+    final bound = _list(_value(resolver.getProperty, property));
+    final programmatic =
+        !same(environmentProfiles, defaultValue) &&
+        (fromProperty.isEmpty || !same(fromProperty, environmentProfiles));
+    if (programmatic) {
+      return merge && bound != null
+          ? _unique([...environmentProfiles, ...bound])
+          : environmentProfiles;
+    }
+    return bound ?? defaultValue;
+  }
+
+  static List<String> _unique(Iterable<String> values) {
+    final seen = <String>{};
+    return [
+      for (final value in values)
+        if (seen.add(value)) value,
+    ];
   }
 
   // Profile names like Boot's ProfilesValidator: letters, digits and
@@ -602,23 +693,31 @@ final class _Run {
 
   // A location ending in `/` is a directory searched for every name and
   // extension; otherwise it is a file, whose profile variant is
-  // `name-profile.ext`. Files found by search are always optional. A `*/`
-  // segment stands for each subdirectory (Boot's wildcard locations).
+  // `name-profile.ext`. Files found by search are always optional, but a
+  // non-optional directory must exist (an existing one may be empty). A
+  // `*/` segment stands for each subdirectory (Boot's wildcard locations).
+  // A relative location is resolved against [parent] (the directory of an
+  // importing file); [fromProfileSpecific] marks an import from a
+  // profile-specific document.
   List<_Document> _loadLocation(
-    String rawLocation,
-    List<String> names, {
+    String rawLocation, {
     required String? profile,
+    String? parent,
+    bool fromProfileSpecific = false,
   }) {
     final optional = rawLocation.startsWith(
       ConfigDataEnvironment.optionalPrefix,
     );
-    final location = _env.resolveRequiredPlaceholders(
+    var location = _env.resolveRequiredPlaceholders(
       optional
           ? rawLocation.substring(ConfigDataEnvironment.optionalPrefix.length)
           : rawLocation,
     );
+    if (parent != null && _isRelative(location)) {
+      location = '$parent$location';
+    }
     final suffix = profile == null ? '' : '-$profile';
-    final profileSpecific = profile != null;
+    final profileSpecific = fromProfileSpecific || profile != null;
     if (location.endsWith('/')) {
       // Like Boot's resolver, earlier loaders' extensions take precedence
       // (`.properties` beats `.yml`), so they are loaded last.
@@ -630,19 +729,36 @@ final class _Run {
           }
         }
       }
-      final directories = location.contains('*')
+      final wildcard = location.contains('*');
+      final directories = wildcard
           ? _subdirectories(location, location)
           : [location];
-      return [
-        for (final name in names)
-          for (final extension in extensions)
-            for (final directory in directories)
-              ..._loadFile(
-                '$directory$name$suffix.$extension',
-                optional: true,
-                profileSpecific: profileSpecific,
-              ),
-      ];
+      var found = false;
+      final documents = <_Document>[];
+      for (final name in _names) {
+        for (final extension in extensions) {
+          for (final directory in directories) {
+            final loaded = _loadFile(
+              '$directory$name$suffix.$extension',
+              optional: true,
+              profileSpecific: profileSpecific,
+            );
+            if (loaded != null) {
+              found = true;
+              documents.addAll(loaded);
+            }
+          }
+        }
+      }
+      // Boot's mandatory-location check; profile variants are skippable.
+      if (!found &&
+          !optional &&
+          profile == null &&
+          !wildcard &&
+          !_isDirectory(location)) {
+        throw ConfigDataLocationNotFoundException(location);
+      }
+      return documents;
     }
     var file = location;
     if (profile != null) {
@@ -660,7 +776,7 @@ final class _Run {
           file.substring(0, slash + 1),
           location,
         ))
-          ..._loadFile(
+          ...?_loadFile(
             '$directory${file.substring(slash + 1)}',
             optional: true,
             profileSpecific: profileSpecific,
@@ -668,10 +784,24 @@ final class _Run {
       ];
     }
     return _loadFile(
-      file,
-      optional: optional || profileSpecific,
-      profileSpecific: profileSpecific,
+          file,
+          optional: optional || profileSpecific,
+          profileSpecific: profileSpecific,
+        ) ??
+        const [];
+  }
+
+  // Whether [location] is an existing directory: a file system one, or a
+  // resource that reports itself as existing (never the classpath, like
+  // Boot, whose directories cannot be checked).
+  bool _isDirectory(String location) {
+    final resource = owner.resourceLoader.getResource(
+      _isUrl(location) ? location : '${ResourceLoader.filePrefix}$location',
     );
+    if (resource is FileSystemResource) {
+      return FileAccess.isDirectory(resource.path);
+    }
+    return !location.startsWith(ClasspathResources.prefix) && resource.exists();
   }
 
   // The subdirectories of a `dir/*/` [pattern] as locations, sorted by
@@ -715,7 +845,9 @@ final class _Run {
     ];
   }
 
-  List<_Document> _loadFile(
+  // The documents of the file at [location]; `null` if it does not exist
+  // (and is optional), an empty list if it was already loaded.
+  List<_Document>? _loadFile(
     String location, {
     required bool optional,
     required bool profileSpecific,
@@ -728,7 +860,7 @@ final class _Run {
         .firstOrNull;
     if (loader == null) {
       if (optional) {
-        return const [];
+        return null;
       }
       throw ConfigDataLoadException(
         location,
@@ -743,7 +875,7 @@ final class _Run {
     final content = _read(resource, location);
     if (content == null) {
       if (optional) {
-        return const [];
+        return null;
       }
       throw ConfigDataResourceNotFoundException(location, resource.description);
     }

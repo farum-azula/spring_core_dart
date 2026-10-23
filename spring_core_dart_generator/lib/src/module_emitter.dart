@@ -271,14 +271,15 @@ class ModuleEmitter {
         'create': _closure(['r'], _creation(bean).code, lambda: true),
         'inject': ?injection,
         if (bean.postConstruct.isNotEmpty)
-          'postConstruct': _calls(bean.postConstruct),
+          'postConstruct': _calls(bean.postConstruct, bean),
         if (bean.initMethod case final method?) ...{
-          'initMethod': _calls([method]),
+          'initMethod': _calls([method], bean),
           'initMethodName': _str(method),
         },
-        if (bean.preDestroy.isNotEmpty) 'preDestroy': _calls(bean.preDestroy),
+        if (bean.preDestroy.isNotEmpty)
+          'preDestroy': _calls(bean.preDestroy, bean),
         if (bean.destroyMethod case final method?) ...{
-          'destroyMethod': _calls([method]),
+          'destroyMethod': _calls([method], bean),
           'destroyMethodName': _str(
             bean.destroyMethodInferred ? '(inferred)' : method,
           ),
@@ -688,10 +689,12 @@ class ModuleEmitter {
   // -----------------------------------------------------------------------
 
   // Advice is invoked through a closure taking the aspect, the join point,
-  // the return value/error and the pointcut's bindings (not used by
-  // generated advice yet); the parameters are mapped as recorded in
+  // the return value/error and the values the pointcut bound (by advice
+  // parameter name); the parameters are mapped as recorded in
   // `AdviceModel.parameters`. `accepts` filters by the value's type so a
-  // typed after-returning/after-throwing advice only sees matching values.
+  // typed after-returning/after-throwing advice only sees matching values;
+  // `bindings` tells the pointcut which names are parameters and their
+  // types.
   Expression _aspect(InterfaceType type, AspectModel aspect, Element element) {
     final aspectType = _type(type, element);
     return TypeReference(
@@ -717,17 +720,36 @@ class ModuleEmitter {
                 refer('aspect').property(advice.methodName).call([
                   for (final parameter in advice.parameters)
                     switch (parameter) {
-                      AdviceParameter.joinPoint => refer('joinPoint'),
-                      AdviceParameter.proceedingJoinPoint => refer(
+                      JoinPointParameter(proceeding: false) => refer(
+                        'joinPoint',
+                      ),
+                      JoinPointParameter() => refer(
                         'joinPoint',
                       ).asA(_spring('ProceedingJoinPoint')),
-                      AdviceParameter.value => refer(
+                      ValueParameter(:final type) => refer(
                         'value',
-                      ).asA(_anyType(advice.valueType!, element)),
+                      ).asA(_anyType(type, element)),
+                      BoundParameter(:final name, :final type) => refer(
+                        'bindings',
+                      ).index(_str(name)).asA(_anyType(type, element)),
                     },
                 ]).code,
                 lambda: true,
               ),
+              if (advice.bindings.isNotEmpty)
+                'bindings': literalMap({
+                  for (final binding in advice.bindings)
+                    _str(binding.name): _spring('AdviceBinding').newInstance([
+                      _str(_simpleName(binding.type)),
+                      _closure(
+                        ['value'],
+                        refer('value')
+                            .isA(_anyType(binding.type, element))
+                            .code,
+                        lambda: true,
+                      ),
+                    ]),
+                }),
               // Only `dynamic` and `Object?` take every value; a
               // non-nullable `Object` skips the `null` of a void method
               // (Spring passes it; Dart cannot).
@@ -761,6 +783,24 @@ class ModuleEmitter {
       return _spring('AopProxyFactory').newInstanceNamed('unavailable', [], {
         'signatures': signatures,
         'reason': _str(reason),
+      });
+    }
+    // A subclass proxy is the bean itself; advice is attached to it.
+    if (proxy.subclass != null) {
+      final bean = refer('bean');
+      return _spring('AopProxyFactory').newInstanceNamed('subclass', [], {
+        'signatures': signatures,
+        'advise': _closure(
+          ['bean', 'invoker'],
+          bean
+              .isA(refer(proxy.className))
+              .conditional(
+                bean.property(r'_$advise').call([refer('invoker')]),
+                literalNull,
+              )
+              .code,
+          lambda: true,
+        ),
       });
     }
     return _spring('AopProxyFactory').newInstance([], {
@@ -850,6 +890,9 @@ class ModuleEmitter {
   // `Advised`, forwards `toString` without advice and overrides every
   // member from `proxy.members`.
   Class _proxyClass(ProxyModel proxy, Element element) {
+    if (proxy.subclass case final subclass?) {
+      return _subclassProxyClass(proxy, subclass, element);
+    }
     final targetType = _type(proxy.targetType, element);
     return Class(
       (c) => c
@@ -922,6 +965,108 @@ class ModuleEmitter {
             ),
           for (final (index, member) in proxy.members.indexed)
             _proxyMember(member, index, element),
+        ]),
+    );
+  }
+
+  // A subclass proxy: forwards the bean constructor, holds the invoker the
+  // auto proxy creator attaches through `_$advise` and overrides every
+  // forwardable member to run `super` through the advice (see
+  // `SubclassProxy`).
+  Class _subclassProxyClass(
+    ProxyModel proxy,
+    SubclassProxy subclass,
+    Element element,
+  ) {
+    final parameters = subclass.constructorParameters;
+    Parameter superParameter(int index, ProxyParameter parameter) => Parameter(
+      (p) => p
+        ..name = parameter.isNamed ? parameter.name : 'p$index'
+        ..toSuper = true
+        ..named = parameter.isNamed
+        ..required = parameter.isNamed && parameter.isRequired,
+    );
+    final invokerType = TypeReference(
+      (t) => t
+        ..symbol = 'ProxyInvoker'
+        ..url = _springUrl,
+    );
+    return Class(
+      (c) => c
+        ..modifier = subclass.isFinal ? ClassModifier.final$ : null
+        ..name = proxy.className
+        ..extend = _type(proxy.targetType, element)
+        ..implements.add(_spring('Advised'))
+        ..fields.add(
+          Field(
+            (f) => f
+              ..name = r'_$invoker'
+              ..type = invokerType.rebuild((t) => t.isNullable = true),
+          ),
+        )
+        ..constructors.add(
+          Constructor(
+            (k) => k
+              ..requiredParameters.addAll([
+                for (final (index, parameter) in parameters.indexed)
+                  if (!parameter.isNamed && parameter.isRequired)
+                    superParameter(index, parameter),
+              ])
+              ..optionalParameters.addAll([
+                for (final (index, parameter) in parameters.indexed)
+                  if (parameter.isNamed || !parameter.isRequired)
+                    superParameter(index, parameter),
+              ])
+              ..initializers.addAll([
+                if (subclass.constructorName case final name?)
+                  refer('super').property(name).call([]).code,
+              ]),
+          ),
+        )
+        ..methods.addAll([
+          Method(
+            (m) => m
+              ..name = r'_$advise'
+              ..returns = refer(proxy.className)
+              ..requiredParameters.add(
+                Parameter(
+                  (p) => p
+                    ..name = 'invoker'
+                    ..type = invokerType,
+                ),
+              )
+              ..body = Block.of([
+                refer(r'_$invoker').assign(refer('invoker')).statement,
+                refer('this').returned.statement,
+              ]),
+          ),
+          Method(
+            (m) => m
+              ..annotations.add(refer('override'))
+              ..type = MethodType.getter
+              ..name = 'aopTarget'
+              ..returns = refer('Object')
+              ..lambda = true
+              ..body = refer('this').code,
+          ),
+          Method(
+            (m) => m
+              ..annotations.add(refer('override'))
+              ..type = MethodType.getter
+              ..name = 'aopAdvisors'
+              ..returns = TypeReference(
+                (t) => t
+                  ..symbol = 'List'
+                  ..types.add(_spring('PointcutAdvisor')),
+              )
+              ..lambda = true
+              ..body = refer(r'_$invoker')
+                  .nullSafeProperty('advisors')
+                  .ifNullThen(literalConstList([]))
+                  .code,
+          ),
+          for (final (index, member) in proxy.members.indexed)
+            _proxyMember(member, index, element, subclass: true),
         ]),
     );
   }
@@ -1257,36 +1402,100 @@ class ModuleEmitter {
   // the real call on the target with the (possibly replaced) arguments.
   // Methods returning `Future` use `invokeAsync` so advice can await the
   // result; void members return `null` from the call closure.
-  Method _proxyMember(ProxyMember member, int index, Element element) {
+  // One forwarded member. A wrapper proxy forwards to `_target` through
+  // `_invoker`; a subclass proxy forwards to `super`, directly while no
+  // advice is attached (`_$invoker` is null).
+  Method _proxyMember(
+    ProxyMember member,
+    int index,
+    Element element, {
+    bool subclass = false,
+  }) {
+    final receiver = subclass ? refer('super') : refer('_target');
+    final target = subclass ? refer('this') : refer('_target');
+    final invokerRef = subclass ? refer('invoker') : refer('_invoker');
     Expression invoke(List<Expression> arguments, Expression call) =>
-        refer('_invoker').property('invoke').call([
+        invokerRef.property('invoke').call([
           refer('this'),
-          refer('_target'),
+          target,
           literalNum(index),
           arguments.isEmpty ? literalConstList([]) : literalList(arguments),
           call,
         ]);
+    // The method body: [advised] runs through the invoker, [direct] is the
+    // plain super call of a subclass proxy without advice.
+    (Code, bool) body(
+      Expression advised,
+      Expression direct, {
+      bool isVoid = false,
+    }) {
+      if (!subclass) {
+        return (isVoid ? advised.statement : advised.code, !isVoid);
+      }
+      final invoker = declareFinal('invoker').assign(refer(r'_$invoker'));
+      final isNull = refer('invoker').equalTo(literalNull);
+      if (isVoid) {
+        return (
+          Block.of([
+            invoker.statement,
+            const Code('if ('),
+            isNull.code,
+            const Code(') {'),
+            direct.statement,
+            const Code('} else {'),
+            advised.statement,
+            const Code('}'),
+          ]),
+          false,
+        );
+      }
+      return (
+        Block.of([
+          invoker.statement,
+          isNull.conditional(direct, advised).returned.statement,
+        ]),
+        false,
+      );
+    }
 
     switch (member.kind) {
       case ProxyMemberKind.getter:
+        final type = _anyType(member.returnType, element);
+        final (code, lambda) = body(
+          invoke(
+            [],
+            _closure(['_'], receiver.property(member.name).code, lambda: true),
+          ).asA(type),
+          receiver.property(member.name),
+        );
         return Method(
           (m) => m
             ..annotations.add(refer('override'))
             ..type = MethodType.getter
             ..name = member.name
-            ..returns = _anyType(member.returnType, element)
-            ..lambda = true
-            ..body = invoke(
-              [],
-              _closure(
-                ['_'],
-                refer('_target').property(member.name).code,
-                lambda: true,
-              ),
-            ).asA(_anyType(member.returnType, element)).code,
+            ..returns = type
+            ..lambda = lambda
+            ..body = code,
         );
       case ProxyMemberKind.setter:
         final type = _anyType(member.returnType, element);
+        final (code, _) = body(
+          invoke(
+            [refer('value')],
+            _closure(
+              ['args'],
+              Block.of([
+                receiver
+                    .property(member.name)
+                    .assign(refer('args').index(literalNum(0)).asA(type))
+                    .statement,
+                literalNull.returned.statement,
+              ]),
+            ),
+          ),
+          receiver.property(member.name).assign(refer('value')),
+          isVoid: true,
+        );
         return Method(
           (m) => m
             ..annotations.add(refer('override'))
@@ -1299,19 +1508,7 @@ class ModuleEmitter {
                   ..type = type,
               ),
             )
-            ..body = invoke(
-              [refer('value')],
-              _closure(
-                ['args'],
-                Block.of([
-                  refer('_target')
-                      .property(member.name)
-                      .assign(refer('args').index(literalNum(0)).asA(type))
-                      .statement,
-                  literalNull.returned.statement,
-                ]),
-              ),
-            ).statement,
+            ..body = code,
         );
       case ProxyMemberKind.method:
         final parameters = member.parameters;
@@ -1331,50 +1528,70 @@ class ModuleEmitter {
             positional.add(argument);
           }
         }
-        final targetCall = refer('_target')
+        final targetCall = receiver
             .property(member.name)
             .call(positional, named, typeArguments);
+        final direct = receiver
+            .property(member.name)
+            .call(
+              [
+                for (final p in parameters)
+                  if (!p.isNamed) refer(p.name),
+              ],
+              {
+                for (final p in parameters)
+                  if (p.isNamed) p.name: refer(p.name),
+              },
+              typeArguments,
+            );
         final arguments = [for (final p in parameters) refer(p.name)];
         final returnType = member.returnType;
-        final Code body;
-        var lambda = true;
-        if (returnType is VoidType) {
-          lambda = false;
-          body = invoke(
-            arguments,
-            _closure(
-              ['args'],
-              Block.of([targetCall.statement, literalNull.returned.statement]),
+        final (code, lambda) = switch (returnType) {
+          VoidType() => body(
+            invoke(
+              arguments,
+              _closure(
+                ['args'],
+                Block.of([
+                  targetCall.statement,
+                  literalNull.returned.statement,
+                ]),
+              ),
             ),
-          ).statement;
-        } else if (returnType is InterfaceType &&
-            returnType.isDartAsyncFuture &&
-            returnType.nullabilitySuffix == NullabilitySuffix.none) {
+            direct,
+            isVoid: true,
+          ),
           // `Future<T>?` is an ordinary value (advice sees the future or
           // null); only a non-nullable Future is awaited by the advice.
-          final valueType = returnType.typeArguments.single;
-          body = refer('_invoker')
-              .property('invokeAsync')
-              .call(
-                [
-                  refer('this'),
-                  refer('_target'),
-                  literalNum(index),
-                  arguments.isEmpty
-                      ? literalConstList([])
-                      : literalList(arguments),
-                  _closure(['args'], targetCall.code, lambda: true),
-                ],
-                {},
-                [_anyType(valueType, element)],
-              )
-              .code;
-        } else {
-          body = invoke(
-            arguments,
-            _closure(['args'], targetCall.code, lambda: true),
-          ).asA(_anyType(returnType, element)).code;
-        }
+          InterfaceType()
+              when returnType.isDartAsyncFuture &&
+                  returnType.nullabilitySuffix == NullabilitySuffix.none =>
+            body(
+              invokerRef
+                  .property('invokeAsync')
+                  .call(
+                    [
+                      refer('this'),
+                      target,
+                      literalNum(index),
+                      arguments.isEmpty
+                          ? literalConstList([])
+                          : literalList(arguments),
+                      _closure(['args'], targetCall.code, lambda: true),
+                    ],
+                    {},
+                    [_anyType(returnType.typeArguments.single, element)],
+                  ),
+              direct,
+            ),
+          _ => body(
+            invoke(
+              arguments,
+              _closure(['args'], targetCall.code, lambda: true),
+            ).asA(_anyType(returnType, element)),
+            direct,
+          ),
+        };
         return Method(
           (m) => m
             ..annotations.add(refer('override'))
@@ -1401,13 +1618,13 @@ class ModuleEmitter {
                   _proxyParameter(parameter, element),
             ])
             ..lambda = lambda
-            ..body = body,
+            ..body = code,
         );
     }
   }
 
-  // Default values were restricted to literals by the scanner, so copying
-  // their source text is safe.
+  // A literal default is copied as source (the scanner checked it); any
+  // other constant is re-created from its value.
   Parameter _proxyParameter(ProxyParameter parameter, Element element) =>
       Parameter(
         (p) => p
@@ -1415,9 +1632,11 @@ class ModuleEmitter {
           ..type = _anyType(parameter.type, element)
           ..named = parameter.isNamed
           ..required = parameter.isNamed && parameter.isRequired
-          ..defaultTo = parameter.defaultValueCode == null
-              ? null
-              : Code(parameter.defaultValueCode!),
+          ..defaultTo = parameter.defaultValueCode != null
+              ? Code(parameter.defaultValueCode!)
+              : parameter.defaultValue != null
+              ? _constant(parameter.defaultValue!, element).code
+              : null,
       );
 
   /// Any type generated code may need: classes, type parameters, function
@@ -1471,13 +1690,28 @@ class ModuleEmitter {
   }
 
   // `(bean) { bean.a(); bean.b(); }` for lifecycle callbacks.
-  Expression _calls(List<String> methods) => _closure(
-    ['bean'],
-    Block.of([
+  // Lifecycle callbacks: an `async` closure awaiting the asynchronous
+  // methods when there are any (the callback's Future is awaited by
+  // refreshAsync / closeAsync), else a plain one.
+  Expression _calls(List<String> methods, BeanModel bean) {
+    final asyncMethods = bean.asyncLifecycleMethods;
+    final body = Block.of([
       for (final method in methods)
-        refer('bean').property(method).call([]).statement,
-    ]),
-  );
+        if (asyncMethods.contains(method))
+          refer('bean').property(method).call([]).awaited.statement
+        else
+          refer('bean').property(method).call([]).statement,
+    ]);
+    if (!methods.any(asyncMethods.contains)) {
+      return _closure(['bean'], body);
+    }
+    return Method(
+      (m) => m
+        ..requiredParameters.add(Parameter((p) => p..name = 'bean'))
+        ..modifier = MethodModifier.async
+        ..body = body,
+    ).closure;
+  }
 
   Expression _propertySource(PropertySourceModel source) =>
       _spring('PropertySourceDeclaration').newInstance(
@@ -1571,6 +1805,10 @@ class ModuleEmitter {
       case ConstructorCreation(configuration: final model?):
         return refer(model.className)
             .newInstance([refer('r'), ...positional], named);
+      // A subclass proxy: the generated subclass forwards to the
+      // constructor.
+      case ConstructorCreation() when bean.proxy?.subclass != null:
+        return refer(bean.proxy!.className).newInstance(positional, named);
       case ConstructorCreation(:final constructorName):
         final type = _type(bean.type, bean.element);
         return constructorName == null
@@ -1912,6 +2150,11 @@ class ModuleEmitter {
         ? type.constInstance(positional, named)
         : type.constInstanceNamed(revivable.accessor, positional, named);
   }
+
+  /// A reference to the class [type] (imported like the emitter's own
+  /// references), for code written outside the emitter.
+  Reference classReference(InterfaceType type, Element element) =>
+      _type(type, element);
 
   // A reference to a class type (with type arguments and nullability),
   // `void`, `dynamic` or `Never`; other types are not supported here (use

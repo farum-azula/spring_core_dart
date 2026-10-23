@@ -286,7 +286,6 @@ class Report {
 
   test('a bean that cannot be proxied keeps its signatures and the reason', () async {
     final output = await _generate(r'''
-@Component()
 class Counter {
   int _n = 0;
   @Timed()
@@ -296,8 +295,14 @@ class Counter {
 class Timed {
   const Timed();
 }
+
+@Configuration()
+class Config {
+  @Bean()
+  Counter counter() => Counter();
+}
 ''', proxyMode: ProxyMode.all);
-    expect(output, isNot(contains('class_\$CounterProxy')));
+    expect(output, isNot(contains('class_\$Config_counterProxy')));
     expect(output, _has('aopProxy: AopProxyFactory.unavailable('));
     expect(output, _has("name: r'next'"));
     expect(output, _has("annotationTypes: [r'Timed']"));
@@ -310,6 +315,363 @@ class Timed {
         "bean by it, or make its members public.')",
       ),
     );
+  });
+
+  group('subclass proxies', () {
+    const counter = r'''
+class Counter {
+  Counter(this.step, {this.name = 'n'});
+  final int step;
+  final String name;
+  int _n = 0;
+  int next() => _n += step;
+  void reset() {
+    _n = 0;
+  }
+  Future<int> later() async => _n;
+  Duration wait([Duration d = const Duration(seconds: 1)]) => d;
+  int get count => _n;
+  set count(int value) {
+    _n = value;
+  }
+  Counter operator +(Counter other) => this;
+}
+''';
+
+    test('a component with private members and no interface', () async {
+      final output = await _generate(
+        '@Component() $counter',
+        proxyMode: ProxyMode.all,
+      );
+      expect(
+        output,
+        _has(r'class _$CounterProxy extends Counter implements Advised {'),
+      );
+      expect(output, _has(r'_$CounterProxy(super.p0, {super.name});'));
+      expect(output, _has(r'ProxyInvoker? _$invoker;'));
+      expect(
+        output,
+        _has(
+          r'_$CounterProxy _$advise(ProxyInvoker invoker) { _$invoker = invoker; return this; }',
+        ),
+      );
+      expect(output, _has('Object get aopTarget => this;'));
+      expect(
+        output,
+        _has(
+          r'List<PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          r'int next() { final invoker = _$invoker; return invoker == null ? super.next() : (invoker.invoke(this, this, 0, const [], (args) => super.next()) as int); }',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          r'void reset() { final invoker = _$invoker; if (invoker == null) { super.reset(); } else { invoker.invoke(this, this, 1, const [], (args) { super.reset(); return null; }); } }',
+        ),
+      );
+      expect(output, _has('Future<int> later() { final invoker'));
+      expect(
+        output,
+        _has(
+          'invoker.invokeAsync<int>(this, this, 2, const [], (args) => super.later())',
+        ),
+      );
+      // A constant default value is re-created, like an annotation.
+      expect(
+        output,
+        _has('Duration wait([Duration d = const Duration(seconds: 1)])'),
+      );
+      expect(output, _has('super.wait((args[0] as Duration))'));
+      expect(
+        output,
+        _has(
+          r'int get count { final invoker = _$invoker; return invoker == null ? super.count : (invoker.invoke(',
+        ),
+      );
+      expect(output, _has('set count(int value) { final invoker'));
+      expect(output, _has('super.count = value;'));
+      expect(
+        output,
+        isNot(contains('operator')),
+        reason: 'operators are inherited',
+      );
+      expect(output, isNot(contains('toString')));
+      expect(
+        output,
+        _has(
+          'aopProxy: AopProxyFactory.subclass(signatures: const [MethodSignature(',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          r'advise: (bean, invoker) => bean is _$CounterProxy ? bean._$advise(invoker) : null',
+        ),
+      );
+      expect(output, _has(r'create: (r) => _$CounterProxy('));
+    });
+
+    test('a named constructor and a base class', () async {
+      final output = await _generate(r'''
+@Component()
+class Named {
+  @Autowired()
+  Named.create([int size = 1]) : _size = size;
+  final int _size;
+  int size() => _size;
+}
+
+@Component()
+base class Guarded {
+  int _n = 0;
+  int tick() => ++_n;
+}
+''', proxyMode: ProxyMode.all);
+      expect(output, _has(r'_$NamedProxy([super.p0]) : super.create();'));
+      expect(
+        output,
+        _has(r'final class _$GuardedProxy extends Guarded implements Advised'),
+      );
+      expect(
+        output,
+        _has(r'create: (r) => _$NamedProxy(r.optionalDependency<int>'),
+      );
+    });
+
+    test('the generated code compiles', () async {
+      expect(
+        await _compileErrors({
+          'lib/src/service.dart':
+              '''
+@Component() $counter
+@Component()
+class Named {
+  @Autowired()
+  Named.create([int size = 1]) : _size = size;
+  final int _size;
+  int size() => _size;
+}
+@Component()
+base class Guarded {
+  int _n = 0;
+  int tick() => ++_n;
+}
+''',
+        }),
+        isEmpty,
+      );
+    });
+
+    test('a class that cannot be extended fails the build', () async {
+      await _expectError(
+        '@Component() final class Locked { int _n = 0; int next() => _n++; }',
+        'Locked cannot be proxied for AOP: Locked cannot be implemented by a '
+            'generated class',
+        proxyMode: ProxyMode.all,
+      );
+      await _expectError(
+        '@Component() final class Locked { int _n = 0; int next() => _n++; }',
+        'because Locked cannot be extended (it is final). Remove `final`, add '
+            'an interface with the advised methods and inject the bean by it, '
+            'or generate no proxy for it (aop_proxies: interfaces or none).',
+        proxyMode: ProxyMode.all,
+      );
+      await _expectError(
+        '@Component() interface class Api { int _n = 0; int next() => _n++; }',
+        'Api cannot be extended (it is interface). Remove `interface`',
+        proxyMode: ProxyMode.all,
+      );
+      await _expectError(
+        '@Component() class Made { Made._(); factory Made() => Made._(); '
+            'int _n = 0; int next() => _n++; }',
+        'is created through the factory constructor',
+        proxyMode: ProxyMode.all,
+      );
+      // Only `all` generates subclass proxies: `interfaces` keeps the
+      // signatures and fails at startup when advice matches.
+      final output = await _generate(
+        '@Component() final class Locked { int _n = 0; int next() => _n++; }',
+        proxyMode: ProxyMode.interfaces,
+      );
+      expect(output, _has('aopProxy: AopProxyFactory.unavailable('));
+    });
+
+    test('a @Bean method type cannot get a subclass proxy', () async {
+      final output = await _generate('''
+$counter
+@Configuration()
+class Config {
+  @Bean()
+  Counter counter() => Counter(1);
+}
+''', proxyMode: ProxyMode.all);
+      expect(output, isNot(contains('extends Counter')));
+      expect(output, _has('aopProxy: AopProxyFactory.unavailable('));
+    });
+  });
+
+  group('argument binding', () {
+    test('bound parameters are read from the bindings map', () async {
+      final output = await _generate(r'''
+class Timed {
+  const Timed();
+}
+
+@Service()
+class Svc {
+  @Timed()
+  int find(int id) => id;
+}
+
+@Aspect()
+@Component()
+class Audit {
+  @Pointcut('args(id, ..)')
+  void withId() {}
+
+  @Before('@annotation(timed) && withId()')
+  void tagged(JoinPoint jp, Timed timed, int id) {}
+
+  @AfterReturning('withId() && this(proxy) && target(bean)', returning: 'result')
+  void returned(int result, Svc bean, Object proxy, int id) {}
+
+  @AfterThrowing('@within(timed)', throwing: 'error')
+  void failed(Timed timed, StateError error) {}
+
+  @Around('@target(timed) && args(id, ..)')
+  Object? around(ProceedingJoinPoint pjp, Timed timed, int? id) => pjp.proceed();
+}
+''', proxyMode: ProxyMode.all);
+      expect(
+        output,
+        _has(
+          "aspect.tagged(joinPoint, (bindings[r'timed'] as Timed), (bindings[r'id'] as int)), "
+          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed), "
+          "r'id': AdviceBinding(r'int', (value) => value is int)}",
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "aspect.returned((value as int), (bindings[r'bean'] as Svc), "
+          "(bindings[r'proxy'] as Object), (bindings[r'id'] as int)), "
+          "bindings: {r'bean': AdviceBinding(r'Svc', (value) => value is Svc), "
+          "r'proxy': AdviceBinding(r'Object', (value) => value is Object), "
+          "r'id': AdviceBinding(r'int', (value) => value is int)}, "
+          'accepts: (value) => value is int',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "aspect.failed((bindings[r'timed'] as Timed), (value as StateError)), "
+          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed)}, "
+          'accepts: (value) => value is StateError',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          "aspect.around((joinPoint as ProceedingJoinPoint), (bindings[r'timed'] as Timed), (bindings[r'id'] as int?)), "
+          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed), "
+          "r'id': AdviceBinding(r'int', (value) => value is int?)}",
+        ),
+      );
+    });
+
+    test(
+      'advice and pointcuts of superclasses and mixins are inherited',
+      () async {
+        final output = await _generate(r'''
+class Timed {
+  const Timed();
+}
+
+abstract class BaseAspect {
+  @Pointcut('within(Svc)')
+  void svc() {}
+
+  @Before('svc() && @annotation(timed)')
+  void inherited(Timed timed) {}
+
+  @After('svc()')
+  void overridden() {}
+}
+
+mixin Logging {
+  @AfterReturning('svc()')
+  void logged(Object? result) {}
+}
+
+@Aspect()
+@Component()
+class Child extends BaseAspect with Logging {
+  @override
+  void overridden() {}
+
+  @Around('svc()')
+  Object? own(ProceedingJoinPoint pjp) => pjp.proceed();
+}
+''');
+        expect(
+          output,
+          _has(
+            "methodName: r'inherited', invoke: (aspect, joinPoint, value, bindings) => aspect.inherited((bindings[r'timed'] as Timed)), "
+            "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed)}",
+          ),
+        );
+        expect(output, _has("methodName: r'logged'"));
+        expect(output, _has("methodName: r'own'"));
+        expect(output, _has("pointcuts: {r'svc': r'within(Svc)'}"));
+        // The override without @After is not advice.
+        expect(output, isNot(contains("methodName: r'overridden'")));
+      },
+    );
+
+    test(
+      'a parameter of another class\'s pointcut is bound at runtime',
+      () async {
+        final output = await _generate(r'''
+@Aspect()
+@Component()
+class Audit {
+  @Before('Common.withId()')
+  void before(int id) {}
+}
+''');
+        expect(output, _has("aspect.before((bindings[r'id'] as int))"));
+      },
+    );
+
+    test('binding mistakes fail the build', () async {
+      await _expectError(
+        "@Aspect() @Component() class A { @Before('execution(* *(..))') void b(String s) {} }",
+        'Unexpected parameter s of @Before advice b: the pointcut does not '
+            'bind it. Bind it with @annotation(s), @within(s), @target(s), '
+            'this(s), target(s) or args(s, ..).',
+      );
+      await _expectError(
+        "@Aspect() @Component() class A { @AfterReturning('execution(* *(..))', returning: 'r') void b(Object? r, String s) {} }",
+        'or name it in `returning:`.',
+      );
+      await _expectError(
+        "@Aspect() @Component() class A { @Before('@annotation(timed)') void b() {} }",
+        "The pointcut of @Before advice b binds 'timed', which is not a "
+            'parameter of the advice method. Add a parameter named timed, or '
+            'match by type with a type name (starting with an uppercase '
+            'letter).',
+      );
+      await _expectError(
+        "@Aspect() @Component() class A { @AfterThrowing('x()', throwing: 'e') void b(Object? error) {} }",
+        "@AfterThrowing advice b names the throwing parameter 'e', which it "
+            'does not declare.',
+      );
+    });
   });
 
   group('generates', () {
@@ -1238,18 +1600,31 @@ abstract class Base { void base(); }
       );
       expect(all, contains(r'class_$PlainProxyimplementsPlain,'));
       expect(all, contains(r'class_$BothProxyimplementsBoth,Base,Api,'));
-      expect(all, isNot(contains(r'_$OpsProxy')), reason: 'operators');
-      expect(all, isNot(contains(r'_$OnlyOpsProxy')));
+      // Operators cannot be forwarded: a subclass proxy inherits them.
       expect(
         all,
-        isNot(contains(r'_$ComplexDefaultProxy')),
+        contains(r'class_$OpsProxyextendsOpsimplementsAdvised{'),
+        reason: 'operators',
+      );
+      expect(all, isNot(contains('operator')));
+      expect(
+        all,
+        contains(r'class_$OnlyOpsProxyextendsOnlyOpsimplementsAdvised{'),
+      );
+      // A constant default value is re-created.
+      expect(
+        all,
+        contains(r'class_$ComplexDefaultProxyimplementsComplexDefault,Api,'),
         reason: 'non-literal default',
       );
+      expect(all, contains('run([Durationd=constDuration(seconds:1)])'));
+      // A member the subclass cannot override stays inherited.
       expect(
         all,
-        isNot(contains(r'_$UntypedProxy')),
+        contains(r'class_$UntypedProxyextendsUntypedimplementsAdvised{'),
         reason: 'generic function type parameter',
       );
+      expect(all, isNot(contains('typed(')));
       for (final excluded in ['Product', 'Processor', 'Config']) {
         expect(all, isNot(contains('_\$${excluded}Proxy')), reason: excluded);
       }
@@ -1504,7 +1879,7 @@ class DbProps { String url = ''; }
         );
         expect(result.outputs.single.path, 'bin/main.beans.dart');
         // lib/spring_auto_configuration.dart of the dependencies is
-        // discovered: spring_boot_dart's first (order 0, then by package).
+        // discovered, listed by package (SpringApplication sorts them).
         expect(
           output,
           contains('autoConfigurations:[springBootAutoConfiguration,'),
@@ -1674,6 +2049,47 @@ class ShopProperties {
     });
   });
 
+  group('asynchronous lifecycle methods', () {
+    test('are awaited by async callbacks (refreshAsync / closeAsync)', () async {
+      final output = await _generate(r'''
+class Conn {
+  Future<void> open() async {}
+  Future<void> close() async {}
+}
+
+@Component()
+class Cache {
+  @PostConstruct()
+  Future<void> warmUp() async {}
+
+  @PostConstruct()
+  void check() {}
+
+  @PreDestroy()
+  Future<void> flush() async {}
+}
+
+@Configuration()
+class Config {
+  @Bean(initMethod: 'open', destroyMethod: 'close')
+  Conn conn() => Conn();
+}
+''');
+      expect(
+        output,
+        _has(
+          'postConstruct: (bean) async { await bean.warmUp(); bean.check(); }',
+        ),
+      );
+      expect(output, _has('preDestroy: (bean) async { await bean.flush(); }'));
+      expect(output, _has('initMethod: (bean) async { await bean.open(); }'));
+      expect(
+        output,
+        _has('destroyMethod: (bean) async { await bean.close(); }'),
+      );
+    });
+  });
+
   group('rejects', () {
     final cases = <String, (String, String)>{
       'abstract bean class': (
@@ -1761,8 +2177,8 @@ class ShopProperties {
         '@Component() class A { @PostConstruct() void init(int x) {} }',
         'without required parameters',
       ),
-      'async lifecycle method': (
-        '@Component() class A { @PreDestroy() Future<void> close() async {} }',
+      'async lifecycle method of a @Configurable': (
+        '@Configurable() class A { @PreDestroy() Future<void> close() async {} }',
         'must not be async',
       ),
       'listener with two parameters': (
@@ -1806,7 +2222,7 @@ class ShopProperties {
         'positional parameters',
       ),
       'unexpected advice parameter': (
-        "@Aspect() @Component() class A { @Before('x()') void b(String s) {} }",
+        "@Aspect() @Component() class A { @Before('execution(* *(..))') void b(String s) {} }",
         'Unexpected parameter s of @Before',
       ),
       'around without proceeding join point': (
@@ -2834,11 +3250,6 @@ class Config { @Bean() ClientFactory client() => ClientFactory(); }
               '@Bean() Object o() => 1; }',
           'add a public generative constructor',
         ),
-        (
-          'class _P {} @Configuration() class C { '
-              '@Bean() Object o(_P? p) => 1; }',
-          'parameter p of the private type _P?',
-        ),
       ]) {
         final result = await _build({
           'lib/src/beans.dart': _scan,
@@ -3019,6 +3430,298 @@ class Config { @Bean() Api api() => Impl(); }
 
     test('the generated code compiles', () async {
       expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
+    });
+  });
+
+  group('private declarations fail the build, naming the fix', () {
+    const uri = 'declared in package:pkg/src/service.dart';
+    final cases = <String, (String, String)>{
+      'constructor parameter type': (
+        'class _Dep {} @Component() class A { A(_Dep d); }',
+        'Constructor parameter d of A',
+      ),
+      'the message names the type, its library and the fix': (
+        'class _Dep {} @Component() class A { A(_Dep d); }',
+        'has the private type _Dep ($uri), which the generated module '
+            'cannot reference: make _Dep public.',
+      ),
+      'type argument': (
+        'class _Dep {} @Component() class A { A(List<_Dep> d); }',
+        'has the private type _Dep',
+      ),
+      '@Bean return type (lite mode)': (
+        'class _Pool {} @Configuration(proxyBeanMethods: false) class C { '
+            '@Bean() _Pool pool() => _Pool(); }',
+        '@Bean method C.pool returns the private type _Pool ($uri), which '
+            'the generated module cannot reference: make _Pool public, or '
+            'declare a public supertype as the return type.',
+      ),
+      '@Bean parameter (full mode)': (
+        'class _P {} @Configuration() class C { @Bean() Object o(_P? p) => 1; }',
+        'Parameter p of @Bean method C.o has the private type _P',
+      ),
+      'injected field': (
+        'class _Dep {} @Component() class A { @Autowired() late _Dep d; }',
+        'Field d of A has the private type _Dep',
+      ),
+      '@Autowired method parameter': (
+        'class _Dep {} @Component() class A { '
+            '@Autowired() void wire(_Dep d) {} }',
+        'Parameter d of method A.wire has the private type _Dep',
+      ),
+      'event type': (
+        'class _Evt {} @Component() class A { '
+            '@EventListener() void on(_Evt e) {} }',
+        'Method A.on listens to the private type _Evt',
+      ),
+      'private function as a default value': (
+        'int _zero() => 0; @Component() class A { '
+            r'A({@Value(r"${f}") Object f = _zero}); }',
+        'The default value of constructor parameter f of A uses the private '
+            '_zero ($uri), which the generated module cannot reference: make '
+            'it public, or declare the parameter without a default.',
+      ),
+      'private class as a default value': (
+        'class _Opts { const _Opts(); } @Component() class A { '
+            r'A({@Value(r"${o}") Object o = const _Opts()}); }',
+        'uses the private _Opts ($uri)',
+      ),
+      'private constructor as a default value': (
+        'class Opts { const Opts._(); } @Component() class A { '
+            r'A({@Value(r"${o}") Object o = const Opts._()}); }',
+        'uses the private Opts._ ($uri)',
+      ),
+      'private bean class': (
+        '@Component() class _A {}',
+        'Bean class _A must be public: the generated module cannot reference '
+            'a private class of package:pkg/src/service.dart. Make it public, '
+            'or move it out of the scanned directory.',
+      ),
+    };
+    for (final MapEntry(key: name, value: (source, message)) in cases.entries) {
+      test(name, () => _expectError(source, message));
+    }
+  });
+
+  group('inherited members', () {
+    test('@Bean methods of superclasses and mixins', () async {
+      final output = await _generate(r'''
+class Pool {}
+class Clock {}
+abstract class BaseConfig {
+  @Bean()
+  Pool pool() => Pool();
+  @Bean()
+  static Clock clock() => Clock();
+}
+mixin Extra {
+  @Bean()
+  String greeting() => 'hi';
+}
+@Configuration(proxyBeanMethods: false)
+class AppConfig extends BaseConfig with Extra {
+  // An override without @Bean still creates the bean (Spring registers
+  // the annotated superclass method; the call dispatches to the override).
+  @override
+  Pool pool() => Pool();
+}
+''');
+      expect(
+        output,
+        _has("r.dependency<AppConfig>(qualifier: r'appConfig').pool()"),
+      );
+      expect(
+        output,
+        _has("r.dependency<AppConfig>(qualifier: r'appConfig').greeting()"),
+      );
+      // A static method is not inherited: called on its declaring class.
+      expect(output, _has('create: (r) => BaseConfig.clock()'));
+    });
+
+    test('a full-mode subclass overrides inherited @Bean methods, with the '
+        'type arguments of a generic superclass substituted', () async {
+      const source = r'''
+class Store<T> {}
+class User {}
+abstract class BaseConfig<T> {
+  @Bean()
+  Store<T> store() => Store<T>();
+}
+@Configuration()
+class UserConfig extends BaseConfig<User> {}
+''';
+      final output = await _generate(source);
+      expect(output, _has('BeanDefinition<Store<User>>('));
+      expect(
+        output,
+        _has(r'class _$UserConfigConfiguration extends UserConfig'),
+      );
+      expect(output, _has('Store<User> store()'));
+      expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
+    });
+
+    test('lifecycle methods of mixins and the members of a generic '
+        'superclass', () async {
+      const source = r'''
+class User {}
+class UserEvent {}
+class Repo<T> {}
+@Component() class UserRepo extends Repo<User> {}
+abstract class BaseService<R, E> {
+  @Autowired()
+  late Repo<R> repo;
+  Repo<R>? other;
+  @Autowired()
+  set otherRepo(Repo<R>? value) => other = value;
+  @Autowired()
+  void wire(List<Repo<R>> all) {}
+  @EventListener()
+  void on(E event) {}
+  @PostConstruct()
+  void baseInit() {}
+  @PreDestroy()
+  void baseDestroy() {}
+}
+mixin Audited {
+  @PostConstruct()
+  void auditInit() {}
+  @PreDestroy()
+  void auditDestroy() {}
+}
+@Service()
+class UserService extends BaseService<User, UserEvent> with Audited {
+  @PostConstruct()
+  void init() {}
+  @PreDestroy()
+  void destroy() {}
+}
+''';
+      final output = await _generate(source);
+      expect(
+        output,
+        _has("bean.repo = r.dependency<Repo<User>>(name: r'repo');"),
+      );
+      expect(
+        output,
+        _has(
+          "if (r.optionalDependency<Repo<User>>(name: r'otherRepo') case final value?) { bean.otherRepo = value; }",
+        ),
+      );
+      expect(output, contains('dependencyList<Repo<User>>()'));
+      expect(
+        output,
+        _has(
+          "EventListenerMethod.of<UserService, UserEvent>(r'UserService.on'",
+        ),
+      );
+      expect(
+        output,
+        _has(
+          'postConstruct: (bean) {bean.baseInit(); bean.auditInit(); bean.init();}',
+        ),
+      );
+      expect(
+        output,
+        _has(
+          'preDestroy: (bean) {bean.destroy(); bean.auditDestroy(); bean.baseDestroy();}',
+        ),
+      );
+      expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
+    });
+  });
+
+  group('@ComponentScan filters and lazyInit', () {
+    const classes = r'''
+class Plugin { const Plugin(); }
+abstract class Handler {}
+@Plugin() class Audit {}
+class LoginHandler implements Handler {}
+abstract class BaseHandler implements Handler {}
+@Component() class Stub {}
+@Component() class Real {}
+@Component() @Lazy(false) class Eager {}
+@Configuration() class Config { @Bean() Object thing() => 1; }
+''';
+    String scan(String options) =>
+        '''
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:pkg/src/beans.beans.dart';
+import 'package:pkg/src/service.dart';
+
+@ComponentScan($options)
+final BeanModule pkgBeans = \$pkgBeans;
+''';
+    Future<TestBuilderResult> build(String options) => _build({
+      'lib/src/beans.dart': scan(options),
+      'lib/src/service.dart': '$_header$classes',
+    });
+    Future<String> generate(String options) async {
+      final result = await build(options);
+      expect(result.errors, isEmpty);
+      return _normalize(
+        result.readerWriter.testing.readString(result.outputs.single),
+      );
+    }
+
+    test('include filters add beans without @Component, excludes win, '
+        'abstract classes are skipped', () async {
+      final output = await generate('''
+includeFilters: [
+  Filter(classes: [Plugin]),
+  Filter(type: FilterType.assignableType, classes: [Handler]),
+],
+excludeFilters: [Filter(type: FilterType.regex, pattern: [r'Stub\$'])],
+''');
+      expect(output, _has("name: r'audit'"));
+      expect(output, _has("name: r'loginHandler'"));
+      expect(output, _has("name: r'real'"));
+      expect(output, isNot(contains('BaseHandler')));
+      expect(output, isNot(contains('Stub')));
+    });
+
+    test('useDefaultFilters: false scans only the includes', () async {
+      final output = await generate(
+        'useDefaultFilters: false, includeFilters: [Filter(classes: [Plugin])]',
+      );
+      expect(output, _has("name: r'audit'"));
+      expect(output, isNot(contains("r'real'")));
+      expect(output, isNot(contains("r'thing'")));
+    });
+
+    test(
+      'lazyInit marks every scanned bean lazy unless @Lazy(false)',
+      () async {
+        final output = await generate('lazyInit: true');
+        final definitions = output.split('BeanDefinition<').skip(1);
+        String? named(String name) =>
+            definitions.firstWhere((d) => d.contains("name:r'$name'"));
+        for (final name in ['stub', 'real', 'config', 'thing']) {
+          expect(named(name), contains('lazy:true'), reason: name);
+        }
+        expect(named('eager'), isNot(contains('lazy:true')));
+      },
+    );
+
+    test('invalid filters fail the build', () async {
+      for (final (options, message) in [
+        (
+          'includeFilters: [Filter(type: FilterType.regex)]',
+          'includeFilters[0]: a FilterType.regex filter needs `pattern`',
+        ),
+        (
+          "excludeFilters: [Filter(classes: [Plugin], pattern: ['x'])]",
+          'excludeFilters[0]: a FilterType.annotation filter uses `classes`, '
+              'not `pattern`',
+        ),
+        (
+          "excludeFilters: [Filter(type: FilterType.regex, pattern: ['('])]",
+          "invalid pattern '('",
+        ),
+      ]) {
+        final result = await build(options);
+        expect(result.succeeded, isFalse, reason: options);
+        expect(result.errors.join('\n'), contains(message), reason: options);
+      }
     });
   });
 }

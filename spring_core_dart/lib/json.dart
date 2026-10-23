@@ -1,7 +1,7 @@
 /// JSON: `ObjectMapper` converts objects to JSON and back on generated
 /// metadata (no reflection), with Jackson-style annotations
-/// (`@JsonProperty`, `@JsonIgnore`, `@JsonInclude`, `@JsonCreator`,
-/// `@JsonValue`), naming strategies and custom (de)serializers.
+/// (`@JsonProperty`, `@JsonIgnore`, `@JsonInclude`, `@JsonPropertyOrder`,
+/// `@JsonCreator`, `@JsonValue`), naming strategies and custom (de)serializers.
 ///
 /// ```dart
 /// @Introspected()

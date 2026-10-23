@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:test/test.dart';
 
@@ -80,6 +82,151 @@ void main() {
     );
     expect(BeanExpressionContext(factory).getObject('nope'), isNull);
   });
+
+  test('systemEnvironment, systemProperties and the environment', () {
+    final environment =
+        StandardEnvironment(systemEnvironment: {'HOME': '/home/neon'})
+          ..propertySources.addFirst(
+            const MapPropertySource('test', {
+              'app.name': 'neon',
+              'app.port': '8080',
+            }),
+          )
+          ..propertySources.addFirst(
+            SimpleCommandLinePropertySource(['--server.port=9000', '--debug']),
+          );
+    final factory = DefaultListableBeanFactory()
+      ..registerSingleton('environment', environment)
+      ..beanExpressionResolver = StandardBeanExpressionResolver();
+    expect(factory.value<String>("#{systemEnvironment['HOME']}"), '/home/neon');
+    expect(factory.value<String>("#{systemEnvironment.HOME}"), '/home/neon');
+    // Dart has no system properties: the command-line arguments stand in.
+    expect(factory.value<String>("#{systemProperties['server.port']}"), '9000');
+    expect(factory.value<int>("#{systemProperties['server.port']}"), 9000);
+    expect(factory.value<String>("#{systemProperties['debug']}"), '');
+    expect(
+      factory.optionalValue<String>("#{systemProperties['app.name']}"),
+      isNull,
+    );
+    expect(factory.value<Map<String, Object?>>('#{systemProperties}'), {
+      'server.port': '9000',
+      'debug': '',
+    });
+    expect(factory.value<String>("#{environment['app.name']}"), 'neon');
+    expect(
+      factory.value<String>("#{environment.getProperty('app.name')}"),
+      'neon',
+    );
+    expect(factory.value<int>("#{environment.getProperty('app.port')}"), 8080);
+    expect(
+      factory.value<String>("#{environment.getProperty('nope', 'fallback')}"),
+      'fallback',
+    );
+    expect(factory.optionalValue<String>("#{environment['nope']}"), isNull);
+    expect(
+      factory.value<bool>("#{environment.containsProperty('app.name')}"),
+      isTrue,
+    );
+    expect(
+      factory.value<bool>("#{environment.matchesProfiles('dev')}"),
+      isFalse,
+    );
+    expect(
+      () => factory.value<String>("#{environment.getRequiredProperty('nope')}"),
+      throwsA(isA<MissingPropertyException>()),
+    );
+    // Beans named like the special maps win.
+    factory.registerSingleton('systemProperties', {'custom': true});
+    expect(factory.value<bool>("#{systemProperties['custom']}"), isTrue);
+  });
+
+  test('special maps without an environment bean', () {
+    final factory = DefaultListableBeanFactory()
+      ..beanExpressionResolver = StandardBeanExpressionResolver();
+    expect(factory.value<Map<String, Object?>>('#{systemProperties}'), isEmpty);
+    expect(
+      factory.value<Map<String, String>>('#{systemEnvironment}'),
+      Platform.environment,
+    );
+    final root = BeanExpressionContext(factory);
+    expect(root.containsObject('systemEnvironment'), isTrue);
+    expect(root.containsObject('systemProperties'), isTrue);
+  });
+
+  test('the factory ConversionService converts inside expressions', () {
+    final factory = DefaultListableBeanFactory()
+      ..beanExpressionResolver = StandardBeanExpressionResolver();
+    expect(
+      () => factory.value<int>("#{'ja' ? 1 : 2}"),
+      throwsA(isA<SpelEvaluationException>()),
+    );
+    factory.conversionService = DefaultConversionService()
+      ..addConverter<String, bool>((s) => s == 'ja');
+    expect(factory.value<int>("#{'ja' ? 1 : 2}"), 1);
+    expect(factory.value<int>("#{'nein' ? 1 : 2}"), 2);
+  });
+
+  test('parsed expressions are cached per resolver', () {
+    final parser = _CountingParser();
+    final factory = DefaultListableBeanFactory()
+      ..beanExpressionResolver = StandardBeanExpressionResolver(parser: parser);
+    final other = DefaultListableBeanFactory()
+      ..beanExpressionResolver = factory.beanExpressionResolver;
+    expect(factory.value<int>('#{1 + 1}'), 2);
+    expect(factory.value<int>('#{1 + 1}'), 2);
+    expect(other.value<int>('#{1 + 1}'), 2);
+    expect(factory.value<int>('#{1 + 2}'), 3);
+    expect(parser.parsed, ['#{1 + 1}', '#{1 + 2}']);
+  });
+
+  test('user exceptions and parse errors in @Value', () {
+    final factory = DefaultListableBeanFactory()
+      ..registerSingleton('english', English(), types: [English, Greeter])
+      ..beanExpressionResolver = StandardBeanExpressionResolver(
+        methodResolvers: [
+          FunctionMethodResolver<English>({
+            'boom': (_, _) => throw StateError('boom'),
+          }),
+        ],
+      );
+    // An exception of the method itself is rethrown as is, not wrapped.
+    expect(
+      () => factory.value<String>('#{english.boom()}'),
+      throwsA(isA<StateError>().having((e) => e.message, 'message', 'boom')),
+    );
+    expect(
+      () => factory.value<String>('#{english.nope()}'),
+      throwsA(
+        isA<SpelEvaluationException>().having(
+          (e) => e.messageCode,
+          'messageCode',
+          SpelMessage.methodNotFound,
+        ),
+      ),
+    );
+    expect(
+      () => factory.value<int>('x #{1 +} y'),
+      throwsA(
+        isA<SpelParseException>()
+            .having((e) => e.position, 'position', greaterThanOrEqualTo(0))
+            .having((e) => e.message, 'message', contains('@')),
+      ),
+    );
+  });
+}
+
+class _CountingParser implements ExpressionParser {
+  final parsed = <String>[];
+  final _delegate = SpelExpressionParser();
+
+  @override
+  Expression parseExpression(
+    String expressionString, [
+    ParserContext? context,
+  ]) {
+    parsed.add(expressionString);
+    return _delegate.parseExpression(expressionString, context);
+  }
 }
 
 class _CustomResolver extends StandardBeanExpressionResolver {

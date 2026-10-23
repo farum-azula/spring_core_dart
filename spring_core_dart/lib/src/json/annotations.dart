@@ -77,6 +77,48 @@ enum JsonInclusion {
   nonEmpty,
 }
 
+/// Class-level: the order in which properties are written, like Jackson's
+/// `@JsonPropertyOrder`. The listed JSON names (or Dart names) come first,
+/// in that order; the others follow in the mapper's order (sorted
+/// alphabetically unless `ObjectMapper.sortPropertiesAlphabetically` is
+/// off). [JsonPropertyOrder.alphabetic] sorts the unlisted ones
+/// alphabetically even when the mapper does not (Jackson's `alphabetic =
+/// true`).
+///
+/// ```dart
+/// @Introspected()
+/// @JsonPropertyOrder(['id', 'title'])
+/// class Book { ... } // {"id":..., "title":..., then the rest}
+///
+/// @Introspected()
+/// @JsonPropertyOrder.alphabetic()
+/// class Tag { ... } // sorted, whatever the mapper says
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @JsonPropertyOrder({"id", "title"})
+/// class Book { ... }
+///
+/// @JsonPropertyOrder(alphabetic = true)
+/// class Tag { ... }
+/// ```
+class JsonPropertyOrder {
+  /// Writes [value] first.
+  const JsonPropertyOrder(this.value) : alphabetic = false;
+
+  /// Sorts the properties alphabetically, after the names in [value] (none
+  /// by default).
+  const JsonPropertyOrder.alphabetic({this.value = const []})
+    : alphabetic = true;
+
+  /// JSON property names written first, in this order.
+  final List<String> value;
+
+  /// Whether the properties that are not listed are sorted alphabetically.
+  final bool alphabetic;
+}
+
 /// Class-level: JSON properties to ignore, and whether unknown properties
 /// are fine while reading, like Jackson's `@JsonIgnoreProperties`.
 ///

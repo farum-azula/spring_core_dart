@@ -400,6 +400,72 @@ void main() {
       });
       expect(timers.isShutdown, isTrue);
     });
+
+    group('spring.task.scheduling.shutdown.await-termination', () {
+      final logs = captureLogs();
+
+      // A context with the real scheduler and a run that lasts until
+      // [finished] completes.
+      Future<(ConfigurableApplicationContext, TimerTaskScheduler)> running(
+        Map<String, Object?> properties,
+        Completer<void> finished,
+      ) async {
+        final context = AnnotationConfigApplicationContext(
+          [springBootStarterSchedulingAutoConfiguration],
+          environment: StandardEnvironment(systemEnvironment: {})
+            ..propertySources.addFirst(MapPropertySource('test', properties)),
+        );
+        await context.refreshAsync();
+        final scheduler =
+            context.getBean<TaskScheduler>() as TimerTaskScheduler;
+        scheduler.schedule(
+          () => finished.future,
+          OneShotTrigger(scheduler.now()),
+          name: 'slow',
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(scheduler.runningTasks, hasLength(1));
+        return (context, scheduler);
+      }
+
+      test('closeAsync waits for the runs going on', () async {
+        final finished = Completer<void>();
+        final (context, scheduler) = await running({
+          'spring.task.scheduling.shutdown.await-termination': 'true',
+        }, finished);
+        var closed = false;
+        final closing = context.closeAsync().then((_) => closed = true);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(closed, isFalse);
+        expect(scheduler.isShutdown, isTrue);
+        finished.complete();
+        await closing;
+        expect(closed, isTrue);
+        expect(scheduler.runningTasks, isEmpty);
+      });
+
+      test('await-termination-period bounds the wait', () async {
+        final (context, scheduler) = await running({
+          'spring.task.scheduling.shutdown.await-termination': true,
+          'spring.task.scheduling.shutdown.await-termination-period': '20ms',
+        }, Completer<void>());
+        final watch = Stopwatch()..start();
+        await context.closeAsync();
+        expect(watch.elapsedMilliseconds, greaterThanOrEqualTo(15));
+        expect(scheduler.runningTasks, hasLength(1));
+        expect(
+          logs.messages,
+          contains(contains('Timed out while waiting for the TaskScheduler')),
+        );
+      });
+
+      test('off by default: close does not wait', () async {
+        final (context, scheduler) = await running(const {}, Completer<void>());
+        await context.closeAsync();
+        expect(context.isClosed, isTrue);
+        expect(scheduler.runningTasks, hasLength(1));
+      });
+    });
   });
 }
 

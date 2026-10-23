@@ -152,6 +152,13 @@ Durations: `500` (milliseconds), `10s`, `5m`, `2h`, `1d`, `PT1H30M`.
 | Property | Default | Meaning |
 |---|---|---|
 | `spring.task.scheduling.enabled` | `true` | `false` switches scheduling off (no `TaskScheduler`, no tasks) |
+| `spring.task.scheduling.shutdown.await-termination` | `false` | `true`: the context's `closeAsync()` waits for the runs going on when it closes (a run, or its `Future`, is never interrupted) |
+| `spring.task.scheduling.shutdown.await-termination-period` | — | How long to wait at most (`30s`); then a warning is logged and the shutdown goes on. Without it the wait is unbounded |
+
+The synchronous `close()` cannot wait: a run going on finishes after the
+close (no further runs start) and `TimerTaskScheduler.runningTasks` lists
+it. Your own `TaskScheduler` bean gets the same through a `Future`-returning
+`destroy()` (`DisposableBean`).
 
 ## Scheduling in code: `TaskScheduler`
 
@@ -241,9 +248,9 @@ every task) and the new context schedules the methods of the new code.
   `fixedDelay`).
 - `#k` in the day of week takes 1-5 (Spring accepts larger ordinals that
   never match).
-- No `spring.task.scheduling.shutdown.await-termination[-period]`: closing
-  a context is synchronous in Dart, so it cannot wait for a running task.
-  A run that is going on is never interrupted; it finishes after the close
-  (no further runs start).
+- `spring.task.scheduling.shutdown.await-termination[-period]` works with
+  the context's `closeAsync()` only (`close()` cannot wait); a run that is
+  going on is never interrupted and, without `await-termination`, finishes
+  after the close (no further runs start).
 - Not yet: `@Async`, `SchedulingConfigurer`, scheduling of prototype
   beans.

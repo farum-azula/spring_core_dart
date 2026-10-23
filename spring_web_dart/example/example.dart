@@ -14,7 +14,7 @@ abstract interface class CatalogApi {
   @GetMapping('/books/{isbn}')
   Future<Map<String, Object?>> find(@PathVariable('isbn') String isbn);
 
-  @PostMapping('/books', consumes: MediaType.applicationJson)
+  @PostMapping.of(path: '/books', consumes: MediaType.applicationJson)
   Future<ResponseEntity<Map<String, Object?>>> create(
     @RequestBody() Map<String, Object?> book,
     @RequestHeader('X-Request-Id') String requestId,

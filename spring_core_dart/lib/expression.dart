@@ -22,4 +22,6 @@ export 'package:spring_core_dart/src/expression/expression.dart';
 export 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 export 'package:spring_core_dart/src/expression/introspection_access.dart';
 export 'package:spring_core_dart/src/expression/spel_parser.dart';
+export 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
+export 'package:spring_core_dart/src/expression/spel_patterns.dart';
 export 'package:spring_core_dart/src/expression/spel_type.dart';

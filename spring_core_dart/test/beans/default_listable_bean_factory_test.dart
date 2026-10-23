@@ -793,27 +793,35 @@ void main() {
     );
 
     test('missing, ambiguous, collection and dependsOn', () {
+      // Lookup failures are wrapped per bean and injection point, like a
+      // failure while the bean is created.
+      Matcher unsatisfied(Matcher cause) =>
+          isA<UnsatisfiedDependencyException>()
+              .having((e) => e.beanName, 'bean', 'holder')
+              .having((e) => e.cause, 'cause', cause);
       expectInvalid(
         [
           holder(const [Dependency(Greeter)]),
         ],
-        isA<NoSuchBeanDefinitionException>().having(
-          (e) => e.requiredBy,
-          'by',
-          'holder',
+        unsatisfied(
+          isA<NoSuchBeanDefinitionException>().having(
+            (e) => e.requiredBy,
+            'by',
+            'holder',
+          ),
         ),
       );
       expectInvalid([
         holder(const [Dependency(Greeter)]),
         english(),
         french(),
-      ], isA<NoUniqueBeanDefinitionException>());
+      ], unsatisfied(isA<NoUniqueBeanDefinitionException>()));
       expectInvalid([
         holder(const [Dependency.collection(Greeter)]),
-      ], isA<NoSuchBeanDefinitionException>());
+      ], unsatisfied(isA<NoSuchBeanDefinitionException>()));
       expectInvalid([
         holder(const [Dependency.map(Greeter)]),
-      ], isA<NoSuchBeanDefinitionException>());
+      ], unsatisfied(isA<NoSuchBeanDefinitionException>()));
       expectInvalid(
         [
           holder(const [], dependsOn: ['ghost']),

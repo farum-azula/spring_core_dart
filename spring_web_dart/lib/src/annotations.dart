@@ -19,7 +19,9 @@ abstract interface class Mapping {
   /// The HTTP method.
   HttpMethod get method;
 
-  /// The path, possibly with `{variables}`: `/books/{isbn}`.
+  /// The path, possibly with `{variables}`: `/books/{isbn}`; empty when the
+  /// annotation has none (`@GetMapping()`): a client uses its base path
+  /// (`@FeignClient(url:, path:)`), like Spring's mapping without `path`.
   String get path;
 
   /// Extra headers, each `'Name=value'` like Spring's
@@ -40,7 +42,7 @@ abstract interface class Mapping {
 /// ...
 ///
 /// ```dart
-/// @RequestMapping('/books/{isbn}', method: HttpMethod.head)
+/// @RequestMapping.of(path: '/books/{isbn}', method: HttpMethod.head)
 /// Future<ResponseEntity<void>> exists(@PathVariable('isbn') String isbn);
 /// ```
 ///
@@ -50,9 +52,19 @@ abstract interface class Mapping {
 /// ResponseEntity<Void> exists(@PathVariable("isbn") String isbn);
 /// ```
 class RequestMapping implements Mapping {
-  /// Maps [path] with [method]; [headers] are `'Name=value'` entries.
-  const RequestMapping(
-    this.path, {
+  /// Maps [path] (none by default: the path of the client or of the class)
+  /// with `GET`.
+  const RequestMapping([this.path = ''])
+    : method = HttpMethod.get,
+      headers = const [],
+      produces = null,
+      consumes = null;
+
+  /// Every attribute by name, like Spring's
+  /// `@RequestMapping(path = "...", method = ...)`; [headers] are
+  /// `'Name=value'` entries.
+  const RequestMapping.of({
+    this.path = '',
     this.method = HttpMethod.get,
     this.headers = const [],
     this.produces,
@@ -75,22 +87,41 @@ class RequestMapping implements Mapping {
   final String? consumes;
 }
 
-/// Maps a `GET` request, like Spring's `@GetMapping`.
+/// Maps a `GET` request, like Spring's `@GetMapping`. The path is optional
+/// (`@GetMapping()` maps the base path of the client or of the class); a
+/// path with other attributes is written `@GetMapping.of(path: ..., ...)`,
+/// because Dart cannot combine an optional positional parameter with named
+/// ones.
 ///
 /// ```dart
 /// @GetMapping('/books/{isbn}')
 /// Future<Book> find(@PathVariable('isbn') String isbn);
+///
+/// @GetMapping.of(path: '/books', produces: MediaType.applicationJson)
+/// Future<List<Book>> all();
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// @GetMapping("/books/{isbn}")
 /// Book find(@PathVariable("isbn") String isbn);
+///
+/// @GetMapping(path = "/books", produces = MediaType.APPLICATION_JSON_VALUE)
+/// List<Book> all();
 /// ```
 class GetMapping implements Mapping {
-  /// Maps `GET` [path]; [headers] are `'Name=value'` entries.
-  const GetMapping(
-    this.path, {
+  /// Maps `GET` [path] (none by default: the path of the client or of
+  /// the class).
+  const GetMapping([this.path = ''])
+    : headers = const [],
+      produces = null,
+      consumes = null;
+
+  /// Every attribute by name, like Spring's
+  /// `@GetMapping(path = "...", produces = "...")`; [headers] are
+  /// `'Name=value'` entries.
+  const GetMapping.of({
+    this.path = '',
     this.headers = const [],
     this.produces,
     this.consumes,
@@ -125,9 +156,18 @@ class GetMapping implements Mapping {
 /// Book create(@RequestBody Book book);
 /// ```
 class PostMapping implements Mapping {
-  /// Maps `POST` [path]; [headers] are `'Name=value'` entries.
-  const PostMapping(
-    this.path, {
+  /// Maps `POST` [path] (none by default: the path of the client or of
+  /// the class).
+  const PostMapping([this.path = ''])
+    : headers = const [],
+      produces = null,
+      consumes = null;
+
+  /// Every attribute by name, like Spring's
+  /// `@PostMapping(path = "...", produces = "...")`; [headers] are
+  /// `'Name=value'` entries.
+  const PostMapping.of({
+    this.path = '',
     this.headers = const [],
     this.produces,
     this.consumes,
@@ -162,9 +202,18 @@ class PostMapping implements Mapping {
 /// Book replace(@PathVariable("isbn") String isbn, @RequestBody Book book);
 /// ```
 class PutMapping implements Mapping {
-  /// Maps `PUT` [path]; [headers] are `'Name=value'` entries.
-  const PutMapping(
-    this.path, {
+  /// Maps `PUT` [path] (none by default: the path of the client or of
+  /// the class).
+  const PutMapping([this.path = ''])
+    : headers = const [],
+      produces = null,
+      consumes = null;
+
+  /// Every attribute by name, like Spring's
+  /// `@PutMapping(path = "...", produces = "...")`; [headers] are
+  /// `'Name=value'` entries.
+  const PutMapping.of({
+    this.path = '',
     this.headers = const [],
     this.produces,
     this.consumes,
@@ -199,9 +248,18 @@ class PutMapping implements Mapping {
 /// Book rename(@PathVariable("isbn") String isbn, @RequestBody Map<String, Object> changes);
 /// ```
 class PatchMapping implements Mapping {
-  /// Maps `PATCH` [path]; [headers] are `'Name=value'` entries.
-  const PatchMapping(
-    this.path, {
+  /// Maps `PATCH` [path] (none by default: the path of the client or of
+  /// the class).
+  const PatchMapping([this.path = ''])
+    : headers = const [],
+      produces = null,
+      consumes = null;
+
+  /// Every attribute by name, like Spring's
+  /// `@PatchMapping(path = "...", produces = "...")`; [headers] are
+  /// `'Name=value'` entries.
+  const PatchMapping.of({
+    this.path = '',
     this.headers = const [],
     this.produces,
     this.consumes,
@@ -236,9 +294,18 @@ class PatchMapping implements Mapping {
 /// void delete(@PathVariable("isbn") String isbn);
 /// ```
 class DeleteMapping implements Mapping {
-  /// Maps `DELETE` [path]; [headers] are `'Name=value'` entries.
-  const DeleteMapping(
-    this.path, {
+  /// Maps `DELETE` [path] (none by default: the path of the client or of
+  /// the class).
+  const DeleteMapping([this.path = ''])
+    : headers = const [],
+      produces = null,
+      consumes = null;
+
+  /// Every attribute by name, like Spring's
+  /// `@DeleteMapping(path = "...", produces = "...")`; [headers] are
+  /// `'Name=value'` entries.
+  const DeleteMapping.of({
+    this.path = '',
     this.headers = const [],
     this.produces,
     this.consumes,
@@ -263,40 +330,64 @@ class DeleteMapping implements Mapping {
 /// Binds a parameter to a `{variable}` of the path, like Spring's
 /// `@PathVariable`. Without a [name] the parameter name is used.
 ///
+/// A path variable is [required] by default: a `null` argument is an error
+/// naming the variable, whatever the type of the parameter. With
+/// `required: false` a `null` argument gives an empty string, as Spring's
+/// URI template expansion does. Dart cannot combine the optional positional
+/// [name] with named attributes, so those are written
+/// `@PathVariable.of(name: 'id', required: false)`.
+///
 /// ```dart
 /// @GetMapping('/books/{isbn}')
 /// Future<Book> find(@PathVariable('isbn') String isbn);
 ///
 /// @GetMapping('/authors/{id}')
 /// Future<Author> author(@PathVariable() int id); // {id}
+///
+/// @GetMapping('/books/{isbn}/pages')
+/// Future<Pages> pages(@PathVariable.of(required: false) String? isbn);
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// Book find(@PathVariable("isbn") String isbn);
+/// Pages pages(@PathVariable(required = false) String isbn);
 /// ```
 class PathVariable {
-  /// Binds the variable [name] (default: the parameter name).
-  const PathVariable([this.name]);
+  /// Binds the variable [name] (default: the parameter name); required.
+  const PathVariable([this.name]) : required = true;
+
+  /// Binds the variable [name] (default: the parameter name); [required]
+  /// is `true` by default.
+  const PathVariable.of({this.name, this.required = true});
 
   /// The variable name, or `null` for the parameter name.
   final String? name;
+
+  /// Whether a value is required (see above).
+  final bool required;
 }
 
 /// Binds a parameter to a query parameter, like Spring's `@RequestParam`.
-/// Without a [name] the parameter name is used; a `null` value is left
-/// out, a list repeats the parameter, and a `Map<String, ...>` adds one
-/// query parameter per entry (its name is not used).
+/// Without a [name] the parameter name is used; a list repeats the
+/// parameter, and a `Map<String, ...>` adds one query parameter per entry
+/// (its name is not used).
 ///
-/// Whether the parameter is required and its default come from the Dart
-/// parameter, as Spring does for Kotlin: a nullable parameter is optional
-/// and a default value (`{int page = 0}`) is the default — Dart cannot
-/// combine the optional positional [name] with `required:` /
-/// `defaultValue:` attributes.
+/// A parameter is [required] by default: a `null` argument is an error
+/// naming the parameter. A [defaultValue] is sent instead of `null` (and
+/// implies `required: false`); a `null` argument of a parameter that is not
+/// required is left out. As in Spring (Kotlin, `@Nullable`), a nullable
+/// Dart parameter (`int? page`) is not required either, and a default
+/// value of the Dart parameter (`{int page = 0}`) is simply the argument.
+/// Dart cannot combine the optional positional [name] with named
+/// attributes, so those are written
+/// `@RequestParam.of(name: 'page', defaultValue: '0')`.
 ///
 /// ```dart
 /// @GetMapping('/books')
-/// Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int page = 0});
+/// Future<List<Book>> search(
+///   @RequestParam('q') String query,
+///   {@RequestParam.of(name: 'page', defaultValue: '0') int? page});
 /// // GET /books?q=dune&page=0
 ///
 /// @GetMapping('/books')
@@ -306,22 +397,34 @@ class PathVariable {
 ///
 /// Spring (Java):
 /// ```java
-/// List<Book> search(@RequestParam("q") String query, @RequestParam int page);
+/// List<Book> search(@RequestParam("q") String query,
+///     @RequestParam(name = "page", defaultValue = "0") int page);
 /// List<Book> filter(@RequestParam Map<String, Object> filters);
 /// ```
 class RequestParam {
-  /// Binds the query parameter [name] (default: the parameter name).
-  const RequestParam([this.name]);
+  /// Binds the query parameter [name] (default: the parameter name);
+  /// required.
+  const RequestParam([this.name]) : required = true, defaultValue = null;
+
+  /// Binds the query parameter [name] (default: the parameter name);
+  /// [required] is `true` by default.
+  const RequestParam.of({this.name, this.required = true, this.defaultValue});
 
   /// The query parameter name, or `null` for the parameter name.
   final String? name;
+
+  /// Whether a value is required (see above).
+  final bool required;
+
+  /// The text sent when the argument is `null`, or `null` for none.
+  final String? defaultValue;
 }
 
 /// Binds a parameter to a header, like Spring's `@RequestHeader`. Without
-/// a [name] the parameter name is used; a `null` value is left out, a list
-/// gives several values, and a `Map<String, ...>` adds one header per
-/// entry (its name is not used). Required and default: as for
-/// [RequestParam], from the Dart parameter.
+/// a [name] the parameter name is used; a list gives several values, and a
+/// `Map<String, ...>` adds one header per entry (its name is not used).
+/// [required] and [defaultValue] work as for [RequestParam]
+/// (`@RequestHeader.of(name: 'X-Tenant', defaultValue: 'public')`).
 ///
 /// ```dart
 /// @PostMapping('/orders')
@@ -329,25 +432,38 @@ class RequestParam {
 ///
 /// @GetMapping('/orders')
 /// Future<List<Order>> list(@RequestHeader() Map<String, String> headers);
+///
+/// @GetMapping('/orders')
+/// Future<List<Order>> mine(@RequestHeader.of(name: 'X-Tenant', defaultValue: 'public') String? tenant);
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// Order place(@RequestBody Order order, @RequestHeader("X-Request-Id") String requestId);
 /// List<Order> list(@RequestHeader Map<String, String> headers);
+/// List<Order> mine(@RequestHeader(name = "X-Tenant", defaultValue = "public") String tenant);
 /// ```
 class RequestHeader {
-  /// Binds the header [name] (default: the parameter name).
-  const RequestHeader([this.name]);
+  /// Binds the header [name] (default: the parameter name); required.
+  const RequestHeader([this.name]) : required = true, defaultValue = null;
+
+  /// Binds the header [name] (default: the parameter name); [required] is
+  /// `true` by default.
+  const RequestHeader.of({this.name, this.required = true, this.defaultValue});
 
   /// The header name, or `null` for the parameter name.
   final String? name;
+
+  /// Whether a value is required (see [RequestParam]).
+  final bool required;
+
+  /// The text sent when the argument is `null`, or `null` for none.
+  final String? defaultValue;
 }
 
 /// Binds a parameter to a cookie, like Spring's `@CookieValue`. Without a
 /// [name] the parameter name is used; a client sends the cookies of a call
 /// in one `Cookie` header (`a=1; b=2`), leaving out `null` values.
-/// Required and default: as for [RequestParam], from the Dart parameter.
 ///
 /// ```dart
 /// @GetMapping('/cart')

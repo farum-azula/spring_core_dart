@@ -38,6 +38,43 @@ final class ConfigDataResourceNotFoundException implements Exception {
       "location with 'optional:' to ignore it.";
 }
 
+/// A non-optional config location produced nothing, like Spring Boot's
+/// `ConfigDataLocationNotFoundException`: a directory location
+/// (`file:./config/`) that does not exist, whether from
+/// `spring.config.location`, `spring.config.import` or a file's own import.
+/// An existing directory without config files is fine.
+///
+/// ```dart
+/// // --spring.config.import=file:./missing/
+/// try {
+///   ConfigDataEnvironment(environment).processAndApplySync();
+/// } on ConfigDataLocationNotFoundException catch (error) {
+///   print(error.location); // file:./missing/
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// // Thrown by SpringApplication.run for a missing non-optional directory.
+/// try {
+///   SpringApplication.run(App.class, args);
+/// } catch (ConfigDataLocationNotFoundException ex) {
+///   log.error(ex.getMessage());
+/// }
+/// ```
+final class ConfigDataLocationNotFoundException implements Exception {
+  /// Creates the exception for [location].
+  ConfigDataLocationNotFoundException(this.location);
+
+  /// The config location as written (without `optional:`).
+  final String location;
+
+  @override
+  String toString() =>
+      "ConfigDataLocationNotFoundException: Config data location '$location' "
+      "cannot be found. Prefix the location with 'optional:' to ignore it.";
+}
+
 /// A property is not allowed where it was found, like Spring Boot's
 /// `InvalidConfigDataPropertyException`.
 ///

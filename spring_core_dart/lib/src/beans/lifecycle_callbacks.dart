@@ -1,3 +1,5 @@
+import 'dart:async';
+
 /// Called after injection, like Spring's `InitializingBean`.
 ///
 /// Runs after `@PostConstruct` methods and before the custom init method.
@@ -15,6 +17,9 @@
 /// }
 /// ```
 ///
+/// A `Future<void> afterPropertiesSet() async` is awaited by
+/// `refreshAsync()` (the synchronous `refresh()` fails for it).
+///
 /// Spring (Java):
 /// ```java
 /// @Service
@@ -25,8 +30,9 @@
 /// ```
 abstract interface class InitializingBean {
   /// Called once all dependencies are injected; throw to fail creation
-  /// (wrapped in a `BeanCreationException`).
-  void afterPropertiesSet();
+  /// (wrapped in a `BeanCreationException`). A returned `Future` is
+  /// awaited by `refreshAsync()`.
+  FutureOr<void> afterPropertiesSet();
 }
 
 /// Called when the bean is destroyed, like Spring's `DisposableBean`.
@@ -41,7 +47,7 @@ abstract interface class InitializingBean {
 ///   final _connection = Connection.open();
 ///
 ///   @override
-///   void destroy() => _connection.close();
+///   Future<void> destroy() => _connection.close(); // awaited by closeAsync()
 /// }
 /// ```
 ///
@@ -55,8 +61,10 @@ abstract interface class InitializingBean {
 /// ```
 abstract interface class DisposableBean {
   /// Releases resources; runs after `@PreDestroy` methods and before the
-  /// custom destroy method. Errors are collected, not rethrown.
-  void destroy();
+  /// custom destroy method. Errors are collected, not rethrown. A returned
+  /// `Future` is awaited by `closeAsync()` (the synchronous `close()` logs
+  /// a warning and goes on).
+  FutureOr<void> destroy();
 }
 
 /// Called once all eager singletons exist, like Spring's

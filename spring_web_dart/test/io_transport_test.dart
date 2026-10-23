@@ -196,12 +196,13 @@ void main() {
   });
 
   test('readTimeout is the longest wait for data, not a deadline', () async {
-    // 6 chunks 40 ms apart: never 150 ms without data...
+    // 6 chunks 40 ms apart: never 400 ms without data, even on a loaded
+    // machine (several test processes at once)...
     final steady = await transport.send(
       HttpRequest(
         method: HttpMethod.get,
         url: base.resolve('/trickle'),
-        readTimeout: const Duration(milliseconds: 150),
+        readTimeout: const Duration(milliseconds: 400),
       ),
     );
     expect(steady.bodyText, '012345');

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `@GetMapping()` without a path calls the `url` and `path` of the client itself.
+- `required` and `defaultValue` of `@RequestParam` / `@RequestHeader` and `required` of `@PathVariable`: `defaultValue` is sent for a `null` argument; a required `null` fails the call with an `ArgumentError` naming the parameter before anything is sent; a `null` that is not required leaves a query parameter or header out (a path variable becomes an empty string).
 - `spring.cloud.openfeign.client.config.*` keys with relaxed names, like Spring Cloud OpenFeign's binding: `readTimeout`, `loggerLevel`, `defaultRequestHeaders.X-Shop`, `read_timeout`, environment variables
 - Breaking: `Map` parameters of `@RequestParam` / `@RequestHeader` give one query parameter / header per entry (they were sent as JSON); an object as the value of a path variable, query parameter, header or cookie (a class written as a JSON object) stops the application at startup, or fails the call with an `EncodeException` when only the value tells.
 - Breaking: mapping `headers` use Spring's `'Name=value'` (as Spring Cloud OpenFeign reads them; server conditions like `'!Name'` are ignored); `'Name: value'` stops the application with the reason.

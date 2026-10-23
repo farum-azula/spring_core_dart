@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
@@ -167,7 +169,14 @@ class SpringBuilder implements Builder {
     assets.sort((a, b) => a.path.compareTo(b.path));
 
     final module = ModuleModel();
-    final scanner = BeanScanner(module, proxyMode: proxyMode);
+    final scanner = BeanScanner(
+      module,
+      proxyMode: proxyMode,
+      scan: componentScanModel(
+        componentScanChecker.firstAnnotationOf(scan)!,
+        scan,
+      ),
+    );
     await _scanLibraries(buildStep, scanner, assets);
     _checkUniqueNames(module.beans);
 
@@ -252,7 +261,9 @@ class SpringBuilder implements Builder {
     final autoConfigurations = await _autoConfigurations(buildStep);
     final springApplication = refer('springApplication');
     final output = input.changeExtension(_outputExtension);
-    final source = ModuleEmitter(output).emit(
+    final emitter = ModuleEmitter(output);
+    final (exclude, excludeName) = _exclusions(emitter, boots.single);
+    final source = emitter.emit(
       moduleName: 'application',
       variableName: r'$application',
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
@@ -276,7 +287,17 @@ class SpringBuilder implements Builder {
                   ],
                   {
                     if (autoConfigurations.isNotEmpty)
-                      'autoConfigurations': literalList(autoConfigurations),
+                      'autoConfigurations': literalList([
+                        for (final (module, _) in autoConfigurations) module,
+                      ]),
+                    if (autoConfigurations.any((entry) => entry.$2 != null))
+                      'autoConfigurationMetadata': literalMap({
+                        for (final (module, metadata) in autoConfigurations)
+                          module: ?metadata,
+                      }),
+                    if (exclude.isNotEmpty) 'exclude': literalList(exclude),
+                    if (excludeName.isNotEmpty)
+                      'excludeName': literalList(excludeName),
                     'fingerprint': literalString(_fingerprintPlaceholder),
                   },
                 )
@@ -403,14 +424,43 @@ class SpringBuilder implements Builder {
     return hash.toRadixString(16).padLeft(8, '0');
   }
 
+  // `exclude` / `excludeName` of `@SpringBootApplication` on [main], as
+  // expressions for `SpringApplication`.
+  static (List<Expression>, List<Expression>) _exclusions(
+    ModuleEmitter emitter,
+    TopLevelFunctionElement main,
+  ) {
+    final annotation = ConstantReader(
+      springBootApplicationChecker.firstAnnotationOf(main),
+    );
+    return (
+      [
+        for (final type
+            in annotation.peek('exclude')?.listValue ?? const <DartObject>[])
+          emitter.classReference(
+            ConstantReader(type).typeValue as InterfaceType,
+            main,
+          ),
+      ],
+      [
+        for (final name
+            in annotation.peek('excludeName')?.listValue ??
+                const <DartObject>[])
+          literalString(ConstantReader(name).stringValue),
+      ],
+    );
+  }
+
   // Auto-configuration modules of every dependency (direct or transitive):
   // top-level variables annotated `@AutoConfigurationModule` in
-  // `lib/spring_auto_configuration.dart`, ordered by `order`, then package.
-  static Future<List<Expression>> _autoConfigurations(
+  // `lib/spring_auto_configuration.dart`, with an expression for their
+  // `order` / `before` / `after` when set. `SpringApplication` sorts them
+  // (Boot's AutoConfigurationSorter); here they are by package, then name.
+  static Future<List<(Expression, Expression?)>> _autoConfigurations(
     BuildStep buildStep,
   ) async {
     final root = buildStep.inputId.package;
-    final found = <(int, String, String, String)>[];
+    final found = <(Expression?, String, String, String)>[];
     final config = await buildStep.packageConfig;
     for (final package in config.packages) {
       if (package.name == root) {
@@ -434,7 +484,7 @@ class SpringBuilder implements Builder {
             variable,
           );
           found.add((
-            ConstantReader(annotation).peek('order')?.intValue ?? 0,
+            _orderingOf(ConstantReader(annotation)),
             package.name,
             variable.name!,
             'package:${package.name}/spring_auto_configuration.dart',
@@ -443,10 +493,33 @@ class SpringBuilder implements Builder {
       }
     }
     found.sort((a, b) {
-      final byOrder = a.$1.compareTo(b.$1);
-      return byOrder != 0 ? byOrder : a.$2.compareTo(b.$2);
+      final byPackage = a.$2.compareTo(b.$2);
+      return byPackage != 0 ? byPackage : a.$3.compareTo(b.$3);
     });
-    return [for (final (_, _, name, url) in found) refer(name, url)];
+    return [
+      for (final (ordering, _, name, url) in found)
+        (refer(name, url), ordering),
+    ];
+  }
+
+  // `const AutoConfigurationModule(order:, before:, after:)` with the
+  // values the annotation sets; `null` when it sets none.
+  static Expression? _orderingOf(ConstantReader annotation) {
+    final order = annotation.peek('order')?.intValue ?? 0;
+    final before = annotation.peek('before')?.listValue ?? const [];
+    final after = annotation.peek('after')?.listValue ?? const [];
+    if (order == 0 && before.isEmpty && after.isEmpty) {
+      return null;
+    }
+    List<Expression> names(List<DartObject> values) => [
+      for (final value in values)
+        literalString(ConstantReader(value).stringValue),
+    ];
+    return refer('AutoConfigurationModule', _bootUrl).constInstance([], {
+      if (order != 0) 'order': literalNum(order),
+      if (before.isNotEmpty) 'before': literalList(names(before)),
+      if (after.isNotEmpty) 'after': literalList(names(after)),
+    });
   }
 
   // A starter's `requires` range against the spring_boot_dart version in

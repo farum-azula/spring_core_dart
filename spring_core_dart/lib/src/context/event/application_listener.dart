@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/context/event/application_event.dart';
 import 'package:spring_core_dart/src/context/event/event_listener_method.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 
@@ -94,6 +95,59 @@ abstract interface class GenericApplicationListener {
 
   /// Handles an [event] that [supportsEvent] accepted.
   void onApplicationEvent(Object event);
+}
+
+/// A [GenericApplicationListener] deciding by the event's and source's
+/// runtime types, with an order, like Spring's `SmartApplicationListener`.
+///
+/// Mix it in (`with SmartApplicationListener`) for the defaults: every
+/// source type, lowest precedence. Beans and `registerSingleton` objects
+/// of this type (as of any [GenericApplicationListener]) receive events.
+///
+/// ```dart
+/// @Component()
+/// class ContextAudit with SmartApplicationListener {
+///   @override
+///   bool supportsEventType(Type eventType) =>
+///       eventType == ContextRefreshedEvent || eventType == ContextClosedEvent;
+///
+///   @override
+///   void onApplicationEvent(Object event) => print(event);
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Component
+/// class ContextAudit implements SmartApplicationListener {
+///   public boolean supportsEventType(Class<? extends ApplicationEvent> t) {
+///     return t == ContextRefreshedEvent.class || t == ContextClosedEvent.class;
+///   }
+///   public void onApplicationEvent(ApplicationEvent event) { ... }
+/// }
+/// ```
+///
+/// A payload is seen as its `PayloadApplicationEvent`; override
+/// [supportsEvent] to decide on the instance instead.
+abstract mixin class SmartApplicationListener
+    implements GenericApplicationListener, Ordered {
+  /// Whether events of the runtime type [eventType] are handled.
+  bool supportsEventType(Type eventType);
+
+  /// Whether events from sources of the runtime type [sourceType] are
+  /// handled; `true` by default. Non-`ApplicationEvent` objects are their
+  /// own source.
+  bool supportsSourceType(Type sourceType) => true;
+
+  @override
+  bool supportsEvent(Object event) =>
+      supportsEventType(event.runtimeType) &&
+      supportsSourceType(
+        (event is ApplicationEvent ? event.source : event).runtimeType,
+      );
+
+  @override
+  int get order => Ordered.lowestPrecedence;
 }
 
 /// Adapts a function to [GenericApplicationListener] for events (or

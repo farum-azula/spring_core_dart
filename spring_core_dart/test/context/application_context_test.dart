@@ -275,7 +275,7 @@ void main() {
           create: (r) => Holder(r.getBean<Greeter>()),
         ),
       ]);
-      expect(ctx.refresh, throwsA(isA<NoSuchBeanDefinitionException>()));
+      expect(ctx.refresh, throwsA(isA<UnsatisfiedDependencyException>()));
       expect(log, isEmpty);
     });
 
@@ -815,6 +815,28 @@ void main() {
       expect(ownSource.parentMessageSource, same(parent));
     });
 
+    test('@Value Resource conversion uses the context resource loader', () {
+      final ctx = context([
+        BeanDefinition<Resource>(
+          name: 'required',
+          create: (r) => r.value<Resource>('mem:a.txt'),
+        ),
+        BeanDefinition<Resource>(
+          name: 'optional',
+          create: (r) => r.optionalValue<Resource>(' mem:a.txt ')!,
+        ),
+      ])..addProtocolResolver(InMemoryProtocolResolver('mem:', {'a.txt': 'A'}));
+      ctx.refresh();
+      expect(
+        (ctx.getBeanByName('required') as Resource).readAsStringSync(),
+        'A',
+      );
+      expect(
+        (ctx.getBeanByName('optional') as Resource).readAsStringSync(),
+        'A',
+      );
+    });
+
     test('resources and protocol resolvers', () {
       final ctx = context([])
         ..addProtocolResolver(InMemoryProtocolResolver('mem:', {'a.txt': 'A'}));
@@ -905,6 +927,8 @@ class _RecordingLifecycleProcessor implements LifecycleProcessor {
   bool isRunning = false;
   @override
   void onClose() => log.add('onClose');
+  @override
+  Future<void> onCloseAsync() async => log.add('onCloseAsync');
   @override
   void onRefresh() => log.add('onRefresh');
   @override

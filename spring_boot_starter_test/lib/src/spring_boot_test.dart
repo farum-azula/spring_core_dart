@@ -189,6 +189,10 @@ final class SpringBootTestContext {
     final application = SpringApplication(
       _application.modules,
       autoConfigurations: _application.autoConfigurations,
+      autoConfigurationMetadata: _application.autoConfigurationMetadata,
+      exclude: _application.exclude,
+      excludeName: _application.excludeName,
+      registerShutdownHook: false, // the test closes its context
       initializers: [..._application.initializers, ..._initializers],
       resourceLoader: _application.resourceLoader,
       out: (line) {

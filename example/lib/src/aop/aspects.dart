@@ -63,13 +63,25 @@ class AuditAspect {
 @Order(2)
 class TimingAspect {
   /// Around advice for every @Timed method; may change the arguments.
-  @Around('@annotation(Timed)')
-  Object? time(ProceedingJoinPoint joinPoint) {
-    tourLog.add('timing: start ${joinPoint.toShortString()}');
+  /// The pointcut binds `timed` (the annotation) and `isbn` (the first
+  /// argument, when it is a String), as AspectJ does.
+  @Around('@annotation(timed) && args(isbn, ..)')
+  Object? time(ProceedingJoinPoint joinPoint, Timed timed, String isbn) {
+    tourLog.add('timing: start ${joinPoint.toShortString()} isbn=$isbn');
     final result = joinPoint.proceed();
     tourLog.add('timing: end');
     return result;
   }
+}
+
+/// No interface and private state: the container creates it as a generated
+/// subclass that runs the advice (Spring: a CGLIB proxy).
+@Service()
+class StockCounter {
+  int _reserved = 0;
+
+  @Timed()
+  int reserve(String isbn) => ++_reserved;
 }
 
 /// An advisor written by hand: upper-cases what the `slogans` bean returns.

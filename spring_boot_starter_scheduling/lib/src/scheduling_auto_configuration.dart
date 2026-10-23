@@ -16,10 +16,15 @@ const _enabled = ConditionalOnProperty(
 ///
 /// Spring Boot schedules only with `@EnableScheduling`; here the
 /// dependency is enough. Switch it off with
-/// `spring.task.scheduling.enabled=false` (handy in tests).
+/// `spring.task.scheduling.enabled=false` (handy in tests). With
+/// `spring.task.scheduling.shutdown.await-termination=true` the context's
+/// `closeAsync()` waits for the runs going on, at most
+/// `spring.task.scheduling.shutdown.await-termination-period`.
 ///
 /// ```properties
 /// spring.task.scheduling.enabled=false
+/// spring.task.scheduling.shutdown.await-termination=true
+/// spring.task.scheduling.shutdown.await-termination-period=30s
 /// ```
 final schedulingAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<TaskScheduler>(
@@ -32,7 +37,20 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(TaskScheduler),
       ]),
     ],
-    create: (_) => TimerTaskScheduler(),
+    create: (r) {
+      // Spring Boot's TaskSchedulingProperties.Shutdown.
+      final environment = r.dependency<Environment>();
+      return TimerTaskScheduler(
+        awaitTermination:
+            environment.getPropertyAs<bool>(
+              'spring.task.scheduling.shutdown.await-termination',
+            ) ??
+            false,
+        awaitTerminationPeriod: environment.getPropertyAs<Duration>(
+          'spring.task.scheduling.shutdown.await-termination-period',
+        ),
+      );
+    },
   ),
   BeanDefinition<ScheduledAnnotationBeanPostProcessor>(
     name: 'scheduledAnnotationBeanPostProcessor',

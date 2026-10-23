@@ -192,11 +192,12 @@ void main() {
   test('AOP', () {
     expectLine('slogans (advisor bean): READ MORE BOOKS');
     expectLine('proxy target: DefaultPricingService');
+    expectLine('subclass proxy: true, reserved 1');
     expectLine('self-invocation through this: timed calls: 0');
     expectLine('self-invocation through @Lazy self: timed calls: 2');
     const order = [
       'audit: before quote[1, 3]',
-      'timing: start',
+      'timing: start execution(PricingService.quote(..)) isbn=1',
       'timing: end',
       'audit: quote returned 30.0',
       'audit: after quote',
@@ -227,9 +228,9 @@ void main() {
 
   test('json', () {
     expectLine(
-      'writeValueAsString: {"isbn":"978-0","title":"Dune",'
-      '"author":{"name":"Frank Herbert","born":1920},'
-      '"formats":["paperback","ebook"],"availability":"sold_out"}',
+      'writeValueAsString: {"author":{"born":1920,"name":"Frank Herbert"},'
+      '"availability":"sold_out","formats":["paperback","ebook"],'
+      '"isbn":"978-0","title":"Dune"}',
     );
     expectLine(
       'readValue (defaults kept, unknown "rating" ignored): Solaris by '
@@ -265,7 +266,10 @@ void main() {
   test('hierarchy and startup failures', () {
     expectLine('child bean using a parent bean: hello from the parent context');
     expectLine('event propagated to the parent: [parent heard order 42]');
-    expectLine('missing dependency: NoSuchBeanDefinitionException');
+    expectLine(
+      "missing dependency: UnsatisfiedDependencyException: Bean 'banner' has "
+      'an unsatisfied dependency LegacyGreeter: No bean of type LegacyGreeter',
+    );
     expectLine(
       'cycle: BeanCurrentlyInCreationException: Circular dependency: a -> b -> a.',
     );

@@ -82,6 +82,43 @@ class Warmup implements ApplicationRunner { ... }       // starts after Migratio
 then go on one after another); `await runApplicationAsync(args)`
 completes after the last runner, like Spring Boot's `run`.
 
+## Shutdown and exit codes
+
+With `spring.main.register-shutdown-hook=true` (the property wins) or
+`SpringApplication(registerShutdownHook: true)` the context is closed when
+the process gets SIGINT or SIGTERM (Boot's shutdown hook): `@PreDestroy`
+methods and `ContextClosedEvent` listeners run, then the process ends with
+`130` / `143`. Unlike Boot it is off by default: a Dart program that
+listens for signals does not end by itself, so a program that is done
+would never exit. Turn it on in programs that run until stopped (scheduled
+tasks, servers); the listener goes away when the context closes. It
+listens through `dart:io` and does nothing on the web.
+
+`SpringApplication.exit(context)` closes the context and returns the exit
+code, like Boot's: the highest non-zero code of the `ExitCodeGenerator`
+beans (and of the generators passed as the second argument), `1` when a
+generator throws. A code other than `0` is also published as an
+`ExitCodeEvent` before the context closes.
+
+```dart
+@Component()
+class FailedJobs implements ExitCodeGenerator {
+  int failed = 0;
+  @override
+  int getExitCode() => failed > 0 ? 2 : 0;
+}
+
+Future<void> main(List<String> args) async {
+  final context = await runApplicationAsync(args);
+  exit(SpringApplication.exit(context)); // dart:io
+}
+```
+
+When a runner fails, `ExitCodeExceptionMapper` beans map the exception to
+a code (the exception may also implement `ExitCodeGenerator` itself); the
+code is published as an `ExitCodeEvent` and returned by
+`SpringApplication.exitCodeOf(error)`, for `main` to pass to `exit`.
+
 ## Resources (`lib/resources/` = the classpath)
 
 ```
@@ -225,6 +262,7 @@ class Catalog {
 | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
 | `spring.jackson.serialization.write-dates-as-timestamps` | `false` | `DateTime` / `Duration` as milliseconds |
 | `spring.jackson.serialization.indent-output` | `false` | pretty-print |
+| `spring.jackson.mapper.sort-properties-alphabetically` | `true` | properties sorted by JSON name, constructor parameters first (Jackson 3's / Boot 4's order); `false`: declaration order |
 | `spring.jackson.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` (no named zones: Dart has no tz database) |
 
 `objectMapperFromProperties(environment)` builds the same mapper by hand.
@@ -258,6 +296,36 @@ or transitively — finds these modules and passes them to the generated
 the application's beans, so `@ConditionalOnMissingBean` backs off when the
 application declares its own bean. Also: `@ConditionalOnBean`,
 `@ConditionalOnProperty`, `@ConditionalOnMissingBean.named('...')`.
+
+Auto-configurations are registered in Boot's order
+(`AutoConfigurationSorter`): by name, then `order`
+(`@AutoConfigureOrder`), then `before` / `after` (a cycle fails the start
+with `AutoConfigure cycle detected between ...`). A module is named like its
+`BeanModule` (by convention the variable); an `@AutoConfiguration` class in
+it can be named too:
+
+```dart
+@AutoConfigurationModule(
+  order: 10,
+  after: ['springBootAutoConfiguration'],   // module or @AutoConfiguration class
+  before: ['neonMetricsAutoConfiguration'],
+)
+final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
+```
+
+Exclude auto-configurations before their conditions run: with
+`@SpringBootApplication(exclude: [CacheAutoConfiguration])` (classes) or
+`excludeName: ['springBootStarterCacheAutoConfiguration']` (the name of a
+module or of a class), or with the property `spring.autoconfigure.exclude`
+(comma-separated or a YAML list), which adds to them. Excluding a class
+removes only its beans; excluding a module removes all of it. Excluding a
+type that is no auto-configuration fails the start; an unknown name is
+ignored. The built-in ones are `MessageSourceAutoConfiguration`,
+`JacksonAutoConfiguration` and `ValidationAutoConfiguration`:
+
+```properties
+spring.autoconfigure.exclude=JacksonAutoConfiguration
+```
 
 A configuration class's conditions are evaluated once for the class and all
 of its `@Bean` methods (all or nothing), like in Spring.
@@ -325,16 +393,18 @@ How it is found: when an application with `@SpringBootApplication` is
 built, the generator walks every package of its dependency graph (direct
 and transitive), reads `lib/spring_auto_configuration.dart` where present
 and lists the annotated modules in the generated `springApplication`
-(sorted by `order`, then package name):
+(by package name; `SpringApplication` puts them in order, see above):
 
 ```dart
 // generated bin/main.beans.dart of the application
 final springApplication = SpringApplication(
   [$application],
   autoConfigurations: [
-    springBootAutoConfiguration,  // spring_boot_dart
     neonCacheAutoConfiguration,   // found in neon_cache
+    springBootAutoConfiguration,  // spring_boot_dart
   ],
+  // only where a starter sets order, before or after
+  autoConfigurationMetadata: {neonCacheAutoConfiguration: AutoConfigurationModule(order: 10)},
 );
 ```
 
@@ -349,8 +419,9 @@ Good to know:
 - **Incompatible versions stop the build**: if `requires` does not match
   the application's `spring_boot_dart`, the generator says which version to
   use (see below).
-- **Registration order**: application beans first, then auto-configuration,
-  so `@ConditionalOnMissingBean` sees what the application declared.
+- **Registration order**: application beans first, then auto-configuration
+  in Boot's order (see above), so `@ConditionalOnMissingBean` sees what the
+  application declared.
 - Keep third-party constraints of the starter wide (`dio: '>=5.0.0 <7.0.0'`)
   so applications can resolve them together with other starters.
 
@@ -375,7 +446,11 @@ logging.level.payments=trace
 before the refresh (Spring's `ApplicationContextInitializer`), and
 `run(args, properties: {...})` adds properties above every other source
 (what `@SpringBootTest(properties = ...)` does). `spring_boot_starter_test`
-is built on both.
+is built on both. `SpringApplication(defaultProperties: {...})` /
+`setDefaultProperties` adds the `defaultProperties` source below every
+other one, config files included (Boot's `setDefaultProperties`), and
+`additionalProfiles: [...]` activates profiles on top of the configured
+ones (Boot's `setAdditionalProfiles`).
 
 ## Application events
 
@@ -552,10 +627,10 @@ declarations are needed for them.
 | YAML 1.1 (SnakeYAML) | YAML 1.2 (`package:yaml`): `on`, `off`, `yes`, `no` stay strings (converting them to `bool` still works), `0777` is 777 | The Dart team's YAML parser |
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |
-| `spring.task.scheduling.shutdown.await-termination` | Not supported: running tasks are not awaited on close | `close()` is synchronous |
+| The shutdown hook is registered by default and runs when the JVM exits | Off by default (`spring.main.register-shutdown-hook=true` turns it on); only on SIGINT / SIGTERM (then `exit(130)` / `exit(143)`); the listener keeps the process alive until the context closes | Dart has no exit hooks, and a signal listener is an open handle that would keep a finished program running |
+| `@AutoConfiguration(before:, after:)` and `@AutoConfigureOrder` on the class | `before`, `after` and `order` of `@AutoConfigurationModule` (a module is the unit; classes can be named in them) | The generator discovers modules, not classes |
 
 ## Not yet
 
-`@AutoConfigureAfter` / `@AutoConfigureBefore` (only
-`AutoConfigurationModule(order:)`), `AvailabilityChangeEvent`, test slices (`@WebMvcTest`-like),
+`AvailabilityChangeEvent`, test slices (`@WebMvcTest`-like),
 Actuator, Web.

@@ -340,10 +340,10 @@ void main() {
       final json = mapper.writeValueAsString(book);
       expect(
         json,
-        '{"isbn":"978-0","title":"Dune","tags":["sf"],'
-        '"author":{"name":"Herbert","born":1920},"genre":"science",'
-        '"stock":"sold_out","published":"1965-08-01T00:00:00.000Z",'
-        '"ratings":{"ann":5},"note":null}',
+        '{"author":{"born":1920,"name":"Herbert"},"genre":"science",'
+        '"isbn":"978-0","note":null,"published":"1965-08-01T00:00:00.000Z",'
+        '"ratings":{"ann":5},"stock":"sold_out","tags":["sf"],'
+        '"title":"Dune"}',
       );
       final again = mapper.readValue<Book>(json);
       expect(again.tags, isA<List<String>>());
@@ -435,7 +435,7 @@ void main() {
           introspector: introspector,
           indentOutput: true,
         ).writeValueAsString(const Author('A')),
-        '{\n  "name": "A",\n  "born": null\n}',
+        '{\n  "born": null,\n  "name": "A"\n}',
       );
     });
 

@@ -1,13 +1,16 @@
 import 'package:spring_core_dart/src/expression/ast.dart';
 import 'package:spring_core_dart/src/expression/expression.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
 
 /// Parses SpEL, like Spring's `SpelExpressionParser`.
 ///
 /// Parsing is pure and the parser is stateless: keep one instance and
 /// cache parsed [Expression]s, which can be evaluated many times against
-/// different contexts and roots.
+/// different contexts and roots. A [SpelParserConfiguration] sets the
+/// limits (expression length, nesting depth, operations per evaluation)
+/// and auto-grow.
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();
@@ -30,8 +33,13 @@ import 'package:spring_core_dart/src/expression/tokenizer.dart';
 /// Differences from Spring: no compiler mode (`SpelCompilerMode`), and
 /// types in `T(...)` / `new` must be registered in a `StandardTypeLocator`.
 class SpelExpressionParser implements ExpressionParser {
-  /// Creates a parser.
-  SpelExpressionParser();
+  /// Creates a parser with [configuration]
+  /// (`SpelParserConfiguration.withDefaults()` when omitted).
+  SpelExpressionParser([SpelParserConfiguration? configuration])
+    : configuration = configuration ?? SpelParserConfiguration.withDefaults();
+
+  /// Limits and auto-grow options of the parsed expressions.
+  final SpelParserConfiguration configuration;
 
   @override
   Expression parseExpression(
@@ -41,7 +49,36 @@ class SpelExpressionParser implements ExpressionParser {
     if (context != null && context.isTemplate) {
       return _parseTemplate(expressionString, context);
     }
-    return SpelExpression(expressionString, _Parser(expressionString).parse());
+    return parseRaw(expressionString);
+  }
+
+  /// Parses [expressionString] as a single SpEL expression, never as a
+  /// template (Spring's `parseRaw`).
+  ///
+  /// Throws a [SpelParseException] when the text is invalid, longer than
+  /// `maximumExpressionLength` or nested deeper than
+  /// `maximumNestingDepth`.
+  SpelExpression parseRaw(String expressionString) {
+    if (expressionString.length > configuration.maximumExpressionLength) {
+      throw SpelParseException(
+        SpelMessage.maxExpressionLengthExceeded,
+        inserts: [configuration.maximumExpressionLength],
+        expressionString: expressionString,
+        position: 0,
+      );
+    }
+    final SpelNode ast;
+    try {
+      ast = _Parser(expressionString, configuration).parse();
+    } on StackOverflowError {
+      throw SpelParseException(
+        SpelMessage.maxExpressionNestingDepthExceeded,
+        inserts: [configuration.maximumNestingDepth],
+        expressionString: expressionString,
+        position: 0,
+      );
+    }
+    return SpelExpression(expressionString, ast, configuration);
   }
 
   // Splits a template into literal and expression parts. A template that
@@ -65,14 +102,14 @@ class SpelExpressionParser implements ExpressionParser {
       final end = _findSuffix(text, expressionStart, prefix, suffix);
       final inner = text.substring(expressionStart, end);
       if (inner.trim().isEmpty) {
-        throw SpelParseException(
-          SpelMessage.unexpectedEndOfExpression,
-          "No expression defined within delimiter '$prefix$suffix'",
+        throw ParseException(
+          "No expression defined within delimiter '$prefix$suffix' at "
+          'character $start',
           expressionString: text,
           position: start,
         );
       }
-      parts.add(parseExpression(inner));
+      parts.add(parseRaw(inner));
       position = end + suffix.length;
     }
     if (parts.isEmpty) {
@@ -86,7 +123,7 @@ class SpelExpressionParser implements ExpressionParser {
   /// Index of the suffix closing an expression that starts at [from],
   /// skipping brackets and quoted strings, like Spring's template parser.
   static int _findSuffix(String text, int from, String prefix, String suffix) {
-    final stack = <String>[];
+    final stack = <(String, int)>[];
     const pairs = {'(': ')', '[': ']', '{': '}'};
     var i = from;
     while (i < text.length) {
@@ -95,12 +132,22 @@ class SpelExpressionParser implements ExpressionParser {
       }
       final c = text[i];
       if (pairs.containsKey(c)) {
-        stack.add(pairs[c]!);
+        stack.add((c, i));
       } else if (pairs.containsValue(c)) {
-        if (stack.isEmpty || stack.removeLast() != c) {
-          throw SpelParseException(
-            SpelMessage.missingCloseBracket,
-            "Found closing '$c' without a matching opening bracket",
+        if (stack.isEmpty) {
+          final opening = pairs.entries.firstWhere((e) => e.value == c).key;
+          throw ParseException(
+            "Found closing '$c' at position $i without an opening "
+            "'$opening'",
+            expressionString: text,
+            position: i,
+          );
+        }
+        final (open, at) = stack.removeLast();
+        if (pairs[open] != c) {
+          throw ParseException(
+            "Found closing '$c' at position $i but most recent opening is "
+            "'$open' at position $at",
             expressionString: text,
             position: i,
           );
@@ -108,9 +155,8 @@ class SpelExpressionParser implements ExpressionParser {
       } else if (c == "'" || c == '"') {
         final close = text.indexOf(c, i + 1);
         if (close < 0) {
-          throw SpelParseException(
-            SpelMessage.unterminatedString,
-            'Unterminated string literal',
+          throw ParseException(
+            'Found non terminating string literal starting at position $i',
             expressionString: text,
             position: i,
           );
@@ -119,12 +165,12 @@ class SpelExpressionParser implements ExpressionParser {
       }
       i++;
     }
-    throw SpelParseException(
-      SpelMessage.missingCloseBracket,
-      "No ending suffix '$suffix' for expression starting at "
-      'position ${from - prefix.length}',
+    final start = from - prefix.length;
+    throw ParseException(
+      "No ending suffix '$suffix' for expression starting at character "
+      '$start: ${text.substring(start)}',
       expressionString: text,
-      position: from - prefix.length,
+      position: start,
     );
   }
 }
@@ -135,72 +181,119 @@ class SpelExpressionParser implements ExpressionParser {
 /// assignment / Elvis / ternary (`_expression`), `or`, `and`, relational
 /// (`_relational`, non-associative), `+ -`, `* / %`, `^` and postfix
 /// `++ --` (`_powerIncDec`), unary `! - + ++ --`, then primary
-/// expressions with their `.x`, `?.x`, `[i]`, `.?[...]` chains.
+/// expressions with their `.x`, `?.x`, `[i]`, `.?[...]` chains. Like
+/// Spring, the level methods return `null` when no operand starts at the
+/// current token, so missing operands are reported by the operator.
 final class _Parser {
-  _Parser(this.text) : _tokens = Tokenizer(text).process();
+  _Parser(this.text, this.configuration) : _tokens = Tokenizer(text).process();
 
   final String text;
+  final SpelParserConfiguration configuration;
   final List<Token> _tokens;
   int _pos = 0;
+  int _depth = 0;
 
   SpelNode parse() {
-    if (_tokens.isEmpty) {
-      throw _error(
-        SpelMessage.unexpectedEndOfExpression,
-        'Empty expression',
-        0,
-      );
-    }
     final node = _expression();
+    if (node == null) {
+      throw _error(SpelMessage.ood, 0);
+    }
     if (_pos < _tokens.length) {
       final token = _tokens[_pos];
-      throw _error(
-        SpelMessage.unexpectedToken,
-        "Unexpected token '${_describe(token)}'",
-        token.start,
-      );
+      throw _error(SpelMessage.moreInput, token.start, [_describe(token)]);
     }
     return node;
   }
+
+  // Counts nesting (parentheses, arguments, indexes, inline collections,
+  // unary chains) so hostile input fails cleanly instead of overflowing
+  // the stack.
+  T _nested<T>(T Function() body) {
+    if (++_depth > configuration.maximumNestingDepth) {
+      throw _error(
+        SpelMessage.maxExpressionNestingDepthExceeded,
+        _current?.start ?? text.length,
+        [configuration.maximumNestingDepth],
+      );
+    }
+    try {
+      return body();
+    } finally {
+      _depth--;
+    }
+  }
+
+  SpelNode _required(SpelNode? node) =>
+      node ?? (throw _error(SpelMessage.ood, _current?.start ?? text.length));
 
   // expression: logicalOr ((= logicalOr) | (?: expression)
   //             | (? expression : expression))?
   // The right side of `=` is a logicalOr, so `a = b = c` is rejected
   // (as in Spring); `?:` and `? :` recurse, so they are right-associative.
-  SpelNode _expression() {
+  SpelNode? _expression() => _nested(() {
     final node = _logicalOr();
     if (_peek(TokenKind.assign)) {
       final token = _next();
-      return Assign(token.start, node, _logicalOr());
+      return Assign(
+        token.start,
+        _left(token, node),
+        _right(token, _logicalOr()),
+      );
     }
     if (_peek(TokenKind.elvis)) {
       final token = _next();
-      return Elvis(token.start, node, _expression());
+      return Elvis(
+        token.start,
+        _left(token, node),
+        _right(token, _expression()),
+      );
     }
     if (_peek(TokenKind.qmark)) {
       final token = _next();
-      final whenTrue = _expression();
-      _expect(TokenKind.colon, "':' in ternary expression");
-      return Ternary(token.start, node, whenTrue, _expression());
+      final whenTrue = _required(_expression());
+      _expect(TokenKind.colon, ':');
+      return Ternary(
+        token.start,
+        _left(token, node),
+        whenTrue,
+        _required(_expression()),
+      );
     }
     return node;
-  }
+  });
+
+  SpelNode _left(Token operator, SpelNode? operand) =>
+      operand ?? (throw _error(SpelMessage.leftOperandProblem, operator.start));
+
+  SpelNode _right(Token operator, SpelNode? operand) =>
+      operand ??
+      (throw _error(SpelMessage.rightOperandProblem, operator.start));
 
   // Left-associative loops: `a or b or c` is ((a or b) or c).
-  SpelNode _logicalOr() {
+  SpelNode? _logicalOr() {
     var node = _logicalAnd();
     while (_peek(TokenKind.or)) {
       final token = _next();
-      node = BinaryOperator(token.start, BinaryKind.or, node, _logicalAnd());
+      node = BinaryOperator(
+        token.start,
+        BinaryKind.or,
+        _left(token, node),
+        _right(token, _logicalAnd()),
+      );
     }
     return node;
   }
 
-  SpelNode _logicalAnd() {
+  SpelNode? _logicalAnd() {
     var node = _relational();
     while (_peek(TokenKind.and)) {
       final token = _next();
-      node = BinaryOperator(token.start, BinaryKind.and, node, _relational());
+      node = BinaryOperator(
+        token.start,
+        BinaryKind.and,
+        _left(token, node),
+        _right(token, _relational()),
+      );
     }
     return node;
   }
@@ -218,31 +311,36 @@ final class _Parser {
   };
 
   // At most one relational operator: `1 < 2 < 3` is a parse error.
-  SpelNode _relational() {
+  SpelNode? _relational() {
     final node = _sum();
     final kind = _current == null ? null : _relationalKinds[_current!.kind];
     if (kind == null) {
       return node;
     }
     final token = _next();
-    return BinaryOperator(token.start, kind, node, _sum());
+    return BinaryOperator(
+      token.start,
+      kind,
+      _left(token, node),
+      _right(token, _sum()),
+    );
   }
 
-  SpelNode _sum() {
+  SpelNode? _sum() {
     var node = _product();
     while (_peek(TokenKind.plus) || _peek(TokenKind.minus)) {
       final token = _next();
       node = BinaryOperator(
         token.start,
         token.kind == TokenKind.plus ? BinaryKind.add : BinaryKind.subtract,
-        node,
-        _product(),
+        _left(token, node),
+        _right(token, _product()),
       );
     }
     return node;
   }
 
-  SpelNode _product() {
+  SpelNode? _product() {
     var node = _powerIncDec();
     while (_peek(TokenKind.star) ||
         _peek(TokenKind.div) ||
@@ -255,8 +353,8 @@ final class _Parser {
           TokenKind.div => BinaryKind.divide,
           _ => BinaryKind.modulus,
         },
-        node,
-        _powerIncDec(),
+        _left(token, node),
+        _right(token, _powerIncDec()),
       );
     }
     return node;
@@ -264,13 +362,18 @@ final class _Parser {
 
   // `^` takes a single unary on each side (`2 ^ 3 ^ 2` is rejected, like
   // Spring), and unary minus binds tighter: `-2 ^ 2` is 4.
-  SpelNode _powerIncDec() {
+  SpelNode? _powerIncDec() {
     final node = _unary();
     if (_peek(TokenKind.power)) {
       final token = _next();
-      return BinaryOperator(token.start, BinaryKind.power, node, _unary());
+      return BinaryOperator(
+        token.start,
+        BinaryKind.power,
+        _left(token, node),
+        _right(token, _unary()),
+      );
     }
-    if (_peek(TokenKind.inc) || _peek(TokenKind.dec)) {
+    if (node != null && (_peek(TokenKind.inc) || _peek(TokenKind.dec))) {
       final token = _next();
       return IncDec(
         token.start,
@@ -282,23 +385,35 @@ final class _Parser {
     return node;
   }
 
-  SpelNode _unary() {
+  SpelNode? _unary() {
     final token = _current;
     switch (token?.kind) {
       case TokenKind.not:
         _next();
-        return UnaryOperator(token!.start, UnaryKind.not, _unary());
+        return UnaryOperator(
+          token!.start,
+          UnaryKind.not,
+          _right(token, _nested(_unary)),
+        );
       case TokenKind.minus:
         _next();
-        return UnaryOperator(token!.start, UnaryKind.minus, _unary());
+        return UnaryOperator(
+          token!.start,
+          UnaryKind.minus,
+          _right(token, _nested(_unary)),
+        );
       case TokenKind.plus:
         _next();
-        return UnaryOperator(token!.start, UnaryKind.plus, _unary());
+        return UnaryOperator(
+          token!.start,
+          UnaryKind.plus,
+          _right(token, _nested(_unary)),
+        );
       case TokenKind.inc || TokenKind.dec:
         _next();
         return IncDec(
           token!.start,
-          _unary(),
+          _right(token, _nested(_unary)),
           increment: token.kind == TokenKind.inc,
           prefix: true,
         );
@@ -309,8 +424,11 @@ final class _Parser {
 
   // A start node followed by any number of navigation nodes; more than
   // one becomes a CompoundExpression evaluated left to right.
-  SpelNode _primary() {
+  SpelNode? _primary() {
     final start = _startNode();
+    if (start == null) {
+      return null;
+    }
     final nodes = [start];
     while (true) {
       final node = _node();
@@ -328,10 +446,10 @@ final class _Parser {
     switch (token?.kind) {
       case TokenKind.dot:
         _next();
-        return _dotted(nullSafe: false);
+        return _dotted(token!, nullSafe: false);
       case TokenKind.safeNavi:
         _next();
-        return _dotted(nullSafe: true);
+        return _dotted(token!, nullSafe: true);
       case TokenKind.lsquare:
         return _indexer(nullSafe: false);
       case TokenKind.select ||
@@ -347,14 +465,10 @@ final class _Parser {
   // After `.` or `?.`: a property or method name. After `?.` the
   // tokenizer cannot see `?.?[`, `?.![`, ... as one token, so those are
   // reassembled here from `?`, `!`, `^` or `$` followed by `[`.
-  SpelNode _dotted({required bool nullSafe}) {
+  SpelNode _dotted(Token dot, {required bool nullSafe}) {
     final token = _current;
     if (token == null) {
-      throw _error(
-        SpelMessage.unexpectedEndOfExpression,
-        'Expected a property or method after the dot',
-        text.length,
-      );
+      throw _error(SpelMessage.ood, dot.start);
     }
     if (nullSafe) {
       // ?.[index], ?.?[select], ?.![project], ?.^[first], ?.$[last]
@@ -376,27 +490,28 @@ final class _Parser {
     if (token.kind == TokenKind.identifier) {
       return _methodOrProperty(nullSafe: nullSafe);
     }
-    throw _error(
-      SpelMessage.unexpectedToken,
-      "Unexpected token '${_describe(token)}' after a dot",
-      token.start,
-    );
+    throw _error(SpelMessage.unexpectedDataAfterDot, dot.start, [
+      _describe(token),
+    ]);
   }
 
   SpelNode _indexer({required bool nullSafe}) {
-    final token = _expect(TokenKind.lsquare, "'['");
-    final index = _expression();
-    _expect(TokenKind.rsquare, "']'");
+    final token = _expect(TokenKind.lsquare, '[');
+    final index = _required(_expression());
+    _expect(TokenKind.rsquare, ']');
     return Indexer(token.start, index, nullSafe: nullSafe);
   }
 
   // Without [kind], the current token is `.?[`-style and says which
   // operator it is; with [kind] (from _dotted) the `[` is still to come.
   SpelNode _selectionOrProjection({required bool nullSafe, TokenKind? kind}) {
-    final token = kind == null ? _next() : _expect(TokenKind.lsquare, "'['");
+    final token = kind == null ? _next() : _expect(TokenKind.lsquare, '[');
     final selector = kind ?? token.kind;
     final expression = _expression();
-    _expect(TokenKind.rsquare, "']'");
+    if (expression == null) {
+      throw _error(SpelMessage.missingSelectionExpression, token.start);
+    }
+    _expect(TokenKind.rsquare, ']');
     return switch (selector) {
       TokenKind.project => Projection(
         token.start,
@@ -441,54 +556,69 @@ final class _Parser {
     );
   }
 
-  List<SpelNode> _arguments() {
-    _expect(TokenKind.lparen, "'('");
+  List<SpelNode> _arguments() => _nested(() {
+    _expect(TokenKind.lparen, '(');
     final arguments = <SpelNode>[];
     if (!_peek(TokenKind.rparen)) {
-      arguments.add(_expression());
+      arguments.add(_required(_expression()));
       while (_peek(TokenKind.comma)) {
         _next();
-        arguments.add(_expression());
+        arguments.add(_required(_expression()));
       }
     }
-    _expect(TokenKind.rparen, "')'");
+    _expect(TokenKind.rparen, ')');
     return arguments;
-  }
+  });
 
   // The first node of a primary: literal, `( )`, inline collection,
   // `[i]` on the active object, `#var`, `#fn()`, `@bean`, `&bean`,
   // selection/projection on the active object, `true`/`false`/`null`
-  // (case-insensitive), `T(Type)`, `new Type(...)`, or a property/method.
-  SpelNode _startNode() {
+  // (case-insensitive), `T(Type)`, `new Type(...)`, `new type[n]`, or a
+  // property/method; `null` when no operand starts here.
+  SpelNode? _startNode() {
     final token = _current;
     if (token == null) {
-      throw _error(
-        SpelMessage.unexpectedEndOfExpression,
-        'Unexpected end of expression',
-        text.length,
-      );
+      return null;
     }
     switch (token.kind) {
       case TokenKind.literalInt:
         _next();
-        return Literal(token.start, _parseInt(token, token.data!, 10));
+        return Literal(
+          token.start,
+          _parseInt(token, token.data!, 10, SpelMessage.notAnInteger),
+        );
       case TokenKind.literalLong:
         // Dart ints are 64-bit, so int and long literals are both `int`.
         _next();
-        return Literal(token.start, _parseInt(token, token.data!, 10));
-      case TokenKind.literalHexInt || TokenKind.literalHexLong:
+        return Literal(
+          token.start,
+          _parseInt(token, token.data!, 10, SpelMessage.notALong),
+        );
+      case TokenKind.literalHexInt:
         _next();
-        return Literal(token.start, _parseInt(token, token.data!, 16));
+        return Literal(
+          token.start,
+          _parseInt(token, token.data!, 16, SpelMessage.notAnInteger),
+        );
+      case TokenKind.literalHexLong:
+        _next();
+        return Literal(
+          token.start,
+          _parseInt(token, token.data!, 16, SpelMessage.notALong),
+        );
       case TokenKind.literalReal || TokenKind.literalRealFloat:
         _next();
-        return Literal(token.start, double.parse(token.data!));
+        final value =
+            double.tryParse(token.data!) ??
+            (throw _error(SpelMessage.notAReal, token.start, [token.data]));
+        return Literal(token.start, value, real: true);
       case TokenKind.literalString:
         _next();
         return Literal(token.start, token.data);
       case TokenKind.lparen:
         _next();
-        final inner = _expression();
-        _expect(TokenKind.rparen, "')'");
+        final inner = _required(_expression());
+        _expect(TokenKind.rparen, ')');
         return inner;
       case TokenKind.lcurly:
         return _inline();
@@ -496,10 +626,7 @@ final class _Parser {
         return _indexer(nullSafe: false);
       case TokenKind.hash:
         _next();
-        final name = _expect(
-          TokenKind.identifier,
-          'a variable or function name',
-        );
+        final name = _expect(TokenKind.identifier, 'identifier');
         if (_peek(TokenKind.lparen)) {
           return FunctionReference(token.start, name.data!, _arguments());
         }
@@ -510,11 +637,7 @@ final class _Parser {
         if (name == null ||
             (name.kind != TokenKind.identifier &&
                 name.kind != TokenKind.literalString)) {
-          throw _error(
-            SpelMessage.unexpectedToken,
-            'Expected a bean name after ${token.kind == TokenKind.beanRef ? '@' : '&'}',
-            token.end,
-          );
+          throw _error(SpelMessage.invalidBeanReference, token.start);
         }
         _next();
         return BeanReference(
@@ -541,27 +664,65 @@ final class _Parser {
           _next();
           _next();
           final name = _qualifiedName();
-          _expect(TokenKind.rparen, "')' after the type name");
+          _expect(TokenKind.rparen, ')');
           return TypeReference(token.start, name);
         }
         if (token.data == 'new' && _peekAt(1, TokenKind.identifier)) {
           _next();
           final name = _qualifiedName();
+          if (_peek(TokenKind.lsquare)) {
+            return _arrayConstruction(token, name);
+          }
+          if (!_peek(TokenKind.lparen)) {
+            throw _error(
+              SpelMessage.missingConstructorArgs,
+              _current?.start ?? text.length,
+            );
+          }
           return ConstructorReference(token.start, name, _arguments());
         }
         return _methodOrProperty(nullSafe: false);
       default:
-        throw _error(
-          SpelMessage.unexpectedToken,
-          "Unexpected token '${_describe(token)}'",
-          token.start,
-        );
+        return null;
     }
+  }
+
+  // `new int[3]`, `new int[2][3]`, `new String[]{'a', 'b'}`: dimensions
+  // (null when empty) and an optional inline list initializer.
+  SpelNode _arrayConstruction(Token newToken, String typeName) {
+    final dimensions = <SpelNode?>[];
+    while (_peek(TokenKind.lsquare)) {
+      _next();
+      if (_peek(TokenKind.rsquare)) {
+        dimensions.add(null);
+      } else {
+        dimensions.add(_required(_expression()));
+      }
+      _expect(TokenKind.rsquare, ']');
+    }
+    InlineList? initializer;
+    if (_peek(TokenKind.lcurly)) {
+      final inline = _inline();
+      if (inline is! InlineList) {
+        throw _error(SpelMessage.notExpectedToken, inline.start, [
+          'list initializer',
+          'map',
+        ]);
+      }
+      initializer = inline;
+    }
+    return ConstructorReference(
+      newToken.start,
+      typeName,
+      const [],
+      dimensions: dimensions,
+      initializer: initializer,
+    );
   }
 
   // `a.b.C`: dotted names are kept as one string for the TypeLocator.
   String _qualifiedName() {
-    final parts = [_expect(TokenKind.identifier, 'a type name').data!];
+    final parts = [_expect(TokenKind.identifier, 'qualified ID').data!];
     while (_peek(TokenKind.dot) && _peekAt(1, TokenKind.identifier)) {
       _next();
       parts.add(_next().data!);
@@ -573,7 +734,7 @@ final class _Parser {
   ///
   /// The first item decides: a `:` after it makes an inline map,
   /// otherwise an inline list.
-  SpelNode _inline() {
+  SpelNode _inline() => _nested(() {
     final open = _next();
     if (_peek(TokenKind.rcurly)) {
       _next();
@@ -584,35 +745,31 @@ final class _Parser {
       _next();
       return InlineMap(open.start, const []);
     }
-    final first = _expression();
+    final first = _required(_expression());
     if (_peek(TokenKind.colon)) {
       _next();
-      final entries = [(first, _expression())];
+      final entries = [(first, _required(_expression()))];
       while (_peek(TokenKind.comma)) {
         _next();
-        final key = _expression();
-        _expect(TokenKind.colon, "':' in inline map");
-        entries.add((key, _expression()));
+        final key = _required(_expression());
+        _expect(TokenKind.colon, ':');
+        entries.add((key, _required(_expression())));
       }
-      _expect(TokenKind.rcurly, "'}'");
+      _expect(TokenKind.rcurly, '}');
       return InlineMap(open.start, entries);
     }
     final items = [first];
     while (_peek(TokenKind.comma)) {
       _next();
-      items.add(_expression());
+      items.add(_required(_expression()));
     }
-    _expect(TokenKind.rcurly, "'}'");
+    _expect(TokenKind.rcurly, '}');
     return InlineList(open.start, items);
-  }
+  });
 
-  int _parseInt(Token token, String digits, int radix) =>
+  int _parseInt(Token token, String digits, int radix, SpelMessage code) =>
       int.tryParse(digits, radix: radix) ??
-      (throw _error(
-        SpelMessage.invalidNumber,
-        "Number '$digits' is too large",
-        token.start,
-      ));
+      (throw _error(code, token.start, [_describe(token)]));
 
   Token? get _current => _pos < _tokens.length ? _tokens[_pos] : null;
 
@@ -623,32 +780,30 @@ final class _Parser {
 
   Token _next() => _tokens[_pos++];
 
-  Token _expect(TokenKind kind, String description) {
+  Token _expect(TokenKind kind, String expected) {
     final token = _current;
     if (token == null) {
-      throw _error(
-        SpelMessage.unexpectedEndOfExpression,
-        'Expected $description but the expression ended',
-        text.length,
-      );
+      throw _error(SpelMessage.ood, text.length);
     }
     if (token.kind != kind) {
-      throw _error(
-        SpelMessage.unexpectedToken,
-        "Expected $description but found '${_describe(token)}'",
-        token.start,
-      );
+      throw _error(SpelMessage.notExpectedToken, token.start, [
+        expected,
+        _describe(token),
+      ]);
     }
     return _next();
   }
 
   String _describe(Token token) => text.substring(token.start, token.end);
 
-  SpelParseException _error(SpelMessage code, String message, int position) =>
-      SpelParseException(
-        code,
-        message,
-        expressionString: text,
-        position: position,
-      );
+  SpelParseException _error(
+    SpelMessage code,
+    int position, [
+    List<Object?> inserts = const [],
+  ]) => SpelParseException(
+    code,
+    inserts: inserts,
+    expressionString: text,
+    position: position,
+  );
 }

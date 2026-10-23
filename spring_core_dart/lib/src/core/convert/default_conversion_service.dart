@@ -62,8 +62,8 @@ class DefaultConversionService extends GenericConversionService {
     }
 
     service
-      // `@Value('classpath:banner.txt') Resource banner`, like Spring's
-      // ResourceEditor.
+      // `Resource` from a location, like Spring's ResourceEditor (inside a
+      // context, `@Value` uses the context's own resource loader instead).
       ..addConverter<String, Resource>(
         (location) => DefaultResourceLoader().getResource(location.trim()),
       )

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:test/test.dart';
@@ -143,7 +144,7 @@ void main() {
           ),
         ]),
       ], out: lines.add).run(const [], systemEnvironment: const {}),
-      throwsA(isA<NoSuchBeanDefinitionException>()),
+      throwsA(isA<UnsatisfiedDependencyException>()),
     );
     expect(
       lines.join('\n'),
@@ -309,6 +310,49 @@ void main() {
     ], out: lines.add).run(['--db.url=x'], systemEnvironment: const {});
     addTearDown(context.close);
     expect(calls, ['cli@1', 'app@2']);
+  });
+
+  group('asynchronous init and destroy callbacks', () {
+    BeanDefinition<_AsyncInit> asyncInit() => BeanDefinition<_AsyncInit>(
+      name: 'asyncInit',
+      create: (_) => _AsyncInit(),
+      postConstruct: (bean) async {
+        await Future<void>.delayed(Duration.zero);
+        bean.ready = true;
+      },
+      destroyMethod: (bean) async {
+        await Future<void>.delayed(Duration.zero);
+        bean.closed = true;
+      },
+    );
+
+    SpringApplication app() => SpringApplication([
+      appModule(),
+      BeanModule('init', [asyncInit()]),
+    ], out: (_) {});
+
+    test('runAsync awaits them (refreshAsync), closeAsync too', () async {
+      final context = await app().runAsync([
+        '--db.url=x',
+      ], systemEnvironment: const {});
+      final bean = context.getBean<_AsyncInit>();
+      expect(bean.ready, isTrue);
+      await context.closeAsync();
+      expect(bean.closed, isTrue);
+    });
+
+    test('run fails for them, naming the bean', () {
+      expect(
+        () => app().run(['--db.url=x'], systemEnvironment: const {}),
+        throwsA(
+          isA<BeanCreationException>().having(
+            (e) => e.beanName,
+            'beanName',
+            'asyncInit',
+          ),
+        ),
+      );
+    });
   });
 
   group('asynchronous runners: one after another, as in Spring Boot', () {
@@ -555,6 +599,40 @@ void main() {
     expect(context.getBeanByName('fromInitializer'), 'hello');
     expect(seen, ['active: false']);
   });
+
+  test('defaultProperties stay below config files; additionalProfiles come '
+      'first', () {
+    final dir = Directory.systemTemp.createTempSync('scd_boot_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    File('${dir.path}/application.properties')
+        .writeAsStringSync('db.url=from-file\nspring.profiles.active=dev');
+    File('${dir.path}/application-dev.properties')
+        .writeAsStringSync('db.max-size=4');
+    final app = SpringApplication(
+      [appModule()],
+      autoConfigurations: [autoModule],
+      defaultProperties: {'db.url': 'from-defaults', 'db.max-size': 7},
+      additionalProfiles: ['extra'],
+      out: lines.add,
+    );
+    final context = app.run([
+      '--spring.config.location=file:${dir.path}/',
+    ], systemEnvironment: const {});
+    addTearDown(context.close);
+    expect(context.getBean<Pool>().url, 'from-file');
+    expect(context.getBean<Pool>().maxSize, 4);
+    expect(context.environment.activeProfiles, ['extra', 'dev']);
+    expect(context.environment.propertySources.last.name, 'defaultProperties');
+
+    app.setDefaultProperties({'db.url': 'replaced'});
+    expect(app.defaultProperties, {'db.url': 'replaced'});
+    final again = app.run([
+      '--spring.config.location=optional:file:${dir.path}/none/',
+    ], systemEnvironment: const {});
+    addTearDown(again.close);
+    expect(again.getBean<Pool>().url, 'replaced');
+    expect(again.getBean<Pool>().maxSize, 10);
+  });
 }
 
 class _Ctx implements ConditionContext {
@@ -608,5 +686,10 @@ class _AsyncRunner implements CommandLineRunner {
 }
 
 class _Flag {
+  bool closed = false;
+}
+
+class _AsyncInit {
+  bool ready = false;
   bool closed = false;
 }

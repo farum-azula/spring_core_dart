@@ -1,0 +1,3 @@
+# The generator tests build in memory (analysing the SDK takes seconds, more
+# when several test processes share the CPU); 30 s would time them out.
+timeout: 3x

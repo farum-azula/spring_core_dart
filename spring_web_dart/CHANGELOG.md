@@ -6,6 +6,9 @@
 - Breaking: mapping `headers` use Spring's `'Name=value'` syntax; `'Name: value'` is no longer accepted by clients.
 - Breaking: `WebSocketConnection` → `WebSocketSession` (`send` → `sendMessage`, `protocol` → `acceptedProtocol`, new `uri` and `isOpen`; `closeCode` / `closeReason` → `closeStatus`); `WebSocketStatus` → `CloseStatus` with Spring's constants (`normal`, `goingAway`, `noStatusCode`, `noCloseFrame`, `serverError`, `serviceRestarted`, `serviceOverload`, ...), `close([CloseStatus status = CloseStatus.normal])` (a normal closure by default, like Spring). `MockWebSocket.url` → `uri`, `closeFromServer([CloseStatus])`.
 - `HttpRequest.readTimeout`: the longest wait for data (for the response, then between two chunks of the body), next to `timeout` (the whole exchange); `HttpRequest.followRedirects` (default `true`; `IoHttpTransport` no longer limits it to `GET` and `HEAD` itself).
+- Breaking: mapping attributes next to a path use the `.of` constructor, because the path is now an optional positional parameter: `@GetMapping('/books', produces: ...)` is `@GetMapping.of(path: '/books', produces: ...)` (also `PostMapping`, `PutMapping`, `PatchMapping`, `DeleteMapping`); `@RequestMapping('/x', method: ...)` is `@RequestMapping.of(path: '/x', method: ...)`.
+- `path` is optional in `@GetMapping()` and the other mapping annotations (`''`: the base path of the client or class).
+- `required` and `defaultValue` (`.of` constructors) on `@RequestParam` and `@RequestHeader`, `required` on `@PathVariable`, as in Spring: `required` is `true` by default, a default value implies `false`, a nullable Dart parameter of a query parameter or header is never required.
 - `@CookieValue`; `@RequestBody(required:)`; `@RequestParam` / `@RequestHeader` document `Map` parameters (one query parameter / header per entry).
 - README: a "Differences from Spring" section.
 

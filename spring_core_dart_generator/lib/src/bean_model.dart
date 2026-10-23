@@ -786,30 +786,59 @@ class ListenerModel {
 ///
 /// ```dart
 /// // Input:
-/// @AfterReturning('all()')
-/// void returned(JoinPoint jp, String result) {}
+/// @AfterReturning('all() && @annotation(timed)', returning: 'result')
+/// void returned(JoinPoint jp, Timed timed, String result) {}
 /// // Output:
-/// invoke: (aspect, joinPoint, value) =>
-///     aspect.returned(joinPoint, (value as String)),
+/// invoke: (aspect, joinPoint, value, bindings) => aspect.returned(
+///     joinPoint, (bindings[r'timed'] as Timed), (value as String)),
+/// bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed)},
 /// ```
 ///
 /// Spring (Java):
 ///
 /// ```java
-/// // AbstractAspectJAdvice binds JoinPoint/ProceedingJoinPoint and the
-/// // returning/throwing argument by reflection on the advice method:
-/// @AfterReturning(pointcut = "all()", returning = "result")
-/// void returned(JoinPoint jp, String result) {}
+/// // AbstractAspectJAdvice binds JoinPoint/ProceedingJoinPoint, the
+/// // returning/throwing argument and the pointcut's formals by
+/// // reflection on the advice method:
+/// @AfterReturning(pointcut = "all() && @annotation(timed)",
+///     returning = "result")
+/// void returned(JoinPoint jp, Timed timed, String result) {}
 /// ```
-enum AdviceParameter {
-  /// A `JoinPoint` parameter.
-  joinPoint,
+sealed class AdviceParameter {
+  const AdviceParameter();
+}
 
-  /// A `ProceedingJoinPoint` parameter (only `@Around`).
-  proceedingJoinPoint,
+/// A `JoinPoint` parameter, or a `ProceedingJoinPoint` one (only
+/// `@Around`) when [proceeding].
+final class JoinPointParameter extends AdviceParameter {
+  /// Creates the parameter.
+  const JoinPointParameter({required this.proceeding});
 
-  /// The return value (`@AfterReturning`) or error (`@AfterThrowing`).
-  value,
+  /// Whether the parameter is a `ProceedingJoinPoint`.
+  final bool proceeding;
+}
+
+/// The return value (`@AfterReturning`) or error (`@AfterThrowing`).
+final class ValueParameter extends AdviceParameter {
+  /// Creates the parameter of type [type].
+  const ValueParameter(this.type);
+
+  /// The declared parameter type (the value must have it).
+  final DartType type;
+}
+
+/// A parameter the pointcut binds (`@annotation(timed)`, `args(id, ..)`,
+/// `this(proxy)`, `target(bean)`): the generated advice takes it from the
+/// bindings map by [name].
+final class BoundParameter extends AdviceParameter {
+  /// Creates the parameter [name] of type [type].
+  const BoundParameter(this.name, this.type);
+
+  /// The parameter name, as written in the pointcut.
+  final String name;
+
+  /// The declared parameter type (the bound value must have it).
+  final DartType type;
 }
 
 /// One advice method of an `@Aspect`.
@@ -862,6 +891,12 @@ class AdviceModel {
 
   /// Type of the value parameter (return value or error), if any.
   final DartType? valueType;
+
+  /// The parameters the pointcut binds.
+  List<BoundParameter> get bindings => [
+    for (final parameter in parameters)
+      if (parameter is BoundParameter) parameter,
+  ];
 }
 
 /// The advice and named pointcuts of an `@Aspect` class.
@@ -937,6 +972,7 @@ class ProxyParameter {
     required this.isNamed,
     required this.isRequired,
     this.defaultValueCode,
+    this.defaultValue,
     this.annotations = const [],
   });
 
@@ -956,8 +992,12 @@ class ProxyParameter {
   /// Whether the parameter is required (positional or `required` named).
   final bool isRequired;
 
-  /// Source of the default value; only simple literals are allowed.
+  /// Source of the default value when it is a simple literal.
   final String? defaultValueCode;
+
+  /// The default value when it is another constant (re-created as code);
+  /// `null` when [defaultValueCode] is set or there is no default.
+  final DartObject? defaultValue;
 }
 
 /// Kind of a proxied member.
@@ -1089,6 +1129,7 @@ class ProxyModel {
     required this.targetTypeNames,
     this.customToString = false,
     this.unavailableReason,
+    this.subclass,
   });
 
   /// Name of the generated class, e.g. `_$EnglishGreeterProxy` or
@@ -1119,6 +1160,67 @@ class ProxyModel {
   /// emitted (`AopProxyFactory.unavailable`) so matching advice fails the
   /// startup with this reason instead of being skipped silently.
   final String? unavailableReason;
+
+  /// Set when the proxy is a subclass of the target (the bean itself,
+  /// created by the container) instead of a wrapper around it.
+  final SubclassProxy? subclass;
+}
+
+/// A subclass proxy: the generated class extends the bean class, forwards
+/// its constructor and overrides the public members to run advice (like a
+/// CGLIB proxy). Used when the class cannot be implemented (private
+/// members, operators, `base`) and has no interface.
+///
+/// ```dart
+/// // Input:
+/// @Service()
+/// class Counter {
+///   Counter(this.step, {this.name = 'n'});
+///   int _n = 0;
+///   int next() => _n += step;
+/// }
+/// // Output:
+/// class _$CounterProxy extends Counter implements Advised {
+///   _$CounterProxy(super.p0, {super.name});
+///   ProxyInvoker? _$invoker;
+///   _$CounterProxy _$advise(ProxyInvoker invoker) { ... }
+///   @override int next() { ... super.next() through the advice ... }
+/// }
+/// // ...and in the bean definition:
+/// create: (r) => _$CounterProxy(r.dependency<int>()),
+/// aopProxy: AopProxyFactory.subclass(
+///   signatures: const [MethodSignature(name: r'next', ...)],
+///   advise: (bean, invoker) =>
+///       bean is _$CounterProxy ? bean._$advise(invoker) : null,
+/// ),
+/// ```
+///
+/// Spring (Java):
+///
+/// ```java
+/// // CglibAopProxy generates a subclass of the bean class at runtime and
+/// // creates the proxy from it (ObjenesisCglibAopProxy):
+/// Enhancer enhancer = new Enhancer();
+/// enhancer.setSuperclass(Counter.class);
+/// enhancer.setCallbacks(callbacks);
+/// ```
+class SubclassProxy {
+  /// Creates the model.
+  SubclassProxy({
+    required this.constructorName,
+    required this.constructorParameters,
+    required this.isFinal,
+  });
+
+  /// The bean constructor the subclass forwards to; `null` for the
+  /// unnamed one.
+  final String? constructorName;
+
+  /// Its parameters, forwarded as `super.` parameters.
+  final List<ProxyParameter> constructorParameters;
+
+  /// Whether the subclass must be `final` (the bean class is `base`).
+  final bool isFinal;
 }
 
 /// Everything needed to emit one `BeanDefinition`.
@@ -1192,6 +1294,7 @@ class BeanModel {
     this.initMethod,
     this.destroyMethod,
     this.destroyMethodInferred = false,
+    this.asyncLifecycleMethods = const {},
     this.listeners = const [],
     this.annotatedMethods = const [],
     this.annotations = const [],
@@ -1282,6 +1385,11 @@ class BeanModel {
   /// Whether [destroyMethod] was inferred (written as
   /// `destroyMethodName: '(inferred)'`, skipped for a `DisposableBean`).
   final bool destroyMethodInferred;
+
+  /// The lifecycle methods ([postConstruct], [preDestroy], [initMethod],
+  /// [destroyMethod]) returning a `Future`: their callbacks are written as
+  /// `async` closures awaiting them, for `refreshAsync()` / `closeAsync()`.
+  final Set<String> asyncLifecycleMethods;
 
   /// Event listener methods of the bean.
   final List<ListenerModel> listeners;
@@ -1617,6 +1725,98 @@ class IntrospectionModel {
 
   /// Whether the class has a public no-argument unnamed constructor.
   final bool instantiable;
+}
+
+/// How a [TypeFilterModel] matches (Spring's `FilterType`).
+enum TypeFilterKind {
+  /// Annotated with one of the classes (or a subclass of one).
+  annotation,
+
+  /// Is, extends, implements or mixes in one of the classes.
+  assignableType,
+
+  /// The class name matches one of the patterns.
+  regex,
+}
+
+/// A `Filter` of `@ComponentScan`, evaluated at build time.
+///
+/// ```dart
+/// // @ComponentScan(includeFilters: [Filter(type: FilterType.regex, pattern: ['.*Repo'])])
+/// TypeFilterModel(TypeFilterKind.regex, patterns: [RegExp('.*Repo')])
+///   .matches(userRepoElement) // true
+/// ```
+class TypeFilterModel {
+  /// Creates a filter of [kind].
+  const TypeFilterModel(
+    this.kind, {
+    this.classes = const [],
+    this.patterns = const [],
+  });
+
+  /// How it matches.
+  final TypeFilterKind kind;
+
+  /// Annotation classes or assignable types (see [kind]).
+  final List<InterfaceElement> classes;
+
+  /// Patterns for the class name (see [kind]).
+  final List<RegExp> patterns;
+
+  /// Whether [element] passes the filter.
+  bool matches(ClassElement element) => switch (kind) {
+    TypeFilterKind.annotation => element.metadata.annotations.any(
+      (annotation) => switch (annotation.computeConstantValue()?.type) {
+        final InterfaceType type => classes.any((c) => _isSubtype(type, c)),
+        _ => false,
+      },
+    ),
+    TypeFilterKind.assignableType => classes.any(
+      (c) => _isSubtype(element.thisType, c),
+    ),
+    TypeFilterKind.regex => patterns.any((p) => p.hasMatch(element.name!)),
+  };
+
+  static bool _isSubtype(InterfaceType type, InterfaceElement of) =>
+      type.element == of || type.allSupertypes.any((s) => s.element == of);
+}
+
+/// `@ComponentScan`'s options for one module (Spring's
+/// `ClassPathScanningCandidateComponentProvider` settings).
+class ComponentScanModel {
+  /// Creates the options; the defaults are Spring's.
+  const ComponentScanModel({
+    this.includeFilters = const [],
+    this.excludeFilters = const [],
+    this.useDefaultFilters = true,
+    this.lazyInit = false,
+  });
+
+  /// Classes matching one are beans even without `@Component`.
+  final List<TypeFilterModel> includeFilters;
+
+  /// Classes matching one are never beans.
+  final List<TypeFilterModel> excludeFilters;
+
+  /// Whether `@Component` (and stereotypes) marks a bean.
+  final bool useDefaultFilters;
+
+  /// Whether every scanned bean is lazy unless `@Lazy(false)`.
+  final bool lazyInit;
+
+  /// Whether [element] is a scanned bean class; [isComponent] says
+  /// whether it has `@Component` (or a stereotype). Excludes win; a class
+  /// only an include filter matches must be concrete (like Spring's
+  /// `isCandidateComponent`).
+  bool isCandidate(ClassElement element, {required bool isComponent}) {
+    if (excludeFilters.any((f) => f.matches(element))) {
+      return false;
+    }
+    if (useDefaultFilters && isComponent) {
+      return true;
+    }
+    return !element.isAbstract && includeFilters.any((f) => f.matches(element));
+  }
 }
 
 /// Everything found by one component scan.

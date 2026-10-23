@@ -23,9 +23,25 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///   }
 /// }
 /// ```
+///
+/// [exclude] / [excludeName] switch auto-configurations off, like Boot's:
+/// by class (`exclude: [CacheAutoConfiguration]`, an `@AutoConfiguration`
+/// class) or by the name of the class or of the module
+/// (`excludeName: ['springBootStarterCacheAutoConfiguration']`); the
+/// property `spring.autoconfigure.exclude` (comma-separated) adds more. An
+/// excluded auto-configuration is removed before its conditions run.
 class SpringBootApplication {
   /// Marks the annotated `main` function.
-  const SpringBootApplication();
+  const SpringBootApplication({
+    this.exclude = const [],
+    this.excludeName = const [],
+  });
+
+  /// Auto-configuration classes to exclude.
+  final List<Type> exclude;
+
+  /// Names of auto-configuration classes or modules to exclude.
+  final List<String> excludeName;
 }
 
 /// Binds the properties under [prefix] to the annotated class, like Spring
@@ -154,7 +170,13 @@ class AutoConfiguration extends Configuration {
 /// "starter"); the generator of every application that depends on the
 /// library (directly or transitively) finds it and passes it to
 /// `SpringApplication` as an auto-configuration — nothing to list by hand.
-/// Lower [order] values are registered first.
+///
+/// Registration order is Boot's `AutoConfigurationSorter`: by module name,
+/// then by [order] (`@AutoConfigureOrder`; lower values first), then by the
+/// [before] / [after] constraints (`@AutoConfiguration(before:, after:)`);
+/// a cycle fails the start. A module is named like its `BeanModule` (by
+/// convention the variable); an `@AutoConfiguration` class inside it can be
+/// named too.
 ///
 /// ```dart
 /// // lib/spring_auto_configuration.dart of package `neon_cache`
@@ -174,10 +196,22 @@ class AutoConfiguration extends Configuration {
 /// ```
 class AutoConfigurationModule {
   /// Marks the annotated module variable.
-  const AutoConfigurationModule({this.order = 0, this.requires});
+  const AutoConfigurationModule({
+    this.order = 0,
+    this.requires,
+    this.before = const [],
+    this.after = const [],
+  });
 
-  /// Registration order among auto-configuration modules.
+  /// Registration order among auto-configuration modules (before the
+  /// constraints), like `@AutoConfigureOrder`.
   final int order;
+
+  /// Modules (or `@AutoConfiguration` classes) registered after this one.
+  final List<String> before;
+
+  /// Modules (or `@AutoConfiguration` classes) registered before this one.
+  final List<String> after;
 
   /// Compatible `spring_boot_dart` versions; `null` means any.
   final String? requires;

@@ -37,11 +37,17 @@ StandardEvaluationContext inventorContext([Object? root]) =>
         }),
       );
 
-Matcher spelError(SpelMessage code) =>
-    throwsA(isA<SpelEvaluationException>().having((e) => e.code, 'code', code));
+Matcher spelError(SpelMessage code) => throwsA(
+  isA<SpelEvaluationException>().having(
+    (e) => e.messageCode,
+    'messageCode',
+    code,
+  ),
+);
 
-Matcher parseError(SpelMessage code) =>
-    throwsA(isA<SpelParseException>().having((e) => e.code, 'code', code));
+Matcher parseError(SpelMessage code) => throwsA(
+  isA<SpelParseException>().having((e) => e.messageCode, 'messageCode', code),
+);
 
 void main() {
   group('literals', () {
@@ -93,13 +99,14 @@ void main() {
       expect(eval('7 mod 3'), 1);
       expect(eval('7.5 % 2'), 1.5);
       expect(eval('2 ^ 10'), 1024);
-      expect(eval('2 ^ -1'), 0.5);
+      expect(eval('2 ^ -1'), 0, reason: '(long) Math.pow(2, -1) in Java');
       expect(eval('2.0 ^ 2'), 4.0);
       expect(eval('-5 + +3'), -2);
       expect(eval('10 - 2 - 3'), 5);
       expect(eval('1 / 0.0'), double.infinity);
-      expect(() => eval('1 / 0'), spelError(SpelMessage.divisionByZero));
-      expect(() => eval('1 % 0'), spelError(SpelMessage.divisionByZero));
+      // Like Java's ArithmeticException, Dart's error propagates as is.
+      expect(() => eval('1 / 0'), throwsA(isA<UnsupportedError>()));
+      expect(() => eval('1 % 0'), throwsA(isA<UnsupportedError>()));
     });
 
     test('strings', () {
@@ -110,9 +117,12 @@ void main() {
       expect(eval("'ab' * 3"), 'ababab');
       expect(
         () => eval('true + 1'),
-        spelError(SpelMessage.operatorNotSupported),
+        spelError(SpelMessage.operatorNotSupportedBetweenTypes),
       );
-      expect(() => eval("-'x'"), spelError(SpelMessage.operatorNotSupported));
+      expect(
+        () => eval("-'x'"),
+        spelError(SpelMessage.operatorNotSupportedBetweenTypes),
+      );
     });
 
     test('relational and equality', () {
@@ -147,8 +157,14 @@ void main() {
       expect(eval('false and nothing.here'), isFalse);
       expect(eval('true or nothing.here'), isTrue);
       expect(eval("'true' and true"), isTrue, reason: 'converted');
-      expect(() => eval('1 and true'), spelError(SpelMessage.notBoolean));
-      expect(() => eval('null or true'), spelError(SpelMessage.notBoolean));
+      expect(
+        () => eval('1 and true'),
+        spelError(SpelMessage.typeConversionError),
+      );
+      expect(
+        () => eval('null or true'),
+        spelError(SpelMessage.typeConversionError),
+      );
     });
 
     test('ternary, Elvis, matches, between, instanceof', () {
@@ -161,9 +177,12 @@ void main() {
       expect(eval("'abc' matches 'b'"), isFalse, reason: 'full match');
       expect(
         () => eval("'a' matches '('"),
-        spelError(SpelMessage.invalidRegex),
+        spelError(SpelMessage.invalidPattern),
       );
-      expect(() => eval("1 matches 'a'"), spelError(SpelMessage.invalidRegex));
+      expect(
+        () => eval("1 matches 'a'"),
+        spelError(SpelMessage.invalidFirstOperandForMatchesOperator),
+      );
       expect(eval('3 between {1, 5}'), isTrue);
       expect(eval("'d' between {'a', 'c'}"), isFalse);
       expect(
@@ -175,9 +194,12 @@ void main() {
       expect(eval('1 instanceof T(num)'), isTrue);
       expect(
         () => eval("1 instanceof 'x'"),
-        spelError(SpelMessage.operatorNotSupported),
+        spelError(SpelMessage.instanceofOperatorNeedsClassOperand),
       );
-      expect(() => eval('1 ? 2 : 3'), spelError(SpelMessage.notBoolean));
+      expect(
+        () => eval('1 ? 2 : 3'),
+        spelError(SpelMessage.typeConversionError),
+      );
     });
 
     test('operator overloading', () {
@@ -186,7 +208,7 @@ void main() {
       expect(eval('{1} + {2}', null, context), [1, 2]);
       expect(
         () => eval('{1} - {2}', null, context),
-        spelError(SpelMessage.operatorNotSupported),
+        spelError(SpelMessage.operatorNotSupportedBetweenTypes),
       );
     });
   });
@@ -209,24 +231,55 @@ void main() {
       expect(eval('#this.name.substring(0, 6)', null, context), 'Nikola');
     });
 
-    test('safe navigation short-circuits the chain', () {
+    test('safe navigation short-circuits the chain, like Spring 6.2', () {
       final orphan = Inventor('Alone', 1900);
       final context = inventorContext(orphan);
       expect(eval('mentor?.name', null, context), isNull);
+      expect(eval('mentor?.name?.length', null, context), isNull);
+      // A null before `?.` ends the whole chain: `.length`, `.greet()` and
+      // the index are not evaluated.
       expect(eval('mentor?.name.length', null, context), isNull);
+      expect(eval('mentor?.name.length()', null, context), isNull);
+      expect(eval('mentor?.greet(1).length', null, context), isNull);
+      expect(eval('mentor?.inventions[0].length', null, context), isNull);
       expect(eval('mentor?.greet(1)', null, context), isNull);
       expect(eval('mentor?.[0]', null, context), isNull);
+      expect(eval('mentor?.?[true]', null, context), isNull);
+      expect(eval('mentor?.![#this]', null, context), isNull);
+      expect(eval('mentor?.^[true].name', null, context), isNull);
+      expect(eval(r'mentor?.$[true].name', null, context), isNull);
+      // Only a null *before* `?.` short-circuits: a null result of `?.`
+      // does not protect the next step.
+      final root = {
+        'a': {'b': null},
+      };
+      expect(eval('a?.b', root), isNull);
+      expect(
+        () => eval('a?.b.c', root),
+        spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
+      );
+      // Non-null chains are unaffected, and so are assignments.
+      orphan.mentor = Inventor('Mentor', 1850, inventions: ['bulb']);
+      expect(eval('mentor?.name.length', null, context), 6);
+      expect(eval('mentor?.inventions[0].length', null, context), 4);
+      expect(eval('mentor?.inventions.![#this.length]', null, context), [4]);
+      parser.parseExpression('mentor?.name').setValue(context, null, 'Mia');
+      expect(orphan.mentor!.name, 'Mia');
+      orphan.mentor = null;
+      // Assignment through a short-circuited chain is a no-op.
+      parser.parseExpression('mentor?.name').setValue(context, null, 'x');
+      parser.parseExpression('mentor?.name.length').setValue(context, null, 1);
       expect(
         () => eval('mentor.name', null, context),
-        spelError(SpelMessage.propertyOnNull),
+        spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
       );
       expect(
         () => eval('mentor.greet(1)', null, context),
-        spelError(SpelMessage.methodOnNull),
+        spelError(SpelMessage.methodCallOnNullObjectNotAllowed),
       );
       expect(
         () => eval('mentor[0]', null, context),
-        spelError(SpelMessage.invalidIndex),
+        spelError(SpelMessage.cannotIndexIntoNullValue),
       );
     });
 
@@ -253,29 +306,35 @@ void main() {
       expect(eval('map.keys', root), ['a', 'b c']);
       expect(
         () => eval('list[5]', root),
-        spelError(SpelMessage.indexOutOfBounds),
+        spelError(SpelMessage.collectionIndexOutOfBounds),
       );
       expect(
         () => eval('text[9]', root),
-        spelError(SpelMessage.indexOutOfBounds),
+        spelError(SpelMessage.stringIndexOutOfBounds),
       );
       expect(
         () => eval('set[9]', root),
-        spelError(SpelMessage.indexOutOfBounds),
+        spelError(SpelMessage.collectionIndexOutOfBounds),
       );
-      expect(() => eval('list[-1]', root), spelError(SpelMessage.invalidIndex));
+      expect(
+        () => eval('list[-1]', root),
+        spelError(SpelMessage.collectionIndexOutOfBounds),
+      );
       expect(
         () => eval("list['x']", root),
-        spelError(SpelMessage.invalidIndex),
+        spelError(SpelMessage.typeConversionError),
       );
       expect(
         () => eval('list[1.5]', root),
-        spelError(SpelMessage.invalidIndex),
+        spelError(SpelMessage.typeConversionError),
       );
-      expect(() => eval('5[0]'), spelError(SpelMessage.invalidIndex));
+      expect(
+        () => eval('5[0]'),
+        spelError(SpelMessage.indexingNotSupportedForType),
+      );
       expect(
         () => eval('nope', root),
-        spelError(SpelMessage.propertyNotReadable),
+        spelError(SpelMessage.propertyOrFieldNotReadable),
       );
       expect(
         () => eval('list.nope()', root),
@@ -288,7 +347,7 @@ void main() {
       expect(eval("['name']", null, context), 'Nikola Tesla');
     });
 
-    test('accessor and method failures are wrapped', () {
+    test('accessor failures are wrapped, method exceptions are not', () {
       final context = inventorContext(tesla)
         ..addPropertyAccessor(
           FunctionPropertyAccessor<Inventor>(
@@ -299,10 +358,8 @@ void main() {
         () => eval('bad', null, context),
         spelError(SpelMessage.exceptionDuringPropertyRead),
       );
-      expect(
-        () => eval('fail()', null, context),
-        spelError(SpelMessage.exceptionDuringMethodInvocation),
-      );
+      // Like Spring, an exception thrown by the method itself propagates.
+      expect(() => eval('fail()', null, context), throwsStateError);
     });
   });
 
@@ -327,7 +384,9 @@ void main() {
       expect(eval('members.?[value > 1]', root), {'b': 2, 'c': 3});
       expect(eval('members.^[value > 1]', root), {'b': 2});
       expect(eval(r'members.$[value > 1]', root), {'c': 3});
+      // Like Spring, no match is null (not an empty map).
       expect(eval(r'members.$[value > 9]', root), isNull);
+      expect(eval('members.^[value > 9]', root), isNull);
       expect(eval('members.![key + value]', root), ['a1', 'b2', 'c3']);
     });
 
@@ -343,23 +402,23 @@ void main() {
       expect(eval('list?.?[#this > 1]', null, context), [2]);
       expect(
         () => eval('none.?[true]', null, context),
-        spelError(SpelMessage.selectionNotSupported),
+        spelError(SpelMessage.invalidTypeForSelection),
       );
       expect(
         () => eval('.?[true]', null),
-        spelError(SpelMessage.selectionNotSupported),
+        spelError(SpelMessage.invalidTypeForSelection),
       );
       expect(
         () => eval('.![1]', null),
-        spelError(SpelMessage.projectionNotSupported),
+        spelError(SpelMessage.projectionNotSupportedOnType),
       );
       expect(
         () => eval("'x'.?[true]"),
-        spelError(SpelMessage.selectionNotSupported),
+        spelError(SpelMessage.invalidTypeForSelection),
       );
       expect(
         () => eval("'x'.![1]"),
-        spelError(SpelMessage.projectionNotSupported),
+        spelError(SpelMessage.projectionNotSupportedOnType),
       );
       expect(
         () => eval('{1}.?[#this]'),
@@ -382,15 +441,19 @@ void main() {
       expect(eval('#missing', null, context), isNull);
       expect(
         () => eval('#nope()', null, context),
-        spelError(SpelMessage.functionNotFound),
+        spelError(SpelMessage.functionNotDefined),
       );
       expect(
         () => eval('#name()', null, context),
-        spelError(SpelMessage.variableNotFunction),
+        spelError(SpelMessage.functionReferenceCannotBeInvoked),
       );
       expect(
         () => eval('#reverse(1)', null, context),
-        spelError(SpelMessage.functionNotFound),
+        spelError(SpelMessage.exceptionDuringFunctionCall),
+      );
+      expect(
+        () => eval("#reverse('a', 'b')", null, context),
+        spelError(SpelMessage.incorrectNumberOfArgumentsToFunction),
       );
     });
 
@@ -410,7 +473,7 @@ void main() {
       );
       expect(
         () => eval('T(Math).NOPE'),
-        spelError(SpelMessage.propertyNotReadable),
+        spelError(SpelMessage.propertyOrFieldNotReadable),
       );
       expect(
         () => eval('new Math()'),
@@ -449,11 +512,12 @@ void main() {
       expect(eval('&factory', null, context), 'bean:&factory');
       expect(
         () => eval('@missing', null, context),
-        spelError(SpelMessage.beanNotFound),
+        spelError(SpelMessage.exceptionDuringBeanResolution),
       );
+      expect(() => eval('@broken', null, context), throwsStateError);
       expect(
         () => eval('@greeter'),
-        spelError(SpelMessage.beanResolverNotRegistered),
+        spelError(SpelMessage.noBeanResolverRegistered),
       );
     });
   });
@@ -479,21 +543,21 @@ void main() {
       });
       expect(
         () => eval('list[5] = 1', data),
-        spelError(SpelMessage.indexOutOfBounds),
+        spelError(SpelMessage.collectionIndexOutOfBounds),
       );
       expect(
         () => eval("'abc'[0] = 'x'"),
-        spelError(SpelMessage.notAssignable),
+        spelError(SpelMessage.indexingNotSupportedForType),
       );
       expect(
         () => eval("{1}.toSet()[0] = 1"),
-        spelError(SpelMessage.notAssignable),
+        spelError(SpelMessage.indexingNotSupportedForType),
       );
-      expect(() => eval('1 = 2'), spelError(SpelMessage.notAssignable));
+      expect(() => eval('1 = 2'), spelError(SpelMessage.setvalueNotSupported));
       expect(() => eval('#this = 1'), spelError(SpelMessage.notAssignable));
       expect(
         () => eval('mentor = null', null, context),
-        spelError(SpelMessage.propertyNotWritable),
+        spelError(SpelMessage.propertyOrFieldNotWritable),
       );
     });
 
@@ -513,7 +577,11 @@ void main() {
       context.setVariable('s', 'x');
       expect(
         () => eval('#s++', null, context),
-        spelError(SpelMessage.operatorNotSupported),
+        spelError(SpelMessage.operandNotIncrementable),
+      );
+      expect(
+        () => eval('#s--', null, context),
+        spelError(SpelMessage.operandNotDecrementable),
       );
     });
 
@@ -537,7 +605,7 @@ void main() {
       expect(
         () =>
             parser.parseExpression('mentor.name').setValue(context, null, 'x'),
-        spelError(SpelMessage.propertyOnNull),
+        spelError(SpelMessage.propertyOrFieldNotWritableOnNull),
       );
       expect(parser.parseExpression('mentor?.name').getValue(context), isNull);
       expect(
@@ -609,22 +677,45 @@ void main() {
       expect(custom.toString(), '[[n]]!');
     });
 
-    test('template errors', () {
+    test('template errors are plain ParseExceptions, like Spring', () {
+      Matcher templateError(String message) => throwsA(
+        isA<ParseException>()
+            .having((e) => e is SpelParseException, 'SpEL', isFalse)
+            .having((e) => e.simpleMessage, 'simpleMessage', message),
+      );
       expect(
         () => parser.parseExpression('#{}', ParserContext.template),
-        parseError(SpelMessage.unexpectedEndOfExpression),
+        templateError(
+          "No expression defined within delimiter '#{}' at "
+          'character 0',
+        ),
       );
       expect(
         () => parser.parseExpression('#{1 + 2', ParserContext.template),
-        parseError(SpelMessage.missingCloseBracket),
+        templateError(
+          "No ending suffix '}' for expression starting at "
+          'character 0: #{1 + 2',
+        ),
       );
       expect(
         () => parser.parseExpression('#{a)}', ParserContext.template),
-        parseError(SpelMessage.missingCloseBracket),
+        templateError(
+          "Found closing ')' at position 3 without an opening "
+          "'('",
+        ),
+      );
+      expect(
+        () => parser.parseExpression('#{(a]}', ParserContext.template),
+        templateError(
+          "Found closing ']' at position 4 but most recent "
+          "opening is '(' at position 2",
+        ),
       );
       expect(
         () => parser.parseExpression("#{'x}", ParserContext.template),
-        parseError(SpelMessage.unterminatedString),
+        templateError(
+          'Found non terminating string literal starting at position 2',
+        ),
       );
     });
   });
@@ -651,15 +742,15 @@ void main() {
       );
       expect(
         () => eval('T(int)', null, context),
-        spelError(SpelMessage.notSupportedInSimpleContext),
+        spelError(SpelMessage.typeNotFound),
       );
       expect(
         () => eval('new List()', null, context),
-        spelError(SpelMessage.notSupportedInSimpleContext),
+        spelError(SpelMessage.constructorNotFound),
       );
       expect(
         () => eval('@bean', null, context),
-        spelError(SpelMessage.beanResolverNotRegistered),
+        spelError(SpelMessage.noBeanResolverRegistered),
       );
       expect(
         () => parser.parseExpression('name').setValue(context, null, 'x'),
@@ -695,89 +786,58 @@ void main() {
           .withTypeConverter(StandardTypeConverter())
           .build();
       expect(readOnly.isAssignmentEnabled, isFalse);
-      expect(readOnly.isConstructorEnabled, isFalse);
+      expect(readOnly.constructorResolvers, isEmpty);
     });
   });
 
   group('parse errors', () {
     test('positions and messages', () {
-      expect(
-        () => parser.parseExpression(''),
-        parseError(SpelMessage.unexpectedEndOfExpression),
+      final cases = {
+        '': SpelMessage.ood,
+        '1 +': SpelMessage.rightOperandProblem,
+        '* 2': SpelMessage.leftOperandProblem,
+        '(1': SpelMessage.ood,
+        '1 2': SpelMessage.moreInput,
+        "'abc": SpelMessage.nonTerminatingQuotedString,
+        '"abc': SpelMessage.nonTerminatingDoubleQuotedString,
+        '0x': SpelMessage.notAnInteger,
+        '1.5L': SpelMessage.realCannotBeLong,
+        'a | b': SpelMessage.missingCharacter,
+        'a ~ b': SpelMessage.unsupportedCharacter,
+        r'a \ b': SpelMessage.unexpectedEscapeChar,
+        'a.': SpelMessage.ood,
+        'a.1': SpelMessage.unexpectedDataAfterDot,
+        '#': SpelMessage.ood,
+        '@': SpelMessage.invalidBeanReference,
+        '{1, 2': SpelMessage.ood,
+        '{a: 1, b}': SpelMessage.notExpectedToken,
+        'true ? 1': SpelMessage.ood,
+        ')': SpelMessage.ood,
+        '99999999999999999999': SpelMessage.notAnInteger,
+        '99999999999999999999L': SpelMessage.notALong,
+        'T(1)': SpelMessage.notExpectedToken,
+        'new Foo': SpelMessage.missingConstructorArgs,
+        'list.?[]': SpelMessage.missingSelectionExpression,
+      };
+      cases.forEach(
+        (text, code) => expect(
+          () => parser.parseExpression(text),
+          parseError(code),
+          reason: text,
+        ),
       );
-      expect(
-        () => parser.parseExpression('1 +'),
-        parseError(SpelMessage.unexpectedEndOfExpression),
-      );
-      expect(
-        () => parser.parseExpression('(1'),
-        parseError(SpelMessage.unexpectedEndOfExpression),
-      );
-      expect(
-        () => parser.parseExpression('1 2'),
-        parseError(SpelMessage.unexpectedToken),
-      );
-      expect(
-        () => parser.parseExpression("'abc"),
-        parseError(SpelMessage.unterminatedString),
-      );
-      expect(
-        () => parser.parseExpression('0x'),
-        parseError(SpelMessage.invalidNumber),
-      );
-      expect(
-        () => parser.parseExpression('a | b'),
-        parseError(SpelMessage.unexpectedData),
-      );
-      expect(
-        () => parser.parseExpression('a ~ b'),
-        parseError(SpelMessage.unexpectedData),
-      );
-      expect(
-        () => parser.parseExpression('a.'),
-        parseError(SpelMessage.unexpectedEndOfExpression),
-      );
-      expect(
-        () => parser.parseExpression('a.1'),
-        parseError(SpelMessage.unexpectedToken),
-      );
-      expect(
-        () => parser.parseExpression('#'),
-        parseError(SpelMessage.unexpectedEndOfExpression),
-      );
-      expect(
-        () => parser.parseExpression('@'),
-        parseError(SpelMessage.unexpectedToken),
-      );
-      expect(
-        () => parser.parseExpression('{1, 2'),
-        parseError(SpelMessage.unexpectedEndOfExpression),
-      );
-      expect(
-        () => parser.parseExpression('{a: 1, b}'),
-        parseError(SpelMessage.unexpectedToken),
-      );
-      expect(
-        () => parser.parseExpression('true ? 1'),
-        parseError(SpelMessage.unexpectedEndOfExpression),
-      );
-      expect(
-        () => parser.parseExpression(')'),
-        parseError(SpelMessage.unexpectedToken),
-      );
-      expect(
-        () => parser.parseExpression('99999999999999999999'),
-        parseError(SpelMessage.invalidNumber),
-      );
-      expect(
-        () => parser.parseExpression('T(1)'),
-        parseError(SpelMessage.unexpectedToken),
-      );
+      // Like Spring: `*` has no left operand.
       final error = _catch(() => parser.parseExpression('1 + * 2'));
+      expect(error.messageCode, SpelMessage.leftOperandProblem);
       expect(error.position, 4);
+      expect(error.simpleMessage, 'EL1070E: Problem parsing left operand');
       expect(
-        error.toString(),
-        contains("in expression '1 + * 2' at position 4"),
+        error.message,
+        'Expression [1 + * 2] @4: EL1070E: Problem parsing left operand',
+      );
+      expect(
+        _catch(() => parser.parseExpression('a ~ b')).simpleMessage,
+        "EL1082E: Unsupported character '~' (126) encountered in expression",
       );
     });
 
@@ -793,8 +853,23 @@ void main() {
 
     test('evaluation error messages', () {
       final error = _catchEval(() => eval('nothing.here'));
-      expect(error.toString(), contains("'nothing'"));
-      expect(error.toString(), contains("in expression 'nothing.here'"));
+      expect(
+        error.simpleMessage,
+        "EL1007E: Property or field 'nothing' cannot be found on null",
+      );
+      expect(error.inserts, ['nothing']);
+      expect(error.message, startsWith('Expression [nothing.here] @0: '));
+      final missing = _catchEval(() => eval('nope', <String, Object?>{}));
+      expect(
+        missing.simpleMessage,
+        allOf(
+          startsWith(
+            "EL1008E: Property or field 'nope' cannot be found on object of "
+            "type '",
+          ),
+          endsWith("' - maybe not public or not valid?"),
+        ),
+      );
       final wrapped = _catchEval(() => eval("'x'.substring('a')"));
       expect(wrapped.toString(), contains('caused by'));
     });
@@ -952,7 +1027,7 @@ void main() {
         'date': DateTime.utc(2026, 10, 20, 9, 30, 15, 250),
         'other': DateTime.utc(2027),
         'duration': const Duration(hours: 49, milliseconds: 1500),
-        'mode': SpelMessage.beanNotFound,
+        'mode': SpelMessage.typeNotFound,
       };
       expect(eval('date.year + date.month + date.day', root), 2056);
       expect(
@@ -997,7 +1072,7 @@ void main() {
       );
       expect(
         eval("mode.name + ':' + mode.index", root),
-        'beanNotFound:${SpelMessage.beanNotFound.index}',
+        'typeNotFound:${SpelMessage.typeNotFound.index}',
       );
     }, skip: false);
   });
@@ -1012,8 +1087,8 @@ void main() {
           throwsA(
             isA<SpelEvaluationException>()
                 .having(
-                  (e) => e.code,
-                  'code',
+                  (e) => e.messageCode,
+                  'messageCode',
                   SpelMessage.variableAssignmentNotSupported,
                 )
                 .having(
@@ -1122,5 +1197,9 @@ class _ListConcat implements OperatorOverloader {
 class _MapBeanResolver implements BeanResolver {
   @override
   Object? resolve(EvaluationContext context, String beanName) =>
-      beanName == 'missing' ? throw StateError('no bean') : 'bean:$beanName';
+      switch (beanName) {
+        'missing' => throw AccessException('no bean'),
+        'broken' => throw StateError('broken resolver'),
+        _ => 'bean:$beanName',
+      };
 }

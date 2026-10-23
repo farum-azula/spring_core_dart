@@ -38,13 +38,19 @@ extension _BeanTypeInference on BeanScanner {
     LibraryElement library,
     Future<AstNode?> Function(Fragment fragment) astNodeFor,
   ) async {
-    final pending = <ClassElement>[...library.classes];
-    final seen = <ClassElement>{};
+    final pending = <InterfaceElement>[...library.classes];
+    final seen = <InterfaceElement>{};
     while (pending.isNotEmpty) {
       final element = pending.removeLast();
       if (!seen.add(element) || element.library.isInSdk) {
         continue;
       }
+      // Inherited `@Bean` methods (superclasses and mixins may live in
+      // libraries outside the scan).
+      pending.addAll([
+        for (final supertype in [?element.supertype, ...element.mixins])
+          supertype.element,
+      ]);
       for (final annotation in _import.annotationsOf(element)) {
         for (final value
             in ConstantReader(annotation).peek('value')?.listValue ??

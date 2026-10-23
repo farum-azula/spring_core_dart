@@ -13,6 +13,8 @@ export 'package:spring_boot_dart/src/binder.dart' show BindResult, Binder;
 export 'package:spring_boot_dart/src/conditions.dart';
 export 'package:spring_boot_dart/src/configuration_properties.dart';
 export 'package:spring_boot_dart/src/events.dart';
+export 'package:spring_boot_dart/src/exit_code.dart'
+    show ExitCodeEvent, ExitCodeExceptionMapper, ExitCodeGenerator;
 export 'package:spring_boot_dart/src/failure_analyzer.dart';
 export 'package:spring_boot_dart/src/runners.dart';
 export 'package:spring_boot_dart/src/spring_application.dart';

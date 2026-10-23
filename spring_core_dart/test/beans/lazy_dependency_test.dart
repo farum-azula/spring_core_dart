@@ -169,7 +169,7 @@ void main() {
             create: (r) => B(LazyA(r.lazyDependency<A>())),
           ),
         ]),
-        throwsA(isA<NoSuchBeanDefinitionException>()),
+        throwsA(isA<UnsatisfiedDependencyException>()),
       );
       expect(
         () => start([
@@ -189,7 +189,7 @@ void main() {
             create: (r) => Loud(LazyGreeter(r.lazyDependency<Greeter>())),
           ),
         ]),
-        throwsA(isA<NoUniqueBeanDefinitionException>()),
+        throwsA(isA<UnsatisfiedDependencyException>()),
       );
     },
   );

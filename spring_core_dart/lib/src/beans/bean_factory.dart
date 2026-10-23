@@ -438,8 +438,17 @@ abstract interface class ConfigurableBeanFactory
 
   /// Destroys all singletons, dependents first. Requesting a singleton
   /// that does not exist yet meanwhile (e.g. from a destroy callback)
-  /// throws `BeanCreationNotAllowedException`.
+  /// throws `BeanCreationNotAllowedException`. A destroy callback that
+  /// returns a `Future` is not awaited: a warning is logged (the error is
+  /// in [destructionErrors]) and the shutdown goes on; use
+  /// [destroySingletonsAsync] for asynchronous destruction.
   void destroySingletons();
+
+  /// Like [destroySingletons], awaiting destroy callbacks that return a
+  /// `Future` (`@PreDestroy`, `DisposableBean.destroy`, the destroy
+  /// method): each bean's callbacks one after another, each bean after its
+  /// dependents. The application context's `closeAsync()` calls this.
+  Future<void> destroySingletonsAsync();
 
   /// Errors thrown by destroy callbacks during the last
   /// [destroySingletons] (and by `destroyBean`); they are logged as
@@ -546,8 +555,19 @@ abstract interface class ConfigurableListableBeanFactory
   /// `SmartInitializingSingleton.afterSingletonsInstantiated`.
   ///
   /// The application context calls this at the end of `refresh()`. Spring:
-  /// `preInstantiateSingletons()`.
+  /// `preInstantiateSingletons()`. An init callback (`@PostConstruct`,
+  /// `afterPropertiesSet`, the init method) that returned a `Future` fails
+  /// it with a `BeanCreationException` naming the bean: use
+  /// [preInstantiateSingletonsAsync] (the context's `refreshAsync()`).
   void preInstantiateSingletons();
+
+  /// Like [preInstantiateSingletons], awaiting the init callbacks that
+  /// returned a `Future` (in creation order; a failure is a
+  /// `BeanCreationException` of that bean) before
+  /// `SmartInitializingSingleton.afterSingletonsInstantiated`. Only beans
+  /// created up to this point may have asynchronous init callbacks: for a
+  /// bean created later (lazy, prototype, scoped) they fail its creation.
+  Future<void> preInstantiateSingletonsAsync();
 
   /// Marks the definitions as final for now, so lookups by type may be
   /// cached. Like in Spring this is a hint: registering or removing

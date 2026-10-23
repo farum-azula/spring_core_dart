@@ -2,16 +2,22 @@ import 'dart:math' as math;
 
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/introspection_access.dart';
+import 'package:spring_core_dart/src/expression/spel_numbers.dart';
+import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
+import 'package:spring_core_dart/src/expression/spel_patterns.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
 /// Mutable state of one evaluation, like Spring's `ExpressionState`.
 ///
 /// Created by `SpelExpression` for each `getValue` / `setValue` call and
 /// passed down the tree. It tracks the *active context object* (what a
-/// bare `name` or `method()` applies to, and what `#this` is) and the
-/// *scope root* (the active object at the start of the current compound
-/// expression, against which arguments and indexes are evaluated). You
-/// only meet it when writing your own [SpelNode]s.
+/// bare `name` or `method()` applies to, and what `#this` is), the *scope
+/// root* (the active object at the start of the current compound
+/// expression, against which method arguments are evaluated) and the
+/// number of operations performed so far (see
+/// `SpelParserConfiguration.maximumOperations`). You only meet it when
+/// writing your own [SpelNode]s.
 ///
 /// ```dart
 /// final state = ExpressionState(
@@ -35,10 +41,16 @@ import 'package:spring_core_dart/src/expression/spel_type.dart';
 /// ```
 final class ExpressionState {
   /// Starts an evaluation of [expressionString] in [context] with [root]
-  /// as `#root`, `#this` and the initial active object.
-  ExpressionState(this.context, this.root, this.expressionString)
-    : _active = [root],
-      _scopeRoots = [root];
+  /// as `#root`, `#this` and the initial active object, under the limits
+  /// of [configuration] (the defaults when omitted).
+  ExpressionState(
+    this.context,
+    this.root,
+    this.expressionString, [
+    SpelParserConfiguration? configuration,
+  ]) : configuration = configuration ?? SpelParserConfiguration.withDefaults(),
+       _active = [root],
+       _scopeRoots = [root];
 
   /// The evaluation context (accessors, variables, types, ...).
   final EvaluationContext context;
@@ -49,17 +61,21 @@ final class ExpressionState {
   /// The expression text, used in error messages.
   final String expressionString;
 
+  /// The parser configuration (limits, auto-grow).
+  final SpelParserConfiguration configuration;
+
   // Two stacks: _active changes at every step of `a.b.c`; _scopeRoots
   // only when a compound expression or `#this`-scope (selection,
   // projection, arguments) starts. pushScope pushes onto both.
   final List<Object?> _active;
   final List<Object?> _scopeRoots;
+  int _operations = 0;
 
   /// The object property and method references apply to.
   Object? get activeContextObject => _active.last;
 
-  /// `#this` at the start of the current compound expression; method and
-  /// indexer arguments are evaluated against it.
+  /// `#this` at the start of the current compound expression; method
+  /// arguments are evaluated against it.
   Object? get scopeRoot => _scopeRoots.last;
 
   /// Makes [value] the active context object until [popActive].
@@ -91,47 +107,130 @@ final class ExpressionState {
     }
   }
 
+  /// Counts one operation (Spring's `trackOperation`); throws
+  /// [SpelMessage.maxOperationsExceeded] when the configured maximum is
+  /// exceeded.
+  void trackOperation() {
+    final maximum = configuration.maximumOperations;
+    if (++_operations > maximum) {
+      throw SpelEvaluationException(
+        SpelMessage.maxOperationsExceeded,
+        inserts: [maximum],
+        expressionString: expressionString,
+      );
+    }
+  }
+
+  /// The value of variable `#name` (counted as an operation).
+  Object? lookupVariable(String name) {
+    trackOperation();
+    return context.lookupVariable(name);
+  }
+
+  /// Assigns `#name` through `EvaluationContext.assignVariable` (counted
+  /// as an operation).
+  Object? assignVariable(String name, Object? Function() valueSupplier) {
+    trackOperation();
+    return context.assignVariable(name, valueSupplier);
+  }
+
+  /// [operation] on [left] and [right] by the context's
+  /// [OperatorOverloader]; throws
+  /// [SpelMessage.operatorNotSupportedBetweenTypes] when it does not
+  /// handle them.
+  Object? operate(
+    Operation operation,
+    Object? left,
+    Object? right,
+    int position,
+  ) {
+    final overloader = context.operatorOverloader;
+    if (overloader.overridesOperation(operation, left, right)) {
+      trackOperation();
+      return overloader.operate(operation, left, right);
+    }
+    throw error(SpelMessage.operatorNotSupportedBetweenTypes, position, [
+      operation.name,
+      typeName(left),
+      typeName(right),
+    ]);
+  }
+
   /// A [SpelEvaluationException] for this expression at [position].
   SpelEvaluationException error(
     SpelMessage code,
-    String message,
     int position, [
+    List<Object?> inserts = const [],
     Object? cause,
   ]) => SpelEvaluationException(
     code,
-    message,
+    inserts: inserts,
+    cause: cause,
     expressionString: expressionString,
     position: position,
-    cause: cause,
   );
+
+  /// [exception] with this expression and [position] filled in when it
+  /// has none (errors from type locators, converters, comparators...).
+  SpelEvaluationException locate(
+    SpelEvaluationException exception,
+    int position,
+  ) => exception.expressionString != null && exception.position >= 0
+      ? exception
+      : SpelEvaluationException(
+          exception.messageCode,
+          inserts: exception.inserts,
+          cause: exception.cause,
+          expressionString: exception.expressionString ?? expressionString,
+          position: exception.position >= 0 ? exception.position : position,
+        );
+
+  /// Runs [body], adding this expression and [position] to a
+  /// [SpelEvaluationException] that has none.
+  T located<T>(int position, T Function() body) {
+    try {
+      return body();
+    } on SpelEvaluationException catch (error, stackTrace) {
+      final located = locate(error, position);
+      if (identical(located, error)) {
+        rethrow;
+      }
+      Error.throwWithStackTrace(located, stackTrace);
+    }
+  }
 
   /// [value] as a `bool`, converting with the context's type converter
   /// (e.g. `'true'`); `null` and non-convertible values throw
-  /// [SpelMessage.notBoolean].
+  /// [SpelMessage.typeConversionError], like Spring.
   bool asBool(Object? value, int position) {
     if (value is bool) {
       return value;
     }
     if (value != null && context.typeConverter.canConvert(value, bool)) {
-      final converted = context.typeConverter.convertValue(value, bool);
+      final converted = located(
+        position,
+        () => context.typeConverter.convertValue(value, bool),
+      );
       if (converted is bool) {
         return converted;
       }
     }
-    throw error(
-      SpelMessage.notBoolean,
-      'Value $value of type ${value.runtimeType} cannot be used as a boolean',
-      position,
-    );
+    throw error(SpelMessage.typeConversionError, position, [
+      typeName(value),
+      'bool',
+    ]);
   }
+
+  /// The type name of [value] for messages (`null` for `null`).
+  static String typeName(Object? value) =>
+      value == null ? 'null' : '${value.runtimeType}';
 }
 
 /// A reference that can be read and written (assignment targets), like
 /// Spring's `ValueRef`.
 ///
 /// Returned by [SpelNode.getValueRef] for properties, variables and
-/// indexed elements; `=`, `++`/`--` and `Expression.setValue` write
-/// through it.
+/// indexed elements; `++`/`--` write through it.
 ///
 /// ```dart
 /// final ref = node.getValueRef(state);
@@ -176,6 +275,21 @@ final class _FunctionRef implements ValueRef {
   void setValue(Object? value) => _set(value);
 }
 
+// Spring's NullValueRef: what a null-safe step on null refers to. Reads
+// give null, writes are ignored.
+final class _NullRef implements ValueRef {
+  const _NullRef();
+
+  @override
+  Object? getValue() => null;
+
+  @override
+  void setValue(Object? value) {}
+
+  @override
+  bool get isWritable => false;
+}
+
 /// A node of the expression tree, like Spring's `SpelNode` /
 /// `SpelNodeImpl`.
 ///
@@ -212,14 +326,41 @@ abstract class SpelNode {
   /// Whether this node uses safe navigation (`?.`).
   bool get isNullSafe => false;
 
-  /// A reference for assigning to this node; throws
+  /// A reference for `++`/`--` on this node; throws
   /// [SpelMessage.notAssignable] unless [isAssignable].
-  ValueRef getValueRef(ExpressionState state) => throw state.error(
-    SpelMessage.notAssignable,
-    'Cannot assign to ${toString()}',
-    start,
-  );
+  ValueRef getValueRef(ExpressionState state) =>
+      throw state.error(SpelMessage.notAssignable, start, [toString()]);
+
+  /// Assigns the value from [valueSupplier] to this node and returns it
+  /// (Spring's `setValueInternal`): `=` and `Expression.setValue`.
+  ///
+  /// The target is resolved before the value is computed; nodes that
+  /// cannot be assigned throw [SpelMessage.setvalueNotSupported].
+  Object? assign(ExpressionState state, Object? Function() valueSupplier) {
+    if (!isAssignable) {
+      throw state.error(SpelMessage.setvalueNotSupported, start, [runtimeType]);
+    }
+    final ref = getValueRef(state);
+    final value = valueSupplier();
+    ref.setValue(value);
+    return value;
+  }
 }
+
+// Whether [node] is statically known to produce a real number: a real
+// literal, or arithmetic on one. Needed on the web, where `7.0` is an
+// `int` at run time; on the VM the run-time type already says so.
+bool _isReal(SpelNode node) => switch (node) {
+  Literal(:final real) => real,
+  UnaryOperator(:final kind, :final operand) =>
+    kind != UnaryKind.not && _isReal(operand),
+  BinaryOperator(:final kind, :final left, :final right) =>
+    BinaryOperator._arithmetic.contains(kind) &&
+        (_isReal(left) || _isReal(right)),
+  Ternary(:final whenTrue, :final whenFalse) =>
+    _isReal(whenTrue) && _isReal(whenFalse),
+  _ => false,
+};
 
 // ---------------------------------------------------------------------------
 // Literals and inline collections
@@ -243,11 +384,16 @@ abstract class SpelNode {
 /// parser.parseExpression("'It''s'").getValue(); // It's
 /// ```
 final class Literal extends SpelNode {
-  /// A literal [value] at [start].
-  Literal(super.start, this.value);
+  /// A literal [value] at [start]; [real] for real number literals.
+  Literal(super.start, this.value, {this.real = false});
 
   /// The constant value.
   final Object? value;
+
+  /// Whether this is a real number literal (`7.0`, `2d`, `1.5f`). On the
+  /// web an integral real is an `int` at run time; this keeps `7.0 / 2`
+  /// a real division there.
+  final bool real;
 
   @override
   Object? getValue(ExpressionState state) => value;
@@ -368,11 +514,9 @@ final class PropertyOrFieldReference extends SpelNode {
       if (nullSafe) {
         return null;
       }
-      throw state.error(
-        SpelMessage.propertyOnNull,
-        "Property or field '$name' cannot be found on null",
-        start,
-      );
+      throw state.error(SpelMessage.propertyOrFieldNotReadableOnNull, start, [
+        name,
+      ]);
     }
     return _read(state, target);
   }
@@ -383,78 +527,101 @@ final class PropertyOrFieldReference extends SpelNode {
     if (target is SpelType) {
       final field = target.staticFields[name];
       if (field != null) {
+        state.trackOperation();
         return field();
       }
     }
     final context = state.context;
     for (final accessor in context.propertyAccessors) {
       if (accessor.canRead(context, target, name)) {
+        state.trackOperation();
         try {
           return accessor.read(context, target, name);
-        } on SpelEvaluationException {
-          rethrow;
+        } on SpelEvaluationException catch (error) {
+          throw state.locate(error, start);
         } catch (error) {
-          throw state.error(
-            SpelMessage.exceptionDuringPropertyRead,
-            "Property '$name' of ${target.runtimeType} cannot be read",
-            start,
-            error,
-          );
+          throw state.error(SpelMessage.exceptionDuringPropertyRead, start, [
+            name,
+            _messageOf(error),
+          ], error);
         }
       }
     }
-    throw state.error(
-      SpelMessage.propertyNotReadable,
-      "Property or field '$name' cannot be found on object of type "
-      "'${target.runtimeType}'",
-      start,
-    );
+    throw state.error(SpelMessage.propertyOrFieldNotReadable, start, [
+      name,
+      target is SpelType ? target : target.runtimeType,
+    ]);
+  }
+
+  void _write(ExpressionState state, Object target, Object? value) {
+    final context = state.context;
+    for (final accessor in context.propertyAccessors) {
+      if (accessor.canWrite(context, target, name)) {
+        state.trackOperation();
+        try {
+          accessor.write(context, target, name, value);
+        } on SpelEvaluationException catch (error) {
+          throw state.locate(error, start);
+        } catch (error) {
+          // E.g. a TypeError writing a String into a Map<String, int>.
+          throw state.error(SpelMessage.exceptionDuringPropertyWrite, start, [
+            name,
+            _messageOf(error),
+          ], error);
+        }
+        return;
+      }
+    }
+    throw state.error(SpelMessage.propertyOrFieldNotWritable, start, [
+      name,
+      target.runtimeType,
+    ]);
   }
 
   @override
   ValueRef getValueRef(ExpressionState state) {
     final target = state.activeContextObject;
     if (target == null) {
-      throw state.error(
-        SpelMessage.propertyOnNull,
-        "Property or field '$name' cannot be set on null",
-        start,
-      );
+      if (nullSafe) {
+        return const _NullRef();
+      }
+      throw state.error(SpelMessage.propertyOrFieldNotWritableOnNull, start, [
+        name,
+      ]);
     }
     final context = state.context;
     return _FunctionRef(
       () => _read(state, target),
-      (value) {
-        for (final accessor in context.propertyAccessors) {
-          if (accessor.canWrite(context, target, name)) {
-            try {
-              accessor.write(context, target, name, value);
-            } on SpelEvaluationException {
-              rethrow;
-            } catch (error) {
-              // E.g. a TypeError writing a String into a Map<String, int>.
-              throw state.error(
-                SpelMessage.exceptionDuringPropertyWrite,
-                "Property '$name' of ${target.runtimeType} cannot be set to "
-                '$value',
-                start,
-                error,
-              );
-            }
-            return;
-          }
-        }
-        throw state.error(
-          SpelMessage.propertyNotWritable,
-          "Property or field '$name' cannot be set on object of type "
-          "'${target.runtimeType}'",
-          start,
-        );
-      },
+      (value) => _write(state, target, value),
       isWritable: context.propertyAccessors.any(
         (a) => a.canWrite(context, target, name),
       ),
     );
+  }
+
+  // Auto-grow (SpelParserConfiguration.autoGrowNullReferences): replaces
+  // a null property followed by `.x` or `[i]` with a new object, when an
+  // accessor knows the property type.
+  Object? _autoGrow(ExpressionState state, Object? target) {
+    if (target == null) {
+      return null;
+    }
+    final context = state.context;
+    for (final accessor in context.propertyAccessors) {
+      if (accessor is IntrospectionPropertyAccessor &&
+          accessor.canWrite(context, target, name)) {
+        final created = accessor.newValue(target, name);
+        if (created == null) {
+          break;
+        }
+        state.trackOperation();
+        _write(state, target, created);
+        return _read(state, target);
+      }
+    }
+    throw state.error(SpelMessage.unableToDynamicallyCreateObject, start, [
+      name,
+    ]);
   }
 
   @override
@@ -466,7 +633,9 @@ final class PropertyOrFieldReference extends SpelNode {
 ///
 /// Arguments are evaluated against the scope root (not the target);
 /// static methods of `SpelType`s are tried first, then the context's
-/// method resolvers in order.
+/// method resolvers in order. Exceptions thrown by the method propagate
+/// unchanged, like Spring; an `AccessException` from an executor is
+/// reported as [SpelMessage.exceptionDuringMethodInvocation].
 ///
 /// ```dart
 /// SpelExpressionParser()
@@ -507,11 +676,9 @@ final class MethodReference extends SpelNode {
       if (nullSafe) {
         return null;
       }
-      throw state.error(
-        SpelMessage.methodOnNull,
-        "Method call: Attempted to call method $name() on null",
-        start,
-      );
+      throw state.error(SpelMessage.methodCallOnNullObjectNotAllowed, start, [
+        '$name()',
+      ]);
     }
     // Arguments see the scope root as #this: in `a.b(#this)` the argument
     // is the object `a` was read from, not `a` itself.
@@ -524,31 +691,43 @@ final class MethodReference extends SpelNode {
       if (target is SpelType) const SpelTypeMethodResolver(),
       ...context.methodResolvers,
     ];
+    final targetType = target is SpelType ? target : target.runtimeType;
     for (final resolver in resolvers) {
-      final executor = resolver.resolve(context, target, name, args);
+      final MethodExecutor? executor;
+      try {
+        executor = resolver.resolve(context, target, name, args);
+      } on SpelEvaluationException catch (error) {
+        throw state.locate(error, start);
+      } on AccessException catch (error) {
+        throw state.error(SpelMessage.problemLocatingMethod, start, [
+          _signature(args),
+          targetType,
+        ], error);
+      }
       if (executor != null) {
+        state.trackOperation();
         try {
           return executor(context, target, args);
-        } on SpelEvaluationException {
-          rethrow;
-        } catch (error) {
+        } on SpelEvaluationException catch (error, stackTrace) {
+          Error.throwWithStackTrace(state.locate(error, start), stackTrace);
+        } on AccessException catch (error) {
           throw state.error(
             SpelMessage.exceptionDuringMethodInvocation,
-            'Method $name(${args.map((a) => a.runtimeType).join(', ')}) '
-            'failed on ${target.runtimeType}',
             start,
+            [name, targetType, error.message],
             error,
           );
         }
       }
     }
-    throw state.error(
-      SpelMessage.methodNotFound,
-      'Method $name(${args.map((a) => a.runtimeType).join(', ')}) cannot be '
-      "found on type '${target is SpelType ? target : target.runtimeType}'",
-      start,
-    );
+    throw state.error(SpelMessage.methodNotFound, start, [
+      _signature(args),
+      targetType,
+    ]);
   }
+
+  String _signature(List<Object?> args) =>
+      '$name(${args.map(ExpressionState.typeName).join(',')})';
 
   @override
   String toString() => '$name(${arguments.join(',')})';
@@ -557,9 +736,9 @@ final class MethodReference extends SpelNode {
 /// A variable: `#name`, plus the special `#this` (current element or
 /// active object) and `#root` (the root object).
 ///
-/// Unset variables evaluate to `null`. `#name = value` assigns through
-/// `EvaluationContext.assignVariable` (which `SimpleEvaluationContext`
-/// rejects); `#this` and `#root` are read-only.
+/// Unset variables evaluate to `null`. `#name = value` and `#name++`
+/// assign through `EvaluationContext.assignVariable` (forbidden in a
+/// `SimpleEvaluationContext`); `#this` and `#root` are read-only.
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()..setVariable('n', 2);
@@ -587,7 +766,7 @@ final class VariableReference extends SpelNode {
   Object? getValue(ExpressionState state) => switch (name) {
     'this' => state.activeContextObject,
     'root' => state.root,
-    _ => state.context.lookupVariable(name),
+    _ => state.lookupVariable(name),
   };
 
   @override
@@ -597,7 +776,19 @@ final class VariableReference extends SpelNode {
     }
     return _FunctionRef(
       () => getValue(state),
-      (value) => state.context.assignVariable(name, () => value),
+      (value) =>
+          state.located(start, () => state.assignVariable(name, () => value)),
+    );
+  }
+
+  @override
+  Object? assign(ExpressionState state, Object? Function() valueSupplier) {
+    if (!isAssignable) {
+      throw state.error(SpelMessage.notAssignable, start, [toString()]);
+    }
+    return state.located(
+      start,
+      () => state.assignVariable(name, valueSupplier),
     );
   }
 
@@ -607,9 +798,11 @@ final class VariableReference extends SpelNode {
 
 /// A call of a registered function: `#name(args)`.
 ///
-/// The variable `#name` must hold a Dart `Function` (see
-/// `StandardEvaluationContext.registerFunction`); it is invoked with
-/// `Function.apply`.
+/// The variable `#name` must hold a Dart `Function` or a
+/// `VarargsFunction` (see `StandardEvaluationContext.registerFunction`).
+/// Anything the function throws is reported as
+/// [SpelMessage.exceptionDuringFunctionCall] with the error as `cause`,
+/// like Spring.
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()
@@ -637,47 +830,37 @@ final class FunctionReference extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
-    final function = state.context.lookupVariable(name);
+    final function = state.lookupVariable(name);
     if (function == null) {
-      throw state.error(
-        SpelMessage.functionNotFound,
-        "Function '$name' is not registered",
-        start,
-      );
+      throw state.error(SpelMessage.functionNotDefined, start, [name]);
     }
-    if (function is! Function) {
-      throw state.error(
-        SpelMessage.variableNotFunction,
-        "Variable '$name' is not a function",
-        start,
-      );
+    if (function is! Function && function is! VarargsFunction) {
+      throw state.error(SpelMessage.functionReferenceCannotBeInvoked, start, [
+        name,
+        function.runtimeType,
+      ]);
     }
     final args = [
       for (final argument in arguments)
         state.withThis(state.scopeRoot, argument),
     ];
-    try {
-      return Function.apply(function, args);
-    } on SpelEvaluationException {
-      rethrow;
-    } catch (error) {
-      // Wrong number, names or types of arguments. A TypeError thrown
-      // inside the body is reported the same way: Dart cannot tell them
-      // apart without reflection.
-      if (error is NoSuchMethodError || error is TypeError) {
-        throw state.error(
-          SpelMessage.functionNotFound,
-          "Function '$name' cannot be called with $args",
-          start,
-          error,
-        );
-      }
+    if (!VarargsFunction.accepts(function, args.length)) {
       throw state.error(
-        SpelMessage.exceptionDuringFunctionCall,
-        "Function '$name' threw an exception",
+        SpelMessage.incorrectNumberOfArgumentsToFunction,
         start,
-        error,
+        [name, args.length, VarargsFunction.minimumArity(function) ?? '?'],
       );
+    }
+    state.trackOperation();
+    try {
+      return VarargsFunction.apply(function, args);
+    } on SpelEvaluationException catch (error) {
+      throw state.locate(error, start);
+    } catch (error) {
+      throw state.error(SpelMessage.exceptionDuringFunctionCall, start, [
+        name,
+        _messageOf(error),
+      ], error);
     }
   }
 
@@ -688,9 +871,13 @@ final class FunctionReference extends SpelNode {
 /// Indexing: `list[0]`, `map['key']`, `map[key]`, `'text'[0]`,
 /// `obj['property']`, `a?.[0]`.
 ///
-/// Lists and maps are readable and writable; strings and other iterables
-/// are read-only. An unquoted name indexing a map is the key itself, and
-/// a string index on any other object reads that property.
+/// The index is evaluated against the root object, like Spring. Lists and
+/// maps are readable and writable; strings are read-only; other targets
+/// go to the context's `IndexAccessor`s, then iterables (read-only), then
+/// a string index on any other object reads that property. An unquoted
+/// name indexing a map is the key itself. With
+/// `SpelParserConfiguration.autoGrowCollections`, lists grow (with
+/// `null`s) when indexed past their end.
 ///
 /// ```dart
 /// SpelExpressionParser()
@@ -729,11 +916,7 @@ final class Indexer extends SpelNode {
       if (nullSafe) {
         return null;
       }
-      throw state.error(
-        SpelMessage.invalidIndex,
-        'Cannot index into a null value',
-        start,
-      );
+      throw state.error(SpelMessage.cannotIndexIntoNullValue, start);
     }
     return _ref(state, target).getValue();
   }
@@ -742,11 +925,10 @@ final class Indexer extends SpelNode {
   ValueRef getValueRef(ExpressionState state) {
     final target = state.activeContextObject;
     if (target == null) {
-      throw state.error(
-        SpelMessage.invalidIndex,
-        'Cannot index into null',
-        start,
-      );
+      if (nullSafe) {
+        return const _NullRef();
+      }
+      throw state.error(SpelMessage.cannotIndexIntoNullValue, start);
     }
     return _ref(state, target);
   }
@@ -755,108 +937,237 @@ final class Indexer extends SpelNode {
   // TypeError (wrong element type for a typed List or Map) is a type
   // conversion error, an UnsupportedError (unmodifiable collection) means
   // the element is not assignable.
-  void _store(ExpressionState state, Object target, void Function() write) {
+  void _store(
+    ExpressionState state,
+    Object target,
+    Object? value,
+    void Function() write,
+  ) {
+    state.trackOperation();
     try {
       write();
     } on TypeError catch (error) {
-      throw state.error(
-        SpelMessage.typeConversionError,
-        'Value does not fit the element type of ${target.runtimeType}',
-        start,
-        error,
-      );
+      throw state.error(SpelMessage.typeConversionError, start, [
+        ExpressionState.typeName(value),
+        target.runtimeType,
+      ], error);
     } on UnsupportedError catch (error) {
-      throw state.error(
-        SpelMessage.notAssignable,
-        'Cannot assign into ${target.runtimeType}',
-        start,
-        error,
-      );
+      throw state.error(SpelMessage.notAssignable, start, [toString()], error);
     }
   }
 
-  // The index is evaluated against the scope root, so `list[#i]` and
-  // `list[size - 1]` see the enclosing object, not the list.
-  ValueRef _ref(ExpressionState state, Object target) {
+  Object? _key(ExpressionState state, Object target) {
     // Like Spring, an unquoted name indexing a map is the key itself.
-    final key = target is Map && index is PropertyOrFieldReference
-        ? (index as PropertyOrFieldReference).name
-        : state.withThis(state.scopeRoot, index);
+    if (target is Map && index is PropertyOrFieldReference) {
+      return (index as PropertyOrFieldReference).name;
+    }
+    // Like Spring, the index is evaluated against the root object.
+    state.pushActive(state.root);
+    try {
+      return index.getValue(state);
+    } finally {
+      state.popActive();
+    }
+  }
+
+  ValueRef _ref(ExpressionState state, Object target) {
+    final key = _key(state, target);
+    final context = state.context;
     switch (target) {
       case Map<Object?, Object?>():
-        return _FunctionRef(
-          () => target[key],
-          (value) => _store(state, target, () => target[key] = value),
-        );
+        return _FunctionRef(() {
+          state.trackOperation();
+          return target[key];
+        }, (value) => _store(state, target, value, () => target[key] = value));
       case List<Object?>():
         final i = _intIndex(state, key);
         return _FunctionRef(
-          () => i < target.length
-              ? target[i]
-              : throw _outOfBounds(state, i, target.length),
+          () {
+            _grow(state, target, i, reading: true);
+            state.trackOperation();
+            return target[i];
+          },
           (value) {
-            if (i >= target.length) {
-              throw _outOfBounds(state, i, target.length);
+            if (i >= target.length && state.configuration.autoGrowCollections) {
+              _grow(state, target, i, reading: false);
+              _store(state, target, value, () => target.add(value));
+              return;
             }
-            _store(state, target, () => target[i] = value);
+            _grow(state, target, i, reading: false);
+            _store(state, target, value, () => target[i] = value);
           },
         );
       case String():
         final i = _intIndex(state, key);
         return _FunctionRef(
-          () => i < target.length
-              ? target[i]
-              : throw _outOfBounds(state, i, target.length),
+          () {
+            if (i >= target.length) {
+              throw state.error(SpelMessage.stringIndexOutOfBounds, start, [
+                target.length,
+                i,
+              ]);
+            }
+            state.trackOperation();
+            return target[i];
+          },
           (_) => throw state.error(
-            SpelMessage.notAssignable,
-            'Strings are immutable',
+            SpelMessage.indexingNotSupportedForType,
             start,
+            ['String'],
           ),
           isWritable: false,
         );
-      case Iterable<Object?>():
-        final i = _intIndex(state, key);
+    }
+    for (final accessor in context.indexAccessors) {
+      final readable = accessor.canRead(context, target, key);
+      final writable = accessor.canWrite(context, target, key);
+      if (readable || writable) {
         return _FunctionRef(
-          () => i < target.length
-              ? target.elementAt(i)
-              : throw _outOfBounds(state, i, target.length),
-          (_) => throw state.error(
-            SpelMessage.notAssignable,
-            'Cannot assign into ${target.runtimeType}',
-            start,
-          ),
-          isWritable: false,
+          () {
+            if (!readable) {
+              throw state.error(
+                SpelMessage.indexingNotSupportedForType,
+                start,
+                [target.runtimeType],
+              );
+            }
+            state.trackOperation();
+            try {
+              return accessor.read(context, target, key);
+            } on SpelEvaluationException catch (error) {
+              throw state.locate(error, start);
+            } catch (error) {
+              throw state.error(SpelMessage.exceptionDuringIndexRead, start, [
+                key,
+                target.runtimeType,
+              ], error);
+            }
+          },
+          (value) {
+            if (!writable) {
+              throw state.error(
+                SpelMessage.indexingNotSupportedForType,
+                start,
+                [target.runtimeType],
+              );
+            }
+            state.trackOperation();
+            try {
+              accessor.write(context, target, key, value);
+            } on SpelEvaluationException catch (error) {
+              throw state.locate(error, start);
+            } catch (error) {
+              throw state.error(SpelMessage.exceptionDuringIndexWrite, start, [
+                key,
+                target.runtimeType,
+              ], error);
+            }
+          },
+          isWritable: writable,
         );
-      default:
-        if (key is String) {
-          // obj['name'] is property access.
-          state.pushActive(target);
-          try {
-            return PropertyOrFieldReference(start, key).getValueRef(state);
-          } finally {
-            state.popActive();
+      }
+    }
+    if (target is Iterable<Object?>) {
+      final i = _intIndex(state, key);
+      return _FunctionRef(
+        () {
+          if (i >= target.length) {
+            throw _outOfBounds(state, i, target.length);
           }
-        }
-        throw state.error(
-          SpelMessage.invalidIndex,
-          'Cannot index into ${target.runtimeType}',
+          state.trackOperation();
+          return target.elementAt(i);
+        },
+        (_) => throw state.error(
+          SpelMessage.indexingNotSupportedForType,
           start,
-        );
+          [target.runtimeType],
+        ),
+        isWritable: false,
+      );
+    }
+    if (key is String) {
+      // obj['name'] is property access.
+      state.pushActive(target);
+      try {
+        return PropertyOrFieldReference(start, key).getValueRef(state);
+      } finally {
+        state.popActive();
+      }
+    }
+    throw state.error(SpelMessage.indexingNotSupportedForType, start, [
+      target.runtimeType,
+    ]);
+  }
+
+  // Index past the end of a list: out of bounds, or (auto-grow) the list
+  // is filled with nulls up to [i] for a read, or up to [i] - 1 before a
+  // write appends the value.
+  void _grow(
+    ExpressionState state,
+    List<Object?> target,
+    int i, {
+    required bool reading,
+  }) {
+    if (i < target.length) {
+      return;
+    }
+    final configuration = state.configuration;
+    if (!configuration.autoGrowCollections) {
+      throw _outOfBounds(state, i, target.length);
+    }
+    if (i >= configuration.maximumAutoGrowSize) {
+      throw state.error(SpelMessage.unableToGrowCollection, start);
+    }
+    try {
+      while (target.length < (reading ? i + 1 : i)) {
+        state.trackOperation();
+        target.add(null);
+      }
+    } on TypeError catch (error) {
+      throw state.error(
+        SpelMessage.unableToGrowCollectionUnknownElementType,
+        start,
+        const [],
+        error,
+      );
+    } on UnsupportedError catch (error) {
+      throw state.error(
+        SpelMessage.unableToGrowCollection,
+        start,
+        const [],
+        error,
+      );
     }
   }
 
-  // Accepts ints, integral doubles and numeric strings; negative indexes
-  // are invalid (no Python-style indexing from the end).
+  // Ints, integral doubles and anything the type converter turns into an
+  // int ('2'); negative indexes are out of bounds.
   int _intIndex(ExpressionState state, Object? key) {
-    final converted = key is int
-        ? key
-        : key is String
-        ? int.tryParse(key)
-        : key is num && key == key.truncate()
-        ? key.toInt()
-        : null;
-    if (converted == null || converted < 0) {
-      throw state.error(SpelMessage.invalidIndex, 'Invalid index $key', start);
+    final int converted;
+    if (key is int) {
+      converted = key;
+    } else if (key is num && key == key.truncate()) {
+      converted = key.toInt();
+    } else {
+      final value = key == null
+          ? null
+          : state.located(
+              start,
+              () => state.context.typeConverter.convertValue(key, int),
+            );
+      if (value is! int) {
+        throw state.error(SpelMessage.typeConversionError, start, [
+          ExpressionState.typeName(key),
+          'int',
+        ]);
+      }
+      converted = value;
+    }
+    if (converted < 0) {
+      throw state.error(SpelMessage.collectionIndexOutOfBounds, start, [
+        '?',
+        converted,
+      ]);
     }
     return converted;
   }
@@ -865,11 +1176,7 @@ final class Indexer extends SpelNode {
     ExpressionState state,
     int i,
     int length,
-  ) => state.error(
-    SpelMessage.indexOutOfBounds,
-    'Index $i out of bounds for length $length',
-    start,
-  );
+  ) => state.error(SpelMessage.collectionIndexOutOfBounds, start, [length, i]);
 
   @override
   String toString() => '${nullSafe ? '?.' : ''}[$index]';
@@ -889,7 +1196,7 @@ final class Indexer extends SpelNode {
 /// parser.parseExpression("{1, 2, 3}.$[#this < 3]").getValue(); // 2
 /// ```
 enum SelectionKind {
-  /// `.?[...]`: every match, as a list, set or map.
+  /// `.?[...]`: every match, as a list or map.
   all,
 
   /// `.^[...]`: the first match, or `null`.
@@ -903,10 +1210,10 @@ enum SelectionKind {
 /// `a?.?[cond]`.
 ///
 /// [condition] is evaluated with each element as `#this` (a `MapEntry`
-/// for maps, with `key` and `value` properties) and must yield a boolean
-/// (otherwise [SpelMessage.resultOfSelectionCriteriaIsNotBoolean]).
-/// Selecting all keeps the collection kind: list, set or map; first/last
-/// of a map is a one-entry map, or `null` when nothing matches.
+/// for maps, with `key` and `value` properties) and must yield a `bool`
+/// (no conversion, like Spring). Selecting all gives a list for any
+/// iterable (also a set) and a map for a map; the first or last match of
+/// a map is a one-entry map, and `null` when nothing matches.
 ///
 /// ```dart
 /// SpelExpressionParser()
@@ -946,47 +1253,59 @@ final class Selection extends SpelNode {
       if (nullSafe) {
         return null;
       }
-      throw state.error(
-        SpelMessage.selectionNotSupported,
-        'Selection is not supported on null',
-        start,
-      );
+      throw state.error(SpelMessage.invalidTypeForSelection, start, ['null']);
     }
-    // Like Spring, the criterion must be a boolean (no conversion).
-    bool matches(Object? element) =>
-        switch (state.withThis(element, condition)) {
-          final bool result => result,
-          _ => throw state.error(
-            SpelMessage.resultOfSelectionCriteriaIsNotBoolean,
-            'Result of selection criteria is not boolean',
-            condition.start,
-          ),
-        };
+    bool matches(Object? element) {
+      final result = state.withThis(element, condition);
+      if (result is! bool) {
+        throw state.error(
+          SpelMessage.resultOfSelectionCriteriaIsNotBoolean,
+          condition.start,
+        );
+      }
+      if (result) {
+        state.trackOperation();
+      }
+      return result;
+    }
+
     switch (target) {
       case Map<Object?, Object?>():
-        final entries = target.entries.where(matches).toList();
-        if (kind != SelectionKind.all && entries.isEmpty) {
-          return null;
+        state.trackOperation();
+        final selected = <Object?, Object?>{};
+        MapEntry<Object?, Object?>? last;
+        for (final entry in target.entries) {
+          if (matches(entry)) {
+            if (kind == SelectionKind.first) {
+              return {entry.key: entry.value};
+            }
+            selected[entry.key] = entry.value;
+            last = entry;
+          }
         }
-        return Map<Object?, Object?>.fromEntries(switch (kind) {
-          SelectionKind.all => entries,
-          SelectionKind.first => [entries.first],
-          SelectionKind.last => [entries.last],
-        });
-      case Iterable<Object?>():
-        final selected = target.where(matches);
         return switch (kind) {
-          SelectionKind.all =>
-            target is Set ? selected.toSet() : selected.toList(),
-          SelectionKind.first => selected.firstOrNull,
-          SelectionKind.last => selected.lastOrNull,
+          SelectionKind.all => selected,
+          _ => last == null ? null : {last.key: last.value},
+        };
+      case Iterable<Object?>():
+        state.trackOperation();
+        final selected = <Object?>[];
+        for (final element in target) {
+          if (matches(element)) {
+            if (kind == SelectionKind.first) {
+              return element;
+            }
+            selected.add(element);
+          }
+        }
+        return switch (kind) {
+          SelectionKind.all => selected,
+          _ => selected.lastOrNull,
         };
       default:
-        throw state.error(
-          SpelMessage.selectionNotSupported,
-          'Selection is not supported on ${target.runtimeType}',
-          start,
-        );
+        throw state.error(SpelMessage.invalidTypeForSelection, start, [
+          target.runtimeType,
+        ]);
     }
   }
 
@@ -1041,24 +1360,24 @@ final class Projection extends SpelNode {
       if (nullSafe) {
         return null;
       }
-      throw state.error(
-        SpelMessage.projectionNotSupported,
-        'Projection is not supported on null',
-        start,
-      );
+      throw state.error(SpelMessage.projectionNotSupportedOnType, start, [
+        'null',
+      ]);
     }
     final Iterable<Object?> elements = switch (target) {
       Map<Object?, Object?>() => target.entries,
       Iterable<Object?>() => target,
-      _ => throw state.error(
-        SpelMessage.projectionNotSupported,
-        'Projection is not supported on ${target.runtimeType}',
-        start,
-      ),
+      _ => throw state.error(SpelMessage.projectionNotSupportedOnType, start, [
+        target.runtimeType,
+      ]),
     };
-    return [
-      for (final element in elements) state.withThis(element, expression),
-    ];
+    state.trackOperation();
+    return [for (final element in elements) _project(state, element)];
+  }
+
+  Object? _project(ExpressionState state, Object? element) {
+    state.trackOperation();
+    return state.withThis(element, expression);
   }
 
   @override
@@ -1067,8 +1386,9 @@ final class Projection extends SpelNode {
 
 /// `a.b.c`: each part is evaluated against the previous result.
 ///
-/// Safe navigation short-circuits the whole chain: in `a?.b.c`, a `null`
-/// `a` makes the result `null` without evaluating `b` or `c`.
+/// Safe navigation applies per step, like Spring 6.2: in `a?.b.c` a `null`
+/// `a` makes `a?.b` `null`, and `.c` then fails on `null`; write
+/// `a?.b?.c` to be null-safe throughout.
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();
@@ -1078,14 +1398,14 @@ final class Projection extends SpelNode {
 ///   },
 /// }); // London
 /// parser
-///     .parseExpression('user?.address.city')
+///     .parseExpression('user?.address?.city')
 ///     .getValue(null, {'user': null}); // null
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// // org.springframework.expression.spel.ast.CompoundExpression
-/// parser.parseExpression("user?.address.city").getValue(context);
+/// parser.parseExpression("user?.address?.city").getValue(context);
 /// ```
 final class CompoundExpression extends SpelNode {
   /// A chain of [children] (at least two), evaluated left to right.
@@ -1099,50 +1419,57 @@ final class CompoundExpression extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) =>
-      _inScope(state, (target) => children.last.getValue(state), () => null);
+      _inScope(state, () => children.last.getValue(state), () => null);
 
   @override
   ValueRef getValueRef(ExpressionState state) => _inScope(
     state,
-    (target) => children.last.getValueRef(state),
-    () => _FunctionRef(() => null, (_) {}, isWritable: false),
+    () => children.last.getValueRef(state),
+    () => const _NullRef(),
   );
 
   /// Evaluates all children but the last, then [last] with the result as
-  /// the active object; [shortCircuit] when a safe navigation hits null.
+  /// the active object; [shortCircuit] when a `null` meets a `?.` step.
   T _inScope<T>(
     ExpressionState state,
-    T Function(Object? target) last,
+    T Function() last,
     T Function() shortCircuit,
   ) {
     // The object the chain starts from becomes the scope root, so
-    // arguments and indexes inside the chain are evaluated against it.
+    // arguments inside the chain are evaluated against it.
     state.pushScope(state.activeContextObject);
     try {
+      // The object the previous child was evaluated on, for auto-grow.
+      var owner = state.activeContextObject;
       var value = children.first.getValue(state);
-      for (var i = 1; i < children.length - 1; i++) {
+      for (var i = 1; i < children.length; i++) {
         final child = children[i];
-        // Safe navigation: a null before a `?.` part ends the whole chain
-        // (later parts are not evaluated, even without `?.`).
-        if (value == null && child.isNullSafe) {
-          return shortCircuit();
+        final previous = children[i - 1];
+        if (value == null) {
+          // Safe navigation (Spring 6.2): a null before a `?.` step ends
+          // the whole chain; later steps are not evaluated, even without
+          // `?.`.
+          if (child.isNullSafe) {
+            return shortCircuit();
+          }
+          if (previous is PropertyOrFieldReference &&
+              state.configuration.autoGrowNullReferences &&
+              (child is Indexer || child is PropertyOrFieldReference)) {
+            value = previous._autoGrow(state, owner);
+          }
         }
+        owner = value;
         state.pushActive(value);
         try {
+          if (i == children.length - 1) {
+            return last();
+          }
           value = child.getValue(state);
         } finally {
           state.popActive();
         }
       }
-      if (value == null && children.last.isNullSafe) {
-        return shortCircuit();
-      }
-      state.pushActive(value);
-      try {
-        return last(value);
-      } finally {
-        state.popActive();
-      }
+      throw StateError('A compound expression has at least two parts');
     } finally {
       state.popScope();
     }
@@ -1176,98 +1503,240 @@ final class TypeReference extends SpelNode {
   final String typeName;
 
   @override
-  Object? getValue(ExpressionState state) {
-    try {
-      return state.context.typeLocator.findType(typeName);
-    } on SpelEvaluationException catch (error) {
-      throw state.error(error.code, error.message, start);
-    }
-  }
+  Object? getValue(ExpressionState state) =>
+      state.located(start, () => state.context.typeLocator.findType(typeName));
 
   @override
   String toString() => 'T($typeName)';
 }
 
-/// A constructor call, `new Name(args)`.
+/// A constructor call, `new Name(args)`, or an array construction,
+/// `new int[3]`, `new int[2][3]`, `new String[]{'a', 'b'}`.
 ///
-/// Calls the default constructor (key `''`) registered on the [SpelType]
-/// with `Function.apply`. Disabled in a `SimpleEvaluationContext`.
+/// Constructors come from the context's [ConstructorResolver]s (by
+/// default the constructors registered on a [SpelType]); a
+/// `SimpleEvaluationContext` has none. Arrays are Dart lists of the
+/// element type: `int`, `long`, `short`, `byte` arrays are filled with
+/// `0`, `double`/`float` with `0.0`, `boolean`/`bool` with `false`, others
+/// with `null`; multi-dimensional arrays are lists of lists.
 ///
 /// ```dart
 /// SpelExpressionParser()
 ///     .parseExpression('new DateTime(2026, 10, 20).year')
 ///     .getValue(); // 2026
+/// SpelExpressionParser().parseExpression('new int[3]').getValue();
+/// // [0, 0, 0]
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// // org.springframework.expression.spel.ast.ConstructorReference
 /// parser.parseExpression("new java.util.Date()").getValue();
+/// parser.parseExpression("new int[3]").getValue(); // int[] {0, 0, 0}
 /// ```
 final class ConstructorReference extends SpelNode {
-  /// A call of [typeName]'s constructor with [arguments].
-  ConstructorReference(super.start, this.typeName, this.arguments);
+  /// A call of [typeName]'s constructor with [arguments], or an array
+  /// construction when [dimensions] is given.
+  ConstructorReference(
+    super.start,
+    this.typeName,
+    this.arguments, {
+    this.dimensions,
+    this.initializer,
+  });
 
   /// The registered type name.
   final String typeName;
 
-  /// The argument expressions.
+  /// The argument expressions (empty for arrays).
   final List<SpelNode> arguments;
+
+  /// Array dimensions (`null` entries for `[]`), or `null` for a
+  /// constructor call.
+  final List<SpelNode?>? dimensions;
+
+  /// The `{...}` initializer of an array construction.
+  final InlineList? initializer;
+
+  static const _primitiveDefaults = <String, Object>{
+    'int': 0,
+    'long': 0,
+    'short': 0,
+    'byte': 0,
+    'double': 0.0,
+    'float': 0.0,
+    'num': 0,
+    'boolean': false,
+    'bool': false,
+  };
 
   @override
   Object? getValue(ExpressionState state) {
-    if (!state.context.isConstructorEnabled) {
-      throw state.error(
-        SpelMessage.notSupportedInSimpleContext,
-        'Constructor invocation is not supported in this context',
-        start,
-      );
-    }
-    final type = TypeReference(start, typeName).getValue(state)! as SpelType;
-    final constructor = type.constructors[''];
-    if (constructor == null) {
-      throw state.error(
-        SpelMessage.constructorNotFound,
-        'No constructor registered for $typeName',
-        start,
-      );
+    if (dimensions != null) {
+      return _array(state, dimensions!);
     }
     final args = [
       for (final argument in arguments)
         state.withThis(state.scopeRoot, argument),
     ];
-    try {
-      return Function.apply(constructor, args);
-    } on SpelEvaluationException {
-      rethrow;
-    } catch (error) {
-      // Wrong number, names or types of arguments. A TypeError thrown
-      // inside the body is reported the same way: Dart cannot tell them
-      // apart without reflection.
-      if (error is NoSuchMethodError || error is TypeError) {
-        throw state.error(
-          SpelMessage.constructorNotFound,
-          'Constructor of $typeName cannot be called with $args',
-          start,
-          error,
-        );
+    final context = state.context;
+    final signature = '(${args.map(ExpressionState.typeName).join(',')})';
+    for (final resolver in context.constructorResolvers) {
+      final ConstructorExecutor? executor;
+      try {
+        executor = resolver.resolve(context, typeName, args);
+      } on SpelEvaluationException catch (error) {
+        throw state.locate(error, start);
+      } on AccessException catch (error) {
+        throw state.error(SpelMessage.constructorInvocationProblem, start, [
+          typeName,
+          signature,
+        ], error);
       }
+      if (executor != null) {
+        state.trackOperation();
+        try {
+          return executor(context, args);
+        } on SpelEvaluationException catch (error, stackTrace) {
+          Error.throwWithStackTrace(state.locate(error, start), stackTrace);
+        } on AccessException catch (error) {
+          throw state.error(SpelMessage.constructorInvocationProblem, start, [
+            typeName,
+            signature,
+          ], error);
+        }
+      }
+    }
+    throw state.error(SpelMessage.constructorNotFound, start, [
+      typeName,
+      signature,
+    ]);
+  }
+
+  Object? _array(ExpressionState state, List<SpelNode?> dimensions) {
+    final type = TypeReference(start, typeName).getValue(state)! as SpelType;
+    final fill = _primitiveDefaults[typeName];
+    final initializer = this.initializer;
+    if (initializer == null) {
+      final sizes = [
+        for (final dimension in dimensions)
+          dimension == null
+              ? throw state.error(SpelMessage.missingArrayDimension, start)
+              : _size(state, dimension),
+      ];
+      var total = 1;
+      for (final size in sizes) {
+        total *= size;
+        if (total > SpelLimits.maxArrayElements) {
+          throw state.error(
+            SpelMessage.maxArrayElementsThresholdExceeded,
+            start,
+            [SpelLimits.maxArrayElements],
+          );
+        }
+      }
+      return _filled(state, type, sizes, fill);
+    }
+    if (dimensions.length > 1) {
       throw state.error(
-        SpelMessage.constructorInvocationProblem,
-        'Constructor of $typeName threw an exception',
+        SpelMessage.multidimArrayInitializerNotSupported,
         start,
-        error,
       );
     }
+    final values = initializer.getValue(state)! as List<Object?>;
+    final dimension = dimensions.single;
+    if (dimension != null && _size(state, dimension) != values.length) {
+      throw state.error(SpelMessage.initializerLengthIncorrect, start);
+    }
+    final elements = [
+      for (final value in values) _element(state, type, fill, value),
+    ];
+    state.trackOperation();
+    return type.arrayOf(elements);
+  }
+
+  List<Object?> _filled(
+    ExpressionState state,
+    SpelType type,
+    List<int> sizes,
+    Object? fill,
+  ) {
+    state.trackOperation();
+    if (sizes.length == 1) {
+      return type.newArray(sizes.single, fill);
+    }
+    return [
+      for (var i = 0; i < sizes.first; i++)
+        _filled(state, type, sizes.sublist(1), fill),
+    ];
+  }
+
+  // An initializer element converted to the element type; primitives do
+  // not take null.
+  Object? _element(
+    ExpressionState state,
+    SpelType type,
+    Object? fill,
+    Object? value,
+  ) {
+    if (value == null) {
+      if (fill != null) {
+        throw state.error(SpelMessage.incorrectElementTypeForArray, start, [
+          typeName,
+          'null',
+        ]);
+      }
+      return null;
+    }
+    if (type.isInstance(value) || type.type == null) {
+      return value;
+    }
+    final converted = state.located(
+      start,
+      () => state.context.typeConverter.convertValue(value, type.type!),
+    );
+    if (!type.isInstance(converted)) {
+      throw state.error(SpelMessage.incorrectElementTypeForArray, start, [
+        typeName,
+        value.runtimeType,
+      ]);
+    }
+    return converted;
+  }
+
+  int _size(ExpressionState state, SpelNode dimension) {
+    final value = dimension.getValue(state);
+    final size = value is int
+        ? value
+        : state.located(
+            start,
+            () => state.context.typeConverter.convertValue(value, int),
+          );
+    if (size is! int || size < 0) {
+      throw state.error(SpelMessage.typeConversionError, start, [
+        ExpressionState.typeName(value),
+        'int',
+      ]);
+    }
+    return size;
   }
 
   @override
-  String toString() => 'new $typeName(${arguments.join(',')})';
+  String toString() {
+    final dimensions = this.dimensions;
+    if (dimensions == null) {
+      return 'new $typeName(${arguments.join(',')})';
+    }
+    return 'new $typeName${dimensions.map((d) => '[${d ?? ''}]').join()}'
+        '${initializer ?? ''}';
+  }
 }
 
 /// A bean reference, `@name`, `@'dotted.name'` or `&factoryBean`.
 ///
-/// Resolved by the context's [BeanResolver] (e.g. `BeanFactoryResolver`).
+/// Resolved by the context's [BeanResolver] (e.g. `BeanFactoryResolver`);
+/// an `AccessException` from the resolver is reported as
+/// [SpelMessage.exceptionDuringBeanResolution].
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()
@@ -1293,25 +1762,23 @@ final class BeanReference extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
+    final beanName = factory ? '&$name' : name;
     final resolver = state.context.beanResolver;
     if (resolver == null) {
-      throw state.error(
-        SpelMessage.beanResolverNotRegistered,
-        'No bean resolver registered in the context to resolve access to '
-        "bean '$name'",
-        start,
-      );
+      throw state.error(SpelMessage.noBeanResolverRegistered, start, [
+        beanName,
+      ]);
     }
-    final beanName = factory ? '&$name' : name;
+    state.trackOperation();
     try {
       return resolver.resolve(state.context, beanName);
-    } catch (error) {
-      throw state.error(
-        SpelMessage.beanNotFound,
-        "Bean '$beanName' cannot be resolved",
-        start,
-        error,
-      );
+    } on SpelEvaluationException catch (error) {
+      throw state.locate(error, start);
+    } on AccessException catch (error) {
+      throw state.error(SpelMessage.exceptionDuringBeanResolution, start, [
+        beanName,
+        error.message,
+      ], error);
     }
   }
 
@@ -1391,12 +1858,18 @@ enum BinaryKind {
 /// A binary operator: arithmetic, comparison, logic, `instanceof`,
 /// `matches` or `between`.
 ///
-/// Arithmetic follows Java: `int / int` truncates (`7 / 2` is `3`),
-/// division or modulus of ints by zero fails, `%` keeps the sign of the
-/// left operand, and `int ^ int` stays an `int` for non-negative
-/// exponents. `+` concatenates when either side is a string. Numbers
-/// compare by value across `int` and `double` (`2 == 2.0`). Other operand
-/// types go to the context's [OperatorOverloader].
+/// Arithmetic follows Java: `int / int` truncates (`7 / 2` is `3`; an
+/// integer division by zero throws Dart's `IntegerDivisionByZeroException`
+/// unchanged, like Java's `ArithmeticException`), `%` keeps the sign of
+/// the left operand, `int ^ int` is computed as a double and truncated
+/// with saturation (`2 ^ -1` is `0`, `2 ^ 100` is the largest `int`), and
+/// `'d' - 3` is `'a'`. `+` concatenates when either side is a string,
+/// converting the other side with the context's `TypeConverter` (`'a' +
+/// {1, 2}` is `a1,2`). Numbers compare by value across `int` and `double`
+/// (`2 == 2.0`), collections deeply (`{1, 2} == {1, 2}`), values of one
+/// enum by index. Other operand types go to the context's
+/// [OperatorOverloader]. `matches` uses Dart's `RegExp` (see
+/// `SpelPatterns`).
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();
@@ -1426,6 +1899,18 @@ final class BinaryOperator extends SpelNode {
   /// The right operand.
   final SpelNode right;
 
+  static const _arithmetic = {
+    BinaryKind.add,
+    BinaryKind.subtract,
+    BinaryKind.multiply,
+    BinaryKind.divide,
+    BinaryKind.modulus,
+    BinaryKind.power,
+  };
+
+  late final bool _leftReal = _isReal(left);
+  late final bool _rightReal = _isReal(right);
+
   @override
   Object? getValue(ExpressionState state) {
     switch (kind) {
@@ -1442,12 +1927,12 @@ final class BinaryOperator extends SpelNode {
         final type = right.getValue(state);
         if (type is! SpelType) {
           throw state.error(
-            SpelMessage.operatorNotSupported,
-            'instanceof needs a type reference on the right',
+            SpelMessage.instanceofOperatorNeedsClassOperand,
             right.start,
+            [ExpressionState.typeName(type)],
           );
         }
-        return type.isInstance(value);
+        return value != null && type.isInstance(value);
       default:
         return _evaluate(state, left.getValue(state), right.getValue(state));
     }
@@ -1463,13 +1948,12 @@ final class BinaryOperator extends SpelNode {
       case BinaryKind.lt || BinaryKind.le || BinaryKind.gt || BinaryKind.ge:
         final comparator = context.typeComparator;
         if (!comparator.canCompare(l, r)) {
-          throw state.error(
-            SpelMessage.notComparable,
-            'Cannot compare ${l.runtimeType} and ${r.runtimeType}',
-            start,
-          );
+          throw state.error(SpelMessage.notComparable, start, [
+            ExpressionState.typeName(l),
+            ExpressionState.typeName(r),
+          ]);
         }
-        final result = comparator.compare(l, r);
+        final result = state.located(start, () => comparator.compare(l, r));
         return switch (kind) {
           BinaryKind.lt => result < 0,
           BinaryKind.le => result <= 0,
@@ -1477,78 +1961,61 @@ final class BinaryOperator extends SpelNode {
           _ => result >= 0,
         };
       case BinaryKind.matches:
-        if (l is! String || r is! String) {
+        if (l is! String) {
           throw state.error(
-            SpelMessage.invalidRegex,
-            'matches needs a string and a regular expression',
-            start,
+            SpelMessage.invalidFirstOperandForMatchesOperator,
+            left.start,
+            [l],
           );
         }
-        if (r.length > SpelLimits.maxRegexLength) {
+        if (r is! String) {
           throw state.error(
-            SpelMessage.maxRegexLengthExceeded,
-            'The regular expression is ${r.length} characters long; the '
-            'maximum is ${SpelLimits.maxRegexLength}',
+            SpelMessage.invalidSecondOperandForMatchesOperator,
             right.start,
+            [r],
           );
         }
         // Anchored, so the whole string must match (Java's
         // String.matches semantics).
-        try {
-          return RegExp('^(?:$r)\$').hasMatch(l);
-        } on FormatException catch (error) {
-          throw state.error(
-            SpelMessage.invalidRegex,
-            "Invalid regular expression '$r'",
-            right.start,
-            error,
-          );
-        }
+        final regex = state.located(right.start, () => SpelPatterns.compile(r));
+        return regex.hasMatch(l);
       case BinaryKind.between:
         if (r is! List || r.length != 2) {
           throw state.error(
             SpelMessage.betweenRightOperandMustBeTwoElementList,
-            "Right operand of 'between' must be a two-element list",
             right.start,
           );
         }
         final comparator = context.typeComparator;
         if (!comparator.canCompare(r[0], l) ||
             !comparator.canCompare(l, r[1])) {
-          throw state.error(
-            SpelMessage.notComparable,
-            'Cannot compare ${l.runtimeType} with '
-            '${r[0].runtimeType} and ${r[1].runtimeType}',
-            start,
-          );
+          throw state.error(SpelMessage.notComparable, start, [
+            ExpressionState.typeName(l),
+            ExpressionState.typeName(r[0]),
+          ]);
         }
-        return comparator.compare(r[0], l) <= 0 &&
-            comparator.compare(l, r[1]) <= 0;
+        return state.located(
+          start,
+          () =>
+              comparator.compare(r[0], l) <= 0 &&
+              comparator.compare(l, r[1]) <= 0,
+        );
       default:
         return arithmetic(state, l, r);
     }
   }
 
-  // A `+` operand as text: strings as they are, `null` as `null`, other
-  // values through the context's TypeConverter when it can convert them
-  // (Spring's OpPlus.convertTypedValueToString).
-  static String _concatPart(ExpressionState state, Object? value) {
-    if (value is String) {
-      return value;
-    }
-    final converter = state.context.typeConverter;
-    if (value != null && converter.canConvert(value, String)) {
-      return '${converter.convertValue(value, String)}';
-    }
-    return '$value';
-  }
+  // An int for integer arithmetic: on the web a real literal's value can
+  // be an `int` at run time, so its statically known kind wins.
+  static bool _isInt(Object? value, bool real) => value is int && !real;
 
   /// Applies this arithmetic operator to the evaluated operands [l] and
-  /// [r]: numbers natively, then string concatenation (`+`) and
-  /// repetition (`string * int`), then the context's
-  /// [OperatorOverloader].
+  /// [r]: numbers natively, then string concatenation (`+`), repetition
+  /// (`string * int`) and character arithmetic (`'d' - 3`), then the
+  /// context's [OperatorOverloader].
   ///
-  /// Throws [SpelMessage.operatorNotSupported] when nothing applies.
+  /// Throws [SpelMessage.operatorNotSupportedBetweenTypes] when nothing
+  /// applies.
   Object? arithmetic(ExpressionState state, Object? l, Object? r) {
     final operation = switch (kind) {
       BinaryKind.add => Operation.add,
@@ -1559,6 +2026,7 @@ final class BinaryOperator extends SpelNode {
       _ => Operation.power,
     };
     if (l is num && r is num) {
+      final ints = _isInt(l, _leftReal) && _isInt(r, _rightReal);
       switch (operation) {
         case Operation.add:
           return l + r;
@@ -1567,98 +2035,90 @@ final class BinaryOperator extends SpelNode {
         case Operation.multiply:
           return l * r;
         case Operation.divide:
-          // Java-like integer division: two ints truncate toward zero and
-          // fail on zero; any double gives a double (1 / 0.0 = Infinity).
-          if (l is int && r is int) {
-            if (r == 0) {
-              throw state.error(
-                SpelMessage.divisionByZero,
-                'Division by zero',
-                start,
-              );
-            }
-            return l ~/ r;
-          }
-          return l / r;
+          // Java-like integer division: two ints truncate toward zero (and
+          // throw on zero, like Java's ArithmeticException); any double
+          // gives a double (1 / 0.0 = Infinity).
+          return ints ? l.toInt() ~/ r.toInt() : l.toDouble() / r.toDouble();
         case Operation.modulus:
-          if (l is int && r is int && r == 0) {
-            throw state.error(
-              SpelMessage.divisionByZero,
-              'Division by zero',
-              start,
-            );
-          }
           // remainder (not Dart's %) keeps the sign of the dividend, like
           // Java: -7 % 3 == -1.
-          return l.remainder(r);
+          return ints
+              ? l.toInt().remainder(r.toInt())
+              : l.toDouble().remainder(r.toDouble());
         case Operation.power:
-          // int ^ non-negative int stays an int (exponentiation by
-          // squaring, so huge exponents finish quickly); otherwise a
-          // double via math.pow.
-          if (l is int && r is int && r >= 0) {
-            var result = 1;
-            var base = l;
-            for (var exponent = r; exponent > 0; exponent >>= 1) {
-              if (exponent & 1 == 1) {
-                result *= base;
-              }
-              base *= base;
-            }
-            return result;
-          }
-          return math.pow(l, r).toDouble();
+          // Java: (long) Math.pow(l, r) for integers, truncating and
+          // saturating; a double otherwise.
+          final result = math.pow(l.toDouble(), r.toDouble()).toDouble();
+          return ints ? toJavaLong(result) : result;
       }
     }
-    if (operation == Operation.add && (l is String || r is String)) {
-      // Spring's OpPlus converts the other operand with the TypeConverter.
-      final text = '${_concatPart(state, l)}${_concatPart(state, r)}';
-      if (text.length > SpelLimits.maxConcatenatedStringLength) {
-        throw state.error(
-          SpelMessage.maxConcatenatedStringLengthExceeded,
-          'Concatenated string is ${text.length} characters long; the '
-          'maximum is ${SpelLimits.maxConcatenatedStringLength}',
-          start,
-        );
-      }
-      return text;
+    switch (operation) {
+      case Operation.add when l is String || r is String:
+        final text = l is String && r is String
+            ? (l, r)
+            : l is String
+            ? (l, _string(state, r))
+            : (_string(state, l), r! as String);
+        final length = text.$1.length + text.$2.length;
+        if (length > SpelLimits.maxConcatenatedStringLength) {
+          throw state.error(
+            SpelMessage.maxConcatenatedStringLengthExceeded,
+            start,
+            [SpelLimits.maxConcatenatedStringLength],
+          );
+        }
+        return '${text.$1}${text.$2}';
+      case Operation.subtract when l is String && l.length == 1 && r is int:
+        // Java char arithmetic: 'd' - 3 is 'a'.
+        return String.fromCharCode((l.codeUnitAt(0) - r) & 0xFFFF);
+      case Operation.multiply when l is String && r is int:
+        return _repeat(state, l, r);
+      default:
+        return state.operate(operation, l, r, start);
     }
-    if (operation == Operation.multiply && l is String && r is int) {
-      if (r < 0) {
-        throw state.error(
-          SpelMessage.negativeRepeatedTextCount,
-          'Repeat count $r must not be negative',
-          start,
-        );
-      }
-      if (l.length * r > SpelLimits.maxRepeatedTextSize) {
-        throw state.error(
-          SpelMessage.maxRepeatedTextSizeExceeded,
-          'Repeated text would be ${l.length * r} characters long; the '
-          'maximum is ${SpelLimits.maxRepeatedTextSize}',
-          start,
-        );
-      }
-      return l * r;
-    }
-    final overloader = state.context.operatorOverloader;
-    if (overloader.overridesOperation(operation, l, r)) {
-      return overloader.operate(operation, l, r);
-    }
-    throw state.error(
-      SpelMessage.operatorNotSupported,
-      "Operator '${operation.name}' is not supported for "
-      '${l.runtimeType} and ${r.runtimeType}',
-      start,
-    );
   }
 
-  /// Numbers are equal by value, otherwise `==` (or `compareTo == 0` for
+  // Repetition with Spring's limits, checked before the string is built
+  // (`'x' * 2^62` must not overflow into a huge allocation).
+  String _repeat(ExpressionState state, String text, int count) {
+    if (count < 0) {
+      throw state.error(SpelMessage.negativeRepeatedTextCount, start, [count]);
+    }
+    if (text.isEmpty || count == 0) {
+      return '';
+    }
+    if (count > SpelLimits.maxRepeatedTextSize ~/ text.length) {
+      throw state.error(SpelMessage.maxRepeatedTextSizeExceeded, start, [
+        SpelLimits.maxRepeatedTextSize,
+      ]);
+    }
+    return text * count;
+  }
+
+  // The other operand of a string concatenation, through the context's
+  // TypeConverter like Spring (a list becomes `1,2`); null is 'null'.
+  static String _string(ExpressionState state, Object? value) {
+    if (value == null) {
+      return 'null';
+    }
+    final converter = state.context.typeConverter;
+    if (converter.canConvert(value, String)) {
+      final converted = converter.convertValue(value, String);
+      if (converted is String) {
+        return converted;
+      }
+    }
+    return '$value';
+  }
+
+  /// Numbers are equal by value, collections deeply (lists in order, sets
+  /// and maps by content), otherwise `==` (or `compareTo == 0` for
   /// comparable values of the same type), like Spring.
   static bool equalityCheck(EvaluationContext context, Object? l, Object? r) {
     if (l is num && r is num) {
       return l.compareTo(r) == 0;
     }
-    if (l == r) {
+    if (_deepEquals(l, r)) {
       return true;
     }
     if (l is Comparable &&
@@ -1666,6 +2126,42 @@ final class BinaryOperator extends SpelNode {
         l.runtimeType == r.runtimeType &&
         context.typeComparator.canCompare(l, r)) {
       return context.typeComparator.compare(l, r) == 0;
+    }
+    return false;
+  }
+
+  // Java's equals for collections: List.equals is ordered and
+  // element-wise, Set.equals and Map.equals compare contents.
+  static bool _deepEquals(Object? l, Object? r) {
+    if (identical(l, r) || l == r) {
+      return true;
+    }
+    if (l is List && r is List) {
+      if (l.length != r.length) {
+        return false;
+      }
+      for (var i = 0; i < l.length; i++) {
+        if (!_deepEquals(l[i], r[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (l is Set && r is Set) {
+      return l.length == r.length &&
+          l.every((a) => r.contains(a) || r.any((b) => _deepEquals(a, b)));
+    }
+    if (l is Map && r is Map) {
+      if (l.length != r.length) {
+        return false;
+      }
+      for (final entry in l.entries) {
+        if (!r.containsKey(entry.key) ||
+            !_deepEquals(entry.value, r[entry.key])) {
+          return false;
+        }
+      }
+      return true;
     }
     return false;
   }
@@ -1723,16 +2219,14 @@ final class UnaryOperator extends SpelNode {
     switch (kind) {
       case UnaryKind.not:
         return !state.asBool(value, operand.start);
-      case UnaryKind.minus || UnaryKind.plus:
-        if (value is! num) {
-          throw state.error(
-            SpelMessage.operatorNotSupported,
-            "Unary '${kind == UnaryKind.minus ? '-' : '+'}' is not supported "
-            'for ${value.runtimeType}',
-            start,
-          );
-        }
-        return kind == UnaryKind.minus ? -value : value;
+      case UnaryKind.minus:
+        return value is num
+            ? -value
+            : state.operate(Operation.subtract, value, null, start);
+      case UnaryKind.plus:
+        return value is num
+            ? value
+            : state.operate(Operation.add, value, null, start);
     }
   }
 
@@ -1816,7 +2310,8 @@ final class Elvis extends SpelNode {
 /// Assignment, `target = value`, evaluating to the assigned value.
 ///
 /// The target can be a property, a variable (`#x`) or an indexed element;
-/// assignment must be enabled in the context.
+/// assignment must be enabled in the context. Like Spring, the target is
+/// resolved before the value is evaluated.
 ///
 /// ```dart
 /// final data = <String, Object?>{'n': 1};
@@ -1842,24 +2337,9 @@ final class Assign extends SpelNode {
   @override
   Object? getValue(ExpressionState state) {
     if (!state.context.isAssignmentEnabled) {
-      throw state.error(
-        SpelMessage.notAssignable,
-        'Assignment is disabled in this context',
-        start,
-      );
+      throw state.error(SpelMessage.notAssignable, start, [toString()]);
     }
-    final target = this.target;
-    if (target is VariableReference && target.isAssignable) {
-      // Like Spring, the value is only evaluated when the context allows
-      // the assignment.
-      return state.context.assignVariable(
-        target.name,
-        () => value.getValue(state),
-      );
-    }
-    final newValue = value.getValue(state);
-    target.getValueRef(state).setValue(newValue);
-    return newValue;
+    return target.assign(state, () => value.getValue(state));
   }
 
   @override
@@ -1869,6 +2349,7 @@ final class Assign extends SpelNode {
 /// `++x`, `x++`, `--x`, `x--` on assignable numeric targets.
 ///
 /// Prefix forms evaluate to the new value, postfix forms to the old one.
+/// Non-numbers go to the context's [OperatorOverloader].
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()..setVariable('n', 1);
@@ -1904,29 +2385,32 @@ final class IncDec extends SpelNode {
   @override
   Object? getValue(ExpressionState state) {
     if (!state.context.isAssignmentEnabled) {
-      throw state.error(
-        SpelMessage.notAssignable,
-        'Assignment is disabled in this context',
-        start,
-      );
+      throw state.error(SpelMessage.notAssignable, start, [toString()]);
     }
-    if (!target.isAssignable) {
-      throw state.error(
-        SpelMessage.notAssignable,
-        'Cannot ${increment ? 'increment' : 'decrement'} $target',
-        start,
-      );
-    }
+    final notSupported = increment
+        ? SpelMessage.operandNotIncrementable
+        : SpelMessage.operandNotDecrementable;
+    // `1++` fails here with notAssignable, like Spring.
     final ref = target.getValueRef(state);
     final current = ref.getValue();
-    if (current is! num) {
-      throw state.error(
-        SpelMessage.operatorNotSupported,
-        'Cannot ${increment ? 'increment' : 'decrement'} ${current.runtimeType}',
-        start,
-      );
+    final Object? next;
+    if (current is num) {
+      next = increment ? current + 1 : current - 1;
+    } else {
+      try {
+        next = state.operate(
+          increment ? Operation.add : Operation.subtract,
+          current,
+          1,
+          start,
+        );
+      } on SpelEvaluationException catch (error) {
+        if (error.messageCode == SpelMessage.operatorNotSupportedBetweenTypes) {
+          throw state.error(notSupported, target.start, [target.toString()]);
+        }
+        rethrow;
+      }
     }
-    final next = increment ? current + 1 : current - 1;
     ref.setValue(next);
     return prefix ? next : current;
   }
@@ -1936,3 +2420,7 @@ final class IncDec extends SpelNode {
       ? '${increment ? '++' : '--'}$target'
       : '$target${increment ? '++' : '--'}';
 }
+
+// The message of an error for EL inserts.
+String _messageOf(Object error) =>
+    error is AccessException ? error.message : '$error';

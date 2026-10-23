@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_core_dart/src/beans/aware.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
@@ -10,8 +12,12 @@ import 'package:spring_core_dart/src/beans/scope.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
+import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/log.dart';
 import 'package:spring_core_dart/src/core/order.dart';
+
+Type _typeOf<T>() => T;
 
 /// Injects a `@Configurable` object the container did not create.
 ///
@@ -91,6 +97,12 @@ class DefaultListableBeanFactory
   @override
   ConversionService conversionService = DefaultConversionService.sharedInstance;
 
+  /// Turns `@Value` strings into [Resource]s (like Spring's
+  /// `ResourceEditor`, registered by the context), so protocol resolvers
+  /// and asset loaders of the context apply; `null` falls back to the
+  /// [conversionService].
+  ResourceLoader? resourceLoader;
+
   @override
   BeanExpressionResolver? beanExpressionResolver;
 
@@ -123,6 +135,13 @@ class DefaultListableBeanFactory
   final _creationOrder = <String>{};
   // Singletons that have destroy callbacks to run.
   final _disposables = <String>{};
+  // Init callbacks that returned a Future, collected until the singletons
+  // are pre-instantiated; `null` afterwards (then such a callback fails
+  // the bean's creation).
+  List<(String, Future<void>)>? _pendingInits = [];
+  // Whether destroy callbacks returning a Future are awaited
+  // (destroySingletonsAsync) or logged (the synchronous paths).
+  bool _asyncDestroy = false;
   // Stack of beans being created; used for cycle detection and to know
   // which bean a lookup is made for.
   final _inCreation = <String>[];
@@ -1351,6 +1370,14 @@ class DefaultListableBeanFactory
     final Object? evaluated = expressionResolver == null
         ? resolved
         : expressionResolver.evaluate(resolved, this);
+    // A Resource comes from the context's loader, like Spring's
+    // ResourceEditor (consulted before the conversion service).
+    final loader = resourceLoader;
+    if (loader != null &&
+        evaluated is String &&
+        (T == Resource || T == _typeOf<Resource?>())) {
+      return loader.getResource(evaluated.trim()) as T;
+    }
     return optional
         ? conversionService.convert<T?>(evaluated)
         : conversionService.convert<T>(evaluated);
@@ -1528,19 +1555,35 @@ class DefaultListableBeanFactory
       exposed = processor.postProcessBeforeInitialization(exposed, name);
     }
     // Init callbacks run on the raw instance; a processor may already have
-    // wrapped it.
-    if (definition == null) {
-      _configurablePostConstruct[raw.runtimeType]?.call(raw);
-    } else {
-      definition.invokePostConstruct(raw);
-    }
+    // wrapped it. They run one after another, an asynchronous one awaited
+    // before the next; the bean is exposed while its Future is pending.
     final initializing = raw is InitializingBean;
-    if (raw is InitializingBean) {
-      raw.afterPropertiesSet();
-    }
-    // Like Spring, an init method named afterPropertiesSet runs once.
-    if (!(initializing && definition?.initMethodName == 'afterPropertiesSet')) {
-      definition?.invokeInitMethod(raw);
+    final init = _runInOrder(
+      [
+        if (definition == null)
+          () => _configurablePostConstruct[raw.runtimeType]?.call(raw)
+        else
+          () => definition.invokePostConstruct(raw),
+        if (raw is InitializingBean) raw.afterPropertiesSet,
+        // Like Spring, an init method named afterPropertiesSet runs once.
+        if (definition != null &&
+            !(initializing &&
+                definition.initMethodName == 'afterPropertiesSet'))
+          () => definition.invokeInitMethod(raw),
+      ].iterator,
+    );
+    if (init is Future<void>) {
+      final pending = _pendingInits;
+      if (pending == null) {
+        init.ignore();
+        throw StateError(
+          "An init callback of bean '$name' returned a Future. Asynchronous "
+          'init callbacks are awaited by refreshAsync() for the beans created '
+          'during the refresh; a bean created later (lazy, prototype, scoped) '
+          'needs synchronous ones.',
+        );
+      }
+      pending.add((name, init));
     }
     for (final processor in _postProcessors) {
       exposed = processor.postProcessAfterInitialization(exposed, name);
@@ -1601,6 +1644,42 @@ class DefaultListableBeanFactory
 
   @override
   void preInstantiateSingletons() {
+    final pending = _createEagerSingletons();
+    if (pending.isNotEmpty) {
+      for (final (_, future) in pending) {
+        future.ignore();
+      }
+      final (name, _) = pending.first;
+      throw BeanCreationException(
+        name,
+        StateError(
+          'An init callback returned a Future; refresh the context with '
+          'refreshAsync() to await asynchronous init callbacks.',
+        ),
+        StackTrace.current,
+      );
+    }
+    _afterSingletonsInstantiated();
+  }
+
+  @override
+  Future<void> preInstantiateSingletonsAsync() async {
+    final pending = _createEagerSingletons();
+    // Every Future gets its listener right away (no unhandled errors);
+    // the first failure wins, named after its bean.
+    await Future.wait<void>([
+      for (final (name, future) in pending)
+        future.catchError(
+          (Object error, StackTrace stackTrace) =>
+              throw BeanCreationException(name, error, stackTrace),
+        ),
+    ], eagerError: true);
+    _afterSingletonsInstantiated();
+  }
+
+  // Creates the eager singletons and ends the collection of asynchronous
+  // init callbacks, returning the pending ones.
+  List<(String, Future<void>)> _createEagerSingletons() {
     // Copy: creating beans may register further definitions.
     for (final definition in _definitions.values.toList()) {
       if (definition.isSingleton && !definition.lazy) {
@@ -1612,6 +1691,12 @@ class DefaultListableBeanFactory
         }
       }
     }
+    final pending = _pendingInits ?? const [];
+    _pendingInits = null;
+    return pending;
+  }
+
+  void _afterSingletonsInstantiated() {
     for (final name in _creationOrder.toList()) {
       final bean = _singletons[name];
       if (bean is SmartInitializingSingleton) {
@@ -1646,7 +1731,7 @@ class DefaultListableBeanFactory
         }
       }
       for (final dependency in definition.dependencies) {
-        targets.addAll(_validateDependency(definition, dependency));
+        targets.addAll(_checkedDependency(definition, dependency));
       }
     }
 
@@ -1678,6 +1763,35 @@ class DefaultListableBeanFactory
         candidate.beanName,
   ];
 
+  /// [_validateDependency] with a failure (a missing or ambiguous bean, a
+  /// placeholder without value) reported as an
+  /// [UnsatisfiedDependencyException] naming the bean and the injection
+  /// point, like a failure while the bean is created ([_injecting]).
+  List<String> _checkedDependency(
+    BeanDefinition<Object> definition,
+    Dependency dependency,
+  ) {
+    try {
+      return _validateDependency(definition, dependency);
+    } on BeansException catch (error, stackTrace) {
+      throw UnsatisfiedDependencyException(
+        definition.name,
+        dependency.toString(),
+        error.message,
+        cause: error,
+        causeStackTrace: stackTrace,
+      );
+    } on PlaceholderResolutionException catch (error, stackTrace) {
+      throw UnsatisfiedDependencyException(
+        definition.name,
+        dependency.toString(),
+        error.message,
+        cause: error,
+        causeStackTrace: stackTrace,
+      );
+    }
+  }
+
   /// Checks [dependency] and returns the names it points to.
   List<String> _validateDependency(
     BeanDefinition<Object> definition,
@@ -1690,16 +1804,7 @@ class DefaultListableBeanFactory
         return const [];
       case DependencyKind.value:
         if (!dependency.optional) {
-          try {
-            resolveEmbeddedValue(dependency.expression!);
-          } on PlaceholderResolutionException catch (error) {
-            throw UnsatisfiedDependencyException(
-              definition.name,
-              dependency.toString(),
-              error.message,
-              cause: error,
-            );
-          }
+          resolveEmbeddedValue(dependency.expression!);
         }
         return const [];
       case DependencyKind.collection || DependencyKind.map:
@@ -1773,11 +1878,32 @@ class DefaultListableBeanFactory
     _destroyingSingletons = true;
     try {
       for (final name in _creationOrder.toList().reversed) {
+        // Synchronous: a returned Future is logged by _guardDestruction.
         _destroySingleton(name);
       }
     } finally {
       _destroyingSingletons = false;
     }
+    _forgetSingletons();
+  }
+
+  @override
+  Future<void> destroySingletonsAsync() async {
+    _destructionErrors.clear();
+    _destroyingSingletons = true;
+    _asyncDestroy = true;
+    try {
+      for (final name in _creationOrder.toList().reversed) {
+        await _destroySingleton(name);
+      }
+    } finally {
+      _destroyingSingletons = false;
+      _asyncDestroy = false;
+    }
+    _forgetSingletons();
+  }
+
+  void _forgetSingletons() {
     _singletons.removeWhere((name, _) => !_manualDefinitions.containsKey(name));
     _rawSingletons.removeWhere(
       (name, _) => !_manualDefinitions.containsKey(name),
@@ -1792,16 +1918,26 @@ class DefaultListableBeanFactory
   /// Destroys [name] after every bean that depends on it and forgets its
   /// dependency bookkeeping, like Spring's `destroyBean(name, bean)`; each
   /// call costs the number of its dependencies, so shutdown is linear.
-  void _destroySingleton(String name) {
+  /// A `Future` when an awaited destroy callback is asynchronous.
+  FutureOr<void> _destroySingleton(String name) {
     // Removing the dependents first also stops recursion on cycles of
     // dependent registrations.
     final dependents = _dependents.remove(name);
-    if (dependents != null) {
-      for (final dependent in dependents) {
-        _dependencies[dependent]?.remove(name);
-        _destroySingleton(dependent);
-      }
-    }
+    return _runInOrder(
+      [
+        if (dependents != null)
+          for (final dependent in dependents)
+            () {
+              _dependencies[dependent]?.remove(name);
+              return _destroySingleton(dependent);
+            },
+        () => _destroyOwn(name),
+      ].iterator,
+    );
+  }
+
+  FutureOr<void> _destroyOwn(String name) {
+    FutureOr<void> destroyed;
     if (_creationOrder.remove(name)) {
       final exposed = _singletons.remove(name);
       final raw = _rawSingletons.remove(name);
@@ -1810,9 +1946,16 @@ class DefaultListableBeanFactory
           raw != null &&
           exposed != null &&
           definition != null) {
-        _destroyBean(definition, raw, exposed);
+        destroyed = _destroyBean(definition, raw, exposed);
       }
     }
+    if (destroyed is Future<void>) {
+      return destroyed.then((_) => _forgetDependencies(name));
+    }
+    _forgetDependencies(name);
+  }
+
+  void _forgetDependencies(String name) {
     _factoryProducts.remove(name);
     final dependencies = _dependencies.remove(name);
     if (dependencies != null) {
@@ -1827,27 +1970,33 @@ class DefaultListableBeanFactory
 
   /// Runs destruction post-processors (on the exposed bean), then
   /// `@PreDestroy`, `DisposableBean.destroy` and the destroy method (on the
-  /// raw bean). Errors are logged and collected in [destructionErrors].
-  void _destroyBean(
+  /// raw bean), one after another. Errors are logged and collected in
+  /// [destructionErrors]. A `Future` when a callback is asynchronous and
+  /// awaited (see [_guardDestruction]).
+  FutureOr<void> _destroyBean(
     BeanDefinition<Object> definition,
     Object raw,
     Object exposed,
   ) {
     final name = definition.name;
     _destructionAwareCallbacks(exposed, name);
-    _guardDestruction(name, () => definition.invokePreDestroy(raw));
     final disposable = raw is DisposableBean;
-    if (raw is DisposableBean) {
-      _guardDestruction(name, raw.destroy);
-    }
     // Like Spring, an inferred destroy method, or one named destroy, does
     // not run again for a DisposableBean.
     final destroyMethod = definition.destroyMethodName;
-    if (!(disposable &&
-        (destroyMethod == BeanDefinition.inferMethod ||
-            destroyMethod == 'destroy'))) {
-      _guardDestruction(name, () => definition.invokeDestroyMethod(raw));
-    }
+    return _runInOrder(
+      [
+        () => _guardDestruction(name, () => definition.invokePreDestroy(raw)),
+        if (raw is DisposableBean) () => _guardDestruction(name, raw.destroy),
+        if (!(disposable &&
+            (destroyMethod == BeanDefinition.inferMethod ||
+                destroyMethod == 'destroy')))
+          () => _guardDestruction(
+            name,
+            () => definition.invokeDestroyMethod(raw),
+          ),
+      ].iterator,
+    );
   }
 
   void _destructionAwareCallbacks(Object exposed, String name) {
@@ -1862,17 +2011,45 @@ class DefaultListableBeanFactory
     }
   }
 
-  void _guardDestruction(String name, void Function() callback) {
+  // Runs a destroy callback: errors are logged and collected. A returned
+  // Future is awaited in destroySingletonsAsync; elsewhere the callback
+  // goes on unawaited, its errors logged too, and the bean is reported.
+  FutureOr<void> _guardDestruction(
+    String name,
+    FutureOr<void> Function() callback,
+  ) {
     try {
-      callback();
+      final result = callback();
+      if (result is Future<void>) {
+        final guarded = result.then(
+          (_) {},
+          onError: (Object error, StackTrace stackTrace) =>
+              _destructionFailed(name, error, stackTrace),
+        );
+        if (_asyncDestroy) {
+          return guarded;
+        }
+        _destructionFailed(
+          name,
+          StateError(
+            'A destroy callback returned a Future that is not awaited; '
+            'close the context with closeAsync() to await it.',
+          ),
+          StackTrace.current,
+        );
+      }
     } catch (error, stackTrace) {
-      _destructionErrors.add(error);
-      _destroyLog.warning(
-        "Destroy callback of bean '$name' failed",
-        error: error,
-        stackTrace: stackTrace,
-      );
+      _destructionFailed(name, error, stackTrace);
     }
+  }
+
+  void _destructionFailed(String name, Object error, StackTrace stackTrace) {
+    _destructionErrors.add(error);
+    _destroyLog.warning(
+      "Destroy callback of bean '$name' failed",
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   // Expando keys cannot be numbers, strings, booleans or records.
@@ -2070,3 +2247,15 @@ const _log = SpringLog('spring_core_dart.beans');
 const _destroyLog = SpringLog(
   'spring_core_dart.beans.factory.support.DisposableBeanAdapter',
 );
+
+/// Runs [steps] one after another; when one returns a `Future`, the rest
+/// run after it completes and the result is a `Future` (synchronous
+/// otherwise).
+FutureOr<void> _runInOrder(Iterator<FutureOr<void> Function()> steps) {
+  while (steps.moveNext()) {
+    final result = steps.current();
+    if (result is Future<void>) {
+      return result.then((_) => _runInOrder(steps));
+    }
+  }
+}

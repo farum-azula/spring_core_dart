@@ -5,6 +5,7 @@
 - `withPropertyValues` accepts `key:value` like `TestPropertyValues`; breaking: values are trimmed
 - `springBootTest(dynamicProperties:)` with `DynamicPropertyRegistry`: properties evaluated when the context starts (`@DynamicPropertySource`)
 - `app.output` no longer holds the startup line (Spring Boot's startup info is now logged through `SpringLog`)
+- `springBootTest` keeps the application's auto-configuration order and exclusions, and does not register the shutdown hook (it closes its own context)
 
 ## 0.1.6
 

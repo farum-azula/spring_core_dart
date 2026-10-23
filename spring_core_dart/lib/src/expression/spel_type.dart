@@ -2,12 +2,14 @@ import 'dart:math' as math;
 
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 
-/// A type usable in `T(Name)`, `new Name(...)` and `instanceof`, registered
-/// in a [StandardTypeLocator] (Dart cannot look up classes by name).
+/// A type usable in `T(Name)`, `new Name(...)`, `new Name[n]` and
+/// `instanceof`, registered in a [StandardTypeLocator] (Dart cannot look up
+/// classes by name).
 ///
-/// Statics and constructors are plain functions, so only what you register
-/// is reachable from expressions.
+/// Statics and constructors are plain functions (or [VarargsFunction]s),
+/// so only what you register is reachable from expressions.
 ///
 /// ```dart
 /// final locator = StandardTypeLocator()
@@ -22,6 +24,7 @@ import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 /// parser.parseExpression('T(Point).ORIGIN').getValue(context);
 /// parser.parseExpression("T(Point).parse('1,2')").getValue(context);
 /// parser.parseExpression('new Point(1, 2)').getValue(context);
+/// parser.parseExpression('new Point[2]').getValue(context); // [null, null]
 /// parser.parseExpression('#p instanceof T(Point)').getValue(context);
 /// ```
 ///
@@ -37,17 +40,38 @@ final class SpelType {
   /// Use [SpelType.of] when there is a Dart type; this constructor is for
   /// pseudo-types without instances such as `Math`.
   SpelType(
-    this.name, {
-    required this._isInstance,
-    this.type,
+    String name, {
+    required bool Function(Object? value) isInstance,
+    Type? type,
     Map<String, Object? Function()> staticFields = const {},
-    Map<String, Function> staticMethods = const {},
-    Map<String, Function> constructors = const {},
-  }) : staticFields = Map.unmodifiable(staticFields),
-       staticMethods = Map.unmodifiable(staticMethods),
-       constructors = Map.unmodifiable(constructors);
+    Map<String, Object> staticMethods = const {},
+    Map<String, Object> constructors = const {},
+  }) : this._(
+         name,
+         isInstance,
+         type,
+         staticFields,
+         staticMethods,
+         constructors,
+         _objectList,
+         _objectListOf,
+       );
 
-  /// A type for [T] (instance check from the type argument).
+  SpelType._(
+    this.name,
+    this._isInstance,
+    this.type,
+    Map<String, Object? Function()> staticFields,
+    Map<String, Object> staticMethods,
+    Map<String, Object> constructors,
+    this._newList,
+    this._listOf,
+  ) : staticFields = Map.unmodifiable(staticFields),
+      staticMethods = Map.unmodifiable(staticMethods),
+      constructors = Map.unmodifiable(constructors);
+
+  /// A type for [T] (instance check and array element type from the type
+  /// argument).
   ///
   /// ```dart
   /// SpelType.of<User>('User', constructors: {'': User.new});
@@ -55,16 +79,28 @@ final class SpelType {
   static SpelType of<T>(
     String name, {
     Map<String, Object? Function()> staticFields = const {},
-    Map<String, Function> staticMethods = const {},
-    Map<String, Function> constructors = const {},
-  }) => SpelType(
+    Map<String, Object> staticMethods = const {},
+    Map<String, Object> constructors = const {},
+  }) => SpelType._(
     name,
-    type: T,
-    isInstance: (value) => value is T,
-    staticFields: staticFields,
-    staticMethods: staticMethods,
-    constructors: constructors,
+    (value) => value is T,
+    T,
+    staticFields,
+    staticMethods,
+    constructors,
+    (length, fill) => fill is T
+        ? List<T>.filled(length, fill, growable: true)
+        : List<T?>.filled(length, null, growable: true),
+    (elements) => elements.every((e) => e is T)
+        ? List<T>.of(elements.cast<T>())
+        : List<T?>.of(elements.cast<T?>()),
   );
+
+  static List<Object?> _objectList(int length, Object? fill) =>
+      List<Object?>.filled(length, fill, growable: true);
+
+  static List<Object?> _objectListOf(List<Object?> elements) =>
+      List<Object?>.of(elements);
 
   /// The name used in `T(name)` and `new name(...)`.
   final String name;
@@ -72,28 +108,163 @@ final class SpelType {
   /// The Dart type, if there is one (`Math` has none).
   final Type? type;
   final bool Function(Object? value) _isInstance;
+  final List<Object?> Function(int length, Object? fill) _newList;
+  final List<Object?> Function(List<Object?> elements) _listOf;
 
   /// `T(Name).FIELD` values.
   final Map<String, Object? Function()> staticFields;
 
-  /// `T(Name).method(args)` functions.
-  final Map<String, Function> staticMethods;
+  /// `T(Name).method(args)` functions (Dart functions or
+  /// [VarargsFunction]s).
+  final Map<String, Object> staticMethods;
 
-  /// `new Name(args)` functions; `''` is the default constructor.
-  final Map<String, Function> constructors;
+  /// `new Name(args)` functions (Dart functions or [VarargsFunction]s);
+  /// `''` is the default constructor.
+  final Map<String, Object> constructors;
 
   /// Whether [value] is an instance of this type (`instanceof`).
   bool isInstance(Object? value) => _isInstance(value);
+
+  /// A growable list of [length] elements of this type, all [fill]
+  /// (`new Name[length]`; a `List<T?>` when [fill] is `null`).
+  List<Object?> newArray(int length, [Object? fill]) => _newList(length, fill);
+
+  /// A list of this element type holding [elements] (`new Name[]{...}`;
+  /// a `List<T?>` when an element is `null`).
+  List<Object?> arrayOf(List<Object?> elements) => _listOf(elements);
 
   @override
   String toString() => 'T($name)';
 }
 
+/// A function taking a variable number of trailing arguments, like a Java
+/// varargs method (`String.join(delimiter, String... elements)`).
+///
+/// Dart has no varargs: wrap the function and it is called with the first
+/// [fixedArity] arguments followed by a `List` of the rest. Accepted by
+/// `StandardEvaluationContext.registerFunction`, `SpelType.staticMethods`
+/// and `SpelType.constructors`.
+///
+/// ```dart
+/// context.registerFunction(
+///   'sum',
+///   VarargsFunction((List<Object?> numbers) =>
+///       numbers.fold<num>(0, (a, b) => a + (b! as num))),
+/// );
+/// parser.parseExpression('#sum(1, 2, 3)').getValue(context); // 6
+/// parser.parseExpression('#sum()').getValue(context); // 0
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// public static int sum(int... numbers) { ... }
+/// context.registerFunction("sum",
+///     MathUtils.class.getMethod("sum", int[].class));
+/// parser.parseExpression("#sum(1, 2, 3)").getValue(context); // 6
+/// ```
+final class VarargsFunction {
+  /// Wraps [function], which takes [fixedArity] positional parameters
+  /// followed by one `List<Object?>` parameter for the rest.
+  const VarargsFunction(this.function, {this.fixedArity = 0});
+
+  /// The wrapped function.
+  final Function function;
+
+  /// How many leading arguments are passed individually.
+  final int fixedArity;
+
+  /// Whether [function] (a Dart `Function` or a [VarargsFunction]) can be
+  /// called with [count] positional arguments; `true` when this cannot be
+  /// told (more than 8 arguments).
+  static bool accepts(Object function, int count) => switch (function) {
+    VarargsFunction(:final fixedArity) => count >= fixedArity,
+    Function() => switch (count) {
+      0 => function is Object? Function(),
+      1 => function is Object? Function(Never),
+      2 => function is Object? Function(Never, Never),
+      3 => function is Object? Function(Never, Never, Never),
+      4 => function is Object? Function(Never, Never, Never, Never),
+      5 => function is Object? Function(Never, Never, Never, Never, Never),
+      6 =>
+        function is Object? Function(Never, Never, Never, Never, Never, Never),
+      7 =>
+        function
+            is Object? Function(
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+            ),
+      8 =>
+        function
+            is Object? Function(
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+              Never,
+            ),
+      _ => true,
+    },
+    _ => false,
+  };
+
+  /// The smallest number of arguments [function] accepts (for messages),
+  /// or `null` when unknown.
+  static int? minimumArity(Object function) {
+    for (var count = 0; count <= 8; count++) {
+      if (accepts(function, count)) {
+        return count;
+      }
+    }
+    return null;
+  }
+
+  /// Calls [function] (a Dart `Function` or a [VarargsFunction]) with
+  /// [arguments].
+  ///
+  /// Throws a `NoSuchMethodError` when the arguments do not fit, and
+  /// whatever the function throws.
+  static Object? apply(Object function, List<Object?> arguments) {
+    switch (function) {
+      case VarargsFunction(:final function, :final fixedArity):
+        if (arguments.length < fixedArity) {
+          throw NoSuchMethodError.withInvocation(
+            function,
+            Invocation.method(#call, arguments),
+          );
+        }
+        return Function.apply(function, [
+          ...arguments.take(fixedArity),
+          arguments.sublist(fixedArity),
+        ]);
+      case Function():
+        return Function.apply(function, arguments);
+      default:
+        throw NoSuchMethodError.withInvocation(
+          function,
+          Invocation.method(#call, arguments),
+        );
+    }
+  }
+}
+
 /// Registry-based [TypeLocator], like Spring's `StandardTypeLocator`.
 ///
-/// Pre-registered: `int`, `double`, `num`, `String`, `bool`, `Object`,
-/// `List`, `Map`, `Set`, `DateTime`, `Duration`, `Math` (`PI`, `E`,
-/// `max`, `min`, `abs`, `sqrt`, `pow`, `round`, `floor`, `ceil`, `random`).
+/// Pre-registered: the Dart types `int`, `double`, `num`, `String`,
+/// `bool`, `Object`, `List`, `Map`, `Set`, `DateTime`, `Duration`, the
+/// pseudo-type `Math` (Java's `java.lang.Math`), and Java names that map
+/// onto Dart types: `Integer`, `Long`, `Short`, `Byte` (`int`), `Double`,
+/// `Float` (`double`), `Number` (`num`), `Boolean` (`bool`), `long`,
+/// `short`, `byte`, `float`, `boolean`, `ArrayList`, `HashMap`,
+/// `LinkedHashMap`, `HashSet`, `LinkedHashSet`. Names may carry an import
+/// prefix (`java.lang.Integer`, `java.util.List`).
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()
@@ -102,6 +273,7 @@ final class SpelType {
 ///         constructors: {'': User.new})));
 /// final parser = SpelExpressionParser();
 /// parser.parseExpression('T(Math).max(1, 2)').getValue(context); // 2
+/// parser.parseExpression("T(Integer).parseInt('7')").getValue(context);
 /// parser.parseExpression("new User('Ada')").getValue(context);
 /// ```
 ///
@@ -113,7 +285,8 @@ final class SpelType {
 /// parser.parseExpression("new com.example.User('Ada')").getValue(context);
 /// ```
 class StandardTypeLocator implements TypeLocator {
-  /// Creates a locator with the pre-registered core types.
+  /// Creates a locator with the pre-registered types and the import
+  /// prefixes `java.lang`, `java.util` and `dart.core`.
   StandardTypeLocator() {
     for (final type in _defaults()) {
       registerType(type);
@@ -121,6 +294,7 @@ class StandardTypeLocator implements TypeLocator {
   }
 
   final _types = <String, SpelType>{};
+  final _imports = <String>['java.lang', 'java.util', 'dart.core'];
 
   /// Adds or replaces [type].
   void registerType(SpelType type) => _types[type.name] = type;
@@ -128,15 +302,152 @@ class StandardTypeLocator implements TypeLocator {
   /// Names of the registered types.
   Iterable<String> get typeNames => _types.keys;
 
+  /// Adds an import prefix (Spring's `registerImport`): `T(app.Point)`
+  /// then finds a type registered as `Point`, and `T(Point)` one
+  /// registered as `app.Point`.
+  void registerImport(String prefix) => _imports.add(prefix);
+
+  /// Removes an import prefix (Spring's `removeImport`).
+  void removeImport(String prefix) => _imports.remove(prefix);
+
+  /// The import prefixes (Spring's `getImportPrefixes`), unmodifiable.
+  List<String> get importPrefixes => List.unmodifiable(_imports);
+
   @override
-  SpelType findType(String typeName) =>
-      _types[typeName] ??
-      (throw SpelEvaluationException(
-        SpelMessage.typeNotFound,
-        "Type '$typeName' is not registered in the TypeLocator",
-      ));
+  SpelType findType(String typeName) {
+    final exact = _types[typeName];
+    if (exact != null) {
+      return exact;
+    }
+    for (final prefix in _imports) {
+      final candidate = typeName.startsWith('$prefix.')
+          ? _types[typeName.substring(prefix.length + 1)]
+          : _types['$prefix.$typeName'];
+      if (candidate != null) {
+        return candidate;
+      }
+    }
+    throw SpelEvaluationException(
+      SpelMessage.typeNotFound,
+      inserts: [typeName],
+    );
+  }
 
   static final _random = math.Random();
+
+  static num _widen(num a, num b, num result) =>
+      a is double || b is double ? result.toDouble() : result;
+
+  // Statics of Java's Integer / Long / Short / Byte.
+  static SpelType _javaInteger(String name, int min, int max) =>
+      SpelType.of<int>(
+        name,
+        staticFields: {'MAX_VALUE': () => max, 'MIN_VALUE': () => min},
+        staticMethods: {
+          'parseInt': _parseJavaInt,
+          'parseLong': _parseJavaInt,
+          'valueOf': (Object value) =>
+              value is int ? value : _parseJavaInt(value.toString()),
+          'toString': (int value, [int radix = 10]) =>
+              value.toRadixString(radix),
+          'toHexString': (int value) => value.toRadixString(16),
+          'toBinaryString': (int value) => value.toRadixString(2),
+          'max': (int a, int b) => math.max(a, b),
+          'min': (int a, int b) => math.min(a, b),
+          'sum': (int a, int b) => a + b,
+          'compare': (int a, int b) => a.compareTo(b),
+          'signum': (int a) => a.sign,
+          'abs': (int a) => a.abs(),
+        },
+      );
+
+  static int _parseJavaInt(String value, [int radix = 10]) =>
+      int.parse(value, radix: radix);
+
+  static SpelType _javaDouble(String name) => SpelType.of<double>(
+    name,
+    staticFields: {
+      'MAX_VALUE': () => double.maxFinite,
+      'MIN_VALUE': () => double.minPositive,
+      'NaN': () => double.nan,
+      'POSITIVE_INFINITY': () => double.infinity,
+      'NEGATIVE_INFINITY': () => double.negativeInfinity,
+    },
+    staticMethods: {
+      'parseDouble': double.parse,
+      'parseFloat': double.parse,
+      'valueOf': (Object value) =>
+          value is num ? value.toDouble() : double.parse(value.toString()),
+      'isNaN': (num value) => value.isNaN,
+      'isInfinite': (num value) => value.isInfinite,
+      'isFinite': (num value) => value.isFinite,
+      'max': (num a, num b) => math.max(a, b).toDouble(),
+      'min': (num a, num b) => math.min(a, b).toDouble(),
+      'sum': (num a, num b) => (a + b).toDouble(),
+      'compare': (num a, num b) => a.compareTo(b),
+    },
+  );
+
+  static SpelType _javaBoolean(String name) => SpelType.of<bool>(
+    name,
+    staticFields: {'TRUE': () => true, 'FALSE': () => false},
+    staticMethods: {
+      'parseBoolean': (String? value) => value?.toLowerCase() == 'true',
+      'valueOf': (Object? value) =>
+          value is bool ? value : '$value'.toLowerCase() == 'true',
+      'logicalAnd': (bool a, bool b) => a && b,
+      'logicalOr': (bool a, bool b) => a || b,
+      'logicalXor': (bool a, bool b) => a != b,
+    },
+  );
+
+  static SpelType _list(String name) => SpelType.of<List<Object?>>(
+    name,
+    constructors: {
+      '': ([Object? source]) =>
+          source is Iterable ? List<Object?>.of(source) : <Object?>[],
+    },
+    staticMethods: {
+      // Java's List.of(E...): an unmodifiable list of the arguments.
+      'of': VarargsFunction(List<Object?>.unmodifiable),
+      'copyOf': (Iterable<Object?> items) => List<Object?>.unmodifiable(items),
+    },
+  );
+
+  static SpelType _map(String name) => SpelType.of<Map<Object?, Object?>>(
+    name,
+    constructors: {
+      '': ([Map<Object?, Object?>? source]) =>
+          source == null ? <Object?, Object?>{} : {...source},
+    },
+    staticMethods: {
+      // Java's Map.of(k1, v1, k2, v2, ...).
+      'of': VarargsFunction((List<Object?> keysAndValues) {
+        if (keysAndValues.length.isOdd) {
+          throw ArgumentError('Map.of needs keys and values in pairs');
+        }
+        return Map<Object?, Object?>.unmodifiable({
+          for (var i = 0; i < keysAndValues.length; i += 2)
+            keysAndValues[i]: keysAndValues[i + 1],
+        });
+      }),
+      'copyOf': (Map<Object?, Object?> map) =>
+          Map<Object?, Object?>.unmodifiable(map),
+    },
+  );
+
+  static SpelType _set(String name) => SpelType.of<Set<Object?>>(
+    name,
+    constructors: {
+      '': ([Object? source]) =>
+          source is Iterable ? Set<Object?>.of(source) : <Object?>{},
+    },
+    staticMethods: {
+      // Java's Set.of(E...).
+      'of': VarargsFunction(Set<Object?>.unmodifiable),
+      'copyOf': (Iterable<Object?> items) => Set<Object?>.unmodifiable(items),
+    },
+  );
 
   // Core types with Java-flavoured statics (MAX_VALUE, valueOf, ofMillis,
   // ...) so typical Spring expressions keep working.
@@ -170,6 +481,15 @@ class StandardTypeLocator implements TypeLocator {
       staticMethods: {
         'valueOf': (Object? value) => '$value',
         'fromCharCode': String.fromCharCode,
+        'fromCharCodes': (Iterable<int> codes) => String.fromCharCodes(codes),
+        // Java's String.join(delimiter, elements...) or (delimiter,
+        // iterable).
+        'join': VarargsFunction((Object? delimiter, List<Object?> elements) {
+          final items = elements.length == 1 && elements.single is Iterable
+              ? elements.single! as Iterable<Object?>
+              : elements;
+          return items.join('$delimiter');
+        }, fixedArity: 1),
       },
     ),
     SpelType.of<bool>(
@@ -177,18 +497,14 @@ class StandardTypeLocator implements TypeLocator {
       staticMethods: {'parse': (String v) => v.toLowerCase() == 'true'},
     ),
     SpelType.of<Object>('Object', constructors: {'': Object.new}),
-    SpelType.of<List<Object?>>(
-      'List',
-      constructors: {'': () => <Object?>[]},
-      staticMethods: {
-        'of': (Iterable<Object?> items) => List<Object?>.of(items),
-      },
-    ),
-    SpelType.of<Map<Object?, Object?>>(
-      'Map',
-      constructors: {'': () => <Object?, Object?>{}},
-    ),
-    SpelType.of<Set<Object?>>('Set', constructors: {'': () => <Object?>{}}),
+    _list('List'),
+    _list('ArrayList'),
+    _map('Map'),
+    _map('HashMap'),
+    _map('LinkedHashMap'),
+    _set('Set'),
+    _set('HashSet'),
+    _set('LinkedHashSet'),
     SpelType.of<DateTime>(
       'DateTime',
       constructors: {
@@ -213,23 +529,67 @@ class StandardTypeLocator implements TypeLocator {
         'ofDays': (int value) => Duration(days: value),
       },
     ),
+    // Java names mapped onto Dart types.
+    _javaInteger('Integer', -2147483648, 2147483647),
+    _javaInteger('Long', minJavaLong, maxJavaLong),
+    _javaInteger('Short', -32768, 32767),
+    _javaInteger('Byte', -128, 127),
+    _javaInteger('long', minJavaLong, maxJavaLong),
+    _javaInteger('short', -32768, 32767),
+    _javaInteger('byte', -128, 127),
+    _javaDouble('Double'),
+    _javaDouble('Float'),
+    _javaDouble('float'),
+    SpelType.of<num>('Number'),
+    _javaBoolean('Boolean'),
+    _javaBoolean('boolean'),
+    // java.lang.Math: real functions return doubles, like Java.
     SpelType(
       'Math',
       isInstance: (_) => false,
       staticFields: {'PI': () => math.pi, 'E': () => math.e},
       staticMethods: {
-        'max': (num a, num b) => math.max(a, b),
-        'min': (num a, num b) => math.min(a, b),
+        'max': (num a, num b) => _widen(a, b, math.max(a, b)),
+        'min': (num a, num b) => _widen(a, b, math.min(a, b)),
         'abs': (num a) => a.abs(),
         'sqrt': (num a) => math.sqrt(a),
-        'pow': (num a, num b) => math.pow(a, b),
-        'round': (num a) => a.round(),
-        'floor': (num a) => a.floor(),
-        'ceil': (num a) => a.ceil(),
+        'cbrt': (num a) => a < 0
+            ? -math.pow(-a.toDouble(), 1 / 3).toDouble()
+            : math.pow(a.toDouble(), 1 / 3).toDouble(),
+        'pow': (num a, num b) => math.pow(a.toDouble(), b.toDouble()),
+        'exp': (num a) => math.exp(a),
+        'log': (num a) => math.log(a),
+        'log10': (num a) => math.log(a) / math.ln10,
+        'sin': (num a) => math.sin(a),
+        'cos': (num a) => math.cos(a),
+        'tan': (num a) => math.tan(a),
+        'asin': (num a) => math.asin(a),
+        'acos': (num a) => math.acos(a),
+        'atan': (num a) => math.atan(a),
+        'atan2': (num y, num x) => math.atan2(y, x),
+        'hypot': (num x, num y) => math.sqrt(x * x + y * y),
+        'toRadians': (num a) => a * math.pi / 180,
+        'toDegrees': (num a) => a * 180 / math.pi,
+        // Java: round(x) is floor(x + 0.5) as a long; floor and ceil are
+        // doubles.
+        'round': (num a) =>
+            a is int ? a : toJavaLong((a + 0.5).floorToDouble()),
+        'floor': (num a) => a.toDouble().floorToDouble(),
+        'ceil': (num a) => a.toDouble().ceilToDouble(),
+        'rint': (num a) => a.toDouble().roundToDouble(),
+        'signum': (num a) => a.toDouble().sign,
+        'floorDiv': _floorDiv,
+        'floorMod': (int a, int b) => a - _floorDiv(a, b) * b,
         'random': _random.nextDouble,
       },
     ),
   ];
+
+  // Java's Math.floorDiv: the quotient rounded towards negative infinity.
+  static int _floorDiv(int a, int b) {
+    final quotient = a ~/ b;
+    return a.remainder(b) != 0 && (a < 0) != (b < 0) ? quotient - 1 : quotient;
+  }
 }
 
 /// Resolves methods of registered types used as `T(Name).method(...)`.
@@ -263,8 +623,96 @@ final class SpelTypeMethodResolver implements MethodResolver {
       return null;
     }
     final function = target.staticMethods[name];
-    return function == null
-        ? null
-        : (_, _, args) => Function.apply(function, args);
+    if (function == null ||
+        !VarargsFunction.accepts(function, arguments.length)) {
+      return null;
+    }
+    return (_, _, args) => callChecked(
+      function,
+      args,
+      () => SpelEvaluationException(
+        SpelMessage.methodNotFound,
+        inserts: ['$name(${_types(args)})', target],
+      ),
+    );
+  }
+
+  /// Calls [function] with [arguments]; a `NoSuchMethodError` or
+  /// `TypeError` (arguments that do not fit, as Dart cannot tell them from
+  /// errors inside the function) becomes [notFound]; anything else the
+  /// function throws propagates unchanged.
+  static Object? callChecked(
+    Object function,
+    List<Object?> arguments,
+    SpelEvaluationException Function() notFound,
+  ) {
+    try {
+      return VarargsFunction.apply(function, arguments);
+    } on NoSuchMethodError catch (error, stackTrace) {
+      Error.throwWithStackTrace(_withCause(notFound(), error), stackTrace);
+    } on TypeError catch (error, stackTrace) {
+      Error.throwWithStackTrace(_withCause(notFound(), error), stackTrace);
+    }
+  }
+
+  static SpelEvaluationException _withCause(
+    SpelEvaluationException error,
+    Object cause,
+  ) => SpelEvaluationException(
+    error.messageCode,
+    inserts: error.inserts,
+    cause: cause,
+  );
+
+  static String _types(List<Object?> args) =>
+      args.map((a) => a == null ? 'null' : '${a.runtimeType}').join(',');
+}
+
+/// Resolves `new Name(...)` with the constructors registered on a
+/// [SpelType], the counterpart of Spring's `ReflectiveConstructorResolver`.
+///
+/// Registered by default in `StandardEvaluationContext`. A
+/// `NoSuchMethodError` or `TypeError` from the call (arguments that do not
+/// fit) is reported as `SpelMessage.constructorNotFound`; anything else the
+/// constructor throws propagates unchanged, like Spring.
+///
+/// ```dart
+/// final context = StandardEvaluationContext()
+///   ..typeLocator = (StandardTypeLocator()
+///     ..registerType(SpelType.of<Point>('Point',
+///         constructors: {'': Point.new})));
+/// SpelExpressionParser().parseExpression('new Point(1, 2)')
+///     .getValue(context);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// // ReflectiveConstructorResolver finds Point(int, int) by reflection.
+/// parser.parseExpression("new com.example.Point(1, 2)").getValue(context);
+/// ```
+final class SpelTypeConstructorResolver implements ConstructorResolver {
+  /// Creates the resolver (stateless).
+  const SpelTypeConstructorResolver();
+
+  @override
+  ConstructorExecutor? resolve(
+    EvaluationContext context,
+    String typeName,
+    List<Object?> arguments,
+  ) {
+    final type = context.typeLocator.findType(typeName);
+    final constructor = type.constructors[''];
+    if (constructor == null ||
+        !VarargsFunction.accepts(constructor, arguments.length)) {
+      return null;
+    }
+    return (_, args) => SpelTypeMethodResolver.callChecked(
+      constructor,
+      args,
+      () => SpelEvaluationException(
+        SpelMessage.constructorNotFound,
+        inserts: [typeName, '(${SpelTypeMethodResolver._types(args)})'],
+      ),
+    );
   }
 }

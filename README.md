@@ -256,16 +256,29 @@ class StockForm(@NotBlank() var String sku, {@Min(1) var int quantity = 1});
 
 Selection when several beans match: the only candidate, else the single
 `@Primary`, else the only non-`@Fallback`, else the one named like the
-parameter. A bean is never injected into itself (Spring's self-reference
-rule), so a `@Primary` composite or decorator of `Greeter` receives the
-*other* greeters. A constructor or `@Bean` parameter with a Dart default
-value keeps the default when no bean (or property) is found, and a required
-`List`/`Set`/`Map` there is empty when nothing matches (Spring's
-single-constructor fallback; field and setter injection still require a
-bean). `List<T>` / `Set<T>` / `Map<String, T>` receive every candidate
-(also from parent contexts) sorted by `PriorityOrdered` → `Ordered` →
-`@Order`. `BeanFactory`, `ApplicationContext`, `ApplicationEventPublisher`,
-`ResourceLoader` and `Environment` can be injected.
+parameter. A bean's name or alias (also one from `registerAlias`) matches
+`@Qualifier` and the parameter name. A bean with `autowireCandidate: false`
+is never injected, not even through a `@Qualifier`, but `getBean` still
+finds it by name or as the only bean of its type. A bean is never injected
+into itself (Spring's self-reference rule), so a `@Primary` composite or
+decorator of `Greeter` receives the *other* greeters. A constructor or
+`@Bean` parameter with a Dart default value keeps the default when no bean
+(or property) is found, and a required `List`/`Set`/`Map` there is empty
+when nothing matches (Spring's single-constructor fallback; field and setter
+injection still require a bean). `List<T>` / `Set<T>` / `Map<String, T>`
+receive every candidate (also from parent contexts); only a `List` is
+sorted, by `PriorityOrdered` → `Ordered` → `@Order` (an `@Order` on a
+`@Bean` method beats the bean's `Ordered.order`, an `@Order` on its class
+does not), a `Set` or `Map` keeps registration order. `BeanFactory`,
+`ApplicationContext`, `ApplicationEventPublisher`, `ResourceLoader` and
+`Environment` can be injected.
+
+A dependency that cannot be resolved (no bean, several candidates, a
+dependency that fails to create) fails `refresh()` or the bean's creation
+with an `UnsatisfiedDependencyException` naming the bean and the injection
+point (`Bean 'shop' has an unsatisfied dependency Greeter 'greeter': ...`);
+its `cause` is the lookup error or the nested bean's failure, so the message
+shows the chain of beans.
 
 `@Value` resolves `${key:default}` placeholders, evaluates `#{...}` SpEL and
 converts the result to the target type (`int`, `Duration`, `List<String>`,
@@ -288,12 +301,33 @@ Creation: constructor → fields/setters/methods → `BeanNameAware` /
 first): `DestructionAwareBeanPostProcessor` → `@PreDestroy` →
 `DisposableBean.destroy` → destroy method.
 
+Asynchronous callbacks: an init callback (`@PostConstruct`,
+`afterPropertiesSet`, init method) or a destroy callback (`@PreDestroy`,
+`DisposableBean.destroy`, destroy method) may return a `Future`.
+`refreshAsync()` (also `ApplicationContext.runAsync`, Spring Boot's
+`runAsync`) awaits the init callbacks of the beans created during the
+refresh — each bean's one after another; the bean is injected into others
+meanwhile — before `SmartInitializingSingleton`, the lifecycle start and
+`ContextRefreshedEvent`; a failure fails the refresh naming the bean. The
+synchronous `refresh()` fails for such a callback, and a bean created
+after the refresh (lazy, prototype, scoped) needs synchronous ones.
+`closeAsync()` awaits the destroy callbacks, dependents first; `close()`
+logs an asynchronous one and goes on without waiting.
+
 `SmartInitializingSingleton` runs after all eager singletons;
 `Lifecycle` / `SmartLifecycle` beans are started by phase (auto-startup at
-refresh) and stopped in reverse on `stop()` / `close()`; a lazy plain
-`Lifecycle` bean is not created for that, like Spring. Mix in
-`SmartLifecycle` (`with`) for Spring's defaults (auto-startup, default
-phase). Like Spring's `doClose`, `close()` never throws because of a failing `ContextClosedEvent`
+refresh) and stopped in reverse on `stop()` / `close()`; a bean's
+dependencies start before it and its dependents stop before it, whatever
+their phase (a plain `Lifecycle` dependency of an auto-startup bean starts
+at refresh); a lazy plain `Lifecycle` bean is not created for that, like
+Spring. Mix in `SmartLifecycle` (`with`) for Spring's defaults
+(auto-startup, default phase). `closeAsync()` waits for the
+`stopWithCallback` callbacks of each phase, at most
+`DefaultLifecycleProcessor.timeoutPerShutdownPhase` (10 seconds) or the
+phase's entry in `timeoutsForShutdownPhases` (declare a
+`lifecycleProcessor` bean to change them); then the beans still running
+are logged and the next phase is stopped. When a refresh fails, the beans
+started so far are stopped. Like Spring's `doClose`, `close()` never throws because of a failing `ContextClosedEvent`
 listener or a bean that fails to stop: the error is logged and shutdown
 continues (a `close()` from a `ContextClosedEvent` listener is ignored; one
 from a `ContextRefreshedEvent` listener closes the context, like Spring).
@@ -319,9 +353,17 @@ Problems the framework recovers from are logged through `SpringLog`
   location). Also `spring.config.location` / `additional-location` (`,`
   separates groups, `;` joins locations into one) / `name`, multi-doc files
   (`#---`, YAML `---`) with `spring.config.activate.on-profile`,
-  `spring.config.import`, `spring.profiles.include` / `group.*`,
-  `optional:` locations. Works with async-only resources (Flutter assets)
-  via `processAndApply()`.
+  `spring.config.import` (files or directories, relative to the importing
+  file, with their `-{profile}` variants; also from the command line or
+  `SPRING_CONFIG_IMPORT`, above every location), `spring.profiles.include`
+  / `group.*`, `optional:` locations (a non-optional file or directory that
+  does not exist fails the start). Profiles follow Boot's rules: the
+  command line wins over a file's `spring.profiles.active`, profiles set
+  with `setActiveProfiles` are kept and the file's added after them,
+  `spring.profiles.default` (file, command line or environment) selects
+  the profile files while none is active, groups expanded. A
+  `defaultProperties` source stays below the config files. Works with
+  async-only resources (Flutter assets) via `processAndApply()`.
 - YAML is flattened like Boot's `YamlPropertySourceLoader`: `app.hosts[0]`,
   `app.servers[0].name`, empty values and `~` as `''`. `@Value` and
   `getProperty('app.hosts[0]')` see list items; `@ConfigurationProperties`
@@ -354,6 +396,23 @@ modules in the application; `@Import([OtherConfig])` pulls in configuration
 classes outside the scan. Contexts can have a parent; beans of the parent
 are visible to the child.
 
+The scan takes Spring's filters, evaluated at build time: `includeFilters`
+make classes beans without `@Component` (`Filter(classes: [Plugin])` for an
+annotation, `Filter(type: FilterType.assignableType, classes: [Handler])`,
+`Filter(type: FilterType.regex, pattern: ['.*Repository'])` on the class
+name; abstract classes are skipped), `excludeFilters` keep classes out
+(they win), `useDefaultFilters: false` scans only the includes and
+`lazyInit: true` makes every scanned bean (components and their `@Bean`
+methods) lazy unless annotated `@Lazy(false)`.
+
+`@Bean` methods, `@Autowired` members, `@PostConstruct` / `@PreDestroy` and
+`@EventListener` methods are also found in superclasses and mixins (Spring
+scans the hierarchy), with the type arguments of a generic superclass
+(`UserService extends BaseService<User>`) substituted. Generated code cannot
+name private declarations: a private bean class, `@Bean` return type,
+injected type or default value fails the build with a message naming it,
+its library and the fix.
+
 ### Events
 
 ```dart
@@ -371,10 +430,18 @@ class Shipping {
 }
 ```
 
-Non-null results are published again. `ApplicationListener<E>` beans work
-too; `context.addListener<E>(...)` returns a removable registration. Events
-published during refresh are delivered once listeners are ready; events
-propagate to the parent context.
+Non-null results are published again; a `Future` result is published
+when it completes, and its error goes to the multicaster's error handler
+(or is logged). `ApplicationListener<E>`, `GenericApplicationListener` and
+`SmartApplicationListener` beans work too, also behind another declared
+`@Bean` type, as do listener objects given to `registerSingleton` (an
+`ApplicationListener<E>` object needs
+`ApplicationListenerAdapter.forListener<E>`); a listener is registered
+once. `context.addListener<E>(...)` returns a removable registration.
+Events published before the listeners are registered (while the bean
+factory post-processors run) are replayed once they are; later ones, e.g.
+from a bean's constructor, reach the listeners right away (a listener bean
+is created for it if needed). Events propagate to the parent context.
 
 ### Messages, resources, conversion
 
@@ -386,7 +453,9 @@ propagate to the parent context.
   named `messageSource`; the context delegates to it.
 - Resources: `lib/resources/` is the classpath — the generator embeds its
   files, so `classpath:...` works in CLI, AOT, Flutter and web without asset
-  declarations; `@Value('classpath:templates/mail.txt') Resource template`.
+  declarations; `@Value('classpath:templates/mail.txt') Resource template`
+  (resolved by the context's resource loader, so custom protocols and
+  asset loaders apply).
   `ResourceLoader` with `classpath:`, `file:` and custom protocols
   (`ProtocolResolver`), `PathMatchingResourcePatternResolver` with
   `AntPathMatcher`.
@@ -429,6 +498,38 @@ Elvis, ternary). Dart has no reflection: user classes are reached through
 `@Introspected` metadata, `FunctionPropertyAccessor` / `FunctionMethodResolver`
 or maps. `SimpleEvaluationContext` restricts expressions for data binding
 (no types, constructors, bean references or variable assignment).
+
+Safe navigation is Spring 6.2's: a `null` before a `?.` step ends the whole
+chain with `null` (`a?.b.c` is `null` when `a` is), for `?.[i]`, `?.?[...]`,
+`?.![...]`, `?.^[...]` and `?.$[...]` too. An exception thrown by a called
+method or constructor is rethrown as is; failures of accessors and of SpEL
+itself are `SpelParseException` / `SpelEvaluationException` with Spring's
+`SpelMessage` codes and the position (`Expression [1 + * 2] @4: EL1070E:
+Problem parsing left operand`).
+
+`SpelParserConfiguration` (Spring 7's builder) sets auto-grow and the limits
+against hostile expressions: length 10 000, nesting depth 1000, operations
+per evaluation 10 000 (`EL1085E`; the default follows
+`-Dspring.expression.maxOperations`), `'x' * n` up to 256 characters, string
+`+` up to 100 000, `matches` patterns (Dart `RegExp` syntax) up to 1000
+characters and without nested quantifiers (`(a+)+` is refused as `EL1073E`:
+Dart's `RegExp` cannot be interrupted like Spring's matcher).
+
+```dart
+final parser = SpelExpressionParser(
+  SpelParserConfiguration.builder().maximumOperations(50000).build(),
+);
+```
+
+In `@Value('#{...}')` the root is the bean factory (`#{mailer}`, `#{@mailer}`)
+with `systemEnvironment` (the environment variables), `systemProperties`
+(Dart has no JVM system properties: the `--key=value` command-line
+arguments, the `commandLineArgs` property source of the `environment` bean,
+stand in), `environment['app.name']` and
+`environment.getProperty('app.name', 'default')`. Conversions use the
+factory's `ConversionService`, parsed expressions are cached by the
+resolver, and `-Dspring.context.expression.maxLength` changes the length
+limit of `@Value` expressions.
 
 ### Validation and data binding
 
@@ -529,8 +630,8 @@ class Book {
 
 final mapper = context.getBean<ObjectMapper>();   // Spring Boot: auto-configured
 final json = mapper.writeValueAsString(book);
-// {"isbn":"1","title":"Dune","author":{"name":"Herbert","born":1920},
-//  "tags":[],"availability":"in_stock","published_at":null}
+// {"author":{"born":1920,"name":"Herbert"},"availability":"in_stock",
+//  "isbn":"1","published_at":null,"tags":[],"title":"Dune"}
 final again = mapper.readValue<Book>(json);
 final books = mapper.readList<Book>('[{"isbn":"2","title":"Ubik","author":{"name":"Dick"}}]');
 ```
@@ -555,8 +656,20 @@ constructor is the unnamed one, or the one marked `@JsonCreator()`.
 | `@JsonIgnore()` | left out in both directions |
 | `@JsonInclude(JsonInclusion.nonNull)` | on a property or class: skip `null` (or empty: `nonEmpty`) values |
 | `@JsonIgnoreProperties(value: ['x'], ignoreUnknown: true)` | on a class: names to ignore; accept unknown properties |
+| `@JsonPropertyOrder(['id', 'title'])` | on a class: these properties first, the rest after; `@JsonPropertyOrder.alphabetic()` sorts the rest whatever the mapper says |
 | `@JsonCreator()` | the constructor to read with |
 | `@JsonValue()` | on an enum field: the JSON form of each value |
+
+**Property order** is Jackson 3's / Spring Boot 4's: the properties of an
+object are written sorted by JSON name (`SORT_PROPERTIES_ALPHABETICALLY`),
+the constructor parameters first and the other properties after them
+(`SORT_CREATOR_PROPERTIES_FIRST`), each group sorted. This is a change from
+earlier versions, which wrote the declaration order (superclass first):
+`ObjectMapper(sortPropertiesAlphabetically: false)` — in Spring Boot
+`spring.jackson.mapper.sort-properties-alphabetically=false` — brings that
+back. `@JsonPropertyOrder` wins either way: the listed names (JSON or Dart
+names) come first, the others follow in the mapper's order. Reading does not
+depend on the order.
 
 Built in: `String`, `int`, `double`, `num`, `bool` (numbers and booleans in
 strings are accepted; `NaN` / infinities as `"NaN"`, `"Infinity"`,
@@ -577,7 +690,7 @@ deserializers:)`, declared as a bean or grouped in a `JsonModule` bean
 Settings: `namingStrategy` (`snakeCase`, `kebabCase`, `upperCamelCase`,
 ...), `inclusion`, `failOnUnknownProperties` (off, like Spring Boot),
 `writeDatesAsTimestamps`, `timeZone` (`UTC` or a fixed offset such as
-`+02:00`), `indentOutput` — in Spring Boot from
+`+02:00`), `indentOutput`, `sortPropertiesAlphabetically` (on) — in Spring Boot from
 `spring.jackson.*` (see `spring_boot_dart`).
 
 Errors name the place: `items[2].price: expected a number, got "abc"`,
@@ -797,10 +910,27 @@ Examples:
 Named pointcuts are shared by all aspects: refer to them as `orders()` or,
 to be explicit, `AuditAspect.orders()`.
 
-Not supported yet: argument binding (`args(...)`, `@annotation(timed)`
-with a parameter name). Read annotations from `joinPoint.signature.annotations`
-instead. An invalid pointcut fails when the context starts, with the
-reason; the Zed extension (`dart_spring`) underlines it while you type.
+A pointcut binds advice parameters by name, as in AspectJ: a lowercase
+identifier in `@annotation(timed)`, `@within(timed)`, `@target(timed)`,
+`this(proxy)`, `target(bean)` or `args(id, ..)` names a parameter of the
+advice method, which receives the annotation, the proxy, the bean or the
+argument (a type name starts with an uppercase letter; `int`, `double`,
+`num`, `bool`, `dynamic` and `void` are types). The bound value must have
+the parameter's type, else the call does not match.
+`@AfterReturning(.., returning: 'result')` / `@AfterThrowing(.., throwing:
+'error')` name the parameter that receives the return value or error (by
+default the first one that is neither a `JoinPoint` nor bound). Advice and
+`@Pointcut` methods of the aspect's superclasses and mixins are inherited.
+A parameter the pointcut does not bind, or a bound name without a
+parameter, fails the build; an invalid pointcut fails when the context
+starts, with the reason; the Zed extension (`dart_spring`) underlines it
+while you type.
+
+```dart
+@Around('@annotation(timed) && args(isbn, ..)')
+Object? time(ProceedingJoinPoint joinPoint, Timed timed, String isbn) =>
+    joinPoint.proceed();
+```
 
 #### Order of advice
 
@@ -852,12 +982,22 @@ Future<Book> refresh(String isbn) =>
 
 Proxies are generated classes that implement the bean class (when it has
 no private members and is not `final`, `base` or `sealed`) and its
-interfaces, so the bean can be injected by either. If advice matches a bean
-that cannot be proxied, the context fails at startup and says why; add an
-interface with the advised methods and inject the bean by it.
-`AopUtils.getTarget(bean)` unwraps a proxy. The generator option
-`aop_proxies` (`all` by default, `interfaces`, `none`) controls which
-proxies are generated (see `spring_core_dart_generator`). Annotations are
+interfaces, so the bean can be injected by either. A component class that
+cannot be implemented (private members, operators, `base`) and has no
+interface is created as a generated subclass instead, which runs its
+public methods, getters and setters through the advice (Spring's CGLIB
+proxy): the bean is its own proxy, `AopUtils.isAopProxy` is true once
+advice is attached, and a member the subclass cannot override (a private
+type, a default value that is not a public constant) is inherited and not
+advised, with a build warning. A component class that can be neither
+implemented nor extended (`final`, `sealed`, `interface`, a factory
+constructor) fails the build with what to change. A `@Bean` method's type
+that cannot be proxied keeps its signatures: advice matching it fails the
+context at startup with the reason; add an interface with the advised
+methods and inject the bean by it. `AopUtils.getTarget(bean)` unwraps a
+proxy. The generator option `aop_proxies` (`all` by default, `interfaces`,
+`none`) controls which proxies are generated (subclass proxies only in
+`all`; see `spring_core_dart_generator`). Annotations are
 matched by names the generator writes, so `@annotation(Timed)` also works in
 minified and obfuscated release builds.
 
@@ -960,7 +1100,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Duplicate bean names are found at startup (Boot disables overriding) | Two unconditional declarations of one name fail the build; declarations with conditions (`@Profile`, `@Conditional...`) may share a name and are checked at refresh (`BeanDefinitionOverrideException` when both match) | Fail early when the clash is certain |
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
-| Asynchronous initialization | Synchronous `refresh()`; load config first with `processAndApply()` | Predictable startup |
+| Asynchronous initialization | `refresh()` is synchronous (load config first with `processAndApply()`); `refreshAsync()` awaits `Future`-returning init callbacks, the bean being injectable meanwhile | Dart cannot block on a `Future` |
 | Package-qualified AOP type patterns, argument binding | Simple type names; qualified wildcards and binding are rejected | No packages in Dart; binding not implemented yet |
 | Jackson `ObjectMapper` (reflection) | `ObjectMapper` on generated metadata; a model needs `@Introspected()` (its classes of the same package are included) | No reflection |
 | Optional `@Value` with `${x:#{null}}` | A nullable target gets `null` when a placeholder is missing | Dart null safety |
@@ -969,9 +1109,8 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Custom qualifier annotations match by type and attributes | They match by their qualifier value only | Annotations are not read at runtime |
 | `@EventListener(condition = "#event.big")` (SpEL) | `condition:` takes a Dart function | Type-checked, no reflection |
 | Asynchronous multicaster (`setTaskExecutor`), `@Async` listeners | Listeners run synchronously | Not implemented |
-| Events published during refresh reach listeners once they are registered | They arrive after all eager singletons exist | Listener beans are looked up on each event |
 | `@Import` of classes, `ImportSelector`, `ImportBeanDefinitionRegistrar`; fully-qualified names for imported classes | Classes only; imported classes get simple bean names | No reflection, no packages in Dart |
-| `SmartLifecycle.stop(Runnable callback)`, per-phase stop timeouts | `stopWithCallback(callback)`; the processor does not wait for a later callback | No overloading; synchronous shutdown |
+| `SmartLifecycle.stop(Runnable callback)` blocks `close()` per phase | `stopWithCallback(callback)`; `closeAsync()` waits for a later callback (per-phase timeouts), `close()` goes on | No overloading; Dart cannot block on a `Future` |
 | A `null` result reaches an `@AfterReturning` parameter of any type | Only `Object?` / `dynamic` (and nullable types) get `null` | Dart null safety |
 | Jackson writes Java enums by name (`IN_STOCK`) | Enums go over the wire by their Dart name (`inStock`); use `@JsonValue` to talk to Java peers | Dart naming conventions |
 | Jackson `BigInteger` as a JSON number | `BigInt` as a string | `jsonEncode` has no arbitrary-precision numbers |

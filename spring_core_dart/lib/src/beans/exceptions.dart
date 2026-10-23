@@ -153,11 +153,12 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
 /// A dependency of a bean cannot be satisfied, like Spring's
 /// `UnsatisfiedDependencyException` (a [BeanCreationException]).
 ///
-/// Thrown by `validateBeanGraph` (e.g. a required `@Value` placeholder has
-/// no value) and when resolving an injection point fails while the bean
-/// is created: [cause] is then the lookup error (a missing or ambiguous
-/// bean, or the failure of the dependency's own creation), so nested
-/// exceptions show the chain of beans and injection points.
+/// Thrown by `validateBeanGraph` (a declared dependency has no bean or
+/// several candidates, a required `@Value` placeholder has no value) and
+/// when resolving an injection point fails while the bean is created:
+/// [cause] is the lookup error (a missing or ambiguous bean, or the
+/// failure of the dependency's own creation), so nested exceptions show
+/// the chain of beans and injection points.
 ///
 /// ```dart
 /// try {

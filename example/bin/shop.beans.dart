@@ -120,6 +120,33 @@ class _$DefaultPricingServiceProxy
   );
 }
 
+class _$StockCounterProxy extends _i3.StockCounter implements _i2.Advised {
+  _$StockCounterProxy();
+
+  _i2.ProxyInvoker? _$invoker;
+
+  _$StockCounterProxy _$advise(_i2.ProxyInvoker invoker) {
+    _$invoker = invoker;
+    return this;
+  }
+
+  @override
+  Object get aopTarget => this;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
+
+  @override
+  int reserve(String isbn) {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.reserve(isbn)
+        : (invoker.invoke(this, this, 0, [
+            isbn,
+          ], (args) => super.reserve((args[0] as String))) as int);
+  }
+}
+
 class _$DefaultSlogansProxy
     implements _i3.DefaultSlogans, _i3.Slogans, _i2.Advised {
   _$DefaultSlogansProxy(this._target, this._invoker);
@@ -483,6 +510,276 @@ class _$BestDiscountProxy
   String get name =>
       (_invoker.invoke(this, _target, 2, const [], (_) => _target.name)
           as String);
+}
+
+class _$CatalogServiceProxy extends _i10.CatalogService implements _i2.Advised {
+  _$CatalogServiceProxy(
+    super.p0,
+    super.p1,
+    super.p2, {
+    super.pageSize,
+    required super.currency,
+    super.retries,
+  });
+
+  _i2.ProxyInvoker? _$invoker;
+
+  _$CatalogServiceProxy _$advise(_i2.ProxyInvoker invoker) {
+    _$invoker = invoker;
+    return this;
+  }
+
+  @override
+  Object get aopTarget => this;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
+
+  @override
+  void wire(
+    _i2.Environment environment,
+    _i2.ApplicationEventPublisher publisher,
+  ) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.wire(environment, publisher);
+    } else {
+      invoker.invoke(this, this, 0, [environment, publisher], (args) {
+        super.wire(
+          (args[0] as _i2.Environment),
+          (args[1] as _i2.ApplicationEventPublisher),
+        );
+        return null;
+      });
+    }
+  }
+
+  @override
+  double priceOf(_i10.Book book) {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.priceOf(book)
+        : (invoker.invoke(this, this, 1, [
+            book,
+          ], (args) => super.priceOf((args[0] as _i10.Book))) as double);
+  }
+
+  @override
+  List<_i10.Book> firstPage() {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.firstPage()
+        : (invoker.invoke(this, this, 2, const [], (args) => super.firstPage())
+              as List<_i10.Book>);
+  }
+
+  @override
+  _i10.BookRepository get books {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.books
+        : (invoker.invoke(this, this, 3, const [], (_) => super.books)
+              as _i10.BookRepository);
+  }
+
+  @override
+  _i10.Discount get discount {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.discount
+        : (invoker.invoke(this, this, 4, const [], (_) => super.discount)
+              as _i10.Discount);
+  }
+
+  @override
+  List<_i10.Plugin> get plugins {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.plugins
+        : (invoker.invoke(this, this, 5, const [], (_) => super.plugins)
+              as List<_i10.Plugin>);
+  }
+
+  @override
+  int get pageSize {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.pageSize
+        : (invoker.invoke(this, this, 6, const [], (_) => super.pageSize)
+              as int);
+  }
+
+  @override
+  String get currency {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.currency
+        : (invoker.invoke(this, this, 7, const [], (_) => super.currency)
+              as String);
+  }
+
+  @override
+  int get retries {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.retries
+        : (invoker.invoke(this, this, 8, const [], (_) => super.retries)
+              as int);
+  }
+
+  @override
+  Duration get deliveryTime {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.deliveryTime
+        : (invoker.invoke(this, this, 9, const [], (_) => super.deliveryTime)
+              as Duration);
+  }
+
+  @override
+  List<String> get tags {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.tags
+        : (invoker.invoke(this, this, 10, const [], (_) => super.tags)
+              as List<String>);
+  }
+
+  @override
+  String get banner {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.banner
+        : (invoker.invoke(this, this, 11, const [], (_) => super.banner)
+              as String);
+  }
+
+  @override
+  String? get motto {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.motto
+        : (invoker.invoke(this, this, 12, const [], (_) => super.motto)
+              as String?);
+  }
+
+  @override
+  String? get slogan {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.slogan
+        : (invoker.invoke(this, this, 13, const [], (_) => super.slogan)
+              as String?);
+  }
+
+  @override
+  _i10.Clock? get clock {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.clock
+        : (invoker.invoke(this, this, 14, const [], (_) => super.clock)
+              as _i10.Clock?);
+  }
+
+  @override
+  String? get wiredWith {
+    final invoker = _$invoker;
+    return invoker == null
+        ? super.wiredWith
+        : (invoker.invoke(this, this, 15, const [], (_) => super.wiredWith)
+              as String?);
+  }
+
+  @override
+  set deliveryTime(Duration value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.deliveryTime = value;
+    } else {
+      invoker.invoke(this, this, 16, [value], (args) {
+        super.deliveryTime = (args[0] as Duration);
+        return null;
+      });
+    }
+  }
+
+  @override
+  set tags(List<String> value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.tags = value;
+    } else {
+      invoker.invoke(this, this, 17, [value], (args) {
+        super.tags = (args[0] as List<String>);
+        return null;
+      });
+    }
+  }
+
+  @override
+  set banner(String value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.banner = value;
+    } else {
+      invoker.invoke(this, this, 18, [value], (args) {
+        super.banner = (args[0] as String);
+        return null;
+      });
+    }
+  }
+
+  @override
+  set motto(String? value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.motto = value;
+    } else {
+      invoker.invoke(this, this, 19, [value], (args) {
+        super.motto = (args[0] as String?);
+        return null;
+      });
+    }
+  }
+
+  @override
+  set slogan(String? value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.slogan = value;
+    } else {
+      invoker.invoke(this, this, 20, [value], (args) {
+        super.slogan = (args[0] as String?);
+        return null;
+      });
+    }
+  }
+
+  @override
+  set clock(_i10.Clock value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.clock = value;
+    } else {
+      invoker.invoke(this, this, 21, [value], (args) {
+        super.clock = (args[0] as _i10.Clock);
+        return null;
+      });
+    }
+  }
+
+  @override
+  set wiredWith(String? value) {
+    final invoker = _$invoker;
+    if (invoker == null) {
+      super.wiredWith = value;
+    } else {
+      invoker.invoke(this, this, 22, [value], (args) {
+        super.wiredWith = (args[0] as String?);
+        return null;
+      });
+    }
+  }
 }
 
 class _$WelcomeLetterProxy implements _i13.WelcomeLetter, _i2.Advised {
@@ -2255,12 +2552,50 @@ _i2.BeanModule get $application => _i2.BeanModule(
         advice: [
           _i2.AspectAdvice<_i3.TimingAspect>(
             kind: _i2.AdviceKind.around,
-            pointcut: r'@annotation(Timed)',
+            pointcut: r'@annotation(timed) && args(isbn, ..)',
             methodName: r'time',
-            invoke: (aspect, joinPoint, value, bindings) =>
-                aspect.time((joinPoint as _i2.ProceedingJoinPoint)),
+            invoke: (aspect, joinPoint, value, bindings) => aspect.time(
+              (joinPoint as _i2.ProceedingJoinPoint),
+              (bindings[r'timed'] as _i3.Timed),
+              (bindings[r'isbn'] as String),
+            ),
+            bindings: {
+              r'timed': _i2.AdviceBinding(
+                r'Timed',
+                (value) => value is _i3.Timed,
+              ),
+              r'isbn': _i2.AdviceBinding(r'String', (value) => value is String),
+            },
           ),
         ],
+      ),
+    ),
+    _i2.BeanDefinition<_i3.StockCounter>(
+      name: r'stockCounter',
+      source:
+          r'package:spring_core_dart_example/src/aop/aspects.dart#StockCounter',
+      types: const [_i3.StockCounter],
+      create: (r) => _$StockCounterProxy(),
+      annotations: const [_i2.Service()],
+      aopProxy: _i2.AopProxyFactory.subclass(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'reserve',
+            declaringType: r'StockCounter',
+            targetType: r'StockCounter',
+            declaringTypes: [r'StockCounter'],
+            returnType: r'int',
+            parameterTypes: [r'String'],
+            parameterNames: [r'isbn'],
+            annotations: [_i3.Timed()],
+            annotationTypes: [r'Timed'],
+            targetTypes: [r'StockCounter'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+        ],
+        advise: (bean, invoker) =>
+            bean is _$StockCounterProxy ? bean._$advise(invoker) : null,
       ),
     ),
     _i2.BeanDefinition<_i3.DefaultSlogans>(
@@ -2880,7 +3215,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Dependency(_i2.Environment, name: r'environment'),
         _i2.Dependency(_i2.ApplicationEventPublisher, name: r'publisher'),
       ],
-      create: (r) => _i10.CatalogService(
+      create: (r) => _$CatalogServiceProxy(
         r.dependency<_i10.BookRepository>(name: r'books'),
         r.dependency<_i10.Discount>(name: r'discount'),
         r.optionalDependencyList<_i10.Plugin>() ?? <_i10.Plugin>[],
@@ -2907,12 +3242,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
         );
       },
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.unavailable(
+      aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
           _i2.MethodSignature(
             name: r'wire',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             returnType: r'void',
             parameterTypes: [r'Environment', r'ApplicationEventPublisher'],
             parameterNames: [r'environment', r'publisher'],
@@ -2924,6 +3260,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'priceOf',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             returnType: r'double',
             parameterTypes: [r'Book'],
             parameterNames: [r'book'],
@@ -2935,6 +3272,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'firstPage',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             returnType: r'List',
             targetTypes: [r'CatalogService'],
             targetAnnotations: [_i2.Service()],
@@ -2944,6 +3282,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'books',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'BookRepository',
             targetTypes: [r'CatalogService'],
@@ -2954,6 +3293,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'discount',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'Discount',
             targetTypes: [r'CatalogService'],
@@ -2964,6 +3304,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'plugins',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'List',
             targetTypes: [r'CatalogService'],
@@ -2974,6 +3315,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'pageSize',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'int',
             targetTypes: [r'CatalogService'],
@@ -2984,6 +3326,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'currency',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'CatalogService'],
@@ -2994,6 +3337,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'retries',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'int',
             targetTypes: [r'CatalogService'],
@@ -3004,6 +3348,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'deliveryTime',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'Duration',
             targetTypes: [r'CatalogService'],
@@ -3014,6 +3359,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'tags',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'List',
             targetTypes: [r'CatalogService'],
@@ -3024,6 +3370,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'banner',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'CatalogService'],
@@ -3034,6 +3381,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'motto',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'CatalogService'],
@@ -3044,6 +3392,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'slogan',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'CatalogService'],
@@ -3054,6 +3403,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'clock',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'Clock',
             targetTypes: [r'CatalogService'],
@@ -3064,14 +3414,93 @@ _i2.BeanModule get $application => _i2.BeanModule(
             name: r'wiredWith',
             declaringType: r'CatalogService',
             targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
             kind: _i2.MemberKind.getter,
             returnType: r'String',
             targetTypes: [r'CatalogService'],
             targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
+          _i2.MethodSignature(
+            name: r'deliveryTime',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'Duration',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'tags',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'List',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'banner',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'motto',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'slogan',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'clock',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'Clock',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
+          _i2.MethodSignature(
+            name: r'wiredWith',
+            declaringType: r'CatalogService',
+            targetType: r'CatalogService',
+            declaringTypes: [r'CatalogService'],
+            kind: _i2.MemberKind.setter,
+            returnType: r'String',
+            targetTypes: [r'CatalogService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
         ],
-        reason: r'CatalogService cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
+        advise: (bean, invoker) =>
+            bean is _$CatalogServiceProxy ? bean._$advise(invoker) : null,
       ),
     ),
     _i2.BeanDefinition<_i13.WelcomeLetter>(
@@ -5507,7 +5936,7 @@ _i34.SpringApplication get springApplication => _i34.SpringApplication(
     _i39.springBootStarterSchedulingAutoConfiguration,
     _i40.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '98aa75a0',
+  fingerprint: '9042e61c',
 );
 
 /// Starts the application: config files, environment, context, runners

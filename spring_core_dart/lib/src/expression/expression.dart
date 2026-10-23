@@ -1,6 +1,7 @@
 import 'package:spring_core_dart/src/expression/ast.dart';
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 
 /// Parses expression strings, like Spring's `ExpressionParser`.
 ///
@@ -162,6 +163,16 @@ abstract interface class Expression {
 
   /// Whether [setValue] would succeed for this expression and context.
   bool isWritable([EvaluationContext? context, Object? rootObject]);
+
+  /// The type of the value the expression evaluates to (`null` for a
+  /// `null` value), like Spring's `getValueType`.
+  ///
+  /// ```dart
+  /// parser.parseExpression("'abc'.length").getValueType(); // int
+  /// ```
+  ///
+  /// Evaluates the expression; throws like [getValue].
+  Type? getValueType([EvaluationContext? context, Object? rootObject]);
 }
 
 // Returns value unchanged when it already is a T; otherwise converts it
@@ -170,15 +181,25 @@ T _convert<T>(Object? value, EvaluationContext context, String expression) {
   if (value is T) {
     return value;
   }
-  final converted = value == null
-      ? null
-      : context.typeConverter.convertValue(value, T);
+  final Object? converted;
+  try {
+    converted = value == null
+        ? null
+        : context.typeConverter.convertValue(value, T);
+  } on SpelEvaluationException catch (error) {
+    throw SpelEvaluationException(
+      error.messageCode,
+      inserts: error.inserts,
+      cause: error.cause,
+      expressionString: expression,
+    );
+  }
   if (converted is T) {
     return converted;
   }
   throw SpelEvaluationException(
     SpelMessage.typeConversionError,
-    'Cannot convert value $value of type ${value.runtimeType} to $T',
+    inserts: [value == null ? 'null' : value.runtimeType, T],
     expressionString: expression,
   );
 }
@@ -186,7 +207,7 @@ T _convert<T>(Object? value, EvaluationContext context, String expression) {
 /// A compiled SpEL expression, like Spring's `SpelExpression`.
 ///
 /// Created by `SpelExpressionParser.parseExpression`; holds the parsed
-/// tree in [ast].
+/// tree in [ast] and the parser's [configuration] (limits, auto-grow).
 ///
 /// ```dart
 /// final expression = SpelExpressionParser().parseExpression('a + b');
@@ -201,8 +222,13 @@ T _convert<T>(Object? value, EvaluationContext context, String expression) {
 /// SpelNode ast = expression.getAST();
 /// ```
 final class SpelExpression implements Expression {
-  /// Wraps the parsed [ast] of [expressionString].
-  SpelExpression(this.expressionString, this.ast);
+  /// Wraps the parsed [ast] of [expressionString], evaluated under
+  /// [configuration] (the defaults when omitted).
+  SpelExpression(
+    this.expressionString,
+    this.ast, [
+    SpelParserConfiguration? configuration,
+  ]) : configuration = configuration ?? SpelParserConfiguration.withDefaults();
 
   @override
   final String expressionString;
@@ -210,52 +236,77 @@ final class SpelExpression implements Expression {
   /// The root node of the parsed tree.
   final SpelNode ast;
 
+  /// The limits and auto-grow options of evaluations.
+  final SpelParserConfiguration configuration;
+
   // A fresh StandardEvaluationContext when none is given; an explicit root
   // replaces the context's root object for this evaluation only.
-  ExpressionState _state(
-    EvaluationContext? context,
-    Object? root,
-    bool hasRoot,
-  ) {
+  ExpressionState _state(EvaluationContext? context, Object? root) {
     final effective = context ?? StandardEvaluationContext();
     return ExpressionState(
       effective,
-      hasRoot ? root : effective.rootObject,
+      root ?? effective.rootObject,
+      expressionString,
+      configuration,
+    );
+  }
+
+  // Evaluates [body], turning a stack overflow (an expression nested more
+  // deeply than the stack allows) into a SpEL error.
+  T _run<T>(ExpressionState state, T Function() body) {
+    try {
+      return body();
+    } on StackOverflowError {
+      throw SpelEvaluationException(
+        SpelMessage.maxExpressionNestingDepthExceeded,
+        inserts: [configuration.maximumNestingDepth],
+        expressionString: expressionString,
+        position: 0,
+      );
+    }
+  }
+
+  @override
+  Object? getValue([EvaluationContext? context, Object? rootObject]) {
+    final state = _state(context, rootObject);
+    return _run(state, () => ast.getValue(state));
+  }
+
+  @override
+  T getValueAs<T>([EvaluationContext? context, Object? rootObject]) {
+    final state = _state(context, rootObject);
+    return _convert<T>(
+      _run(state, () => ast.getValue(state)),
+      state.context,
       expressionString,
     );
   }
 
   @override
-  Object? getValue([EvaluationContext? context, Object? rootObject]) =>
-      ast.getValue(_state(context, rootObject, rootObject != null));
-
-  @override
-  T getValueAs<T>([EvaluationContext? context, Object? rootObject]) {
-    final state = _state(context, rootObject, rootObject != null);
-    return _convert<T>(ast.getValue(state), state.context, expressionString);
-  }
+  Type? getValueType([EvaluationContext? context, Object? rootObject]) =>
+      getValue(context, rootObject)?.runtimeType;
 
   @override
   void setValue(EvaluationContext? context, Object? rootObject, Object? value) {
-    final state = _state(context, rootObject, rootObject != null);
+    final state = _state(context, rootObject);
     if (!state.context.isAssignmentEnabled) {
       throw SpelEvaluationException(
         SpelMessage.notAssignable,
-        'Assignment is disabled in this context',
+        inserts: [expressionString],
         expressionString: expressionString,
       );
     }
-    ast.getValueRef(state).setValue(value);
+    _run(state, () => ast.assign(state, () => value));
   }
 
   @override
   bool isWritable([EvaluationContext? context, Object? rootObject]) {
-    final state = _state(context, rootObject, rootObject != null);
+    final state = _state(context, rootObject);
     if (!state.context.isAssignmentEnabled || !ast.isAssignable) {
       return false;
     }
     try {
-      return ast.getValueRef(state).isWritable;
+      return _run(state, () => ast.getValueRef(state).isWritable);
     } on SpelEvaluationException {
       return false;
     }
@@ -303,13 +354,17 @@ final class LiteralExpression implements Expression {
       );
 
   @override
+  Type? getValueType([EvaluationContext? context, Object? rootObject]) =>
+      String;
+
+  @override
   void setValue(
     EvaluationContext? context,
     Object? rootObject,
     Object? value,
   ) => throw SpelEvaluationException(
     SpelMessage.notAssignable,
-    'Cannot call setValue() on a LiteralExpression',
+    inserts: [expressionString],
     expressionString: expressionString,
   );
 
@@ -323,9 +378,10 @@ final class LiteralExpression implements Expression {
 /// Literal text and expressions concatenated as a string, like Spring's
 /// `CompositeStringExpression`.
 ///
-/// Each part is evaluated and converted to a `String`; `null` parts are
-/// skipped. A template with a single `#{...}` and no text is not composite
-/// and keeps the value's type.
+/// Each part is evaluated and converted to a `String` with the context's
+/// type converter (a list becomes `1,2`); `null` parts are skipped. A
+/// template with a single `#{...}` and no text is not composite and keeps
+/// the value's type.
 ///
 /// ```dart
 /// final expression = SpelExpressionParser()
@@ -375,13 +431,17 @@ final class CompositeStringExpression implements Expression {
   }
 
   @override
+  Type? getValueType([EvaluationContext? context, Object? rootObject]) =>
+      String;
+
+  @override
   void setValue(
     EvaluationContext? context,
     Object? rootObject,
     Object? value,
   ) => throw SpelEvaluationException(
     SpelMessage.notAssignable,
-    'Cannot call setValue() on a CompositeStringExpression',
+    inserts: [expressionString],
     expressionString: expressionString,
   );
 

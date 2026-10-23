@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:collection';
+
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/core/log.dart';
 
@@ -97,8 +100,16 @@ abstract mixin class SmartLifecycle implements Lifecycle {
   /// Stops the component and calls [callback] once it has stopped, like
   /// Spring's `stop(Runnable callback)`; by default [stop], then
   /// [callback]. The lifecycle processor stops smart lifecycles through
-  /// this method. Unlike Spring, it does not wait for a [callback] that
-  /// is called later (there are no per-phase stop timeouts).
+  /// this method: `closeAsync()` waits for the callbacks of a phase (at
+  /// most the processor's timeout for that phase) before stopping the
+  /// next phase; the synchronous `stop()` / `close()` do not wait.
+  ///
+  /// ```dart
+  /// @override
+  /// void stopWithCallback(void Function() callback) {
+  ///   _socket.close().whenComplete(callback);
+  /// }
+  /// ```
   void stopWithCallback(void Function() callback) {
     stop();
     callback();
@@ -116,7 +127,10 @@ abstract mixin class SmartLifecycle implements Lifecycle {
 ///   @Bean()
 ///   LifecycleProcessor lifecycleProcessor(
 ///     ConfigurableListableBeanFactory factory,
-///   ) => DefaultLifecycleProcessor(factory);
+///   ) => DefaultLifecycleProcessor(
+///     factory,
+///     timeoutPerShutdownPhase: const Duration(seconds: 30),
+///   );
 /// }
 /// ```
 ///
@@ -124,15 +138,22 @@ abstract mixin class SmartLifecycle implements Lifecycle {
 /// ```java
 /// @Bean
 /// LifecycleProcessor lifecycleProcessor() {
-///   return new DefaultLifecycleProcessor();
+///   var processor = new DefaultLifecycleProcessor();
+///   processor.setTimeoutPerShutdownPhase(30000);
+///   return processor;
 /// }
 /// ```
 abstract interface class LifecycleProcessor implements Lifecycle {
   /// Starts auto-startup [SmartLifecycle] beans (context refresh).
   void onRefresh();
 
-  /// Stops running beans (context close).
+  /// Stops running beans (context close); does not wait for
+  /// [SmartLifecycle.stopWithCallback] callbacks that come later.
   void onClose();
+
+  /// Stops running beans (context `closeAsync()`), waiting for the
+  /// callbacks of [SmartLifecycle.stopWithCallback] phase by phase.
+  Future<void> onCloseAsync();
 }
 
 /// Default [LifecycleProcessor], like Spring's `DefaultLifecycleProcessor`:
@@ -140,10 +161,19 @@ abstract interface class LifecycleProcessor implements Lifecycle {
 /// have phase 0.
 ///
 /// Beans in the same phase start in registration order and stop in the
-/// reverse order. Like Spring's `getLifecycleBeans`, only singletons are
-/// considered, and of the plain [Lifecycle] beans only those already
-/// created: a lazy plain [Lifecycle] bean is not created to be started or
-/// stopped ([SmartLifecycle] beans are).
+/// reverse order; a bean's dependencies (injected or `dependsOn`) start
+/// before it and its dependents stop before it, whatever their phase. Like
+/// Spring's `getLifecycleBeans`, only singletons are considered, and of
+/// the plain [Lifecycle] beans only those already created: a lazy plain
+/// [Lifecycle] bean is not created to be started or stopped
+/// ([SmartLifecycle] beans are). At refresh a plain [Lifecycle] bean is
+/// started only as the dependency of an auto-startup bean.
+///
+/// On `closeAsync()` the processor waits, per phase, for the callbacks
+/// of [SmartLifecycle.stopWithCallback] at most [timeoutPerShutdownPhase]
+/// (or the phase's entry in [timeoutsForShutdownPhases]), logs the beans
+/// still running and goes on with the next phase, like Spring. The
+/// synchronous `stop()` / `close()` do not wait.
 ///
 /// ```dart
 /// final processor = DefaultLifecycleProcessor(context.beanFactory)
@@ -157,16 +187,33 @@ abstract interface class LifecycleProcessor implements Lifecycle {
 /// processor.setBeanFactory(beanFactory);
 /// processor.start();
 /// ```
-///
-/// Unlike Spring there are no per-phase stop timeouts.
 class DefaultLifecycleProcessor implements LifecycleProcessor {
   /// Creates a processor managing the lifecycle singletons of
-  /// [beanFactory].
-  DefaultLifecycleProcessor(this.beanFactory);
+  /// [beanFactory]; see [timeoutPerShutdownPhase] and
+  /// [timeoutsForShutdownPhases].
+  DefaultLifecycleProcessor(
+    this.beanFactory, {
+    this.timeoutPerShutdownPhase = const Duration(seconds: 10),
+    Map<int, Duration> timeoutsForShutdownPhases = const {},
+  }) : timeoutsForShutdownPhases = {...timeoutsForShutdownPhases};
 
   /// The factory the lifecycle beans are looked up in.
   final ConfigurableListableBeanFactory beanFactory;
+
+  /// How long `closeAsync()` waits for the stop callbacks of one phase
+  /// (Spring's `timeoutPerShutdownPhase`, 10 seconds by default).
+  Duration timeoutPerShutdownPhase;
+
+  /// Timeouts of specific phases, overriding [timeoutPerShutdownPhase]
+  /// (Spring's `timeoutsForShutdownPhases`).
+  final Map<int, Duration> timeoutsForShutdownPhases;
+
   bool _running = false;
+
+  /// The timeout for the shutdown of [phase] (Spring's
+  /// `determineTimeout`).
+  Duration timeoutForShutdownPhase(int phase) =>
+      timeoutsForShutdownPhases[phase] ?? timeoutPerShutdownPhase;
 
   @override
   bool get isRunning => _running;
@@ -198,76 +245,178 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
     _running = false;
   }
 
+  @override
+  Future<void> onCloseAsync() async {
+    await _stopBeansAsync();
+    _running = false;
+  }
+
   // Spring's getLifecycleBeans: created singletons and SmartLifecycle
-  // beans (created if needed); a plain Lifecycle bean not created yet is
-  // left alone.
-  List<Lifecycle> _lifecycleBeans() {
+  // beans (created if needed) by name; a plain Lifecycle bean not created
+  // yet is left alone.
+  Map<String, Lifecycle> _lifecycleBeans() {
     final smart = beanFactory
         .getBeanNamesForType(SmartLifecycle, includeNonSingletons: false)
         .toSet();
-    return [
-      for (final name in beanFactory.getBeanNamesForType(
-        Lifecycle,
-        includeNonSingletons: false,
-      ))
-        if (smart.contains(name) ||
-            beanFactory.containsSingleton(
-              name.startsWith(BeanFactory.factoryBeanPrefix)
-                  ? name.substring(BeanFactory.factoryBeanPrefix.length)
-                  : name,
-            ))
-          if (beanFactory.getBeanByName(name) case final Lifecycle bean
-              when !identical(bean, this))
-            bean,
-    ];
-  }
-
-  List<Lifecycle> _byPhase({required bool descending}) {
-    final beans = _lifecycleBeans();
-    // Sort by phase, ties by registration index; reversing the whole
-    // comparison makes stop order the exact mirror of start order.
-    final indexed = beans.indexed.toList()
-      ..sort((a, b) {
-        final byPhase = _phase(a.$2).compareTo(_phase(b.$2));
-        final ordered = byPhase != 0 ? byPhase : a.$1.compareTo(b.$1);
-        return descending ? -ordered : ordered;
-      });
-    return [for (final (_, bean) in indexed) bean];
+    final beans = <String, Lifecycle>{};
+    for (final name in beanFactory.getBeanNamesForType(
+      Lifecycle,
+      includeNonSingletons: false,
+    )) {
+      final canonical = name.startsWith(BeanFactory.factoryBeanPrefix)
+          ? name.substring(BeanFactory.factoryBeanPrefix.length)
+          : name;
+      if (!smart.contains(name) && !beanFactory.containsSingleton(canonical)) {
+        continue;
+      }
+      if (beanFactory.getBeanByName(name) case final Lifecycle bean
+          when !identical(bean, this)) {
+        beans[canonical] = bean;
+      }
+    }
+    return beans;
   }
 
   static int _phase(Lifecycle bean) => bean is SmartLifecycle ? bean.phase : 0;
 
+  // Like Spring's startBeans: the candidates grouped by phase, ascending;
+  // every bean when started explicitly, the auto-startup SmartLifecycle
+  // beans at refresh.
   void _startBeans({required bool autoStartupOnly}) {
-    for (final bean in _byPhase(descending: false)) {
-      final eligible =
-          !autoStartupOnly || (bean is SmartLifecycle && bean.isAutoStartup);
-      if (eligible && !bean.isRunning) {
-        bean.start();
+    final beans = _lifecycleBeans();
+    final phases = SplayTreeMap<int, List<String>>();
+    beans.forEach((name, bean) {
+      if (!autoStartupOnly || (bean is SmartLifecycle && bean.isAutoStartup)) {
+        phases.putIfAbsent(_phase(bean), () => []).add(name);
+      }
+    });
+    for (final names in phases.values) {
+      for (final name in names) {
+        _doStart(beans, name, autoStartupOnly: autoStartupOnly);
       }
     }
   }
 
-  // Like Spring's DefaultLifecycleProcessor: a bean that fails to stop is
-  // logged and the remaining beans are still stopped.
+  // Like Spring's doStart: the bean's dependencies first (removed from
+  // [beans], so each bean starts once); a SmartLifecycle dependency that
+  // is not auto-startup is skipped at refresh, a plain one is started.
+  void _doStart(
+    Map<String, Lifecycle> beans,
+    String name, {
+    required bool autoStartupOnly,
+  }) {
+    final bean = beans.remove(name);
+    if (bean == null) {
+      return;
+    }
+    for (final dependency in beanFactory.getDependenciesForBean(name)) {
+      _doStart(beans, dependency, autoStartupOnly: autoStartupOnly);
+    }
+    if (!bean.isRunning &&
+        (!autoStartupOnly || bean is! SmartLifecycle || bean.isAutoStartup)) {
+      bean.start();
+    }
+  }
+
+  // All lifecycle beans grouped by phase, highest first; within a phase
+  // the reverse of the start order.
+  static List<(int, List<String>)> _shutdownPhases(
+    Map<String, Lifecycle> beans,
+  ) {
+    final phases = SplayTreeMap<int, List<String>>((a, b) => b.compareTo(a));
+    beans.forEach(
+      (name, bean) => phases.putIfAbsent(_phase(bean), () => []).add(name),
+    );
+    return [
+      for (final MapEntry(:key, :value) in phases.entries)
+        (key, value.reversed.toList()),
+    ];
+  }
+
   void _stopBeans() {
-    for (final bean in _byPhase(descending: true)) {
-      try {
-        if (!bean.isRunning) {
-          continue;
-        }
-        if (bean is SmartLifecycle) {
-          bean.stopWithCallback(() {});
-        } else {
-          bean.stop();
-        }
-      } catch (error, stackTrace) {
-        _log.warning(
-          'Failed to stop lifecycle bean ${bean.runtimeType}',
-          error: error,
-          stackTrace: stackTrace,
-        );
+    final beans = _lifecycleBeans();
+    for (final (_, names) in _shutdownPhases(beans)) {
+      for (final name in names) {
+        _doStop(beans, name, pending: null);
       }
     }
+  }
+
+  Future<void> _stopBeansAsync() async {
+    final beans = _lifecycleBeans();
+    for (final (phase, names) in _shutdownPhases(beans)) {
+      final pending = <String, Future<void>>{};
+      for (final name in names) {
+        _doStop(beans, name, pending: pending);
+      }
+      await _awaitPhase(phase, pending);
+    }
+  }
+
+  // Like Spring's doStop: the beans depending on this one first. A
+  // SmartLifecycle is stopped through stopWithCallback; when [pending] is
+  // given, its callback is waited for by phase. A bean that fails to stop
+  // is logged and the remaining beans are still stopped.
+  void _doStop(
+    Map<String, Lifecycle> beans,
+    String name, {
+    required Map<String, Future<void>>? pending,
+  }) {
+    final bean = beans.remove(name);
+    if (bean == null) {
+      return;
+    }
+    for (final dependent in beanFactory.getDependentBeans(name)) {
+      _doStop(beans, dependent, pending: pending);
+    }
+    try {
+      if (!bean.isRunning) {
+        return;
+      }
+      if (bean is SmartLifecycle) {
+        final stopped = Completer<void>();
+        pending?[name] = stopped.future;
+        bean.stopWithCallback(() {
+          if (!stopped.isCompleted) {
+            stopped.complete();
+          }
+        });
+      } else {
+        bean.stop();
+      }
+    } catch (error, stackTrace) {
+      pending?.remove(name);
+      _log.warning(
+        "Failed to stop bean '$name'",
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  // Like Spring's LifecycleGroup.stop: waits for the phase's callbacks at
+  // most the phase's timeout, then logs the beans still running.
+  Future<void> _awaitPhase(int phase, Map<String, Future<void>> pending) {
+    if (pending.isEmpty) {
+      return Future<void>.value();
+    }
+    final running = {...pending.keys};
+    final timeout = timeoutForShutdownPhase(phase);
+    return Future.wait([
+      for (final MapEntry(:key, :value) in pending.entries)
+        value.whenComplete(() => running.remove(key)),
+    ]).timeout(
+      timeout,
+      onTimeout: () {
+        final count = running.length;
+        _log.warning(
+          'Failed to shut down $count bean${count == 1 ? '' : 's'} with phase '
+          'value $phase within timeout of ${timeout.inMilliseconds}ms: '
+          '${running.toList()}',
+        );
+        return const [];
+      },
+    );
   }
 }
 

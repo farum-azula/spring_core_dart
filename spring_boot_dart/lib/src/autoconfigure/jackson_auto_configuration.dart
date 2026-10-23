@@ -17,6 +17,7 @@ const _source = 'package:spring_boot_dart#JacksonAutoConfiguration';
 /// spring.jackson.serialization.write-dates-as-timestamps=true
 /// spring.jackson.serialization.indent-output=true
 /// spring.jackson.time-zone=UTC
+/// spring.jackson.mapper.sort-properties-alphabetically=false
 /// ```
 final jacksonAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ObjectMapper>(
@@ -48,6 +49,7 @@ final jacksonAutoConfiguration = <BeanDefinition<Object>>[
 /// | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` |
 /// | `spring.jackson.serialization.write-dates-as-timestamps` | `false` |
 /// | `spring.jackson.serialization.indent-output` | `false` |
+/// | `spring.jackson.mapper.sort-properties-alphabetically` | `true` (properties sorted by name, constructor parameters first; `false`: declaration order) |
 /// | `spring.jackson.time-zone` | none (each date in its own zone); `UTC` or a fixed offset such as `+02:00` |
 ObjectMapper objectMapperFromProperties(
   Environment environment, {
@@ -78,6 +80,14 @@ ObjectMapper objectMapperFromProperties(
     ),
     timeZone: environment.getProperty('spring.jackson.time-zone'),
     indentOutput: flag('spring.jackson.serialization.indent-output'),
+    sortPropertiesAlphabetically:
+        (environment.getProperty(
+                  'spring.jackson.mapper.sort-properties-alphabetically',
+                ) ??
+                'true')
+            .trim()
+            .toLowerCase() !=
+        'false',
     serializers: serializers,
     deserializers: deserializers,
     modules: modules,

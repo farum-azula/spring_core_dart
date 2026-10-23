@@ -230,11 +230,11 @@ void main() {
   test('mapping annotations', () {
     const List<Mapping> mappings = [
       GetMapping('/a'),
-      PostMapping('/b', consumes: MediaType.applicationJson),
+      PostMapping.of(path: '/b', consumes: MediaType.applicationJson),
       PutMapping('/c'),
       PatchMapping('/d'),
-      DeleteMapping('/e', headers: ['X-A=1']),
-      RequestMapping('/f', method: HttpMethod.head),
+      DeleteMapping.of(path: '/e', headers: ['X-A=1']),
+      RequestMapping.of(path: '/f', method: HttpMethod.head),
     ];
     expect(
       [for (final m in mappings) m.method],
@@ -254,5 +254,57 @@ void main() {
     expect(const CookieValue('SESSION').name, 'SESSION');
     expect(const RequestBody().required, isTrue);
     expect(const RequestBody(required: false).required, isFalse);
+  });
+
+  test('the path of a mapping is optional', () {
+    const List<Mapping> mappings = [
+      GetMapping(),
+      PostMapping(),
+      PutMapping(),
+      PatchMapping(),
+      DeleteMapping(),
+      RequestMapping(),
+      GetMapping.of(produces: MediaType.textEventStream),
+      RequestMapping.of(method: HttpMethod.head),
+    ];
+    for (final mapping in mappings) {
+      expect(mapping.path, '', reason: '$mapping');
+    }
+    expect(mappings[0].method, HttpMethod.get);
+    expect(mappings[1].method, HttpMethod.post);
+    expect(mappings[5].method, HttpMethod.get);
+    expect(mappings[6].produces, 'text/event-stream');
+    expect(mappings[7].method, HttpMethod.head);
+    // The shorthand and the attribute form agree.
+    expect(const GetMapping('/a').path, const GetMapping.of(path: '/a').path);
+    expect(const GetMapping('/a').headers, isEmpty);
+    expect(const GetMapping('/a').produces, isNull);
+  });
+
+  test('required and defaultValue of parameter annotations', () {
+    // Spring: required unless said otherwise, no default value.
+    expect(const PathVariable().required, isTrue);
+    expect(const PathVariable('id').required, isTrue);
+    expect(const RequestParam('q').required, isTrue);
+    expect(const RequestParam('q').defaultValue, isNull);
+    expect(const RequestHeader().required, isTrue);
+    expect(const RequestHeader('X-Id').defaultValue, isNull);
+
+    const optional = PathVariable.of(name: 'id', required: false);
+    expect(optional.name, 'id');
+    expect(optional.required, isFalse);
+    expect(const PathVariable.of().required, isTrue);
+
+    const param = RequestParam.of(name: 'page', defaultValue: '0');
+    expect(param.name, 'page');
+    expect(param.defaultValue, '0');
+    expect(param.required, isTrue, reason: 'the annotation keeps what was set');
+    expect(const RequestParam.of(required: false).name, isNull);
+    expect(const RequestParam.of(required: false).required, isFalse);
+
+    const header = RequestHeader.of(name: 'X-Tenant', defaultValue: 'public');
+    expect(header.name, 'X-Tenant');
+    expect(header.defaultValue, 'public');
+    expect(const RequestHeader.of(required: false).required, isFalse);
   });
 }

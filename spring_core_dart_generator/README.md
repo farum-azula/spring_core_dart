@@ -70,6 +70,25 @@ targets:
 Beans without matching advice are never wrapped at runtime; the option only
 controls generated code size.
 
+`@ComponentScan` itself takes Spring's scan options, evaluated at build
+time: `includeFilters` / `excludeFilters` (`Filter(classes: [Plugin])` for
+an annotation, `Filter(type: FilterType.assignableType, classes: [Handler])`,
+`Filter(type: FilterType.regex, pattern: ['.*Repository'])` on the class
+name; excludes win, abstract classes never match), `useDefaultFilters:
+false` (only the includes make beans) and `lazyInit: true` (every scanned
+bean lazy unless `@Lazy(false)`). A filter without the argument its type
+uses, or with an invalid pattern, fails the build.
+
+## Build errors
+
+Generated code cannot name a private declaration (`_Foo`, `_default`): a
+private bean class, `@Bean` return type, injected type (also as a type
+argument), event type or default value (a private function, class or
+constructor) fails the build with a message naming the declaration, its
+library and the fix (make it public, or move it out of the scan / declare
+a public supertype / drop the default) instead of a generated file that
+does not compile. Every error points at the source element.
+
 ## Public API
 
 `lib/builder.dart`: `springCoreDartBuilder`, referenced from `build.yaml`

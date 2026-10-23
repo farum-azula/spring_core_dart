@@ -860,10 +860,80 @@ class PropertySource {
 /// ```
 ///
 /// Unlike Spring, scanning happens at build time (`build_runner`), not by
-/// reading the classpath at startup.
+/// reading the classpath at startup. The filters are evaluated then too:
+///
+/// ```dart
+/// @ComponentScan(
+///   includeFilters: [Filter(type: FilterType.assignableType, classes: [Plugin])],
+///   excludeFilters: [Filter(type: FilterType.regex, pattern: ['.*Stub$'])],
+///   lazyInit: true,
+/// )
+/// final BeanModule myFeatureBeans = $myFeatureBeans;
+/// ```
 class ComponentScan {
   /// Creates the annotation.
-  const ComponentScan();
+  const ComponentScan({
+    this.includeFilters = const [],
+    this.excludeFilters = const [],
+    this.useDefaultFilters = true,
+    this.lazyInit = false,
+  });
+
+  /// Classes matching one of these are beans even without `@Component`
+  /// (an abstract class never is).
+  final List<Filter> includeFilters;
+
+  /// Classes matching one of these are never beans, whatever else says;
+  /// their `@Bean` methods are skipped with them.
+  final List<Filter> excludeFilters;
+
+  /// Whether `@Component` (and its stereotypes) marks a bean; with `false`
+  /// only [includeFilters] do.
+  final bool useDefaultFilters;
+
+  /// Whether the scanned beans (components and their `@Bean` methods) are
+  /// lazy unless annotated `@Lazy(false)`.
+  final bool lazyInit;
+}
+
+/// A type filter of [ComponentScan], like Spring's `@ComponentScan.Filter`.
+///
+/// ```dart
+/// Filter(classes: [Plugin])                          // annotated @Plugin
+/// Filter(type: FilterType.assignableType, classes: [Handler])
+/// Filter(type: FilterType.regex, pattern: ['.*Repository'])
+/// ```
+class Filter {
+  /// Creates a filter; [classes] serve [FilterType.annotation] and
+  /// [FilterType.assignableType], [pattern] serves [FilterType.regex].
+  const Filter({
+    this.type = FilterType.annotation,
+    this.classes = const [],
+    this.pattern = const [],
+  });
+
+  /// How the filter matches.
+  final FilterType type;
+
+  /// Annotation classes (also matched by their subclasses, like Spring's
+  /// meta-annotations) or assignable types.
+  final List<Type> classes;
+
+  /// Regular expressions matched against the class name.
+  final List<String> pattern;
+}
+
+/// How a [Filter] matches a class, like Spring's `FilterType`.
+enum FilterType {
+  /// The class is annotated with one of the filter's classes.
+  annotation,
+
+  /// The class is, extends, implements or mixes in one of the filter's
+  /// classes.
+  assignableType,
+
+  /// The class name matches one of the filter's patterns.
+  regex,
 }
 
 /// Lets `autowireBean` inject a class the container does not create (for

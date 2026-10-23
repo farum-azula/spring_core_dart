@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
@@ -83,6 +85,26 @@ abstract interface class ApplicationContext
     resourceLoader: resourceLoader,
     id: id,
   )..refresh();
+
+  /// Like [run], refreshing with [ConfigurableApplicationContext.refreshAsync]
+  /// (asynchronous init callbacks are awaited).
+  static Future<ConfigurableApplicationContext> runAsync(
+    List<BeanModule> modules, {
+    ApplicationContext? parent,
+    ConfigurableEnvironment? environment,
+    ResourceLoader? resourceLoader,
+    String? id,
+  }) async {
+    final context = AnnotationConfigApplicationContext(
+      modules,
+      parent: parent,
+      environment: environment,
+      resourceLoader: resourceLoader,
+      id: id,
+    );
+    await context.refreshAsync();
+    return context;
+  }
 
   /// Unique id of the context; by default the class name and identity
   /// hash code (`AnnotationConfigApplicationContext@1b2c3d`), like Spring's
@@ -218,11 +240,31 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   ///
   /// Like Spring's `GenericApplicationContext`, a second call throws (a
-  /// `StateError`), also after a failed refresh.
+  /// `StateError`), also after a failed refresh. An init callback
+  /// (`@PostConstruct`, `afterPropertiesSet`, init method) that returns a
+  /// `Future` fails the refresh: use [refreshAsync] for those.
   void refresh();
 
+  /// Like [refresh], awaiting asynchronous init callbacks: the eager
+  /// singletons are created, then every `Future` returned by their
+  /// `@PostConstruct`, `afterPropertiesSet` and init methods is awaited
+  /// (a failure fails the refresh, naming the bean) before
+  /// `SmartInitializingSingleton`, the lifecycle start and
+  /// `ContextRefreshedEvent`. A failed refresh stops the lifecycle beans
+  /// already started and destroys the created singletons, awaiting
+  /// asynchronous destroy callbacks.
+  ///
+  /// ```dart
+  /// final context = AnnotationConfigApplicationContext([appBeans]);
+  /// await context.refreshAsync();
+  /// ```
+  Future<void> refreshAsync();
+
   /// Publishes `ContextClosedEvent`, stops lifecycle beans and destroys
-  /// singletons. Safe to call more than once.
+  /// singletons. Safe to call more than once. Does not wait: a
+  /// `SmartLifecycle` callback that comes later or a destroy callback
+  /// returning a `Future` is logged and the shutdown goes on; see
+  /// [closeAsync].
   ///
   /// ```dart
   /// final context = ApplicationContext.run([appBeans]);
@@ -234,6 +276,22 @@ abstract interface class ConfigurableApplicationContext
   /// context.close(); // or context.registerShutdownHook();
   /// ```
   void close();
+
+  /// Like [close], waiting: for the `SmartLifecycle.stopWithCallback`
+  /// callbacks of each phase (at most the lifecycle processor's timeout
+  /// per phase, 10 seconds by default; then the beans still running are
+  /// logged and the next phase is stopped) and for destroy callbacks
+  /// (`@PreDestroy`, `DisposableBean.destroy`, destroy methods) that
+  /// return a `Future`, each bean after its dependents. Completes once
+  /// the context is closed; a no-op unless active.
+  ///
+  /// ```dart
+  /// ProcessSignal.sigint.watch().listen((_) async {
+  ///   await context.closeAsync();
+  ///   exit(0);
+  /// });
+  /// ```
+  Future<void> closeAsync();
 
   /// Whether the context is active: from the start of [refresh] until
   /// [close] has finished (`false` again after a failed refresh), like
@@ -350,6 +408,7 @@ class AnnotationConfigApplicationContext
   final PathMatchingResourcePatternResolver _resources;
   final _factoryPostProcessors = <BeanFactoryPostProcessor>[];
   final _listeners = <GenericApplicationListener>[];
+  late final _listenerDetector = _ApplicationListenerDetector(this);
   ApplicationContext? _parent;
   ApplicationEventMulticaster? _multicaster;
   List<Object>? _earlyEvents;
@@ -471,38 +530,81 @@ class AnnotationConfigApplicationContext
   /// See [ConfigurableApplicationContext.refresh].
   @override
   void refresh() {
+    _prepareRefresh();
+    try {
+      _refreshUntilSingletons();
+      _factory.preInstantiateSingletons();
+      _finishRefresh();
+    } catch (_) {
+      if (_cancelRefresh()) {
+        _factory.destroySingletons();
+        _state = _State.failed;
+      }
+      rethrow;
+    }
+  }
+
+  /// See [ConfigurableApplicationContext.refreshAsync].
+  @override
+  Future<void> refreshAsync() async {
+    _prepareRefresh();
+    try {
+      _refreshUntilSingletons();
+      await _factory.preInstantiateSingletonsAsync();
+      _finishRefresh();
+    } catch (_) {
+      if (_cancelRefresh()) {
+        await _factory.destroySingletonsAsync();
+        _state = _State.failed;
+      }
+      rethrow;
+    }
+  }
+
+  void _prepareRefresh() {
     if (_state != _State.created) {
       throw StateError('$displayName.refresh() can be called only once.');
     }
     _state = _State.refreshing;
     startupDate = DateTime.now();
     // Events published while refreshing (before the multicaster and the
-    // listeners exist) are buffered and replayed in _finishRefresh.
+    // listeners exist) are buffered and replayed in _registerListeners.
     _earlyEvents = [];
-    try {
-      environment.validateRequiredProperties();
-      _prepareBeanFactory();
-      _loadModules();
-      _invokeBeanFactoryPostProcessors();
-      _registerBeanPostProcessors();
-      _initMessageSource();
-      _initEventMulticaster();
-      _registerListeners();
-      _factory.validateBeanGraph();
-      _finishBeanFactoryInitialization();
-      _finishRefresh();
-      // A listener of ContextRefreshedEvent may have closed the context.
-      if (_state == _State.refreshing) {
-        _state = _State.active;
-      }
-    } catch (_) {
-      if (_state != _State.closed) {
-        _factory.destroySingletons();
-        _state = _State.failed;
-      }
-      _earlyEvents = null;
-      rethrow;
+  }
+
+  // The refresh steps before the eager singletons are created.
+  void _refreshUntilSingletons() {
+    environment.validateRequiredProperties();
+    _prepareBeanFactory();
+    _loadModules();
+    _invokeBeanFactoryPostProcessors();
+    _registerBeanPostProcessors();
+    _initMessageSource();
+    _initEventMulticaster();
+    _registerListeners();
+    _factory.validateBeanGraph();
+    _finishBeanFactoryInitialization();
+  }
+
+  // A failed refresh: like Spring's cancelRefresh, but the lifecycle beans
+  // started so far (an earlier phase, or all of them when a
+  // ContextRefreshedEvent listener failed) are stopped first. `false`
+  // when a listener closed the context already (nothing left to do).
+  bool _cancelRefresh() {
+    _earlyEvents = null;
+    if (_state == _State.closed) {
+      return false;
     }
+    try {
+      _lifecycleProcessor?.onClose();
+    } catch (error, stackTrace) {
+      _log.warning(
+        'Exception thrown from the LifecycleProcessor cancelling the refresh',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    return true;
   }
 
   // Infrastructure every context offers: conversion, SpEL with
@@ -512,12 +614,14 @@ class AnnotationConfigApplicationContext
   void _prepareBeanFactory() {
     _factory
       ..conversionService = environment.conversionService
+      ..resourceLoader = this
       ..beanExpressionResolver ??= StandardBeanExpressionResolver(
         propertyAccessors: [IntrospectionPropertyAccessor(introspector)],
         methodResolvers: [IntrospectionMethodResolver(introspector)],
       )
       ..addEmbeddedValueResolver(environment.resolveRequiredPlaceholders)
       ..addBeanPostProcessor(ApplicationContextAwareProcessor(this))
+      ..addBeanPostProcessor(_listenerDetector)
       ..registerResolvableDependency(BeanFactory, _factory)
       ..registerResolvableDependency(ListableBeanFactory, _factory)
       ..registerResolvableDependency(ConfigurableListableBeanFactory, _factory)
@@ -674,6 +778,9 @@ class AnnotationConfigApplicationContext
         _factory.addBeanPostProcessor(processor);
       }
     }
+    // Last, so it sees the proxies (like Spring re-registering its
+    // ApplicationListenerDetector at the end).
+    _factory.addBeanPostProcessor(_listenerDetector);
   }
 
   // A user `messageSource` bean gets the parent context as its parent
@@ -717,10 +824,21 @@ class AnnotationConfigApplicationContext
     );
   }
 
-  // Programmatic listeners plus one adapter per `@EventListener` method;
-  // the adapters fetch the bean lazily on each event.
+  // Programmatic and detected listeners, listener objects registered as
+  // singletons, plus one adapter per `@EventListener` method (the adapters
+  // fetch the bean lazily on each event); then the early events are
+  // replayed, like Spring's registerListeners, so events published while
+  // the singletons are created go straight to the listeners.
   void _registerListeners() {
     final multicaster = _multicaster!;
+    for (final name in _factory.singletonNames) {
+      if (_factory.containsBeanDefinition(name)) {
+        continue;
+      }
+      if (_factory.getSingleton(name) case final GenericApplicationListener l) {
+        addApplicationListener(l);
+      }
+    }
     _listeners.forEach(multicaster.addApplicationListener);
     for (final name in _factory.beanDefinitionNames) {
       final definition = _factory.getBeanDefinition(name);
@@ -730,11 +848,17 @@ class AnnotationConfigApplicationContext
         );
       }
     }
+    // Clear the buffer first so the replayed events are really dispatched.
+    // Replayed locally only: the parent already received them when they
+    // were published.
+    final events = _earlyEvents!;
+    _earlyEvents = null;
+    events.forEach(multicaster.multicastEvent);
   }
 
   // A `conversionService` bean replaces the environment's service for
-  // `@Value` conversion; then the configuration is frozen and eager
-  // singletons are created.
+  // `@Value` conversion; then the configuration is frozen (the caller
+  // creates the eager singletons).
   void _finishBeanFactoryInitialization() {
     if (_factory.containsLocalBean(conversionServiceBeanName)) {
       final service = _factory.getBeanByName(conversionServiceBeanName);
@@ -742,18 +866,10 @@ class AnnotationConfigApplicationContext
         _factory.conversionService = service;
       }
     }
-    _factory
-      ..freezeConfiguration()
-      ..preInstantiateSingletons();
+    _factory.freezeConfiguration();
   }
 
   void _finishRefresh() {
-    // Clear the buffer first so the replayed events are really dispatched.
-    // Replayed locally only: the parent already received them when they
-    // were published (like Spring's registerListeners).
-    final events = _earlyEvents!;
-    _earlyEvents = null;
-    events.forEach(_multicaster!.multicastEvent);
     final processor = _factory.containsLocalBean(lifecycleProcessorBeanName)
         ? _factory.getBeanByName(lifecycleProcessorBeanName)
               as LifecycleProcessor
@@ -761,6 +877,10 @@ class AnnotationConfigApplicationContext
     _lifecycleProcessor = processor;
     processor.onRefresh();
     publishEvent(ContextRefreshedEvent(this));
+    // A listener of ContextRefreshedEvent may have closed the context.
+    if (_state == _State.refreshing) {
+      _state = _State.active;
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -791,12 +911,41 @@ class AnnotationConfigApplicationContext
   /// `ContextRefreshedEvent` listener).
   @override
   void close() {
-    if (_state != _State.active && _state != _State.refreshing) {
+    if (!_beginClose()) {
       return;
     }
-    // Like Spring's doClose: each step is guarded so a failing listener or
-    // lifecycle bean neither stops the shutdown nor escapes from close().
-    // The state changes first, so a close() from a listener is a no-op.
+    try {
+      _lifecycleProcessor?.onClose();
+    } catch (error, stackTrace) {
+      _lifecycleCloseFailed(error, stackTrace);
+    }
+    _factory.destroySingletons();
+    _finishClose();
+  }
+
+  /// See [ConfigurableApplicationContext.closeAsync].
+  @override
+  Future<void> closeAsync() async {
+    if (!_beginClose()) {
+      return;
+    }
+    try {
+      await _lifecycleProcessor?.onCloseAsync();
+    } catch (error, stackTrace) {
+      _lifecycleCloseFailed(error, stackTrace);
+    }
+    await _factory.destroySingletonsAsync();
+    _finishClose();
+  }
+
+  // Like Spring's doClose: each step is guarded so a failing listener or
+  // lifecycle bean neither stops the shutdown nor escapes from close().
+  // The state changes first, so a close() from a listener is a no-op.
+  // `false` when the context is not active (nothing to close).
+  bool _beginClose() {
+    if (_state != _State.active && _state != _State.refreshing) {
+      return false;
+    }
     _state = _State.closing;
     try {
       publishEvent(ContextClosedEvent(this));
@@ -807,16 +956,17 @@ class AnnotationConfigApplicationContext
         stackTrace: stackTrace,
       );
     }
-    try {
-      _lifecycleProcessor?.onClose();
-    } catch (error, stackTrace) {
+    return true;
+  }
+
+  void _lifecycleCloseFailed(Object error, StackTrace stackTrace) =>
       _log.warning(
         'Exception thrown from the LifecycleProcessor on context close',
         error: error,
         stackTrace: stackTrace,
       );
-    }
-    _factory.destroySingletons();
+
+  void _finishClose() {
     _multicaster?.removeAllListeners();
     _state = _State.closed;
   }
@@ -854,6 +1004,23 @@ class AnnotationConfigApplicationContext
     }
     // The parent gets the original object so it wraps it itself.
     _parent?.publishEvent(event);
+  }
+
+  // The error of an asynchronous `@EventListener` result: the
+  // multicaster's error handler when it has one, else logged (Spring's
+  // handleAsyncError).
+  void _asyncListenerFailed(Object error, StackTrace stackTrace) {
+    if (_multicaster case SimpleApplicationEventMulticaster(
+      errorHandler: final handler?,
+    )) {
+      handler(error, stackTrace);
+      return;
+    }
+    _log.error(
+      'Unexpected error occurred in asynchronous listener',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -1052,6 +1219,17 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   void onApplicationEvent(Object event) {
     final bean = _context._factory.getBeanByName(_beanName);
     final result = _method.invoke(bean, event);
+    if (result is Future<Object?>) {
+      // Like Spring's CompletionStage handling: the value is published
+      // when it arrives, a failure goes to the error handler.
+      result.then(_publishResult, onError: _context._asyncListenerFailed);
+      return;
+    }
+    _publishResult(result);
+  }
+
+  // Non-null results are published, an Iterable element by element.
+  void _publishResult(Object? result) {
     if (result == null) {
       return;
     }
@@ -1068,6 +1246,56 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
 
   @override
   String toString() => '_BeanMethodListener($_beanName, ${_method.id})';
+}
+
+/// Registers listener beans with the context once they are created, like
+/// Spring's `ApplicationListenerDetector`: a singleton that is a
+/// [GenericApplicationListener] (an `ApplicationListener<E>` bean is wired
+/// by the generator instead, through its `onApplicationEvent` method) is
+/// added when initialized and removed when destroyed; a non-singleton one
+/// is not reachable and gets a warning.
+final class _ApplicationListenerDetector
+    extends DestructionAwareBeanPostProcessor {
+  _ApplicationListenerDetector(this._context);
+
+  final AnnotationConfigApplicationContext _context;
+
+  @override
+  Object postProcessAfterInitialization(Object bean, String beanName) {
+    if (bean is! GenericApplicationListener) {
+      return bean;
+    }
+    final factory = _context._factory;
+    final definition = factory.containsBeanDefinition(beanName)
+        ? factory.getBeanDefinition(beanName)
+        : null;
+    if (definition != null &&
+        definition.eventListeners.any(
+          (m) => m.id.endsWith('.onApplicationEvent'),
+        )) {
+      return bean;
+    }
+    if (definition == null || definition.isSingleton) {
+      _context.addApplicationListener(bean);
+    } else {
+      _log.warning(
+        "Bean '$beanName' implements GenericApplicationListener but is not "
+        'reachable for event multicasting by its containing '
+        'ApplicationContext because it does not have singleton scope.',
+      );
+    }
+    return bean;
+  }
+
+  @override
+  bool requiresDestruction(Object bean) => bean is GenericApplicationListener;
+
+  @override
+  void postProcessBeforeDestruction(Object bean, String beanName) {
+    if (bean is GenericApplicationListener) {
+      _context.removeApplicationListener(bean);
+    }
+  }
 }
 
 /// The [ConditionContext] handed to conditions while modules load.

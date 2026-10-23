@@ -340,15 +340,17 @@ final class Tokenizer {
             : push(TokenKind.factoryBeanRef, 1);
       case '|':
         if (peek() != '|') {
-          throw _error(SpelMessage.unexpectedData, "Unexpected character '|'");
+          throw _error(SpelMessage.missingCharacter, ['|']);
         }
         push(TokenKind.or, 2);
       case '<':
         peek() == '=' ? push(TokenKind.le, 2) : push(TokenKind.lt, 1);
       case '>':
         peek() == '=' ? push(TokenKind.ge, 2) : push(TokenKind.gt, 1);
+      case r'\':
+        throw _error(SpelMessage.unexpectedEscapeChar);
       default:
-        throw _error(SpelMessage.unexpectedData, "Unexpected character '$c'");
+        throw _error(SpelMessage.unsupportedCharacter, [c, c.codeUnitAt(0)]);
     }
   }
 
@@ -391,7 +393,9 @@ final class Tokenizer {
         _pos++;
       }
       if (_pos == digitsStart) {
-        throw _error(SpelMessage.invalidNumber, 'Invalid hex number', start);
+        throw _error(SpelMessage.notAnInteger, [
+          expression.substring(start, _pos),
+        ], start);
       }
       final digits = expression.substring(digitsStart, _pos);
       if (_pos < expression.length &&
@@ -441,7 +445,10 @@ final class Tokenizer {
       final suffix = expression[_pos].toLowerCase();
       // `L` only applies to integers; `f`/`d` turn any number into a
       // real literal.
-      if (suffix == 'l' && !real) {
+      if (suffix == 'l') {
+        if (real) {
+          throw _error(SpelMessage.realCannotBeLong, const [], start);
+        }
         _pos++;
         _tokens.add(Token(TokenKind.literalLong, start, _pos, text));
         return;
@@ -476,8 +483,10 @@ final class Tokenizer {
     while (true) {
       if (_pos >= expression.length) {
         throw _error(
-          SpelMessage.unterminatedString,
-          'Unterminated string literal',
+          quote == "'"
+              ? SpelMessage.nonTerminatingQuotedString
+              : SpelMessage.nonTerminatingDoubleQuotedString,
+          const [],
           start,
         );
       }
@@ -498,12 +507,12 @@ final class Tokenizer {
   }
 
   SpelParseException _error(
-    SpelMessage code,
-    String message, [
+    SpelMessage code, [
+    List<Object?> inserts = const [],
     int? position,
   ]) => SpelParseException(
     code,
-    message,
+    inserts: inserts,
     expressionString: expression,
     position: position ?? _pos,
   );

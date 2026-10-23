@@ -28,7 +28,7 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// }
 ///
 /// final mapper = context.getBean<ObjectMapper>(); // or ObjectMapper(...)
-/// final json = mapper.writeValueAsString(book);   // {"isbn":"1","title":"Dune","tags":[]}
+/// final json = mapper.writeValueAsString(book);   // {"isbn":"1","tags":[],"title":"Dune"}
 /// final again = mapper.readValue<Book>(json);
 /// final books = mapper.readList<Book>('[{"isbn":"1","title":"Dune"}]');
 /// ```
@@ -61,7 +61,12 @@ class ObjectMapper {
   /// [writeDatesAsTimestamps] writes `DateTime` / `Duration` as
   /// milliseconds; [timeZone] (`UTC`, `Z` or a fixed offset such as
   /// `+02:00` or `GMT+2`) is the offset dates are written in;
-  /// [indentOutput] pretty-prints. The serializers and deserializers of
+  /// [indentOutput] pretty-prints; [sortPropertiesAlphabetically] writes the
+  /// properties of an object sorted by JSON name (Jackson 3's default,
+  /// `MapperFeature.SORT_PROPERTIES_ALPHABETICALLY`; a class's constructor
+  /// parameters come first, like `SORT_CREATOR_PROPERTIES_FIRST`), `false`
+  /// writes them in declaration order (Jackson 2's, superclass first);
+  /// `@JsonPropertyOrder` wins either way. The serializers and deserializers of
   /// [modules] come after [serializers] / [deserializers].
   ObjectMapper({
     BeanIntrospector? introspector,
@@ -71,6 +76,7 @@ class ObjectMapper {
     this.writeDatesAsTimestamps = false,
     this.timeZone,
     this.indentOutput = false,
+    this.sortPropertiesAlphabetically = true,
     Iterable<JsonSerializer<Object>> serializers = const [],
     Iterable<JsonDeserializer<Object>> deserializers = const [],
     Iterable<JsonModule> modules = const [],
@@ -109,6 +115,11 @@ class ObjectMapper {
 
   /// Whether [writeValueAsString] pretty-prints.
   final bool indentOutput;
+
+  /// Whether the properties of an object are written sorted by JSON name
+  /// (constructor parameters first), instead of in declaration order;
+  /// `spring.jackson.mapper.sort-properties-alphabetically`.
+  final bool sortPropertiesAlphabetically;
 
   /// Custom writers, tried before the built-in conversions.
   final List<JsonSerializer<Object>> serializers;
@@ -655,6 +666,9 @@ final class _ClassInfo {
     known
       ..addAll(jsonNames.values)
       ..addAll(parameterNames.values);
+    writeOrder = _writeOrder(
+      classAnnotations.whereType<JsonPropertyOrder>().firstOrNull,
+    );
   }
 
   final BeanIntrospection<Object> introspection;
@@ -674,6 +688,48 @@ final class _ClassInfo {
   /// Every JSON name the class reads.
   final known = <String>{};
 
+  /// The properties in the order they are written.
+  late final List<BeanProperty<Object>> writeOrder;
+
+  // Jackson's POJOPropertiesCollector._sortProperties: the names of
+  // `@JsonPropertyOrder` first, then (when sorting) the constructor
+  // parameters, then the rest; sorted by JSON name when [sorting], else in
+  // declaration order.
+  List<BeanProperty<Object>> _writeOrder(JsonPropertyOrder? order) {
+    final properties = introspection.properties.toList();
+    final sorting =
+        (order?.alphabetic ?? false) || mapper.sortPropertiesAlphabetically;
+    if (!sorting && (order == null || order.value.isEmpty)) {
+      return properties;
+    }
+    int byName(BeanProperty<Object> a, BeanProperty<Object> b) =>
+        jsonNames[a.name]!.compareTo(jsonNames[b.name]!);
+    if (sorting) {
+      properties.sort(byName);
+    }
+    final ordered = <BeanProperty<Object>>[];
+    for (final name in order?.value ?? const <String>[]) {
+      // A JSON name, or the Dart name of a property.
+      var index = properties.indexWhere((p) => jsonNames[p.name] == name);
+      if (index < 0) {
+        index = properties.indexWhere((p) => p.name == name);
+      }
+      if (index >= 0) {
+        ordered.add(properties.removeAt(index));
+      }
+    }
+    if (sorting) {
+      final creator = {
+        for (final parameter
+            in introspection.constructor?.parameters ?? const <BeanParameter>[])
+          parameter.name,
+      };
+      ordered.addAll(properties.where((p) => creator.contains(p.name)));
+      properties.removeWhere((p) => creator.contains(p.name));
+    }
+    return ordered..addAll(properties);
+  }
+
   String _name(String dartName, List<Object> annotations) =>
       _explicitName(annotations) ?? mapper.namingStrategy.translate(dartName);
 
@@ -682,7 +738,7 @@ final class _ClassInfo {
 
   Map<String, Object?> write(Object bean, _Path path, Set<Object> seen) {
     final result = <String, Object?>{};
-    for (final property in introspection.properties) {
+    for (final property in writeOrder) {
       final name = jsonNames[property.name]!;
       if (ignoredNames.contains(name)) {
         continue;
