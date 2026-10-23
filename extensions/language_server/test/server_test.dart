@@ -61,7 +61,9 @@ final class _Client {
     final id = _nextId++;
     final completer = _pending[id] = Completer<Object?>();
     _write({'id': id, 'method': method, 'params': params});
-    return completer.future.timeout(const Duration(seconds: 20));
+    // The first request analyses the project, which takes a while when
+    // several test processes share the machine.
+    return completer.future.timeout(const Duration(seconds: 90));
   }
 
   void notify(String method, Map<String, Object?> params) =>

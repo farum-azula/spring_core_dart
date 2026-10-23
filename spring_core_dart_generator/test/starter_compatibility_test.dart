@@ -45,7 +45,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return testBuilder(
-    const SpringBuilder(),
+    SpringBuilder(),
     {
       'pkg|bin/main.dart': app,
       'neon_cache|lib/spring_auto_configuration.dart': _starter(

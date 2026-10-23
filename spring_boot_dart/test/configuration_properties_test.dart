@@ -341,6 +341,19 @@ void main() {
     fail('expected a failure');
   }
 
+  test('String, num and bool beans pass through (no Expando key)', () {
+    final context = SpringApplication([
+      module(),
+      BeanModule('values', [
+        BeanDefinition<String>(name: 'text', create: (_) => 'hello'),
+        BeanDefinition<int>(name: 'count', create: (_) => 3),
+      ]),
+    ], out: (_) {}).run(['--pool.url=jdbc:x']);
+    addTearDown(context.close);
+    expect(context.getBean<String>(), 'hello');
+    expect(context.getBean<int>(), 3);
+  });
+
   group('JavaBean binding', () {
     test('comma lists, indexed lists and environment variable indexes', () {
       final app = run(

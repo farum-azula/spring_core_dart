@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' as io;
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -90,14 +91,33 @@ const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 class SpringBuilder implements Builder {
   /// Creates the builder; [proxyMode] defaults to [ProxyMode.all].
   ///
+  /// [readExistingOutput] returns the current content of a generated file
+  /// (`null` when there is none); by default the file is read from disk
+  /// (outputs are built to source, so it is at the asset path relative to
+  /// the package directory the build runs in). Tests inject it so they need
+  /// no real files.
+  ///
   /// ```dart
-  /// const builder = SpringBuilder(proxyMode: ProxyMode.interfaces);
+  /// final builder = SpringBuilder(proxyMode: ProxyMode.interfaces);
   /// ```
-  const SpringBuilder({this.proxyMode = ProxyMode.all});
+  SpringBuilder({
+    this.proxyMode = ProxyMode.all,
+    Future<String?> Function(AssetId output)? readExistingOutput,
+  }) : _readExistingOutput = readExistingOutput ?? _readOutputFile;
 
   /// Which beans get generated AOP proxies (build option `aop_proxies`:
   /// `all`, `interfaces` or `none`).
   final ProxyMode proxyMode;
+
+  final Future<String?> Function(AssetId output) _readExistingOutput;
+
+  // The last generated content per output in this process (`watch` keeps
+  // one builder); the file on disk is the source after a fresh start.
+  final Map<AssetId, String> _lastGood = {};
+
+  // Outputs whose syntax-error warning was logged and not yet followed by
+  // a successful generation.
+  final Set<AssetId> _warned = {};
 
   /// Every `.dart` input may produce a `.beans.dart` output next to it.
   @override
@@ -112,6 +132,14 @@ class SpringBuilder implements Builder {
   /// `@ComponentScan`, when the scan variable is private or starts with
   /// `$`, when a scanned class is invalid (see [BeanScanner]) or when two
   /// beans share a name or alias.
+  ///
+  /// An error in the sources never removes or changes an output that
+  /// already exists (from this process or on disk): while a scanned library
+  /// has syntax errors (`build_runner watch` while typing) the existing
+  /// file is written again unchanged and one warning is logged until the
+  /// next successful generation; a validation error keeps the file too and
+  /// is reported as the build error. Without an existing output (a cold
+  /// build) both fail the build as before.
   @override
   Future<void> build(BuildStep buildStep) async {
     final input = buildStep.inputId;
@@ -124,9 +152,69 @@ class SpringBuilder implements Builder {
         !text.contains('SpringBootApplication')) {
       return;
     }
+    final output = input.changeExtension(_outputExtension);
+    String? source;
+    try {
+      source = await _generate(buildStep, output);
+    } on SyntaxErrorInAssetException catch (error) {
+      // build_runner deletes an output its step does not write, so the
+      // existing content is written again: the build stays green and the
+      // generated file does not flicker on every keystroke.
+      final existing = await _existingOutput(output);
+      if (existing == null) {
+        rethrow;
+      }
+      if (_warned.add(output)) {
+        log.warning(
+          '${output.path} is kept unchanged until the sources parse again; '
+          '${error.assetId.path} has syntax errors:\n$error',
+        );
+      }
+      await buildStep.writeAsString(output, existing);
+      return;
+    } catch (error, stackTrace) {
+      // A validation error, or a crash on the element model of a library
+      // with errors: the existing file stays too, the error is reported.
+      final existing = await _existingOutput(output);
+      if (existing == null) {
+        rethrow;
+      }
+      log.severe(
+        '${output.path} is kept unchanged until this error is fixed:',
+        error,
+        stackTrace,
+      );
+      await buildStep.writeAsString(output, existing);
+      return;
+    }
+    if (source == null) {
+      return;
+    }
+    _warned.remove(output);
+    _lastGood[output] = source;
+    await buildStep.writeAsString(output, source);
+  }
+
+  /// The content of [output] from its last generation in this process, else
+  /// from [_readExistingOutput]; `null` when there is none (a cold build).
+  Future<String?> _existingOutput(AssetId output) async =>
+      _lastGood[output] ?? await _readExistingOutput(output);
+
+  // Outputs are built to source (`build_to: source`), so the file is at the
+  // asset path relative to the package directory the build runs in.
+  static Future<String?> _readOutputFile(AssetId output) async {
+    final file = io.File(output.path);
+    return await file.exists() ? file.readAsString() : null;
+  }
+
+  /// The source of [output] for [buildStep]'s input, or `null` when the
+  /// input declares neither a `@ComponentScan` variable nor a
+  /// `@SpringBootApplication` function.
+  Future<String?> _generate(BuildStep buildStep, AssetId output) async {
+    final input = buildStep.inputId;
     final resolver = buildStep.resolver;
     if (!await resolver.isLibrary(input)) {
-      return;
+      return null;
     }
     final library = await resolver.libraryFor(input);
     final boots = [
@@ -134,15 +222,14 @@ class SpringBuilder implements Builder {
         if (springBootApplicationChecker.hasAnnotationOf(function)) function,
     ];
     if (boots.isNotEmpty) {
-      await _buildApplication(buildStep, boots);
-      return;
+      return _buildApplication(buildStep, boots, output);
     }
     final scans = [
       for (final variable in library.topLevelVariables)
         if (componentScanChecker.hasAnnotationOf(variable)) variable,
     ];
     if (scans.isEmpty) {
-      return;
+      return null;
     }
     if (scans.length > 1) {
       throw InvalidGenerationSource(
@@ -180,16 +267,12 @@ class SpringBuilder implements Builder {
     await _scanLibraries(buildStep, scanner, assets);
     _checkUniqueNames(module.beans);
 
-    final output = input.changeExtension(_outputExtension);
-    await buildStep.writeAsString(
-      output,
-      ModuleEmitter(output).emit(
-        moduleName: variableName,
-        variableName: '\$$variableName',
-        scannedDirectory: directory,
-        module: module,
-        resources: await _resources(buildStep),
-      ),
+    return ModuleEmitter(output).emit(
+      moduleName: variableName,
+      variableName: '\$$variableName',
+      scannedDirectory: directory,
+      module: module,
+      resources: await _resources(buildStep),
     );
   }
 
@@ -231,9 +314,10 @@ class SpringBuilder implements Builder {
   // from the application class, the whole package is scanned — `lib/` and
   // the directory of `main` (e.g. `bin/`) — and the output also declares
   // `springApplication` and `runApplication(args)`.
-  Future<void> _buildApplication(
+  Future<String> _buildApplication(
     BuildStep buildStep,
     List<TopLevelFunctionElement> boots,
+    AssetId output,
   ) async {
     if (boots.length > 1) {
       throw InvalidGenerationSource(
@@ -260,7 +344,6 @@ class SpringBuilder implements Builder {
 
     final autoConfigurations = await _autoConfigurations(buildStep);
     final springApplication = refer('springApplication');
-    final output = input.changeExtension(_outputExtension);
     final emitter = ModuleEmitter(output);
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
     final source = emitter.emit(
@@ -406,10 +489,7 @@ class SpringBuilder implements Builder {
     );
     // The hash of the generated code (with the placeholder in it) replaces
     // the placeholder; same length, so the formatting is unchanged.
-    await buildStep.writeAsString(
-      output,
-      source.replaceFirst(_fingerprintPlaceholder, _fnv1a(source)),
-    );
+    return source.replaceFirst(_fingerprintPlaceholder, _fnv1a(source));
   }
 
   static const _fingerprintPlaceholder = '00000000';

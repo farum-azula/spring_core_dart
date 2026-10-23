@@ -2382,7 +2382,13 @@ class BeanScanner {
         }
         final name = _requireName(field);
         if (field.isPrivate) {
-          _fail('Injected field $name must be public.', field);
+          _fail(
+            'Injected field $name must be public: the generated code is '
+            'another library and cannot reach a private member; inject it '
+            'through a constructor parameter (`this.$name` keeps the field '
+            'private) or make it public.',
+            field,
+          );
         }
         if (field.setter == null) {
           _fail(
@@ -2414,7 +2420,12 @@ class BeanScanner {
         }
         final name = _requireName(setter);
         if (setter.isPrivate) {
-          _fail('Injected setter $name must be public.', setter);
+          _fail(
+            'Injected setter $name must be public: the generated code is '
+            'another library and cannot reach a private member; use a '
+            'constructor parameter or a public setter.',
+            setter,
+          );
         }
         if (seen.add(name)) {
           result.add(
@@ -2463,7 +2474,11 @@ class BeanScanner {
         }
         final name = _requireName(method);
         if (method.isPrivate) {
-          _fail('@Autowired method $name must be public.', method);
+          _fail(
+            '@Autowired method $name must be public: the generated code is '
+            'another library and cannot call a private member.',
+            method,
+          );
         }
         _rejectAsync(method, '@Autowired method $name');
         if (seen.add(name)) {

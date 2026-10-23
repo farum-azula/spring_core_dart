@@ -22,6 +22,7 @@ import 'package:spring_core_dart_example/src/app.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
 import 'package:spring_core_dart_example/src/catalog/welcome_letter.dart';
 import 'package:spring_core_dart_example/src/config/data_config.dart';
+import 'package:spring_core_dart_example/src/config/greetings.dart';
 import 'package:spring_core_dart_example/src/config/shop_config.dart';
 import 'package:spring_core_dart_example/src/events/orders.dart';
 import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
@@ -281,6 +282,8 @@ class _Tour {
     show('clock (setter injection)', catalog.clock.runtimeType);
     show('wire (method injection)', catalog.wiredWith);
     show('Map<String, Discount>', context.getBeansOfType<Discount>().keys);
+    // Primary constructor, field in the body: r.optionalDependencyList<String>().
+    show('greetings collected', context.getBean<Greeter>().greetings);
     show('prototype ids', [
       context.getBean<IdGenerator>().id,
       context.getBean<IdGenerator>().id,

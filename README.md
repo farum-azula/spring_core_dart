@@ -269,7 +269,9 @@ injection still require a bean). `List<T>` / `Set<T>` / `Map<String, T>`
 receive every candidate (also from parent contexts); only a `List` is
 sorted, by `PriorityOrdered` → `Ordered` → `@Order` (an `@Order` on a
 `@Bean` method beats the bean's `Ordered.order`, an `@Order` on its class
-does not), a `Set` or `Map` keeps registration order. `BeanFactory`,
+does not), a `Set` or `Map` keeps registration order. This works for
+primary constructors too (`class Greeter(this._all) { final List<String>
+_all; }`), with the field declared in the header or in the body. `BeanFactory`,
 `ApplicationContext`, `ApplicationEventPublisher`, `ResourceLoader` and
 `Environment` can be injected.
 
@@ -1095,6 +1097,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `Scope` SPI, `Pointcut` interface | `CustomScope`, `AopPointcut` | `@Scope`, `@Pointcut` are the annotations |
 | `@Null`, `@Pattern`, `@Future` | `MustBeNull`, `Matches`, `FutureDate` (codes unchanged) | Clash with Dart's `Null`, `Pattern` and `Future` |
 | `Validator.supports(Class)` | `supports(Object target)` | Dart cannot test subtypes on a `Type` |
+| `@Autowired` on a private field or setter (reflection) | Only public fields and setters; a private field is injected through a constructor parameter (`this._repo`, Dart 3.13 primary constructors included) | The generated code is another library and cannot reach private members |
 | CGLIB-enhanced `@Configuration` classes | A generated subclass in the `.beans.dart` file: a class with instance `@Bean` methods must be extendable from another library (not `final`, `sealed` or `interface`, public generative constructor) or use `proxyBeanMethods: false`, else the build fails; an inter-bean call of a `FactoryBean` method returns the container's factory itself (Spring: an enhanced factory whose `getObject()` returns the container's product) | No runtime bytecode generation |
 | `@Bean` definitions know only the declared return type until the bean is created (`beanClassName` is `null`) | The type of the returned expression(s) is known at build time and the definition is registered under it and its supertypes: `getBean<HikariDataSource>()`, `getBeanNamesForType`, `@ConditionalOnBean` / `@ConditionalOnMissingBean` and AOP (`within(Impl)`, annotations on implementation methods) see it before the bean exists | Deliberately better: the generator sees the method body |
 | Duplicate bean names are found at startup (Boot disables overriding) | Two unconditional declarations of one name fail the build; declarations with conditions (`@Profile`, `@Conditional...`) may share a name and are checked at refresh (`BeanDefinitionOverrideException` when both match) | Fail early when the clash is certain |

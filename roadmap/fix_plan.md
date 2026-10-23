@@ -142,5 +142,4 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 - [ ] Nested `@ComponentScan` roots duplicating beans; escaping the scan glob; validating explicit names.
 - [ ] `@Value` on super-constructor parameters; constructor selection like Spring.
 - [ ] Warning-free generated code; better error messages (several errors, library URIs).
-- [ ] `build_runner watch` while typing: a library with syntax errors must not fail the build and lose the generated `*.beans.dart` (build_runner deletes the outputs of a failed step); keep the previous output and report the parse error once, so a large project is not red and rebuilt on every keystroke.
 

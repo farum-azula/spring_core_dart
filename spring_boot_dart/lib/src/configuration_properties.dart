@@ -66,6 +66,11 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
 
   @override
   Object postProcessBeforeInitialization(Object bean, String beanName) {
+    // Expando keys cannot be numbers, strings, booleans or records, and
+    // none of those is a @ConfigurationProperties class.
+    if (bean is num || bean is String || bean is bool || bean is Record) {
+      return bean;
+    }
     if (_constructed[bean] ?? false) {
       return bean;
     }

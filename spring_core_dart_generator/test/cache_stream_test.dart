@@ -66,7 +66,7 @@ Future<TestBuilderResult> _build(String service) async {
   );
   await readerWriter.testing.loadIsolateSources();
   return testBuilder(
-    const SpringBuilder(proxyMode: ProxyMode.all),
+    SpringBuilder(proxyMode: ProxyMode.all),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/service.dart':

@@ -78,6 +78,7 @@ void main() {
       'Books for night owls',
     );
     expectLine('clock (setter injection): SystemClock');
+    expectLine('greetings collected: [hello, hi]');
     expectLine('prototype ids: [');
     expectLine('lazy pool created yet?: false');
     expectLine('pool open (initMethod connect): true');

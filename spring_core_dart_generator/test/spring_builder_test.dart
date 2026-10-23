@@ -119,7 +119,7 @@ void main() {
       springCoreDartBuilder(const BuilderOptions({})),
       isA<SpringBuilder>(),
     );
-    expect(const SpringBuilder().buildExtensions, {
+    expect(SpringBuilder().buildExtensions, {
       '.dart': ['.beans.dart'],
     });
   });

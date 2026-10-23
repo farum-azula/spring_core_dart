@@ -37,6 +37,20 @@ release train, set by `tool/version.dart` and checked in CI), so extension
 - Completion and diagnostics for property keys (unknown key, wrong type,
   deprecated), profile names, bean names in `@Qualifier`, and missing or
   ambiguous beans before running the app.
+- The generator's build errors as diagnostics while typing, at the exact
+  range, with a message that says what is wrong and what to do — today
+  they only show up in the build_runner output, where a duplicate bean
+  name reads like an unexplained failure. First: two declarations of one
+  bean name without conditions (`@Bean(name: 'string_bean')` twice, a
+  `@Component('x')` and a `@Bean` method named `x`) underlined on both,
+  "Bean name 'string_bean' is already declared by AppConfig.newBean
+  (lib/config.dart:5); use another name or a condition (@Profile,
+  @ConditionalOn...) on one of them"; then every other generator check
+  (private types, classes a full-mode `@Configuration` cannot extend,
+  `final` classes that need a proxy, unknown beans in `@Qualifier` /
+  `@DependsOn`, wrong `@ComponentScan` filters, unbound advice parameters).
+  The language server runs the generator's scanner on the open files, so
+  the messages are the same as the build's.
 - Placeholders and raw strings: in Dart `"${shop.name}"` is string
   interpolation (a compile error), so placeholders need `r'${shop.name}'`
   or `'\${shop.name}'`. Typing `${` in `@Value` / `@Query` adds the `r`,
@@ -45,16 +59,8 @@ release train, set by `tool/version.dart` and checked in CI), so extension
 - Built as a Dart language server on top of the generator's analysis, so
   the same server can later back VS Code and IntelliJ plugins.
 
-Bug: **`build_runner watch` deletes and regenerates `*.beans.dart` on every
-keystroke.** While code is being typed the library has syntax errors most of
-the time; the generator then fails, build_runner removes its outputs and the
-whole project is red until the next successful build, which on a large
-project takes seconds each time. Fix on the generator side (tracked in
-[fix_plan.md](fix_plan.md), Generator): when a scanned library does not
-parse, skip the rebuild and keep the previous output instead of failing;
-report the parse error once. On the editor side the Flutter extension's
-watch should debounce longer (see `roadmap/bugs.md` of
-zed_editor_extensions).
+The generator keeps the generated code untouched while the sources have
+errors; the editor-side watch is tracked in zed_editor_extensions.
 
 ## Zed extension for Flutter (`flutter_spring`)
 

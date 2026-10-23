@@ -89,6 +89,15 @@ library and the fix (make it public, or move it out of the scan / declare
 a public supertype / drop the default) instead of a generated file that
 does not compile. Every error points at the source element.
 
+An error in the sources never removes or changes an existing `*.beans.dart`
+(`build_runner watch` while typing would otherwise delete and regenerate it
+on every keystroke): while a scanned library has syntax errors the builder
+skips generation, writes the existing file again unchanged and logs one
+warning per output until the next successful generation; a generator error
+keeps the file too and is reported as the build error (`build_runner build`
+fails, the file just stays). Without an existing output (a cold build) both
+fail the build.
+
 ## Public API
 
 `lib/builder.dart`: `springCoreDartBuilder`, referenced from `build.yaml`
