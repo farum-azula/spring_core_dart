@@ -40,16 +40,25 @@ abstract class ApplicationEvent {
 /// `PayloadApplicationEvent`. Listeners for the payload type receive the
 /// payload itself.
 ///
-/// The context creates it for you; listen to the payload type directly.
+/// The context creates it for you, typed with the static type of the
+/// published object; listen to the payload type directly, or to
+/// `PayloadApplicationEvent<T>` for the source and timestamp too. An
+/// `@EventListener` method (or `ApplicationListener`) of
+/// `PayloadApplicationEvent<T>` matches on the payload's runtime type,
+/// like Spring; a listener added with `addListener` matches on the event's
+/// type argument.
 ///
 /// ```dart
 /// context.addListener<OrderPlaced>((order) => print(order.id));
 /// context.publishEvent(OrderPlaced(1, 20)); // wrapped automatically
 ///
 /// // Listeners of the wrapper see the source too:
-/// context.addListener<PayloadApplicationEvent<Object>>(
+/// context.addListener<PayloadApplicationEvent<OrderPlaced>>(
 ///   (event) => print('${event.payload} from ${event.source}'),
 /// );
+///
+/// @EventListener()
+/// void on(PayloadApplicationEvent<OrderPlaced> event) { ... }
 /// ```
 ///
 /// Spring (Java):
@@ -60,8 +69,9 @@ abstract class ApplicationEvent {
 /// void on(PayloadApplicationEvent<OrderPlaced> event) { ... }
 /// ```
 class PayloadApplicationEvent<T extends Object> extends ApplicationEvent {
-  /// Creates an event carrying [payload], published by [source].
-  PayloadApplicationEvent(super.source, this.payload);
+  /// Creates an event carrying [payload], published by [source];
+  /// [timestamp] defaults to now.
+  PayloadApplicationEvent(super.source, this.payload, {super.timestamp});
 
   /// The published object.
   final T payload;

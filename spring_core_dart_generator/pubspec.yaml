@@ -17,7 +17,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  analyzer: ">=14.0.0 <15.0.0"
+  analyzer: ">=14.3.0 <15.0.0"
   build: ^5.0.0
   code_builder: ^4.13.0
   dart_style: ^3.1.0
@@ -25,11 +25,12 @@ dependencies:
   path: ^1.9.0
   pub_semver: ^2.1.0
   source_gen: ^4.3.0
+  spring_core_dart: ^0.1.7
+  yaml: ^3.1.0
 
 dev_dependencies:
   coverage: ^1.11.0
   # Only for tests: generated code under test imports the runtime.
-  spring_core_dart: ^0.1.7
   spring_boot_dart: ^0.1.7
   build_test: ^3.5.0
   package_config: ^2.1.0

@@ -57,6 +57,51 @@ final class EventListenerMethod<T extends Object> {
     invoke: (bean, event) => handler(bean, unwrap<E>(event)!.value),
   );
 
+  /// A listener of `PayloadApplicationEvent<P>`, matching on the runtime
+  /// type of the payload like Spring's `ResolvableType` matching: a
+  /// payload published as `PayloadApplicationEvent<Object>` (an object of
+  /// static type `Object`, a listener's result) is handed over as a
+  /// `PayloadApplicationEvent<P>` with the same source and timestamp.
+  /// [condition] filters the event.
+  ///
+  /// The generator uses it for `@EventListener` methods (and
+  /// `ApplicationListener`s) of a `PayloadApplicationEvent<P>`:
+  ///
+  /// ```dart
+  /// EventListenerMethod.forPayload<Audit, OrderPlaced>(
+  ///   'Audit.on',
+  ///   (bean, event) => bean.on(event),
+  /// );
+  /// ```
+  static EventListenerMethod<T> forPayload<T extends Object, P extends Object>(
+    String id,
+    Object? Function(T bean, PayloadApplicationEvent<P> event) handler, {
+    int? order,
+    bool Function(PayloadApplicationEvent<P> event)? condition,
+  }) => EventListenerMethod<T>(
+    id: id,
+    order: order,
+    supports: (event) {
+      final payloadEvent = _payloadEvent<P>(event);
+      return payloadEvent != null &&
+          (condition == null || condition(payloadEvent));
+    },
+    invoke: (bean, event) => handler(bean, _payloadEvent<P>(event)!),
+  );
+
+  static PayloadApplicationEvent<P>? _payloadEvent<P extends Object>(
+    Object event,
+  ) => switch (event) {
+    final PayloadApplicationEvent<P> typed => typed,
+    PayloadApplicationEvent(
+      :final source,
+      payload: final P payload,
+      :final timestamp,
+    ) =>
+      PayloadApplicationEvent<P>(source, payload, timestamp: timestamp),
+    _ => null,
+  };
+
   /// A listener for several event types: [accepts] decides on the event or
   /// its payload; [condition] (a `bool Function(E)`) is applied to the
   /// accepted object.

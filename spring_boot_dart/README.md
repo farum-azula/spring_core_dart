@@ -86,7 +86,8 @@ completes after the last runner, like Spring Boot's `run`.
 
 With `spring.main.register-shutdown-hook=true` (the property wins) or
 `SpringApplication(registerShutdownHook: true)` the context is closed when
-the process gets SIGINT or SIGTERM (Boot's shutdown hook): `@PreDestroy`
+the process gets SIGINT or SIGTERM (Boot's shutdown hook, through the
+context's `registerShutdownHook()`): `@PreDestroy`
 methods and `ContextClosedEvent` listeners run, then the process ends with
 `130` / `143`. Unlike Boot it is off by default: a Dart program that
 listens for signals does not end by itself, so a program that is done
@@ -237,7 +238,7 @@ replace another of the same name (off by default).
 
 ## JSON: the `ObjectMapper` bean
 
-An `objectMapper` bean (the core's `ObjectMapper`) is configured from
+A `jacksonJsonMapper` bean (Boot 4's name; the core's `ObjectMapper`) is configured from
 `spring.jackson.*`, like Spring Boot's `JacksonAutoConfiguration`. It knows
 every `@Introspected` class of the application and adds every
 `JsonSerializer` / `JsonDeserializer` bean (Boot's `@JsonComponent`) and every
@@ -260,10 +261,16 @@ class Catalog {
 | `spring.jackson.property-naming-strategy` | `LOWER_CAMEL_CASE` | `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `KEBAB_CASE`, `LOWER_CASE`, `LOWER_DOT_CASE` |
 | `spring.jackson.default-property-inclusion` | `always` | `non_null`, `non_empty` |
 | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
-| `spring.jackson.serialization.write-dates-as-timestamps` | `false` | `DateTime` / `Duration` as milliseconds |
+| `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.jackson.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` | `DateTime` / `Duration` as milliseconds |
 | `spring.jackson.serialization.indent-output` | `false` | pretty-print |
 | `spring.jackson.mapper.sort-properties-alphabetically` | `true` | properties sorted by JSON name, constructor parameters first (Jackson 3's / Boot 4's order); `false`: declaration order |
 | `spring.jackson.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` (no named zones: Dart has no tz database) |
+
+Any other `spring.jackson.*` key (Boot binds Jackson's feature flags,
+`date-format`, `locale`, ...) is logged as a warning naming the key and
+ignored. Time zones are `UTC` / `Z` or a fixed offset: Dart has no time zone
+database, so a named zone such as `Europe/Berlin` fails the startup with a
+message saying so.
 
 `objectMapperFromProperties(environment)` builds the same mapper by hand.
 

@@ -13,15 +13,23 @@ name: 'Release'
 # RELEASE_TOKEN: pushes made with the default GITHUB_TOKEN do not start
 # other workflows (the tag must start publish.yml).
 
+# The bump is part of the run's name, so the list of runs shows what was
+# chosen.
+run-name: Release (${{ inputs.bump }})
+
 on:
   workflow_dispatch:
     inputs:
+      # No usable default: GitHub resets the inputs to their defaults when
+      # the branch of the form is changed, so a default could be released by
+      # mistake. "choose" fails the run.
       bump:
         description: 'Version bump: patch (0.1.6 → 0.1.7) or minor (0.1.6 → 0.2.0, breaking changes)'
         type: choice
         required: true
-        default: patch
+        default: choose
         options:
+          - choose
           - patch
           - minor
 
@@ -50,7 +58,15 @@ jobs:
 
       - name: Bump versions and changelogs
         id: release
-        run: dart run tool/release.dart --bump="${{ inputs.bump }}"
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          if [ "$BUMP" != patch ] && [ "$BUMP" != minor ]; then
+            echo "::error::Choose the bump (patch or minor) in the Run workflow form."
+            exit 1
+          fi
+          echo "Bump: $BUMP"
+          dart run tool/release.dart --bump="$BUMP"
 
       # Test with the new version before tagging (tests may check it, e.g.
       # compatibility messages): a failure leaves no tag behind.
@@ -78,5 +94,5 @@ jobs:
           if [ -z "$VERSION" ]; then
             echo "Nothing to release: no package changed since the last tag." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Released v$VERSION: \"Release: publish to pub.dev\" publishes it now." >> "$GITHUB_STEP_SUMMARY"
+            echo "Released v$VERSION (${{ inputs.bump }}): \"Release: publish to pub.dev\" publishes it now." >> "$GITHUB_STEP_SUMMARY"
           fi

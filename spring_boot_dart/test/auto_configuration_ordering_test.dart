@@ -272,7 +272,7 @@ void main() {
       [springBootAutoConfiguration],
       excludeName: ['JacksonAutoConfiguration'],
     );
-    expect(context.containsBean('objectMapper'), isFalse);
+    expect(context.containsBean('jacksonJsonMapper'), isFalse);
     expect(context.containsBean('defaultValidator'), isTrue);
     context.close();
   });

@@ -20,9 +20,9 @@ import 'package:spring_core_dart_generator/src/constraint_checker.dart';
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
 
-// Annotations are matched by name in `package:spring_core_dart`, so the
-// generator does not depend on the runtime package (consumers can pull both
-// from git without dependency overrides).
+// Annotations are matched by name in `package:spring_core_dart` (the
+// generator depends on the runtime only for its pointcut parser, see
+// aop_analysis.dart).
 TypeChecker _spring(String name) =>
     TypeChecker.typeNamedLiterally(name, inPackage: 'spring_core_dart');
 
@@ -65,6 +65,8 @@ final _objectProvider = _spring('ObjectProvider');
 final _objectFactory = _spring('ObjectFactory');
 final _introspected = _spring('Introspected');
 final _aspectAnnotation = _spring('Aspect');
+final _constraint = _spring('Constraint');
+final _valid = _spring('Valid');
 final _pointcutAnnotation = _spring('Pointcut');
 final _adviceAnnotations = {
   'around': _spring('Around'),
@@ -222,6 +224,43 @@ const _diAnnotations = {
 /// class AppConfig {}
 /// ```
 final componentScanChecker = _spring('ComponentScan');
+
+/// Several independent validation errors of one build, reported together
+/// (each with its message, library URI and location) instead of one per
+/// build.
+///
+/// ```dart
+/// // Two broken classes in one scanned directory:
+/// // 2 problems in this build:
+/// //
+/// // 1. Bean class Broken must not be abstract.
+/// //    package:app/src/broken.dart:3:16
+/// //    ...
+/// // 2. Only one constructor may be @Autowired ...
+/// ```
+class BuildErrors implements Exception {
+  /// Wraps [errors] (at least two).
+  BuildErrors(List<InvalidGenerationSource> errors)
+    : errors = List.unmodifiable(errors);
+
+  /// The errors, in scan order.
+  final List<InvalidGenerationSource> errors;
+
+  @override
+  String toString() => [
+    '${errors.length} problems in this build:',
+    for (final (index, error) in errors.indexed)
+      '${index + 1}. ${describeBuildError(error)}',
+  ].join('\n\n');
+}
+
+/// [error] as text with the library URI of its element, also when no
+/// source span can be computed for it.
+String describeBuildError(InvalidGenerationSource error) {
+  final text = error.toString();
+  final uri = error.element?.library?.uri;
+  return uri == null || text.contains('$uri') ? text : '$text\n($uri)';
+}
 
 /// Reads the options of the `@ComponentScan` [annotation] on [element]
 /// (`includeFilters`, `excludeFilters`, `useDefaultFilters`, `lazyInit`).
@@ -417,22 +456,110 @@ class BeanScanner {
   /// // ASM and keeps those whose metadata has @Component:
   /// provider.findCandidateComponents("com.example.app.greeting");
   /// ```
+  ///
+  /// A problem with one declaration does not stop the scan: it is added to
+  /// [errors] and the next declaration is scanned, so one build reports
+  /// every independent problem (see [throwErrors]).
   void scanLibrary(LibraryElement library) {
     for (final element in library.classes) {
-      if (_configurable.hasAnnotationOf(element)) {
-        _scanConfigurable(element);
-      }
-      if (_introspected.hasAnnotationOf(element)) {
-        _scanIntrospected(element);
-      }
-      if (_interfaceProxyPrimary(element) case final primary?) {
-        _scanInterfaceProxy(element, primary: primary);
-        continue;
-      }
-      final annotation = _component.firstAnnotationOf(element);
-      if (scan.isCandidate(element, isComponent: annotation != null)) {
-        scanClass(element, annotation: annotation);
-      }
+      collectErrors(() {
+        if (_configurable.hasAnnotationOf(element)) {
+          _scanConfigurable(element);
+        }
+        if (_introspected.hasAnnotationOf(element)) {
+          _scanIntrospected(element);
+        }
+        if (_interfaceProxyPrimary(element) case final primary?) {
+          _scanInterfaceProxy(element, primary: primary);
+          return;
+        }
+        final annotation = _component.firstAnnotationOf(element);
+        if (scan.isCandidate(element, isComponent: annotation != null)) {
+          scanClass(element, annotation: annotation);
+        }
+      });
+    }
+    _rejectUnsupportedTargets(library);
+  }
+
+  /// Validation errors of the declarations scanned so far, in scan order.
+  final errors = <InvalidGenerationSource>[];
+
+  /// Runs [action], adding an `InvalidGenerationSource` it throws to
+  /// [errors] instead of stopping the build.
+  void collectErrors(void Function() action) {
+    try {
+      action();
+    } on InvalidGenerationSource catch (error) {
+      errors.add(error);
+    }
+  }
+
+  /// Throws the collected [errors]: the single error itself, or a
+  /// [BuildErrors] listing all of them; does nothing without errors.
+  void throwErrors() {
+    switch (errors) {
+      case []:
+        return;
+      case [final error]:
+        throw error;
+      default:
+        throw BuildErrors(errors);
+    }
+  }
+
+  // Only classes are beans: `@Component` on a mixin, enum, extension or
+  // extension type, and `@Bean` on a top-level function, would otherwise be
+  // ignored silently (Spring's annotations cannot be put there at all).
+  void _rejectUnsupportedTargets(LibraryElement library) {
+    final targets = <(Element, String, String)>[
+      for (final mixin in library.mixins)
+        (
+          mixin,
+          'mixin',
+          'annotate a class that mixes it in '
+              '(`class ${mixin.name}Bean with ${mixin.name}`)',
+        ),
+      for (final enumElement in library.enums)
+        (enumElement, 'enum', 'return the value from a @Bean method'),
+      for (final extension in library.extensions)
+        (
+          extension,
+          'extension',
+          'annotate the extended class, or declare a @Bean method',
+        ),
+      for (final extensionType in library.extensionTypes)
+        (
+          extensionType,
+          'extension type',
+          'use a class: extension types are erased at runtime, so the '
+              'container cannot tell them from their representation type',
+        ),
+    ];
+    for (final (element, kind, instead) in targets) {
+      collectErrors(() {
+        if (_component.firstAnnotationOf(element) case final annotation?) {
+          _fail(
+            '@${annotation.type!.element!.name} on $kind '
+            '${element.displayName} of ${library.uri}: only classes can be '
+            'beans; $instead.',
+            element,
+          );
+        }
+      });
+    }
+    for (final function in library.topLevelFunctions) {
+      collectErrors(() {
+        if (_bean.hasAnnotationOf(function)) {
+          _fail(
+            '@Bean on top-level function ${function.displayName} of '
+            '${library.uri}: @Bean methods belong to a class with '
+            '@Configuration or @Component; move it there (as an instance '
+            'or static method).',
+            function,
+          );
+        }
+      });
     }
   }
 
@@ -526,16 +653,23 @@ class BeanScanner {
     module.propertySources.addAll(_propertySources(element, classConditions));
 
     final type = element.thisType;
-    final name =
-        (annotation == null
-            ? null
-            : ConstantReader(annotation).peek('name')?.stringValue) ??
-        _decapitalize(className);
+    final explicitName = annotation == null
+        ? null
+        : ConstantReader(annotation).peek('name')?.stringValue;
+    final name = explicitName == null
+        ? _decapitalize(className)
+        : _checkBeanName(
+            explicitName,
+            'The bean name of $className',
+            element,
+            orDefault: _decapitalize(className),
+          );
     // A constructor-bound @ConfigurationProperties class is created from
     // properties, not beans (see _boundConstructor).
-    final constructor = _boundConstructor(element) == null
-        ? _selectConstructor(element)
-        : null;
+    final constructors = _boundConstructor(element) == null
+        ? _selectConstructors(element)
+        : const <ConstructorElement>[];
+    final constructor = constructors.firstOrNull;
     final classLazy = _isLazy(element);
     // Checked before the configuration subclass: a private parameter type
     // is an error in lite mode too.
@@ -567,6 +701,13 @@ class BeanScanner {
               _constructorName(constructor!),
               arguments,
               configuration: configuration,
+              alternatives: [
+                for (final alternative in constructors.skip(1))
+                  ConstructorAlternative(
+                    _constructorName(alternative),
+                    _arguments(alternative.formalParameters, creation: true),
+                  ),
+              ],
             ),
       scope: _scopeOf(element),
       lazy: classLazy ?? scan.lazyInit,
@@ -598,12 +739,21 @@ class BeanScanner {
             )
           : null,
     );
+    if (constructors.length > 1 &&
+        (configuration != null || owner.proxy?.subclass != null)) {
+      _fail(
+        '$className is created as a generated subclass '
+        '(${configuration != null ? 'full-mode @Configuration' : 'AOP proxy'}'
+        '), which calls one constructor: mark that one @Autowired() '
+        'instead of several @Autowired(required: false).',
+        element,
+      );
+    }
     module.beans.add(owner);
 
-    // `@Lazy` on a `@Configuration` class is the default for its `@Bean`
-    // methods (as in Spring); on other components it only affects the
-    // component itself.
-    final isConfiguration = _configuration.hasAnnotationOf(element);
+    // `@Lazy` on a class is the default for its `@Bean` methods, full or
+    // lite configuration (Spring's processCommonDefinitionAnnotations
+    // falls back to the configuration class's `@Lazy`).
     for (final (method, beanAnnotation) in beanMethods) {
       module.beans.add(
         _scanBeanMethod(
@@ -611,7 +761,7 @@ class BeanScanner {
           method,
           ConstantReader(beanAnnotation),
           classConditions: classConditions,
-          classLazy: isConfiguration ? classLazy : null,
+          classLazy: classLazy,
           configuration: configuration,
         ),
       );
@@ -945,6 +1095,22 @@ class BeanScanner {
       .firstOrNull
       ?.name;
 
+  /// [_userAnnotations] of a getter or setter; for the implicit accessors of
+  /// a field, also those of the field (`@Timed() int count = 0;` advises
+  /// `count` like an annotated explicit getter). Constraints and `@Valid`
+  /// stay out: on a field they validate the field, while on an accessor
+  /// method validation would check the return value of the getter and of
+  /// every setter call.
+  List<DartObject> _accessorAnnotations(PropertyAccessorElement accessor) => [
+    ..._userAnnotations(accessor),
+    if (accessor.isOriginVariable)
+      for (final annotation in _userAnnotations(accessor.variable))
+        if (annotation.type case final type?
+            when !_constraint.isAssignableFromType(type) &&
+                !_valid.isExactlyType(type))
+          annotation,
+  ];
+
   /// Const annotations worth keeping at runtime: user annotations and
   /// constraints, not `dart:` ones or Spring's DI annotations.
   List<DartObject> _userAnnotations(Element element) => [
@@ -1066,6 +1232,14 @@ class BeanScanner {
     if (declaredType.isDartAsyncFuture || declaredType.isDartAsyncFutureOr) {
       _fail('@Bean method $methodName must not be async.', method);
     }
+    if (declaredType.element case ExtensionTypeElement(:final name)) {
+      _fail(
+        '@Bean method $methodName returns extension type $name: extension '
+        'types are erased at runtime, so the container cannot tell them '
+        'from their representation type. Return a class instead.',
+        method,
+      );
+    }
     final returnType = inferredBeanType(method, declaredType);
     final inferred = returnType != declaredType;
     for (final type in {declaredType, returnType}) {
@@ -1078,7 +1252,15 @@ class BeanScanner {
     }
     final initMethod = annotation.peek('initMethod')?.stringValue;
     final destroyMethod = annotation.peek('destroyMethod')?.stringValue;
-    final name = annotation.peek('name')?.stringValue ?? methodName;
+    final explicitName = annotation.peek('name')?.stringValue;
+    final name = explicitName == null
+        ? methodName
+        : _checkBeanName(
+            explicitName,
+            'The bean name of ${_describe(method)}',
+            method,
+            orDefault: methodName,
+          );
     final scope = _scopeOf(method);
     final arguments = _arguments(method.formalParameters, creation: true);
     final factoryObjectTypes = _factoryObjectTypes(returnType);
@@ -1089,7 +1271,11 @@ class BeanScanner {
       aliases: [
         for (final alias
             in annotation.peek('aliases')?.listValue ?? const <DartObject>[])
-          alias.toStringValue()!,
+          _checkBeanName(
+            alias.toStringValue()!,
+            'An alias of ${_describe(method)}',
+            method,
+          ),
       ],
       type: returnType,
       exposedTypes: inferred
@@ -1176,7 +1362,7 @@ class BeanScanner {
           ? null
           : _proxyModel(
               returnType,
-              '_\$${owner.type.element.name}_${methodName}Proxy',
+              '_\$${owner.type.element.name}\$${_capitalize(methodName)}Proxy',
               implementSelf: true,
             ),
     );
@@ -1573,8 +1759,8 @@ class BeanScanner {
             typeParameters: const [],
             parameters: const [],
             annotations: [
-              ..._userAnnotations(implementation),
-              ..._userAnnotations(getter),
+              ..._accessorAnnotations(implementation),
+              if (getter != implementation) ..._accessorAnnotations(getter),
             ],
           ),
         );
@@ -1611,7 +1797,7 @@ class BeanScanner {
                 isRequired: true,
               ),
             ],
-            annotations: _userAnnotations(implementation),
+            annotations: _accessorAnnotations(implementation),
           ),
         );
       }
@@ -1753,7 +1939,7 @@ class BeanScanner {
             returnType: getter.returnType,
             typeParameters: const [],
             parameters: const [],
-            annotations: _userAnnotations(getter),
+            annotations: _accessorAnnotations(getter),
           ),
         );
       }
@@ -1908,8 +2094,8 @@ class BeanScanner {
               typeParameters: const [],
               parameters: const [],
               annotations: [
-                ..._userAnnotations(implementation),
-                ..._userAnnotations(getter),
+                ..._accessorAnnotations(implementation),
+                if (getter != implementation) ..._accessorAnnotations(getter),
               ],
             ),
           );
@@ -1945,7 +2131,7 @@ class BeanScanner {
                   isRequired: true,
                 ),
               ],
-              annotations: _userAnnotations(implementation!),
+              annotations: _accessorAnnotations(implementation!),
             ),
           );
         }
@@ -2289,40 +2475,122 @@ class BeanScanner {
         : constructor;
   }
 
-  // Constructor selection, like Spring's: the single `@Autowired`
-  // constructor, else the public unnamed constructor, else the only public
-  // constructor; otherwise the choice is ambiguous and generation fails.
-  ConstructorElement _selectConstructor(ClassElement element) {
+  // Constructor selection, like Spring's AutowiredAnnotationBeanPostProcessor
+  // and ConstructorResolver. Candidates, greediest first:
+  // - a required `@Autowired` constructor (no other may be `@Autowired`);
+  // - several `@Autowired(required: false)` constructors, plus the one
+  //   callable without arguments: the generated code calls the first whose
+  //   beans exist (see ModuleEmitter);
+  // - otherwise the only public constructor (generative ones count first),
+  //   the primary constructor (like Kotlin's in Spring) or the one callable
+  //   without arguments; anything else is ambiguous and fails the build.
+  List<ConstructorElement> _selectConstructors(ClassElement element) {
+    final className = element.name!;
+    String label(ConstructorElement constructor) =>
+        _constructorName(constructor) == null
+        ? className
+        : '$className.${constructor.name}';
     final annotated = [
       for (final constructor in element.constructors)
         if (_autowired.hasAnnotationOf(constructor)) constructor,
     ];
-    if (annotated.length > 1) {
-      _fail('Only one constructor may be @Autowired.', annotated[1]);
+    for (final constructor in annotated) {
+      if (constructor.isPrivate) {
+        _fail(
+          '@Autowired constructor ${label(constructor)} must be public: the '
+          'generated module cannot call a private constructor.',
+          constructor,
+        );
+      }
     }
-    final public = [
-      for (final constructor in element.constructors)
-        if (constructor.isPublic) constructor,
+    final required = [
+      for (final constructor in annotated)
+        if (ConstantReader(_autowired.firstAnnotationOf(constructor))
+                .peek('required')
+                ?.boolValue ??
+            true)
+          constructor,
     ];
-    final unnamed = element.unnamedConstructor;
-    final selected = annotated.isNotEmpty
-        ? annotated.single
-        : (unnamed != null && unnamed.isPublic)
-        ? unnamed
-        : public.length == 1
-        ? public.single
-        : null;
-    if (selected == null) {
+    if (required.isNotEmpty) {
+      if (annotated.length > 1) {
+        _fail(
+          'Only one constructor may be @Autowired when one of them is '
+          'required: ${label(required.first)} is required, but '
+          '${annotated.map(label).join(', ')} are @Autowired. Keep one, or '
+          'mark each candidate @Autowired(required: false) to use the one '
+          'with the most parameters whose beans exist.',
+          annotated.firstWhere((c) => c != required.first),
+        );
+      }
+      return required;
+    }
+    final noArgument = _noArgumentConstructor(element);
+    if (annotated.isNotEmpty) {
+      final candidates = [
+        ...annotated,
+        if (noArgument != null && !annotated.contains(noArgument)) noArgument,
+      ];
+      // Stable: declaration order among constructors of the same size.
+      final order = [...candidates];
+      return candidates..sort((a, b) {
+        final bySize = b.formalParameters.length.compareTo(
+          a.formalParameters.length,
+        );
+        return bySize != 0 ? bySize : order.indexOf(a) - order.indexOf(b);
+      });
+    }
+    final generative = [
+      for (final constructor in element.constructors)
+        if (constructor.isPublic && !constructor.isFactory) constructor,
+    ];
+    final candidates = generative.isNotEmpty
+        ? generative
+        : [
+            for (final constructor in element.constructors)
+              if (constructor.isPublic) constructor,
+          ];
+    if (candidates.isEmpty) {
       _fail(
-        'Cannot choose a constructor for ${element.name}: '
-        'mark one public constructor with @Autowired.',
+        'Bean class $className has no public constructor: the generated '
+        'module cannot create it. Add a public constructor.',
         element,
       );
     }
-    if (selected.isPrivate) {
-      _fail('@Autowired constructor must be public.', selected);
+    if (candidates.length == 1) {
+      return candidates;
     }
-    return selected;
+    if (candidates.where((c) => c.isPrimary).firstOrNull case final primary?) {
+      return [primary];
+    }
+    if (noArgument != null) {
+      return [noArgument];
+    }
+    _fail(
+      'Cannot choose a constructor for $className: it has several public '
+      'constructors (${candidates.map(label).join(', ')}), neither a '
+      'primary one nor a single one callable without arguments. Mark the '
+      'one to use with '
+      '@Autowired(), or several with @Autowired(required: false).',
+      element,
+    );
+  }
+
+  // Spring's default constructor: here the public one callable without
+  // arguments (no required parameters), generative ones first; `null` when
+  // there is none or several (`A.one()` and `A.two()`).
+  ConstructorElement? _noArgumentConstructor(ClassElement element) {
+    final callable = [
+      for (final constructor in element.constructors)
+        if (constructor.isPublic &&
+            constructor.formalParameters.every((p) => !p.isRequired))
+          constructor,
+    ];
+    final generative = [
+      for (final constructor in callable)
+        if (!constructor.isFactory) constructor,
+    ];
+    final preferred = generative.isNotEmpty ? generative : callable;
+    return preferred.length == 1 ? preferred.single : null;
   }
 
   // `null` for the unnamed constructor (the analyzer may report it as
@@ -2457,8 +2725,32 @@ class BeanScanner {
   }
 
   // Fields and setters are injected only when annotated.
-  bool _isInjected(Element element) =>
-      _autowired.hasAnnotationOf(element) || _value.hasAnnotationOf(element);
+  bool _isInjected(Element element) {
+    if (_value.hasAnnotationOf(element)) {
+      return true;
+    }
+    if (!_autowired.hasAnnotationOf(element)) {
+      return false;
+    }
+    _rejectOptionalAutowired(element);
+    return true;
+  }
+
+  // `@Autowired(required: false)` chooses among constructors only; on a
+  // field, setter or method a nullable type says the same in Dart.
+  void _rejectOptionalAutowired(Element element) {
+    final required = ConstantReader(_autowired.firstAnnotationOf(element))
+        .peek('required')
+        ?.boolValue;
+    if (required == false) {
+      _fail(
+        '@Autowired(required: false) on ${_describe(element)}: `required` '
+        'only chooses among constructors. Make the type nullable (`T?`) '
+        'for an optional dependency.',
+        element,
+      );
+    }
+  }
 
   /// Public `@Autowired` methods of the class and its supertypes, in
   /// injection order (see [injectionRank]).
@@ -2472,6 +2764,7 @@ class BeanScanner {
         if (method.isStatic || !_autowired.hasAnnotationOf(method)) {
           continue;
         }
+        _rejectOptionalAutowired(method);
         final name = _requireName(method);
         if (method.isPrivate) {
           _fail(
@@ -2560,16 +2853,45 @@ class BeanScanner {
       if (!supertype.isDartCoreObject) supertype.element,
   ];
 
+  /// The element whose `@Value` / `@Qualifier` / `@Named` / `@Lazy`
+  /// annotations apply to the injection point [element]: a super parameter
+  /// (`B(super.url)`) without any of them carries those of the super
+  /// constructor's parameter (`A(@Value('\${url}') this.url)`).
+  Element _injectionAnnotationSource(Element element) {
+    var current = element;
+    while (current is SuperFormalParameterElement &&
+        !_value.hasAnnotationOf(current) &&
+        !_qualifier.hasAnnotationOf(current) &&
+        !_named.hasAnnotationOf(current) &&
+        !_lazy.hasAnnotationOf(current)) {
+      final parameter = current.superConstructorParameter;
+      if (parameter == null) {
+        break;
+      }
+      current = parameter;
+    }
+    return current;
+  }
+
   // A nullable declared type makes the point optional. `@Value` wins over
   // everything else; otherwise the kind follows from the type (see
   // `_pointKind`). The element name is kept for single beans so the
   // runtime can fall back to matching it against bean names.
   InjectionPoint _injectionPoint(Element element, DartType type) {
-    final valueAnnotation = _value.firstAnnotationOf(element);
+    final annotated = _injectionAnnotationSource(element);
+    final valueAnnotation = _value.firstAnnotationOf(annotated);
     final optional = type.nullabilitySuffix == NullabilitySuffix.question;
     _requirePublicType(type, element, '${_describe(element)} has');
+    if (type case InterfaceType(element: ExtensionTypeElement(:final name))) {
+      _fail(
+        'Cannot inject extension type $name into ${_describe(element)}: '
+        'extension types are erased at runtime, so the container cannot '
+        'tell them from their representation type. Use a class instead.',
+        element,
+      );
+    }
     if (valueAnnotation != null) {
-      if (_isLazy(element) ?? false) {
+      if (_isLazy(annotated) ?? false) {
         _fail(
           '@Lazy on ${element.displayName}: @Value is resolved at creation; '
           'only beans can be injected lazily.',
@@ -2591,9 +2913,9 @@ class BeanScanner {
     if (interfaceType.isDartAsyncFuture || interfaceType.isDartAsyncFutureOr) {
       _fail('Cannot inject a Future into ${element.displayName}.', element);
     }
-    final qualifier = _qualifierOf(element);
+    final qualifier = _qualifierOf(annotated);
     final (kind, beanType) = _pointKind(interfaceType, element);
-    final lazy = _isLazy(element) ?? false;
+    final lazy = _isLazy(annotated) ?? false;
     if (lazy) {
       _checkLazyPoint(element, kind, beanType, optional: optional);
     }
@@ -2858,9 +3180,9 @@ class BeanScanner {
         : ConstantReader(named).peek('name')?.stringValue ?? element.name;
   }
 
-  // Three kinds of conditions: `@Profile`, `@Conditional([Type])` and any
-  // const annotation whose class implements `Condition` (re-emitted as a
-  // const expression, see `ModuleEmitter`).
+  // Three kinds of conditions: `@Profile`, `@Conditional([Type])` (or a
+  // subclass of either) and any const annotation whose class implements
+  // `Condition` (re-emitted as a const expression, see `ModuleEmitter`).
   List<ConditionModel> _conditions(Element element) {
     final result = <ConditionModel>[];
     for (final annotation in element.metadata.annotations) {
@@ -2869,14 +3191,16 @@ class BeanScanner {
       if (value == null || type is! InterfaceType) {
         continue;
       }
-      if (_profile.isExactlyType(type)) {
+      // A subclass (`class Dev extends Profile`) counts like the base
+      // annotation, as Spring's meta-annotations do.
+      if (_profile.isAssignableFromType(type)) {
         result.add(
           ProfileConditionModel([
             for (final p in ConstantReader(value).read('value').listValue)
               p.toStringValue()!,
           ]),
         );
-      } else if (_conditional.isExactlyType(type)) {
+      } else if (_conditional.isAssignableFromType(type)) {
         for (final conditionType in ConstantReader(
           value,
         ).read('value').listValue) {
@@ -3363,6 +3687,33 @@ class BeanScanner {
   }
 
   // Analyzer elements may be unnamed (e.g. while code is incomplete).
+  // An explicit bean name or alias: Spring's registry rejects empty and
+  // blank names; surrounding whitespace is a typo no lookup would match.
+  String _checkBeanName(
+    String name,
+    String what,
+    Element element, {
+    String? orDefault,
+  }) {
+    final remove = orDefault == null
+        ? 'remove it'
+        : "remove it to use the default name '$orDefault'";
+    if (name.trim().isEmpty) {
+      _fail(
+        "$what is ${name.isEmpty ? 'empty' : 'blank'}: give a name, or "
+        '$remove.',
+        element,
+      );
+    }
+    if (name.trim() != name) {
+      _fail(
+        "$what '$name' starts or ends with whitespace: use '${name.trim()}'.",
+        element,
+      );
+    }
+    return name;
+  }
+
   String _requireName(Element element) =>
       element.name ?? _fail('Unnamed element.', element);
 

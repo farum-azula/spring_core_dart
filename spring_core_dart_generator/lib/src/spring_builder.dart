@@ -13,6 +13,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
 const _outputExtension = '.beans.dart';
@@ -102,12 +103,18 @@ class SpringBuilder implements Builder {
   /// ```
   SpringBuilder({
     this.proxyMode = ProxyMode.all,
+    this.pruneProxies = true,
     Future<String?> Function(AssetId output)? readExistingOutput,
   }) : _readExistingOutput = readExistingOutput ?? _readOutputFile;
 
   /// Which beans get generated AOP proxies (build option `aop_proxies`:
   /// `all`, `interfaces` or `none`).
   final ProxyMode proxyMode;
+
+  /// Whether `aop_proxies: all` skips the proxy classes of beans no
+  /// pointcut of the module can match (build option `aop_prune`, `true` by
+  /// default).
+  final bool pruneProxies;
 
   final Future<String?> Function(AssetId output) _readExistingOutput;
 
@@ -217,6 +224,7 @@ class SpringBuilder implements Builder {
       return null;
     }
     final library = await resolver.libraryFor(input);
+    _rejectMisplacedScans(library);
     final boots = [
       for (final function in library.topLevelFunctions)
         if (springBootApplicationChecker.hasAnnotationOf(function)) function,
@@ -247,15 +255,18 @@ class SpringBuilder implements Builder {
     }
 
     // The scan root is the directory of the annotated file; every library
-    // below it (recursively) is scanned, generated files excluded.
+    // below it (recursively) is scanned, generated files excluded. A
+    // subdirectory with its own @ComponentScan is left to that scan, whose
+    // module is imported instead.
     final directory = p.url.dirname(input.path);
-    final assets = await buildStep
-        .findAssets(Glob('$directory/**.dart'))
-        .where((asset) => !asset.path.endsWith(_outputExtension))
-        .toList();
-    assets.sort((a, b) => a.path.compareTo(b.path));
-
     final module = ModuleModel();
+    final assets = await _scannedAssets(
+      buildStep,
+      {directory},
+      module,
+      scanRoot: directory,
+    );
+
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -265,9 +276,14 @@ class SpringBuilder implements Builder {
       ),
     );
     await _scanLibraries(buildStep, scanner, assets);
-    _checkUniqueNames(module.beans);
+    scanner.collectErrors(() => _checkUniqueNames(module.beans));
+    scanner.throwErrors();
 
-    return ModuleEmitter(output).emit(
+    return ModuleEmitter(
+      output,
+      dependencies: await _dependencies(buildStep),
+      pruneProxies: pruneProxies,
+    ).emit(
       moduleName: variableName,
       variableName: '\$$variableName',
       scannedDirectory: directory,
@@ -329,22 +345,21 @@ class SpringBuilder implements Builder {
     final directory = p.url.dirname(input.path);
     final roots = {'lib', directory}
       ..removeWhere((root) => root != 'lib' && p.url.isWithin('lib', root));
-    final assets = <AssetId>{
-      for (final root in roots)
-        ...await buildStep
-            .findAssets(Glob('${Glob.quote(root)}/**.dart'))
-            .where((asset) => !asset.path.endsWith(_outputExtension))
-            .toList(),
-    }.toList()..sort((a, b) => a.path.compareTo(b.path));
-
     final module = ModuleModel();
+    final assets = await _scannedAssets(buildStep, roots, module);
+
     final scanner = BeanScanner(module, proxyMode: proxyMode);
     await _scanLibraries(buildStep, scanner, assets);
-    _checkUniqueNames(module.beans);
+    scanner.collectErrors(() => _checkUniqueNames(module.beans));
+    scanner.throwErrors();
 
     final autoConfigurations = await _autoConfigurations(buildStep);
     final springApplication = refer('springApplication');
-    final emitter = ModuleEmitter(output);
+    final emitter = ModuleEmitter(
+      output,
+      dependencies: await _dependencies(buildStep),
+      pruneProxies: pruneProxies,
+    );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
     final source = emitter.emit(
       moduleName: 'application',
@@ -655,6 +670,142 @@ class SpringBuilder implements Builder {
         ?.computeConstantValue()
         ?.toStringValue();
     return value == null ? null : Version.parse(value);
+  }
+
+  /// The `.dart` files below [roots] (glob characters in directory names
+  /// are escaped), sorted by path, generated files excluded.
+  ///
+  /// A `@ComponentScan` file below them other than the input owns its
+  /// directory: its files are left out and its module variable is added to
+  /// [module]'s imports (the outermost ones only), so a bean is registered
+  /// once even when both modules are used (Spring skips candidates that
+  /// an overlapping scan already registered). Two `@ComponentScan` files in
+  /// one directory ([scanRoot], the input's for a `@ComponentScan`) fail
+  /// the build.
+  Future<List<AssetId>> _scannedAssets(
+    BuildStep buildStep,
+    Set<String> roots,
+    ModuleModel module, {
+    String? scanRoot,
+  }) async {
+    final input = buildStep.inputId;
+    final all = <AssetId>{
+      for (final root in roots)
+        ...await buildStep
+            .findAssets(Glob('${Glob.quote(root)}/**.dart'))
+            .where((asset) => !asset.path.endsWith(_outputExtension))
+            .toList(),
+    }.toList()..sort((a, b) => a.path.compareTo(b.path));
+
+    final nested = <String, TopLevelVariableElement>{};
+    for (final asset in all) {
+      if (asset == input ||
+          !(await buildStep.readAsString(asset)).contains('ComponentScan') ||
+          !await buildStep.resolver.isLibrary(asset)) {
+        continue;
+      }
+      final library = await buildStep.resolver.libraryFor(asset);
+      final scan = library.topLevelVariables
+          .where(componentScanChecker.hasAnnotationOf)
+          .firstOrNull;
+      if (scan == null) {
+        continue;
+      }
+      final directory = p.url.dirname(asset.path);
+      if (directory == scanRoot) {
+        throw InvalidGenerationSource(
+          'Two @ComponentScan roots in $directory/: ${input.path} and '
+          '${asset.path}. A directory has one scan root; remove one, or move '
+          'it into a subdirectory (which the other then imports).',
+          element: scan,
+        );
+      }
+      nested.putIfAbsent(directory, () => scan);
+    }
+    bool owned(String path) =>
+        nested.keys.any((directory) => p.url.isWithin(directory, path));
+    for (final MapEntry(key: directory, value: scan) in nested.entries) {
+      if (!owned(directory)) {
+        module.imports.add(scan);
+      }
+    }
+    return [
+      for (final asset in all)
+        if (!owned(asset.path)) asset,
+    ];
+  }
+
+  /// The direct dependencies of the root package (with itself) that the
+  /// input's directory may import, from its `pubspec.yaml` (dev
+  /// dependencies only outside `lib/` and `bin/`, as the
+  /// `depend_on_referenced_packages` lint checks); `null` when it cannot be
+  /// read.
+  static Future<Set<String>?> _dependencies(BuildStep buildStep) async {
+    final package = buildStep.inputId.package;
+    final pubspec = AssetId(package, 'pubspec.yaml');
+    if (!await buildStep.canRead(pubspec)) {
+      return null;
+    }
+    final Object? yaml;
+    try {
+      yaml = loadYaml(await buildStep.readAsString(pubspec));
+    } on YamlException {
+      return null;
+    }
+    if (yaml is! Map) {
+      return null;
+    }
+    return {
+      package,
+      for (final section in [
+        'dependencies',
+        if (!const {
+          'lib',
+          'bin',
+        }.contains(buildStep.inputId.pathSegments.first))
+          'dev_dependencies',
+      ])
+        if (yaml[section] case final Map<Object?, Object?> entries)
+          for (final name in entries.keys) '$name',
+    };
+  }
+
+  // `@ComponentScan` belongs on a top-level variable; anywhere else it
+  // would be ignored silently.
+  static void _rejectMisplacedScans(LibraryElement library) {
+    final misplaced = <(Element, String)>[
+      for (final element in library.classes) (element, 'class'),
+      for (final element in library.mixins) (element, 'mixin'),
+      for (final element in library.enums) (element, 'enum'),
+      for (final element in library.extensions) (element, 'extension'),
+      for (final element in library.extensionTypes) (element, 'extension type'),
+      for (final element in library.topLevelFunctions) (element, 'function'),
+      for (final element in library.getters)
+        if (element.isOriginDeclaration) (element, 'getter'),
+      for (final container in [
+        ...library.classes,
+        ...library.mixins,
+        ...library.enums,
+        ...library.extensions,
+        ...library.extensionTypes,
+      ]) ...[
+        for (final field in container.fields)
+          if (field.isOriginDeclaration) (field, 'field'),
+        for (final method in container.methods) (method, 'method'),
+      ],
+    ];
+    for (final (element, kind) in misplaced) {
+      if (componentScanChecker.hasAnnotationOf(element)) {
+        throw InvalidGenerationSource(
+          '@ComponentScan on $kind ${element.displayName} of '
+          '${library.uri}: put it on a top-level variable holding the '
+          'generated module, e.g.\n'
+          '  @ComponentScan()\n'
+          '  final BeanModule appBeans = \$appBeans;',
+          element: element,
+        );
+      }
+    }
   }
 
   /// Scans the libraries among [assets] with [scanner], resolving the

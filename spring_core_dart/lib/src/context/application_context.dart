@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';
+import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
@@ -17,6 +18,7 @@ import 'package:spring_core_dart/src/context/event/event_listener_method.dart';
 import 'package:spring_core_dart/src/context/lifecycle.dart';
 import 'package:spring_core_dart/src/context/message/abstract_message_source.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
+import 'package:spring_core_dart/src/context/shutdown_hook.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
@@ -268,7 +270,7 @@ abstract interface class ConfigurableApplicationContext
   ///
   /// ```dart
   /// final context = ApplicationContext.run([appBeans]);
-  /// ProcessSignal.sigint.watch().listen((_) => context.close());
+  /// context.registerShutdownHook(); // or close() yourself
   /// ```
   ///
   /// Spring (Java):
@@ -276,6 +278,55 @@ abstract interface class ConfigurableApplicationContext
   /// context.close(); // or context.registerShutdownHook();
   /// ```
   void close();
+
+  /// Closes the context with [close] when the process gets SIGINT or
+  /// SIGTERM, then ends the process with `128 + signal` (`130`, `143`),
+  /// like Spring's `registerShutdownHook()` on the JVM. Registered once;
+  /// the signals are no longer watched once the context closes (a Dart
+  /// program that watches signals does not end by itself). Does nothing
+  /// without `dart:io` (web).
+  ///
+  /// ```dart
+  /// final context = ApplicationContext.run([appBeans])
+  ///   ..registerShutdownHook();
+  /// ```
+  ///
+  /// Spring (Java):
+  /// ```java
+  /// context.registerShutdownHook();
+  /// ```
+  void registerShutdownHook();
+
+  /// Stops the running [Lifecycle] beans except the [SmartLifecycle] beans
+  /// that are not [SmartLifecycle.isPauseable], then publishes
+  /// `ContextPausedEvent`, like Spring 7's `pause()`; [restart] resumes.
+  /// A no-op for the beans unless the lifecycle is running. Does not wait
+  /// for `SmartLifecycle.stopWithCallback` callbacks; see [pauseAsync].
+  ///
+  /// ```dart
+  /// // Flutter: AppLifecycleState.paused / resumed
+  /// context.pause();
+  /// context.restart();
+  /// ```
+  ///
+  /// Spring (Java):
+  /// ```java
+  /// context.pause();
+  /// context.restart();
+  /// ```
+  void pause();
+
+  /// Like [pause], waiting for the `SmartLifecycle.stopWithCallback`
+  /// callbacks of each phase (at most the lifecycle processor's timeout
+  /// per phase) before `ContextPausedEvent` is published.
+  Future<void> pauseAsync();
+
+  /// Stops the pauseable [Lifecycle] beans if the lifecycle is running,
+  /// then starts the auto-startup [SmartLifecycle] beans again (restoring
+  /// the state after [refresh]) and publishes `ContextRestartedEvent`,
+  /// like Spring 7's `restart()`. Unlike [start], beans that are not
+  /// auto-startup stay stopped.
+  void restart();
 
   /// Like [close], waiting: for the `SmartLifecycle.stopWithCallback`
   /// callbacks of each phase (at most the lifecycle processor's timeout
@@ -414,6 +465,7 @@ class AnnotationConfigApplicationContext
   List<Object>? _earlyEvents;
   MessageSource? _messageSource;
   LifecycleProcessor? _lifecycleProcessor;
+  void Function()? _stopShutdownHook;
   _State _state = _State.created;
 
   @override
@@ -577,10 +629,12 @@ class AnnotationConfigApplicationContext
     environment.validateRequiredProperties();
     _prepareBeanFactory();
     _loadModules();
+    postProcessBeanFactory(_factory);
     _invokeBeanFactoryPostProcessors();
     _registerBeanPostProcessors();
     _initMessageSource();
     _initEventMulticaster();
+    onRefresh();
     _registerListeners();
     _factory.validateBeanGraph();
     _finishBeanFactoryInitialization();
@@ -661,6 +715,7 @@ class AnnotationConfigApplicationContext
         return;
       }
       module.imports.forEach(load);
+      conditionContext.definition = null;
       for (final declaration in module.propertySources) {
         if (!declaration.conditions.every((c) => c.matches(conditionContext))) {
           continue;
@@ -673,6 +728,7 @@ class AnnotationConfigApplicationContext
         );
       }
       for (final definition in module.definitions) {
+        conditionContext.definition = definition;
         if (definition.conditions.every((c) => c.matches(conditionContext))) {
           _factory.registerBeanDefinition(definition);
         }
@@ -783,9 +839,9 @@ class AnnotationConfigApplicationContext
     _factory.addBeanPostProcessor(_listenerDetector);
   }
 
-  // A user `messageSource` bean gets the parent context as its parent
-  // (unless it has one); otherwise an empty DelegatingMessageSource
-  // forwards to the parent.
+  // A user `messageSource` bean gets the parent's message source as its
+  // parent (unless it has one); otherwise an empty DelegatingMessageSource
+  // forwards to it.
   void _initMessageSource() {
     if (_factory.containsLocalBean(messageSourceBeanName)) {
       final source =
@@ -793,12 +849,12 @@ class AnnotationConfigApplicationContext
       if (source is HierarchicalMessageSource &&
           source.parentMessageSource == null &&
           _parent != null) {
-        source.parentMessageSource = _parent;
+        source.parentMessageSource = _internalParentMessageSource;
       }
       _messageSource = source;
       return;
     }
-    final delegating = DelegatingMessageSource(_parent);
+    final delegating = DelegatingMessageSource(_internalParentMessageSource);
     _messageSource = delegating;
     _factory.registerSingleton(
       messageSourceBeanName,
@@ -806,6 +862,15 @@ class AnnotationConfigApplicationContext
       types: [MessageSource, HierarchicalMessageSource],
     );
   }
+
+  // Like Spring's getInternalParentMessageSource: the message source of a
+  // parent of this class (so lookups do not go through the parent
+  // context), else the parent context itself.
+  MessageSource? get _internalParentMessageSource => switch (_parent) {
+    final AnnotationConfigApplicationContext parent =>
+      parent._messageSource ?? parent,
+    final parent => parent,
+  };
 
   // A user `applicationEventMulticaster` bean wins over the default.
   void _initEventMulticaster() {
@@ -856,15 +921,16 @@ class AnnotationConfigApplicationContext
     events.forEach(multicaster.multicastEvent);
   }
 
-  // A `conversionService` bean replaces the environment's service for
-  // `@Value` conversion; then the configuration is frozen (the caller
-  // creates the eager singletons).
+  // A `conversionService` bean (here or in an ancestor, like Spring's
+  // containsBean) replaces the environment's service for `@Value`
+  // conversion; then the configuration is frozen (the caller creates the
+  // eager singletons).
   void _finishBeanFactoryInitialization() {
-    if (_factory.containsLocalBean(conversionServiceBeanName)) {
-      final service = _factory.getBeanByName(conversionServiceBeanName);
-      if (service is ConversionService) {
-        _factory.conversionService = service;
-      }
+    if (_factory.containsBean(conversionServiceBeanName) &&
+        _factory.isTypeMatch(conversionServiceBeanName, ConversionService)) {
+      _factory.conversionService = _factory.getBeanByName(
+        conversionServiceBeanName,
+      ) as ConversionService;
     }
     _factory.freezeConfiguration();
   }
@@ -903,8 +969,48 @@ class AnnotationConfigApplicationContext
     publishEvent(ContextStoppedEvent(this));
   }
 
+  /// See [ConfigurableApplicationContext.restart].
+  @override
+  void restart() {
+    _checkActive();
+    _lifecycleProcessor!.onRestart();
+    publishEvent(ContextRestartedEvent(this));
+  }
+
+  /// See [ConfigurableApplicationContext.pause].
+  @override
+  void pause() {
+    _checkActive();
+    _lifecycleProcessor!.onPause();
+    publishEvent(ContextPausedEvent(this));
+  }
+
+  /// See [ConfigurableApplicationContext.pauseAsync].
+  @override
+  Future<void> pauseAsync() async {
+    _checkActive();
+    await _lifecycleProcessor!.onPauseAsync();
+    publishEvent(ContextPausedEvent(this));
+  }
+
   @override
   bool get isRunning => _lifecycleProcessor?.isRunning ?? false;
+
+  /// See [ConfigurableApplicationContext.registerShutdownHook].
+  @override
+  void registerShutdownHook() {
+    if (_stopShutdownHook != null) {
+      return;
+    }
+    final (:watch, :exit) = shutdownHookPlatform;
+    _stopShutdownHook = watch((code) {
+      try {
+        close();
+      } finally {
+        exit(code);
+      }
+    });
+  }
 
   /// See [ConfigurableApplicationContext.close]; a no-op unless active
   /// (like Spring, it also works while refreshing, e.g. from a
@@ -922,6 +1028,38 @@ class AnnotationConfigApplicationContext
     _factory.destroySingletons();
     _finishClose();
   }
+
+  /// Template method called by [refresh] after the modules are loaded
+  /// (every bean definition is registered, no bean is created yet) and
+  /// before the bean factory post-processors run, like Spring's
+  /// `postProcessBeanFactory`. Override in a subclass to register
+  /// definitions, singletons or post-processors; not meant to be called
+  /// directly. Does nothing by default.
+  ///
+  /// ```dart
+  /// class MyContext extends AnnotationConfigApplicationContext {
+  ///   MyContext(super.modules);
+  ///
+  ///   @override
+  ///   void postProcessBeanFactory(ConfigurableListableBeanFactory factory) =>
+  ///       factory.registerSingleton('clock', SystemClock());
+  /// }
+  /// ```
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {}
+
+  /// Template method called by [refresh] once the message source and the
+  /// event multicaster exist, before the listeners are registered and the
+  /// eager singletons are created, like Spring's `onRefresh`. Override in
+  /// a subclass for context-specific refresh work; not meant to be called
+  /// directly. Does nothing by default.
+  void onRefresh() {}
+
+  /// Template method called by [close] and [closeAsync] last, after the
+  /// singletons are destroyed and before the context counts as closed,
+  /// like Spring's `onClose`. Override in a subclass for context-specific
+  /// shutdown work; not meant to be called directly. Does nothing by
+  /// default.
+  void onClose() {}
 
   /// See [ConfigurableApplicationContext.closeAsync].
   @override
@@ -947,6 +1085,9 @@ class AnnotationConfigApplicationContext
       return false;
     }
     _state = _State.closing;
+    // Like Spring removing the JVM shutdown hook on an explicit close.
+    _stopShutdownHook?.call();
+    _stopShutdownHook = null;
     try {
       publishEvent(ContextClosedEvent(this));
     } catch (error, stackTrace) {
@@ -967,8 +1108,12 @@ class AnnotationConfigApplicationContext
       );
 
   void _finishClose() {
-    _multicaster?.removeAllListeners();
-    _state = _State.closed;
+    try {
+      onClose();
+    } finally {
+      _multicaster?.removeAllListeners();
+      _state = _State.closed;
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -977,7 +1122,9 @@ class AnnotationConfigApplicationContext
 
   /// Dispatches [event] to matching listeners synchronously, then to the
   /// parent context. Non-[ApplicationEvent] objects are wrapped in a
-  /// [PayloadApplicationEvent]. Like Spring 7, before [refresh], after a
+  /// [PayloadApplicationEvent] of their static type [T] (Spring uses the
+  /// runtime type), so `addListener<PayloadApplicationEvent<OrderPlaced>>`
+  /// sees `publishEvent(OrderPlaced(...))`. Like Spring 7, before [refresh], after a
   /// failed refresh and after [close] the event is not delivered locally
   /// (only to the parent).
   ///
@@ -991,10 +1138,10 @@ class AnnotationConfigApplicationContext
   /// context.publishEvent(new OrderPlaced(1, 250));
   /// ```
   @override
-  void publishEvent(Object event) {
+  void publishEvent<T extends Object>(T event) {
     final applicationEvent = event is ApplicationEvent
         ? event
-        : PayloadApplicationEvent<Object>(this, event);
+        : PayloadApplicationEvent<T>(this, event);
     final early = _earlyEvents;
     if (early != null) {
       early.add(applicationEvent);
@@ -1217,8 +1364,7 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
 
   @override
   void onApplicationEvent(Object event) {
-    final bean = _context._factory.getBeanByName(_beanName);
-    final result = _method.invoke(bean, event);
+    final result = _method.invoke(_target(), event);
     if (result is Future<Object?>) {
       // Like Spring's CompletionStage handling: the value is published
       // when it arrives, a failure goes to the error handler.
@@ -1226,6 +1372,18 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
       return;
     }
     _publishResult(result);
+  }
+
+  // The bean declaring the method: for a FactoryBean, the factory itself
+  // (`&name`), not its product.
+  Object _target() {
+    final factory = _context._factory;
+    final isFactoryBean =
+        factory.containsBeanDefinition(_beanName) &&
+        factory.getBeanDefinition(_beanName).isFactoryBean;
+    return factory.getBeanByName(
+      isFactoryBean ? '${BeanFactory.factoryBeanPrefix}$_beanName' : _beanName,
+    );
   }
 
   // Non-null results are published, an Iterable element by element.
@@ -1305,6 +1463,9 @@ final class _ConditionContext
 
   final AnnotationConfigApplicationContext _context;
   final _results = <String, bool>{};
+
+  @override
+  BeanDefinition<Object>? definition;
 
   @override
   bool evaluateOnce(String key, bool Function() evaluate) =>

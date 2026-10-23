@@ -1,3 +1,9 @@
+## Unreleased
+
+- the shutdown hook (`registerShutdownHook: true` / `spring.main.register-shutdown-hook`) delegates to the core's `context.registerShutdownHook()`; behaviour unchanged (off by default)
+- breaking: the auto-configured mapper bean is named `jacksonJsonMapper` (Boot 4's name) instead of `objectMapper`
+- Jackson: `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4; wins over `spring.jackson.serialization.write-dates-as-timestamps`); any other unsupported `spring.jackson.*` key is logged as a warning naming it; a named `spring.jackson.time-zone` fails with a message that only `UTC` and fixed offsets are supported
+
 ## 0.1.7
 
 - `SpringApplication.runAsync` / `reloadAsync` refresh with the context's `refreshAsync()` (asynchronous `@PostConstruct` / init methods are awaited before the runners) and close with `closeAsync()`; `run` fails for an asynchronous init callback

@@ -8,7 +8,6 @@ import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/runners.dart';
-import 'package:spring_boot_dart/src/shutdown_hook.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -117,7 +116,8 @@ class SpringApplication {
   final List<String> excludeName;
 
   /// Whether the context is closed on SIGINT / SIGTERM (Spring Boot's
-  /// `setRegisterShutdownHook`); `spring.main.register-shutdown-hook` wins
+  /// `setRegisterShutdownHook`), through the context's
+  /// `registerShutdownHook()`; `spring.main.register-shutdown-hook` wins
   /// when set. Off by default, unlike Boot: a signal listener keeps a Dart
   /// program alive, so a program that is done would never end. Turn it on
   /// in programs that run until stopped. Nothing happens without `dart:io`.
@@ -666,7 +666,7 @@ class SpringApplication {
   ) {
     if (environment.getPropertyAs<bool>('spring.main.register-shutdown-hook') ??
         registerShutdownHook) {
-      addShutdownHook(context);
+      context.registerShutdownHook();
     }
   }
 

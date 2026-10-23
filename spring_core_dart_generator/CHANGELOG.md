@@ -1,3 +1,22 @@
+## Unreleased
+
+- depends on `spring_core_dart` (the same version): pointcut expressions are parsed at build time with the runtime's parser
+- an `@EventListener` method (or `ApplicationListener`) of `PayloadApplicationEvent<P>` is emitted as `EventListenerMethod.forPayload<B, P>`, matching on the payload's runtime type (needs the matching `spring_core_dart`)
+- AOP: every advice and `@Pointcut` expression is parsed at build time with the runtime's parser; a syntax error fails the build naming the aspect, the advice and the character position (a reference to a pointcut of a class outside the module is left to the runtime)
+- AOP: the implicit getters and setters of public fields carry the field's annotations (`@annotation(Timed)` matches `@Timed() int count = 0;`), except constraints and `@Valid`; a getter is no longer listed with its own annotations twice
+- breaking: with `aop_proxies: all`, no proxy class is generated for a bean no pointcut of the module can match (it keeps its signatures: an advisor from another module that matches it fails the startup with the reason); nothing is skipped without advice, with an advisor bean, for beans annotated from outside `spring_core_dart` or `@Validated`, and for subclass proxies. Build option `aop_prune: false` restores a proxy class for every bean
+- breaking: constructor selection like Spring's `AutowiredAnnotationBeanPostProcessor`: a required `@Autowired()` constructor must be the only `@Autowired` one; several `@Autowired(required: false)` constructors are candidates and the generated `create` calls the one with the most parameters whose beans exist (`r.containsBeanOfType(...)`), the constructor callable without arguments last; without `@Autowired` the only public constructor (generative before factories), else the primary constructor, else the one callable without arguments is used — the unnamed constructor no longer wins over others by itself; anything else fails the build listing the constructors (needs the matching `spring_core_dart`)
+- breaking: `@Autowired(required: false)` on a field, setter or method fails the build (make the type nullable)
+- super parameters (`B(super.url)`) carry the `@Value` / `@Qualifier` / `@Named` / `@Lazy` of the super constructor's parameter unless they have their own
+- breaking: unsupported targets fail the build naming the target and what to use instead: `@Component` (or a stereotype) on a mixin, enum, extension or extension type, `@Bean` on a top-level function, `@ComponentScan` on anything but a top-level variable, injecting or returning an extension type
+- subclasses of `Profile` and `Conditional` count like the base annotation (Spring meta-annotations)
+- breaking: class-level `@Lazy` on a lite configuration (`@Component` with `@Bean` methods) makes its `@Bean` methods lazy unless they say otherwise, like on `@Configuration`
+- breaking: a directory with its own `@ComponentScan` belongs to that scan: the enclosing scan or `@SpringBootApplication` imports its module (`BeanModule.imports`) instead of registering its beans again; two `@ComponentScan` roots in one directory fail the build
+- glob characters in the scanned directory's name are escaped
+- breaking: an empty, blank or space-padded explicit bean name or alias fails the build
+- independent validation errors of one build are reported together (`N problems in this build:`), each with its library URI and location
+- generated code is free of the recommended lints too: bean-method proxy classes are named `_$Config$MethodProxy` (UpperCamelCase), and a declaration of a package that is not a direct dependency is imported through the user's library that exports it (no `depend_on_referenced_packages`); new dependency on `package:yaml` (reads the root `pubspec.yaml`), `analyzer` 14.3 or later
+
 ## 0.1.7
 
 - an error in the sources never removes or changes an existing `*.beans.dart` (`build_runner watch` while typing no longer deletes and regenerates it on every keystroke): while a scanned library has syntax errors the builder skips generation, writes the existing file again unchanged and logs one warning per output until the next successful generation; a generator error (private type, unknown bean, bad annotation, cycle, ...) keeps the file too and is reported with `log.severe`, so `build_runner build` still fails; without an existing output (a cold build) both fail as before. `SpringBuilder` takes an optional `readExistingOutput` (tests inject it) and its constructor is no longer `const`

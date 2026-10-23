@@ -132,6 +132,20 @@ property keys.
 `shared_preferences` as a property source, and `@ConfigurationProperties`
 beans written back to it, so user settings are ordinary configuration.
 
+## Environment of the app
+
+Flutter's `main()` gets no arguments, so two sources stand in for Boot's
+command line and OS environment:
+
+- the Dart compile-time environment (`--dart-define=key=value`,
+  `String.fromEnvironment`), always on: its keys bind like `--key=value`
+  arguments (relaxed binding, above the config files);
+- the OS environment variables (`Platform.environment`), only when the
+  property `spring.flutter.scan-os-environment=true` (name to settle) turns
+  them on; **off by default**: on a phone the OS environment is noise, a
+  desktop or dev setup opts in. With the flag off only the Dart defines
+  are read.
+
 ## Tokens and secrets of the user
 
 A `TokenStore` bean on the iOS / macOS Keychain and the Android Keystore

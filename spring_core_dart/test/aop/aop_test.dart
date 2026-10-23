@@ -198,6 +198,24 @@ void main() {
       );
     });
 
+    test('a syntax error carries its position', () {
+      int? offsetOf(String expression) {
+        try {
+          ExpressionPointcut(expression);
+        } on FormatException catch (e) {
+          return e.offset;
+        }
+        return null;
+      }
+
+      expect(offsetOf('within(A) && '), 13);
+      expect(offsetOf('within(A) && frob(B)'), 13);
+      expect(offsetOf('within(A) && execution(String)'), 13);
+      expect(offsetOf('within(A'), 0);
+      expect(offsetOf('within(A) )'), 10);
+      expect(offsetOf('within(A) && other()'), 13);
+    });
+
     test('within, target, bean, annotations', () {
       expect(matches('within(*Service)', price), isTrue);
       expect(matches('within(Service)', price), isFalse);

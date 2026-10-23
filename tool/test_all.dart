@@ -10,8 +10,9 @@
 //
 // The runs go in parallel (a pool sized by the CPU count), and slow test
 // suites are split into shards (`dart test --total-shards`), so the whole
-// thing takes about as long as its slowest shard. Each run prints one line;
-// the output of a failed run is printed in full at the end.
+// thing takes about as long as its slowest shard. Each run prints a line
+// when it starts and one when it ends, with a progress line every 30 s; the
+// output of a failed run is printed in full at the end.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -59,7 +60,20 @@ Future<void> main(List<String> args) async {
   ];
 
   final watch = Stopwatch()..start();
+  // A progress line every 30 s: the first runs to finish are the slow ones.
+  final progress = Timer.periodic(const Duration(seconds: 30), (_) {
+    final done = runs.where((run) => run.finished).length;
+    final running = [
+      for (final run in runs)
+        if (run.started && !run.finished) run.title,
+    ];
+    stdout.writeln(
+      '... ${watch.elapsed.inSeconds}s: $done/${runs.length} done, '
+      'running: ${running.join(', ')}',
+    );
+  });
   await _pool(runs, concurrency: (cpus / 2).ceil().clamp(2, 8));
+  progress.cancel();
 
   final failed = [
     for (final run in runs)
@@ -110,9 +124,13 @@ final class _Run {
   final String failure;
 
   bool passed = false;
+  bool started = false;
+  bool finished = false;
   String output = '';
 
   Future<void> start() async {
+    started = true;
+    stdout.writeln('run  dart test $title');
     final watch = Stopwatch()..start();
     final process = await Process.start(Platform.resolvedExecutable, [
       'test',
@@ -124,6 +142,7 @@ final class _Run {
       process.stderr.transform(utf8.decoder).forEach(out.write),
     ]);
     passed = await process.exitCode == 0;
+    finished = true;
     output = out.toString();
     final seconds = (watch.elapsedMilliseconds / 1000).toStringAsFixed(0);
     stdout.writeln(

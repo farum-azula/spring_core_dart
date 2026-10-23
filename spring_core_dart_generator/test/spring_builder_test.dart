@@ -20,6 +20,7 @@ const _header = "import 'package:spring_core_dart/spring_core_dart.dart';\n";
 Future<TestBuilderResult> _build(
   Map<String, Object> sources, {
   ProxyMode proxyMode = ProxyMode.none,
+  bool prune = true,
 }) async {
   final readerWriter = TestReaderWriter(
     rootPackage: 'pkg',
@@ -27,7 +28,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return testBuilder(
-    SpringBuilder(proxyMode: proxyMode),
+    SpringBuilder(proxyMode: proxyMode, pruneProxies: prune),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -41,12 +42,17 @@ Future<String> _generate(
   String beans, {
   Map<String, Object> extra = const {},
   ProxyMode proxyMode = ProxyMode.none,
+  bool prune = true,
 }) async {
-  final result = await _build({
-    'lib/src/beans.dart': _scan,
-    'lib/src/service.dart': '$_header$beans',
-    ...extra,
-  }, proxyMode: proxyMode);
+  final result = await _build(
+    {
+      'lib/src/beans.dart': _scan,
+      'lib/src/service.dart': '$_header$beans',
+      ...extra,
+    },
+    proxyMode: proxyMode,
+    prune: prune,
+  );
   expect(result.errors, isEmpty);
   return _normalize(
     result.readerWriter.testing.readString(result.outputs.single),
@@ -315,6 +321,133 @@ class Config {
         "bean by it, or make its members public.')",
       ),
     );
+  });
+
+  group('pointcut validation and pruning', () {
+    const header = r"""
+class Timed {
+  const Timed();
+}
+
+@Service()
+class Orders {
+  void place() {}
+}
+
+@Service()
+class Mail {
+  void send() {}
+}
+
+@Service()
+class Slow {
+  @Timed()
+  void run() {}
+}
+""";
+
+    Future<String> generate(String aspect, {bool prune = true}) => _generate(
+      '$header\n@Aspect() @Component() class A { $aspect }',
+      proxyMode: ProxyMode.all,
+      prune: prune,
+    );
+
+    test('a syntax error fails the build with the position', () async {
+      await _expectError(
+        "$header\n@Aspect() @Component() class A { @Before('execution(* *(..)) &&') void b() {} }",
+        'is invalid: Invalid pointcut (unexpected end of expression) at '
+            "character 21 of 'execution(* *(..)) &&'",
+        proxyMode: ProxyMode.all,
+      );
+      await _expectError(
+        "$header\n@Aspect() @Component() class A { @Before('within(Orders) && frobnicate(Mail)') void b() {} }",
+        "unknown designator 'frobnicate') at character 18",
+        proxyMode: ProxyMode.all,
+      );
+      await _expectError(
+        "$header\n@Aspect() @Component() class A { @Before('execution(* *(..))') void b() {} "
+            "@Pointcut('execution(String)') void bad() {} }",
+        'The @Pointcut A.bad is invalid',
+        proxyMode: ProxyMode.all,
+      );
+      // Also without proxies: the expression is wrong either way.
+      await _expectError(
+        "$header\n@Aspect() @Component() class A { @Before('bean(') void b() {} }",
+        'is invalid',
+      );
+    });
+
+    test(
+      'a reference to a pointcut of another class is left to the runtime',
+      () async {
+        final output = await generate("@Before('Common.web()') void b() {}");
+        expect(output, contains(r'_$OrdersProxy'));
+      },
+    );
+
+    test('beans no pointcut matches get no proxy class', () async {
+      final output = await generate(
+        "@Before('execution(* Orders.*(..))') void b() {}",
+      );
+      expect(output, contains(r'class_$OrdersProxy'));
+      expect(output, isNot(contains(r'_$MailProxy')));
+      // The signatures stay: an advisor from elsewhere fails loudly.
+      expect(output, contains('AopProxyFactory.unavailable('));
+      expect(output, _has('found no pointcut that matches Mail'));
+    });
+
+    test('annotation, within and name pointcuts', () async {
+      final annotation = await generate(
+        "@Before('@annotation(Timed)') void b() {}",
+      );
+      // `@Timed` is no stereotype: a starter's advisor may match by it.
+      expect(annotation, contains(r'class_$SlowProxy'));
+      expect(annotation, isNot(contains(r'_$OrdersProxy')));
+      final within = await generate("@Before('within(Mail)') void b() {}");
+      expect(within, contains(r'class_$MailProxy'));
+      expect(within, isNot(contains(r'_$OrdersProxy')));
+      final byName = await generate("@Before('bean(orders)') void b() {}");
+      expect(byName, contains(r'class_$OrdersProxy'));
+      expect(byName, isNot(contains(r'_$MailProxy')));
+      // A negation matches a lot: everything else keeps its proxy.
+      final all = await generate("@Before('!within(Mail)') void b() {}");
+      expect(all, contains(r'class_$OrdersProxy'));
+      expect(all, contains(r'class_$SlowProxy'));
+    });
+
+    test('in doubt, every bean keeps its proxy', () async {
+      final everything = await generate(
+        "@Before('execution(* Orders.*(..))') void b() {}",
+        prune: false,
+      );
+      expect(everything, contains(r'class_$MailProxy'));
+      // Without advice nothing is known about the advisors elsewhere.
+      final none = await _generate(header, proxyMode: ProxyMode.all);
+      expect(none, contains(r'class_$MailProxy'));
+      // An advisor bean of the module may match anything.
+      final advisor = await _generate("""
+$header
+@Aspect() @Component() class A { @Before('execution(* Orders.*(..))') void b() {} }
+@Component() class Custom extends DefaultPointcutAdvisor {
+  Custom() : super(const TruePointcut(), const _Noop());
+}
+class _Noop implements MethodInterceptor {
+  const _Noop();
+  @override
+  Object? invoke(MethodInvocation invocation) => invocation.proceed();
+}
+""", proxyMode: ProxyMode.all);
+      expect(advisor, contains(r'class_$MailProxy'));
+      // A starter's annotation-driven advisor (`@Cacheable`) may match.
+      final starter = await _generate("""
+$header
+class Cacheable { const Cacheable(); }
+@Service() class Cached { @Cacheable() void get() {} }
+@Aspect() @Component() class A { @Before('execution(* Orders.*(..))') void b() {} }
+""", proxyMode: ProxyMode.all);
+      expect(starter, contains(r'class_$CachedProxy'));
+      expect(starter, isNot(contains(r'_$MailProxy')));
+    });
   });
 
   group('subclass proxies', () {
@@ -946,6 +1079,9 @@ class Conditions {
 class ProductFactory extends FactoryBean<Product> {
   @override
   Product getObject() => Product();
+
+  @EventListener()
+  void onPlaced(Placed placed) {}
 }
 
 @Component()
@@ -966,9 +1102,26 @@ class Listener implements ApplicationListener<Shipped> {
 
   @EventListener()
   Future<void> onAsync(Placed placed) async {}
+
+  @EventListener()
+  void onPayload(PayloadApplicationEvent<Placed> event) {}
 }
 ''');
       expect(output, _has('factoryObjectTypes: const [Product]'));
+      // A FactoryBean's listeners are registered (invoked on the factory).
+      expect(
+        output,
+        _has(
+          "EventListenerMethod.of<ProductFactory, Placed>(r'ProductFactory.onPlaced'",
+        ),
+      );
+      // A PayloadApplicationEvent<P> listener matches on the payload type.
+      expect(
+        output,
+        _has(
+          "EventListenerMethod.forPayload<Listener, Placed>(r'Listener.onPayload'",
+        ),
+      );
       // The raw `FactoryBean` (instantiated to bounds) finds every factory.
       expect(
         output,
@@ -1277,6 +1430,7 @@ class Gateway implements Api {
   final Repository repository;
   final int _retries;
 
+  @Autowired()
   new(this.repository, {required this._retries});
   new withDefaults(Repository repository) : this(repository, retries: 3);
 
@@ -1310,8 +1464,8 @@ class Form(var String email, {var int age = 0});
         ),
       );
       expect(output, _has('create: (r) => Clock()'));
-      // Private named parameter: called with its public name; the unnamed
-      // `new(...)` constructor wins over `new withDefaults(...)`.
+      // Private named parameter: called with its public name; the
+      // `@Autowired` `new(...)` constructor wins over `new withDefaults(...)`.
       expect(
         output,
         _has(
@@ -1527,6 +1681,71 @@ class Impl implements Api {
       );
     });
 
+    test(
+      'public fields are advised like explicit getters and setters',
+      () async {
+        final output = await _generate(r'''
+class Note {
+  const Note();
+}
+
+@Service()
+class Plain {
+  @Note()
+  String title = '';
+  final int id = 1;
+  @NotBlank()
+  String name = 'n';
+  static int shared = 0;
+  String get label => title;
+}
+
+@Service()
+class Hidden {
+  int count = 0;
+  int _secret = 0;
+  int get secret => _secret;
+}
+''', proxyMode: ProxyMode.all);
+        for (final proxy in [r'_$PlainProxy', r'_$HiddenProxy']) {
+          expect(output, contains(proxy));
+        }
+        // Implementing proxy: field accessors forward through the advice.
+        expect(output, _has('String get title => (_invoker.invoke('));
+        expect(output, _has('set title(String value) {_invoker.invoke('));
+        expect(output, _has('int get id => (_invoker.invoke('));
+        expect(output, isNot(contains('setid(')), reason: 'final: no setter');
+        expect(output, _has('String get label => (_invoker.invoke('));
+        expect(
+          output,
+          isNot(contains('shared')),
+          reason: 'static: not a member',
+        );
+        // The field's annotations reach the pointcut (`@annotation(Note)`).
+        expect(
+          output,
+          _has(
+            "MethodSignature(name: r'title', declaringType: r'Plain', targetType: r'Plain'",
+          ),
+        );
+        expect(output, _has('annotations: [Note()]'));
+        expect(output, isNot(contains('annotations:[Note(),Note()]')));
+        expect(
+          RegExp(r'annotations:\[Note\(\)\]').allMatches(output),
+          hasLength(2),
+          reason: 'the getter and the setter of the field',
+        );
+        // Subclass proxy: the same for a class with private members.
+        expect(
+          output,
+          _has(
+            r'int get count { final invoker = _$invoker; return invoker == null ? super.count : (invoker.invoke(',
+          ),
+        );
+        expect(output, _has('set count(int value) { final invoker'));
+      },
+    );
+
     test('generic type arguments in proxied signatures', () async {
       final output = await _generate('''
 abstract interface class Jobs {
@@ -1572,8 +1791,8 @@ class Config {
   @Bean() Nested nestedConfig() => Nested();
 }
 ''', proxyMode: ProxyMode.all);
-      expect(output, isNot(contains(r'_$Config_auditAspectProxy')));
-      expect(output, isNot(contains(r'_$Config_nestedConfigProxy')));
+      expect(output, isNot(contains(r'_$Config$AuditAspectProxy')));
+      expect(output, isNot(contains(r'_$Config$NestedConfigProxy')));
     });
 
     test('proxy modes and exclusions', () async {
@@ -1629,8 +1848,8 @@ abstract class Base { void base(); }
         expect(all, isNot(contains('_\$${excluded}Proxy')), reason: excluded);
       }
       // The bean type is inferred from the method body (`Both()`).
-      expect(all, contains(r'class_$Config_apiProxyimplementsBoth,Base,Api,'));
-      expect(all, isNot(contains(r'_$Config_textProxy')), reason: 'SDK types');
+      expect(all, contains(r'class_$Config$ApiProxyimplementsBoth,Base,Api,'));
+      expect(all, isNot(contains(r'_$Config$TextProxy')), reason: 'SDK types');
 
       final interfaces = await _generate(
         source,
@@ -1640,7 +1859,7 @@ abstract class Base { void base(); }
       expect(interfaces, isNot(contains(r'_$PlainProxy')));
       expect(
         interfaces,
-        contains(r'class_$Config_apiProxyimplementsBase,Api,'),
+        contains(r'class_$Config$ApiProxyimplementsBase,Api,'),
       );
 
       final none = await _generate(source);
@@ -3423,7 +3642,7 @@ class Impl implements Api {
 @Configuration(proxyBeanMethods: false)
 class Config { @Bean() Api api() => Impl(); }
 ''', proxyMode: ProxyMode.all);
-      expect(output, contains(r'class_$Config_apiProxyimplementsImpl,Api'));
+      expect(output, contains(r'class_$Config$ApiProxyimplementsImpl,Api'));
       expect(output, _has("name: r'extra'"));
       expect(output, _has("targetType: r'Impl'"));
     });

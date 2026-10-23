@@ -812,7 +812,8 @@ void main() {
         ),
       ], parent: parent)..refresh();
       expect(withOwn.getMessage('hi', args: ['x']), 'Hello x');
-      expect(ownSource.parentMessageSource, same(parent));
+      // Like Spring: the parent's message source, not the parent context.
+      expect(ownSource.parentMessageSource, same(parentSource));
     });
 
     test('@Value Resource conversion uses the context resource loader', () {
@@ -931,6 +932,12 @@ class _RecordingLifecycleProcessor implements LifecycleProcessor {
   Future<void> onCloseAsync() async => log.add('onCloseAsync');
   @override
   void onRefresh() => log.add('onRefresh');
+  @override
+  void onRestart() => log.add('onRestart');
+  @override
+  void onPause() => log.add('onPause');
+  @override
+  Future<void> onPauseAsync() async => log.add('onPauseAsync');
   @override
   void start() {}
   @override

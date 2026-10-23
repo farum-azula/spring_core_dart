@@ -78,7 +78,12 @@ import 'package:build/build.dart';
 /// ```
 Builder springCoreDartBuilder(BuilderOptions options) {
   final mode = options.config['aop_proxies'] as String? ?? 'all';
+  final prune = options.config['aop_prune'] ?? true;
+  if (prune is! bool) {
+    throw ArgumentError.value(prune, 'aop_prune', 'Expected true or false');
+  }
   return SpringBuilder(
+    pruneProxies: prune,
     proxyMode: ProxyMode.values.firstWhere(
       (m) => m.name == mode,
       orElse: () => throw ArgumentError.value(

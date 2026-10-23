@@ -7,33 +7,32 @@
 
 import 'dart:async' as _i4;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i20;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i19;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i18;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i17;
 import 'package:spring_boot_dart/src/runners.dart' as _i2;
 import 'package:spring_boot_feign_example/src/blog_runner.dart' as _i1;
 import 'package:spring_boot_feign_example/src/echo_socket.dart' as _i6;
-import 'package:spring_boot_feign_example/src/feign_config.dart' as _i18;
+import 'package:spring_boot_feign_example/src/feign_config.dart' as _i16;
 import 'package:spring_boot_feign_example/src/jsonplaceholder_client.dart'
     as _i5;
 import 'package:spring_boot_feign_example/src/live_runners.dart' as _i12;
 import 'package:spring_boot_feign_example/src/models.dart' as _i7;
 import 'package:spring_boot_feign_example/src/wikimedia_client.dart' as _i13;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i21;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i16;
+    as _i19;
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
+    as _i11;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i15;
 import 'package:spring_boot_starter_feign/src/feign_exception.dart' as _i10;
 import 'package:spring_boot_starter_feign/src/request_template.dart' as _i8;
 import 'package:spring_boot_starter_feign/src/retryer.dart' as _i9;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i22;
+    as _i20;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i23;
+    as _i21;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i15;
+    as _i14;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
-import 'package:spring_web_dart/src/annotations.dart' as _i17;
-import 'package:spring_web_dart/src/response_entity.dart' as _i11;
-import 'package:spring_web_dart/src/sse/event_stream.dart' as _i14;
 
 class _$BlogRunnerProxy
     implements _i1.BlogRunner, _i2.ApplicationRunner, _i3.Advised {
@@ -95,9 +94,9 @@ class _$EchoSocketProxy implements _i6.EchoSocket, _i3.Advised {
   );
 }
 
-class _$FeignConfig_clientNameProxy
+class _$FeignConfig$ClientNameProxy
     implements _i8.RequestInterceptor, _i3.Advised {
-  _$FeignConfig_clientNameProxy(this._target, this._invoker);
+  _$FeignConfig$ClientNameProxy(this._target, this._invoker);
 
   final _i8.RequestInterceptor _target;
 
@@ -122,9 +121,9 @@ class _$FeignConfig_clientNameProxy
   ) as _i4.FutureOr<void>);
 }
 
-class _$FeignConfig_retryerProxy
+class _$FeignConfig$RetryerProxy
     implements _i9.DefaultRetryer, _i9.Retryer, _i3.Advised {
-  _$FeignConfig_retryerProxy(this._target, this._invoker);
+  _$FeignConfig$RetryerProxy(this._target, this._invoker);
 
   final _i9.DefaultRetryer _target;
 
@@ -297,13 +296,13 @@ class _$WikimediaStreamsProxy implements _i13.WikimediaStreams, _i3.Advised {
   String toString() => _target.toString();
 
   @override
-  _i14.EventStream<_i7.RecentChange> recentChanges() => (_invoker.invoke(
+  _i11.EventStream<_i7.RecentChange> recentChanges() => (_invoker.invoke(
     this,
     _target,
     0,
     const [],
     (args) => _target.recentChanges(),
-  ) as _i14.EventStream<_i7.RecentChange>);
+  ) as _i11.EventStream<_i7.RecentChange>);
 }
 
 /// Implements `EchoSocket` through an `InvocationHandler`.
@@ -317,14 +316,14 @@ class _$EchoSocketImpl implements _i6.EchoSocket {
   static _$EchoSocketImpl $create(_i3.DependencyResolver r) {
     final metadata = _i3.InterfaceMetadata<_i6.EchoSocket>(
       typeName: r'EchoSocket',
-      annotations: const [_i15.WebSocketClient(r'echo', url: r'${echo.url}')],
+      annotations: const [_i14.WebSocketClient(r'echo', url: r'${echo.url}')],
       methods: [
         _i3.ProxyMethod(
           r'messages',
           returnType: const _i3.GenericType<_i4.Stream<_i7.ChatMessage>>([
             _i3.ClassType<_i7.ChatMessage>(),
           ]),
-          annotations: const [_i15.OnMessage()],
+          annotations: const [_i14.OnMessage()],
           call: (target, arguments) => (target as _i6.EchoSocket).messages(),
         ),
         _i3.ProxyMethod(
@@ -339,7 +338,7 @@ class _$EchoSocketImpl implements _i6.EchoSocket {
           returnType: const _i3.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i15.SendMessage()],
+          annotations: const [_i14.SendMessage()],
           call: (target, arguments) => (target as _i6.EchoSocket).send(
             (arguments[0] as _i7.ChatMessage),
           ),
@@ -374,7 +373,7 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
     final metadata = _i3.InterfaceMetadata<_i5.JsonPlaceholderClient>(
       typeName: r'JsonPlaceholderClient',
       annotations: const [
-        _i16.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
+        _i15.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
       ],
       methods: [
         _i3.ProxyMethod(
@@ -384,12 +383,12 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'id',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i17.PathVariable()],
+              annotations: const [_i11.PathVariable()],
             ),
           ],
           returnType: const _i3.ClassType<_i7.User>(),
           isFuture: true,
-          annotations: const [_i17.GetMapping(r'/users/{id}')],
+          annotations: const [_i11.GetMapping(r'/users/{id}')],
           call: (target, arguments) =>
               (target as _i5.JsonPlaceholderClient).user((arguments[0] as int)),
         ),
@@ -400,12 +399,12 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'userId',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i17.RequestParam(r'userId')],
+              annotations: const [_i11.RequestParam(r'userId')],
             ),
           ],
           returnType: const _i3.ListType<_i7.Post>(_i3.ClassType<_i7.Post>()),
           isFuture: true,
-          annotations: const [_i17.GetMapping(r'/posts')],
+          annotations: const [_i11.GetMapping(r'/posts')],
           call: (target, arguments) => (target as _i5.JsonPlaceholderClient)
               .postsOf((arguments[0] as int)),
         ),
@@ -416,12 +415,12 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'id',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i17.PathVariable()],
+              annotations: const [_i11.PathVariable()],
             ),
           ],
           returnType: const _i3.ClassType<_i7.Post>(),
           isFuture: true,
-          annotations: const [_i17.GetMapping(r'/posts/{id}')],
+          annotations: const [_i11.GetMapping(r'/posts/{id}')],
           call: (target, arguments) =>
               (target as _i5.JsonPlaceholderClient).post((arguments[0] as int)),
         ),
@@ -432,14 +431,14 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'id',
               type: const _i3.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i17.PathVariable()],
+              annotations: const [_i11.PathVariable()],
             ),
           ],
           returnType: const _i3.ListType<_i7.Comment>(
             _i3.ClassType<_i7.Comment>(),
           ),
           isFuture: true,
-          annotations: const [_i17.GetMapping(r'/posts/{id}/comments')],
+          annotations: const [_i11.GetMapping(r'/posts/{id}/comments')],
           call: (target, arguments) => (target as _i5.JsonPlaceholderClient)
               .comments((arguments[0] as int)),
         ),
@@ -450,14 +449,14 @@ class _$JsonPlaceholderClientImpl implements _i5.JsonPlaceholderClient {
               r'post',
               type: const _i3.ClassType<_i7.NewPost>(),
               isRequired: true,
-              annotations: const [_i17.RequestBody()],
+              annotations: const [_i11.RequestBody()],
             ),
           ],
           returnType: const _i3.GenericType<_i11.ResponseEntity<_i7.Post>>([
             _i3.ClassType<_i7.Post>(),
           ]),
           isFuture: true,
-          annotations: const [_i17.PostMapping(r'/posts')],
+          annotations: const [_i11.PostMapping(r'/posts')],
           call: (target, arguments) => (target as _i5.JsonPlaceholderClient)
               .create((arguments[0] as _i7.NewPost)),
         ),
@@ -508,16 +507,16 @@ class _$WikimediaStreamsImpl implements _i13.WikimediaStreams {
     final metadata = _i3.InterfaceMetadata<_i13.WikimediaStreams>(
       typeName: r'WikimediaStreams',
       annotations: const [
-        _i16.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
+        _i15.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
       ],
       methods: [
         _i3.ProxyMethod(
           r'recentChanges',
-          returnType: const _i3.GenericType<_i14.EventStream<_i7.RecentChange>>(
+          returnType: const _i3.GenericType<_i11.EventStream<_i7.RecentChange>>(
             [_i3.ClassType<_i7.RecentChange>()],
           ),
           annotations: const [
-            _i17.GetMapping.of(
+            _i11.GetMapping.of(
               path: r'/v2/stream/recentchange',
               headers: [r'User-Agent=${wikimedia.user-agent}'],
             ),
@@ -534,14 +533,14 @@ class _$WikimediaStreamsImpl implements _i13.WikimediaStreams {
   }
 
   @override
-  _i14.EventStream<_i7.RecentChange> recentChanges() =>
+  _i11.EventStream<_i7.RecentChange> recentChanges() =>
       (_handler.invoke(_metadata.methods[0], const [])
-          as _i14.EventStream<_i7.RecentChange>);
+          as _i11.EventStream<_i7.RecentChange>);
 }
 
 /// `FeignConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$FeignConfigConfiguration extends _i18.FeignConfig {
+class _$FeignConfigConfiguration extends _i16.FeignConfig {
   _$FeignConfigConfiguration(this._$beanFactory);
 
   final _i3.BeanFactory _$beanFactory;
@@ -628,7 +627,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i6.EchoSocket],
       primary: true,
       create: (r) => _$EchoSocketImpl.$create(r),
-      annotations: const [_i15.WebSocketClient(r'echo', url: r'${echo.url}')],
+      annotations: const [_i14.WebSocketClient(r'echo', url: r'${echo.url}')],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
           _i3.MethodSignature(
@@ -637,11 +636,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             targetType: r'EchoSocket',
             declaringTypes: [r'EchoSocket'],
             returnType: r'Stream',
-            annotations: [_i15.OnMessage()],
+            annotations: [_i14.OnMessage()],
             annotationTypes: [r'OnMessage'],
             targetTypes: [r'EchoSocket'],
             targetAnnotations: [
-              _i15.WebSocketClient(r'echo', url: r'${echo.url}'),
+              _i14.WebSocketClient(r'echo', url: r'${echo.url}'),
             ],
             targetAnnotationTypes: [r'WebSocketClient'],
           ),
@@ -653,11 +652,11 @@ _i3.BeanModule get $application => _i3.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'ChatMessage'],
             parameterNames: [r'message'],
-            annotations: [_i15.SendMessage()],
+            annotations: [_i14.SendMessage()],
             annotationTypes: [r'SendMessage'],
             targetTypes: [r'EchoSocket'],
             targetAnnotations: [
-              _i15.WebSocketClient(r'echo', url: r'${echo.url}'),
+              _i14.WebSocketClient(r'echo', url: r'${echo.url}'),
             ],
             targetAnnotationTypes: [r'WebSocketClient'],
           ),
@@ -666,10 +665,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _$EchoSocketProxy((target as _i6.EchoSocket), invoker),
       ),
     ),
-    _i3.BeanDefinition<_i18.FeignConfig>(
+    _i3.BeanDefinition<_i16.FeignConfig>(
       name: r'feignConfig',
       source: r'package:spring_boot_feign_example/src/feign_config.dart#FeignConfig',
-      types: const [_i18.FeignConfig],
+      types: const [_i16.FeignConfig],
       create: (r) => _$FeignConfigConfiguration(r),
       annotations: const [_i3.Configuration()],
     ),
@@ -680,10 +679,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
       factoryBeanName: r'feignConfig',
       factoryMethodName: r'clientName',
       dependencies: const [
-        _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
+        _i3.Dependency(_i16.FeignConfig, qualifier: r'feignConfig'),
         _i3.Dependency.value(r'${spring.application.name}'),
       ],
-      create: (r) => (r.dependency<_i18.FeignConfig>(
+      create: (r) => (r.dependency<_i16.FeignConfig>(
         qualifier: r'feignConfig',
       ) as _$FeignConfigConfiguration)._$clientName(r),
       annotations: const [_i3.Bean()],
@@ -700,7 +699,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             targetTypes: [r'RequestInterceptor'],
           ),
         ],
-        create: (target, invoker) => _$FeignConfig_clientNameProxy(
+        create: (target, invoker) => _$FeignConfig$ClientNameProxy(
           (target as _i8.RequestInterceptor),
           invoker,
         ),
@@ -713,9 +712,9 @@ _i3.BeanModule get $application => _i3.BeanModule(
       factoryBeanName: r'feignConfig',
       factoryMethodName: r'retryer',
       dependencies: const [
-        _i3.Dependency(_i18.FeignConfig, qualifier: r'feignConfig'),
+        _i3.Dependency(_i16.FeignConfig, qualifier: r'feignConfig'),
       ],
-      create: (r) => ((r.dependency<_i18.FeignConfig>(
+      create: (r) => ((r.dependency<_i16.FeignConfig>(
         qualifier: r'feignConfig',
       ) as _$FeignConfigConfiguration)._$retryer(r) as _i9.DefaultRetryer),
       annotations: const [_i3.Bean()],
@@ -760,7 +759,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           ),
         ],
         create: (target, invoker) =>
-            _$FeignConfig_retryerProxy((target as _i9.DefaultRetryer), invoker),
+            _$FeignConfig$RetryerProxy((target as _i9.DefaultRetryer), invoker),
       ),
     ),
     _i3.BeanDefinition<_i5.JsonPlaceholderClient>(
@@ -770,7 +769,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       primary: true,
       create: (r) => _$JsonPlaceholderClientImpl.$create(r),
       annotations: const [
-        _i16.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
+        _i15.FeignClient(r'jsonplaceholder', url: r'${jsonplaceholder.url}'),
       ],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
@@ -783,13 +782,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
             parameterAnnotations: [
-              [_i17.PathVariable()],
+              [_i11.PathVariable()],
             ],
-            annotations: [_i17.GetMapping(r'/users/{id}')],
+            annotations: [_i11.GetMapping(r'/users/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i16.FeignClient(
+              _i15.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -805,13 +804,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
             parameterTypes: [r'int'],
             parameterNames: [r'userId'],
             parameterAnnotations: [
-              [_i17.RequestParam(r'userId')],
+              [_i11.RequestParam(r'userId')],
             ],
-            annotations: [_i17.GetMapping(r'/posts')],
+            annotations: [_i11.GetMapping(r'/posts')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i16.FeignClient(
+              _i15.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -827,13 +826,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
             parameterAnnotations: [
-              [_i17.PathVariable()],
+              [_i11.PathVariable()],
             ],
-            annotations: [_i17.GetMapping(r'/posts/{id}')],
+            annotations: [_i11.GetMapping(r'/posts/{id}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i16.FeignClient(
+              _i15.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -849,13 +848,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
             parameterTypes: [r'int'],
             parameterNames: [r'id'],
             parameterAnnotations: [
-              [_i17.PathVariable()],
+              [_i11.PathVariable()],
             ],
-            annotations: [_i17.GetMapping(r'/posts/{id}/comments')],
+            annotations: [_i11.GetMapping(r'/posts/{id}/comments')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i16.FeignClient(
+              _i15.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -871,13 +870,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
             parameterTypes: [r'NewPost'],
             parameterNames: [r'post'],
             parameterAnnotations: [
-              [_i17.RequestBody()],
+              [_i11.RequestBody()],
             ],
-            annotations: [_i17.PostMapping(r'/posts')],
+            annotations: [_i11.PostMapping(r'/posts')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'JsonPlaceholderClient'],
             targetAnnotations: [
-              _i16.FeignClient(
+              _i15.FeignClient(
                 r'jsonplaceholder',
                 url: r'${jsonplaceholder.url}',
               ),
@@ -980,7 +979,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       primary: true,
       create: (r) => _$WikimediaStreamsImpl.$create(r),
       annotations: const [
-        _i16.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
+        _i15.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
       ],
       aopProxy: _i3.AopProxyFactory(
         signatures: const [
@@ -991,7 +990,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             declaringTypes: [r'WikimediaStreams'],
             returnType: r'EventStream',
             annotations: [
-              _i17.GetMapping.of(
+              _i11.GetMapping.of(
                 path: r'/v2/stream/recentchange',
                 headers: [r'User-Agent=${wikimedia.user-agent}'],
               ),
@@ -999,7 +998,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'WikimediaStreams'],
             targetAnnotations: [
-              _i16.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
+              _i15.FeignClient(r'wikimedia', url: r'${wikimedia.url}'),
             ],
             targetAnnotationTypes: [r'FeignClient'],
           ),
@@ -1473,39 +1472,39 @@ _i3.BeanModule get $application => _i3.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i19.SpringApplication get springApplication => _i19.SpringApplication(
+_i17.SpringApplication get springApplication => _i17.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i20.springBootAutoConfiguration,
-    _i21.springBootStarterFeignAutoConfiguration,
-    _i22.springBootStarterLoggingAutoConfiguration,
-    _i23.springBootStarterWebsocketAutoConfiguration,
+    _i18.springBootAutoConfiguration,
+    _i19.springBootStarterFeignAutoConfiguration,
+    _i20.springBootStarterLoggingAutoConfiguration,
+    _i21.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '248f981e',
+  fingerprint: '15c679ad',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i19.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i17.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i19.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i17.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i19.ConfigurableApplicationContext reloadApplication(
-  _i19.ConfigurableApplicationContext running, {
+_i17.ConfigurableApplicationContext reloadApplication(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i19.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i19.ConfigurableApplicationContext running, {
+Future<_i17.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

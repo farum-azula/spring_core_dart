@@ -85,6 +85,44 @@ class ContextStoppedEvent extends ApplicationContextEvent {
   ContextStoppedEvent(super.source);
 }
 
+/// `restart()` was called on the context, like Spring 7's
+/// `ContextRestartedEvent`: the auto-startup lifecycle beans run again.
+/// It is a [ContextStartedEvent], so start listeners see it too.
+///
+/// ```dart
+/// context.addListener<ContextRestartedEvent>((_) => print('resumed'));
+/// context.restart();
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @EventListener
+/// void onRestart(ContextRestartedEvent event) { ... }
+/// ```
+class ContextRestartedEvent extends ContextStartedEvent {
+  /// Creates the event for the context [source].
+  ContextRestartedEvent(super.source);
+}
+
+/// `pause()` (or `pauseAsync()`) was called on the context, like Spring
+/// 7's `ContextPausedEvent`: the pauseable lifecycle beans are stopped.
+/// It is a [ContextStoppedEvent], so stop listeners see it too.
+///
+/// ```dart
+/// context.addListener<ContextPausedEvent>((_) => print('paused'));
+/// context.pause();
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @EventListener
+/// void onPause(ContextPausedEvent event) { ... }
+/// ```
+class ContextPausedEvent extends ContextStoppedEvent {
+  /// Creates the event for the context [source].
+  ContextPausedEvent(super.source);
+}
+
 /// The context is closing; beans are still available.
 ///
 /// Published first in `close()`, before lifecycle beans are stopped and

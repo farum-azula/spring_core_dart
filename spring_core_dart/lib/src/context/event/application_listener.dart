@@ -5,9 +5,9 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// Publishes events, like Spring's `ApplicationEventPublisher`.
 ///
 /// Objects that are not `ApplicationEvent`s are wrapped in a
-/// `PayloadApplicationEvent`; listeners of the payload type receive the
-/// payload itself. Every application context is a publisher and can be
-/// injected as one.
+/// `PayloadApplicationEvent<T>` of their static type `T`; listeners of the
+/// payload type receive the payload itself. Every application context is a
+/// publisher and can be injected as one.
 ///
 /// ```dart
 /// @Service()
@@ -32,8 +32,10 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// }
 /// ```
 abstract interface class ApplicationEventPublisher {
-  /// Notifies all matching listeners of [event] (synchronously).
-  void publishEvent(Object event);
+  /// Notifies all matching listeners of [event] (synchronously); an
+  /// [event] that is not an `ApplicationEvent` is wrapped in a
+  /// `PayloadApplicationEvent<T>`.
+  void publishEvent<T extends Object>(T event);
 }
 
 /// A listener bean, like Spring's `ApplicationListener`.

@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
@@ -38,6 +39,29 @@ abstract interface class ConditionContext {
   /// Loader for checking resources (for example `resourceLoader
   /// .getResource('file:x').exists()`).
   ResourceLoader get resourceLoader;
+
+  /// The definition whose conditions are being evaluated, like the
+  /// `AnnotatedTypeMetadata` Spring passes to `Condition.matches`: its
+  /// [BeanDefinition.annotations] (of the class, or of the `@Bean` method
+  /// and its return type), name and types. `null` for the conditions of a
+  /// `@PropertySource`. A [ConditionGroup] (the conditions of a
+  /// `@Configuration` class shared by its `@Bean` methods) is evaluated
+  /// once, with the first definition it guards.
+  ///
+  /// ```dart
+  /// class OnExperimental implements Condition {
+  ///   const OnExperimental();
+  ///
+  ///   // Beans annotated @Experimental() only when experiments are on.
+  ///   @override
+  ///   bool matches(ConditionContext context) {
+  ///     final annotations = context.definition?.annotations ?? const [];
+  ///     return annotations.whereType<Experimental>().isEmpty ||
+  ///         context.environment.getProperty('experiments') == 'on';
+  ///   }
+  /// }
+  /// ```
+  BeanDefinition<Object>? get definition;
 }
 
 /// Decides whether a bean is registered, like Spring's `Condition`.

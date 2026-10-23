@@ -10,6 +10,7 @@ import 'package:code_builder/code_builder.dart'
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
+import 'package:spring_core_dart_generator/src/aop_analysis.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 
@@ -18,6 +19,11 @@ part 'configuration_emitter.dart';
 // Runtime types are always imported from the public library, never from
 // `src/`.
 const _springUrl = 'package:spring_core_dart/spring_core_dart.dart';
+
+const _payloadApplicationEvent = TypeChecker.typeNamedLiterally(
+  'PayloadApplicationEvent',
+  inPackage: 'spring_core_dart',
+);
 
 // A reference to a public runtime type, e.g. `BeanDefinition`.
 Reference _spring(String name) => refer(name, _springUrl);
@@ -80,10 +86,21 @@ class ModuleEmitter {
   /// ```dart
   /// final emitter = ModuleEmitter(input.changeExtension('.beans.dart'));
   /// ```
-  ModuleEmitter(this.output);
+  ModuleEmitter(this.output, {this.dependencies, this.pruneProxies = true});
+
+  /// Whether `aop_proxies: all` skips the proxy classes of beans no
+  /// pointcut of the module can match (build option `aop_prune`).
+  final bool pruneProxies;
 
   /// The library being generated; used to make `asset:` imports relative.
   final AssetId output;
+
+  /// The packages the generated library's package depends on directly
+  /// (with itself); `null` when unknown. A declaration of any other
+  /// package is imported through a library of these that exports it (the
+  /// user's code reaches it that way), so the output does not trigger
+  /// `depend_on_referenced_packages`.
+  final Set<String>? dependencies;
 
   /// Returns the formatted source of the generated library.
   ///
@@ -120,7 +137,16 @@ class ModuleEmitter {
     List<Spec> extra = const [],
     Map<String, ({String? text, String? base64})> resources = const {},
   }) {
+    analyzeAop(module, prune: pruneProxies);
     final arguments = <String, Expression>{
+      if (module.imports.isNotEmpty)
+        'imports': literalList([
+          for (final variable in module.imports)
+            refer(
+              variable.name!,
+              _importUrl(variable.library.uri, variable, name: variable.name),
+            ),
+        ]),
       if (resources.isNotEmpty)
         'resources': literalConstMap({
           for (final MapEntry(key: path, value: (:text, :base64))
@@ -1795,6 +1821,22 @@ class ModuleEmitter {
     };
   }
 
+  // `r.containsBeanOfType(A) && ...` for the required single beans among
+  // [arguments]; `null` when nothing has to be checked.
+  Expression? _satisfiable(List<Argument> arguments, Element element) {
+    final checks = [
+      for (final Argument(:point) in arguments)
+        if (point.kind == PointKind.single && !point.optional)
+          refer('r')
+              .property('containsBeanOfType')
+              .call(
+                [_type(point.type, element)],
+                {if (point.qualifier case final q?) 'qualifier': _str(q)},
+              ),
+    ];
+    return checks.isEmpty ? null : checks.reduce((a, b) => a.and(b));
+  }
+
   // Body of `create: (r) => ...`: a constructor call, a static method call
   // or a method call on the owner bean looked up by name.
   Expression _creation(BeanModel bean) {
@@ -1809,11 +1851,30 @@ class ModuleEmitter {
       // constructor.
       case ConstructorCreation() when bean.proxy?.subclass != null:
         return refer(bean.proxy!.className).newInstance(positional, named);
-      case ConstructorCreation(:final constructorName):
+      case ConstructorCreation(:final constructorName, :final alternatives):
         final type = _type(bean.type, bean.element);
-        return constructorName == null
-            ? type.newInstance(positional, named)
-            : type.newInstanceNamed(constructorName, positional, named);
+        Expression call(String? name, List<Argument> arguments) {
+          final (positional, named) = _arguments(arguments, bean.element);
+          return name == null
+              ? type.newInstance(positional, named)
+              : type.newInstanceNamed(name, positional, named);
+        }
+        // `@Autowired(required: false)` constructors: the first (greediest)
+        // whose beans exist, else the last one, like Spring's
+        // ConstructorResolver.
+        final candidates = [
+          (constructorName, creation.arguments),
+          for (final alternative in alternatives)
+            (alternative.constructorName, alternative.arguments),
+        ];
+        var result = call(candidates.last.$1, candidates.last.$2);
+        for (final (name, arguments) in candidates.reversed.skip(1)) {
+          final satisfiable = _satisfiable(arguments, bean.element);
+          result = satisfiable == null
+              ? call(name, arguments)
+              : satisfiable.conditional(call(name, arguments), result);
+        }
+        return result;
       case BeanMethodCreation():
         final Expression call;
         if (creation.enhanced case final enhanced?) {
@@ -1992,14 +2053,24 @@ class ModuleEmitter {
                   literalNull.returned.statement,
                 ]),
       ).closure;
-      return _spring('EventListenerMethod').property('of').call(
+      // A `PayloadApplicationEvent<P>` listener matches on the payload's
+      // runtime type (`EventListenerMethod.forPayload<B, P>`).
+      final payload = _payloadApplicationEvent.isExactlyType(parameter)
+          ? parameter.typeArguments.single
+          : null;
+      return _spring(
+        'EventListenerMethod',
+      ).property(payload is InterfaceType ? 'forPayload' : 'of').call(
         [_str(listener.id), handler],
         {
           ...named,
           if (listener.condition case final condition?)
             'condition': _functionReference(condition, element),
         },
-        [bean, eventType],
+        [
+          bean,
+          if (payload is InterfaceType) _type(payload, element) else eventType,
+        ],
       );
     }
 
@@ -2070,7 +2141,14 @@ class ModuleEmitter {
   // A tear-off of a top-level function or `Class.staticMethod`.
   Expression _functionReference(ExecutableElement function, Element element) {
     final name = function.name!;
-    final url = _importUrl(function.library.uri, element);
+    final url = _importUrl(
+      function.library.uri,
+      element,
+      name: switch (function.enclosingElement) {
+        final InterfaceElement enclosing => enclosing.name,
+        _ => function.name,
+      },
+    );
     final enclosing = function.enclosingElement;
     if (function is MethodElement && enclosing is InterfaceElement) {
       return refer(enclosing.name!, url).property(name);
@@ -2131,7 +2209,13 @@ class ModuleEmitter {
       );
     }
     final source = revivable.source;
-    final url = _importUrl(source.removeFragment(), element);
+    final url = _importUrl(
+      source.removeFragment(),
+      element,
+      name: source.fragment.isEmpty
+          ? revivable.accessor.split('.').first
+          : source.fragment,
+    );
     if (source.fragment.isEmpty) {
       // A top-level constant or an enum value (`Enum.value`).
       final [first, ...rest] = revivable.accessor.split('.');
@@ -2186,6 +2270,26 @@ class ModuleEmitter {
     );
   }
 
+  // A library of a direct dependency (or of the generated package) that
+  // the library of [element] imports and that exports [name] of [uri].
+  Uri? _exportingLibrary(Uri uri, String name, Element element) {
+    final library = element.library;
+    if (library == null) {
+      return null;
+    }
+    for (final fragment in library.fragments) {
+      for (final imported in fragment.importedLibraries) {
+        final candidate = imported.uri;
+        if (candidate.scheme == 'package' &&
+            dependencies!.contains(candidate.pathSegments.first) &&
+            imported.exportNamespace.get2(name)?.library?.uri == uri) {
+          return candidate;
+        }
+      }
+    }
+    return null;
+  }
+
   // Maps a library URI to an import usable from [output]: `dart:core`
   // needs none, runtime `src/` libraries map to the public library,
   // `package:` and `dart:` URIs are kept, `asset:` URIs under `lib/` become
@@ -2211,6 +2315,12 @@ class ModuleEmitter {
       case 'package' when uri.pathSegments.first == 'spring_core_dart':
         // Public library instead of the runtime's src/ files.
         return _springUrl;
+      case 'package'
+          when name != null &&
+              dependencies != null &&
+              !dependencies!.contains(uri.pathSegments.first):
+        return _exportingLibrary(uri, name, element)?.toString() ??
+            uri.toString();
       case 'dart' || 'package':
         return uri.toString();
       case 'asset':
@@ -2222,6 +2332,7 @@ class ModuleEmitter {
               pathSegments: [package, ...segments.skip(1)],
             ),
             element,
+            name: name,
           );
         }
         if (package != output.package) {

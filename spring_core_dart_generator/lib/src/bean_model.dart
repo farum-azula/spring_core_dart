@@ -142,6 +142,22 @@ class InjectionPoint {
             kind == PointKind.map),
   );
 
+  /// A copy that is [optional] (for metadata only: the lookup itself is
+  /// unchanged); a `@Value` point stays as it is.
+  InjectionPoint asOptional() => kind == PointKind.value
+      ? this
+      : InjectionPoint(
+          kind: kind,
+          type: type,
+          optional: true,
+          qualifier: qualifier,
+          name: name,
+          expression: expression,
+          defaultValue: defaultValue,
+          lazy: lazy,
+          allowEmpty: allowEmpty,
+        );
+
   /// How the value is looked up (single bean, collection, value, ...).
   final PointKind kind;
 
@@ -261,6 +277,7 @@ class ConstructorCreation extends Creation {
     this.constructorName,
     this.arguments, {
     this.configuration,
+    this.alternatives = const [],
   });
 
   /// `null` for the unnamed constructor.
@@ -272,6 +289,32 @@ class ConstructorCreation extends Creation {
   /// For a full-mode `@Configuration` class: the generated subclass that is
   /// created instead (its constructor takes the bean factory first).
   final ConfigurationClassModel? configuration;
+
+  /// The other `@Autowired(required: false)` constructors, fewer
+  /// parameters last: the constructor above is called when the beans of
+  /// its parameters exist, else the first alternative whose beans exist,
+  /// else the last one (Spring's ConstructorResolver).
+  ///
+  /// ```dart
+  /// create: (r) => r.containsBeanOfType(Clock)
+  ///     ? Report(r.dependency<Clock>(name: r'clock'))
+  ///     : Report(),
+  /// ```
+  final List<ConstructorAlternative> alternatives;
+}
+
+/// A constructor the container may call instead of the selected one (see
+/// [ConstructorCreation.alternatives]).
+class ConstructorAlternative {
+  /// Creates an alternative; [constructorName] is `null` for the unnamed
+  /// constructor.
+  ConstructorAlternative(this.constructorName, this.arguments);
+
+  /// `null` for the unnamed constructor.
+  final String? constructorName;
+
+  /// One argument per parameter.
+  final List<Argument> arguments;
 }
 
 /// An interface proxy: the generated `_$XImpl.$create(r)`, which asks an
@@ -1133,7 +1176,7 @@ class ProxyModel {
   });
 
   /// Name of the generated class, e.g. `_$EnglishGreeterProxy` or
-  /// `_$Config_clockProxy` for a `@Bean` method.
+  /// `_$Config$ClockProxy` for a `@Bean` method.
   final String className;
 
   /// The type the proxy forwards to.
@@ -1159,7 +1202,7 @@ class ProxyModel {
   /// Why no proxy class can be generated; then only the signatures are
   /// emitted (`AopProxyFactory.unavailable`) so matching advice fails the
   /// startup with this reason instead of being skipped silently.
-  final String? unavailableReason;
+  String? unavailableReason;
 
   /// Set when the proxy is a subclass of the target (the bean itself,
   /// created by the container) instead of a wrapper around it.
@@ -1428,7 +1471,16 @@ class BeanModel {
         optional: false,
         qualifier: ownerName,
       ),
-    for (final argument in creation.arguments) argument.point,
+    // With alternative constructors no single parameter is required: the
+    // generated code only calls a constructor whose beans exist.
+    if (creation case ConstructorCreation(:final alternatives)
+        when alternatives.isNotEmpty) ...[
+      for (final argument in creation.arguments) argument.point.asOptional(),
+      for (final alternative in alternatives)
+        for (final argument in alternative.arguments)
+          argument.point.asOptional(),
+    ] else
+      for (final argument in creation.arguments) argument.point,
     for (final property in properties) property.point,
     for (final method in methods)
       for (final argument in method.arguments) argument.point,
@@ -1855,6 +1907,10 @@ class ModuleModel {
 
   /// `@PropertySource` declarations of scanned and imported classes.
   final propertySources = <PropertySourceModel>[];
+
+  /// Module variables of nested `@ComponentScan` roots, registered before
+  /// this module's beans (`BeanModule.imports`).
+  final imports = <TopLevelVariableElement>[];
 
   /// Lazy proxies for `@Lazy` injection points, one per type (keyed by
   /// library URI and type name).

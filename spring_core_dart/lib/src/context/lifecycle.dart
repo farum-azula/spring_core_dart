@@ -97,6 +97,12 @@ abstract mixin class SmartLifecycle implements Lifecycle {
   /// [defaultPhase] by default.
   int get phase => defaultPhase;
 
+  /// Whether `context.pause()` stops it (and `context.restart()` starts it
+  /// again); `true` by default, like Spring 7's `isPauseable()`. Return
+  /// `false` for a component that must keep running while the context is
+  /// paused (it still stops on `stop()` and `close()`).
+  bool get isPauseable => true;
+
   /// Stops the component and calls [callback] once it has stopped, like
   /// Spring's `stop(Runnable callback)`; by default [stop], then
   /// [callback]. The lifecycle processor stops smart lifecycles through
@@ -147,6 +153,20 @@ abstract interface class LifecycleProcessor implements Lifecycle {
   /// Starts auto-startup [SmartLifecycle] beans (context refresh).
   void onRefresh();
 
+  /// Stops the pauseable beans if running, then starts the auto-startup
+  /// beans again (context `restart()`), like Spring 7's `onRestart()`.
+  void onRestart();
+
+  /// Stops running beans except the [SmartLifecycle] beans that are not
+  /// [SmartLifecycle.isPauseable] (context `pause()`), like Spring 7's
+  /// `onPause()`; does not wait for [SmartLifecycle.stopWithCallback]
+  /// callbacks that come later.
+  void onPause();
+
+  /// Like [onPause] (context `pauseAsync()`), waiting for the callbacks of
+  /// [SmartLifecycle.stopWithCallback] phase by phase.
+  Future<void> onPauseAsync();
+
   /// Stops running beans (context close); does not wait for
   /// [SmartLifecycle.stopWithCallback] callbacks that come later.
   void onClose();
@@ -174,6 +194,12 @@ abstract interface class LifecycleProcessor implements Lifecycle {
 /// (or the phase's entry in [timeoutsForShutdownPhases]), logs the beans
 /// still running and goes on with the next phase, like Spring. The
 /// synchronous `stop()` / `close()` do not wait.
+///
+/// Like Spring 7, `pause()` stops the running beans except the
+/// [SmartLifecycle] beans that are not [SmartLifecycle.isPauseable] (plain
+/// [Lifecycle] beans are stopped too) and `restart()` stops the pauseable
+/// beans if still running, then starts the auto-startup beans again, which
+/// restores the state after refresh.
 ///
 /// ```dart
 /// final processor = DefaultLifecycleProcessor(context.beanFactory)
@@ -237,6 +263,31 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
   void onRefresh() {
     _startBeans(autoStartupOnly: true);
     _running = true;
+  }
+
+  @override
+  void onRestart() {
+    if (_running) {
+      _stopBeans(pauseableOnly: true);
+    }
+    _startBeans(autoStartupOnly: true);
+    _running = true;
+  }
+
+  @override
+  void onPause() {
+    if (_running) {
+      _stopBeans(pauseableOnly: true);
+      _running = false;
+    }
+  }
+
+  @override
+  Future<void> onPauseAsync() async {
+    if (_running) {
+      await _stopBeansAsync(pauseableOnly: true);
+      _running = false;
+    }
   }
 
   @override
@@ -333,21 +384,21 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
     ];
   }
 
-  void _stopBeans() {
+  void _stopBeans({bool pauseableOnly = false}) {
     final beans = _lifecycleBeans();
     for (final (_, names) in _shutdownPhases(beans)) {
       for (final name in names) {
-        _doStop(beans, name, pending: null);
+        _doStop(beans, name, pending: null, pauseableOnly: pauseableOnly);
       }
     }
   }
 
-  Future<void> _stopBeansAsync() async {
+  Future<void> _stopBeansAsync({bool pauseableOnly = false}) async {
     final beans = _lifecycleBeans();
     for (final (phase, names) in _shutdownPhases(beans)) {
       final pending = <String, Future<void>>{};
       for (final name in names) {
-        _doStop(beans, name, pending: pending);
+        _doStop(beans, name, pending: pending, pauseableOnly: pauseableOnly);
       }
       await _awaitPhase(phase, pending);
     }
@@ -355,25 +406,30 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
 
   // Like Spring's doStop: the beans depending on this one first. A
   // SmartLifecycle is stopped through stopWithCallback; when [pending] is
-  // given, its callback is waited for by phase. A bean that fails to stop
-  // is logged and the remaining beans are still stopped.
+  // given, its callback is waited for by phase. When pausing, a
+  // SmartLifecycle that is not pauseable keeps running. A bean that fails
+  // to stop is logged and the remaining beans are still stopped.
   void _doStop(
     Map<String, Lifecycle> beans,
     String name, {
     required Map<String, Future<void>>? pending,
+    bool pauseableOnly = false,
   }) {
     final bean = beans.remove(name);
     if (bean == null) {
       return;
     }
     for (final dependent in beanFactory.getDependentBeans(name)) {
-      _doStop(beans, dependent, pending: pending);
+      _doStop(beans, dependent, pending: pending, pauseableOnly: pauseableOnly);
     }
     try {
       if (!bean.isRunning) {
         return;
       }
       if (bean is SmartLifecycle) {
+        if (pauseableOnly && !bean.isPauseable) {
+          return;
+        }
         final stopped = Completer<void>();
         pending?[name] = stopped.future;
         bean.stopWithCallback(() {

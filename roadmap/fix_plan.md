@@ -93,15 +93,10 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 ## Context, events, lifecycle (`context`)
 
 - [ ] Programmatic registration: Spring 7's `BeanRegistrar` (`registerBean<T>(name, spec)`) through `@Import` and `context.register(registrar)`, `ImportSelector` / `ImportBeanDefinitionRegistrar`, `registerBean` on the context.
-- [ ] Spring 7 `pause()` / `restart()`: `ContextPausedEvent` / `ContextRestartedEvent`, `LifecycleProcessor.onPause` / `onRestart`, `SmartLifecycle.isPauseable` (maps onto Flutter's paused/resumed).
-- [ ] `PayloadApplicationEvent<T>` listeners; `@EventListener` methods on `FactoryBean` classes.
 - [ ] Asynchronous delivery: an executor-like option on `SimpleApplicationEventMulticaster` and `@Async` listeners (with the `TaskExecutor` of the scheduling starter).
 - [ ] Listener conditions inside the error handler; lifecycle discovery by instance type.
 - [ ] Phased creation of post-processors (`PriorityOrdered` → `Ordered` → rest, re-querying names).
-- [ ] `ConditionContext` access to the definition being evaluated.
 - [ ] `EmbeddedValueResolverAware` evaluating SpEL; descriptive errors for infrastructure misuse.
-- [ ] Child message lookups use the parent's message source, not the parent context; `conversionService` from ancestors.
-- [ ] Template hooks (`postProcessBeanFactory`, `onRefresh`, `onClose`), `registerShutdownHook()`.
 
 ## Configuration (`core`)
 
@@ -124,22 +119,4 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 - [ ] Indexes evaluated against the root; selection result types.
 - [ ] Java type names (`T(Integer)`), array construction (`new int[4]`), missing String/List/Map methods.
 - [ ] Missing APIs: `Expression.getValueType`, `IndexAccessor` (6.2).
-
-## JSON (`json`, Jackson auto-configuration)
-
-- [ ] Unsupported `spring.jackson.*` keys fail or warn; accept Boot 4's `spring.jackson.datatype.datetime.*`; bean name like Boot (`jacksonJsonMapper`); named time zones (Dart has no tz database: only `UTC` and fixed offsets today).
-
-## AOP (`aop`)
-
-- [ ] Implicit field getters/setters not advised (explicit getters are methods, which Spring advises).
-- [ ] Build-time validation of pointcut expressions; smaller generated code than `aop_proxies: all` without changing its meaning (skip beans no pointcut can match).
-
-## Generator
-
-- [ ] Annotations on primary-constructor fields lost when a library is resolved twice in one build.
-- [ ] Reject extension types and other unsupported targets (`@ComponentScan` on a class, `@Component` on mixins/enums).
-- [ ] Subclasses of `Profile`/`Conditional`; class-level `@Lazy` on lite configuration classes.
-- [ ] Nested `@ComponentScan` roots duplicating beans; escaping the scan glob; validating explicit names.
-- [ ] `@Value` on super-constructor parameters; constructor selection like Spring.
-- [ ] Warning-free generated code; better error messages (several errors, library URIs).
 

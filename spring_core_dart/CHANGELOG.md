@@ -1,3 +1,16 @@
+## Unreleased
+
+- `context.pause()` / `pauseAsync()` / `restart()` with `ContextPausedEvent` (a `ContextStoppedEvent`) and `ContextRestartedEvent` (a `ContextStartedEvent`) and `SmartLifecycle.isPauseable` (default `true`), like Spring 7: pause stops the running lifecycle beans except non-pauseable smart ones, restart stops the pauseable ones if running and starts the auto-startup beans again
+- breaking: `LifecycleProcessor` has `onPause()`, `onPauseAsync()` and `onRestart()`; `ConfigurableApplicationContext` has `pause()`, `pauseAsync()`, `restart()` and `registerShutdownHook()`
+- `context.registerShutdownHook()`: SIGINT / SIGTERM close the context and end the process with `130` / `143` (once per context, released on close, a no-op without `dart:io`), like Spring's `registerShutdownHook()`
+- template hooks on `AnnotationConfigApplicationContext`, like Spring's: `postProcessBeanFactory(beanFactory)` after the modules are loaded, `onRefresh()` before the listeners and eager singletons, `onClose()` last in `close()` / `closeAsync()`
+- breaking: `ApplicationEventPublisher.publishEvent` is generic (`publishEvent<T extends Object>(T event)`); a payload is wrapped in a `PayloadApplicationEvent<T>` of its static type (was `PayloadApplicationEvent<Object>`), so listeners of `PayloadApplicationEvent<T>` receive it; new `EventListenerMethod.forPayload<B, P>` matches on the payload's runtime type (used by the generator); `PayloadApplicationEvent` takes an optional `timestamp`
+- events: `@EventListener` methods of a `FactoryBean` are invoked on the factory (`&name`), not on its product
+- breaking: `ConditionContext` has `definition`, the `BeanDefinition` whose conditions are evaluated (Spring's `AnnotatedTypeMetadata`; `null` for `@PropertySource` conditions)
+- breaking: a child context's `messageSource` falls back to the parent's message source instead of the parent context (Spring's `getInternalParentMessageSource`); a `conversionService` bean of an ancestor context is used for `@Value` conversion when the child has none
+- AOP: a pointcut syntax error (`FormatException`) carries the character position (`offset`) of the designator or token at fault
+- `@Autowired(required: false)` on constructors: several such constructors are candidates and the one with the most parameters whose beans exist is used, like Spring (needs the matching `spring_core_dart_generator`)
+
 ## 0.1.7
 
 - `@ComponentScan(includeFilters:, excludeFilters:, useDefaultFilters:, lazyInit:)` with `Filter` / `FilterType` (`annotation`, `assignableType`, `regex`), like Spring's `@ComponentScan.Filter`; read by the generator at build time (needs the matching `spring_core_dart_generator`)

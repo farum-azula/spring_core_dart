@@ -5,8 +5,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'package:spring_boot_dart/src/shutdown_hook.dart';
 import 'package:test/test.dart';
 
 // Starts the fixture and waits for its `ready` line. The fixture's path is
@@ -30,45 +28,6 @@ Future<(Process, Stream<String>)> _start(List<String> args) async {
 }
 
 void main() {
-  group('addShutdownHook', () {
-    late ConfigurableApplicationContext context;
-    late void Function(int) signal;
-    late List<String> events;
-
-    setUp(() {
-      events = [];
-      context = SpringApplication(
-        [],
-        registerShutdownHook: false,
-        out: (_) {},
-      ).run(const [], systemEnvironment: const {});
-      addShutdownHook(
-        context,
-        watch: (onSignal) {
-          signal = onSignal;
-          return () => events.add('stopped');
-        },
-        exit: (code) => events.add('exit $code'),
-      );
-    });
-
-    test('a signal closes the context, then ends the process', () {
-      context.addApplicationListener(
-        ApplicationListenerAdapter.of<ContextClosedEvent>(
-          (_) => events.add('closed'),
-        ),
-      );
-      signal(143);
-      expect(context.isActive, isFalse);
-      expect(events, ['stopped', 'closed', 'exit 143']);
-    });
-
-    test('closing the context stops watching the signals', () {
-      context.close();
-      expect(events, ['stopped']);
-    });
-  });
-
   group('SpringApplication', () {
     Future<(int, String)> end(Process process, Stream<String> lines) async {
       final output = lines.toList();

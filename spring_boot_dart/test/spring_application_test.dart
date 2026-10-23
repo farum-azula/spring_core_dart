@@ -647,6 +647,8 @@ class _Ctx implements ConditionContext {
       context.beanFactory as BeanDefinitionRegistry;
   @override
   ResourceLoader get resourceLoader => context;
+  @override
+  BeanDefinition<Object>? get definition => null;
 }
 
 class _FormatAnalyzer implements FailureAnalyzer {

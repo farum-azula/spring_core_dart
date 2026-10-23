@@ -493,7 +493,9 @@ class Description {
 /// Marks an injection point, like Spring's `@Autowired`.
 ///
 /// - Constructor: the constructor used to create the bean (only needed when
-///   a class has several constructors).
+///   a class has several constructors). Several constructors may be
+///   `@Autowired(required: false)`: the one with the most parameters whose
+///   beans exist is used.
 /// - Field or setter: assigned after construction; fields must be public
 ///   and settable (`late final` or non-final).
 /// - Method: called after construction with injected arguments.
@@ -530,8 +532,15 @@ class Description {
 /// }
 /// ```
 class Autowired {
-  /// Creates the annotation.
-  const Autowired();
+  /// Creates the annotation; [required] only matters on constructors.
+  const Autowired({this.required = true});
+
+  /// On a constructor: `false` makes it one of several candidates, and the
+  /// container calls the one with the most parameters it can satisfy
+  /// (Spring's `@Autowired(required = false)` constructors). On fields,
+  /// setters and methods a nullable type expresses an optional dependency
+  /// instead (`required: false` there fails the build).
+  final bool required;
 }
 
 /// JSR-330 alias of [Autowired].

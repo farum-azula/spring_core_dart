@@ -66,9 +66,16 @@ targets:
 | Option | Values | Default |
 |---|---|---|
 | `aop_proxies` | `all` — proxy classes for every bean that can be implemented (class and interfaces); `interfaces` — only through abstract types; `none` — no proxies | `all` |
+| `aop_prune` | `true` — with `aop_proxies: all`, no proxy class for a bean no pointcut of the module can match (its signatures stay, so an advisor from elsewhere that matches fails the startup with the reason); `false` — every bean keeps its proxy class | `true` |
 
-Beans without matching advice are never wrapped at runtime; the option only
-controls generated code size.
+Beans without matching advice are never wrapped at runtime; the options only
+control generated code size. Every advice and `@Pointcut` expression is
+parsed with the runtime's parser at build time: a syntax error fails the build
+with the aspect, the advice and the character position. Nothing is pruned
+when the module has no advice or declares an advisor bean, and a bean whose
+class or members carry an annotation from outside `spring_core_dart` (or
+`@Validated`) keeps its proxy, because starters' advisors match by annotation.
+Public fields are proxied as implicit getters and setters.
 
 `@ComponentScan` itself takes Spring's scan options, evaluated at build
 time: `includeFilters` / `excludeFilters` (`Filter(classes: [Plugin])` for
@@ -88,6 +95,17 @@ constructor) fails the build with a message naming the declaration, its
 library and the fix (make it public, or move it out of the scan / declare
 a public supertype / drop the default) instead of a generated file that
 does not compile. Every error points at the source element.
+
+Independent problems of one build are reported together (`N problems in
+this build:`, each with its message, library URI and location) instead of
+one per build. Among them: `@Component` on a mixin, enum, extension or
+extension type, `@Bean` on a top-level function, `@ComponentScan` anywhere
+but on a top-level variable, two `@ComponentScan` roots in one directory,
+an empty, blank or space-padded bean name or alias, an ambiguous
+constructor choice and injecting or returning an extension type (erased at
+runtime). The generated code itself is free of analyzer warnings and of the
+`package:lints` recommended lints (`type=lint` is still ignored in it, as
+your own lint set may differ).
 
 An error in the sources never removes or changes an existing `*.beans.dart`
 (`build_runner watch` while typing would otherwise delete and regenerate it

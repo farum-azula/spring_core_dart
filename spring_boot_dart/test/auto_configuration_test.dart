@@ -267,6 +267,79 @@ void main() {
       context.close();
     });
 
+    test('the mapper bean is named like Boot 4 names it', () {
+      final context = run([app], []);
+      expect(context.containsBean('jacksonJsonMapper'), isTrue);
+      expect(context.containsBean('objectMapper'), isFalse);
+      context.close();
+    });
+
+    test('spring.jackson.datatype.datetime.write-dates-as-timestamps', () {
+      final instant = DateTime.utc(2026, 1, 1, 10);
+      final context = run(
+        [app],
+        ['--spring.jackson.datatype.datetime.write-dates-as-timestamps=true'],
+      );
+      expect(
+        context.getBean<ObjectMapper>().writeValueAsString(instant),
+        '${instant.millisecondsSinceEpoch}',
+      );
+      context.close();
+      // The Boot 4 key wins over the Boot 3 one.
+      final both = run(
+        [app],
+        [
+          '--spring.jackson.datatype.datetime.write-dates-as-timestamps=false',
+          '--spring.jackson.serialization.write-dates-as-timestamps=true',
+        ],
+      );
+      expect(
+        both.getBean<ObjectMapper>().writeValueAsString(instant),
+        '"2026-01-01T10:00:00.000Z"',
+      );
+      both.close();
+    });
+
+    test('unsupported spring.jackson.* keys are logged, not applied', () {
+      final warnings = <String>[];
+      final handler = SpringLog.handler;
+      SpringLog.handler = (record) {
+        if (record.loggerName == 'spring_boot_dart.JacksonAutoConfiguration') {
+          warnings.add(record.message);
+        }
+      };
+      addTearDown(() => SpringLog.handler = handler);
+      final context = run(
+        [app],
+        [
+          '--spring.jackson.date-format=yyyy',
+          '--spring.jackson.serialization.fail-on-empty-beans=false',
+          '--spring.jackson.property-naming-strategy=SNAKE_CASE',
+          '--spring.jackson.time-zone=UTC',
+        ],
+      );
+      expect(warnings, hasLength(2));
+      expect(warnings[0], contains("'spring.jackson.date-format'"));
+      expect(
+        warnings[1],
+        contains("'spring.jackson.serialization.fail-on-empty-beans'"),
+      );
+      context.close();
+    });
+
+    test('a named time zone fails with a clear message', () {
+      expect(
+        () => run([app], ['--spring.jackson.time-zone=Europe/Berlin']),
+        throwsA(
+          predicate(
+            (e) =>
+                e.toString().contains('Europe/Berlin') &&
+                e.toString().contains('no time zone database'),
+          ),
+        ),
+      );
+    });
+
     test('spring.jackson.time-zone', () {
       final context = run([app], ['--spring.jackson.time-zone=+02:00']);
       final mapper = context.getBean<ObjectMapper>();

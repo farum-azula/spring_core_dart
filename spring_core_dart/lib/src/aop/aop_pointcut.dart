@@ -516,7 +516,17 @@ final class _PointcutParser {
       _expect(')');
       return inner;
     }
-    // Every designator and named reference is followed by `( ... )`.
+    // Every designator and named reference is followed by `( ... )`; errors
+    // in it point at the designator.
+    _designatorStart = _matches[_pos - 1].start;
+    try {
+      return _designator(token);
+    } finally {
+      _designatorStart = null;
+    }
+  }
+
+  _Node _designator(String token) {
     final body = _parenthesized();
     switch (token) {
       case 'execution':
@@ -918,6 +928,15 @@ final class _PointcutParser {
     _pos++;
   }
 
-  FormatException _error(String message) =>
-      FormatException('Invalid pointcut ($message)', expression);
+  // Where the designator being parsed starts; null between designators.
+  int? _designatorStart;
+
+  /// An error pointing at the designator being parsed, else at the current
+  /// token (the end of the expression when all were read).
+  FormatException _error(String message) => FormatException(
+    'Invalid pointcut ($message)',
+    expression,
+    _designatorStart ??
+        (_pos < _matches.length ? _matches[_pos].start : expression.length),
+  );
 }

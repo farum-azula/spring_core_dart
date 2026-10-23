@@ -64,6 +64,7 @@ targets:
       spring_core_dart_generator:spring_core_dart:
         options:
           aop_proxies: all   # all (default) | interfaces | none
+          aop_prune: true    # all: skip proxies of beans no pointcut matches
 ```
 
 ## Quick start
@@ -159,8 +160,8 @@ Future<void> main(List<String> args) async {
 
 | Annotation | Meaning |
 |---|---|
-| `@Component([name])`, `@Service`, `@Repository`, `@Controller`, `@Named` | A bean. Default name: lowerCamelCase class name (`URLService` stays). Subclass `Component` for your own stereotypes. |
-| `@Configuration(name:, proxyBeanMethods:)` | A bean whose `@Bean` methods declare more beans. Like Spring's default (`proxyBeanMethods: true`), the container creates a generated subclass whose `@Bean` methods return its beans, so a `@Bean` method calling another one gets the singleton (a prototype: a new instance; static methods are not intercepted); `proxyBeanMethods: false` ("lite", also `@Component` classes and `@AutoConfiguration`) calls them as written. `@Lazy` / `@Profile` / conditions on it apply to its `@Bean` methods. |
+| `@Component([name])`, `@Service`, `@Repository`, `@Controller`, `@Named` | A bean. Default name: lowerCamelCase class name (`URLService` stays); an explicit name or alias must not be empty, blank or padded with spaces. Subclass `Component` for your own stereotypes. Only classes are beans: on a mixin, enum, extension or extension type (erased at runtime) the build fails and says what to use instead. |
+| `@Configuration(name:, proxyBeanMethods:)` | A bean whose `@Bean` methods declare more beans. Like Spring's default (`proxyBeanMethods: true`), the container creates a generated subclass whose `@Bean` methods return its beans, so a `@Bean` method calling another one gets the singleton (a prototype: a new instance; static methods are not intercepted); `proxyBeanMethods: false` ("lite", also `@Component` classes and `@AutoConfiguration`) calls them as written. `@Lazy` / `@Profile` / conditions on it (also on a lite `@Component` with `@Bean` methods) apply to its `@Bean` methods, unless a method says otherwise (`@Lazy(false)`). |
 | `@Bean(name:, aliases:, initMethod:, destroyMethod:, autowireCandidate:)` | A bean produced by a method; type = what the method body returns (`DataSource ds() => HikariDataSource()` is a `HikariDataSource`, also found as `DataSource`); parameters are injected. Destroy method is inferred (`close`, `shutdown`, `dispose`) unless `destroyMethod: ''`. |
 | `@Scope('prototype')` / `ScopeType.*` / custom name | Scope; custom scopes via `registerScope(name, CustomScope)` (e.g. `SimpleMapScope`). |
 | `@Lazy()` | Singletons are eager by default; lazy ones are created on first use. |
@@ -254,6 +255,35 @@ class Report {
 class StockForm(@NotBlank() var String sku, {@Min(1) var int quantity = 1});
 ```
 
+#### Choosing the constructor
+
+Like Spring's `AutowiredAnnotationBeanPostProcessor`: an `@Autowired()`
+constructor is used (it must be the only `@Autowired` one); several
+`@Autowired(required: false)` constructors are candidates, and the bean is
+created with the one with the most parameters whose beans exist (checked
+when the bean is created, the constructor callable without arguments as
+the last resort). Without `@Autowired`: the only public constructor
+(generative ones count before factories), else the primary constructor
+(like Kotlin's in Spring), else the one callable without arguments;
+anything else fails the build and lists the constructors.
+`required: false` only applies to constructors; on fields, setters and
+methods a nullable type makes the dependency optional.
+
+A super parameter carries the `@Value` / `@Qualifier` / `@Named` / `@Lazy`
+of the super constructor's parameter unless it has its own:
+
+```dart
+abstract class Client {
+  Client(@Value(r'${api.url}') this.url);
+  final String url;
+}
+
+@Component()
+class OrdersClient extends Client {
+  OrdersClient(super.url); // injected from ${api.url}
+}
+```
+
 Selection when several beans match: the only candidate, else the single
 `@Primary`, else the only non-`@Fallback`, else the one named like the
 parameter. A bean's name or alias (also one from `registerAlias`) matches
@@ -334,6 +364,26 @@ listener or a bean that fails to stop: the error is logged and shutdown
 continues (a `close()` from a `ContextClosedEvent` listener is ignored; one
 from a `ContextRefreshedEvent` listener closes the context, like Spring).
 
+Like Spring 7, `context.pause()` stops the running lifecycle beans except
+the `SmartLifecycle` beans whose `isPauseable` is `false`, and
+`context.restart()` (stopping the pauseable beans first if still running)
+starts the auto-startup beans again, restoring the state after refresh —
+a fit for Flutter's `paused` / `resumed`. They publish
+`ContextPausedEvent` (a `ContextStoppedEvent`) and `ContextRestartedEvent`
+(a `ContextStartedEvent`); `pauseAsync()` waits for the `stopWithCallback`
+callbacks like `closeAsync()`. A custom `LifecycleProcessor` implements
+`onPause` / `onPauseAsync` / `onRestart`.
+
+`context.registerShutdownHook()` closes the context on SIGINT / SIGTERM
+and ends the process with `128 + signal`, like Spring's JVM hook (once per
+context; the signals are released when the context closes; nothing on the
+web). Subclasses of `AnnotationConfigApplicationContext` can override
+Spring's template hooks: `postProcessBeanFactory(beanFactory)` (all
+definitions loaded, before the bean factory post-processors), `onRefresh()`
+(message source and multicaster ready, before the listeners and the eager
+singletons) and `onClose()` (last in `close()` / `closeAsync()`, after the
+singletons are destroyed).
+
 Problems the framework recovers from are logged through `SpringLog`
 (warnings are printed by default): set `SpringLog.level` and
 `SpringLog.handler` to route them, e.g. to `package:logging`.
@@ -386,16 +436,24 @@ There is no `.env` support by design: configuration lives in property files.
 
 ### Conditions
 
-`@Profile(['dev'])`, `@Conditional([MyCondition])`, or any const annotation
-class that implements `Condition` (attribute-style conditions such as
-`@ConditionalOnProperty('feature.x')`). Conditions see the environment and
-the definitions registered before them.
+`@Profile(['dev'])`, `@Conditional([MyCondition])` (or your own subclass of
+either, `class Dev extends Profile { const Dev() : super(const ['dev']); }`,
+like a Spring meta-annotation), or any const annotation class that
+implements `Condition` (attribute-style conditions such as
+`@ConditionalOnProperty('feature.x')`). Conditions see the environment, the
+definitions registered before them and, as `context.definition`, the
+definition being evaluated (its `annotations`, name and types — Spring's
+`AnnotatedTypeMetadata`; `null` for `@PropertySource` conditions).
 
 ### Modules
 
-`@ComponentScan` generates a `BeanModule` per package (directory). Combine
-modules in the application; `@Import([OtherConfig])` pulls in configuration
-classes outside the scan. Contexts can have a parent; beans of the parent
+`@ComponentScan` (on a top-level variable) generates a `BeanModule` per
+package (directory). Combine modules in the application;
+`@Import([OtherConfig])` pulls in configuration classes outside the scan. A
+subdirectory with its own `@ComponentScan` belongs to that scan (its
+filters apply): the enclosing scan, or `@SpringBootApplication`, imports its
+module instead of scanning the files again, so every bean is registered
+once even when both modules are used. One directory has one scan root. Contexts can have a parent; beans of the parent
 are visible to the child.
 
 The scan takes Spring's filters, evaluated at build time: `includeFilters`
@@ -444,6 +502,12 @@ Events published before the listeners are registered (while the bean
 factory post-processors run) are replayed once they are; later ones, e.g.
 from a bean's constructor, reach the listeners right away (a listener bean
 is created for it if needed). Events propagate to the parent context.
+A published object that is not an `ApplicationEvent` is wrapped in a
+`PayloadApplicationEvent<T>` of its static type: listeners of `T` get the
+payload, listeners of `PayloadApplicationEvent<T>` the event; generated
+listeners of `PayloadApplicationEvent<T>` match on the payload's runtime
+type, like Spring. `@EventListener` methods of a `FactoryBean` run on the
+factory, not on its product.
 
 ### Messages, resources, conversion
 
@@ -452,7 +516,9 @@ is created for it if needed). Events propagate to the parent context.
   `messages_ru` → default or system locale → base, `cacheSeconds`
   reloading), `MessageSourceAccessor`, locale fallback,
   `MessageFormat` placeholders, quotes, `number`, `choice`. Define a bean
-  named `messageSource`; the context delegates to it.
+  named `messageSource`; the context delegates to it. In a child context
+  it falls back to the parent's message source (not the parent context),
+  like Spring.
 - Resources: `lib/resources/` is the classpath — the generator embeds its
   files, so `classpath:...` works in CLI, AOT, Flutter and web without asset
   declarations; `@Value('classpath:templates/mail.txt') Resource template`
@@ -482,7 +548,8 @@ is created for it if needed). Events propagate to the parent context.
   Tests see `test/resources/` first (`spring_boot_starter_test`), like
   `src/test/resources` before `src/main/resources` in Java.
 - `DefaultConversionService` with Spring Boot duration syntax (`10s`,
-  `PT5M`), collections and enums.
+  `PT5M`), collections and enums. A `conversionService` bean (also in an
+  ancestor context) is used for `@Value` conversion.
 
 ### SpEL
 
@@ -896,7 +963,7 @@ Examples:
 
 | Pointcut | Advises |
 |---|---|
-| `execution(* *(..))` | every method of every bean (methods only, not getters/setters) |
+| `execution(* *(..))` | every method of every bean (methods only: `execution` never matches getters or setters, explicit or the implicit ones of a public field) |
 | `within(OrderService)` | everything of the `OrderService` bean, getters and setters included |
 | `execution(* OrderService.*(..))` | the methods of `OrderService` |
 | `execution(* find*(..))` | methods whose name starts with `find`, in any bean |
@@ -1003,6 +1070,31 @@ proxy. The generator option `aop_proxies` (`all` by default, `interfaces`,
 matched by names the generator writes, so `@annotation(Timed)` also works in
 minified and obfuscated release builds.
 
+Public fields are advised like explicit getters and setters: a field `int
+count` is an implicit getter `count` and (when not `final`) setter `count=`,
+and the proxy overrides both. They are `MemberKind.getter` / `setter`
+members, reached through `within`, `bean`, `target`, `@within`, custom
+advisors and `@annotation(X)` (an annotation on the field counts for both
+accessors, except constraints and `@Valid`, which validate the field). Spring
+has no implicit accessors, so there is no `get*` name to match with
+`execution`.
+
+The build parses every advice and `@Pointcut` expression with the runtime's
+own parser: a syntax error fails the build with the aspect, the advice and
+the character position, instead of the context at startup (a reference to a
+pointcut of a class outside the module is left to the runtime). In
+`aop_proxies: all` the generator also skips the proxy class of a bean no
+pointcut of the module can match (`execution` and `within` with a type
+pattern, `@annotation` when no member carries the annotation, `bean(...)`;
+decided with the same matcher the runtime uses). It keeps the bean's
+signatures, so an advisor from elsewhere (another module, a starter) that
+turns out to match it fails the startup with the reason instead of being
+skipped silently. Nothing is skipped when the module has no advice or
+declares an advisor bean, for a bean whose class or members carry an
+annotation from outside `spring_core_dart` or `@Validated` (annotation-driven
+advisors such as `@Cacheable`), or for subclass proxies. `aop_prune: false` in
+`build.yaml` generates the proxies of every bean again.
+
 ### Logging
 
 `SpringLog` is the logging facade (Spring's commons-logging / SLF4J): the
@@ -1104,6 +1196,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
 | Asynchronous initialization | `refresh()` is synchronous (load config first with `processAndApply()`); `refreshAsync()` awaits `Future`-returning init callbacks, the bean being injectable meanwhile | Dart cannot block on a `Future` |
+| `execution(* getName(..))` matches an explicit or generated getter (they are methods in Java) | `execution` matches methods only; a public field is an implicit getter / setter that the proxy advises (`MemberKind.getter` / `setter`, reached by `within`, `bean`, `@annotation`, custom advisors); an explicit getter is a getter too | Dart has getters and setters of its own and fields have implicit ones |
 | Package-qualified AOP type patterns, argument binding | Simple type names; qualified wildcards and binding are rejected | No packages in Dart; binding not implemented yet |
 | Jackson `ObjectMapper` (reflection) | `ObjectMapper` on generated metadata; a model needs `@Introspected()` (its classes of the same package are included) | No reflection |
 | Optional `@Value` with `${x:#{null}}` | A nullable target gets `null` when a placeholder is missing | Dart null safety |
@@ -1118,7 +1211,8 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Jackson writes Java enums by name (`IN_STOCK`) | Enums go over the wire by their Dart name (`inStock`); use `@JsonValue` to talk to Java peers | Dart naming conventions |
 | Jackson `BigInteger` as a JSON number | `BigInt` as a string | `jsonEncode` has no arbitrary-precision numbers |
 | Jackson's `null` / missing value for a primitive is `0` / `false` (unless `FAIL_ON_NULL_FOR_PRIMITIVES`) | A JSON `null` or missing value for a non-nullable type is an error | Dart null safety |
-| `spring.jackson.time-zone` with any zone ID | `UTC` / `Z` or a fixed offset (`+02:00`, `GMT+2`) | Dart has no time zone database |
+| `spring.jackson.time-zone` with any zone ID | `UTC` / `Z` or a fixed offset (`+02:00`, `GMT+2`); a named zone (`Europe/Berlin`) fails at startup with a message saying so | Dart has no time zone database |
+| Boot binds every `spring.jackson.*` key (Jackson features, `date-format`, `locale`, ...) | Only the keys of the `spring_boot_dart` table are read; any other `spring.jackson.*` key is logged as a warning and ignored | The mapper has no Jackson feature flags |
 | SpEL `matches` and String methods are Java's | Dart's `RegExp` syntax and Dart's String methods (`replaceAll` with a string is literal) | Dart runtime |
 | SpEL `T(java.lang.Math)` finds any class | `T()` needs registered types and takes Dart type names (`T(int)`) | No reflection |
 | `ReloadableResourceBundleMessageSource` reload checks every resource's timestamp | File resources by modification time; others are re-read; preloaded (async-only) resources change only through `preload()` | Not every resource has a timestamp or sync reads |

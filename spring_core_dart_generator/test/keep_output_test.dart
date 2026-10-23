@@ -1,3 +1,8 @@
+// Several in-memory builds per test; the machine may be busy with other
+// test processes.
+@Timeout(Duration(minutes: 5))
+library;
+
 // An error in the sources never removes or changes an existing output:
 // `build_runner watch` while typing (syntax errors most of the time) must
 // not make the generated file flicker in and out on every keystroke.
