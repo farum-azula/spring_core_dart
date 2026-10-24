@@ -166,7 +166,8 @@ class DataBinder {
       );
   BeanPropertyBindingResult? _bindingResult;
 
-  /// Only these fields may be bound (`*` wildcards); `null` allows all.
+  /// Only these fields may be bound (`*` wildcards); `null` or empty
+  /// allows all (Spring's `setAllowedFields()` with no patterns).
   List<String>? allowedFields;
 
   /// These fields are never bound (`*` wildcards).
@@ -536,7 +537,9 @@ class DataBinder {
   // `roles[admin]`.
   bool _isAllowed(String field) {
     final allowed = allowedFields;
-    if (allowed != null && !allowed.any((p) => simpleMatch(p, field))) {
+    if (allowed != null &&
+        allowed.isNotEmpty &&
+        !allowed.any((p) => simpleMatch(p, field))) {
       return false;
     }
     final candidates = {field.toLowerCase(), _bracketForm(field).toLowerCase()};

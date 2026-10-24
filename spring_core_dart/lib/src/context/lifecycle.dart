@@ -2,7 +2,29 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
+import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/core/log.dart';
+
+/// A context-level failure, like Spring's `ApplicationContextException`:
+/// thrown, for example, when a [Lifecycle] bean fails to start
+/// ("Failed to start bean 'x'", the bean's error as [cause]).
+///
+/// ```dart
+/// try {
+///   context.refresh();
+/// } on ApplicationContextException catch (e) {
+///   print('${e.message}: ${e.cause}');
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// } catch (ApplicationContextException ex) { ... }
+/// ```
+class ApplicationContextException extends BeansException {
+  /// A failure described by [message], caused by [cause].
+  const ApplicationContextException(super.message, {super.cause});
+}
 
 /// A component that can be started and stopped, like Spring's `Lifecycle`.
 ///
@@ -193,7 +215,10 @@ abstract interface class LifecycleProcessor implements Lifecycle {
 /// of [SmartLifecycle.stopWithCallback] at most [timeoutPerShutdownPhase]
 /// (or the phase's entry in [timeoutsForShutdownPhases]), logs the beans
 /// still running and goes on with the next phase, like Spring. The
-/// synchronous `stop()` / `close()` do not wait.
+/// synchronous `stop()` / `close()` do not wait (Spring's block); a bean
+/// asked to start while its stop callback is still pending (`restart()`,
+/// or `start()` right after `stop()`) is started when the callback fires
+/// instead of being skipped as running.
 ///
 /// Like Spring 7, `pause()` stops the running beans except the
 /// [SmartLifecycle] beans that are not [SmartLifecycle.isPauseable] (plain
@@ -235,6 +260,13 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
   final Map<int, Duration> timeoutsForShutdownPhases;
 
   bool _running = false;
+
+  // SmartLifecycle beans whose stopWithCallback callback has not fired yet
+  // (Spring's stop() blocks on a latch per phase; Dart cannot block), and
+  // those of them to start once it fires: a start (restart(), or start()
+  // after stop()) asked for while they were still stopping.
+  final _stopping = <String, Completer<void>>{};
+  final _startWhenStopped = <String>{};
 
   /// The timeout for the shutdown of [phase] (Spring's
   /// `determineTimeout`).
@@ -375,9 +407,28 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
     for (final dependency in beanFactory.getDependenciesForBean(name)) {
       _doStart(beans, dependency, autoStartupOnly: autoStartupOnly);
     }
-    if (!bean.isRunning &&
-        (!autoStartupOnly || bean is! SmartLifecycle || bean.isAutoStartup)) {
-      bean.start();
+    if (autoStartupOnly && bean is SmartLifecycle && !bean.isAutoStartup) {
+      return;
+    }
+    if (_stopping.containsKey(name)) {
+      // Still stopping: started when its stop callback fires, instead of
+      // being skipped as running and ending up stopped.
+      _startWhenStopped.add(name);
+      return;
+    }
+    if (!bean.isRunning) {
+      try {
+        bean.start();
+      } on Object catch (error, stackTrace) {
+        // Spring's doStart wraps the failure, naming the bean.
+        Error.throwWithStackTrace(
+          ApplicationContextException(
+            "Failed to start bean '$name'",
+            cause: error,
+          ),
+          stackTrace,
+        );
+      }
     }
   }
 
@@ -435,27 +486,58 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
       _doStop(beans, dependent, pending: pending, pauseableOnly: pauseableOnly);
     }
     try {
+      if (bean is SmartLifecycle && pauseableOnly && !bean.isPauseable) {
+        return;
+      }
+      _startWhenStopped.remove(name);
+      if (_stopping[name] case final stopping?) {
+        // A stop still in progress: wait for its callback.
+        pending?[name] = stopping.future;
+        return;
+      }
       if (!bean.isRunning) {
         return;
       }
       if (bean is SmartLifecycle) {
-        if (pauseableOnly && !bean.isPauseable) {
-          return;
-        }
         final stopped = Completer<void>();
+        _stopping[name] = stopped;
         pending?[name] = stopped.future;
-        bean.stopWithCallback(() {
-          if (!stopped.isCompleted) {
-            stopped.complete();
-          }
-        });
+        bean.stopWithCallback(() => _stopped(name, bean, stopped));
       } else {
         bean.stop();
       }
     } catch (error, stackTrace) {
       pending?.remove(name);
+      if (_stopping.remove(name) case final stopped?
+          when !stopped.isCompleted) {
+        stopped.complete();
+      }
       _log.warning(
         "Failed to stop bean '$name'",
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  // The stop callback of [bean]: once only; starts the bean again when a
+  // start was asked for meanwhile.
+  void _stopped(String name, SmartLifecycle bean, Completer<void> stopped) {
+    if (stopped.isCompleted) {
+      return;
+    }
+    stopped.complete();
+    if (identical(_stopping[name], stopped)) {
+      _stopping.remove(name);
+    }
+    if (!_startWhenStopped.remove(name) || bean.isRunning) {
+      return;
+    }
+    try {
+      bean.start();
+    } catch (error, stackTrace) {
+      _log.warning(
+        "Failed to start bean '$name' after its stop callback",
         error: error,
         stackTrace: stackTrace,
       );

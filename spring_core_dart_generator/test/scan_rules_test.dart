@@ -485,11 +485,11 @@ class NoArgument {
     test('independent problems are reported together with their library '
         'URIs', () async {
       final message = await _errors({
-        'lib/src/a.dart': '@Component() abstract class Broken {}',
+        'lib/src/a.dart': '@Configuration() class Broken { @Bean() Future<int> b() async => 1; }',
         'lib/src/b.dart': "@Component('') class Unnamed {}",
       });
       expect(message, contains('2 problems in this build'));
-      expect(message, contains('Bean class Broken must not be abstract.'));
+      expect(message, contains('@Bean method b must not be async.'));
       expect(message, contains('package:pkg/src/a.dart'));
       expect(message, contains('The bean name of Unnamed is empty'));
       expect(message, contains('package:pkg/src/b.dart'));

@@ -9,11 +9,14 @@ import 'dart:typed_data';
 /// `{0,number,percent}`, `{0,number,<pattern>}` (`DecimalFormat` patterns:
 /// `#`, `0`, `,` grouping, `.` fraction, quoted and plain literal prefixes
 /// and suffixes, `%`, a `;negative` subpattern such as
-/// `#,##0.00;(#,##0.00)`); `{0,date}`, `{0,time}` (ISO-8601 parts);
-/// `{0,choice,0#none|1#one|1<{0} many}`. Numbers are rounded half-even on
-/// their exact binary value, like Java's `DecimalFormat` (`0.15` with
-/// `#.#` gives `0.1`: the double is slightly below 0.15). Missing arguments
-/// stay as `{n}`.
+/// `#,##0.00;(#,##0.00)`); `{0,date}` and `{0,time}` with the styles
+/// `short`, `medium` (the default), `long`, `full` or a `SimpleDateFormat`
+/// pattern (`{0,date,yyyy-MM-dd}`); `{0,choice,0#none|1#one|1<{0} many}`.
+/// Numbers are rounded half-even on their exact binary value, like Java's
+/// `DecimalFormat` (`0.15` with `#.#` gives `0.1`: the double is slightly
+/// below 0.15). Missing arguments stay as `{n}`. Like Java's
+/// `applyPattern`, the whole pattern is checked: a malformed element
+/// throws even when its argument is missing or of another type.
 ///
 /// With a [format] `locale` (`de`, `fr_CA`, ...), numbers use its decimal
 /// and grouping separators (`1.234,5` in German, `1 234,5` in French);
@@ -28,6 +31,7 @@ import 'dart:typed_data';
 ///   [1234],
 /// ); // There are 1,234 files.
 /// MessageFormat.format('{0,number}', [1234.5], locale: 'de'); // 1.234,5
+/// MessageFormat.format('{0,date,short}', [DateTime(2026, 1, 12)]); // 1/12/26
 /// ```
 ///
 /// Spring (Java) uses `java.text.MessageFormat`:
@@ -39,9 +43,11 @@ import 'dart:typed_data';
 ///
 /// Differences from Java: `{0,number,percent}` and `currency` keep the US
 /// layout (`26%`; currency gives two decimals without a symbol); the minus
-/// sign is always `-`; dates and times use ISO-8601 parts instead of locale
-/// styles, and date styles (`short`, `long`, custom patterns) are ignored;
-/// no scientific notation (`0.##E0`).
+/// sign is always `-`; dates and times use the US English styles and
+/// names whatever the locale (`Jan 12, 2026`, `3:30 PM` with a plain space
+/// where JDK 20+ prints a narrow no-break space), and a time zone is the
+/// `DateTime`'s (`UTC` or the local zone's name); no scientific notation
+/// (`0.##E0`).
 abstract final class MessageFormat {
   /// Formats [pattern] with [args], with the number symbols of [locale].
   ///
@@ -117,31 +123,72 @@ abstract final class MessageFormat {
     if (index == null || index < 0) {
       throw FormatException("Invalid argument index '${parts.first}'", pattern);
     }
+    final type = parts.length > 1 ? parts[1].trim().toLowerCase() : null;
+    final style = parts.length > 2 ? parts[2] : null;
+    // Checked before the argument, like Java's applyPattern.
+    final _NumberPattern? numberPattern;
+    final List<_DatePart>? datePattern;
+    final List<(double, bool, String)>? choices;
+    switch (type) {
+      case null:
+        numberPattern = null;
+        datePattern = null;
+        choices = null;
+      case 'number':
+        numberPattern = _numberPattern(style?.trim(), pattern);
+        datePattern = null;
+        choices = null;
+      case 'date' || 'time':
+        numberPattern = null;
+        datePattern = _DatePart.parse(
+          _dateStyle(type == 'date', style?.trim()),
+          pattern,
+        );
+        choices = null;
+      case 'choice':
+        numberPattern = null;
+        datePattern = null;
+        choices = [
+          for (final option in _splitChoices(style ?? ''))
+            _parseChoice(option, pattern),
+        ];
+      default:
+        throw FormatException("Unknown format type '$type'", pattern);
+    }
     if (index >= args.length) {
       return '{$index}';
     }
     final value = args[index];
-    final type = parts.length > 1 ? parts[1].trim().toLowerCase() : null;
-    final style = parts.length > 2 ? parts[2] : null;
-    switch (type) {
-      case null:
-        return _plain(value, symbols);
-      case 'number':
-        return _number(value, style?.trim(), pattern, symbols);
-      case 'date':
-        return value is DateTime
-            ? value.toIso8601String().split('T').first
-            : '$value';
-      case 'time':
-        return value is DateTime
-            ? value.toIso8601String().split('T').last.substring(0, 8)
-            : '$value';
-      case 'choice':
-        return _choice(value, style ?? '', args, pattern, symbols);
-      default:
-        throw FormatException("Unknown format type '$type'", pattern);
+    if (numberPattern != null) {
+      return value is num
+          ? _decimal(value, numberPattern, symbols)
+          : _plain(value, symbols);
     }
+    if (datePattern != null) {
+      return value is DateTime
+          ? _DatePart.formatAll(datePattern, value)
+          : _plain(value, symbols);
+    }
+    if (choices != null) {
+      return _choice(value, choices, args, pattern, symbols);
+    }
+    return _plain(value, symbols);
   }
+
+  // The SimpleDateFormat pattern of a date or time [style] (Java's
+  // DateFormat styles in US English, CLDR); a custom pattern as it is.
+  static String _dateStyle(bool date, String? style) =>
+      switch (style?.toLowerCase()) {
+        null || '' || 'medium' => date ? 'MMM d, y' : 'h:mm:ss a',
+        'short' => date ? 'M/d/yy' : 'h:mm a',
+        'long' => date ? 'MMMM d, y' : 'h:mm:ss a z',
+        'full' => date ? 'EEEE, MMMM d, y' : 'h:mm:ss a zzzz',
+        _ => style!,
+      };
+
+  // Java's default for a date without a format type:
+  // DateFormat.getDateTimeInstance(SHORT, SHORT).
+  static final _plainDate = _DatePart.parse('M/d/yy, h:mm a', '');
 
   /// Splits `index,type,style` at the first two top-level commas (not in
   /// nested `{...}` or quotes).
@@ -181,34 +228,25 @@ abstract final class MessageFormat {
     return parts;
   }
 
-  // `{n}` without a type: numbers like `{n,number}`, dates as
-  // `yyyy-MM-dd HH:mm`, everything else via toString.
+  // `{n}` without a type: numbers like `{n,number}`, dates in Java's
+  // short date-time style (`1/12/26, 3:30 PM`), everything else via
+  // toString.
   static String _plain(Object? value, _Symbols symbols) => switch (value) {
     null => 'null',
     num() => _decimal(value, _NumberPattern.standard, symbols),
-    DateTime() =>
-      value.toIso8601String().replaceFirst('T', ' ').substring(0, 16),
+    DateTime() => _DatePart.formatAll(_plainDate, value),
     _ => value.toString(),
   };
 
-  // `{n,number[,style]}`; non-numbers are formatted as plain values.
-  static String _number(
-    Object? value,
-    String? style,
-    String pattern,
-    _Symbols symbols,
-  ) {
-    if (value is! num) {
-      return _plain(value, symbols);
-    }
-    return switch (style) {
-      null || '' => _decimal(value, _NumberPattern.standard, symbols),
-      'integer' => _decimal(value, _NumberPattern.integer, symbols),
-      'percent' => _decimal(value, _NumberPattern.percent, symbols),
-      'currency' => _decimal(value, _NumberPattern.currency, symbols),
-      _ => _decimal(value, _NumberPattern.parse(style, pattern), symbols),
-    };
-  }
+  // The pattern of `{n,number[,style]}`.
+  static _NumberPattern _numberPattern(String? style, String pattern) =>
+      switch (style) {
+        null || '' => _NumberPattern.standard,
+        'integer' => _NumberPattern.integer,
+        'percent' => _NumberPattern.percent,
+        'currency' => _NumberPattern.currency,
+        _ => _NumberPattern.parse(style, pattern),
+      };
 
   /// Formats [value] with [format]: half-even rounding on the exact value,
   /// prefixes/suffixes of the positive or negative subpattern.
@@ -330,7 +368,7 @@ abstract final class MessageFormat {
   /// reaches (`#` means `>=`, `<` means `>`), or the first option.
   static String _choice(
     Object? value,
-    String style,
+    List<(double, bool, String)> options,
     List<Object?> args,
     String pattern,
     _Symbols symbols,
@@ -338,9 +376,9 @@ abstract final class MessageFormat {
     if (value is! num) {
       throw FormatException('choice format requires a number', pattern);
     }
-    final options = [
-      for (final option in _splitChoices(style)) _parseChoice(option, pattern),
-    ];
+    if (options.isEmpty) {
+      return '';
+    }
     var index = 0;
     for (var i = 0; i < options.length; i++) {
       final (limit, strict, _) = options[i];
@@ -530,6 +568,18 @@ final class _NumberPattern {
     if (integerPart.replaceAll(',', '').isEmpty && fractionPart.isEmpty) {
       throw FormatException("Invalid number pattern '$style'", pattern);
     }
+    // Java's DecimalFormat.applyPattern: one decimal separator, no
+    // grouping in the fraction, `#` before `0` in the integer part and
+    // after it in the fraction, no empty group.
+    if (fractionPart.contains('.') || fractionPart.contains(',')) {
+      throw FormatException("Malformed number pattern '$style'", pattern);
+    }
+    if (RegExp('0[,]*#').hasMatch(integerPart) ||
+        RegExp('#0').hasMatch(fractionPart) ||
+        integerPart.endsWith(',') ||
+        integerPart.contains(',,')) {
+      throw FormatException("Malformed number pattern '$style'", pattern);
+    }
     final lastComma = integerPart.lastIndexOf(',');
     final multiplier = positive.multiplier;
     return _NumberPattern(
@@ -620,5 +670,147 @@ final class _NumberPattern {
       suffix: suffix.toString(),
       multiplier: multiplier,
     );
+  }
+}
+
+/// One element of a `SimpleDateFormat` pattern: a letter run (`yyyy`,
+/// `MMM`) or literal text.
+final class _DatePart {
+  const _DatePart(this.letter, this.count, this.text);
+
+  /// The pattern letter, or `null` for literal [text].
+  final String? letter;
+  final int count;
+  final String text;
+
+  // Java's SimpleDateFormat letters this formatter knows.
+  static const _letters = 'GyYMLdDEuaHkKhmsSzZX';
+
+  static const _months = [
+    'January', 'February', 'March', 'April', 'May', 'June', 'July', //
+    'August', 'September', 'October', 'November', 'December',
+  ];
+  static const _days = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', //
+    'Sunday',
+  ];
+
+  /// Parses [style]; an unknown letter or an unterminated quote throws,
+  /// like Java's `SimpleDateFormat`.
+  static List<_DatePart> parse(String style, String pattern) {
+    final parts = <_DatePart>[];
+    final literal = StringBuffer();
+    void flush() {
+      if (literal.isNotEmpty) {
+        parts.add(_DatePart(null, 0, literal.toString()));
+        literal.clear();
+      }
+    }
+
+    var i = 0;
+    while (i < style.length) {
+      final c = style[i];
+      if (c == "'") {
+        if (i + 1 < style.length && style[i + 1] == "'") {
+          literal.write("'");
+          i += 2;
+          continue;
+        }
+        final end = style.indexOf("'", i + 1);
+        if (end < 0) {
+          throw FormatException("Unterminated quote in '$style'", pattern);
+        }
+        literal.write(style.substring(i + 1, end));
+        i = end + 1;
+        continue;
+      }
+      if (RegExp('[a-zA-Z]').hasMatch(c)) {
+        if (!_letters.contains(c)) {
+          throw FormatException(
+            "Illegal pattern character '$c' in '$style'",
+            pattern,
+          );
+        }
+        var end = i;
+        while (end < style.length && style[end] == c) {
+          end++;
+        }
+        flush();
+        parts.add(_DatePart(c, end - i, ''));
+        i = end;
+        continue;
+      }
+      literal.write(c);
+      i++;
+    }
+    flush();
+    return parts;
+  }
+
+  static String formatAll(List<_DatePart> parts, DateTime value) =>
+      parts.map((part) => part._format(value)).join();
+
+  static String _pad(int value, int count) =>
+      value.toString().padLeft(count, '0');
+
+  String _format(DateTime d) {
+    final hour12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    return switch (letter) {
+      null => text,
+      'G' => 'AD',
+      'y' || 'Y' => count == 2 ? _pad(d.year % 100, 2) : _pad(d.year, count),
+      'M' || 'L' => switch (count) {
+        1 || 2 => _pad(d.month, count),
+        3 => _months[d.month - 1].substring(0, 3),
+        _ => _months[d.month - 1],
+      },
+      'd' => _pad(d.day, count),
+      'D' => _pad(
+        DateTime.utc(
+              d.year,
+              d.month,
+              d.day,
+            ).difference(DateTime.utc(d.year)).inDays +
+            1,
+        count,
+      ),
+      'E' =>
+        count <= 3
+            ? _days[d.weekday - 1].substring(0, 3)
+            : _days[d.weekday - 1],
+      'u' => _pad(d.weekday, count),
+      'a' => d.hour < 12 ? 'AM' : 'PM',
+      'H' => _pad(d.hour, count),
+      'k' => _pad(d.hour == 0 ? 24 : d.hour, count),
+      'K' => _pad(d.hour % 12, count),
+      'h' => _pad(hour12, count),
+      'm' => _pad(d.minute, count),
+      's' => _pad(d.second, count),
+      'S' => _pad(d.millisecond, count),
+      'z' => d.isUtc ? 'UTC' : d.timeZoneName,
+      'Z' => _offset(d, colon: false, zulu: false),
+      'X' => _offset(d, colon: count >= 3, zulu: true, hoursOnly: count == 1),
+      _ => '',
+    };
+  }
+
+  // `+0200`, `+02:00`, `+02` or `Z`.
+  static String _offset(
+    DateTime d, {
+    required bool colon,
+    required bool zulu,
+    bool hoursOnly = false,
+  }) {
+    final offset = d.isUtc ? Duration.zero : d.timeZoneOffset;
+    if (offset == Duration.zero && zulu) {
+      return 'Z';
+    }
+    final minutes = offset.inMinutes.abs();
+    final sign = offset.isNegative ? '-' : '+';
+    final hours = _pad(minutes ~/ 60, 2);
+    if (hoursOnly) {
+      return '$sign$hours';
+    }
+    return '$sign$hours${colon ? ':' : ''}${_pad(minutes % 60, 2)}';
   }
 }

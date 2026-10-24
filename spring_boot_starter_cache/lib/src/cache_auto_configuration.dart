@@ -38,7 +38,16 @@ CacheManager cacheManagerFromProperties(Environment environment) {
         'declare a CacheManager bean',
       );
   }
-  final names = environment.getProperty('spring.cache.cache-names');
+  // A comma list or a YAML list (`spring.cache.cache-names[0]`).
+  final names = environment is ConfigurableEnvironment
+      ? Binder.get(environment)
+            .bind(
+              'spring.cache.cache-names',
+              const ListType<String>(ClassType<String>()),
+            )
+            .map<List<String>?>((names) => names)
+            .orElse(null)
+      : environment.getProperty('spring.cache.cache-names')?.split(',');
   CacheSpec spec(String prefix) => CacheSpec(
     timeToLive: environment.getPropertyAs<Duration>('$prefix.time-to-live'),
     maxSize: environment.getPropertyAs<int>('$prefix.max-size'),
@@ -47,7 +56,7 @@ CacheManager cacheManagerFromProperties(Environment environment) {
     cacheNames: names == null
         ? null
         : [
-            for (final name in names.split(','))
+            for (final name in names)
               if (name.trim().isNotEmpty) name.trim(),
           ],
     defaultSpec: spec('spring.cache.simple'),

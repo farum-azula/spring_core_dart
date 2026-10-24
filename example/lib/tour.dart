@@ -360,6 +360,15 @@ class _Tour {
     show('basket (custom scope)', baskets.items);
     context.beanFactory.getRegisteredScope('basket')!.remove('basket');
     show('basket after the scope ended', baskets.items);
+
+    final cashier = context.getBean<Cashier>();
+    final first = cashier.ring(['Dune']);
+    final second = cashier.ring(['Emma']);
+    show('@Lookup prototype receipts', [first.lines, second.lines]);
+    show(
+      "@Lookup('banner') singleton",
+      identical(cashier.banner(), cashier.banner()),
+    );
   }
 
   void events() {

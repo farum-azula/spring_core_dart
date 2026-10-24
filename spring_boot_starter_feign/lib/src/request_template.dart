@@ -60,15 +60,28 @@ class RequestTemplate {
   /// Removes every value of header [name], like Feign's `removeHeader`.
   void removeHeader(String name) => headers.remove(name);
 
-  /// Adds query parameter [name] = [value].
-  void query(String name, String value) {
-    final all = {
-      for (final MapEntry(:key, :value) in url.queryParametersAll.entries)
-        key: [...value],
-    };
-    (all[name] ??= []).add(value);
-    url = url.replace(queryParameters: all);
+  /// Adds query parameter [name] = [value] (the query already in [url]
+  /// stays as written).
+  void query(String name, String value) =>
+      url = appendQuery(url, [(name, value)]);
+}
+
+/// [url] with [parameters] appended to its query, encoded like a form
+/// (`+` for spaces); the query already in [url] is kept as written.
+Uri appendQuery(Uri url, Iterable<(String, String)> parameters) {
+  final added = [
+    for (final (name, value) in parameters)
+      '${Uri.encodeQueryComponent(name)}=${Uri.encodeQueryComponent(value)}',
+  ];
+  if (added.isEmpty) {
+    return url;
   }
+  return url.replace(
+    query: [
+      if (url.hasQuery && url.query.isNotEmpty) url.query,
+      ...added,
+    ].join('&'),
+  );
 }
 
 /// Changes every request of the Feign clients before it is sent, like
@@ -94,16 +107,22 @@ abstract interface class RequestInterceptor {
 }
 
 /// Adds `Authorization: Basic ...` (Feign's
-/// `BasicAuthRequestInterceptor`).
+/// `BasicAuthRequestInterceptor`); pass `encoding: utf8` for names or
+/// passwords outside ISO-8859-1, like Feign's `Charset` argument.
 ///
 /// ```dart
 /// @Bean()
 /// RequestInterceptor auth() => BasicAuthRequestInterceptor('shop', 's3cret');
 /// ```
 class BasicAuthRequestInterceptor implements RequestInterceptor {
-  /// Sends [username] and [password].
-  BasicAuthRequestInterceptor(String username, String password)
-    : _value = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+  /// Sends [username] and [password], encoded with [encoding] (ISO-8859-1
+  /// by default, like Feign; throws `ArgumentError` for characters it
+  /// cannot encode).
+  BasicAuthRequestInterceptor(
+    String username,
+    String password, {
+    Encoding encoding = latin1,
+  }) : _value = 'Basic ${base64Encode(encoding.encode('$username:$password'))}';
 
   final String _value;
 

@@ -295,9 +295,9 @@ final class BuiltinMethodResolver implements MethodResolver {
         !VarargsFunction.accepts(function, arguments.length)) {
       return null;
     }
-    return (_, _, args) => SpelTypeMethodResolver.callChecked(
+    return (context, _, args) => SpelTypeMethodResolver.callChecked(
       function,
-      args,
+      VarargsFunction.convertArguments(function, args, context.typeConverter),
       () => SpelEvaluationException(
         SpelMessage.methodNotFound,
         inserts: [

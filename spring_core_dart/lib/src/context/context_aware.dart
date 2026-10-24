@@ -15,7 +15,7 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///
 /// ```dart
 /// @Component()
-/// class Lookup implements ApplicationContextAware {
+/// class BeanLocator implements ApplicationContextAware {
 ///   late ApplicationContext context;
 ///
 ///   @override
@@ -27,7 +27,7 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 /// Spring (Java):
 /// ```java
 /// @Component
-/// class Lookup implements ApplicationContextAware {
+/// class BeanLocator implements ApplicationContextAware {
 ///   public void setApplicationContext(ApplicationContext ctx) { ... }
 /// }
 /// ```

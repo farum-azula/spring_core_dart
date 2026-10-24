@@ -55,9 +55,10 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
   ReloadableResourceBundleMessageSource({
     List<String> basenames = const [],
     ResourceLoader? resourceLoader,
-    this.cacheSeconds = -1,
+    int cacheSeconds = -1,
     this.fallbackToSystemLocale = true,
   }) : _basenames = [...basenames],
+       cacheMillis = cacheSeconds < 0 ? -1 : cacheSeconds * 1000,
        resourceLoader = resourceLoader ?? DefaultResourceLoader();
 
   final List<String> _basenames;
@@ -69,8 +70,15 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
   /// `-1` (the default) caches forever; `0` checks the files on every
   /// lookup; a positive value checks them at most every [cacheSeconds]
   /// seconds. A checked file is re-read when it changed (see the class
-  /// documentation).
-  int cacheSeconds;
+  /// documentation). Stored as [cacheMillis].
+  int get cacheSeconds => cacheMillis < 0 ? -1 : cacheMillis ~/ 1000;
+
+  set cacheSeconds(int seconds) =>
+      cacheMillis = seconds < 0 ? -1 : seconds * 1000;
+
+  /// [cacheSeconds] in milliseconds, like Spring's `setCacheMillis`
+  /// (Spring Boot's `spring.messages.cache-duration=500ms` sets it).
+  int cacheMillis;
 
   /// Whether a lookup falls back to the system locale
   /// ([Locales.systemLocale]) when the requested locale misses and no
@@ -166,11 +174,12 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
     final cached = _cache[path];
     if (cached != null) {
       // Async-only content always comes from the preload cache.
-      if (cacheSeconds < 0 || !resource.supportsSyncRead) {
+      if (cacheMillis < 0 || !resource.supportsSyncRead) {
         return cached.properties;
       }
       final now = DateTime.now();
-      if (now.difference(cached.checked) < Duration(seconds: cacheSeconds)) {
+      if (now.difference(cached.checked) <
+          Duration(milliseconds: cacheMillis)) {
         return cached.properties;
       }
       final modified = _lastModified(resource);

@@ -17,7 +17,7 @@ void main() {
         .withUserConfiguration(parametersModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(server);
+        .withBean<HttpTransport>(() => server);
   });
 
   group('a mapping without a path', () {

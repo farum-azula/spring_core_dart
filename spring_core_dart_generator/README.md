@@ -66,15 +66,17 @@ targets:
 | Option | Values | Default |
 |---|---|---|
 | `aop_proxies` | `all` — proxy classes for every bean that can be implemented (class and interfaces); `interfaces` — only through abstract types; `none` — no proxies | `all` |
-| `aop_prune` | `true` — with `aop_proxies: all`, no proxy class for a bean no pointcut of the module can match (its signatures stay, so an advisor from elsewhere that matches fails the startup with the reason); `false` — every bean keeps its proxy class | `true` |
+| `aop_prune` | `true` — with `aop_proxies: all`, the `@SpringBootApplication` output (which knows every module of the application) generates no proxy class for a bean no pointcut of the application can match (its signatures stay, so an advisor that matches anyway fails the startup with the reason); `@ComponentScan` modules are never pruned, since any module may import them; `false` — every bean keeps its proxy class | `true` |
 
 Beans without matching advice are never wrapped at runtime; the options only
 control generated code size. Every advice and `@Pointcut` expression is
 parsed with the runtime's parser at build time: a syntax error fails the build
-with the aspect, the advice and the character position. Nothing is pruned
-when the module has no advice or declares an advisor bean, and a bean whose
-class or members carry an annotation from outside `spring_core_dart` (or
-`@Validated`) keeps its proxy, because starters' advisors match by annotation.
+with the aspect, the advice and the character position. Pruning reads the
+aspects of the nested `@ComponentScan` modules too; nothing is pruned when no
+module has advice, a module declares an advisor bean or an
+auto-configuration declares aspects, and a bean whose class or members carry
+an annotation from outside `spring_core_dart` (or `@Validated`) keeps its
+proxy, because starters' advisors match by annotation.
 Public fields are proxied as implicit getters and setters.
 
 `@ComponentScan` itself takes Spring's scan options, evaluated at build

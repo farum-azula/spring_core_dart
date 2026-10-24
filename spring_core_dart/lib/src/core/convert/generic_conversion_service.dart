@@ -4,18 +4,22 @@ import 'package:spring_core_dart/src/core/convert/lenient_enum.dart';
 
 /// One registered conversion to a fixed target type.
 final class _Converter {
-  _Converter(this.accepts, this.convert);
+  _Converter(this.accepts, this.acceptsType, this.convert);
 
   final bool Function(Object source) accepts;
+  // Whether a source of type X is accepted (X a subtype of the source).
+  final bool Function<X>() acceptsType;
   final Object? Function(Object source) convert;
 }
 
 /// Knows how to recognize instances of a target type, captured from a type
 /// argument at registration time.
 final class _Target {
-  _Target(this.isInstance);
+  _Target(this.isInstance, this.isSupertypeOf);
 
   final bool Function(Object? value) isInstance;
+  // Whether X is a subtype of the target.
+  final bool Function<X>() isSupertypeOf;
   final List<_Converter> converters = [];
 }
 
@@ -55,15 +59,25 @@ class GenericConversionService implements ConversionService, ConverterRegistry {
 
   // The `v is T` closure is created here, while `T` is still a type
   // argument, so targets can later test instances by `Type` alone.
-  _Target _target<T>() => _targets.putIfAbsent(T, () => _Target((v) => v is T));
+  _Target _target<T>() => _targets.putIfAbsent(
+    T,
+    () => _Target((v) => v is T, <X>() => <X>[] is List<T>),
+  );
 
   @override
   void addConverter<S, T>(T? Function(S source) converter) {
-    final entry = _Converter((source) => source is S, (s) => converter(s as S));
+    final entry = _Converter(
+      (source) => source is S,
+      <X>() => <X>[] is List<S>,
+      (s) => converter(s as S),
+    );
     // Same converter for `T` and `T?`; newest first (later registrations win).
     _target<T>().converters.insert(0, entry);
     _targets
-        .putIfAbsent(_typeOf<T?>(), () => _Target((v) => v is T?))
+        .putIfAbsent(
+          _typeOf<T?>(),
+          () => _Target((v) => v is T?, <X>() => <X>[] is List<T?>),
+        )
         .converters
         .insert(0, entry);
   }
@@ -117,6 +131,22 @@ class GenericConversionService implements ConversionService, ConverterRegistry {
       return true;
     }
     return _find(source, targetType) != null;
+  }
+
+  @override
+  bool canConvertType<S>(Type targetType) {
+    if (targetType == Object ||
+        targetType == dynamic ||
+        targetType == _typeOf<Object?>() ||
+        S == targetType) {
+      return true;
+    }
+    final target = _targets[targetType];
+    if (target == null) {
+      return false;
+    }
+    return target.isSupertypeOf<S>() ||
+        target.converters.any((converter) => converter.acceptsType<S>());
   }
 
   @override

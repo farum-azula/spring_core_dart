@@ -4,6 +4,7 @@ import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
+import 'package:spring_core_dart/src/beans/null_bean.dart';
 import 'package:spring_core_dart/src/beans/scope.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/context/event/event_listener_method.dart';
@@ -236,7 +237,8 @@ final class BeanDefinition<T extends Object> {
   /// `create`.
   ///
   /// - `create`: calls the constructor (or `@Bean` method); obtain
-  ///   dependencies from the resolver (`r.dependency<Foo>()`).
+  ///   dependencies from the resolver (`r.dependency<Foo>()`). It may
+  ///   return `null`: the bean is then a [NullBean].
   /// - `inject`: field, setter and method injection after construction.
   /// - `postConstruct` / `initMethod`: init callbacks (`@PostConstruct`,
   ///   `@Bean(initMethod:)`); a returned `Future` is awaited by
@@ -415,7 +417,9 @@ final class BeanDefinition<T extends Object> {
   /// Advice and pointcuts when this bean is an `@Aspect`.
   final AspectMetadata<T>? aspect;
 
-  final T Function(DependencyResolver resolver) _create;
+  // May return `null` (a `@Bean` method declared `T?`): the bean is then a
+  // [NullBean].
+  final T? Function(DependencyResolver resolver) _create;
   final void Function(T bean, DependencyResolver resolver)? _inject;
   final FutureOr<void> Function(T bean)? _postConstruct;
   final FutureOr<void> Function(T bean)? _initMethod;
@@ -469,8 +473,10 @@ final class BeanDefinition<T extends Object> {
       (type == Object ||
           (factoryObjectTypes!.contains(type) && !types.contains(type)));
 
-  /// Creates a new instance (calls `create`); used by the container.
-  T instantiate(DependencyResolver resolver) => _create(resolver);
+  /// Creates a new instance (calls `create`); a [NullBean] when `create`
+  /// returns `null` (Spring's null bean). Used by the container.
+  Object instantiate(DependencyResolver resolver) =>
+      _create(resolver) ?? NullBean();
 
   /// Runs field, setter and method injection.
   void populate(Object bean, DependencyResolver resolver) =>

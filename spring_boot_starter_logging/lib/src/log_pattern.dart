@@ -176,8 +176,18 @@ final class LogPattern {
 
 typedef _Render = String Function(SpringLogRecord record);
 
-// When the first pattern was created: the origin of %relative.
-final _start = DateTime.now();
+// The origin of %relative: when the first pattern was created, or the
+// time of an earlier record (records buffered before the logging system
+// started), so the value is never negative — Logback counts from the
+// birth of its context, before any event.
+DateTime _start = DateTime.now();
+
+int _relative(SpringLogRecord record) {
+  if (record.time.isBefore(_start)) {
+    _start = record.time;
+  }
+  return record.time.difference(_start).inMilliseconds;
+}
 
 String _fields(SpringLogRecord record) => record.fields.isEmpty
     ? ''
@@ -558,8 +568,8 @@ final class _Parser {
       case 'seq':
         return simple((r) => '${r.sequence}');
       case 'r' || 'relative':
-        final start = _start; // initialized no later than the pattern
-        return simple((r) => '${r.time.difference(start).inMilliseconds}');
+        _start; // initialized no later than the pattern
+        return simple((r) => '${_relative(r)}');
       case 'ex' ||
           'exception' ||
           'throwable' ||

@@ -1,3 +1,3 @@
 # Root runs (`dart test <package>/test` from here) use this file instead of
 # the packages' own: the generator tests build in memory and need the margin.
-timeout: 3x
+timeout: 6x

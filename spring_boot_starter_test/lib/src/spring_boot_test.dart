@@ -6,7 +6,9 @@ import 'package:test_api/scaffolding.dart';
 /// Starts [application] for the tests of the enclosing `main` or `group`,
 /// like `@SpringBootTest`: the context is created once before the first
 /// test (config files, auto-configuration, `@ConfigurationProperties`,
-/// runners: everything `runApplication` does) and closed after the last.
+/// runners: everything `runApplication` does) and closed with
+/// `closeAsync()` after the last (asynchronous `@PreDestroy` methods and
+/// lifecycle stops are awaited).
 ///
 /// - [resourceDirectories] (default `test/resources/`, relative to the
 ///   package of the calling test file, wherever the tests are started
@@ -102,9 +104,9 @@ SpringBootTestContext springBootTest(
       await test._start();
     }
   });
-  tearDown(() {
+  tearDown(() async {
     if (test._dirty) {
-      test._close();
+      await test._close();
     }
   });
   tearDownAll(test._finish);
@@ -207,17 +209,19 @@ final class SpringBootTestContext {
     );
   }
 
-  void _close() {
+  // Like SpringApplication's shutdown: closeAsync() awaits asynchronous
+  // @PreDestroy methods and SmartLifecycle stops.
+  Future<void> _close() async {
     final context = _context;
     _context = null;
     _dirty = false;
     if (context != null && context.isActive) {
-      context.close();
+      await context.closeAsync();
     }
   }
 
-  void _finish() {
-    _close();
+  Future<void> _finish() async {
+    await _close();
     for (final remove in _removeDirectories) {
       remove();
     }

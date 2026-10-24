@@ -547,6 +547,61 @@ class Autowired {
   final bool required;
 }
 
+/// Marks a method whose every call returns a bean of the container
+/// (lookup method injection): the bean named [value], else the bean of the
+/// method's return type. Typical use is a singleton that needs a fresh
+/// prototype bean per call.
+///
+/// The bean is created as a generated subclass that overrides the method,
+/// so the method may be abstract (then the class may be abstract too: an
+/// abstract `@Component` class with `@Lookup` methods is a bean, unlike
+/// other abstract classes) or concrete (its body is never run). A nullable
+/// return type gives `null` when no bean matches the type.
+///
+/// Dart limits (checked at build time): the method must be public, take no
+/// parameters (Spring passes them as constructor arguments to `getBean`)
+/// and not be generic; the class must be extendable from the generated
+/// library (not `final`, `sealed` or `interface`), created through a public
+/// generative constructor, and not a full-mode `@Configuration` class.
+///
+/// ```dart
+/// @Component()
+/// @Scope(ScopeType.prototype)
+/// class Command {}
+///
+/// @Component()
+/// abstract class CommandManager {
+///   @Lookup()
+///   Command createCommand(); // a new Command per call
+///
+///   @Lookup('auditLog')
+///   AuditLog auditLog(); // the bean named `auditLog`
+///
+///   void process() => createCommand().run();
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Component
+/// public abstract class CommandManager {
+///   @Lookup
+///   protected abstract Command createCommand();
+///
+///   @Lookup("auditLog")
+///   protected abstract AuditLog auditLog();
+/// }
+/// ```
+class Lookup {
+  /// Creates the annotation; [value] is the name of the bean to return
+  /// (by default the bean of the return type).
+  const Lookup([this.value]);
+
+  /// The name (or alias) of the bean to return; `null` looks it up by the
+  /// method's return type.
+  final String? value;
+}
+
 /// JSR-330 alias of [Autowired].
 ///
 /// ```dart

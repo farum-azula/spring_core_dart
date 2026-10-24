@@ -107,6 +107,86 @@ final class AnnotationMatchingPointcut<A> implements AopPointcut {
       );
 }
 
+/// Combines pointcuts with [union] and [intersection], like Spring's
+/// `ComposablePointcut` (a mutable builder: both return the pointcut
+/// itself).
+///
+/// The match is static: an [ExpressionPointcut] part that depends on the
+/// call (`args(id)`, bindings) counts as matching here; use it on its own
+/// in an advisor to have it decided per call.
+///
+/// ```dart
+/// final pointcut = ComposablePointcut(
+///   const NameMatchMethodPointcut(['find*']),
+/// ).union(const AnnotationMatchingPointcut<Timed>())
+///  .intersection(ExpressionPointcut('within(*Service)'));
+/// DefaultPointcutAdvisor(pointcut, LoggingInterceptor());
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// ComposablePointcut pointcut = new ComposablePointcut(findMethods)
+///     .union(AnnotationMatchingPointcut.forMethodAnnotation(Timed.class))
+///     .intersection(servicePointcut);
+/// ```
+final class ComposablePointcut implements AopPointcut {
+  /// Starts from [pointcut] (every member by default).
+  ComposablePointcut([AopPointcut pointcut = const TruePointcut()])
+    : _matches = ((s, name, aliases) =>
+          pointcutMatchesBean(pointcut, s, name, aliases));
+
+  bool Function(MethodSignature s, String beanName, List<String> aliases)
+  _matches;
+
+  /// Matches what this pointcut or [other] matches.
+  ComposablePointcut union(AopPointcut other) {
+    final current = _matches;
+    _matches = (s, name, aliases) =>
+        current(s, name, aliases) ||
+        pointcutMatchesBean(other, s, name, aliases);
+    return this;
+  }
+
+  /// Matches what both this pointcut and [other] match.
+  ComposablePointcut intersection(AopPointcut other) {
+    final current = _matches;
+    _matches = (s, name, aliases) =>
+        current(s, name, aliases) &&
+        pointcutMatchesBean(other, s, name, aliases);
+    return this;
+  }
+
+  @override
+  bool matches(MethodSignature signature, String beanName) =>
+      _matches(signature, beanName, const []);
+
+  /// Like [matches], with the bean's aliases and qualifier values for the
+  /// `bean(...)` parts.
+  bool matchesBean(
+    MethodSignature signature,
+    String beanName,
+    List<String> beanAliases,
+  ) => _matches(signature, beanName, beanAliases);
+}
+
+/// Whether [pointcut] matches [signature] of the bean [beanName], with its
+/// aliases and qualifier values ([beanAliases]) for pointcuts that test
+/// bean names ([ExpressionPointcut], [ComposablePointcut]).
+///
+/// ```dart
+/// pointcutMatchesBean(pointcut, signature, 'orders', ['primaryOrders']);
+/// ```
+bool pointcutMatchesBean(
+  AopPointcut pointcut,
+  MethodSignature signature,
+  String beanName,
+  List<String> beanAliases,
+) => switch (pointcut) {
+  final ExpressionPointcut p => p.matchesBean(signature, beanName, beanAliases),
+  final ComposablePointcut p => p.matchesBean(signature, beanName, beanAliases),
+  _ => pointcut.matches(signature, beanName),
+};
+
 /// `*` wildcard matching.
 ///
 /// The whole [text] must match; every other character is literal.
@@ -163,21 +243,29 @@ final class AdviceBinding {
 /// patterns are ignored since Dart has libraries, not packages):
 /// - `execution([modifiers] ret [Type.]method(params))` — `*` wildcards,
 ///   `..` for any parameters, `*` for one parameter, `Type+` for the type
-///   and its subtypes;
-/// - `within(TypePattern)` — the bean class (`Type+`: or a subtype);
+///   and its subtypes; modifiers `public`, `protected` (`@protected`
+///   members), `private` (never), optionally negated with `!`; a `throws`
+///   clause is rejected (Dart methods declare no exceptions);
+/// - `within(TypePattern)` — the class whose body runs for the member (the
+///   bean class, or the superclass or mixin it inherits the member from;
+///   `Type+`: or a subtype of it);
 /// - `target(Type)` / `this(Type)` — the bean class or any supertype;
-/// - `args(...)` — the parameters (declared types; `..` for any number);
+/// - `args(...)` — the parameters (`..` for any number): the declared
+///   type, or the runtime argument when [typeTests] has the type;
+/// - `@args(...)` — arguments whose runtime class carries the annotation
+///   ([argumentAnnotations]);
 /// - `bean(namePattern)` — the bean name, an alias or a qualifier value;
 /// - `@annotation(Name)` — an annotation on the member;
-/// - `@within(Name)` / `@target(Name)` — an annotation on the bean class;
+/// - `@within(Name)` — an annotation on the class whose body runs;
+/// - `@target(Name)` — an annotation on the bean class;
 /// - named pointcuts `name()` (of the same aspect) / `Type.name()`;
 /// - `&&` / `and`, `||` / `or`, `!` / `not`, parentheses.
 ///
 /// With [bindings] (written by the generator for advice parameters), an
 /// identifier naming an advice parameter in `@annotation(x)`,
-/// `@within(x)`, `@target(x)`, `this(x)`, `target(x)` or `args(...)` binds
-/// that parameter: the advice receives the annotation, the proxy, the
-/// target or the argument ([bind]).
+/// `@within(x)`, `@target(x)`, `this(x)`, `target(x)`, `args(...)` or
+/// `@args(...)` binds that parameter: the advice receives the annotation,
+/// the proxy, the target or the argument ([bind]).
 ///
 /// The expression is parsed eagerly; invalid expressions throw a
 /// [FormatException].
@@ -209,13 +297,30 @@ final class ExpressionPointcut implements AopPointcut {
   /// only as `'Type.name'` (unqualified references inside it then refer to
   /// `Type`'s pointcuts). [bindings] are the advice parameters the
   /// expression may bind, by name.
+  ///
+  /// [typeTests] test a value against a type by its simple name
+  /// (`'String': (v) => v is String`): `args(String)` then also matches a
+  /// parameter of another declared type whose argument is a `String` at
+  /// runtime (AspectJ's `instanceof` test). [argumentAnnotations] return
+  /// the annotation of the given type that the runtime class of a value
+  /// carries, or `null` (`'Audited': (v) => v is Order ? const Audited() :
+  /// null`), for `@args(Audited)`. The generator writes both for aspects.
   ExpressionPointcut(
     this.expression, {
     Map<String, String> namedPointcuts = const {},
     Map<String, AdviceBinding> bindings = const {},
+    Map<String, bool Function(Object? value)> typeTests = const {},
+    Map<String, Object? Function(Object? value)> argumentAnnotations = const {},
     this.owner,
   }) : bindings = Map.unmodifiable(bindings),
-       _root = _parse(expression, namedPointcuts, owner, bindings);
+       _root = _parse(
+         expression,
+         namedPointcuts,
+         owner,
+         bindings,
+         typeTests,
+         argumentAnnotations,
+       );
 
   // Parses [expression]; every binding must be used by it (AspectJ's
   // "formal unbound in pointcut"), or the advice would receive `null`.
@@ -224,6 +329,8 @@ final class ExpressionPointcut implements AopPointcut {
     Map<String, String> named,
     String? owner,
     Map<String, AdviceBinding> bindings,
+    Map<String, bool Function(Object? value)> typeTests,
+    Map<String, Object? Function(Object? value)> argumentAnnotations,
   ) {
     final used = <String>{};
     final root = _PointcutParser(
@@ -233,14 +340,16 @@ final class ExpressionPointcut implements AopPointcut {
       owner,
       bindings,
       used,
+      typeTests,
+      argumentAnnotations,
     ).parse();
     final unbound = bindings.keys.where((name) => !used.contains(name));
     if (unbound.isNotEmpty) {
       throw FormatException(
         'Invalid pointcut (advice parameter ${unbound.join(', ')} is not '
         'bound by the expression; bind it with @annotation(name), '
-        '@within(name), @target(name), this(name), target(name) or '
-        'args(name, ..), or remove the parameter)',
+        '@within(name), @target(name), this(name), target(name), '
+        'args(name, ..) or @args(name, ..), or remove the parameter)',
         expression,
       );
     }
@@ -403,20 +512,16 @@ final class _Not extends _Node {
   bool get isRuntime => inner.isRuntime;
 }
 
-// A designator. [test] is the static check; [bind] (for bindings and
-// argument checks) decides a call and binds values.
+// A designator. [test] is the static check; [bind] (for bindings)
+// binds values per call.
 final class _Leaf extends _Node {
-  _Leaf(this.test, {this.bind, this.dynamicCheck = false});
+  _Leaf(this.test, {this.bind});
 
   final bool Function(_Static context) test;
   final bool Function(_Dynamic context, Map<String, Object?> bound)? bind;
 
-  // Whether a passing static test still depends on the call.
-  final bool dynamicCheck;
-
   @override
-  bool? check(_Static context) =>
-      test(context) ? (dynamicCheck ? null : true) : false;
+  bool? check(_Static context) => test(context);
 
   @override
   bool run(_Dynamic context, Map<String, Object?> bound) =>
@@ -424,6 +529,25 @@ final class _Leaf extends _Node {
 
   @override
   bool get isRuntime => bind != null;
+}
+
+// A designator whose static check may be undecided (`null`) and whose
+// call-time check [decide] may bind values.
+final class _Runtime extends _Node {
+  _Runtime(this.test, this.decide);
+
+  final bool? Function(_Static context) test;
+  final bool Function(_Dynamic context, Map<String, Object?> bound) decide;
+
+  @override
+  bool? check(_Static context) => test(context);
+
+  @override
+  bool run(_Dynamic context, Map<String, Object?> bound) =>
+      test(context) != false && decide(context, bound);
+
+  @override
+  bool get isRuntime => true;
 }
 
 // Recursive-descent parser compiling an expression into a [_Node] tree.
@@ -446,6 +570,8 @@ final class _PointcutParser {
     this.owner,
     this.bindings,
     this.used,
+    this.typeTests,
+    this.argumentAnnotations,
   )
     // Tokens: operators, parentheses, identifiers (optionally `@`-prefixed
     // and dotted, e.g. `@annotation`, `Aspect.name`) and any other run of
@@ -464,6 +590,8 @@ final class _PointcutParser {
   final Map<String, AdviceBinding> bindings;
   // Names of [bindings] the expression (and its named pointcuts) binds.
   final Set<String> used;
+  final Map<String, bool Function(Object? value)> typeTests;
+  final Map<String, Object? Function(Object? value)> argumentAnnotations;
   final List<RegExpMatch> _matches;
   int _pos = 0;
 
@@ -531,15 +659,18 @@ final class _PointcutParser {
     switch (token) {
       case 'execution':
         return _execution(body);
+      // AspectJ's `within` is lexical: the class whose body runs.
       case 'within':
         final (pattern, subtypes) = _typePattern(body);
-        return _Leaf((c) => _typeMatches(pattern, subtypes, c.signature));
+        return _Leaf((c) => _withinMatches(pattern, subtypes, c.signature));
       // Proxies implement the bean's types, so `this` and `target` check
       // the same types; bound, `this` is the proxy and `target` the bean.
       case 'target' || 'this':
         return _targetOrThis(body, isThis: token == 'this');
       case 'args':
         return _args(body);
+      case '@args':
+        return _annotatedArgs(body);
       case 'bean':
         final pattern = body.trim();
         return _Leaf((c) => c.beanNames.any((n) => wildcardMatch(pattern, n)));
@@ -549,7 +680,17 @@ final class _PointcutParser {
           (s) => _names(s.annotationTypes, s.annotations),
           (s) => s.annotations,
         );
-      case '@within' || '@target':
+      // `@within`: the class whose body runs; `@target`: the bean class.
+      case '@within':
+        return _annotation(
+          body,
+          (s) => _names(
+            s.implementingTypeAnnotationTypes ?? s.targetAnnotationTypes,
+            s.implementingTypeAnnotations ?? s.targetAnnotations,
+          ),
+          (s) => s.implementingTypeAnnotations ?? s.targetAnnotations,
+        );
+      case '@target':
         return _annotation(
           body,
           (s) => _names(s.targetAnnotationTypes, s.targetAnnotations),
@@ -563,19 +704,27 @@ final class _PointcutParser {
     }
   }
 
+  // `target(Type)` / `this(Type)`; bound (`target(t)`), the parameter's
+  // type check on the target or proxy decides each call, so a parameter of
+  // type `Object` (or of a type the static names do not show, like an
+  // introduced interface for `this`) matches too.
   _Node _targetOrThis(String body, {required bool isThis}) {
     final binding = _binding(body);
     final type = binding?.typeName ?? _simple(body);
-    bool test(_Static c) =>
+    final any = type == 'Object' || type == 'dynamic';
+    bool named(_Static c) =>
+        any ||
         c.signature.targetTypes.contains(type) ||
         c.signature.targetType == type;
     if (binding == null) {
-      return _Leaf(test);
+      return _Leaf(named);
     }
     final name = body.trim();
-    return _Leaf(
-      test,
-      bind: (c, bound) {
+    return _Runtime(
+      // The proxy may implement more types than the bean class
+      // (introductions): `this` is then decided per call.
+      (c) => named(c) ? true : (isThis ? null : false),
+      (c, bound) {
         final value = isThis ? c.invocation.proxy : c.invocation.target;
         if (!binding.accepts(value)) {
           return false;
@@ -629,33 +778,127 @@ final class _PointcutParser {
             _stripGenerics(trimmed),
     ];
     List<String> types(_Static c) => c.signature.parameterTypes;
+    // A type name with a runtime test may match an argument of another
+    // declared type (AspectJ tests `instanceof` on the argument).
+    bool testable(String pattern) =>
+        !pattern.contains('*') && typeTests.containsKey(pattern);
+    bool declaredMatch(_Static c, String pattern, int index) =>
+        wildcardMatch(pattern, types(c)[index]);
     bool test(_Static c) =>
         _matchArgs(items, types(c).length, 0, 0, (item, index) {
           if (item case final String pattern) {
-            return wildcardMatch(pattern, types(c)[index]);
+            return declaredMatch(c, pattern, index) || testable(pattern);
           }
           return true;
         });
-    if (!items.any((item) => item is (String, AdviceBinding))) {
+    final bindsValues = items.any((item) => item is (String, AdviceBinding));
+    final runtime =
+        bindsValues || items.any((item) => item is String && testable(item));
+    if (!runtime) {
       return _Leaf(test);
     }
-    return _Leaf(
-      test,
-      dynamicCheck: true,
-      bind: (c, bound) {
+    return _Runtime(
+      (c) {
+        if (!test(c)) {
+          return false;
+        }
+        // Decided without the call when the declared types match and
+        // nothing is bound.
+        final declaredOnly = _matchArgs(
+          items,
+          types(c).length,
+          0,
+          0,
+          (item, index) => item is! String || declaredMatch(c, item, index),
+        );
+        return declaredOnly && !bindsValues ? true : null;
+      },
+      (c, bound) {
         final args = c.invocation.args;
         final declared = types(c);
         final values = <String, Object?>{};
         final matched = _matchArgs(items, args.length, 0, 0, (item, index) {
           switch (item) {
             case final String pattern:
-              return index >= declared.length ||
-                  wildcardMatch(pattern, declared[index]);
+              if (index >= declared.length ||
+                  wildcardMatch(pattern, declared[index])) {
+                return true;
+              }
+              return testable(pattern) && typeTests[pattern]!(args[index]);
             case (final String name, final AdviceBinding binding):
               if (!binding.accepts(args[index])) {
                 return false;
               }
               values[name] = args[index];
+              return true;
+          }
+          return true;
+        });
+        if (matched) {
+          bound.addAll(values);
+        }
+        return matched;
+      },
+    );
+  }
+
+  // `@args(Audited, ..)` / `@args(audited)`: the runtime class of each
+  // argument carries the annotation (AspectJ); decided per call with
+  // [argumentAnnotations], which return the annotation of a value or null.
+  _Node _annotatedArgs(String body) {
+    // `null`: `..`; `'*'`: any one argument; `(name, binding)`: a binding;
+    // another `String`: an annotation type name.
+    final items = <Object?>[
+      for (final p in _splitParameters(body))
+        if (p.trim() case final trimmed when trimmed.isNotEmpty)
+          if (trimmed == '..')
+            null
+          else if (trimmed == '*')
+            '*'
+          else if (_binding(trimmed) case final binding?)
+            (trimmed, binding)
+          else
+            _annotationName(trimmed),
+    ];
+    final known = items.every(
+      (item) => switch (item) {
+        (String _, final AdviceBinding binding) =>
+          argumentAnnotations.containsKey(binding.typeName),
+        final String name when name != '*' => argumentAnnotations.containsKey(
+          name,
+        ),
+        _ => true,
+      },
+    );
+    return _Runtime(
+      (c) =>
+          known &&
+              _matchArgs(
+                items,
+                c.signature.parameterTypes.length,
+                0,
+                0,
+                (_, _) => true,
+              )
+          ? null
+          : false,
+      (c, bound) {
+        final args = c.invocation.args;
+        final values = <String, Object?>{};
+        final matched = _matchArgs(items, args.length, 0, 0, (item, index) {
+          switch (item) {
+            case '*':
+              return true;
+            case final String name:
+              return argumentAnnotations[name]!(args[index]) != null;
+            case (final String name, final AdviceBinding binding):
+              final annotation = argumentAnnotations[binding.typeName]!(
+                args[index],
+              );
+              if (annotation == null || !binding.accepts(annotation)) {
+                return false;
+              }
+              values[name] = annotation;
               return true;
           }
           return true;
@@ -740,6 +983,8 @@ final class _PointcutParser {
         nestedOwner,
         bindings,
         used,
+        typeTests,
+        argumentAnnotations,
       ).parse();
     } finally {
       resolving.remove(key);
@@ -768,31 +1013,63 @@ final class _PointcutParser {
     throw _error("missing ')'");
   }
 
-  // `execution([modifiers] returnType [Type.]name(params))`; Java
-  // modifiers are accepted and ignored. The type pattern may match the
-  // declaring type, the bean class or any type declaring the member;
-  // `Type+` also any supertype of the bean class.
+  // `execution([modifiers] returnType [Type.]name(params))`. Modifiers:
+  // `public` (not `@protected`), `protected` (`@protected`, Dart's closest),
+  // `private` (never: private members are not proxied), each optionally
+  // negated with `!`; `static` and `final` are accepted and ignored. The
+  // type pattern may match the declaring type, the bean class or any type
+  // declaring the member; `Type+` also any supertype of the bean class.
   _Node _execution(String body) {
+    if (RegExp(r'\)\s*throws\b').hasMatch(body)) {
+      throw _error(
+        "'throws' in execution is not supported: Dart methods declare no "
+        'exceptions; select errors with @AfterThrowing and a typed error '
+        "parameter (or throwing: 'name') instead",
+      );
+    }
     final match = RegExp(
-      r'^\s*(?:(?:public|static|final)\s+)*(\S+)\s+([^\s(]+)\s*\((.*)\)\s*$',
+      r'^\s*((?:!?\s*(?:public|protected|private|static|final)\s+)*)'
+      r'(\S+)\s+([^\s(]+)\s*\((.*)\)\s*$',
     ).firstMatch(body);
     if (match == null) {
       throw _error("malformed execution pattern '$body'");
     }
-    final returnPattern = _stripGenerics(match[1]!);
-    final qualified = match[2]!;
+    final modifiers = [
+      for (final m in RegExp(
+        r'(!?)\s*(public|protected|private|static|final)',
+      ).allMatches(match[1]!))
+        (m[1] == '!', m[2]!),
+    ];
+    bool modifiersMatch(MethodSignature s) => modifiers.every((modifier) {
+      final (negated, name) = modifier;
+      final bool has;
+      switch (name) {
+        case 'public':
+          has = !s.isProtected;
+        case 'protected':
+          has = s.isProtected;
+        case 'private':
+          has = false;
+        default:
+          return true;
+      }
+      return has != negated;
+    });
+    final returnPattern = _stripGenerics(match[2]!);
+    final qualified = match[3]!;
     final dot = qualified.lastIndexOf('.');
     final methodPattern = dot < 0 ? qualified : qualified.substring(dot + 1);
     final typePattern = dot < 0
         ? null
         : _typePattern(qualified.substring(0, dot));
     final params = [
-      for (final p in _splitParameters(match[3]!))
+      for (final p in _splitParameters(match[4]!))
         if (p.trim().isNotEmpty) _stripGenerics(p.trim()),
     ];
     return _Leaf(
       (c) =>
           c.signature.kind == MemberKind.method &&
+          modifiersMatch(c.signature) &&
           wildcardMatch(returnPattern, c.signature.returnType) &&
           wildcardMatch(methodPattern, c.signature.name) &&
           (typePattern == null ||
@@ -811,11 +1088,17 @@ final class _PointcutParser {
       s.declaringTypes.any((t) => wildcardMatch(pattern, t)) ||
       (subtypes && s.targetTypes.any((t) => wildcardMatch(pattern, t)));
 
-  // `within(Type)`: the bean class; `within(Type+)`: or any supertype of it
-  // (the bean is a subtype of `Type`).
-  static bool _typeMatches(String pattern, bool subtypes, MethodSignature s) =>
-      wildcardMatch(pattern, s.targetType) ||
-      (subtypes && s.targetTypes.any((t) => wildcardMatch(pattern, t)));
+  // `within(Type)`: the class whose body runs for the member (the bean
+  // class, or the superclass / mixin it inherits the member from);
+  // `within(Type+)`: or any supertype of that class.
+  static bool _withinMatches(
+    String pattern,
+    bool subtypes,
+    MethodSignature s,
+  ) =>
+      wildcardMatch(pattern, s.implementingType) ||
+      (subtypes &&
+          s.implementingTypeHierarchy.any((t) => wildcardMatch(pattern, t)));
 
   // Matches parameter types against patterns; `..` matches zero or more
   // parameters (tried by backtracking over every possible skip).

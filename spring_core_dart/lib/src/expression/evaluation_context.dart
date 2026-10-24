@@ -560,7 +560,8 @@ final class StandardTypeConverter implements TypeConverter {
 /// Compares numbers, strings, dates, durations, enums and `Comparable`s;
 /// `null` is smaller than anything, like Spring's `StandardTypeComparator`.
 ///
-/// Numbers compare by value across `int` and `double`; values of one enum
+/// Numbers compare by value across `int` and `double`; booleans with
+/// `false < true` (Java's `Boolean` is `Comparable`); values of one enum
 /// type by their index (like Java enums, which are `Comparable` by
 /// ordinal); other `Comparable`s only with values of the same kind.
 ///
@@ -586,6 +587,7 @@ final class StandardTypeComparator implements TypeComparator {
       left == null ||
       right == null ||
       (left is num && right is num) ||
+      (left is bool && right is bool) ||
       (left is Enum &&
           right is Enum &&
           left.runtimeType == right.runtimeType) ||
@@ -609,6 +611,10 @@ final class StandardTypeComparator implements TypeComparator {
     }
     if (left is num && right is num) {
       return left.compareTo(right);
+    }
+    if (left is bool && right is bool) {
+      // Java's Boolean is Comparable: false < true.
+      return left == right ? 0 : (left ? 1 : -1);
     }
     if (left is Comparable && right is Comparable && _sameKind(left, right)) {
       return left.compareTo(right);

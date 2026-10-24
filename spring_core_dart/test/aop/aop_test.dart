@@ -100,6 +100,19 @@ class ServiceProxy implements Service, Advised {
   List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
+  void addAdvisor(PointcutAdvisor advisor) => _invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      _invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) => _invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) => _invoker.removeAdvice(advice);
+
+  @override
   int price(int amount) =>
       _invoker.invoke(this, _target, 0, [
             amount,
@@ -622,8 +635,10 @@ void main() {
         ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
         expect(
           noAop.beanFactory.beanPostProcessorCount,
-          2,
-          reason: 'only the aware processor and the listener detector',
+          3,
+          reason:
+              'only the aware processor, the @PostConstruct step and the '
+              'listener detector',
         );
       },
     );

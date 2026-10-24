@@ -42,21 +42,24 @@ abstract final class DurationStyle {
   /// Parses [value] in either style; throws [FormatException] otherwise.
   ///
   /// Leading and trailing whitespace is ignored; units are
-  /// case-insensitive.
+  /// case-insensitive. A number without a unit is in [unit] (milliseconds
+  /// by default; Boot's `@DurationUnit`).
   ///
   /// ```dart
   /// DurationStyle.parse('-2h'); // -Duration(hours: 2)
   /// DurationStyle.parse('PT0.5S'); // Duration(milliseconds: 500)
+  /// DurationStyle.parse('30', unit: ChronoUnit.seconds); // 30 seconds
   /// ```
-  static Duration parse(String value) {
+  static Duration parse(String value, {ChronoUnit unit = ChronoUnit.millis}) {
     final text = value.trim();
     final simple = _simple.firstMatch(text);
     if (simple != null) {
       final amount = int.parse(simple[1]!);
       return switch (simple[2]!.toLowerCase()) {
+        '' => unit.of(amount),
         'ns' => Duration(microseconds: amount ~/ 1000),
         'us' => Duration(microseconds: amount),
-        '' || 'ms' => Duration(milliseconds: amount),
+        'ms' => Duration(milliseconds: amount),
         's' => Duration(seconds: amount),
         'm' => Duration(minutes: amount),
         'h' => Duration(hours: amount),
@@ -157,4 +160,45 @@ abstract final class DurationStyle {
     }
     return '${micros}us';
   }
+}
+
+/// Units of a duration, like `java.time.temporal.ChronoUnit` (the ones a
+/// Dart [Duration] can hold): the unit of a number without one in
+/// [DurationStyle.parse] (Spring Boot's `@DurationUnit`).
+enum ChronoUnit {
+  /// Nanoseconds (truncated to microseconds).
+  nanos,
+
+  /// Microseconds.
+  micros,
+
+  /// Milliseconds.
+  millis,
+
+  /// Seconds.
+  seconds,
+
+  /// Minutes.
+  minutes,
+
+  /// Hours.
+  hours,
+
+  /// Days (24 hours).
+  days;
+
+  /// [amount] of this unit.
+  ///
+  /// ```dart
+  /// ChronoUnit.seconds.of(30); // Duration(seconds: 30)
+  /// ```
+  Duration of(int amount) => switch (this) {
+    nanos => Duration(microseconds: amount ~/ 1000),
+    micros => Duration(microseconds: amount),
+    millis => Duration(milliseconds: amount),
+    seconds => Duration(seconds: amount),
+    minutes => Duration(minutes: amount),
+    hours => Duration(hours: amount),
+    days => Duration(days: amount),
+  };
 }

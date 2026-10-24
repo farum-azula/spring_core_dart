@@ -24,8 +24,11 @@ import 'package:spring_core_dart/src/context/message/abstract_message_source.dar
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/context/shutdown_hook.dart';
 import 'package:spring_core_dart/src/context/task_executor.dart';
-import 'package:spring_core_dart/src/context/annotations.dart' show Async;
+import 'package:spring_core_dart/src/context/annotations.dart'
+    show Async, Configuration;
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
+import 'package:spring_core_dart/src/core/env/config/config_data_environment.dart'
+    show ConfigDataEnvironment;
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_resolver.dart';
@@ -296,8 +299,10 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void close();
 
-  /// Closes the context with [close] when the process gets SIGINT or
-  /// SIGTERM, then ends the process with `128 + signal` (`130`, `143`),
+  /// Closes the context with [closeAsync] (waiting for asynchronous
+  /// `SmartLifecycle` stops and destroy callbacks) when the process gets
+  /// SIGINT or SIGTERM, then ends the process with `128 + signal` (`130`,
+  /// `143`),
   /// like Spring's `registerShutdownHook()` on the JVM. Registered once;
   /// the signals are no longer watched once the context closes (a Dart
   /// program that watches signals does not end by itself). Does nothing
@@ -342,7 +347,9 @@ abstract interface class ConfigurableApplicationContext
   /// then starts the auto-startup [SmartLifecycle] beans again (restoring
   /// the state after [refresh]) and publishes `ContextRestartedEvent`,
   /// like Spring 7's `restart()`. Unlike [start], beans that are not
-  /// auto-startup stay stopped.
+  /// auto-startup stay stopped. A bean whose
+  /// `SmartLifecycle.stopWithCallback` callback is still pending is started
+  /// when the callback fires.
   void restart();
 
   /// Like [close], waiting: for the `SmartLifecycle.stopWithCallback`
@@ -777,6 +784,7 @@ class AnnotationConfigApplicationContext
       ..addEmbeddedValueResolver(environment.resolveRequiredPlaceholders)
       ..addBeanPostProcessor(ApplicationContextAwareProcessor(this))
       ..addBeanPostProcessor(_listenerDetector)
+      ..addSingletonsInstantiatedCallback(_registerEventListenerMethods)
       ..registerResolvableDependency(BeanFactory, _factory)
       ..registerResolvableDependency(ListableBeanFactory, _factory)
       ..registerResolvableDependency(ConfigurableListableBeanFactory, _factory)
@@ -831,10 +839,56 @@ class AnnotationConfigApplicationContext
     }
   }
 
+  // `@PropertySource` files go last, but `defaultProperties` stays the
+  // lowest source (Spring Boot's PropertySourceOrderingBeanFactoryPostProcessor).
+  void _keepDefaultPropertiesLast() {
+    final sources = environment.propertySources;
+    final defaults = sources.remove(
+      ConfigDataEnvironment.defaultPropertiesSourceName,
+    );
+    if (defaults != null) {
+      sources.addLast(defaults);
+    }
+  }
+
+  final _conditionEvaluations = <ConditionEvaluation>[];
+
+  /// The outcome of every condition evaluated by the last refresh, in
+  /// evaluation order (Spring Boot's `ConditionEvaluationReport`, printed
+  /// by `SpringApplication` for `--debug`). A condition group (the
+  /// conditions of a configuration class) appears once, under its key.
+  List<ConditionEvaluation> get conditionEvaluations =>
+      List.unmodifiable(_conditionEvaluations);
+
   void _loadModules() {
+    _conditionEvaluations.clear();
     final processor = _propertySources;
     final conditionContext = _ConditionContext(this);
     final seen = <BeanModule>{};
+    const parse = ConfigurationPhase.parseConfiguration;
+    const registerBean = ConfigurationPhase.registerBean;
+    bool matchIn(
+      ConfigurationPhase phase,
+      List<Condition> conditions,
+      String source, [
+      BeanDefinition<Object>? definition,
+    ]) {
+      conditionContext.definition = definition;
+      return conditionsMatch(
+        conditions,
+        conditionContext,
+        phase: phase,
+        source: source,
+      );
+    }
+
+    // Spring's DeferredImportSelectorHandler: selectors collected while
+    // loading and run at the end (null while they run: then at once).
+    List<DeferredImportSelector>? deferredSelectors = [];
+    // Definitions of configuration classes and @Bean methods with a
+    // registerBean-phase condition, decided once everything is loaded
+    // (Spring's ConfigurationClassBeanDefinitionReader).
+    final deferredDefinitions = <BeanDefinition<Object>>[];
     // Depth-first: imports first; per module, property sources before
     // conditions so conditions can read the loaded properties. Each module
     // is loaded once even if imported several times.
@@ -843,18 +897,31 @@ class AnnotationConfigApplicationContext
         return;
       }
       module.imports.forEach(load);
-      conditionContext.definition = null;
       final registrars = [
         for (final declaration in module.registrars)
-          if (declaration.conditions.every((c) => c.matches(conditionContext)))
+          if (matchIn(
+            parse,
+            declaration.conditions,
+            '@Import (module ${module.name})',
+          ))
             declaration.create(),
       ];
-      // Like Spring: selected modules before the importing one.
+      // Like Spring: selected modules before the importing one; deferred
+      // selectors after everything else.
       for (final selector in registrars.whereType<ImportSelector>()) {
-        _processImport(selector, load);
+        if (selector is DeferredImportSelector && deferredSelectors != null) {
+          _awareCallbacks(selector);
+          deferredSelectors.add(selector);
+        } else {
+          _processImport(selector, load);
+        }
       }
       for (final declaration in module.propertySources) {
-        if (!declaration.conditions.every((c) => c.matches(conditionContext))) {
+        if (!matchIn(
+          parse,
+          declaration.conditions,
+          '@PropertySource ${declaration.locations.join(', ')}',
+        )) {
           continue;
         }
         processor.processPropertySource(
@@ -864,11 +931,24 @@ class AnnotationConfigApplicationContext
           factory: declaration.factory,
           encoding: declaration.encoding,
         );
+        _keepDefaultPropertiesLast();
       }
       for (final definition in module.definitions) {
-        conditionContext.definition = definition;
-        if (definition.conditions.every((c) => c.matches(conditionContext))) {
-          _factory.registerBeanDefinition(definition);
+        final conditions = definition.conditions;
+        final name = definition.name;
+        if (!hasPhaseCondition(conditions, registerBean)) {
+          conditionContext.definition = definition;
+          if (conditionContext.allMatch(conditions, name)) {
+            _factory.registerBeanDefinition(definition);
+          }
+        } else if (!_isConfigurationDefinition(definition)) {
+          // A plain component: both phases now, like Spring's scanning.
+          if (matchIn(parse, conditions, name, definition) &&
+              matchIn(registerBean, conditions, name, definition)) {
+            _factory.registerBeanDefinition(definition);
+          }
+        } else if (matchIn(parse, conditions, name, definition)) {
+          deferredDefinitions.add(definition);
         }
       }
       module.configurers.forEach(
@@ -890,24 +970,42 @@ class AnnotationConfigApplicationContext
     for (final component in _components) {
       if (component is BeanModule) {
         load(component);
+      } else if (component is DeferredImportSelector) {
+        _awareCallbacks(component);
+        deferredSelectors.add(component);
       } else {
         _processImport(component, load);
       }
     }
+    // Deferred selectors by order (stable); those they import run at once.
+    final selectors = OrderComparator.sort(deferredSelectors);
+    deferredSelectors = null;
+    for (final selector in selectors) {
+      selector.selectImports().forEach(load);
+    }
+    for (final definition in deferredDefinitions) {
+      if (matchIn(
+        registerBean,
+        definition.conditions,
+        definition.name,
+        definition,
+      )) {
+        _factory.registerBeanDefinition(definition);
+      }
+    }
+    conditionContext.definition = null;
   }
+
+  // A configuration class or `@Bean` method: decided in the registerBean
+  // phase after loading (Spring's reader); other components at once.
+  static bool _isConfigurationDefinition(BeanDefinition<Object> definition) =>
+      definition.factoryMethodName != null ||
+      definition.annotations.any((a) => a is Configuration);
 
   // Like Spring's ConfigurationClassParser.processImports (with
   // ParserStrategyUtils' Aware callbacks) and BeanRegistryAdapter.
   void _processImport(Object import, void Function(BeanModule) load) {
-    if (import is EnvironmentAware) {
-      import.setEnvironment(environment);
-    }
-    if (import is BeanFactoryAware) {
-      import.setBeanFactory(_factory);
-    }
-    if (import is ResourceLoaderAware) {
-      import.setResourceLoader(this);
-    }
+    _awareCallbacks(import);
     switch (import) {
       case final ImportSelector selector:
         selector.selectImports().forEach(load);
@@ -915,11 +1013,17 @@ class AnnotationConfigApplicationContext
         registrar.registerBeanDefinitions(_factory);
       case final BeanRegistrar registrar:
         registrar.register(
-          _BeanRegistryAdapter(_factory, environment),
+          _BeanRegistryAdapter(
+            _factory,
+            environment,
+            '${registrar.runtimeType}',
+          ),
           environment,
         );
       case final _SingleBeanRegistrar registrar:
-        registrar.register(_BeanRegistryAdapter(_factory, environment));
+        registrar.register(
+          _BeanRegistryAdapter(_factory, environment, 'registerBean'),
+        );
       default:
         throw ArgumentError.value(
           import,
@@ -928,6 +1032,20 @@ class AnnotationConfigApplicationContext
               'ImportBeanDefinitionRegistrar (configuration classes are '
               'imported by the generator)',
         );
+    }
+  }
+
+  // The Aware callbacks of an imported registrar or selector
+  // (ParserStrategyUtils).
+  void _awareCallbacks(Object import) {
+    if (import is EnvironmentAware) {
+      import.setEnvironment(environment);
+    }
+    if (import is BeanFactoryAware) {
+      import.setBeanFactory(_factory);
+    }
+    if (import is ResourceLoaderAware) {
+      import.setResourceLoader(this);
     }
   }
 
@@ -1016,7 +1134,9 @@ class AnnotationConfigApplicationContext
     final beans = <T, int?>{
       for (final name in names)
         _factory.getBeanByName(name) as T: _factory.containsBeanDefinition(name)
-            ? _factory.getBeanDefinition(name).order
+            ? DefaultListableBeanFactory.annotatedOrderOf(
+                _factory.getBeanDefinition(name),
+              )
             : null,
     };
     return OrderComparator.sort(beans.keys, (bean) => beans[bean]);
@@ -1037,19 +1157,44 @@ class AnnotationConfigApplicationContext
           this,
           names,
           _factory.beanPostProcessorCount +
-              1 +
+              2 +
               names.length +
               (usesAop ? 1 : 0),
         ),
       );
     }
+    // `@PostConstruct` runs at the place of Spring's
+    // CommonAnnotationBeanPostProcessor: among the PriorityOrdered
+    // processors by its order (an internal bean, so before user processors
+    // of the same order), before the Ordered and plain ones.
+    final common = CommonAnnotationBeanPostProcessor();
+    var commonAdded = false;
+    void addCommon() {
+      if (!commonAdded) {
+        commonAdded = true;
+        _factory.addBeanPostProcessor(common);
+      }
+    }
+
     _postProcessorPhases<BeanPostProcessor>(
       BeanPostProcessor,
       <String>{},
-      _factory.addBeanPostProcessor,
+      (processor) {
+        final beforeCommon = switch (processor) {
+          PriorityOrdered(:final order) => order <= common.order,
+          _ => false,
+        };
+        if (!beforeCommon) {
+          addCommon();
+        }
+        _factory.addBeanPostProcessor(processor);
+      },
       beforePhase: (phase) {
-        if (usesAop && phase == 1) {
-          _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
+        if (phase == 1) {
+          addCommon();
+          if (usesAop) {
+            _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
+          }
         }
       },
     );
@@ -1109,10 +1254,12 @@ class AnnotationConfigApplicationContext
   }
 
   // Programmatic and detected listeners, listener objects registered as
-  // singletons, plus one adapter per `@EventListener` method (the adapters
-  // fetch the bean lazily on each event); then the early events are
-  // replayed, like Spring's registerListeners, so events published while
-  // the singletons are created go straight to the listeners.
+  // singletons, plus the `ApplicationListener` beans (one adapter each,
+  // fetching the bean on each event, like the listener bean names of
+  // Spring's multicaster); then the early events are replayed, like
+  // Spring's registerListeners, so events published while the singletons
+  // are created go straight to the listeners. `@EventListener` methods
+  // come later, in [_registerEventListenerMethods].
   void _registerListeners() {
     final multicaster = _multicaster!;
     for (final name in _factory.singletonNames) {
@@ -1127,9 +1274,11 @@ class AnnotationConfigApplicationContext
     for (final name in _factory.beanDefinitionNames) {
       final definition = _factory.getBeanDefinition(name);
       for (final method in definition.eventListeners) {
-        multicaster.addApplicationListener(
-          _BeanMethodListener(this, name, method),
-        );
+        if (_isListenerInterface(method)) {
+          multicaster.addApplicationListener(
+            _BeanMethodListener(this, name, method),
+          );
+        }
       }
     }
     // Clear the buffer first so the replayed events are really dispatched.
@@ -1139,6 +1288,34 @@ class AnnotationConfigApplicationContext
     _earlyEvents = null;
     events.forEach(multicaster.multicastEvent);
   }
+
+  // One adapter per `@EventListener` method, registered once the eager
+  // singletons exist and before the SmartInitializingSingleton callbacks,
+  // like Spring's EventListenerMethodProcessor.afterSingletonsInstantiated:
+  // an event published while the singletons are created (from a
+  // `@PostConstruct`, say) does not reach `@EventListener` methods, so it
+  // never needs a listener bean that is still being created.
+  void _registerEventListenerMethods() {
+    final multicaster = _multicaster;
+    if (multicaster == null) {
+      return;
+    }
+    for (final name in _factory.beanDefinitionNames) {
+      final definition = _factory.getBeanDefinition(name);
+      for (final method in definition.eventListeners) {
+        if (!_isListenerInterface(method)) {
+          multicaster.addApplicationListener(
+            _BeanMethodListener(this, name, method),
+          );
+        }
+      }
+    }
+  }
+
+  // The `onApplicationEvent` of an `ApplicationListener` bean (wired by the
+  // generator like an `@EventListener` method).
+  static bool _isListenerInterface(EventListenerMethod<Object> method) =>
+      method.id.endsWith('.onApplicationEvent');
 
   // A `conversionService` bean (here or in an ancestor, like Spring's
   // containsBean) replaces the environment's service for `@Value`
@@ -1155,10 +1332,21 @@ class AnnotationConfigApplicationContext
   }
 
   void _finishRefresh() {
-    final processor = _factory.containsLocalBean(lifecycleProcessorBeanName)
-        ? _factory.getBeanByName(lifecycleProcessorBeanName)
-              as LifecycleProcessor
-        : DefaultLifecycleProcessor(_factory);
+    // Like Spring's initLifecycleProcessor: a `lifecycleProcessor` bean, or
+    // a DefaultLifecycleProcessor registered under that name.
+    final LifecycleProcessor processor;
+    if (_factory.containsLocalBean(lifecycleProcessorBeanName)) {
+      processor = _factory.getBeanByName(
+        lifecycleProcessorBeanName,
+      ) as LifecycleProcessor;
+    } else {
+      processor = DefaultLifecycleProcessor(_factory);
+      _factory.registerSingleton(
+        lifecycleProcessorBeanName,
+        processor,
+        types: [LifecycleProcessor, DefaultLifecycleProcessor],
+      );
+    }
     _lifecycleProcessor = processor;
     processor.onRefresh();
     publishEvent(ContextRefreshedEvent(this));
@@ -1222,13 +1410,12 @@ class AnnotationConfigApplicationContext
       return;
     }
     final (:watch, :exit) = shutdownHookPlatform;
-    _stopShutdownHook = watch((code) {
-      try {
-        close();
-      } finally {
-        exit(code);
-      }
-    });
+    // closeAsync, so asynchronous SmartLifecycle stops and destroy
+    // callbacks finish before the process ends (Spring's hook thread
+    // blocks on them).
+    _stopShutdownHook = watch(
+      (code) => unawaited(closeAsync().whenComplete(() => exit(code))),
+    );
   }
 
   /// See [ConfigurableApplicationContext.close]; a no-op unless active
@@ -1602,12 +1789,20 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   // for it (a lazy listener not created yet uses its @Order).
   @override
   int get order {
+    final listenerBean =
+        AnnotationConfigApplicationContext._isListenerInterface(_method);
     if (_context._factory.getSingleton(_beanName) case final Ordered bean
-        when bean is ApplicationListener<Object> &&
-            _method.id.endsWith('.onApplicationEvent')) {
+        when bean is ApplicationListener<Object> && listenerBean) {
       return bean.order;
     }
-    return _method.order ?? Ordered.lowestPrecedence;
+    // A listener bean's jakarta @Priority counts after its @Order.
+    final factory = _context._factory;
+    final priority = listenerBean && factory.containsBeanDefinition(_beanName)
+        ? DefaultListableBeanFactory.annotatedOrderOf(
+            factory.getBeanDefinition(_beanName),
+          )
+        : null;
+    return _method.order ?? priority ?? Ordered.lowestPrecedence;
   }
 
   @override
@@ -1695,9 +1890,14 @@ final class _ApplicationListenerDetector
 
   final AnnotationConfigApplicationContext _context;
 
+  // ApplicationListener beans (wired as adapters by bean name) removed
+  // from the multicaster when destroyed; added back when created again.
+  final _detached = <String>{};
+
   @override
   Object postProcessAfterInitialization(Object bean, String beanName) {
-    if (bean is! GenericApplicationListener) {
+    if (bean is! GenericApplicationListener &&
+        bean is! ApplicationListener<Object>) {
       return bean;
     }
     final factory = _context._factory;
@@ -1706,8 +1906,20 @@ final class _ApplicationListenerDetector
         : null;
     if (definition != null &&
         definition.eventListeners.any(
-          (m) => m.id.endsWith('.onApplicationEvent'),
+          AnnotationConfigApplicationContext._isListenerInterface,
         )) {
+      if (_detached.remove(beanName) && definition.isSingleton) {
+        for (final method in definition.eventListeners) {
+          if (AnnotationConfigApplicationContext._isListenerInterface(method)) {
+            _context._multicaster?.addApplicationListener(
+              _BeanMethodListener(_context, beanName, method),
+            );
+          }
+        }
+      }
+      return bean;
+    }
+    if (bean is! GenericApplicationListener) {
       return bean;
     }
     if (definition == null || definition.isSingleton) {
@@ -1723,12 +1935,30 @@ final class _ApplicationListenerDetector
   }
 
   @override
-  bool requiresDestruction(Object bean) => bean is GenericApplicationListener;
+  bool requiresDestruction(Object bean) =>
+      bean is GenericApplicationListener || bean is ApplicationListener<Object>;
 
+  // Like Spring's ApplicationListenerDetector: a destroyed listener bean
+  // (also one wired by name, e.g. after destroySingleton or the end of
+  // its scope) no longer receives events; it would be created again.
   @override
   void postProcessBeforeDestruction(Object bean, String beanName) {
     if (bean is GenericApplicationListener) {
       _context.removeApplicationListener(bean);
+    }
+    var removed = false;
+    _context._multicaster?.removeApplicationListeners((listener) {
+      final match =
+          listener is _BeanMethodListener &&
+          listener._beanName == beanName &&
+          AnnotationConfigApplicationContext._isListenerInterface(
+            listener._method,
+          );
+      removed |= match;
+      return match;
+    });
+    if (removed) {
+      _detached.add(beanName);
     }
   }
 }
@@ -1743,10 +1973,18 @@ final class _SingleBeanRegistrar {
 /// The [BeanRegistry] handed to a [BeanRegistrar], like Spring 7's
 /// `BeanRegistryAdapter`.
 final class _BeanRegistryAdapter implements BeanRegistry {
-  _BeanRegistryAdapter(this._factory, this._environment);
+  _BeanRegistryAdapter(this._factory, this._environment, this._origin);
 
   final DefaultListableBeanFactory _factory;
   final Environment _environment;
+
+  // The registrar's type, or `registerBean` for the context's.
+  final String _origin;
+
+  // Each registration is its own source: two beans of the same name are
+  // an override (or a BeanDefinitionOverrideException), never "the same
+  // module registered twice".
+  static var _registrations = 0;
 
   @override
   String registerBean<T extends Object>(
@@ -1780,7 +2018,7 @@ final class _BeanRegistryAdapter implements BeanRegistry {
         description: description,
         aliases: aliases,
         dependsOn: dependsOn,
-        source: 'BeanRegistrar',
+        source: 'BeanRegistrar $_origin#${_registrations++}',
       ),
     );
     return beanName;
@@ -1851,11 +2089,36 @@ final class _BeanPostProcessorChecker extends BeanPostProcessor {
 
 /// The [ConditionContext] handed to conditions while modules load.
 final class _ConditionContext
-    implements ConditionContext, ConditionEvaluationCache {
+    implements
+        ConditionContext,
+        ConditionEvaluationCache,
+        ConditionEvaluationRecorder {
   _ConditionContext(this._context);
 
   final AnnotationConfigApplicationContext _context;
   final _results = <String, bool>{};
+
+  // Whether all of [conditions] match (stopping at the first that does
+  // not), recording each outcome under [source]; a ConditionGroup records
+  // its own conditions under its key.
+  bool allMatch(List<Condition> conditions, String source) {
+    for (final condition in conditions) {
+      final matched = condition.matches(this);
+      if (condition is! ConditionGroup) {
+        recordCondition(source, condition, matched);
+      }
+      if (!matched) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  void recordCondition(String source, Condition condition, bool matched) =>
+      _context._conditionEvaluations.add(
+        ConditionEvaluation(source, condition, matched: matched),
+      );
 
   @override
   BeanDefinition<Object>? definition;

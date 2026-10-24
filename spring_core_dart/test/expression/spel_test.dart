@@ -324,10 +324,9 @@ void main() {
         () => eval("list['x']", root),
         spelError(SpelMessage.typeConversionError),
       );
-      expect(
-        () => eval('list[1.5]', root),
-        spelError(SpelMessage.typeConversionError),
-      );
+      // The index is converted to int like Spring's Indexer does
+      // (NumberUtils truncates): `list[1.5]` is `list[1]`.
+      expect(eval('list[1.5]', root), 20);
       expect(
         () => eval('5[0]'),
         spelError(SpelMessage.indexingNotSupportedForType),
@@ -447,8 +446,10 @@ void main() {
         () => eval('#name()', null, context),
         spelError(SpelMessage.functionReferenceCannotBeInvoked),
       );
+      // Arguments are converted like Spring's convertAllArguments.
+      expect(eval('#reverse(12)', null, context), '21');
       expect(
-        () => eval('#reverse(1)', null, context),
+        () => eval('#reverse(null)', null, context),
         spelError(SpelMessage.exceptionDuringFunctionCall),
       );
       expect(

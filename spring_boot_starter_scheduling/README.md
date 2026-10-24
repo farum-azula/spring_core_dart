@@ -59,7 +59,7 @@ Give exactly one of `cron`, `fixedRate` or `fixedDelay`.
 |---|---|---|
 | `fixedRate` | start every period (measured between starts) | `fixedRate: Duration(minutes: 5)` |
 | `fixedDelay` | wait this long after each run completes | `fixedDelay: Duration(seconds: 30)` |
-| `initialDelay` | wait before the first run (not with `cron`) | `initialDelay: Duration(seconds: 10)` |
+| `initialDelay` | wait before the first run (not with `cron`); alone: one run after it (Spring 6.1) | `initialDelay: Duration(seconds: 10)` |
 | `cron` | run at cron times; `-` switches the task off | `cron: '0 */15 * * * *'` |
 | `zone` | time zone of `cron`: leave out for local time, or `'UTC'` | `zone: 'UTC'` |
 | `scheduler` | the `TaskScheduler` bean to run on, by qualifier or bean name (`${...}` allowed); default: the only one, the primary one or `taskScheduler` | `scheduler: 'reportsScheduler'` |
@@ -171,7 +171,7 @@ class Reminders {
   final TaskScheduler scheduler;
 
   ScheduledTask remindAt(DateTime at, String text) =>
-      scheduler.schedule(() => notify(text), OneShotTrigger(at));
+      scheduler.scheduleAt(() => notify(text), at);
 
   ScheduledTask poll() => scheduler.scheduleWithFixedDelay(
     checkInbox,
@@ -255,6 +255,8 @@ every task) and the new context schedules the methods of the new code.
   `spring.task.scheduling.enabled=false` switches it off.
 - Time zones: local time or UTC only (Dart has no time zone database).
 - Durations are `Duration`s instead of numbers plus `timeUnit`.
+- `TaskScheduler.schedule(task, Instant)` is `scheduleAt(task, DateTime)`
+  (Dart has no overloads).
 - `fixedRate` tasks never overlap and do not catch up missed runs: when a
   run takes longer than the period, the next one starts right after it,
   once (Spring's single-threaded scheduler runs the missed executions back

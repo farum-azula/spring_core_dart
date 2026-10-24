@@ -26,7 +26,7 @@ void main() {
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
         .withPropertyValues(['catalog.url=https://api.neon.test'])
-        .withBean<HttpTransport>(server);
+        .withBean<HttpTransport>(() => server);
   });
 
   test('GET with a path variable, JSON into an immutable class', () async {
@@ -160,7 +160,7 @@ void main() {
           'spring.cloud.openfeign.client.config.default.read-timeout=3s',
           'spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon',
         ])
-        .withBean<RequestInterceptor>(TraceInterceptor())
+        .withBean<RequestInterceptor>(() => TraceInterceptor())
         .runAsync((context) async {
           await context.getBean<CatalogClient>().find('1');
           final request = server.lastRequest;
@@ -186,7 +186,7 @@ void main() {
     });
     await runner
         .withBean<Retryer>(
-          const DefaultRetryer(
+          () => const DefaultRetryer(
             period: Duration(milliseconds: 1),
             maxAttempts: 3,
           ),
@@ -246,7 +246,7 @@ void main() {
         .withUserConfiguration(brokenModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(MockHttpTransport())
+        .withBean<HttpTransport>(() => MockHttpTransport())
         .run((context) {
           final failure = '${context.startupFailure}';
           expect(failure, contains('Invalid Feign client BrokenClient'));
@@ -264,7 +264,7 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(MockHttpTransport())
+        .withBean<HttpTransport>(() => MockHttpTransport())
         .run((context) {
           expect('${context.startupFailure}', contains('catalog.url'));
         });

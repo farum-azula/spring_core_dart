@@ -143,6 +143,41 @@ abstract interface class ConditionEvaluationCache {
   bool evaluateOnce(String key, bool Function() evaluate);
 }
 
+/// The outcome of one condition evaluated while a context loaded its
+/// modules: what Spring Boot's `ConditionEvaluationReport` collects (and
+/// prints for `--debug`). Read them from
+/// `AnnotationConfigApplicationContext.conditionEvaluations`.
+final class ConditionEvaluation {
+  /// [condition] of [source] gave [matched].
+  const ConditionEvaluation(
+    this.source,
+    this.condition, {
+    required this.matched,
+  });
+
+  /// What the condition guards: a bean name, a [ConditionGroup.key] (a
+  /// configuration class such as `package:app#CacheConfig`) or
+  /// `@PropertySource <locations>`.
+  final String source;
+
+  /// The evaluated condition.
+  final Condition condition;
+
+  /// Whether it matched.
+  final bool matched;
+
+  @override
+  String toString() =>
+      '$source: $condition ${matched ? 'matched' : 'did not match'}';
+}
+
+/// Records condition outcomes; the context's [ConditionContext] is one.
+/// [ConditionGroup] records its own conditions under its key.
+abstract interface class ConditionEvaluationRecorder {
+  /// Records that [condition] of [source] gave [matched].
+  void recordCondition(String source, Condition condition, bool matched);
+}
+
 /// The conditions of one configuration class, evaluated once for the class
 /// and all of its `@Bean` methods (and its `@PropertySource`s), like
 /// Spring's per-class condition evaluation: the class is registered all or
@@ -174,9 +209,150 @@ class ConditionGroup implements Condition {
 
   @override
   bool matches(ConditionContext context) {
-    bool evaluate() => conditions.every((c) => c.matches(context));
+    bool evaluate() {
+      for (final condition in conditions) {
+        final matched = condition.matches(context);
+        if (context is ConditionEvaluationRecorder) {
+          (context as ConditionEvaluationRecorder).recordCondition(
+            key,
+            condition,
+            matched,
+          );
+        }
+        if (!matched) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     return context is ConditionEvaluationCache
         ? (context as ConditionEvaluationCache).evaluateOnce(key, evaluate)
         : evaluate();
   }
+
+  /// Like [matches] in [phase] (see [conditionsMatch]); cached per phase.
+  bool matchesIn(ConditionContext context, ConfigurationPhase phase) {
+    bool evaluate() =>
+        conditionsMatch(conditions, context, phase: phase, source: key);
+    return context is ConditionEvaluationCache
+        ? (context as ConditionEvaluationCache).evaluateOnce(
+            '$key@${phase.name}',
+            evaluate,
+          )
+        : evaluate();
+  }
 }
+
+/// When a [ConfigurationCondition] is evaluated, like Spring's
+/// `ConfigurationCondition.ConfigurationPhase`.
+enum ConfigurationPhase {
+  /// While configuration is parsed: whether a configuration class is used
+  /// at all (its imports, `@PropertySource`s, selectors) and whether a
+  /// component is registered.
+  parseConfiguration,
+
+  /// When the bean definitions of configuration classes (the class itself
+  /// and its `@Bean` methods) are registered, after every module,
+  /// component and deferred import has been loaded, so such a condition
+  /// sees all of them (Spring's `ConfigurationClassBeanDefinitionReader`).
+  registerBean,
+}
+
+/// A [Condition] evaluated in one [ConfigurationPhase] only, like Spring's
+/// `ConfigurationCondition`; plain conditions are evaluated in both.
+///
+/// A `registerBean` condition does not stop a configuration class from
+/// being parsed (its imports and property sources load); it decides,
+/// once everything is loaded, whether the class and its `@Bean` methods
+/// are registered. Spring Boot's `@ConditionalOnBean` works that way.
+///
+/// ```dart
+/// class OnMissingClock implements ConfigurationCondition {
+///   const OnMissingClock();
+///
+///   @override
+///   ConfigurationPhase get configurationPhase =>
+///       ConfigurationPhase.registerBean;
+///
+///   @override
+///   bool matches(ConditionContext context) =>
+///       context.beanFactory.getBeanNamesForType(Clock).isEmpty;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class OnMissingClock implements ConfigurationCondition {
+///   public ConfigurationPhase getConfigurationPhase() {
+///     return ConfigurationPhase.REGISTER_BEAN;
+///   }
+///   public boolean matches(ConditionContext c, AnnotatedTypeMetadata m) { ... }
+/// }
+/// ```
+abstract interface class ConfigurationCondition implements Condition {
+  /// The phase the condition is evaluated in.
+  ConfigurationPhase get configurationPhase;
+}
+
+/// Whether every one of [conditions] matches, like Spring's
+/// `ConditionEvaluator.shouldSkip`: in [phase], a [ConfigurationCondition]
+/// of the other phase is not evaluated (counts as matching); without a
+/// phase every condition is evaluated.
+///
+/// ```dart
+/// conditionsMatch(definition.conditions, context,
+///     phase: ConfigurationPhase.parseConfiguration);
+/// ```
+bool conditionsMatch(
+  Iterable<Condition> conditions,
+  ConditionContext context, {
+  ConfigurationPhase? phase,
+  String? source,
+}) {
+  for (final condition in conditions) {
+    final skipped = switch (condition) {
+      ConfigurationCondition(:final configurationPhase) =>
+        phase != null && configurationPhase != phase,
+      _ => false,
+    };
+    final matches = switch (condition) {
+      _ when skipped => true,
+      final ConditionGroup group when phase != null => group.matchesIn(
+        context,
+        phase,
+      ),
+      _ => condition.matches(context),
+    };
+    // Outcomes go to the evaluation report under [source]; a group
+    // records its own conditions under its key.
+    if (source != null &&
+        !skipped &&
+        condition is! ConditionGroup &&
+        context is ConditionEvaluationRecorder) {
+      (context as ConditionEvaluationRecorder).recordCondition(
+        source,
+        condition,
+        matches,
+      );
+    }
+    if (!matches) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Whether [conditions] (also inside a [ConditionGroup]) include a
+/// [ConfigurationCondition] of [phase].
+bool hasPhaseCondition(
+  Iterable<Condition> conditions,
+  ConfigurationPhase phase,
+) => conditions.any(
+  (condition) => switch (condition) {
+    ConfigurationCondition(:final configurationPhase) =>
+      configurationPhase == phase,
+    ConditionGroup(:final conditions) => hasPhaseCondition(conditions, phase),
+    _ => false,
+  },
+);

@@ -46,7 +46,7 @@ void main() {
 
   test('backs off when the application declares a CacheManager', () {
     final own = InMemoryCacheManager(cacheNames: ['books', 'configured']);
-    runner.withBean<CacheManager>(own).run((context) {
+    runner.withBean<CacheManager>(() => own).run((context) {
       expect(context.getBean<CacheManager>(), same(own));
       context.getBean<Books>().find('1');
       expect(own.getCache('books')!.get('1'), isNotNull);
@@ -94,6 +94,19 @@ void main() {
         ),
       );
     });
+  });
+
+  test('spring.cache.cache-names as a YAML list', () {
+    runner
+        .withPropertyValues([
+          'spring.cache.cache-names[0]=authors',
+          'spring.cache.cache-names[1]=books',
+        ])
+        .run((context) {
+          final manager =
+              context.getBean<CacheManager>() as InMemoryCacheManager;
+          expect(manager.cacheNames, ['authors', 'books']);
+        });
   });
 
   test('time to live and size limits from properties', () {

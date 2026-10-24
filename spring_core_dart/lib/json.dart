@@ -1,7 +1,11 @@
 /// JSON: `ObjectMapper` converts objects to JSON and back on generated
 /// metadata (no reflection), with Jackson-style annotations
-/// (`@JsonProperty`, `@JsonIgnore`, `@JsonInclude`, `@JsonPropertyOrder`,
-/// `@JsonCreator`, `@JsonValue`), naming strategies and custom (de)serializers.
+/// (`@JsonProperty`, `@JsonAlias`, `@JsonIgnore`, `@JsonInclude`,
+/// `@JsonPropertyOrder`, `@JsonCreator`, `@JsonValue`, `@JsonFormat`,
+/// `@JsonNaming`, `@JsonView`, `@JsonUnwrapped`, `@JsonAnyGetter` /
+/// `@JsonAnySetter`, `@JsonTypeInfo` / `@JsonSubTypes`), naming
+/// strategies, a tree model (`JsonNode`), `JsonMapper.builder()` and custom
+/// (de)serializers.
 ///
 /// ```dart
 /// @Introspected()
@@ -22,6 +26,8 @@ library;
 export 'package:spring_core_dart/src/beans/type_info.dart';
 export 'package:spring_core_dart/src/json/annotations.dart';
 export 'package:spring_core_dart/src/json/json_exception.dart';
+export 'package:spring_core_dart/src/json/json_mapper.dart';
+export 'package:spring_core_dart/src/json/json_node.dart';
 export 'package:spring_core_dart/src/json/json_serializer.dart';
 export 'package:spring_core_dart/src/json/naming.dart';
 export 'package:spring_core_dart/src/json/object_mapper.dart';

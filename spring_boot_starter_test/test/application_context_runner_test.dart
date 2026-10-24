@@ -57,7 +57,7 @@ void main() {
 
   group('withBean registers a bean before the configurations', () {
     test('auto-configuration backs off; runners are immutable', () {
-      final withFake = runner.withBean<Greeter>(FakeGreeter());
+      final withFake = runner.withBean<Greeter>(FakeGreeter.new);
       withFake.run((context) {
         expect(context, hasSingleBean<Greeter>());
         expect(context, hasBeanNamed('greeter'));
@@ -67,20 +67,36 @@ void main() {
       runner.run((context) {
         expect(context.getBean<Greeter>(), isA<RealGreeter>());
       });
-      base.withBean(Counter()..value = 3).run((context) {
+      base.withBean(() => Counter()..value = 3).run((context) {
         expect(context.getBean<Counter>().value, 3);
         expect(context, hasBeanNamed('counter'));
       });
       // Spring's names: `URLService` stays as it is.
-      base.withBean(URLService()).run((context) {
+      base.withBean(URLService.new).run((context) {
         expect(context, hasBeanNamed('URLService'));
       });
+    });
+
+    test('each run gets a new instance from the supplier', () {
+      final created = <Counter>[];
+      final withCounter = base.withBean(() {
+        final counter = Counter();
+        created.add(counter);
+        return counter;
+      });
+      withCounter.run((context) => context.getBean<Counter>().value = 7);
+      withCounter.run((context) {
+        // Not the instance the first (closed) context destroyed.
+        expect(context.getBean<Counter>().value, isNot(7));
+      });
+      expect(created, hasLength(2));
+      expect(identical(created[0], created[1]), isFalse);
     });
 
     test('also when the configuration was added first', () {
       base
           .withAutoConfiguration(greeterAutoConfiguration)
-          .withBean<Greeter>(FakeGreeter(), name: 'fake')
+          .withBean<Greeter>(FakeGreeter.new, name: 'fake')
           .run((context) {
             expect(context, hasSingleBean<Greeter>());
             expect(context.getBeanNamesForType<Greeter>(), ['fake']);
@@ -90,7 +106,7 @@ void main() {
     test('a missing back-off shows up as a second bean', () {
       base
           .withAutoConfiguration(greeterWithoutBackOff)
-          .withBean<Greeter>(FakeGreeter())
+          .withBean<Greeter>(FakeGreeter.new)
           .run((context) {
             expect(context, isNot(hasSingleBean<Greeter>()));
             expect(context.getBeanNamesForType<Greeter>(), [
@@ -103,7 +119,7 @@ void main() {
     test('it never replaces a bean', () {
       base
           .withUserConfiguration(appModule())
-          .withBean<Mailer>(FakeMailer())
+          .withBean<Mailer>(FakeMailer.new)
           .run((context) {
             expect(context.getBeanNamesForType<Mailer>(), [
               'mailer',
@@ -114,7 +130,7 @@ void main() {
       // The same name as a bean of the configurations: the start fails.
       base
           .withUserConfiguration(appModule())
-          .withBean<Greeter>(FakeGreeter())
+          .withBean<Greeter>(FakeGreeter.new)
           .run((context) {
             expect(context, hasFailed(isA<BeanDefinitionOverrideException>()));
           });

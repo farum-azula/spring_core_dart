@@ -192,10 +192,15 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     );
     final kinds = [scheduled.cron != null, rate != null, delay != null];
     final count = kinds.where((k) => k).length;
+    if (count == 0 && initialDelay != null) {
+      // Spring 6.1: only an initial delay is a one-time task.
+      return _OneTimeTrigger(initialDelay);
+    }
     if (count != 1) {
       invalid(
         count == 0
-            ? 'give one of cron, fixedRate or fixedDelay'
+            ? 'give one of cron, fixedRate or fixedDelay (or only '
+                  'initialDelay to run once)'
             : 'give only one of cron, fixedRate or fixedDelay',
       );
     }
@@ -318,4 +323,19 @@ final class _ScheduledMethod {
   final Trigger trigger;
   // `@Scheduled(scheduler:)`; null: the default scheduler.
   final String? schedulerName;
+}
+
+// `@Scheduled(initialDelay: ...)` alone: one run, [delay] after the start
+// (Spring's OneTimeTask).
+final class _OneTimeTrigger implements Trigger {
+  _OneTimeTrigger(this.delay);
+
+  final Duration delay;
+
+  @override
+  DateTime? nextExecution(TriggerContext context) =>
+      context.lastScheduledExecution == null ? context.now.add(delay) : null;
+
+  @override
+  String toString() => 'OneTimeTrigger(initialDelay: $delay)';
 }

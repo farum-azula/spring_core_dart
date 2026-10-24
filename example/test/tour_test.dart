@@ -146,6 +146,8 @@ void main() {
     expectLine('salesReport: created on first use');
     expectLine('basket (custom scope): [Dune]');
     expectLine('basket after the scope ended: []');
+    expectLine('@Lookup prototype receipts: [[Dune], [Emma]]');
+    expectLine("@Lookup('banner') singleton: true");
     expectLine('destruction-aware bpp: invoiceService');
   });
 

@@ -60,7 +60,12 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 /// - `spring.config.name`, `spring.config.location` and
 ///   `spring.config.additional-location` change what is searched.
 /// - `optional:` locations never fail when missing; a non-optional file,
-///   or directory that does not exist, fails the start.
+///   or directory that does not exist, fails the start (unless
+///   `spring.config.on-not-found=ignore`). A location without a known
+///   extension needs a trailing `/` (a directory) or an extension hint
+///   (`file:./conf[.yml]`).
+/// - `configtree:` locations read a directory tree, a file per property
+///   ([configTreePrefix]).
 /// - A `defaultProperties` source (`SpringApplication`'s default
 ///   properties) stays below the config files.
 /// - Relaxed names: the environment gets Boot's
@@ -190,6 +195,18 @@ class ConfigDataEnvironment {
 
   /// Prefix marking a location that may be missing.
   static const optionalPrefix = 'optional:';
+
+  /// Prefix of a config tree location (`configtree:/etc/config/`): every
+  /// file below the directory is a property named by its path (`a/b` is
+  /// `a.b`) whose value is the file's content (one trailing newline
+  /// removed), like Spring Boot's Kubernetes-style volume mounts. Entries
+  /// whose name starts with `..` are skipped; `configtree:/etc/*/` reads
+  /// each subdirectory.
+  static const configTreePrefix = 'configtree:';
+
+  /// What a missing non-optional location does: `fail` (default) or
+  /// `ignore` (Boot's `spring.config.on-not-found`).
+  static const onNotFoundProperty = 'spring.config.on-not-found';
 
   // Properties that may only appear in non-profile documents.
   static const _profileProperties = [
@@ -343,7 +360,28 @@ final class _Run {
 
   ConfigurableEnvironment get _env => owner.environment;
 
+  // `spring.config.on-not-found=ignore`: missing locations are skipped as
+  // if they were `optional:` (Boot's ConfigDataNotFoundAction).
+  late final bool _ignoreNotFound;
+
+  bool _readOnNotFound() {
+    final value = _bind(
+      _env.propertySources,
+      ConfigDataEnvironment.onNotFoundProperty,
+      _env,
+    )?.trim().toLowerCase();
+    return switch (value) {
+      null || 'fail' => false,
+      'ignore' => true,
+      _ => throw ConfigDataLoadException(
+        ConfigDataEnvironment.onNotFoundProperty,
+        "invalid value '$value' (use 'fail' or 'ignore')",
+      ),
+    };
+  }
+
   _Result process() {
+    _ignoreNotFound = _readOnNotFound();
     _names =
         _list(
           _bind(
@@ -618,19 +656,23 @@ final class _Run {
     );
     check(defaults, StandardEnvironment.defaultProfilesPropertyName);
 
-    // Expand groups (members follow their group; nested groups allowed).
+    // Expand groups depth-first like Boot's Profiles.expandProfiles: a
+    // group's members follow it (nested groups too), a profile keeps the
+    // first position it is reached at.
     List<String> expand(Iterable<String> profiles) {
-      final result = _unique(profiles);
-      for (var i = 0; i < result.length; i++) {
-        final group = '${ConfigDataEnvironment.profileGroupPrefix}${result[i]}';
+      final stack = [...profiles].reversed.toList();
+      final result = <String>[];
+      final seen = <String>{};
+      while (stack.isNotEmpty) {
+        final current = stack.removeLast();
+        if (!seen.add(current)) {
+          continue;
+        }
+        result.add(current);
+        final group = '${ConfigDataEnvironment.profileGroupPrefix}$current';
         final members = _list(_bind(_boundSources(), group, resolver));
         check(members ?? const [], group);
-        var insertAt = i + 1;
-        for (final member in members ?? const <String>[]) {
-          if (!result.contains(member)) {
-            result.insert(insertAt++, member);
-          }
-        }
+        stack.addAll((members ?? const <String>[]).reversed);
       }
       return result;
     }
@@ -728,6 +770,12 @@ final class _Run {
     }
     final suffix = profile == null ? '' : '-$profile';
     final profileSpecific = fromProfileSpecific || profile != null;
+    final ignoreMissing = optional || _ignoreNotFound;
+    if (location.startsWith(ConfigDataEnvironment.configTreePrefix)) {
+      return profile != null
+          ? const []
+          : _loadConfigTree(location, optional: ignoreMissing);
+    }
     if (location.endsWith('/')) {
       // Like Boot's resolver, earlier loaders' extensions take precedence
       // (`.properties` beats `.yml`), so they are loaded last.
@@ -744,7 +792,10 @@ final class _Run {
           ? _subdirectories(location, location)
           : [location];
       // Boot's check for a mandatory wildcard location.
-      if (wildcard && directories.isEmpty && !optional && profile == null) {
+      if (wildcard &&
+          directories.isEmpty &&
+          !ignoreMissing &&
+          profile == null) {
         throw ConfigDataLocationNotFoundException(
           rawLocation,
           reason: 'contains no subdirectories',
@@ -769,7 +820,7 @@ final class _Run {
       }
       // Boot's mandatory-location check; profile variants are skippable.
       if (!found &&
-          !optional &&
+          !ignoreMissing &&
           profile == null &&
           !wildcard &&
           !_isDirectory(location)) {
@@ -777,14 +828,32 @@ final class _Run {
       }
       return documents;
     }
+    // An extension hint names the format of a file without (or with
+    // another) extension: `file:./conf[.yml]` (Boot's extension hints).
     var file = location;
-    if (profile != null) {
-      // No extension in the file name: there is no profile variant.
-      final dot = file.lastIndexOf('.');
-      if (dot <= file.lastIndexOf('/')) {
+    String? hint;
+    if (_extensionHint.firstMatch(location) case final match?) {
+      file = match.group(1)!;
+      hint = match.group(2)!.substring(1);
+    }
+    final dot = file.lastIndexOf('.');
+    final extension =
+        hint ?? (dot > file.lastIndexOf('/') ? file.substring(dot + 1) : '');
+    if (!owner.loaders.any((l) => l.fileExtensions.contains(extension))) {
+      if (optional) {
         return const [];
       }
-      file = '${file.substring(0, dot)}$suffix${file.substring(dot)}';
+      // Boot's StandardConfigDataLocationResolver message.
+      throw ConfigDataLoadException(
+        rawLocation,
+        'File extension is not known to any PropertySourceLoader. If the '
+        "location is meant to reference a directory, it must end in '/'",
+      );
+    }
+    if (profile != null) {
+      file = hint != null
+          ? '$file$suffix'
+          : '${file.substring(0, dot)}$suffix${file.substring(dot)}';
     }
     if (file.contains('*')) {
       final slash = file.lastIndexOf('/');
@@ -802,10 +871,74 @@ final class _Run {
     }
     return _loadFile(
           file,
-          optional: optional || profileSpecific,
+          optional: ignoreMissing || profileSpecific,
           profileSpecific: profileSpecific,
+          extension: hint,
         ) ??
         const [];
+  }
+
+  static final _extensionHint = RegExp(r'^(.*)\[(\.\w+)\](?!\[)$');
+
+  // A `configtree:` location: one source per directory (each subdirectory
+  // for `dir/*/`), like Boot's ConfigTreeConfigDataLoader.
+  List<_Document> _loadConfigTree(String location, {required bool optional}) {
+    final path = location.substring(
+      ConfigDataEnvironment.configTreePrefix.length,
+    );
+    final directories = path.contains('*')
+        ? _subdirectories(path, location)
+        : [path];
+    final documents = <_Document>[];
+    for (final directory in directories) {
+      if (!FileAccess.isDirectory(directory)) {
+        if (optional || path.contains('*')) {
+          continue;
+        }
+        throw ConfigDataResourceNotFoundException(
+          location,
+          'config tree [$directory]',
+        );
+      }
+      if (!_loaded.add(
+        '${ConfigDataEnvironment.configTreePrefix}'
+        '${_normalized(directory)}',
+      )) {
+        continue;
+      }
+      final root = directory.endsWith('/') ? directory : '$directory/';
+      final absolute = FileAccess.absolute(root).replaceAll(r'\', '/');
+      final properties = <String, Object>{};
+      for (final file in FileAccess.listFilesRecursively(directory)) {
+        final full = FileAccess.absolute(file).replaceAll(r'\', '/');
+        final relative = full.startsWith(absolute)
+            ? full.substring(absolute.length)
+            : file.substring(root.length);
+        final segments = relative.split('/');
+        if (segments.any((segment) => segment.startsWith('..'))) {
+          continue;
+        }
+        var value = utf8.decode(
+          FileAccess.readBytesSync(file),
+          allowMalformed: true,
+        );
+        // Option.AUTO_TRIM_TRAILING_NEW_LINE: one trailing newline.
+        if (value.endsWith('\r\n')) {
+          value = value.substring(0, value.length - 2);
+        } else if (value.endsWith('\n')) {
+          value = value.substring(0, value.length - 1);
+        }
+        properties[segments.join('.')] = value;
+      }
+      documents.add(
+        _Document(
+          MapPropertySource("Config tree '$directory'", properties),
+          location,
+          profileSpecific: false,
+        ),
+      );
+    }
+    return documents;
   }
 
   // Whether [location] is an existing directory: a file system one, or a
@@ -868,8 +1001,9 @@ final class _Run {
     String location, {
     required bool optional,
     required bool profileSpecific,
+    String? extension,
   }) {
-    final extension = location.contains('.')
+    extension ??= location.contains('.')
         ? location.substring(location.lastIndexOf('.') + 1)
         : '';
     final loader = owner.loaders

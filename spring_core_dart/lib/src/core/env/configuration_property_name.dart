@@ -247,6 +247,12 @@ final class ConfigurationPropertyName {
     var depth = 0;
     for (var i = 0; i < name.length; i++) {
       final char = name[i];
+      // `a..b` and `a.[0]` have an empty element (invalid in Spring Boot).
+      if (depth == 0 && (char == '.' || char == '[') && i > 0) {
+        if (name[i - 1] == '.') {
+          return null;
+        }
+      }
       if (char == '[') {
         if (depth == 0) {
           if (buffer.isNotEmpty) {

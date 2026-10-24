@@ -109,3 +109,30 @@ class BasketService {
 
   List<String> get items => basket.getObject().items;
 }
+
+/// A prototype: the container creates a new one for each lookup.
+@Component()
+@Scope(ScopeType.prototype)
+class Receipt {
+  final lines = <String>[];
+}
+
+/// Lookup method injection: an abstract singleton whose `@Lookup` methods
+/// the generated subclass implements, returning beans of the container on
+/// every call.
+///
+/// Spring (Java): the same `@Lookup` on abstract methods, implemented by a
+/// CGLIB subclass.
+@Service()
+abstract class Cashier {
+  /// A new [Receipt] per call (by return type).
+  @Lookup()
+  Receipt newReceipt();
+
+  /// The bean named `banner` (a singleton: the same each time).
+  @Lookup('banner')
+  Banner banner();
+
+  /// Rings up [titles] on a fresh receipt.
+  Receipt ring(List<String> titles) => newReceipt()..lines.addAll(titles);
+}

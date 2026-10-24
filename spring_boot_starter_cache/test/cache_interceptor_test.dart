@@ -100,6 +100,21 @@ void main() {
     expect(proxy.count('find'), 1);
   });
 
+  test('a @CachePut whose condition fails does not force a @Cacheable '
+      'hit to run (Spring hasCachePut)', () {
+    cache('books').put('1', 'cached 1');
+    expect(proxy.refresh('1', false), 'cached 1');
+    expect(proxy.count('refresh'), 0);
+    expect(proxy.refresh('1', true), 'refreshed 1');
+    expect(proxy.count('refresh'), 1);
+    expect(cache('books').get('1')?.value, 'refreshed 1');
+    // A condition reading #result cannot be decided before the call: the
+    // put counts as passing, so the method runs despite the hit.
+    expect(proxy.refreshResult('1'), 'refreshed 1');
+    expect(proxy.count('refreshResult'), 1);
+    expect(cache('refreshed').get('1')?.value, 'refreshed 1');
+  });
+
   group('@CacheEvict', () {
     test('removes one key after the call', () {
       proxy

@@ -75,3 +75,35 @@ class Resource {
   /// The bean name; `null` uses the field or setter name.
   final String? name;
 }
+
+/// JSR-250's `@Priority` (`jakarta.annotation.Priority`) on a bean class
+/// (or `@Bean` method): among several candidates for an injection point or
+/// a `getBean<T>()` without a primary or name match, the one with the
+/// lowest [value] wins (two with that value are ambiguous); and it orders
+/// beans in collections and listeners after `Ordered` and `@Order`, like
+/// Spring's `AnnotationAwareOrderComparator`.
+///
+/// ```dart
+/// import 'package:spring_core_dart/jakarta.dart' as jakarta;
+///
+/// @Component()
+/// @jakarta.Priority(1)
+/// class FastStore implements Store { ... }
+///
+/// @Component()
+/// @jakarta.Priority(5)
+/// class SlowStore implements Store { ... }
+/// // Store is FastStore; List<Store> is [FastStore, SlowStore].
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Component @Priority(1) class FastStore implements Store { ... }
+/// ```
+class Priority {
+  /// A bean with priority [value] (lower is higher priority).
+  const Priority(this.value);
+
+  /// The priority; lower values win.
+  final int value;
+}

@@ -227,6 +227,100 @@ final class VarargsFunction {
     return null;
   }
 
+  /// [arguments] converted with [converter] to the parameter types of
+  /// [function] where they do not fit, like Spring's
+  /// `ReflectionHelper.convertAllArguments`: `#half(3)` with a `double`
+  /// parameter gets `3.0`, `'abc'.substring('1')` gets `1`,
+  /// `'abc'.charAt(1.0)` gets `1`. Dart has no reflection, so the
+  /// parameter types are probed: `int`, `double`, `num`, `String` and
+  /// `bool` parameters of the first [maxConvertedArity] positional
+  /// parameters convert; an argument that cannot be converted is passed
+  /// as it is (the call then fails as usual).
+  static List<Object?> convertArguments(
+    Object function,
+    List<Object?> arguments,
+    TypeConverter converter,
+  ) {
+    final (Function target, int count, int converted) = switch (function) {
+      VarargsFunction(:final function, :final fixedArity) => (
+        function,
+        fixedArity + 1,
+        fixedArity,
+      ),
+      final Function function => (function, arguments.length, arguments.length),
+      _ => (_noFunction, 0, 0),
+    };
+    if (count > maxConvertedArity || converted > arguments.length) {
+      return arguments;
+    }
+    List<Object?>? result;
+    for (var i = 0; i < converted; i++) {
+      final value = arguments[i];
+      if (value == null || _accepts<Object?>(target, count, i)) {
+        continue;
+      }
+      final Type? type;
+      if (_accepts<int>(target, count, i) &&
+          _accepts<double>(target, count, i)) {
+        type = value is num ? null : num;
+      } else if (_accepts<double>(target, count, i)) {
+        type = value is double ? null : double;
+      } else if (_accepts<int>(target, count, i)) {
+        type = value is int ? null : int;
+      } else if (_accepts<String>(target, count, i)) {
+        type = value is String ? null : String;
+      } else if (_accepts<bool>(target, count, i)) {
+        type = value is bool ? null : bool;
+      } else {
+        type = null;
+      }
+      if (type == null) {
+        continue;
+      }
+      try {
+        final convertedValue = type == num
+            ? _toNum(value, converter)
+            : converter.convertValue(value, type);
+        (result ??= [...arguments])[i] = convertedValue;
+      } on Exception {
+        // Not convertible: the call reports the mismatch.
+      }
+    }
+    return result ?? arguments;
+  }
+
+  /// How many positional parameters [convertArguments] can probe.
+  static const maxConvertedArity = 4;
+
+  static void _noFunction() {}
+
+  // A String into a `num` parameter: an int when it reads as one, else a
+  // double (Java picks the overload; Dart has one `num`).
+  static Object? _toNum(Object value, TypeConverter converter) {
+    if (value is String) {
+      return int.tryParse(value.trim()) ??
+          converter.convertValue(value, double);
+    }
+    return converter.convertValue(value, double);
+  }
+
+  // Whether parameter [index] of [function], called with [count]
+  // positional arguments, accepts an [X].
+  static bool _accepts<X>(Function function, int count, int index) =>
+      switch ((count, index)) {
+        (1, 0) => function is Object? Function(X),
+        (2, 0) => function is Object? Function(X, Never),
+        (2, 1) => function is Object? Function(Never, X),
+        (3, 0) => function is Object? Function(X, Never, Never),
+        (3, 1) => function is Object? Function(Never, X, Never),
+        (3, 2) => function is Object? Function(Never, Never, X),
+        (4, 0) => function is Object? Function(X, Never, Never, Never),
+        (4, 1) => function is Object? Function(Never, X, Never, Never),
+        (4, 2) => function is Object? Function(Never, Never, X, Never),
+        (4, 3) => function is Object? Function(Never, Never, Never, X),
+        _ => true,
+      };
+
   /// Calls [function] (a Dart `Function` or a [VarargsFunction]) with
   /// [arguments].
   ///
@@ -622,7 +716,7 @@ class StandardTypeLocator implements TypeLocator {
             a is int ? a : toJavaLong((a + 0.5).floorToDouble()),
         'floor': (num a) => a.toDouble().floorToDouble(),
         'ceil': (num a) => a.toDouble().ceilToDouble(),
-        'rint': (num a) => a.toDouble().roundToDouble(),
+        'rint': (num a) => _rint(a.toDouble()),
         'signum': (num a) => a.toDouble().sign,
         'floorDiv': _floorDiv,
         'floorMod': (int a, int b) => a - _floorDiv(a, b) * b,
@@ -630,6 +724,23 @@ class StandardTypeLocator implements TypeLocator {
       },
     ),
   ];
+
+  // Java's Math.rint: the closest integral double, ties to the even one
+  // (Dart's roundToDouble rounds ties away from zero); the sign of a zero
+  // result is the argument's (`rint(-0.4)` is `-0.0`).
+  static double _rint(double a) {
+    if (!a.isFinite || a.abs() >= 4503599627370496) {
+      return a; // 2^52 and above: already integral
+    }
+    final floor = a.floorToDouble();
+    final fraction = a - floor;
+    final result = fraction < 0.5
+        ? floor
+        : fraction > 0.5
+        ? floor + 1
+        : (floor % 2 == 0 ? floor : floor + 1);
+    return result == 0 ? (a.isNegative ? -0.0 : 0.0) : result;
+  }
 
   // Java's Math.floorDiv: the quotient rounded towards negative infinity.
   static int _floorDiv(int a, int b) {
@@ -673,9 +784,9 @@ final class SpelTypeMethodResolver implements MethodResolver {
         !VarargsFunction.accepts(function, arguments.length)) {
       return null;
     }
-    return (_, _, args) => callChecked(
+    return (context, _, args) => callChecked(
       function,
-      args,
+      VarargsFunction.convertArguments(function, args, context.typeConverter),
       () => SpelEvaluationException(
         SpelMessage.methodNotFound,
         inserts: ['$name(${_types(args)})', target],
@@ -752,9 +863,13 @@ final class SpelTypeConstructorResolver implements ConstructorResolver {
         !VarargsFunction.accepts(constructor, arguments.length)) {
       return null;
     }
-    return (_, args) => SpelTypeMethodResolver.callChecked(
+    return (context, args) => SpelTypeMethodResolver.callChecked(
       constructor,
-      args,
+      VarargsFunction.convertArguments(
+        constructor,
+        args,
+        context.typeConverter,
+      ),
       () => SpelEvaluationException(
         SpelMessage.constructorNotFound,
         inserts: [typeName, '(${SpelTypeMethodResolver._types(args)})'],

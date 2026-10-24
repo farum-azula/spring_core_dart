@@ -28,7 +28,26 @@ void main() {
     expect(feed.connectTimeout, const Duration(seconds: 2));
     expect(feed.reconnect.maxRetries, 3);
     expect(feed.reconnect.maxDelay, const Duration(minutes: 1));
-    expect(feed.defaultRequestHeaders, {'X-Trace': 't', 'X-Shop': 'neon'});
+    expect(feed.defaultRequestHeaders, {
+      'X-Trace': ['t'],
+      'X-Shop': ['neon'],
+    });
+  });
+
+  test('default-request-headers lists: X: a,b and X[0], X[1] are two '
+      'values', () {
+    final feed = config({
+      'spring.websocket.client.config.feed.default-request-headers.X-Tags':
+          'a,b',
+      'spring.websocket.client.config.feed.default-request-headers.X-List[0]':
+          'one',
+      'spring.websocket.client.config.feed.default-request-headers.X-List[1]':
+          'two',
+    });
+    expect(feed.defaultRequestHeaders, {
+      'X-Tags': ['a', 'b'],
+      'X-List': ['one', 'two'],
+    });
   });
 
   test('environment variables, below the other sources', () {

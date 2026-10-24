@@ -426,7 +426,8 @@ void main() {
         writeDatesAsTimestamps: true,
       );
       final tree = snake.valueToTree(book)! as Map<String, Object?>;
-      expect(tree['published'], DateTime.utc(1965, 8).millisecondsSinceEpoch);
+      // Jackson 3: seconds with the fraction (WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS).
+      expect(tree['published'], -139449600.0);
       expect(tree.containsKey('note'), isFalse);
       final read = snake.treeToValue<Book>(tree);
       expect(read.published, DateTime.utc(1965, 8));

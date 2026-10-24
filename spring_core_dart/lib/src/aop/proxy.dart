@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/aop_context.dart';
@@ -26,12 +27,83 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 ///
 /// A generated subclass proxy (for a class that cannot be implemented) is
 /// the bean itself: its [aopTarget] is the proxy.
+///
+/// Advisors can be added and removed at runtime, like Spring's
+/// `Advised.addAdvisor` / `removeAdvisor`: a later call of an affected
+/// member uses the new chain.
+///
+/// ```dart
+/// (calculator as Advised).addAdvice(LoggingInterceptor());
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// ((Advised) calculator).addAdvice(new LoggingInterceptor());
+/// ```
 abstract interface class Advised {
   /// The proxied bean.
   Object get aopTarget;
 
   /// Advisors that apply to the proxy.
   List<PointcutAdvisor> get aopAdvisors;
+
+  /// Appends [advisor] (it becomes the innermost one).
+  void addAdvisor(PointcutAdvisor advisor);
+
+  /// Removes [advisor]; `false` when it was not there.
+  bool removeAdvisor(PointcutAdvisor advisor);
+
+  /// Appends [advice] for every member (Spring's `addAdvice`: a
+  /// `DefaultPointcutAdvisor` with a `TruePointcut`).
+  void addAdvice(MethodInterceptor advice);
+
+  /// Removes the first advisor whose advice is [advice]; `false` when
+  /// there is none.
+  bool removeAdvice(MethodInterceptor advice);
+}
+
+/// An interface that `@DeclareParents` adds to the proxies of matching
+/// beans (Spring's introductions), written by the generator: the proxy
+/// implements [interfaceName] and forwards its members to the object
+/// [create] returns (one per proxy, created on first use).
+///
+/// ```dart
+/// Introduction(
+///   interfaceName: 'UsageTracked',
+///   aspectType: 'UsageTracking',
+///   create: DefaultUsageTracked.new,
+/// );
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @DeclareParents(value = "com.x.service.*+",
+///     defaultImpl = DefaultUsageTracked.class)
+/// public static UsageTracked mixin;
+/// ```
+final class Introduction {
+  /// Creates the introduction of [interfaceName] declared by the aspect
+  /// named [aspectType]; [create] makes the delegate.
+  Introduction({
+    required this.interfaceName,
+    required this.aspectType,
+    required this._create,
+  });
+
+  /// The introduced interface.
+  final String interfaceName;
+
+  /// The aspect declaring it (its `AspectMetadata.typeName`): the bean is
+  /// proxied for the introduction only while that aspect is registered.
+  final String aspectType;
+
+  final Object Function() _create;
+
+  /// A new delegate implementing the interface.
+  Object create() => _create();
+
+  @override
+  String toString() => 'Introduction($interfaceName by $aspectType)';
 }
 
 /// Unwraps AOP proxies, like Spring's `AopUtils` / `AopProxyUtils`.
@@ -99,10 +171,15 @@ abstract final class AopUtils {
 final class AopProxyFactory {
   /// Creates a factory for proxies of members [signatures]; `create`
   /// instantiates the generated proxy class.
+  ///
+  /// [introductions] are the interfaces `@DeclareParents` adds to the
+  /// proxy class (see [Introduction]).
   AopProxyFactory({
     required List<MethodSignature> signatures,
     required Object Function(Object target, ProxyInvoker invoker) this._create,
+    List<Introduction> introductions = const [],
   }) : signatures = List.unmodifiable(signatures),
+       introductions = List.unmodifiable(introductions),
        _advise = null,
        unavailableReason = null;
 
@@ -114,6 +191,7 @@ final class AopProxyFactory {
     required List<MethodSignature> signatures,
     required String reason,
   }) : signatures = List.unmodifiable(signatures),
+       introductions = const [],
        _create = null,
        _advise = null,
        unavailableReason = reason;
@@ -136,11 +214,17 @@ final class AopProxyFactory {
     required List<MethodSignature> signatures,
     required Object? Function(Object bean, ProxyInvoker invoker) this._advise,
   }) : signatures = List.unmodifiable(signatures),
+       introductions = const [],
        _create = null,
        unavailableReason = null;
 
   /// Proxied members, indexed like the generated proxy calls them.
   final List<MethodSignature> signatures;
+
+  /// Interfaces the generated proxy class implements for `@DeclareParents`,
+  /// indexed like the proxy calls [ProxyInvoker.introduction].
+  final List<Introduction> introductions;
+
   final Object Function(Object target, ProxyInvoker invoker)? _create;
   final Object? Function(Object bean, ProxyInvoker invoker)? _advise;
 
@@ -161,7 +245,7 @@ final class AopProxyFactory {
   }) => [
     for (final advisor in advisors)
       if (signatures.any(
-        (s) => _pointcutMatches(advisor.pointcut, s, beanName, beanAliases),
+        (s) => pointcutMatchesBean(advisor.pointcut, s, beanName, beanAliases),
       ))
         advisor,
   ];
@@ -178,6 +262,7 @@ final class AopProxyFactory {
       advisors,
       beanName,
       beanAliases: beanAliases,
+      introductions: introductions,
     );
     if (_advise case final advise?) {
       return advise(target, invoker) ??
@@ -199,17 +284,6 @@ final class AopProxyFactory {
     return create(target, invoker);
   }
 }
-
-// Whether [pointcut] matches [signature] of the bean named [beanName]
-// (with its aliases and qualifier values for an [ExpressionPointcut]).
-bool _pointcutMatches(
-  AopPointcut pointcut,
-  MethodSignature signature,
-  String beanName,
-  List<String> beanAliases,
-) => pointcut is ExpressionPointcut
-    ? pointcut.matchesBean(signature, beanName, beanAliases)
-    : pointcut.matches(signature, beanName);
 
 /// A proxy could not be created, like Spring's `AopConfigException`.
 class AopConfigException implements Exception {
@@ -280,19 +354,75 @@ final class ProxyInvoker {
   /// Creates an invoker applying [advisors] (in order) to the members
   /// [signatures] of the bean named [beanName]; [beanAliases] (aliases and
   /// qualifier values) also count for `bean(...)` pointcuts.
+  ///
+  /// [introductions] are the `@DeclareParents` interfaces of the proxy
+  /// ([introduction]).
   ProxyInvoker(
     this.signatures,
     List<PointcutAdvisor> advisors,
     this.beanName, {
     List<String> beanAliases = const [],
-  }) : advisors = List.unmodifiable(advisors),
-       beanAliases = List.unmodifiable(beanAliases);
+    List<Introduction> introductions = const [],
+  }) : _advisors = [...advisors],
+       beanAliases = List.unmodifiable(beanAliases),
+       introductions = List.unmodifiable(introductions),
+       _delegates = List.filled(introductions.length, null);
+
+  /// Fails the call of an `Advised` method on a generated subclass proxy
+  /// that no advice matched when the bean was created (it has no invoker).
+  static Never notAdvised(Object proxy) => throw AopConfigException(
+    'The ${proxy.runtimeType} bean is not advised: no advice matched it when '
+    'it was created, so it has no advisors to change. Declare advice that '
+    'matches it (or a PointcutAdvisor bean) to have it proxied.',
+  );
 
   /// Proxied members, by index.
   final List<MethodSignature> signatures;
 
-  /// Advisors that apply to the proxy, outermost first.
-  final List<PointcutAdvisor> advisors;
+  final List<PointcutAdvisor> _advisors;
+
+  /// Advisors that apply to the proxy, outermost first (a view: it
+  /// follows [addAdvisor] and [removeAdvisor]).
+  late final List<PointcutAdvisor> advisors = UnmodifiableListView(_advisors);
+
+  /// The `@DeclareParents` interfaces of the proxy, by index.
+  final List<Introduction> introductions;
+
+  final List<Object?> _delegates;
+
+  /// The delegate of introduction [index], created on first use (one per
+  /// proxy).
+  Object introduction(int index) =>
+      _delegates[index] ??= introductions[index].create();
+
+  /// Appends [advisor]; calls from now on use it.
+  void addAdvisor(PointcutAdvisor advisor) {
+    _advisors.add(advisor);
+    _chains.clear();
+  }
+
+  /// Removes [advisor]; `false` when it was not there.
+  bool removeAdvisor(PointcutAdvisor advisor) {
+    final removed = _advisors.remove(advisor);
+    if (removed) {
+      _chains.clear();
+    }
+    return removed;
+  }
+
+  /// Appends [advice] for every member.
+  void addAdvice(MethodInterceptor advice) =>
+      addAdvisor(DefaultPointcutAdvisor(const TruePointcut(), advice));
+
+  /// Removes the first advisor whose advice is [advice].
+  bool removeAdvice(MethodInterceptor advice) {
+    for (final advisor in _advisors) {
+      if (identical(advisor.advice, advice)) {
+        return removeAdvisor(advisor);
+      }
+    }
+    return false;
+  }
 
   /// Name of the proxied bean, for `bean(...)` pointcuts.
   final String beanName;
@@ -309,8 +439,8 @@ final class ProxyInvoker {
   List<MethodInterceptor> chainFor(int index) => _chains.putIfAbsent(index, () {
     final signature = signatures[index];
     return [
-      for (final advisor in advisors)
-        if (_pointcutMatches(
+      for (final advisor in _advisors)
+        if (pointcutMatchesBean(
           advisor.pointcut,
           signature,
           beanName,

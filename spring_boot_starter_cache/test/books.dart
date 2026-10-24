@@ -119,6 +119,24 @@ class Books {
     _count('plain');
     return 'plain $isbn';
   }
+
+  @Caching(
+    cacheable: [Cacheable('books', key: '#isbn')],
+    put: [CachePut('books', key: '#isbn', condition: '#force == true')],
+  )
+  String refresh(String isbn, bool force) {
+    _count('refresh');
+    return 'refreshed $isbn';
+  }
+
+  @Caching(
+    cacheable: [Cacheable('books', key: '#isbn')],
+    put: [CachePut('refreshed', key: '#isbn', condition: '#result != null')],
+  )
+  String refreshResult(String isbn) {
+    _count('refreshResult');
+    return 'refreshed $isbn';
+  }
 }
 
 MethodSignature _sig(
@@ -209,6 +227,28 @@ final booksSignatures = [
     returnType: 'Future',
   ),
   _sig('plain', ['isbn'], const []),
+  _sig(
+    'refresh',
+    ['isbn', 'force'],
+    const [
+      Caching(
+        cacheable: [Cacheable('books', key: '#isbn')],
+        put: [CachePut('books', key: '#isbn', condition: '#force == true')],
+      ),
+    ],
+  ),
+  _sig(
+    'refreshResult',
+    ['isbn'],
+    const [
+      Caching(
+        cacheable: [Cacheable('books', key: '#isbn')],
+        put: [
+          CachePut('refreshed', key: '#isbn', condition: '#result != null'),
+        ],
+      ),
+    ],
+  ),
 ];
 
 /// What the generator writes for [Books].
@@ -223,6 +263,19 @@ class BooksProxy extends Books implements Advised {
 
   @override
   List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(PointcutAdvisor advisor) => _invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      _invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) => _invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) => _invoker.removeAdvice(advice);
 
   @override
   Map<String, int> get calls => _target.calls;
@@ -314,6 +367,14 @@ class BooksProxy extends Books implements Advised {
 
   @override
   String plain(String isbn) => _call(16, [isbn], () => _target.plain(isbn));
+
+  @override
+  String refresh(String isbn, bool force) =>
+      _call(17, [isbn, force], () => _target.refresh(isbn, force));
+
+  @override
+  String refreshResult(String isbn) =>
+      _call(18, [isbn], () => _target.refreshResult(isbn));
 }
 
 /// The proxy factory the generator writes into the bean definition.

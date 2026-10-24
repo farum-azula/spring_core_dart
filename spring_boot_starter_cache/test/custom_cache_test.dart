@@ -72,7 +72,7 @@ void main() {
           ]),
         )
         .withBean<CacheManager>(
-          SimpleCacheManager([StoreCache('books', store)]),
+          () => SimpleCacheManager([StoreCache('books', store)]),
         )
         .withAutoConfiguration(springBootStarterCacheAutoConfiguration);
     runner.run((context) {

@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:spring_boot_dart/src/annotations.dart';
 import 'package:spring_boot_dart/src/auto_configuration_sorter.dart';
+import 'package:spring_boot_dart/src/banner.dart';
 import 'package:spring_boot_dart/src/binder.dart';
+import 'package:spring_boot_dart/src/condition_evaluation_report.dart';
 import 'package:spring_boot_dart/src/configuration_properties.dart';
+import 'package:spring_boot_dart/src/environment_post_processor.dart';
 import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
@@ -79,6 +82,9 @@ class SpringApplication {
     List<GenericApplicationListener> listeners = const [],
     Map<String, Object?> defaultProperties = const {},
     List<String> additionalProfiles = const [],
+    List<EnvironmentPostProcessor> environmentPostProcessors = const [],
+    this.banner,
+    this.bannerMode = BannerMode.console,
     this.resourceLoader,
     this.fingerprint,
     void Function(String line)? out,
@@ -92,6 +98,7 @@ class SpringApplication {
        _listeners = [...listeners],
        _defaultProperties = {...defaultProperties},
        additionalProfiles = List.unmodifiable(additionalProfiles),
+       environmentPostProcessors = List.unmodifiable(environmentPostProcessors),
        out = out ?? print;
 
   /// The application's own modules.
@@ -190,6 +197,72 @@ class SpringApplication {
   /// lowest precedence of the profile-specific ones.
   final List<String> additionalProfiles;
 
+  /// The banner printed at startup (Spring Boot's `setBanner`); a
+  /// `classpath:banner.txt` (or `spring.banner.location`) wins, the default
+  /// is the [SpringBootBanner].
+  final Banner? banner;
+
+  /// Where the banner goes (Spring Boot's `setBannerMode`);
+  /// `spring.main.banner-mode` (`off`, `console`, `log`) wins.
+  final BannerMode bannerMode;
+
+  // Boot's printBanner: after the environment is prepared, before the
+  // context is created.
+  void _printBanner(StandardEnvironment environment) {
+    final property = environment
+        .getProperty('spring.main.banner-mode')
+        ?.trim()
+        .toLowerCase();
+    final mode = switch (property) {
+      null || '' => bannerMode,
+      'off' || 'false' => BannerMode.off,
+      'console' => BannerMode.console,
+      'log' => BannerMode.log,
+      _ => throw ConfigurationPropertiesBindException('spring.main', null, [
+        'spring.main.banner-mode: failed to convert to BannerMode (one of '
+            'off, console, log) (was "$property")',
+      ]),
+    };
+    if (mode == BannerMode.off) {
+      return;
+    }
+    final location =
+        environment.getProperty('spring.banner.location') ??
+        'classpath:banner.txt';
+    final resource = (resourceLoader ?? DefaultResourceLoader()).getResource(
+      location,
+    );
+    final chosen = resource.supportsSyncRead && resource.exists()
+        ? ResourceBanner(resource)
+        : banner ?? const SpringBootBanner();
+    chosen.printBanner(
+      environment,
+      mode == BannerMode.log ? (text) => _log.info(text) : print,
+    );
+  }
+
+  /// Customize the environment before the context is created, around
+  /// config data loading by order (see [EnvironmentPostProcessor]).
+  final List<EnvironmentPostProcessor> environmentPostProcessors;
+
+  // The post-processors before (`true`) or after config data, in order.
+  Iterable<EnvironmentPostProcessor> _postProcessors({required bool before}) =>
+      OrderComparator.sort(environmentPostProcessors).where(
+        (processor) =>
+            (OrderComparator.orderOf(processor) <
+                EnvironmentPostProcessor.configDataOrder) ==
+            before,
+      );
+
+  void _postProcessEnvironment(
+    StandardEnvironment environment, {
+    required bool before,
+  }) {
+    for (final processor in _postProcessors(before: before)) {
+      processor.postProcessEnvironment(environment, this);
+    }
+  }
+
   /// Identifies the generated code the application was built from (a hash
   /// written by the generator). [reload] keeps a running context when it
   /// is unchanged.
@@ -229,12 +302,15 @@ class SpringApplication {
     final run = _RunListeners(this, args)..starting();
     final environment = _environment(args, systemEnvironment, properties);
     final (context, arguments) = _guard(run, () {
+      _postProcessEnvironment(environment, before: true);
       ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
         additionalProfiles: additionalProfiles,
       ).processAndApplySync();
+      _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
+      _printBanner(environment);
       return _start(run, args, environment, watch, (
         systemEnvironment,
         properties,
@@ -309,12 +385,15 @@ class SpringApplication {
     final run = _RunListeners(this, args)..starting();
     final environment = _environment(args, systemEnvironment, properties);
     try {
+      _postProcessEnvironment(environment, before: true);
       await ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
         additionalProfiles: additionalProfiles,
       ).processAndApply();
+      _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
+      _printBanner(environment);
     } catch (error) {
       _report(run, error);
       rethrow;
@@ -537,12 +616,14 @@ class SpringApplication {
     try {
       context.refresh();
     } catch (error) {
+      _logConditionReport(context, crash: true);
       _report(run, error, context);
       if (context.isActive) {
         context.close();
       }
       rethrow;
     }
+    _logConditionReport(context);
     _registerShutdownHook(environment, context);
     _logStarted(prepared, watch);
     return (context, prepared.arguments);
@@ -562,16 +643,39 @@ class SpringApplication {
     try {
       await context.refreshAsync();
     } catch (error) {
+      _logConditionReport(context, crash: true);
       _report(run, error, context);
       if (context.isActive) {
         await context.closeAsync();
       }
       rethrow;
     }
+    _logConditionReport(context);
     _registerShutdownHook(environment, context);
     _logStarted(prepared, watch);
     return (context, prepared.arguments);
   }
+
+  // Boot's ConditionEvaluationReportLogger: the report when `debug` is set
+  // (`--debug`); for a failed start without it, how to get the report.
+  static void _logConditionReport(
+    ConfigurableApplicationContext context, {
+    bool crash = false,
+  }) {
+    final debug = context.environment.getProperty('debug');
+    if (debug != null && debug.trim().toLowerCase() != 'false') {
+      _reportLog.info('${ConditionEvaluationReport.of(context)}');
+    } else if (crash) {
+      _reportLog.info(
+        "Error starting ApplicationContext. To display the condition "
+        "evaluation report re-run your application with 'debug' enabled.",
+      );
+    }
+  }
+
+  static const _reportLog = SpringLog(
+    'spring_boot_dart.ConditionEvaluationReport',
+  );
 
   void _logStarted(_Prepared prepared, Stopwatch watch) {
     if (prepared.logStartupInfo) {
@@ -629,7 +733,11 @@ class SpringApplication {
         types: const [ApplicationArguments],
       )
       ..addBeanPostProcessor(
-        ConfigurationPropertiesBinder(environment, context.introspector),
+        ConfigurationPropertiesBinder(
+          environment,
+          context.introspector,
+          beanFactory: context.beanFactory,
+        ),
       );
     if (environment.getPropertyAs<bool>('spring.main.lazy-initialization') ??
         false) {
@@ -723,12 +831,13 @@ class SpringApplication {
     var code = 0;
     if (active) {
       try {
-        code =
-            (ExitCodeGenerators()..addMapped(
-                  error,
-                  context.getBeansOfType<ExitCodeExceptionMapper>().values,
-                ))
-                .exitCode;
+        final generators = ExitCodeGenerators();
+        for (final (mapper, order) in _beansWithOrder<ExitCodeExceptionMapper>(
+          context,
+        )) {
+          generators.addMapped(error, mapper, order);
+        }
+        code = generators.exitCode;
       } catch (_) {
         // Mappers that cannot be created map nothing.
       }
@@ -760,6 +869,17 @@ class SpringApplication {
 
   static final _exitCodes = Expando<int>('SpringApplication exit codes');
 
+  // The beans of type [T] with their `@Order` value.
+  static List<(T, int?)> _beansWithOrder<T extends Object>(
+    ConfigurableApplicationContext context,
+  ) => [
+    for (final name in context.getBeanNamesForType(T))
+      (
+        context.getBeanByName(name) as T,
+        context.beanFactory.getBeanDefinition(name).order,
+      ),
+  ];
+
   /// The exit code a failed run chose for [error]: what the
   /// [ExitCodeExceptionMapper] beans say (they are asked while the context
   /// is active, so for a failing runner, not for a failed refresh), or
@@ -784,8 +904,8 @@ class SpringApplication {
 
   /// Closes [context] and returns the exit code of the application, like
   /// Spring Boot's `SpringApplication.exit`: the code of the
-  /// [exitCodeGenerators] and of the [ExitCodeGenerator] beans (the highest
-  /// positive or lowest negative one wins). A code other than `0` is also
+  /// [exitCodeGenerators] and of the [ExitCodeGenerator] beans, sorted by
+  /// order (`Ordered` / `@Order`): the first non-zero code wins. A code other than `0` is also
   /// published as an [ExitCodeEvent] before the context closes. A failure
   /// on the way is logged and gives `1` (unless a code was found).
   ///
@@ -799,11 +919,13 @@ class SpringApplication {
     var exitCode = 0;
     try {
       try {
-        exitCode =
-            (ExitCodeGenerators()
-                  ..addAll(exitCodeGenerators)
-                  ..addAll(context.getBeansOfType<ExitCodeGenerator>().values))
-                .exitCode;
+        final generators = ExitCodeGenerators()..addAll(exitCodeGenerators);
+        for (final (generator, order) in _beansWithOrder<ExitCodeGenerator>(
+          context,
+        )) {
+          generators.add(generator, order);
+        }
+        exitCode = generators.exitCode;
         if (exitCode != 0) {
           context.publishEvent(ExitCodeEvent(context, exitCode));
         }
@@ -874,58 +996,78 @@ class SpringApplication {
   /// same as `logging.level.neon.checkout`. Levels of an earlier run are
   /// replaced.
   static void applyLoggingLevels(ConfigurableEnvironment environment) {
-    String? rootValue; // `root` in any case, like Spring Boot
-    final groups = <String, List<String>>{};
-    final levels = <String, String>{};
-    for (final source in environment.propertySources) {
-      if (source is! EnumerablePropertySource<Object>) {
-        continue;
+    // Bound like Boot's LoggingApplicationListener: groups as lists (a
+    // comma list or `logging.group.x[0]`), levels as a map whose values
+    // must be log levels (anything else fails the start).
+    final binder = Binder.get(environment);
+    final groups = binder
+        .bind(
+          'logging.group',
+          const MapType<String, List<String>>(
+            ClassType<String>(),
+            ListType<String>(ClassType<String>()),
+          ),
+        )
+        .orElse(const {});
+    final values = binder
+        .bind(
+          'logging.level',
+          const MapType<String, String>(
+            ClassType<String>(),
+            ClassType<String>(),
+          ),
+        )
+        .orElse(const {});
+    final levels = <String, SpringLogLevel>{};
+    final invalid = <String>[];
+    for (final MapEntry(key: logger, value: value) in values.entries) {
+      if (value.trim().isEmpty) {
+        continue; // no level: inherited
       }
-      for (final key in source.propertyNames) {
-        final name = _loggingKey(key, 'logging.group.', 'LOGGING_GROUP_');
-        if (name != null && !groups.containsKey(name)) {
-          groups[name] = [
-            for (final logger in '${source.getProperty(key)}'.split(','))
-              if (logger.trim().isNotEmpty) logger.trim(),
-          ];
-          continue;
-        }
-        final logger = _loggingKey(key, 'logging.level.', 'LOGGING_LEVEL_');
-        if (logger != null && logger.toLowerCase() == 'root') {
-          rootValue ??= environment.getProperty(key);
-        } else if (logger != null && !levels.containsKey(logger)) {
-          // Earlier sources win, as in the environment itself.
-          levels[logger] = '${source.getProperty(key)}';
-        }
+      final level = parseSpringLogLevel(value);
+      if (level == null) {
+        invalid.add(
+          'logging.level.$logger: failed to convert to LogLevel (was '
+          '"$value"; use trace, debug, info, warn, error, fatal or off)',
+        );
+      } else {
+        levels.putIfAbsent(logger, () => level);
       }
     }
-    final root = parseSpringLogLevel(
-      rootValue ??
-          environment.getProperty('logging.level.root') ??
-          environment.getProperty('logging.level'),
-    );
+    final scalar = environment.getProperty('logging.level');
+    if (scalar != null &&
+        scalar.trim().isNotEmpty &&
+        parseSpringLogLevel(scalar) == null) {
+      invalid.add(
+        'logging.level: failed to convert to LogLevel (was "$scalar")',
+      );
+    }
+    if (invalid.isNotEmpty) {
+      throw ConfigurationPropertiesBindException(
+        'logging.level',
+        null,
+        invalid,
+      );
+    }
+    // `root` in any case, like Spring Boot; the first (highest) source's.
+    final rootKey = levels.keys
+        .where((name) => name.toLowerCase() == 'root')
+        .firstOrNull;
+    final root = rootKey != null
+        ? levels[rootKey]
+        : parseSpringLogLevel(scalar);
+    levels.removeWhere((name, _) => name.toLowerCase() == 'root');
     if (root != null) {
       SpringLog.level = root;
     }
     SpringLog.resetLevels();
-    for (final MapEntry(key: logger, value: value) in levels.entries) {
-      final level = parseSpringLogLevel(value);
-      if (level != null) {
-        for (final name in groups[logger] ?? [logger]) {
-          SpringLog.setLevel(name, level);
+    for (final MapEntry(key: logger, value: level) in levels.entries) {
+      for (final name in groups[logger] ?? [logger]) {
+        if (name.trim().isNotEmpty) {
+          SpringLog.setLevel(name.trim(), level);
         }
       }
     }
-  }
-
-  static String? _loggingKey(String key, String prefix, String envPrefix) {
-    if (key.startsWith(prefix) && key.length > prefix.length) {
-      return key.substring(prefix.length);
-    }
-    if (key.startsWith(envPrefix) && key.length > envPrefix.length) {
-      return key.substring(envPrefix.length).toLowerCase().replaceAll('_', '.');
-    }
-    return null;
   }
 }
 

@@ -61,7 +61,7 @@ void main() {
           'spring.websocket.client.config.chat.reconnect.delay=10ms',
           'spring.websocket.client.config.chat.reconnect.max-delay=40ms',
         ])
-        .withBean<WebSocketTransport>(sockets);
+        .withBean<WebSocketTransport>(() => sockets);
   });
 
   test(
@@ -388,7 +388,7 @@ void main() {
   test('interceptors and default headers apply to every handshake', () async {
     final interceptor = TokenInterceptor();
     await runner
-        .withBean<WebSocketHandshakeInterceptor>(interceptor)
+        .withBean<WebSocketHandshakeInterceptor>(() => interceptor)
         .withPropertyValues([
           'spring.websocket.client.config.default.default-request-headers.X-Shop=neon',
         ])
@@ -422,7 +422,7 @@ void main() {
         .withUserConfiguration(brokenModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
-        .withBean<WebSocketTransport>(MockWebSocketTransport())
+        .withBean<WebSocketTransport>(() => MockWebSocketTransport())
         .run((context) {
           final failure = '${context.startupFailure}';
           expect(failure, contains('Invalid WebSocket client BrokenSocket'));
@@ -441,7 +441,7 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
-        .withBean<WebSocketTransport>(MockWebSocketTransport())
+        .withBean<WebSocketTransport>(() => MockWebSocketTransport())
         .run((context) {
           expect('${context.startupFailure}', contains('chat.url'));
         });

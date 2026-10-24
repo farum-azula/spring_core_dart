@@ -44,35 +44,47 @@ class ExitCodeEvent extends ApplicationEvent {
   final int exitCode;
 }
 
-/// Spring Boot's `ExitCodeGenerators`: the highest positive (or lowest
-/// negative) code wins; a generator that throws makes it `1` unless another
-/// code was found.
+/// Spring Boot's `ExitCodeGenerators` (3.0+): the generators sorted by
+/// order (`Ordered`, else the order given when adding, stable otherwise);
+/// the first non-zero code wins. A generator that throws gives `1`, which
+/// a later generator's code replaces (as in Boot).
 final class ExitCodeGenerators {
-  final _generators = <ExitCodeGenerator>[];
+  final _generators = <(ExitCodeGenerator, int?)>[];
+
+  /// Adds [generator] with its `@Order` value [order] (used when it is not
+  /// `Ordered`).
+  void add(ExitCodeGenerator generator, [int? order]) =>
+      _generators.add((generator, order));
 
   /// Adds [generators].
   void addAll(Iterable<ExitCodeGenerator> generators) =>
-      _generators.addAll(generators);
+      generators.forEach(add);
 
-  /// Adds a generator that asks each of [mappers] for the code of
-  /// [exception].
-  void addMapped(Object exception, Iterable<ExitCodeExceptionMapper> mappers) =>
-      _generators.addAll([
-        for (final mapper in mappers) _Mapped(exception, mapper),
-      ]);
+  /// Adds a generator that asks [mapper] for the code of [exception].
+  void addMapped(
+    Object exception,
+    ExitCodeExceptionMapper mapper, [
+    int? order,
+  ]) => _generators.add((
+    _Mapped(exception, mapper),
+    OrderComparator.orderOf(mapper, order),
+  ));
 
   /// The exit code of all the generators.
   int get exitCode {
     var exitCode = 0;
-    for (final generator in _generators) {
+    final sorted = OrderComparator.sort<(ExitCodeGenerator, int?)>(
+      _generators,
+      (entry) => OrderComparator.orderOf(entry.$1, entry.$2),
+    );
+    for (final (generator, _) in sorted) {
       try {
-        final value = generator.getExitCode();
-        if ((value > 0 && value > exitCode) ||
-            (value < 0 && value < exitCode)) {
-          exitCode = value;
+        exitCode = generator.getExitCode();
+        if (exitCode != 0) {
+          break;
         }
       } catch (_) {
-        exitCode = exitCode != 0 ? exitCode : 1;
+        exitCode = 1;
       }
     }
     return exitCode;

@@ -75,7 +75,7 @@ class Books implements BookService {
 | Annotation | What it does |
 |---|---|
 | `@Cacheable('books')` | Returns the cached result when there is one; otherwise runs the method and stores the result. |
-| `@CachePut('books', key: '#isbn')` | Always runs the method and stores the result (refreshes the entry). |
+| `@CachePut('books', key: '#isbn')` | Always runs the method and stores the result (refreshes the entry); next to a `@Cacheable` hit only when its `condition` passes (one reading `#result` counts as passing), like Spring. |
 | `@CacheEvict('books', key: '#isbn')` | Removes the entry after the method returned. `allEntries: true` clears the cache, `beforeInvocation: true` evicts before the call (also when it throws). |
 | `@Caching(cacheable: [...], put: [...], evict: [...])` | Several operations on one method. Repeating an annotation works too. |
 | `@CacheConfig(cacheNames: ['books'])` | On the class: default cache names, `keyGenerator`, `cacheManager`, `cacheResolver` for its methods. |
@@ -208,7 +208,7 @@ application declares no `CacheManager` of its own):
 | Property | Default | Meaning |
 |---|---|---|
 | `spring.cache.type` | `simple` | `simple`: caches in memory; `none`: cache nothing (annotations stay, methods always run) |
-| `spring.cache.cache-names` | — | A fixed set of caches, e.g. `books,authors`; an unknown name is then an error. Without it caches are created on first use. |
+| `spring.cache.cache-names` | — | A fixed set of caches, e.g. `books,authors` or a YAML list; an unknown name is then an error. Without it caches are created on first use. |
 | `spring.cache.simple.time-to-live` | none | How long entries live: `10m`, `30s`, `PT1H`, or milliseconds. |
 | `spring.cache.simple.max-size` | none | Maximum entries per cache; the least recently used go first. |
 | `spring.cache.simple.caches.<name>.time-to-live` | — | The same for one cache. |

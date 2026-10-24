@@ -111,9 +111,9 @@ class SpringBuilder implements Builder {
   /// `all`, `interfaces` or `none`).
   final ProxyMode proxyMode;
 
-  /// Whether `aop_proxies: all` skips the proxy classes of beans no
-  /// pointcut of the module can match (build option `aop_prune`, `true` by
-  /// default).
+  /// Whether `aop_proxies: all` skips, in the `@SpringBootApplication`
+  /// output, the proxy classes of beans no pointcut of the application can
+  /// match (build option `aop_prune`, `true` by default).
   final bool pruneProxies;
 
   final Future<String?> Function(AssetId output) _readExistingOutput;
@@ -279,10 +279,13 @@ class SpringBuilder implements Builder {
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     scanner.throwErrors();
 
+    // Any module may import this one, so its beans may be advised by
+    // aspects the build cannot see: no proxy is pruned (only the
+    // @SpringBootApplication output, which knows every module, prunes).
     return ModuleEmitter(
       output,
       dependencies: await _dependencies(buildStep),
-      pruneProxies: pruneProxies,
+      pruneProxies: false,
     ).emit(
       moduleName: variableName,
       variableName: '\$$variableName',
@@ -346,7 +349,13 @@ class SpringBuilder implements Builder {
     final roots = {'lib', directory}
       ..removeWhere((root) => root != 'lib' && p.url.isWithin('lib', root));
     final module = ModuleModel();
-    final assets = await _scannedAssets(buildStep, roots, module);
+    final nested = <AssetId>[];
+    final assets = await _scannedAssets(
+      buildStep,
+      roots,
+      module,
+      nestedAssets: nested,
+    );
 
     final scanner = BeanScanner(module, proxyMode: proxyMode);
     await _scanLibraries(buildStep, scanner, assets);
@@ -359,6 +368,9 @@ class SpringBuilder implements Builder {
       output,
       dependencies: await _dependencies(buildStep),
       pruneProxies: pruneProxies,
+      foreignAdvice: pruneProxies
+          ? await _foreignAdvice(buildStep, scanner, nested)
+          : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
     final source = emitter.emit(
@@ -508,6 +520,59 @@ class SpringBuilder implements Builder {
   }
 
   static const _fingerprintPlaceholder = '00000000';
+
+  // The advice of the application's other modules, for proxy pruning: the
+  // aspects and advisor beans of the nested @ComponentScan modules
+  // ([nested]: their libraries), and whether an auto-configuration may
+  // declare aspects (its libraries mention `AspectMetadata`), which the
+  // build cannot read.
+  Future<ForeignAdvice> _foreignAdvice(
+    BuildStep buildStep,
+    BeanScanner scanner,
+    List<AssetId> nested,
+  ) async {
+    final foreign = ForeignAdvice();
+    final resolver = buildStep.resolver;
+    for (final asset in nested) {
+      if (await resolver.isLibrary(asset)) {
+        scanner.collectAdvice(await resolver.libraryFor(asset), foreign);
+      }
+    }
+    final root = buildStep.inputId.package;
+    final config = await buildStep.packageConfig;
+    for (final package in config.packages) {
+      final id = AssetId(package.name, autoConfigurationLibrary);
+      if (package.name == root ||
+          !await buildStep.canRead(id) ||
+          !await resolver.isLibrary(id)) {
+        continue;
+      }
+      final pending = [await resolver.libraryFor(id)];
+      final seen = <Uri>{};
+      while (pending.isNotEmpty && !foreign.unknown) {
+        final library = pending.removeLast();
+        if (!seen.add(library.uri)) {
+          continue;
+        }
+        final source = await buildStep.readAsString(
+          AssetId.resolve(library.uri),
+        );
+        if (source.contains('AspectMetadata')) {
+          foreign.unknown = true;
+        }
+        for (final fragment in library.fragments) {
+          for (final imported in fragment.importedLibraries) {
+            final uri = imported.uri;
+            if (uri.scheme == 'package' &&
+                uri.pathSegments.first == package.name) {
+              pending.add(imported);
+            }
+          }
+        }
+      }
+    }
+    return foreign;
+  }
 
   // FNV-1a (32 bit) as 8 hex digits: stable across runs and platforms,
   // unlike String.hashCode.
@@ -682,11 +747,14 @@ class SpringBuilder implements Builder {
   /// an overlapping scan already registered). Two `@ComponentScan` files in
   /// one directory ([scanRoot], the input's for a `@ComponentScan`) fail
   /// the build.
+  ///
+  /// [nestedAssets] receives the files left to the nested scans.
   Future<List<AssetId>> _scannedAssets(
     BuildStep buildStep,
     Set<String> roots,
     ModuleModel module, {
     String? scanRoot,
+    List<AssetId>? nestedAssets,
   }) async {
     final input = buildStep.inputId;
     final all = <AssetId>{
@@ -729,6 +797,7 @@ class SpringBuilder implements Builder {
         module.imports.add(scan);
       }
     }
+    nestedAssets?.addAll(all.where((asset) => owned(asset.path)));
     return [
       for (final asset in all)
         if (!owned(asset.path)) asset,
@@ -816,6 +885,22 @@ class SpringBuilder implements Builder {
     List<AssetId> assets,
   ) async {
     final resolver = buildStep.resolver;
+    // Where each public type is declared, to name the import a library
+    // misses (the runtime's public library first, then scanned files).
+    final runtime = AssetId('spring_core_dart', 'lib/spring_core_dart.dart');
+    final libraries = [
+      if (await buildStep.canRead(runtime) && await resolver.isLibrary(runtime))
+        await resolver.libraryFor(runtime),
+      for (final asset in assets)
+        if (await resolver.isLibrary(asset)) await resolver.libraryFor(asset),
+    ];
+    for (final library in libraries) {
+      for (final name in library.exportNamespace.definedNames2.keys) {
+        if (!name.startsWith('_') && !name.endsWith('=')) {
+          scanner.knownTypes.putIfAbsent(name, () => library.uri);
+        }
+      }
+    }
     for (final asset in assets) {
       if (await resolver.isLibrary(asset)) {
         final library = await resolver.libraryFor(asset);

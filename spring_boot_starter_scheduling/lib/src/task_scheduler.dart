@@ -21,10 +21,8 @@ typedef TimerFactory = Timer Function(Duration delay, void Function() callback);
 ///   Reminders(this.scheduler);
 ///   final TaskScheduler scheduler;
 ///
-///   ScheduledTask remind(String text, DateTime at) => scheduler.schedule(
-///     () => print(text),
-///     OneShotTrigger(at),
-///   );
+///   ScheduledTask remind(String text, DateTime at) =>
+///       scheduler.scheduleAt(() => print(text), at);
 ///
 ///   ScheduledTask poll() => scheduler.scheduleWithFixedDelay(
 ///     checkInbox,
@@ -39,6 +37,10 @@ typedef TimerFactory = Timer Function(Duration delay, void Function() callback);
 /// class Reminders {
 ///   Reminders(TaskScheduler scheduler) { this.scheduler = scheduler; }
 ///
+///   ScheduledFuture<?> remind(String text, Instant at) {
+///     return scheduler.schedule(() -> System.out.println(text), at);
+///   }
+///
 ///   ScheduledFuture<?> poll() =>
 ///       scheduler.scheduleWithFixedDelay(this::checkInbox, Duration.ofSeconds(30));
 /// }
@@ -52,6 +54,14 @@ abstract interface class TaskScheduler {
   ScheduledTask schedule(
     ScheduledFunction task,
     Trigger trigger, {
+    String? name,
+  });
+
+  /// Runs [task] once at [startTime] (right away when it is past), like
+  /// Spring's `schedule(Runnable, Instant)` (Dart has no overloads).
+  ScheduledTask scheduleAt(
+    ScheduledFunction task,
+    DateTime startTime, {
     String? name,
   });
 
@@ -78,6 +88,7 @@ abstract interface class TaskScheduler {
 ///
 /// ```dart
 /// scheduler.schedule(sendReminder, OneShotTrigger(DateTime(2026, 12, 31, 18)));
+/// scheduler.scheduleAt(sendReminder, DateTime(2026, 12, 31, 18)); // the same
 /// ```
 ///
 /// Spring (Java):
@@ -216,6 +227,13 @@ final class TimerTaskScheduler implements TaskScheduler, DisposableBean {
     scheduled._scheduleNext();
     return scheduled;
   }
+
+  @override
+  ScheduledTask scheduleAt(
+    ScheduledFunction task,
+    DateTime startTime, {
+    String? name,
+  }) => schedule(task, OneShotTrigger(startTime), name: name);
 
   @override
   ScheduledTask scheduleAtFixedRate(

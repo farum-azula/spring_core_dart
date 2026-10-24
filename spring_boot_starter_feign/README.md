@@ -88,7 +88,9 @@ or an `EventStream<T>` for server-sent events (see below).
 The path is joined to the client's `url` and `path`; without a path
 (`@GetMapping()`) the request goes to the client's `url` and `path` itself
 (`@FeignClient(url: 'https://api.shop.test', path: '/api')` →
-`https://api.shop.test/api`). Mapping annotations
+`https://api.shop.test/api`). A query in the path
+(`@GetMapping('/books?sort=title')`) is sent as written, the parameters of
+the call appended to it. Mapping annotations
 also take `headers: ['X-Shop=${shop.name}']` (Spring's `Name=value`,
 placeholders allowed; server conditions such as `'!X-Debug'` are ignored,
 Feign's `'Name: value'` stops the application), `produces` (the `Accept`
@@ -245,18 +247,24 @@ spring.cloud.openfeign.client.config.catalog.dismiss404=true
 spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
 spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en
 spring.cloud.openfeign.client.config.catalog.follow-redirects=false
+spring.cloud.openfeign.client.config.catalog.retryer=catalogRetryer
+spring.cloud.openfeign.client.config.catalog.error-decoder=com.example.ShopErrors
+spring.cloud.openfeign.client.config.catalog.request-interceptors[0]=requestIds
 spring.cloud.openfeign.client.decode-slash=false
 ```
 
 | Property | Default | Meaning |
 |---|---|---|
-| `url` | — | base URL when `@FeignClient(url:)` is not given |
+| `url` | — | base URL when `@FeignClient(url:)` is not given (or empty); `http://` is put in front of one without a scheme |
 | `read-timeout` | `60s` | the longest wait for data — for the response, then between two chunks of the body — not a limit for the whole call, like Feign's (`10s`, `PT1M`, milliseconds; `0` for none) |
 | `connect-timeout` | `10s` | connection timeout of the default transport (`default` only; `0` for none) |
 | `logger-level` | `none` | `none`, `basic`, `headers`, `full` (see Logging) |
 | `dismiss404` | `false` | a 404 gives `null` (nullable results) or a `ResponseEntity` instead of an exception; a `void` method still throws, like Feign |
-| `default-request-headers.<Name>` | — | a header sent with every request that has none of that name (after the interceptors) |
-| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name (after the interceptors; `a,b` gives two) |
+| `default-request-headers.<Name>` | — | a header sent with every request that has none of that name (after the interceptors; `a,b` or a YAML list gives two values) |
+| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name (after the interceptors; `a,b` or a YAML list gives two) |
+| `retryer` | — | the `Retryer` of the client: a bean name, or a class name matching one bean (see Per-client configuration) |
+| `error-decoder` | — | the `ErrorDecoder` of the client (bean or class name) |
+| `request-interceptors` | — | more `RequestInterceptor`s for the client (a list of bean or class names) |
 | `follow-redirects` | `true` | whether redirects are followed |
 | `spring.cloud.openfeign.client.decode-slash` | `true` | for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: `%2F`) |
 
@@ -269,6 +277,34 @@ prefixes every path. More attributes, as in Spring Cloud OpenFeign:
 | `qualifiers: ['books']` | more names that select the client bean with `@Qualifier('books')` |
 | `primary: false` | the client bean is not `@Primary` (it is by default) |
 | `dismiss404: true` | like the `dismiss404` property |
+| `configuration: [CatalogFeignConfig]` | configuration classes whose beans apply to this client only (see below) |
+
+### Per-client configuration
+
+Like Spring Cloud OpenFeign, `@FeignClient(configuration:)` lists classes
+whose `Retryer`, `ErrorDecoder` and `RequestInterceptor` beans configure
+that client only:
+
+```dart
+@FeignClient('catalog', url: r'${catalog.url}',
+    configuration: [CatalogFeignConfig])
+abstract interface class CatalogClient { ... }
+
+@Configuration()
+class CatalogFeignConfig {
+  @Bean()
+  Retryer catalogRetryer() => const DefaultRetryer(maxAttempts: 3);
+
+  @Bean()
+  RequestInterceptor catalogAuth() =>
+      BasicAuthRequestInterceptor('shop', 's3cret');
+}
+```
+
+The client's own `Retryer` / `ErrorDecoder` win over the application's;
+its interceptors run together with the application's, in `@Order`. Beans
+of a configuration class never reach the other clients. The `retryer`,
+`error-decoder` and `request-interceptors` properties win over both.
 
 ## Errors
 
@@ -320,7 +356,7 @@ interceptors, so a refreshed token reaches the retry.
 
 ```dart
 @Bean()
-Retryer retryer() => const DefaultRetryer(maxAttempts: 3);   // 100 ms, 150 ms, ... up to 1 s
+Retryer retryer() => const DefaultRetryer(maxAttempts: 3);   // 150 ms, 225 ms, ... up to 1 s, like Feign
 ```
 
 ## Interceptors
@@ -353,7 +389,8 @@ header, `removeHeader(name)` first. The interceptors run for every attempt
 of a call (retries too) on a new template; the `default-request-headers`,
 `default-query-parameters` and the default `Accept` come after them, for
 names they did not set. `BasicAuthRequestInterceptor(user, password)` is
-built in too.
+built in too (ISO-8859-1 like Feign's; `encoding: utf8` for other
+characters).
 
 ## Fallback
 
@@ -450,6 +487,16 @@ the responses.
   `Slf4jLogger` logs under the interface's fully qualified class name.
 - Each retry starts from a new template (Feign runs the interceptors again
   on the same one, where header values pile up).
+- `@FeignClient(configuration:)` classes are ordinary `@Configuration()`
+  beans (Dart cannot create a class by reflection, so they are not kept
+  out of the application context as in Spring's child contexts); the
+  starter instead keeps their beans away from the other clients, which is
+  what Spring does when the class is not component-scanned. Only
+  `Retryer`, `ErrorDecoder` and `RequestInterceptor` beans are per client
+  (not `Decoder`, `Encoder`, `Contract`, `Client`, `Logger.Level`).
+- The `retryer`, `error-decoder` and `request-interceptors` properties
+  name beans (by bean name, or by a class name matching exactly one bean);
+  Spring creates the class when there is no bean of it.
 - `primary` and `qualifiers` are read by the generator; there is no
   `<contextId>FeignClient` alias. A method may have several `Map`
   parameters (Feign: one query map and one header map).

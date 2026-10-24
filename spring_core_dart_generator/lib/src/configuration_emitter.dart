@@ -9,7 +9,22 @@ part of 'module_emitter.dart';
 // returned as it is, a prototype is created with them, and a singleton
 // ignores them when one is `null`.
 
+/// The generated marker class of a defaulted `@Bean` parameter left out of
+/// an inter-bean call.
+const absentClass = r'_$Absent';
+
 extension _ConfigurationEmitter on ModuleEmitter {
+  /// `class _$Absent { const _$Absent(); }`, emitted when a full-mode
+  /// `@Bean` method has a defaulted parameter.
+  Class absentMarkerClass() => Class(
+    (c) => c
+      ..docs.add(
+        '/// A defaulted `@Bean` parameter left out of an inter-bean call.',
+      )
+      ..name = absentClass
+      ..constructors.add(Constructor((k) => k..constant = true)),
+  );
+
   /// `(r.dependency<AppConfig>(...) as _$AppConfigConfiguration)._$m(r)`.
   Expression enhancedBeanMethodCall(
     BeanMethodCreation creation,
@@ -30,14 +45,6 @@ extension _ConfigurationEmitter on ModuleEmitter {
   Class configurationClass(ConfigurationClassModel model) {
     final element = model.type.element;
     final withArguments = model.beanMethods.any((m) => m.parameters.isNotEmpty);
-    final parameters = model.constructorParameters;
-    Parameter superParameter(int index, ProxyParameter parameter) => Parameter(
-      (p) => p
-        ..name = parameter.isNamed ? parameter.name : 'p$index'
-        ..toSuper = true
-        ..named = parameter.isNamed
-        ..required = parameter.isNamed && parameter.isRequired,
-    );
     return Class(
       (c) => c
         ..docs.add(
@@ -71,27 +78,14 @@ extension _ConfigurationEmitter on ModuleEmitter {
             ),
         ])
         ..constructors.add(
-          Constructor(
-            (k) => k
-              ..requiredParameters.addAll([
-                Parameter(
-                  (p) => p
-                    ..name = r'_$beanFactory'
-                    ..toThis = true,
-                ),
-                for (final (index, parameter) in parameters.indexed)
-                  if (!parameter.isNamed && parameter.isRequired)
-                    superParameter(index, parameter),
-              ])
-              ..optionalParameters.addAll([
-                for (final (index, parameter) in parameters.indexed)
-                  if (parameter.isNamed || !parameter.isRequired)
-                    superParameter(index, parameter),
-              ])
-              ..initializers.addAll([
-                if (model.constructorName case final name?)
-                  refer('super').property(name).call([]).code,
-              ]),
+          _forwardingConstructor(
+            model.constructorName,
+            model.constructorParameters,
+            Parameter(
+              (p) => p
+                ..name = r'_$beanFactory'
+                ..toThis = true,
+            ),
           ),
         )
         ..methods.addAll([
@@ -106,16 +100,41 @@ extension _ConfigurationEmitter on ModuleEmitter {
   // `foo()` returns `getBeanByName('foo')`; with parameters, the arguments
   // are kept for the creation of the bean while the container looks it up.
   Method _beanMethodOverride(EnhancedBeanMethod method, Element element) {
-    final returnType = _type(method.returnType, element);
-    final lookup = refer(r'_$beanFactory')
+    final returnType = _anyType(method.returnType, element);
+    // Fields through `this.`, locals with `_$` names: a parameter may be
+    // called `arguments` or `_$beanFactory` without shadowing them.
+    final bean = refer('this')
+        .property(r'_$beanFactory')
         .property('getBeanByName')
         .call([
           _str(method.isFactoryBean ? '&${method.beanName}' : method.beanName),
-        ])
-        .asA(returnType);
+        ]);
+    // A method that may return null: its NullBean is returned as null, as
+    // Spring's BeanMethodInterceptor does.
+    final mayBeNull =
+        method.returnType.nullabilitySuffix == NullabilitySuffix.question;
+    final lookup = mayBeNull
+        ? _spring('NullBean')
+              .property('orNull')
+              .call(
+                [bean],
+                {},
+                [
+                  _anyType(
+                    element.library!.typeSystem.promoteToNonNull(
+                      method.returnType,
+                    ),
+                    element,
+                  ),
+                ],
+              )
+        : bean.asA(returnType);
     final hasParameters = method.parameters.isNotEmpty;
     final key = _str(method.beanName);
-    final store = refer(r'_$arguments').index(key).assign(refer('arguments'));
+    final store = refer('this')
+        .property(r'_$arguments')
+        .index(key)
+        .assign(refer(r'_$args'));
     // Spring: "stubbed null arguments just for reference purposes" of a
     // singleton are not used.
     final nullable = method.parameters.any(
@@ -139,7 +158,7 @@ extension _ConfigurationEmitter on ModuleEmitter {
         ..lambda = !hasParameters
         ..body = hasParameters
             ? Block.of([
-                declareFinal('arguments')
+                declareFinal(r'_$args')
                     .assign(
                       literalList([
                         for (final parameter in method.parameters)
@@ -148,7 +167,7 @@ extension _ConfigurationEmitter on ModuleEmitter {
                     )
                     .statement,
                 if (method.isSingleton && nullable) ...[
-                  const Code('if (!arguments.contains(null)) {'),
+                  const Code(r'if (!_$args.contains(null)) {'),
                   store.statement,
                   const Code('}'),
                 ] else
@@ -156,7 +175,11 @@ extension _ConfigurationEmitter on ModuleEmitter {
                 const Code('try {'),
                 lookup.returned.statement,
                 const Code('} finally {'),
-                refer(r'_$arguments').property('remove').call([key]).statement,
+                refer('this')
+                    .property(r'_$arguments')
+                    .property('remove')
+                    .call([key])
+                    .statement,
                 const Code('}'),
               ])
             : lookup.code,
@@ -167,17 +190,25 @@ extension _ConfigurationEmitter on ModuleEmitter {
     EnhancedBeanMethod method,
     ProxyParameter parameter,
     Element element,
-  ) => Parameter(
-    (p) => p
-      ..name = parameter.name
-      ..type = _anyType(parameter.type, element)
-      ..named = parameter.isNamed
-      ..required = parameter.isNamed && parameter.isRequired
-      ..defaultTo = switch (method.defaults[parameter.name]) {
-        final value? => _constant(value, element).code,
-        null => null,
-      },
-  );
+  ) {
+    // A defaulted parameter the caller leaves out is resolved like the
+    // container resolves it (a bean, else the Dart default), so the bean
+    // is the same whoever creates it first: the override marks it absent
+    // instead of passing the Dart default.
+    final defaulted = method.defaults.containsKey(parameter.name);
+    return Parameter(
+      (p) => p
+        ..name = parameter.name
+        ..type = defaulted
+            ? refer('Object?')
+            : _anyType(parameter.type, element)
+        ..named = parameter.isNamed
+        ..required = parameter.isNamed && parameter.isRequired
+        ..defaultTo = defaulted
+            ? refer(absentClass).constInstance([]).code
+            : null,
+    );
+  }
 
   // `_$foo(r)`: the original method, with the arguments of the inter-bean
   // call that is creating the bean, else with the injected ones.
@@ -200,7 +231,7 @@ extension _ConfigurationEmitter on ModuleEmitter {
     ]);
     return Method(
       (m) => m
-        ..returns = _type(method.returnType, element)
+        ..returns = _anyType(method.returnType, element)
         ..name = '_\$${method.methodName}'
         ..requiredParameters.add(
           Parameter(
@@ -213,19 +244,31 @@ extension _ConfigurationEmitter on ModuleEmitter {
         ..body = method.parameters.isEmpty
             ? injected.code
             : Block.of([
-                declareFinal('arguments')
+                declareFinal(r'_$args')
                     .assign(
-                      refer(r'_$arguments')
+                      refer('this')
+                          .property(r'_$arguments')
                           .property('remove')
                           .call([_str(method.beanName)]),
                     )
                     .statement,
-                const Code('if (arguments != null) {'),
+                const Code(r'if (_$args != null) {'),
                 superCall([
                   for (final (index, parameter) in method.parameters.indexed)
-                    refer('arguments')
-                        .index(literalNum(index))
-                        .asA(_anyType(parameter.type, element)),
+                    if (method.defaults.containsKey(parameter.name))
+                      refer(r'_$args')
+                          .index(literalNum(index))
+                          .isA(refer(absentClass))
+                          .conditional(
+                            _lookup(method.arguments[index].point, element),
+                            refer(r'_$args')
+                                .index(literalNum(index))
+                                .asA(_anyType(parameter.type, element)),
+                          )
+                    else
+                      refer(r'_$args')
+                          .index(literalNum(index))
+                          .asA(_anyType(parameter.type, element)),
                 ]).returned.statement,
                 const Code('}'),
                 injected.returned.statement,

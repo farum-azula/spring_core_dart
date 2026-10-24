@@ -216,3 +216,70 @@ class AutoConfigurationModule {
   /// Compatible `spring_boot_dart` versions; `null` means any.
   final String? requires;
 }
+
+/// The property a `@ConfigurationProperties` field or constructor parameter
+/// is bound from, when its Dart name cannot be used, like Spring Boot's
+/// `@Name` (the value is read in dashed form).
+///
+/// ```dart
+/// @ConfigurationProperties('app')
+/// class AppProperties {
+///   AppProperties(@Name('import') this.importSettings);
+///   final String importSettings; // app.import
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// public record AppProperties(@Name("import") String importSettings) {}
+/// ```
+class Name {
+  /// Binds from the property [value].
+  const Name(this.value);
+
+  /// The property name (one element, e.g. `import` or `max-size`).
+  final String value;
+}
+
+/// The unit of a `Duration` property written as a plain number, like Spring
+/// Boot's `@DurationUnit` (milliseconds otherwise). Values with a unit
+/// (`10s`) or in ISO-8601 (`PT10S`) are not affected.
+///
+/// ```dart
+/// @ConfigurationProperties('app')
+/// class AppProperties {
+///   @DurationUnit(ChronoUnit.seconds)
+///   Duration timeout = const Duration(seconds: 30); // app.timeout=60 → 60 s
+/// }
+/// ```
+///
+/// Spring (Java):
+/// `@DurationUnit(ChronoUnit.SECONDS) private Duration timeout;`
+class DurationUnit {
+  /// Plain numbers are in [value].
+  const DurationUnit(this.value);
+
+  /// The unit of plain numbers.
+  final ChronoUnit value;
+}
+
+/// The unit of a `DataSize` property written as a plain number, like
+/// Spring Boot's `@DataSizeUnit` (bytes otherwise).
+///
+/// ```dart
+/// @ConfigurationProperties('app')
+/// class AppProperties {
+///   @DataSizeUnit(DataUnit.megabytes)
+///   DataSize bufferSize = DataSize.ofMegabytes(2); // app.buffer-size=4 → 4 MB
+/// }
+/// ```
+///
+/// Spring (Java):
+/// `@DataSizeUnit(DataUnit.MEGABYTES) private DataSize bufferSize;`
+class DataSizeUnit {
+  /// Plain numbers are in [value].
+  const DataSizeUnit(this.value);
+
+  /// The unit of plain numbers.
+  final DataUnit value;
+}

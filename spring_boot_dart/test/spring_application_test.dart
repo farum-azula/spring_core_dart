@@ -596,7 +596,9 @@ void main() {
         '--logging.level.neon.checkout=debug',
         '--logging.group.payments=neon.card, neon.cash',
         '--logging.level.payments=trace',
-        '--logging.level.neon.catalog=loud', // unknown: ignored
+        '--logging.group.shop[0]=neon.cart',
+        '--logging.group.shop[1]=neon.basket',
+        '--logging.level.shop=error',
       ],
       env: {
         'LOGGING_LEVEL_NEON_CHECKOUT': 'error', // command line wins
@@ -609,8 +611,29 @@ void main() {
       'neon.card': SpringLogLevel.trace,
       'neon.cash': SpringLogLevel.trace,
       'neon.shipping': SpringLogLevel.info,
+      'neon.cart': SpringLogLevel.error,
+      'neon.basket': SpringLogLevel.error,
     });
     expect(SpringLog.levelOf('neon.card.visa'), SpringLogLevel.trace);
+  });
+
+  test('an invalid logging.level value fails the start like Boot\'s '
+      'binding', () {
+    final saved = SpringLog.level;
+    addTearDown(() {
+      SpringLog.level = saved;
+      SpringLog.resetLevels();
+    });
+    expect(
+      () => run(['--db.url=x', '--logging.level.neon.catalog=loud']),
+      throwsA(
+        isA<ConfigurationPropertiesBindException>().having(
+          (e) => e.errors.single,
+          'error',
+          contains('logging.level.neon.catalog'),
+        ),
+      ),
+    );
   });
 
   test('properties win over the command line; initializers run first', () {

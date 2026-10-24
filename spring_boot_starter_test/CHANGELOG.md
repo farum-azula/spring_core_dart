@@ -1,3 +1,8 @@
+## Unreleased
+
+- Breaking: `ApplicationContextRunner.withBean<T>(supplier)` takes a supplier like Boot's `withBean(type, supplier)`: each run gets a new instance (an instance was reused after a previous run destroyed it).
+- `springBootTest` closes its context with `closeAsync()` (asynchronous `@PreDestroy` and lifecycle stops are awaited); `ApplicationContextRunner.runAsync` too.
+
 ## 0.1.7
 
 - `ApplicationContextRunner` attaches relaxed names to its environment, like an application started by `SpringApplication` (`app.read-timeout` finds `app.readTimeout`)

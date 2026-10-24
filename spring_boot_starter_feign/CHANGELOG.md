@@ -1,3 +1,13 @@
+## Unreleased
+
+- `@FeignClient(configuration: [...])`: the `Retryer`, `ErrorDecoder` and `RequestInterceptor` beans of the listed `@Configuration()` classes apply to that client only (and never reach the other clients); properties `retryer`, `error-decoder` and `request-interceptors` of `spring.cloud.openfeign.client.config.<name>` (bean or class names) win over them.
+- Breaking: `default-request-headers` is a `Map<String, List<String>>` and both `default-request-headers` and `default-query-parameters` are bound through the Binder: `X: a,b` and YAML lists (`X[0]`, `X[1]`) give several values (lists were sent as a header `X.0`).
+- Breaking: `DefaultRetryer` waits 150 ms, 225 ms, ... (period × 1.5^attempt) like Feign's `Retryer.Default` (it started at 100 ms).
+- Breaking: `BasicAuthRequestInterceptor` encodes ISO-8859-1 like Feign (`encoding: utf8` for other characters).
+- A client `url` without a scheme gets `http://`; `@FeignClient(url: '')` (or a placeholder resolving to empty) falls back to the `url` property.
+- A query written in a mapping path (`@GetMapping('/items?type=a%20b&flag')`) is sent as written; the call's parameters are appended.
+- Breaking: `FeignClientFactory` looks up the interceptors, error decoder and retryer per client; its `interceptors` / `errorDecoder` / `retryer` arguments are optional overrides.
+
 ## 0.1.7
 
 - `@GetMapping()` without a path calls the `url` and `path` of the client itself.

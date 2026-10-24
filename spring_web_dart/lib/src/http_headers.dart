@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:spring_web_dart/src/media_type.dart';
+
 /// HTTP headers: names are case-insensitive, a name may have several
 /// values, insertion order and the original casing are kept. Like Spring's
 /// `HttpHeaders` (Spring Framework 7: not a `Map`).
@@ -9,6 +11,9 @@ import 'dart:convert';
 ///   ..add('X-Tag', 'a')
 ///   ..add('x-tag', 'b')
 ///   ..contentType = MediaType.applicationJson
+///   ..accept = [MediaType.parse(MediaType.applicationJson)]
+///   ..eTag = 'v1'                  // "v1"
+///   ..lastModified = DateTime.utc(2026, 10, 24)
 ///   ..setBearerAuth(token);
 /// headers['accept'];             // 'application/json'
 /// headers.getAll('X-TAG');       // ['a', 'b']
@@ -24,6 +29,9 @@ import 'dart:convert';
 /// ```java
 /// HttpHeaders headers = new HttpHeaders();
 /// headers.setContentType(MediaType.APPLICATION_JSON);
+/// headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+/// headers.setETag("v1");
+/// headers.setLastModified(Instant.parse("2026-10-24T00:00:00Z"));
 /// headers.setBearerAuth(token);
 /// headers.add("X-Tag", "a");
 /// headers.get("x-tag");
@@ -325,6 +333,198 @@ class HttpHeaders {
   set contentLength(int value) =>
       _setOrRemove(contentLengthHeader, value < 0 ? null : '$value');
 
+  /// The media types of `Accept` (every value, comma lists split), like
+  /// Spring's `getAccept()`; empty when there is none. Throws an
+  /// [InvalidMediaTypeException] for an invalid one.
+  List<MediaType> get accept => [
+    for (final value in getAll(acceptHeader))
+      ...MediaType.parseMediaTypes(value),
+  ];
+
+  /// Sets `Accept` to [mediaTypes] (empty removes it).
+  set accept(List<MediaType> mediaTypes) => _setOrRemove(
+    acceptHeader,
+    mediaTypes.isEmpty ? null : mediaTypes.join(', '),
+  );
+
+  /// The `ETag` as written (quotes included), or `null`.
+  String? get eTag => this[etagHeader];
+
+  /// Sets the `ETag`, quoting it unless it already is (`"v1"` or the weak
+  /// `W/"v1"`), like Spring's `setETag`; `null` removes it.
+  set eTag(String? value) =>
+      _setOrRemove(etagHeader, value == null ? null : _quoteETag(value));
+
+  /// The entity tags of `If-None-Match` (quotes included, `*` as is),
+  /// like Spring's `getIfNoneMatch()`.
+  List<String> get ifNoneMatch => _eTags(ifNoneMatchHeader);
+
+  /// Sets `If-None-Match` to [eTags], quoting each like [eTag] (`*` as
+  /// is); empty removes it.
+  set ifNoneMatch(List<String> eTags) => _setOrRemove(
+    ifNoneMatchHeader,
+    eTags.isEmpty
+        ? null
+        : [for (final tag in eTags) tag == '*' ? tag : _quoteETag(tag)]
+              .join(', '),
+  );
+
+  /// The `Last-Modified` date (UTC), or `null` when there is none; throws
+  /// `ArgumentError` for a value that is not an HTTP date, like Spring's
+  /// `getLastModified()`.
+  DateTime? get lastModified => _date(lastModifiedHeader);
+
+  /// Sets `Last-Modified` as an HTTP date (RFC 1123, second precision);
+  /// `null` removes it.
+  set lastModified(DateTime? value) => _setOrRemove(
+    lastModifiedHeader,
+    value == null ? null : formatDate(value),
+  );
+
+  /// The `Date` (UTC), or `null` when there is none; throws
+  /// `ArgumentError` for a value that is not an HTTP date.
+  DateTime? get date => _date(dateHeader);
+
+  /// Sets `Date` as an HTTP date; `null` removes it.
+  set date(DateTime? value) =>
+      _setOrRemove(dateHeader, value == null ? null : formatDate(value));
+
+  /// The `Content-Disposition`, or `null` when there is none (Spring's
+  /// `getContentDisposition()` gives an empty one).
+  ContentDisposition? get contentDisposition =>
+      switch (this[contentDispositionHeader]) {
+        final value? => ContentDisposition.parse(value),
+        null => null,
+      };
+
+  /// Sets the `Content-Disposition`; `null` removes it.
+  set contentDisposition(ContentDisposition? value) =>
+      _setOrRemove(contentDispositionHeader, value?.toString());
+
+  /// Sets `Content-Disposition: form-data; name=...; filename=...`, like
+  /// Spring's `setContentDispositionFormData`.
+  void setContentDispositionFormData(String name, [String? filename]) =>
+      contentDisposition = ContentDisposition.formData(
+        name: name,
+        filename: filename,
+      );
+
+  /// [value] as an HTTP date (RFC 1123, in GMT), e.g.
+  /// `Sat, 24 Oct 2026 08:00:00 GMT`.
+  static String formatDate(DateTime value) {
+    final utc = value.toUtc();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${_days[utc.weekday - 1]}, ${two(utc.day)} '
+        '${_months[utc.month - 1]} ${utc.year} '
+        '${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)} GMT';
+  }
+
+  /// Reads an HTTP date in the RFC 1123, RFC 850 or asctime format, like
+  /// Spring; `null` when [value] is none of them.
+  static DateTime? parseDate(String value) {
+    final text = value.trim();
+    for (final (format, day, month, year) in _dateFormats) {
+      final match = format.firstMatch(text);
+      if (match == null) {
+        continue;
+      }
+      final monthIndex = _months.indexWhere(
+        (name) => name.toLowerCase() == match[month]!.toLowerCase(),
+      );
+      if (monthIndex < 0) {
+        return null;
+      }
+      var y = int.parse(match[year]!);
+      if (y < 100) {
+        // RFC 850 two-digit years.
+        y += y < 70 ? 2000 : 1900;
+      }
+      final time = match.namedGroup('time')!.split(':');
+      return DateTime.utc(
+        y,
+        monthIndex + 1,
+        int.parse(match[day]!.trim()),
+        int.parse(time[0]),
+        int.parse(time[1]),
+        int.parse(time[2]),
+      );
+    }
+    return null;
+  }
+
+  static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  static final _dateFormats = [
+    // RFC 1123: Sun, 06 Nov 1994 08:49:37 GMT
+    (
+      RegExp(
+        r'^(?:[A-Za-z]{3}, )?(\d{1,2}) ([A-Za-z]{3}) (\d{4}) '
+        r'(?<time>\d{2}:\d{2}:\d{2}) GMT$',
+      ),
+      1,
+      2,
+      3,
+    ),
+    // RFC 850: Sunday, 06-Nov-94 08:49:37 GMT
+    (
+      RegExp(
+        r'^[A-Za-z]+, (\d{2})-([A-Za-z]{3})-(\d{2}) '
+        r'(?<time>\d{2}:\d{2}:\d{2}) GMT$',
+      ),
+      1,
+      2,
+      3,
+    ),
+    // asctime: Sun Nov  6 08:49:37 1994
+    (
+      RegExp(
+        r'^[A-Za-z]{3} ([A-Za-z]{3}) ( ?\d{1,2}) '
+        r'(?<time>\d{2}:\d{2}:\d{2}) (\d{4})$',
+      ),
+      2,
+      1,
+      4,
+    ),
+  ];
+
+  DateTime? _date(String name) {
+    final value = this[name];
+    if (value == null) {
+      return null;
+    }
+    return parseDate(value) ??
+        (throw ArgumentError.value(
+          value,
+          name,
+          'Cannot parse date value "$value" for "$name" header',
+        ));
+  }
+
+  static String _quoteETag(String tag) =>
+      tag.startsWith('"') || tag.startsWith('W/"') ? tag : '"$tag"';
+
+  List<String> _eTags(String name) => [
+    for (final value in getAll(name))
+      for (final match in _eTag.allMatches(value)) match[0]!,
+  ];
+
+  static final _eTag = RegExp(r'\*|(?:W/)?"[^"]*"');
+
   /// Sets `Authorization: Bearer <token>`.
   void setBearerAuth(String token) => set(authorizationHeader, 'Bearer $token');
 
@@ -358,4 +558,183 @@ class HttpHeaders {
 
   @override
   String toString() => toMap().toString();
+}
+
+/// The `Content-Disposition` header, like Spring's `ContentDisposition`:
+/// its [type] (`attachment`, `inline`, `form-data`), [name] and
+/// [filename]. A non-ASCII file name is written as `filename*` (RFC 5987,
+/// UTF-8) and read back from it.
+///
+/// ```dart
+/// headers.contentDisposition = const ContentDisposition.attachment(
+///   filename: 'report.pdf',
+/// );
+/// headers.contentDisposition!.filename; // 'report.pdf'
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// headers.setContentDisposition(
+///     ContentDisposition.attachment().filename("report.pdf").build());
+/// headers.getContentDisposition().getFilename();
+/// ```
+final class ContentDisposition {
+  /// A disposition of [type] (e.g. `attachment`).
+  const ContentDisposition(this.type, {this.name, this.filename});
+
+  /// `attachment` with an optional [filename].
+  const ContentDisposition.attachment({String? filename})
+    : this('attachment', filename: filename);
+
+  /// `inline` with an optional [filename].
+  const ContentDisposition.inline({String? filename})
+    : this('inline', filename: filename);
+
+  /// `form-data` for the part [name], with an optional [filename].
+  const ContentDisposition.formData({required String name, String? filename})
+    : this('form-data', name: name, filename: filename);
+
+  /// Reads a `Content-Disposition` value, like Spring's
+  /// `ContentDisposition.parse`; throws `ArgumentError` for one without a
+  /// type.
+  static ContentDisposition parse(String value) {
+    final parts = _split(value);
+    final type = parts.first.trim();
+    if (type.isEmpty) {
+      throw ArgumentError.value(value, 'value', 'no disposition type');
+    }
+    String? name;
+    String? filename;
+    String? extendedFilename;
+    for (final part in parts.skip(1)) {
+      final eq = part.indexOf('=');
+      if (eq < 0) {
+        continue;
+      }
+      final key = part.substring(0, eq).trim().toLowerCase();
+      final raw = part.substring(eq + 1).trim();
+      switch (key) {
+        case 'name':
+          name = _unquote(raw);
+        case 'filename':
+          filename = _unquote(raw);
+        case 'filename*':
+          extendedFilename = _decodeExtended(raw);
+      }
+    }
+    return ContentDisposition(
+      type.toLowerCase(),
+      name: name,
+      filename: extendedFilename ?? filename,
+    );
+  }
+
+  /// `attachment`, `inline`, `form-data`, ...
+  final String type;
+
+  /// The `name` parameter (form data), or `null`.
+  final String? name;
+
+  /// The `filename` (or `filename*`) parameter, or `null`.
+  final String? filename;
+
+  /// Whether the type is `attachment`.
+  bool get isAttachment => type == 'attachment';
+
+  /// Whether the type is `inline`.
+  bool get isInline => type == 'inline';
+
+  /// Whether the type is `form-data`.
+  bool get isFormData => type == 'form-data';
+
+  @override
+  bool operator ==(Object other) =>
+      other is ContentDisposition &&
+      other.type == type &&
+      other.name == name &&
+      other.filename == filename;
+
+  @override
+  int get hashCode => Object.hash(type, name, filename);
+
+  /// The header value, e.g. `attachment; filename="report.pdf"`.
+  @override
+  String toString() {
+    final buffer = StringBuffer(type);
+    if (name case final name?) {
+      buffer.write('; name="${_escape(name)}"');
+    }
+    if (filename case final filename?) {
+      if (_ascii.hasMatch(filename)) {
+        buffer.write('; filename="${_escape(filename)}"');
+      } else {
+        buffer.write("; filename*=UTF-8''${_encodeExtended(filename)}");
+      }
+    }
+    return buffer.toString();
+  }
+
+  static final _ascii = RegExp(r'^[\x20-\x7e]*$');
+
+  static String _escape(String value) =>
+      value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+
+  static String _unquote(String value) {
+    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+      return value
+          .substring(1, value.length - 1)
+          .replaceAllMapped(RegExp(r'\\(.)'), (m) => m[1]!);
+    }
+    return value;
+  }
+
+  // RFC 5987 attr-char: ALPHA / DIGIT / "!#$&+-.^_`|~".
+  static final _attrChar = RegExp(r"[A-Za-z0-9!#$&+\-.^_`|~]");
+
+  static String _encodeExtended(String value) => [
+    for (final byte in utf8.encode(value))
+      if (byte < 0x80 && _attrChar.hasMatch(String.fromCharCode(byte)))
+        String.fromCharCode(byte)
+      else
+        '%${byte.toRadixString(16).toUpperCase().padLeft(2, '0')}',
+  ].join();
+
+  static String? _decodeExtended(String value) {
+    final first = value.indexOf("'");
+    final second = first < 0 ? -1 : value.indexOf("'", first + 1);
+    if (second < 0) {
+      return null;
+    }
+    final encoding = Encoding.getByName(value.substring(0, first)) ?? utf8;
+    final text = value.substring(second + 1);
+    final bytes = <int>[];
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] == '%' && i + 2 < text.length) {
+        bytes.add(int.parse(text.substring(i + 1, i + 3), radix: 16));
+        i += 2;
+      } else {
+        bytes.addAll(utf8.encode(text[i]));
+      }
+    }
+    return encoding.decode(bytes);
+  }
+
+  static List<String> _split(String value) {
+    final parts = <String>[];
+    var quoted = false;
+    var start = 0;
+    for (var i = 0; i < value.length; i++) {
+      final char = value[i];
+      if (char == r'\' && quoted) {
+        i++;
+      } else if (char == '"') {
+        quoted = !quoted;
+      } else if (char == ';' && !quoted) {
+        parts.add(value.substring(start, i));
+        start = i + 1;
+      }
+    }
+    parts.add(value.substring(start));
+    return parts;
+  }
 }

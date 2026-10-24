@@ -1,5 +1,6 @@
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
+import 'package:spring_core_dart/src/core/convert/data_size.dart';
 import 'package:spring_core_dart/src/core/convert/duration_style.dart';
 import 'package:spring_core_dart/src/core/convert/generic_conversion_service.dart';
 
@@ -75,9 +76,11 @@ class DefaultConversionService extends GenericConversionService {
       // ISO-8601 (`PT1H30M`), like Boot's DurationToStringConverter.
       ..addConverter<Duration, String>(DurationStyle.formatIso)
       ..addConverter<DateTime, String>((source) => source.toIso8601String())
+      // Truncated like Spring's NumberUtils (`1.9` is `1`); NaN and
+      // infinity cannot be converted.
       ..addConverter<num, int>((source) {
-        if (source is double && source != source.truncateToDouble()) {
-          throw ArgumentError.value(source, 'source', 'Not an integer');
+        if (source is double && !source.isFinite) {
+          throw ArgumentError.value(source, 'source', 'Not a finite number');
         }
         return source.toInt();
       })
@@ -95,6 +98,9 @@ class DefaultConversionService extends GenericConversionService {
       // Not trimmed: whitespace can be significant in a pattern.
       ..addConverter<String, RegExp>((s) => RegExp(s))
       ..addConverter<int, Duration>((s) => Duration(milliseconds: s))
+      ..addConverter<String, DataSize>((s) => _map(text(s), DataSize.parse))
+      ..addConverter<int, DataSize>(DataSize.ofBytes)
+      ..addConverter<DataSize, String>((size) => size.toString())
       ..addCollectionConverters<String>()
       ..addCollectionConverters<int>()
       ..addCollectionConverters<double>()
@@ -102,6 +108,7 @@ class DefaultConversionService extends GenericConversionService {
       ..addCollectionConverters<bool>()
       ..addCollectionConverters<BigInt>()
       ..addCollectionConverters<Duration>()
+      ..addCollectionConverters<DataSize>()
       ..addCollectionConverters<Uri>();
   }
 

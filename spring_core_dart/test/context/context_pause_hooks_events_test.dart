@@ -270,12 +270,14 @@ void main() {
 
     tearDown(() => shutdownHookPlatform = original);
 
-    test('a signal closes the context, then ends the process', () {
+    test('a signal closes the context, then ends the process', () async {
       final context = ctx([logged('a')])
         ..refresh()
         ..registerShutdownHook()
         ..registerShutdownHook();
       signal!(143);
+      // closeAsync: the exit comes once the close has finished.
+      await pumpEventQueue();
       expect(context.isClosed, isTrue);
       expect(calls, ['watch', 'unwatch', 'exit 143']);
       expect(log, contains('a:destroy'));

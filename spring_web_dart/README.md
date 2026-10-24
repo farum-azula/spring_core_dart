@@ -83,13 +83,13 @@ its type); then `null` gives an empty string.
 
 | Type | Spring | What |
 |---|---|---|
-| `ResponseEntity<T>` | `ResponseEntity<T>` | status code, headers and body; `ResponseEntity.ok(body)` |
-| `HttpHeaders` | `HttpHeaders` | case-insensitive, several values per name, order and casing kept; `forEach((name, values))`, `toSingleValueMap()`, `contentType`, `location`, `contentLength`, `setBearerAuth`, `setBasicAuth`; name constants `HttpHeaders.contentTypeHeader`, ... |
+| `ResponseEntity<T>` | `ResponseEntity<T>` | status code, headers and body; `ResponseEntity.ok(body)`, `created(uri).body(x)`, `notFound().build()` |
+| `HttpHeaders` | `HttpHeaders` | case-insensitive, several values per name, order and casing kept; `forEach((name, values))`, `toSingleValueMap()`, `contentType`, `accept`, `eTag`, `ifNoneMatch`, `lastModified`, `date`, `contentDisposition`, `location`, `contentLength`, `setBearerAuth`, `setBasicAuth`; name constants `HttpHeaders.contentTypeHeader`, ... |
 | `HttpStatus` | `HttpStatus` | every Spring 7 constant (`notFound`, `unprocessableContent`, `contentTooLarge`, ...) as an `int`; `reasonPhrase`, `series`, `is2xxSuccessful`, `is4xxClientError`, `isError`, ...; `valueOf(404)`, `resolve(599)` |
 | `HttpStatusCode` | `HttpStatusCode` | any code (`statusCode` of responses): `HttpStatusCode.valueOf(599).is5xxServerError` |
 | `HttpStatusSeries` | `HttpStatus.Series` | `informational`, `successful`, `redirection`, `clientError`, `serverError` |
-| `HttpMethod` | `HttpMethod` | `get`, `post`, ...; `value` is `GET`, `parse('post')` |
-| `MediaType` | `MediaType` | `applicationJson`, `textPlain`, ... |
+| `HttpMethod` | `HttpMethod` | `get`, `post`, ...; `value` is `GET`, `parse('POST')` |
+| `MediaType` | `MediaType` | `applicationJson`, `applicationProblemJson`, ...; `parse`, `includes`, `isCompatibleWith` |
 
 ```dart
 final headers = HttpHeaders()
@@ -315,11 +315,21 @@ sockets.failNextConnect();                       // the next connect fails
 - **`HttpHeaders` name constants end in `Header`**
   (`HttpHeaders.contentTypeHeader`, as in `dart:io`), because the typed
   accessors use the plain names (`headers.contentType`); `contentType` is a
-  `String` (`MediaType` holds string constants, not parsed media types).
-  `operator []` gives the first value, `getAll` all of them, and `toMap()`
-  joins several values with `, ` (`toSingleValueMap()` keeps the first).
-- **`HttpMethod.parse`** throws on an unknown method (Spring's
-  `HttpMethod.valueOf` creates one).
+  `String`, `accept` a `List<MediaType>`, `lastModified` / `date` are
+  `DateTime?` (`null` instead of `-1`) and `contentDisposition` is `null`
+  when there is none (Spring: an empty one). `operator []` gives the first
+  value, `getAll` all of them, and `toMap()` joins several values with `, `
+  (`toSingleValueMap()` keeps the first).
+- **`MediaType` constants are `String`s** (Spring's `..._VALUE`
+  constants), so they work in annotations; `MediaType.parse` gives a
+  `MediaType` object (Spring's `parseMediaType`) with `includes`,
+  `isCompatibleWith`, `charset`, `qualityValue`.
+- **`ResponseEntity` builders** end in `body(...)` or `build<T>()`;
+  `ResponseEntity.ok(body)` is a constructor (Spring's `ok()` builder is
+  `ResponseEntity.status(HttpStatus.ok)`).
+- **`HttpMethod.parse`** is case-sensitive like Spring's
+  `HttpMethod.valueOf`, but throws on any other text, `'get'` included
+  (Spring's `valueOf` creates a new method).
 - **Timeouts:** an `HttpRequest` has a `readTimeout` (the longest wait for
   data, Spring's read timeout) and a `timeout` (a deadline for the whole
   exchange, which Spring's request factories do not have).

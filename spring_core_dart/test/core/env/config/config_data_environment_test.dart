@@ -382,7 +382,7 @@ a=2
         isA<ConfigDataLoadException>().having(
           (e) => e.toString(),
           'text',
-          contains('no PropertySourceLoader'),
+          contains('File extension is not known to any PropertySourceLoader'),
         ),
       ),
     );

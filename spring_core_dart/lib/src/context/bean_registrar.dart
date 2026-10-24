@@ -134,6 +134,35 @@ abstract interface class ImportSelector {
   List<BeanModule> selectImports();
 }
 
+/// An [ImportSelector] that runs after every other module and component
+/// has been loaded, like Spring's `DeferredImportSelector` (Spring Boot
+/// imports its auto-configurations with one): its modules can back off
+/// when the application already registered a bean. Deferred selectors run
+/// in `Ordered` / `@Order` order (registration order otherwise); one
+/// selected by a deferred import runs right away.
+///
+/// ```dart
+/// class DefaultsSelector implements DeferredImportSelector, Ordered {
+///   const DefaultsSelector();
+///
+///   @override
+///   int get order => Ordered.lowestPrecedence;
+///
+///   @override
+///   List<BeanModule> selectImports() => [defaultClockModule];
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class DefaultsSelector implements DeferredImportSelector, Ordered {
+///   public String[] selectImports(AnnotationMetadata metadata) {
+///     return new String[] {DefaultClockConfig.class.getName()};
+///   }
+/// }
+/// ```
+abstract interface class DeferredImportSelector implements ImportSelector {}
+
 /// Registers bean definitions for an `@Import`, like Spring's
 /// `ImportBeanDefinitionRegistrar`.
 ///

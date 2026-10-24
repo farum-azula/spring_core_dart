@@ -90,10 +90,8 @@ void main() {
     test('num to int and double', () {
       expect(service.convert<int>(3.0), 3);
       expect(service.convert<double>(3), 3.0);
-      expect(
-        () => service.convert<int>(3.5),
-        throwsA(isA<ConversionFailedException>()),
-      );
+      // Truncated, like Spring's NumberUtils.convertNumberToTargetClass.
+      expect(service.convert<int>(3.5), 3);
     });
   });
 

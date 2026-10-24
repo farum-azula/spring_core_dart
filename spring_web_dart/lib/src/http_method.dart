@@ -2,7 +2,7 @@
 ///
 /// ```dart
 /// HttpMethod.post.value;           // 'POST'
-/// HttpMethod.parse('delete');      // HttpMethod.delete
+/// HttpMethod.parse('DELETE');      // HttpMethod.delete
 /// ```
 ///
 /// Spring (Java):
@@ -38,12 +38,12 @@ enum HttpMethod {
   /// The method as sent on the wire: `GET`, `POST`, ...
   String get value => name.toUpperCase();
 
-  /// The method named [value] (case-insensitive); throws `ArgumentError`
-  /// for an unknown one.
+  /// The method named exactly [value] (`GET`, `POST`, ...: case-sensitive,
+  /// like Spring's `HttpMethod.valueOf`); throws `ArgumentError` for any
+  /// other text (`'get'` too: HTTP methods are case-sensitive).
   static HttpMethod parse(String value) {
-    final key = value.trim().toLowerCase();
     for (final method in values) {
-      if (method.name == key) {
+      if (method.value == value) {
         return method;
       }
     }

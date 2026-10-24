@@ -16,7 +16,7 @@ void main() {
   setUp(() => sockets = MockWebSocketTransport());
 
   ApplicationContextRunner app() =>
-      appContext().withBean<WebSocketTransport>(sockets);
+      appContext().withBean<WebSocketTransport>(() => sockets);
 
   test('connects on first use to the URL of application.properties', () async {
     await app().runAsync((context) async {

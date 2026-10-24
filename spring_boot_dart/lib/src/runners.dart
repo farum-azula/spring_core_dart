@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:spring_core_dart/spring_core_dart.dart';
+
 /// The command-line arguments of a `SpringApplication` run, like Spring
 /// Boot's `ApplicationArguments`; injectable as a bean.
 ///
@@ -13,43 +15,34 @@ import 'dart:async';
 /// }
 /// ```
 class ApplicationArguments {
-  /// Parses [sourceArgs] (`--name=value`, `--flag`, plain arguments).
+  /// Parses [sourceArgs] (`--name=value`, `--flag`, plain arguments; a
+  /// lone `--` ends the options) like Spring Boot's
+  /// `DefaultApplicationArguments`; throws an [ArgumentError] for an
+  /// option without a name (`--=value`).
   ApplicationArguments(List<String> sourceArgs)
-    : sourceArgs = List.unmodifiable(sourceArgs);
+    : sourceArgs = List.unmodifiable(sourceArgs),
+      _source = SimpleCommandLinePropertySource(sourceArgs);
 
   /// The raw arguments.
   final List<String> sourceArgs;
 
+  final SimpleCommandLinePropertySource _source;
+
   /// Names of the `--options`.
-  Set<String> get optionNames => {
-    for (final arg in sourceArgs)
-      if (arg.startsWith('--') && arg.length > 2)
-        arg.substring(2).split('=').first,
-  };
+  Set<String> get optionNames => {..._source.propertyNames};
 
   /// Whether `--name` was given.
-  bool containsOption(String name) => optionNames.contains(name);
+  bool containsOption(String name) => _source.getOptionValues(name) != null;
 
   /// Values of `--name=value` (empty for a bare `--name`), or `null`.
   List<String>? getOptionValues(String name) {
-    final values = <String>[];
-    var found = false;
-    for (final arg in sourceArgs) {
-      if (arg == '--$name') {
-        found = true;
-      } else if (arg.startsWith('--$name=')) {
-        found = true;
-        values.add(arg.substring(name.length + 3));
-      }
-    }
-    return found ? values : null;
+    final values = _source.getOptionValues(name);
+    return values == null ? null : List.unmodifiable(values);
   }
 
-  /// Arguments that are not `--options`.
-  List<String> get nonOptionArgs => [
-    for (final arg in sourceArgs)
-      if (!arg.startsWith('--')) arg,
-  ];
+  /// Arguments that are not `--options` (everything after a lone `--`
+  /// included, the `--` itself not).
+  List<String> get nonOptionArgs => _source.nonOptionArgs;
 }
 
 /// A bean run once the application has started, like Spring Boot's

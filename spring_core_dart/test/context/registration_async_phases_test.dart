@@ -276,7 +276,7 @@ void main() {
       expect(ctx.beanFactory.beanDefinitionNames, ['repo', 'clock']);
       expect(
         ctx.beanFactory.getBeanDefinition('clock').source,
-        'BeanRegistrar',
+        startsWith('BeanRegistrar GreeterRegistrar#'),
       );
     });
 

@@ -1,8 +1,10 @@
 # Fix plan
 
 Open differences from Spring found in reviews: first against Spring
-Framework 6.2 / Spring Boot 3, then (October 2026) against Spring Framework
-7.0, Spring Boot 4.0 and Spring Cloud OpenFeign 5.0 across every package.
+Framework 6.2 / Spring Boot 3, then twice (October 2026) against Spring
+Framework 7.0, Spring Boot 4.0 and Spring Cloud OpenFeign 5.0 across every
+package. The items below are from the second of those (the pre-0.2.0
+review); bugs were confirmed with probe programs.
 Items marked **High** are the ones a Spring developer trips over first.
 Before 1.0 renames are made outright, with no deprecated aliases.
 
@@ -49,31 +51,50 @@ the box, location groups and `config/*/`, relaxed binding in the
 environment (camelCase Feign/WebSocket keys), `@ConfigurationProperties`
 lists, maps and constructor binding, application events, full-mode
 `@Configuration`, conditional beans sharing a name, inferred `@Bean` types.
+Fourth batch: every item of the October 2026 review (container, context,
+configuration, SpEL, generator, AOP, JSON, HTTP), including async
+lifecycle, `BeanRegistrar`, async events, pause/restart, scoped proxies,
+Jakarta `Provider` / `@Resource`, `classpath*:`, SpEL numbers on the web,
+pointcut validation and constructor selection. Fifth batch: every item of
+the pre-0.2.0 review — `@EventListener`
+registration after the singletons, cron on the web, SpEL argument
+conversion, JSON timestamps in seconds, polymorphism, generic classes and
+the Jackson annotations, validation groups and container elements, the new
+post-processor kinds, Boot's environment and config-data items, conditions,
+`EnvironmentPostProcessor`, per-client Feign configuration, the HTTP types,
+proxy pruning across modules, null / function / record / generic beans,
+`args` / `within` by runtime and declaring type, `ProxyFactory`, the
+remaining pointcut designators and `@Lookup` methods.
 
-## How close to Spring (October 2026)
+## How close to Spring (pre-0.2.0 review, October 2026)
 
 Per area: **API** — public names and signatures that match Spring
 (a change forced by Dart counts half); **behaviour** — 15–50 behaviours
 per area a Spring developer relies on, checked in the code and with probe
-tests; **coverage** — share of the commonly used features of the Spring
-counterpart. Estimates, ±5–10 points, measured before those fixes.
+programs; **coverage** — share of the commonly used features of the Spring
+counterpart. Estimates, ±5–10 points; the first review's numbers in
+brackets.
 
 | Area | API | Behaviour | Coverage |
 |---|---|---|---|
-| Container (`beans`) | 86% | 65% | 69% |
-| Context, events, lifecycle | 87% | 65% | 66% |
-| Configuration, resources (`core`) | 91% | 63% | 67% |
-| SpEL | 64% | 67% | 77% |
-| Validation, binding | 84% | 62% | 58% |
-| JSON (vs Jackson) | 70% | 67% | 44% |
-| AOP | 80% | 66% | 66% |
-| Annotations, generator | 91% | 77% | 73% |
-| `spring_boot_dart` | 67% | 60% | 56% |
-| `spring_web_dart` | 73% | 55% | 45% |
-| Feign starter | 77% | 60% | 52% |
-| WebSocket starter (declarative by design) | 62% | 64% | 56% |
-| Logging starter | 70% | 66% | 50% |
-| Scheduling starter | 71% | 78% | 55% |
-| Cache starter | 90% | 81% | 63% |
-| Test starter | 73% | 70% | 58% |
-| **All, weighted by code size** | **81%** | **67%** | **64%** |
+| Container (`beans`) | 88% (86) | 80% (65) | 72% (69) |
+| Context, events, lifecycle | 88% (87) | 75% (65) | 69% (66) |
+| Configuration, resources (`core`) | 92% (91) | 84% (63) | 71% (67) |
+| SpEL | 72% (64) | 85% (67) | 82% (77) |
+| Validation, binding | 86% (84) | 79% (62) | 61% (58) |
+| JSON (vs Jackson) | 72% (70) | 75% (67) | 47% (44) |
+| AOP | 82% (80) | 74% (66) | 71% (66) |
+| Annotations, generator | 92% (91) | 83% (77) | 76% (73) |
+| `spring_boot_dart` | 70% (67) | 76% (60) | 60% (56) |
+| `spring_web_dart` | 74% (73) | 72% (55) | 47% (45) |
+| Feign starter | 78% (77) | 74% (60) | 55% (52) |
+| WebSocket starter (declarative by design) | 64% (62) | 72% (64) | 58% (56) |
+| Logging starter | 72% (70) | 74% (66) | 52% (50) |
+| Scheduling starter | 73% (71) | 80% (78) | 58% (55) |
+| Cache starter | 90% (90) | 85% (81) | 65% (63) |
+| Test starter | 74% (73) | 76% (70) | 60% (58) |
+| **All, weighted by code size** | **84%** (81) | **78%** (67) | **67%** (64) |
+
+## Open
+
+Nothing open.

@@ -115,8 +115,11 @@ void main() {
 
   test('HttpMethod', () {
     expect(HttpMethod.post.value, 'POST');
-    expect(HttpMethod.parse('delete'), HttpMethod.delete);
-    expect(HttpMethod.parse(' PATCH '), HttpMethod.patch);
+    expect(HttpMethod.parse('DELETE'), HttpMethod.delete);
+    expect(HttpMethod.parse('PATCH'), HttpMethod.patch);
+    // Case-sensitive like Spring's HttpMethod.valueOf: 'delete' is not DELETE.
+    expect(() => HttpMethod.parse('delete'), throwsArgumentError);
+    expect(() => HttpMethod.parse(' PATCH '), throwsArgumentError);
     expect(() => HttpMethod.parse('FETCH'), throwsArgumentError);
     expect('${HttpMethod.get}', 'GET');
   });

@@ -31,8 +31,9 @@ final class _NeverRetry implements Retryer {
 }
 
 /// Feign's `Retryer.Default`: up to [maxAttempts] attempts, waiting
-/// [period] × 1.5^(attempt − 1), at most [maxPeriod] (or until the
-/// server's `Retry-After`).
+/// [period] × 1.5^attempt after failed attempt `attempt` (150 ms, 225 ms,
+/// ... with the default 100 ms, as in Feign), at most [maxPeriod] (or
+/// until the server's `Retry-After`).
 class DefaultRetryer implements Retryer {
   /// Retries with growing pauses.
   const DefaultRetryer({
@@ -41,7 +42,7 @@ class DefaultRetryer implements Retryer {
     this.maxAttempts = 5,
   });
 
-  /// The first pause.
+  /// The base of the pauses: the first one is 1.5 × [period].
   final Duration period;
 
   /// The longest pause.
@@ -63,8 +64,10 @@ class DefaultRetryer implements Retryer {
         delay = Duration.zero;
       }
     } else {
+      // Feign counts the attempt before computing the interval:
+      // period × 1.5^(attempt + 1 − 1).
       var micros = period.inMicroseconds.toDouble();
-      for (var i = 1; i < attempt; i++) {
+      for (var i = 0; i < attempt; i++) {
         micros *= 1.5;
       }
       delay = Duration(microseconds: micros.round());

@@ -324,13 +324,28 @@ int _weekday(int year, int month, int day) =>
 
 /// The values of one field as a bit set.
 final class _Bits {
-  _Bits(this._bits, this.min, this.max);
+  _Bits(this._values, this.min, this.max);
 
-  final int _bits; // bit n set = value n allowed (values up to 59)
+  // _values[n] = value n allowed (values up to 59). A list rather than the
+  // bits of an int: dart2js shifts are 32-bit, so `1 << 45` is lost on the
+  // web.
+  final List<bool> _values;
   final int min;
   final int max;
 
-  bool contains(int value) => value >= 0 && (_bits >> value) & 1 == 1;
+  bool contains(int value) =>
+      value >= 0 && value < _values.length && _values[value];
+
+  /// The values allowed by this field or [other].
+  _Bits union(_Bits other) => _Bits(
+    List.generate(
+      _values.length,
+      (v) => _values[v] || other.contains(v),
+      growable: false,
+    ),
+    min,
+    max,
+  );
 
   int get first => nextFrom(min)!;
 
@@ -381,7 +396,7 @@ _Bits _parseBits(
   bool allowQuestionMark = false,
   bool dayOfWeek = false,
 }) {
-  var bits = 0;
+  final values = List.filled(max + 1, false);
   for (final part in field.split(',')) {
     if (part.isEmpty) {
       throw const FormatException('empty list element');
@@ -424,13 +439,16 @@ _Bits _parseBits(
       to = slash >= 0 ? max : from;
     }
     for (var v = from; v <= to; v += step) {
-      bits |= 1 << v;
+      values[v] = true;
     }
   }
-  if (dayOfWeek && bits & 1 == 1) {
-    bits = (bits | 1 << 7) & ~1; // 0 is Sunday, like 7
+  if (dayOfWeek && values[0]) {
+    // 0 is Sunday, like 7
+    values
+      ..[0] = false
+      ..[7] = true;
   }
-  return _Bits(bits, min, max);
+  return _Bits(values, min, max);
 }
 
 /// A day field (day of month or day of week): values and Quartz-style
@@ -497,7 +515,7 @@ final class _DayField {
         specials.add(parseSpecial(element));
       } else {
         final bits = parseValues(element);
-        values = _Bits((values?._bits ?? 0) | bits._bits, bits.min, bits.max);
+        values = values?.union(bits) ?? bits;
       }
     }
     return _DayField(values, specials, valueOf);

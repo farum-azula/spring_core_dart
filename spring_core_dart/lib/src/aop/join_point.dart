@@ -68,6 +68,10 @@ final class MethodSignature {
     this.targetAnnotations = const [],
     this.annotationTypes = const [],
     this.targetAnnotationTypes = const [],
+    this.implementingTypes = const [],
+    this.implementingTypeAnnotations,
+    this.implementingTypeAnnotationTypes,
+    this.isProtected = false,
   });
 
   /// The member name, e.g. `add`.
@@ -119,6 +123,36 @@ final class MethodSignature {
 
   /// Class names of [targetAnnotations] (see [annotationTypes]).
   final List<String> targetAnnotationTypes;
+
+  /// The class whose body runs for the member (the bean class, or the
+  /// superclass or mixin it inherits the member from), then its
+  /// supertypes. Empty means `[targetType, ...targetTypes]`.
+  ///
+  /// `within(Base)` matches a member whose body is in `Base`, as AspectJ's
+  /// `within` selects join points by lexical scope: an inherited method of
+  /// `Base` matches `within(Base)`, not `within(Sub)`.
+  final List<String> implementingTypes;
+
+  /// Const annotations on the class of [implementingTypes] (for
+  /// `@within`); `null` when it is the bean class ([targetAnnotations]).
+  final List<Object>? implementingTypeAnnotations;
+
+  /// Class names of [implementingTypeAnnotations]; `null` when it is the
+  /// bean class ([targetAnnotationTypes]).
+  final List<String>? implementingTypeAnnotationTypes;
+
+  /// Whether the member is annotated `@protected` (`package:meta`), the
+  /// closest Dart has to Java's `protected` (`execution(protected ...)`).
+  final bool isProtected;
+
+  /// The class whose body runs for the member, for `within`.
+  String get implementingType =>
+      implementingTypes.isEmpty ? targetType : implementingTypes.first;
+
+  /// [implementingType] and its supertypes, for `within(Type+)`.
+  List<String> get implementingTypeHierarchy => implementingTypes.isEmpty
+      ? [targetType, ...targetTypes]
+      : implementingTypes;
 
   /// `Greeter.greet(..)`.
   String toShortString() => '$declaringType.$name(..)';

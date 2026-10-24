@@ -140,7 +140,7 @@ a missing URL or one that does not start with `ws://` / `wss://`.
 | `reconnect.max-delay` | `30s` | The longest wait |
 | `reconnect.jitter` | `0` | A random part added to or taken from each wait (scaled by the multiplier too; never below `delay` nor above `max-delay`) |
 | `reconnect.max-retries` | none | Attempts in a row before giving up |
-| `default-request-headers.<Name>` | — | Headers sent with every handshake (not in browsers) |
+| `default-request-headers.<Name>` | — | Headers sent with every handshake (not in browsers); `a,b` or a YAML list gives several values |
 
 ```properties
 spring.websocket.client.config.default.connect-timeout=5s
@@ -200,7 +200,7 @@ await const ApplicationContextRunner()
     .withAutoConfiguration(springBootAutoConfiguration)
     .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
     .withPropertyValues(['chat.url=ws://chat.test/ws'])
-    .withBean<WebSocketTransport>(sockets)
+    .withBean<WebSocketTransport>(() => sockets)
     .runAsync((context) async {
       final chat = context.getBean<ChatSocket>();
       final messages = <ChatMessage>[];

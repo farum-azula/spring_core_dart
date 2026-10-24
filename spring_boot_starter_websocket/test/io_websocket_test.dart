@@ -49,7 +49,7 @@ void main() {
           'spring.websocket.client.config.chat.reconnect-delay=10ms',
           'spring.websocket.client.config.chat.default-request-headers.X-Shop=neon',
         ])
-        .withBean<WebSocketTransport>(IoWebSocketTransport())
+        .withBean<WebSocketTransport>(() => IoWebSocketTransport())
         .runAsync((context) async {
           final chat = context.getBean<ChatSocket>();
           final replies = StreamController<ChatMessage>();

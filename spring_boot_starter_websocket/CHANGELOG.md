@@ -1,3 +1,7 @@
+## Unreleased
+
+- Breaking: `WebSocketClientConfig.defaultRequestHeaders` is a `Map<String, List<String>>` bound through the Binder: `X: a,b` and YAML lists (`X[0]`) give several header values.
+
 ## 0.1.7
 
 - `spring.websocket.client.config.*` keys with relaxed names: `connectTimeout`, `reconnect.maxRetries`, `defaultRequestHeaders.X-Shop`, environment variables

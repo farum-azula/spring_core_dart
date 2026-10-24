@@ -270,12 +270,22 @@ final class AspectMetadata<A extends Object> {
   /// Creates metadata with the aspect's [advice] methods and named
   /// [pointcuts]; [typeName] is the aspect's class name as written in
   /// qualified references (`AuditAspect.calculator()`), `'$A'` by default.
+  ///
+  /// [typeTests] and [argumentAnnotations] are the runtime type tests the
+  /// aspect's pointcuts need (`args(String)`, `@args(Audited)`, see
+  /// `ExpressionPointcut`); [perClause] is the `@Aspect` instantiation
+  /// model (`perthis(...)` / `pertarget(...)`, `null` for a singleton).
   AspectMetadata({
     List<AspectAdvice<A>> advice = const [],
     Map<String, String> pointcuts = const {},
     String? typeName,
+    Map<String, bool Function(Object? value)> typeTests = const {},
+    Map<String, Object? Function(Object? value)> argumentAnnotations = const {},
+    this.perClause,
   }) : advice = List.unmodifiable(advice),
        pointcuts = Map.unmodifiable(pointcuts),
+       typeTests = Map.unmodifiable(typeTests),
+       argumentAnnotations = Map.unmodifiable(argumentAnnotations),
        typeName = typeName ?? '$A';
 
   /// The advice methods, in declaration order.
@@ -288,6 +298,19 @@ final class AspectMetadata<A extends Object> {
   /// The aspect's class name (written by the generator, so it survives
   /// minified release builds).
   final String typeName;
+
+  /// Runtime type tests by simple type name, for `args(Type)` (AspectJ
+  /// tests the argument with `instanceof`).
+  final Map<String, bool Function(Object? value)> typeTests;
+
+  /// The annotation of a type (by simple name) that a value's runtime
+  /// class carries, or `null`, for `@args(Annotation)`.
+  final Map<String, Object? Function(Object? value)> argumentAnnotations;
+
+  /// `perthis(pointcut)` / `pertarget(pointcut)`: one aspect instance per
+  /// proxy / target bean (the aspect bean must be a prototype); `null` for
+  /// a singleton aspect.
+  final String? perClause;
 }
 
 /// Runs one [AspectAdvice] of an aspect bean obtained per call (so lazy
@@ -317,13 +340,24 @@ final class AspectMetadata<A extends Object> {
 final class AspectAdviceInterceptor implements MethodInterceptor {
   /// Creates an interceptor running [advice] on the bean that [aspect]
   /// returns.
-  AspectAdviceInterceptor(this.advice, this.aspect);
+  AspectAdviceInterceptor(this.advice, Object Function() aspect)
+    : _aspectFor = ((_) => aspect());
+
+  /// Creates an interceptor running [advice] on the aspect [aspectFor]
+  /// returns for each call (per-instance aspects: `perthis` / `pertarget`).
+  AspectAdviceInterceptor.forInvocation(
+    this.advice,
+    Object Function(MethodInvocation invocation) aspectFor,
+  ) : _aspectFor = aspectFor;
 
   /// The advice method to run.
   final AspectAdvice<Object> advice;
 
-  /// Looks up the aspect bean (called on every invocation).
-  final Object Function() aspect;
+  // Looks up the aspect for a call (on every invocation).
+  final Object Function(MethodInvocation invocation) _aspectFor;
+
+  /// The aspect [invocation] runs the advice on.
+  Object aspectFor(MethodInvocation invocation) => _aspectFor(invocation);
 
   /// Runs the advice for [invocation]; [bindings] are the advice
   /// parameters the pointcut bound for this call.
@@ -337,7 +371,7 @@ final class AspectAdviceInterceptor implements MethodInterceptor {
   ]) {
     final joinPoint = _AdviceJoinPoint(invocation);
     Object? run(Object? value) =>
-        advice.invoke(aspect(), joinPoint, value, bindings);
+        advice.invoke(_aspectFor(invocation), joinPoint, value, bindings);
     switch (advice.kind) {
       case AdviceKind.around:
         return run(null);

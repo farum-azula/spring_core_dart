@@ -101,9 +101,10 @@ tasks, servers); the listener goes away when the context closes. It
 listens through `dart:io` and does nothing on the web.
 
 `SpringApplication.exit(context)` closes the context and returns the exit
-code, like Boot's: the highest non-zero code of the `ExitCodeGenerator`
-beans (and of the generators passed as the second argument), `1` when a
-generator throws. A code other than `0` is also published as an
+code, like Boot 3+: the generators passed as the second argument and the
+`ExitCodeGenerator` beans, sorted by order (`Ordered`, `@Order`), give the
+first non-zero code; a generator that throws gives `1` unless a later one
+has a code. A code other than `0` is also published as an
 `ExitCodeEvent` before the context closes.
 
 ```dart
@@ -230,7 +231,35 @@ Dart default value, or `null` when nullable; a required non-nullable one
 without any of them fails the start (`pool.url: no value bound for the
 required constructor parameter 'url' of PoolProperties ...`).
 `Binder.get(environment).bind('app.hosts', ListType<String>(...))` binds
-outside of a properties class.
+outside of a properties class (`BindResult.map` / `ifBound` / `orElseGet` /
+`orElseThrow`, and a `BindHandler` told about each property).
+
+More of Boot's binding:
+
+- `@ConfigurationProperties('pool')` on a `@Bean` method binds the object
+  it returns, also a class of another package (the generator writes its
+  introspection); `@Validated()` on the method validates it.
+- `@Name('import')` binds a field or constructor parameter from another
+  property name; `@DurationUnit(ChronoUnit.seconds)` /
+  `@DataSizeUnit(DataUnit.megabytes)` give plain numbers a unit (`DataSize`
+  properties read `10MB`, `512KB`).
+- Environment variables bind nested objects under dashed names
+  (`APP_MAIN_SERVER_HOST` → `app.main-server.host`).
+- Validation: a `Validator` bean named `configurationPropertiesValidator`
+  checks every bound object it supports, `@Validated()` classes are checked
+  against their constraints, and a properties class that is itself a
+  `Validator` validates itself.
+
+`SpringApplication(environmentPostProcessors: [...])` customizes the
+environment before the context exists (Boot's `EnvironmentPostProcessor`):
+one ordered before `EnvironmentPostProcessor.configDataOrder` runs before
+the config files are read (it can add imports, profiles, sources), the
+others after them.
+
+A banner is printed at startup (`SpringBootBanner`, a `classpath:banner.txt`
+or `spring.banner.location`, or `SpringApplication(banner:)`);
+`spring.main.banner-mode` / `bannerMode:` is `console` (default), `log` or
+`off`.
 
 A `Validator` (`defaultValidator`, a `BeanValidator`) and a
 `methodValidationPostProcessor` (method validation of `@Validated` beans)
@@ -264,9 +293,14 @@ class Catalog {
 | Property | Default | Meaning |
 |---|---|---|
 | `spring.jackson.property-naming-strategy` | `LOWER_CAMEL_CASE` | `SNAKE_CASE`, `UPPER_SNAKE_CASE`, `UPPER_CAMEL_CASE`, `KEBAB_CASE`, `LOWER_CASE`, `LOWER_DOT_CASE` |
-| `spring.jackson.default-property-inclusion` | `always` | `non_null`, `non_empty` |
+| `spring.jackson.default-property-inclusion` | `always` | `non_null`, `non_absent`, `non_empty`, `non_default` |
 | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
-| `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.jackson.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` | `DateTime` / `Duration` as milliseconds |
+| `spring.jackson.deserialization.accept-float-as-int` | `true` | `1.5` into an `int` truncates; `false` rejects it |
+| `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.jackson.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` | `DateTime` as epoch seconds with the fraction (Jackson 3) |
+| `spring.jackson.datatype.datetime.write-durations-as-timestamps` (or `serialization.`) | `false` | `Duration` as seconds |
+| `spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds` (or `serialization.`) | `true` | `false`: timestamps in milliseconds |
+| `spring.jackson.datatype.datetime.read-date-timestamps-as-nanoseconds` (or `deserialization.`) | `true` | integer timestamps are seconds; `false`: milliseconds |
+| `spring.jackson.mapper.default-view-inclusion` | `false` | properties without `@JsonView` are written with a view |
 | `spring.jackson.serialization.indent-output` | `false` | pretty-print |
 | `spring.jackson.mapper.sort-properties-alphabetically` | `true` | properties sorted by JSON name, constructor parameters first (Jackson 3's / Boot 4's order); `false`: declaration order |
 | `spring.jackson.time-zone` | each date in its own zone | `UTC` or a fixed offset such as `+02:00` (no named zones: Dart has no tz database) |
@@ -276,6 +310,17 @@ Any other `spring.jackson.*` key (Boot binds Jackson's feature flags,
 ignored. Time zones are `UTC` / `Z` or a fixed offset: Dart has no time zone
 database, so a named zone such as `Europe/Berlin` fails the startup with a
 message saying so.
+
+`JsonMapperBuilderCustomizer` beans (Boot 4's) change the builder after
+the properties are applied:
+
+```dart
+@Bean()
+JsonMapperBuilderCustomizer indented() =>
+    JsonMapperBuilderCustomizer.of(
+      (builder) => builder.enable(SerializationFeature.indentOutput),
+    );
+```
 
 `objectMapperFromProperties(environment)` builds the same mapper by hand.
 
@@ -306,11 +351,17 @@ The generator of every application that depends on the library — directly
 or transitively — finds these modules and passes them to the generated
 `springApplication`; nothing is listed by hand. They are registered after
 the application's beans, so `@ConditionalOnMissingBean` backs off when the
-application declares its own bean. Also: `@ConditionalOnBean`,
-`@ConditionalOnProperty`, `@ConditionalOnMissingBean.named('...')`. Like
-Boot 3.4+, beans declared with `autowireCandidate: false` or
-`defaultCandidate: false` count for neither `@ConditionalOnBean` nor
-`@ConditionalOnMissingBean`.
+application declares its own bean. Also: `@ConditionalOnBean` (by type
+or `.named('...')`), `@ConditionalOnMissingBean.named('...')`,
+`@ConditionalOnSingleCandidate`, `@ConditionalOnProperty` (with `prefix:`,
+several names with `.names([...])`), `@ConditionalOnBooleanProperty`,
+`@ConditionalOnExpression` (SpEL, placeholders resolved first) and
+`@ConditionalOnResource`. Like Boot 3.4+, beans declared with
+`autowireCandidate: false` or `defaultCandidate: false` count for neither
+`@ConditionalOnBean` nor `@ConditionalOnMissingBean`. With `--debug` (or
+`debug=true`) the condition evaluation report (positive and negative
+matches, `ConditionEvaluationReport`) is logged at INFO after the refresh
+or a failed start.
 
 Auto-configurations are registered in Boot's order
 (`AutoConfigurationSorter`): by name, then `order`
@@ -449,11 +500,13 @@ starter:
 ```properties
 logging.level.root=info
 logging.level.neon.checkout=debug          # and every neon.checkout.* logger
-logging.group.payments=neon.card,neon.cash # a log group
+logging.group.payments=neon.card,neon.cash # a log group (or a YAML list)
 logging.level.payments=trace
 ```
 
-`LOGGING_LEVEL_NEON_CHECKOUT=debug` (an environment variable) works too.
+`LOGGING_LEVEL_NEON_CHECKOUT=debug` (an environment variable) works too. A
+value that is no level (`trace`, `debug`, `info`, `warn`, `error`, `fatal`,
+`off`) fails the start, like Boot's binding.
 
 ## Context initializers and test properties
 
@@ -647,6 +700,12 @@ are read asynchronously too.
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |
 | The shutdown hook is registered by default and runs when the JVM exits | Off by default (`spring.main.register-shutdown-hook=true` turns it on); only on SIGINT / SIGTERM (then `exit(130)` / `exit(143)`); the listener keeps the process alive until the context closes | Dart has no exit hooks, and a signal listener is an open handle that would keep a finished program running |
+| `EnvironmentPostProcessor`s listed in `META-INF/spring.factories` | `SpringApplication(environmentPostProcessors: [...])`; ordered by `Ordered` around config data (`EnvironmentPostProcessor.configDataOrder`) | No class path to scan |
+| `@DurationUnit(ChronoUnit.X)`, `@DataSizeUnit(DataUnit.X)` | The same with Dart enums (`ChronoUnit.seconds`, `DataUnit.megabytes`; no months / years) | Dart naming; `Duration` has no calendar units |
+| `BindHandler.onFailure` returns a replacement value or rethrows | `onFailure(name, error)` returns whether the failure counts (`false` leaves the property unbound) | Errors are collected and reported together |
+| `JsonMapperBuilderCustomizer` gets Jackson's `JsonMapper.Builder` | It gets the core `JsonMapperBuilder` (naming, inclusion, time zone, features, serializers, modules); Jackson's other builder methods are missing | Only what the Dart mapper supports |
+| The condition evaluation report explains each outcome (`found bean 'x'`, `@ConditionalOnProperty (a=b) matched`) | It names each condition and whether it matched; a configuration class's conditions are listed under its key | Conditions are plain Dart objects |
+| The banner is printed to `System.out`; `banner.txt` may use `${application.version}`, `${AnsiColor.*}` | `print` (`spring.main.banner-mode=log` logs it); `banner.txt` gets `${spring-boot.version}`, `${spring-boot.formatted-version}` and environment placeholders | Dart has no manifest version or ANSI property source |
 | `@AutoConfiguration(before:, after:)` and `@AutoConfigureOrder` on the class | `before`, `after` and `order` of `@AutoConfigurationModule` (a module is the unit; classes can be named in them) | The generator discovers modules, not classes |
 
 ## Not yet

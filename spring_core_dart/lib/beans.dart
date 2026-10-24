@@ -29,6 +29,7 @@ export 'package:spring_core_dart/src/beans/factory_bean.dart';
 export 'package:spring_core_dart/src/beans/interface_proxy.dart';
 export 'package:spring_core_dart/src/beans/introspection.dart';
 export 'package:spring_core_dart/src/beans/lifecycle_callbacks.dart';
+export 'package:spring_core_dart/src/beans/null_bean.dart';
 export 'package:spring_core_dart/src/beans/object_provider.dart';
 export 'package:spring_core_dart/src/beans/type_info.dart';
 export 'package:spring_core_dart/src/beans/post_processors.dart';

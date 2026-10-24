@@ -120,6 +120,7 @@ class InjectionPoint {
     this.allowEmpty = false,
     this.lazy,
     this.fallbackToType = false,
+    this.exactType,
   });
 
   /// A copy for a constructor or `@Bean` method parameter: a Dart default
@@ -139,6 +140,7 @@ class InjectionPoint {
     defaultValue: defaultValue,
     lazy: lazy,
     fallbackToType: fallbackToType,
+    exactType: exactType,
     allowEmpty:
         collectionsMayBeEmpty &&
         defaultValue == null &&
@@ -163,6 +165,7 @@ class InjectionPoint {
           lazy: lazy,
           allowEmpty: allowEmpty,
           fallbackToType: fallbackToType,
+          exactType: exactType,
         );
 
   /// How the value is looked up (single bean, collection, value, ...).
@@ -203,6 +206,10 @@ class InjectionPoint {
   /// no bean has the field or setter name (Spring's
   /// `fallbackToDefaultTypeMatch`).
   final bool fallbackToType;
+
+  /// For a single bean of a function or record type: that type ([type] is
+  /// then `Function` or `Record`).
+  final DartType? exactType;
 }
 
 /// A constructor or method argument.
@@ -289,6 +296,7 @@ class ConstructorCreation extends Creation {
     this.constructorName,
     this.arguments, {
     this.configuration,
+    this.lookup,
     this.alternatives = const [],
   });
 
@@ -301,6 +309,10 @@ class ConstructorCreation extends Creation {
   /// For a full-mode `@Configuration` class: the generated subclass that is
   /// created instead (its constructor takes the bean factory first).
   final ConfigurationClassModel? configuration;
+
+  /// For a class with `@Lookup` methods: the generated subclass that is
+  /// created instead (its constructor takes the bean factory first).
+  final LookupClassModel? lookup;
 
   /// The other `@Autowired(required: false)` constructors, fewer
   /// parameters last: the constructor above is called when the beans of
@@ -512,6 +524,87 @@ class ConfigurationClassModel {
   final List<EnhancedBeanMethod> beanMethods = [];
 }
 
+/// The generated subclass of a bean class with `@Lookup` methods: each
+/// one returns a bean of the container per call (Spring's lookup method
+/// injection, done there by a CGLIB subclass).
+///
+/// ```dart
+/// // Input:
+/// @Component()
+/// abstract class CommandManager {
+///   @Lookup()
+///   Command createCommand();
+/// }
+///
+/// // Output:
+/// class _$CommandManagerLookup extends CommandManager {
+///   _$CommandManagerLookup(this._$beanFactory) : super();
+///   final BeanFactory _$beanFactory;
+///
+///   @override
+///   Command createCommand() => this._$beanFactory.getBean<Command>();
+/// }
+/// // ...and in the bean definition:
+/// create: (r) => _$CommandManagerLookup(r),
+/// ```
+///
+/// Spring (Java):
+///
+/// ```java
+/// // CglibSubclassingInstantiationStrategy subclasses the bean class; its
+/// // LookupOverrideMethodInterceptor calls beanFactory.getBean(...).
+/// ```
+class LookupClassModel {
+  /// Creates the model.
+  LookupClassModel({
+    required this.className,
+    required this.type,
+    required this.constructorName,
+    required this.constructorParameters,
+    required this.isBase,
+    required this.methods,
+  });
+
+  /// The generated subclass, e.g. `_$CommandManagerLookup`.
+  final String className;
+
+  /// The bean class.
+  final InterfaceType type;
+
+  /// The super constructor; `null` for the unnamed one.
+  final String? constructorName;
+
+  /// Parameters of the super constructor, forwarded as super parameters.
+  final List<ProxyParameter> constructorParameters;
+
+  /// Whether the bean class is `base` (the subclass is then emitted
+  /// `final`; a subclass proxy in the same library may still extend it).
+  final bool isBase;
+
+  /// The overridden methods.
+  final List<LookupMethod> methods;
+}
+
+/// One `@Lookup` method of a [LookupClassModel].
+class LookupMethod {
+  /// Creates the model.
+  LookupMethod({
+    required this.name,
+    required this.beanName,
+    required this.returnType,
+  });
+
+  /// The method name.
+  final String name;
+
+  /// The bean returned (`@Lookup('name')`); `null` looks the bean up by
+  /// [returnType].
+  final String? beanName;
+
+  /// The declared return type (nullable: `null` when no bean matches).
+  final DartType returnType;
+}
+
 /// One `@Bean` method overridden by a [ConfigurationClassModel].
 class EnhancedBeanMethod {
   /// Creates the model.
@@ -536,8 +629,9 @@ class EnhancedBeanMethod {
   /// The bean the override returns.
   final String beanName;
 
-  /// The declared return type.
-  final InterfaceType returnType;
+  /// The declared return type (nullable for a method that may return
+  /// `null`, a function or record type for such beans).
+  final DartType returnType;
 
   /// The method's parameters (types and kinds).
   final List<ProxyParameter> parameters;
@@ -1043,13 +1137,120 @@ class AdviceModel {
 /// ```
 class AspectModel {
   /// Creates an aspect model.
-  AspectModel(this.advice, this.pointcuts);
+  AspectModel(
+    this.advice,
+    this.pointcuts, {
+    this.perClause,
+    this.typeTests = const {},
+    this.argumentAnnotations = const {},
+    this.introductions = const [],
+  });
 
   /// Advice methods in declaration order.
   final List<AdviceModel> advice;
 
   /// Named pointcuts: method name to pointcut expression.
   final Map<String, String> pointcuts;
+
+  /// `perthis(...)` / `pertarget(...)` of `@Aspect('...')`; `null` for a
+  /// singleton aspect.
+  final String? perClause;
+
+  /// Types named in `args(...)` of the aspect's expressions, by the name
+  /// written there: the runtime tests the argument against them (AspectJ
+  /// matches `args` by the runtime type of the argument).
+  final Map<String, InterfaceType> typeTests;
+
+  /// Annotation names in `@args(...)` of the aspect's expressions; the
+  /// emitter writes, for each, which scanned classes carry it.
+  final Set<String> argumentAnnotations;
+
+  /// `@DeclareParents` fields of the aspect.
+  final List<IntroductionModel> introductions;
+}
+
+/// The aspects and advisor beans of the other modules of an application,
+/// for proxy pruning: a bean of one module may be advised by an aspect of
+/// another.
+///
+/// The `@SpringBootApplication` output knows every module of the
+/// application at build time (its scan, the nested `@ComponentScan`
+/// modules it imports and the auto-configurations); a `@ComponentScan`
+/// module does not (any other module may import it), so it is never
+/// pruned.
+///
+/// ```dart
+/// final foreign = ForeignAdvice()
+///   ..aspects.add(('AuditAspect', auditAspectModel));
+/// ModuleEmitter(output, foreignAdvice: foreign).emit(...);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// // No equivalent: Spring creates proxies at runtime, once every advisor
+/// // of the context is known.
+/// ```
+class ForeignAdvice {
+  /// Aspects of the other modules, with the aspect class name.
+  final aspects = <(String, AspectModel)>[];
+
+  /// Whether another module declares an advisor bean (which may match
+  /// anything).
+  bool advisors = false;
+
+  /// Whether another module may declare advice the build cannot read (an
+  /// auto-configuration with aspects); nothing is pruned then.
+  bool unknown = false;
+}
+
+/// A `@DeclareParents` field of an aspect: proxies of the beans whose class
+/// matches [typePattern] also implement [interfaceType], forwarding its
+/// members to one [defaultImpl] instance per proxy (Spring's
+/// `DeclareParentsAdvisor`).
+///
+/// ```dart
+/// // Input:
+/// @DeclareParents('Orders+', defaultImpl: DefaultUsageTracked)
+/// static UsageTracked? mixin;
+/// // Output, in the proxy of Orders:
+/// class _$OrdersProxy implements Orders, UsageTracked, Advised {
+///   @override
+///   int get useCount =>
+///       (this._invoker.introduction(0) as UsageTracked).useCount;
+/// }
+/// ```
+///
+/// Spring (Java):
+///
+/// ```java
+/// @DeclareParents(value = "com.x.Orders+",
+///     defaultImpl = DefaultUsageTracked.class)
+/// public static UsageTracked mixin;
+/// ```
+class IntroductionModel {
+  /// Creates the model.
+  IntroductionModel({
+    required this.aspectType,
+    required this.typePattern,
+    required this.interfaceType,
+    required this.defaultImpl,
+    required this.members,
+  });
+
+  /// Name of the declaring aspect class.
+  final String aspectType;
+
+  /// The `@DeclareParents` type pattern (`Orders+`, `*Service`).
+  final String typePattern;
+
+  /// The introduced interface.
+  final InterfaceType interfaceType;
+
+  /// The class created per proxy (`defaultImpl:`).
+  final InterfaceType defaultImpl;
+
+  /// The members of [interfaceType] the proxy forwards.
+  final List<ProxyMember> members;
 }
 
 /// A parameter of a proxied method.
@@ -1162,6 +1363,18 @@ class ProxyMember {
     required this.annotations,
   });
 
+  /// The class whose body runs for the member and its supertypes, when it
+  /// is not the target class (an inherited member): `within` and
+  /// `@within` match the type that declares the code, as in AspectJ.
+  List<String> implementingTypes = const [];
+
+  /// Annotations of `implementingTypes.first`, for `@within`.
+  List<DartObject> implementingTypeAnnotations = const [];
+
+  /// Whether the member is `@protected` (package:meta), for
+  /// `execution(protected ...)`.
+  bool isProtected = false;
+
   /// Method, getter or setter.
   final ProxyMemberKind kind;
 
@@ -1267,6 +1480,10 @@ class ProxyModel {
   /// Set when the proxy is a subclass of the target (the bean itself,
   /// created by the container) instead of a wrapper around it.
   final SubclassProxy? subclass;
+
+  /// `@DeclareParents` introductions the proxy class implements, in the
+  /// order of their runtime index.
+  final introductions = <IntroductionModel>[];
 }
 
 /// A subclass proxy: the generated class extends the bean class, forwards
@@ -1404,6 +1621,8 @@ class BeanModel {
     this.aspect,
     this.proxy,
     this.scopedProxy,
+    this.valueType,
+    this.nullable = false,
   });
 
   /// Source element, for error messages.
@@ -1516,6 +1735,13 @@ class BeanModel {
   /// `BeanDefinition.scopedProxy`, finding the current instance on every
   /// call.
   final ProxyModel? scopedProxy;
+
+  /// The function or record type of a `@Bean` method returning one
+  /// ([type] is then `Function` or `Record`).
+  final DartType? valueType;
+
+  /// Whether the `@Bean` method may return `null` (a `NullBean` then).
+  final bool nullable;
 
   /// Every injection point, for `BeanDefinition.dependencies`.
   ///
@@ -1720,10 +1946,11 @@ class IntrospectedProperty {
   /// The property name.
   final String name;
 
-  /// Non-nullable declared type.
-  final InterfaceType type;
+  /// Non-nullable declared type: a class type, or a type parameter of a
+  /// generic introspected class.
+  final DartType type;
 
-  /// Whether the declared type is nullable.
+  /// Whether the declared type is nullable (always for a type parameter).
   final bool nullable;
 
   /// Whether the property has a setter.
@@ -1989,6 +2216,10 @@ class ModuleModel {
   /// library URI and type name).
   final lazyProxies = <String, ProxyModel>{};
 
+  /// Every public class of the scanned libraries (for `@args(...)`: which
+  /// classes carry an annotation).
+  final classes = <ClassElement>[];
+
   final _proxyNames = <String>{};
 
   /// [name], or `name2`, `name3`... if a generated class of the module
@@ -2114,6 +2345,8 @@ class ConstructorParameterModel {
     required this.isNamed,
     required this.isRequired,
     required this.annotations,
+    this.hasDefault = false,
+    this.defaultValue,
   });
 
   /// The parameter name.
@@ -2130,6 +2363,13 @@ class ConstructorParameterModel {
 
   /// User annotations on the parameter.
   final List<DartObject> annotations;
+
+  /// Whether it declares a default value.
+  final bool hasDefault;
+
+  /// Its default value when generated code can re-create it (set for
+  /// introspected constructors).
+  final DartObject? defaultValue;
 }
 
 /// The `fromJson` of an introspected class (`factory Book.fromJson(Map

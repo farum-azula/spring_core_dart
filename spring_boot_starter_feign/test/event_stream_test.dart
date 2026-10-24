@@ -30,7 +30,7 @@ void main() {
         .withPropertyValues([
           'spring.cloud.openfeign.client.config.default.event-stream.reconnect-delay=10ms',
         ])
-        .withBean<HttpTransport>(server);
+        .withBean<HttpTransport>(() => server);
   });
 
   test('typed events with await for, Accept and Cache-Control', () async {
@@ -106,7 +106,9 @@ void main() {
         '/ticks',
       ).respondEvents([const ServerSentEvent('two', id: '2')])
       ..when(HttpMethod.get, '/ticks').respond(204);
-    await runner.withBean<RequestInterceptor>(tokens).runAsync((context) async {
+    await runner.withBean<RequestInterceptor>(() => tokens).runAsync((
+      context,
+    ) async {
       final ticks = await context.getBean<OrdersClient>().ticks().toList();
       expect(ticks, ['one', 'two']);
       final requests = server.requests;
@@ -221,7 +223,7 @@ void main() {
         .withUserConfiguration(badStreamModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(MockHttpTransport())
+        .withBean<HttpTransport>(() => MockHttpTransport())
         .run((context) {
           final failure = '${context.startupFailure}';
           expect(failure, contains('Invalid Feign client BadStreamClient'));

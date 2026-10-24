@@ -412,7 +412,15 @@ void main() {
           create: (_) => _BrokenServer(),
         ),
       ]);
-      expect(c.refresh, throwsStateError);
+      // Like Spring: wrapped in an ApplicationContextException.
+      expect(
+        c.refresh,
+        throwsA(
+          isA<ApplicationContextException>()
+              .having((e) => e.message, 'message', contains("'broken'"))
+              .having((e) => e.cause, 'cause', isA<StateError>()),
+        ),
+      );
       expect(log, ['a:start', 'a:stop']);
     });
   });

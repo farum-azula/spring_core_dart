@@ -23,7 +23,7 @@ void main() {
   Future<void> withStreams(
     Future<void> Function(WikimediaStreams streams) body,
   ) => appContext()
-      .withBean<HttpTransport>(server)
+      .withBean<HttpTransport>(() => server)
       .withPropertyValues([
         'spring.cloud.openfeign.client.config.wikimedia.event-stream.reconnect-delay=1ms',
       ])

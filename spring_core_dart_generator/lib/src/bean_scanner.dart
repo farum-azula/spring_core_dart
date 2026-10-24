@@ -19,6 +19,7 @@ import 'package:spring_core_dart_generator/src/constraint_checker.dart';
 
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
+part 'lookup_scanning.dart';
 
 // Annotations are matched by name in `package:spring_core_dart` (the
 // generator depends on the runtime only for its pointcut parser, see
@@ -39,6 +40,7 @@ final _dependsOn = _spring('DependsOn');
 final _description = _spring('Description');
 final _order = _spring('Order');
 final _autowired = _spring('Autowired');
+final _lookup = _spring('Lookup');
 final _value = _spring('Value');
 final _postConstruct = _spring('PostConstruct');
 final _preDestroy = _spring('PreDestroy');
@@ -58,6 +60,9 @@ final _configurable = _spring('Configurable');
 final _eventListener = _spring('EventListener');
 final _beanMethodAnnotation = _spring('BeanMethodAnnotation');
 final _jsonCreator = _spring('JsonCreator');
+final _jsonSubTypes = _spring('JsonSubTypes');
+final _jsonTypeInfo = _spring('JsonTypeInfo');
+final _jsonView = _spring('JsonView');
 
 // `@ConfigurationProperties` from spring_boot_dart (matched by URL, so the
 // generator does not depend on that package): constructor binding.
@@ -84,6 +89,8 @@ final _adviceAnnotations = {
   'afterReturning': _spring('AfterReturning'),
   'afterThrowing': _spring('AfterThrowing'),
 };
+final _declareParents = _spring('DeclareParents');
+final _advisor = _spring('Advisor');
 final _joinPoint = _spring('JoinPoint');
 final _proceedingJoinPoint = _spring('ProceedingJoinPoint');
 
@@ -99,7 +106,14 @@ const _caching = TypeChecker.fromUrl('$_cacheAnnotations#Caching');
 /// Like Spring's `AbstractAutoProxyCreator.isInfrastructureClass`, which
 /// skips `Advice`, `Pointcut`, `Advisor` and `AopInfrastructureBean`.
 /// Members every generated AOP proxy declares (from `Advised`).
-const _advisedMembers = {'aopTarget', 'aopAdvisors'};
+const _advisedMembers = {
+  'aopTarget',
+  'aopAdvisors',
+  'addAdvisor',
+  'removeAdvisor',
+  'addAdvice',
+  'removeAdvice',
+};
 
 String _reservedMessage(String? type, String member) =>
     '$type.$member has the name of a member every proxy declares '
@@ -167,8 +181,11 @@ enum ProxyMode {
 // Pointcut designators whose body may name an advice parameter, and the
 // text between their parentheses.
 final _bindingDesignator = RegExp(
-  r'(?<![@\w.])(@annotation|@within|@target|this|target|args)\s*\(([^()]*)\)',
+  r'(?<![@\w.])(@annotation|@within|@target|@args|this|target|args)\s*\(([^()]*)\)',
 );
+
+// `args(...)` / `@args(...)` and their bodies.
+final _argsDesignator = RegExp(r'(?<![\w.])(@?args)\s*\(([^()]*)\)');
 
 // A reference to a named pointcut: `name()` or `Type.name()`.
 final _namedReference = RegExp(r'(?<![@\w.])([A-Za-z_][\w.]*)\s*\(\s*\)');
@@ -472,6 +489,9 @@ class BeanScanner {
   /// every independent problem (see [throwErrors]).
   void scanLibrary(LibraryElement library) {
     for (final element in library.classes) {
+      if (element.isPublic) {
+        module.classes.add(element);
+      }
       collectErrors(() {
         if (_configurable.hasAnnotationOf(element)) {
           _scanConfigurable(element);
@@ -484,12 +504,46 @@ class BeanScanner {
           return;
         }
         final annotation = _component.firstAnnotationOf(element);
+        // Like Spring's scan (isCandidateComponent), an abstract class is
+        // no candidate unless it has @Lookup methods: it is skipped, not
+        // an error.
+        if (element.isAbstract && !hasLookupMethods(element)) {
+          return;
+        }
         if (scan.isCandidate(element, isComponent: annotation != null)) {
           scanClass(element, annotation: annotation);
         }
       });
     }
     _rejectUnsupportedTargets(library);
+  }
+
+  /// Adds the aspects and advisor beans of [library] (a library of another
+  /// module of the application) to [into], for proxy pruning; nothing is
+  /// added to [module]. A class the scanner cannot read marks [into]
+  /// unknown (its own build reports the error).
+  ///
+  /// ```dart
+  /// final foreign = ForeignAdvice();
+  /// scanner.collectAdvice(nestedLibrary, foreign);
+  /// ```
+  void collectAdvice(LibraryElement library, ForeignAdvice into) {
+    for (final element in library.classes) {
+      try {
+        if (_aspectModel(element) case final aspect?) {
+          into.aspects.add((element.name!, aspect));
+        }
+        if (_component.hasAnnotationOf(element) &&
+            (_advisor.isAssignableFrom(element) ||
+                _beanMethods(element.thisType).any(
+                  (entry) => _advisor.isAssignableFromType(entry.$1.returnType),
+                ))) {
+          into.advisors = true;
+        }
+      } on InvalidGenerationSource {
+        into.unknown = true;
+      }
+    }
   }
 
   /// Validation errors of the declarations scanned so far, in scan order.
@@ -640,11 +694,13 @@ class BeanScanner {
         element,
       );
     }
-    if (element.isAbstract) {
-      _fail('Bean class $className must not be abstract.', element);
-    }
-    if (element.typeParameters.isNotEmpty) {
-      _fail('Generic bean class $className is not supported.', element);
+    if (element.isAbstract && !hasLookupMethods(element)) {
+      _fail(
+        'Bean class $className must not be abstract (an abstract class is '
+        'a bean only when it has @Lookup methods for the container to '
+        'implement).',
+        element,
+      );
     }
 
     // Evaluated once for the class, its @Bean methods, its property
@@ -666,7 +722,15 @@ class BeanScanner {
     }
     module.propertySources.addAll(_propertySources(element, classConditions));
 
-    final type = element.thisType;
+    // A generic class is registered under its raw type (type arguments
+    // instantiated to their bounds), like Spring's definition of the raw
+    // class; its members are read through that type.
+    final type = element.typeParameters.isEmpty
+        ? element.thisType
+        : element.library.typeSystem.instantiateInterfaceToBounds(
+            element: element,
+            nullabilitySuffix: NullabilitySuffix.none,
+          );
     final explicitName = annotation == null
         ? null
         : ConstantReader(annotation).peek('name')?.stringValue;
@@ -681,7 +745,13 @@ class BeanScanner {
     // A constructor-bound @ConfigurationProperties class is created from
     // properties, not beans (see _boundConstructor).
     final constructors = _boundConstructor(element) == null
-        ? _selectConstructors(element)
+        ? [
+            for (final constructor in _selectConstructors(element))
+              List<ConstructorElement>.of(type.constructors).firstWhere(
+                (c) => c.name == constructor.name,
+                orElse: () => constructor,
+              ),
+          ]
         : const <ConstructorElement>[];
     final constructor = constructors.firstOrNull;
     final classLazy = _isLazy(element);
@@ -700,8 +770,14 @@ class BeanScanner {
         constructor != null &&
             isFullConfiguration(element) &&
             beanMethods.any((m) => !m.$1.isStatic)
-        ? configurationClassModel(element, constructor)
+        ? configurationClassModel(element, type, constructor)
         : null;
+    final lookup = lookupClassModel(
+      element,
+      type,
+      constructor,
+      fullConfiguration: configuration != null,
+    );
     final owner = BeanModel(
       element: element,
       source: source,
@@ -715,6 +791,7 @@ class BeanScanner {
               _constructorName(constructor!),
               arguments,
               configuration: configuration,
+              lookup: lookup,
               alternatives: [
                 for (final alternative in constructors.skip(1))
                   ConstructorAlternative(
@@ -755,12 +832,18 @@ class BeanScanner {
           : null,
     );
     if (constructors.length > 1 &&
-        (configuration != null || owner.proxy?.subclass != null)) {
+        (configuration != null ||
+            lookup != null ||
+            owner.proxy?.subclass != null)) {
+      final kind = configuration != null
+          ? 'full-mode @Configuration'
+          : lookup != null
+          ? '@Lookup methods'
+          : 'AOP proxy';
       _fail(
-        '$className is created as a generated subclass '
-        '(${configuration != null ? 'full-mode @Configuration' : 'AOP proxy'}'
-        '), which calls one constructor: mark that one @Autowired() '
-        'instead of several @Autowired(required: false).',
+        '$className is created as a generated subclass ($kind), which '
+        'calls one constructor: mark that one @Autowired() instead of '
+        'several @Autowired(required: false).',
         element,
       );
     }
@@ -877,19 +960,16 @@ class BeanScanner {
 
   // [automatic]: a class of the same package used by an introspected class
   // (a property or constructor parameter type); skipped silently when it
-  // cannot be introspected.
+  // cannot be introspected. A generic class (`Page<T>`) is described with
+  // its type parameters erased, plus a `specialize` callback the emitter
+  // writes for `Page<Book>` (see ModuleEmitter._introspection).
   void _scanIntrospected(ClassElement element, {bool automatic = false}) {
     final name = _requireName(element);
-    if (element.isPrivate || element.typeParameters.isNotEmpty) {
+    if (element.isPrivate) {
       if (automatic) {
         return;
       }
-      _fail(
-        element.isPrivate
-            ? '@Introspected class $name must be public.'
-            : 'Generic @Introspected class $name is not supported.',
-        element,
-      );
+      _fail('@Introspected class $name must be public.', element);
     }
     if (!_introspectedClasses.add(element)) {
       return;
@@ -912,14 +992,26 @@ class BeanScanner {
           continue;
         }
         final fieldType = field.type;
-        if (fieldType is! InterfaceType || field.getter == null) {
+        // A type parameter of the class itself (`T content`) too.
+        final ownTypeParameter =
+            fieldType is TypeParameterType &&
+            element.typeParameters.contains(fieldType.element);
+        if ((fieldType is! InterfaceType && !ownTypeParameter) ||
+            field.getter == null) {
           continue;
         }
         properties[fieldName] = IntrospectedProperty(
           name: fieldName,
-          type: _requireInterfaceType(fieldType, field, stripNullable: true),
+          type: fieldType is TypeParameterType
+              ? fieldType.element.instantiate(
+                  nullabilitySuffix: NullabilitySuffix.none,
+                )
+              : _requireInterfaceType(fieldType, field, stripNullable: true),
           declaredType: fieldType,
-          nullable: fieldType.nullabilitySuffix == NullabilitySuffix.question,
+          // `T` may be nullable (`Page<Book?>`).
+          nullable:
+              ownTypeParameter ||
+              fieldType.nullabilitySuffix == NullabilitySuffix.question,
           writable: field.setter != null,
           annotations: [
             ..._userAnnotations(field),
@@ -1007,6 +1099,41 @@ class BeanScanner {
         }
       }
     }
+    _introspectJsonTypes(element, [
+      ..._userAnnotations(element),
+      for (final property in properties.values) ...property.annotations,
+      for (final parameter
+          in dataConstructor?.parameters ?? const <ConstructorParameterModel>[])
+        ...parameter.annotations,
+    ]);
+  }
+
+  // The classes JSON annotations name are needed at runtime: the subtypes
+  // of `@JsonSubTypes` and the `defaultImpl` of `@JsonTypeInfo` (to read
+  // them), and the view classes of `@JsonView` (to compare views that
+  // extend other views).
+  void _introspectJsonTypes(ClassElement user, List<DartObject> annotations) {
+    void scan(DartObject? type, {required bool automatic}) {
+      if (type?.toTypeValue() case final InterfaceType listed
+          when listed.element is ClassElement) {
+        _scanIntrospected(listed.element as ClassElement, automatic: automatic);
+      }
+    }
+
+    for (final annotation in annotations) {
+      final reader = ConstantReader(annotation);
+      if (_jsonSubTypes.isExactlyType(annotation.type!)) {
+        for (final subType in reader.read('value').listValue) {
+          scan(subType.getField('value'), automatic: false);
+        }
+      } else if (_jsonTypeInfo.isExactlyType(annotation.type!)) {
+        scan(annotation.getField('defaultImpl'), automatic: false);
+      } else if (_jsonView.isExactlyType(annotation.type!)) {
+        for (final view in reader.read('value').listValue) {
+          scan(view, automatic: true);
+        }
+      }
+    }
   }
 
   void _introspectUsed(DartType type, ClassElement user) {
@@ -1065,6 +1192,13 @@ class BeanScanner {
             isNamed: parameter.isNamed,
             isRequired: parameter.isRequired,
             annotations: _userAnnotations(parameter),
+            hasDefault: parameter.hasDefaultValue,
+            defaultValue: switch (parameter.hasDefaultValue
+                ? parameter.computeConstantValue()
+                : null) {
+              final value? when _isRecreatable(value) => value,
+              _ => null,
+            },
           ),
       ],
     );
@@ -1236,11 +1370,26 @@ class BeanScanner {
     if (method.typeParameters.isNotEmpty) {
       _fail('Generic @Bean method $methodName is not supported.', method);
     }
-    final declaredType = method.returnType;
-    if (declaredType is! InterfaceType ||
-        declaredType.nullabilitySuffix != NullabilitySuffix.none) {
+    final returned = method.returnType;
+    _requireDefinedType(returned, method, '${_describe(method)} returns');
+    // Like Spring, a @Bean method may return null (the bean is a NullBean)
+    // and any type: a function or record type is registered as it is,
+    // with `Function` / `Record` as its class.
+    final nullable = returned.nullabilitySuffix == NullabilitySuffix.question;
+    final nonNull = method.library.typeSystem.promoteToNonNull(returned);
+    final valueType = nonNull is FunctionType || nonNull is RecordType
+        ? nonNull
+        : null;
+    final typeProvider = method.library.typeProvider;
+    final declaredType = switch (nonNull) {
+      FunctionType() => typeProvider.functionType,
+      RecordType() => typeProvider.recordType,
+      _ => nonNull,
+    };
+    if (declaredType is! InterfaceType) {
       _fail(
-        '@Bean method $methodName must return a non-nullable class type.',
+        '@Bean method $methodName must return a class, function or record '
+        'type.',
         method,
       );
     }
@@ -1255,7 +1404,9 @@ class BeanScanner {
         method,
       );
     }
-    final returnType = inferredBeanType(method, declaredType);
+    final returnType = valueType == null
+        ? inferredBeanType(method, declaredType)
+        : declaredType;
     final inferred = returnType != declaredType;
     for (final type in {declaredType, returnType}) {
       _requirePublicType(
@@ -1279,6 +1430,13 @@ class BeanScanner {
     final scope = _scopeOf(method);
     final arguments = _arguments(method.formalParameters, creation: true);
     final factoryObjectTypes = _factoryObjectTypes(returnType);
+    // `@ConfigurationProperties` on a `@Bean` method binds the returned
+    // object (also a class of another package): it needs introspection.
+    if (_configurationProperties.hasAnnotationOf(method)) {
+      if (returnType.element case final ClassElement element) {
+        _scanIntrospected(element, automatic: true);
+      }
+    }
     return BeanModel(
       element: method,
       source: '${owner.source}.$methodName',
@@ -1314,7 +1472,7 @@ class BeanScanner {
                 configuration,
                 method,
                 beanName: name,
-                declaredType: declaredType,
+                declaredType: returned,
                 isFactoryBean: factoryObjectTypes != null,
                 isSingleton: scope == 'singleton',
                 arguments: arguments,
@@ -1323,6 +1481,8 @@ class BeanScanner {
       ),
       scope: scope,
       scopedProxy: _scopedProxyOf(method, returnType),
+      valueType: valueType,
+      nullable: nullable,
       lazy: _isLazy(method) ?? classLazy ?? scan.lazyInit,
       primary: _primary.hasAnnotationOf(method),
       fallback: _fallback.hasAnnotationOf(method),
@@ -1424,7 +1584,293 @@ class BeanScanner {
       for (final (method, kind, annotation) in adviceMethods)
         _adviceModel(method, kind, annotation, pointcuts, element.name!),
     ];
-    return AspectModel(advice, pointcuts);
+    final expressions = [
+      for (final item in advice) item.pointcut,
+      ...pointcuts.values,
+    ];
+    final (typeTests, annotationNames) = _argumentTypes(
+      element,
+      expressions,
+      advice,
+    );
+    return AspectModel(
+      advice,
+      pointcuts,
+      perClause: _perClause(element),
+      typeTests: typeTests,
+      argumentAnnotations: annotationNames,
+      introductions: _introductions(element),
+    );
+  }
+
+  // `@Aspect('perthis(...)')` / `@Aspect('pertarget(...)')`; `null` for a
+  // singleton aspect. Like Spring, such an aspect must be a prototype
+  // bean, and percflow / percflowbelow / pertypewithin are rejected.
+  String? _perClause(ClassElement element) {
+    final annotation = _aspectAnnotation.firstAnnotationOf(element);
+    final value = annotation == null
+        ? null
+        : ConstantReader(annotation).peek('value')?.stringValue.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    final kind = RegExp(r'^(\w+)\s*\(').firstMatch(value)?[1];
+    if (kind == 'percflow' ||
+        kind == 'percflowbelow' ||
+        kind == 'pertypewithin') {
+      _fail(
+        "@Aspect('$value') on ${element.name}: $kind is not supported by "
+        'Spring AOP (nor here); use perthis(...) or pertarget(...).',
+        element,
+      );
+    }
+    if ((kind != 'perthis' && kind != 'pertarget') || !value.endsWith(')')) {
+      _fail(
+        "@Aspect('$value') on ${element.name}: the instantiation model must "
+        "be perthis(pointcut) or pertarget(pointcut), or '' for a singleton.",
+        element,
+      );
+    }
+    if (_scopeOf(element) != 'prototype') {
+      _fail(
+        "Bean with name '${_decapitalize(element.name!)}' is a singleton, but "
+        "aspect instantiation model is not singleton (@Aspect('$value')): add "
+        "@Scope('prototype') to ${element.name}.",
+        element,
+      );
+    }
+    return value;
+  }
+
+  // Types written in `args(...)` (tested against the runtime argument, as
+  // AspectJ does) and annotation names in `@args(...)` of [expressions],
+  // looked up in [element]'s library; a bound name in `@args` contributes
+  // the type of the advice parameter it binds.
+  (Map<String, InterfaceType>, Set<String>) _argumentTypes(
+    ClassElement element,
+    List<String> expressions,
+    List<AdviceModel> advice,
+  ) {
+    final types = <String, InterfaceType>{};
+    final annotations = <String>{};
+    final bound = {
+      for (final item in advice)
+        for (final parameter in item.parameters)
+          if (parameter case BoundParameter(:final name, :final type))
+            name: type,
+    };
+    for (final expression in expressions) {
+      for (final match in _argsDesignator.allMatches(expression)) {
+        final isAnnotation = match[1] == '@args';
+        for (final raw in _splitTopLevel(match[2]!)) {
+          final item = raw.trim().replaceAll('?', '');
+          if (item.isEmpty || item == '..' || item.contains('*')) {
+            continue;
+          }
+          final generic = item.indexOf('<');
+          final name = (generic < 0 ? item : item.substring(0, generic))
+              .split('.')
+              .last;
+          if (_bindingName.hasMatch(name) && !_lowercaseTypes.contains(name)) {
+            if (bound[name] case final InterfaceType type when isAnnotation) {
+              annotations.add(type.element.name!);
+            }
+            continue;
+          }
+          if (isAnnotation) {
+            annotations.add(name);
+          } else if (_lookUpType(element.library, name) case final type?) {
+            types[name] = type;
+          }
+        }
+      }
+    }
+    return (types, annotations);
+  }
+
+  // [text] split at commas outside `<...>`.
+  static List<String> _splitTopLevel(String text) {
+    final parts = <String>[];
+    var depth = 0;
+    var start = 0;
+    for (var i = 0; i < text.length; i++) {
+      switch (text[i]) {
+        case '<':
+          depth++;
+        case '>':
+          depth--;
+        case ',' when depth == 0:
+          parts.add(text.substring(start, i));
+          start = i + 1;
+      }
+    }
+    parts.add(text.substring(start));
+    return parts;
+  }
+
+  // The public class named [name] that [library] sees (its own or an
+  // imported one), as a raw type (type arguments to bounds).
+  static InterfaceType? _lookUpType(LibraryElement library, String name) {
+    for (final candidate in [
+      library,
+      for (final fragment in library.fragments) ...fragment.importedLibraries,
+    ]) {
+      final found = candidate.exportNamespace.get2(name);
+      if (found is InterfaceElement && found.isPublic) {
+        return library.typeSystem.instantiateInterfaceToBounds(
+          element: found,
+          nullabilitySuffix: NullabilitySuffix.none,
+        );
+      }
+    }
+    return null;
+  }
+
+  // `@DeclareParents('Pattern+', defaultImpl: Impl) static I? field;` of
+  // [element] (and its superclasses): proxies of matching beans implement
+  // `I` and forward it to an `Impl()` (Spring's introductions).
+  List<IntroductionModel> _introductions(ClassElement element) {
+    final result = <IntroductionModel>[];
+    for (final current in _classChain(element)) {
+      for (final field in current.fields) {
+        final annotation = _declareParents.firstAnnotationOf(field);
+        if (annotation == null) {
+          continue;
+        }
+        final reader = ConstantReader(annotation);
+        final where = '@DeclareParents ${element.name}.${field.name}';
+        if (!field.isStatic) {
+          _fail('$where must be a static field (as in AspectJ).', field);
+        }
+        final declared = element.library.typeSystem.promoteToNonNull(
+          field.type,
+        );
+        if (declared is! InterfaceType ||
+            !_canImplement(declared) ||
+            declared.element is! ClassElement &&
+                declared.element is! MixinElement) {
+          _fail(
+            '$where: the field type ${field.type.getDisplayString()} is the '
+            'introduced interface; it must be a public class or interface '
+            'that another library can implement.',
+            field,
+          );
+        }
+        final defaultImpl = reader.read('defaultImpl').typeValue;
+        final implElement = defaultImpl.element;
+        if (defaultImpl is! InterfaceType ||
+            implElement is! ClassElement ||
+            implElement.isAbstract ||
+            !implElement.isPublic ||
+            !element.library.typeSystem.isSubtypeOf(defaultImpl, declared)) {
+          _fail(
+            '$where: defaultImpl ${defaultImpl.getDisplayString()} must be a '
+            'public, non-abstract class implementing ${declared.element.name}.',
+            field,
+          );
+        }
+        final constructor = implElement.unnamedConstructor;
+        if (constructor == null ||
+            constructor.formalParameters.any((p) => p.isRequired)) {
+          _fail(
+            '$where: defaultImpl ${implElement.name} needs an unnamed '
+            'constructor without required parameters (one instance is '
+            'created per proxy).',
+            field,
+          );
+        }
+        result.add(
+          IntroductionModel(
+            aspectType: element.name!,
+            typePattern: reader.read('value').stringValue,
+            interfaceType: declared,
+            defaultImpl: defaultImpl,
+            members: _introducedMembers(declared, field),
+          ),
+        );
+      }
+    }
+    return result;
+  }
+
+  // The members a proxy forwards for the introduced interface [type].
+  List<ProxyMember> _introducedMembers(InterfaceType type, Element element) {
+    final members = <ProxyMember>[];
+    final seen = <String>{};
+    final library = type.element.library;
+    for (final current in [type, ...type.allSupertypes]) {
+      if (current.isDartCoreObject) {
+        continue;
+      }
+      final declaring = current.element.name!;
+      for (final method in current.methods) {
+        final name = method.name;
+        if (method.isStatic ||
+            name == null ||
+            method.isOperator ||
+            const {'toString', 'noSuchMethod'}.contains(name) ||
+            !seen.add('m:$name')) {
+          continue;
+        }
+        final implementation = type.lookUpMethod(name, library) ?? method;
+        final member = _proxyMethod(implementation, method, declaring);
+        if (member == null) {
+          _fail(
+            'The introduced method $declaring.$name cannot be forwarded by a '
+            'proxy: a parameter default value is not a public constant, or a '
+            'signature uses a private type.',
+            element,
+          );
+        }
+        members.add(member);
+      }
+      for (final getter in current.getters) {
+        final name = getter.name;
+        if (getter.isStatic ||
+            name == null ||
+            const {'hashCode', 'runtimeType'}.contains(name) ||
+            !seen.add('g:$name')) {
+          continue;
+        }
+        members.add(
+          ProxyMember(
+            kind: ProxyMemberKind.getter,
+            name: name,
+            declaringType: declaring,
+            returnType: getter.returnType,
+            typeParameters: const [],
+            parameters: const [],
+            annotations: const [],
+          ),
+        );
+      }
+      for (final setter in current.setters) {
+        final name = setter.name;
+        if (setter.isStatic || name == null || !seen.add('s:$name')) {
+          continue;
+        }
+        final valueType = setter.formalParameters.single.type;
+        members.add(
+          ProxyMember(
+            kind: ProxyMemberKind.setter,
+            name: name,
+            declaringType: declaring,
+            returnType: valueType,
+            typeParameters: const [],
+            parameters: [
+              ProxyParameter(
+                name: 'value',
+                type: valueType,
+                isNamed: false,
+                isRequired: true,
+              ),
+            ],
+            annotations: const [],
+          ),
+        );
+      }
+    }
+    return members;
   }
 
   // The class, its mixins (last applied first) and superclasses up to the
@@ -1578,7 +2024,9 @@ class BeanScanner {
     final visited = <String>{};
     void visit(String expression) {
       for (final match in _bindingDesignator.allMatches(expression)) {
-        final items = match[1] == 'args' ? match[2]!.split(',') : [match[2]!];
+        final items = match[1]!.endsWith('args')
+            ? match[2]!.split(',')
+            : [match[2]!];
         for (final item in items) {
           final id = item.trim();
           if (_bindingName.hasMatch(id) && !_lowercaseTypes.contains(id)) {
@@ -1645,21 +2093,70 @@ class BeanScanner {
     );
     final failure = _proxyFailure;
     if (model != null || failure == null) {
-      return _rejectCachedStreams(model);
+      return _withImplementations(_rejectCachedStreams(model));
     }
     if (constructor != null && (mode ?? proxyMode) == ProxyMode.all) {
-      return _rejectCachedStreams(
-        _subclassProxyModel(targetType, className, constructor, failure),
+      return _withImplementations(
+        _rejectCachedStreams(
+          _subclassProxyModel(targetType, className, constructor, failure),
+        ),
       );
     }
-    return _rejectCachedStreams(
-      _signatureOnlyModel(targetType, className, failure),
+    return _withImplementations(
+      _rejectCachedStreams(_signatureOnlyModel(targetType, className, failure)),
     );
   }
 
+  // Records, per member of [model], the class whose body runs when it is
+  // inherited (for `within` / `@within`, which AspectJ matches against the
+  // type declaring the code) and whether it is `@protected` (for
+  // `execution(protected ...)`).
+  ProxyModel? _withImplementations(ProxyModel? model) {
+    if (model == null) {
+      return null;
+    }
+    final target = model.targetType;
+    final library = target.element.library;
+    bool isProtected(Element? element) =>
+        element != null &&
+        (element.metadata.hasProtected ||
+            (element is PropertyAccessorElement &&
+                element.variable.metadata.hasProtected));
+    for (final member in model.members) {
+      final name = member.name;
+      final ExecutableElement? implementation = switch (member.kind) {
+        ProxyMemberKind.method => target.lookUpMethod(name, library),
+        ProxyMemberKind.getter => target.lookUpGetter(name, library),
+        ProxyMemberKind.setter => target.lookUpSetter(name, library),
+      };
+      member.isProtected =
+          isProtected(implementation) ||
+          [target, ...target.allSupertypes].any(
+            (type) => isProtected(switch (member.kind) {
+              ProxyMemberKind.method => type.getMethod(name),
+              ProxyMemberKind.getter => type.getGetter(name),
+              ProxyMemberKind.setter => type.getSetter(name),
+            }),
+          );
+      final owner = implementation?.enclosingElement;
+      if (owner is! InterfaceElement || owner == target.element) {
+        continue;
+      }
+      member.implementingTypes = [
+        owner.name!,
+        for (final supertype in owner.allSupertypes)
+          if (!supertype.isDartCoreObject) supertype.element.name!,
+      ];
+      member.implementingTypeAnnotations = _userAnnotations(owner);
+    }
+    return model;
+  }
+
   // A subclass proxy (see `SubclassProxy`) of a component class that no
-  // generated class can implement ([implementFailure]); fails the build
-  // when the class cannot be extended, saying what to change.
+  // generated class can implement ([implementFailure]); when the class
+  // cannot be extended either, only its signatures (like any type that
+  // cannot be proxied): the context fails at startup, saying what to
+  // change, only if advice matches the bean.
   ProxyModel? _subclassProxyModel(
     InterfaceType targetType,
     String className,
@@ -1668,16 +2165,17 @@ class BeanScanner {
   ) {
     final element = targetType.element;
     final typeName = element.name!;
-    Never fail(String problem, String change) => _fail(
-      '$typeName cannot be proxied for AOP: $implementFailure A subclass '
-      'proxy (the bean created as a generated subclass of $typeName) is not '
-      'possible either, because $typeName $problem. $change, add an '
-      'interface with the advised methods and inject the bean by it, or '
-      'generate no proxy for it (aop_proxies: interfaces or none).',
-      element,
-    );
+    ProxyModel unavailable(String problem, String change) =>
+        _signatureOnlyModel(
+          targetType,
+          className,
+          '$implementFailure A subclass proxy (the bean created as a '
+          'generated subclass of $typeName) is not possible either, because '
+          '$typeName $problem. $change, or add an interface with the advised '
+          'methods and inject the bean by it.',
+        );
     if (element is! ClassElement) {
-      fail('is not a class', 'Make it a class');
+      return unavailable('is not a class', 'Make it a class');
     }
     final modifier = element.isSealed
         ? 'sealed'
@@ -1687,16 +2185,16 @@ class BeanScanner {
         ? 'interface'
         : null;
     if (modifier != null || !element.isExtendableOutside) {
-      fail(
+      return unavailable(
         'cannot be extended${modifier == null ? '' : ' (it is $modifier)'}',
         modifier == null ? 'Make it extendable' : 'Remove `$modifier`',
       );
     }
     if (targetType.typeArguments.isNotEmpty) {
-      fail('is generic', 'Remove its type parameters');
+      return unavailable('is generic', 'Remove its type parameters');
     }
     if (constructor.isFactory) {
-      fail(
+      return unavailable(
         'is created through the factory constructor '
             '${constructor.displayName}, which a subclass cannot call',
         'Add a public generative constructor',
@@ -2905,6 +3403,7 @@ class BeanScanner {
   // `_pointKind`). The element name is kept for single beans so the
   // runtime can fall back to matching it against bean names.
   InjectionPoint _injectionPoint(Element element, DartType type) {
+    _requireDefinedType(type, element, '${_describe(element)} has');
     final annotated = _injectionAnnotationSource(element);
     final valueAnnotation = _value.firstAnnotationOf(annotated);
     final optional = type.nullabilitySuffix == NullabilitySuffix.question;
@@ -2930,6 +3429,30 @@ class BeanScanner {
         type: _requireInterfaceType(type, element, stripNullable: true),
         optional: optional,
         expression: ConstantReader(valueAnnotation).read('value').stringValue,
+      );
+    }
+    // A function or record bean, injected by its exact type (single beans
+    // only, like any other value type).
+    final library = element.library!;
+    final nonNull = library.typeSystem.promoteToNonNull(type);
+    if (nonNull is FunctionType || nonNull is RecordType) {
+      if ((_isLazy(annotated) ?? false) ||
+          _resource.firstAnnotationOf(element) != null) {
+        _fail(
+          '${_describe(element)}: a ${nonNull.getDisplayString()} can only be '
+          'injected directly (not @Lazy or @Resource).',
+          element,
+        );
+      }
+      return InjectionPoint(
+        kind: PointKind.single,
+        type: nonNull is FunctionType
+            ? library.typeProvider.functionType
+            : library.typeProvider.recordType,
+        exactType: nonNull,
+        optional: optional,
+        qualifier: _qualifierOf(annotated),
+        name: element.name,
       );
     }
     final interfaceType = _requireInterfaceType(
@@ -3896,6 +4419,91 @@ class BeanScanner {
   /// generated module is another library and cannot name it. [use] says
   /// what references it ("constructor parameter dep of Cache has"),
   /// [alternative] a second way out besides making the type public.
+  /// Public types of the scanned libraries and of the runtime, by name:
+  /// where to import a type from when the analyzer cannot resolve it (a
+  /// missing import). Filled by the builder before scanning.
+  final Map<String, Uri> knownTypes = {};
+
+  // A type the analyzer could not resolve (`InvalidType`, usually a
+  // missing import) fails with its name as written and, when a scanned
+  // library or the runtime declares it, the import to add.
+  void _requireDefinedType(DartType type, Element element, String use) {
+    if (!_mentionsInvalidType(type)) {
+      return;
+    }
+    final name = _writtenTypeName(element);
+    final source = knownTypes[name];
+    final where = element.library?.uri;
+    _fail(
+      '${_capitalize(use)} the type '
+      '${name ?? type.getDisplayString()}, which is not defined in $where '
+      '(a missing import or a typo)'
+      '${source == null ? '' : ": add import '$source';"}.',
+      element,
+    );
+  }
+
+  static bool _mentionsInvalidType(DartType type) => switch (type) {
+    InvalidType() => true,
+    InterfaceType() => type.typeArguments.any(_mentionsInvalidType),
+    FunctionType() =>
+      _mentionsInvalidType(type.returnType) ||
+          type.formalParameters.any((p) => _mentionsInvalidType(p.type)),
+    RecordType() =>
+      type.positionalFields.any((f) => _mentionsInvalidType(f.type)) ||
+          type.namedFields.any((f) => _mentionsInvalidType(f.type)),
+    _ => false,
+  };
+
+  // The first type name written in the declaration of [element] (a
+  // parameter, field or method; for `this.x` the field), read from the
+  // source before the declared name: the identifier the analyzer could not
+  // resolve when it is the only one.
+  static String? _writtenTypeName(Element element) {
+    var declaration = element;
+    if (declaration is FieldFormalParameterElement) {
+      declaration = declaration.field ?? declaration;
+    }
+    final fragment = declaration.firstFragment;
+    final offset = fragment.nameOffset;
+    final unit = fragment.libraryFragment;
+    if (offset == null || unit == null) {
+      return null;
+    }
+    final text = unit.source.contents.data;
+    // Back from the name to the start of the declaration.
+    var start = offset;
+    var depth = 0;
+    while (start > 0) {
+      final char = text[start - 1];
+      if (char == '>' || char == ')') {
+        depth++;
+      } else if (char == '<' || char == '(') {
+        if (depth == 0) {
+          break;
+        }
+        depth--;
+      } else if (depth == 0 && ',;{}['.contains(char)) {
+        break;
+      }
+      start--;
+    }
+    final written = text
+        .substring(start, offset)
+        .replaceAll(RegExp(r'@\w+(\.\w+)*(\([^)]*\))?'), ' ')
+        .replaceAll(
+          RegExp(r'\b(required|final|covariant|late|static|const|var|this)\b'),
+          ' ',
+        );
+    for (final match in RegExp(r'[A-Za-z_$][\w$]*').allMatches(written)) {
+      final name = match[0]!;
+      if (!const {'Function', 'dynamic', 'void'}.contains(name)) {
+        return name;
+      }
+    }
+    return null;
+  }
+
   void _requirePublicType(
     DartType type,
     Element element,

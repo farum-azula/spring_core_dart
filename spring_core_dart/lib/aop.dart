@@ -28,3 +28,4 @@ export 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 export 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';
 export 'package:spring_core_dart/src/aop/join_point.dart';
 export 'package:spring_core_dart/src/aop/proxy.dart';
+export 'package:spring_core_dart/src/aop/proxy_factory.dart';

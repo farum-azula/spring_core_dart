@@ -353,6 +353,41 @@ void main() {
       expect(ctx.containsBean('flagged'), isTrue);
     });
 
+    test('@PropertySource files stay above defaultProperties (Boot\'s '
+        'PropertySourceOrderingBeanFactoryPostProcessor)', () {
+      final loader = DefaultResourceLoader(
+        protocolResolvers: [
+          InMemoryProtocolResolver('mem:', {'a.properties': 'name=file'}),
+        ],
+      );
+      final environment = StandardEnvironment(systemEnvironment: {})
+        ..propertySources.addLast(
+          MapPropertySource(ConfigDataEnvironment.defaultPropertiesSourceName, {
+            'name': 'default',
+            'only': 'default',
+          }),
+        );
+      final ctx = AnnotationConfigApplicationContext(
+        [
+          module(
+            const [],
+            propertySources: const [
+              PropertySourceDeclaration(['mem:a.properties']),
+            ],
+          ),
+        ],
+        environment: environment,
+        resourceLoader: loader,
+      )..refresh();
+      addTearDown(ctx.close);
+      expect(ctx.environment.getProperty('name'), 'file');
+      expect(ctx.environment.getProperty('only'), 'default');
+      expect(
+        environment.propertySources.last.name,
+        ConfigDataEnvironment.defaultPropertiesSourceName,
+      );
+    });
+
     test('conditions: profiles and custom; registry visible in order', () {
       final ctx = context(
         [
@@ -618,7 +653,8 @@ void main() {
     });
 
     test(
-      'events published during refresh are delivered after listeners are ready',
+      'events published while the singletons are created do not reach '
+      '@EventListener methods (registered after the singletons, like Spring)',
       () {
         final ctx = context([
           audit(
@@ -637,7 +673,9 @@ void main() {
             },
           ),
         ])..refresh();
-        expect(ctx.getBean<Audit>().events, ['early']);
+        expect(ctx.getBean<Audit>().events, isEmpty);
+        ctx.publishEvent('later');
+        expect(ctx.getBean<Audit>().events, ['later']);
       },
     );
 

@@ -50,7 +50,7 @@ void main() {
 - Test config lives in `test/resources/` (see below).
 - The context starts once before the first test of the `main` / `group`
   (config files, auto-configuration, runners: all of `runApplication`) and
-  closes after the last one.
+  closes with `closeAsync()` after the last one.
 - `properties` win over every other source, the command line included.
 - `dynamicProperties` (`@DynamicPropertySource`) adds properties whose
   values are known only when the context starts (see below).
@@ -147,7 +147,7 @@ test('default cache', () {
 });
 
 test('backs off for the application cache', () {
-  runner.withBean<Cache>(AppCache()).run((context) {
+  runner.withBean<Cache>(AppCache.new).run((context) {
     expect(context, hasSingleBean<Cache>()); // a missing back-off: two beans
     expect(context.getBean<Cache>(), isA<AppCache>());
   });
@@ -160,8 +160,9 @@ test('needs a size', () {
 });
 ```
 
-- `withBean<T>(instance, name: ...)` registers an extra bean before the
-  configurations are processed, like Boot's `withBean`: a
+- `withBean<T>(supplier, name: ...)` registers an extra bean before the
+  configurations are processed, like Boot's `withBean(type, supplier)`
+  (each run gets a new instance from `supplier`): a
   `@ConditionalOnMissingBean` backs off, and a missing back-off shows up as
   a second bean (or, with the same name, a failed start). It never
   replaces a bean.
@@ -175,7 +176,8 @@ test('needs a size', () {
   auto-configuration), `withSystemEnvironment`, `withInitializer`.
 
 For asynchronous checks use `runAsync`: the context stays open until the
-returned future completes (`run` closes it as soon as the body returns).
+returned future completes and is then closed with `closeAsync()` (`run`
+closes it with `close()` as soon as the body returns).
 
 ```dart
 test('calls the client', () async {
@@ -218,8 +220,10 @@ Every test starts with an empty capture.
   automatic reset between tests (`@MockitoBean(reset)`): use any mock
   library and reset in `setUp`. Without an existing bean, the instance is
   registered.
-- `ApplicationContextRunner.withBean` takes an instance instead of a class
-  or supplier; `withBeanOverride` has no Boot counterpart.
+- `ApplicationContextRunner.withBean` takes a supplier and the type as a
+  type argument (`withBean<Cache>(AppCache.new)`), not a class; there is
+  no constructor-arguments variant. `withBeanOverride` has no Boot
+  counterpart.
 - No context caching across test files: each `springBootTest` starts its
   own context (shared by the tests of its `main` / `group`).
 - `dynamicProperties` is a parameter, not an annotated static method; no

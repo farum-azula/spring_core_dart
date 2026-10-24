@@ -1,3 +1,8 @@
+## Unreleased
+
+- a `@CachePut` whose `condition` fails before the call no longer forces a `@Cacheable` hit to run the method (Spring's `hasCachePut`; a condition reading `#result` still counts as passing)
+- `spring.cache.cache-names` accepts a YAML list (`spring.cache.cache-names[0]`)
+
 ## 0.1.7
 
 - `@CacheConfig` defaults apply like Spring's: `keyGenerator` only to operations without `key` and `keyGenerator` (a `key` next to `@CacheConfig(keyGenerator:)` no longer throws), `cacheManager` / `cacheResolver` only to operations without either.

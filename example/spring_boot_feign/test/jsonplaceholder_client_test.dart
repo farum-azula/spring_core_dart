@@ -19,7 +19,7 @@ void main() {
   Future<void> withClient(
     Future<void> Function(JsonPlaceholderClient api) body,
   ) => appContext()
-      .withBean<HttpTransport>(server)
+      .withBean<HttpTransport>(() => server)
       .runAsync((context) => body(context.getBean<JsonPlaceholderClient>()));
 
   test(

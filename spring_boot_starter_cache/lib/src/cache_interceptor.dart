@@ -235,7 +235,11 @@ final class CacheInterceptor implements MethodInterceptor {
         }
       }
     }
-    final hasPut = operations.any((o) => o is CachePutOperation);
+    // Like Spring's hasCachePut: a @CachePut whose condition already fails
+    // does not force the call (one needing #result is assumed to pass).
+    final hasPut = operations.any(
+      (o) => o is CachePutOperation && call.conditionBeforeInvocation(o),
+    );
     if (hit != null && !hasPut) {
       call.afterInvocation(hit.value, const {});
       return isAsync ? Future<Object?>.value(hit.value) : hit.value;
@@ -389,6 +393,15 @@ final class _Call {
   bool condition(CacheOperation operation, [_Result? result]) =>
       operation.condition == null ||
       _evaluate(operation.condition!, operation, result) == true;
+
+  // The condition before the call: an expression reading `#result` (not
+  // available yet) counts as passing (Spring's VariableNotAvailableException).
+  bool conditionBeforeInvocation(CacheOperation operation) {
+    final text = operation.condition;
+    return text == null || _readsResult.hasMatch(text) || condition(operation);
+  }
+
+  static final _readsResult = RegExp(r'#result\b');
 
   bool unless(CacheOperation operation, _Result result) {
     final unless = switch (operation) {

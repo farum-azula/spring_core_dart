@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `@Scheduled(initialDelay: ...)` (or `initialDelayString`) alone runs the method once after the delay, like Spring 6.1.
+- `TaskScheduler.scheduleAt(task, DateTime)` runs a task once at that time, like Spring's `schedule(Runnable, Instant)`.
+- cron on the web: fields with values of 32 and above (`0 45 * * * *`, `50 * * * * *`) fire under dart2js (the field sets were 64-bit int bit masks, shifted modulo 32 there)
 - an `applicationTaskExecutor` bean (alias `taskExecutor`, a `SimpleAsyncTaskExecutor`) unless the application has a `TaskExecutor`, like Spring Boot's `TaskExecutionAutoConfiguration`; it switches `@Async` event listeners on
 
 ## 0.1.7

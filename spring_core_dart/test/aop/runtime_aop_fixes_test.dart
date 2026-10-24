@@ -124,6 +124,19 @@ class _$CalcProxy implements Calc, Advised {
   List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
+  void addAdvisor(PointcutAdvisor advisor) => _invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      _invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) => _invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) => _invoker.removeAdvice(advice);
+
+  @override
   int add(int a, int b) =>
       _invoker.invoke(this, _target, 0, [
             a,
@@ -193,6 +206,22 @@ class _$CounterProxy extends Counter implements Advised {
   List<PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
 
   @override
+  void addAdvisor(PointcutAdvisor advisor) =>
+      (_$invoker ?? ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      (_$invoker ?? ProxyInvoker.notAdvised(this)).removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) =>
+      (_$invoker ?? ProxyInvoker.notAdvised(this)).addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) =>
+      (_$invoker ?? ProxyInvoker.notAdvised(this)).removeAdvice(advice);
+
+  @override
   int next() {
     final invoker = _$invoker;
     return invoker == null
@@ -229,6 +258,19 @@ class _$SelfieProxy implements Selfie, Advised {
 
   @override
   List<PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(PointcutAdvisor advisor) => _invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) =>
+      _invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(MethodInterceptor advice) => _invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) => _invoker.removeAdvice(advice);
 
   @override
   Object who() =>
@@ -541,14 +583,24 @@ void main() {
       ]);
       calc.add(1, 2);
       expect(log, ['true true']);
-      // A type the bean does not have: no static match.
+      // A type the bean class does not have: `target` cannot match; the
+      // proxy may implement more (introductions), so `this` is decided
+      // per call.
+      expect(
+        matches(
+          'target(other)',
+          add,
+          bindings: {'other': binding<Counter>('Counter')},
+        ),
+        isFalse,
+      );
       expect(
         matches(
           'this(other)',
           add,
           bindings: {'other': binding<Counter>('Counter')},
         ),
-        isFalse,
+        isTrue,
       );
     });
 
@@ -629,7 +681,7 @@ void main() {
           ),
         ),
       );
-      expect(() => ExpressionPointcut('@args(Timed)'), throwsFormatException);
+      expect(() => ExpressionPointcut('@args(timed)'), throwsFormatException);
     });
   });
 

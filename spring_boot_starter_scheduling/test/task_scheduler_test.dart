@@ -150,6 +150,28 @@ void main() {
       expect(scheduler.tasks, [task]);
     });
 
+    test('scheduleAt runs once at the start time, like schedule(task, '
+        'Instant)', () {
+      final runs = <DateTime>[];
+      final task = scheduler.scheduleAt(
+        () => runs.add(clock.now()),
+        start.add(const Duration(minutes: 2)),
+        name: 'once',
+      );
+      expect(task.nextExecution, start.add(const Duration(minutes: 2)));
+      clock.elapse(const Duration(hours: 1));
+      expect(runs, [start.add(const Duration(minutes: 2))]);
+      expect(task.runs, 1);
+      expect(scheduler.tasks, isEmpty);
+      // A past start time runs right away.
+      scheduler.scheduleAt(
+        () => runs.add(clock.now()),
+        start.subtract(const Duration(days: 1)),
+      );
+      clock.elapse(Duration.zero);
+      expect(runs, hasLength(2));
+    });
+
     test('fixed delay waits for asynchronous runs', () async {
       final starts = <DateTime>[];
       scheduler.scheduleWithFixedDelay(() async {

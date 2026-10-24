@@ -34,6 +34,13 @@ sealed class TypeInfo<T> {
   /// Calls the [visitor] method for this kind with its type arguments.
   R accept<R>(TypeInfoVisitor<R> visitor);
 
+  /// The same type, nullable (`T?`).
+  TypeInfo<T> asNullable();
+
+  /// Calls [body] with the described type as its type argument (`T?` when
+  /// [nullable]), e.g. to create a `Page<T>` from a `TypeInfo` of `T`.
+  R capture<R>(R Function<X>() body) => nullable ? body<T?>() : body<T>();
+
   /// Whether [value] belongs to this type (`null` only when [nullable]).
   bool isInstance(Object? value) => value == null ? nullable : value is T;
 }
@@ -84,6 +91,9 @@ final class ClassType<T> extends TypeInfo<T> {
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitClass<T>(this);
 
   @override
+  ClassType<T> asNullable() => ClassType<T>(nullable: true);
+
+  @override
   String toString() => '$T${nullable ? '?' : ''}';
 }
 
@@ -102,6 +112,9 @@ final class ListType<E> extends TypeInfo<List<E>> {
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitList<E>(this);
 
   @override
+  ListType<E> asNullable() => ListType<E>(element, nullable: true);
+
+  @override
   String toString() => 'List<$element>${nullable ? '?' : ''}';
 }
 
@@ -118,6 +131,9 @@ final class SetType<E> extends TypeInfo<Set<E>> {
 
   @override
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitSet<E>(this);
+
+  @override
+  SetType<E> asNullable() => SetType<E>(element, nullable: true);
 
   @override
   String toString() => 'Set<$element>${nullable ? '?' : ''}';
@@ -143,6 +159,9 @@ final class MapType<K, V> extends TypeInfo<Map<K, V>> {
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitMap<K, V>(this);
 
   @override
+  MapType<K, V> asNullable() => MapType<K, V>(key, value, nullable: true);
+
+  @override
   String toString() => 'Map<$key, $value>${nullable ? '?' : ''}';
 }
 
@@ -165,6 +184,10 @@ final class EnumType<E extends Enum> extends TypeInfo<E> {
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitEnum<E>(this);
 
   @override
+  EnumType<E> asNullable() =>
+      EnumType<E>(values, jsonValue: jsonValue, nullable: true);
+
+  @override
   String toString() => '$E${nullable ? '?' : ''}';
 }
 
@@ -185,6 +208,9 @@ final class GenericType<T> extends TypeInfo<T> {
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitGeneric<T>(this);
 
   @override
+  GenericType<T> asNullable() => GenericType<T>(arguments, nullable: true);
+
+  @override
   String toString() => '$T${nullable ? '?' : ''}';
 }
 
@@ -196,6 +222,9 @@ final class DynamicType extends TypeInfo<Object?> {
 
   @override
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitDynamic(this);
+
+  @override
+  DynamicType asNullable() => this;
 
   @override
   String toString() => 'dynamic';

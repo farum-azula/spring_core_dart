@@ -26,6 +26,7 @@ extension _ConfigurationScanning on BeanScanner {
   /// generated library cannot extend the class.
   ConfigurationClassModel configurationClassModel(
     ClassElement element,
+    InterfaceType type,
     ConstructorElement constructor,
   ) {
     final name = element.name!;
@@ -63,7 +64,7 @@ extension _ConfigurationScanning on BeanScanner {
     }
     return ConfigurationClassModel(
       className: module.uniqueClassName('_\$${name}Configuration'),
-      type: element.thisType,
+      type: type,
       constructorName: _constructorName(constructor),
       // Parameter types are public: the scanner checks every injection
       // point before coming here.
@@ -86,7 +87,7 @@ extension _ConfigurationScanning on BeanScanner {
     ConfigurationClassModel model,
     MethodElement method, {
     required String beanName,
-    required InterfaceType declaredType,
+    required DartType declaredType,
     required bool isFactoryBean,
     required bool isSingleton,
     required List<Argument> arguments,

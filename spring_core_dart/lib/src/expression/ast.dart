@@ -360,6 +360,34 @@ abstract class SpelNode {
 bool _realValue(SpelNode node, Object? value) =>
     value is double && (value is! int || node._real);
 
+// The elements of a list, map or array built by SpEL that hold real
+// numbers: on the web an integral double is an `int` at run time, so
+// without this `{1.0, 2.0}[0] / 2` would divide as ints there. Holds the
+// keys (list indexes, map keys) or [_allElements] (a `double[]`). Only
+// integral values need it, so on the VM (where a double is never an
+// `int`) nothing is recorded.
+final _realElements = Expando<Object>('realElements');
+const _allElements = Object();
+
+void _markRealElement(Object collection, Object? key) {
+  final marks = _realElements[collection];
+  if (marks is Set<Object?>) {
+    marks.add(key);
+  } else if (marks == null) {
+    _realElements[collection] = <Object?>{key};
+  }
+}
+
+// Whether [value], read from [collection] at [key], is a real number.
+bool _isRealElement(Object collection, Object? key, Object? value) {
+  if (value is! int) {
+    return false;
+  }
+  final marks = _realElements[collection];
+  return identical(marks, _allElements) ||
+      (marks is Set<Object?> && marks.contains(key));
+}
+
 // Methods of `T(Math)` that return a double in Java whatever the
 // arguments; `abs`, `max` and `min` do when an argument is real.
 const _realMathMethods = {
@@ -469,9 +497,17 @@ final class InlineList extends SpelNode {
   final List<SpelNode> items;
 
   @override
-  Object? getValue(ExpressionState state) => [
-    for (final item in items) item.getValue(state),
-  ];
+  Object? getValue(ExpressionState state) {
+    final list = <Object?>[];
+    for (final item in items) {
+      final value = item.getValue(state);
+      if (item._real && value is int) {
+        _markRealElement(list, list.length);
+      }
+      list.add(value);
+    }
+    return list;
+  }
 
   @override
   String toString() => '{${items.join(',')}}';
@@ -501,12 +537,21 @@ final class InlineMap extends SpelNode {
   final List<(SpelNode, SpelNode)> entries;
 
   @override
-  Object? getValue(ExpressionState state) => {
-    for (final (key, value) in entries)
+  Object? getValue(ExpressionState state) {
+    final map = <Object?, Object?>{};
+    for (final (key, value) in entries) {
       // An unquoted key is its own name, like Spring.
-      (key is PropertyOrFieldReference ? key.name : key.getValue(state)): value
-          .getValue(state),
-  };
+      final k = key is PropertyOrFieldReference
+          ? key.name
+          : key.getValue(state);
+      final v = value.getValue(state);
+      if (value._real && v is int) {
+        _markRealElement(map, k);
+      }
+      map[k] = v;
+    }
+    return map;
+  }
 
   @override
   String toString() => '{${entries.map((e) => '${e.$1}:${e.$2}').join(',')}}';
@@ -898,8 +943,13 @@ final class FunctionReference extends SpelNode {
       );
     }
     state.trackOperation();
+    final converted = VarargsFunction.convertArguments(
+      function,
+      args,
+      state.context.typeConverter,
+    );
     try {
-      return VarargsFunction.apply(function, args);
+      return VarargsFunction.apply(function, converted);
     } on SpelEvaluationException catch (error) {
       throw state.locate(error, start);
     } catch (error) {
@@ -957,6 +1007,7 @@ final class Indexer extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
+    _real = false;
     final target = state.activeContextObject;
     if (target == null) {
       if (nullSafe) {
@@ -1023,7 +1074,9 @@ final class Indexer extends SpelNode {
       case Map<Object?, Object?>():
         return _FunctionRef(() {
           state.trackOperation();
-          return target[key];
+          final value = target[key];
+          _real = _isRealElement(target, key, value);
+          return value;
         }, (value) => _store(state, target, value, () => target[key] = value));
       case List<Object?>():
         final i = _intIndex(state, key);
@@ -1031,7 +1084,9 @@ final class Indexer extends SpelNode {
           () {
             _grow(state, target, i, reading: true);
             state.trackOperation();
-            return target[i];
+            final value = target[i];
+            _real = _isRealElement(target, i, value);
+            return value;
           },
           (value) {
             if (i >= target.length && state.configuration.autoGrowCollections) {
@@ -1694,7 +1749,7 @@ final class ConstructorReference extends SpelNode {
           );
         }
       }
-      return _filled(state, type, sizes, fill);
+      return _markReal(_filled(state, type, sizes, fill), null);
     }
     if (dimensions.length > 1) {
       throw state.error(
@@ -1711,7 +1766,25 @@ final class ConstructorReference extends SpelNode {
       for (final value in values) _element(state, type, fill, value),
     ];
     state.trackOperation();
-    return type.arrayOf(elements);
+    return _markReal(type.arrayOf(elements), values);
+  }
+
+  // A one-dimensional `double[]` / `float[]` holds real numbers only; an
+  // array of another type keeps the marks of its [initializer] values.
+  Object? _markReal(Object? array, List<Object?>? initializer) {
+    if (array is! List<Object?>) {
+      return array;
+    }
+    if (const {'double', 'float', 'Double', 'Float'}.contains(typeName)) {
+      if (dimensions!.length == 1) {
+        _realElements[array] = _allElements;
+      }
+    } else if (initializer != null) {
+      if (_realElements[initializer] case final marks?) {
+        _realElements[array] = marks;
+      }
+    }
+    return array;
   }
 
   List<Object?> _filled(

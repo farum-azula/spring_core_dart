@@ -1,3 +1,7 @@
+## Unreleased
+
+- `%r` / `%relative` is never negative: records older than the first pattern (buffered before the logging system started) move the origin back.
+
 ## 0.1.7
 
 - Breaking: Spring Boot's default console and file lines (`LogPattern.defaultConsolePattern` / `defaultFilePattern`, replacing `LogPattern.defaultPattern`): ISO-8601 time with offset, PID, `--- [app]`, `[isolate]`, `%-40.40logger{39} :`; `logging.pattern.dateformat`, `logging.pattern.level`, `logging.pattern.correlation`, `logging.exception-conversion-word`, `logging.include-application-name` / `-group`, `spring.output.ansi.enabled`

@@ -91,21 +91,35 @@ final class FeignInvocationHandler implements InvocationHandler {
   final _plans = Map<ProxyMethod, _Plan>.identity();
   late final String _baseUrl;
 
+  // `@FeignClient(url:)`, else the `url` property (an empty or blank
+  // annotation url counts as none, like Spring's default ""); without a
+  // scheme `http://` is put in front, like Spring Cloud OpenFeign.
   String _resolveBaseUrl(List<String> problems) {
-    final url = client.url ?? config.url;
-    if (url == null || url.trim().isEmpty) {
+    String? resolve(String? url) {
+      if (url == null || url.trim().isEmpty) {
+        return null;
+      }
+      try {
+        final resolved = environment.resolveRequiredPlaceholders(url.trim());
+        return resolved.trim().isEmpty ? null : resolved.trim();
+      } on Object catch (error) {
+        problems.add('cannot resolve the URL "$url": $error');
+        return '';
+      }
+    }
+
+    final url = resolve(client.url) ?? resolve(config.url);
+    if (url == null) {
       problems.add(
         'no URL: set @FeignClient(url: ...) or '
         'spring.cloud.openfeign.client.config.${client.configKey}.url',
       );
       return '';
     }
-    try {
-      return environment.resolveRequiredPlaceholders(url.trim());
-    } on Object catch (error) {
-      problems.add('cannot resolve the URL "$url": $error');
-      return '';
+    if (url.isEmpty || url.contains('://')) {
+      return url;
     }
+    return 'http://$url';
   }
 
   @override
@@ -748,10 +762,9 @@ final class _Plan {
       );
     }
     var url = Uri.parse(_join(handler._baseUrl, expanded));
-    final query = {
-      for (final MapEntry(:key, :value) in url.queryParametersAll.entries)
-        key: [...value],
-    };
+    // A query written in the mapping path stays as written; the
+    // parameters of the call are appended to it.
+    final query = <String, List<String>>{};
     void addQuery(String name, Object? value, TypeInfo<Object?> type) {
       for (final text in _texts(value, type, '@RequestParam "$name"')) {
         (query[name] ??= []).add(text);
@@ -774,7 +787,10 @@ final class _Plan {
       ).forEach((name, value) => addQuery(name, value, valueType));
     }
     if (query.isNotEmpty) {
-      url = url.replace(queryParameters: query);
+      url = appendQuery(url, [
+        for (final MapEntry(key: name, value: values) in query.entries)
+          for (final value in values) (name, value),
+      ]);
     }
     final requestHeaders = HttpHeaders();
     for (final (name, value) in staticHeaders) {
@@ -865,9 +881,11 @@ final class _Plan {
   void applyDefaults(RequestTemplate template) {
     final config = handler.config;
     final headers = template.headers;
-    config.defaultRequestHeaders.forEach((name, value) {
+    config.defaultRequestHeaders.forEach((name, values) {
       if (!headers.contains(name)) {
-        headers.set(name, value);
+        for (final value in values) {
+          headers.add(name, value);
+        }
       }
     });
     final query = template.url.queryParametersAll;

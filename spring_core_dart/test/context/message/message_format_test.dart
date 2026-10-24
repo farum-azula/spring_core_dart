@@ -47,11 +47,34 @@ void main() {
 
   test('dates and times', () {
     final date = DateTime.utc(2026, 10, 20, 9, 5, 7);
-    expect(f('{0,date}', [date]), '2026-10-20');
-    expect(f('{0,time}', [date]), '09:05:07');
-    expect(f('{0}', [date]), '2026-10-20 09:05');
+    // Java's DateFormat styles (en_US, CLDR); medium by default.
+    expect(f('{0,date}', [date]), 'Oct 20, 2026');
+    expect(f('{0,date,short}', [date]), '10/20/26');
+    expect(f('{0,date,medium}', [date]), 'Oct 20, 2026');
+    expect(f('{0,date,long}', [date]), 'October 20, 2026');
+    expect(f('{0,date,full}', [date]), 'Tuesday, October 20, 2026');
+    expect(f('{0,time}', [date]), '9:05:07 AM');
+    expect(f('{0,time,short}', [date]), '9:05 AM');
+    expect(f('{0,time,long}', [date]), '9:05:07 AM UTC');
+    expect(f('{0}', [date]), '10/20/26, 9:05 AM');
+    expect(f('{0,time}', [DateTime.utc(2026, 1, 1, 15, 30)]), '3:30:00 PM');
+    expect(f('{0,time,short}', [DateTime.utc(2026, 1, 1)]), '12:00 AM');
     expect(f('{0,date}', ['x']), 'x');
     expect(f('{0,time}', ['y']), 'y');
+  });
+
+  test('custom date patterns (SimpleDateFormat letters)', () {
+    final date = DateTime.utc(2026, 3, 7, 14, 5, 9, 42);
+    expect(f('{0,date,yyyy-MM-dd}', [date]), '2026-03-07');
+    expect(
+      f("{0,date,EEE, d MMM yy 'at' HH:mm:ss.SSS}", [date]),
+      'Sat, 7 Mar 26 at 14:05:09.042',
+    );
+    expect(f('{0,time,hh:mm a}', [date]), '02:05 PM');
+    expect(f('{0,date,D}', [date]), '66');
+    expect(f('{0,date,XXX}', [date]), 'Z');
+    expect(f('{0,date,Z}', [date]), '+0000');
+    expect(f("{0,date,''yy''}", [date]), "'26'");
   });
 
   test('choice', () {
@@ -82,5 +105,25 @@ void main() {
     expect(() => f('{0,choice,zero}', [1]), throwsFormatException);
     expect(() => f('{0,choice,x#a}', [1]), throwsFormatException);
     expect(() => f('{0,number,abc}', [1]), throwsFormatException);
+  });
+
+  test('malformed patterns throw even without their argument', () {
+    // Java's applyPattern checks every element up front.
+    expect(() => f('{1,unknown}', ['a']), throwsFormatException);
+    expect(() => f('{0,number,abc}', ['not a number']), throwsFormatException);
+    expect(() => f('{1,number,abc}', []), throwsFormatException);
+    expect(() => f('{0,choice,x#a}', []), throwsFormatException);
+    expect(() => f('{0,date,bogus}', [DateTime(2026)]), throwsFormatException);
+    expect(() => f('{2,date,yyyy-qq}', []), throwsFormatException);
+    expect(() => f("{0,date,'open}", [DateTime(2026)]), throwsFormatException);
+    expect(() => f('{0,number,#.#.#}', [1]), throwsFormatException);
+    expect(() => f('{0,number,#,##0.0,0}', [1]), throwsFormatException);
+    expect(() => f('{0,number,0#}', [1]), throwsFormatException);
+    expect(() => f('{0,number,0.#0}', [1]), throwsFormatException);
+    expect(() => f('{0,number,#,}', [1]), throwsFormatException);
+    expect(() => f('ok {0} but {', ['a']), throwsFormatException);
+    // Valid ones still format.
+    expect(f('{0,number,#,##0.0#}', [1.234]), '1.23');
+    expect(f('{0,number,00.00}', [1.5]), '01.50');
   });
 }

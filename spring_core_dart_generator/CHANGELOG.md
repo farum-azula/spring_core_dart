@@ -1,5 +1,16 @@
 ## Unreleased
 
+- `@Lookup` methods: a bean class with them (abstract ones included, unlike other abstract classes the scan skips) is created as a generated subclass `_$<Class>Lookup` overriding each to return `getBean<T>()` / `findBean<T>()` / `getBeanByName(name)`; a subclass AOP proxy extends it; build errors for lookup methods with parameters, private, static or generic ones, getters, by-type lookups without a class return type, classes that cannot be extended and full-mode `@Configuration` classes (needs the matching `spring_core_dart`)
+- breaking: proxy pruning (`aop_prune`) happens only in the `@SpringBootApplication` output and sees the aspects and advisor beans of the nested `@ComponentScan` modules it imports (an auto-configuration with aspects turns it off); a `@ComponentScan` module keeps every proxy class, since any other module may import it and advise its beans
+- a `final` / `sealed` / `interface` component, or one with only a factory constructor, no longer fails the build in `aop_proxies: all`: it keeps its signatures (`AopProxyFactory.unavailable`) and the context fails at startup only when advice matches it
+- generated code is clash-free: proxies read `this._target` / `this._invoker` and name their locals `_$i` / `_$args`, so parameters named `_target`, `_invoker`, `invoker`, `_resolve` or `arguments` (full-mode `@Bean`) compile; `unnecessary_cast` is in the generated `ignore_for_file`
+- generated proxies implement `Advised.addAdvisor` / `removeAdvisor` / `addAdvice` / `removeAdvice` (these names are reserved like `aopTarget`); signatures carry `implementingTypes` (+ annotations) for inherited members and `isProtected` for `@protected` ones; aspects carry `typeTests` for `args(Type)`, `argumentAnnotations` for `@args(...)` and the `perClause` of `@Aspect('perthis(...)')` / `'pertarget(...)'` (a singleton per-instance aspect, `percflow` and `pertypewithin` fail the build); `@DeclareParents` fields make the proxies of the module's matching beans implement the interface (`AopProxyFactory(introductions:)`); needs the matching `spring_core_dart`
+- `@Bean` methods may return `null` (`T?`: a `NullBean`; an inter-bean call returns `null`), a function type or a record type (registered and injected by that exact type, `Type _$typeOf<T>()` for types without a literal); generic `@Component` and `@Configuration` classes are registered under their raw type; the scan skips abstract classes instead of failing (an `@Import`ed abstract class still fails)
+- a type the analyzer cannot resolve (a missing import) is reported with its name and the import to add (`add import 'package:app/src/clock.dart';`) instead of "Cannot inject InvalidType"
+- full mode: a defaulted `@Bean` parameter left out of an inter-bean call is resolved like the container resolves it (a bean, else the Dart default) instead of always getting the Dart default
+
+- generic `@Introspected` classes (erased introspection plus `specialize`); introspections carry `className`; classes named by `@JsonSubTypes`, `@JsonTypeInfo(defaultImpl:)` and `@JsonView` are introspected (needs the matching `spring_core_dart`)
+- build-time checks of constraint attributes (`Size(min: -1)`, min > max, ...) and of `@Each` / `@EachKey` element types
 - breaking: the generated file is `<name>.spring.dart` (was `<name>.beans.dart`): change the imports and delete the old files
 - `@Import` of a `BeanRegistrar`, `ImportSelector` or `ImportBeanDefinitionRegistrar` class is emitted as `ImportDeclaration(Type.new, conditions: ...)` in `BeanModule.registrars` (the class needs a public no-argument constructor) instead of being scanned as a configuration class (needs the matching `spring_core_dart`)
 - `@Async` on an `@EventListener` method is emitted as `async: Async(...)`; `@Async` on other methods fails the build
@@ -22,6 +33,7 @@
 - independent validation errors of one build are reported together (`N problems in this build:`), each with its library URI and location
 - generated code is free of the recommended lints too: bean-method proxy classes are named `_$Config$MethodProxy` (UpperCamelCase), and a declaration of a package that is not a direct dependency is imported through the user's library that exports it (no `depend_on_referenced_packages`); new dependency on `package:yaml` (reads the root `pubspec.yaml`), `analyzer` 14.3 or later
 - `@PropertySource(encoding: ...)` is passed to `PropertySourceDeclaration.encoding` (needs the matching `spring_core_dart`)
+- the return type of a `@ConfigurationProperties` `@Bean` method gets introspection metadata (also a class of another package), so `spring_boot_dart` can bind it
 
 ## 0.1.7
 

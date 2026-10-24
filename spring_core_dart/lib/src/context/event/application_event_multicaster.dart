@@ -32,6 +32,16 @@ abstract interface class ApplicationEventMulticaster {
   /// Removes [listener] if present.
   void removeApplicationListener(GenericApplicationListener listener);
 
+  /// Removes the listeners [predicate] accepts (Spring 5.3.5's
+  /// `removeApplicationListeners(Predicate)`), e.g. those of one bean.
+  ///
+  /// ```dart
+  /// multicaster.removeApplicationListeners((l) => l is AuditListener);
+  /// ```
+  void removeApplicationListeners(
+    bool Function(GenericApplicationListener listener) predicate,
+  );
+
   /// Removes every listener (called when the context closes).
   void removeAllListeners();
 
@@ -98,6 +108,11 @@ class SimpleApplicationEventMulticaster implements ApplicationEventMulticaster {
   @override
   void removeApplicationListener(GenericApplicationListener listener) =>
       _listeners.remove(listener);
+
+  @override
+  void removeApplicationListeners(
+    bool Function(GenericApplicationListener listener) predicate,
+  ) => _listeners.removeWhere(predicate);
 
   @override
   void removeAllListeners() => _listeners.clear();

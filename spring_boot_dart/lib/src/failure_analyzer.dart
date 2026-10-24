@@ -160,6 +160,45 @@ FailureAnalysis? _analyze(Object error, List<Object> chain) => switch (error) {
         '$placeholder:default}.',
     error,
   ),
+  // Boot's BeanDefinitionOverrideFailureAnalyzer.
+  BeanDefinitionOverrideException(:final name, :final source) =>
+    FailureAnalysis(
+      "The bean '$name'${source == null ? '' : ', defined in $source,'} "
+          'could not be registered. A bean with that name has already been '
+          'defined and overriding is disabled.',
+      'Consider renaming one of the beans or enabling overriding by setting '
+          'spring.main.allow-bean-definition-overriding=true',
+      error,
+    ),
+  // Boot's ConfigDataNotFoundFailureAnalyzer.
+  ConfigDataResourceNotFoundException(:final location, :final description) =>
+    FailureAnalysis(
+      "Config data resource '$description' via location '$location' does "
+          'not exist',
+      "Check that the value '$location' is correct, or prefix it with "
+          "'optional:'",
+      error,
+    ),
+  ConfigDataLocationNotFoundException(:final location) => FailureAnalysis(
+    "Config data location '$location' does not exist",
+    "Check that the value '$location' is correct, or prefix it with "
+        "'optional:'",
+    error,
+  ),
+  // Boot's InvalidConfigurationPropertyNameFailureAnalyzer.
+  InvalidConfigurationPropertyNameException(
+    :final name,
+    :final invalidCharacters,
+  ) =>
+    FailureAnalysis(
+      "Configuration property name '$name' is not valid:\n\n"
+          '    Invalid characters: ${invalidCharacters.join(', ')}\n'
+          "    Reason: Canonical names should be kebab-case ('-' separated), "
+          'lowercase alpha-numeric characters and must start with a letter',
+      "Modify '$name' so that it conforms to the canonical names "
+          'requirements.',
+      error,
+    ),
   ConfigurationPropertiesBindException(:final prefix, :final errors) =>
     FailureAnalysis(
       "Binding to target properties under '$prefix' failed:\n\n"

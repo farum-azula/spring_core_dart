@@ -1,10 +1,23 @@
 ## Unreleased
 
+- Jackson: `spring.jackson.datatype.datetime.write-durations-as-timestamps` / `write-date-timestamps-as-nanoseconds` / `read-date-timestamps-as-nanoseconds`, `deserialization.accept-float-as-int`, `mapper.default-view-inclusion`; `default-property-inclusion` accepts `non_absent` and `non_default`; breaking: date timestamps are seconds with the fraction (Jackson 3), durations stay ISO-8601 unless `write-durations-as-timestamps`
 - `@ConditionalOnBean` / `@ConditionalOnMissingBean` documented and tested to ignore `autowireCandidate: false` and `defaultCandidate: false` beans, like Boot 3.4+
 - the shutdown hook (`registerShutdownHook: true` / `spring.main.register-shutdown-hook`) delegates to the core's `context.registerShutdownHook()`; behaviour unchanged (off by default)
 - breaking: the auto-configured mapper bean is named `jacksonJsonMapper` (Boot 4's name) instead of `objectMapper`
 - Jackson: `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4; wins over `spring.jackson.serialization.write-dates-as-timestamps`); any other unsupported `spring.jackson.*` key is logged as a warning naming it; a named `spring.jackson.time-zone` fails with a message that only `UTC` and fixed offsets are supported
 - `${random.*}` placeholders: `SpringApplication` adds a `RandomValuePropertySource` after the system environment, like Boot
+- binding: environment variables bind nested objects under dashed names (`APP_MAIN_SERVER_HOST` → `app.main-server.host`, Boot's legacy ancestor check); `@Name`, `@DurationUnit(ChronoUnit.x)`, `@DataSizeUnit(DataUnit.x)`; `BindHandler` (`Binder.bind(handler:)`); `BindResult.map` / `ifBound` / `orElseGet` / `orElseThrow`
+- `@ConfigurationProperties` on `@Bean` methods binds the returned object (`@Validated()` on the method validates it); `ConfigurationPropertiesBinder(beanFactory:)`
+- validation of bound objects like Boot: the `configurationPropertiesValidator` bean (`ConfigurationPropertiesBinder.validatorBeanName`) and self-validating properties classes (a properties class that is a `Validator`)
+- `EnvironmentPostProcessor` (`SpringApplication(environmentPostProcessors:)`), run before or after config data by order (`EnvironmentPostProcessor.configDataOrder`)
+- conditions: `ConditionalOnProperty(prefix:)` and `ConditionalOnProperty.names([...])`, `@ConditionalOnBooleanProperty`, `@ConditionalOnSingleCandidate`, `@ConditionalOnExpression`, `@ConditionalOnResource`, `ConditionalOnBean.named`; `ConditionEvaluationReport`, logged at INFO for `--debug` / `debug=true` (with a hint after a failed start otherwise)
+- `JsonMapperBuilderCustomizer` beans for the auto-configured mapper: they receive the core `JsonMapperBuilder` (`jsonMapperBuilderFromProperties`)
+- banner: `Banner`, `SpringBootBanner`, `ResourceBanner`, `BannerMode` (`SpringApplication(banner:, bannerMode:)`, `spring.main.banner-mode`, `classpath:banner.txt` / `spring.banner.location`); printed by default like Boot
+- failure analysis for `BeanDefinitionOverrideException`, missing config data (`ConfigDataResourceNotFoundException`, `ConfigDataLocationNotFoundException`) and invalid property names
+- breaking: `SpringApplication.exit` and failed runs take the first non-zero code of the generators sorted by order (Boot 3+), not the highest
+- breaking: an invalid `logging.level.*` value fails the start (Boot's binding to `LogLevel`); `logging.group.<name>` and `spring.messages.basename` accept YAML lists
+- `ApplicationArguments` parses like `SimpleCommandLinePropertySource`: a lone `--` ends the options, `--=x` is an error
+- `spring.messages.cache-duration` keeps sub-second values (`500ms`); `spring.messages.use-code-as-default-message` / `fallback-to-system-locale` are read case-insensitively
 
 ## 0.1.7
 

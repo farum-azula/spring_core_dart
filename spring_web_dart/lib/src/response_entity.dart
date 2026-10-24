@@ -13,6 +13,8 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// }
 /// response.statusCode.is2xxSuccessful; // true
 /// ResponseEntity.ok(book);
+/// ResponseEntity.created(Uri.parse('/books/1')).body(book);
+/// ResponseEntity.notFound().build<Book>();
 /// ```
 ///
 /// Spring (Java):
@@ -21,6 +23,8 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// response.getStatusCode(); response.getHeaders().getLocation(); response.getBody();
 /// response.getStatusCode().is2xxSuccessful();
 /// ResponseEntity.ok(book);
+/// ResponseEntity.created(URI.create("/books/1")).body(book);
+/// ResponseEntity.notFound().build();
 /// ```
 class ResponseEntity<T> {
   /// A response with [statusCode], [body] and [headers].
@@ -33,6 +37,40 @@ class ResponseEntity<T> {
     : statusCode = HttpStatus.ok,
       headers = HttpHeaders();
 
+  /// A builder for a response with [statusCode], like Spring's
+  /// `ResponseEntity.status(...)`.
+  static ResponseEntityBuilder status(int statusCode) =>
+      ResponseEntityBuilder._(statusCode);
+
+  /// A builder for a `201 Created` response with the `Location`
+  /// [location], like Spring's `ResponseEntity.created(uri)`.
+  static ResponseEntityBuilder created(Uri location) =>
+      ResponseEntityBuilder._(HttpStatus.created)..location(location);
+
+  /// A builder for a `202 Accepted` response.
+  static ResponseEntityBuilder accepted() =>
+      ResponseEntityBuilder._(HttpStatus.accepted);
+
+  /// A builder for a `204 No Content` response.
+  static ResponseEntityBuilder noContent() =>
+      ResponseEntityBuilder._(HttpStatus.noContent);
+
+  /// A builder for a `400 Bad Request` response.
+  static ResponseEntityBuilder badRequest() =>
+      ResponseEntityBuilder._(HttpStatus.badRequest);
+
+  /// A builder for a `404 Not Found` response.
+  static ResponseEntityBuilder notFound() =>
+      ResponseEntityBuilder._(HttpStatus.notFound);
+
+  /// A builder for a `422 Unprocessable Content` response.
+  static ResponseEntityBuilder unprocessableContent() =>
+      ResponseEntityBuilder._(HttpStatus.unprocessableContent);
+
+  /// A builder for a `500 Internal Server Error` response.
+  static ResponseEntityBuilder internalServerError() =>
+      ResponseEntityBuilder._(HttpStatus.internalServerError);
+
   /// The status code (an `int` with `is2xxSuccessful`, ...), like
   /// Spring's `getStatusCode()`.
   final HttpStatusCode statusCode;
@@ -42,6 +80,9 @@ class ResponseEntity<T> {
 
   /// The headers.
   final HttpHeaders headers;
+
+  /// Whether there is a body, like Spring's `hasBody()`.
+  bool get hasBody => body != null;
 
   /// Whether the status is 2xx.
   bool get isSuccess => statusCode.is2xxSuccessful;
@@ -55,4 +96,67 @@ class ResponseEntity<T> {
     final status? => ' ${status.reasonPhrase}',
     null => '',
   };
+}
+
+/// Builds a [ResponseEntity], like Spring's `ResponseEntity.BodyBuilder`
+/// (from [ResponseEntity.status], [ResponseEntity.created], ...): set
+/// headers, then finish with [body] or [build].
+///
+/// ```dart
+/// ResponseEntity.status(HttpStatus.created)
+///     .header('X-Id', '1')
+///     .contentType(MediaType.applicationJson)
+///     .body(book);
+/// ```
+final class ResponseEntityBuilder {
+  ResponseEntityBuilder._(this._statusCode);
+
+  final int _statusCode;
+  final _headers = HttpHeaders();
+
+  /// Adds [values] to header [name].
+  ResponseEntityBuilder header(String name, List<String> values) {
+    for (final value in values) {
+      _headers.add(name, value);
+    }
+    return this;
+  }
+
+  /// Adds every header of [headers].
+  ResponseEntityBuilder headers(HttpHeaders headers) {
+    headers.forEach((name, values) => header(name, values));
+    return this;
+  }
+
+  /// Sets the `Location`.
+  ResponseEntityBuilder location(Uri location) {
+    _headers.location = location;
+    return this;
+  }
+
+  /// Sets the `Content-Type`.
+  ResponseEntityBuilder contentType(String mediaType) {
+    _headers.contentType = mediaType;
+    return this;
+  }
+
+  /// Sets the `ETag` (quoted unless it already is).
+  ResponseEntityBuilder eTag(String tag) {
+    _headers.eTag = tag;
+    return this;
+  }
+
+  /// Sets `Last-Modified`.
+  ResponseEntityBuilder lastModified(DateTime date) {
+    _headers.lastModified = date;
+    return this;
+  }
+
+  /// The response with [body].
+  ResponseEntity<T> body<T>(T? body) =>
+      ResponseEntity<T>(_statusCode, body: body, headers: _headers.copy());
+
+  /// The response without a body.
+  ResponseEntity<T> build<T>() =>
+      ResponseEntity<T>(_statusCode, headers: _headers.copy());
 }

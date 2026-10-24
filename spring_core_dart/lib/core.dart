@@ -20,6 +20,7 @@ library;
 
 export 'package:spring_core_dart/src/core/convert/conversion_exceptions.dart';
 export 'package:spring_core_dart/src/core/convert/conversion_service.dart';
+export 'package:spring_core_dart/src/core/convert/data_size.dart';
 export 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 export 'package:spring_core_dart/src/core/convert/duration_style.dart';
 export 'package:spring_core_dart/src/core/convert/generic_conversion_service.dart';

@@ -198,11 +198,24 @@ class BeanValidator implements SmartValidator {
   /// [validationMessageSource] resolves `{key}` placeholders of messages
   /// (Spring's `setValidationMessageSource`); [clockProvider] gives "now"
   /// to the date constraints (Spring's `setClockProvider`).
+  ///
+  /// [groupSequences] defines group sequences (Jakarta's `@GroupSequence`
+  /// on a group interface): requesting the key validates the listed groups
+  /// in order and stops at the first group with a violation.
+  ///
+  /// ```dart
+  /// abstract final class Complete {}
+  ///
+  /// BeanValidator(groupSequences: {Complete: [Default, Strict]})
+  ///     .validateObject(form, groups: [Complete]);
+  /// ```
   BeanValidator({
     BeanIntrospector? introspector,
     this.validationMessageSource,
     this.clockProvider = const DefaultClockProvider(),
-  }) : introspector = introspector ?? BeanIntrospector.shared;
+    Map<Type, List<Type>> groupSequences = const {},
+  }) : introspector = introspector ?? BeanIntrospector.shared,
+       groupSequences = Map.unmodifiable(groupSequences);
 
   /// Source of the constraint annotations and property values.
   final BeanIntrospector introspector;
@@ -213,6 +226,9 @@ class BeanValidator implements SmartValidator {
 
   /// The clock of the date constraints.
   final ClockProvider clockProvider;
+
+  /// Group sequences: a group → the groups it validates in order.
+  final Map<Type, List<Type>> groupSequences;
 
   @override
   bool supports(Object target) =>
@@ -225,7 +241,9 @@ class BeanValidator implements SmartValidator {
   @override
   void validateWithGroups(Object target, Errors errors, List<Type> groups) {
     for (final violation in validateObject(target, groups: groups)) {
-      final field = violation.propertyPath;
+      // Spring's determineField: container element nodes
+      // (`names[1].<list element>`) end at their index (`names[1]`).
+      final field = violation.propertyPath.replaceAll(_elementNode, '');
       // Like Spring's SpringValidatorAdapter: no constraint error on top of
       // a binding failure (the type mismatch says it all).
       if (field.isNotEmpty &&
@@ -264,9 +282,11 @@ class BeanValidator implements SmartValidator {
       } else if (errors is BindingResult) {
         // The rejected value is the invalid one, except for class-level
         // violations reported on a property and nested paths, where it is
-        // the property's current value (Spring's getRejectedValue).
+        // the property's current value (Spring's getRejectedValue); not for
+        // `lucky[].city` paths, which cannot be read back.
         final rejected =
             (field.isNotEmpty &&
+                !field.contains('[]') &&
                 (identical(violation.invalidValue, violation.leafBean) ||
                     field.contains('[') ||
                     field.contains('.')))
@@ -297,7 +317,10 @@ class BeanValidator implements SmartValidator {
 
   /// All violations of [target] (and nested `@Valid` values).
   ///
-  /// Jakarta's `Validator.validate(object, groups...)`.
+  /// Jakarta's `Validator.validate(object, groups...)`. Groups that are
+  /// [groupSequences] are validated group by group, stopping at the first
+  /// group with a violation; a class's `@GroupSequence` replaces its
+  /// [Default] group.
   ///
   /// ```dart
   /// final violations = BeanValidator().validateObject(
@@ -310,7 +333,12 @@ class BeanValidator implements SmartValidator {
     List<Type> groups = const [],
   }) {
     final violations = <ConstraintViolation>[];
-    _validate(target, target, '', groups, violations, Set.identity());
+    _inGroups(
+      groups,
+      violations,
+      (groups) =>
+          _validate(target, target, '', groups, violations, Set.identity()),
+    );
     return violations;
   }
 
@@ -336,14 +364,24 @@ class BeanValidator implements SmartValidator {
       );
     }
     final violations = <ConstraintViolation>[];
-    _checkValue(
-      root: target,
-      leaf: target,
-      constraints: beanProperty.annotationsOf<Constraint>(),
-      value: beanProperty.getValue(target),
-      path: beanProperty.name,
-      groups: groups,
-      violations: violations,
+    final value = beanProperty.getValue(target);
+    _inGroups(
+      groups,
+      violations,
+      (groups) => _ownGroups(
+        introspection,
+        groups,
+        violations,
+        (applies) => _checkValue(
+          root: target,
+          leaf: target,
+          annotations: beanProperty.annotations,
+          value: value,
+          path: beanProperty.name,
+          applies: applies,
+          violations: violations,
+        ),
+      ),
     );
     return violations;
   }
@@ -371,14 +409,23 @@ class BeanValidator implements SmartValidator {
       );
     }
     final violations = <ConstraintViolation>[];
-    _checkValue(
-      root: null,
-      leaf: null,
-      constraints: beanProperty.annotationsOf<Constraint>(),
-      value: value,
-      path: property,
-      groups: groups,
-      violations: violations,
+    _inGroups(
+      groups,
+      violations,
+      (groups) => _ownGroups(
+        introspection,
+        groups,
+        violations,
+        (applies) => _checkValue(
+          root: null,
+          leaf: null,
+          annotations: beanProperty.annotations,
+          value: value,
+          path: property,
+          applies: applies,
+          violations: violations,
+        ),
+      ),
     );
     return violations;
   }
@@ -402,25 +449,33 @@ class BeanValidator implements SmartValidator {
   }) {
     final violations = <ConstraintViolation>[];
     final annotations = method.parameterAnnotations;
-    for (var i = 0; i < arguments.length && i < annotations.length; i++) {
-      final name = i < method.parameterNames.length
-          ? method.parameterNames[i]
-          : 'arg$i';
-      final path = '${method.name}.$name';
-      final value = arguments[i];
-      _checkValue(
-        root: target,
-        leaf: target,
-        constraints: annotations[i].whereType<Constraint>(),
-        value: value,
-        path: path,
-        groups: groups,
-        violations: violations,
-      );
-      if (value != null && annotations[i].whereType<Valid>().isNotEmpty) {
-        _cascade(target, value, path, groups, violations, Set.identity());
+    _inGroups(groups, violations, (groups) {
+      for (var i = 0; i < arguments.length && i < annotations.length; i++) {
+        final name = i < method.parameterNames.length
+            ? method.parameterNames[i]
+            : 'arg$i';
+        final path = '${method.name}.$name';
+        final value = arguments[i];
+        _checkValue(
+          root: target,
+          leaf: target,
+          annotations: annotations[i],
+          value: value,
+          path: path,
+          applies: (constraint) => constraint.appliesTo(groups),
+          violations: violations,
+        );
+        _cascade(
+          target,
+          value,
+          path,
+          annotations[i],
+          groups,
+          violations,
+          Set.identity(),
+        );
       }
-    }
+    });
     return violations;
   }
 
@@ -440,20 +495,147 @@ class BeanValidator implements SmartValidator {
   }) {
     final violations = <ConstraintViolation>[];
     final path = '${method.name}.<return value>';
-    _checkValue(
-      root: target,
-      leaf: target,
-      constraints: method.annotations.whereType<Constraint>(),
-      value: returnValue,
-      path: path,
-      groups: groups,
-      violations: violations,
-    );
-    if (returnValue != null &&
-        method.annotations.whereType<Valid>().isNotEmpty) {
-      _cascade(target, returnValue, path, groups, violations, Set.identity());
-    }
+    _inGroups(groups, violations, (groups) {
+      _checkValue(
+        root: target,
+        leaf: target,
+        annotations: method.annotations,
+        value: returnValue,
+        path: path,
+        applies: (constraint) => constraint.appliesTo(groups),
+        violations: violations,
+      );
+      _cascade(
+        target,
+        returnValue,
+        path,
+        method.annotations,
+        groups,
+        violations,
+        Set.identity(),
+      );
+    });
     return violations;
+  }
+
+  // Runs [validate] for the requested [groups], like Hibernate Validator's
+  // ValidationOrder: the plain groups together, then each sequence group by
+  // group, stopping at the first group that adds a violation.
+  void _inGroups(
+    List<Type> groups,
+    List<ConstraintViolation> violations,
+    void Function(List<Type> groups) validate,
+  ) {
+    final requested = groups.isEmpty ? const <Type>[Default] : groups;
+    final plain = [
+      for (final group in requested)
+        if (!groupSequences.containsKey(group)) group,
+    ];
+    if (plain.isNotEmpty) {
+      validate(plain);
+    }
+    for (final group in requested) {
+      if (!groupSequences.containsKey(group)) {
+        continue;
+      }
+      for (final step in _expand(group, const [])) {
+        final before = violations.length;
+        validate([step]);
+        if (violations.length > before) {
+          break;
+        }
+      }
+    }
+  }
+
+  // The plain groups of the sequence [group], nested sequences expanded.
+  List<Type> _expand(Type group, List<Type> visiting) {
+    if (visiting.contains(group)) {
+      throw GroupDefinitionException(
+        'Cyclic dependency in groups definition: '
+        '${[...visiting, group].join(' -> ')}',
+      );
+    }
+    final members = groupSequences[group];
+    if (members == null) {
+      return [group];
+    }
+    if (group == Default) {
+      throw const GroupDefinitionException(
+        'Default cannot be a group sequence; use @GroupSequence on the '
+        'class to redefine it',
+      );
+    }
+    return [
+      for (final member in members) ..._expand(member, [...visiting, group]),
+    ];
+  }
+
+  // The class's `@GroupSequence` (its redefined Default group), checked
+  // like Hibernate Validator's BeanMetaDataImpl.
+  static GroupSequence? _defaultSequence(
+    BeanIntrospection<Object>? introspection,
+  ) {
+    if (introspection == null) {
+      return null;
+    }
+    final sequence = introspection.annotations
+        .whereType<GroupSequence>()
+        .firstOrNull;
+    if (sequence == null) {
+      return null;
+    }
+    final type = introspection.beanType;
+    if (sequence.value.contains(Default)) {
+      throw GroupDefinitionException(
+        'Default cannot appear in the default group sequence of $type.',
+      );
+    }
+    if (!sequence.value.contains(type)) {
+      throw GroupDefinitionException(
+        '$type must be part of the redefined default group sequence.',
+      );
+    }
+    return sequence;
+  }
+
+  // Runs [check] on the constraints of a bean of [introspection] for
+  // [groups]; with a redefined Default group (`@GroupSequence` on the
+  // class), Default runs as that sequence: the class itself stands for its
+  // Default constraints and the sequence stops at the first group with a
+  // violation.
+  void _ownGroups(
+    BeanIntrospection<Object>? introspection,
+    List<Type> groups,
+    List<ConstraintViolation> violations,
+    void Function(bool Function(Constraint) applies) check,
+  ) {
+    final sequence = _defaultSequence(introspection);
+    if (sequence == null || (groups.isNotEmpty && !groups.contains(Default))) {
+      check((constraint) => constraint.appliesTo(groups));
+      return;
+    }
+    final type = introspection!.beanType;
+    final others = [
+      for (final group in groups)
+        if (group != Default) group,
+    ];
+    if (others.isNotEmpty) {
+      check((constraint) => constraint.appliesTo(others));
+    }
+    for (final group in sequence.value) {
+      final before = violations.length;
+      check(
+        group == type
+            ? (constraint) =>
+                  constraint.appliesTo(const [Default]) ||
+                  constraint.groups.contains(type)
+            : (constraint) => constraint.appliesTo([group]),
+      );
+      if (violations.length > before) {
+        break;
+      }
+    }
   }
 
   // Validates [target] (reached from [root] at [path], which is empty or
@@ -478,60 +660,83 @@ class BeanValidator implements SmartValidator {
         return;
       }
       final objectPath = path.replaceFirst(RegExp(r'\.$'), '');
-      // Class-level constraints; their path is the object's own path, or a
-      // property node the constraint added.
-      for (final constraint
-          in introspection.annotations.whereType<Constraint>()) {
-        if (constraint.appliesTo(groups)) {
-          _check(
+      final redefined = _defaultSequence(introspection) != null;
+      void checkOwn(bool Function(Constraint) applies, {bool cascade = false}) {
+        // Class-level constraints; their path is the object's own path, or
+        // a property node the constraint added.
+        for (final constraint
+            in introspection.annotations.whereType<Constraint>()) {
+          if (applies(constraint)) {
+            _check(
+              root: root,
+              leaf: target,
+              constraint: constraint,
+              value: target,
+              path: objectPath,
+              violations: violations,
+            );
+          }
+        }
+        for (final property in introspection.properties) {
+          final value = property.getValue(target);
+          _checkValue(
             root: root,
             leaf: target,
-            constraint: constraint,
-            value: target,
-            path: objectPath,
+            annotations: property.annotations,
+            value: value,
+            path: '$path${property.name}',
+            applies: applies,
             violations: violations,
           );
+          if (cascade) {
+            _cascade(
+              root,
+              value,
+              '$path${property.name}',
+              property.annotations,
+              groups,
+              violations,
+              ancestors,
+            );
+          }
         }
       }
+
+      if (!redefined) {
+        checkOwn((constraint) => constraint.appliesTo(groups), cascade: true);
+        return;
+      }
+      _ownGroups(introspection, groups, violations, checkOwn);
       for (final property in introspection.properties) {
-        final value = property.getValue(target);
-        _checkValue(
-          root: root,
-          leaf: target,
-          constraints: property.annotationsOf<Constraint>(),
-          value: value,
-          path: '$path${property.name}',
-          groups: groups,
-          violations: violations,
+        _cascade(
+          root,
+          property.getValue(target),
+          '$path${property.name}',
+          property.annotations,
+          groups,
+          violations,
+          ancestors,
         );
-        if (value != null && property.annotationsOf<Valid>().isNotEmpty) {
-          _cascade(
-            root,
-            value,
-            '$path${property.name}',
-            groups,
-            violations,
-            ancestors,
-          );
-        }
       }
     } finally {
       ancestors.remove(target);
     }
   }
 
-  // Checks the [constraints] of the applicable groups on one value.
+  // Checks the constraints in [annotations] that [applies] accepts on one
+  // value, and the element constraints (`@Each`, `@EachKey`) on its
+  // elements.
   void _checkValue({
     required Object? root,
     required Object? leaf,
-    required Iterable<Constraint> constraints,
+    required List<Object> annotations,
     required Object? value,
     required String path,
-    required List<Type> groups,
+    required bool Function(Constraint) applies,
     required List<ConstraintViolation> violations,
   }) {
-    for (final constraint in constraints) {
-      if (constraint.appliesTo(groups)) {
+    for (final constraint in annotations.whereType<Constraint>()) {
+      if (applies(constraint)) {
         _check(
           root: root,
           leaf: leaf,
@@ -541,6 +746,61 @@ class BeanValidator implements SmartValidator {
           violations: violations,
         );
       }
+    }
+    for (final annotation in annotations) {
+      final (constraints, keys) = switch (annotation) {
+        Each(:final constraints) => (constraints, false),
+        EachKey(:final constraints) => (constraints, true),
+        _ => (const <Constraint>[], false),
+      };
+      final applicable = constraints.where(applies).toList();
+      if (applicable.isEmpty || value == null) {
+        continue;
+      }
+      for (final (elementPath, element) in _elements(value, path, keys)) {
+        for (final constraint in applicable) {
+          _check(
+            root: root,
+            leaf: leaf,
+            constraint: constraint,
+            value: element,
+            path: elementPath,
+            violations: violations,
+          );
+        }
+      }
+    }
+  }
+
+  // The elements of a container with Hibernate Validator's paths:
+  // `names[1].<list element>`, `tags[].<iterable element>`,
+  // `scores[math].<map value>`, `scores<K>[math].<map key>`.
+  static Iterable<(String, Object?)> _elements(
+    Object value,
+    String path,
+    bool keys,
+  ) sync* {
+    switch (value) {
+      case Map<Object?, Object?>():
+        for (final MapEntry(:key, value: element) in value.entries) {
+          yield keys
+              ? ('$path<K>[$key].<map key>', key)
+              : ('$path[$key].<map value>', element);
+        }
+      case List<Object?>() when !keys:
+        for (var i = 0; i < value.length; i++) {
+          yield ('$path[$i].<list element>', value[i]);
+        }
+      case Iterable<Object?>() when !keys:
+        for (final element in value) {
+          yield ('$path[].<iterable element>', element);
+        }
+      default:
+        throw ConstraintDeclarationException(
+          '${keys ? '@EachKey' : '@Each'} on $path: '
+          '${value.runtimeType} is not a '
+          '${keys ? 'map' : 'collection or map'}',
+        );
     }
   }
 
@@ -554,6 +814,17 @@ class BeanValidator implements SmartValidator {
     required String path,
     required List<ConstraintViolation> violations,
   }) {
+    if (_checkedParameters[constraint] == null) {
+      constraint.checkParameters();
+      _checkedParameters[constraint] = true;
+    }
+    if (value != null && !constraint.supports(value)) {
+      throw UnexpectedTypeException(
+        "No validator could be found for constraint '${constraint.name}' "
+        "validating type '${value.runtimeType}'. Check configuration for "
+        "'$path'",
+      );
+    }
     final template = _template(constraint);
     final context = ConstraintValidatorContext(
       defaultConstraintMessageTemplate: template,
@@ -567,7 +838,7 @@ class BeanValidator implements SmartValidator {
           propertyPath: path,
           constraint: constraint,
           invalidValue: value,
-          message: _interpolate(constraint, template),
+          message: _interpolate(constraint, template, value),
           messageTemplate: template,
           rootBean: root,
           leafBean: leaf,
@@ -610,8 +881,9 @@ class BeanValidator implements SmartValidator {
 
   // Jakarta's interpolation: `{key}` placeholders from the message source
   // (resolved again while they keep producing placeholders), then
-  // `{attribute}` placeholders.
-  String _interpolate(Constraint constraint, String template) {
+  // `{attribute}` placeholders, then the expressions `${validatedValue}`
+  // and `${attribute}`.
+  String _interpolate(Constraint constraint, String template, Object? value) {
     var message = template;
     final source = validationMessageSource;
     if (source != null) {
@@ -630,7 +902,18 @@ class BeanValidator implements SmartValidator {
         }
       }
     }
-    return constraint.interpolate(message);
+    final attributes = constraint.attributes;
+    return constraint
+        .interpolate(message)
+        .replaceAllMapped(
+          _expression,
+          (match) => switch (match[1]!) {
+            'validatedValue' => '$value',
+            final name when attributes.containsKey(name) =>
+              '${attributes[name]}',
+            _ => match[0]!,
+          },
+        );
   }
 
   static String? _lookUp(MessageSource source, String key) {
@@ -641,53 +924,100 @@ class BeanValidator implements SmartValidator {
     }
   }
 
-  // Cascades `@Valid`: map values become `path[key].`, iterable elements
-  // `path[index].` and plain objects `path.`; null elements are skipped.
+  // Cascades `@Valid` (from [annotations]): map values become `path[key].`,
+  // list elements `path[index].`, other iterables (sets) `path[].` and plain
+  // objects `path.`; null elements are skipped. `@ConvertGroup` changes the
+  // groups of the nested validation.
   void _cascade(
     Object root,
-    Object value,
+    Object? value,
     String path,
+    List<Object> annotations,
     List<Type> groups,
     List<ConstraintViolation> violations,
     Set<Object> ancestors,
   ) {
-    switch (value) {
-      case Map<Object?, Object?>():
-        for (final MapEntry(:key, value: element) in value.entries) {
-          if (element != null) {
-            _validate(
-              root,
-              element,
-              '$path[$key].',
-              groups,
-              violations,
-              ancestors,
-            );
-          }
-        }
-      case Iterable<Object?>():
-        var index = 0;
-        for (final element in value) {
-          if (element != null) {
-            _validate(
-              root,
-              element,
-              '$path[$index].',
-              groups,
-              violations,
-              ancestors,
-            );
-          }
-          index++;
-        }
-      default:
-        _validate(root, value, '$path.', groups, violations, ancestors);
+    final conversions = annotations.whereType<ConvertGroup>().toList();
+    if (annotations.whereType<Valid>().isEmpty) {
+      if (conversions.isNotEmpty) {
+        throw ConstraintDeclarationException(
+          '@ConvertGroup on $path without @Valid: group conversions are '
+          'only allowed on cascaded elements',
+        );
+      }
+      return;
     }
+    if (value == null) {
+      return;
+    }
+    final nested = _convert(groups, conversions, path);
+    _inGroups(nested, violations, (groups) {
+      void validate(Object element, String elementPath) =>
+          _validate(root, element, elementPath, groups, violations, ancestors);
+      switch (value) {
+        case Map<Object?, Object?>():
+          for (final MapEntry(:key, value: element) in value.entries) {
+            if (element != null) {
+              validate(element, '$path[$key].');
+            }
+          }
+        case List<Object?>():
+          for (var i = 0; i < value.length; i++) {
+            if (value[i] case final element?) {
+              validate(element, '$path[$i].');
+            }
+          }
+        case Iterable<Object?>():
+          for (final element in value) {
+            if (element != null) {
+              validate(element, '$path[].');
+            }
+          }
+        default:
+          validate(value, '$path.');
+      }
+    });
+  }
+
+  // [groups] with the `@ConvertGroup` conversions applied.
+  static List<Type> _convert(
+    List<Type> groups,
+    List<ConvertGroup> conversions,
+    String path,
+  ) {
+    if (conversions.isEmpty) {
+      return groups;
+    }
+    final targets = <Type, Type>{};
+    for (final conversion in conversions) {
+      if (targets.containsKey(conversion.from)) {
+        throw ConstraintDeclarationException(
+          '@ConvertGroup on $path: ${conversion.from} is converted more '
+          'than once',
+        );
+      }
+      targets[conversion.from] = conversion.to;
+    }
+    return [
+      for (final group in groups.isEmpty ? const <Type>[Default] : groups)
+        targets[group] ?? group,
+    ];
   }
 }
 
 // `{0}` or `{0,number,...}` — not a regex quantifier such as `{2,3}`.
 final _springPlaceholder = RegExp(r'\{\d+(\}|,\s*[a-zA-Z])');
 
-// A Jakarta message parameter: `{key}` (no nested braces).
-final _parameter = RegExp(r'\{([^{}\s]+)\}');
+// A Jakarta message parameter: `{key}` (no nested braces), not the body of
+// an expression `${...}`.
+final _parameter = RegExp(r'(?<!\$)\{([^{}\s]+)\}');
+
+// A Jakarta EL expression naming a value: `${validatedValue}`, `${max}`.
+final _expression = RegExp(r'\$\{\s*(\w+)\s*\}');
+
+// Constraints whose parameters were checked.
+final _checkedParameters = Expando<bool>();
+
+// A container element node of a property path (`.<list element>`) or the
+// type argument of a map key node (`<K>`).
+final _elementNode = RegExp(r'\.?<[^>]*>');

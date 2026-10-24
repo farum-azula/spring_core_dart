@@ -304,6 +304,8 @@ final class BeanIntrospection<T extends Object> {
     this.constructor,
     this._fromJson,
     this._toJson,
+    this._className,
+    this._specialize,
   }) : _properties = {for (final p in properties) p.name: p},
        _methods = {for (final m in methods) m.name: m},
        annotations = List.unmodifiable(annotations);
@@ -313,6 +315,27 @@ final class BeanIntrospection<T extends Object> {
   final T Function()? _instantiate;
   final T Function(Object? json)? _fromJson;
   final Object? Function(T bean)? _toJson;
+  final String? _className;
+  final BeanIntrospection<Object> Function(List<TypeInfo<Object?>> arguments)?
+  _specialize;
+
+  /// The simple name of the class, without type arguments (written by the
+  /// generator, so it survives minification; e.g. the default JSON type id).
+  String get className => _className ?? '$T'.replaceFirst(RegExp('<.*'), '');
+
+  /// Whether this describes a generic class with its type parameters
+  /// erased (`Page<Object?>` for `Page<T>`) that can be [specialize]d.
+  bool get isGeneric => _specialize != null;
+
+  /// The introspection of this generic class with the type [arguments]
+  /// (`Page<Book>` for `[ClassType<Book>()]`): constructor parameters and
+  /// properties typed with them. Throws `StateError` when not [isGeneric].
+  BeanIntrospection<Object> specialize(List<TypeInfo<Object?>> arguments) =>
+      (_specialize ?? (throw StateError('$T is not generic')))(arguments);
+
+  /// Whether [S] is a parameterization of the class this describes
+  /// (`Page<Book>` for `Page<Object?>`).
+  bool isRawTypeOf<S>() => <S>[] is List<T?>;
 
   /// The constructor to create instances from data (`ObjectMapper`), when
   /// the class has a usable one.
@@ -417,8 +440,44 @@ class BeanIntrospector {
   final _byType = <Type, BeanIntrospection<Object>>{};
 
   /// Adds [introspection], replacing any for the same type.
-  void register(BeanIntrospection<Object> introspection) =>
-      _byType[introspection.beanType] = introspection;
+  void register(BeanIntrospection<Object> introspection) {
+    _byType[introspection.beanType] = introspection;
+    _specialized.clear();
+  }
+
+  /// Every registered introspection, this registry's first, then the
+  /// [parent]'s.
+  Iterable<BeanIntrospection<Object>> get introspections sync* {
+    yield* _byType.values;
+    if (parent case final parent?) {
+      yield* parent.introspections;
+    }
+  }
+
+  final _specialized = <Type, BeanIntrospection<Object>?>{};
+
+  /// The introspection of the generic type [T] (`Page<Book>`): the generic
+  /// introspection of its class specialized with the type [arguments];
+  /// `null` when its class is not introspected (or not generic). Cached per
+  /// type.
+  BeanIntrospection<Object>? forGenericType<T>(
+    List<TypeInfo<Object?>> arguments,
+  ) {
+    if (_specialized.containsKey(T)) {
+      return _specialized[T];
+    }
+    BeanIntrospection<Object>? found;
+    for (final introspection in introspections) {
+      if (introspection.isGeneric && introspection.isRawTypeOf<T>()) {
+        final specialized = introspection.specialize(arguments);
+        if (specialized.describes<T>()) {
+          found = specialized;
+          break;
+        }
+      }
+    }
+    return _specialized[T] = found;
+  }
 
   /// Adds every one of [introspections].
   void registerAll(Iterable<BeanIntrospection<Object>> introspections) =>

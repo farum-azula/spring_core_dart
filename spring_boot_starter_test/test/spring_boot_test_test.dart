@@ -47,6 +47,33 @@ void main() {
     });
   });
 
+  group('the context is closed with closeAsync()', () {
+    final destroyed = <String>[];
+    final app = springBootTest(
+      SpringApplication([
+        BeanModule('slow', [
+          BeanDefinition<Counter>(
+            name: 'counter',
+            create: (_) => Counter(),
+            preDestroy: (counter) async {
+              await Future<void>.delayed(const Duration(milliseconds: 30));
+              destroyed.add('counter');
+            },
+          ),
+        ]),
+      ]),
+    );
+
+    test('a dirty context is closed after the test', () {
+      expect(app.getBean<Counter>(), isNotNull);
+      app.markDirty();
+    });
+
+    test('(its asynchronous @PreDestroy was awaited)', () {
+      expect(destroyed, ['counter']);
+    });
+  });
+
   group('dynamicProperties (@DynamicPropertySource)', () {
     var port = 0;
     var registrations = 0;

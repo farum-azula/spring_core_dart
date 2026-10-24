@@ -84,8 +84,30 @@ abstract class FactoryBean<T extends Object> {
 /// }
 /// ```
 ///
-/// Spring 7's `getObject(Class)` / `supportsType(Class)` have no
-/// counterpart: product types are known at build time.
+/// Like Spring 7, a smart factory may serve more product types than its
+/// declared ones: once the factory exists, a lookup by a type it
+/// [supportsType] gets [getObjectForType] (Spring's `getObject(Class)`).
+///
+/// ```dart
+/// class ClientFactory extends SmartFactoryBean<HttpClient> {
+///   @override
+///   HttpClient getObject() => HttpClient();
+///
+///   @override
+///   bool supportsType(Type type) =>
+///       type == HttpClient || type == RetryingClient;
+///
+///   @override
+///   Object? getObjectForType(Type type) =>
+///       type == RetryingClient ? RetryingClient(getObject()) : getObject();
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// public boolean supportsType(Class<?> type) { ... }
+/// public <S> S getObject(Class<S> type) throws Exception { ... }
+/// ```
 abstract class SmartFactoryBean<T extends Object> extends FactoryBean<T> {
   /// Whether every [getObject] call returns an independent instance, so
   /// `BeanFactory.isPrototype` is `true` for the product. A plain
@@ -96,4 +118,15 @@ abstract class SmartFactoryBean<T extends Object> extends FactoryBean<T> {
   /// Whether the product of a non-lazy singleton factory is created at
   /// refresh (`preInstantiateSingletons`) instead of on first use.
   bool get isEagerInit => false;
+
+  /// Whether this factory serves a product for lookups by [type]; by
+  /// default its [objectType] (and `Object`), like Spring 7's
+  /// `supportsType(Class)`. Consulted once the factory is created.
+  bool supportsType(Type type) => type == objectType || type == Object;
+
+  /// The product for a lookup by [type] (Spring 7's `getObject(Class)`):
+  /// [getObject] when [supportsType], else `null`. Products of a singleton
+  /// factory are cached per type.
+  Object? getObjectForType(Type type) =>
+      supportsType(type) ? getObject() : null;
 }

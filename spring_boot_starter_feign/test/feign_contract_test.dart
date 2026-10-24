@@ -43,7 +43,7 @@ void main() {
         .withUserConfiguration(contractModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(server);
+        .withBean<HttpTransport>(() => server);
   });
 
   group('Map parameters', () {
@@ -93,7 +93,7 @@ void main() {
           .withUserConfiguration(invalidModule)
           .withAutoConfiguration(springBootAutoConfiguration)
           .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-          .withBean<HttpTransport>(MockHttpTransport())
+          .withBean<HttpTransport>(() => MockHttpTransport())
           .run((context) {
             final failure = '${context.startupFailure}';
             expect(failure, contains('Invalid Feign client InvalidClient'));
@@ -165,7 +165,7 @@ void main() {
         .withUserConfiguration(invalidModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(MockHttpTransport())
+        .withBean<HttpTransport>(() => MockHttpTransport())
         .run((context) {
           expect(
             '${context.startupFailure}',
@@ -243,7 +243,7 @@ void main() {
             'catalog.url=https://api.neon.test',
             'spring.cloud.openfeign.client.config.catalog.dismiss404=true',
           ])
-          .withBean<HttpTransport>(server)
+          .withBean<HttpTransport>(() => server)
           .runAsync((context) async {
             await expectLater(
               context.getBean<CatalogClient>().delete('7'),
@@ -309,7 +309,7 @@ void main() {
             'spring.cloud.openfeign.client.config.default.default-query-parameters.lang=en',
             'spring.cloud.openfeign.client.config.contract-v2.default-query-parameters.tag=a,b',
           ])
-          .withBean<RequestInterceptor>(Tracing())
+          .withBean<RequestInterceptor>(() => Tracing())
           .runAsync((context) async {
             final client = context.getBean<ContractClient>();
             await client.statics();
@@ -334,7 +334,7 @@ void main() {
             'spring.cloud.openfeign.client.config.default.default-request-headers.X-Shop=default',
             'spring.cloud.openfeign.client.config.default.default-request-headers.Accept=text/plain',
           ])
-          .withBean<RequestInterceptor>(Tracing())
+          .withBean<RequestInterceptor>(() => Tracing())
           .runAsync((context) async {
             await context.getBean<ContractClient>().statics();
             final headers = server.lastRequest.headers;
@@ -373,9 +373,9 @@ void main() {
       });
       final token = RotatingToken();
       await runner
-          .withBean<RequestInterceptor>(token)
+          .withBean<RequestInterceptor>(() => token)
           .withBean<Retryer>(
-            const DefaultRetryer(period: Duration(milliseconds: 1)),
+            () => const DefaultRetryer(period: Duration(milliseconds: 1)),
           )
           .runAsync((context) async {
             expect(await context.getBean<ContractClient>().statics(), 'ok');
@@ -455,7 +455,7 @@ void main() {
       });
       await runner
           .withBean<Retryer>(
-            const DefaultRetryer(period: Duration(milliseconds: 1)),
+            () => const DefaultRetryer(period: Duration(milliseconds: 1)),
           )
           .runAsync((context) async {
             await context.getBean<ContractClient>().statics();

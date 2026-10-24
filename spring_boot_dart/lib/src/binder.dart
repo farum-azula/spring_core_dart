@@ -67,8 +67,15 @@ final class Binder {
   /// ```dart
   /// binder.bind('app.timeout', const ClassType<Duration>()).get();
   /// ```
-  BindResult<T> bind<T>(String name, TypeInfo<T> target) {
-    final context = BindContext(this);
+  ///
+  /// [handler] is told about each property bound on the way (Spring Boot's
+  /// `BindHandler`).
+  BindResult<T> bind<T>(
+    String name,
+    TypeInfo<T> target, {
+    BindHandler handler = BindHandler.defaultHandler,
+  }) {
+    final context = BindContext(this, handler: handler);
     final value = context.bind(
       ConfigurationPropertyName.of(name),
       target,
@@ -95,7 +102,97 @@ final class BindResult<T> {
 
   /// The bound value, or [other] when nothing was bound.
   T orElse(T other) => isBound ? _value as T : other;
+
+  /// The bound value, or the result of [other] when nothing was bound.
+  T orElseGet(T Function() other) => isBound ? _value as T : other();
+
+  /// The bound value; throws the result of [error] when nothing was bound.
+  ///
+  /// ```dart
+  /// binder
+  ///     .bind('app.port', const ClassType<int>())
+  ///     .orElseThrow(() => StateError('app.port is required'));
+  /// ```
+  T orElseThrow(Object Function() error) =>
+      isBound ? _value as T : throw error();
+
+  /// Calls [action] with the bound value, if any.
+  void ifBound(void Function(T value) action) {
+    if (isBound) {
+      action(_value as T);
+    }
+  }
+
+  /// The bound value mapped through [mapper]; unbound stays unbound.
+  ///
+  /// ```dart
+  /// final port = binder
+  ///     .bind('app.port', const ClassType<int>())
+  ///     .map((port) => port + 1)
+  ///     .orElse(8080);
+  /// ```
+  BindResult<R> map<R>(R Function(T value) mapper) => isBound
+      ? BindResult<R>._(mapper(_value as T), isBound: true)
+      : BindResult<R>._(null, isBound: false);
 }
+
+/// Callbacks of a [Binder.bind] run for every property bound on the way
+/// (the top-level name, then nested properties and elements), like Spring
+/// Boot's `BindHandler`; extend it and override what you need.
+///
+/// ```dart
+/// final class LoggingBindHandler extends BindHandler {
+///   const LoggingBindHandler();
+///
+///   @override
+///   Object? onSuccess(
+///     ConfigurationPropertyName name,
+///     TypeInfo<Object?> target,
+///     Object? result,
+///   ) {
+///     print('bound $name');
+///     return result;
+///   }
+/// }
+///
+/// binder.bind('app', appType, handler: const LoggingBindHandler());
+/// ```
+///
+/// Spring (Java): `binder.bind("app", Bindable.of(App.class), handler)`.
+///
+/// Differences: [onFailure] gets the error message and decides whether it
+/// counts (Boot's returns a replacement value or rethrows).
+class BindHandler {
+  /// A handler that changes nothing.
+  const BindHandler();
+
+  /// The default: binds as is and reports every failure.
+  static const BindHandler defaultHandler = BindHandler();
+
+  /// Before [name] is bound to [target]; `false` skips it (unbound).
+  bool onStart(ConfigurationPropertyName name, TypeInfo<Object?> target) =>
+      true;
+
+  /// After [name] was bound to [result]; returns the value to use.
+  Object? onSuccess(
+    ConfigurationPropertyName name,
+    TypeInfo<Object?> target,
+    Object? result,
+  ) => result;
+
+  /// When [name] cannot be bound ([error] describes why); `true` (the
+  /// default) reports the failure, `false` ignores it (left unbound).
+  bool onFailure(ConfigurationPropertyName name, String error) => true;
+
+  /// After [name] was bound or not ([result] `null` when unbound).
+  void onFinish(
+    ConfigurationPropertyName name,
+    TypeInfo<Object?> target,
+    Object? result,
+  ) {}
+}
+
+Type _typeOf<T>() => T;
 
 /// Marks "nothing bound" (a bound value may be `null`).
 const Object unbound = _Unbound();
@@ -108,7 +205,7 @@ final class _Unbound {
 /// to `spring_boot_dart`).
 final class BindContext {
   /// Takes the property sources of [binder]'s environment, in order.
-  BindContext(this.binder)
+  BindContext(this.binder, {this.handler = BindHandler.defaultHandler})
     : sources = [
         for (final source in binder.environment.propertySources)
           if (source is! ConfigurationPropertySourcesPropertySource)
@@ -117,6 +214,13 @@ final class BindContext {
 
   /// The binder this run belongs to.
   final Binder binder;
+
+  /// Told about every bind (Spring Boot's `BindHandler`).
+  final BindHandler handler;
+
+  // Annotations of the field or constructor parameter being bound
+  // (`@DurationUnit`, `@DataSizeUnit`), applied to its value and elements.
+  List<Object> _annotations = const [];
 
   /// The environment's property sources, in precedence order.
   final List<BindSource> sources;
@@ -141,7 +245,10 @@ final class BindContext {
   }
 
   void _error(ConfigurationPropertyName name, String message, [Object? value]) {
-    errors.add('$name: $message${value == null ? '' : ' (was "$value")'}');
+    final error = '$name: $message${value == null ? '' : ' (was "$value")'}';
+    if (handler.onFailure(name, error)) {
+      errors.add(error);
+    }
   }
 
   /// Binds [name] to [type]; [existing] is the current value of a JavaBean
@@ -152,7 +259,34 @@ final class BindContext {
     TypeInfo<Object?> type, {
     required Object? existing,
     List<BindSource>? only,
-  }) => type.accept(_BindVisitor(this, name, existing, only ?? sources));
+  }) {
+    if (!handler.onStart(name, type)) {
+      return unbound;
+    }
+    var result = type.accept(
+      _BindVisitor(this, name, existing, only ?? sources),
+    );
+    if (!identical(result, unbound)) {
+      result = handler.onSuccess(name, type, result);
+    }
+    handler.onFinish(name, type, identical(result, unbound) ? null : result);
+    return result;
+  }
+
+  // Binds with [annotations] as the annotations of the bound member.
+  Object? _withAnnotations(List<Object> annotations, Object? Function() bind) {
+    final previous = _annotations;
+    _annotations = annotations;
+    try {
+      return bind();
+    } finally {
+      _annotations = previous;
+    }
+  }
+
+  // `@Name('x')` of a member, else its Dart name, in dashed form.
+  static String _memberName(String name, List<Object> annotations) =>
+      dashedForm(annotations.whereType<Name>().firstOrNull?.value ?? name);
 
   /// Binds the properties under [name] into [bean] through its setters
   /// (JavaBean binding); whether any property was bound.
@@ -165,7 +299,9 @@ final class BindContext {
     final scope = only ?? sources;
     var bound = false;
     for (final property in introspection.properties) {
-      final propertyName = name.append(dashedForm(property.name));
+      final propertyName = name.append(
+        _memberName(property.name, property.annotations),
+      );
       Object? current;
       try {
         current = property.getValue(bean);
@@ -173,9 +309,12 @@ final class BindContext {
         current = null;
       }
       final typeInfo = property.typeInfo;
-      final value = typeInfo != null
-          ? bind(propertyName, typeInfo, existing: current, only: scope)
-          : _bindRaw(propertyName, property.type, current, scope);
+      final value = _withAnnotations(
+        property.annotations,
+        () => typeInfo != null
+            ? bind(propertyName, typeInfo, existing: current, only: scope)
+            : _bindRaw(propertyName, property.type, current, scope),
+      );
       if (identical(value, unbound)) {
         continue;
       }
@@ -292,12 +431,12 @@ final class BindContext {
     var bound = false;
     var failed = false;
     for (final parameter in constructor.parameters) {
-      final parameterName = name.append(dashedForm(parameter.name));
-      var value = bind(
-        parameterName,
-        parameter.type,
-        existing: null,
-        only: scope,
+      final parameterName = name.append(
+        _memberName(parameter.name, parameter.annotations),
+      );
+      var value = _withAnnotations(
+        parameter.annotations,
+        () => bind(parameterName, parameter.type, existing: null, only: scope),
       );
       var omit = false;
       if (identical(value, unbound)) {
@@ -305,11 +444,14 @@ final class BindContext {
             .whereType<DefaultValue>()
             .firstOrNull;
         if (defaultValue != null) {
-          value = _defaultValue(
-            parameterName,
-            parameter.type,
-            defaultValue,
-            scope,
+          value = _withAnnotations(
+            parameter.annotations,
+            () => _defaultValue(
+              parameterName,
+              parameter.type,
+              defaultValue,
+              scope,
+            ),
           );
         } else if (!parameter.isRequired) {
           omit = true; // the Dart default value
@@ -403,13 +545,27 @@ final class BindContext {
     required bool recursive,
   }) => scope.any(
     (source) =>
-        source.isEnumerable ? source.names.any(name.isAncestorOf) : !recursive,
+        source.isEnumerable ? source.containsDescendantOf(name) : !recursive,
   );
 
   /// Converts [raw] to [type]; [unbound] (with an error recorded) when it
   /// cannot be converted, and for blank input of non-string types.
   Object? _convert(ConfigurationPropertyName name, Object raw, Type type) {
     try {
+      // `@DurationUnit` / `@DataSizeUnit` give plain numbers their unit.
+      if ((raw is String && raw.trim().isNotEmpty) || raw is int) {
+        if (type == Duration || type == _typeOf<Duration?>()) {
+          final unit = _annotations.whereType<DurationUnit>().firstOrNull;
+          if (unit != null) {
+            return DurationStyle.parse('$raw', unit: unit.value);
+          }
+        } else if (type == DataSize || type == _typeOf<DataSize?>()) {
+          final unit = _annotations.whereType<DataSizeUnit>().firstOrNull;
+          if (unit != null) {
+            return DataSize.parse('$raw', unit: unit.value);
+          }
+        }
+      }
       final converted = binder.conversionService.convertTo(raw, type);
       return converted ?? unbound;
     } catch (error) {
@@ -640,6 +796,45 @@ final class BindSource {
   /// The value of [name] in any relaxed form, or `null`.
   Object? valueOf(ConfigurationPropertyName name) =>
       ConfigurationPropertySources.getProperty(source, name);
+
+  /// Whether the source has a property below [name]. For system
+  /// environment variables also below [name] with its dashes read as dots
+  /// (`APP_MAIN_SERVER_HOST` is below `app.main-server`), like Spring
+  /// Boot's legacy check in `SystemEnvironmentPropertyMapper`.
+  bool containsDescendantOf(ConfigurationPropertyName name) {
+    if (names.any(name.isAncestorOf)) {
+      return true;
+    }
+    if (source is! SystemEnvironmentPropertySource) {
+      return false;
+    }
+    final legacy = _legacyName(name);
+    return legacy != null && names.any(legacy.isAncestorOf);
+  }
+
+  // `app.main-server[0]` → `app.main.server[0]`; `null` without dashes.
+  static ConfigurationPropertyName? _legacyName(
+    ConfigurationPropertyName name,
+  ) {
+    var dashed = false;
+    final parts = <String>[];
+    for (var i = 0; i < name.numberOfElements; i++) {
+      if (name.isIndexed(i)) {
+        parts.add('[${name.getElement(i)}]');
+        continue;
+      }
+      final element = name.getElement(
+        i,
+        form: ConfigurationPropertyNameForm.dashed,
+      );
+      dashed = dashed || element.contains('-');
+      parts.add(
+        '${parts.isEmpty ? '' : '.'}'
+        '${element.split('-').where((part) => part.isNotEmpty).join('.')}',
+      );
+    }
+    return dashed ? ConfigurationPropertyName.ofIfValid(parts.join()) : null;
+  }
 
   /// Every property of the source (empty when it cannot be listed).
   Iterable<ConfigurationPropertyName> get names => switch (source) {

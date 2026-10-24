@@ -107,6 +107,23 @@ void main() {
     expect(clock.pendingTimers, 0);
   });
 
+  test('initialDelay alone runs the method once (Spring 6.1)', () {
+    runner([
+      reportsDefinition({
+        'refresh': [const Scheduled(initialDelay: Duration(minutes: 1))],
+        'cleanup': [const Scheduled(initialDelayString: r'${jobs.warm-up:2m}')],
+      }),
+    ]).run((context) {
+      final tasks = context
+          .getBean<ScheduledAnnotationBeanPostProcessor>()
+          .scheduledTasks;
+      expect(tasks.map((t) => t.name), ['Reports.refresh', 'Reports.cleanup']);
+      expect(tasks.first.nextExecution, start.add(const Duration(minutes: 1)));
+      clock.elapse(const Duration(hours: 3));
+      expect(reportsOf(context).calls, ['refresh', 'cleanup']);
+    });
+  });
+
   test('placeholders, Spring Boot durations and a switched-off cron', () {
     runner([
       reportsDefinition({
@@ -541,4 +558,16 @@ class InterfaceOnlyProxy implements Advised {
 
   @override
   List<PointcutAdvisor> get aopAdvisors => const [];
+
+  @override
+  void addAdvisor(PointcutAdvisor advisor) => ProxyInvoker.notAdvised(this);
+
+  @override
+  bool removeAdvisor(PointcutAdvisor advisor) => ProxyInvoker.notAdvised(this);
+
+  @override
+  void addAdvice(MethodInterceptor advice) => ProxyInvoker.notAdvised(this);
+
+  @override
+  bool removeAdvice(MethodInterceptor advice) => ProxyInvoker.notAdvised(this);
 }

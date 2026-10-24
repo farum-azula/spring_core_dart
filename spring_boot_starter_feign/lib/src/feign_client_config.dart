@@ -37,11 +37,23 @@ enum FeignLoggerLevel {
 /// spring.cloud.openfeign.client.config.catalog.logger-level=basic
 /// spring.cloud.openfeign.client.config.catalog.dismiss404=true
 /// spring.cloud.openfeign.client.config.catalog.default-request-headers.X-Shop=neon
-/// spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en
+/// spring.cloud.openfeign.client.config.catalog.default-query-parameters.lang=en,de
+/// spring.cloud.openfeign.client.config.catalog.retryer=catalogRetryer
+/// spring.cloud.openfeign.client.config.catalog.error-decoder=catalogErrors
+/// spring.cloud.openfeign.client.config.catalog.request-interceptors[0]=audit
 /// spring.cloud.openfeign.client.config.catalog.follow-redirects=false
 /// spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=1s
 /// spring.cloud.openfeign.client.decode-slash=false
 /// ```
+///
+/// `default-request-headers` and `default-query-parameters` are maps of
+/// lists, like Spring's `Map<String, Collection<String>>`: `X: a,b` or a
+/// YAML list (`X[0]`, `X[1]`) gives two values.
+///
+/// `retryer`, `error-decoder` and `request-interceptors` name beans (Spring
+/// takes class names and creates the class when there is no bean of it):
+/// a bean name, or a class name (`com.example.AuditInterceptor` or
+/// `AuditInterceptor`) matching the type of exactly one bean.
 ///
 /// The `event-stream.*` keys (reconnection of `EventStream<T>` methods)
 /// are additions of this starter: Spring Cloud OpenFeign cannot stream.
@@ -59,6 +71,9 @@ final class FeignClientConfig {
     this.eventStreamReconnect = true,
     this.eventStreamReconnectDelay = const Duration(seconds: 3),
     this.eventStreamMaxAttempts,
+    this.retryer,
+    this.errorDecoder,
+    this.requestInterceptors = const [],
   });
 
   /// The base URL (when `@FeignClient` has none).
@@ -85,12 +100,13 @@ final class FeignClientConfig {
   final bool dismiss404;
 
   /// Headers sent with every request that has none of that name after the
-  /// interceptors ran.
-  final Map<String, String> defaultRequestHeaders;
+  /// interceptors ran (`default-request-headers.<name>`; a comma-separated
+  /// value or a list gives several values).
+  final Map<String, List<String>> defaultRequestHeaders;
 
   /// Query parameters added to every request that has none of that name
   /// after the interceptors ran (`default-query-parameters.<name>`; a
-  /// comma-separated value gives several).
+  /// comma-separated value or a list gives several).
   final Map<String, List<String>> defaultQueryParameters;
 
   /// Whether redirects are followed (`follow-redirects`, default `true`).
@@ -113,6 +129,19 @@ final class FeignClientConfig {
   /// gives up (`event-stream.max-attempts`; default: no limit).
   final int? eventStreamMaxAttempts;
 
+  /// The `Retryer` bean of the client (`retryer`: a bean or class name),
+  /// instead of the one of its configuration classes or the application.
+  final String? retryer;
+
+  /// The `ErrorDecoder` bean of the client (`error-decoder`: a bean or
+  /// class name).
+  final String? errorDecoder;
+
+  /// `RequestInterceptor` beans added for the client
+  /// (`request-interceptors`: bean or class names; those of `default` and
+  /// of the client).
+  final List<String> requestInterceptors;
+
   static const _prefix = 'spring.cloud.openfeign.client.config.';
 
   /// The settings of client [name] from [environment].
@@ -128,13 +157,17 @@ final class FeignClientConfig {
     }
 
     final level = get('logger-level');
-    final headers = <String, String>{
-      ..._headers(environment, '${_prefix}default.default-request-headers.'),
-      ..._headers(environment, '$_prefix$name.default-request-headers.'),
+    final headers = <String, List<String>>{
+      ..._lists(environment, '${_prefix}default.default-request-headers'),
+      ..._lists(environment, '$_prefix$name.default-request-headers'),
     };
-    final queries = <String, String>{
-      ..._headers(environment, '${_prefix}default.default-query-parameters.'),
-      ..._headers(environment, '$_prefix$name.default-query-parameters.'),
+    final queries = <String, List<String>>{
+      ..._lists(environment, '${_prefix}default.default-query-parameters'),
+      ..._lists(environment, '$_prefix$name.default-query-parameters'),
+    };
+    String? bean(String key) => switch (get(key)?.trim()) {
+      final value? when value.isNotEmpty => value,
+      _ => null,
     };
     final readTimeout = duration('read-timeout') ?? defaultReadTimeout;
     return FeignClientConfig(
@@ -145,10 +178,7 @@ final class FeignClientConfig {
           : FeignLoggerLevel.parse(level),
       dismiss404: get('dismiss404')?.trim().toLowerCase() == 'true',
       defaultRequestHeaders: headers,
-      defaultQueryParameters: {
-        for (final MapEntry(:key, :value) in queries.entries)
-          key: [for (final item in value.split(',')) item.trim()],
-      },
+      defaultQueryParameters: queries,
       followRedirects: get('follow-redirects')?.trim().toLowerCase() != 'false',
       decodeSlash:
           environment
@@ -165,6 +195,12 @@ final class FeignClientConfig {
         final value? => int.parse(value.trim()),
         null => null,
       },
+      retryer: bean('retryer'),
+      errorDecoder: bean('error-decoder'),
+      requestInterceptors: [
+        ..._list(environment, '${_prefix}default.request-interceptors'),
+        ..._list(environment, '$_prefix$name.request-interceptors'),
+      ],
     );
   }
 
@@ -179,38 +215,49 @@ final class FeignClientConfig {
     return timeout == Duration.zero ? null : timeout;
   }
 
-  // The entries under [prefix] with relaxed names, like Boot's map
-  // binding: `default-request-headers.X-Shop`,
-  // `defaultRequestHeaders.X-Shop` or `default-request-headers[X.Shop]`;
-  // the first source with an entry wins.
-  static Map<String, String> _headers(Environment environment, String prefix) {
-    final result = <String, String>{};
+  // The map of lists at [name], bound like Spring Cloud OpenFeign's
+  // `Map<String, Collection<String>>`: relaxed names
+  // (`default-request-headers.X-Shop`, `defaultRequestHeaders.X-Shop`,
+  // `default-request-headers[X.Shop]`), a comma list or indexed values
+  // (`X-Shop[0]`, YAML lists) for several values.
+  static Map<String, List<String>> _lists(
+    Environment environment,
+    String name,
+  ) {
     if (environment is! ConfigurableEnvironment) {
-      return result;
+      return const {};
     }
-    final parent = ConfigurationPropertyName.adapt(prefix, '.');
-    for (final source in environment.propertySources) {
-      if (source is! EnumerablePropertySource<Object>) {
-        continue;
-      }
-      final names = ConfigurationPropertySources.propertyNames(source);
-      for (final MapEntry(key: name, value: keys) in names.entries) {
-        if (parent.isAncestorOf(name)) {
-          final header = [
-            for (
-              var i = parent.numberOfElements;
-              i < name.numberOfElements;
-              i++
-            )
-              name.getElement(i),
-          ].join('.');
-          result.putIfAbsent(
-            header,
-            () => environment.getProperty(keys.first) ?? '',
-          );
-        }
-      }
-    }
-    return result;
+    return Binder.get(environment)
+        .bind(
+          _canonical(name),
+          const MapType<String, List<String>>(
+            ClassType<String>(),
+            ListType<String>(ClassType<String>()),
+          ),
+        )
+        .orElse(const {});
   }
+
+  // The list at [name] (a comma list or indexed values).
+  static List<String> _list(Environment environment, String name) {
+    if (environment is! ConfigurableEnvironment) {
+      return switch (environment.getProperty(name)) {
+        final value? => [
+          for (final item in value.split(','))
+            if (item.trim().isNotEmpty) item.trim(),
+        ],
+        null => const [],
+      };
+    }
+    return Binder.get(environment)
+        .bind(_canonical(name), const ListType<String>(ClassType<String>()))
+        .orElse(const []);
+  }
+
+  // [name] as a canonical property name (a client name may have upper
+  // case letters).
+  static String _canonical(String name) =>
+      ConfigurationPropertyName.isValid(name)
+      ? name
+      : ConfigurationPropertyName.adapt(name, '.').toString();
 }

@@ -135,19 +135,28 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
     this.candidates, {
     super.qualifier,
     super.requiredBy,
+    this.samePriority,
   });
 
   /// Names of the matching beans (only the primary ones when several are
   /// primary).
   final List<String> candidates;
 
+  /// The `@Priority` value several candidates share as the highest, when
+  /// that is why none could be chosen.
+  final int? samePriority;
+
   @override
-  String get message =>
-      '${candidates.length} beans of type $type match'
-      '${qualifier == null ? '' : " qualifier '$qualifier'"}'
-      '${requiredBy == null ? '' : " (required by bean '$requiredBy')"}: '
-      '${candidates.join(', ')}. '
-      'Mark one with @Primary or select one with @Qualifier.';
+  String get message => samePriority != null
+      ? 'Multiple beans of type $type found with the same highest priority '
+            '($samePriority)'
+            '${requiredBy == null ? '' : " (required by bean '$requiredBy')"}'
+            ' among candidates: ${candidates.join(', ')}.'
+      : '${candidates.length} beans of type $type match'
+            '${qualifier == null ? '' : " qualifier '$qualifier'"}'
+            '${requiredBy == null ? '' : " (required by bean '$requiredBy')"}: '
+            '${candidates.join(', ')}. '
+            'Mark one with @Primary or select one with @Qualifier.';
 }
 
 /// A dependency of a bean cannot be satisfied, like Spring's
@@ -449,4 +458,45 @@ class ScopeNotRegisteredException extends BeansException {
 
   /// The bean declared in that scope.
   final String beanName;
+}
+
+/// The scope of a bean is not active right now, like Spring's
+/// `ScopeNotActiveException`: the `CustomScope` threw a `StateError` from
+/// `get` (e.g. a request scope outside a request). An `ObjectProvider`'s
+/// `getIfAvailable` / `getIfUnique` / `ifAvailable` treat it like a
+/// missing bean.
+///
+/// ```dart
+/// class ScreenScope implements CustomScope {
+///   @override
+///   Object get(String name, Object Function() objectFactory) =>
+///       _current?.get(name, objectFactory) ??
+///       (throw StateError('No screen is open'));
+///   ...
+/// }
+/// cartProvider.getIfAvailable(); // null while no screen is open
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// cartProvider.getIfAvailable(); // null outside the scope
+/// ```
+class ScopeNotActiveException extends BeanCreationException {
+  /// [beanName] of scope [scopeName] cannot be reached: [cause].
+  ScopeNotActiveException(
+    String beanName,
+    this.scopeName,
+    Object cause, [
+    StackTrace? causeStackTrace,
+  ]) : super.withMessage(
+         beanName,
+         "Scope '$scopeName' is not active for the current context; consider "
+         'defining a scoped proxy for this bean if you intend to refer to it '
+         'from a singleton',
+         cause: cause,
+         causeStackTrace: causeStackTrace,
+       );
+
+  /// The inactive scope.
+  final String scopeName;
 }

@@ -280,11 +280,26 @@ void main() {
         [app],
         ['--spring.jackson.datatype.datetime.write-dates-as-timestamps=true'],
       );
+      // Jackson 3: seconds with the fraction.
       expect(
         context.getBean<ObjectMapper>().writeValueAsString(instant),
-        '${instant.millisecondsSinceEpoch}',
+        '1767261600.0',
       );
       context.close();
+      final millis = run(
+        [app],
+        [
+          '--spring.jackson.datatype.datetime.write-dates-as-timestamps=true',
+          '--spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds=false',
+          '--spring.jackson.datatype.datetime.write-durations-as-timestamps=true',
+          '--spring.jackson.default-property-inclusion=non_default',
+        ],
+      );
+      final mapper = millis.getBean<ObjectMapper>();
+      expect(mapper.writeValueAsString(instant), '1767261600000');
+      expect(mapper.writeValueAsString(const Duration(seconds: 2)), '2000');
+      expect(mapper.inclusion, JsonInclusion.nonDefault);
+      millis.close();
       // The Boot 4 key wins over the Boot 3 one.
       final both = run(
         [app],

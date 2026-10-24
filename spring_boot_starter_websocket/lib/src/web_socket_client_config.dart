@@ -39,8 +39,10 @@ final class WebSocketClientConfig {
   /// listens (`reconnect.*`).
   final WebSocketReconnectPolicy reconnect;
 
-  /// Headers sent with every handshake (not possible in browsers).
-  final Map<String, String> defaultRequestHeaders;
+  /// Headers sent with every handshake (not possible in browsers); a
+  /// comma-separated value or a list (`X-Tag[0]`, YAML) gives several
+  /// values.
+  final Map<String, List<String>> defaultRequestHeaders;
 
   static const _prefix = 'spring.websocket.client.config.';
 
@@ -74,45 +76,36 @@ final class WebSocketClientConfig {
         maxRetries: maxRetries == null ? null : int.parse(maxRetries.trim()),
       ),
       defaultRequestHeaders: {
-        ..._headers(environment, '${_prefix}default.default-request-headers.'),
-        ..._headers(environment, '$_prefix$name.default-request-headers.'),
+        ..._headers(environment, '${_prefix}default.default-request-headers'),
+        ..._headers(environment, '$_prefix$name.default-request-headers'),
       },
     );
   }
 
-  // The entries under [prefix] with relaxed names, like Boot's map
-  // binding: `default-request-headers.X-Shop`,
-  // `defaultRequestHeaders.X-Shop` or `default-request-headers[X.Shop]`;
-  // the first source with an entry wins.
-  static Map<String, String> _headers(Environment environment, String prefix) {
-    final result = <String, String>{};
+  // The map of lists at [name], bound like a Spring Boot
+  // `Map<String, List<String>>`: relaxed names
+  // (`default-request-headers.X-Shop`, `defaultRequestHeaders.X-Shop`,
+  // `default-request-headers[X.Shop]`), a comma list or indexed values
+  // (`X-Shop[0]`, YAML lists) for several values.
+  static Map<String, List<String>> _headers(
+    Environment environment,
+    String name,
+  ) {
     if (environment is! ConfigurableEnvironment) {
-      return result;
+      return const {};
     }
-    final parent = ConfigurationPropertyName.adapt(prefix, '.');
-    for (final source in environment.propertySources) {
-      if (source is! EnumerablePropertySource<Object>) {
-        continue;
-      }
-      final names = ConfigurationPropertySources.propertyNames(source);
-      for (final MapEntry(key: name, value: keys) in names.entries) {
-        if (parent.isAncestorOf(name)) {
-          final header = [
-            for (
-              var i = parent.numberOfElements;
-              i < name.numberOfElements;
-              i++
-            )
-              name.getElement(i),
-          ].join('.');
-          result.putIfAbsent(
-            header,
-            () => environment.getProperty(keys.first) ?? '',
-          );
-        }
-      }
-    }
-    return result;
+    final canonical = ConfigurationPropertyName.isValid(name)
+        ? name
+        : ConfigurationPropertyName.adapt(name, '.').toString();
+    return Binder.get(environment)
+        .bind(
+          canonical,
+          const MapType<String, List<String>>(
+            ClassType<String>(),
+            ListType<String>(ClassType<String>()),
+          ),
+        )
+        .orElse(const {});
   }
 }
 

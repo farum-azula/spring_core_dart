@@ -128,8 +128,10 @@ final class ApplicationContextRunner {
   ApplicationContextRunner withSystemEnvironment(Map<String, String> env) =>
       _copy(systemEnvironment: {...systemEnvironment, ...env});
 
-  /// Registers [instance] as an extra bean of [T] called [name] (default:
-  /// the type name in lower camel case), like Boot's `withBean`.
+  /// Registers an extra bean of [T] called [name] (default: the type name
+  /// in lower camel case), created by [supplier] in each context the
+  /// runner starts, like Boot's `withBean(type, supplier)`: every run gets
+  /// a new instance, never one a previous run destroyed.
   ///
   /// The bean is registered before the configurations are processed, so
   /// auto-configuration sees it: a `@ConditionalOnMissingBean` backs off,
@@ -138,7 +140,7 @@ final class ApplicationContextRunner {
   /// bean; use [withBeanOverride] for that.
   ///
   /// ```dart
-  /// runner.withBean<HttpClient>(FakeClient()).run((context) {
+  /// runner.withBean<HttpClient>(FakeClient.new).run((context) {
   ///   expect(context, hasSingleBean<HttpClient>()); // the starter backed off
   /// });
   /// ```
@@ -149,7 +151,7 @@ final class ApplicationContextRunner {
   ///     .run(context -> assertThat(context).hasSingleBean(HttpClient.class));
   /// ```
   ApplicationContextRunner withBean<T extends Object>(
-    T instance, {
+    T Function() supplier, {
     String? name,
   }) => _copy(
     beans: [
@@ -157,7 +159,7 @@ final class ApplicationContextRunner {
       BeanDefinition<T>(
         name: name ?? _beanName('$T'),
         types: [T],
-        create: (_) => instance,
+        create: (_) => supplier(),
         // Unique: definitions of the same source are taken as one.
         source: 'ApplicationContextRunner.withBean<$T>#${beans.length}',
       ),
@@ -217,8 +219,9 @@ final class ApplicationContextRunner {
     }
   }
 
-  /// Like [run], for an asynchronous [body]: the context is closed once
-  /// the returned future completes.
+  /// Like [run], for an asynchronous [body]: the context is closed with
+  /// `closeAsync()` (asynchronous `@PreDestroy` and lifecycle stops are
+  /// awaited) once the returned future completes.
   ///
   /// ```dart
   /// await runner.runAsync((context) async {
@@ -232,7 +235,7 @@ final class ApplicationContextRunner {
     try {
       return await body(assertable);
     } finally {
-      assertable._close();
+      await assertable._closeAsync();
     }
   }
 
@@ -254,7 +257,11 @@ final class ApplicationContextRunner {
       ...autoConfigurations,
     ], environment: environment);
     context.beanFactory.addBeanPostProcessor(
-      ConfigurationPropertiesBinder(environment, context.introspector),
+      ConfigurationPropertiesBinder(
+        environment,
+        context.introspector,
+        beanFactory: context.beanFactory,
+      ),
     );
     if (overrides.isNotEmpty) {
       context.addBeanFactoryPostProcessor(BeanOverrideProcessor(overrides));
@@ -285,6 +292,12 @@ final class AssertableApplicationContext {
   void _close() {
     if (_context.isActive) {
       _context.close();
+    }
+  }
+
+  Future<void> _closeAsync() async {
+    if (_context.isActive) {
+      await _context.closeAsync();
     }
   }
 

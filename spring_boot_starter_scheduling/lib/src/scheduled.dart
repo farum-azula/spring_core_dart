@@ -3,7 +3,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// Runs a bean method on a schedule, like Spring's `@Scheduled`.
 ///
 /// Give exactly one of [cron], [fixedRate] / [fixedRateString] or
-/// [fixedDelay] / [fixedDelayString]. The method must be public and take
+/// [fixedDelay] / [fixedDelayString] — or only [initialDelay] /
+/// [initialDelayString] for a single run after that delay (Spring 6.1). The method must be public and take
 /// no parameters; it may return a `Future`, which is awaited. Put several
 /// `@Scheduled` on one method for several schedules. Requires
 /// `spring_core_dart_generator` (it makes the method callable without
@@ -24,6 +25,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 ///   @Scheduled(cron: r'${reports.cleanup-cron:-}') // `-`: switched off
 ///   void cleanup() { ... }
+///
+///   @Scheduled(initialDelay: Duration(minutes: 1)) // once, a minute in
+///   void warmUp() { ... }
 /// }
 /// ```
 ///
@@ -40,6 +44,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 ///   @Scheduled(cron = "0 0 9 * * MON-FRI")
 ///   void morningDigest() { ... }
+///
+///   @Scheduled(initialDelay = 1, timeUnit = TimeUnit.MINUTES)
+///   void warmUp() { ... }
 /// }
 /// ```
 ///
@@ -90,7 +97,7 @@ class Scheduled {
   final Duration? fixedDelay;
 
   /// Delay before the first run of [fixedRate] / [fixedDelay] tasks; not
-  /// allowed with [cron].
+  /// allowed with [cron]. Alone, the method runs once after it.
   final Duration? initialDelay;
 
   /// [fixedRate] as text: `'10s'`, `r'${jobs.rate}'`, `'500'` (ms).

@@ -28,9 +28,80 @@
 ///   }
 /// }
 /// ```
+///
+/// [value] is the instantiation model, as in Spring: empty for one
+/// (singleton) aspect, `perthis(pointcut)` for one aspect instance per
+/// proxy, `pertarget(pointcut)` for one per target bean. A per-instance
+/// aspect must be a prototype bean (`@Scope('prototype')`); its advice
+/// applies where both the per-clause pointcut and the advice's pointcut
+/// match.
+///
+/// ```dart
+/// @Aspect('perthis(execution(* Orders.*(..)))')
+/// @Component()
+/// @Scope('prototype')
+/// class CallCounter {
+///   int calls = 0;
+///
+///   @Before('execution(* Orders.*(..))')
+///   void count() => calls++;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Aspect("perthis(execution(* com.x.Orders.*(..)))")
+/// @Component
+/// @Scope("prototype")
+/// class CallCounter { ... }
+/// ```
 class Aspect {
-  /// Creates the `@Aspect()` annotation.
-  const Aspect();
+  /// Creates the `@Aspect()` annotation with the per-clause [value].
+  const Aspect([this.value = '']);
+
+  /// The instantiation model: empty (singleton), `perthis(...)` or
+  /// `pertarget(...)`.
+  final String value;
+}
+
+/// Makes the proxies of matching beans implement an interface, like
+/// AspectJ's `@DeclareParents` in Spring AOP (an introduction).
+///
+/// Put it on a static field of an `@Aspect` whose type is the interface:
+/// the proxy of every bean whose class matches the [value] type pattern
+/// (`Orders`, `*Service`, `Repository+`) implements it, forwarding its
+/// members to a [defaultImpl] instance created per proxy. Advice can reach
+/// it with `this(tracked)`.
+///
+/// ```dart
+/// @Aspect()
+/// @Component()
+/// class UsageTracking {
+///   @DeclareParents('*Service+', defaultImpl: DefaultUsageTracked)
+///   static UsageTracked? mixin;
+///
+///   @Before('execution(* *Service.*(..)) && this(usage)')
+///   void count(UsageTracked usage) => usage.increment();
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @DeclareParents(value = "com.x.service.*+",
+///     defaultImpl = DefaultUsageTracked.class)
+/// public static UsageTracked mixin;
+/// ```
+class DeclareParents {
+  /// Introduces the field's interface into beans matching [value],
+  /// implemented by [defaultImpl] (a class with a no-argument
+  /// constructor).
+  const DeclareParents(this.value, {required this.defaultImpl});
+
+  /// Type pattern of the bean classes that get the interface.
+  final String value;
+
+  /// The implementation each proxy forwards the interface's members to.
+  final Type defaultImpl;
 }
 
 /// A named pointcut on a method of an aspect, like Spring's `@Pointcut`.

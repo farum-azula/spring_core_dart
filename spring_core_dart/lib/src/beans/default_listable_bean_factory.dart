@@ -5,7 +5,9 @@ import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/beans/factory_bean.dart';
+import 'package:spring_core_dart/src/beans/jakarta.dart' show Priority;
 import 'package:spring_core_dart/src/beans/lifecycle_callbacks.dart';
+import 'package:spring_core_dart/src/beans/null_bean.dart';
 import 'package:spring_core_dart/src/beans/object_provider.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
 import 'package:spring_core_dart/src/beans/scope.dart';
@@ -127,6 +129,10 @@ class DefaultListableBeanFactory
   final _rawSingletons = <String, Object>{};
   // Cached products of singleton FactoryBeans, by factory bean name.
   final _factoryProducts = <String, Object>{};
+
+  // Products of singleton SmartFactoryBeans looked up by a type
+  // (getObjectForType), per factory name and type.
+  final _typedFactoryProducts = <(String, Type), Object>{};
   // Factory beans whose getObject() is running -> creation stack depth at
   // that moment (to report re-entrant product requests as cycles).
   final _productsInCreation = <String, int>{};
@@ -149,6 +155,13 @@ class DefaultListableBeanFactory
   final _dependents = <String, Set<String>>{};
   final _dependencies = <String, Set<String>>{};
   final _postProcessors = <BeanPostProcessor>[];
+
+  // Definitions told to the MergedBeanDefinitionPostProcessors already.
+  final _mergedDefinitions = <String>{};
+
+  // Beans an InstantiationAwareBeanPostProcessor supplied before
+  // instantiation: no destroy callbacks, like Spring.
+  final _shortCircuited = <String>{};
   final _valueResolvers = <StringValueResolver>[];
   final _scopes = <String, CustomScope>{};
   final _configurers = <Type, BeanConfigurer>{};
@@ -211,10 +224,22 @@ class DefaultListableBeanFactory
       }
     } else if (_aliases.containsKey(name)) {
       // Like Spring: with overriding allowed the definition takes the name
-      // over from the alias.
+      // over from the alias (which is freed); otherwise an alias of an
+      // existing bean is an override, a dangling one a store error.
+      final aliased = _canonical(name);
       if (!allowBeanDefinitionOverriding) {
-        throw BeanDefinitionOverrideException(name, definition.source);
+        if (containsLocalBean(aliased)) {
+          throw BeanDefinitionOverrideException(name, definition.source);
+        }
+        throw BeanDefinitionStoreException(
+          "Cannot register bean definition for bean '$name' since there is "
+          "already an alias for bean '$aliased' bound.",
+        );
       }
+      _log.info(
+        "Removed alias '$name' for bean '$aliased' since the same name has "
+        'been registered for another bean definition',
+      );
       _aliases.remove(name);
     }
     // Replacing a definition or a registered singleton destroys the old
@@ -222,10 +247,24 @@ class DefaultListableBeanFactory
     if (existing != null || _manualDefinitions.containsKey(name)) {
       destroySingleton(name);
     }
+    if (existing != null) {
+      _resetMergedDefinition(name);
+    }
     _definitions[name] = definition;
     _clearByTypeCache();
     for (final alias in definition.aliases) {
       registerAlias(name, alias);
+    }
+  }
+
+  // Spring's resetBeanDefinition: the MergedBeanDefinitionPostProcessors
+  // drop their metadata of [name].
+  void _resetMergedDefinition(String name) {
+    _mergedDefinitions.remove(name);
+    for (final processor in _postProcessors) {
+      if (processor is MergedBeanDefinitionPostProcessor) {
+        processor.resetBeanDefinition(name);
+      }
     }
   }
 
@@ -237,6 +276,7 @@ class DefaultListableBeanFactory
     }
     destroySingleton(canonical);
     _definitions.remove(canonical);
+    _resetMergedDefinition(canonical);
     // Every alias leading to the bean, also through other aliases.
     final aliases = [
       for (final alias in _aliases.keys)
@@ -536,7 +576,8 @@ class DefaultListableBeanFactory
   /// first, then registered singletons, like Spring.
   List<BeanDefinition<Object>> _definitionsOf(Type type) => _byType[type] ??= [
     for (final definition in _definitions.values)
-      if (definition.matchesType(type)) definition,
+      if (definition.matchesType(type) || _smartSupports(definition, type))
+        definition,
     for (final definition in _manualDefinitions.values)
       if (definition.matchesType(type)) definition,
   ];
@@ -546,12 +587,25 @@ class DefaultListableBeanFactory
     for (final definition in _definitionsOf(type))
       _Candidate(
         this,
-        definition.isFactoryBean && !definition.isProductType(type)
+        definition.isFactoryBean && !_isProductType(definition, type)
             ? '${BeanFactory.factoryBeanPrefix}${definition.name}'
             : definition.name,
         definition,
       ),
   ];
+
+  // A created SmartFactoryBean serving [type] beyond its declared product
+  // types (Spring 7's supportsType).
+  bool _smartSupports(BeanDefinition<Object> definition, Type type) =>
+      definition.isFactoryBean &&
+      !definition.types.contains(type) &&
+      switch (_singletons[definition.name]) {
+        final SmartFactoryBean<Object> factory => factory.supportsType(type),
+        _ => false,
+      };
+
+  bool _isProductType(BeanDefinition<Object> definition, Type type) =>
+      definition.isProductType(type) || _smartSupports(definition, type);
 
   void _clearByTypeCache() {
     _byType.clear();
@@ -718,6 +772,15 @@ class DefaultListableBeanFactory
         }
       }
     }
+    final prioritized = _highestPriorityCandidate(
+      type,
+      candidates,
+      qualifier: qualifier,
+      requiredBy: requiredBy,
+    );
+    if (prioritized != null) {
+      return prioritized;
+    }
     final selected = _uniqueDefaultCandidate(candidates);
     if (selected != null) {
       return selected;
@@ -771,6 +834,47 @@ class DefaultListableBeanFactory
         if (!candidate.fallback) candidate,
     ];
     return regular.length == 1 ? regular.single : null;
+  }
+
+  /// The `@Priority` of [definition] (jakarta's), if any.
+  static int? _priorityOf(BeanDefinition<Object>? definition) =>
+      definition?.annotations.whereType<Priority>().firstOrNull?.value;
+
+  /// Spring's `determineHighestPriorityCandidate`: the candidate with the
+  /// lowest `@Priority` value (candidates without one do not compete);
+  /// two sharing that value are ambiguous.
+  static _Candidate? _highestPriorityCandidate(
+    Type type,
+    List<_Candidate> candidates, {
+    String? qualifier,
+    String? requiredBy,
+  }) {
+    _Candidate? highest;
+    int? highestPriority;
+    var conflict = false;
+    for (final candidate in candidates) {
+      final priority = _priorityOf(candidate.definition);
+      if (priority == null) {
+        continue;
+      }
+      if (highestPriority == null || priority < highestPriority) {
+        highest = candidate;
+        highestPriority = priority;
+        conflict = false;
+      } else if (priority == highestPriority) {
+        conflict = true;
+      }
+    }
+    if (conflict) {
+      throw NoUniqueBeanDefinitionException(
+        type,
+        [for (final candidate in candidates) candidate.name],
+        qualifier: qualifier,
+        requiredBy: requiredBy,
+        samePriority: highestPriority,
+      );
+    }
+    return highest;
   }
 
   static _Candidate? _uniqueDefaultCandidate(List<_Candidate> candidates) {
@@ -838,6 +942,12 @@ class DefaultListableBeanFactory
               : candidates
                     .where((c) => c.matchesName(qualifier))
                     .firstOrNull) ??
+          _highestPriorityCandidate(
+            type,
+            candidates,
+            qualifier: qualifier,
+            requiredBy: requiredBy,
+          ) ??
           _uniqueDefaultCandidate(candidates);
       if (selected == null) {
         throw NoUniqueBeanDefinitionException(
@@ -860,8 +970,10 @@ class DefaultListableBeanFactory
   /// then the parent.
   T? _getBean<T extends Object>(String? qualifier, {required bool required}) {
     final candidate = _resolveNamedBean(T, qualifier);
-    if (candidate != null) {
-      return candidate.resolve<T>();
+    // A null bean is found but absent: the lookup goes on (Spring's
+    // resolveNamedBean returns null for it).
+    if (candidate?.resolveOrNull<T>() case final bean?) {
+      return bean;
     }
     final resolvable = qualifier == null ? _resolvable[T] : null;
     if (resolvable != null) {
@@ -916,7 +1028,16 @@ class DefaultListableBeanFactory
       if (requester != null) {
         _registerDependency(candidate, requester, direct: direct);
       }
-      return candidate.resolve<T>();
+      // A null bean satisfies only an optional point (Spring's
+      // doResolveDependency).
+      return candidate.resolveOrNull<T>() ??
+          (required
+              ? throw NoSuchBeanDefinitionException(
+                  T,
+                  qualifier: qualifier,
+                  requiredBy: requester,
+                )
+              : null);
     }
     final resolvable = qualifier == null ? _resolvable[T] : null;
     if (resolvable != null) {
@@ -944,7 +1065,8 @@ class DefaultListableBeanFactory
       requester: requester,
       multiple: true,
     ))
-      (_registeredFor(candidate, requester), candidate.resolve<T>()),
+      if (candidate.resolveOrNull<T>() case final bean?)
+        (_registeredFor(candidate, requester), bean),
   ];
 
   _Candidate _registeredFor(_Candidate candidate, String? requester) {
@@ -1093,7 +1215,8 @@ class DefaultListableBeanFactory
       return definition.isFactoryBean && definition.types.contains(type);
     }
     return definition.isFactoryBean
-        ? definition.factoryObjectTypes!.contains(type)
+        ? definition.factoryObjectTypes!.contains(type) ||
+              _smartSupports(definition, type)
         : definition.types.contains(type);
   }
 
@@ -1166,7 +1289,18 @@ class DefaultListableBeanFactory
           ? products.first
           : _factoryProducts[canonical]?.runtimeType;
     }
-    return manual ? _singletons[canonical]?.runtimeType : definition.beanType;
+    if (manual) {
+      return _singletons[canonical]?.runtimeType;
+    }
+    for (final processor in _postProcessors) {
+      if (processor is SmartInstantiationAwareBeanPostProcessor) {
+        if (processor.predictBeanType(definition.beanType, canonical)
+            case final predicted?) {
+          return predicted;
+        }
+      }
+    }
+    return definition.beanType;
   }
 
   // ---------------------------------------------------------------------
@@ -1189,14 +1323,15 @@ class DefaultListableBeanFactory
   }) => {
     for (final candidate in _localCandidates(T))
       if (includeNonSingletons || candidate.definition!.isSingleton)
-        candidate.name: candidate.resolve<T>(),
+        candidate.name: ?candidate.resolveOrNull<T>(),
   };
 
   @override
   List<T> getSortedBeans<T extends Object>({String? qualifier}) => [
     for (final (_, bean) in _sortEntries([
       for (final candidate in _lookupCandidates(T, qualifier))
-        (candidate.name, candidate.resolve<T>(), candidate.definition),
+        if (candidate.resolveOrNull<T>() case final bean?)
+          (candidate.name, bean, candidate.definition),
     ]))
       bean,
   ];
@@ -1259,8 +1394,16 @@ class DefaultListableBeanFactory
     if (order != null && definition!.factoryMethodName != null) {
       return order;
     }
-    return OrderComparator.orderOf(bean, order);
+    // Ordered, then @Order, then jakarta's @Priority (Spring's
+    // AnnotationAwareOrderComparator).
+    return OrderComparator.orderOf(bean, order ?? _priorityOf(definition));
   }
+
+  /// The order a bean of [definition] gets from its annotations when it is
+  /// not `Ordered`: `@Order`, else jakarta's `@Priority` (Spring's
+  /// `OrderUtils.getOrderFromAnnotations`); `null` without either.
+  static int? annotatedOrderOf(BeanDefinition<Object> definition) =>
+      definition.order ?? _priorityOf(definition);
 
   // ---------------------------------------------------------------------
   // Dependency resolution (generated code)
@@ -1459,7 +1602,12 @@ class DefaultListableBeanFactory
   /// a factory bean when [type] is a product type.
   Object _objectFor(BeanDefinition<Object> definition, Type type) {
     final instance = _instanceOf(definition);
-    return definition.isProductType(type)
+    if (instance is SmartFactoryBean<Object> &&
+        type != Object &&
+        _isProductType(definition, type)) {
+      return _typedProductOf(definition, instance, type);
+    }
+    return _isProductType(definition, type)
         ? _productOf(definition, instance)
         : instance;
   }
@@ -1487,6 +1635,10 @@ class DefaultListableBeanFactory
         _singletons[name] = exposed;
         _rawSingletons[name] = raw;
         _creationOrder.add(name);
+        if (exposed is SmartFactoryBean<Object>) {
+          // It may serve more types now (supportsType).
+          _clearByTypeCache();
+        }
         if (_requiresDestruction(definition, raw, exposed)) {
           _disposables.add(name);
         }
@@ -1512,7 +1664,7 @@ class DefaultListableBeanFactory
         final scope =
             _scopes[scopeName] ??
             (throw ScopeNotRegisteredException(scopeName, name));
-        return scope.get(name, () {
+        Object create() {
           final (raw, exposed) = _createBean(definition);
           if (_canExpando(exposed)) {
             _scopedRaw[exposed] = raw;
@@ -1524,7 +1676,16 @@ class DefaultListableBeanFactory
             );
           }
           return exposed;
-        });
+        }
+
+        try {
+          return scope.get(name, create);
+        } on StateError catch (error, stackTrace) {
+          // The scope itself refused (creation errors are wrapped in a
+          // BeanCreationException): Spring's IllegalStateException from
+          // Scope.get, reported as ScopeNotActiveException.
+          throw ScopeNotActiveException(name, scopeName, error, stackTrace);
+        }
     }
   }
 
@@ -1564,6 +1725,45 @@ class DefaultListableBeanFactory
     }
   }
 
+  // Spring 7's getObject(Class) of a SmartFactoryBean; cached per type for
+  // a singleton factory.
+  Object _typedProductOf(
+    BeanDefinition<Object> definition,
+    SmartFactoryBean<Object> factory,
+    Type type,
+  ) {
+    final name = definition.name;
+    final shared = definition.isSingleton && factory.isSingleton;
+    if (shared) {
+      if (_typedFactoryProducts[(name, type)] case final cached?) {
+        return cached;
+      }
+    }
+    Object? product;
+    try {
+      product = factory.getObjectForType(type);
+      if (product != null) {
+        for (final processor in _postProcessors) {
+          product = processor.postProcessAfterInitialization(product!, name);
+        }
+      }
+    } on BeanCreationException catch (error, stackTrace) {
+      if (error.beanName == name) {
+        rethrow;
+      }
+      throw BeanCreationException(name, error, stackTrace);
+    } catch (error, stackTrace) {
+      throw BeanCreationException(name, error, stackTrace);
+    }
+    if (product == null) {
+      throw BeanNotOfRequiredTypeException(name, type, factory.runtimeType);
+    }
+    if (shared) {
+      _typedFactoryProducts[(name, type)] = product;
+    }
+    return product;
+  }
+
   /// Calls `getObject` and applies only `postProcessAfterInitialization`
   /// (like Spring's `postProcessObjectFromFactoryBean`).
   Object _createProduct(String name, FactoryBean<Object> factory) {
@@ -1601,8 +1801,44 @@ class DefaultListableBeanFactory
         registerDependentBean(dependsOn, name);
         getBeanByName(dependsOn);
       }
+      if (_beforeInstantiation(definition) case final bean?) {
+        _shortCircuited.add(name);
+        return (bean, bean);
+      }
+      _shortCircuited.remove(name);
       final raw = definition.instantiate(this);
-      definition.populate(raw, this);
+      // A null bean is registered as it is: nothing to inject, process or
+      // initialize (Spring skips its init methods too).
+      if (raw is NullBean) {
+        return (raw, raw);
+      }
+      if (_mergedDefinitions.add(name)) {
+        for (final processor in _postProcessors) {
+          if (processor is MergedBeanDefinitionPostProcessor) {
+            processor.postProcessMergedBeanDefinition(
+              definition,
+              definition.beanType,
+              name,
+            );
+          }
+        }
+      }
+      var inject = true;
+      for (final processor in _postProcessors) {
+        if (processor is InstantiationAwareBeanPostProcessor &&
+            !processor.postProcessAfterInstantiation(raw, name)) {
+          inject = false;
+          break;
+        }
+      }
+      if (inject) {
+        definition.populate(raw, this);
+        for (final processor in _postProcessors) {
+          if (processor is InstantiationAwareBeanPostProcessor) {
+            processor.postProcessProperties(raw, name);
+          }
+        }
+      }
       final exposed = _initialize(raw, name, definition);
       return (raw, exposed);
     } on BeanCreationException catch (error, stackTrace) {
@@ -1619,6 +1855,31 @@ class DefaultListableBeanFactory
     }
   }
 
+  // Spring's resolveBeforeInstantiation: the first bean an
+  // InstantiationAwareBeanPostProcessor supplies, through the
+  // postProcessAfterInitialization of every processor; `null` to create
+  // the bean as usual.
+  Object? _beforeInstantiation(BeanDefinition<Object> definition) {
+    final name = definition.name;
+    for (final processor in _postProcessors) {
+      if (processor is! InstantiationAwareBeanPostProcessor) {
+        continue;
+      }
+      final bean = processor.postProcessBeforeInstantiation(
+        definition.beanType,
+        name,
+      );
+      if (bean != null) {
+        var exposed = bean;
+        for (final processor in _postProcessors) {
+          exposed = processor.postProcessAfterInitialization(exposed, name);
+        }
+        return exposed;
+      }
+    }
+    return null;
+  }
+
   /// Aware callbacks, post-processors and init callbacks; [definition] is
   /// `null` for `initializeBean` on an external object.
   Object _initialize(
@@ -1633,7 +1894,22 @@ class DefaultListableBeanFactory
       raw.setBeanFactory(this);
     }
     var exposed = raw;
+    // `@PostConstruct` runs where the CommonAnnotationBeanPostProcessor is
+    // in the chain (after every processor without it), like Spring.
+    FutureOr<void> postConstruct() {
+      if (definition != null) {
+        return definition.invokePostConstruct(raw);
+      }
+      _configurablePostConstruct[raw.runtimeType]?.call(raw);
+    }
+
+    FutureOr<void> Function()? postConstructed;
     for (final processor in _postProcessors) {
+      if (processor is CommonAnnotationBeanPostProcessor &&
+          postConstructed == null) {
+        final result = postConstruct();
+        postConstructed = () => result;
+      }
       exposed = processor.postProcessBeforeInitialization(exposed, name);
     }
     // Init callbacks run on the raw instance; a processor may already have
@@ -1642,10 +1918,7 @@ class DefaultListableBeanFactory
     final initializing = raw is InitializingBean;
     final init = _runInOrder(
       [
-        if (definition == null)
-          () => _configurablePostConstruct[raw.runtimeType]?.call(raw)
-        else
-          () => definition.invokePostConstruct(raw),
+        postConstructed ?? postConstruct,
         if (raw is InitializingBean) raw.afterPropertiesSet,
         // Like Spring, an init method named afterPropertiesSet runs once.
         if (definition != null &&
@@ -1679,13 +1952,15 @@ class DefaultListableBeanFactory
     Object raw,
     Object exposed,
   ) =>
-      definition.hasDestroyCallbacks ||
-      raw is DisposableBean ||
-      _postProcessors.any(
-        (p) =>
-            p is DestructionAwareBeanPostProcessor &&
-            p.requiresDestruction(exposed),
-      );
+      raw is! NullBean &&
+      !_shortCircuited.contains(definition.name) &&
+      (definition.hasDestroyCallbacks ||
+          raw is DisposableBean ||
+          _postProcessors.any(
+            (p) =>
+                p is DestructionAwareBeanPostProcessor &&
+                p.requiresDestruction(exposed),
+          ));
 
   @override
   void autowireBean(Object existingBean) {
@@ -1778,14 +2053,36 @@ class DefaultListableBeanFactory
     return pending;
   }
 
+  // Like Spring's preInstantiateSingletons: the callbacks of
+  // [addSingletonsInstantiatedCallback] first (the context's
+  // EventListenerMethodProcessor is its first internal bean), then every
+  // SmartInitializingSingleton in bean definition order (not creation
+  // order); singletons registered as objects get no callback.
   void _afterSingletonsInstantiated() {
-    for (final name in _creationOrder.toList()) {
+    for (final callback in _singletonsInstantiatedCallbacks.toList()) {
+      callback();
+    }
+    for (final name in _definitions.keys.toList()) {
       final bean = _singletons[name];
       if (bean is SmartInitializingSingleton) {
         bean.afterSingletonsInstantiated();
       }
     }
   }
+
+  final _singletonsInstantiatedCallbacks = <void Function()>[];
+
+  /// Runs [callback] once the eager singletons exist, before the
+  /// [SmartInitializingSingleton] callbacks: where an application context
+  /// registers its `@EventListener` methods, like Spring's
+  /// `EventListenerMethodProcessor` (itself a `SmartInitializingSingleton`
+  /// registered before any other bean).
+  ///
+  /// ```dart
+  /// factory.addSingletonsInstantiatedCallback(registerListenerMethods);
+  /// ```
+  void addSingletonsInstantiatedCallback(void Function() callback) =>
+      _singletonsInstantiatedCallbacks.add(callback);
 
   // ---------------------------------------------------------------------
   // Validation
@@ -2015,6 +2312,7 @@ class DefaultListableBeanFactory
       (name, _) => !_manualDefinitions.containsKey(name),
     );
     _factoryProducts.clear();
+    _typedFactoryProducts.clear();
     _scopedProxies.clear();
     _creationOrder.clear();
     _disposables.clear();
@@ -2064,6 +2362,7 @@ class DefaultListableBeanFactory
 
   void _forgetDependencies(String name) {
     _factoryProducts.remove(name);
+    _typedFactoryProducts.removeWhere((key, _) => key.$1 == name);
     _scopedProxies.remove(name);
     final dependencies = _dependencies.remove(name);
     if (dependencies != null) {
@@ -2226,6 +2525,20 @@ final class _Candidate {
           owner.getAliases(beanName).contains(candidateName),
   };
 
+  /// The bean (or factory product) as [T], or `null` for a [NullBean].
+  T? resolveOrNull<T extends Object>() {
+    final bean = switch (owner) {
+      final DefaultListableBeanFactory factory => factory._objectFor(
+        definition!,
+        T,
+      ),
+      _ => owner.getBeanByName(name),
+    };
+    return bean is NullBean
+        ? null
+        : DefaultListableBeanFactory._castTo<T>(bean, beanName);
+  }
+
   /// The bean (or factory product) as [T], created by its owner.
   T resolve<T extends Object>() => switch (owner) {
     final DefaultListableBeanFactory factory =>
@@ -2281,12 +2594,12 @@ final class _BeanObjectProvider<T extends Object> extends Iterable<T>
         )
       : _factory._lookupCandidates(T, _qualifier);
 
-  T _beanOf(_Candidate candidate) {
+  T? _beanOf(_Candidate candidate) {
     final requester = _requester;
     if (requester != null) {
       _factory._registerDependency(candidate, requester, direct: false);
     }
-    return candidate.resolve<T>();
+    return candidate.resolveOrNull<T>();
   }
 
   @override
@@ -2295,9 +2608,18 @@ final class _BeanObjectProvider<T extends Object> extends Iterable<T>
   @override
   T get() => getObject();
 
+  // A bean in a scope that is not active counts as missing (Spring 6.2's
+  // getIfAvailable / getIfUnique).
   @override
-  T? getIfAvailable([T Function()? defaultSupplier]) =>
-      _resolve(required: false) ?? defaultSupplier?.call();
+  T? getIfAvailable([T Function()? defaultSupplier]) {
+    T? bean;
+    try {
+      bean = _resolve(required: false);
+    } on ScopeNotActiveException {
+      bean = null;
+    }
+    return bean ?? defaultSupplier?.call();
+  }
 
   @override
   T? getIfUnique([T Function()? defaultSupplier]) {
@@ -2329,14 +2651,15 @@ final class _BeanObjectProvider<T extends Object> extends Iterable<T>
   List<T> orderedList() => [
     for (final (_, bean) in DefaultListableBeanFactory._sortEntries([
       for (final candidate in _candidates)
-        (candidate.name, _beanOf(candidate), candidate.definition),
+        if (_beanOf(candidate) case final bean?)
+          (candidate.name, bean, candidate.definition),
     ]))
       bean,
   ];
 
   // Beans are created one by one while iterating (Spring's stream()).
   @override
-  Iterator<T> get iterator => _candidates.map(_beanOf).iterator;
+  Iterator<T> get iterator => _candidates.map(_beanOf).nonNulls.iterator;
 
   @override
   bool get isEmpty => _candidates.isEmpty;

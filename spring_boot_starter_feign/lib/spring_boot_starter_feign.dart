@@ -26,5 +26,5 @@ export 'src/feign_client_config.dart';
 export 'src/feign_client_factory.dart';
 export 'src/feign_exception.dart';
 export 'src/feign_invocation_handler.dart';
-export 'src/request_template.dart';
+export 'src/request_template.dart' hide appendQuery;
 export 'src/retryer.dart';

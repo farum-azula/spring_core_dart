@@ -6,12 +6,19 @@ library;
 
 export 'package:spring_boot_dart/src/annotations.dart';
 export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.dart'
-    show objectMapperFromProperties;
+    show
+        JsonMapperBuilderCustomizer,
+        jsonMapperBuilderFromProperties,
+        objectMapperFromProperties;
 export 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart'
     show MessagesBundleCondition;
-export 'package:spring_boot_dart/src/binder.dart' show BindResult, Binder;
+export 'package:spring_boot_dart/src/banner.dart';
+export 'package:spring_boot_dart/src/binder.dart'
+    show BindHandler, BindResult, Binder;
+export 'package:spring_boot_dart/src/condition_evaluation_report.dart';
 export 'package:spring_boot_dart/src/conditions.dart';
 export 'package:spring_boot_dart/src/configuration_properties.dart';
+export 'package:spring_boot_dart/src/environment_post_processor.dart';
 export 'package:spring_boot_dart/src/events.dart';
 export 'package:spring_boot_dart/src/exit_code.dart'
     show ExitCodeEvent, ExitCodeExceptionMapper, ExitCodeGenerator;

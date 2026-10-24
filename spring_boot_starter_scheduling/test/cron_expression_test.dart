@@ -19,6 +19,41 @@ DateTime utc(int y, [int m = 1, int d = 1, int h = 0, int mi = 0, int s = 0]) =>
     DateTime.utc(y, m, d, h, mi, s);
 
 void main() {
+  // Every value 0..59 of the second and minute fields, also those at or
+  // above 32 that a 64-bit int bit set loses under dart2js (run with
+  // `dart test -p node`).
+  group('every field value (web-safe bit set)', () {
+    test('a single second 0..59 fires at that second', () {
+      for (var s = 0; s < 60; s++) {
+        expect(
+          next('$s * * * * *', utc(2026, 1, 1, 10, 0, 0)),
+          s == 0 ? utc(2026, 1, 1, 10, 1, 0) : utc(2026, 1, 1, 10, 0, s),
+          reason: 'second $s',
+        );
+      }
+    });
+
+    test('a single minute 0..59 fires at that minute', () {
+      for (var m = 0; m < 60; m++) {
+        expect(
+          next('0 $m * * * *', utc(2026, 1, 1, 10, 0, 0)),
+          m == 0 ? utc(2026, 1, 1, 11, 0, 0) : utc(2026, 1, 1, 10, m, 0),
+          reason: 'minute $m',
+        );
+      }
+    });
+
+    test('lists and steps above 31 and day lists with specials', () {
+      expect(times('45,50 33-34 * * * *', utc(2026, 1, 1, 10, 0, 0), 3), [
+        utc(2026, 1, 1, 10, 33, 45),
+        utc(2026, 1, 1, 10, 33, 50),
+        utc(2026, 1, 1, 10, 34, 45),
+      ]);
+      expect(next('0 0 0 15,L * *', utc(2026, 1, 16)), utc(2026, 1, 31));
+      expect(next('0 0 0 31,L * *', utc(2026, 1, 1)), utc(2026, 1, 31));
+    });
+  });
+
   group('fields', () {
     test('every second and strictly after', () {
       expect(

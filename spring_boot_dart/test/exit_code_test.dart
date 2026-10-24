@@ -8,6 +8,12 @@ final class Code implements ExitCodeGenerator {
   int getExitCode() => code;
 }
 
+final class OrderedCode extends Code implements Ordered {
+  OrderedCode(super.code, this.order);
+  @override
+  final int order;
+}
+
 final class Throwing implements ExitCodeGenerator {
   @override
   int getExitCode() => throw StateError('no code');
@@ -72,19 +78,25 @@ void main() {
       expect(events, isEmpty);
     });
 
-    test('the highest code of the beans wins', () {
-      final context = _run([Code(3), Code(7), Code(0), Code(5)]);
-      expect(SpringApplication.exit(context), 7);
+    test('the first non-zero code wins (Boot 3+), not the highest', () {
+      final context = _run([Code(0), Code(3), Code(7), Code(5)]);
+      expect(SpringApplication.exit(context), 3);
     });
 
-    test('the lowest negative code wins among negative ones', () {
-      final context = _run([Code(-2), Code(-9), Code(-4)]);
+    test('generators are sorted by order first', () {
+      final context = _run([
+        OrderedCode(-2, 5),
+        OrderedCode(-9, 1),
+        OrderedCode(0, 0),
+      ]);
       expect(SpringApplication.exit(context), -9);
     });
 
     test('generators passed in are combined with the beans', () {
       final context = _run([Code(3)]);
       expect(SpringApplication.exit(context, [Code(9), Code(1)]), 9);
+      final ordered = _run([OrderedCode(4, Ordered.highestPrecedence)]);
+      expect(SpringApplication.exit(ordered, [Code(9)]), 4);
     });
 
     test('ExitCodeEvent is published, then the context closes', () {

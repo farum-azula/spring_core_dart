@@ -54,7 +54,10 @@ import 'package:build/build.dart';
 ///
 /// Reads the `aop_proxies` option (`all` by default, `interfaces` or
 /// `none`; see [ProxyMode]) and throws an [ArgumentError] for any other
-/// value.
+/// value, and `aop_prune` (`true` by default): whether the
+/// `@SpringBootApplication` output skips the proxy classes of beans no
+/// pointcut of the application can match (`@ComponentScan` modules are
+/// never pruned: any other module may import them).
 ///
 /// Example `build.yaml` in a consuming package:
 ///

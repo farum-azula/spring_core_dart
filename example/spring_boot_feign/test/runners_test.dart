@@ -30,8 +30,8 @@ void main() {
 
   ApplicationContextRunner app([List<String> properties = const []]) =>
       appContext()
-          .withBean<HttpTransport>(server)
-          .withBean<WebSocketTransport>(sockets)
+          .withBean<HttpTransport>(() => server)
+          .withBean<WebSocketTransport>(() => sockets)
           .withPropertyValues(properties);
 
   List<String> linesOf(String logger) => [

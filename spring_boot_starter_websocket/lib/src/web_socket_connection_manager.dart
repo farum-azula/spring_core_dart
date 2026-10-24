@@ -168,7 +168,11 @@ final class WebSocketConnectionManager {
     final handshake = WebSocketHandshake(
       clientName: clientName,
       url: url,
-      headers: HttpHeaders(config.defaultRequestHeaders),
+      headers: HttpHeaders.fromEntries([
+        for (final MapEntry(key: name, value: values)
+            in config.defaultRequestHeaders.entries)
+          for (final value in values) MapEntry(name, value),
+      ]),
       protocols: protocols,
     );
     final WebSocketSession connection;

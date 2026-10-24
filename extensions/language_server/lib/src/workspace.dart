@@ -695,7 +695,8 @@ final class SpringWorkspace {
     if (annotation != null && _beanNameAnnotations.contains(annotation)) {
       return _BeanTarget(beansNamed(value), "Bean '$value'");
     }
-    if (annotation == 'ConditionalOnProperty') {
+    if (annotation == 'ConditionalOnProperty' ||
+        annotation == 'ConditionalOnBooleanProperty') {
       return _PropertyTarget(value, property(value));
     }
     if (annotation == 'ConfigurationProperties') {

@@ -31,6 +31,16 @@ abstract interface class ConversionService {
   /// ```
   bool canConvert(Object? source, Type targetType);
 
+  /// Whether values of type [S] can be converted to [targetType] (Spring's
+  /// `canConvert(Class, Class)`): [S] is one, or a converter accepts [S]
+  /// (or a supertype of it, such as `num` for `int`).
+  ///
+  /// ```dart
+  /// service.canConvertType<String>(Duration); // true
+  /// service.canConvertType<Uri>(Duration); // false
+  /// ```
+  bool canConvertType<S>(Type targetType);
+
   /// Converts [source] to [T].
   ///
   /// Returns [source] unchanged when it already is a [T]. A `null` source

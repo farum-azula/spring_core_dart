@@ -35,8 +35,15 @@ class ConfigurationPropertiesBindException implements Exception {
 /// Mutable classes are bound through their setters before their init
 /// callbacks run; classes with a constructor that has parameters are
 /// created bound by [bindOrCreate] (constructor binding, called by the
-/// generated code through [ConstructorBound]). Constraints are checked when
-/// the class is annotated `@Validated()`.
+/// generated code through [ConstructorBound]). `@ConfigurationProperties`
+/// on a `@Bean` method binds the returned object (a class of another
+/// package too; the generator writes its introspection).
+///
+/// Validation, like Spring Boot's: a `Validator` bean named
+/// `configurationPropertiesValidator` checks every bound object it
+/// supports; constraint annotations are checked when the class (or the
+/// `@Bean` method) is annotated `@Validated()`; an object that is itself a
+/// `Validator` validates itself.
 ///
 /// Registered by `SpringApplication`; see [ConfigurationProperties] for the
 /// naming rules.
@@ -47,7 +54,16 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
     this.environment,
     this.introspector, {
     MessageSource? messageSource,
+    this.beanFactory,
   }) : messageSource = messageSource ?? StaticMessageSource();
+
+  /// Name of the `Validator` bean applied to every bound object (Spring
+  /// Boot's `ConfigurationPropertiesBinder.VALIDATOR_BEAN_NAME`).
+  static const validatorBeanName = 'configurationPropertiesValidator';
+
+  /// The bean factory: the annotations of `@Bean` methods and the
+  /// [validatorBeanName] bean come from here (none without it).
+  final ConfigurableListableBeanFactory? beanFactory;
 
   /// The properties are read from here (and converted with its
   /// conversion service).
@@ -75,11 +91,26 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
       return bean;
     }
     final introspection = introspector.findIntrospection(bean);
-    final annotation = introspection?.annotations
+    // A `@Bean` method's annotations come first (Boot's
+    // ConfigurationPropertiesBean: the factory method, then the type).
+    final annotations = [
+      ...?_definition(beanName)?.annotations,
+      ...?introspection?.annotations,
+    ];
+    final annotation = annotations
         .whereType<ConfigurationProperties>()
         .firstOrNull;
-    if (introspection == null || annotation == null) {
+    if (annotation == null) {
       return bean;
+    }
+    if (introspection == null) {
+      throw StateError(
+        "@ConfigurationProperties('${annotation.prefix}') bean '$beanName' "
+        'is a ${bean.runtimeType} without introspection metadata: generated '
+        'for @ConfigurationProperties classes and the return types of '
+        '@ConfigurationProperties @Bean methods (or annotate the class '
+        '@Introspected()).',
+      );
     }
     final prefix = annotation.prefix;
     BindContext(_binder)
@@ -89,8 +120,15 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
         ConfigurationPropertyName.of(prefix),
       )
       ..throwIfFailed(prefix, beanName);
-    _validate(bean, introspection, prefix, beanName);
+    _validate(bean, annotations, prefix, beanName);
     return bean;
+  }
+
+  BeanDefinition<Object>? _definition(String beanName) {
+    final factory = beanFactory;
+    return factory != null && factory.containsBeanDefinition(beanName)
+        ? factory.getBeanDefinition(beanName)
+        : null;
   }
 
   /// Creates the `@ConfigurationProperties` class [T] through its
@@ -127,19 +165,28 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
         '$prefix: could not create $T',
       ]);
     }
-    _validate(bean, introspection, prefix, beanName);
+    _validate(bean, introspection.annotations, prefix, beanName);
     _constructed[bean] = true;
     return bean;
   }
 
-  // Only `@Validated` classes are validated, like Spring Boot.
+  // Spring Boot's ConfigurationPropertiesBinder.getValidators: the
+  // `configurationPropertiesValidator` bean, constraints for `@Validated`
+  // ones, then the object itself when it is a Validator; each only when it
+  // supports the object.
   void _validate(
     Object bean,
-    BeanIntrospection<Object> introspection,
+    List<Object> annotations,
     String prefix,
     String beanName,
   ) {
-    if (!introspection.annotations.any((a) => a is Validated)) {
+    final validators = [
+      ?_configurationPropertiesValidator(),
+      if (annotations.any((a) => a is Validated))
+        BeanValidator(introspector: introspector),
+      if (bean case final Validator self) self,
+    ].where((validator) => validator.supports(bean));
+    if (validators.isEmpty) {
       return;
     }
     final binder = DataBinder(
@@ -148,7 +195,7 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
       introspector: introspector,
       conversionService: environment.conversionService,
     );
-    binder.validators.add(BeanValidator(introspector: introspector));
+    binder.validators.addAll(validators);
     binder.validate();
     final result = binder.bindingResult;
     if (result.hasErrors) {
@@ -159,6 +206,14 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
               '${error is FieldError && error.rejectedValue != null ? ' (was "${error.rejectedValue}")' : ''}',
       ]);
     }
+  }
+
+  Validator? _configurationPropertiesValidator() {
+    final factory = beanFactory;
+    if (factory == null || !factory.containsBean(validatorBeanName)) {
+      return null;
+    }
+    return factory.getBeanByName(validatorBeanName) as Validator;
   }
 
   // `servers[0].maxSize` → `servers[0].max-size`.
@@ -186,5 +241,6 @@ abstract final class ConstructorBound {
   ) => ConfigurationPropertiesBinder(
     resolver.dependency<ConfigurableEnvironment>(),
     resolver.dependency<BeanIntrospector>(),
+    beanFactory: resolver.dependency<ConfigurableListableBeanFactory>(),
   ).bindOrCreate<T>(beanName);
 }

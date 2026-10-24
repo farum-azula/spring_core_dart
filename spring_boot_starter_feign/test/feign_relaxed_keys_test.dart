@@ -21,7 +21,7 @@ void main() {
         .withUserConfiguration(contractModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
-        .withBean<HttpTransport>(server);
+        .withBean<HttpTransport>(() => server);
   });
 
   test('camelCase keys: readTimeout, followRedirects, loggerLevel, '

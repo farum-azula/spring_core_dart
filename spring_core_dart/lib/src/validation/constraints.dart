@@ -120,7 +120,7 @@ abstract class Constraint {
   String interpolatedMessage() => interpolate(message ?? defaultMessage);
 
   /// [template] with `{attribute}` placeholders replaced by the attribute
-  /// values; other placeholders are kept.
+  /// values; other placeholders and `${...}` expressions are kept.
   ///
   /// ```dart
   /// const Size(max: 20).interpolate('at most {max}'); // 'at most 20'
@@ -130,12 +130,28 @@ abstract class Constraint {
     // expression such as `[A-Z]{2,3}`) is not interpolated again.
     final attributes = this.attributes;
     return template.replaceAllMapped(
-      RegExp(r'\{(\w+)\}'),
+      RegExp(r'(?<!\$)\{(\w+)\}'),
       (match) => attributes.containsKey(match.group(1))
           ? '${attributes[match.group(1)]}'
           : match.group(0)!,
     );
   }
+
+  /// Whether the constraint can validate [value] (a non-null value), like
+  /// Hibernate Validator finding a `ConstraintValidator` for its type. When
+  /// it cannot, `BeanValidator` throws an [UnexpectedTypeException] (e.g.
+  /// `@Size` on an `int`). Custom constraints accept everything.
+  bool supports(Object value) => true;
+
+  /// Throws a [ConstraintDeclarationException] when the attributes are
+  /// invalid (`Size(min: -1)`, `min > max`, a malformed regular expression),
+  /// like Hibernate Validator initializing the constraint's validator.
+  /// `BeanValidator` calls it before the first use of the constraint.
+  ///
+  /// ```dart
+  /// const Size(min: 5, max: 2).checkParameters(); // throws
+  /// ```
+  void checkParameters() {}
 
   /// Whether the constraint applies when validating [requested] groups.
   ///
@@ -275,10 +291,223 @@ final class ConstraintViolationBuilder {
   }
 }
 
+/// The base of the errors of the validation engine itself (not of the
+/// validated values), like Jakarta's `ValidationException`.
+///
+/// ```dart
+/// try {
+///   validator.validateObject(form);
+/// } on ValidationException catch (e) {
+///   print(e.message); // a wrong declaration, not an invalid form
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// } catch (jakarta.validation.ValidationException e) { ... }
+/// ```
+class ValidationException implements Exception {
+  /// Reports [message].
+  const ValidationException(this.message);
+
+  /// What is wrong.
+  final String message;
+
+  @override
+  String toString() => '$runtimeType: $message';
+}
+
+/// A constraint is declared wrongly: invalid attributes (`Size(min: -1)`,
+/// `min > max`), `@ConvertGroup` without `@Valid`, element constraints on
+/// a value that is no collection; like Jakarta's
+/// `ConstraintDeclarationException`.
+///
+/// ```dart
+/// // @Size(min: 5, max: 2) String name = '';
+/// validator.validateObject(form); // throws ConstraintDeclarationException
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// } catch (jakarta.validation.ConstraintDeclarationException e) { ... }
+/// ```
+class ConstraintDeclarationException extends ValidationException {
+  /// Reports [message].
+  const ConstraintDeclarationException(super.message);
+}
+
+/// A built-in constraint validates a value of a type it does not support
+/// (`@Size` on an `int`, `@NotBlank` on a `List`), like Jakarta's
+/// `UnexpectedTypeException`. Generated code reports declared types at
+/// build time already; this catches `dynamic` / `Object` properties and
+/// hand-written metadata.
+///
+/// ```dart
+/// // @Size(max: 3) Object age = 42;
+/// validator.validateObject(form); // throws UnexpectedTypeException
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// // HV000030: No validator could be found for constraint
+/// // 'jakarta.validation.constraints.Size' validating type 'java.lang.Integer'
+/// ```
+class UnexpectedTypeException extends ConstraintDeclarationException {
+  /// Reports [message].
+  const UnexpectedTypeException(super.message);
+}
+
+/// A group sequence is defined wrongly (a cycle, `Default` in a class's
+/// `@GroupSequence`, or the class missing from it), like Jakarta's
+/// `GroupDefinitionException`.
+///
+/// ```dart
+/// // @GroupSequence([Default, Strict]) class Form { ... }
+/// validator.validateObject(form); // throws GroupDefinitionException
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// } catch (jakarta.validation.GroupDefinitionException e) { ... }
+/// ```
+class GroupDefinitionException extends ValidationException {
+  /// Reports [message].
+  const GroupDefinitionException(super.message);
+}
+
+/// Class-level: redefines the [Default] group of the class as a sequence,
+/// like Jakarta's `@GroupSequence` on a bean class. The groups are
+/// validated in order and validation stops at the first group with a
+/// violation; the class itself stands for its [Default] constraints and
+/// must be listed (`Default` must not).
+///
+/// Sequences used as groups (Jakarta's `@GroupSequence` on a group
+/// interface) are given to `BeanValidator(groupSequences: ...)`, since a
+/// Dart group type cannot carry annotations that are read at runtime.
+///
+/// ```dart
+/// abstract final class Expensive {}
+///
+/// @Introspected()
+/// @GroupSequence([Order, Expensive])
+/// class Order {
+///   @NotBlank()
+///   String sku = '';
+///
+///   // Only checked when the Default constraints of Order pass.
+///   @StockAvailable(groups: [Expensive])
+///   String warehouse = '';
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @GroupSequence({Order.class, Expensive.class})
+/// class Order { ... }
+/// ```
+class GroupSequence {
+  /// Validates [value] in order.
+  const GroupSequence(this.value);
+
+  /// The groups, in order.
+  final List<Type> value;
+}
+
+/// With `@Valid`: validates the nested value with group [to] where the
+/// outer validation runs group [from], like Jakarta's `@ConvertGroup`.
+///
+/// ```dart
+/// abstract final class DriverChecks {}
+///
+/// @Introspected()
+/// class Car {
+///   @Valid()
+///   @ConvertGroup(to: DriverChecks) // from: Default
+///   Driver? driver;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Valid
+/// @ConvertGroup(from = Default.class, to = DriverChecks.class)
+/// private Driver driver;
+/// ```
+class ConvertGroup {
+  /// Converts [from] (default: [Default]) into [to].
+  const ConvertGroup({this.from = Default, required this.to});
+
+  /// The group of the outer validation.
+  final Type from;
+
+  /// The group the nested value is validated with.
+  final Type to;
+}
+
+/// Constraints on the elements of a collection (or the values of a map),
+/// like Jakarta's container element constraints (`List<@NotBlank String>`;
+/// Dart has no annotations on type arguments).
+///
+/// List elements are reported as `names[1].<list element>` (Spring field
+/// `names[1]`), other iterables as `tags[].<iterable element>`, map values
+/// as `scores[math].<map value>`. Use [EachKey] for map keys.
+///
+/// ```dart
+/// @Introspected()
+/// class Survey {
+///   @Each([NotBlank(), Size(max: 20)])
+///   List<String> answers = [];
+///
+///   @Each([Min(0)])
+///   Map<String, int> scores = {};
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class Survey {
+///   private List<@NotBlank @Size(max = 20) String> answers;
+///   private Map<String, @Min(0) Integer> scores;
+/// }
+/// ```
+class Each {
+  /// Checks [constraints] on every element.
+  const Each(this.constraints);
+
+  /// The element constraints.
+  final List<Constraint> constraints;
+}
+
+/// Constraints on the keys of a map, like Jakarta's container element
+/// constraints on a map key (`Map<@NotBlank String, Integer>`). Reported as
+/// `scores<K>[key].<map key>` (Spring field `scores[key]`).
+///
+/// ```dart
+/// @Introspected()
+/// class Survey {
+///   @EachKey([Size(max: 10)])
+///   Map<String, int> scores = {};
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// private Map<@Size(max = 10) String, Integer> scores;
+/// ```
+class EachKey {
+  /// Checks [constraints] on every key.
+  const EachKey(this.constraints);
+
+  /// The key constraints.
+  final List<Constraint> constraints;
+}
+
 /// Validates nested objects, collections and maps, like Jakarta's `@Valid`.
 ///
-/// Elements of lists are reported as `items[0].sku`, map values as
-/// `byKey[key].sku`; `null` values are skipped.
+/// Elements of lists are reported as `items[0].sku`, of other iterables
+/// (sets) as `items[].sku`, map values as `byKey[key].sku`; `null` values
+/// are skipped. [ConvertGroup] changes the groups of the nested
+/// validation.
 ///
 /// ```dart
 /// @Introspected()
@@ -304,6 +533,41 @@ final class ConstraintViolationBuilder {
 class Valid {
   /// Creates the `@Valid()` annotation.
   const Valid();
+}
+
+bool _isSized(Object value) =>
+    value is String || value is Iterable || value is Map;
+
+bool _isNumeric(Object value) =>
+    value is num || value is BigInt || value is String;
+
+// Hibernate Validator's checks of the `@Size` bounds.
+void _checkBounds(int min, int max) {
+  if (min < 0) {
+    throw const ConstraintDeclarationException(
+      'The min parameter cannot be negative.',
+    );
+  }
+  if (max < 0) {
+    throw const ConstraintDeclarationException(
+      'The max parameter cannot be negative.',
+    );
+  }
+  if (max < min) {
+    throw const ConstraintDeclarationException(
+      'The length cannot be negative.',
+    );
+  }
+}
+
+void _checkRegExp(String regexp, List<PatternFlag> flags) {
+  try {
+    _fullMatch(regexp, flags, '');
+  } on FormatException catch (error) {
+    throw ConstraintDeclarationException(
+      'Invalid regular expression "$regexp": ${error.message}',
+    );
+  }
 }
 
 // Length of strings, collections and maps; `null` for anything else so
@@ -405,6 +669,9 @@ class NotEmpty extends Constraint {
   String get name => 'NotEmpty';
 
   @override
+  bool supports(Object value) => _isSized(value);
+
+  @override
   String get defaultMessage => 'must not be empty';
 
   @override
@@ -436,6 +703,9 @@ class NotBlank extends Constraint {
 
   @override
   String get name => 'NotBlank';
+
+  @override
+  bool supports(Object value) => value is String;
 
   @override
   String get defaultMessage => 'must not be blank';
@@ -482,6 +752,14 @@ class Size extends Constraint {
 
   @override
   String get name => 'Size';
+
+  @override
+  bool supports(Object value) => _isSized(value);
+
+  @override
+  void checkParameters() {
+    _checkBounds(min, max);
+  }
 
   @override
   String get defaultMessage => 'size must be between {min} and {max}';
@@ -618,6 +896,14 @@ class Min extends Constraint {
   String get name => 'Min';
 
   @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
+  void checkParameters() {
+    _checkFinite(value);
+  }
+
+  @override
   String get defaultMessage => 'must be greater than or equal to {value}';
 
   @override
@@ -658,6 +944,14 @@ class Max extends Constraint {
 
   @override
   String get name => 'Max';
+
+  @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
+  void checkParameters() {
+    _checkFinite(value);
+  }
 
   @override
   String get defaultMessage => 'must be less than or equal to {value}';
@@ -711,6 +1005,14 @@ class DecimalMin extends Constraint {
 
   @override
   String get name => 'DecimalMin';
+
+  @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
+  void checkParameters() {
+    _checkDecimal(value);
+  }
 
   @override
   String get defaultMessage => inclusive
@@ -767,6 +1069,14 @@ class DecimalMax extends Constraint {
   String get name => 'DecimalMax';
 
   @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
+  void checkParameters() {
+    _checkDecimal(value);
+  }
+
+  @override
   String get defaultMessage => inclusive
       ? 'must be less than or equal to {value}'
       : 'must be less than {value}';
@@ -781,6 +1091,20 @@ class DecimalMax extends Constraint {
   bool isValid(Object? value) {
     final sign = _compare(value, _decimalBound(this.value));
     return sign == null || (inclusive ? sign <= 0 : sign < 0);
+  }
+}
+
+void _checkDecimal(String value) {
+  if (_Decimal.parse(value.trim()) == null) {
+    throw ConstraintDeclarationException(
+      '$value does not represent a valid BigDecimal format.',
+    );
+  }
+}
+
+void _checkFinite(num value) {
+  if (!value.isFinite) {
+    throw ConstraintDeclarationException('$value is not a finite number.');
   }
 }
 
@@ -812,6 +1136,9 @@ class Positive extends Constraint {
 
   @override
   String get name => 'Positive';
+
+  @override
+  bool supports(Object value) => _isNumeric(value);
 
   @override
   String get defaultMessage => 'must be greater than 0';
@@ -848,6 +1175,9 @@ class PositiveOrZero extends Constraint {
   String get name => 'PositiveOrZero';
 
   @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
   String get defaultMessage => 'must be greater than or equal to 0';
 
   @override
@@ -882,6 +1212,9 @@ class Negative extends Constraint {
   String get name => 'Negative';
 
   @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
   String get defaultMessage => 'must be less than 0';
 
   @override
@@ -914,6 +1247,9 @@ class NegativeOrZero extends Constraint {
 
   @override
   String get name => 'NegativeOrZero';
+
+  @override
+  bool supports(Object value) => _isNumeric(value);
 
   @override
   String get defaultMessage => 'must be less than or equal to 0';
@@ -997,6 +1333,14 @@ class Matches extends Constraint {
 
   @override
   String get name => 'Pattern';
+
+  @override
+  bool supports(Object value) => value is String;
+
+  @override
+  void checkParameters() {
+    _checkRegExp(regexp, flags);
+  }
 
   @override
   String get defaultMessage => 'must match "{regexp}"';
@@ -1094,6 +1438,16 @@ class Email extends Constraint {
   String get name => 'Email';
 
   @override
+  bool supports(Object value) => value is String;
+
+  @override
+  void checkParameters() {
+    if (regexp != '.*' || flags.isNotEmpty) {
+      _checkRegExp(regexp, flags);
+    }
+  }
+
+  @override
   String get defaultMessage => 'must be a well-formed email address';
 
   @override
@@ -1177,6 +1531,23 @@ class Digits extends Constraint {
   String get name => 'Digits';
 
   @override
+  bool supports(Object value) => _isNumeric(value);
+
+  @override
+  void checkParameters() {
+    if (integer < 0) {
+      throw const ConstraintDeclarationException(
+        'The length of the integer part cannot be negative.',
+      );
+    }
+    if (fraction < 0) {
+      throw const ConstraintDeclarationException(
+        'The length of the fraction part cannot be negative.',
+      );
+    }
+  }
+
+  @override
   String get defaultMessage =>
       'numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)';
 
@@ -1231,6 +1602,9 @@ class AssertTrue extends Constraint {
   String get name => 'AssertTrue';
 
   @override
+  bool supports(Object value) => value is bool;
+
+  @override
   String get defaultMessage => 'must be true';
 
   @override
@@ -1260,6 +1634,9 @@ class AssertFalse extends Constraint {
 
   @override
   String get name => 'AssertFalse';
+
+  @override
+  bool supports(Object value) => value is bool;
 
   @override
   String get defaultMessage => 'must be false';
@@ -1326,6 +1703,9 @@ class Past extends Constraint {
   String get name => 'Past';
 
   @override
+  bool supports(Object value) => value is DateTime;
+
+  @override
   String get defaultMessage => 'must be a past date';
 
   @override
@@ -1368,6 +1748,9 @@ class PastOrPresent extends Constraint {
 
   @override
   String get name => 'PastOrPresent';
+
+  @override
+  bool supports(Object value) => value is DateTime;
 
   @override
   String get defaultMessage => 'must be a date in the past or in the present';
@@ -1414,6 +1797,9 @@ class FutureDate extends Constraint {
   String get name => 'Future';
 
   @override
+  bool supports(Object value) => value is DateTime;
+
+  @override
   String get defaultMessage => 'must be a future date';
 
   @override
@@ -1456,6 +1842,9 @@ class FutureOrPresent extends Constraint {
 
   @override
   String get name => 'FutureOrPresent';
+
+  @override
+  bool supports(Object value) => value is DateTime;
 
   @override
   String get defaultMessage => 'must be a date in the present or in the future';

@@ -1,5 +1,6 @@
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
+import 'package:spring_core_dart/src/aop/aspect_advisors.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
@@ -56,6 +57,10 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
   // while an advisor bean could not be created yet.
   List<PointcutAdvisor>? _advisors;
 
+  // Type names of the registered aspects (for `@DeclareParents`
+  // introductions), set by [_buildAdvisors].
+  Set<String> _aspectTypes = const {};
+
   /// Runs first among the ordered post-processors, like Spring's
   /// auto proxy creator (`HIGHEST_PRECEDENCE`): later post-processors see
   /// the proxy.
@@ -110,7 +115,12 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       beanName,
       beanAliases: aliases,
     );
-    if (eligible.isEmpty) {
+    // An introduction of a registered aspect proxies the bean too
+    // (Spring's DeclareParentsAdvisor is an IntroductionAdvisor).
+    if (eligible.isEmpty &&
+        !proxyFactory.introductions.any(
+          (introduction) => _aspectTypes.contains(introduction.aspectType),
+        )) {
       return bean;
     }
     return proxyFactory.createProxy(
@@ -157,6 +167,17 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       seen.addAll(names);
     }
 
+    _aspectTypes = {
+      for (final (_, definition) in aspects) definition.aspect!.typeName,
+    };
+    // Runtime type tests of every aspect; an aspect's own entries win.
+    final typeTests = <String, bool Function(Object?)>{
+      for (final (_, definition) in aspects) ...definition.aspect!.typeTests,
+    };
+    final argumentAnnotations = <String, Object? Function(Object?)>{
+      for (final (_, definition) in aspects)
+        ...definition.aspect!.argumentAnnotations,
+    };
     // Every aspect's pointcuts, qualified by the aspect's type name.
     final qualified = <String, String>{
       for (final (_, definition) in aspects)
@@ -170,31 +191,24 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
     var sequence = 0;
     for (final (factory, definition) in aspects) {
       final metadata = definition.aspect!;
-      final named = {...qualified, ...metadata.pointcuts};
-      final advice = [...metadata.advice]
-        ..sort((a, b) => a.kind.index.compareTo(b.kind.index));
       final (order, known) = _aspectOrder(factory, definition);
       complete &= known;
-      for (final item in advice) {
-        entries.add((
-          DefaultPointcutAdvisor(
-            ExpressionPointcut(
-              item.pointcut,
-              namedPointcuts: named,
-              bindings: item.bindings,
-              owner: metadata.typeName,
-            ),
-            // The aspect bean is looked up per call, so lazy and
-            // prototype aspects work.
-            AspectAdviceInterceptor(
-              item,
-              () => factory.getBeanByName(definition.name),
-            ),
-            order: order,
-          ),
-          order,
-          sequence++,
-        ));
+      for (final advisor in aspectAdvisors(
+        metadata,
+        // The aspect bean is looked up per call, so lazy and prototype
+        // aspects work.
+        aspect: () => factory.getBeanByName(definition.name),
+        order: order,
+        singleton: definition.isSingleton,
+        beanName: definition.name,
+        named: {...qualified, ...metadata.pointcuts},
+        typeTests: {...typeTests, ...metadata.typeTests},
+        argumentAnnotations: {
+          ...argumentAnnotations,
+          ...metadata.argumentAnnotations,
+        },
+      )) {
+        entries.add((advisor, order, sequence++));
       }
     }
     for (final (factory, name) in advisorNames) {

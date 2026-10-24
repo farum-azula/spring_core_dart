@@ -68,6 +68,20 @@ void main() {
     }
   });
 
+  test('%r is never negative, also for records older than the pattern', () {
+    final pattern = LogPattern('%r');
+    final early = SpringLogRecord(
+      SpringLogLevel.info,
+      'a',
+      'buffered before the logging system started',
+      time: DateTime.now().subtract(const Duration(minutes: 5)),
+    );
+    expect(int.parse(pattern.format(early)), greaterThanOrEqualTo(0));
+    final later = SpringLogRecord(SpringLogLevel.info, 'a', 'now');
+    expect(int.parse(pattern.format(later)), greaterThanOrEqualTo(0));
+    expect(int.parse(pattern.format(later)), greaterThanOrEqualTo(299000));
+  });
+
   test('format modifiers, like Logback', () {
     const cases = {
       '[%5p]': '[ INFO]',

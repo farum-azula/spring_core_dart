@@ -217,6 +217,24 @@ void main() {
       expect(source.getMessage('only.base'), 'unseen', reason: 'checked now');
     });
 
+    test('cacheMillis: sub-second cache durations (Spring setCacheMillis)', () {
+      final file = File('${temp.path}/i18n/messages.properties');
+      final source = ReloadableResourceBundleMessageSource(
+        basenames: ['file:${temp.path}/i18n/messages'],
+      )..cacheMillis = 500;
+      expect(source.cacheSeconds, 0);
+      expect(source.getMessage('only.base'), 'base');
+      file
+        ..writeAsStringSync('only.base=changed')
+        ..setLastModifiedSync(DateTime(2030));
+      // Within 500 ms: still cached (0 seconds would re-read every time).
+      expect(source.getMessage('only.base'), 'base');
+      source.cacheSeconds = 2;
+      expect(source.cacheMillis, 2000);
+      source.cacheSeconds = -1;
+      expect(source.cacheMillis, -1);
+    });
+
     test('fallbackToSystemLocale only applies without a defaultLocale', () {
       File('${temp.path}/i18n/messages_de.properties')
           .writeAsStringSync('only.base=Basis');
