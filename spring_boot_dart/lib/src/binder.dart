@@ -228,6 +228,9 @@ final class BindContext {
   /// One line per property that could not be bound.
   final errors = <String>[];
 
+  /// The names bound so far.
+  final boundNames = <ConfigurationPropertyName>{};
+
   // Data object types being bound, against endless recursion through
   // sources that cannot list their names.
   final _binding = <Type>[];
@@ -267,6 +270,7 @@ final class BindContext {
       _BindVisitor(this, name, existing, only ?? sources),
     );
     if (!identical(result, unbound)) {
+      boundNames.add(name);
       result = handler.onSuccess(name, type, result);
     }
     handler.onFinish(name, type, identical(result, unbound) ? null : result);
@@ -319,6 +323,7 @@ final class BindContext {
         continue;
       }
       bound = true;
+      boundNames.add(propertyName);
       if (identical(value, current)) {
         continue; // a nested object bound in place
       }
@@ -417,7 +422,9 @@ final class BindContext {
   /// default value, else `null` when nullable; a missing collection is
   /// empty and a missing nested object is created with its own defaults;
   /// any other missing parameter is an error. With [requireAny], [unbound]
-  /// when no parameter was bound.
+  /// when no parameter was bound, without reporting missing ones (Spring
+  /// Boot's `ValueObjectBinder` returns `null`: a nullable nested object
+  /// whose own keys are all missing stays `null`).
   Object? bindConstructor(
     BeanIntrospection<Object> introspection,
     ConfigurationPropertyName name,
@@ -430,6 +437,9 @@ final class BindContext {
     final named = <Symbol, Object?>{};
     var bound = false;
     var failed = false;
+    // Missing-parameter errors (and those of nested objects created with
+    // their defaults), reported only when something was bound.
+    final missing = <String>[];
     for (final parameter in constructor.parameters) {
       final parameterName = name.append(
         _memberName(parameter.name, parameter.annotations),
@@ -458,19 +468,24 @@ final class BindContext {
         } else if (parameter.type.nullable) {
           value = null;
         } else {
+          final errorsBefore = errors.length;
           value = parameter.type.accept(
             _EmptyVisitor(this, parameterName, scope),
           );
+          missing.addAll(errors.sublist(errorsBefore));
+          errors.removeRange(errorsBefore, errors.length);
         }
         if (identical(value, unbound) && !omit) {
           if (!failed) {
-            _error(
-              parameterName,
-              'no value bound for the required constructor parameter '
-              "'${parameter.name}' of ${introspection.beanType} (set the "
-              'property, give the parameter a @DefaultValue or a default, '
-              'or make it nullable)',
-            );
+            final error =
+                '$parameterName: no value bound for the required '
+                "constructor parameter '${parameter.name}' of "
+                '${introspection.beanType} (set the property, give the '
+                'parameter a @DefaultValue or a default, or make it '
+                'nullable)';
+            if (handler.onFailure(parameterName, error)) {
+              missing.add(error);
+            }
           }
           failed = true;
           value = null;
@@ -492,6 +507,7 @@ final class BindContext {
     if (requireAny && !bound) {
       return unbound;
     }
+    errors.addAll(missing);
     if (failed) {
       return unbound;
     }
@@ -701,11 +717,63 @@ final class BindContext {
       }
     }
     if (left.isNotEmpty) {
-      errors.add(
-        'The elements [${left.join(', ')}] were left unbound '
-        '(list indexes must start at 0 and have no gaps).',
-      );
+      final error =
+          'The elements [${left.join(', ')}] were left unbound '
+          '(list indexes must start at 0 and have no gaps).';
+      if (handler.onFailure(name, error)) {
+        errors.add(error);
+      }
     }
+  }
+
+  // Sources whose names are never reported as unbound (Boot's
+  // UnboundElementsSourceFilter).
+  static const _benignSources = {
+    SystemEnvironmentPropertySource.defaultName,
+    'systemProperties',
+  };
+
+  /// Reports the properties under [root] that were not bound (Spring
+  /// Boot's `NoUnboundElementsBindHandler`, used for
+  /// `@ConfigurationProperties(ignoreUnknownFields: false)`). OS
+  /// environment variables are not checked; list elements overridden by a
+  /// whole list from a higher-precedence source are not unbound.
+  void checkNoUnboundProperties(ConfigurationPropertyName root) {
+    final left = <String>{};
+    for (final source in sources) {
+      if (!source.isEnumerable || _benignSources.contains(source.source.name)) {
+        continue;
+      }
+      for (final name in source.names) {
+        if (root.isAncestorOf(name) &&
+            !boundNames.contains(name) &&
+            !_isOverriddenElement(root, name)) {
+          left.add('$name');
+        }
+      }
+    }
+    if (left.isNotEmpty) {
+      final error =
+          'The elements [${(left.toList()..sort()).join(', ')}] '
+          'were left unbound.';
+      if (handler.onFailure(root, error)) {
+        errors.add(error);
+      }
+    }
+  }
+
+  // `a.hosts[1]` (or `a.servers[0].host`) when `a.hosts` was bound as a
+  // whole from another source.
+  bool _isOverriddenElement(
+    ConfigurationPropertyName root,
+    ConfigurationPropertyName name,
+  ) {
+    for (var i = root.numberOfElements + 1; i < name.numberOfElements; i++) {
+      if (name.isIndexed(i) && boundNames.contains(name.chop(i))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Binds a map at [name]: an entry per key under it, from every source

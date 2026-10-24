@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:spring_core_dart/src/core/env/cloud_platform.dart';
 import 'package:spring_core_dart/src/core/env/config/config_data_exceptions.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_loader.dart';
 import 'package:spring_core_dart/src/core/env/config/yaml_property_source_loader.dart';
@@ -50,8 +51,10 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///   digit; `spring.profiles.validate=false` turns this off).
 /// - Multi-document files: documents separated by `#---` (`---` in YAML),
 ///   each optionally guarded by `spring.config.activate.on-profile` (an
-///   empty guard is no guard). The legacy `spring.profiles` key is
-///   rejected.
+///   empty guard is no guard) and `spring.config.activate.on-cloud-platform`
+///   (the [CloudPlatform] detected from the environment or set by
+///   `spring.main.cloud-platform`; `none` matches when there is none). The
+///   legacy `spring.profiles` key is rejected.
 /// - `spring.config.import` imports more files (relative to the importing
 ///   file) or directories (`file:./config/`: `application*` files like a
 ///   search location); imported files override the file that imports them
@@ -178,6 +181,10 @@ class ConfigDataEnvironment {
 
   /// Profile expressions that must match for a document to be used.
   static const onProfileProperty = 'spring.config.activate.on-profile';
+
+  /// The [CloudPlatform] that must be active for a document to be used.
+  static const onCloudPlatformProperty =
+      'spring.config.activate.on-cloud-platform';
 
   /// Profiles to add to the active ones, comma-separated.
   static const includeProfilesProperty = 'spring.profiles.include';
@@ -316,6 +323,12 @@ final class _Document {
   _Document(this.source, this.location, {required this.profileSpecific})
     : onProfile = _guard(
         _Run._sourceValue(source, ConfigDataEnvironment.onProfileProperty),
+      ),
+      onCloudPlatform = _guard(
+        _Run._sourceValue(
+          source,
+          ConfigDataEnvironment.onCloudPlatformProperty,
+        ),
       );
 
   // An empty on-profile is no guard at all, as in Boot (an empty array).
@@ -327,6 +340,8 @@ final class _Document {
   final bool profileSpecific;
   // The raw on-profile guard; placeholders are resolved on activation.
   final String? onProfile;
+  // The raw on-cloud-platform guard.
+  final String? onCloudPlatform;
   // Whether its on-profile guard matched; inactive documents are dropped.
   bool active = false;
   bool importsProcessed = false;
@@ -357,6 +372,11 @@ final class _Run {
   final _loaded = <String>{};
   // Config file base names (`spring.config.name`).
   late final List<String> _names;
+  // The cloud platform, deduced once the unguarded documents are active
+  // (Boot's ConfigDataActivationContext); on-cloud-platform documents wait
+  // for it.
+  CloudPlatform? _platform;
+  bool _platformKnown = false;
 
   ConfigurableEnvironment get _env => owner.environment;
 
@@ -417,7 +437,12 @@ final class _Run {
     }
     // Documents guarded by on-profile stay inactive until the profiles are
     // known (like Spring Boot), so `!prod` is not applied before we know
-    // whether prod is active.
+    // whether prod is active. The cloud platform is deduced from the
+    // environment and the unguarded documents, then the documents guarded
+    // by on-cloud-platform alone are activated.
+    _activate(const [], profilesKnown: false);
+    _platform = _deducePlatform();
+    _platformKnown = true;
     _activate(const [], profilesKnown: false);
 
     // 2. Profiles from the environment and the active documents.
@@ -463,10 +488,13 @@ final class _Run {
         for (var i = 0; i < documents.length; i++) {
           final document = documents[i];
           if (!document.active) {
-            if (!profilesKnown && document.onProfile != null) {
+            if ((!profilesKnown && document.onProfile != null) ||
+                (!_platformKnown && document.onCloudPlatform != null)) {
               continue;
             }
-            document.active = _matchesProfiles(document, profiles);
+            document.active =
+                _matchesCloudPlatform(document) &&
+                _matchesProfiles(document, profiles);
             if (!document.active) {
               continue;
             }
@@ -497,6 +525,42 @@ final class _Run {
         }
       }
     }
+  }
+
+  // Boot's deduceCloudPlatform: `spring.main.cloud-platform` from the
+  // environment and the active documents, else the platform active in the
+  // environment itself.
+  CloudPlatform? _deducePlatform() {
+    final enforced = _bind(
+      _boundSources(),
+      CloudPlatform.propertyName,
+      _resolver(),
+    );
+    if (enforced != null) {
+      if (CloudPlatform.parse(enforced) case final platform?) {
+        return platform;
+      }
+    }
+    return CloudPlatform.getActive(_env);
+  }
+
+  // Whether the on-cloud-platform guard of [document] (if any) names the
+  // deduced platform (`none` when there is none).
+  bool _matchesCloudPlatform(_Document document) {
+    final guard = document.onCloudPlatform;
+    if (guard == null) {
+      return true;
+    }
+    final value = _resolver(document).resolveRequiredPlaceholders(guard).trim();
+    final wanted = CloudPlatform.parse(value);
+    if (wanted == null) {
+      throw ConfigDataLoadException(
+        document.location,
+        "invalid '${ConfigDataEnvironment.onCloudPlatformProperty}' value "
+        "'$value' (one of ${CloudPlatform.values.map((p) => p.name).join(', ')})",
+      );
+    }
+    return wanted == (_platform ?? CloudPlatform.none);
   }
 
   // Whether the on-profile guard of [document] (if any) matches

@@ -21,6 +21,10 @@ abstract final class FileAccess {
   /// Completes with an [UnsupportedError].
   static Future<Uint8List> readBytes(String path) async => _unsupported();
 
+  /// Completes with an [UnsupportedError].
+  static Future<Uint8List> readUrl(Uri url) async =>
+      throw UnsupportedError('Reading URLs is not supported');
+
   /// Returns [path] unchanged.
   static String absolute(String path) => path;
 

@@ -188,10 +188,12 @@ void main() {
     late ConfigurableApplicationContext seen;
     base
         .withInitializer(
-          (context) => context.beanFactory.registerSingleton(
-            'extra',
-            'value',
-            types: const [String],
+          ApplicationContextInitializer.of(
+            (context) => context.beanFactory.registerSingleton(
+              'extra',
+              'value',
+              types: const [String],
+            ),
           ),
         )
         .run((context) {

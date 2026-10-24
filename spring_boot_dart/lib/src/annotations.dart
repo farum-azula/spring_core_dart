@@ -93,6 +93,12 @@ class SpringBootApplication {
 /// With `@Validated()` on the class the constraint annotations
 /// (`@NotBlank`, `@Min`, ...) are checked after binding, as in Spring Boot.
 ///
+/// [ignoreInvalidFields] keeps the default of a property whose value cannot
+/// be converted instead of failing the start; [ignoreUnknownFields]
+/// `false` fails the start for properties under the prefix that bind to
+/// nothing (`db.urll`; OS environment variables are not checked), like
+/// Boot's attributes of the same names.
+///
 /// Spring (Java):
 /// ```java
 /// @ConfigurationProperties("db") @Validated
@@ -103,11 +109,24 @@ class SpringBootApplication {
 /// ```
 class ConfigurationProperties extends Component implements Introspected {
   /// Binds the properties under [prefix]; [name] overrides the bean name.
-  const ConfigurationProperties(this.prefix, {String? name}) : super(name);
+  const ConfigurationProperties(
+    this.prefix, {
+    String? name,
+    this.ignoreInvalidFields = false,
+    this.ignoreUnknownFields = true,
+  }) : super(name);
 
   /// Property prefix in canonical form (lower case, `-` between words),
   /// e.g. `db` for `db.url` or `my-app`.
   final String prefix;
+
+  /// Whether values that cannot be converted are ignored (the field keeps
+  /// its default) instead of failing the start.
+  final bool ignoreInvalidFields;
+
+  /// Whether properties under [prefix] that bind to nothing are ignored
+  /// (the default); `false` fails the start for them.
+  final bool ignoreUnknownFields;
 
   /// No extra classes to introspect (see `Introspected.classes`).
   @override

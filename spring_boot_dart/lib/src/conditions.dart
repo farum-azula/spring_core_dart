@@ -229,29 +229,103 @@ class ConditionalOnResource implements Condition {
   String toString() => '@ConditionalOnResource (${resources.join(', ')})';
 }
 
-/// Registers the bean only when a bean of [type] is already registered,
-/// like Spring Boot's `@ConditionalOnBean`.
+/// Registers the bean only when [platform] is the active [CloudPlatform]
+/// (detected from environment variables, or set by
+/// `spring.main.cloud-platform`), like Spring Boot's
+/// `@ConditionalOnCloudPlatform`.
+///
+/// ```dart
+/// @Bean()
+/// @ConditionalOnCloudPlatform(CloudPlatform.kubernetes)
+/// Probes probes() => Probes();
+/// ```
+///
+/// Spring (Java): `@ConditionalOnCloudPlatform(CloudPlatform.KUBERNETES)`.
+class ConditionalOnCloudPlatform implements Condition {
+  /// Requires [platform].
+  const ConditionalOnCloudPlatform(this.platform);
+
+  /// The platform that must be active.
+  final CloudPlatform platform;
+
+  @override
+  bool matches(ConditionContext context) =>
+      platform.isActive(context.environment);
+
+  @override
+  String toString() => '@ConditionalOnCloudPlatform (${platform.name})';
+}
+
+/// Where `@ConditionalOnBean` / `@ConditionalOnMissingBean` look for beans,
+/// like Spring Boot's `SearchStrategy`.
+enum SearchStrategy {
+  /// Only this context.
+  current,
+
+  /// Only the parent contexts (all of them).
+  ancestors,
+
+  /// This context and its parents.
+  all,
+}
+
+/// Registers the bean only when the given beans are already registered,
+/// like Spring Boot's `@ConditionalOnBean`: a bean of [type] (and of every
+/// one of [types]), named [name] (and every one of [names]), and annotated
+/// with each of [annotations] (the exact annotation class). Without any of
+/// them, the type is the bean's own (the `@Bean` method's return type).
+/// [search] limits the contexts searched.
 ///
 /// Conditions see the definitions registered before them: put them on
 /// auto-configuration (registered after the application's beans). Like
 /// Boot 3.4+, beans with `autowireCandidate: false` or
-/// `defaultCandidate: false` do not count (for [ConditionalOnMissingBean]
-/// either); beans of parent contexts do.
+/// `defaultCandidate: false` do not count by type (for
+/// [ConditionalOnMissingBean] either); beans of parent contexts do.
 ///
 /// ```dart
 /// @Bean()
 /// @ConditionalOnBean(DataSource)
 /// Migrations migrations(DataSource source) => Migrations(source);
+///
+/// @Bean()
+/// @ConditionalOnBean.where(
+///   types: [DataSource, Clock],
+///   search: SearchStrategy.current,
+/// )
+/// Audit audit() => Audit();
 /// ```
 ///
-/// Spring (Java): `@ConditionalOnBean(DataSource.class)`.
+/// Spring (Java): `@ConditionalOnBean(DataSource.class)`,
+/// `@ConditionalOnBean(value = {DataSource.class, Clock.class},
+/// search = SearchStrategy.CURRENT)`.
 class ConditionalOnBean implements Condition {
-  /// Requires a bean of [type].
-  const ConditionalOnBean(Type this.type) : name = null;
+  /// Requires a bean of [type]; without it, of the bean's own type.
+  const ConditionalOnBean([this.type])
+    : name = null,
+      types = const [],
+      names = const [],
+      annotations = const [],
+      search = SearchStrategy.all;
 
   /// Requires a bean named [name] (Spring Boot's
   /// `@ConditionalOnBean(name = "...")`).
-  const ConditionalOnBean.named(String this.name) : type = null;
+  const ConditionalOnBean.named(
+    String this.name, {
+    this.search = SearchStrategy.all,
+  }) : type = null,
+       types = const [],
+       names = const [],
+       annotations = const [];
+
+  /// Requires every bean described: all of [types], [names] and
+  /// [annotations]; the bean's own type when all are empty.
+  const ConditionalOnBean.where({
+    this.types = const [],
+    this.names = const [],
+    this.annotations = const [],
+    this.search = SearchStrategy.all,
+  }) : type = null,
+       name = null;
 
   /// The required bean type.
   final Type? type;
@@ -259,14 +333,38 @@ class ConditionalOnBean implements Condition {
   /// The required bean name.
   final String? name;
 
+  /// More required bean types.
+  final List<Type> types;
+
+  /// More required bean names.
+  final List<String> names;
+
+  /// Annotation classes each required on some bean (its class or `@Bean`
+  /// method).
+  final List<Type> annotations;
+
+  /// The contexts searched.
+  final SearchStrategy search;
+
   @override
-  bool matches(ConditionContext context) => name != null
-      ? context.beanFactory.containsBean(name!)
-      : context.beanFactory.containsBeanOfType(type!);
+  bool matches(ConditionContext context) {
+    final spec = _BeanSpec(
+      context,
+      'ConditionalOnBean',
+      types: [?type, ...types],
+      names: [?name, ...names],
+      annotations: annotations,
+      ignored: const [],
+      search: search,
+    );
+    return spec.types.every(spec.hasType) &&
+        spec.names.every(spec.hasName) &&
+        spec.annotations.every(spec.hasAnnotation);
+  }
 
   @override
   String toString() =>
-      '@ConditionalOnBean (${name != null ? 'name: $name' : 'types: $type'})';
+      '@ConditionalOnBean (${_describe([?type, ...types], [?name, ...names], annotations, const [], search)})';
 }
 
 /// Registers the bean only when exactly one bean of [type] can be injected
@@ -321,28 +419,62 @@ class ConditionalOnSingleCandidate implements Condition {
   String toString() => '@ConditionalOnSingleCandidate (types: $type)';
 }
 
-/// Registers the bean only when no bean of [type] is registered yet, like
-/// Spring Boot's `@ConditionalOnMissingBean`: the default a library
-/// provides backs off when the application declares its own bean.
+/// Registers the bean only when none of the given beans is registered yet,
+/// like Spring Boot's `@ConditionalOnMissingBean`: the default a library
+/// provides backs off when the application declares its own bean. No bean
+/// of [type] (nor of any of [types]), named [name] (nor any of [names]) or
+/// annotated with one of [annotations]; without any of them, no bean of the
+/// bean's own type (the `@Bean` method's return type). Beans of [ignored]
+/// types do not count; [search] limits the contexts searched.
 ///
 /// ```dart
 /// @AutoConfiguration()
 /// class HttpAutoConfiguration {
 ///   @Bean()
-///   @ConditionalOnMissingBean(HttpClientSettings)
+///   @ConditionalOnMissingBean()
 ///   HttpClientSettings httpSettings() => HttpClientSettings();
+///
+///   @Bean()
+///   @ConditionalOnMissingBean.where(ignored: [TestClock])
+///   Clock clock() => SystemClock();
 /// }
 /// ```
 ///
-/// Spring (Java): `@ConditionalOnMissingBean` (the type is inferred from the
-/// `@Bean` method there; here it is given explicitly).
+/// Spring (Java): `@ConditionalOnMissingBean`,
+/// `@ConditionalOnMissingBean(ignored = TestClock.class)`.
 class ConditionalOnMissingBean implements Condition {
-  /// Requires that no bean of [type] exists.
-  const ConditionalOnMissingBean(Type this.type) : name = null;
+  /// Requires that no bean of [type] exists; without it, of the bean's own
+  /// type.
+  const ConditionalOnMissingBean([this.type])
+    : name = null,
+      types = const [],
+      names = const [],
+      annotations = const [],
+      ignored = const [],
+      search = SearchStrategy.all;
 
   /// Requires that no bean named [name] exists (Spring's
   /// `@ConditionalOnMissingBean(name = "...")`).
-  const ConditionalOnMissingBean.named(String this.name) : type = null;
+  const ConditionalOnMissingBean.named(
+    String this.name, {
+    this.search = SearchStrategy.all,
+  }) : type = null,
+       types = const [],
+       names = const [],
+       annotations = const [],
+       ignored = const [];
+
+  /// Requires that none of the beans described exists: of [types], named
+  /// [names] or annotated with [annotations]; of the bean's own type when
+  /// all are empty.
+  const ConditionalOnMissingBean.where({
+    this.types = const [],
+    this.names = const [],
+    this.annotations = const [],
+    this.ignored = const [],
+    this.search = SearchStrategy.all,
+  }) : type = null,
+       name = null;
 
   /// The bean type that must be missing.
   final Type? type;
@@ -350,13 +482,160 @@ class ConditionalOnMissingBean implements Condition {
   /// The bean name that must be missing.
   final String? name;
 
+  /// More bean types that must be missing.
+  final List<Type> types;
+
+  /// More bean names that must be missing.
+  final List<String> names;
+
+  /// Annotation classes no bean may carry.
+  final List<Type> annotations;
+
+  /// Bean types that do not count.
+  final List<Type> ignored;
+
+  /// The contexts searched.
+  final SearchStrategy search;
+
   @override
-  bool matches(ConditionContext context) => name != null
-      ? !context.beanFactory.containsBean(name!)
-      : !context.beanFactory.containsBeanOfType(type!);
+  bool matches(ConditionContext context) {
+    final spec = _BeanSpec(
+      context,
+      'ConditionalOnMissingBean',
+      types: [?type, ...types],
+      names: [?name, ...names],
+      annotations: annotations,
+      ignored: ignored,
+      search: search,
+    );
+    return !spec.types.any(spec.hasType) &&
+        !spec.names.any(spec.hasName) &&
+        !spec.annotations.any(spec.hasAnnotation);
+  }
 
   @override
   String toString() =>
-      '@ConditionalOnMissingBean '
-      '(${name != null ? 'name: $name' : 'types: $type'})';
+      '@ConditionalOnMissingBean (${_describe([?type, ...types], [?name, ...names], annotations, ignored, search)})';
+}
+
+String _describe(
+  List<Type> types,
+  List<String> names,
+  List<Type> annotations,
+  List<Type> ignored,
+  SearchStrategy search,
+) => [
+  if (types.isNotEmpty) 'types: ${types.join(', ')}',
+  if (names.length == 1) 'name: ${names.single}',
+  if (names.length > 1) 'names: ${names.join(', ')}',
+  if (annotations.isNotEmpty) 'annotations: ${annotations.join(', ')}',
+  if (ignored.isNotEmpty) 'ignored: ${ignored.join(', ')}',
+  if (search != SearchStrategy.all) 'search: ${search.name}',
+  if (types.isEmpty && names.isEmpty && annotations.isEmpty)
+    "the bean's own type",
+].join('; ');
+
+// The beans `@ConditionalOnBean` / `@ConditionalOnMissingBean` look for,
+// like Spring Boot's `OnBeanCondition.Spec`.
+final class _BeanSpec {
+  _BeanSpec(
+    ConditionContext context,
+    String annotation, {
+    required List<Type> types,
+    required this.names,
+    required this.annotations,
+    required List<Type> ignored,
+    required SearchStrategy search,
+  }) : factories = _factories(context.beanFactory, search),
+       types = types.isEmpty && names.isEmpty && annotations.isEmpty
+           ? [_deduce(context, annotation)]
+           : types {
+    for (final type in ignored) {
+      for (final factory in factories) {
+        _ignored.addAll(factory.getBeanNamesForType(type));
+      }
+    }
+  }
+
+  final List<ListableBeanFactory> factories;
+  final List<Type> types;
+  final List<String> names;
+  final List<Type> annotations;
+  final _ignored = <String>{};
+
+  // Boot deduces the type from the `@Bean` method's return type.
+  static Type _deduce(ConditionContext context, String annotation) {
+    final definition = context.definition;
+    if (definition == null) {
+      throw StateError(
+        '@$annotation did not specify a bean using type, name or annotation '
+        "and the attempt to deduce the bean's type failed",
+      );
+    }
+    return definition.beanType;
+  }
+
+  static List<ListableBeanFactory> _factories(
+    ConfigurableListableBeanFactory factory,
+    SearchStrategy search,
+  ) {
+    final all = <ListableBeanFactory>[];
+    for (
+      BeanFactory? current = factory;
+      current != null;
+      current = current is HierarchicalBeanFactory
+          ? current.parentBeanFactory
+          : null
+    ) {
+      if (current is ListableBeanFactory) {
+        all.add(current);
+      }
+    }
+    return switch (search) {
+      SearchStrategy.current => all.take(1).toList(),
+      SearchStrategy.ancestors => all.skip(1).toList(),
+      SearchStrategy.all => all,
+    };
+  }
+
+  // Whether [name] in [factory] counts: not ignored, and (for a
+  // definition) an autowire and default candidate.
+  bool _counts(ListableBeanFactory factory, String name) {
+    if (_ignored.contains(name)) {
+      return false;
+    }
+    if (factory is! BeanDefinitionRegistry ||
+        !(factory as BeanDefinitionRegistry).containsBeanDefinition(name)) {
+      return true;
+    }
+    final definition = (factory as BeanDefinitionRegistry).getBeanDefinition(
+      name,
+    );
+    return definition.autowireCandidate && definition.defaultCandidate;
+  }
+
+  bool hasType(Type type) => factories.any(
+    (factory) =>
+        factory.getBeanNamesForType(type).any((name) => _counts(factory, name)),
+  );
+
+  bool hasName(String name) =>
+      !_ignored.contains(name) &&
+      factories.any(
+        (factory) => factory is HierarchicalBeanFactory
+            ? (factory as HierarchicalBeanFactory).containsLocalBean(name)
+            : factory.containsBean(name),
+      );
+
+  bool hasAnnotation(Type annotation) => factories.any(
+    (factory) => factory.beanDefinitionNames.any(
+      (name) =>
+          !_ignored.contains(name) &&
+          factory is BeanDefinitionRegistry &&
+          (factory as BeanDefinitionRegistry)
+              .getBeanDefinition(name)
+              .annotations
+              .any((a) => a.runtimeType == annotation),
+    ),
+  );
 }

@@ -643,11 +643,15 @@ void main() {
           [appModule()],
           autoConfigurations: [autoModule],
           initializers: [
-            (context) => seen.add('active: ${context.isActive}'),
-            (context) => context.beanFactory.registerSingleton(
-              'fromInitializer',
-              'hello',
-              types: const [String],
+            ApplicationContextInitializer.of(
+              (context) => seen.add('active: ${context.isActive}'),
+            ),
+            ApplicationContextInitializer.of(
+              (context) => context.beanFactory.registerSingleton(
+                'fromInitializer',
+                'hello',
+                types: const [String],
+              ),
             ),
           ],
           out: lines.add,

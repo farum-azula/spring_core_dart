@@ -79,7 +79,10 @@ class ObjectMapper {
   /// which values are written; [failOnUnknownProperties] rejects JSON
   /// properties a class does not have (off, like Spring Boot);
   /// [acceptFloatAsInt] truncates numbers with a fraction read into an
-  /// `int` (on, like Jackson); [writeDatesAsTimestamps] /
+  /// `int` (on, like Jackson); [failOnNullForPrimitives] rejects a JSON
+  /// `null` or a missing constructor parameter for a non-nullable `int`,
+  /// `double`, `num` or `bool` (on, like Jackson 3; off reads them as `0` /
+  /// `false`); [writeDatesAsTimestamps] /
   /// [writeDurationsAsTimestamps] write `DateTime` / `Duration` as numbers
   /// (off, like Jackson 3), in seconds with the fraction
   /// ([writeDateTimestampsAsNanoseconds], on) or milliseconds; numbers are
@@ -102,6 +105,7 @@ class ObjectMapper {
     this.inclusion = JsonInclusion.always,
     this.failOnUnknownProperties = false,
     this.acceptFloatAsInt = true,
+    this.failOnNullForPrimitives = true,
     this.writeDatesAsTimestamps = false,
     this.writeDurationsAsTimestamps = false,
     this.writeDateTimestampsAsNanoseconds = true,
@@ -131,6 +135,7 @@ class ObjectMapper {
       inclusion = other.inclusion,
       failOnUnknownProperties = other.failOnUnknownProperties,
       acceptFloatAsInt = other.acceptFloatAsInt,
+      failOnNullForPrimitives = other.failOnNullForPrimitives,
       writeDatesAsTimestamps = other.writeDatesAsTimestamps,
       writeDurationsAsTimestamps = other.writeDurationsAsTimestamps,
       writeDateTimestampsAsNanoseconds = other.writeDateTimestampsAsNanoseconds,
@@ -159,6 +164,12 @@ class ObjectMapper {
   /// Whether a number with a fraction read into an `int` is truncated
   /// (Jackson's `ACCEPT_FLOAT_AS_INT`); otherwise it is an error.
   final bool acceptFloatAsInt;
+
+  /// Whether a JSON `null` (or a missing constructor parameter) for a
+  /// non-nullable `int`, `double`, `num` or `bool` is an error (Jackson's
+  /// `FAIL_ON_NULL_FOR_PRIMITIVES`, on by default since Jackson 3);
+  /// otherwise it is read as `0` / `false`.
+  final bool failOnNullForPrimitives;
 
   /// Whether `DateTime` is written as a timestamp.
   final bool writeDatesAsTimestamps;
@@ -218,6 +229,7 @@ class ObjectMapper {
     SerializationFeature.indentOutput => indentOutput,
     DeserializationFeature.failOnUnknownProperties => failOnUnknownProperties,
     DeserializationFeature.acceptFloatAsInt => acceptFloatAsInt,
+    DeserializationFeature.failOnNullForPrimitives => failOnNullForPrimitives,
     DateTimeFeature.writeDatesAsTimestamps => writeDatesAsTimestamps,
     DateTimeFeature.writeDurationsAsTimestamps => writeDurationsAsTimestamps,
     DateTimeFeature.writeDateTimestampsAsNanoseconds =>
@@ -248,6 +260,10 @@ class ObjectMapper {
         failOnUnknownProperties,
       )
       .configure(DeserializationFeature.acceptFloatAsInt, acceptFloatAsInt)
+      .configure(
+        DeserializationFeature.failOnNullForPrimitives,
+        failOnNullForPrimitives,
+      )
       .configure(DateTimeFeature.writeDatesAsTimestamps, writeDatesAsTimestamps)
       .configure(
         DateTimeFeature.writeDurationsAsTimestamps,
@@ -436,9 +452,13 @@ class ObjectMapper {
         if (format?.shape == JsonFormatShape.number) {
           return value.index;
         }
+        // Without an EnumType here (a top-level value, an `Object?`
+        // property, a map value): the one registered for the enum.
         return switch (type) {
           final EnumType<Enum> enumType => enumType.toJsonValue(value),
-          _ => value.name,
+          _ =>
+            introspector.enumTypeFor(value.runtimeType)?.toJsonValue(value) ??
+                value.name,
         };
       case JsonNode():
         return value.toJson();
@@ -510,7 +530,10 @@ class ObjectMapper {
         final String key => key,
         final Enum key => switch (keyType) {
           final EnumType<Enum> enumType => '${enumType.toJsonValue(key)}',
-          _ => key.name,
+          _ => switch (introspector.enumTypeFor(key.runtimeType)) {
+            final enumType? => '${enumType.toJsonValue(key)}',
+            null => key.name,
+          },
         },
         final DateTime key => _writeDate(key),
         null => throw JsonMappingException(
@@ -626,12 +649,29 @@ class ObjectMapper {
       if (type.nullable) {
         return null;
       }
+      if (_primitiveDefault(type) case final value?) {
+        return value;
+      }
       throw JsonMappingException(
         'null is not allowed here (expected $type)',
         path: '$path',
       );
     }
     return type.accept(_Reader(this, json, path, format));
+  }
+
+  // Without failOnNullForPrimitives: Java's default of a primitive for a
+  // non-nullable int, double, num or bool (`0`, `0.0`, `false`).
+  Object? _primitiveDefault(TypeInfo<Object?> type) {
+    if (failOnNullForPrimitives || type.nullable || type is! ClassType) {
+      return null;
+    }
+    return switch (type.type) {
+      const (int) || const (num) => 0,
+      const (double) => 0.0,
+      const (bool) => false,
+      _ => null,
+    };
   }
 
   // Jackson's coercion of "" for scalars (CoercionAction.AsNull): numbers,
@@ -741,6 +781,19 @@ class ObjectMapper {
     if (introspection != null) {
       return _info(introspection).read(json, path);
     }
+    if (<T>[] is List<Enum?>) {
+      // An enum without its EnumType at hand: the registered one.
+      final enumType =
+          introspector.enumTypeOf<T>() ??
+          (throw JsonMappingException(
+            'cannot read the enum $T: no @Introspected class uses it, so its '
+            'values are not known; pass its type, e.g. readValue(json, '
+            'EnumType<$T>($T.values)), or register it with '
+            'introspector.registerEnum(EnumType<$T>($T.values))',
+            path: '$path',
+          ));
+      return _read(json, enumType, path, format)!;
+    }
     if (<T>[] is List<Iterable<Object?>?> ||
         <T>[] is List<Map<Object?, Object?>?>) {
       // Map<String, dynamic>, List<dynamic> (Jackson's raw Map / List):
@@ -752,6 +805,27 @@ class ObjectMapper {
         'cannot read $T without its element types: pass a type, e.g. '
         'readValue(json, const ListType<Book>(ClassType<Book>())), or use '
         'readList / readMap',
+        path: '$path',
+      );
+    }
+    // A generic class with bounded type parameters (`Page<T extends
+    // Num>`) is introspected raw only: Dart cannot build `Page<X>` from a
+    // type parameter X without that bound.
+    final bounded = introspector.introspections
+        .where(
+          (i) =>
+              !i.isGeneric &&
+              i.isRawTypeOf<T>() &&
+              !i.describes<T>() &&
+              '${i.beanType}'.contains('<'),
+        )
+        .firstOrNull;
+    if (bounded != null) {
+      throw JsonMappingException(
+        'cannot read $T: ${bounded.className} has bounded type parameters, '
+        'so its introspection cannot be specialized with type arguments '
+        '(only ${bounded.beanType} is described); register a '
+        'JsonDeserializer for $T, or drop the bounds',
         path: '$path',
       );
     }
@@ -901,7 +975,15 @@ class ObjectMapper {
     );
   }
 
-  Object? _readKey(String key, TypeInfo<Object?> type, _Path path) {
+  Object? _readKey(String key, TypeInfo<Object?> keyType, _Path path) {
+    final type =
+        switch (keyType) {
+          ClassType() => keyType.capture(
+            <K>() => <K>[] is List<Enum?> ? introspector.enumTypeOf<K>() : null,
+          ),
+          _ => null,
+        } ??
+        keyType;
     if (type case final EnumType<Enum> enumType) {
       for (final value in enumType.values) {
         if ('${enumType.toJsonValue(value)}' == key) {
@@ -1126,8 +1208,25 @@ final class _ClassInfo {
         ...?introspection.getProperty(name)?.annotations,
       ];
       A? find<A>() => annotations.whereType<A>().firstOrNull;
-      final jsonName = find<JsonProperty>()?.name ?? naming.translate(name);
+      final property = find<JsonProperty>();
+      final jsonName = property != null && property.name.isNotEmpty
+          ? property.name
+          : naming.translate(name);
       jsonNames[name] = jsonName;
+      switch (property?.access) {
+        case JsonPropertyAccess.readOnly:
+          readOnlyNames.add(name);
+        case JsonPropertyAccess.writeOnly:
+          writeOnlyNames.add(name);
+        case JsonPropertyAccess.auto || JsonPropertyAccess.readWrite || null:
+          break;
+      }
+      if (property?.required ?? false) {
+        requiredNames.add(name);
+      }
+      if (find<JsonValue>() != null) {
+        valueProperty ??= introspection.getProperty(name);
+      }
       if (find<JsonIgnore>() != null || ignoredNames.contains(jsonName)) {
         ignoredNames.add(jsonName);
       }
@@ -1154,6 +1253,10 @@ final class _ClassInfo {
       }
     }
     for (final method in introspection.methods) {
+      if (method.annotations.whereType<JsonValue>().isNotEmpty &&
+          method.parameterTypes.isEmpty) {
+        valueMethod ??= method;
+      }
       if (method.annotations.whereType<JsonAnyGetter>().isNotEmpty) {
         anyGetterMethod ??= method;
       }
@@ -1192,6 +1295,22 @@ final class _ClassInfo {
 
   /// JSON names left out in both directions.
   final ignoredNames = <String>{};
+
+  /// Dart names of `@JsonProperty(access: readOnly)` properties: written,
+  /// not read.
+  final readOnlyNames = <String>{};
+
+  /// Dart names of `@JsonProperty(access: writeOnly)` properties: read,
+  /// not written.
+  final writeOnlyNames = <String>{};
+
+  /// Dart names of `@JsonProperty(required: true)` properties.
+  final requiredNames = <String>{};
+
+  /// The `@JsonValue` property or method: the class is written as its
+  /// value.
+  BeanProperty<Object>? valueProperty;
+  BeanMethod<Object>? valueMethod;
 
   /// Dart names of `@JsonAnyGetter` / `@JsonAnySetter` properties.
   final anyNames = <String>{};
@@ -1357,10 +1476,24 @@ final class _ClassInfo {
   // -------------------------------------------------------------------
 
   Object? write(Object bean, _Path path, Set<Object> seen) {
+    // `@JsonValue`: the whole object is written as that value.
+    if (valueProperty case final property?) {
+      return mapper._write(
+        property.getValue(bean),
+        path,
+        seen,
+        property.typeInfo,
+        formats[property.name],
+      );
+    }
+    if (valueMethod case final method?) {
+      return mapper._write(method.invoke(bean, const []), path, seen);
+    }
     if (classFormat?.shape == JsonFormatShape.array) {
       return [
         for (final property in writeOrder)
-          if (_regular(property.name))
+          if (_regular(property.name) &&
+              !writeOnlyNames.contains(property.name))
             mapper._write(
               property.getValue(bean),
               path.key(jsonNames[property.name]!),
@@ -1395,7 +1528,7 @@ final class _ClassInfo {
     final result = <String, Object?>{};
     for (final property in writeOrder) {
       final name = property.name;
-      if (!_regular(name)) {
+      if (!_regular(name) || writeOnlyNames.contains(name)) {
         continue;
       }
       final json = jsonNames[name]!;
@@ -1509,6 +1642,9 @@ final class _ClassInfo {
         );
       }
     }
+    if (valueProperty != null || valueMethod != null) {
+      return _readDelegating(json, path);
+    }
     var object = json;
     if (classFormat?.shape == JsonFormatShape.array && object is List) {
       final order = [
@@ -1524,6 +1660,27 @@ final class _ClassInfo {
       throw mapper._expected('an object', json, path);
     }
     return _readObject(object, path, nested: nested);
+  }
+
+  // A class written through its `@JsonValue` is read back through a
+  // constructor with one parameter (Jackson's delegating creator), the
+  // JSON read as that parameter's type.
+  Object _readDelegating(Object json, _Path path) {
+    final constructor = introspection.constructor;
+    final parameters = constructor?.parameters ?? const <BeanParameter>[];
+    if (constructor == null ||
+        parameters.isEmpty ||
+        parameters.skip(1).any((p) => p.isRequired)) {
+      throw JsonMappingException(
+        'cannot read ${introspection.beanType}: it is written through its '
+        '@JsonValue, so it is read through a constructor with one '
+        'parameter (or a fromJson); it has none',
+        path: '$path',
+      );
+    }
+    final parameter = parameters.first;
+    final value = mapper._read(json, parameter.type, path);
+    return _construct(constructor, {parameter.name: value}, path);
   }
 
   String? _presentKey(String name, Map<Object?, Object?> json) {
@@ -1583,11 +1740,21 @@ final class _ClassInfo {
       }
       final key = _presentKey(name, json);
       if (key == null) {
+        // Jackson checks `required` for creator properties only.
+        if (requiredNames.contains(name) && parameterNames.contains(name)) {
+          throw JsonMappingException(
+            'missing required creator property "${jsonNames[name]}" (of '
+            '${introspection.beanType})',
+            path: '$path',
+          );
+        }
         continue;
       }
       used.add(key);
-      if (!settable) {
-        continue; // read-only and not a constructor parameter
+      if (!settable || readOnlyNames.contains(name)) {
+        // read-only (no setter, or `access: readOnly`), not a constructor
+        // parameter
+        continue;
       }
       values[name] = mapper._read(
         json[key],
@@ -1726,8 +1893,14 @@ final class _ClassInfo {
     final named = <Symbol, Object?>{};
     for (final parameter in constructor.parameters) {
       final name = jsonNames[parameter.name]!;
-      final present = values.containsKey(parameter.name);
-      final value = values[parameter.name];
+      var present = values.containsKey(parameter.name);
+      var value = values[parameter.name];
+      if (!present && parameter.isRequired) {
+        if (mapper._primitiveDefault(parameter.type) case final primitive?) {
+          present = true;
+          value = primitive;
+        }
+      }
       if (!present && parameter.isRequired && !parameter.type.nullable) {
         throw JsonMappingException(
           'missing property "$name" (required by '
@@ -1895,14 +2068,13 @@ final class _Polymorphism {
         path,
       );
     }
-    target ??=
-        byId[id] ??
-        (throw JsonMappingException(
-          'could not resolve type id "$id" as a subtype of '
-          '${requested.introspection.beanType}: known type ids = '
-          '[${(byId.keys.toList()..sort()).join(', ')}]',
-          path: '$path',
-        ));
+    // An unknown id falls back to `defaultImpl` like Jackson; without
+    // one it is an error.
+    final unknown =
+        'could not resolve type id "$id" as a subtype of '
+        '${requested.introspection.beanType}: known type ids = '
+        '[${(byId.keys.toList()..sort()).join(', ')}]';
+    target ??= byId[id] ?? _defaultImpl(unknown, path);
     if (target != requested.introspection &&
         !target.isSubtypeOf(requested.introspection)) {
       throw JsonMappingException(

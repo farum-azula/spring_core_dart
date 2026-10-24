@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
@@ -13,6 +15,7 @@ class FileAppender extends LogAppender {
     this.maxHistory = 7,
     this.totalSizeCap = 0,
     bool cleanHistoryOnStart = false,
+    this.encoding = utf8,
     super.threshold,
   }) : pattern = pattern ?? LogPattern(LogPattern.defaultFilePattern) {
     throw UnsupportedError('Log files need dart:io');
@@ -32,6 +35,10 @@ class FileAppender extends LogAppender {
 
   /// Number of rolled-over files kept.
   final int maxHistory;
+
+  /// The charset of the file (`logging.charset.file`, UTF-8 by default);
+  /// characters it cannot encode are written as `?`, like Java.
+  final Encoding encoding;
 
   /// Total size of the rolled-over files, in bytes; `0` sets no limit.
   final int totalSizeCap;

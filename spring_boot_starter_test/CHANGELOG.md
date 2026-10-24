@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Breaking: initializers are `ApplicationContextInitializer` objects (`ApplicationContextInitializer.of((context) => ...)`), following `spring_boot_dart`.
+- `ApplicationContextRunner.runAsync` refreshes with `refreshAsync()` (asynchronous `@PostConstruct` / init methods are awaited; a failed start is closed with `closeAsync()`).
+- `ApplicationContextRunner` sorts its auto-configurations like Boot's `AutoConfigurations.of(...)`: by name, `order`, then `before` / `after` (`withAutoConfiguration(module, metadata)` takes the module's `@AutoConfigurationModule`).
+- `ApplicationContextRunner.withParent`, `withAllowBeanDefinitionOverriding` and `withAllowCircularReferences` (`true` fails the run: circular references are always an error).
+- `BeanOverride` names a new bean like `withBean` (`defaultBeanName`: `URLService` stays, type arguments are left out).
 - Breaking: `ApplicationContextRunner.withBean<T>(supplier)` takes a supplier like Boot's `withBean(type, supplier)`: each run gets a new instance (an instance was reused after a previous run destroyed it).
 - `springBootTest` closes its context with `closeAsync()` (asynchronous `@PreDestroy` and lifecycle stops are awaited); `ApplicationContextRunner.runAsync` too.
 

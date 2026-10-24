@@ -50,7 +50,9 @@ final class ExpressionState {
     SpelParserConfiguration? configuration,
   ]) : configuration = configuration ?? SpelParserConfiguration.withDefaults(),
        _active = [root],
-       _scopeRoots = [root];
+       _activeReal = [false],
+       _scopeRoots = [root],
+       _scopeRootReal = [false];
 
   /// The evaluation context (accessors, variables, types, ...).
   final EvaluationContext context;
@@ -69,37 +71,58 @@ final class ExpressionState {
   // projection, arguments) starts. pushScope pushes onto both.
   final List<Object?> _active;
   final List<Object?> _scopeRoots;
+  // Whether the matching entry of _active / _scopeRoots is a real number
+  // (a Java double) although it is an `int` at run time (the web).
+  final List<bool> _activeReal;
+  final List<bool> _scopeRootReal;
   int _operations = 0;
 
   /// The object property and method references apply to.
   Object? get activeContextObject => _active.last;
 
+  /// Whether [activeContextObject] is a real number (a Java `double`),
+  /// also when it is integral and so an `int` at run time on the web.
+  bool get activeContextObjectIsReal => _activeReal.last;
+
   /// `#this` at the start of the current compound expression; method
   /// arguments are evaluated against it.
   Object? get scopeRoot => _scopeRoots.last;
 
-  /// Makes [value] the active context object until [popActive].
-  void pushActive(Object? value) => _active.add(value);
+  /// Whether [scopeRoot] is a real number (see
+  /// [activeContextObjectIsReal]).
+  bool get scopeRootIsReal => _scopeRootReal.last;
+
+  /// Makes [value] the active context object until [popActive]; [real]
+  /// when it is a real number (a Java `double`) even if integral.
+  void pushActive(Object? value, {bool real = false}) {
+    _active.add(value);
+    _activeReal.add(real);
+  }
 
   /// Restores the previous active context object.
-  void popActive() => _active.removeLast();
+  void popActive() {
+    _active.removeLast();
+    _activeReal.removeLast();
+  }
 
-  /// Starts a new scope with [value] as scope root and active object;
-  /// end it with [popScope].
-  void pushScope(Object? value) {
+  /// Starts a new scope with [value] as scope root and active object
+  /// ([real] as in [pushActive]); end it with [popScope].
+  void pushScope(Object? value, {bool real = false}) {
     _scopeRoots.add(value);
-    _active.add(value);
+    _scopeRootReal.add(real);
+    pushActive(value, real: real);
   }
 
   /// Ends the scope started by [pushScope].
   void popScope() {
     _scopeRoots.removeLast();
-    _active.removeLast();
+    _scopeRootReal.removeLast();
+    popActive();
   }
 
-  /// Evaluates [node] with [value] as `#this`.
-  Object? withThis(Object? value, SpelNode node) {
-    pushScope(value);
+  /// Evaluates [node] with [value] as `#this` ([real] as in [pushActive]).
+  Object? withThis(Object? value, SpelNode node, {bool real = false}) {
+    pushScope(value, real: real);
     try {
       return node.getValue(this);
     } finally {
@@ -598,6 +621,7 @@ final class PropertyOrFieldReference extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
+    _real = false;
     final target = state.activeContextObject;
     if (target == null) {
       if (nullSafe) {
@@ -611,12 +635,16 @@ final class PropertyOrFieldReference extends SpelNode {
   }
 
   // Static fields of a T(...) type win; then the first accessor whose
-  // canRead says yes. Non-SpEL errors from accessors are wrapped.
+  // canRead says yes. Non-SpEL errors from accessors are wrapped. Records
+  // whether the value is a real number (see SpelNode._real): a static
+  // field of a double type, a map entry marked real, or a property
+  // declared `double`.
   Object? _read(ExpressionState state, Object target) {
     if (target is SpelType) {
       final field = target.staticFields[name];
       if (field != null) {
         state.trackOperation();
+        _real = target.type == double;
         return field();
       }
     }
@@ -625,7 +653,19 @@ final class PropertyOrFieldReference extends SpelNode {
       if (accessor.canRead(context, target, name)) {
         state.trackOperation();
         try {
-          return accessor.read(context, target, name);
+          final value = accessor.read(context, target, name);
+          _real =
+              value is int &&
+              switch (accessor) {
+                IntrospectionPropertyAccessor(:final introspector) =>
+                  introspector
+                          .findIntrospection(target)
+                          ?.getProperty(name)
+                          ?.type ==
+                      double,
+                _ => target is Map && _isRealElement(target, name, value),
+              };
+          return value;
         } on SpelEvaluationException catch (error) {
           throw state.locate(error, start);
         } catch (error) {
@@ -760,6 +800,7 @@ final class MethodReference extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
+    _real = false;
     final target = state.activeContextObject;
     if (target == null) {
       if (nullSafe) {
@@ -769,11 +810,20 @@ final class MethodReference extends SpelNode {
         '$name()',
       ]);
     }
+    // A real number that is an `int` at run time (the web): Java's
+    // Double.toString, `2.0.toString()` is '2.0'.
+    if (target is int &&
+        state.activeContextObjectIsReal &&
+        name == 'toString' &&
+        arguments.isEmpty) {
+      state.trackOperation();
+      return javaRealString(target);
+    }
     // Arguments see the scope root as #this: in `a.b(#this)` the argument
     // is the object `a` was read from, not `a` itself.
     final args = [
       for (final argument in arguments)
-        state.withThis(state.scopeRoot, argument),
+        state.withThis(state.scopeRoot, argument, real: state.scopeRootIsReal),
     ];
     final context = state.context;
     final resolvers = [
@@ -854,11 +904,14 @@ final class VariableReference extends SpelNode {
   bool get isAssignable => name != 'this' && name != 'root';
 
   @override
-  Object? getValue(ExpressionState state) => switch (name) {
-    'this' => state.activeContextObject,
-    'root' => state.root,
-    _ => state.lookupVariable(name),
-  };
+  Object? getValue(ExpressionState state) {
+    _real = name == 'this' && state.activeContextObjectIsReal;
+    return switch (name) {
+      'this' => state.activeContextObject,
+      'root' => state.root,
+      _ => state.lookupVariable(name),
+    };
+  }
 
   @override
   ValueRef getValueRef(ExpressionState state) {
@@ -933,7 +986,7 @@ final class FunctionReference extends SpelNode {
     }
     final args = [
       for (final argument in arguments)
-        state.withThis(state.scopeRoot, argument),
+        state.withThis(state.scopeRoot, argument, real: state.scopeRootIsReal),
     ];
     if (!VarargsFunction.accepts(function, args.length)) {
       throw state.error(
@@ -1046,11 +1099,39 @@ final class Indexer extends SpelNode {
     } on TypeError catch (error) {
       throw state.error(SpelMessage.typeConversionError, start, [
         ExpressionState.typeName(value),
-        target.runtimeType,
+        _elementType(target),
       ], error);
     } on UnsupportedError catch (error) {
       throw state.error(SpelMessage.notAssignable, start, [toString()], error);
     }
+  }
+
+  // The element type of a typed list (`int` of a `List<int>`) or the value
+  // type of a map, for messages: the conversion that failed is to it, like
+  // Spring's "cannot convert from String to Integer". Read from the
+  // runtime type's name (Dart has no reflection on type arguments).
+  static String _elementType(Object target) {
+    final name = '${target.runtimeType}';
+    final open = name.indexOf('<');
+    if (open < 0 || !name.endsWith('>')) {
+      return name;
+    }
+    final arguments = <String>[];
+    var depth = 0;
+    var from = open + 1;
+    for (var i = from; i < name.length - 1; i++) {
+      switch (name[i]) {
+        case '<':
+          depth++;
+        case '>':
+          depth--;
+        case ',' when depth == 0:
+          arguments.add(name.substring(from, i).trim());
+          from = i + 1;
+      }
+    }
+    arguments.add(name.substring(from, name.length - 1).trim());
+    return arguments.last;
   }
 
   Object? _key(ExpressionState state, Object target) {
@@ -1349,6 +1430,7 @@ final class Selection extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
+    _real = false;
     final target = state.activeContextObject;
     if (target == null) {
       if (nullSafe) {
@@ -1356,8 +1438,8 @@ final class Selection extends SpelNode {
       }
       throw state.error(SpelMessage.invalidTypeForSelection, start, ['null']);
     }
-    bool matches(Object? element) {
-      final result = state.withThis(element, condition);
+    bool matches(Object? element, {bool real = false}) {
+      final result = state.withThis(element, condition, real: real);
       if (result is! bool) {
         throw state.error(
           SpelMessage.resultOfSelectionCriteriaIsNotBoolean,
@@ -1375,40 +1457,66 @@ final class Selection extends SpelNode {
         state.trackOperation();
         final selected = <Object?, Object?>{};
         MapEntry<Object?, Object?>? last;
+        // Values marked real stay marked in the result (the web).
+        Map<Object?, Object?> copy(Map<Object?, Object?> map) {
+          for (final MapEntry(:key, :value) in map.entries) {
+            if (_isRealElement(target, key, value)) {
+              _markRealElement(map, key);
+            }
+          }
+          return map;
+        }
+
         for (final entry in target.entries) {
           if (matches(entry)) {
             if (kind == SelectionKind.first) {
-              return {entry.key: entry.value};
+              return copy({entry.key: entry.value});
             }
             selected[entry.key] = entry.value;
             last = entry;
           }
         }
         return switch (kind) {
-          SelectionKind.all => selected,
-          _ => last == null ? null : {last.key: last.value},
+          SelectionKind.all => copy(selected),
+          _ => last == null ? null : copy({last.key: last.value}),
         };
       case Iterable<Object?>():
         state.trackOperation();
         final keep = <bool>[];
+        // Real numbers of a list SpEL built (on the web), carried over to
+        // `#this` and the result.
+        final reals = <bool>[];
         Object? last;
+        var lastReal = false;
+        var index = 0;
         for (final element in target) {
-          final selected = matches(element);
+          final real = _isRealElement(target, index++, element);
+          final selected = matches(element, real: real);
           if (selected) {
             if (kind == SelectionKind.first) {
+              _real = real;
               return element;
             }
             last = element;
+            lastReal = real;
+            reals.add(real);
           }
           keep.add(selected);
         }
         if (kind != SelectionKind.all) {
+          _real = lastReal;
           return last; // The last match, or null (also for `^[` without).
         }
         // A new list (Spring's ArrayList) with the element type of the
         // source: selecting from a List<int> gives a List<int>.
         var i = 0;
-        return target.where((_) => keep[i++]).toList();
+        final selected = target.where((_) => keep[i++]).toList();
+        for (var j = 0; j < reals.length; j++) {
+          if (reals[j]) {
+            _markRealElement(selected, j);
+          }
+        }
+        return selected;
       default:
         throw state.error(SpelMessage.invalidTypeForSelection, start, [
           target.runtimeType,
@@ -1479,12 +1587,22 @@ final class Projection extends SpelNode {
       ]),
     };
     state.trackOperation();
-    return [for (final element in elements) _project(state, element)];
+    final result = <Object?>[];
+    var index = 0;
+    for (final element in elements) {
+      final real = _isRealElement(target, index++, element);
+      final value = _project(state, element, real);
+      if (expression._real && value is int) {
+        _markRealElement(result, result.length);
+      }
+      result.add(value);
+    }
+    return result;
   }
 
-  Object? _project(ExpressionState state, Object? element) {
+  Object? _project(ExpressionState state, Object? element, bool real) {
     state.trackOperation();
-    return state.withThis(element, expression);
+    return state.withThis(element, expression, real: real);
   }
 
   @override
@@ -1550,7 +1668,10 @@ final class CompoundExpression extends SpelNode {
   ) {
     // The object the chain starts from becomes the scope root, so
     // arguments inside the chain are evaluated against it.
-    state.pushScope(state.activeContextObject);
+    state.pushScope(
+      state.activeContextObject,
+      real: state.activeContextObjectIsReal,
+    );
     try {
       // The object the previous child was evaluated on, for auto-grow.
       var owner = state.activeContextObject;
@@ -1572,7 +1693,7 @@ final class CompoundExpression extends SpelNode {
           }
         }
         owner = value;
-        state.pushActive(value);
+        state.pushActive(value, real: previous._real && value is int);
         try {
           if (i == children.length - 1) {
             return last();
@@ -1686,12 +1807,13 @@ final class ConstructorReference extends SpelNode {
 
   @override
   Object? getValue(ExpressionState state) {
+    _real = false;
     if (dimensions != null) {
       return _array(state, dimensions!);
     }
     final args = [
       for (final argument in arguments)
-        state.withThis(state.scopeRoot, argument),
+        state.withThis(state.scopeRoot, argument, real: state.scopeRootIsReal),
     ];
     final context = state.context;
     final signature = '(${args.map(ExpressionState.typeName).join(',')})';
@@ -1710,7 +1832,12 @@ final class ConstructorReference extends SpelNode {
       if (executor != null) {
         state.trackOperation();
         try {
-          return executor(context, args);
+          final value = executor(context, args);
+          // `new Double(2)`: a real number, also when integral (the web).
+          _real = const {
+            'Double', 'Float', 'double', 'float', //
+          }.contains(typeName.split('.').last);
+          return value;
         } on SpelEvaluationException catch (error, stackTrace) {
           Error.throwWithStackTrace(state.locate(error, start), stackTrace);
         } on AccessException catch (error) {
@@ -2280,7 +2407,7 @@ final class BinaryOperator extends SpelNode {
     }
     // A real number that is an `int` at run time (the web): Java's `7.0`.
     if (real && value is int) {
-      return '$value.0';
+      return javaRealString(value);
     }
     final converter = state.context.typeConverter;
     if (converter.canConvert(value, String)) {
@@ -2316,7 +2443,7 @@ final class BinaryOperator extends SpelNode {
   // Java's equals for collections: List.equals is ordered and
   // element-wise, Set.equals and Map.equals compare contents.
   static bool _deepEquals(Object? l, Object? r) {
-    if (identical(l, r) || l == r) {
+    if (identical(l, r)) {
       return true;
     }
     if (l is List && r is List) {
@@ -2324,7 +2451,7 @@ final class BinaryOperator extends SpelNode {
         return false;
       }
       for (var i = 0; i < l.length; i++) {
-        if (!_deepEquals(l[i], r[i])) {
+        if (!_elementEquals(l, i, l[i], r, i, r[i])) {
           return false;
         }
       }
@@ -2332,21 +2459,45 @@ final class BinaryOperator extends SpelNode {
     }
     if (l is Set && r is Set) {
       return l.length == r.length &&
-          l.every((a) => r.contains(a) || r.any((b) => _deepEquals(a, b)));
+          l.every((a) => r.any((b) => _elementEquals(l, null, a, r, null, b)));
     }
     if (l is Map && r is Map) {
       if (l.length != r.length) {
         return false;
       }
-      for (final entry in l.entries) {
-        if (!r.containsKey(entry.key) ||
-            !_deepEquals(entry.value, r[entry.key])) {
+      for (final MapEntry(:key, :value) in l.entries) {
+        if (!r.containsKey(key) ||
+            !_elementEquals(l, key, value, r, key, r[key])) {
           return false;
         }
       }
       return true;
     }
-    return false;
+    return l == r;
+  }
+
+  // Java's equals of two elements: numbers are equal only when of the same
+  // kind (`{2.0} == {2}` is false: Double.equals(Integer) is false), reals
+  // like Double.equals (NaN equals NaN, 0.0 does not equal -0.0). On the
+  // web an integral real is an `int`; the marks of collections SpEL built
+  // tell them apart.
+  static bool _elementEquals(
+    Object lc,
+    Object? lk,
+    Object? l,
+    Object rc,
+    Object? rk,
+    Object? r,
+  ) {
+    if (l is num && r is num) {
+      final lReal = l is double && (l is! int || _isRealElement(lc, lk, l));
+      final rReal = r is double && (r is! int || _isRealElement(rc, rk, r));
+      if (lReal != rReal) {
+        return false;
+      }
+      return lReal ? l.toDouble().compareTo(r.toDouble()) == 0 : l == r;
+    }
+    return _deepEquals(l, r);
   }
 
   @override

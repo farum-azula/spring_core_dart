@@ -33,7 +33,13 @@ enum DeserializationFeature implements JsonFeature {
 
   /// A number with a fraction read into an `int` is truncated
   /// (`ACCEPT_FLOAT_AS_INT`).
-  acceptFloatAsInt(true);
+  acceptFloatAsInt(true),
+
+  /// A JSON `null` (or a missing constructor parameter) for a non-nullable
+  /// `int`, `double`, `num` or `bool` is an error
+  /// (`FAIL_ON_NULL_FOR_PRIMITIVES`; on, like Jackson 3); off reads it as
+  /// `0` / `false`.
+  failOnNullForPrimitives(true);
 
   const DeserializationFeature(this.enabledByDefault);
 
@@ -108,6 +114,7 @@ class JsonMapper extends ObjectMapper {
     super.inclusion,
     super.failOnUnknownProperties,
     super.acceptFloatAsInt,
+    super.failOnNullForPrimitives,
     super.writeDatesAsTimestamps,
     super.writeDurationsAsTimestamps,
     super.writeDateTimestampsAsNanoseconds,
@@ -228,6 +235,9 @@ final class JsonMapperBuilder {
       DeserializationFeature.failOnUnknownProperties,
     ),
     acceptFloatAsInt: isEnabled(DeserializationFeature.acceptFloatAsInt),
+    failOnNullForPrimitives: isEnabled(
+      DeserializationFeature.failOnNullForPrimitives,
+    ),
     writeDatesAsTimestamps: isEnabled(DateTimeFeature.writeDatesAsTimestamps),
     writeDurationsAsTimestamps: isEnabled(
       DateTimeFeature.writeDurationsAsTimestamps,

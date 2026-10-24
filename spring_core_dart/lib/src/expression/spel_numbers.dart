@@ -24,3 +24,25 @@ int toJavaLong(double value) {
   }
   return value.truncate();
 }
+
+/// Java's `Double.toString` of a real number that is an `int` at run time
+/// (an integral double on the web): `2.0`, `-3.0`, `1.0E7`, `1.5E10`.
+String javaRealString(int value) {
+  if (value.abs() < 10000000) {
+    return '$value.0';
+  }
+  final digits = BigInt.from(value).abs().toString();
+  final significant = digits.replaceFirst(RegExp(r'0+$'), '');
+  final fraction = significant.length > 1 ? significant.substring(1) : '0';
+  return '${value < 0 ? '-' : ''}${significant[0]}.${fraction}E'
+      '${digits.length - 1}';
+}
+
+/// Whether [digits] in [radix] fit Java's `long` (64-bit two's complement
+/// range), checked exactly also on the web.
+bool fitsJavaLong(String digits, int radix) {
+  final value = BigInt.tryParse(digits, radix: radix);
+  return value != null &&
+      value >= -(BigInt.one << 63) &&
+      value < (BigInt.one << 63);
+}

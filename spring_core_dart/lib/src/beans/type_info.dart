@@ -215,10 +215,17 @@ final class GenericType<T> extends TypeInfo<T> {
 }
 
 /// `dynamic`, `Object?` or a type that is not described further: values
-/// are taken as they are.
+/// are taken as they are. `void` (e.g. of `ResponseEntity<void>`) is
+/// [DynamicType.forVoid], so a reader can ignore the value.
 final class DynamicType extends TypeInfo<Object?> {
   /// Any value.
-  const DynamicType() : super(nullable: true);
+  const DynamicType() : isVoid = false, super(nullable: true);
+
+  /// `void`: no value is expected.
+  const DynamicType.forVoid() : isVoid = true, super(nullable: true);
+
+  /// Whether this stands for `void`.
+  final bool isVoid;
 
   @override
   R accept<R>(TypeInfoVisitor<R> visitor) => visitor.visitDynamic(this);
@@ -227,5 +234,5 @@ final class DynamicType extends TypeInfo<Object?> {
   DynamicType asNullable() => this;
 
   @override
-  String toString() => 'dynamic';
+  String toString() => isVoid ? 'void' : 'dynamic';
 }

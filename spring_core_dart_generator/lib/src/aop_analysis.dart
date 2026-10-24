@@ -183,7 +183,6 @@ void _applyIntroductions(ModuleModel module, List<AspectModel> aspects) {
     final proxy = bean.proxy;
     if (proxy == null ||
         proxy.unavailableReason != null ||
-        proxy.subclass != null ||
         bean.aspect != null) {
       continue;
     }

@@ -109,7 +109,7 @@ Parameters:
 | `@RequestHeader('X-Trace') String? trace` | a header; `null` is left out, a `List` gives several values |
 | `@RequestHeader() Map<String, String> headers` | one header per entry |
 | `@CookieValue('SESSION') String session` | a cookie: the cookies of a call go in one `Cookie: a=1; b=2` header; `null` is left out |
-| `@RequestBody() Book book` | the body: objects as JSON (`ObjectMapper`), `String` as text, `Uint8List` as bytes |
+| `@RequestBody() Book book` | the body: objects as JSON (`ObjectMapper`), `String` as text, `Uint8List` as bytes; with `consumes: MediaType.applicationFormUrlencoded` (or that `Content-Type` header) a `Map` or object is sent as a form (`name=value&...`, see below) |
 | a parameter without annotation | the body (only one such parameter) |
 
 `@PathVariable`, `@RequestParam` and `@RequestHeader` follow Spring's
@@ -135,8 +135,22 @@ Results:
 | `Future<Book?>` | `null` for an empty body (or a 404 with `dismiss404`) |
 | `Future<void>` | nothing (the status must be 2xx) |
 | `Future<String>`, `Future<Uint8List>` | the body as text, as bytes |
-| `Future<ResponseEntity<Book>>` | status, headers and the body |
+| `Future<ResponseEntity<Book>>` | status, headers and the body (read-only headers) |
+| `Future<ResponseEntity<void>>` | status and headers; the body is ignored |
+| `Future<HttpResponse>` | the raw response (Feign's `Response`): any status, no error decoding, no `dismiss404` |
 | `EventStream<OrderEvent>`, `Stream<OrderEvent>` | the events of a `text/event-stream` response (see Server-sent events) |
+
+Form bodies work like Spring Cloud OpenFeign's `SpringFormEncoder`: the
+entries of a `Map` (or the properties of an object, as the `ObjectMapper`
+writes them) become `name=value` pairs, URL-encoded in the `charset` of
+the content type (UTF-8 by default); a `List` value repeats the name and
+`null` values are left out.
+
+```dart
+@PostMapping.of(path: '/login', consumes: MediaType.applicationFormUrlencoded)
+Future<void> login(@RequestBody() Map<String, String> form);
+// username=neo&password=s3cr%3Ft
+```
 
 Enums, `DateTime` and other values in paths, query parameters, headers and
 cookies are written like in JSON (an enum's name or `@JsonValue`, ISO-8601
@@ -502,5 +516,8 @@ the responses.
   parameters (Feign: one query map and one header map).
 - Server-sent events (`EventStream<T>`, `event-stream.*` properties) are an
   addition: OpenFeign has no streaming.
-- Not yet: form and multipart bodies, `@SpringQueryMap`, streaming of other
+- Form bodies take the object's properties as the `ObjectMapper` writes
+  them (`@JsonProperty` names), not feign-form's `@FormProperty`; a nested
+  object in a form fails the call with an `EncodeException`.
+- Not yet: multipart bodies, `@SpringQueryMap`, streaming of other
   response bodies (downloads).

@@ -1,13 +1,19 @@
+import 'dart:convert';
+
 import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_boot_dart/src/conditions.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 /// Registers a `messageSource` reading `classpath:<basename>*.properties`
-/// when the application has no bean named `messageSource`, like Spring Boot's
-/// `MessageSourceAutoConfiguration`.
+/// when this context (not a parent) has no bean named `messageSource`, like
+/// Spring Boot's `MessageSourceAutoConfiguration`.
 ///
 /// Properties: `spring.messages.basename` (comma-separated, default
-/// `messages`), `spring.messages.use-code-as-default-message`,
+/// `messages`), `spring.messages.encoding` (default `UTF-8`),
+/// `spring.messages.use-code-as-default-message`,
+/// `spring.messages.always-use-message-format`,
+/// `spring.messages.common-messages` (property files with
+/// locale-independent messages, comma-separated; a later file wins),
 /// `spring.messages.fallback-to-system-locale` (default `true`),
 /// `spring.messages.cache-duration` (seconds without a unit, e.g. `10`,
 /// or any duration such as `500ms`; cached forever by default) and `spring.messages.default-locale` (not in Spring
@@ -30,7 +36,10 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
       ConditionGroup(
         'package:spring_boot_dart#MessageSourceAutoConfiguration',
         [
-          ConditionalOnMissingBean.named('messageSource'),
+          ConditionalOnMissingBean.named(
+            'messageSource',
+            search: SearchStrategy.current,
+          ),
           MessagesBundleCondition(),
         ],
       ),
@@ -46,9 +55,39 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
       bool flag(String name, {required bool orElse}) =>
           environment.getPropertyAs<bool>(name) ?? orElse;
       // Booleans bind case-insensitively, like Boot's binding.
+      final encoding = environment.getProperty('spring.messages.encoding');
+      if (encoding != null && encoding.trim().isNotEmpty) {
+        source.defaultEncoding =
+            Encoding.getByName(encoding.trim()) ??
+            (throw ArgumentError.value(
+              encoding,
+              'spring.messages.encoding',
+              'Unsupported encoding',
+            ));
+      }
+      final common = Binder.get(r.dependency<ConfigurableEnvironment>())
+          .bind(
+            'spring.messages.common-messages',
+            const ListType<String>(ClassType<String>()),
+          )
+          .orElse(const []);
+      if (common.isNotEmpty) {
+        final loader = r.dependency<ResourceLoader>();
+        source.commonMessages = {
+          for (final location in common)
+            ...PropertiesLoaderUtils.loadPropertiesSync(
+              loader.getResource(location.trim()),
+              encoding: source.defaultEncoding,
+            ),
+        };
+      }
       source
         ..useCodeAsDefaultMessage = flag(
           'spring.messages.use-code-as-default-message',
+          orElse: false,
+        )
+        ..alwaysUseMessageFormat = flag(
+          'spring.messages.always-use-message-format',
           orElse: false,
         )
         ..fallbackToSystemLocale = flag(

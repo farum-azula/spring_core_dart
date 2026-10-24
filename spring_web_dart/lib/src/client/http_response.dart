@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_status.dart';
+import 'package:spring_web_dart/src/media_type.dart';
 
 /// A response from an `HttpTransport`: status code, headers and the body
 /// bytes. Non-2xx codes are ordinary responses, not errors. Like Spring's
@@ -47,15 +48,28 @@ final class HttpResponse {
   /// The body bytes.
   Uint8List get bodyBytes => _body;
 
-  /// The body as text: UTF-8 (malformed bytes replaced), or Latin-1 when
-  /// the `Content-Type` says `charset=iso-8859-1`.
-  String get bodyText {
-    final contentType = headers.contentType?.toLowerCase() ?? '';
-    if (contentType.contains('charset=iso-8859-1') ||
-        contentType.contains('charset=latin1')) {
-      return latin1.decode(_body);
+  /// The body as text, decoded with the `charset` of the `Content-Type`
+  /// (quoted or not, any name Dart knows: UTF-8, ISO-8859-1, US-ASCII and
+  /// their aliases); UTF-8 without one or for a charset Dart does not
+  /// know. Malformed bytes are replaced, not thrown.
+  String get bodyText => decodeBody(_body, headers.contentType);
+
+  /// Decodes [bytes] with the `charset` of [contentType], like [bodyText].
+  static String decodeBody(List<int> bytes, String? contentType) {
+    Encoding? encoding;
+    if (contentType != null) {
+      try {
+        encoding = MediaType.parse(contentType).charset;
+      } on ArgumentError {
+        encoding = null;
+      }
     }
-    return utf8.decode(_body, allowMalformed: true);
+    return switch (encoding) {
+      AsciiCodec() => const AsciiDecoder(allowInvalid: true).convert(bytes),
+      Latin1Codec() => const Latin1Decoder(allowInvalid: true).convert(bytes),
+      final Encoding other when other is! Utf8Codec => other.decode(bytes),
+      _ => utf8.decode(bytes, allowMalformed: true),
+    };
   }
 
   /// Whether the status is 2xx.

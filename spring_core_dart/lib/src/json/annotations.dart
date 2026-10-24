@@ -1,29 +1,78 @@
 import 'package:spring_core_dart/src/json/naming.dart';
 
-/// The JSON name of a property or constructor parameter, like Jackson's
-/// `@JsonProperty`. Wins over the naming strategy.
+/// The JSON name of a property, constructor parameter or enum constant,
+/// like Jackson's `@JsonProperty`. Wins over the naming strategy.
+///
+/// [access] limits the property to one direction: [JsonPropertyAccess.readOnly]
+/// is written but ignored when read, [JsonPropertyAccess.writeOnly] is read
+/// but not written. [required] makes a missing constructor parameter an
+/// error even when it is nullable or has a default; like Jackson, it is
+/// only checked for constructor parameters (creator properties), not for
+/// setters.
 ///
 /// ```dart
 /// @Introspected()
 /// class Book {
-///   const Book(this.isbn, this.publishedAt);
+///   const Book(this.isbn, this.publishedAt, {this.password});
+///   @JsonProperty('', required: true)
 ///   final String isbn;
 ///   @JsonProperty('published_at')
 ///   final DateTime publishedAt;
+///   @JsonProperty('', access: JsonPropertyAccess.writeOnly)
+///   final String? password;
 /// }
 /// // {"isbn": "978-0", "published_at": "2026-01-01T00:00:00.000"}
+///
+/// enum Color {
+///   @JsonProperty('RED')
+///   red,
+///   green, // "green"
+/// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
+/// @JsonProperty(required = true) String isbn;
 /// @JsonProperty("published_at") Instant publishedAt;
+/// @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String password;
+/// enum Color { @JsonProperty("RED") RED, GREEN }
 /// ```
 class JsonProperty {
-  /// The property is called [name] in JSON.
-  const JsonProperty(this.name);
+  /// The property is called [name] in JSON (`''`: its own name, after
+  /// the naming strategy, e.g. `@JsonProperty('', required: true)`).
+  const JsonProperty(
+    this.name, {
+    this.access = JsonPropertyAccess.auto,
+    this.required = false,
+  });
 
-  /// The JSON name.
+  /// The JSON name; empty for the default one.
   final String name;
+
+  /// In which directions the property is used.
+  final JsonPropertyAccess access;
+
+  /// Whether a constructor parameter must be present in the JSON.
+  final bool required;
+}
+
+/// The directions a property is used in (Jackson's
+/// `JsonProperty.Access`).
+enum JsonPropertyAccess {
+  /// Both, as far as the property can be read and set (`AUTO`).
+  auto,
+
+  /// Only written to JSON; a value in the JSON is ignored (`READ_ONLY`:
+  /// the property is only read from the object).
+  readOnly,
+
+  /// Only read from JSON, never written (`WRITE_ONLY`: the property is only
+  /// set on the object).
+  writeOnly,
+
+  /// Both (`READ_WRITE`); like [auto], as Dart has no visibility levels
+  /// between public and private.
+  readWrite,
 }
 
 /// Leaves a property out of JSON in both directions, like Jackson's
@@ -184,8 +233,12 @@ class JsonCreator {
   const JsonCreator();
 }
 
-/// On a field of an enum: the field's value is the JSON form of each enum
-/// value (default: the value's name), like Jackson's `@JsonValue`.
+/// The value an object is written as, like Jackson's `@JsonValue`: on a
+/// field or getter of an enum, the JSON form of each enum value (default:
+/// the value's name); on a property (field or getter) or a method without
+/// parameters of an `@Introspected` class, the whole object is written as
+/// that value and read back through a constructor with one parameter
+/// (Jackson's delegating creator) or its `fromJson`. One per class.
 ///
 /// ```dart
 /// enum Stock {
@@ -197,6 +250,14 @@ class JsonCreator {
 ///   final String json;
 /// }
 /// // Stock.inStock  ↔  "in_stock"
+///
+/// @Introspected()
+/// class Isbn {
+///   const Isbn(this.value);
+///   @JsonValue()
+///   final String value;
+/// }
+/// // Isbn('978-0')  ↔  "978-0"
 /// ```
 ///
 /// Spring (Java):
@@ -205,9 +266,10 @@ class JsonCreator {
 ///   IN_STOCK("in_stock");
 ///   @JsonValue final String json;
 /// }
+/// record Isbn(@JsonValue String value) {}
 /// ```
 class JsonValue {
-  /// Marks the field.
+  /// Marks the field, getter or method.
   const JsonValue();
 }
 
@@ -437,7 +499,8 @@ class JsonView {
 class JsonTypeInfo {
   /// Type ids by [use], included as [include]; [property] is the id's
   /// property name (default `@type`); [defaultImpl] is read when the id is
-  /// missing; [visible] also passes the id property on to the class.
+  /// missing or unknown; [visible] also passes the id property on to the
+  /// class.
   const JsonTypeInfo({
     this.use = JsonTypeId.name,
     this.include = JsonTypeInclusion.property,
@@ -455,7 +518,7 @@ class JsonTypeInfo {
   /// The type id's property name; empty for `@type`.
   final String property;
 
-  /// The class read when the JSON has no type id.
+  /// The class read when the JSON has no type id or an unknown one.
   final Type? defaultImpl;
 
   /// Whether the type id property is also read into the class.

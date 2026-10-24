@@ -82,6 +82,39 @@ class StockCounter {
 
   @Timed()
   int reserve(String isbn) => ++_reserved;
+
+  /// Calls [reserve] on itself: like a `this.` call in Spring, the advice
+  /// of [reserve] does not run, although the bean is its own proxy.
+  int reserveAll(List<String> isbns) {
+    var last = _reserved;
+    for (final isbn in isbns) {
+      last = reserve(isbn);
+    }
+    return last;
+  }
+}
+
+/// Added to [StockCounter]'s generated subclass by [SloganAudit]'s
+/// `@DeclareParents`.
+abstract interface class Labelled {
+  String get label;
+}
+
+class StockLabel implements Labelled {
+  @override
+  String get label => 'stock counter';
+}
+
+/// An aspect registered by a `@Bean` method of [AopConfig] instead of
+/// `@Component`, as Spring allows.
+@Aspect()
+class SloganAudit {
+  @DeclareParents('StockCounter', defaultImpl: StockLabel)
+  static Labelled? label;
+
+  @AfterReturning('bean(slogans)')
+  void returned(JoinPoint joinPoint) =>
+      tourLog.add('slogan audit: ${joinPoint.signature.name}');
 }
 
 /// An advisor written by hand: upper-cases what the `slogans` bean returns.
@@ -108,4 +141,7 @@ class AopConfig {
     ExpressionPointcut('bean(slogans)'),
     UpperCaseInterceptor(),
   );
+
+  @Bean()
+  SloganAudit sloganAudit() => SloganAudit();
 }

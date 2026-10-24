@@ -12,12 +12,15 @@ export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.da
         objectMapperFromProperties;
 export 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart'
     show MessagesBundleCondition;
+export 'package:spring_boot_dart/src/auto_configuration_sorter.dart'
+    show selectAutoConfigurations;
 export 'package:spring_boot_dart/src/banner.dart';
 export 'package:spring_boot_dart/src/binder.dart'
     show BindHandler, BindResult, Binder;
 export 'package:spring_boot_dart/src/condition_evaluation_report.dart';
 export 'package:spring_boot_dart/src/conditions.dart';
 export 'package:spring_boot_dart/src/configuration_properties.dart';
+export 'package:spring_boot_dart/src/deferred_logs.dart';
 export 'package:spring_boot_dart/src/environment_post_processor.dart';
 export 'package:spring_boot_dart/src/events.dart';
 export 'package:spring_boot_dart/src/exit_code.dart'

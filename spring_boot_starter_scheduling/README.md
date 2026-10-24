@@ -223,7 +223,20 @@ class Mailer {
 
 An exception (thrown or from the returned `Future`) is logged at error
 level to the `spring.scheduling` logger, with the task name; the task keeps
-its schedule. Handle errors in the method if you need retries or alerts.
+its schedule. Handle errors in the method if you need retries or alerts,
+or declare an `ErrorHandler` bean (Spring's `ErrorHandler`, which Spring
+sets on its `ThreadPoolTaskScheduler`): it receives every error instead
+of the log. A handler that throws stops the task, like Spring's
+`LOG_AND_PROPAGATE`.
+
+```dart
+@Component()
+class ReportErrors implements ErrorHandler {
+  @override
+  void handleError(Object error, StackTrace stackTrace) =>
+      crashReporter.record(error, stackTrace);
+}
+```
 
 ## Testing
 

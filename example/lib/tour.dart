@@ -497,15 +497,7 @@ class _Tour {
     show('reserve (async)', await pricing.reserve('2'));
     show('slogans (advisor bean)', context.getBean<Slogans>().today());
     show('proxy target', AopUtils.getTarget(pricing).runtimeType);
-    final stock = context.getBean<StockCounter>();
-    show(
-      'subclass proxy',
-      '${AopUtils.isAopProxy(stock)}, reserved ${stock.reserve('3')}',
-    );
-
-    // Self-invocation: only calls through the @Lazy self reference are
-    // advised.
-    final basket = context.getBean<BasketPricing>();
+    show('@Bean aspect ran', tourLog.contains('slogan audit: today'));
     int timed(void Function() body) {
       final before = tourLog.length;
       body();
@@ -514,6 +506,21 @@ class _Tour {
           .where((line) => line.startsWith('timing: start'))
           .length;
     }
+
+    final stock = context.getBean<StockCounter>();
+    show(
+      'subclass proxy',
+      '${AopUtils.isAopProxy(stock)}, reserved ${stock.reserve('3')}',
+    );
+    show(
+      'subclass proxy self-calls: timed calls',
+      timed(() => stock.reserveAll(['4', '5'])),
+    );
+    show('subclass proxy @DeclareParents', (stock as Labelled).label);
+
+    // Self-invocation: only calls through the @Lazy self reference are
+    // advised.
+    final basket = context.getBean<BasketPricing>();
 
     show(
       'self-invocation through this: timed calls',

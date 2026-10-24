@@ -147,12 +147,38 @@ abstract interface class ScheduledTask {
 
 const _log = SpringLog('spring.scheduling');
 
+/// Handles the errors of scheduled tasks, like Spring's `ErrorHandler`
+/// given to `ThreadPoolTaskScheduler.setErrorHandler`: the starter's
+/// scheduler uses the `ErrorHandler` bean, if there is one. An error
+/// thrown by the handler itself (Spring's `LOG_AND_PROPAGATE`) stops the
+/// task: it is logged and the task runs no more.
+///
+/// ```dart
+/// @Component()
+/// class ReportErrors implements ErrorHandler {
+///   @override
+///   void handleError(Object error, StackTrace stackTrace) =>
+///       crashReporter.record(error, stackTrace);
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// scheduler.setErrorHandler(t -> crashReporter.record(t));
+/// ```
+abstract interface class ErrorHandler {
+  /// Handles [error], thrown by a task (synchronously or by its `Future`).
+  void handleError(Object error, StackTrace stackTrace);
+}
+
 /// The default [TaskScheduler], on `dart:async` timers (one event loop, so
 /// a task never runs twice at the same time), like Spring's
 /// `ThreadPoolTaskScheduler` with one thread.
 ///
-/// Errors thrown by a task (synchronously or by its `Future`) are logged
-/// at error level to `spring.scheduling` and the task keeps its schedule.
+/// Errors thrown by a task (synchronously or by its `Future`) go to the
+/// [errorHandler]; without one they are logged at error level to
+/// `spring.scheduling` (Spring's `LOG_AND_SUPPRESS_ERROR_HANDLER`). Either
+/// way the task keeps its schedule, unless the handler throws.
 ///
 /// ```dart
 /// final scheduler = TimerTaskScheduler();
@@ -179,6 +205,7 @@ final class TimerTaskScheduler implements TaskScheduler, DisposableBean {
     TimerFactory? createTimer,
     this.awaitTermination = false,
     this.awaitTerminationPeriod,
+    this.errorHandler,
   }) : _now = now ?? DateTime.now,
        _createTimer = createTimer ?? Timer.new;
 
@@ -200,6 +227,10 @@ final class TimerTaskScheduler implements TaskScheduler, DisposableBean {
   /// waits until the runs are finished. When it elapses a warning is
   /// logged and the shutdown goes on.
   final Duration? awaitTerminationPeriod;
+
+  /// Receives the errors of the tasks (`null`: they are logged); see
+  /// [ErrorHandler].
+  final ErrorHandler? errorHandler;
 
   /// Tasks that are not cancelled and not finished.
   List<ScheduledTask> get tasks => List.unmodifiable(_tasks);
@@ -388,12 +419,30 @@ final class _TimerTask implements ScheduledTask {
     }
   }
 
-  void _failed(Object error, StackTrace stackTrace) => _log.error(
-    'Scheduled task $name failed',
-    error: error,
-    stackTrace: stackTrace,
-    fields: {'task': name},
-  );
+  void _failed(Object error, StackTrace stackTrace) {
+    final handler = _scheduler.errorHandler;
+    if (handler == null) {
+      _log.error(
+        'Scheduled task $name failed',
+        error: error,
+        stackTrace: stackTrace,
+        fields: {'task': name},
+      );
+      return;
+    }
+    try {
+      handler.handleError(error, stackTrace);
+    } catch (propagated, propagatedTrace) {
+      // Spring: an error escaping the handler suppresses later runs.
+      _log.error(
+        'Scheduled task $name failed and will not run again',
+        error: propagated,
+        stackTrace: propagatedTrace,
+        fields: {'task': name},
+      );
+      cancel();
+    }
+  }
 
   void _completed() {
     _lastCompletion = _scheduler.now();

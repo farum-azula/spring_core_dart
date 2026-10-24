@@ -32,6 +32,7 @@ class FileAppender extends LogAppender {
     this.maxHistory = 7,
     this.totalSizeCap = 0,
     bool cleanHistoryOnStart = false,
+    this.encoding = utf8,
     super.threshold,
   }) : pattern = pattern ?? LogPattern(LogPattern.defaultFilePattern) {
     if (maxFileSize < 0 || maxHistory < 0 || totalSizeCap < 0) {
@@ -68,6 +69,10 @@ class FileAppender extends LogAppender {
   /// Number of rolled-over files kept (`<path>.1` is the newest).
   final int maxHistory;
 
+  /// The charset of the file (`logging.charset.file`, UTF-8 by default);
+  /// characters it cannot encode are written as `?`, like Java.
+  final Encoding encoding;
+
   /// Total size of the rolled-over files, in bytes: the oldest are deleted
   /// while they exceed it; `0` sets no limit.
   final int totalSizeCap;
@@ -88,11 +93,23 @@ class FileAppender extends LogAppender {
     if (_file == null) {
       return;
     }
-    _pending.add(utf8.encode('${pattern.formatLine(record)}\n'));
+    _pending.add(_encode('${pattern.formatLine(record)}\n'));
     if (!_flushScheduled) {
       _flushScheduled = true;
       scheduleMicrotask(flush);
     }
+  }
+
+  List<int> _encode(String text) {
+    final limit = switch (encoding) {
+      AsciiCodec() => 0x7f,
+      Latin1Codec() => 0xff,
+      _ => null,
+    };
+    if (limit == null) {
+      return encoding.encode(text);
+    }
+    return [for (final rune in text.runes) rune > limit ? 0x3f : rune];
   }
 
   /// Writes buffered lines now.

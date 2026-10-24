@@ -79,8 +79,10 @@ final class ExitCodeGenerators {
     );
     for (final (generator, _) in sorted) {
       try {
-        exitCode = generator.getExitCode();
-        if (exitCode != 0) {
+        // A later 0 keeps the 1 of a generator that threw (Boot).
+        final value = generator.getExitCode();
+        if (value != 0) {
+          exitCode = value;
           break;
         }
       } catch (_) {

@@ -92,7 +92,9 @@ abstract interface class ConverterRegistry {
   /// ```
   void addConverter<S, T>(T? Function(S source) converter);
 
-  /// Adds `String` → [E] and [E] → `String`. Names match leniently, like
+  /// Adds `String` → [E], [E] → `String` and the collection converters of
+  /// [E] (`List<E>` / `Set<E>`, see [addCollectionConverters]). Names
+  /// match leniently, like
   /// Boot's `LenientObjectToEnumConverterFactory`: `my-value`, `MY_VALUE`
   /// and `myValue` all find `myValue`.
   ///
@@ -105,14 +107,25 @@ abstract interface class ConverterRegistry {
   /// ```
   void addEnum<E extends Enum>(List<E> values);
 
-  /// Adds `String` (comma-separated) and `Iterable` → `List<E>` / `Set<E>`;
-  /// elements are converted with this service.
+  /// Adds `String` (comma-separated), `Iterable` and any other object (a
+  /// one-element collection, Spring's `ObjectToCollectionConverter`) →
+  /// `List<E>` / `Set<E>`; elements are converted with this service.
   ///
   /// ```dart
   /// registry.addCollectionConverters<Level>();
   /// service.convert<Set<Level>>('info,warn'); // {Level.info, Level.warn}
+  /// service.convert<List<int>>(5); // [5]
   /// ```
   void addCollectionConverters<E>();
+
+  /// Adds `Map` → `Map<K, V>`, keys and values converted with this service
+  /// (Spring's `MapToMapConverter`).
+  ///
+  /// ```dart
+  /// registry.addMapConverters<String, Level>();
+  /// service.convert<Map<String, Level>>({'a': 'warn'}); // {a: Level.warn}
+  /// ```
+  void addMapConverters<K, V>();
 
   /// Removes every converter targeting [T] (and `T?`).
   ///

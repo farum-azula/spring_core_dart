@@ -145,10 +145,7 @@ abstract final class ClasspathResources {
     final normalized = _normalize(path);
     final embedded = _embedded[normalized];
     if (embedded != null) {
-      return ByteArrayResource(
-        embedded.bytes,
-        description: 'class path resource [$normalized]',
-      );
+      return _EmbeddedClasspathResource(normalized, embedded.bytes);
     }
     return FileSystemResource('$directory/$normalized');
   }
@@ -156,4 +153,25 @@ abstract final class ClasspathResources {
   // `/config/./app.properties` → `config/app.properties`.
   static String _normalize(String path) =>
       FileSystemResource(path).path.replaceFirst(RegExp('^/'), '');
+}
+
+// An embedded file, with a file name and relative resources like Spring's
+// ClassPathResource.
+final class _EmbeddedClasspathResource extends ByteArrayResource {
+  _EmbeddedClasspathResource(this.path, Uint8List bytes)
+    : super(bytes, description: 'class path resource [$path]');
+
+  final String path;
+
+  @override
+  String get filename => path.substring(path.lastIndexOf('/') + 1);
+
+  @override
+  Resource createRelative(String relativePath) {
+    final slash = path.lastIndexOf('/');
+    final directory = slash < 0 ? '' : path.substring(0, slash + 1);
+    return ClasspathResources.resolve(
+      '$directory${relativePath.startsWith('/') ? relativePath.substring(1) : relativePath}',
+    );
+  }
 }

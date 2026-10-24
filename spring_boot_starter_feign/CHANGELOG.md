@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Form bodies: with `consumes: application/x-www-form-urlencoded` (or that `Content-Type` header) a `Map` or object body is sent as `name=value&...` like Spring Cloud OpenFeign's `SpringFormEncoder` (it was sent as JSON).
+- `Future<ResponseEntity<void>>` ignores the body (a non-JSON body failed the call).
+- `Future<HttpResponse>` returns the raw response for any status, without error decoding, like Feign's `Response`.
+- A `request-interceptors` bean that is also a `RequestInterceptor` bean of the context runs once.
 - `@FeignClient(configuration: [...])`: the `Retryer`, `ErrorDecoder` and `RequestInterceptor` beans of the listed `@Configuration()` classes apply to that client only (and never reach the other clients); properties `retryer`, `error-decoder` and `request-interceptors` of `spring.cloud.openfeign.client.config.<name>` (bean or class names) win over them.
 - Breaking: `default-request-headers` is a `Map<String, List<String>>` and both `default-request-headers` and `default-query-parameters` are bound through the Binder: `X: a,b` and YAML lists (`X[0]`, `X[1]`) give several values (lists were sent as a header `X.0`).
 - Breaking: `DefaultRetryer` waits 150 ms, 225 ms, ... (period × 1.5^attempt) like Feign's `Retryer.Default` (it started at 100 ms).

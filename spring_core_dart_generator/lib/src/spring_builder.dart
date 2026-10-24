@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:analyzer/dart/ast/ast.dart'
+    show Comment, InstanceCreationExpression, SimpleIdentifier;
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -521,11 +524,38 @@ class SpringBuilder implements Builder {
 
   static const _fingerprintPlaceholder = '00000000';
 
+  // Runs [visitor] over the resolved declarations of [library]; `false`
+  // when one cannot be resolved.
+  static Future<bool> _visitDeclarations(
+    Resolver resolver,
+    LibraryElement library,
+    _AdvisorCreations visitor,
+  ) async {
+    final declarations = <Element>[
+      ...library.topLevelVariables,
+      ...library.topLevelFunctions,
+      ...library.classes,
+    ];
+    for (final declaration in declarations) {
+      try {
+        (await resolver.astNodeFor(
+          declaration.firstFragment,
+          resolve: true,
+        ))?.accept(visitor);
+      } on Object {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // The advice of the application's other modules, for proxy pruning: the
   // aspects and advisor beans of the nested @ComponentScan modules
-  // ([nested]: their libraries), and whether an auto-configuration may
+  // ([nested]: their libraries), whether an auto-configuration may
   // declare aspects (its libraries mention `AspectMetadata`), which the
-  // build cannot read.
+  // build cannot read, and whether it declares advisor beans whose
+  // pointcut is not an `AnnotationPointcut` (beans with the annotations
+  // such a pointcut matches are never pruned).
   Future<ForeignAdvice> _foreignAdvice(
     BuildStep buildStep,
     BeanScanner scanner,
@@ -549,6 +579,7 @@ class SpringBuilder implements Builder {
       }
       final pending = [await resolver.libraryFor(id)];
       final seen = <Uri>{};
+      final advisors = _AdvisorCreations();
       while (pending.isNotEmpty && !foreign.unknown) {
         final library = pending.removeLast();
         if (!seen.add(library.uri)) {
@@ -560,6 +591,10 @@ class SpringBuilder implements Builder {
         if (source.contains('AspectMetadata')) {
           foreign.unknown = true;
         }
+        if (source.contains('Advisor') &&
+            !await _visitDeclarations(resolver, library, advisors)) {
+          foreign.advisors = true;
+        }
         for (final fragment in library.fragments) {
           for (final imported in fragment.importedLibraries) {
             final uri = imported.uri;
@@ -569,6 +604,9 @@ class SpringBuilder implements Builder {
             }
           }
         }
+      }
+      if (advisors.mentioned && !advisors.annotationDriven) {
+        foreign.advisors = true;
       }
     }
     return foreign;
@@ -938,5 +976,85 @@ class SpringBuilder implements Builder {
         byName[name] = bean.element;
       }
     }
+  }
+}
+
+const _advisorChecker = TypeChecker.fromUrl(
+  'package:spring_core_dart/src/aop/advisor.dart#Advisor',
+);
+const _defaultPointcutAdvisorChecker = TypeChecker.fromUrl(
+  'package:spring_core_dart/src/aop/advisor.dart#DefaultPointcutAdvisor',
+);
+const _annotationPointcutChecker = TypeChecker.fromUrl(
+  'package:spring_core_dart/src/aop/aop_pointcut.dart#AnnotationPointcut',
+);
+const _annotationMatchingPointcutChecker = TypeChecker.fromUrl(
+  'package:spring_core_dart/src/aop/aop_pointcut.dart'
+  '#AnnotationMatchingPointcut',
+);
+
+// The advisors the libraries of a starter create (`DefaultPointcutAdvisor
+// (p, ...)` or an `Advisor` class) or register (`Advisor` in the types of
+// a bean definition), and whether all created ones have a pointcut whose
+// static type is an `AnnotationPointcut` matching annotations from
+// outside `package:spring_core_dart` (the annotations pruning keeps the
+// beans of). Registered without a creation the build sees counts as not
+// annotation-driven.
+class _AdvisorCreations extends RecursiveAstVisitor<void> {
+  var mentioned = false;
+  var _found = false;
+  var _annotationDriven = true;
+
+  bool get annotationDriven => _found && _annotationDriven;
+
+  // Doc comments (`[Advisor]`) register nothing.
+  @override
+  void visitComment(Comment node) {}
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    if (node.element case final InterfaceElement element
+        when _advisorChecker.isAssignableFrom(element)) {
+      mentioned = true;
+    }
+    super.visitSimpleIdentifier(node);
+  }
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    final type = node.staticType;
+    if (type is InterfaceType && _advisorChecker.isAssignableFromType(type)) {
+      mentioned = true;
+      _found = true;
+      final pointcut = _defaultPointcutAdvisorChecker.isExactlyType(type)
+          ? node
+                .argumentList
+                .arguments
+                .firstOrNull
+                ?.argumentExpression
+                .staticType
+          : type.lookUpGetter('pointcut', type.element.library)?.returnType;
+      if (!_matchesByForeignAnnotation(pointcut)) {
+        _annotationDriven = false;
+      }
+    }
+    super.visitInstanceCreationExpression(node);
+  }
+
+  static bool _matchesByForeignAnnotation(DartType? pointcut) {
+    if (pointcut is! InterfaceType ||
+        !_annotationPointcutChecker.isAssignableFromType(pointcut)) {
+      return false;
+    }
+    // `AnnotationMatchingPointcut<A>` with a runtime annotation (not kept
+    // by pruning) matches beans the build may prune.
+    if (_annotationMatchingPointcutChecker.isExactlyType(pointcut)) {
+      final annotation = pointcut.typeArguments.single;
+      return annotation is InterfaceType &&
+          !annotation.element.library.uri.toString().startsWith(
+            'package:spring_core_dart/',
+          );
+    }
+    return true;
   }
 }

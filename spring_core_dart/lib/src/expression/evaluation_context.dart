@@ -1,7 +1,9 @@
+import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 import 'package:spring_core_dart/src/expression/builtins.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/introspection_access.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
 /// Reads and writes properties of objects, like Spring's `PropertyAccessor`.
@@ -660,8 +662,13 @@ final class StandardOperatorOverloader implements OperatorOverloader {
 
 /// The full-featured context, like Spring's `StandardEvaluationContext`.
 ///
-/// Comes with [MapAccessor] and the built-in accessors/methods for core
-/// Dart types; add accessors for your own classes. Supports variables,
+/// Comes with [MapAccessor], properties and methods of `@Introspected`
+/// classes (`IntrospectionPropertyAccessor` and
+/// `IntrospectionMethodResolver` over `BeanIntrospector.shared`, the
+/// counterpart of Spring's reflective accessor and resolver) and the
+/// built-in accessors/methods for core Dart types; add accessors for other
+/// classes (or for the introspector of an application context, whose
+/// `@Value('#{...}')` expressions have them already). Supports variables,
 /// functions, `T(...)` types, constructors, bean references and
 /// assignment. Do not use it for untrusted expressions; use
 /// [SimpleEvaluationContext] instead.
@@ -688,7 +695,9 @@ final class StandardOperatorOverloader implements OperatorOverloader {
 ///     .getValue(context, String.class);
 /// ```
 ///
-/// Spring reads `name` reflectively; in Dart an accessor is required.
+/// Spring reads `name` reflectively; in Dart the class must be
+/// `@Introspected` (registered in `BeanIntrospector.shared`) or have an
+/// accessor.
 class StandardEvaluationContext implements EvaluationContext {
   /// Creates a context whose `#root` is [rootObject].
   StandardEvaluationContext([this.rootObject]);
@@ -696,14 +705,25 @@ class StandardEvaluationContext implements EvaluationContext {
   @override
   Object? rootObject;
 
+  final _introspectionAccessor = IntrospectionPropertyAccessor(
+    BeanIntrospector.shared,
+  );
+  final _introspectionResolver = IntrospectionMethodResolver(
+    BeanIntrospector.shared,
+  );
+
   @override
-  final List<PropertyAccessor> propertyAccessors = [
+  late final List<PropertyAccessor> propertyAccessors = [
     const MapAccessor(),
+    _introspectionAccessor,
     const BuiltinPropertyAccessor(),
   ];
 
   @override
-  final List<MethodResolver> methodResolvers = [const BuiltinMethodResolver()];
+  late final List<MethodResolver> methodResolvers = [
+    _introspectionResolver,
+    const BuiltinMethodResolver(),
+  ];
 
   @override
   final List<ConstructorResolver> constructorResolvers = [
@@ -735,21 +755,26 @@ class StandardEvaluationContext implements EvaluationContext {
 
   /// Adds [accessor] before the default ones.
   ///
-  /// The defaults ([MapAccessor], [BuiltinPropertyAccessor]) stay last, so
-  /// user accessors are asked first; when they were removed from
-  /// [propertyAccessors], [accessor] is appended.
+  /// The defaults ([MapAccessor], the shared introspection accessor,
+  /// [BuiltinPropertyAccessor]) stay last, so user accessors are asked
+  /// first; when they were removed from [propertyAccessors], [accessor] is
+  /// appended.
   void addPropertyAccessor(PropertyAccessor accessor) => _insertBeforeDefaults(
     propertyAccessors,
     accessor,
-    (a) => a is MapAccessor || a is BuiltinPropertyAccessor,
+    (a) =>
+        a is MapAccessor ||
+        identical(a, _introspectionAccessor) ||
+        a is BuiltinPropertyAccessor,
   );
 
-  /// Adds [resolver] before the built-in one (or appends it when
-  /// `BuiltinMethodResolver` was removed from [methodResolvers]).
+  /// Adds [resolver] before the default ones (the shared introspection
+  /// resolver and `BuiltinMethodResolver`), or appends it when they were
+  /// removed from [methodResolvers].
   void addMethodResolver(MethodResolver resolver) => _insertBeforeDefaults(
     methodResolvers,
     resolver,
-    (r) => r is BuiltinMethodResolver,
+    (r) => identical(r, _introspectionResolver) || r is BuiltinMethodResolver,
   );
 
   /// Adds [resolver] before the default `SpelTypeConstructorResolver`
@@ -854,8 +879,8 @@ class SimpleEvaluationContext implements EvaluationContext {
   static SimpleEvaluationContextBuilder forReadWriteDataBinding() =>
       SimpleEvaluationContextBuilder._(assignment: true);
 
-  /// Only the given accessors (instead of [MapAccessor] and the built-in
-  /// one); assignment enabled (Spring's
+  /// Only the given accessors (instead of [MapAccessor], the introspection
+  /// accessor and the built-in one); assignment enabled (Spring's
   /// `SimpleEvaluationContext.forPropertyAccessors(...)`).
   ///
   /// ```dart
@@ -948,7 +973,13 @@ final class SimpleEvaluationContextBuilder {
     required this._assignment,
     List<PropertyAccessor>? accessors,
   }) : _accessors =
-           accessors ?? [const MapAccessor(), const BuiltinPropertyAccessor()];
+           accessors ??
+           [
+             const MapAccessor(),
+             // Spring's DataBindingPropertyAccessor: public properties.
+             IntrospectionPropertyAccessor(BeanIntrospector.shared),
+             const BuiltinPropertyAccessor(),
+           ];
 
   bool _assignment;
   final List<PropertyAccessor> _accessors;
@@ -958,10 +989,12 @@ final class SimpleEvaluationContextBuilder {
   TypeConverter _converter = StandardTypeConverter();
   Object? _root;
 
-  /// Enables built-in instance methods (and [extra] resolvers).
+  /// Enables instance methods: those of `@Introspected` classes in
+  /// `BeanIntrospector.shared` (Spring's `DataBindingMethodResolver`) and
+  /// the built-in ones of core Dart types (and [extra] resolvers).
   ///
   /// [extra] resolvers, like those of [withMethodResolvers], are asked
-  /// before `BuiltinMethodResolver`.
+  /// first.
   SimpleEvaluationContextBuilder withInstanceMethods([
     List<MethodResolver> extra = const [],
   ]) {
@@ -1018,7 +1051,10 @@ final class SimpleEvaluationContextBuilder {
     List.unmodifiable(_accessors),
     List.unmodifiable([
       ..._resolvers,
-      if (_instanceMethods) const BuiltinMethodResolver(),
+      if (_instanceMethods) ...[
+        IntrospectionMethodResolver(BeanIntrospector.shared),
+        const BuiltinMethodResolver(),
+      ],
     ]),
     List.unmodifiable(_indexAccessors),
     _converter,

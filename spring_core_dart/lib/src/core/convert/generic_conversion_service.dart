@@ -97,6 +97,7 @@ class GenericConversionService implements ConversionService, ConverterRegistry {
           ));
     });
     addConverter<E, String>((source) => source.name);
+    addCollectionConverters<E>();
   }
 
   @override
@@ -108,6 +109,9 @@ class GenericConversionService implements ConversionService, ConverterRegistry {
         ? const []
         : source.split(',').map((part) => part.trim());
 
+    // Registered first, so the String and Iterable converters win.
+    addConverter<Object, List<E>>((source) => [convert<E>(source)]);
+    addConverter<Object, Set<E>>((source) => {convert<E>(source)});
     addConverter<String, List<E>>((source) => elements(split(source)));
     addConverter<String, Set<E>>((source) => elements(split(source)).toSet());
     addConverter<Iterable<Object?>, List<E>>(elements);
@@ -115,6 +119,15 @@ class GenericConversionService implements ConversionService, ConverterRegistry {
       (source) => elements(source).toSet(),
     );
   }
+
+  @override
+  void addMapConverters<K, V>() =>
+      addConverter<Map<Object?, Object?>, Map<K, V>>(
+        (source) => {
+          for (final MapEntry(:key, :value) in source.entries)
+            convert<K>(key): convert<V>(value),
+        },
+      );
 
   @override
   void removeConvertible<T>() {

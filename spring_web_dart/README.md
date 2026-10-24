@@ -323,10 +323,20 @@ sockets.failNextConnect();                       // the next connect fails
 - **`MediaType` constants are `String`s** (Spring's `..._VALUE`
   constants), so they work in annotations; `MediaType.parse` gives a
   `MediaType` object (Spring's `parseMediaType`) with `includes`,
-  `isCompatibleWith`, `charset`, `qualityValue`.
+  `isCompatibleWith`, `charset`, `qualityValue`. Parameters follow
+  Spring's rules (tokens or quoted values, a parameter without `=`
+  ignored, the last of a repeated name kept), but a `charset` only has to
+  be a legal name: Dart knows few encodings (UTF-8, ISO-8859-1, US-ASCII),
+  so `charset` is `null` for the others instead of an "unsupported
+  charset" error, and `HttpResponse.bodyText` falls back to UTF-8.
 - **`ResponseEntity` builders** end in `body(...)` or `build<T>()`;
   `ResponseEntity.ok(body)` is a constructor (Spring's `ok()` builder is
-  `ResponseEntity.status(HttpStatus.ok)`).
+  `ResponseEntity.status(HttpStatus.ok)`). `ResponseEntity.of` takes a
+  nullable body (Dart has no `Optional`), like `ofNullable`. `==` compares
+  lists, sets and maps in the body by content.
+- **`HttpHeaders.addAll(name, values)`** adds the values of one name;
+  `addHeaders(other)` is Spring's `addAll(HttpHeaders)` and `putAll(other)`
+  its `putAll(HttpHeaders)` (Dart has no overloads). `size` counts names.
 - **`HttpMethod.parse`** is case-sensitive like Spring's
   `HttpMethod.valueOf`, but throws on any other text, `'get'` included
   (Spring's `valueOf` creates a new method).

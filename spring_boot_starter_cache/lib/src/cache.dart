@@ -162,6 +162,34 @@ mixin CacheDefaults implements Cache {
   }
 }
 
+/// Changes the [CacheManager] the starter creates from `spring.cache.*`,
+/// before it is used, like Spring Boot's `CacheManagerCustomizer`. Not
+/// generic: check the type of the manager yourself.
+///
+/// ```dart
+/// @Component()
+/// class WarmCaches implements CacheManagerCustomizer {
+///   @override
+///   void customize(CacheManager cacheManager) {
+///     if (cacheManager is InMemoryCacheManager) {
+///       cacheManager.getCache('books');
+///     }
+///   }
+/// }
+/// ```
+///
+/// Spring Boot (Java):
+/// ```java
+/// @Bean
+/// CacheManagerCustomizer<ConcurrentMapCacheManager> warm() {
+///   return manager -> manager.setCacheNames(List.of("books"));
+/// }
+/// ```
+abstract interface class CacheManagerCustomizer {
+  /// Changes [cacheManager].
+  void customize(CacheManager cacheManager);
+}
+
 /// A [CacheManager] for a fixed list of caches, like Spring's
 /// `SimpleCacheManager`: the way to put caches of your own (or a mix with
 /// `InMemoryCache`) behind the annotations. An unknown name gives `null`,

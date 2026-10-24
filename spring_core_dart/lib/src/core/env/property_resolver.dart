@@ -265,9 +265,15 @@ abstract class AbstractPropertyResolver
     ignoreUnresolvable: false,
   )).replacePlaceholders(text, _rawString);
 
-  // Placeholders look up raw values; nested placeholders inside them are
-  // resolved recursively by the helper.
-  String? _rawString(String key) => getRawProperty(key)?.toString();
+  // Placeholders look up raw values as strings (through the conversion
+  // service, so an enum is its name, like Spring's
+  // getPropertyAsRawString); nested placeholders inside them are resolved
+  // recursively by the helper.
+  String? _rawString(String key) => switch (getRawProperty(key)) {
+    null => null,
+    final String value => value,
+    final value => conversionService.convert<String?>(value),
+  };
 
   PropertyPlaceholderHelper _helper({required bool ignoreUnresolvable}) =>
       PropertyPlaceholderHelper(

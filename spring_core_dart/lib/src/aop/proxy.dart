@@ -210,11 +210,16 @@ final class AopProxyFactory {
   ///       bean is _$CalculatorProxy ? bean._$advise(invoker) : null,
   /// );
   /// ```
+  ///
+  /// [introductions] are the interfaces `@DeclareParents` adds to the
+  /// subclass (see [Introduction]); their members work once the aspect
+  /// declaring them is registered (it attaches the invoker).
   AopProxyFactory.subclass({
     required List<MethodSignature> signatures,
     required Object? Function(Object bean, ProxyInvoker invoker) this._advise,
+    List<Introduction> introductions = const [],
   }) : signatures = List.unmodifiable(signatures),
-       introductions = const [],
+       introductions = List.unmodifiable(introductions),
        _create = null,
        unavailableReason = null;
 
@@ -376,6 +381,17 @@ final class ProxyInvoker {
     'matches it (or a PointcutAdvisor bean) to have it proxied.',
   );
 
+  /// Fails the call of a `@DeclareParents` member ([interfaceName]) on a
+  /// generated subclass proxy that has no invoker: the aspect declaring the
+  /// introduction is not registered (a condition or profile left it out).
+  static Never notIntroduced(Object proxy, String interfaceName) =>
+      throw AopConfigException(
+        'The ${proxy.runtimeType} bean implements $interfaceName through a '
+        '@DeclareParents introduction, but the aspect declaring it is not '
+        'registered in the context, so there is no $interfaceName '
+        'implementation to call.',
+      );
+
   /// Proxied members, by index.
   final List<MethodSignature> signatures;
 
@@ -454,6 +470,15 @@ final class ProxyInvoker {
     ];
   });
 
+  // A subclass proxy (the bean is its own proxy, [target] is [proxy])
+  // calling itself from its own code: like a `this.` call on Spring's
+  // target, the call skips the advice (unless made through
+  // `AopContext.currentProxy()`).
+  static bool _isSelfCall(Object proxy, Object target) =>
+      identical(proxy, target) &&
+      isInProxyBody(proxy) &&
+      !takeCallThroughProxy(proxy);
+
   /// Invokes member [index] synchronously.
   ///
   /// [call] invokes the target with the (possibly replaced) arguments; it
@@ -464,21 +489,29 @@ final class ProxyInvoker {
     int index,
     List<Object?> arguments,
     Object? Function(List<Object?> arguments) call,
-  ) => runWithCurrentProxy(proxy, () {
-    final chain = chainFor(index);
-    if (chain.isEmpty) {
+  ) {
+    if (_isSelfCall(proxy, target)) {
       return call(arguments);
     }
-    return _Invocation(
-      proxy,
-      target,
-      signatures[index],
-      [...arguments],
-      chain,
-      0,
-      call,
-    ).proceed();
-  });
+    final body = identical(proxy, target)
+        ? (List<Object?> args) => runProxyBody(proxy, () => call(args))
+        : call;
+    return runWithCurrentProxy(proxy, () {
+      final chain = chainFor(index);
+      if (chain.isEmpty) {
+        return body(arguments);
+      }
+      return _Invocation(
+        proxy,
+        target,
+        signatures[index],
+        [...arguments],
+        chain,
+        0,
+        body,
+      ).proceed();
+    });
+  }
 
   /// Invokes member [index] that returns `Future<T>`.
   ///
@@ -491,23 +524,32 @@ final class ProxyInvoker {
     int index,
     List<Object?> arguments,
     Future<T> Function(List<Object?> arguments) call,
-  ) => runAsyncWithCurrentProxy(proxy, () {
-    final chain = chainFor(index);
-    if (chain.isEmpty) {
+  ) {
+    if (_isSelfCall(proxy, target)) {
       return call(arguments);
     }
-    return retypeFuture<T>(
-      _AsyncInvocation<T>(
-        proxy,
-        target,
-        signatures[index],
-        [...arguments],
-        chain,
-        0,
-        call,
-      ).proceed(),
-    );
-  });
+    final body = identical(proxy, target)
+        ? (List<Object?> args) =>
+              runProxyBody(proxy, () => call(args), async: true)
+        : call;
+    return runAsyncWithCurrentProxy(proxy, () {
+      final chain = chainFor(index);
+      if (chain.isEmpty) {
+        return body(arguments);
+      }
+      return retypeFuture<T>(
+        _AsyncInvocation<T>(
+          proxy,
+          target,
+          signatures[index],
+          [...arguments],
+          chain,
+          0,
+          body,
+        ).proceed(),
+      );
+    });
+  }
 
   /// Invokes member [index] that returns `FutureOr<T>`.
   ///
@@ -520,22 +562,31 @@ final class ProxyInvoker {
     int index,
     List<Object?> arguments,
     FutureOr<T> Function(List<Object?> arguments) call,
-  ) => runAsyncWithCurrentProxy(proxy, () {
-    final chain = chainFor(index);
-    if (chain.isEmpty) {
+  ) {
+    if (_isSelfCall(proxy, target)) {
       return call(arguments);
     }
-    final result = _FutureOrInvocation<T>(
-      proxy,
-      target,
-      signatures[index],
-      [...arguments],
-      chain,
-      0,
-      call,
-    ).proceed();
-    return result is Future ? retypeFuture<T>(result) : result as T;
-  });
+    final body = identical(proxy, target)
+        ? (List<Object?> args) =>
+              runProxyBody(proxy, () => call(args), async: true)
+        : call;
+    return runAsyncWithCurrentProxy(proxy, () {
+      final chain = chainFor(index);
+      if (chain.isEmpty) {
+        return body(arguments);
+      }
+      final result = _FutureOrInvocation<T>(
+        proxy,
+        target,
+        signatures[index],
+        [...arguments],
+        chain,
+        0,
+        body,
+      ).proceed();
+      return result is Future ? retypeFuture<T>(result) : result as T;
+    });
+  }
 }
 
 // Advice whose pointcut must be evaluated per call: skipped when the call

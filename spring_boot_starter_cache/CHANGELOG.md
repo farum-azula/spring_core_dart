@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Class-level `@Cacheable` / `@CachePut` / `@CacheEvict` / `@Caching` apply to every public method without cache annotations of its own, like Spring (they were ignored).
+- `#root.method.name` (and `returnType`, `parameterTypes`, `parameterNames`, `parameterCount`) in cache SpEL.
+- A `null` cache key fails the call with an `ArgumentError`, like Spring (it was used as a key).
+- `spring.cache.type=generic`, the default when there are `Cache` beans: a `SimpleCacheManager` of them, like Boot's `GenericCacheConfiguration`.
+- `CacheManagerCustomizer` beans customize the auto-configured manager; `cacheManagerFromProperties(caches:, customizers:)`.
+- `CacheAnnotationPointcut` is an `AnnotationPointcut`, so the cache advisor keeps proxy pruning on
 - a `@CachePut` whose `condition` fails before the call no longer forces a `@Cacheable` hit to run the method (Spring's `hasCachePut`; a condition reading `#result` still counts as passing)
 - `spring.cache.cache-names` accepts a YAML list (`spring.cache.cache-names[0]`)
 

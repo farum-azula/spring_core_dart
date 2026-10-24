@@ -61,8 +61,10 @@ ConfigurableApplicationContext _run(
   registerShutdownHook: false,
   initializers: [
     if (events != null)
-      (context) => context.addApplicationListener(
-        ApplicationListenerAdapter.of<ExitCodeEvent>(events.add),
+      ApplicationContextInitializer.of(
+        (context) => context.addApplicationListener(
+          ApplicationListenerAdapter.of<ExitCodeEvent>(events.add),
+        ),
       ),
   ],
   out: (_) {},
@@ -118,6 +120,8 @@ void main() {
     test('a generator that throws gives 1, or keeps the code found', () {
       expect(SpringApplication.exit(_run([Throwing()])), 1);
       expect(SpringApplication.exit(_run([Code(6), Throwing()])), 6);
+      expect(SpringApplication.exit(_run([Throwing(), Code(0)])), 1);
+      expect(SpringApplication.exit(_run([Throwing(), Code(5)])), 5);
     });
 
     test('an already closed context gives 1', () {

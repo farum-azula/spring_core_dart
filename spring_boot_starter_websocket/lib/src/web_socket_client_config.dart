@@ -66,7 +66,7 @@ final class WebSocketClientConfig {
       url: get('url'),
       connectTimeout: duration('connect-timeout') ?? defaults.connectTimeout,
       reconnect: WebSocketReconnectPolicy(
-        enabled: get('reconnect.enabled')?.trim().toLowerCase() != 'false',
+        enabled: _flag(get('reconnect.enabled'), '$name.reconnect.enabled'),
         delay: duration('reconnect.delay') ?? policy.delay,
         multiplier: multiplier == null
             ? policy.multiplier
@@ -75,12 +75,37 @@ final class WebSocketClientConfig {
         jitter: duration('reconnect.jitter') ?? policy.jitter,
         maxRetries: maxRetries == null ? null : int.parse(maxRetries.trim()),
       ),
-      defaultRequestHeaders: {
-        ..._headers(environment, '${_prefix}default.default-request-headers'),
-        ..._headers(environment, '$_prefix$name.default-request-headers'),
-      },
+      defaultRequestHeaders: _merge(
+        _headers(environment, '${_prefix}default.default-request-headers'),
+        _headers(environment, '$_prefix$name.default-request-headers'),
+      ),
     );
   }
+
+  // A boolean like Spring Boot's binding: true / false (also on / off,
+  // yes / no, 1 / 0) in any case; anything else fails.
+  static bool _flag(String? value, String key) =>
+      switch (value?.trim().toLowerCase()) {
+        null || '' => true,
+        'true' || 'on' || 'yes' || '1' => true,
+        'false' || 'off' || 'no' || '0' => false,
+        _ => throw FormatException(
+          '$_prefix$key: failed to convert to boolean (was "$value")',
+          value,
+        ),
+      };
+
+  // The client's headers replace those of `default` with the same name in
+  // any case (header names are case-insensitive).
+  static Map<String, List<String>> _merge(
+    Map<String, List<String>> defaults,
+    Map<String, List<String>> own,
+  ) => {
+    for (final MapEntry(:key, :value) in defaults.entries)
+      if (!own.keys.any((name) => name.toLowerCase() == key.toLowerCase()))
+        key: value,
+    ...own,
+  };
 
   // The map of lists at [name], bound like a Spring Boot
   // `Map<String, List<String>>`: relaxed names

@@ -24,6 +24,27 @@ abstract final class FileAccess {
   /// The bytes of the file at [path], read asynchronously.
   static Future<Uint8List> readBytes(String path) => File(path).readAsBytes();
 
+  /// The body of a GET request to [url]; a status of 400 or above throws
+  /// an [HttpException].
+  static Future<Uint8List> readUrl(Uri url) async {
+    final client = HttpClient();
+    try {
+      final response = await (await client.getUrl(url)).close();
+      if (response.statusCode >= 400) {
+        await response.drain<void>();
+        throw HttpException(
+          'Cannot read URL [$url]: HTTP ${response.statusCode}',
+          uri: url,
+        );
+      }
+      final builder = BytesBuilder(copy: false);
+      await response.forEach(builder.add);
+      return builder.takeBytes();
+    } finally {
+      client.close();
+    }
+  }
+
   /// [path] made absolute against the current directory.
   static String absolute(String path) => File(path).absolute.path;
 

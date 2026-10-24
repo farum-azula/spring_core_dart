@@ -1161,6 +1161,9 @@ class Listener implements ApplicationListener<Shipped> {
 
   @EventListener()
   void onPayload(PayloadApplicationEvent<Placed> event) {}
+
+  @EventListener()
+  List<Placed?> onMany(Product product) => [];
 }
 ''');
       expect(output, _has('factoryObjectTypes: const [Product]'));
@@ -1197,7 +1200,9 @@ class Listener implements ApplicationListener<Shipped> {
         output,
         _has(
           "EventListenerMethod.of<Listener, Placed>(r'Listener.onPlaced', "
-          '(bean, event) => bean.onPlaced(event), order: 1, condition: isImportant,)',
+          '(bean, event) => bean.onPlaced(event), order: 1, '
+          'resultType: const EventResultType<Shipped>(), '
+          'condition: isImportant,)',
         ),
       );
       expect(
@@ -1213,6 +1218,17 @@ class Listener implements ApplicationListener<Shipped> {
         ),
       );
       expect(output, _has('bean.onAsync(event); return null;'));
+      // Results are published as their declared (element) type, so
+      // PayloadApplicationEvent<Placed> listeners see them.
+      expect(
+        output,
+        _has(
+          "EventListenerMethod.of<Listener, Product>(r'Listener.onMany', "
+          '(bean, event) => bean.onMany(event), '
+          'resultType: const EventResultType<Placed>(),)',
+        ),
+      );
+      expect(output, isNot(_has('EventResultType<Object>')));
     });
 
     test('conditions, imports, property sources, configurables', () async {
@@ -2877,6 +2893,8 @@ abstract interface class CatalogClient {
   void ping();
 
   Stream<Book> changes();
+
+  Stream<void> pulses();
 }
 """;
 
@@ -2955,6 +2973,14 @@ abstract interface class CatalogClient {
         _has(
           '@override Stream<Book> changes() => '
           '(this._handler.invoke(this._metadata.methods[6], const []) as Stream<Book>);',
+        ),
+      );
+      // A `void` type argument (`ResponseEntity<void>`): the handler can
+      // tell it from `dynamic`.
+      expect(
+        output,
+        _has(
+          'returnType: const GenericType<Stream<void>>([DynamicType.forVoid()])',
         ),
       );
       // The bean: primary (from @InterfaceProxy(primary: true)), created by
@@ -3618,6 +3644,16 @@ class Caches {
   Object a() => 1;
   @Bean(name: 'cache') @ConditionalOnMissingBean.named('cache')
   Object b() => 2;
+  @Bean() @ConditionalOnMissingBean()
+  @ConditionalOnCloudPlatform(CloudPlatform.kubernetes)
+  Pooled probe() => Pooled();
+  @Bean()
+  @ConditionalOnMissingBean.where(
+    types: [DataSource],
+    ignored: [Embedded],
+    search: SearchStrategy.current,
+  )
+  String text() => 'x';
 }
 """;
 

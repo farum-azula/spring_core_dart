@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/validation/message_escapes.dart';
+
 /// Default validation group (constraints without groups belong to it).
 ///
 /// Validating without groups runs the constraints of this group; list it
@@ -120,22 +122,16 @@ abstract class Constraint {
   String interpolatedMessage() => interpolate(message ?? defaultMessage);
 
   /// [template] with `{attribute}` placeholders replaced by the attribute
-  /// values; other placeholders and `${...}` expressions are kept.
+  /// values; other placeholders and `${...}` expressions are kept, and the
+  /// Jakarta escapes `\{`, `\}`, `\$`, `\\` become literal characters.
   ///
   /// ```dart
   /// const Size(max: 20).interpolate('at most {max}'); // 'at most 20'
+  /// const Size(max: 20).interpolate(r'\{max} is {max}'); // '{max} is 20'
   /// ```
-  String interpolate(String template) {
-    // One pass, so an attribute value containing braces (a regular
-    // expression such as `[A-Z]{2,3}`) is not interpolated again.
-    final attributes = this.attributes;
-    return template.replaceAllMapped(
-      RegExp(r'(?<!\$)\{(\w+)\}'),
-      (match) => attributes.containsKey(match.group(1))
-          ? '${attributes[match.group(1)]}'
-          : match.group(0)!,
-    );
-  }
+  String interpolate(String template) => revealMessageEscapes(
+    interpolateAttributes(hideMessageEscapes(template), attributes),
+  );
 
   /// Whether the constraint can validate [value] (a non-null value), like
   /// Hibernate Validator finding a `ConstraintValidator` for its type. When

@@ -159,7 +159,7 @@ final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
 
   /// Members of `@Validated` bean classes not excluded by [excludeFilters].
   @override
-  AopPointcut get pointcut => _ValidatedPointcut(excludeFilters);
+  AnnotationPointcut get pointcut => _ValidatedPointcut(excludeFilters);
 
   /// Innermost, like Spring's validation advisor added after the existing
   /// ones.
@@ -170,7 +170,7 @@ final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
   String toString() => 'MethodValidationPostProcessor';
 }
 
-final class _ValidatedPointcut implements AopPointcut {
+final class _ValidatedPointcut implements AnnotationPointcut {
   const _ValidatedPointcut(this.excludeFilters);
 
   final List<bool Function(List<Object> classAnnotations)> excludeFilters;

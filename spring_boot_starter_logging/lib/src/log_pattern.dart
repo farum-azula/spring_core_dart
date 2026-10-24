@@ -16,7 +16,12 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 /// | `%ex`, `%exception`, `%throwable{n}` (also `%xEx`, `%rEx`) | error and stack trace (`{short}`, `{full}` or `n` lines) |
 /// | `%wEx` | the same between line breaks (Spring Boot) |
 /// | `%nopex` | no error output |
-/// | `%clr(...){color}` | colours its content (Spring Boot); without a colour by level |
+/// | `%clr(...){color}` | colours its content (Spring Boot, with `spring.output.ansi.enabled`); without a colour by level |
+/// | `%red(...)`, `%boldRed(...)`, `%gray(...)`, ... `%highlight(...)` | Logback's colours (always ANSI, like Logback): `black red green yellow blue magenta cyan white gray` and `bold...`; `%highlight` by level (error bold red, warn red, info blue) |
+/// | `%replace(...){regex, replacement}` | its content with every match replaced (`$1` for groups) |
+/// | `%kvp{DOUBLE\|SINGLE\|NONE}` | the fields as `key="value"` pairs, separated by spaces |
+/// | `%prefix(...)` | each conversion inside as `name=value` (`level=INFO`, `%X{key}` as `key=...`) |
+/// | `%property{key}` | a variable or property (`null` when there is none) |
 /// | `%esb(...){VAR}` | `[value] ` of its content or of the variable, nothing when empty (Spring Boot) |
 /// | `%(...)` | groups content for a format modifier |
 /// | `%r`, `%relative` | milliseconds since the logging started |
@@ -350,8 +355,51 @@ final class _Variables {
   }
 }
 
+// Logback's PatternLayout names of the converters, for %prefix.
+const _converterNames = {
+  'd': 'date',
+  'date': 'date',
+  'p': 'level',
+  'le': 'level',
+  'level': 'level',
+  'c': 'logger',
+  'lo': 'logger',
+  'logger': 'logger',
+  'm': 'message',
+  'msg': 'message',
+  'message': 'message',
+  't': 'thread',
+  'thread': 'thread',
+  'r': 'relative',
+  'relative': 'relative',
+  'seq': 'sequenceNumber',
+};
+
+// Logback's colour converters (ANSIConstants): foreground codes.
+const _logbackColors = {
+  'black': '30',
+  'red': '31',
+  'green': '32',
+  'yellow': '33',
+  'blue': '34',
+  'magenta': '35',
+  'cyan': '36',
+  'white': '37',
+  'gray': '1;30',
+  'boldRed': '1;31',
+  'boldGreen': '1;32',
+  'boldYellow': '1;33',
+  'boldBlue': '1;34',
+  'boldMagenta': '1;35',
+  'boldCyan': '1;36',
+  'boldWhite': '1;37',
+};
+
 final class _Parser {
   _Parser(this.text, this.variables, this.ansi);
+
+  // The %prefix name of a conversion's render function.
+  static final _names = Expando<String>();
 
   static (List<_Render>, bool) compile(
     String pattern,
@@ -465,7 +513,13 @@ final class _Parser {
     final render = word == null
         ? _concat(children!)
         : _converter(word, option, children);
-    return info == null ? render : (r) => info.apply(render(r));
+    final _Render result = info == null ? render : (r) => info.apply(render(r));
+    if (word != null) {
+      _names[result] = (word == 'X' || word == 'mdc') && option != null
+          ? option.split(':-').first
+          : _converterNames[word] ?? word;
+    }
+    return result;
   }
 
   static final _modifier = RegExp(r'(-)?(\d+)?(?:\.(-)?(\d+))?');
@@ -595,6 +649,72 @@ final class _Parser {
           _fail('%clr needs (...) around the coloured text');
         }
         return _color(_concat(children), option);
+      case 'highlight':
+        final inner = _requireChildren(word, children);
+        return (r) {
+          final code = switch (r.level) {
+            SpringLogLevel.error => '1;31',
+            SpringLogLevel.warning => '31',
+            SpringLogLevel.info => '34',
+            _ => '39',
+          };
+          return '\x1B[${code}m${inner(r)}\x1B[0;39m';
+        };
+      case _ when _logbackColors.containsKey(word):
+        final inner = _requireChildren(word, children);
+        final code = _logbackColors[word];
+        return (r) => '\x1B[${code}m${inner(r)}\x1B[0;39m';
+      case 'replace':
+        final inner = _requireChildren(word, children);
+        final options = _splitOptions(option ?? '');
+        if (options.length != 2) {
+          _fail('%replace needs {regex, replacement}');
+        }
+        final RegExp regex;
+        try {
+          regex = RegExp(_unquote(options[0].trim()));
+        } on FormatException catch (error) {
+          _fail('%replace: invalid regex (${error.message})');
+        }
+        final replacement = _unquote(options[1].trim());
+        return (r) => inner(r).replaceAllMapped(
+          regex,
+          (match) => _javaReplacement(match, replacement),
+        );
+      case 'kvp':
+        final quote = switch (option?.trim().toUpperCase()) {
+          null || '' || 'DOUBLE' => '"',
+          'SINGLE' => "'",
+          'NONE' => '',
+          _ => _fail('%kvp{$option}: use DOUBLE, SINGLE or NONE'),
+        };
+        return simple(
+          (r) => [
+            for (final MapEntry(:key, :value) in r.fields.entries)
+              '$key=$quote$value$quote',
+          ].join(' '),
+        );
+      case 'prefix':
+        final parts = children;
+        if (parts == null) {
+          _fail('%prefix needs (...) around the conversions');
+        }
+        return (r) {
+          final buffer = StringBuffer();
+          for (final part in parts) {
+            if (_names[part] case final name?) {
+              buffer.write('$name=');
+            }
+            buffer.write(part(r));
+          }
+          return buffer.toString();
+        };
+      case 'property':
+        final key = option?.trim();
+        if (key == null || key.isEmpty) {
+          return simple((_) => 'Property_HAS_NO_KEY');
+        }
+        return simple((_) => variables[key] ?? 'null');
       case 'esb':
         final inner = children == null ? null : _concat(children);
         final fallback = option == null ? null : variables[option.trim()];
@@ -606,6 +726,49 @@ final class _Parser {
       default:
         _fail('Unknown conversion word %$word');
     }
+  }
+
+  _Render _requireChildren(String word, List<_Render>? children) {
+    if (children == null) {
+      _fail('%$word needs (...) around its content');
+    }
+    return _concat(children);
+  }
+
+  static String _unquote(String value) =>
+      value.length >= 2 &&
+          ((value.startsWith("'") && value.endsWith("'")) ||
+              (value.startsWith('"') && value.endsWith('"')))
+      ? value.substring(1, value.length - 1)
+      : value;
+
+  // Java's Matcher.replaceAll replacement: `$n` / `${name}` groups, `\x`
+  // a literal x.
+  static String _javaReplacement(Match match, String replacement) {
+    final out = StringBuffer();
+    for (var i = 0; i < replacement.length; i++) {
+      final c = replacement[i];
+      if (c == r'\' && i + 1 < replacement.length) {
+        out.write(replacement[++i]);
+      } else if (c == r'$' && i + 1 < replacement.length) {
+        var j = i + 1;
+        while (j < replacement.length &&
+            replacement.codeUnitAt(j) >= 48 &&
+            replacement.codeUnitAt(j) <= 57) {
+          j++;
+        }
+        if (j > i + 1) {
+          final group = int.parse(replacement.substring(i + 1, j));
+          out.write(group <= match.groupCount ? match.group(group) ?? '' : '');
+          i = j - 1;
+        } else {
+          out.write(c);
+        }
+      } else {
+        out.write(c);
+      }
+    }
+    return out.toString();
   }
 
   int? _depth(String word, String? option) {

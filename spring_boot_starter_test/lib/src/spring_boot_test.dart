@@ -86,14 +86,16 @@ SpringBootTestContext springBootTest(
     ),
     initializers: [
       if (dynamicProperties != null)
-        (context) {
+        ApplicationContextInitializer.of((context) {
           final source = DynamicValuesPropertySource();
           dynamicProperties(source);
           context.environment.propertySources.addFirst(source);
-        },
+        }),
       if (overrides.isNotEmpty)
-        (context) => context.addBeanFactoryPostProcessor(
-          BeanOverrideProcessor(overrides),
+        ApplicationContextInitializer.of(
+          (context) => context.addBeanFactoryPostProcessor(
+            BeanOverrideProcessor(overrides),
+          ),
         ),
       ...initializers,
     ],

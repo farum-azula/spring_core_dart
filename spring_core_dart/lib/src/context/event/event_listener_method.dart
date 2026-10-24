@@ -1,6 +1,31 @@
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/context/annotations.dart';
 import 'package:spring_core_dart/src/context/event/application_event.dart';
+import 'package:spring_core_dart/src/context/event/application_listener.dart';
+
+/// The declared result type [R] of a listener method (the element type of
+/// an `Iterable` result): its results are published as `R`, so they reach
+/// `PayloadApplicationEvent<R>` listeners like Spring's (which uses the
+/// result's runtime class). The generator passes it as
+/// `EventListenerMethod(resultType:)`.
+///
+/// ```dart
+/// EventListenerMethod.of<Shipping, OrderPlaced>(
+///   'Shipping.onPlaced',
+///   (bean, event) => bean.onPlaced(event), // returns OrderShipped
+///   resultType: const EventResultType<OrderShipped>(),
+/// );
+/// ```
+final class EventResultType<R extends Object> {
+  /// The result type [R].
+  const EventResultType();
+
+  /// Publishes [result] through [publisher], as an [R] when it is one.
+  void publish(ApplicationEventPublisher publisher, Object result) =>
+      result is R
+      ? publisher.publishEvent<R>(result)
+      : publisher.publishEvent(result);
+}
 
 /// An `@EventListener` method of a bean of type [T], prepared by generated
 /// code (no reflection).
@@ -42,6 +67,7 @@ final class EventListenerMethod<T extends Object> {
     this._shouldHandle,
     this.order,
     this.async,
+    this.resultType,
   });
 
   /// A listener for events (or payloads) of type [E]; [condition] filters
@@ -52,10 +78,12 @@ final class EventListenerMethod<T extends Object> {
     int? order,
     bool Function(E event)? condition,
     Async? async,
+    EventResultType<Object>? resultType,
   }) => EventListenerMethod<T>(
     id: id,
     order: order,
     async: async,
+    resultType: resultType,
     supports: (event) => unwrap<E>(event) != null,
     shouldHandle: condition == null
         ? null
@@ -85,10 +113,12 @@ final class EventListenerMethod<T extends Object> {
     int? order,
     bool Function(PayloadApplicationEvent<P> event)? condition,
     Async? async,
+    EventResultType<Object>? resultType,
   }) => EventListenerMethod<T>(
     id: id,
     order: order,
     async: async,
+    resultType: resultType,
     supports: (event) => _payloadEvent<P>(event) != null,
     shouldHandle: condition == null
         ? null
@@ -128,6 +158,7 @@ final class EventListenerMethod<T extends Object> {
     required this._invoke,
     this.order,
     this.async,
+    this.resultType,
     Function? condition,
   }) : _supports = ((event) => _matched(event, accepts) != null),
        // `condition` is untyped (it comes from the annotation), so it is
@@ -188,6 +219,10 @@ final class EventListenerMethod<T extends Object> {
   /// The method's `@Async` (`null` when it runs on the publishing call);
   /// see [Async].
   final Async? async;
+
+  /// The declared result type; results are published as it (as their
+  /// static type `Object` without it).
+  final EventResultType<Object>? resultType;
 
   final bool Function(Object event) _supports;
   final bool Function(Object event)? _shouldHandle;

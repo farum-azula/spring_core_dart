@@ -1,10 +1,11 @@
 # Fix plan
 
 Open differences from Spring found in reviews: first against Spring
-Framework 6.2 / Spring Boot 3, then twice (October 2026) against Spring
-Framework 7.0, Spring Boot 4.0 and Spring Cloud OpenFeign 5.0 across every
-package. The items below are from the second of those (the pre-0.2.0
-review); bugs were confirmed with probe programs.
+Framework 6.2 / Spring Boot 3, then three times (October 2026) against
+Spring Framework 7.0, Spring Boot 4.0, Spring Cloud OpenFeign 5.0 and
+Jackson 3 across every package. The items below are from the third of
+those (the second pre-0.2.0 review); bugs were confirmed with probe
+programs.
 Items marked **High** are the ones a Spring developer trips over first.
 Before 1.0 renames are made outright, with no deprecated aliases.
 
@@ -66,35 +67,35 @@ proxy pruning across modules, null / function / record / generic beans,
 `args` / `within` by runtime and declaring type, `ProxyFactory`, the
 remaining pointcut designators and `@Lookup` methods.
 
-## How close to Spring (pre-0.2.0 review, October 2026)
+## How close to Spring (second pre-0.2.0 review, October 2026)
 
 Per area: **API** — public names and signatures that match Spring
 (a change forced by Dart counts half); **behaviour** — 15–50 behaviours
 per area a Spring developer relies on, checked in the code and with probe
 programs; **coverage** — share of the commonly used features of the Spring
-counterpart. Estimates, ±5–10 points; the first review's numbers in
+counterpart. Estimates, ±5–10 points; the previous review's numbers in
 brackets.
 
 | Area | API | Behaviour | Coverage |
 |---|---|---|---|
-| Container (`beans`) | 88% (86) | 80% (65) | 72% (69) |
-| Context, events, lifecycle | 88% (87) | 75% (65) | 69% (66) |
-| Configuration, resources (`core`) | 92% (91) | 84% (63) | 71% (67) |
-| SpEL | 72% (64) | 85% (67) | 82% (77) |
-| Validation, binding | 86% (84) | 79% (62) | 61% (58) |
-| JSON (vs Jackson) | 72% (70) | 75% (67) | 47% (44) |
-| AOP | 82% (80) | 74% (66) | 71% (66) |
-| Annotations, generator | 92% (91) | 83% (77) | 76% (73) |
-| `spring_boot_dart` | 70% (67) | 76% (60) | 60% (56) |
-| `spring_web_dart` | 74% (73) | 72% (55) | 47% (45) |
-| Feign starter | 78% (77) | 74% (60) | 55% (52) |
-| WebSocket starter (declarative by design) | 64% (62) | 72% (64) | 58% (56) |
-| Logging starter | 72% (70) | 74% (66) | 52% (50) |
-| Scheduling starter | 73% (71) | 80% (78) | 58% (55) |
-| Cache starter | 90% (90) | 85% (81) | 65% (63) |
-| Test starter | 74% (73) | 76% (70) | 60% (58) |
-| **All, weighted by code size** | **84%** (81) | **78%** (67) | **67%** (64) |
+| Container (`beans`) | 88% (88) | 87% (80) | 73% (72) |
+| Context, events, lifecycle | 88% (88) | 85% (75) | 70% (69) |
+| Configuration, resources (`core`) | 92% (92) | 87% (84) | 72% (71) |
+| SpEL | 73% (72) | 85% (85) | 82% (82) |
+| Validation, binding | 86% (86) | 82% (79) | 62% (61) |
+| JSON (vs Jackson) | 73% (72) | 78% (75) | 49% (47) |
+| AOP | 82% (82) | 74% (74) | 72% (71) |
+| Annotations, generator | 92% (92) | 84% (83) | 77% (76) |
+| `spring_boot_dart` | 72% (70) | 84% (76) | 62% (60) |
+| `spring_web_dart` | 78% (74) | 77% (72) | 50% (47) |
+| Feign starter | 80% (78) | 78% (74) | 57% (55) |
+| WebSocket starter (declarative by design) | 64% (64) | 74% (72) | 58% (58) |
+| Logging starter | 72% (72) | 75% (74) | 52% (52) |
+| Scheduling starter | 74% (73) | 84% (80) | 59% (58) |
+| Cache starter | 90% (90) | 85% (85) | 65% (65) |
+| Test starter | 74% (74) | 76% (76) | 60% (60) |
+| **All, weighted by code size** | **85%** (84) | **82%** (78) | **68%** (67) |
 
 ## Open
 
-Nothing open.
+Nothing open: the next step is the next full review.

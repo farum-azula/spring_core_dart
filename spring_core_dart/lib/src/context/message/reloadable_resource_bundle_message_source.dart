@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_core_dart/src/context/message/abstract_message_source.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
@@ -66,6 +68,10 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
   /// Loads the bundle files.
   final ResourceLoader resourceLoader;
 
+  /// The charset the files are read in (Spring's `setDefaultEncoding`;
+  /// Boot's `spring.messages.encoding`); UTF-8 by default.
+  Encoding defaultEncoding = utf8;
+
   /// How long loaded files are cached, like Spring's `setCacheSeconds`:
   /// `-1` (the default) caches forever; `0` checks the files on every
   /// lookup; a positive value checks them at most every [cacheSeconds]
@@ -122,7 +128,9 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
         final resource = resourceLoader.getResource(path);
         _cache[path] = _Bundle(
           resource.exists()
-              ? PropertiesParser.parse(await resource.readAsString())
+              ? PropertiesParser.parse(
+                  await resource.readAsString(encoding: defaultEncoding),
+                )
               : const {},
           _lastModified(resource),
         );
@@ -192,7 +200,9 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
     if (!resource.exists()) {
       properties = const {};
     } else if (resource.supportsSyncRead) {
-      properties = PropertiesParser.parse(resource.readAsStringSync());
+      properties = PropertiesParser.parse(
+        resource.readAsStringSync(encoding: defaultEncoding),
+      );
     } else {
       throw StateError(
         '${resource.description} can only be read asynchronously; call '

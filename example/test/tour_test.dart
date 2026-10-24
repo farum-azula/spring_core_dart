@@ -196,6 +196,9 @@ void main() {
     expectLine('slogans (advisor bean): READ MORE BOOKS');
     expectLine('proxy target: DefaultPricingService');
     expectLine('subclass proxy: true, reserved 1');
+    expectLine('subclass proxy self-calls: timed calls: 0');
+    expectLine('subclass proxy @DeclareParents: stock counter');
+    expectLine('@Bean aspect ran: true');
     expectLine('self-invocation through this: timed calls: 0');
     expectLine('self-invocation through @Lazy self: timed calls: 2');
     const order = [

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/file_appender.dart';
@@ -135,6 +138,9 @@ final class LoggingSystem {
   /// Makes this the `SpringLog.handler` (the previous one is restored by
   /// [uninstall]).
   void install() {
+    if (_uninstallPending) {
+      uninstall();
+    }
     if (isInstalled) {
       return;
     }
@@ -145,6 +151,7 @@ final class LoggingSystem {
   /// Restores the `SpringLog.handler` that was active before [install] and
   /// closes the log file.
   void uninstall() {
+    _uninstallPending = false;
     _closeFile();
     final previous = _previous;
     if (previous == null) {
@@ -154,6 +161,23 @@ final class LoggingSystem {
       SpringLog.handler = previous;
     }
     _previous = null;
+  }
+
+  bool _uninstallPending = false;
+
+  // A failed start: like Logback after Spring Boot's cleanUp, records still
+  // reach the appenders (and the file) while the failure is reported;
+  // uninstalled once the current work is done, or by the next install.
+  void _uninstallAfterFailure() {
+    if (!isInstalled && _file == null) {
+      return;
+    }
+    _uninstallPending = true;
+    Timer.run(() {
+      if (_uninstallPending) {
+        uninstall();
+      }
+    });
   }
 
   void _dispatch(SpringLogRecord record) {
@@ -172,18 +196,28 @@ final class LoggingSystem {
   /// `logging.pattern.console` or Spring Boot's pattern
   /// ([LogPattern.defaultConsolePattern]).
   void configure(PropertyResolver environment) {
+    if (_uninstallPending) {
+      uninstall();
+    }
+    // Validated like Boot's binding, though only its condition reads it.
+    _flag(environment, 'logging.enabled');
     if (!_rootLevelConfigured(environment)) {
       SpringLog.level = SpringLogLevel.info;
     }
+    final consolePattern =
+        _rawProperty(environment, 'logging.pattern.console') ??
+        LogPattern.defaultConsolePattern;
+    // An empty pattern turns the console off, as Logback's appender does
+    // not start without one.
     consoleEnabled =
-        environment.getProperty('logging.console.enabled') != 'false';
-    bufferEnabled =
-        environment.getProperty('logging.buffer.enabled') != 'false';
+        _flag(environment, 'logging.console.enabled') &&
+        consolePattern.trim().isNotEmpty;
+    bufferEnabled = _flag(environment, 'logging.buffer.enabled');
     final variables = _variables(environment);
     String? lookup(String name) => environment.getProperty(name);
+    _charset(environment, 'logging.charset.console');
     console.pattern = LogPattern(
-      _rawProperty(environment, 'logging.pattern.console') ??
-          LogPattern.defaultConsolePattern,
+      consolePattern.trim().isEmpty ? '%m' : consolePattern,
       variables: variables,
       lookup: lookup,
       ansi: _ansi(environment),
@@ -219,7 +253,7 @@ final class LoggingSystem {
   static Map<String, String> _variables(PropertyResolver environment) {
     String? raw(String key) => _blankToNull(_rawProperty(environment, key));
     String? value(String key) => _blankToNull(environment.getProperty(key));
-    bool include(String key) => environment.getProperty(key) != 'false';
+    bool include(String key) => _flag(environment, key);
     return {
       'LOG_LEVEL_PATTERN': ?raw('logging.pattern.level'),
       'LOG_DATEFORMAT_PATTERN': ?raw('logging.pattern.dateformat'),
@@ -302,14 +336,23 @@ final class LoggingSystem {
     }
     final path = _resolve(name ?? '${_trimSlash(directory!)}/spring.log');
     const policy = 'logging.logback.rollingpolicy';
+    if (environment.containsProperty('$policy.file-name-pattern')) {
+      _log.warning(
+        '$policy.file-name-pattern is not supported (ignored): files roll '
+        'over by size only, to <file>.1, <file>.2, ...',
+      );
+    }
+    final filePattern =
+        _rawProperty(environment, 'logging.pattern.file') ??
+        LogPattern.defaultFilePattern;
+    // An empty pattern: no file, as Logback's appender does not start.
+    if (filePattern.trim().isEmpty) {
+      return;
+    }
     _file = FileAppender(
       path,
-      pattern: LogPattern(
-        _rawProperty(environment, 'logging.pattern.file') ??
-            LogPattern.defaultFilePattern,
-        variables: variables,
-        lookup: lookup,
-      ),
+      pattern: LogPattern(filePattern, variables: variables, lookup: lookup),
+      encoding: _charset(environment, 'logging.charset.file') ?? utf8,
       maxFileSize: parseDataSize(
         environment.getProperty('$policy.max-file-size') ?? '10MB',
       ),
@@ -317,8 +360,11 @@ final class LoggingSystem {
       totalSizeCap: parseDataSize(
         environment.getProperty('$policy.total-size-cap') ?? '0B',
       ),
-      cleanHistoryOnStart:
-          environment.getProperty('$policy.clean-history-on-start') == 'true',
+      cleanHistoryOnStart: _flag(
+        environment,
+        '$policy.clean-history-on-start',
+        defaultValue: false,
+      ),
       threshold: _threshold(environment, 'logging.threshold.file'),
     );
   }
@@ -362,8 +408,63 @@ final class LoggingSystem {
     if (value == null || value.trim().isEmpty) {
       return SpringLogLevel.trace;
     }
+    // `false` is YAML's `off`, like Boot's lenient enum conversion.
+    if (value.trim().toLowerCase() == 'false') {
+      return SpringLogLevel.off;
+    }
     return parseSpringLogLevel(value) ??
         (throw FormatException('$key: unknown level', value));
+  }
+
+  // A boolean property like Boot's binding: true / false (also on / off,
+  // yes / no, 1 / 0) in any case; anything else fails the start.
+  static bool _flag(
+    PropertyResolver environment,
+    String key, {
+    bool defaultValue = true,
+  }) {
+    final value = environment.getProperty(key);
+    return switch (value?.trim().toLowerCase()) {
+      null || '' => defaultValue,
+      'true' || 'on' || 'yes' || '1' => true,
+      'false' || 'off' || 'no' || '0' => false,
+      _ => throw FormatException(
+        '$key: failed to convert to boolean (was "$value")',
+        value,
+      ),
+    };
+  }
+
+  // `logging.charset.*`: an encoding Dart knows (UTF-8, ISO-8859-1,
+  // US-ASCII and their aliases), or a failed start.
+  static Encoding? _charset(PropertyResolver environment, String key) {
+    final value = _blankToNull(environment.getProperty(key));
+    if (value == null) {
+      return null;
+    }
+    return Encoding.getByName(value.toLowerCase()) ??
+        (throw FormatException(
+          '$key: unsupported charset (use UTF-8, ISO-8859-1 or US-ASCII)',
+          value,
+        ));
+  }
+
+  // Records logged before this system took over (Spring Boot's
+  // DeferredLogs): to every appender but the console, as the handler of
+  // the time has shown them already.
+  void _replay(List<SpringLogRecord> records) {
+    for (final record in records) {
+      for (final appender in appenders) {
+        if (identical(appender, console)) {
+          continue;
+        }
+        try {
+          appender.append(record);
+        } catch (_) {
+          // As in _dispatch.
+        }
+      }
+    }
   }
 
   /// The name of the root logger, like Spring Boot's
@@ -418,9 +519,15 @@ final class LoggingSystem {
 
 /// Configures and installs the [LoggingSystem] as soon as the context
 /// starts processing (a `BeanFactoryPostProcessor`, so before application
-/// beans exist) and uninstalls it when the context closes.
+/// beans exist) and uninstalls it when the context closes. When the start
+/// fails it stays installed until the failure has been logged (Spring
+/// Boot's report reaches the log file too).
 final class LoggingSystemInitializer
-    implements BeanFactoryPostProcessor, PriorityOrdered, DisposableBean {
+    implements
+        BeanFactoryPostProcessor,
+        PriorityOrdered,
+        DisposableBean,
+        ApplicationContextAware {
   /// An initializer reading [environment].
   LoggingSystemInitializer(this.environment, [LoggingSystem? system])
     : system = system ?? LoggingSystem.instance;
@@ -434,13 +541,49 @@ final class LoggingSystemInitializer
   @override
   int get order => Ordered.highestPrecedence;
 
+  ApplicationContext? _context;
+  bool _closing = false;
+
+  @override
+  void setApplicationContext(ApplicationContext applicationContext) =>
+      _context = applicationContext;
+
   @override
   void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
     system
       ..configure(environment)
       ..install();
+    if (beanFactory.containsBean(DeferredLogs.beanName)) {
+      final deferred = beanFactory.getBeanByName(DeferredLogs.beanName);
+      if (deferred is DeferredLogs) {
+        system._replay(deferred.switchOver());
+      }
+    }
+    if (_context case final ConfigurableApplicationContext context) {
+      context.addApplicationListener(_ClosedListener(this));
+    }
   }
 
   @override
-  void destroy() => system.uninstall();
+  void destroy() {
+    // Destroyed without ContextClosedEvent: the refresh failed, and Spring
+    // Boot is about to report it.
+    if (_context != null && !_closing) {
+      system._uninstallAfterFailure();
+    } else {
+      system.uninstall();
+    }
+  }
+}
+
+final class _ClosedListener implements GenericApplicationListener {
+  _ClosedListener(this.initializer);
+
+  final LoggingSystemInitializer initializer;
+
+  @override
+  bool supportsEvent(Object event) => event is ContextClosedEvent;
+
+  @override
+  void onApplicationEvent(Object event) => initializer._closing = true;
 }

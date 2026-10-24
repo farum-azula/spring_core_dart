@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:spring_core_dart/src/core/env/platform_environment_stub.dart'
+    if (dart.library.io) 'package:spring_core_dart/src/core/env/platform_environment_io.dart';
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/java_format.dart';
@@ -358,8 +360,12 @@ final class VarargsFunction {
 /// onto Dart types: `Integer`, `Long`, `Short`, `Byte` (`int`), `Double`,
 /// `Float` (`double`), `Number` (`num`), `Boolean` (`bool`), `long`,
 /// `short`, `byte`, `float`, `boolean`, `ArrayList`, `HashMap`,
-/// `LinkedHashMap`, `HashSet`, `LinkedHashSet`. Names may carry an import
-/// prefix (`java.lang.Integer`, `java.util.List`).
+/// `LinkedHashMap`, `HashSet`, `LinkedHashSet`, `StringBuilder` and
+/// `StringBuffer` (Dart's `StringBuffer`), plus the statics of `Objects`
+/// (`isNull`, `requireNonNull`, `hash`, ...) and `System`
+/// (`currentTimeMillis`, `nanoTime`, `getenv`; Dart has no system
+/// properties, so `getProperty` returns its default). Names may carry an
+/// import prefix (`java.lang.Integer`, `java.util.List`).
 ///
 /// ```dart
 /// final context = StandardEvaluationContext()
@@ -683,6 +689,13 @@ class StandardTypeLocator implements TypeLocator {
     _javaBoolean('boolean'),
     _javaCharacter('Character'),
     _javaCharacter('char'),
+    _javaObjects(),
+    _javaSystem(),
+    // java.lang.StringBuilder / StringBuffer: a Dart StringBuffer with
+    // Java's methods (`append` returns the builder; see
+    // BuiltinMethodResolver).
+    _stringBuilder('StringBuilder'),
+    _stringBuilder('StringBuffer'),
     // java.lang.Math: real functions return doubles, like Java.
     SpelType(
       'Math',
@@ -724,6 +737,78 @@ class StandardTypeLocator implements TypeLocator {
       },
     ),
   ];
+
+  static SpelType _stringBuilder(String name) => SpelType.of<StringBuffer>(
+    name,
+    // `new StringBuilder()`, `new StringBuilder('abc')`, and Java's
+    // capacity `new StringBuilder(16)` (empty).
+    constructors: {
+      '': ([Object? initial]) => initial == null || initial is int
+          ? StringBuffer()
+          : StringBuffer('$initial'),
+    },
+  );
+
+  // java.util.Objects.
+  static SpelType _javaObjects() => SpelType(
+    'Objects',
+    isInstance: (_) => false,
+    staticMethods: {
+      'equals': (Object? a, Object? b) => a == b,
+      'deepEquals': (Object? a, Object? b) => _deepEquals(a, b),
+      'hashCode': (Object? value) => value?.hashCode ?? 0,
+      'hash': VarargsFunction(Object.hashAll),
+      'toString': (Object? value, [String? nullDefault]) =>
+          value == null ? nullDefault ?? 'null' : '$value',
+      'isNull': (Object? value) => value == null,
+      'nonNull': (Object? value) => value != null,
+      'requireNonNull': (Object? value, [String? message]) =>
+          value ?? (throw ArgumentError(message ?? 'null')),
+      'requireNonNullElse': (Object? value, Object? fallback) =>
+          value ??
+          fallback ??
+          (throw ArgumentError('defaultObj must not be null')),
+      'checkIndex': (int index, int length) {
+        RangeError.checkValidIndex(index, null, 'index', length);
+        return index;
+      },
+    },
+  );
+
+  static bool _deepEquals(Object? a, Object? b) {
+    if (a is List && b is List) {
+      if (a.length != b.length) {
+        return false;
+      }
+      for (var i = 0; i < a.length; i++) {
+        if (!_deepEquals(a[i], b[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return a == b;
+  }
+
+  // java.lang.System: the clock and environment variables (none on the
+  // web). Dart has no system properties: getProperty gives the default.
+  static SpelType _javaSystem() => SpelType(
+    'System',
+    isInstance: (_) => false,
+    staticMethods: {
+      'currentTimeMillis': () => DateTime.now().millisecondsSinceEpoch,
+      'nanoTime': () => DateTime.now().microsecondsSinceEpoch * 1000,
+      'getenv': ([String? name]) {
+        final environment = platformEnvironment();
+        return name == null
+            ? Map<String, String>.of(environment)
+            : environment[name];
+      },
+      'getProperty': (String name, [String? fallback]) => fallback,
+      'lineSeparator': () => '\n',
+      'identityHashCode': (Object? value) => identityHashCode(value),
+    },
+  );
 
   // Java's Math.rint: the closest integral double, ties to the even one
   // (Dart's roundToDouble rounds ties away from zero); the sign of a zero

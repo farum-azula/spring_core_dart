@@ -235,6 +235,10 @@ abstract interface class ConfigurableApplicationContext
   /// Removes a listener added with [addApplicationListener].
   void removeApplicationListener(GenericApplicationListener listener);
 
+  /// The listeners added with [addApplicationListener] (Spring's
+  /// `getApplicationListeners`); listener beans are not included.
+  List<GenericApplicationListener> get applicationListeners;
+
   /// Adds a resolver for a custom location scheme (for example `asset:`),
   /// like Spring's `DefaultResourceLoader.addProtocolResolver`.
   void addProtocolResolver(ProtocolResolver resolver);
@@ -629,6 +633,10 @@ class AnnotationConfigApplicationContext
     }
     _listeners.add(listener);
   }
+
+  @override
+  List<GenericApplicationListener> get applicationListeners =>
+      List.unmodifiable(_listeners);
 
   @override
   void removeApplicationListener(GenericApplicationListener listener) {
@@ -1858,19 +1866,24 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
     );
   }
 
-  // Non-null results are published, an Iterable element by element.
+  // Non-null results are published, an Iterable element by element, as
+  // the method's declared result type when known.
   void _publishResult(Object? result) {
     if (result == null) {
       return;
     }
+    void publish(Object item) => switch (_method.resultType) {
+      final type? => type.publish(_context, item),
+      null => _context.publishEvent(item),
+    };
     if (result is Iterable<Object?>) {
       for (final item in result) {
         if (item != null) {
-          _context.publishEvent(item);
+          publish(item);
         }
       }
     } else {
-      _context.publishEvent(result);
+      publish(result);
     }
   }
 

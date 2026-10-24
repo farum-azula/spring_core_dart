@@ -3,6 +3,7 @@ import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
 /// Loads resources by location, like Spring's `ResourceLoader`.
 ///
@@ -159,8 +160,9 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 /// `package:` URIs as the package's files (through the package config of
 /// the running program; not on the web or in AOT executables). Plain paths
 /// (`app.properties`, `/config/x.txt`) are classpath resources too, like
-/// Spring's `getResourceByPath`. Other `scheme:` locations resolve to a
-/// resource that does not exist.
+/// Spring's `getResourceByPath`. `http:` / `https:` locations are
+/// [UrlResource]s. Other `scheme:` locations resolve to a resource that
+/// does not exist.
 ///
 /// Platforms with their own asset system plug in with a
 /// [ProtocolResolver], which comes first: a Flutter app can resolve
@@ -173,7 +175,8 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 ///   ..addProtocolResolver(InMemoryProtocolResolver('memory:', {}));
 /// loader.getResource('config/app.properties'); // lib/resources/config/...
 /// loader.getResource('file:///etc/app.properties'); // FileSystemResource
-/// loader.getResource('https://example.com/x').exists(); // false
+/// loader.getResource('https://example.com/x'); // UrlResource
+/// loader.getResource('ftp://example.com/x').exists(); // false
 /// ```
 ///
 /// Spring (Java):
@@ -211,6 +214,9 @@ class DefaultResourceLoader implements ResourceLoader {
     }
     if (location.startsWith(ResourceLoader.filePrefix)) {
       return FileSystemResource.fromFileUrl(location);
+    }
+    if (location.startsWith('http:') || location.startsWith('https:')) {
+      return UrlResource(Uri.parse(location));
     }
     if (location.startsWith(packagePrefix)) {
       final path = FileAccess.resolvePackageUri(location);

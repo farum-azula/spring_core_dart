@@ -1,5 +1,25 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
+/// Spring's bean name of a class, as `ApplicationContextRunner.withBean`
+/// and [BeanOverride] name a new bean of [type]: lower camel case
+/// (`HttpClient` → `httpClient`), a name starting with two capitals stays
+/// (`URLService`, `Introspector.decapitalize`), type arguments are left
+/// out (`Cache<String>` → `cache`).
+String defaultBeanName(String type) {
+  final generic = type.indexOf('<');
+  final simple = generic < 0 ? type : type.substring(0, generic);
+  if (simple.isEmpty) {
+    return 'bean';
+  }
+  if (simple.length > 1 &&
+      simple[1].toUpperCase() == simple[1] &&
+      simple[1].toLowerCase() != simple[1] &&
+      simple[0].toUpperCase() == simple[0]) {
+    return simple;
+  }
+  return simple[0].toLowerCase() + simple.substring(1);
+}
+
 /// Replaces the bean of type [T] with [instance] in a test context, like
 /// Spring's `@TestBean` / `@MockitoBean` (bean overriding).
 ///
@@ -31,7 +51,8 @@ final class BeanOverride<T extends Object> {
   final T instance;
 
   /// The bean to replace when several beans of [T] exist; also the name of
-  /// a newly registered bean (default: the type name, lower camel case).
+  /// a newly registered bean (default: [defaultBeanName] of [T], the rule
+  /// of `ApplicationContextRunner.withBean`).
   final String? name;
 
   /// The overridden type.
@@ -55,7 +76,7 @@ final class BeanOverride<T extends Object> {
         'Pass name: to choose one.',
       );
     } else {
-      target = candidates.isEmpty ? _defaultName : candidates.single;
+      target = candidates.isEmpty ? defaultBeanName('$T') : candidates.single;
     }
     final original = registry.containsBeanDefinition(target)
         ? registry.getBeanDefinition(target)
@@ -78,13 +99,6 @@ final class BeanOverride<T extends Object> {
         source: 'BeanOverride<$T>',
       ),
     );
-  }
-
-  String get _defaultName {
-    final type = '$T';
-    return type.isEmpty
-        ? 'beanOverride'
-        : type[0].toLowerCase() + type.substring(1);
   }
 
   @override

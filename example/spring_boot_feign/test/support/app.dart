@@ -10,8 +10,10 @@ import '../../bin/main.spring.dart';
 ApplicationContextRunner appContext() {
   final application = springApplication;
   var runner = const ApplicationContextRunner().withInitializer(
-    (context) =>
-        ConfigDataEnvironment(context.environment).processAndApplySync(),
+    ApplicationContextInitializer.of(
+      (context) =>
+          ConfigDataEnvironment(context.environment).processAndApplySync(),
+    ),
   );
   for (final module in application.modules) {
     runner = runner.withUserConfiguration(module);

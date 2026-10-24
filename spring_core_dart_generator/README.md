@@ -72,11 +72,13 @@ Beans without matching advice are never wrapped at runtime; the options only
 control generated code size. Every advice and `@Pointcut` expression is
 parsed with the runtime's parser at build time: a syntax error fails the build
 with the aspect, the advice and the character position. Pruning reads the
-aspects of the nested `@ComponentScan` modules too; nothing is pruned when no
-module has advice, a module declares an advisor bean or an
-auto-configuration declares aspects, and a bean whose class or members carry
-an annotation from outside `spring_core_dart` (or `@Validated`) keeps its
-proxy, because starters' advisors match by annotation.
+aspects of the nested `@ComponentScan` modules too (`@Aspect` classes and
+aspects returned by `@Bean` methods); nothing is pruned when no module has
+advice, a module declares an advisor bean, or an auto-configuration
+declares aspects or an advisor bean whose pointcut is not an
+`AnnotationPointcut`, and a bean whose class or members carry an annotation
+from outside `spring_core_dart` (or `@Validated`) keeps its proxy, because
+those starters' advisors match by annotation.
 Public fields are proxied as implicit getters and setters.
 
 `@ComponentScan` itself takes Spring's scan options, evaluated at build

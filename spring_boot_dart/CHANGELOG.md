@@ -1,5 +1,18 @@
 ## Unreleased
 
+- validation auto-configuration: `defaultValidator` backs off only for a `BeanValidator` bean (a plain form `Validator` no longer removes it) and method validation uses the unique `BeanValidator` (two plain `Validator` beans no longer fail the start)
+- breaking: `@ConditionalOnBean` / `@ConditionalOnMissingBean` without arguments check the `@Bean` method's return type; `.where(types:, names:, annotations:, search:)` (and `ignored:` for the missing one), `.named(..., search:)`; new `SearchStrategy`; the auto-configured `messageSource` looks at the current context only (`SearchStrategy.current`), like Boot
+- `@ConditionalOnCloudPlatform(CloudPlatform.x)`
+- `@ConfigurationProperties(ignoreInvalidFields:, ignoreUnknownFields:)`
+- binding: a nullable nested value object none of whose own keys is set stays `null` (was "no value bound" for its required parameters)
+- breaking: `ApplicationContextInitializer` is a class (`initialize(context)`, or `ApplicationContextInitializer.of(...)`), sorted by `Ordered`; `LazyInitializationExcludeFilter` beans; `SPRING_APPLICATION_JSON` / `spring.application.json` (`SpringApplicationJsonEnvironmentPostProcessor`)
+- `spring.messages.encoding`, `always-use-message-format`, `common-messages`; `runAsync` prints a `banner.txt` that is readable asynchronously only (a Flutter asset)
+- an exit code generator that throws, followed by one returning 0, gives 1 (was 0); `ApplicationFailedEvent` reaches the listeners added with `context.addApplicationListener` when the context did not start
+- `selectAutoConfigurations` is exported (Boot's exclusions and `AutoConfigurationSorter` order, used by `ApplicationContextRunner`).
+- A failed start is logged like Spring Boot: the failure analysis at error level under `spring_boot_dart.diagnostics.LoggingFailureAnalysisReporter`, any other failure as `Application run failed` with the error and stack trace (refresh failures without an analysis were not reported at all). Breaking: `SpringApplication(out:)` is optional and, when given, receives the reports instead of the log.
+- `DeferredLogs`: what is logged while an application starts is handed to the logging system (bean `springBootDeferredLogs`), which replays it.
+- `logging.level.<logger>: false` (YAML's `off`) is OFF, like Boot's lenient enum conversion.
+- Jackson: `spring.jackson.deserialization.fail-on-null-for-primitives` (`true`, Jackson 3's default)
 - Jackson: `spring.jackson.datatype.datetime.write-durations-as-timestamps` / `write-date-timestamps-as-nanoseconds` / `read-date-timestamps-as-nanoseconds`, `deserialization.accept-float-as-int`, `mapper.default-view-inclusion`; `default-property-inclusion` accepts `non_absent` and `non_default`; breaking: date timestamps are seconds with the fraction (Jackson 3), durations stay ISO-8601 unless `write-durations-as-timestamps`
 - `@ConditionalOnBean` / `@ConditionalOnMissingBean` documented and tested to ignore `autowireCandidate: false` and `defaultCandidate: false` beans, like Boot 3.4+
 - the shutdown hook (`registerShutdownHook: true` / `spring.main.register-shutdown-hook`) delegates to the core's `context.registerShutdownHook()`; behaviour unchanged (off by default)

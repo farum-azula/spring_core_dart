@@ -50,11 +50,12 @@ logging.threshold.buffer=debug
 logging.file.name=logs/shop.log          # a log file (or logging.file.path=logs → logs/spring.log)
 logging.pattern.file=%d %5p [%logger] %m%X%n%ex   # default: Boot's
 logging.threshold.file=info
+logging.charset.file=UTF-8               # also ISO-8859-1, US-ASCII
 logging.logback.rollingpolicy.max-file-size=10MB  # roll over into shop.log.1, .2, ...
 logging.logback.rollingpolicy.max-history=7       # rolled-over files kept
 logging.logback.rollingpolicy.total-size-cap=0B   # their total size; 0B: no limit
 logging.logback.rollingpolicy.clean-history-on-start=false
-logging.enabled=false                    # turn the starter off
+logging.enabled=false                    # turn the starter off (on/off values: true / false in any case)
 ```
 
 ## Patterns
@@ -75,6 +76,11 @@ Logback's `PatternLayout` syntax with Spring Boot's converters
 | `%nopex` | no error output |
 | `%clr(...){color}` | colours (Boot): `faint`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `black`, `white`, `bright_*`; none: by level |
 | `%esb(...){VAR}` | `[value] ` of its content or a variable, nothing when empty (Boot) |
+| `%red(...)`, `%boldRed(...)`, `%gray(...)`, ..., `%highlight(...)` | Logback's colours, always ANSI: `black red green yellow blue magenta cyan white gray`, `bold...`; `%highlight` by level |
+| `%replace(...){regex, replacement}` | its content with the matches replaced (`$1` for groups) |
+| `%kvp{DOUBLE\|SINGLE\|NONE}` | the fields as `key="value"` pairs |
+| `%prefix(...)` | each conversion inside as `name=value` (`level=INFO`) |
+| `%property{key}` | a variable or property (`null` when there is none) |
 | `%(...)` | groups content for a format modifier |
 | `%r`, `%relative` | milliseconds since logging started |
 | `%seq` | record sequence number |
@@ -199,14 +205,34 @@ LoggingSystem.instance
   (`%m%n%wEx`), with the record's fields (`%X`) after the message.
 - `%thread` is the isolate name; `%X` prints ` {k=v, ...}` (with a leading
   space, nothing without fields) instead of `k=v, k=v`.
-- Not supported: caller data (`%C`, `%M`, `%L`, `%F`, `%caller`),
-  `%marker`, `%property`, `%replace`, `%contextName`, Logback's colour
-  words (`%red`, `%highlight`, ...), `%d` time zones other than UTC (Dart
-  has no time zone database), `logback.xml` / `logback-spring.xml`.
+- Caller data is impossible: a Dart record does not know the class,
+  method, line or file that logged it (`%C`, `%M`, `%L`, `%F`, `%caller`
+  stop the start as unknown words).
+- Not supported: `%marker`, `%contextName`, `%d` time zones other than UTC
+  (Dart has no time zone database), `logback.xml` / `logback-spring.xml`.
 - `%clr` colours are on when `spring.output.ansi.enabled` says so; `detect`
   means a terminal on standard output (never on the web or in a file).
-- Rolling is by size into numbered files (`shop.log.1`, `.2`, ...), not
-  `logging.logback.rollingpolicy.file-name-pattern` with dates;
-  `max-history` counts files, not days; archives are not compressed.
+  Logback's colour words (`%red(...)`, `%boldRed(...)`, `%highlight(...)`)
+  always write ANSI codes, as Logback does.
+- `%kvp` prints the record's fields (Dart has no SLF4J key-value pairs);
+  `%prefix` names conversions by Logback's long names (`level=`,
+  `logger=`, `%X{key}` as `key=`); `%property` reads the pattern
+  variables, then the environment.
+- Rolling is by size only, into numbered files (`shop.log.1`, `.2`, ...):
+  `logging.logback.rollingpolicy.file-name-pattern` (dates, `%i`, `.gz`)
+  is ignored with a warning; `max-history` counts files, not days;
+  archives are not compressed.
+- `logging.charset.file` takes the encodings Dart knows (UTF-8,
+  ISO-8859-1, US-ASCII); `logging.charset.console` is only checked: the
+  console is `print`, which writes text, not bytes.
+- An empty `logging.pattern.console=` (or `logging.pattern.file=`) turns
+  that output off, as Logback's appender does not start without a
+  pattern (Logback also reports a status error).
+- Lines logged while the application starts, before the logging system
+  is set up during the refresh, are replayed into the file, the buffer and
+  added appenders (Spring Boot's `DeferredLogs`); the console showed them
+  already through the `SpringLog.handler` of the time, in its format.
+- A failed start keeps the logging system installed until the failure
+  report is logged (so it reaches the file), then uninstalls it.
 - No structured logging (`logging.structured.*`), no `logging.config`,
-  no predefined `web` / `sql` logger groups, no `logging.charset.*`.
+  no predefined `web` / `sql` logger groups.

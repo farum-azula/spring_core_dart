@@ -42,18 +42,38 @@ final class ApplicationContextRunner {
   const ApplicationContextRunner._({
     this.userConfigurations = const [],
     this.autoConfigurations = const [],
+    this.autoConfigurationMetadata = const {},
     this.properties = const {},
     this.systemEnvironment = const {},
     this.initializers = const [],
     this.beans = const [],
     this.overrides = const [],
+    this.parent,
+    this.allowBeanDefinitionOverriding = false,
+    this.allowCircularReferences = false,
   });
 
   /// Application modules, registered before [autoConfigurations].
   final List<BeanModule> userConfigurations;
 
-  /// Auto-configuration modules under test.
+  /// Auto-configuration modules under test, registered in Spring Boot's
+  /// order (by name, `order`, then `before` / `after` of
+  /// [autoConfigurationMetadata]), like `AutoConfigurations.of(...)`.
   final List<BeanModule> autoConfigurations;
+
+  /// The `@AutoConfigurationModule` of each module of
+  /// [autoConfigurations] given to [withAutoConfiguration].
+  final Map<BeanModule, AutoConfigurationModule> autoConfigurationMetadata;
+
+  /// The parent of the contexts ([withParent]).
+  final ApplicationContext? parent;
+
+  /// Whether a bean definition may replace another of the same name
+  /// ([withAllowBeanDefinitionOverriding]; `false` like Boot's runner).
+  final bool allowBeanDefinitionOverriding;
+
+  /// [withAllowCircularReferences]: always `false` in a working run.
+  final bool allowCircularReferences;
 
   /// Properties (highest precedence).
   final Map<String, Object?> properties;
@@ -73,28 +93,76 @@ final class ApplicationContextRunner {
   ApplicationContextRunner _copy({
     List<BeanModule>? userConfigurations,
     List<BeanModule>? autoConfigurations,
+    Map<BeanModule, AutoConfigurationModule>? autoConfigurationMetadata,
     Map<String, Object?>? properties,
     Map<String, String>? systemEnvironment,
     List<ApplicationContextInitializer>? initializers,
     List<BeanDefinition<Object>>? beans,
     List<BeanOverride<Object>>? overrides,
+    (ApplicationContext?,)? parent,
+    bool? allowBeanDefinitionOverriding,
+    bool? allowCircularReferences,
   }) => ApplicationContextRunner._(
     userConfigurations: userConfigurations ?? this.userConfigurations,
     autoConfigurations: autoConfigurations ?? this.autoConfigurations,
+    autoConfigurationMetadata:
+        autoConfigurationMetadata ?? this.autoConfigurationMetadata,
     properties: properties ?? this.properties,
     systemEnvironment: systemEnvironment ?? this.systemEnvironment,
     initializers: initializers ?? this.initializers,
     beans: beans ?? this.beans,
     overrides: overrides ?? this.overrides,
+    parent: parent == null ? this.parent : parent.$1,
+    allowBeanDefinitionOverriding:
+        allowBeanDefinitionOverriding ?? this.allowBeanDefinitionOverriding,
+    allowCircularReferences:
+        allowCircularReferences ?? this.allowCircularReferences,
   );
 
   /// Adds an application module (`withUserConfiguration`).
   ApplicationContextRunner withUserConfiguration(BeanModule module) =>
       _copy(userConfigurations: [...userConfigurations, module]);
 
-  /// Adds an auto-configuration module (`withConfiguration(AutoConfigurations.of(...))`).
-  ApplicationContextRunner withAutoConfiguration(BeanModule module) =>
-      _copy(autoConfigurations: [...autoConfigurations, module]);
+  /// Adds an auto-configuration module
+  /// (`withConfiguration(AutoConfigurations.of(...))`) with the [metadata]
+  /// of its `@AutoConfigurationModule` annotation (the generator passes it
+  /// to `SpringApplication`; a runner needs it by hand). The modules are
+  /// registered in Boot's order: by name, then `order`, then `before` /
+  /// `after`, whatever order they were added in.
+  ///
+  /// ```dart
+  /// runner
+  ///     .withAutoConfiguration(webModule, const AutoConfigurationModule(
+  ///       after: ['jacksonModule'],
+  ///     ))
+  ///     .withAutoConfiguration(jacksonModule);
+  /// ```
+  ApplicationContextRunner withAutoConfiguration(
+    BeanModule module, [
+    AutoConfigurationModule? metadata,
+  ]) => _copy(
+    autoConfigurations: [...autoConfigurations, module],
+    autoConfigurationMetadata: {
+      ...autoConfigurationMetadata,
+      module: ?metadata,
+    },
+  );
+
+  /// Uses [parent] as the parent of every context the runner starts
+  /// (`withParent`): its beans can be injected, its environment is merged.
+  ApplicationContextRunner withParent(ApplicationContext parent) =>
+      _copy(parent: (parent,));
+
+  /// Whether a bean definition may replace another of the same name
+  /// (`withAllowBeanDefinitionOverriding`; off by default, like Boot).
+  ApplicationContextRunner withAllowBeanDefinitionOverriding(bool allow) =>
+      _copy(allowBeanDefinitionOverriding: allow);
+
+  /// Boot's `withAllowCircularReferences`: `false` is the default and the
+  /// only behaviour of `spring_core_dart`, which has no early references;
+  /// with `true` every run fails with an `UnsupportedError` saying so.
+  ApplicationContextRunner withAllowCircularReferences(bool allow) =>
+      _copy(allowCircularReferences: allow);
 
   /// Adds `key=value` or `key:value` properties (`withPropertyValues`),
   /// split at the first `=` or `:` like Boot's `TestPropertyValues`; name
@@ -129,7 +197,7 @@ final class ApplicationContextRunner {
       _copy(systemEnvironment: {...systemEnvironment, ...env});
 
   /// Registers an extra bean of [T] called [name] (default: the type name
-  /// in lower camel case), created by [supplier] in each context the
+  /// in lower camel case, see [defaultBeanName]), created by [supplier] in each context the
   /// runner starts, like Boot's `withBean(type, supplier)`: every run gets
   /// a new instance, never one a previous run destroyed.
   ///
@@ -157,7 +225,7 @@ final class ApplicationContextRunner {
     beans: [
       ...beans,
       BeanDefinition<T>(
-        name: name ?? _beanName('$T'),
+        name: name ?? defaultBeanName('$T'),
         types: [T],
         create: (_) => supplier(),
         // Unique: definitions of the same source are taken as one.
@@ -183,23 +251,6 @@ final class ApplicationContextRunner {
       BeanOverride<T>(instance, name: name),
     ],
   );
-
-  // Spring's bean name of a class: `HttpClient` → `httpClient`, while
-  // `URLService` stays (Introspector.decapitalize).
-  static String _beanName(String type) {
-    final generic = type.indexOf('<');
-    final simple = generic < 0 ? type : type.substring(0, generic);
-    if (simple.isEmpty) {
-      return 'bean';
-    }
-    if (simple.length > 1 &&
-        simple[1].toUpperCase() == simple[1] &&
-        simple[1].toLowerCase() != simple[1] &&
-        simple[0].toUpperCase() == simple[0]) {
-      return simple;
-    }
-    return simple[0].toLowerCase() + simple.substring(1);
-  }
 
   /// Adds an initializer (`withInitializer`).
   ApplicationContextRunner withInitializer(
@@ -231,7 +282,7 @@ final class ApplicationContextRunner {
   Future<R> runAsync<R>(
     FutureOr<R> Function(AssertableApplicationContext context) body,
   ) async {
-    final assertable = _start();
+    final assertable = await _startAsync();
     try {
       return await body(assertable);
     } finally {
@@ -240,6 +291,51 @@ final class ApplicationContextRunner {
   }
 
   AssertableApplicationContext _start() {
+    final context = _create();
+    Object? failure;
+    try {
+      _prepare(context);
+      context.refresh();
+    } catch (error) {
+      failure = error;
+      if (context.isActive) {
+        context.close();
+      }
+    }
+    return AssertableApplicationContext._(context, failure);
+  }
+
+  // Like [_start] with `refreshAsync()`: asynchronous init callbacks are
+  // awaited, a failed context is closed with `closeAsync()`.
+  Future<AssertableApplicationContext> _startAsync() async {
+    final context = _create();
+    Object? failure;
+    try {
+      _prepare(context);
+      await context.refreshAsync();
+    } catch (error) {
+      failure = error;
+      if (context.isActive) {
+        await context.closeAsync();
+      }
+    }
+    return AssertableApplicationContext._(context, failure);
+  }
+
+  void _prepare(AnnotationConfigApplicationContext context) {
+    if (allowCircularReferences) {
+      throw UnsupportedError(
+        'withAllowCircularReferences(true): circular references are always '
+        'an error in spring_core_dart (there are no early references); '
+        'break the cycle with ObjectProvider<T> or a lazy lookup',
+      );
+    }
+    for (final initializer in initializers) {
+      initializer.initialize(context);
+    }
+  }
+
+  AnnotationConfigApplicationContext _create() {
     final environment = StandardEnvironment(
       systemEnvironment: systemEnvironment,
     );
@@ -250,12 +346,23 @@ final class ApplicationContextRunner {
     }
     // Relaxed names, as in an application started by SpringApplication.
     ConfigurationPropertySources.attach(environment);
-    final context = AnnotationConfigApplicationContext([
-      // Like Boot: registered beans first, then the configurations.
-      if (beans.isNotEmpty) BeanModule('ApplicationContextRunner.beans', beans),
-      ...userConfigurations,
-      ...autoConfigurations,
-    ], environment: environment);
+    final context = AnnotationConfigApplicationContext(
+      [
+        // Like Boot: registered beans first, then the configurations.
+        if (beans.isNotEmpty)
+          BeanModule('ApplicationContextRunner.beans', beans),
+        ...userConfigurations,
+        ...selectAutoConfigurations(
+          autoConfigurations,
+          metadata: autoConfigurationMetadata,
+        ),
+      ],
+      environment: environment,
+      parent: parent,
+    );
+    if (context.beanFactory case final DefaultListableBeanFactory factory) {
+      factory.allowBeanDefinitionOverriding = allowBeanDefinitionOverriding;
+    }
     context.beanFactory.addBeanPostProcessor(
       ConfigurationPropertiesBinder(
         environment,
@@ -266,19 +373,7 @@ final class ApplicationContextRunner {
     if (overrides.isNotEmpty) {
       context.addBeanFactoryPostProcessor(BeanOverrideProcessor(overrides));
     }
-    Object? failure;
-    try {
-      for (final initializer in initializers) {
-        initializer(context);
-      }
-      context.refresh();
-    } catch (error) {
-      failure = error;
-      if (context.isActive) {
-        context.close();
-      }
-    }
-    return AssertableApplicationContext._(context, failure);
+    return context;
   }
 }
 

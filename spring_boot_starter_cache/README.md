@@ -80,6 +80,10 @@ class Books implements BookService {
 | `@Caching(cacheable: [...], put: [...], evict: [...])` | Several operations on one method. Repeating an annotation works too. |
 | `@CacheConfig(cacheNames: ['books'])` | On the class: default cache names, `keyGenerator`, `cacheManager`, `cacheResolver` for its methods. |
 
+`@Cacheable`, `@CachePut`, `@CacheEvict` and `@Caching` on the class apply
+to every public method that has no cache annotation of its own, like
+Spring (not to getters, setters or `toString`).
+
 `@Cacheable('books')` names one cache. For several caches, or to take them
 from `@CacheConfig`, use `.of`: `@Cacheable.of(cacheNames: ['books', 'isbn'])`,
 `@Cacheable.of(key: '#isbn')` (same for `CachePut.of` and `CacheEvict.of`).
@@ -124,11 +128,15 @@ argument itself, several → `SimpleKey([...])`, which compares by content
 | `#p0`, `#a0` | the first argument |
 | `#result` | the result (`unless`; `key` and `condition` of `@CachePut`; `@CacheEvict` after the call) |
 | `#root.methodName` | `find` |
+| `#root.method.name` | `find` (also `returnType`, `parameterTypes`, `parameterNames`, `parameterCount`) |
 | `#root.args` | all arguments, `#root.args[1]` |
 | `#root.target` | the bean |
 | `#root.targetClass` | the bean class name, `Books` |
 | `#root.caches` | the cache names of the operation |
 | `@region` | the bean named `region` |
+
+A key that comes out `null` (from `key` or a key generator) fails the
+call with an `ArgumentError`, like Spring.
 
 Examples:
 
@@ -207,7 +215,7 @@ application declares no `CacheManager` of its own):
 
 | Property | Default | Meaning |
 |---|---|---|
-| `spring.cache.type` | `simple` | `simple`: caches in memory; `none`: cache nothing (annotations stay, methods always run) |
+| `spring.cache.type` | `generic` with `Cache` beans, else `simple` | `generic`: a `SimpleCacheManager` of the `Cache` beans; `simple`: caches in memory; `none`: cache nothing (annotations stay, methods always run) |
 | `spring.cache.cache-names` | — | A fixed set of caches, e.g. `books,authors` or a YAML list; an unknown name is then an error. Without it caches are created on first use. |
 | `spring.cache.simple.time-to-live` | none | How long entries live: `10m`, `30s`, `PT1H`, or milliseconds. |
 | `spring.cache.simple.max-size` | none | Maximum entries per cache; the least recently used go first. |
@@ -560,7 +568,13 @@ Or keep it on and check the cache through the `CacheManager` bean
 - `@Cacheable('books')` takes one name; several names go to
   `@Cacheable.of(cacheNames: [...])` (Dart cannot mix an optional
   positional parameter with named ones).
-- `#root.caches` holds cache names, `#root.targetClass` the class name.
+- `#root.caches` holds cache names, `#root.targetClass` the class name,
+  `#root.method` the `MethodSignature` (`name`, `returnType`, ... as
+  text).
+- `CacheManagerCustomizer` is not generic: every customizer gets the
+  manager and checks its type (the container finds beans by their exact
+  type, so `CacheManagerCustomizer<InMemoryCacheManager>` could not be
+  matched against a manager).
 - `Future` results are cached by value (Spring 6.1 does the same for
   `CompletableFuture`).
 - Built-in store: memory, with time to live and size limit (Spring's
@@ -569,7 +583,7 @@ Or keep it on and check the cache through the `CacheManager` bean
   `spring.cache.simple.caches.<name>.*` are this starter's: Spring Boot's
   `simple` type has no settings (time to live and size come from Caffeine
   or Redis there, under `spring.cache.caffeine.*` / `spring.cache.redis.*`).
-  `spring.cache.type` knows `simple` and `none` only.
+  `spring.cache.type` knows `generic`, `simple` and `none` only.
 - `SimpleKeyGenerator` wraps a single collection argument in a `SimpleKey`
   (Dart lists, sets and maps compare by identity; the key compares by
   content); Spring wraps only arrays.

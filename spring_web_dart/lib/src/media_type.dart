@@ -28,26 +28,26 @@ import 'dart:convert';
 /// ```
 final class MediaType {
   /// The media type [type]/[subtype] with [parameters]; type and subtype
-  /// are lower-cased, like Spring.
+  /// are lower-cased, like Spring. Parameter names are tokens, values
+  /// tokens or quoted strings (`"..."` or `'...'`), `charset` a legal
+  /// charset name and `q` between 0 and 1; a name given twice (in any
+  /// case) keeps the last value.
   MediaType(
     String type, [
     String subtype = wildcardType,
     Map<String, String> parameters = const {},
   ]) : type = _checkToken(type.toLowerCase(), 'type'),
        subtype = _checkToken(subtype.toLowerCase(), 'subtype'),
-       parameters = Map.unmodifiable(parameters) {
+       parameters = Map.unmodifiable(_checkParameters(parameters)) {
     if (this.type == wildcardType && this.subtype != wildcardType) {
       throw InvalidMediaTypeException(
         toString(),
         'wildcard type is legal only in "*/*" (all media types)',
       );
     }
-    final quality = parameters.entries
-        .where((entry) => entry.key.toLowerCase() == 'q')
-        .map((entry) => entry.value)
-        .firstOrNull;
+    final quality = getParameter('q');
     if (quality != null) {
-      final value = double.tryParse(_unquote(quality));
+      final value = double.tryParse(quality);
       if (value == null || value < 0 || value > 1) {
         throw InvalidMediaTypeException(
           toString(),
@@ -86,22 +86,18 @@ final class MediaType {
     if (subtype.contains('/')) {
       throw InvalidMediaTypeException(value, 'does not contain a single "/"');
     }
+    // Like Spring's MimeTypeUtils: a parameter without "=" is ignored.
     final parameters = <String, String>{};
     for (final part in parts.skip(1)) {
       final parameter = part.trim();
-      if (parameter.isEmpty) {
+      final eq = parameter.indexOf('=');
+      if (eq < 0) {
         continue;
       }
-      final eq = parameter.indexOf('=');
-      if (eq <= 0) {
-        throw InvalidMediaTypeException(
-          value,
-          'parameter "$parameter" has no "="',
-        );
-      }
-      parameters[parameter.substring(0, eq).trim()] = parameter
-          .substring(eq + 1)
-          .trim();
+      final name = parameter.substring(0, eq).trim();
+      parameters
+        ..removeWhere((key, _) => key.toLowerCase() == name.toLowerCase())
+        ..[name] = parameter.substring(eq + 1).trim();
     }
     try {
       return MediaType(type, subtype, parameters);
@@ -354,12 +350,52 @@ final class MediaType {
   }
 
   static String _unquote(String value) =>
-      value.length >= 2 && value.startsWith('"') && value.endsWith('"')
-      ? value.substring(1, value.length - 1)
-      : value;
+      _isQuoted(value) ? value.substring(1, value.length - 1) : value;
+
+  static Map<String, String> _checkParameters(Map<String, String> values) {
+    final checked = <String, String>{};
+    for (final MapEntry(key: name, :value) in values.entries) {
+      if (name.isEmpty) {
+        throw InvalidMediaTypeException(
+          '$name=$value',
+          "'parameter' must not be empty",
+        );
+      }
+      if (value.isEmpty) {
+        throw InvalidMediaTypeException(
+          '$name=$value',
+          "'value' must not be empty",
+        );
+      }
+      _checkToken(name, 'parameter name');
+      if (name.toLowerCase() == 'charset') {
+        final charset = _unquote(value);
+        if (!_charsetName.hasMatch(charset)) {
+          throw InvalidMediaTypeException(
+            '$name=$value',
+            'unsupported charset "$charset"',
+          );
+        }
+      } else if (!_isQuoted(value)) {
+        _checkToken(value, 'parameter value');
+      }
+      checked
+        ..removeWhere((key, _) => key.toLowerCase() == name.toLowerCase())
+        ..[name] = value;
+    }
+    return checked;
+  }
+
+  // java.nio.charset.Charset's legal names.
+  static final _charsetName = RegExp(r'^[A-Za-z0-9][A-Za-z0-9\-+:_.]*$');
+
+  static bool _isQuoted(String value) =>
+      value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'")));
 
   // RFC 7230 token characters.
-  static final _token = RegExp(r"^[!#$%&'*+\-.^_`|~0-9a-z]+$");
+  static final _token = RegExp(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$");
 
   static String _checkToken(String value, String what) {
     if (!_token.hasMatch(value)) {

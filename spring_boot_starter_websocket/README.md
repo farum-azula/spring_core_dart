@@ -117,13 +117,18 @@ a missing URL or one that does not start with `ws://` / `wss://`.
   none, 1001, 1005, 1006, 1011–1014) or a failed attempt is opened again
   after `reconnect.delay`, multiplied by `reconnect.multiplier` after each
   failure up to `reconnect.max-delay`, give or take `reconnect.jitter`;
-  listeners stay subscribed. Sends during the outage wait for the new
-  connection. A normal close by the server (1000) ends the streams; other
+  listeners stay subscribed. A send (or `connect()`) during the outage
+  waits for the next attempt only and fails if it fails, so it never waits
+  longer than the delay plus `connect-timeout`. The retries count on
+  until a connection proves stable (it delivers a message, or stays open
+  for `reconnect.max-delay`), so a server that accepts and closes at once
+  still reaches `reconnect.max-retries`. A normal close by the server (1000) ends the streams; other
   codes (1008 policy violation, ...) end them with a `WebSocketException`.
   The connection is managed by a `WebSocketConnectionManager` (Spring's
   name), the open connection is a `WebSocketSession` of `spring_web_dart`.
 - **Without listeners** a failed attempt fails the send at once.
-- **Shutdown.** Connections are closed when the application stops.
+- **Shutdown.** Connections are closed when the application stops;
+  `closeAsync()` waits until they are.
 
 ## Configuration
 
@@ -134,13 +139,13 @@ a missing URL or one that does not start with `ws://` / `wss://`.
 |---|---|---|
 | `url` | — | The address when `@WebSocketClient` has no `url` |
 | `connect-timeout` | `10s` | The longest a handshake may take |
-| `reconnect.enabled` | `true` | Open lost connections again while someone listens |
+| `reconnect.enabled` | `true` | Open lost connections again while someone listens (`true` / `false` in any case; other values fail the start) |
 | `reconnect.delay` | `1s` | The wait before the first attempt |
 | `reconnect.multiplier` | `2` | What each further wait is multiplied by (`1`: a fixed delay) |
 | `reconnect.max-delay` | `30s` | The longest wait |
 | `reconnect.jitter` | `0` | A random part added to or taken from each wait (scaled by the multiplier too; never below `delay` nor above `max-delay`) |
 | `reconnect.max-retries` | none | Attempts in a row before giving up |
-| `default-request-headers.<Name>` | — | Headers sent with every handshake (not in browsers); `a,b` or a YAML list gives several values |
+| `default-request-headers.<Name>` | — | Headers sent with every handshake (not in browsers); `a,b` or a YAML list gives several values; a client's header replaces `default`'s of the same name in any case |
 
 ```properties
 spring.websocket.client.config.default.connect-timeout=5s

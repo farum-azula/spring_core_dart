@@ -30,7 +30,7 @@ class BrowserWebSocketTransport implements WebSocketTransport {
     List<String> protocols = const [],
     Duration? timeout,
   }) async {
-    if (headers != null && !headers.isEmpty) {
+    if (headers != null && headers.isNotEmpty) {
       throw WebSocketException(
         'browsers cannot send headers (${headers.names.join(', ')}) with a '
         'WebSocket handshake: pass them as query parameters or a protocol',

@@ -5,7 +5,9 @@ import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
+import 'package:spring_core_dart/src/core/io/path_matcher.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
+import 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
 import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 
 /// Creates a property source from a resource, like Spring's
@@ -208,6 +210,23 @@ class PropertySourceProcessor {
         }
         rethrow;
       }
+      // A pattern (`file:conf/*.properties`, `classpath*:`) loads every
+      // match, none being fine (Spring 6.1's PropertySourceProcessor).
+      if (_patterns.isPattern(resolved)) {
+        final loader = resourceLoader;
+        final resolver = loader is ResourcePatternResolver
+            ? loader
+            : PathMatchingResourcePatternResolver(resourceLoader: loader);
+        for (final resource in resolver.getResources(resolved)) {
+          _add(
+            factory.createPropertySource(
+              name,
+              EncodedResource(_readable(resource), encoding: charset),
+            ),
+          );
+        }
+        continue;
+      }
       final resource = resourceLoader.getResource(resolved);
       if (!resource.exists()) {
         if (ignoreResourceNotFound) {
@@ -223,6 +242,8 @@ class PropertySourceProcessor {
       );
     }
   }
+
+  static final _patterns = AntPathMatcher();
 
   /// Reads the resources of [locations] that only support asynchronous
   /// reading (such as Flutter assets behind a `ProtocolResolver`), so a

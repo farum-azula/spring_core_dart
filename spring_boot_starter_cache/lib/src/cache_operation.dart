@@ -173,9 +173,25 @@ final class AnnotationCacheOperationSource {
       annotation is CacheEvict ||
       annotation is Caching;
 
+  /// The cache annotations that apply to the member [signature], like
+  /// Spring's `AbstractFallbackCacheOperationSource`: its own, else those
+  /// on the class (`@Cacheable` on the class applies to every public
+  /// method, not to getters, setters or `Object`'s members).
+  static List<Object> cacheAnnotationsOf(MethodSignature signature) {
+    final own = signature.annotations.where(isCacheAnnotation).toList();
+    if (own.isNotEmpty ||
+        signature.kind != MemberKind.method ||
+        _objectMembers.contains(signature.name)) {
+      return own;
+    }
+    return signature.targetAnnotations.where(isCacheAnnotation).toList();
+  }
+
+  static const _objectMembers = {'toString', 'noSuchMethod', '==', 'hashCode'};
+
   /// The operations of the cache annotations on the member [signature]
-  /// (empty when it has none); throws a `StateError` for an invalid
-  /// combination.
+  /// (or on its class, see [cacheAnnotationsOf]; empty when there are
+  /// none); throws a `StateError` for an invalid combination.
   List<CacheOperation> getCacheOperations(MethodSignature signature) =>
       _operations[signature] ??= _parse(signature);
 
@@ -301,7 +317,7 @@ final class AnnotationCacheOperationSource {
           ),
     );
 
-    for (final annotation in signature.annotations) {
+    for (final annotation in cacheAnnotationsOf(signature)) {
       switch (annotation) {
         case final Cacheable a:
           cacheable(a);

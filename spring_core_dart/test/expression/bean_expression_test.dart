@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:test/test.dart';
 
@@ -146,7 +144,8 @@ void main() {
     expect(factory.value<Map<String, Object?>>('#{systemProperties}'), isEmpty);
     expect(
       factory.value<Map<String, String>>('#{systemEnvironment}'),
-      Platform.environment,
+      // The process environment (none on the web).
+      StandardEnvironment().systemEnvironment,
     );
     final root = BeanExpressionContext(factory);
     expect(root.containsObject('systemEnvironment'), isTrue);

@@ -4,6 +4,15 @@ import 'package:test/test.dart';
 
 class MyMessages extends StaticMessageSource {}
 
+/// A plain form `Validator` (Spring's `org.springframework.validation`
+/// one), not a Bean Validation one.
+class FormValidator implements Validator {
+  @override
+  bool supports(Object target) => false;
+  @override
+  void validate(Object target, Errors errors) {}
+}
+
 class Order {
   const Order({required this.orderId, this.note});
   final int orderId;
@@ -177,6 +186,47 @@ void main() {
       );
       context.close();
     });
+
+    test('plain form Validator beans keep defaultValidator, like Boot', () {
+      final context = run([
+        BeanModule('app', [
+          for (final name in ['formA', 'formB'])
+            BeanDefinition<FormValidator>(
+              name: name,
+              types: const [FormValidator, Validator],
+              create: (_) => FormValidator(),
+            ),
+        ]),
+      ], []);
+      final defaultValidator = context.getBeanByName('defaultValidator');
+      expect(defaultValidator, isA<BeanValidator>());
+      expect(
+        context.getBean<MethodValidationPostProcessor>().advice.validator,
+        same(defaultValidator),
+      );
+      context.close();
+    });
+
+    test('two BeanValidators: method validation uses its own', () {
+      final context = run([
+        BeanModule('app', [
+          for (final name in ['first', 'second'])
+            BeanDefinition<BeanValidator>(
+              name: name,
+              types: const [BeanValidator, Validator],
+              create: (_) => BeanValidator(),
+            ),
+        ]),
+      ], []);
+      expect(context.containsBean('defaultValidator'), isFalse);
+      final used = context
+          .getBean<MethodValidationPostProcessor>()
+          .advice
+          .validator;
+      expect(used, isNot(same(context.getBeanByName('first'))));
+      expect(used, isNot(same(context.getBeanByName('second'))));
+      context.close();
+    });
   });
 
   test('backs off without a bundle or with an application messageSource', () {
@@ -234,6 +284,21 @@ void main() {
       );
       // JsonModule beans are added.
       expect(mapper.writeValueAsString(Uri.parse('a')), '"uri:a"');
+      // Jackson 3's default.
+      expect(
+        mapper.isEnabled(DeserializationFeature.failOnNullForPrimitives),
+        isTrue,
+      );
+      context.close();
+    });
+
+    test('spring.jackson.deserialization.fail-on-null-for-primitives', () {
+      final context = run(
+        [app],
+        ['--spring.jackson.deserialization.fail-on-null-for-primitives=false'],
+      );
+      final mapper = context.getBean<ObjectMapper>();
+      expect(mapper.readValue<int>('null'), 0);
       context.close();
     });
 

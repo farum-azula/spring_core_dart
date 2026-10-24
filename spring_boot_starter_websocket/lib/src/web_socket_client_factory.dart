@@ -60,11 +60,25 @@ final class WebSocketClientFactory
     return handler;
   }
 
+  /// Closes every client's connection; with open connections the
+  /// returned future completes once they are closed (awaited by
+  /// `closeAsync()`).
   @override
-  void destroy() {
-    for (final handler in _handlers) {
-      unawaited(handler.connectionManager.dispose());
-    }
+  FutureOr<void> destroy() {
+    final handlers = [..._handlers];
     _handlers.clear();
+    final closing = <Future<void>>[];
+    for (final handler in handlers) {
+      final manager = handler.connectionManager;
+      if (manager.isConnected) {
+        closing.add(manager.dispose());
+      } else {
+        // Nothing to wait for: no connection to close.
+        unawaited(manager.dispose());
+      }
+    }
+    if (closing.isNotEmpty) {
+      return Future.wait(closing).then((_) {});
+    }
   }
 }

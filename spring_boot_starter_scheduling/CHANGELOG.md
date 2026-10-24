@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `ErrorHandler` for the errors of scheduled tasks (`TimerTaskScheduler(errorHandler:)`; the auto-configured scheduler uses the `ErrorHandler` bean); a handler that throws stops the task, like Spring's `LOG_AND_PROPAGATE`.
 - `@Scheduled(initialDelay: ...)` (or `initialDelayString`) alone runs the method once after the delay, like Spring 6.1.
 - `TaskScheduler.scheduleAt(task, DateTime)` runs a task once at that time, like Spring's `schedule(Runnable, Instant)`.
 - cron on the web: fields with values of 32 and above (`0 45 * * * *`, `50 * * * * *`) fire under dart2js (the field sets were 64-bit int bit masks, shifted modulo 32 there)

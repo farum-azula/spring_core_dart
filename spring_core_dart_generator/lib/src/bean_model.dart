@@ -904,6 +904,7 @@ class ListenerModel {
     required this.eventTypes,
     required this.parameterType,
     required this.returnsValue,
+    this.resultType,
     this.order,
     this.condition,
     this.async = false,
@@ -924,6 +925,11 @@ class ListenerModel {
 
   /// Whether the result is published as an event.
   final bool returnsValue;
+
+  /// The declared type of the published result (the element type of an
+  /// `Iterable`), emitted as `resultType: EventResultType<R>()` so results
+  /// reach `PayloadApplicationEvent<R>` listeners; `null` when unknown.
+  final InterfaceType? resultType;
 
   /// The `@Order` value of the method (of the class for
   /// `ApplicationListener`).

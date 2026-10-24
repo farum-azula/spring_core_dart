@@ -224,6 +224,13 @@ Every test starts with an empty capture.
   type argument (`withBean<Cache>(AppCache.new)`), not a class; there is
   no constructor-arguments variant. `withBeanOverride` has no Boot
   counterpart.
+- `ApplicationContextRunner.withAutoConfiguration(module, metadata)`
+  takes the module's `@AutoConfigurationModule` by hand (Dart cannot read
+  the annotation of a variable at runtime); the modules are then sorted
+  like `AutoConfigurations.of(...)` (name, `order`, `before` / `after`).
+- `withAllowCircularReferences(true)` fails every run with an
+  `UnsupportedError`: circular references are always an error here (no
+  early references); `false` is the default, as in Boot.
 - No context caching across test files: each `springBootTest` starts its
   own context (shared by the tests of its `main` / `group`).
 - `dynamicProperties` is a parameter, not an annotated static method; no

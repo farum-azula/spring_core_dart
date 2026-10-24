@@ -37,12 +37,14 @@ void main() {
     // The servers' addresses are known only once they run: set before the
     // context is refreshed, above every other property source.
     initializers: [
-      (context) => context.environment.propertySources.addFirst(
-        MapPropertySource('local servers', {
-          'jsonplaceholder.url': servers.httpUrl,
-          'wikimedia.url': servers.httpUrl,
-          'echo.url': servers.echoUrl,
-        }),
+      ApplicationContextInitializer.of(
+        (context) => context.environment.propertySources.addFirst(
+          MapPropertySource('local servers', {
+            'jsonplaceholder.url': servers.httpUrl,
+            'wikimedia.url': servers.httpUrl,
+            'echo.url': servers.echoUrl,
+          }),
+        ),
       ),
     ],
   );

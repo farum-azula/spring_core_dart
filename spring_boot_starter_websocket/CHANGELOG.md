@@ -1,5 +1,10 @@
 ## Unreleased
 
+- The retry count is reset only once a connection proves stable (a message, or open for `reconnect.max-delay`): a server that accepts and closes at once no longer keeps `reconnect.max-retries` from stopping.
+- A send (or `connect()`) without a connection waits for the next attempt only and fails with it (it waited forever while listeners kept reconnecting without `max-retries`).
+- `WebSocketClientFactory.destroy()` returns a future that completes once the open connections are closed (awaited by `closeAsync()`).
+- A client's `default-request-headers` replace `default`'s of the same name in any case (both were sent).
+- `reconnect.enabled` takes true / false in any case (and on / off, yes / no, 1 / 0); anything else fails the start (`nope` was on).
 - Breaking: `WebSocketClientConfig.defaultRequestHeaders` is a `Map<String, List<String>>` bound through the Binder: `X: a,b` and YAML lists (`X[0]`) give several header values.
 
 ## 0.1.7

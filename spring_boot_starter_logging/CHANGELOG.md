@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Logback's colour words `%black` ... `%white`, `%gray`, `%boldRed` ..., `%highlight`; `%replace(...){regex, replacement}`, `%kvp`, `%prefix(...)`, `%property{key}`.
+- `logging.charset.file` (UTF-8, ISO-8859-1, US-ASCII; `FileAppender(encoding:)`); `logging.charset.console` is checked.
+- `logging.logback.rollingpolicy.file-name-pattern` is ignored with a warning (rolling is by size only).
+- On/off properties (`logging.console.enabled`, `logging.buffer.enabled`, `logging.include-application-name` / `-group`, `logging.logback.rollingpolicy.clean-history-on-start`, `logging.enabled`) take true / false in any case (and on / off, yes / no, 1 / 0); anything else fails the start (`FALSE` and `nope` were on).
+- An empty `logging.pattern.console=` turns the console off (it printed empty lines); an empty `logging.pattern.file=` writes no file.
+- A threshold of `false` (YAML's `off`) is OFF.
+- Lines logged while the application starts, before the logging system is set up, are replayed into the file, the buffer and added appenders.
+- A failed start: the logging system stays installed until the failure is logged, so the report (or `Application run failed` with the error) reaches the log file.
 - `%r` / `%relative` is never negative: records older than the first pattern (buffered before the logging system started) move the origin back.
 
 ## 0.1.7

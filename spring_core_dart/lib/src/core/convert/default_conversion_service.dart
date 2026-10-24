@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/convert/data_size.dart';
@@ -12,13 +14,20 @@ import 'package:spring_core_dart/src/core/convert/generic_conversion_service.dar
 ///   `bool`, `Uri`, `DateTime` (ISO-8601), `Duration` (`10s`, `5m`,
 ///   `PT10S`, plain millis), `RegExp`; an empty or blank string becomes
 ///   `null`.
-/// - `int` → `Duration` (milliseconds).
+/// - `int` → `Duration` (milliseconds); `BigInt` → `int` (failing on
+///   overflow) and `double`; `num` → `BigInt`.
+/// - `String` → `Encoding` (`utf-8`, `latin1`, ...; Spring's `Charset`)
+///   and back to its name.
+/// - Enums → `String`: the name (`red`, not `Color.red`).
 /// - `bool` from `true/on/yes/1` and `false/off/no/0`, case-insensitive.
 /// - `num` → `int`, `double`; anything → `String` (`toString`; a list or
 ///   set as `a,b`; `Duration` as ISO-8601 `PT10S` and `DateTime` in their
 ///   parseable forms).
 /// - `List` / `Set` of `String`, `int`, `double`, `num`, `bool`, `BigInt`,
-///   `Duration`, `Uri` from comma-separated strings and other iterables.
+///   `Duration`, `Uri` from comma-separated strings, other iterables and
+///   single values (a one-element collection).
+/// - `Map` → `Map<String, V>` for those element types and `Object?`, keys
+///   and values converted.
 ///
 /// ```dart
 /// final service = DefaultConversionService();
@@ -69,6 +78,31 @@ class DefaultConversionService extends GenericConversionService {
         (location) => DefaultResourceLoader().getResource(location.trim()),
       )
       ..addConverter<Object, String>((source) => source.toString())
+      // `red`, not `Color.red` (Spring's EnumToStringConverter).
+      ..addConverter<Enum, String>((source) => source.name)
+      // Spring's StringToCharsetConverter.
+      ..addConverter<String, Encoding>(
+        (s) => _map(
+          text(s),
+          (name) =>
+              Encoding.getByName(name) ??
+              (throw ArgumentError.value(name, 'source', 'Unknown encoding')),
+        ),
+      )
+      ..addConverter<Encoding, String>((source) => source.name)
+      // Like Spring's NumberUtils: an overflow is an error.
+      ..addConverter<BigInt, int>(
+        (source) => source.isValidInt
+            ? source.toInt()
+            : throw ArgumentError.value(source, 'source', 'Overflow for int'),
+      )
+      ..addConverter<BigInt, double>((source) => source.toDouble())
+      ..addConverter<num, BigInt>((source) {
+        if (source is double && !source.isFinite) {
+          throw ArgumentError.value(source, 'source', 'Not a finite number');
+        }
+        return BigInt.from(source);
+      })
       // `[a, b]` reads as `a,b`, like Spring's CollectionToStringConverter.
       ..addConverter<Iterable<Object?>, String>(
         (source) => source.map(service.convert<String?>).join(','),
@@ -109,7 +143,17 @@ class DefaultConversionService extends GenericConversionService {
       ..addCollectionConverters<BigInt>()
       ..addCollectionConverters<Duration>()
       ..addCollectionConverters<DataSize>()
-      ..addCollectionConverters<Uri>();
+      ..addCollectionConverters<Uri>()
+      ..addMapConverters<String, String>()
+      ..addMapConverters<String, int>()
+      ..addMapConverters<String, double>()
+      ..addMapConverters<String, num>()
+      ..addMapConverters<String, bool>()
+      ..addMapConverters<String, BigInt>()
+      ..addMapConverters<String, Duration>()
+      ..addMapConverters<String, DataSize>()
+      ..addMapConverters<String, Uri>()
+      ..addMapConverters<String, Object?>();
   }
 
   // Applies [parse] unless the trimmed input was blank.

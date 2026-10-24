@@ -403,6 +403,15 @@ abstract interface class ConfigurableBeanFactory
   /// Number of registered bean post-processors.
   int get beanPostProcessorCount;
 
+  /// Makes [alias] another name for the bean [name], like Spring's
+  /// `ConfigurableBeanFactory.registerAlias` (see
+  /// `BeanDefinitionRegistry.registerAlias` for the rules).
+  ///
+  /// ```dart
+  /// context.beanFactory.registerAlias('dataSource', 'primaryDb');
+  /// ```
+  void registerAlias(String name, String alias);
+
   /// Registers a custom [scope] under [name] for `@Scope(name)` beans. The
   /// built-in `singleton` and `prototype` cannot be replaced.
   ///

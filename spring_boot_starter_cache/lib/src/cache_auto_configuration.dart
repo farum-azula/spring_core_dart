@@ -11,7 +11,7 @@ const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 ///
 /// | Property | Meaning |
 /// |---|---|
-/// | `spring.cache.type` | `simple` (default): [InMemoryCacheManager]; `none`: [NoOpCacheManager] |
+/// | `spring.cache.type` | `generic` (the default when [caches] are given: the `Cache` beans): a [SimpleCacheManager] of them; `simple` (the default otherwise): [InMemoryCacheManager]; `none`: [NoOpCacheManager] |
 /// | `spring.cache.cache-names` | a fixed set of caches (`books,authors`); otherwise caches are created on demand |
 /// | `spring.cache.simple.time-to-live` | how long entries live (`10m`, `PT1H`, milliseconds) |
 /// | `spring.cache.simple.max-size` | maximum entries per cache |
@@ -21,21 +21,47 @@ const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 /// final manager = cacheManagerFromProperties(context.environment);
 /// ```
 ///
+/// [customizers] then customize the manager, like Spring Boot's
+/// `CacheManagerCustomizers`.
+///
 /// Spring Boot (Java): `CacheAutoConfiguration` with
-/// `SimpleCacheConfiguration` / `NoOpCacheConfiguration`.
-CacheManager cacheManagerFromProperties(Environment environment) {
-  final type = (environment.getProperty('spring.cache.type') ?? 'simple')
-      .trim()
-      .toLowerCase();
+/// `GenericCacheConfiguration` / `SimpleCacheConfiguration` /
+/// `NoOpCacheConfiguration`.
+CacheManager cacheManagerFromProperties(
+  Environment environment, {
+  List<Cache> caches = const [],
+  List<CacheManagerCustomizer> customizers = const [],
+}) {
+  final manager = _cacheManager(environment, caches);
+  for (final customizer in customizers) {
+    customizer.customize(manager);
+  }
+  return manager;
+}
+
+CacheManager _cacheManager(Environment environment, List<Cache> caches) {
+  final configured = environment.getProperty('spring.cache.type')?.trim();
+  // Boot tries generic first: it applies when there are Cache beans.
+  final type = configured == null || configured.isEmpty
+      ? (caches.isEmpty ? 'simple' : 'generic')
+      : configured.toLowerCase();
   switch (type) {
     case 'none':
       return NoOpCacheManager();
+    case 'generic':
+      if (caches.isEmpty) {
+        throw StateError(
+          'spring.cache.type=generic needs at least one Cache bean (the '
+          'caches of the manager)',
+        );
+      }
+      return SimpleCacheManager(caches);
     case 'simple':
       break;
     default:
       throw StateError(
-        "Unsupported spring.cache.type '$type': use 'simple' or 'none', or "
-        'declare a CacheManager bean',
+        "Unsupported spring.cache.type '$type': use 'generic', 'simple' or "
+        "'none', or declare a CacheManager bean",
       );
   }
   // A comma list or a YAML list (`spring.cache.cache-names[0]`).
@@ -92,7 +118,12 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean.named('cacheResolver'),
       ]),
     ],
-    create: (r) => cacheManagerFromProperties(r.dependency<Environment>()),
+    create: (r) => cacheManagerFromProperties(
+      r.dependency<Environment>(),
+      caches: r.optionalDependencyList<Cache>() ?? const [],
+      customizers:
+          r.optionalDependencyList<CacheManagerCustomizer>() ?? const [],
+    ),
   ),
   BeanDefinition<CacheInterceptor>(
     name: 'cacheInterceptor',

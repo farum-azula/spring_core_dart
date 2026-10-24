@@ -67,6 +67,13 @@ jobs:
       - name: Tests of all packages
         run: dart run tool/test_all.dart
 
+      # SpEL and the JSON mapper run on the web too, where an integral
+      # double is an `int` at run time: their tests also run compiled to
+      # JavaScript, on node.
+      - name: SpEL and JSON tests on node
+        working-directory: spring_core_dart
+        run: dart test -p node test/expression test/json
+
       - name: Example runs (tour and Spring Boot app)
         working-directory: example
         run: |

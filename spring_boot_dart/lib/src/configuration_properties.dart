@@ -113,16 +113,26 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
       );
     }
     final prefix = annotation.prefix;
-    BindContext(_binder)
-      ..bindProperties(
-        bean,
-        introspection,
-        ConfigurationPropertyName.of(prefix),
-      )
-      ..throwIfFailed(prefix, beanName);
+    final root = ConfigurationPropertyName.of(prefix);
+    final context = _context(annotation)
+      ..bindProperties(bean, introspection, root);
+    // Boot fails on the first error, so unbound ones come after.
+    if (!annotation.ignoreUnknownFields && context.errors.isEmpty) {
+      context.checkNoUnboundProperties(root);
+    }
+    context.throwIfFailed(prefix, beanName);
     _validate(bean, annotations, prefix, beanName);
     return bean;
   }
+
+  // Boot's ConfigurationPropertiesBinder.getHandler: errors ignored with
+  // `ignoreInvalidFields`.
+  BindContext _context(ConfigurationProperties annotation) => BindContext(
+    _binder,
+    handler: annotation.ignoreInvalidFields
+        ? const _IgnoreErrorsBindHandler()
+        : BindHandler.defaultHandler,
+  );
 
   BeanDefinition<Object>? _definition(String beanName) {
     final factory = beanFactory;
@@ -152,13 +162,18 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
       );
     }
     final prefix = annotation.prefix;
-    final context = BindContext(_binder);
+    final root = ConfigurationPropertyName.of(prefix);
+    final context = _context(annotation);
     final bean = context.bindConstructor(
       introspection,
-      ConfigurationPropertyName.of(prefix),
+      root,
       context.sources,
       requireAny: false,
     );
+    // Boot fails on the first error, so unbound ones come after.
+    if (!annotation.ignoreUnknownFields && context.errors.isEmpty) {
+      context.checkNoUnboundProperties(root);
+    }
     context.throwIfFailed(prefix, beanName);
     if (bean is! T) {
       throw ConfigurationPropertiesBindException(prefix, beanName, [
@@ -221,6 +236,15 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
     RegExp(r'[^.\[\]]+(?![^\[]*\])'),
     (match) => dashedForm(match[0]!),
   );
+}
+
+// Spring Boot's IgnoreErrorsBindHandler: a value that cannot be bound is
+// left unbound (the field keeps its default).
+final class _IgnoreErrorsBindHandler extends BindHandler {
+  const _IgnoreErrorsBindHandler();
+
+  @override
+  bool onFailure(ConfigurationPropertyName name, String error) => false;
 }
 
 /// Creates constructor-bound `@ConfigurationProperties` beans: the

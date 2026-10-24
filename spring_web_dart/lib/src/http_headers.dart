@@ -50,6 +50,13 @@ class HttpHeaders {
     }
   }
 
+  /// A read-only view of [headers], like Spring's
+  /// `HttpHeaders.readOnlyHttpHeaders`: it shows later changes of
+  /// [headers], and its own setters throw `UnsupportedError`.
+  HttpHeaders.readOnly(HttpHeaders headers)
+    : _entries = headers._entries,
+      _readOnly = true;
+
   /// `Accept`.
   static const acceptHeader = 'Accept';
 
@@ -234,7 +241,18 @@ class HttpHeaders {
   /// `WWW-Authenticate`.
   static const wwwAuthenticateHeader = 'WWW-Authenticate';
 
-  final _entries = <MapEntry<String, String>>[];
+  List<MapEntry<String, String>> _entries = [];
+
+  bool _readOnly = false;
+
+  /// Whether this is a read-only view ([HttpHeaders.readOnly]).
+  bool get isReadOnly => _readOnly;
+
+  void _checkWritable() {
+    if (_readOnly) {
+      throw UnsupportedError('HttpHeaders are read-only');
+    }
+  }
 
   static bool _same(String a, String b) => a.toLowerCase() == b.toLowerCase();
 
@@ -256,6 +274,7 @@ class HttpHeaders {
 
   /// Replaces the values of [name] with [value].
   void set(String name, String value) {
+    _checkWritable();
     final index = _entries.indexWhere((e) => _same(e.key, name));
     remove(name);
     final entry = MapEntry(name, value);
@@ -267,13 +286,64 @@ class HttpHeaders {
   }
 
   /// Adds [value] to the values of [name].
-  void add(String name, String value) => _entries.add(MapEntry(name, value));
+  void add(String name, String value) {
+    _checkWritable();
+    _entries.add(MapEntry(name, value));
+  }
+
+  /// Adds every one of [values] to the values of [name], like Spring's
+  /// `addAll(name, values)`.
+  void addAll(String name, Iterable<String> values) {
+    for (final value in values) {
+      add(name, value);
+    }
+  }
+
+  /// Adds every value of [headers], like Spring's `addAll(HttpHeaders)`.
+  void addHeaders(HttpHeaders headers) {
+    _checkWritable();
+    _entries.addAll(List.of(headers._entries));
+  }
+
+  /// Replaces the values of each name of [headers] with its values, like
+  /// Spring's `putAll(HttpHeaders)`.
+  void putAll(HttpHeaders headers) {
+    final other = List.of(headers._entries);
+    for (final name in headers.names.toList()) {
+      remove(name);
+    }
+    _checkWritable();
+    _entries.addAll(other);
+  }
+
+  /// Sets each entry of [values] (one value per name), like Spring's
+  /// `setAll`.
+  void setAll(Map<String, String> values) => values.forEach(set);
 
   /// Removes every value of [name].
-  void remove(String name) => _entries.removeWhere((e) => _same(e.key, name));
+  void remove(String name) {
+    _checkWritable();
+    _entries.removeWhere((e) => _same(e.key, name));
+  }
+
+  /// Removes every header, like Spring's `clear()`.
+  void clear() {
+    _checkWritable();
+    _entries.clear();
+  }
 
   /// Whether [name] has a value.
   bool contains(String name) => _entries.any((e) => _same(e.key, name));
+
+  /// Whether [value] is one of the values of [name] (the name
+  /// case-insensitive, the value exact), like Spring's
+  /// `containsHeaderValue`.
+  bool containsHeaderValue(String name, String value) =>
+      _entries.any((e) => _same(e.key, name) && e.value == value);
+
+  /// The number of header names (several values of one name count once),
+  /// like Spring's `size()`.
+  int get size => names.length;
 
   /// The header names, each once, as first added.
   Iterable<String> get names {
@@ -309,6 +379,9 @@ class HttpHeaders {
 
   /// Whether there are no headers.
   bool get isEmpty => _entries.isEmpty;
+
+  /// Whether there is a header.
+  bool get isNotEmpty => _entries.isNotEmpty;
 
   /// The `Content-Type` (e.g. `application/json`), or `null`.
   String? get contentType => this[contentTypeHeader];
@@ -369,10 +442,12 @@ class HttpHeaders {
               .join(', '),
   );
 
-  /// The `Last-Modified` date (UTC), or `null` when there is none; throws
-  /// `ArgumentError` for a value that is not an HTTP date, like Spring's
-  /// `getLastModified()`.
-  DateTime? get lastModified => _date(lastModifiedHeader);
+  /// The `Last-Modified` date (UTC), or `null` when there is none or it
+  /// is not an HTTP date (lenient, like Spring's `getLastModified()`).
+  DateTime? get lastModified => switch (this[lastModifiedHeader]) {
+    final value? => parseDate(value),
+    null => null,
+  };
 
   /// Sets `Last-Modified` as an HTTP date (RFC 1123, second precision);
   /// `null` removes it.
@@ -555,6 +630,37 @@ class HttpHeaders {
 
   void _setOrRemove(String name, String? value) =>
       value == null ? remove(name) : set(name, value);
+
+  /// The same names (case-insensitive) with the same values in the same
+  /// order per name, like Spring's `equals`.
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! HttpHeaders || other.size != size) {
+      return false;
+    }
+    for (final name in names) {
+      final values = getAll(name);
+      final otherValues = other.getAll(name);
+      if (values.length != otherValues.length) {
+        return false;
+      }
+      for (var i = 0; i < values.length; i++) {
+        if (values[i] != otherValues[i]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAllUnordered([
+    for (final name in names)
+      Object.hash(name.toLowerCase(), Object.hashAll(getAll(name))),
+  ]);
 
   @override
   String toString() => toMap().toString();

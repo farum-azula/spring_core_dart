@@ -1,6 +1,7 @@
 import 'package:spring_core_dart/src/expression/ast.dart';
 import 'package:spring_core_dart/src/expression/expression.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
 
@@ -767,8 +768,12 @@ final class _Parser {
     return InlineList(open.start, items);
   });
 
+  // Out of the 64-bit range is an error (EL1035E / EL1036E), also on the
+  // web, where int.tryParse rounds large values instead of failing.
   int _parseInt(Token token, String digits, int radix, SpelMessage code) =>
-      int.tryParse(digits, radix: radix) ??
+      (fitsJavaLong(digits, radix)
+          ? int.tryParse(digits, radix: radix)
+          : null) ??
       (throw _error(code, token.start, [_describe(token)]));
 
   Token? get _current => _pos < _tokens.length ? _tokens[_pos] : null;

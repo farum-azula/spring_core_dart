@@ -96,6 +96,7 @@ final class _FunctionCustomizer implements JsonMapperBuilderCustomizer {
 /// | `spring.jackson.default-property-inclusion` | `always` (or `non_null`, `non_absent`, `non_empty`, `non_default`) |
 /// | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` |
 /// | `spring.jackson.deserialization.accept-float-as-int` | `true` |
+/// | `spring.jackson.deserialization.fail-on-null-for-primitives` | `true` (Jackson 3; `false` reads `null` as `0` / `false`) |
 /// | `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.jackson.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` |
 /// | `spring.jackson.datatype.datetime.write-durations-as-timestamps` (or `serialization.`) | `false` |
 /// | `spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds` (or `serialization.`) | `true` (seconds with the fraction; `false`: milliseconds) |
@@ -174,6 +175,9 @@ JsonMapperBuilder jsonMapperBuilderFromProperties(
   set(DeserializationFeature.acceptFloatAsInt, const [
     'spring.jackson.deserialization.accept-float-as-int',
   ]);
+  set(DeserializationFeature.failOnNullForPrimitives, const [
+    'spring.jackson.deserialization.fail-on-null-for-primitives',
+  ]);
   set(DateTimeFeature.writeDatesAsTimestamps, const [
     '$_dateTime.write-dates-as-timestamps',
     'spring.jackson.serialization.write-dates-as-timestamps',
@@ -225,6 +229,7 @@ const _supportedKeys = {
   'spring.jackson.default-property-inclusion',
   'spring.jackson.deserialization.fail-on-unknown-properties',
   'spring.jackson.deserialization.accept-float-as-int',
+  'spring.jackson.deserialization.fail-on-null-for-primitives',
   'spring.jackson.serialization.write-dates-as-timestamps',
   'spring.jackson.serialization.write-durations-as-timestamps',
   'spring.jackson.serialization.write-date-timestamps-as-nanoseconds',

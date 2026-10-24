@@ -141,8 +141,29 @@ final class YamlPropertySourceLoader extends PropertySourceLoader {
   static Object? _plain(YamlNode node) => switch (node) {
     YamlMap() => _map(node),
     YamlList() => [for (final item in node.nodes) _plain(item)],
+    YamlScalar(:final num value, style: ScalarStyle.PLAIN) => _integer(
+      node.span.text,
+      value,
+    ),
     _ => node.value,
   };
+
+  static final _decimal = RegExp(r'^[-+]?[0-9]+$');
+  static final _hex = RegExp(r'^0x[0-9a-fA-F]+$');
+
+  // Integers beyond `int` (64 bits, 53 on the web) stay exact as a
+  // `BigInt`, like SnakeYAML's BigInteger, instead of becoming doubles.
+  static Object _integer(String text, num value) {
+    final BigInt big;
+    if (_decimal.hasMatch(text)) {
+      big = BigInt.parse(text.startsWith('+') ? text.substring(1) : text);
+    } else if (_hex.hasMatch(text)) {
+      big = BigInt.parse(text.substring(2), radix: 16);
+    } else {
+      return value;
+    }
+    return big.isValidInt ? big.toInt() : big;
+  }
 
   static Map<Object?, Object?> _map(YamlMap node) {
     final result = <Object?, Object?>{};

@@ -306,7 +306,8 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     _logResponse(response, watch.elapsed);
     final status = response.statusCode;
-    if (status.is2xxSuccessful) {
+    // Like Feign, a method returning the raw response gets every status.
+    if (status.is2xxSuccessful || _Plan.isRaw(method)) {
       return response;
     }
     // Like Feign, a void method still throws.
@@ -843,12 +844,21 @@ final class _Plan {
     if (bodyIndex != null && arguments[bodyIndex] != null) {
       final value = arguments[bodyIndex]!;
       final String contentType;
+      final declared = requestHeaders.contentType ?? consumes;
+      final form = declared != null && _isForm(declared);
       if (value is Uint8List) {
         bytes = value;
         contentType = MediaType.applicationOctetStream;
       } else if (value is String) {
         bytes = utf8.encode(value);
         contentType = '${MediaType.textPlain}; charset=utf-8';
+      } else if (form) {
+        // Like Spring Cloud OpenFeign's SpringFormEncoder: a Map or an
+        // object as `name=value&...`.
+        bytes = ascii.encode(
+          _formBody(value, parameters[bodyIndex].type, declared),
+        );
+        contentType = declared;
       } else {
         try {
           bytes = utf8.encode(mapper.writeValueAsString(value));
@@ -872,6 +882,49 @@ final class _Plan {
       headers: requestHeaders,
       body: bytes,
     );
+  }
+
+  static bool _isForm(String contentType) {
+    try {
+      return MediaType.parse(contentType).equalsTypeAndSubtype(
+        MediaType.parse(MediaType.applicationFormUrlencoded),
+      );
+    } on ArgumentError {
+      return false;
+    }
+  }
+
+  // [value] (a Map or an object the mapper writes as one) as an
+  // `application/x-www-form-urlencoded` body in the charset of
+  // [contentType] (UTF-8 by default): one `name=value` per entry, one per
+  // item of a list, null values left out.
+  String _formBody(Object value, TypeInfo<Object?> type, String contentType) {
+    final what = 'the form body';
+    final Object? tree;
+    try {
+      tree = value is Map ? value : mapper.valueToTree(value, type);
+    } on JsonMappingException catch (error) {
+      throw EncodeException(
+        'cannot write $what of $methodKey: $error',
+        cause: error,
+      );
+    }
+    if (tree is! Map<Object?, Object?>) {
+      throw EncodeException(
+        '$what of $methodKey must be a Map or an object, not '
+        '${value.runtimeType}',
+      );
+    }
+    final encoding = MediaType.parse(contentType).charset ?? utf8;
+    String encode(String text) =>
+        Uri.encodeQueryComponent(text, encoding: encoding);
+    final valueType = type is MapType ? type.value : const DynamicType();
+    return [
+      for (final MapEntry(:key, value: item) in tree.entries)
+        if (key != null && item != null)
+          for (final text in _texts(item, valueType, '$what entry "$key"'))
+            '${encode('$key')}=${encode(text)}',
+    ].join('&');
   }
 
   /// What the configuration adds after the interceptors, for names the
@@ -1002,7 +1055,16 @@ final class _Plan {
     }
   }
 
+  /// Whether [method] returns the raw `HttpResponse` (Feign's
+  /// `Response`): no error decoding, no 404 handling, no body decoding.
+  static bool isRaw(ProxyMethod method) =>
+      method.returnType is ClassType<Object?> &&
+      method.returnType.type == HttpResponse;
+
   Object? decode(HttpResponse response, ProxyMethod method) {
+    if (isRaw(method)) {
+      return response;
+    }
     final status = response.statusCode;
     final type = method.returnType;
     final entity =
@@ -1023,6 +1085,10 @@ final class _Plan {
     }
     if (entity) {
       final bodyType = type.arguments.firstOrNull ?? const DynamicType();
+      // ResponseEntity<void>: the body is ignored, like Spring.
+      if (bodyType case DynamicType(isVoid: true)) {
+        return _entity(type, response, null);
+      }
       return _entity(type, response, _body(response, bodyType, emptyOk: true));
     }
     return _body(response, type);

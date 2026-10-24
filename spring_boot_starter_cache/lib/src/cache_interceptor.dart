@@ -9,7 +9,8 @@ import 'package:spring_boot_starter_cache/src/caching_configurer.dart';
 import 'package:spring_boot_starter_cache/src/key_generator.dart';
 
 /// Matches the members carrying `@Cacheable`, `@CachePut`, `@CacheEvict`
-/// or `@Caching`, like Spring's `CacheOperationSourcePointcut`.
+/// or `@Caching` (on the member, or on the class for its public methods),
+/// like Spring's `CacheOperationSourcePointcut`.
 ///
 /// ```dart
 /// DefaultPointcutAdvisor(const CacheAnnotationPointcut(), interceptor);
@@ -19,7 +20,7 @@ import 'package:spring_boot_starter_cache/src/key_generator.dart';
 /// ```java
 /// // Registered by @EnableCaching (BeanFactoryCacheOperationSourceAdvisor).
 /// ```
-final class CacheAnnotationPointcut implements AopPointcut {
+final class CacheAnnotationPointcut implements AnnotationPointcut {
   /// Creates the pointcut.
   const CacheAnnotationPointcut();
 
@@ -29,7 +30,7 @@ final class CacheAnnotationPointcut implements AopPointcut {
 
   @override
   bool matches(MethodSignature signature, String beanName) =>
-      signature.annotations.any(isCacheAnnotation);
+      AnnotationCacheOperationSource.cacheAnnotationsOf(signature).isNotEmpty;
 
   @override
   String toString() => 'CacheAnnotationPointcut';
@@ -351,9 +352,8 @@ final class CacheOperationValidator extends BeanPostProcessor
     );
     for (final signature
         in definition.aopProxy?.signatures ?? const <MethodSignature>[]) {
-      if (signature.annotations.any(
-        CacheAnnotationPointcut.isCacheAnnotation,
-      )) {
+      if (AnnotationCacheOperationSource.cacheAnnotationsOf(signature)
+          .isNotEmpty) {
         interceptor.cacheOperations(signature);
       }
     }
@@ -412,13 +412,24 @@ final class _Call {
     return unless != null && _evaluate(unless, operation, result) == true;
   }
 
-  Object? key(CacheOperation operation, [_Result? result]) {
-    if (operation.key case final key?) {
-      return _evaluate(key, operation, result);
-    }
-    return _interceptor
-        ._keyGeneratorFor(operation)
-        .generate(_invocation.target, _invocation.signature, _invocation.args);
+  Object key(CacheOperation operation, [_Result? result]) {
+    final key = switch (operation.key) {
+      final key? => _evaluate(key, operation, result),
+      null =>
+        _interceptor
+            ._keyGeneratorFor(operation)
+            .generate(
+              _invocation.target,
+              _invocation.signature,
+              _invocation.args,
+            ),
+    };
+    // Like Spring's CacheAspectSupport.generateKey.
+    return key ??
+        (throw ArgumentError(
+          'Null key returned for cache operation ${operation.description}: '
+          'the key expression or key generator gave null',
+        ));
   }
 
   List<Cache> caches(CacheOperation operation) =>
@@ -537,6 +548,7 @@ final class _Call {
             'targetClass': signature.targetType,
             'caches': operation.cacheNames,
           })
+          ..addPropertyAccessor(const _MethodSignatureAccessor())
           ..addPropertyAccessor(
             IntrospectionPropertyAccessor(_interceptor.introspector),
           )
@@ -559,6 +571,44 @@ final class _Call {
     }
     return _interceptor._expression(text).getValue(context);
   }
+}
+
+// `#root.method.name` and the other properties of the method, like
+// Spring's `java.lang.reflect.Method` in the root object (read-only).
+final class _MethodSignatureAccessor implements PropertyAccessor {
+  const _MethodSignatureAccessor();
+
+  static Object? _read(MethodSignature method, String name) => switch (name) {
+    'name' => method.name,
+    'declaringClass' || 'declaringType' => method.declaringType,
+    'returnType' => method.returnType,
+    'parameterTypes' => method.parameterTypes,
+    'parameterNames' => method.parameterNames,
+    'parameterCount' => method.parameterTypes.length,
+    'annotations' => method.annotations,
+    _ => _missing,
+  };
+
+  static final _missing = Object();
+
+  @override
+  bool canRead(EvaluationContext context, Object target, String name) =>
+      target is MethodSignature && !identical(_read(target, name), _missing);
+
+  @override
+  Object? read(EvaluationContext context, Object target, String name) =>
+      _read(target as MethodSignature, name);
+
+  @override
+  bool canWrite(EvaluationContext context, Object target, String name) => false;
+
+  @override
+  void write(
+    EvaluationContext context,
+    Object target,
+    String name,
+    Object? newValue,
+  ) => throw UnsupportedError('The method of a cache call is read-only');
 }
 
 // A method result (wrapped, so `null` results differ from "no result").

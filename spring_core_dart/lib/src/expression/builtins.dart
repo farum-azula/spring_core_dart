@@ -321,6 +321,7 @@ final class BuiltinMethodResolver implements MethodResolver {
       num n => _num(n, name),
       DateTime d => _date(d, name),
       Duration d => _duration(d, name),
+      StringBuffer b => _stringBuilder(b, name),
       _ => null,
     };
     return specific ??
@@ -531,6 +532,51 @@ final class BuiltinMethodResolver implements MethodResolver {
     'remainder' => (num other) => n.remainder(other),
     _ => null,
   };
+
+  // Java's StringBuilder over a Dart StringBuffer (`new StringBuilder()`).
+  static Function? _stringBuilder(StringBuffer b, String name) {
+    StringBuffer replace(String text) => b
+      ..clear()
+      ..write(text);
+    return switch (name) {
+      'append' => (Object? value) => b..write(value),
+      'length' => () => b.length,
+      'isEmpty' => () => b.isEmpty,
+      'charAt' => (int index) => b.toString()[index],
+      'indexOf' => (String text) => b.toString().indexOf(text),
+      'insert' => (int offset, Object? value) {
+        final text = b.toString();
+        return replace(
+          '${text.substring(0, offset)}$value${text.substring(offset)}',
+        );
+      },
+      'reverse' => () => replace(b.toString().split('').reversed.join()),
+      'setLength' => (int length) {
+        final text = b.toString();
+        replace(
+          length <= text.length
+              ? text.substring(0, length)
+              : text.padRight(length, '\u0000'),
+        );
+      },
+      'deleteCharAt' => (int index) {
+        final text = b.toString();
+        RangeError.checkValidIndex(index, text);
+        return replace(text.substring(0, index) + text.substring(index + 1));
+      },
+      'delete' => (int start, int end) {
+        final text = b.toString();
+        final stop = end > text.length ? text.length : end;
+        return replace(text.substring(0, start) + text.substring(stop));
+      },
+      'replace' => (int start, int end, String replacement) {
+        final text = b.toString();
+        final stop = end > text.length ? text.length : end;
+        return replace(text.replaceRange(start, stop, replacement));
+      },
+      _ => null,
+    };
+  }
 
   static Function? _date(DateTime d, String name) => switch (name) {
     'isBefore' => (DateTime other) => d.isBefore(other),

@@ -80,11 +80,13 @@ final class FeignClientFactory
       environment: environment,
       mapper: mapper,
       transport: transport,
-      interceptors: [
+      // A `request-interceptors` bean that is also a context bean (or is
+      // named twice) runs once.
+      interceptors: _distinct([
         ...beans.interceptors(),
         for (final name in config.requestInterceptors)
           beans.named<RequestInterceptor>(name, 'request-interceptors'),
-      ],
+      ]),
       errorDecoder: switch (config.errorDecoder) {
         final name? => beans.named<ErrorDecoder>(name, 'error-decoder'),
         null =>
@@ -100,6 +102,11 @@ final class FeignClientFactory
           : () => fallbackBean ??= _fallback(fallbackType, metadata),
     );
   }
+
+  static List<T> _distinct<T extends Object>(List<T> values) => [
+    for (final (index, value) in values.indexed)
+      if (!values.take(index).any((other) => identical(other, value))) value,
+  ];
 
   // The configuration classes of every client bean (from the annotations
   // of their definitions), computed once.

@@ -31,6 +31,36 @@ abstract interface class AopPointcut {
   bool matches(MethodSignature signature, String beanName);
 }
 
+/// A pointcut that matches only members or classes carrying annotations
+/// from outside `package:spring_core_dart` (`@Cacheable`, `@Validated`),
+/// like Spring's annotation-driven advisors.
+///
+/// The build skips the proxy classes of beans no pointcut can match
+/// (`aop_prune`), keeping every bean that carries such an annotation. An
+/// advisor bean of a starter's auto-configuration whose pointcut is an
+/// `AnnotationPointcut` (declared so in the advisor's static type) keeps
+/// that saving; any other advisor bean of a starter turns it off, since
+/// the build cannot tell which beans it matches.
+///
+/// ```dart
+/// final class CacheAnnotationPointcut implements AnnotationPointcut {
+///   const CacheAnnotationPointcut();
+///
+///   @override
+///   bool matches(MethodSignature signature, String beanName) =>
+///       signature.annotations.any((a) => a is Cacheable);
+/// }
+///
+/// DefaultPointcutAdvisor(const CacheAnnotationPointcut(), interceptor);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// new DefaultPointcutAdvisor(
+///     new AnnotationMatchingPointcut(null, Cacheable.class), interceptor);
+/// ```
+abstract interface class AnnotationPointcut implements AopPointcut {}
+
 /// Matches every member.
 ///
 /// ```dart
@@ -92,7 +122,7 @@ final class NameMatchMethodPointcut implements AopPointcut {
 /// AnnotationMatchingPointcut.forMethodAnnotation(Timed.class);
 /// AnnotationMatchingPointcut.forClassAnnotation(Service.class);
 /// ```
-final class AnnotationMatchingPointcut<A> implements AopPointcut {
+final class AnnotationMatchingPointcut<A> implements AnnotationPointcut {
   /// Creates a pointcut for annotations of type [A] on members (or on
   /// the class when [onClass] is `true`).
   const AnnotationMatchingPointcut({this.onClass = false});
@@ -1027,17 +1057,31 @@ final class _PointcutParser {
         "parameter (or throwing: 'name') instead",
       );
     }
-    final match = RegExp(
-      r'^\s*((?:!?\s*(?:public|protected|private|static|final)\s+)*)'
-      r'(\S+)\s+([^\s(]+)\s*\((.*)\)\s*$',
-    ).firstMatch(body);
-    if (match == null) {
+    final head = RegExp(
+      r'^\s*((?:!?\s*(?:public|protected|private|static|final)\s+)*)',
+    ).firstMatch(body)!;
+    // The return type pattern: one word, or a parenthesized combination
+    // (`(String || int)`), which may contain spaces.
+    var rest = body.substring(head.end);
+    String? returnText;
+    if (rest.startsWith('(')) {
+      final end = _closingParenthesis(rest);
+      if (end > 0) {
+        returnText = rest.substring(0, end + 1);
+        rest = rest.substring(end + 1);
+      }
+    } else if (RegExp(r'^\S+').firstMatch(rest) case final word?) {
+      returnText = word[0];
+      rest = rest.substring(word.end);
+    }
+    final match = RegExp(r'^\s+([^\s(]+)\s*\((.*)\)\s*$').firstMatch(rest);
+    if (returnText == null || match == null) {
       throw _error("malformed execution pattern '$body'");
     }
     final modifiers = [
       for (final m in RegExp(
         r'(!?)\s*(public|protected|private|static|final)',
-      ).allMatches(match[1]!))
+      ).allMatches(head[1]!))
         (m[1] == '!', m[2]!),
     ];
     bool modifiersMatch(MethodSignature s) => modifiers.every((modifier) {
@@ -1055,26 +1099,143 @@ final class _PointcutParser {
       }
       return has != negated;
     });
-    final returnPattern = _stripGenerics(match[2]!);
-    final qualified = match[3]!;
+    final returnMatches = _typeExpression(returnText);
+    final qualified = match[1]!;
     final dot = qualified.lastIndexOf('.');
     final methodPattern = dot < 0 ? qualified : qualified.substring(dot + 1);
     final typePattern = dot < 0
         ? null
         : _typePattern(qualified.substring(0, dot));
     final params = [
-      for (final p in _splitParameters(match[4]!))
-        if (p.trim().isNotEmpty) _stripGenerics(p.trim()),
+      for (final p in _splitParameters(match[2]!))
+        if (p.trim().isNotEmpty)
+          p.trim() == '..' ? null : _typeExpression(p.trim()),
     ];
     return _Leaf(
       (c) =>
           c.signature.kind == MemberKind.method &&
           modifiersMatch(c.signature) &&
-          wildcardMatch(returnPattern, c.signature.returnType) &&
+          returnMatches(c.signature.returnType) &&
           wildcardMatch(methodPattern, c.signature.name) &&
           (typePattern == null ||
               _declaringMatches(typePattern.$1, typePattern.$2, c.signature)) &&
           _matchParams(params, c.signature.parameterTypes),
+    );
+  }
+
+  // Index of the `)` closing the `(` at the start of [text]; -1 if none.
+  static int _closingParenthesis(String text) {
+    var depth = 0;
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] == '(') {
+        depth++;
+      } else if (text[i] == ')' && --depth == 0) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // Subtypes `Type+` knows among the types signatures name (simple names
+  // of the declared types; the hierarchy of other types is not recorded).
+  static const _knownSubtypes = {
+    'num': {'num', 'int', 'double'},
+    'Iterable': {'Iterable', 'List', 'Set'},
+    'Pattern': {'Pattern', 'String', 'RegExp'},
+  };
+
+  // An AspectJ type pattern for an `execution` return or parameter type:
+  // a (qualified) name with `*` wildcards and generics (ignored), `Type+`,
+  // `!pattern`, and `&&` / `||` combinations in parentheses
+  // (`(String || int)`; unparenthesized they are an error, as in AspectJ).
+  bool Function(String type) _typeExpression(String raw) {
+    // Type arguments are not matched (`Map<String, int>` → `Map`).
+    var text = raw;
+    for (var previous = ''; previous != text;) {
+      previous = text;
+      text = text.replaceAll(RegExp('<[^<>]*>'), '');
+    }
+    final tokens = [
+      for (final m in RegExp(r'\|\||&&|!|\(|\)|[^\s()!|&]+').allMatches(text))
+        m[0]!,
+    ];
+    var index = 0;
+    String? peek() => index < tokens.length ? tokens[index] : null;
+
+    late bool Function(String) Function() or;
+    bool Function(String) unary() {
+      final token = peek();
+      if (token == null || token == ')' || token == '||' || token == '&&') {
+        throw _error("malformed type pattern '$raw'");
+      }
+      index++;
+      if (token == '!') {
+        final inner = unary();
+        return (type) => !inner(type);
+      }
+      if (token == '(') {
+        final inner = or();
+        if (peek() != ')') {
+          throw _error("missing ')' in type pattern '$raw'");
+        }
+        index++;
+        return inner;
+      }
+      return _simpleTypeMatcher(token);
+    }
+
+    bool Function(String) and() {
+      var left = unary();
+      while (peek() == '&&') {
+        index++;
+        final first = left;
+        final second = unary();
+        left = (type) => first(type) && second(type);
+      }
+      return left;
+    }
+
+    or = () {
+      var left = and();
+      while (peek() == '||') {
+        index++;
+        final first = left;
+        final second = and();
+        left = (type) => first(type) || second(type);
+      }
+      return left;
+    };
+
+    final matcher = unary();
+    if (index < tokens.length) {
+      throw _error(
+        "type pattern '${raw.trim()}' combines types with "
+        "'${tokens[index]}' outside parentheses; write "
+        "'(${raw.trim()})', as AspectJ requires",
+      );
+    }
+    return matcher;
+  }
+
+  // One type name pattern of [_typeExpression].
+  bool Function(String) _simpleTypeMatcher(String raw) {
+    final cleaned = _stripGenerics(raw);
+    if (!cleaned.endsWith('+')) {
+      final pattern = _simple(cleaned);
+      return (type) => wildcardMatch(pattern, type);
+    }
+    final pattern = _simple(cleaned.substring(0, cleaned.length - 1));
+    if (pattern == 'Object' || pattern == '*') {
+      return (type) => type != 'void';
+    }
+    if (_knownSubtypes[pattern] case final subtypes?) {
+      return subtypes.contains;
+    }
+    throw _error(
+      "'$cleaned' in an execution return or parameter type: signatures "
+      'carry the simple name of each declared type, not its supertypes, '
+      'so the subtypes of $pattern are unknown; list them '
+      "('($pattern || Sub1 || Sub2)'), or use 'Object+' or '*'",
     );
   }
 
@@ -1102,12 +1263,15 @@ final class _PointcutParser {
 
   // Matches parameter types against patterns; `..` matches zero or more
   // parameters (tried by backtracking over every possible skip).
-  static bool _matchParams(List<String> patterns, List<String> types) {
+  static bool _matchParams(
+    List<bool Function(String)?> patterns,
+    List<String> types,
+  ) {
     if (patterns.isEmpty) {
       return types.isEmpty;
     }
     final head = patterns.first;
-    if (head == '..') {
+    if (head == null) {
       for (var skip = 0; skip <= types.length; skip++) {
         if (_matchParams(patterns.sublist(1), types.sublist(skip))) {
           return true;
@@ -1116,7 +1280,7 @@ final class _PointcutParser {
       return false;
     }
     return types.isNotEmpty &&
-        wildcardMatch(head, types.first) &&
+        head(types.first) &&
         _matchParams(patterns.sublist(1), types.sublist(1));
   }
 
@@ -1127,9 +1291,9 @@ final class _PointcutParser {
     var start = 0;
     for (var i = 0; i < text.length; i++) {
       switch (text[i]) {
-        case '<':
+        case '<' || '(':
           depth++;
-        case '>':
+        case '>' || ')':
           depth--;
         case ',' when depth == 0:
           parts.add(text.substring(start, i));

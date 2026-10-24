@@ -16,6 +16,7 @@ import 'package:build/build.dart' show log;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/constraint_checker.dart';
+import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
@@ -70,7 +71,6 @@ const _configurationProperties = TypeChecker.fromUrl(
   'package:spring_boot_dart/src/annotations.dart#ConfigurationProperties',
 );
 final _interfaceProxy = _spring('InterfaceProxy');
-final _jsonValue = _spring('JsonValue');
 final _factoryBean = _spring('FactoryBean');
 final _applicationListener = _spring('ApplicationListener');
 final _objectProvider = _spring('ObjectProvider');
@@ -533,6 +533,18 @@ class BeanScanner {
         if (_aspectModel(element) case final aspect?) {
           into.aspects.add((element.name!, aspect));
         }
+        // `@Bean AuditAspect audit() => AuditAspect();`
+        if (_component.hasAnnotationOf(element)) {
+          for (final (method, _) in _beanMethods(element.thisType)) {
+            if (method.returnType
+                case InterfaceType(element: final ClassElement returned)
+                when returned != element) {
+              if (_aspectModel(returned) case final aspect?) {
+                into.aspects.add((returned.name!, aspect));
+              }
+            }
+          }
+        }
         if (_component.hasAnnotationOf(element) &&
             (_advisor.isAssignableFrom(element) ||
                 _beanMethods(element.thisType).any(
@@ -974,12 +986,20 @@ class BeanScanner {
     if (!_introspectedClasses.add(element)) {
       return;
     }
+    checkJsonAnnotations(element);
     final type = element.thisType;
-    // Subclass first, so overriding declarations win (first one kept).
+    // Subclass first, then its mixins and superclasses (with theirs), so
+    // overriding declarations win (first one kept).
     // Only fields with a getter and an interface type, and methods callable
     // with positional arguments only, can be described by BeanProperty and
     // BeanMethod; anything else is skipped silently.
-    final hierarchy = [element, ..._superclasses(type)];
+    final hierarchy = [
+      for (final current in [element, ..._superclasses(type)]) ...[
+        current,
+        // Applied mixins, the last one first (it overrides the others).
+        for (final mixin in current.mixins.reversed) mixin.element,
+      ],
+    ];
     final properties = <String, IntrospectedProperty>{};
     final methods = <String, IntrospectedMethod>{};
     for (final current in hierarchy) {
@@ -1238,12 +1258,6 @@ class BeanScanner {
     return false;
   }
 
-  /// The field of [element] marked `@JsonValue()`, if any (for emitters).
-  static String? jsonValueField(EnumElement element) => element.fields
-      .where((f) => !f.isStatic && _jsonValue.hasAnnotationOf(f))
-      .firstOrNull
-      ?.name;
-
   /// [_userAnnotations] of a getter or setter; for the implicit accessors of
   /// a field, also those of the field (`@Timed() int count = 0;` advises
   /// `count` like an annotated explicit getter). Constraints and `@Valid`
@@ -1262,6 +1276,11 @@ class BeanScanner {
 
   /// Const annotations worth keeping at runtime: user annotations and
   /// constraints, not `dart:` ones or Spring's DI annotations.
+  ///
+  /// An annotation the generated library cannot re-create (a private
+  /// constant or function among its values, `@Audit(_level)`) is left out;
+  /// a constraint or `@Valid` fails the build instead, since leaving it
+  /// out would skip the validation.
   List<DartObject> _userAnnotations(Element element) => [
     for (final annotation in element.metadata.annotations)
       if (annotation.computeConstantValue() case final value?)
@@ -1269,9 +1288,29 @@ class BeanScanner {
             when !type.element.library.isInSdk &&
                 type.element.isPublic &&
                 !(_isSpringType(type) &&
-                    _diAnnotations.contains(type.element.name)))
+                    _diAnnotations.contains(type.element.name)) &&
+                _recreatableOrFail(value, type, element))
           value,
   ];
+
+  bool _recreatableOrFail(
+    DartObject value,
+    InterfaceType type,
+    Element element,
+  ) {
+    if (_isRecreatable(value)) {
+      return true;
+    }
+    if (_constraint.isAssignableFromType(type) || _valid.isExactlyType(type)) {
+      _fail(
+        '@${type.element.name} on ${_describe(element)} uses a private '
+        'constant or function, which the generated code cannot reference, '
+        'so the constraint could not be checked. Make the value public.',
+        element,
+      );
+    }
+    return false;
+  }
 
   /// The annotations of a bean class or `@Bean` method for
   /// `BeanDefinition.annotations` (`findAnnotationOnBean`,
@@ -1529,6 +1568,12 @@ class BeanScanner {
           : _requireNoArgMethod(returnType, initMethod, method, 'initMethod'),
       destroyMethod: _beanDestroyMethod(returnType, destroyMethod, method),
       destroyMethodInferred: destroyMethod == '(inferred)',
+      // Like Spring, an `@Aspect` class registered through a `@Bean`
+      // method is an aspect too (its advice applies to the other beans).
+      aspect: switch (returnType.element) {
+        final ClassElement element => _aspectModel(element),
+        _ => null,
+      },
       // The proxy class is named after owner and method, because two
       // `@Bean` methods may return the same type.
       proxy:
@@ -1918,6 +1963,11 @@ class BeanScanner {
     for (final parameter in method.formalParameters) {
       final type = parameter.type;
       final parameterName = parameter.name ?? '';
+      _requireDefinedType(
+        type,
+        parameter,
+        'parameter $parameterName of $annotationName advice $name has',
+      );
       if (parameter.isNamed) {
         _fail('Advice method $name must use positional parameters.', method);
       }
@@ -2210,6 +2260,18 @@ class BeanScanner {
       'The $kind $typeName.$name is not advised: the subclass proxy of '
       '$typeName cannot override it ($reason).',
     );
+    // `@nonVirtual` (package:meta) on any declaration of the member.
+    bool nonVirtual(
+      String name,
+      ExecutableElement? Function(InterfaceType) of,
+    ) => [targetType, ...targetType.allSupertypes].any((type) {
+      final declaration = of(type);
+      return declaration != null &&
+          (declaration.metadata.hasNonVirtual ||
+              (declaration is PropertyAccessorElement &&
+                  declaration.variable.metadata.hasNonVirtual));
+    });
+    const nonVirtualReason = 'it is @nonVirtual';
     for (final current in _hierarchy(targetType)) {
       final declaring = current.name!;
       for (final method in current.methods) {
@@ -2230,6 +2292,10 @@ class BeanScanner {
         }
         if (_advisedMembers.contains(name)) {
           _fail(_reservedMessage(typeName, name), element);
+        }
+        if (nonVirtual(name, (type) => type.getMethod(name))) {
+          skip('method', name, nonVirtualReason);
+          continue;
         }
         final member = _proxyMethod(implementation, method, declaring);
         if (member == null) {
@@ -2264,6 +2330,10 @@ class BeanScanner {
           skip('getter', name, 'its type is private');
           continue;
         }
+        if (nonVirtual(name, (type) => type.getGetter(name))) {
+          skip('getter', name, nonVirtualReason);
+          continue;
+        }
         members.add(
           ProxyMember(
             kind: ProxyMemberKind.getter,
@@ -2294,6 +2364,10 @@ class BeanScanner {
         final parameterType = implementation.formalParameters.single.type;
         if (!_isEmittable(parameterType)) {
           skip('setter', name, 'its type is private');
+          continue;
+        }
+        if (nonVirtual(name, (type) => type.getSetter(name))) {
+          skip('setter', name, nonVirtualReason);
           continue;
         }
         members.add(
@@ -4012,6 +4086,34 @@ class BeanScanner {
   // ---------------------------------------------------------------------
 
   // `ApplicationListener<E>` implementations first, then `@EventListener`
+  // The type a listener's results are published as: the return type, or
+  // the element type of an Iterable; `null` for `Object`, `dynamic`,
+  // private or generic types (published as `Object`).
+  static InterfaceType? _listenerResultType(DartType returnType) {
+    var type = returnType;
+    if (type is InterfaceType) {
+      final iterable = type.isDartCoreIterable
+          ? type
+          : type.allSupertypes.where((s) => s.isDartCoreIterable).firstOrNull;
+      if (iterable != null) {
+        type = iterable.typeArguments.single;
+      }
+    }
+    if (type is! InterfaceType ||
+        type.isDartCoreObject ||
+        type.isDartCoreNull ||
+        type.element.name == null ||
+        type.element.name!.startsWith('_') ||
+        type.typeArguments.any((a) => a is! InterfaceType)) {
+      return null;
+    }
+    // `R?` is published as `R` (null results are not published).
+    return type.element.instantiate(
+      typeArguments: type.typeArguments,
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
+  }
+
   // methods of the class and its supertypes (subclass first, one listener
   // per method name).
   List<ListenerModel> _listeners(ClassElement element) {
@@ -4104,15 +4206,17 @@ class BeanScanner {
     if (conditionValue != null && condition == null) {
       _fail('@EventListener condition must be a function.', method);
     }
+    final returnsValue =
+        returnType is! VoidType &&
+        !returnType.isDartAsyncFuture &&
+        !returnType.isDartAsyncFutureOr;
     return ListenerModel(
       id: annotation.peek('id')?.stringValue ?? '$className.$methodName',
       methodName: methodName,
       eventTypes: classes.isEmpty ? [parameterType!] : classes,
       parameterType: parameterType,
-      returnsValue:
-          returnType is! VoidType &&
-          !returnType.isDartAsyncFuture &&
-          !returnType.isDartAsyncFutureOr,
+      returnsValue: returnsValue,
+      resultType: returnsValue ? _listenerResultType(returnType) : null,
       order: _orderOf(method),
       condition: condition,
       async: asyncAnnotation != null,
@@ -4431,7 +4535,11 @@ class BeanScanner {
     if (!_mentionsInvalidType(type)) {
       return;
     }
-    final name = _writtenTypeName(element);
+    // A setter's type is written in its parameter.
+    final name = _writtenTypeName(switch (element) {
+      SetterElement(formalParameters: [final parameter]) => parameter,
+      _ => element,
+    });
     final source = knownTypes[name];
     final where = element.library?.uri;
     _fail(
@@ -4495,13 +4603,30 @@ class BeanScanner {
           RegExp(r'\b(required|final|covariant|late|static|const|var|this)\b'),
           ' ',
         );
-    for (final match in RegExp(r'[A-Za-z_$][\w$]*').allMatches(written)) {
-      final name = match[0]!;
-      if (!const {'Function', 'dynamic', 'void'}.contains(name)) {
-        return name;
-      }
-    }
-    return null;
+    // The first name the library cannot resolve (`Clock` in
+    // `List<Clock>`), else the first name written.
+    final typeParameters = {
+      for (
+        Element? current = declaration;
+        current != null;
+        current = current.enclosingElement
+      )
+        if (current case TypeParameterizedElement(:final typeParameters))
+          for (final typeParameter in typeParameters) ?typeParameter.name,
+    };
+    final names = [
+      for (final match in RegExp(r'[A-Za-z_$][\w$]*').allMatches(written))
+        if (!const {'Function', 'dynamic', 'void'}.contains(match[0]))
+          match[0]!,
+    ];
+    return names
+            .where(
+              (name) =>
+                  !typeParameters.contains(name) &&
+                  unit.scope.lookup(name).getter == null,
+            )
+            .firstOrNull ??
+        names.firstOrNull;
   }
 
   void _requirePublicType(

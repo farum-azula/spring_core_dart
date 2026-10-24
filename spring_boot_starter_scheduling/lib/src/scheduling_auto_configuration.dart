@@ -23,7 +23,8 @@ const _enabled = ConditionalOnProperty(
 /// `spring.task.scheduling.enabled=false` (handy in tests). With
 /// `spring.task.scheduling.shutdown.await-termination=true` the context's
 /// `closeAsync()` waits for the runs going on, at most
-/// `spring.task.scheduling.shutdown.await-termination-period`.
+/// `spring.task.scheduling.shutdown.await-termination-period`. An
+/// `ErrorHandler` bean receives the errors of the tasks.
 ///
 /// ```properties
 /// spring.task.scheduling.enabled=false
@@ -67,6 +68,7 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
         awaitTerminationPeriod: environment.getPropertyAs<Duration>(
           'spring.task.scheduling.shutdown.await-termination-period',
         ),
+        errorHandler: r.optionalDependency<ErrorHandler>(),
       );
     },
   ),

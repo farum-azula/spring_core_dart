@@ -460,7 +460,8 @@ void main() {
         (const Max(1), double.nan, false),
         (const Min(1), double.infinity, true),
         (const Max(1), double.negativeInfinity, true),
-        (const Max(9007199254740993), 9007199254740992, true),
+        // Beyond 2^53 (parsed: the literal is not exact in JavaScript).
+        (Max(int.parse('9007199254740993')), 9007199254740992, true),
         (const Min(1), true, true),
       ];
       for (final (constraint, value, valid) in cases) {

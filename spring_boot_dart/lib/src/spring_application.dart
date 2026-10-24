@@ -9,6 +9,7 @@ import 'package:spring_boot_dart/src/configuration_properties.dart';
 import 'package:spring_boot_dart/src/environment_post_processor.dart';
 import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
+import 'package:spring_boot_dart/src/deferred_logs.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
@@ -87,7 +88,7 @@ class SpringApplication {
     this.bannerMode = BannerMode.console,
     this.resourceLoader,
     this.fingerprint,
-    void Function(String line)? out,
+    this.out,
   }) : modules = List.unmodifiable(modules),
        autoConfigurations = List.unmodifiable(autoConfigurations),
        autoConfigurationMetadata = Map.unmodifiable(autoConfigurationMetadata),
@@ -98,8 +99,7 @@ class SpringApplication {
        _listeners = [...listeners],
        _defaultProperties = {...defaultProperties},
        additionalProfiles = List.unmodifiable(additionalProfiles),
-       environmentPostProcessors = List.unmodifiable(environmentPostProcessors),
-       out = out ?? print;
+       environmentPostProcessors = List.unmodifiable(environmentPostProcessors);
 
   /// The application's own modules.
   final List<BeanModule> modules;
@@ -130,9 +130,9 @@ class SpringApplication {
   /// in programs that run until stopped. Nothing happens without `dart:io`.
   final bool registerShutdownHook;
 
-  /// Called with the context before it is refreshed, in order (Spring's
-  /// `ApplicationContextInitializer`): add post-processors, register
-  /// singletons, ...
+  /// Called with the context before it is refreshed, sorted by `Ordered`
+  /// (Spring's `ApplicationContextInitializer`): add post-processors,
+  /// register singletons, ...
   final List<ApplicationContextInitializer> initializers;
 
   /// Consulted, together with the `FailureAnalyzer` beans of the context,
@@ -207,8 +207,9 @@ class SpringApplication {
   final BannerMode bannerMode;
 
   // Boot's printBanner: after the environment is prepared, before the
-  // context is created.
-  void _printBanner(StandardEnvironment environment) {
+  // context is created. [preloaded] is the banner file read
+  // asynchronously (runAsync: Flutter assets).
+  void _printBanner(StandardEnvironment environment, [Resource? preloaded]) {
     final property = environment
         .getProperty('spring.main.banner-mode')
         ?.trim()
@@ -226,12 +227,7 @@ class SpringApplication {
     if (mode == BannerMode.off) {
       return;
     }
-    final location =
-        environment.getProperty('spring.banner.location') ??
-        'classpath:banner.txt';
-    final resource = (resourceLoader ?? DefaultResourceLoader()).getResource(
-      location,
-    );
+    final resource = preloaded ?? _bannerResource(environment);
     final chosen = resource.supportsSyncRead && resource.exists()
         ? ResourceBanner(resource)
         : banner ?? const SpringBootBanner();
@@ -241,13 +237,41 @@ class SpringApplication {
     );
   }
 
+  Resource _bannerResource(Environment environment) =>
+      (resourceLoader ?? DefaultResourceLoader()).getResource(
+        environment.getProperty('spring.banner.location') ??
+            'classpath:banner.txt',
+      );
+
+  // The banner file when it can only be read asynchronously (a Flutter
+  // asset), read into memory; `null` otherwise or when it cannot be read.
+  Future<Resource?> _readBannerAsync(Environment environment) async {
+    final resource = _bannerResource(environment);
+    if (resource.supportsSyncRead || !resource.exists()) {
+      return null;
+    }
+    try {
+      return ByteArrayResource(
+        await resource.readAsBytes(),
+        description: resource.description,
+      );
+    } on Object {
+      return null;
+    }
+  }
+
   /// Customize the environment before the context is created, around
   /// config data loading by order (see [EnvironmentPostProcessor]).
   final List<EnvironmentPostProcessor> environmentPostProcessors;
 
-  // The post-processors before (`true`) or after config data, in order.
+  // The post-processors before (`true`) or after config data, in order;
+  // Boot's built-in SpringApplicationJsonEnvironmentPostProcessor among
+  // them.
   Iterable<EnvironmentPostProcessor> _postProcessors({required bool before}) =>
-      OrderComparator.sort(environmentPostProcessors).where(
+      OrderComparator.sort([
+        const SpringApplicationJsonEnvironmentPostProcessor(),
+        ...environmentPostProcessors,
+      ]).where(
         (processor) =>
             (OrderComparator.orderOf(processor) <
                 EnvironmentPostProcessor.configDataOrder) ==
@@ -272,9 +296,14 @@ class SpringApplication {
   /// asset-aware loader (and [runAsync]) in Flutter.
   final ResourceLoader? resourceLoader;
 
-  /// Where failure reports go (the startup info is logged through
-  /// [SpringLog]).
-  final void Function(String line) out;
+  /// Where failure reports go instead of the log; `null` (the default)
+  /// logs them like Spring Boot: a failure analysis at error level under
+  /// `spring_boot_dart.diagnostics.LoggingFailureAnalysisReporter`, any
+  /// other failure as `Application run failed` with the error and stack
+  /// trace under `spring_boot_dart.SpringApplication`. A logging system
+  /// (`spring_boot_starter_logging`) stays installed until the failure is
+  /// logged, so it reaches the log file too.
+  final void Function(String line)? out;
 
   /// Starts the application synchronously (config files read with
   /// `dart:io`). [systemEnvironment] replaces the OS environment and
@@ -320,8 +349,8 @@ class SpringApplication {
     try {
       run.started(context, watch.elapsed);
       called = runners ? _callRunners(context, arguments) : null;
-    } catch (error) {
-      _runFailed(run, context, error);
+    } catch (error, stackTrace) {
+      _runFailed(run, context, error, stackTrace: stackTrace);
       rethrow;
     }
     if (called is Future<void>) {
@@ -332,7 +361,7 @@ class SpringApplication {
         called.then(
           (_) => _ready(run, context, watch),
           onError: (Object error, StackTrace stackTrace) {
-            _runFailed(run, context, error);
+            _runFailed(run, context, error, stackTrace: stackTrace);
             Error.throwWithStackTrace(error, stackTrace);
           },
         ),
@@ -356,8 +385,14 @@ class SpringApplication {
     }
     try {
       run.ready(context, watch.elapsed);
-    } catch (error) {
-      _runFailed(run, context, error, failedEvent: false);
+    } catch (error, stackTrace) {
+      _runFailed(
+        run,
+        context,
+        error,
+        failedEvent: false,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -393,9 +428,9 @@ class SpringApplication {
       ).processAndApply();
       _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
-      _printBanner(environment);
-    } catch (error) {
-      _report(run, error);
+      _printBanner(environment, await _readBannerAsync(environment));
+    } catch (error, stackTrace) {
+      _report(run, error, stackTrace: stackTrace);
       rethrow;
     }
     final (context, arguments) = await _guardAsync(
@@ -410,8 +445,8 @@ class SpringApplication {
       if (runners) {
         await _callRunners(context, arguments);
       }
-    } catch (error) {
-      await _runFailedAsync(run, context, error);
+    } catch (error, stackTrace) {
+      await _runFailedAsync(run, context, error, stackTrace);
       rethrow;
     }
     _ready(run, context, watch);
@@ -522,8 +557,8 @@ class SpringApplication {
   T _guard<T>(_RunListeners run, T Function() body) {
     try {
       return body();
-    } catch (error) {
-      _report(run, error);
+    } catch (error, stackTrace) {
+      _report(run, error, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -531,8 +566,8 @@ class SpringApplication {
   Future<T> _guardAsync<T>(_RunListeners run, Future<T> Function() body) async {
     try {
       return await body();
-    } catch (error) {
-      _report(run, error);
+    } catch (error, stackTrace) {
+      _report(run, error, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -545,22 +580,47 @@ class SpringApplication {
   // handleRunFailure).
   void _report(
     _RunListeners run,
-    Object error, [
+    Object error, {
     ConfigurableApplicationContext? context,
-  ]) {
+    StackTrace? stackTrace,
+  }) {
+    run.deferredLogs.switchOver();
     if (_reported.remove(error)) {
       return;
     }
     _handleExitCode(context, error);
     run.failed(context, error);
-    final analysis = analyzeFailure(error, analyzers: _analyzers(context));
-    if (analysis != null) {
-      out(analysis.report);
-    }
+    _reportFailure(context, error, stackTrace);
     if (context != null) {
       _reported.add(error);
     }
   }
+
+  // Boot's reportFailure: the failure analysis (LoggingFailureAnalysisReporter)
+  // or "Application run failed" with the error, to [out] or the log.
+  void _reportFailure(
+    ConfigurableApplicationContext? context,
+    Object error,
+    StackTrace? stackTrace,
+  ) {
+    final analysis = analyzeFailure(error, analyzers: _analyzers(context));
+    final out = this.out;
+    if (out != null) {
+      out(analysis?.report ?? 'Application run failed: $error');
+    } else if (analysis != null) {
+      _reporterLog.error(analysis.report);
+    } else {
+      _log.error(
+        'Application run failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  static const _reporterLog = SpringLog(
+    'spring_boot_dart.diagnostics.LoggingFailureAnalysisReporter',
+  );
 
   // [failureAnalyzers], then the `FailureAnalyzer` beans of [context] (if
   // they can still be created), sorted by order.
@@ -615,14 +675,15 @@ class SpringApplication {
     final context = prepared.context;
     try {
       context.refresh();
-    } catch (error) {
+    } catch (error, stackTrace) {
       _logConditionReport(context, crash: true);
-      _report(run, error, context);
+      _report(run, error, context: context, stackTrace: stackTrace);
       if (context.isActive) {
         context.close();
       }
       rethrow;
     }
+    run.deferredLogs.switchOver();
     _logConditionReport(context);
     _registerShutdownHook(environment, context);
     _logStarted(prepared, watch);
@@ -642,14 +703,15 @@ class SpringApplication {
     final context = prepared.context;
     try {
       await context.refreshAsync();
-    } catch (error) {
+    } catch (error, stackTrace) {
       _logConditionReport(context, crash: true);
-      _report(run, error, context);
+      _report(run, error, context: context, stackTrace: stackTrace);
       if (context.isActive) {
         await context.closeAsync();
       }
       rethrow;
     }
+    run.deferredLogs.switchOver();
     _logConditionReport(context);
     _registerShutdownHook(environment, context);
     _logStarted(prepared, watch);
@@ -732,6 +794,11 @@ class SpringApplication {
         arguments,
         types: const [ApplicationArguments],
       )
+      ..registerSingleton(
+        DeferredLogs.beanName,
+        run.deferredLogs,
+        types: const [DeferredLogs],
+      )
       ..addBeanPostProcessor(
         ConfigurationPropertiesBinder(
           environment,
@@ -755,8 +822,8 @@ class SpringApplication {
         types: const [BeanFactoryPostProcessor, Ordered],
       );
     }
-    for (final initializer in initializers) {
-      initializer(context);
+    for (final initializer in OrderComparator.sort(initializers)) {
+      initializer.initialize(context);
     }
     run
       ..contextPrepared(context)
@@ -788,8 +855,15 @@ class SpringApplication {
     ConfigurableApplicationContext context,
     Object error, {
     bool failedEvent = true,
+    StackTrace? stackTrace,
   }) {
-    _reportRunFailure(run, context, error, failedEvent: failedEvent);
+    _reportRunFailure(
+      run,
+      context,
+      error,
+      failedEvent: failedEvent,
+      stackTrace: stackTrace,
+    );
     if (context.isActive) {
       context.close();
     }
@@ -798,9 +872,16 @@ class SpringApplication {
   Future<void> _runFailedAsync(
     _RunListeners run,
     ConfigurableApplicationContext context,
-    Object error,
-  ) async {
-    _reportRunFailure(run, context, error, failedEvent: true);
+    Object error, [
+    StackTrace? stackTrace,
+  ]) async {
+    _reportRunFailure(
+      run,
+      context,
+      error,
+      failedEvent: true,
+      stackTrace: stackTrace,
+    );
     if (context.isActive) {
       await context.closeAsync();
     }
@@ -811,15 +892,13 @@ class SpringApplication {
     ConfigurableApplicationContext context,
     Object error, {
     required bool failedEvent,
+    StackTrace? stackTrace,
   }) {
     _handleExitCode(context, error);
     if (failedEvent) {
       run.failed(context, error);
     }
-    out(
-      analyzeFailure(error, analyzers: _analyzers(context))?.report ??
-          'Application run failed: $error',
-    );
+    _reportFailure(context, error, stackTrace);
   }
 
   // Boot's handleExitCode: the code from the ExitCodeExceptionMapper beans
@@ -982,6 +1061,13 @@ class SpringApplication {
     }
   }
 
+  // Like Boot's LenientObjectToEnumConverterFactory: `false` (YAML's `off`)
+  // is OFF.
+  static SpringLogLevel? _parseLevel(String? value) =>
+      value?.trim().toLowerCase() == 'false'
+      ? SpringLogLevel.off
+      : parseSpringLogLevel(value);
+
   /// Applies `logging.level.*` from [environment] to [SpringLog], like
   /// Spring Boot's `LoggingApplicationListener`:
   ///
@@ -993,8 +1079,8 @@ class SpringApplication {
   /// ```
   ///
   /// `LOGGING_LEVEL_NEON_CHECKOUT=debug` (environment variable) is the
-  /// same as `logging.level.neon.checkout`. Levels of an earlier run are
-  /// replaced.
+  /// same as `logging.level.neon.checkout`; `false` (YAML's `off`) is
+  /// `off`. Levels of an earlier run are replaced.
   static void applyLoggingLevels(ConfigurableEnvironment environment) {
     // Bound like Boot's LoggingApplicationListener: groups as lists (a
     // comma list or `logging.group.x[0]`), levels as a map whose values
@@ -1024,7 +1110,7 @@ class SpringApplication {
       if (value.trim().isEmpty) {
         continue; // no level: inherited
       }
-      final level = parseSpringLogLevel(value);
+      final level = _parseLevel(value);
       if (level == null) {
         invalid.add(
           'logging.level.$logger: failed to convert to LogLevel (was '
@@ -1037,7 +1123,7 @@ class SpringApplication {
     final scalar = environment.getProperty('logging.level');
     if (scalar != null &&
         scalar.trim().isNotEmpty &&
-        parseSpringLogLevel(scalar) == null) {
+        _parseLevel(scalar) == null) {
       invalid.add(
         'logging.level: failed to convert to LogLevel (was "$scalar")',
       );
@@ -1053,9 +1139,7 @@ class SpringApplication {
     final rootKey = levels.keys
         .where((name) => name.toLowerCase() == 'root')
         .firstOrNull;
-    final root = rootKey != null
-        ? levels[rootKey]
-        : parseSpringLogLevel(scalar);
+    final root = rootKey != null ? levels[rootKey] : _parseLevel(scalar);
     levels.removeWhere((name, _) => name.toLowerCase() == 'root');
     if (root != null) {
       SpringLog.level = root;
@@ -1075,8 +1159,9 @@ class SpringApplication {
 /// `LazyInitializationBeanFactoryPostProcessor`; [SpringApplication] adds
 /// it for `spring.main.lazy-initialization=true`.
 ///
-/// Beans with their own `@Lazy(...)` and `SmartInitializingSingleton`
-/// beans are left alone.
+/// Beans with their own `@Lazy(...)`, `SmartInitializingSingleton` beans
+/// and beans excluded by a [LazyInitializationExcludeFilter] bean are left
+/// alone.
 ///
 /// Spring (Java):
 /// ```java
@@ -1087,10 +1172,20 @@ class LazyInitializationBeanFactoryPostProcessor
     implements BeanFactoryPostProcessor, Ordered {
   @override
   void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    // Like Boot, the filter beans are created here.
+    final filters = [
+      const LazyInitializationExcludeFilter.forBeanTypes([
+        SmartInitializingSingleton,
+      ]),
+      ...beanFactory.getBeansOfType<LazyInitializationExcludeFilter>().values,
+    ];
     for (final name in beanFactory.beanDefinitionNames) {
       final definition = beanFactory.getBeanDefinition(name);
       if (definition.annotations.any((a) => a is Lazy) ||
-          definition.types.contains(SmartInitializingSingleton)) {
+          filters.any(
+            (filter) =>
+                filter.isExcluded(name, definition, definition.beanType),
+          )) {
         continue;
       }
       definition.lazy = true;
@@ -1148,11 +1243,132 @@ typedef _Prepared = ({
   bool logStartupInfo,
 });
 
+/// Keeps beans eager under `spring.main.lazy-initialization=true`, like
+/// Spring Boot's `LazyInitializationExcludeFilter`: declare one as a bean
+/// (a `@Bean` method, static in Boot) and [LazyInitializationBeanFactoryPostProcessor]
+/// leaves the beans it excludes alone.
+///
+/// ```dart
+/// @Bean()
+/// LazyInitializationExcludeFilter eagerCaches() =>
+///     const LazyInitializationExcludeFilter.forBeanTypes([CacheWarmer]);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Bean
+/// static LazyInitializationExcludeFilter eagerCaches() {
+///   return LazyInitializationExcludeFilter.forBeanTypes(CacheWarmer.class);
+/// }
+/// ```
+abstract interface class LazyInitializationExcludeFilter {
+  /// A filter calling [isExcluded] (a Java lambda).
+  const factory LazyInitializationExcludeFilter.of(
+    bool Function(
+      String beanName,
+      BeanDefinition<Object> definition,
+      Type beanType,
+    )
+    isExcluded,
+  ) = _FunctionExcludeFilter;
+
+  /// Excludes the beans of [types] (registered under one of them).
+  const factory LazyInitializationExcludeFilter.forBeanTypes(List<Type> types) =
+      _TypesExcludeFilter;
+
+  /// Whether the bean [beanName] stays eager.
+  bool isExcluded(
+    String beanName,
+    BeanDefinition<Object> definition,
+    Type beanType,
+  );
+}
+
+final class _FunctionExcludeFilter implements LazyInitializationExcludeFilter {
+  const _FunctionExcludeFilter(this._isExcluded);
+
+  final bool Function(String, BeanDefinition<Object>, Type) _isExcluded;
+
+  @override
+  bool isExcluded(
+    String beanName,
+    BeanDefinition<Object> definition,
+    Type beanType,
+  ) => _isExcluded(beanName, definition, beanType);
+}
+
+final class _TypesExcludeFilter implements LazyInitializationExcludeFilter {
+  const _TypesExcludeFilter(this.types);
+
+  final List<Type> types;
+
+  @override
+  bool isExcluded(
+    String beanName,
+    BeanDefinition<Object> definition,
+    Type beanType,
+  ) => types.any((type) => type == beanType || definition.types.contains(type));
+}
+
 /// Prepares a context before it is refreshed, like Spring's
 /// `ApplicationContextInitializer`; see [SpringApplication.initializers].
-typedef ApplicationContextInitializer = void Function(
-  ConfigurableApplicationContext context,
-);
+/// [SpringApplication] runs them sorted by `Ordered` (unordered ones
+/// last).
+///
+/// ```dart
+/// final class TestServers implements ApplicationContextInitializer, Ordered {
+///   @override
+///   int get order => Ordered.highestPrecedence;
+///
+///   @override
+///   void initialize(ConfigurableApplicationContext context) =>
+///       context.environment.propertySources.addFirst(
+///         MapPropertySource('servers', {'api.url': 'http://localhost:8081'}),
+///       );
+/// }
+///
+/// SpringApplication([appBeans], initializers: [
+///   TestServers(),
+///   ApplicationContextInitializer.of((context) => print(context.id)),
+/// ]);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// class TestServers implements
+///     ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
+///   public void initialize(ConfigurableApplicationContext context) { ... }
+/// }
+/// application.addInitializers(new TestServers(), context -> ...);
+/// ```
+abstract interface class ApplicationContextInitializer {
+  /// An initializer calling [initialize] (a Java lambda), ordered by
+  /// [order].
+  const factory ApplicationContextInitializer.of(
+    void Function(ConfigurableApplicationContext context) initialize, {
+    int order,
+  }) = _FunctionInitializer;
+
+  /// Prepares [context].
+  void initialize(ConfigurableApplicationContext context);
+}
+
+final class _FunctionInitializer
+    implements ApplicationContextInitializer, Ordered {
+  const _FunctionInitializer(
+    this._initialize, {
+    this.order = Ordered.lowestPrecedence,
+  });
+
+  final void Function(ConfigurableApplicationContext context) _initialize;
+
+  @override
+  final int order;
+
+  @override
+  void initialize(ConfigurableApplicationContext context) =>
+      _initialize(context);
+}
 
 // Spring Boot's EventPublishingRunListener: the application's listeners
 // get the early events through their own multicaster, the later ones
@@ -1167,6 +1383,9 @@ final class _RunListeners {
   final SpringApplication application;
   final List<String> args;
   final _multicaster = SimpleApplicationEventMulticaster();
+
+  // What is logged before a logging system takes over (replayed by it).
+  final deferredLogs = DeferredLogs.capture();
 
   void starting() =>
       _multicaster.multicastEvent(ApplicationStartingEvent(application, args));
@@ -1209,6 +1428,14 @@ final class _RunListeners {
       if (context != null && context.isActive) {
         context.publishEvent(event);
       } else {
+        // Like Boot, also to the listeners added to the context.
+        for (final listener
+            in context?.applicationListeners ??
+                const <GenericApplicationListener>[]) {
+          if (!application._listeners.contains(listener)) {
+            _multicaster.addApplicationListener(listener);
+          }
+        }
         _multicaster.multicastEvent(event);
       }
     } catch (listenerError, stackTrace) {

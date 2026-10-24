@@ -1,5 +1,10 @@
 ## Unreleased
 
+- `HttpHeaders.addAll(name, values)`, `addHeaders`, `putAll`, `setAll`, `clear`, `size`, `containsHeaderValue`, `isNotEmpty`, `==` / `hashCode` (names in any case), `HttpHeaders.readOnly` (a view whose setters throw).
+- `ResponseEntity`: read-only headers, `==` / `hashCode`, `ResponseEntity.of` / `ofNullable` (200 with the body, 404 without one).
+- `HttpResponse.bodyText` decodes with the `charset` of the `Content-Type`, quoted or not and in any spelling Dart knows (only `charset=iso-8859-1` / `latin1` were seen); `HttpResponse.decodeBody`.
+- `HttpHeaders.lastModified` is lenient like Spring's: `null` for a value that is not an HTTP date (it threw).
+- `MediaType.parse` and the constructor check parameters like Spring: names are tokens, values tokens or quoted strings (also single quotes), no empty values, a legal charset name; a parameter without `=` is ignored (it threw) and a repeated name (any case) keeps the last value.
 - `MediaType.parse` / `parseMediaTypes` give `MediaType` objects with `includes`, `isCompatibleWith`, `charset`, `qualityValue`, `subtypeSuffix` (Spring's rules for wildcards and `+json` suffixes; `InvalidMediaTypeException`); more constants: `applicationXml`, `applicationProblemJson`, `applicationProblemXml`, `applicationNdjson`, `applicationPdf`, `applicationYaml`, `textXml`, `textMarkdown`, images, multipart, ...
 - `HttpHeaders.accept`, `eTag` (quoted like Spring's `setETag`), `ifNoneMatch`, `lastModified`, `date` (HTTP dates: RFC 1123, RFC 850, asctime; `formatDate` / `parseDate`), `contentDisposition` (new `ContentDisposition`, `filename*` for non-ASCII names), `setContentDispositionFormData`.
 - `ResponseEntity.status(...)`, `created(uri)`, `accepted()`, `noContent()`, `badRequest()`, `notFound()`, `unprocessableContent()`, `internalServerError()` builders (`header`, `headers`, `location`, `contentType`, `eTag`, `lastModified`, then `body(x)` or `build<T>()`), and `hasBody`.

@@ -99,6 +99,7 @@ extension _LookupScanning on BeanScanner {
             ].map((t) => t.getMethod(name)).nonNulls.firstOrNull ??
             method;
         final returnType = declared.returnType;
+        _requireDefinedType(returnType, method, '$label returns');
         final beanName = ConstantReader(annotation).peek('value')?.stringValue;
         if (beanName != null && beanName.isEmpty) {
           BeanScanner._fail(
@@ -133,6 +134,42 @@ extension _LookupScanning on BeanScanner {
     }
     if (methods.isEmpty) {
       return null;
+    }
+    // The generated subclass implements the lookup methods only: any other
+    // abstract member would leave it abstract (Spring's CGLIB subclass
+    // fails the same way at call time with an AbstractMethodError).
+    if (element.isAbstract) {
+      final abstract = <String>[];
+      for (final member in element.interfaceMembers.values) {
+        final name = member.name;
+        if (name == null || member.isStatic || seen.contains(name)) {
+          continue;
+        }
+        final concrete = switch (member) {
+          MethodElement() => type.lookUpMethod(name, library, concrete: true),
+          GetterElement() => type.lookUpGetter(name, library, concrete: true),
+          SetterElement() => type.lookUpSetter(name, library, concrete: true),
+          _ => member,
+        };
+        if (concrete == null) {
+          abstract.add(switch (member) {
+            GetterElement() => 'get $name',
+            SetterElement() => 'set $name',
+            _ => '$name()',
+          });
+        }
+      }
+      if (abstract.isNotEmpty) {
+        BeanScanner._fail(
+          '$className has @Lookup methods, which a generated subclass '
+          'overrides to return beans of the container, but it also has the '
+          'abstract member${abstract.length == 1 ? '' : 's'} '
+          '${abstract.join(', ')}, which the generated subclass cannot '
+          'implement: give ${abstract.length == 1 ? 'it a body' : 'them bodies'}'
+          ' or make ${abstract.length == 1 ? 'it a @Lookup method' : 'them @Lookup methods'}.',
+          element,
+        );
+      }
     }
     Never fail(String problem, String change, [Element? at]) =>
         BeanScanner._fail(

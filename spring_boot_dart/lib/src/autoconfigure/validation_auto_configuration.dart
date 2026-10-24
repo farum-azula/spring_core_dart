@@ -5,9 +5,12 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 const _source = 'package:spring_boot_dart#ValidationAutoConfiguration';
 
 /// Registers a `defaultValidator` ([BeanValidator] on the context's
-/// [BeanIntrospector]) when the application declares no `Validator`, and a
+/// [BeanIntrospector]) when the application declares no [BeanValidator]
+/// (Boot's `@ConditionalOnMissingBean(jakarta.validation.Validator.class)`:
+/// plain form `Validator` beans don't count), and a
 /// `methodValidationPostProcessor` that validates the methods of
-/// `@Validated` beans, like Spring Boot's `ValidationAutoConfiguration`.
+/// `@Validated` beans with the unique [BeanValidator] (a new one when there
+/// is none or several), like Spring Boot's `ValidationAutoConfiguration`.
 /// `@ConfigurationProperties` classes are excluded from method validation
 /// (their `@Validated` turns on binding validation instead).
 final validationAutoConfiguration = <BeanDefinition<Object>>[
@@ -17,7 +20,7 @@ final validationAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     // Method-level conditions (Boot's @Bean @ConditionalOnMissingBean),
     // so not a ConditionGroup shared by both beans.
-    conditions: const [ConditionalOnMissingBean(Validator)],
+    conditions: const [ConditionalOnMissingBean(BeanValidator)],
     create: (r) =>
         BeanValidator(introspector: r.dependency<BeanIntrospector>()),
   ),
@@ -32,10 +35,8 @@ final validationAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     conditions: const [ConditionalOnMissingBean(MethodValidationPostProcessor)],
     create: (r) => MethodValidationPostProcessor(
-      switch (r.optionalDependency<Validator>()) {
-        final BeanValidator validator => validator,
-        _ => BeanValidator(introspector: r.dependency<BeanIntrospector>()),
-      },
+      r.provider<BeanValidator>(name: 'validator').getIfUnique() ??
+          BeanValidator(introspector: r.dependency<BeanIntrospector>()),
       [_isConfigurationProperties],
     ),
   ),

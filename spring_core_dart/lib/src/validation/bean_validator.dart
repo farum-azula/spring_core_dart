@@ -3,6 +3,7 @@ import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/validation/constraints.dart';
 import 'package:spring_core_dart/src/validation/errors.dart';
+import 'package:spring_core_dart/src/validation/message_escapes.dart';
 import 'package:spring_core_dart/src/validation/validator.dart';
 
 /// One failed constraint, like Jakarta's `ConstraintViolation`.
@@ -149,8 +150,10 @@ final class ResolvableAttribute implements MessageSourceResolvable {
 ///
 /// Messages are interpolated like Jakarta: `{key}` placeholders are looked
 /// up in [validationMessageSource] (recursively; the built-in messages also
-/// under `jakarta.validation.constraints.<Name>.message`), then
-/// `{attribute}` placeholders are replaced by the constraint's attributes.
+/// under `jakarta.validation.constraints.<Name>.message`, which resolve to
+/// Hibernate's default messages without a message source), then
+/// `{attribute}` placeholders are replaced by the constraint's attributes;
+/// `\{`, `\}`, `\$` and `\\` stay literal characters.
 /// Date constraints read the time from [clockProvider].
 ///
 /// ```dart
@@ -879,41 +882,67 @@ class BeanValidator implements SmartValidator {
     return constraint.defaultMessage;
   }
 
-  // Jakarta's interpolation: `{key}` placeholders from the message source
-  // (resolved again while they keep producing placeholders), then
-  // `{attribute}` placeholders, then the expressions `${validatedValue}`
-  // and `${attribute}`.
+  // Jakarta's interpolation: `{key}` placeholders from the message source,
+  // else Hibernate's built-in messages for
+  // `{jakarta.validation.constraints.<Name>.message}` (resolved again while
+  // they keep producing placeholders), then `{attribute}` placeholders,
+  // then the expressions `${validatedValue}` and `${attribute}`. Escaped
+  // `\{`, `\}`, `\$` and `\\` stay literal characters.
   String _interpolate(Constraint constraint, String template, Object? value) {
-    var message = template;
+    var message = hideMessageEscapes(template);
     final source = validationMessageSource;
-    if (source != null) {
-      for (var depth = 0; depth < 10; depth++) {
-        var changed = false;
-        message = message.replaceAllMapped(_parameter, (match) {
-          final resolved = _lookUp(source, match[1]!);
-          if (resolved == null) {
-            return match[0]!;
-          }
-          changed = true;
-          return resolved;
-        });
-        if (!changed) {
-          break;
+    String? resolve(String key) {
+      if (source != null) {
+        if (_lookUp(source, key) case final found?) {
+          return found;
         }
+      }
+      return _builtInMessage(constraint, key);
+    }
+
+    for (var depth = 0; depth < 10; depth++) {
+      var changed = false;
+      message = message.replaceAllMapped(_parameter, (match) {
+        final resolved = resolve(match[1]!);
+        if (resolved == null) {
+          return match[0]!;
+        }
+        changed = true;
+        return hideMessageEscapes(resolved);
+      });
+      if (!changed) {
+        break;
       }
     }
     final attributes = constraint.attributes;
-    return constraint
-        .interpolate(message)
-        .replaceAllMapped(
-          _expression,
-          (match) => switch (match[1]!) {
-            'validatedValue' => '$value',
-            final name when attributes.containsKey(name) =>
-              '${attributes[name]}',
-            _ => match[0]!,
-          },
-        );
+    return revealMessageEscapes(
+      interpolateAttributes(message, attributes).replaceAllMapped(
+        _expression,
+        (match) => switch (match[1]!) {
+          'validatedValue' => '$value',
+          final name when attributes.containsKey(name) => '${attributes[name]}',
+          _ => match[0]!,
+        },
+      ),
+    );
+  }
+
+  static const _jakartaPrefix = 'jakarta.validation.constraints.';
+
+  // `jakarta.validation.constraints.<Name>.message` without a message
+  // source: the constraint's own default message (it knows its attributes,
+  // e.g. `inclusive`), else Hibernate's English one.
+  static String? _builtInMessage(Constraint constraint, String key) {
+    if (!key.startsWith(_jakartaPrefix) || !key.endsWith('.message')) {
+      return null;
+    }
+    final name = key.substring(
+      _jakartaPrefix.length,
+      key.length - '.message'.length,
+    );
+    return name == constraint.name
+        ? constraint.defaultMessage
+        : builtInConstraintMessages[name];
   }
 
   static String? _lookUp(MessageSource source, String key) {

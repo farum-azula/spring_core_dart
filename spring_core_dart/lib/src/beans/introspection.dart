@@ -438,11 +438,72 @@ class BeanIntrospector {
   /// Registry consulted when this one has no match.
   final BeanIntrospector? parent;
   final _byType = <Type, BeanIntrospection<Object>>{};
+  final _enums = <Type, EnumType<Enum>>{};
 
-  /// Adds [introspection], replacing any for the same type.
+  /// Adds [introspection], replacing any for the same type. The enums its
+  /// properties and constructor parameters use are registered too (see
+  /// [registerEnum]).
   void register(BeanIntrospection<Object> introspection) {
     _byType[introspection.beanType] = introspection;
     _specialized.clear();
+    for (final property in introspection.properties) {
+      _collectEnums(property.typeInfo);
+    }
+    for (final parameter
+        in introspection.constructor?.parameters ?? const <BeanParameter>[]) {
+      _collectEnums(parameter.type);
+    }
+  }
+
+  void _collectEnums(TypeInfo<Object?>? type) {
+    switch (type) {
+      case final EnumType<Enum> enumType:
+        _enums.putIfAbsent(enumType.type, () => enumType);
+      case ListType(:final element):
+        _collectEnums(element);
+      case SetType(:final element):
+        _collectEnums(element);
+      case MapType(:final key, :final value):
+        _collectEnums(key);
+        _collectEnums(value);
+      case GenericType(:final arguments):
+        arguments.forEach(_collectEnums);
+      case ClassType() || DynamicType() || null:
+        break;
+    }
+  }
+
+  /// Makes the values of an enum (and its `@JsonValue` form) known, so
+  /// values of it are converted where no [EnumType] is at hand:
+  /// `ObjectMapper.readValue<Color>(...)`, `readList<Color>`, enums in
+  /// `Object?` properties or map values. The enums the properties and
+  /// constructor parameters of registered introspections use are
+  /// registered automatically; the first registration of an enum wins.
+  ///
+  /// ```dart
+  /// BeanIntrospector.shared.registerEnum(EnumType<Color>(Color.values));
+  /// ```
+  void registerEnum(EnumType<Enum> type) =>
+      _enums.putIfAbsent(type.type, () => type);
+
+  /// The registered [EnumType] of the enum [type] (here, else in the
+  /// [parent]).
+  EnumType<Enum>? enumTypeFor(Type type) =>
+      _enums[type] ?? parent?.enumTypeFor(type);
+
+  /// The registered [EnumType] of the enum [T] (also when [T] is a
+  /// nullable `Color?`).
+  EnumType<Enum>? enumTypeOf<T>() {
+    final exact = _enums[T];
+    if (exact != null) {
+      return exact;
+    }
+    for (final type in _enums.values) {
+      if (type.capture(<E>() => <T>[] is List<E?> && <E?>[] is List<T>)) {
+        return type;
+      }
+    }
+    return parent?.enumTypeOf<T>();
   }
 
   /// Every registered introspection, this registry's first, then the

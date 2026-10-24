@@ -27,15 +27,27 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// ResponseEntity.notFound().build();
 /// ```
 class ResponseEntity<T> {
-  /// A response with [statusCode], [body] and [headers].
+  /// A response with [statusCode], [body] and [headers]; [headers] are
+  /// read-only from here on, like Spring's `HttpEntity`.
   ResponseEntity(int statusCode, {this.body, HttpHeaders? headers})
     : statusCode = HttpStatusCode(statusCode),
-      headers = headers ?? HttpHeaders();
+      headers = HttpHeaders.readOnly(headers ?? HttpHeaders());
 
   /// A `200 OK` response with [body].
   ResponseEntity.ok(T this.body)
     : statusCode = HttpStatus.ok,
-      headers = HttpHeaders();
+      headers = HttpHeaders.readOnly(HttpHeaders());
+
+  /// `200 OK` with [body], or `404 Not Found` without a body when [body]
+  /// is `null`, like Spring's `ResponseEntity.of(Optional)` (Dart has no
+  /// `Optional`: a nullable body stands for it).
+  static ResponseEntity<T> of<T>(T? body) => ofNullable(body);
+
+  /// `200 OK` with [body], or `404 Not Found` without a body when [body]
+  /// is `null`, like Spring's `ResponseEntity.ofNullable`.
+  static ResponseEntity<T> ofNullable<T>(T? body) => body == null
+      ? ResponseEntity<T>(HttpStatus.notFound)
+      : ResponseEntity<T>(HttpStatus.ok, body: body);
 
   /// A builder for a response with [statusCode], like Spring's
   /// `ResponseEntity.status(...)`.
@@ -86,6 +98,42 @@ class ResponseEntity<T> {
 
   /// Whether the status is 2xx.
   bool get isSuccess => statusCode.is2xxSuccessful;
+
+  /// The same status code, headers and body, like Spring's `equals`.
+  @override
+  bool operator ==(Object other) =>
+      other is ResponseEntity &&
+      other.statusCode == statusCode &&
+      other.headers == headers &&
+      _equalBodies(other.body, body);
+
+  @override
+  int get hashCode => Object.hash(statusCode, headers, _bodyHash(body));
+
+  static bool _equalBodies(Object? a, Object? b) => switch ((a, b)) {
+    (final List<Object?> a, final List<Object?> b) =>
+      a.length == b.length &&
+          [for (var i = 0; i < a.length; i++) i]
+              .every((i) => _equalBodies(a[i], b[i])),
+    (final Map<Object?, Object?> a, final Map<Object?, Object?> b) =>
+      a.length == b.length &&
+          a.keys.every(
+            (key) => b.containsKey(key) && _equalBodies(a[key], b[key]),
+          ),
+    (final Set<Object?> a, final Set<Object?> b) =>
+      a.length == b.length && a.containsAll(b),
+    _ => a == b,
+  };
+
+  static int _bodyHash(Object? body) => switch (body) {
+    final List<Object?> list => Object.hashAll(list.map(_bodyHash)),
+    final Map<Object?, Object?> map => Object.hashAllUnordered([
+      for (final MapEntry(:key, :value) in map.entries)
+        Object.hash(key, _bodyHash(value)),
+    ]),
+    final Set<Object?> set => Object.hashAllUnordered(set),
+    _ => body.hashCode,
+  };
 
   @override
   String toString() =>

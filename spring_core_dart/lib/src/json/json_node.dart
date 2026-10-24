@@ -185,8 +185,19 @@ sealed class JsonNode {
   bool operator ==(Object other) =>
       other is JsonNode && _deepEquals(toJson(), other.toJson());
 
+  // Consistent with ==: object properties in any order hash alike, and
+  // numbers equal by value (`1` and `1.0`) hash alike.
   @override
-  int get hashCode => toString().hashCode;
+  int get hashCode => _deepHash(toJson());
+
+  static int _deepHash(Object? value) => switch (value) {
+    final List<Object?> list => Object.hashAll(list.map(_deepHash)),
+    final Map<Object?, Object?> map => Object.hashAllUnordered([
+      for (final MapEntry(:key, :value) in map.entries)
+        Object.hash(key, _deepHash(value)),
+    ]),
+    _ => value.hashCode,
+  };
 
   static bool _deepEquals(Object? a, Object? b) {
     if (a is List<Object?> && b is List<Object?>) {

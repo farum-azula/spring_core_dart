@@ -62,9 +62,13 @@ final class WebSocketConnectionManager {
   StreamSubscription<Object>? _subscription;
   Completer<WebSocketSession>? _pending;
   Timer? _retry;
-  // Reconnection attempts since the last connection (for the backoff and
-  // max-retries).
+  // Reconnection attempts since the last stable connection (for the
+  // backoff and max-retries).
   var _retries = 0;
+  // Resets _retries once a connection proved stable.
+  Timer? _stable;
+  // Sends (and connect()) waiting for the outcome of the next attempt.
+  final _waiters = <Completer<WebSocketSession>>[];
   // Bumped by close(): attempts of an older generation are dropped.
   var _generation = 0;
   var _disposed = false;
@@ -93,14 +97,45 @@ final class WebSocketConnectionManager {
   }
 
   /// Sends a text (`String`) or binary (`List<int>`) message, opening the
-  /// connection first when needed.
+  /// connection first when needed. Without a connection the send waits for
+  /// the next attempt only (at most the reconnect delay and the connect
+  /// timeout): if it fails, so does the send, while the listeners' client
+  /// goes on reconnecting.
   Future<void> sendMessage(Object message) async {
-    final connection = await _ensure();
+    final connection = await _awaitConnection();
     connection.sendMessage(message);
   }
 
-  /// Opens the connection now (if it is not open).
-  Future<void> connect() => _ensure();
+  /// Opens the connection now (if it is not open); fails when the next
+  /// attempt fails, like [sendMessage].
+  Future<void> connect() => _awaitConnection();
+
+  Future<WebSocketSession> _awaitConnection() {
+    final connection = _connection;
+    if (connection != null) {
+      return Future.value(connection);
+    }
+    final waiter = Completer<WebSocketSession>();
+    _waiters.add(waiter);
+    _ensure().then(_resolveWaiters, onError: _failWaiters);
+    return waiter.future;
+  }
+
+  void _resolveWaiters(WebSocketSession connection) {
+    final waiters = [..._waiters];
+    _waiters.clear();
+    for (final waiter in waiters) {
+      waiter.complete(connection);
+    }
+  }
+
+  void _failWaiters(Object error, [StackTrace? stackTrace]) {
+    final waiters = [..._waiters];
+    _waiters.clear();
+    for (final waiter in waiters) {
+      waiter.completeError(error, stackTrace);
+    }
+  }
 
   /// Closes the connection (normal closure); listeners are done. Using the
   /// client again opens a new connection.
@@ -122,8 +157,8 @@ final class WebSocketConnectionManager {
     if (_disposed) {
       return;
     }
-    await close();
     _disposed = true;
+    await close();
   }
 
   // Forgets the current connection and any attempt in progress.
@@ -131,6 +166,8 @@ final class WebSocketConnectionManager {
     _generation++;
     _retry?.cancel();
     _retry = null;
+    _stable?.cancel();
+    _stable = null;
     unawaited(_subscription?.cancel());
     _subscription = null;
     _connection = null;
@@ -140,6 +177,7 @@ final class WebSocketConnectionManager {
     if (pending != null && !pending.isCompleted) {
       pending.completeError(pendingError);
     }
+    _failWaiters(pendingError);
   }
 
   StateError _disposedError() => StateError(
@@ -197,10 +235,20 @@ final class WebSocketConnectionManager {
       return;
     }
     _log.debug('connected to ${handshake.url}', fields: {'client': clientName});
-    _retries = 0;
+    // The retries count on until the connection proves stable (a message,
+    // or open for the longest reconnect delay): a server that accepts and
+    // closes at once still reaches max-retries.
+    _stable?.cancel();
+    _stable = Timer(config.reconnect.maxDelay, () {
+      _stable = null;
+      if (_connection == connection) {
+        _retries = 0;
+      }
+    });
     _connection = connection;
     _subscription = connection.messages.listen(
       (message) {
+        _retries = 0;
         for (final listener in [..._listeners]) {
           listener.add(message);
         }
@@ -218,6 +266,7 @@ final class WebSocketConnectionManager {
   // A connection attempt failed.
   void _failed(Object error, StackTrace stackTrace) {
     _log.debug('connection failed: $error', fields: {'client': clientName});
+    _failWaiters(error, stackTrace);
     if (_listeners.isNotEmpty && _schedule()) {
       return;
     }
@@ -237,6 +286,8 @@ final class WebSocketConnectionManager {
     }
     _connection = null;
     _subscription = null;
+    _stable?.cancel();
+    _stable = null;
     final status = connection.closeStatus;
     final code = status?.code;
     final reason = status?.reason;

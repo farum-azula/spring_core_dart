@@ -303,6 +303,56 @@ BeanModule module() => BeanModule(
 );
 // ---- end of generated ----
 
+/// A value object with a required parameter (binder tests).
+class Credentials {
+  const Credentials(this.user);
+  final String user;
+}
+
+/// Holds an optional [Credentials].
+class Remote {
+  const Remote({this.credentials, this.other});
+  final Credentials? credentials;
+  final String? other;
+}
+
+final credentialsIntrospection = BeanIntrospection<Credentials>(
+  properties: [
+    BeanProperty<Credentials>(
+      'user',
+      type: String,
+      typeInfo: const ClassType<String>(),
+      get: (b) => b.user,
+    ),
+  ],
+  constructor: BeanConstructor<Credentials>(
+    parameters: const [
+      BeanParameter('user', type: ClassType<String>(), isRequired: true),
+    ],
+    create: (positional, named) => Credentials(positional[0]! as String),
+  ),
+);
+
+final remoteIntrospection = BeanIntrospection<Remote>(
+  properties: const [],
+  constructor: BeanConstructor<Remote>(
+    parameters: const [
+      BeanParameter(
+        'credentials',
+        type: ClassType<Credentials>(nullable: true),
+        symbol: #credentials,
+      ),
+      BeanParameter(
+        'other',
+        type: ClassType<String>(nullable: true),
+        symbol: #other,
+      ),
+    ],
+    create: (positional, named) =>
+        Function.apply(Remote.new, positional, named) as Remote,
+  ),
+);
+
 void main() {
   ConfigurableApplicationContext run({
     List<String> args = const [],
@@ -606,6 +656,57 @@ app:
       ], environment: environment)..refresh();
       addTearDown(context.close);
       expect(context.getBean<PoolProperties>().url, 'jdbc:y');
+    });
+  });
+
+  group('nested value objects without their own keys', () {
+    Binder binder(Map<String, Object> properties) => Binder(
+      StandardEnvironment(systemEnvironment: {})
+        ..propertySources.addFirst(MapPropertySource('test', properties)),
+      introspector: BeanIntrospector()
+        ..registerAll([credentialsIntrospection, remoteIntrospection]),
+    );
+
+    test('a nullable nested value object stays null, like Boot', () {
+      final remote = binder({
+        'app.remote.other': 'x',
+        'app.remote.credentials.unknown': 'y',
+      }).bind('app.remote', const ClassType<Remote>()).get();
+      expect(remote.other, 'x');
+      expect(remote.credentials, isNull);
+    });
+
+    test('a value object with none of its keys is unbound', () {
+      final result = binder({'app.creds.unknown': 'x'})
+          .bind('app.creds', const ClassType<Credentials>());
+      expect(result.isBound, isFalse);
+    });
+
+    test('list elements of value-object type with none of their keys', () {
+      expect(
+        () => binder({'app.list[0].user': 'ada', 'app.list[1].unknown': 'x'})
+            .bind(
+              'app.list',
+              const ListType<Credentials>(ClassType<Credentials>()),
+            ),
+        throwsA(
+          isA<ConfigurationPropertiesBindException>().having(
+            (e) => e.errors.single,
+            'error',
+            allOf(contains('app.list[1]'), contains('left unbound')),
+          ),
+        ),
+        reason:
+            "Boot: UnboundConfigurationPropertiesException, not 'no "
+            "value bound'",
+      );
+      final list = binder({'app.list[0].user': 'ada'})
+          .bind(
+            'app.list',
+            const ListType<Credentials>(ClassType<Credentials>()),
+          )
+          .get();
+      expect([for (final c in list) c.user], ['ada']);
     });
   });
 

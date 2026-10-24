@@ -229,7 +229,8 @@ class PoolProperties {
 A parameter without a property takes its `@DefaultValue` (Boot's), its
 Dart default value, or `null` when nullable; a required non-nullable one
 without any of them fails the start (`pool.url: no value bound for the
-required constructor parameter 'url' of PoolProperties ...`).
+required constructor parameter 'url' of PoolProperties ...`). A nullable
+nested value object none of whose own keys is set stays `null`.
 `Binder.get(environment).bind('app.hosts', ListType<String>(...))` binds
 outside of a properties class (`BindResult.map` / `ifBound` / `orElseGet` /
 `orElseThrow`, and a `BindHandler` told about each property).
@@ -245,6 +246,11 @@ More of Boot's binding:
   properties read `10MB`, `512KB`).
 - Environment variables bind nested objects under dashed names
   (`APP_MAIN_SERVER_HOST` → `app.main-server.host`).
+- `@ConfigurationProperties('db', ignoreUnknownFields: false)` fails the
+  start for properties under the prefix that bind to nothing (`The
+  elements [db.urll] were left unbound.`; OS environment variables are not
+  checked); `ignoreInvalidFields: true` keeps the default of a value that
+  cannot be converted.
 - Validation: a `Validator` bean named `configurationPropertiesValidator`
   checks every bound object it supports, `@Validated()` classes are checked
   against their constraints, and a properties class that is itself a
@@ -254,19 +260,26 @@ More of Boot's binding:
 environment before the context exists (Boot's `EnvironmentPostProcessor`):
 one ordered before `EnvironmentPostProcessor.configDataOrder` runs before
 the config files are read (it can add imports, profiles, sources), the
-others after them.
+others after them. `SPRING_APPLICATION_JSON` (or
+`--spring.application.json`) adds its JSON as properties (`{"app":
+{"hosts": ["a"]}}` is `app.hosts[0]`), below the command line and above
+the OS environment, like Boot's.
 
 A banner is printed at startup (`SpringBootBanner`, a `classpath:banner.txt`
 or `spring.banner.location`, or `SpringApplication(banner:)`);
 `spring.main.banner-mode` / `bannerMode:` is `console` (default), `log` or
-`off`.
+`off`. With `runAsync` a `banner.txt` that can only be read asynchronously
+(a Flutter asset) is printed too.
 
 A `Validator` (`defaultValidator`, a `BeanValidator`) and a
-`methodValidationPostProcessor` (method validation of `@Validated` beans)
-are auto-configured, like Boot's `ValidationAutoConfiguration`; your own
-`Validator` bean replaces the default one.
+`methodValidationPostProcessor` (method validation of `@Validated` beans,
+with the unique `BeanValidator`) are auto-configured, like Boot's
+`ValidationAutoConfiguration`; your own `BeanValidator` bean replaces the
+default one (plain form `Validator` beans do not).
 
-`spring.main.lazy-initialization=true` makes all singletons lazy;
+`spring.main.lazy-initialization=true` makes all singletons lazy (a
+`LazyInitializationExcludeFilter` bean keeps the beans it excludes eager,
+`LazyInitializationExcludeFilter.forBeanTypes([CacheWarmer])`);
 `spring.main.allow-bean-definition-overriding=true` lets a definition
 replace another of the same name (off by default).
 
@@ -296,6 +309,7 @@ class Catalog {
 | `spring.jackson.default-property-inclusion` | `always` | `non_null`, `non_absent`, `non_empty`, `non_default` |
 | `spring.jackson.deserialization.fail-on-unknown-properties` | `false` | reject JSON properties a class does not have |
 | `spring.jackson.deserialization.accept-float-as-int` | `true` | `1.5` into an `int` truncates; `false` rejects it |
+| `spring.jackson.deserialization.fail-on-null-for-primitives` | `true` | a JSON `null` (or missing constructor value) for a non-nullable `int`, `double`, `num` or `bool` fails, like Jackson 3; `false` reads `0` / `false` |
 | `spring.jackson.datatype.datetime.write-dates-as-timestamps` (Boot 4) or `spring.jackson.serialization.write-dates-as-timestamps` (Boot 3; the former wins) | `false` | `DateTime` as epoch seconds with the fraction (Jackson 3) |
 | `spring.jackson.datatype.datetime.write-durations-as-timestamps` (or `serialization.`) | `false` | `Duration` as seconds |
 | `spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds` (or `serialization.`) | `true` | `false`: timestamps in milliseconds |
@@ -351,12 +365,19 @@ The generator of every application that depends on the library — directly
 or transitively — finds these modules and passes them to the generated
 `springApplication`; nothing is listed by hand. They are registered after
 the application's beans, so `@ConditionalOnMissingBean` backs off when the
-application declares its own bean. Also: `@ConditionalOnBean` (by type
-or `.named('...')`), `@ConditionalOnMissingBean.named('...')`,
-`@ConditionalOnSingleCandidate`, `@ConditionalOnProperty` (with `prefix:`,
-several names with `.names([...])`), `@ConditionalOnBooleanProperty`,
-`@ConditionalOnExpression` (SpEL, placeholders resolved first) and
-`@ConditionalOnResource`. Like Boot 3.4+, beans declared with
+application declares its own bean. `@ConditionalOnBean` /
+`@ConditionalOnMissingBean` take a type, `.named('...')`, or
+`.where(types:, names:, annotations:, search:)` (`ignored:` too for the
+missing one); without arguments they check the `@Bean` method's return
+type, and `search: SearchStrategy.current` looks at this context only
+(Boot's `SearchStrategy`). Also: `@ConditionalOnSingleCandidate`,
+`@ConditionalOnProperty` (with `prefix:`, several names with
+`.names([...])`), `@ConditionalOnBooleanProperty`,
+`@ConditionalOnExpression` (SpEL, placeholders resolved first),
+`@ConditionalOnResource` and `@ConditionalOnCloudPlatform`
+(`CloudPlatform.kubernetes`, `heroku`, `cloudFoundry`, `azureAppService`,
+`amazonEcs`, ..., detected from environment variables like Boot's, or set
+with `spring.main.cloud-platform`). Like Boot 3.4+, beans declared with
 `autowireCandidate: false` or `defaultCandidate: false` count for neither
 `@ConditionalOnBean` nor `@ConditionalOnMissingBean`. With `--debug` (or
 `debug=true`) the condition evaluation report (positive and negative
@@ -398,8 +419,10 @@ of its `@Bean` methods (all or nothing), like in Spring.
 
 `spring_boot_dart` itself is a starter: `MessageSourceAutoConfiguration`
 registers a `messageSource` for `classpath:<spring.messages.basename>`
-(default `messages`) when the application has no bean named
-`messageSource`.
+(default `messages`) when the context (not a parent) has no bean named
+`messageSource`, with `spring.messages.encoding`,
+`use-code-as-default-message`, `always-use-message-format`,
+`common-messages`, `fallback-to-system-locale` and `cache-duration`.
 
 Starters of this repository:
 
@@ -510,8 +533,9 @@ value that is no level (`trace`, `debug`, `info`, `warn`, `error`, `fatal`,
 
 ## Context initializers and test properties
 
-`SpringApplication(..., initializers: [(context) => ...])` runs callbacks
-before the refresh (Spring's `ApplicationContextInitializer`), and
+`SpringApplication(..., initializers: [...])` runs `ApplicationContextInitializer`s
+before the refresh, sorted by `Ordered` (a class implementing `initialize`,
+or `ApplicationContextInitializer.of((context) => ...)`), and
 `run(args, properties: {...})` adds properties above every other source
 (what `@SpringBootTest(properties = ...)` does). `spring_boot_starter_test`
 is built on both. `SpringApplication(defaultProperties: {...})` /
@@ -707,6 +731,8 @@ are read asynchronously too.
 | The condition evaluation report explains each outcome (`found bean 'x'`, `@ConditionalOnProperty (a=b) matched`) | It names each condition and whether it matched; a configuration class's conditions are listed under its key | Conditions are plain Dart objects |
 | The banner is printed to `System.out`; `banner.txt` may use `${application.version}`, `${AnsiColor.*}` | `print` (`spring.main.banner-mode=log` logs it); `banner.txt` gets `${spring-boot.version}`, `${spring-boot.formatted-version}` and environment placeholders | Dart has no manifest version or ANSI property source |
 | `@AutoConfiguration(before:, after:)` and `@AutoConfigureOrder` on the class | `before`, `after` and `order` of `@AutoConfigurationModule` (a module is the unit; classes can be named in them) | The generator discovers modules, not classes |
+| `spring.main.allow-circular-references=true` allows circular references | Not supported: a cycle is always an error (mark an injection point `@Lazy()` or inject an `ObjectProvider`) | No early singleton references |
+| `@ConditionalOnBean(annotation = Service.class)` also finds meta-annotated beans | `annotations: [Service]` matches that exact annotation class | Annotations are plain objects at runtime |
 
 ## Not yet
 
