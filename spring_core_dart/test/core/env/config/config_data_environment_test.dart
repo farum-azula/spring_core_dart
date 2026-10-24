@@ -22,7 +22,7 @@ class _AsyncResource extends AbstractResource {
 }
 
 /// Minimal "key: value" loader standing in for a YAML loader.
-class _ColonLoader implements PropertySourceLoader {
+class _ColonLoader extends PropertySourceLoader {
   @override
   List<String> get fileExtensions => const ['yml', 'yaml'];
 

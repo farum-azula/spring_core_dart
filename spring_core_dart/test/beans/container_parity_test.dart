@@ -560,7 +560,10 @@ void main() {
       expect(factory.getBeanByName('&greeter'), same(greeterFactory));
       expect(factory.isFactoryBean('greeter'), isTrue);
       expect(factory.getBean<GreeterFactory>(), same(greeterFactory));
-      expect(factory.getType('greeter'), German);
+      expect(factory.getType('greeter'), Greeter);
+      expect(factory.getBean<Greeter>(), isA<German>());
+      expect(factory.getBeanNamesForType(Greeter), ['greeter']);
+      expect(factory.isTypeMatch('greeter', Greeter), isTrue);
       expect(factory.isSingleton('greeter'), isTrue);
       expect(greeterFactory.calls, 1);
     });

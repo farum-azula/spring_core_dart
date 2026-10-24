@@ -34,7 +34,7 @@ import 'package:test_api/scaffolding.dart';
 /// Logging levels and the log handler are restored afterwards.
 ///
 /// ```dart
-/// import '../bin/shop.beans.dart'; // springApplication
+/// import '../bin/shop.spring.dart'; // springApplication
 ///
 /// void main() {
 ///   final app = springBootTest(

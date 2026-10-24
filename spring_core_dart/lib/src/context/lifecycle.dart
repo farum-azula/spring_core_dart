@@ -304,7 +304,9 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
 
   // Spring's getLifecycleBeans: created singletons and SmartLifecycle
   // beans (created if needed) by name; a plain Lifecycle bean not created
-  // yet is left alone.
+  // yet is left alone. A created singleton counts by its instance too (a
+  // `@Bean Object server()` returning a Lifecycle, like Spring matching
+  // the singleton's actual type).
   Map<String, Lifecycle> _lifecycleBeans() {
     final smart = beanFactory
         .getBeanNamesForType(SmartLifecycle, includeNonSingletons: false)
@@ -323,6 +325,16 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
       if (beanFactory.getBeanByName(name) case final Lifecycle bean
           when !identical(bean, this)) {
         beans[canonical] = bean;
+      }
+    }
+    for (final name in beanFactory.singletonNames) {
+      if (beans.containsKey(name)) {
+        continue;
+      }
+      if (beanFactory.getSingleton(name) case final Lifecycle bean
+          when !identical(bean, this) &&
+              !beans.values.any((known) => identical(known, bean))) {
+        beans[name] = bean;
       }
     }
     return beans;

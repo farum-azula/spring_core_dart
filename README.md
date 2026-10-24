@@ -26,7 +26,7 @@ separate library.
 | `spring_boot_starter_feign` | [`spring_boot_starter_feign/`](spring_boot_starter_feign/README.md) | Feign clients: an abstract class with `@FeignClient` and mapping annotations becomes an injectable HTTP client; JSON via `ObjectMapper`, interceptors, retries, fallbacks, `spring.cloud.openfeign.client.config.*`. |
 | `spring_boot_starter_websocket` | [`spring_boot_starter_websocket/`](spring_boot_starter_websocket/README.md) | Declarative WebSocket clients: an abstract class with `@WebSocketClient`, `@OnMessage` (`Stream<T>`) and `@SendMessage` methods becomes an injectable socket; JSON via `ObjectMapper`, one shared connection opened on demand, reconnection with backoff, handshake interceptors. Spring has no declarative WebSocket client: this follows the `@FeignClient` style. |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
-| `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.beans.dart` modules. |
+| `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.spring.dart` modules. |
 | `spring_boot_feign_example` | [`example/spring_boot_feign/`](example/spring_boot_feign/README.md) | A small Spring Boot app against real public servers: a Feign client (REST, JSONPlaceholder), server-sent events (Wikimedia, `EventStream<T>`) and a `@WebSocketClient` (an echo server): run it with `dart run bin/main.dart`. |
 | `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
@@ -74,7 +74,7 @@ see [`spring_boot_dart/`](spring_boot_dart/README.md):
 
 ```dart
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.beans.dart';
+import 'main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -91,7 +91,7 @@ Tested with `spring_boot_starter_test` (a dev dependency):
 ```dart
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
-import '../bin/main.beans.dart';
+import '../bin/main.spring.dart';
 
 void main() {
   final app = springBootTest(
@@ -116,7 +116,7 @@ spring.profiles.active=dev
 ```dart
 // lib/src/beans.dart — everything under lib/src/ is scanned
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:my_app/src/beans.beans.dart';
+import 'package:my_app/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;
@@ -163,7 +163,7 @@ Future<void> main(List<String> args) async {
 | `@Component([name])`, `@Service`, `@Repository`, `@Controller`, `@Named` | A bean. Default name: lowerCamelCase class name (`URLService` stays); an explicit name or alias must not be empty, blank or padded with spaces. Subclass `Component` for your own stereotypes. Only classes are beans: on a mixin, enum, extension or extension type (erased at runtime) the build fails and says what to use instead. |
 | `@Configuration(name:, proxyBeanMethods:)` | A bean whose `@Bean` methods declare more beans. Like Spring's default (`proxyBeanMethods: true`), the container creates a generated subclass whose `@Bean` methods return its beans, so a `@Bean` method calling another one gets the singleton (a prototype: a new instance; static methods are not intercepted); `proxyBeanMethods: false` ("lite", also `@Component` classes and `@AutoConfiguration`) calls them as written. `@Lazy` / `@Profile` / conditions on it (also on a lite `@Component` with `@Bean` methods) apply to its `@Bean` methods, unless a method says otherwise (`@Lazy(false)`). |
 | `@Bean(name:, aliases:, initMethod:, destroyMethod:, autowireCandidate:)` | A bean produced by a method; type = what the method body returns (`DataSource ds() => HikariDataSource()` is a `HikariDataSource`, also found as `DataSource`); parameters are injected. Destroy method is inferred (`close`, `shutdown`, `dispose`) unless `destroyMethod: ''`. |
-| `@Scope('prototype')` / `ScopeType.*` / custom name | Scope; custom scopes via `registerScope(name, CustomScope)` (e.g. `SimpleMapScope`). |
+| `@Scope('prototype', proxyMode:)` / `ScopeType.*` / custom name | Scope; custom scopes via `registerScope(name, CustomScope)` (e.g. `SimpleMapScope`). `proxyMode: ScopedProxyMode.targetClass` (or `interfaces`) injects a generated scoped proxy that asks the scope for the current instance on every call, so singletons can hold scoped beans (by hand: `BeanDefinition(scopedProxy:)`); without it a scoped bean injected directly into a singleton is logged as a warning. |
 | `@Lazy()` | Singletons are eager by default; lazy ones are created on first use. |
 | `@Primary()`, `@Fallback()`, `@Qualifier('x')` | Choosing between candidates. |
 | `@DependsOn([...])`, `@Order(n)`, `@Description('...')` | Creation order, collection order, documentation. |
@@ -171,7 +171,8 @@ Future<void> main(List<String> args) async {
 A bean is registered under its own type and all its public supertypes.
 Generic supertypes are matched by the full type (`Store<User>`).
 A `FactoryBean<T>` exposes its product by name and type; `&name` returns the
-factory.
+factory. A `FactoryBean` given to `registerSingleton` is found by its
+`objectType` (`T`).
 
 ### Injection
 
@@ -222,6 +223,36 @@ The bean must exist and be unique (checked at refresh). The type must be
 an interface or a class without private members, not generic, and the
 point must not be nullable; otherwise the build stops and suggests
 `ObjectProvider<T>`.
+
+Candidates follow Spring's `DefaultListableBeanFactory`: a bean is never
+injected into itself, and a configuration's own `@Bean` products are left
+out of its collections and single dependencies unless nothing else matches
+(a collection then gets them, never the configuration itself). Beans of
+parent contexts take part (their `@Primary`, `@Order`,
+`autowireCandidate` and qualifiers kept; a local bean of the same name
+hides them); for a single dependency a local `@Primary` beats a parent's,
+the parameter name matches bean names and aliases (not qualifier values),
+then the `@Qualifier` value as a bean name, and two `@Primary` candidates
+are an error.
+
+The JSR-330 / JSR-250 names that clash with other libraries live in
+`package:spring_core_dart/jakarta.dart`: a `Provider<T>` injection point
+gets the same lazy provider as `ObjectProvider<T>` (`get()`), and
+`@Resource` on a field or setter injects by bean name (the member name, or
+by type when no bean has it; `@Resource(name: 'x')` exactly that bean):
+
+```dart
+import 'package:spring_core_dart/jakarta.dart' as jakarta;
+
+@Service()
+class Reports {
+  Reports(this.clock);
+  final jakarta.Provider<Clock> clock;       // clock.get() on every use
+
+  @jakarta.Resource(name: 'archiveStore')
+  late final Store store;
+}
+```
 
 #### Primary constructors and other new syntax
 
@@ -352,7 +383,9 @@ refresh) and stopped in reverse on `stop()` / `close()`; a bean's
 dependencies start before it and its dependents stop before it, whatever
 their phase (a plain `Lifecycle` dependency of an auto-startup bean starts
 at refresh); a lazy plain `Lifecycle` bean is not created for that, like
-Spring. Mix in `SmartLifecycle` (`with`) for Spring's defaults
+Spring. A created singleton counts by its instance too (a `@Bean Object
+server()` returning a `SmartLifecycle`), like Spring matching the
+singleton's actual type. Mix in `SmartLifecycle` (`with`) for Spring's defaults
 (auto-startup, default phase). `closeAsync()` waits for the
 `stopWithCallback` callbacks of each phase, at most
 `DefaultLifecycleProcessor.timeoutPerShutdownPhase` (10 seconds) or the
@@ -416,6 +449,25 @@ Problems the framework recovers from are logged through `SpringLog`
   the profile files while none is active, groups expanded. A
   `defaultProperties` source stays below the config files. Works with
   async-only resources (Flutter assets) via `processAndApply()`.
+- Binding follows Boot's binder: indexed keys (`spring.profiles.include[0]`,
+  `SPRING_PROFILES_ACTIVE_0_`) form a list, and a list comes whole from the
+  highest source that has it (`--spring.profiles.active[0]=dev` replaces a
+  file's list). `${...}` in a file's `spring.config.import` and on-profile
+  guard is resolved against the command line and environment first, then
+  the files; an unresolvable placeholder in an `optional:` import just
+  skips it. A non-optional wildcard location (`file:./config/*/`) needs at
+  least one subdirectory.
+- `${random.int}`, `${random.int(10)}`, `${random.int[5,10]}`,
+  `${random.long}`, `${random.uuid}`, `${random.value}`
+  (`RandomValuePropertySource`, added by `SpringApplication`; call
+  `RandomValuePropertySource.addToEnvironment` otherwise).
+- Placeholders follow Spring 6.2's parser: `${db:url}` is first looked up as
+  the key `db:url`, then as `db` with the default `url`; an unclosed `${`
+  is plain text (`${a ${b}` resolves `${b}`).
+- `.properties` files are UTF-8; for ISO-8859-1 (what Spring reads) use
+  `PropertiesPropertySourceLoader(encoding: latin1)` in
+  `ConfigDataEnvironment(loaders: ...)` or `@PropertySource(encoding:
+  'ISO-8859-1')`.
 - YAML is flattened like Boot's `YamlPropertySourceLoader`: `app.hosts[0]`,
   `app.servers[0].name`, empty values and `~` as `''`. `@Value` and
   `getProperty('app.hosts[0]')` see list items; `@ConfigurationProperties`
@@ -430,7 +482,9 @@ Problems the framework recovers from are logged through `SpringLog`
   conditions (`@Profile`, `@Conditional`, ...) match; classes pulled in with
   `@Import` inherit the importer's conditions. As in Spring it reads
   `.properties`; for YAML pass a `PropertySourceFactory` that uses
-  `YamlPropertySourceLoader`.
+  `YamlPropertySourceLoader`. Async-only resources (Flutter assets behind a
+  `ProtocolResolver`) work with `refreshAsync()` / `runAsync`, which reads
+  them before the modules are loaded.
 
 There is no `.env` support by design: configuration lives in property files.
 
@@ -455,6 +509,44 @@ filters apply): the enclosing scan, or `@SpringBootApplication`, imports its
 module instead of scanning the files again, so every bean is registered
 once even when both modules are used. One directory has one scan root. Contexts can have a parent; beans of the parent
 are visible to the child.
+
+Programmatic registration follows Spring 7. A `BeanRegistrar` registers
+beans with a supplier and Spring's `Spec` options; put it in
+`@Import([...])` (the generator creates it with its no-argument
+constructor when the importing class is registered, so it follows that
+class's conditions) or `context.register(...)` it. `ImportSelector`
+(returns `BeanModule`s, loaded before the importing module) and
+`ImportBeanDefinitionRegistrar` (gets the `BeanDefinitionRegistry`) work
+the same way and may implement `EnvironmentAware`, `BeanFactoryAware`,
+`ResourceLoaderAware`. `context.registerBean<T>(supplier, ...)` is
+Spring's `GenericApplicationContext.registerBean`. Registration happens
+while the modules load, in registration order; registering anything after
+`refresh()` fails with a `StateError` saying so.
+
+```dart
+class MessagingRegistrar implements BeanRegistrar {
+  const MessagingRegistrar();
+
+  @override
+  void register(BeanRegistry registry, Environment env) {
+    registry.registerBean<Clock>((_) => SystemClock(), name: 'clock');
+    if (env.containsProperty('mail.host')) {
+      registry.registerBean<Mailer>(
+        (context) => SmtpMailer(context.dependency<Clock>()),
+        name: 'mailer', primary: true, lazy: true, description: 'SMTP',
+      ); // unnamed: `Mailer#0`, like Spring's uniqueBeanName
+    }
+  }
+}
+
+@Configuration()
+@Import([MessagingRegistrar]) // or: context.register(const MessagingRegistrar())
+class AppConfig {}
+
+final context = AnnotationConfigApplicationContext([appBeans])
+  ..registerBean<Clock>((_) => FixedClock(), name: 'testClock', primary: true)
+  ..refresh();
+```
 
 The scan takes Spring's filters, evaluated at build time: `includeFilters`
 make classes beans without `@Component` (`Filter(classes: [Plugin])` for an
@@ -509,6 +601,30 @@ listeners of `PayloadApplicationEvent<T>` match on the payload's runtime
 type, like Spring. `@EventListener` methods of a `FactoryBean` run on the
 factory, not on its product.
 
+Asynchronous delivery: `SimpleApplicationEventMulticaster(taskExecutor:
+SimpleAsyncTaskExecutor())` (as an `applicationEventMulticaster` bean)
+calls every listener on the executor, like Spring's `setTaskExecutor`;
+errors go to its `errorHandler` (without one the executor logs them).
+`@Async()` on an `@EventListener` method runs just that method on a
+`TaskExecutor` bean (`@Async('name')` picks one; otherwise the only or
+`@Primary` one, else `taskExecutor`), its failure going to the error
+handler or the log and its result being published when it arrives. Like
+`@EnableAsync`, it is switched on by having a `TaskExecutor` bean: the
+scheduling starter registers `applicationTaskExecutor` (alias
+`taskExecutor`); without one `@Async` is ignored. The generator accepts
+`@Async` on `@EventListener` methods only. As in Spring, a listener's
+`condition` runs inside the multicaster's error handling (on the executor
+when there is one), so a failing condition reaches the `errorHandler`.
+
+```dart
+@Component()
+class Mailer {
+  @EventListener()
+  @Async()
+  Future<void> onPlaced(OrderPlaced order) => sendConfirmation(order);
+}
+```
+
 ### Messages, resources, conversion
 
 - `MessageSource`: `StaticMessageSource`,
@@ -524,9 +640,18 @@ factory, not on its product.
   declarations; `@Value('classpath:templates/mail.txt') Resource template`
   (resolved by the context's resource loader, so custom protocols and
   asset loaders apply).
-  `ResourceLoader` with `classpath:`, `file:` and custom protocols
-  (`ProtocolResolver`), `PathMatchingResourcePatternResolver` with
-  `AntPathMatcher`.
+  `ResourceLoader` with `classpath:` (also plain paths such as
+  `app.properties`, as in Spring), `file:` (percent-decoded:
+  `file:my%20dir/a.txt`), `package:my_app/config/app.yml` (the package's
+  file through the package config; not on the web or in AOT executables)
+  and custom protocols (`ProtocolResolver`, tried first: this is how a
+  Flutter asset loader plugs in), `PathMatchingResourcePatternResolver`
+  with `AntPathMatcher` for `file:` and classpath patterns: `classpath:`
+  searches the first classpath root with the pattern's base directory,
+  `classpath*:` every root (added directories, then the embedded
+  resources); matching directories are returned too and directories the
+  pattern cannot match are not walked. `FileSystemResource` of a directory
+  exists but is not readable, like Spring's.
 
   Why `lib/resources/` and not `bin/` or the project root: `lib/` is the
   only part of a Dart package that other packages can use, so a starter
@@ -563,7 +688,18 @@ Literals, inline lists/maps, properties, indexing, safe navigation (`?.`,
 short-circuiting the chain), methods, variables and functions, `T(Type)`
 statics, constructors, `@bean` references, selection/projection,
 assignment and `++`/`--`, all operators (`div`, `between`, `matches`,
-Elvis, ternary). Dart has no reflection: user classes are reached through
+Elvis, ternary). Numbers follow Spring 7's operators: `int` arithmetic
+for integers (`7 / 2` is `3`, `1 / 0` throws `UnsupportedError` like
+Java's `ArithmeticException`), `double` once a real number is involved
+(`7.0 / 2` is `3.5`, also on the web, where `7.0` is an `int` at run time:
+real literals, `T(Math)` functions and the operators on them are tracked),
+`^` like `OpPower` (a long above `Integer.MAX_VALUE`, saturating), `==`
+with Java's double semantics (`NaN != NaN`) and deep for lists and maps,
+`'d' - 3` is `'a'`. Selection (`.?[...]`) keeps the element type of the
+source list. `T()` knows the common `java.lang` names (`T(Integer)`,
+`T(Character)`, `T(Math)`, `new int[4]`, `new char[2]`), and String has
+Java's `format` / `formatted`, `getBytes` and `chars` on top of the Dart
+methods. Dart has no reflection: user classes are reached through
 `@Introspected` metadata, `FunctionPropertyAccessor` / `FunctionMethodResolver`
 or maps. `SimpleEvaluationContext` restricts expressions for data binding
 (no types, constructors, bean references or variable assignment).
@@ -1122,6 +1258,21 @@ With Spring Boot, levels come from `logging.level.*` properties.
 `BeanModule`s, `registerSingleton`, `@Configurable` + `autowireBean` for
 objects created elsewhere (e.g. Flutter `State`).
 
+Post-processor beans are created in Spring's phases
+(`PostProcessorRegistrationDelegate`): `PriorityOrdered`, then `Ordered`
+(or `@Order`), then the rest — each phase only after the previous one is
+registered or invoked, so a `PriorityOrdered` `BeanPostProcessor` already
+processes the `Ordered` ones; the names are queried again before each
+phase (registry post-processors repeat the last phase while they register
+more of themselves). A regular bean created while the `BeanPostProcessor`s
+are registered (a dependency of one of them) misses the later ones; like
+Spring's `BeanPostProcessorChecker` this is logged at info level ("Bean
+'repo' of type [Repo] is not eligible for getting processed by all
+BeanPostProcessors ...", naming the post-processor being created) — make
+such a dependency an `ObjectProvider` or `@Lazy`. `EmbeddedValueResolverAware`
+gets Spring's `EmbeddedValueResolver`: `${...}` placeholders, then `#{...}`
+SpEL (`resolver(r"#{'${app.home}' + '/cache'}")`).
+
 Your own interface implementations: mark an annotation class with
 `@InterfaceProxy()` and every abstract class carrying that annotation
 becomes a bean whose implementation the generator writes — each method hands
@@ -1190,7 +1341,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `@Null`, `@Pattern`, `@Future` | `MustBeNull`, `Matches`, `FutureDate` (codes unchanged) | Clash with Dart's `Null`, `Pattern` and `Future` |
 | `Validator.supports(Class)` | `supports(Object target)` | Dart cannot test subtypes on a `Type` |
 | `@Autowired` on a private field or setter (reflection) | Only public fields and setters; a private field is injected through a constructor parameter (`this._repo`, Dart 3.13 primary constructors included) | The generated code is another library and cannot reach private members |
-| CGLIB-enhanced `@Configuration` classes | A generated subclass in the `.beans.dart` file: a class with instance `@Bean` methods must be extendable from another library (not `final`, `sealed` or `interface`, public generative constructor) or use `proxyBeanMethods: false`, else the build fails; an inter-bean call of a `FactoryBean` method returns the container's factory itself (Spring: an enhanced factory whose `getObject()` returns the container's product) | No runtime bytecode generation |
+| CGLIB-enhanced `@Configuration` classes | A generated subclass in the `.spring.dart` file: a class with instance `@Bean` methods must be extendable from another library (not `final`, `sealed` or `interface`, public generative constructor) or use `proxyBeanMethods: false`, else the build fails; an inter-bean call of a `FactoryBean` method returns the container's factory itself (Spring: an enhanced factory whose `getObject()` returns the container's product) | No runtime bytecode generation |
 | `@Bean` definitions know only the declared return type until the bean is created (`beanClassName` is `null`) | The type of the returned expression(s) is known at build time and the definition is registered under it and its supertypes: `getBean<HikariDataSource>()`, `getBeanNamesForType`, `@ConditionalOnBean` / `@ConditionalOnMissingBean` and AOP (`within(Impl)`, annotations on implementation methods) see it before the bean exists | Deliberately better: the generator sees the method body |
 | Duplicate bean names are found at startup (Boot disables overriding) | Two unconditional declarations of one name fail the build; declarations with conditions (`@Profile`, `@Conditional...`) may share a name and are checked at refresh (`BeanDefinitionOverrideException` when both match) | Fail early when the clash is certain |
 | CGLIB / JDK proxies | Generated `implements` proxies | Final or private-member classes are proxied through interfaces only |
@@ -1204,8 +1355,8 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `getBean` does not return `registerResolvableDependency` values | `getBean<BeanFactory>()`, `getBean<ApplicationContext>()` return them | Same objects that injection gets |
 | Custom qualifier annotations match by type and attributes | They match by their qualifier value only | Annotations are not read at runtime |
 | `@EventListener(condition = "#event.big")` (SpEL) | `condition:` takes a Dart function | Type-checked, no reflection |
-| Asynchronous multicaster (`setTaskExecutor`), `@Async` listeners | Listeners run synchronously | Not implemented |
-| `@Import` of classes, `ImportSelector`, `ImportBeanDefinitionRegistrar`; fully-qualified names for imported classes | Classes only; imported classes get simple bean names | No reflection, no packages in Dart |
+| `@EnableAsync` switches `@Async` on; `@Async` on any bean method (proxies) | A `TaskExecutor` bean switches it on (the scheduling starter has one); `@Async` on `@EventListener` methods only; a `TaskExecutor` runs tasks in a later event-loop turn | No runtime proxies; Dart isolates have no threads |
+| `ImportSelector.selectImports(metadata)` returns class names; registrars get the importing class's metadata; imported classes get fully-qualified names; `BeanRegistry.registerBean(Class)` instantiates the class | `selectImports()` returns `BeanModule`s, no metadata; simple bean names; `registerBean<T>` needs a supplier | No reflection, no packages in Dart |
 | `SmartLifecycle.stop(Runnable callback)` blocks `close()` per phase | `stopWithCallback(callback)`; `closeAsync()` waits for a later callback (per-phase timeouts), `close()` goes on | No overloading; Dart cannot block on a `Future` |
 | A `null` result reaches an `@AfterReturning` parameter of any type | Only `Object?` / `dynamic` (and nullable types) get `null` | Dart null safety |
 | Jackson writes Java enums by name (`IN_STOCK`) | Enums go over the wire by their Dart name (`inStock`); use `@JsonValue` to talk to Java peers | Dart naming conventions |
@@ -1214,7 +1365,9 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `spring.jackson.time-zone` with any zone ID | `UTC` / `Z` or a fixed offset (`+02:00`, `GMT+2`); a named zone (`Europe/Berlin`) fails at startup with a message saying so | Dart has no time zone database |
 | Boot binds every `spring.jackson.*` key (Jackson features, `date-format`, `locale`, ...) | Only the keys of the `spring_boot_dart` table are read; any other `spring.jackson.*` key is logged as a warning and ignored | The mapper has no Jackson feature flags |
 | SpEL `matches` and String methods are Java's | Dart's `RegExp` syntax and Dart's String methods (`replaceAll` with a string is literal) | Dart runtime |
-| SpEL `T(java.lang.Math)` finds any class | `T()` needs registered types and takes Dart type names (`T(int)`) | No reflection |
+| SpEL `T(java.lang.Math)` finds any class | `T()` needs registered types and takes Dart type names (`T(int)`) and the common `java.lang` ones | No reflection |
+| SpEL on the JVM knows `7.0` from `7` | On the web an integral double that comes from outside SpEL (a variable, a bean property, a list element) counts as an `int` | JavaScript has one number type |
+| Boot reads `.properties` config files as ISO-8859-1 | UTF-8 unless the loader says otherwise (`PropertiesPropertySourceLoader(encoding: latin1)`) | Dart files are UTF-8 |
 | `ReloadableResourceBundleMessageSource` reload checks every resource's timestamp | File resources by modification time; others are re-read; preloaded (async-only) resources change only through `preload()` | Not every resource has a timestamp or sync reads |
 
 ## Roadmap
@@ -1263,6 +1416,6 @@ analyzer than `build_runner` / `source_gen` need. Consumers are unaffected.
 Tests: 398 (runtime), 97 (generator), 21 (Spring Boot), 14 (web), 29
 (logging starter), 62 (scheduling starter), 43 (cache starter), 13 (Feign
 starter), 25 (test starter), 20 end-to-end over the generated code of the
-example (tour and Spring Boot app), 29 (language server). Generated `*.beans.dart` files are committed. CI
+example (tour and Spring Boot app), 29 (language server). Generated `*.spring.dart` files are committed. CI
 (`.github/workflows/ci.yml`) also checks that generated code is up to date,
 runs the tour, and runs the AOP release check as minified JavaScript.

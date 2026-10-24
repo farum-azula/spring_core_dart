@@ -107,9 +107,12 @@ class PropertyPlaceholderHelper {
       }
       final end = _findEnd(value, start + prefix.length);
       if (end < 0) {
-        // No closing suffix: the rest is literal text.
-        result.write(value.substring(position));
-        break;
+        // No closing suffix: the prefix is literal text and scanning goes
+        // on after it, so `${a ${b}` still resolves `${b}` (Spring 6.2's
+        // PlaceholderParser).
+        result.write(value.substring(position, start + prefix.length));
+        position = start + prefix.length;
+        continue;
       }
       result.write(value.substring(position, start));
       final original = value.substring(start, end + suffix.length);
@@ -127,8 +130,18 @@ class PropertyPlaceholderHelper {
     List<String> visited,
     String value,
   ) {
-    // Resolve placeholders inside the key and default first.
     final (rawKey, rawDefault) = _split(content);
+    // Like Spring 6.2, a simple `key:default` is first tried as a key
+    // as a whole (`${db:url}` finds a `db:url` property).
+    if (rawDefault != null &&
+        !content.contains(prefix) &&
+        !visited.contains(content)) {
+      final whole = resolver(content);
+      if (whole != null) {
+        return _parse(whole, resolver, [...visited, content]);
+      }
+    }
+    // Resolve placeholders inside the key and default first.
     final key = _parse(rawKey, resolver, visited);
     if (visited.contains(key)) {
       throw PlaceholderResolutionException(

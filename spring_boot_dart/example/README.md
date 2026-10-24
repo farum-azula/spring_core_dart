@@ -25,14 +25,14 @@ dev_dependencies:
 ```dart
 // bin/main.dart (lib/main.dart in Flutter)
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.beans.dart'; // generated next to this file
+import 'main.spring.dart'; // generated next to this file
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
 ```
 
 ```bash
-dart run build_runner build   # scans lib/ and bin/, writes main.beans.dart
+dart run build_runner build   # scans lib/ and bin/, writes main.spring.dart
 dart run bin/main.dart
 ```
 

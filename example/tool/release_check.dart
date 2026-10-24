@@ -111,5 +111,38 @@ void main() {
   context.getBean<StockFeed>().changes();
   context.getBean<SupportChat>().lines();
   context.close();
+  _checkSpel();
   print('release check passed');
+}
+
+// SpEL keeps Java's int/double arithmetic under JavaScript, where `7.0`
+// and `7` are the same number.
+void _checkSpel() {
+  final parser = SpelExpressionParser();
+  const cases = <String, Object>{
+    '7.0 / 2': 3.5,
+    '7 / 2': 3,
+    '7.0 / 2 * 2 / 4': 1.75,
+    '(7.0 ?: 1) / 2': 3.5,
+    'T(Math).sqrt(16) / 8': 0.5,
+    'T(Math).floor(7.5) / 2': 3.5,
+    "'x' + 7.0": 'x7.0',
+    '-7 % 3': -1,
+    "'d' - 3": 'a',
+    '(-2) ^ 33': -2147483648,
+    'T(Double).NaN == T(Double).NaN': false,
+    '{1, {2}} == {1, {2}}': true,
+  };
+  cases.forEach((expression, expected) {
+    final actual = parser.parseExpression(expression).getValue();
+    if (actual != expected) {
+      throw StateError('SpEL $expression: expected $expected, got $actual');
+    }
+  });
+  try {
+    parser.parseExpression('1 / 0').getValue();
+    throw StateError('SpEL 1 / 0 did not fail');
+  } on UnsupportedError {
+    // Like Java's ArithmeticException.
+  }
 }

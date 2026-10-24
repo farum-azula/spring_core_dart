@@ -21,7 +21,7 @@ dev_dependencies:
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/shop.beans.dart'; // generated springApplication
+import '../bin/shop.spring.dart'; // generated springApplication
 
 void main() {
   final gateway = FakeGateway();

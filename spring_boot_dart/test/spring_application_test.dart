@@ -162,6 +162,46 @@ void main() {
     custom.close();
   });
 
+  test('on-bean conditions ignore non-default and non-autowire candidates', () {
+    // Boot 3.4+ OnBeanCondition: `@Bean(defaultCandidate: false)` and
+    // `autowireCandidate: false` beans neither satisfy @ConditionalOnBean
+    // nor make @ConditionalOnMissingBean back off.
+    for (final hidden in [
+      BeanDefinition<CustomCache>(
+        name: 'customCache',
+        types: const [CustomCache, Cache],
+        defaultCandidate: false,
+        create: (_) => CustomCache(),
+      ),
+      BeanDefinition<CustomCache>(
+        name: 'customCache',
+        types: const [CustomCache, Cache],
+        autowireCandidate: false,
+        create: (_) => CustomCache(),
+      ),
+    ]) {
+      final context = SpringApplication(
+        [
+          appModule(),
+          BeanModule('hidden', [
+            hidden,
+            BeanDefinition<Recorder>(
+              name: 'needsCache',
+              conditions: const [ConditionalOnBean(Cache)],
+              create: (_) => Recorder(),
+            ),
+          ]),
+        ],
+        autoConfigurations: [autoModule],
+        out: lines.add,
+      ).run(['--db.url=x']);
+      expect(context.containsBean('defaultCache'), isTrue);
+      expect(context.containsBean('needsCache'), isFalse);
+      expect(context.getBean<Cache>(), isA<DefaultCache>());
+      context.close();
+    }
+  });
+
   test('runners run in order with the arguments; startup line', () {
     final context = run(['--db.url=x', '--mode=batch', 'file.csv']);
     expect(context.getBean<Recorder>().calls, [

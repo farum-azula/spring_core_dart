@@ -267,3 +267,54 @@ class DescriptiveResource extends AbstractResource {
   Future<Uint8List> readAsBytes() =>
       Future.error(StateError('$description cannot be opened'));
 }
+
+/// A [resource] with the [encoding] to read it in, like Spring's
+/// `EncodedResource`; `null` means UTF-8.
+///
+/// `@PropertySource(encoding: ...)` hands one to the
+/// `PropertySourceFactory`.
+///
+/// ```dart
+/// final resource = EncodedResource(
+///   FileSystemResource('config/legacy.properties'),
+///   encoding: latin1,
+/// );
+/// resource.readAsStringSync();
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// var resource = new EncodedResource(
+///     new FileSystemResource("config/legacy.properties"),
+///     StandardCharsets.ISO_8859_1);
+/// ```
+final class EncodedResource {
+  /// Wraps [resource], to be read in [encoding] (UTF-8 when `null`).
+  const EncodedResource(this.resource, {this.encoding});
+
+  /// The wrapped resource.
+  final Resource resource;
+
+  /// The declared encoding, or `null` for the default (UTF-8).
+  final Encoding? encoding;
+
+  /// Reads the whole content synchronously in [encoding].
+  String readAsStringSync() =>
+      resource.readAsStringSync(encoding: encoding ?? utf8);
+
+  /// Reads the whole content asynchronously in [encoding].
+  Future<String> readAsString() =>
+      resource.readAsString(encoding: encoding ?? utf8);
+
+  @override
+  bool operator ==(Object other) =>
+      other is EncodedResource &&
+      other.resource == resource &&
+      other.encoding?.name == encoding?.name;
+
+  @override
+  int get hashCode => Object.hash(resource, encoding?.name);
+
+  @override
+  String toString() => resource.toString();
+}

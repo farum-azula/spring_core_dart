@@ -1,3 +1,7 @@
+## Unreleased
+
+- an `applicationTaskExecutor` bean (alias `taskExecutor`, a `SimpleAsyncTaskExecutor`) unless the application has a `TaskExecutor`, like Spring Boot's `TaskExecutionAutoConfiguration`; it switches `@Async` event listeners on
+
 ## 0.1.7
 
 - `spring.task.scheduling.shutdown.await-termination` / `await-termination-period`: the context's `closeAsync()` waits for the runs going on (`TimerTaskScheduler(awaitTermination:, awaitTerminationPeriod:)`, `runningTasks`; `destroy()` returns the `Future`)

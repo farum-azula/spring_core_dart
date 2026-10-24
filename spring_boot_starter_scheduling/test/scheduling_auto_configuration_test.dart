@@ -371,6 +371,42 @@ void main() {
       });
     });
 
+    test('an applicationTaskExecutor runs @Async listeners', () async {
+      final received = <String>[];
+      final listener = BeanDefinition<Reports>(
+        name: 'reports',
+        create: (_) => Reports(),
+        eventListeners: [
+          EventListenerMethod.of<Reports, String>('Reports.on', (_, event) {
+            received.add(event);
+            return null;
+          }, async: const Async()),
+        ],
+      );
+      await bare.withUserConfiguration(BeanModule('app', [listener])).runAsync((
+        context,
+      ) async {
+        expect(context, hasSingleBean<TaskExecutor>());
+        final executor = context.getBean<TaskExecutor>();
+        expect(context.getBeanByName('taskExecutor'), same(executor));
+        context.context.publishEvent('hello');
+        expect(received, isEmpty);
+        await (executor as SimpleAsyncTaskExecutor).whenIdle;
+        expect(received, ['hello']);
+      });
+      final own = SimpleAsyncTaskExecutor();
+      bare
+          .withUserConfiguration(
+            BeanModule('app', [
+              BeanDefinition<TaskExecutor>(name: 'mine', create: (_) => own),
+            ]),
+          )
+          .run((context) {
+            expect(context, hasSingleBean<TaskExecutor>());
+            expect(context.getBean<TaskExecutor>(), same(own));
+          });
+    });
+
     test('spring.task.scheduling.enabled=false switches it off', () {
       runner([
             reportsDefinition({

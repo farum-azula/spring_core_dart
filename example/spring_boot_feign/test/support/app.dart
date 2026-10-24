@@ -4,7 +4,7 @@
 // ConfigDataApplicationContextInitializer).
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
-import '../../bin/main.beans.dart';
+import '../../bin/main.spring.dart';
 
 /// The application's beans (runners are beans, but nothing calls them).
 ApplicationContextRunner appContext() {

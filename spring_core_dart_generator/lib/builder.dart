@@ -2,7 +2,7 @@
 ///
 /// The generator turns annotated Dart classes into plain Dart code at build
 /// time: for every library that declares a `@ComponentScan()` variable it
-/// writes a sibling `*.beans.dart` file with a `BeanModule` holding one
+/// writes a sibling `*.spring.dart` file with a `BeanModule` holding one
 /// `BeanDefinition` per bean, generated AOP proxy classes, introspection
 /// metadata and `@Configurable` configurers. Nothing is discovered by
 /// reflection at runtime (Dart AOT and Flutter have no `dart:mirrors`).
@@ -21,7 +21,7 @@
 /// ```dart
 /// // lib/src/beans.dart
 /// import 'package:spring_core_dart/spring_core_dart.dart';
-/// import 'package:my_app/src/beans.beans.dart';
+/// import 'package:my_app/src/beans.spring.dart';
 ///
 /// @ComponentScan()
 /// final BeanModule appBeans = $appBeans;

@@ -1,4 +1,6 @@
 import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
+import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
+    if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
@@ -153,9 +155,18 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 ///
 /// Order: registered [ProtocolResolver]s, then `classpath:` (the files of
 /// `lib/resources/`, see [ClasspathResources]), then `file:` as file system
-/// resources. Plain paths (`app.properties`, `/config/x.txt`) are classpath
-/// resources too, like Spring's `getResourceByPath`. Other `scheme:`
-/// locations resolve to a resource that does not exist.
+/// resources (percent-decoded, see [FileSystemResource.fromFileUrl]), then
+/// `package:` URIs as the package's files (through the package config of
+/// the running program; not on the web or in AOT executables). Plain paths
+/// (`app.properties`, `/config/x.txt`) are classpath resources too, like
+/// Spring's `getResourceByPath`. Other `scheme:` locations resolve to a
+/// resource that does not exist.
+///
+/// Platforms with their own asset system plug in with a
+/// [ProtocolResolver], which comes first: a Flutter app can resolve
+/// `package:my_app/config/app.properties` (or an `asset:` scheme) to an
+/// async-only resource over its asset bundle, which `ConfigDataEnvironment`
+/// and `@PropertySource` then read asynchronously.
 ///
 /// ```dart
 /// final loader = DefaultResourceLoader()
@@ -199,7 +210,13 @@ class DefaultResourceLoader implements ResourceLoader {
       return ClasspathResources.resolve(location);
     }
     if (location.startsWith(ResourceLoader.filePrefix)) {
-      return FileSystemResource(_filePath(location));
+      return FileSystemResource.fromFileUrl(location);
+    }
+    if (location.startsWith(packagePrefix)) {
+      final path = FileAccess.resolvePackageUri(location);
+      return path == null
+          ? DescriptiveResource('resource [$location] (cannot be resolved)')
+          : FileSystemResource(path);
     }
     // Another `scheme:` prefix (at least two letters, so a Windows drive
     // like `C:\` is still a plain path).
@@ -211,9 +228,6 @@ class DefaultResourceLoader implements ResourceLoader {
     return ClasspathResources.resolve(location);
   }
 
-  static String _filePath(String location) {
-    final rest = location.substring(ResourceLoader.filePrefix.length);
-    // file:///abs/path and file:/abs/path are both absolute.
-    return rest.startsWith('///') ? rest.substring(2) : rest;
-  }
+  /// Prefix of a Dart package URI (`package:my_app/config/app.yml`).
+  static const packagePrefix = 'package:';
 }

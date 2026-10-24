@@ -27,7 +27,7 @@ dev_dependencies:
 melos:
   scripts:
     gen:
-      description: Regenerate *.beans.dart in packages that use the generator.
+      description: Regenerate *.spring.dart in packages that use the generator.
       exec: dart run build_runner build
       packageFilters:
         dependsOn: build_runner

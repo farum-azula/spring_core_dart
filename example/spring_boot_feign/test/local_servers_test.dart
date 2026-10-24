@@ -11,7 +11,7 @@ import 'dart:convert';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.beans.dart';
+import '../bin/main.spring.dart';
 import 'support/local_servers.dart';
 
 void main() {

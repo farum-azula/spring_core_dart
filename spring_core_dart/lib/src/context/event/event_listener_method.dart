@@ -1,4 +1,5 @@
 import 'package:spring_core_dart/src/aop/proxy.dart';
+import 'package:spring_core_dart/src/context/annotations.dart';
 import 'package:spring_core_dart/src/context/event/application_event.dart';
 
 /// An `@EventListener` method of a bean of type [T], prepared by generated
@@ -30,13 +31,17 @@ import 'package:spring_core_dart/src/context/event/application_event.dart';
 /// void onPlaced(OrderPlaced event) { ... }
 /// ```
 final class EventListenerMethod<T extends Object> {
-  /// Creates a listener method from raw callbacks: `supports` decides on an
-  /// event, `invoke` calls the method on the bean.
+  /// Creates a listener method from raw callbacks: `supports` decides on
+  /// the event type, `shouldHandle` on the condition (called right before
+  /// `invoke`, inside the multicaster's error handling), `invoke` calls
+  /// the method on the bean; [async] is the method's `@Async`.
   EventListenerMethod({
     required this.id,
     required this._supports,
     required this._invoke,
+    this._shouldHandle,
     this.order,
+    this.async,
   });
 
   /// A listener for events (or payloads) of type [E]; [condition] filters
@@ -46,14 +51,15 @@ final class EventListenerMethod<T extends Object> {
     Object? Function(T bean, E event) handler, {
     int? order,
     bool Function(E event)? condition,
+    Async? async,
   }) => EventListenerMethod<T>(
     id: id,
     order: order,
-    supports: (event) {
-      final matching = unwrap<E>(event);
-      return matching != null &&
-          (condition == null || condition(matching.value));
-    },
+    async: async,
+    supports: (event) => unwrap<E>(event) != null,
+    shouldHandle: condition == null
+        ? null
+        : (event) => condition(unwrap<E>(event)!.value),
     invoke: (bean, event) => handler(bean, unwrap<E>(event)!.value),
   );
 
@@ -78,14 +84,15 @@ final class EventListenerMethod<T extends Object> {
     Object? Function(T bean, PayloadApplicationEvent<P> event) handler, {
     int? order,
     bool Function(PayloadApplicationEvent<P> event)? condition,
+    Async? async,
   }) => EventListenerMethod<T>(
     id: id,
     order: order,
-    supports: (event) {
-      final payloadEvent = _payloadEvent<P>(event);
-      return payloadEvent != null &&
-          (condition == null || condition(payloadEvent));
-    },
+    async: async,
+    supports: (event) => _payloadEvent<P>(event) != null,
+    shouldHandle: condition == null
+        ? null
+        : (event) => condition(_payloadEvent<P>(event)!),
     invoke: (bean, event) => handler(bean, _payloadEvent<P>(event)!),
   );
 
@@ -120,15 +127,16 @@ final class EventListenerMethod<T extends Object> {
     required bool Function(Object candidate) accepts,
     required this._invoke,
     this.order,
+    this.async,
     Function? condition,
-  }) : _supports = ((event) {
-         final matched = _matched(event, accepts);
-         // `condition` is untyped (it comes from the annotation), so it is
-         // called dynamically.
-         return matched != null &&
-             (condition == null ||
-                 Function.apply(condition, [matched.value]) == true);
-       });
+  }) : _supports = ((event) => _matched(event, accepts) != null),
+       // `condition` is untyped (it comes from the annotation), so it is
+       // called dynamically.
+       _shouldHandle = condition == null
+           ? null
+           : ((event) =>
+                 Function.apply(condition, [_matched(event, accepts)!.value]) ==
+                 true);
 
   /// The accepted object: [event] itself or its payload; throws an
   /// `ArgumentError` if neither is accepted.
@@ -177,11 +185,24 @@ final class EventListenerMethod<T extends Object> {
   /// `@Order` of the method.
   final int? order;
 
+  /// The method's `@Async` (`null` when it runs on the publishing call);
+  /// see [Async].
+  final Async? async;
+
   final bool Function(Object event) _supports;
+  final bool Function(Object event)? _shouldHandle;
   final Object? Function(T bean, Object event) _invoke;
 
-  /// Whether the method handles [event] (type and condition match).
+  /// Whether the method listens to [event]'s type (or its payload's), like
+  /// Spring's `ApplicationListenerMethodAdapter.supportsEventType`; the
+  /// condition is checked by [shouldHandle].
   bool supports(Object event) => _supports(event);
+
+  /// Whether the condition accepts [event] (`true` without one), like
+  /// Spring's `ApplicationListenerMethodAdapter.shouldHandle`; called for
+  /// a [supports]ed event right before [invoke], so a failing condition
+  /// reaches the multicaster's error handler like a failing listener.
+  bool shouldHandle(Object event) => _shouldHandle?.call(event) ?? true;
 
   /// Calls the method; a non-null result is published by the caller.
   ///

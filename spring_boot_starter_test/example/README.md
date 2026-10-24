@@ -23,7 +23,7 @@ Your app is built with `spring_core_dart_generator` (it creates the
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/main.beans.dart'; // generated: springApplication
+import '../bin/main.spring.dart'; // generated: springApplication
 
 void main() {
   final app = springBootTest(springApplication);

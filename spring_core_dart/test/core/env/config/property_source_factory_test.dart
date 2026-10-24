@@ -109,9 +109,9 @@ class _UpperCaseFactory implements PropertySourceFactory {
   @override
   AbstractPropertySource<Object> createPropertySource(
     String? name,
-    Resource resource,
+    EncodedResource resource,
   ) {
-    final source = ResourcePropertySource.fromResource(resource);
+    final source = ResourcePropertySource.fromResource(resource.resource);
     return MapPropertySource(name ?? source.name, {
       for (final key in source.propertyNames)
         key.toUpperCase(): source.getProperty(key),

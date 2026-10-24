@@ -296,10 +296,14 @@ class Bean {
 /// ```
 class Scope {
   /// Creates the annotation for the scope named [value].
-  const Scope(this.value);
+  const Scope(this.value, {this.proxyMode = ScopedProxyMode.no});
 
   /// The scope name, such as [ScopeType.prototype].
   final String value;
+
+  /// Whether the bean is injected through a scoped proxy that finds the
+  /// current instance on every call (see [ScopedProxyMode]).
+  final ScopedProxyMode proxyMode;
 }
 
 /// Delays creation, like Spring's `@Lazy`.
@@ -824,6 +828,7 @@ class PropertySource {
     this.name,
     this.ignoreResourceNotFound = false,
     this.factory,
+    this.encoding,
   });
 
   /// Resource locations of the property files.
@@ -839,6 +844,10 @@ class PropertySource {
   /// A `PropertySourceFactory` type with a no-argument constructor; the
   /// default reads `.properties` files.
   final Type? factory;
+
+  /// The charset the files are read in, such as `'ISO-8859-1'`; UTF-8
+  /// when `null`.
+  final String? encoding;
 }
 
 /// Generates a module with every bean declared in the directory of the
@@ -848,7 +857,7 @@ class PropertySource {
 /// which has the same name prefixed with `$`:
 ///
 /// ```dart
-/// import 'package:my_feature/src/beans.beans.dart';
+/// import 'package:my_feature/src/beans.spring.dart';
 ///
 /// @ComponentScan()
 /// final BeanModule myFeatureBeans = $myFeatureBeans;
@@ -1042,6 +1051,60 @@ class EventListener {
 
   /// Listener id; defaults to `Class.method`.
   final String? id;
+}
+
+/// Runs an `@EventListener` method on a `TaskExecutor` instead of the
+/// publishing call, like Spring's `@Async` on an event listener.
+///
+/// [value] names the executor bean; without it the context uses the only
+/// (or `@Primary`) `TaskExecutor` bean, else the one named `taskExecutor`.
+/// Activation works like Spring's `@EnableAsync`: `@Async` takes effect
+/// only when the context has a `TaskExecutor` bean — the scheduling
+/// starter (`spring_boot_starter_scheduling`) registers one
+/// (`applicationTaskExecutor`, alias `taskExecutor`); without any,
+/// `@Async` is ignored and the listener runs synchronously. A failure
+/// (thrown, or from the returned `Future`) goes to the multicaster's error
+/// handler, else it is logged (Spring's
+/// `SimpleAsyncUncaughtExceptionHandler`); a result is published as an
+/// event, as for synchronous listeners.
+///
+/// The generator accepts `@Async` on `@EventListener` methods only: there
+/// are no runtime proxies for other methods.
+///
+/// ```dart
+/// @Component()
+/// class Mailer {
+///   @EventListener()
+///   @Async()
+///   Future<void> onPlaced(OrderPlaced order) => sendConfirmation(order);
+///
+///   @EventListener()
+///   @Async('mailExecutor')
+///   void onShipped(OrderShipped order) { ... }
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @EnableAsync
+/// @Configuration
+/// class AsyncConfig {}
+///
+/// @Component
+/// class Mailer {
+///   @Async @EventListener
+///   CompletableFuture<Void> onPlaced(OrderPlaced order) { ... }
+///
+///   @Async("mailExecutor") @EventListener
+///   void onShipped(OrderShipped order) { ... }
+/// }
+/// ```
+class Async {
+  /// Creates the annotation; see [value].
+  const Async([this.value]);
+
+  /// Name of the `TaskExecutor` bean; `null` for the default one.
+  final String? value;
 }
 
 /// Marks an annotation class whose methods the runtime looks up on beans.

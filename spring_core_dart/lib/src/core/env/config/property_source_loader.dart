@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 
@@ -8,10 +10,11 @@ import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 /// formats.
 ///
 /// Unlike Spring Boot, loaders get the file content as a string (resources
-/// may be async-only), not a `Resource`.
+/// may be async-only), not a `Resource`; it is decoded with [encoding]
+/// (UTF-8 unless the loader overrides it).
 ///
 /// ```dart
-/// class JsonPropertySourceLoader implements PropertySourceLoader {
+/// class JsonPropertySourceLoader extends PropertySourceLoader {
 ///   const JsonPropertySourceLoader();
 ///
 ///   @override
@@ -52,9 +55,15 @@ import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 /// }
 /// // registered in META-INF/spring.factories
 /// ```
-abstract interface class PropertySourceLoader {
+abstract class PropertySourceLoader {
+  /// Const constructor for subclasses.
+  const PropertySourceLoader();
+
   /// Extensions handled by this loader, without the dot.
   List<String> get fileExtensions;
+
+  /// The encoding the files are read in; UTF-8 by default.
+  Encoding get encoding => utf8;
 
   /// One property source per document in [content], in file order. Empty
   /// documents are skipped.
@@ -74,7 +83,16 @@ abstract interface class PropertySourceLoader {
 ///   'a=1\n#---\nspring.config.activate.on-profile=dev\na=2\n',
 /// );
 /// sources.length; // 2
+///
+/// // Files in ISO-8859-1, as Spring Boot reads them:
+/// ConfigDataEnvironment(
+///   environment,
+///   loaders: const [PropertiesPropertySourceLoader(encoding: latin1)],
+/// );
 /// ```
+///
+/// Spring Boot always reads `.properties` files as ISO-8859-1; here they
+/// are UTF-8 unless [encoding] says otherwise.
 ///
 /// Spring (Java):
 /// ```java
@@ -82,9 +100,12 @@ abstract interface class PropertySourceLoader {
 ///     .load("application.properties",
 ///         new ClassPathResource("application.properties"));
 /// ```
-final class PropertiesPropertySourceLoader implements PropertySourceLoader {
-  /// Creates the loader (stateless; use `const`).
-  const PropertiesPropertySourceLoader();
+final class PropertiesPropertySourceLoader extends PropertySourceLoader {
+  /// Creates the loader reading files in [encoding] (use `const`).
+  const PropertiesPropertySourceLoader({this.encoding = utf8});
+
+  @override
+  final Encoding encoding;
 
   // A separator line consists only of `#---` or `!---` (trailing blanks
   // allowed), as in Spring Boot.

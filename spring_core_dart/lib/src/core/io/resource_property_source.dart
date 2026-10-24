@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
@@ -25,16 +27,17 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 class ResourcePropertySource extends MapPropertySource {
   ResourcePropertySource._(super.name, super.source);
 
-  /// Reads [resource] synchronously.
+  /// Reads [resource] synchronously, decoding it with [encoding].
   ///
   /// Throws [UnsupportedError] if the resource does not support
   /// synchronous reading.
   factory ResourcePropertySource.fromResource(
     Resource resource, {
     String? name,
+    Encoding encoding = utf8,
   }) => ResourcePropertySource._(
     name ?? resource.description,
-    PropertiesLoaderUtils.loadPropertiesSync(resource),
+    PropertiesLoaderUtils.loadPropertiesSync(resource, encoding: encoding),
   );
 
   /// Parses already loaded [content] of [resource].
@@ -53,7 +56,7 @@ class ResourcePropertySource extends MapPropertySource {
     PropertiesParser.parse(content),
   );
 
-  /// Reads [resource] asynchronously.
+  /// Reads [resource] asynchronously, decoding it with [encoding].
   ///
   /// ```dart
   /// final source = await ResourcePropertySource.load(resource);
@@ -61,9 +64,10 @@ class ResourcePropertySource extends MapPropertySource {
   static Future<ResourcePropertySource> load(
     Resource resource, {
     String? name,
+    Encoding encoding = utf8,
   }) async => ResourcePropertySource.fromContent(
     resource,
-    await resource.readAsString(),
+    await resource.readAsString(encoding: encoding),
     name: name,
   );
 }

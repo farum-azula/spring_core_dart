@@ -1,5 +1,9 @@
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
+
+import 'dart:convert';
+
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/java_format.dart';
 import 'package:spring_core_dart/src/expression/spel_patterns.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
@@ -304,8 +308,9 @@ final class BuiltinMethodResolver implements MethodResolver {
     );
   }
 
-  // Type-specific methods first, then the universal Object methods.
-  static Function? _method(Object target, String name) {
+  // Type-specific methods first, then the universal Object methods: a
+  // Function or a VarargsFunction.
+  static Object? _method(Object target, String name) {
     final specific = switch (target) {
       String s => _string(s, name),
       Map<Object?, Object?> m => _map(m, name),
@@ -328,7 +333,7 @@ final class BuiltinMethodResolver implements MethodResolver {
         };
   }
 
-  static Function? _string(String s, String name) => switch (name) {
+  static Object? _string(String s, String name) => switch (name) {
     'length' || 'size' => () => s.length,
     'isEmpty' => () => s.isEmpty,
     'isNotEmpty' => () => s.isNotEmpty,
@@ -376,6 +381,11 @@ final class BuiltinMethodResolver implements MethodResolver {
     ),
     'contentEquals' => (Object? other) => s == '$other',
     'matches' => (String regex) => SpelPatterns.compile(regex).hasMatch(s),
+    // Java's formatted(args...), String.format with this as the format.
+    'formatted' => VarargsFunction((List<Object?> args) => javaFormat(s, args)),
+    // UTF-8 bytes, like getBytes(StandardCharsets.UTF_8).
+    'getBytes' => () => utf8.encode(s).toList(),
+    'chars' => () => s.codeUnits.toList(),
     _ => null,
   };
 
@@ -411,6 +421,23 @@ final class BuiltinMethodResolver implements MethodResolver {
     'removeLast' => l.removeLast,
     'clear' => l.clear,
     'reversed' => () => l.reversed.toList(),
+    'removeAll' => (Iterable<Object?> items) {
+      final before = l.length;
+      l.removeWhere(items.contains);
+      return l.length != before;
+    },
+    'retainAll' => (Iterable<Object?> items) {
+      final before = l.length;
+      l.retainWhere(items.contains);
+      return l.length != before;
+    },
+    // Java's sort(null): natural order.
+    'sort' => ([Object? comparator]) {
+      if (comparator != null) {
+        throw ArgumentError('Only sort(null) (natural order) is supported');
+      }
+      l.sort();
+    },
     _ => null,
   };
 

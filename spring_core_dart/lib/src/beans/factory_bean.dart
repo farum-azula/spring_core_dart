@@ -42,8 +42,9 @@
 /// ClientFactory factory = (ClientFactory) context.getBean("&client");
 /// ```
 ///
-/// Unlike Spring there is no `getObjectType()`: the product types are known
-/// at build time from the type argument.
+/// The product types of a definition are known at build time from the
+/// type argument; [objectType] (Spring's `getObjectType()`) is used for a
+/// factory given to `registerSingleton`.
 abstract class FactoryBean<T extends Object> {
   /// Creates (or returns) the product.
   ///
@@ -55,6 +56,10 @@ abstract class FactoryBean<T extends Object> {
   /// container then caches it. Override with `false` for a new product on
   /// every lookup (Spring's `isSingleton()`).
   bool get isSingleton => true;
+
+  /// The product type, [T] by default (Spring's `getObjectType()`): a
+  /// factory registered with `registerSingleton` is found by it.
+  Type get objectType => T;
 }
 
 /// A [FactoryBean] that tells more about its product, like Spring's

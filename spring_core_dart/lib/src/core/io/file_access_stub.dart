@@ -30,6 +30,12 @@ abstract final class FileAccess {
   /// Always empty.
   static List<String> listDirectories(String directory) => const [];
 
+  /// Always empty.
+  static List<String> listFiles(String directory) => const [];
+
+  /// Always `null`: there are no package files.
+  static String? resolvePackageUri(String uri) => null;
+
   /// Throws [UnsupportedError].
   static int length(String path) => _unsupported();
 

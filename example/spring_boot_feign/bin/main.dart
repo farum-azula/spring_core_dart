@@ -7,7 +7,7 @@
 //   dart run bin/main.dart
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.beans.dart';
+import 'main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);

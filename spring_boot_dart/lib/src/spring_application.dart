@@ -434,6 +434,9 @@ class SpringApplication {
         ),
       );
     }
+    // Boot's RandomValuePropertySourceEnvironmentPostProcessor: `random.*`
+    // before config data is loaded.
+    RandomValuePropertySource.addToEnvironment(environment);
     return environment;
   }
 

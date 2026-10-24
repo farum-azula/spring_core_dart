@@ -46,6 +46,13 @@ final _profile = _spring('Profile');
 final _conditional = _spring('Conditional');
 final _condition = _spring('Condition');
 final _import = _spring('Import');
+final _async = _spring('Async');
+// `@Import`ed classes the runtime instantiates instead of scanning.
+final _importRegistrars = [
+  _spring('BeanRegistrar'),
+  _spring('ImportSelector'),
+  _spring('ImportBeanDefinitionRegistrar'),
+];
 final _propertySource = _spring('PropertySource');
 final _configurable = _spring('Configurable');
 final _eventListener = _spring('EventListener');
@@ -63,6 +70,8 @@ final _factoryBean = _spring('FactoryBean');
 final _applicationListener = _spring('ApplicationListener');
 final _objectProvider = _spring('ObjectProvider');
 final _objectFactory = _spring('ObjectFactory');
+final _provider = _spring('Provider');
+final _resource = _spring('Resource');
 final _introspected = _spring('Introspected');
 final _aspectAnnotation = _spring('Aspect');
 final _constraint = _spring('Constraint');
@@ -186,6 +195,7 @@ final _literalDefault = RegExp(
 const _diAnnotations = {
   'Autowired',
   'Inject',
+  'Resource',
   'Value',
   'Qualifier',
   'Named',
@@ -644,6 +654,10 @@ class BeanScanner {
         ? const <ConditionModel>[]
         : [GroupConditionModel(source, ownConditions)];
     for (final imported in _importedClasses(element)) {
+      if (_importRegistrars.any((c) => c.isAssignableFrom(imported))) {
+        _addRegistrar(imported, element, classConditions);
+        continue;
+      }
       scanClass(
         imported,
         annotation: _component.firstAnnotationOf(imported),
@@ -710,6 +724,7 @@ class BeanScanner {
               ],
             ),
       scope: _scopeOf(element),
+      scopedProxy: _scopedProxyOf(element, type),
       lazy: classLazy ?? scan.lazyInit,
       primary: _primary.hasAnnotationOf(element),
       fallback: _fallback.hasAnnotationOf(element),
@@ -1307,6 +1322,7 @@ class BeanScanner {
         declaredType: inferred ? declaredType : null,
       ),
       scope: scope,
+      scopedProxy: _scopedProxyOf(method, returnType),
       lazy: _isLazy(method) ?? classLazy ?? scan.lazyInit,
       primary: _primary.hasAnnotationOf(method),
       fallback: _fallback.hasAnnotationOf(method),
@@ -2726,6 +2742,17 @@ class BeanScanner {
 
   // Fields and setters are injected only when annotated.
   bool _isInjected(Element element) {
+    if (_resource.hasAnnotationOf(element)) {
+      if (_value.hasAnnotationOf(element) ||
+          _autowired.hasAnnotationOf(element)) {
+        _fail(
+          '@Resource on ${_describe(element)} cannot be combined with '
+          '@Autowired, @Inject or @Value.',
+          element,
+        );
+      }
+      return true;
+    }
     if (_value.hasAnnotationOf(element)) {
       return true;
     }
@@ -2915,6 +2942,15 @@ class BeanScanner {
     }
     final qualifier = _qualifierOf(annotated);
     final (kind, beanType) = _pointKind(interfaceType, element);
+    if (_resource.firstAnnotationOf(element) case final resource?) {
+      return _resourcePoint(
+        element,
+        resource,
+        kind,
+        beanType,
+        optional: optional,
+      );
+    }
     final lazy = _isLazy(annotated) ?? false;
     if (lazy) {
       _checkLazyPoint(element, kind, beanType, optional: optional);
@@ -2930,6 +2966,51 @@ class BeanScanner {
           ? element.name
           : null,
       lazy: lazy ? _lazyProxy(beanType, element) : null,
+    );
+  }
+
+  // JSR-250 `@Resource` on a field or setter: the bean named like the
+  // member (falling back to the type) or as `name:` says.
+  InjectionPoint _resourcePoint(
+    Element element,
+    DartObject resource,
+    PointKind kind,
+    InterfaceType type, {
+    required bool optional,
+  }) {
+    final what = '@Resource on ${_describe(element)}';
+    if (element is FormalParameterElement) {
+      _fail(
+        '$what: @Resource applies to fields and setters only (like '
+        'Spring); use @Autowired / @Qualifier on parameters.',
+        element,
+      );
+    }
+    if (kind != PointKind.single) {
+      _fail(
+        '$what: @Resource injects one bean by name; use @Autowired for '
+        'collections and providers.',
+        element,
+      );
+    }
+    if (_qualifier.hasAnnotationOf(element) ||
+        _named.hasAnnotationOf(element) ||
+        _lazy.hasAnnotationOf(element)) {
+      _fail(
+        '$what: @Resource selects the bean by name; @Qualifier, @Named and '
+        '@Lazy do not apply.',
+        element,
+      );
+    }
+    final explicit = ConstantReader(resource).peek('name')?.stringValue;
+    return InjectionPoint(
+      kind: PointKind.resource,
+      type: type,
+      optional: optional,
+      name: explicit == null
+          ? _requireName(element)
+          : _checkBeanName(explicit, 'The name of $what', element),
+      fallbackToType: explicit == null,
     );
   }
 
@@ -2958,8 +3039,10 @@ class BeanScanner {
 
   /// The lazy proxy class for `@Lazy` injection of [type], shared by all
   /// injection points of that type in the module.
-  ProxyModel _lazyProxy(InterfaceType type, Element element) {
+  ProxyModel _lazyProxy(InterfaceType type, Element element, {String? what}) {
     final typeName = type.element.name!;
+    final subject = what ?? '@Lazy on ${element.displayName}';
+    final kind = what == null ? 'lazy proxy' : 'proxy';
     final key = '${type.element.library.uri}#$typeName';
     final existing = module.lazyProxies[key];
     if (existing != null) {
@@ -2970,14 +3053,15 @@ class BeanScanner {
         'ObjectProvider<$typeName> and call getObject().';
     if (type.typeArguments.isNotEmpty) {
       _fail(
-        '@Lazy on ${element.displayName}: generic types ($typeName<...>) '
-        'cannot be injected lazily yet. $hint',
+        '$subject: generic types ($typeName<...>) cannot be '
+        '${what == null ? 'injected lazily' : 'proxied'} yet. '
+        '$hint',
         element,
       );
     }
     if (type.element.library.isInSdk || !_canImplement(type)) {
       _fail(
-        '@Lazy on ${element.displayName}: the lazy proxy must implement '
+        '$subject: the $kind must implement '
         '$typeName, which is not possible from generated code (SDK type, '
         'private members, or a final/base/sealed class). $hint',
         element,
@@ -2992,7 +3076,7 @@ class BeanScanner {
     );
     if (proxy == null || proxy.unavailableReason != null) {
       _fail(
-        '@Lazy on ${element.displayName}: no lazy proxy can be generated: '
+        '$subject: no $kind can be generated: '
         '${proxy?.unavailableReason ?? '$typeName is an SDK type.'} $hint',
         element,
       );
@@ -3025,10 +3109,11 @@ class BeanScanner {
       }
       return (PointKind.map, argument(1));
     }
-    // An ObjectFactory<T> point receives the same provider (Spring's
-    // DependencyObjectProvider serves both).
+    // ObjectFactory<T> and JSR-330 Provider<T> points receive the same
+    // provider (Spring's DependencyObjectProvider serves both).
     if (_objectProvider.isExactlyType(type) ||
-        _objectFactory.isExactlyType(type)) {
+        _objectFactory.isExactlyType(type) ||
+        _provider.isExactlyType(type)) {
       return (PointKind.provider, argument(0));
     }
     return (PointKind.single, type);
@@ -3134,6 +3219,37 @@ class BeanScanner {
         : ConstantReader(annotation).read('value').stringValue;
   }
 
+  // `@Scope(proxyMode:)` other than `no` on a custom or prototype scope:
+  // the lazy proxy class of [type] (shared with `@Lazy` points), which
+  // `BeanDefinition.scopedProxy` wraps around the scope lookup.
+  ProxyModel? _scopedProxyOf(Element element, InterfaceType type) {
+    final annotation = _scope.firstAnnotationOf(element);
+    final mode = annotation == null
+        ? null
+        : ConstantReader(annotation)
+              .peek('proxyMode')
+              ?.revive()
+              .accessor
+              .split('.')
+              .last;
+    if (mode == null || mode == 'no') {
+      return null;
+    }
+    final what =
+        '@Scope(proxyMode: ScopedProxyMode.$mode) on ${_describe(element)}';
+    if (_scopeOf(element) == 'singleton') {
+      _fail(
+        '$what: a singleton needs no scoped proxy; give the scope name '
+        "(`@Scope('session', proxyMode: ...)`).",
+        element,
+      );
+    }
+    if (_factoryObjectTypes(type) != null) {
+      _fail('$what: a FactoryBean cannot have a scoped proxy.', element);
+    }
+    return _lazyProxy(type, element, what: what);
+  }
+
   // `null` when there is no `@Lazy`, so `@Lazy(false)` on a `@Bean` method
   // can override `@Lazy()` on its configuration class.
   bool? _isLazy(Element element) {
@@ -3226,6 +3342,37 @@ class BeanScanner {
     return result;
   }
 
+  // A registrar or selector of `@Import`: created at runtime with its
+  // no-argument constructor when the importing class is registered (once
+  // per module; the first importer's conditions win).
+  void _addRegistrar(
+    ClassElement imported,
+    ClassElement importer,
+    List<ConditionModel> conditions,
+  ) {
+    final name = _requireName(imported);
+    if (!module.markScanned('${imported.library.uri}#$name')) {
+      return;
+    }
+    final constructor = imported.unnamedConstructor;
+    if (imported.isPrivate ||
+        imported.isAbstract ||
+        imported.typeParameters.isNotEmpty ||
+        constructor == null ||
+        constructor.isPrivate ||
+        constructor.formalParameters.any((p) => p.isRequired)) {
+      _fail(
+        '@Import of $name: a BeanRegistrar, ImportSelector or '
+        'ImportBeanDefinitionRegistrar must be a public, non-abstract, '
+        'non-generic class with a no-argument constructor.',
+        importer,
+      );
+    }
+    module.registrars.add(
+      RegistrarModel(imported.thisType, importer, conditions: conditions),
+    );
+  }
+
   Iterable<ClassElement> _importedClasses(ClassElement element) sync* {
     for (final annotation in _import.annotationsOf(element)) {
       for (final value in ConstantReader(annotation).read('value').listValue) {
@@ -3265,6 +3412,7 @@ class BeanScanner {
           name: reader.peek('name')?.stringValue,
           ignoreResourceNotFound:
               reader.peek('ignoreResourceNotFound')?.boolValue ?? false,
+          encoding: reader.peek('encoding')?.stringValue,
           conditions: conditions,
           element: element,
           factoryType: factory as InterfaceType?,
@@ -3367,6 +3515,13 @@ class BeanScanner {
       for (final method in interface.methods) {
         final annotation = _eventListener.firstAnnotationOf(method);
         if (annotation == null) {
+          if (_async.hasAnnotationOf(method)) {
+            _fail(
+              '@Async is supported on @EventListener methods only: '
+              '${_requireName(method)} would run synchronously.',
+              method,
+            );
+          }
           continue;
         }
         final methodName = _requireName(method);
@@ -3420,6 +3575,7 @@ class BeanScanner {
       );
     }
     final returnType = method.returnType;
+    final asyncAnnotation = _async.firstAnnotationOf(method);
     final conditionValue = annotation.peek('condition');
     final condition = conditionValue?.objectValue.toFunctionValue();
     if (conditionValue != null && condition == null) {
@@ -3436,6 +3592,10 @@ class BeanScanner {
           !returnType.isDartAsyncFutureOr,
       order: _orderOf(method),
       condition: condition,
+      async: asyncAnnotation != null,
+      asyncExecutor: asyncAnnotation == null
+          ? null
+          : ConstantReader(asyncAnnotation).peek('value')?.stringValue,
     );
   }
 

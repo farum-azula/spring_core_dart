@@ -179,7 +179,7 @@ spring:
       write('app.yml', 'app:\n  name: x\n');
       final source = const DefaultPropertySourceFactory().createPropertySource(
         null,
-        FileSystemResource('$root/app.yml'),
+        EncodedResource(FileSystemResource('$root/app.yml')),
       );
       // Read as a properties file, like Spring's DefaultPropertySourceFactory.
       expect(source.getProperty('app.name'), isNull);

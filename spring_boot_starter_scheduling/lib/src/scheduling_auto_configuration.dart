@@ -11,8 +11,12 @@ const _enabled = ConditionalOnProperty(
 );
 
 /// The beans of the scheduling starter: a [TaskScheduler]
-/// ([TimerTaskScheduler], unless the application declares its own) and the
-/// [ScheduledAnnotationBeanPostProcessor] that runs `@Scheduled` methods.
+/// ([TimerTaskScheduler], unless the application declares its own), the
+/// [ScheduledAnnotationBeanPostProcessor] that runs `@Scheduled` methods
+/// and a [TaskExecutor] (`applicationTaskExecutor`, alias `taskExecutor`,
+/// a [SimpleAsyncTaskExecutor] unless the application declares a
+/// `TaskExecutor`; Spring Boot's `TaskExecutionAutoConfiguration`), which
+/// turns `@Async` event listeners on.
 ///
 /// Spring Boot schedules only with `@EnableScheduling`; here the
 /// dependency is enough. Switch it off with
@@ -27,6 +31,20 @@ const _enabled = ConditionalOnProperty(
 /// spring.task.scheduling.shutdown.await-termination-period=30s
 /// ```
 final schedulingAutoConfiguration = <BeanDefinition<Object>>[
+  BeanDefinition<TaskExecutor>(
+    name: 'applicationTaskExecutor',
+    aliases: const [
+      AnnotationConfigApplicationContext.defaultTaskExecutorBeanName,
+    ],
+    types: const [TaskExecutor, SimpleAsyncTaskExecutor],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.applicationTaskExecutor', [
+        ConditionalOnMissingBean(TaskExecutor),
+      ]),
+    ],
+    create: (_) => SimpleAsyncTaskExecutor(),
+  ),
   BeanDefinition<TaskScheduler>(
     name: 'taskScheduler',
     types: const [TaskScheduler, TimerTaskScheduler, DisposableBean],

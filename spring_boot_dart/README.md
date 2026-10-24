@@ -22,7 +22,7 @@ dev_dependencies:
 // bin/main.dart (or lib/main.dart in Flutter)
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'main.beans.dart'; // generated next to this file
+import 'main.spring.dart'; // generated next to this file
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -30,7 +30,7 @@ void main(List<String> args) => runApplication(args);
 
 `dart run build_runner build` scans the whole package (`lib/` and the
 directory of `main`) — no `@ComponentScan`, no module variables — and writes
-`main.beans.dart` with the beans, the `lib/resources/` files, the
+`main.spring.dart` with the beans, the `lib/resources/` files, the
 auto-configuration of the dependencies and `runApplication` /
 `runApplicationAsync`.
 
@@ -41,8 +41,13 @@ auto-configuration of the dependencies and `runApplication` /
    (= `lib/resources/`), `application-{profile}` files, then the external
    group `./`, `./config/`, `./config/*/` overriding the packaged files
    (Boot's location groups), imports, profile groups,
-   `${ENV_VAR:default}` placeholders; relaxed names (`app.read-timeout`
-   also finds `app.readTimeout`, `app.read_timeout`, `APP_READTIMEOUT`);
+   `${ENV_VAR:default}` and `${random.uuid}` / `${random.int[1,10]}`
+   placeholders; relaxed names (`app.read-timeout` also finds
+   `app.readTimeout`, `app.read_timeout`, `APP_READTIMEOUT`) and indexed
+   keys (`spring.profiles.include[0]`, `SPRING_PROFILES_INCLUDE_0_`; a list
+   comes whole from the highest source). Placeholders in a file's imports
+   and on-profile guards see the command line first; an `optional:` import
+   with an unresolvable placeholder is skipped;
 3. `logging.level.root=debug` → `SpringLog`;
 4. the context, with `ApplicationArguments` as a bean and
    `@ConfigurationProperties` binding;
@@ -283,7 +288,7 @@ A library ("starter") ships auto-configuration in
 ```dart
 // lib/spring_auto_configuration.dart of package `neon_cache`
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'src/cache.beans.dart';
+import 'src/cache.spring.dart';
 
 @AutoConfigurationModule()
 final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
@@ -302,7 +307,10 @@ or transitively — finds these modules and passes them to the generated
 `springApplication`; nothing is listed by hand. They are registered after
 the application's beans, so `@ConditionalOnMissingBean` backs off when the
 application declares its own bean. Also: `@ConditionalOnBean`,
-`@ConditionalOnProperty`, `@ConditionalOnMissingBean.named('...')`.
+`@ConditionalOnProperty`, `@ConditionalOnMissingBean.named('...')`. Like
+Boot 3.4+, beans declared with `autowireCandidate: false` or
+`defaultCandidate: false` count for neither `@ConditionalOnBean` nor
+`@ConditionalOnMissingBean`.
 
 Auto-configurations are registered in Boot's order
 (`AutoConfigurationSorter`): by name, then `order`
@@ -366,7 +374,7 @@ name is fixed): a public top-level `BeanModule` variable annotated with
 ```dart
 // lib/spring_auto_configuration.dart of package `neon_cache`
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'src/cache.beans.dart';
+import 'src/cache.spring.dart';
 
 @AutoConfigurationModule(requires: '^0.1.0') // compatible spring_boot_dart versions
 final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
@@ -390,7 +398,7 @@ class CacheAutoConfiguration {
 **3. Publish the generated code.** The generator writes files only into the
 package being built (`build_to: source`), never into dependencies, so run
 `dart run build_runner build` in the starter and publish its
-`*.beans.dart` with the package.
+`*.spring.dart` with the package.
 
 **4. Test it** with `ApplicationContextRunner` (`spring_boot_starter_test`):
 the starter alone, with an application bean that makes it back off, with
@@ -403,7 +411,7 @@ and lists the annotated modules in the generated `springApplication`
 (by package name; `SpringApplication` puts them in order, see above):
 
 ```dart
-// generated bin/main.beans.dart of the application
+// generated bin/main.spring.dart of the application
 final springApplication = SpringApplication(
   [$application],
   autoConfigurations: [
@@ -623,7 +631,10 @@ Notes:
 
 `runApplicationAsync(args)` (also generated) reads the config files
 asynchronously; resources from `lib/resources/` are embedded, so no asset
-declarations are needed for them.
+declarations are needed for them. Other assets plug in as a
+`ProtocolResolver` on the context's resource loader (for `asset:` or
+`package:` locations); config imports and `@PropertySource` files from it
+are read asynchronously too.
 
 ## Differences from Spring
 
@@ -631,6 +642,7 @@ declarations are needed for them.
 |---|---|---|
 | Constructor binding passes `null` for a missing property without `@DefaultValue` | A missing non-nullable scalar fails the start; a missing collection is empty and a missing nested object is created with its own defaults (what Boot does with an empty `@DefaultValue`) | Dart's non-nullable types |
 | `@ConstructorBinding` picks one of several constructors | Constructor binding only for a class whose only public generative constructor has parameters | Not implemented yet |
+| `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1) | Dart files are UTF-8 |
 | YAML 1.1 (SnakeYAML) | YAML 1.2 (`package:yaml`): `on`, `off`, `yes`, `no` stay strings (converting them to `bool` still works), `0777` is 777 | The Dart team's YAML parser |
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |

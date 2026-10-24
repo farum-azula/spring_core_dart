@@ -268,14 +268,20 @@ class AntPathMatcher implements PathMatcher {
       final patLength = patIdxTmp - pattStart - 1;
       final strLength = pathEnd - pathStart + 1;
       var foundIdx = -1;
+      // Each attempt collects its variables apart, so a failed attempt
+      // (backtracking over `**`) leaves nothing behind.
       outer:
       for (var i = 0; i <= strLength - patLength; i++) {
+        final attempt = variables == null ? null : <String, String>{};
         for (var j = 0; j < patLength; j++) {
           final subPat = pattDirs[pattStart + j + 1];
           final subStr = pathDirs[pathStart + i + j];
-          if (!_matchStrings(subPat, subStr, variables)) {
+          if (!_matchStrings(subPat, subStr, attempt)) {
             continue outer;
           }
+        }
+        if (attempt != null) {
+          _mergeVariables(variables!, attempt);
         }
         foundIdx = pathStart + i;
         break;
@@ -293,6 +299,23 @@ class AntPathMatcher implements PathMatcher {
       }
     }
     return true;
+  }
+
+  // Adds [found] to [variables]; a name bound twice must have one value.
+  static void _mergeVariables(
+    Map<String, String> variables,
+    Map<String, String> found,
+  ) {
+    for (final MapEntry(:key, :value) in found.entries) {
+      final previous = variables[key];
+      if (previous != null && previous != value) {
+        throw ArgumentError(
+          "The value '$value' for URI variable '$key' does not match the "
+          "previous value '$previous'",
+        );
+      }
+      variables[key] = value;
+    }
   }
 
   // Path segments without empty ones (so `//` and edge separators vanish).

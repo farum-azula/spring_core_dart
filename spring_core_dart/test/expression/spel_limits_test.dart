@@ -32,9 +32,14 @@ void main() {
       expect(eval('2 ^ -1'), 0);
       expect(eval('2.0 ^ -1'), 0.5);
       expect(eval('1 ^ 2000000000'), 1);
-      // Saturates at Long.MAX_VALUE / MIN_VALUE instead of wrapping.
+      // Spring 7's OpPower: above Integer.MAX_VALUE a (long) cast that
+      // saturates at Long.MAX_VALUE; below Integer.MIN_VALUE an (int) cast
+      // that saturates at Integer.MIN_VALUE; a long operand gives a long.
       expect(eval('2 ^ 1000000000'), eval('T(Long).MAX_VALUE'));
-      expect(eval('(-2) ^ 1000000001'), eval('T(Long).MIN_VALUE'));
+      expect(eval('2 ^ 31'), 2147483648);
+      expect(eval('(-2) ^ 1000000001'), eval('T(Integer).MIN_VALUE'));
+      expect(eval('(-2) ^ 33'), -2147483648);
+      expect(eval('(-3000000000) ^ 3'), eval('T(Long).MIN_VALUE'));
       expect(eval('T(Long).MAX_VALUE > 0 and T(Long).MIN_VALUE < 0'), isTrue);
     });
 

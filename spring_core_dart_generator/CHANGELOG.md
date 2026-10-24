@@ -1,5 +1,10 @@
 ## Unreleased
 
+- breaking: the generated file is `<name>.spring.dart` (was `<name>.beans.dart`): change the imports and delete the old files
+- `@Import` of a `BeanRegistrar`, `ImportSelector` or `ImportBeanDefinitionRegistrar` class is emitted as `ImportDeclaration(Type.new, conditions: ...)` in `BeanModule.registrars` (the class needs a public no-argument constructor) instead of being scanned as a configuration class (needs the matching `spring_core_dart`)
+- `@Async` on an `@EventListener` method is emitted as `async: Async(...)`; `@Async` on other methods fails the build
+- `@Scope(..., proxyMode: ScopedProxyMode.targetClass)` / `interfaces` emits `scopedProxy:` with the lazy proxy class of the bean's type (build error on a singleton, a `FactoryBean` or a type that cannot be implemented); needs the matching `spring_core_dart`
+- JSR-330 `Provider<T>` injection points (from `package:spring_core_dart/jakarta.dart`) are resolved like `ObjectProvider<T>`; JSR-250 `@Resource` on fields and setters emits `r.resource<T>('name')` (`fallbackToType: true` without an explicit name) and `Dependency.resource`; on parameters, with collections, `@Qualifier`, `@Lazy`, `@Autowired` or `@Value` it is a build error
 - depends on `spring_core_dart` (the same version): pointcut expressions are parsed at build time with the runtime's parser
 - an `@EventListener` method (or `ApplicationListener`) of `PayloadApplicationEvent<P>` is emitted as `EventListenerMethod.forPayload<B, P>`, matching on the payload's runtime type (needs the matching `spring_core_dart`)
 - AOP: every advice and `@Pointcut` expression is parsed at build time with the runtime's parser; a syntax error fails the build naming the aspect, the advice and the character position (a reference to a pointcut of a class outside the module is left to the runtime)
@@ -16,6 +21,7 @@
 - breaking: an empty, blank or space-padded explicit bean name or alias fails the build
 - independent validation errors of one build are reported together (`N problems in this build:`), each with its library URI and location
 - generated code is free of the recommended lints too: bean-method proxy classes are named `_$Config$MethodProxy` (UpperCamelCase), and a declaration of a package that is not a direct dependency is imported through the user's library that exports it (no `depend_on_referenced_packages`); new dependency on `package:yaml` (reads the root `pubspec.yaml`), `analyzer` 14.3 or later
+- `@PropertySource(encoding: ...)` is passed to `PropertySourceDeclaration.encoding` (needs the matching `spring_core_dart`)
 
 ## 0.1.7
 

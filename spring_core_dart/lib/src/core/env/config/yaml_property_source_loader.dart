@@ -54,7 +54,7 @@ import 'package:yaml/yaml.dart';
 /// SnakeYAML's YAML 1.1, so `on`, `off`, `yes` and `no` stay strings
 /// (converting them to `bool` or an enum still works) and `0777` is the
 /// number 777.
-final class YamlPropertySourceLoader implements PropertySourceLoader {
+final class YamlPropertySourceLoader extends PropertySourceLoader {
   /// Creates the loader (stateless; use `const`).
   const YamlPropertySourceLoader();
 

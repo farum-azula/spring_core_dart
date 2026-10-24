@@ -29,6 +29,50 @@ abstract final class ScopeType {
   static const prototype = 'prototype';
 }
 
+/// Whether a bean of a custom (or prototype) scope is injected through a
+/// scoped proxy, like Spring's `ScopedProxyMode` (`@Scope(proxyMode:)`).
+///
+/// With a proxy, every injection point and lookup gets one shared object
+/// implementing the bean's class; each call on it asks the scope for the
+/// current instance, so a singleton can hold a request- or screen-scoped
+/// bean. The generator writes the proxy class (the type must be
+/// implementable from generated code, like for `@Lazy` injection points);
+/// by hand it is [BeanDefinition.scopedProxy].
+///
+/// ```dart
+/// @Component()
+/// @Scope('screen', proxyMode: ScopedProxyMode.targetClass)
+/// class ScreenState { ... }
+///
+/// @Service()
+/// class Analytics {
+///   Analytics(this.state); // the proxy: the current screen's state
+///   final ScreenState state;
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Component
+/// @Scope(value = "screen", proxyMode = ScopedProxyMode.TARGET_CLASS)
+/// class ScreenState { ... }
+/// ```
+///
+/// Differences from Spring: there is no `DEFAULT` (a Dart keyword; [no] is
+/// the default); [interfaces] and [targetClass] both generate a class
+/// implementing the bean's type (Dart classes are interfaces too); the
+/// target is not registered as a separate `scopedTarget.` bean.
+enum ScopedProxyMode {
+  /// No proxy: the instance is injected directly.
+  no,
+
+  /// A proxy implementing the bean's type (Spring's JDK interface proxy).
+  interfaces,
+
+  /// A proxy implementing the bean's class (Spring's CGLIB proxy).
+  targetClass,
+}
+
 /// A custom bean scope, like Spring's `Scope` SPI (renamed because `@Scope`
 /// is the annotation).
 ///

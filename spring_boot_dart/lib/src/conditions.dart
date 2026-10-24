@@ -48,7 +48,10 @@ class ConditionalOnProperty implements Condition {
 /// like Spring Boot's `@ConditionalOnBean`.
 ///
 /// Conditions see the definitions registered before them: put them on
-/// auto-configuration (registered after the application's beans).
+/// auto-configuration (registered after the application's beans). Like
+/// Boot 3.4+, beans with `autowireCandidate: false` or
+/// `defaultCandidate: false` do not count (for [ConditionalOnMissingBean]
+/// either); beans of parent contexts do.
 ///
 /// ```dart
 /// @Bean()

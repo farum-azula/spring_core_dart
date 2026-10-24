@@ -317,6 +317,13 @@ abstract class SpelNode {
   /// Start position in the expression text.
   final int start;
 
+  // Whether the last value of this node is a real number (a Java double)
+  // even when integral. On the web `7.0` is an `int` at run time, so the
+  // nodes that know better (real literals and arithmetic, `T(Math)`
+  // functions, the branches they pass through) record it here for the
+  // operators using the value; see _realValue.
+  bool _real = false;
+
   /// Evaluates this node in [state].
   Object? getValue(ExpressionState state);
 
@@ -347,20 +354,55 @@ abstract class SpelNode {
   }
 }
 
-// Whether [node] is statically known to produce a real number: a real
-// literal, or arithmetic on one. Needed on the web, where `7.0` is an
-// `int` at run time; on the VM the run-time type already says so.
-bool _isReal(SpelNode node) => switch (node) {
-  Literal(:final real) => real,
-  UnaryOperator(:final kind, :final operand) =>
-    kind != UnaryKind.not && _isReal(operand),
-  BinaryOperator(:final kind, :final left, :final right) =>
-    BinaryOperator._arithmetic.contains(kind) &&
-        (_isReal(left) || _isReal(right)),
-  Ternary(:final whenTrue, :final whenFalse) =>
-    _isReal(whenTrue) && _isReal(whenFalse),
-  _ => false,
+// Whether [value], just computed by [node], is a real number: a `double`
+// on the VM; on the web (where an integral double is an `int`) a
+// non-integral number, or one [node] knows to be real.
+bool _realValue(SpelNode node, Object? value) =>
+    value is double && (value is! int || node._real);
+
+// Methods of `T(Math)` that return a double in Java whatever the
+// arguments; `abs`, `max` and `min` do when an argument is real.
+const _realMathMethods = {
+  'sqrt', 'cbrt', 'pow', 'exp', 'log', 'log10', 'sin', 'cos', 'tan', //
+  'asin', 'acos', 'atan', 'atan2', 'hypot', 'toRadians', 'toDegrees',
+  'floor', 'ceil', 'rint', 'signum', 'random',
 };
+
+// Whether `target.name(arguments)` returns a Java double.
+bool _realResult(
+  Object target,
+  String name,
+  List<SpelNode> arguments,
+  List<Object?> values,
+) {
+  if (name == 'doubleValue' || name == 'floatValue' || name == 'toDouble') {
+    return true;
+  }
+  if (target is! SpelType) {
+    return false;
+  }
+  switch (target.name) {
+    case 'Math':
+      if (_realMathMethods.contains(name)) {
+        return true;
+      }
+      if (!const {'abs', 'max', 'min'}.contains(name)) {
+        return false;
+      }
+      for (var i = 0; i < arguments.length; i++) {
+        if (_realValue(arguments[i], values[i])) {
+          return true;
+        }
+      }
+      return false;
+    case 'Double' || 'Float' || 'double' || 'float':
+      return const {
+        'valueOf', 'parseDouble', 'parseFloat', 'parse', 'tryParse', //
+        'max', 'min', 'sum',
+      }.contains(name);
+  }
+  return false;
+}
 
 // ---------------------------------------------------------------------------
 // Literals and inline collections
@@ -385,7 +427,9 @@ bool _isReal(SpelNode node) => switch (node) {
 /// ```
 final class Literal extends SpelNode {
   /// A literal [value] at [start]; [real] for real number literals.
-  Literal(super.start, this.value, {this.real = false});
+  Literal(super.start, this.value, {this.real = false}) {
+    _real = real;
+  }
 
   /// The constant value.
   final Object? value;
@@ -707,7 +751,9 @@ final class MethodReference extends SpelNode {
       if (executor != null) {
         state.trackOperation();
         try {
-          return executor(context, target, args);
+          final result = executor(context, target, args);
+          _real = _realResult(target, name, arguments, args);
+          return result;
         } on SpelEvaluationException catch (error, stackTrace) {
           Error.throwWithStackTrace(state.locate(error, start), stackTrace);
         } on AccessException catch (error) {
@@ -1289,19 +1335,25 @@ final class Selection extends SpelNode {
         };
       case Iterable<Object?>():
         state.trackOperation();
-        final selected = <Object?>[];
+        final keep = <bool>[];
+        Object? last;
         for (final element in target) {
-          if (matches(element)) {
+          final selected = matches(element);
+          if (selected) {
             if (kind == SelectionKind.first) {
               return element;
             }
-            selected.add(element);
+            last = element;
           }
+          keep.add(selected);
         }
-        return switch (kind) {
-          SelectionKind.all => selected,
-          _ => selected.lastOrNull,
-        };
+        if (kind != SelectionKind.all) {
+          return last; // The last match, or null (also for `^[` without).
+        }
+        // A new list (Spring's ArrayList) with the element type of the
+        // source: selecting from a List<int> gives a List<int>.
+        var i = 0;
+        return target.where((_) => keep[i++]).toList();
       default:
         throw state.error(SpelMessage.invalidTypeForSelection, start, [
           target.runtimeType,
@@ -1418,8 +1470,14 @@ final class CompoundExpression extends SpelNode {
   bool get isAssignable => children.last.isAssignable;
 
   @override
-  Object? getValue(ExpressionState state) =>
-      _inScope(state, () => children.last.getValue(state), () => null);
+  Object? getValue(ExpressionState state) {
+    _real = false;
+    return _inScope(state, () {
+      final value = children.last.getValue(state);
+      _real = children.last._real;
+      return value;
+    }, () => null);
+  }
 
   @override
   ValueRef getValueRef(ExpressionState state) => _inScope(
@@ -1568,6 +1626,7 @@ final class ConstructorReference extends SpelNode {
     'num': 0,
     'boolean': false,
     'bool': false,
+    'char': '\u0000',
   };
 
   @override
@@ -1899,18 +1958,6 @@ final class BinaryOperator extends SpelNode {
   /// The right operand.
   final SpelNode right;
 
-  static const _arithmetic = {
-    BinaryKind.add,
-    BinaryKind.subtract,
-    BinaryKind.multiply,
-    BinaryKind.divide,
-    BinaryKind.modulus,
-    BinaryKind.power,
-  };
-
-  late final bool _leftReal = _isReal(left);
-  late final bool _rightReal = _isReal(right);
-
   @override
   Object? getValue(ExpressionState state) {
     switch (kind) {
@@ -1934,11 +1981,22 @@ final class BinaryOperator extends SpelNode {
         }
         return value != null && type.isInstance(value);
       default:
-        return _evaluate(state, left.getValue(state), right.getValue(state));
+        final l = left.getValue(state);
+        final leftReal = _realValue(left, l);
+        final r = right.getValue(state);
+        final rightReal = _realValue(right, r);
+        _real = false;
+        return _evaluate(state, l, r, leftReal, rightReal);
     }
   }
 
-  Object? _evaluate(ExpressionState state, Object? l, Object? r) {
+  Object? _evaluate(
+    ExpressionState state,
+    Object? l,
+    Object? r,
+    bool leftReal,
+    bool rightReal,
+  ) {
     final context = state.context;
     switch (kind) {
       case BinaryKind.eq:
@@ -2001,22 +2059,33 @@ final class BinaryOperator extends SpelNode {
               comparator.compare(l, r[1]) <= 0,
         );
       default:
-        return arithmetic(state, l, r);
+        return arithmetic(
+          state,
+          l,
+          r,
+          leftReal: leftReal,
+          rightReal: rightReal,
+        );
     }
   }
-
-  // An int for integer arithmetic: on the web a real literal's value can
-  // be an `int` at run time, so its statically known kind wins.
-  static bool _isInt(Object? value, bool real) => value is int && !real;
 
   /// Applies this arithmetic operator to the evaluated operands [l] and
   /// [r]: numbers natively, then string concatenation (`+`), repetition
   /// (`string * int`) and character arithmetic (`'d' - 3`), then the
   /// context's [OperatorOverloader].
   ///
+  /// [leftReal] / [rightReal] mark integral operands that are real
+  /// numbers (on the web, where `7.0` is an `int` at run time).
+  ///
   /// Throws [SpelMessage.operatorNotSupportedBetweenTypes] when nothing
   /// applies.
-  Object? arithmetic(ExpressionState state, Object? l, Object? r) {
+  Object? arithmetic(
+    ExpressionState state,
+    Object? l,
+    Object? r, {
+    bool leftReal = false,
+    bool rightReal = false,
+  }) {
     final operation = switch (kind) {
       BinaryKind.add => Operation.add,
       BinaryKind.subtract => Operation.subtract,
@@ -2026,7 +2095,8 @@ final class BinaryOperator extends SpelNode {
       _ => Operation.power,
     };
     if (l is num && r is num) {
-      final ints = _isInt(l, _leftReal) && _isInt(r, _rightReal);
+      final ints = l is int && !leftReal && r is int && !rightReal;
+      _real = !ints;
       switch (operation) {
         case Operation.add:
           return l + r;
@@ -2038,18 +2108,28 @@ final class BinaryOperator extends SpelNode {
           // Java-like integer division: two ints truncate toward zero (and
           // throw on zero, like Java's ArithmeticException); any double
           // gives a double (1 / 0.0 = Infinity).
-          return ints ? l.toInt() ~/ r.toInt() : l.toDouble() / r.toDouble();
+          if (ints) {
+            return l.toInt() ~/ _nonZero(r.toInt());
+          }
+          return l.toDouble() / r.toDouble();
         case Operation.modulus:
           // remainder (not Dart's %) keeps the sign of the dividend, like
           // Java: -7 % 3 == -1.
           return ints
-              ? l.toInt().remainder(r.toInt())
+              ? l.toInt().remainder(_nonZero(r.toInt()))
               : l.toDouble().remainder(r.toDouble());
         case Operation.power:
-          // Java: (long) Math.pow(l, r) for integers, truncating and
-          // saturating; a double otherwise.
+          // Spring 7's OpPower: a double when an operand is real;
+          // otherwise Math.pow cast to long when above Integer.MAX_VALUE
+          // or an operand is a long (here: outside the int range), else
+          // cast to int, which saturates at Integer.MIN_VALUE.
           final result = math.pow(l.toDouble(), r.toDouble()).toDouble();
-          return ints ? toJavaLong(result) : result;
+          if (!ints) {
+            return result;
+          }
+          return result > _maxInt || _isLong(l) || _isLong(r)
+              ? toJavaLong(result)
+              : _toJavaInt(result);
       }
     }
     switch (operation) {
@@ -2057,8 +2137,8 @@ final class BinaryOperator extends SpelNode {
         final text = l is String && r is String
             ? (l, r)
             : l is String
-            ? (l, _string(state, r))
-            : (_string(state, l), r! as String);
+            ? (l, _string(state, r, real: rightReal))
+            : (_string(state, l, real: leftReal), r! as String);
         final length = text.$1.length + text.$2.length;
         if (length > SpelLimits.maxConcatenatedStringLength) {
           throw state.error(
@@ -2077,6 +2157,26 @@ final class BinaryOperator extends SpelNode {
         return state.operate(operation, l, r, start);
     }
   }
+
+  static const _maxInt = 2147483647;
+  static const _minInt = -2147483648;
+
+  static bool _isLong(int value) => value > _maxInt || value < _minInt;
+
+  // Java's `(int)` cast of a double: NaN is 0, out-of-range values
+  // saturate.
+  static int _toJavaInt(double value) => value.isNaN
+      ? 0
+      : value >= _maxInt
+      ? _maxInt
+      : value <= _minInt
+      ? _minInt
+      : value.truncate();
+
+  // Java's ArithmeticException for an integer division by zero, the same
+  // on the VM and the web (where `~/ 0` fails differently).
+  static int _nonZero(int divisor) =>
+      divisor == 0 ? throw UnsupportedError('/ by zero') : divisor;
 
   // Repetition with Spring's limits, checked before the string is built
   // (`'x' * 2^62` must not overflow into a huge allocation).
@@ -2097,9 +2197,17 @@ final class BinaryOperator extends SpelNode {
 
   // The other operand of a string concatenation, through the context's
   // TypeConverter like Spring (a list becomes `1,2`); null is 'null'.
-  static String _string(ExpressionState state, Object? value) {
+  static String _string(
+    ExpressionState state,
+    Object? value, {
+    bool real = false,
+  }) {
     if (value == null) {
       return 'null';
+    }
+    // A real number that is an `int` at run time (the web): Java's `7.0`.
+    if (real && value is int) {
+      return '$value.0';
     }
     final converter = state.context.typeConverter;
     if (converter.canConvert(value, String)) {
@@ -2115,8 +2223,10 @@ final class BinaryOperator extends SpelNode {
   /// and maps by content), otherwise `==` (or `compareTo == 0` for
   /// comparable values of the same type), like Spring.
   static bool equalityCheck(EvaluationContext context, Object? l, Object? r) {
+    // Numbers compare by value like Spring's OpEQ (`1 == 1.0`), with
+    // Java's double semantics: NaN equals nothing, `0.0 == -0.0`.
     if (l is num && r is num) {
-      return l.compareTo(r) == 0;
+      return l == r;
     }
     if (_deepEquals(l, r)) {
       return true;
@@ -2220,10 +2330,12 @@ final class UnaryOperator extends SpelNode {
       case UnaryKind.not:
         return !state.asBool(value, operand.start);
       case UnaryKind.minus:
+        _real = _realValue(operand, value);
         return value is num
             ? -value
             : state.operate(Operation.subtract, value, null, start);
       case UnaryKind.plus:
+        _real = _realValue(operand, value);
         return value is num
             ? value
             : state.operate(Operation.add, value, null, start);
@@ -2263,10 +2375,14 @@ final class Ternary extends SpelNode {
   final SpelNode whenFalse;
 
   @override
-  Object? getValue(ExpressionState state) =>
-      state.asBool(condition.getValue(state), condition.start)
-      ? whenTrue.getValue(state)
-      : whenFalse.getValue(state);
+  Object? getValue(ExpressionState state) {
+    final branch = state.asBool(condition.getValue(state), condition.start)
+        ? whenTrue
+        : whenFalse;
+    final result = branch.getValue(state);
+    _real = branch._real;
+    return result;
+  }
 
   @override
   String toString() => '($condition ? $whenTrue : $whenFalse)';
@@ -2298,9 +2414,13 @@ final class Elvis extends SpelNode {
   @override
   Object? getValue(ExpressionState state) {
     final result = value.getValue(state);
-    return result == null || (result is String && result.isEmpty)
-        ? fallback.getValue(state)
-        : result;
+    if (result == null || (result is String && result.isEmpty)) {
+      final other = fallback.getValue(state);
+      _real = fallback._real;
+      return other;
+    }
+    _real = value._real;
+    return result;
   }
 
   @override
@@ -2339,7 +2459,9 @@ final class Assign extends SpelNode {
     if (!state.context.isAssignmentEnabled) {
       throw state.error(SpelMessage.notAssignable, start, [toString()]);
     }
-    return target.assign(state, () => value.getValue(state));
+    final result = target.assign(state, () => value.getValue(state));
+    _real = value._real;
+    return result;
   }
 
   @override

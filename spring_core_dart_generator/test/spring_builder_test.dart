@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.beans.dart';
+import 'package:pkg/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -98,11 +98,11 @@ Future<List<String>> _compileErrors(
   return resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/src/beans.beans.dart': output,
+      'pkg|lib/src/beans.spring.dart': output,
     },
     (resolver) async {
       final library = await resolver.libraryFor(
-        AssetId('pkg', 'lib/src/beans.beans.dart'),
+        AssetId('pkg', 'lib/src/beans.spring.dart'),
       );
       final errors = await library.session.getErrors(
         library.firstFragment.source.fullName,
@@ -114,7 +114,7 @@ Future<List<String>> _compileErrors(
       ];
     },
     rootPackage: 'pkg',
-    resolverFor: 'pkg|lib/src/beans.beans.dart',
+    resolverFor: 'pkg|lib/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
 }
@@ -126,7 +126,7 @@ void main() {
       isA<SpringBuilder>(),
     );
     expect(SpringBuilder().buildExtensions, {
-      '.dart': ['.beans.dart'],
+      '.dart': ['.spring.dart'],
     });
   });
 
@@ -1191,7 +1191,7 @@ class Custom implements Condition {
 
 class YamlFactory implements PropertySourceFactory {
   @override
-  AbstractPropertySource<Object> createPropertySource(String? name, Resource resource) => throw UnimplementedError();
+  AbstractPropertySource<Object> createPropertySource(String? name, EncodedResource resource) => throw UnimplementedError();
 }
 
 class Imported {
@@ -1202,7 +1202,7 @@ class Imported {
 @Configuration()
 @Import([Imported])
 @PropertySource(['file:a.properties'])
-@PropertySource([r'${dir}/b.yml'], name: 'b', ignoreResourceNotFound: true, factory: YamlFactory)
+@PropertySource([r'${dir}/b.yml'], name: 'b', ignoreResourceNotFound: true, factory: YamlFactory, encoding: 'ISO-8859-1')
 @OnMode(Mode.on, names: ['a'], weights: {'w': 1.5}, flags: {true}, type: String, nested: Nested(), check: OnMode.always, nothing: null)
 @onConstant
 @Conditional([Custom])
@@ -1246,7 +1246,8 @@ class Screen {
         output,
         _has(
           r"PropertySourceDeclaration(const [r'${dir}/b.yml'], name: r'b', "
-          'ignoreResourceNotFound: true, factory: YamlFactory(), conditions: [',
+          "ignoreResourceNotFound: true, encoding: r'ISO-8859-1', "
+          'factory: YamlFactory(), conditions: [',
         ),
       );
       expect(
@@ -1383,7 +1384,7 @@ class B {}
       final result = await _build({
         'test/fixtures/beans.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'beans.beans.dart';
+import 'beans.spring.dart';
 
 @ComponentScan()
 final BeanModule testBeans = $testBeans;
@@ -2077,7 +2078,7 @@ class CloudConfig {}
         final result = await _build({
           'bin/main.dart': r'''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.beans.dart';
+import 'main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -2096,7 +2097,7 @@ class DbProps { String url = ''; }
         final output = _normalize(
           result.readerWriter.testing.readString(result.outputs.single),
         );
-        expect(result.outputs.single.path, 'bin/main.beans.dart');
+        expect(result.outputs.single.path, 'bin/main.spring.dart');
         // lib/spring_auto_configuration.dart of the dependencies is
         // discovered, listed by package (SpringApplication sorts them).
         expect(
@@ -2160,7 +2161,7 @@ class DbProps { String url = ''; }
         final result = await _build({
           'bin/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.beans.dart';
+import 'main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -3864,7 +3865,7 @@ abstract class BaseHandler implements Handler {}
     String scan(String options) =>
         '''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.beans.dart';
+import 'package:pkg/src/beans.spring.dart';
 import 'package:pkg/src/service.dart';
 
 @ComponentScan($options)
@@ -3941,6 +3942,93 @@ excludeFilters: [Filter(type: FilterType.regex, pattern: [r'Stub\$'])],
         expect(result.succeeded, isFalse, reason: options);
         expect(result.errors.join('\n'), contains(message), reason: options);
       }
+    });
+  });
+
+  group('registrars and @Async listeners', () {
+    const source = '''
+class Clock {}
+
+class Registrar implements BeanRegistrar {
+  const Registrar();
+  @override
+  void register(BeanRegistry registry, Environment environment) =>
+      registry.registerBean<Clock>((_) => Clock(), name: 'clock');
+}
+
+class Selector implements ImportSelector {
+  @override
+  List<BeanModule> selectImports() => const [];
+}
+
+class Definitions implements ImportBeanDefinitionRegistrar {
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) {}
+}
+
+@Configuration()
+@Import([Registrar, Selector])
+@Profile(['cloud'])
+class Config {}
+
+@Configuration()
+@Import([Definitions, Registrar])
+class Other {}
+
+@Component()
+class Mailer {
+  @EventListener()
+  @Async()
+  Future<void> onText(String text) async {}
+
+  @EventListener(classes: [int, double])
+  @Async('pool')
+  void onNumber() {}
+}
+''';
+
+    test('are emitted and compile', () async {
+      final output = await _generate(source);
+      expect(
+        output,
+        _has(
+          'registrars: [ImportDeclaration(Registrar.new, conditions: '
+          "[ConditionGroup(r'package:pkg/src/service.dart#Config', "
+          "[const ProfileCondition([r'cloud'])])]), "
+          'ImportDeclaration(Selector.new, conditions: [',
+        ),
+      );
+      // Imported once: the first importer wins.
+      expect(output, _has('ImportDeclaration(Definitions.new)]'));
+      expect(output, isNot(_has("name: r'registrar'")));
+      expect(output, _has('async: const Async()'));
+      expect(output, _has("async: const Async(r'pool')"));
+      expect(await _compileErrors({'lib/src/s.dart': source}), isEmpty);
+    });
+
+    test('misuse is reported', () async {
+      await _expectError(
+        '''
+class Registrar implements BeanRegistrar {
+  Registrar(this.name);
+  final String name;
+  @override
+  void register(BeanRegistry registry, Environment environment) {}
+}
+
+@Configuration()
+@Import([Registrar])
+class Config {}
+''',
+        'must be a public, non-abstract, non-generic class with a no-argument constructor',
+      );
+      await _expectError('''
+@Component()
+class Mailer {
+  @Async()
+  void send() {}
+}
+''', '@Async is supported on @EventListener methods only');
     });
   });
 }

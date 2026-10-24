@@ -81,7 +81,7 @@ One file tells the generator what to scan (everything under `lib/src/`):
 ```dart
 // lib/src/app.dart
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'app.beans.dart'; // will be generated
+import 'app.spring.dart'; // will be generated
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;

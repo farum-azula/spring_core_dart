@@ -1,7 +1,7 @@
 // The intermediate model between `BeanScanner` (reads analyzer elements)
 // and `ModuleEmitter` (writes Dart code). The scanner fills one
 // [ModuleModel] per `@ComponentScan`; the emitter turns it into a
-// `*.beans.dart` library. Examples in this file show generated code
+// `*.spring.dart` library. Examples in this file show generated code
 // without its import prefixes (`_i1.`, `_i2.`).
 
 import 'package:analyzer/dart/constant/value.dart';
@@ -67,6 +67,10 @@ enum PointKind {
 
   /// A `@Value` expression resolved against the environment.
   value,
+
+  /// A `@Resource` field or setter: the bean named [InjectionPoint.name]
+  /// (`r.resource<T>('name')`).
+  resource,
 }
 
 /// Something the container must supply: a constructor or method argument,
@@ -115,6 +119,7 @@ class InjectionPoint {
     this.defaultValue,
     this.allowEmpty = false,
     this.lazy,
+    this.fallbackToType = false,
   });
 
   /// A copy for a constructor or `@Bean` method parameter: a Dart default
@@ -133,6 +138,7 @@ class InjectionPoint {
     expression: expression,
     defaultValue: defaultValue,
     lazy: lazy,
+    fallbackToType: fallbackToType,
     allowEmpty:
         collectionsMayBeEmpty &&
         defaultValue == null &&
@@ -156,6 +162,7 @@ class InjectionPoint {
           defaultValue: defaultValue,
           lazy: lazy,
           allowEmpty: allowEmpty,
+          fallbackToType: fallbackToType,
         );
 
   /// How the value is looked up (single bean, collection, value, ...).
@@ -191,6 +198,11 @@ class InjectionPoint {
   /// For a `@Lazy` single bean: the generated lazy proxy that resolves the
   /// bean on every member access (Spring's lazy-resolution proxy).
   final ProxyModel? lazy;
+
+  /// For a `@Resource` point without an explicit name: inject by type when
+  /// no bean has the field or setter name (Spring's
+  /// `fallbackToDefaultTypeMatch`).
+  final bool fallbackToType;
 }
 
 /// A constructor or method argument.
@@ -800,6 +812,8 @@ class ListenerModel {
     required this.returnsValue,
     this.order,
     this.condition,
+    this.async = false,
+    this.asyncExecutor,
   });
 
   /// Listener id: `@EventListener(id:)` or `Class.method`.
@@ -823,6 +837,52 @@ class ListenerModel {
 
   /// A `bool Function(E)` top-level or static function.
   final ExecutableElement? condition;
+
+  /// Whether the method carries `@Async` (emitted as `async: Async(...)`).
+  final bool async;
+
+  /// The executor bean name of `@Async('name')`.
+  final String? asyncExecutor;
+}
+
+/// An `@Import`ed `BeanRegistrar`, `ImportSelector` or
+/// `ImportBeanDefinitionRegistrar` class.
+///
+/// ```dart
+/// // Input:
+/// @Configuration()
+/// @Import([MessagingRegistrar])
+/// @Profile(['cloud'])
+/// class AppConfig {}
+/// // Output (BeanModule argument):
+/// registrars: [
+///   ImportDeclaration(
+///     MessagingRegistrar.new,
+///     conditions: [ConditionGroup(..., [const ProfileCondition(['cloud'])])],
+///   ),
+/// ],
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// // ConfigurationClassParser.processImports instantiates it reflectively:
+/// @Configuration
+/// @Import(MessagingRegistrar.class)
+/// @Profile("cloud")
+/// class AppConfig {}
+/// ```
+class RegistrarModel {
+  /// Creates a registrar model.
+  RegistrarModel(this.type, this.element, {this.conditions = const []});
+
+  /// The registrar or selector class (with a no-argument constructor).
+  final InterfaceType type;
+
+  /// The importing class (for imports of condition types).
+  final Element element;
+
+  /// Conditions of the importing class.
+  final List<ConditionModel> conditions;
 }
 
 /// How an advice method parameter is filled.
@@ -1343,6 +1403,7 @@ class BeanModel {
     this.annotations = const [],
     this.aspect,
     this.proxy,
+    this.scopedProxy,
   });
 
   /// Source element, for error messages.
@@ -1450,6 +1511,11 @@ class BeanModel {
 
   /// The generated AOP proxy, when the bean can be proxied.
   final ProxyModel? proxy;
+
+  /// For `@Scope(proxyMode:)`: the lazy proxy class handed to
+  /// `BeanDefinition.scopedProxy`, finding the current instance on every
+  /// call.
+  final ProxyModel? scopedProxy;
 
   /// Every injection point, for `BeanDefinition.dependencies`.
   ///
@@ -1581,7 +1647,11 @@ class PropertySourceModel {
     this.factoryType,
     this.conditions = const [],
     this.element,
+    this.encoding,
   });
+
+  /// The charset name the files are read in (`null`: UTF-8).
+  final String? encoding;
 
   /// Conditions of the declaring class (and of the classes importing it):
   /// the file is loaded only when they match, like Spring skipping a
@@ -1907,6 +1977,9 @@ class ModuleModel {
 
   /// `@PropertySource` declarations of scanned and imported classes.
   final propertySources = <PropertySourceModel>[];
+
+  /// `@Import`ed registrars and selectors (`BeanModule.registrars`).
+  final registrars = <RegistrarModel>[];
 
   /// Module variables of nested `@ComponentScan` roots, registered before
   /// this module's beans (`BeanModule.imports`).

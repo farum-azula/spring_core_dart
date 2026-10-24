@@ -6,7 +6,7 @@
 
 `build_runner` builder for spring_core_dart. For every library with a
 `@ComponentScan` variable it scans the library's directory recursively and
-writes `<file>.beans.dart` with a `BeanModule`.
+writes `<file>.spring.dart` with a `BeanModule`.
 
 Full guide: [spring_core_dart](https://pub.dev/packages/spring_core_dart).
 
@@ -25,7 +25,7 @@ Mark a scan root and run `dart run build_runner build` (or `watch`):
 
 ```dart
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:my_app/src/beans.beans.dart';
+import 'package:my_app/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule appBeans = $appBeans;
@@ -107,7 +107,7 @@ runtime). The generated code itself is free of analyzer warnings and of the
 `package:lints` recommended lints (`type=lint` is still ignored in it, as
 your own lint set may differ).
 
-An error in the sources never removes or changes an existing `*.beans.dart`
+An error in the sources never removes or changes an existing `*.spring.dart`
 (`build_runner watch` while typing would otherwise delete and regenerate it
 on every keystroke): while a scanned library has syntax errors the builder
 skips generation, writes the existing file again unchanged and logs one
@@ -119,7 +119,7 @@ fail the build.
 ## Public API
 
 `lib/builder.dart`: `springCoreDartBuilder`, referenced from `build.yaml`
-(`auto_apply: dependents`, `build_to: source`, `.dart` → `.beans.dart`).
+(`auto_apply: dependents`, `build_to: source`, `.dart` → `.spring.dart`).
 
 ## Dependencies
 

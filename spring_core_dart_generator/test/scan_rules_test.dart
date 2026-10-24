@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.beans.dart';
+import 'package:pkg/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -53,7 +53,7 @@ Future<String> _generate(String beans, {ProxyMode? proxyMode}) async {
     'lib/src/service.dart': '$_header$beans',
   }, proxyMode: proxyMode ?? ProxyMode.none);
   expect(result.errors, isEmpty);
-  return _output(result, 'lib/src/beans.beans.dart');
+  return _output(result, 'lib/src/beans.spring.dart');
 }
 
 Future<String> _errors(Map<String, String> files) async {
@@ -83,11 +83,11 @@ Future<List<String>> _diagnostics(
   return resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/src/beans.beans.dart': output,
+      'pkg|lib/src/beans.spring.dart': output,
     },
     (resolver) async {
       final library = await resolver.libraryFor(
-        AssetId('pkg', 'lib/src/beans.beans.dart'),
+        AssetId('pkg', 'lib/src/beans.spring.dart'),
       );
       final errors = await library.session.getErrors(
         library.firstFragment.source.fullName,
@@ -100,7 +100,7 @@ Future<List<String>> _diagnostics(
       ];
     },
     rootPackage: 'pkg',
-    resolverFor: 'pkg|lib/src/beans.beans.dart',
+    resolverFor: 'pkg|lib/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
 }
@@ -111,7 +111,7 @@ void main() {
     final result = await _build({
       'lib/a/beans.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/a/beans.beans.dart';
+import 'package:pkg/a/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule aBeans = $aBeans;
@@ -128,7 +128,7 @@ class Form(@NotBlank() var String email);
 ''',
       'lib/b/beans.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/b/beans.beans.dart';
+import 'package:pkg/b/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule bBeans = $bBeans;
@@ -144,7 +144,7 @@ class BConfig {
 ''',
     });
     expect(result.errors, isEmpty);
-    for (final path in ['lib/a/beans.beans.dart', 'lib/b/beans.beans.dart']) {
+    for (final path in ['lib/a/beans.spring.dart', 'lib/b/beans.spring.dart']) {
       final output = _output(result, path);
       expect(
         output,
@@ -156,11 +156,11 @@ class BConfig {
       );
     }
     expect(
-      _output(result, 'lib/a/beans.beans.dart'),
+      _output(result, 'lib/a/beans.spring.dart'),
       _has("r'email', type: String"),
     );
     expect(
-      _output(result, 'lib/a/beans.beans.dart'),
+      _output(result, 'lib/a/beans.spring.dart'),
       _has('annotations: const [NotBlank()]'),
     );
   });
@@ -252,7 +252,7 @@ class NoProxies {
         'lib/src/top.dart': '$_header@Component() class Top {}',
         'lib/src/feature/feature.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/feature/feature.beans.dart';
+import 'package:pkg/src/feature/feature.spring.dart';
 
 @ComponentScan()
 final BeanModule featureBeans = $featureBeans;
@@ -260,7 +260,7 @@ final BeanModule featureBeans = $featureBeans;
         'lib/src/feature/service.dart': '$_header@Component() class Inner {}',
         'lib/src/feature/deep/feature.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/feature/deep/feature.beans.dart';
+import 'package:pkg/src/feature/deep/feature.spring.dart';
 
 @ComponentScan()
 final BeanModule deepBeans = $deepBeans;
@@ -269,12 +269,12 @@ final BeanModule deepBeans = $deepBeans;
             '$_header@Component() class Deep {}',
       });
       expect(result.errors, isEmpty);
-      final top = _output(result, 'lib/src/beans.beans.dart');
+      final top = _output(result, 'lib/src/beans.spring.dart');
       expect(top, contains("name:r'top'"));
       expect(top, isNot(contains("name:r'inner'")));
       expect(top, isNot(contains("name:r'deep'")));
       expect(top, contains('imports:[featureBeans]'));
-      final feature = _output(result, 'lib/src/feature/feature.beans.dart');
+      final feature = _output(result, 'lib/src/feature/feature.spring.dart');
       expect(feature, contains("name:r'inner'"));
       expect(feature, isNot(contains("name:r'deep'")));
       expect(feature, contains('imports:[deepBeans]'));
@@ -284,7 +284,7 @@ final BeanModule deepBeans = $deepBeans;
       final result = await _build({
         'bin/main.dart': r'''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'main.beans.dart';
+import 'main.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);
@@ -294,7 +294,7 @@ void main(List<String> args) => runApplication(args);
         'lib/other.dart': '$_header@Component() class Other {}',
       });
       expect(result.errors, isEmpty);
-      final app = _output(result, 'bin/main.beans.dart');
+      final app = _output(result, 'bin/main.spring.dart');
       expect(app, contains("name:r'other'"));
       expect(app, isNot(contains("name:r'inner'")));
       expect(app, contains('imports:[pkgBeans]'));
@@ -303,7 +303,7 @@ void main(List<String> args) => runApplication(args);
     test('two roots in one directory fail the build', () async {
       final message = await _errors({
         'lib/src/more.dart': r'''
-import 'package:pkg/src/more.beans.dart';
+import 'package:pkg/src/more.spring.dart';
 
 @ComponentScan()
 final BeanModule moreBeans = $moreBeans;
@@ -316,7 +316,7 @@ final BeanModule moreBeans = $moreBeans;
       final result = await _build({
         'lib/v{1}/beans.dart': r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'beans.beans.dart';
+import 'beans.spring.dart';
 
 @ComponentScan()
 final BeanModule v1Beans = $v1Beans;
@@ -325,7 +325,7 @@ final BeanModule v1Beans = $v1Beans;
         'lib/v1/service.dart': '$_header@Component() class Elsewhere {}',
       });
       expect(result.errors, isEmpty);
-      final output = _output(result, 'lib/v{1}/beans.beans.dart');
+      final output = _output(result, 'lib/v{1}/beans.spring.dart');
       expect(output, contains("name:r'versioned'"));
       expect(output, isNot(contains("name:r'elsewhere'")));
     });
@@ -411,7 +411,7 @@ class Report {
           key: '$_header$value',
       });
       expect(result.errors, isEmpty);
-      final output = _output(result, 'lib/src/beans.beans.dart');
+      final output = _output(result, 'lib/src/beans.spring.dart');
       expect(
         output,
         _has(

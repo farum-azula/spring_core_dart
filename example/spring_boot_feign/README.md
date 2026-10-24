@@ -79,7 +79,7 @@ No internet needed, so they run in CI too:
 | `lib/src/echo_socket.dart` | a declarative WebSocket client: `@WebSocketClient`, `@OnMessage` (`Stream<ChatMessage>`), `@SendMessage` |
 | `lib/src/live_runners.dart` | `WikipediaRunner` (prints 5 live edits, then `break` closes the stream) and `EchoRunner` (sends two messages, prints the echo) |
 | `lib/resources/application.properties` | the server URLs, the Wikimedia `User-Agent`, Feign and WebSocket settings, logging levels |
-| `bin/main.beans.dart` | generated: the beans, the client implementations, the JSON metadata of the models |
+| `bin/main.spring.dart` | generated: the beans, the client implementations, the JSON metadata of the models |
 | `test/` | unit tests on mocks, the end-to-end test and its local servers (`test/support/`) |
 
 ## Things to try

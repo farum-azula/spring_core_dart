@@ -132,10 +132,23 @@ abstract final class ClasspathResources {
         return file;
       }
     }
+    return resolveEmbedded(normalized);
+  }
+
+  /// The resource for [path] without the added [directories]: the
+  /// embedded file, or the file under [directory].
+  ///
+  /// ```dart
+  /// ClasspathResources.resolveEmbedded('application.yml');
+  /// ```
+  static Resource resolveEmbedded(String path) {
+    final normalized = _normalize(path);
     final embedded = _embedded[normalized];
-    final description = 'class path resource [$normalized]';
     if (embedded != null) {
-      return ByteArrayResource(embedded.bytes, description: description);
+      return ByteArrayResource(
+        embedded.bytes,
+        description: 'class path resource [$normalized]',
+      );
     }
     return FileSystemResource('$directory/$normalized');
   }

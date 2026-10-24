@@ -1,4 +1,5 @@
 import 'package:spring_core_dart/src/context/event/application_listener.dart';
+import 'package:spring_core_dart/src/context/task_executor.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 
 /// Dispatches events to listeners, like Spring's
@@ -6,7 +7,8 @@ import 'package:spring_core_dart/src/core/order.dart';
 ///
 /// The context uses a bean named `applicationEventMulticaster` if one
 /// exists, otherwise a [SimpleApplicationEventMulticaster]. Implement it to
-/// change dispatching (for example to deliver events asynchronously).
+/// change dispatching (asynchronous delivery is built in: see
+/// [SimpleApplicationEventMulticaster.taskExecutor]).
 ///
 /// ```dart
 /// final multicaster = SimpleApplicationEventMulticaster()
@@ -40,11 +42,15 @@ abstract interface class ApplicationEventMulticaster {
   void multicastEvent(Object event);
 }
 
-/// Calls listeners synchronously in `Ordered` order, like Spring's
-/// `SimpleApplicationEventMulticaster`.
+/// Calls listeners in `Ordered` order, like Spring's
+/// `SimpleApplicationEventMulticaster`: synchronously, or each on the
+/// [taskExecutor] when one is set.
 ///
 /// Without an [errorHandler] the first listener error stops dispatching and
-/// is rethrown (Spring's default).
+/// is rethrown (Spring's default); with a [taskExecutor] it is left to the
+/// executor (a `SimpleAsyncTaskExecutor` logs it). A listener's condition
+/// (`@EventListener(condition:)`) is evaluated inside this error handling,
+/// on the executor when there is one, like in Spring.
 ///
 /// ```dart
 /// @Configuration()
@@ -52,6 +58,7 @@ abstract interface class ApplicationEventMulticaster {
 ///   @Bean()
 ///   ApplicationEventMulticaster applicationEventMulticaster() =>
 ///       SimpleApplicationEventMulticaster(
+///         taskExecutor: SimpleAsyncTaskExecutor(),
 ///         errorHandler: (error, stack) => log.severe('listener', error),
 ///       );
 /// }
@@ -62,16 +69,19 @@ abstract interface class ApplicationEventMulticaster {
 /// @Bean
 /// ApplicationEventMulticaster applicationEventMulticaster() {
 ///   var multicaster = new SimpleApplicationEventMulticaster();
+///   multicaster.setTaskExecutor(new SimpleAsyncTaskExecutor());
 ///   multicaster.setErrorHandler(t -> log.error("listener", t));
 ///   return multicaster;
 /// }
 /// ```
-///
-/// Unlike Spring there is no task executor: dispatching is always
-/// synchronous.
 class SimpleApplicationEventMulticaster implements ApplicationEventMulticaster {
-  /// Creates a multicaster; see [errorHandler].
-  SimpleApplicationEventMulticaster({this.errorHandler});
+  /// Creates a multicaster; see [taskExecutor] and [errorHandler].
+  SimpleApplicationEventMulticaster({this.taskExecutor, this.errorHandler});
+
+  /// Runs each listener invocation (Spring's `setTaskExecutor`); `null`
+  /// calls the listeners on the publishing call. Which listeners match is
+  /// decided when the event is published.
+  TaskExecutor? taskExecutor;
 
   /// Receives listener errors instead of rethrowing them.
   void Function(Object error, StackTrace stackTrace)? errorHandler;
@@ -99,22 +109,34 @@ class SimpleApplicationEventMulticaster implements ApplicationEventMulticaster {
 
   @override
   void multicastEvent(Object event) {
+    final executor = taskExecutor;
     // Iterates a sorted copy, so listeners may add or remove listeners
     // while an event is dispatched.
     for (final listener in applicationListeners) {
       if (!listener.supportsEvent(event)) {
         continue;
       }
-      final handler = errorHandler;
-      if (handler == null) {
-        listener.onApplicationEvent(event);
-        continue;
+      if (executor == null) {
+        invokeListener(listener, event);
+      } else {
+        executor.execute(() => invokeListener(listener, event));
       }
-      try {
-        listener.onApplicationEvent(event);
-      } catch (error, stackTrace) {
-        handler(error, stackTrace);
-      }
+    }
+  }
+
+  /// Calls [listener] with [event], handing an error to [errorHandler]
+  /// when there is one (Spring's `invokeListener`); override it to wrap
+  /// each invocation.
+  void invokeListener(GenericApplicationListener listener, Object event) {
+    final handler = errorHandler;
+    if (handler == null) {
+      listener.onApplicationEvent(event);
+      return;
+    }
+    try {
+      listener.onApplicationEvent(event);
+    } catch (error, stackTrace) {
+      handler(error, stackTrace);
     }
   }
 }

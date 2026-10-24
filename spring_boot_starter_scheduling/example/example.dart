@@ -19,7 +19,7 @@ class Heartbeat {
   Future<void> report() async => print('report at ${DateTime.now()}');
 }
 
-// Written by the generator for `Heartbeat` (in main.beans.dart).
+// Written by the generator for `Heartbeat` (in main.spring.dart).
 final heartbeatDefinition = BeanDefinition<Heartbeat>(
   name: 'heartbeat',
   create: (_) => Heartbeat(),

@@ -6,6 +6,11 @@ Framework 6.2 / Spring Boot 3, then (October 2026) against Spring Framework
 Items marked **High** are the ones a Spring developer trips over first.
 Before 1.0 renames are made outright, with no deprecated aliases.
 
+**0.2.0** is released only when every item below is done and a new full
+review against Spring Framework 7 / Boot 4 / OpenFeign 5 (every package,
+like the October 2026 one) finds nothing left to fix; until then releases
+are patches (0.1.x).
+
 Already fixed (with regression tests): Dart default values of
 constructor parameters, empty collections for constructors and `@Bean`
 methods, `@Bean` products processed like components, `@PropertySource` /
@@ -72,51 +77,3 @@ counterpart. Estimates, ±5–10 points, measured before those fixes.
 | Cache starter | 90% | 81% | 63% |
 | Test starter | 73% | 70% | 58% |
 | **All, weighted by code size** | **81%** | **67%** | **64%** |
-
-## Container (`beans`)
-
-- [ ] Exclude beans produced by a configuration's own `@Bean` methods from its collections (`factoryBeanName`, Spring's `isSelfReference`).
-- [ ] Parent contexts: collections should see grandparent beans; keep the parent beans' `@Order` and `autowireCandidate=false`; shadow by `containsLocalBean`.
-- [ ] Single dependencies: merge local and parent candidates (parent `@Primary` may win, local wins a tie), pass the parameter name to the parent, validate ambiguity in the parent.
-- [ ] `defaultCandidate` honoured by `@ConditionalOnBean` / `@ConditionalOnMissingBean` (the definition and injection already follow Spring 6.2).
-- [ ] `determineAutowireCandidate` details: two `@Primary` beans always ambiguous; parameter name matches bean names/aliases only; Spring 6.2 "qualifier-suggested name" step.
-- [ ] Clean dependency bookkeeping on `removeBeanDefinition`; forbid bean creation while singletons are being destroyed.
-- [ ] Warn when a custom-scoped bean is injected directly into a singleton; scoped proxies.
-- [ ] Generic lookups: `Object` lookups returning all beans.
-- [ ] Dereference registered `FactoryBean`s (`registerSingleton`).
-- [ ] Alias overriding when `allowBeanDefinitionOverriding` is on; dangling alias chains after removal.
-- [ ] Clearer cycle message for re-entrant `FactoryBean` products.
-- [ ] Linear shutdown (destroy order bookkeeping is O(n²)).
-- [ ] `@Value` with a custom SpEL template prefix (always delegate to the expression resolver).
-- [ ] Missing APIs: `beanNamesForTypeIncludingAncestors`, `destroyBean`, `SmartFactoryBean`, `isTypeMatch`, annotation lookups (`getBeansWithAnnotation`), `Provider<T>` (`@Inject`) injection points, `@Resource`.
-
-## Context, events, lifecycle (`context`)
-
-- [ ] Programmatic registration: Spring 7's `BeanRegistrar` (`registerBean<T>(name, spec)`) through `@Import` and `context.register(registrar)`, `ImportSelector` / `ImportBeanDefinitionRegistrar`, `registerBean` on the context.
-- [ ] Asynchronous delivery: an executor-like option on `SimpleApplicationEventMulticaster` and `@Async` listeners (with the `TaskExecutor` of the scheduling starter).
-- [ ] Listener conditions inside the error handler; lifecycle discovery by instance type.
-- [ ] Phased creation of post-processors (`PriorityOrdered` → `Ordered` → rest, re-querying names).
-- [ ] `EmbeddedValueResolverAware` evaluating SpEL; descriptive errors for infrastructure misuse.
-
-## Configuration (`core`)
-
-- [ ] Lenient placeholders in optional imports; command line beats a file's own placeholders in imports and guards.
-- [ ] Indexed keys (`spring.profiles.include[0]`).
-- [ ] Encoding option (Latin-1) for `.properties`.
-- [ ] `classpath:` / `classpath*:` patterns in `PathMatchingResourcePatternResolver` over embedded resources.
-- [ ] `AntPathMatcher.extractUriTemplateVariables` on backtracking `**` paths; `FileSystemResource` directories.
-- [ ] Placeholder parser details (`${a ${b}`, `key:default` tried as a key).
-- [ ] Pattern resolver pruning; `file:` URL decoding.
-- [ ] `random.*`, `package:` resources, async `@PropertySource` for Flutter assets; a non-optional `config/*/` location without subdirectories fails.
-
-
-## SpEL (`expression`)
-
-- [ ] Web: real literals (`7.0 / 2`) and int/double semantics under dart2js.
-- [ ] Subtypes accepted by introspected properties and methods (`#{svc.process(@english)}` with an interface parameter).
-- [ ] Deep `==` for collections; `^` saturation like Java; `T(Math)` returning doubles; numeric edge cases.
-- [ ] `'d' - 3` is `'a'` (single-character string minus int).
-- [ ] Indexes evaluated against the root; selection result types.
-- [ ] Java type names (`T(Integer)`), array construction (`new int[4]`), missing String/List/Map methods.
-- [ ] Missing APIs: `Expression.getValueType`, `IndexAccessor` (6.2).
-

@@ -42,7 +42,8 @@ final class ConfigDataResourceNotFoundException implements Exception {
 /// `ConfigDataLocationNotFoundException`: a directory location
 /// (`file:./config/`) that does not exist, whether from
 /// `spring.config.location`, `spring.config.import` or a file's own import.
-/// An existing directory without config files is fine.
+/// An existing directory without config files is fine, but a wildcard
+/// location (`file:./config/*/`) needs at least one subdirectory.
 ///
 /// ```dart
 /// // --spring.config.import=file:./missing/
@@ -64,15 +65,20 @@ final class ConfigDataResourceNotFoundException implements Exception {
 /// ```
 final class ConfigDataLocationNotFoundException implements Exception {
   /// Creates the exception for [location].
-  ConfigDataLocationNotFoundException(this.location);
+  ConfigDataLocationNotFoundException(this.location, {this.reason});
 
   /// The config location as written (without `optional:`).
   final String location;
 
+  /// Why it was not found, when more specific than a missing location
+  /// (`contains no subdirectories`).
+  final String? reason;
+
   @override
   String toString() =>
       "ConfigDataLocationNotFoundException: Config data location '$location' "
-      "cannot be found. Prefix the location with 'optional:' to ignore it.";
+      "${reason ?? 'cannot be found'}. Prefix the location with 'optional:' "
+      'to ignore it.';
 }
 
 /// A property is not allowed where it was found, like Spring Boot's

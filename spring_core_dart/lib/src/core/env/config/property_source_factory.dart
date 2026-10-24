@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
@@ -20,10 +23,10 @@ import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 ///   @override
 ///   AbstractPropertySource<Object> createPropertySource(
 ///     String? name,
-///     Resource resource,
-///   ) => MapPropertySource(name ?? resource.description, {
+///     EncodedResource resource,
+///   ) => MapPropertySource(name ?? resource.resource.description, {
 ///     for (final document in const YamlPropertySourceLoader().load(
-///       resource.description,
+///       resource.resource.description,
 ///       resource.readAsStringSync(),
 ///     ))
 ///       ...(document as MapPropertySource).source,
@@ -55,10 +58,11 @@ import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 /// class AppConfig {}
 /// ```
 abstract interface class PropertySourceFactory {
-  /// Reads [resource] synchronously; [name] overrides the default name.
+  /// Reads [resource] synchronously, in its encoding; [name] overrides
+  /// the default name.
   AbstractPropertySource<Object> createPropertySource(
     String? name,
-    Resource resource,
+    EncodedResource resource,
   );
 }
 
@@ -70,7 +74,7 @@ abstract interface class PropertySourceFactory {
 /// ```dart
 /// final source = const DefaultPropertySourceFactory().createPropertySource(
 ///   null,
-///   FileSystemResource('config/app.properties'),
+///   EncodedResource(FileSystemResource('config/app.properties')),
 /// );
 /// ```
 ///
@@ -87,8 +91,12 @@ final class DefaultPropertySourceFactory implements PropertySourceFactory {
   @override
   AbstractPropertySource<Object> createPropertySource(
     String? name,
-    Resource resource,
-  ) => ResourcePropertySource.fromResource(resource, name: name);
+    EncodedResource resource,
+  ) => ResourcePropertySource.fromResource(
+    resource.resource,
+    name: name,
+    encoding: resource.encoding ?? utf8,
+  );
 }
 
 /// A `@PropertySource` location that does not exist.
@@ -177,12 +185,19 @@ class PropertySourceProcessor {
   /// `PropertySourceNotFoundException` or `PlaceholderResolutionException`.
   /// [factory] creates the source (default: `.properties`); [name] names
   /// all sources of this call, which are then merged into one composite.
+  /// [encoding] is the charset name the files are read in (such as
+  /// `ISO-8859-1`; UTF-8 when `null`).
+  ///
+  /// Resources that can only be read asynchronously (Flutter assets) must
+  /// be [preload]ed first; otherwise they throw a [StateError].
   void processPropertySource(
     List<String> locations, {
     String? name,
     bool ignoreResourceNotFound = false,
     PropertySourceFactory factory = const DefaultPropertySourceFactory(),
+    String? encoding,
   }) {
+    final charset = encoding == null ? null : _charset(encoding);
     for (final location in locations) {
       final String resolved;
       try {
@@ -200,9 +215,68 @@ class PropertySourceProcessor {
         }
         throw PropertySourceNotFoundException(location, resource.description);
       }
-      _add(factory.createPropertySource(name, resource));
+      _add(
+        factory.createPropertySource(
+          name,
+          EncodedResource(_readable(resource), encoding: charset),
+        ),
+      );
     }
   }
+
+  /// Reads the resources of [locations] that only support asynchronous
+  /// reading (such as Flutter assets behind a `ProtocolResolver`), so a
+  /// later [processPropertySource] can load them synchronously.
+  ///
+  /// Locations whose placeholders cannot be resolved yet, and missing
+  /// resources, are skipped (processing reports them).
+  /// `ConfigurableApplicationContext.refreshAsync` does this for every
+  /// `@PropertySource`.
+  ///
+  /// ```dart
+  /// await processor.preload(['asset:config/app.properties']);
+  /// processor.processPropertySource(['asset:config/app.properties']);
+  /// ```
+  Future<void> preload(Iterable<String> locations) async {
+    for (final location in locations) {
+      final String resolved;
+      try {
+        resolved = environment.resolveRequiredPlaceholders(location);
+      } on PlaceholderResolutionException {
+        continue;
+      }
+      final resource = resourceLoader.getResource(resolved);
+      final key = resource.description;
+      if (resource.supportsSyncRead ||
+          _preloaded.containsKey(key) ||
+          !resource.exists()) {
+        continue;
+      }
+      _preloaded[key] = await resource.readAsBytes();
+    }
+  }
+
+  // Content of async-only resources read by [preload], by description.
+  final _preloaded = <String, Uint8List>{};
+
+  // [resource], or its preloaded content when it is async-only.
+  Resource _readable(Resource resource) {
+    if (resource.supportsSyncRead) {
+      return resource;
+    }
+    final bytes = _preloaded[resource.description];
+    if (bytes == null) {
+      throw StateError(
+        '${resource.description} can only be read asynchronously; refresh '
+        'the context with refreshAsync() (or call preload first)',
+      );
+    }
+    return ByteArrayResource(bytes, description: resource.description);
+  }
+
+  static Encoding _charset(String name) =>
+      Encoding.getByName(name) ??
+      (throw ArgumentError.value(name, 'encoding', 'Unsupported encoding'));
 
   // Like Spring's PropertySourceProcessor.addPropertySource: a name this
   // processor already added is extended (merged, newest first); a source

@@ -201,6 +201,24 @@ same time:
 - `cron`: the next time is computed after the run, so times missed during
   a long run are skipped.
 
+## `TaskExecutor` and `@Async` listeners
+
+The starter also registers Spring Boot's `applicationTaskExecutor` (alias
+`taskExecutor`): a `SimpleAsyncTaskExecutor` of the core, which runs each
+task in a later event-loop turn and logs its errors. Declaring your own
+`TaskExecutor` bean replaces it. Having it switches `@Async` on for
+`@EventListener` methods (Spring's `@EnableAsync`): such a listener runs on
+the executor instead of the publishing call.
+
+```dart
+@Component()
+class Mailer {
+  @EventListener()
+  @Async() // or @Async('mailExecutor') for another TaskExecutor bean
+  Future<void> onPlaced(OrderPlaced order) => sendConfirmation(order);
+}
+```
+
 ## Errors
 
 An exception (thrown or from the returned `Future`) is logged at error
@@ -252,5 +270,7 @@ every task) and the new context schedules the methods of the new code.
   the context's `closeAsync()` only (`close()` cannot wait); a run that is
   going on is never interrupted and, without `await-termination`, finishes
   after the close (no further runs start).
-- Not yet: `@Async`, `SchedulingConfigurer`, scheduling of prototype
-  beans.
+- `@Async` works on `@EventListener` methods only and needs no
+  `@EnableAsync` (the `TaskExecutor` bean switches it on); there is no
+  `spring.task.execution.*` pool configuration (Dart has no threads).
+- Not yet: `SchedulingConfigurer`, scheduling of prototype beans.

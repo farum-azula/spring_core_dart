@@ -111,7 +111,7 @@ What you get:
 ```text
 my_app/
   bin/main.dart                               @SpringBootApplication + runApplication
-  bin/main.beans.dart                         generated
+  bin/main.spring.dart                         generated
   lib/src/greeting/app_properties.dart        @ConfigurationProperties('app')
   lib/src/greeting/greeting_service.dart      @Service
   lib/src/greeting/greeting_runner.dart       ApplicationRunner

@@ -11,7 +11,7 @@
 //   dart run bin/shop.dart --spring.task.scheduling.enabled=false
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'shop.beans.dart';
+import 'shop.spring.dart';
 
 @SpringBootApplication()
 void main(List<String> args) => runApplication(args);

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 /// File system access through `dart:io`.
@@ -50,5 +51,32 @@ abstract final class FileAccess {
       for (final entity in dir.listSync())
         if (entity is Directory) entity.path.replaceAll(r'\', '/'),
     ]..sort();
+  }
+
+  /// Paths of the files directly in [directory], using `/` separators,
+  /// sorted; empty if [directory] is not a directory.
+  static List<String> listFiles(String directory) {
+    final dir = Directory(directory);
+    if (!dir.existsSync()) {
+      return const [];
+    }
+    return [
+      for (final entity in dir.listSync())
+        if (entity is File) entity.path.replaceAll(r'\', '/'),
+    ]..sort();
+  }
+
+  /// The file path of a `package:` [uri] through the package config of
+  /// the running program; `null` when it cannot be resolved (an AOT
+  /// executable has no package config).
+  static String? resolvePackageUri(String uri) {
+    try {
+      final resolved = Isolate.resolvePackageUriSync(Uri.parse(uri));
+      return resolved != null && resolved.isScheme('file')
+          ? resolved.toFilePath().replaceAll(r'\', '/')
+          : null;
+    } on Object {
+      return null;
+    }
   }
 }

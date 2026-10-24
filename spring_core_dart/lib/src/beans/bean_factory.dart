@@ -672,6 +672,24 @@ abstract interface class DependencyResolver
     String? name,
   });
 
+  /// A `@Resource` field or setter (JSR-250, see `jakarta.dart`): the
+  /// bean named [name] (an alias or `&factory` too) as [T]. With
+  /// [fallbackToType] (the name is the field or setter name, not given
+  /// explicitly) a bean of [T] is injected when no bean has that name,
+  /// like Spring's `CommonAnnotationBeanPostProcessor`.
+  ///
+  /// ```dart
+  /// inject: (bean, r) =>
+  ///     bean.dataSource = r.resource<DataSource>('dataSource', fallbackToType: true),
+  /// ```
+  T resource<T extends Object>(String name, {bool fallbackToType = false});
+
+  /// A `@Resource` field or setter; `null` when the bean is missing.
+  T? optionalResource<T extends Object>(
+    String name, {
+    bool fallbackToType = false,
+  });
+
   /// A `@Value` expression converted to [T]: `${...}` placeholders are
   /// resolved, then `#{...}` is evaluated, then the result is converted.
   ///

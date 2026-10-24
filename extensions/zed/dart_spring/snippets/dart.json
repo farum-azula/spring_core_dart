@@ -1,11 +1,11 @@
 {
   "Spring Boot application": {
     "prefix": "spboot",
-    "description": "main with @SpringBootApplication; run build_runner to generate main.beans.dart",
+    "description": "main with @SpringBootApplication; run build_runner to generate main.spring.dart",
     "body": [
       "import 'package:spring_boot_dart/spring_boot_dart.dart';",
       "",
-      "import '${1:main}.beans.dart';",
+      "import '${1:main}.spring.dart';",
       "",
       "@SpringBootApplication()",
       "void main(List<String> args) => runApplication(args);$0"
@@ -17,7 +17,7 @@
     "body": [
       "import 'package:spring_core_dart/spring_core_dart.dart';",
       "",
-      "import '${1:app}.beans.dart';",
+      "import '${1:app}.spring.dart';",
       "",
       "@ComponentScan()",
       "final BeanModule ${2:appBeans} = \\$${2:appBeans};$0"
@@ -284,7 +284,7 @@
       "import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';",
       "import 'package:test/test.dart';",
       "",
-      "import '${1:../bin/main}.beans.dart';",
+      "import '${1:../bin/main}.spring.dart';",
       "",
       "void main() {",
       "  final app = springBootTest(",

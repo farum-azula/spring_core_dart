@@ -4,11 +4,11 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// `@SpringBootApplication`.
 ///
 /// `spring_core_dart_generator` scans the whole package (`lib/` and the
-/// directory of `main`) and writes `main.beans.dart` next to it, with the
+/// directory of `main`) and writes `main.spring.dart` next to it, with the
 /// beans and a `runApplication(args)` function:
 ///
 /// ```dart
-/// import 'main.beans.dart';
+/// import 'main.spring.dart';
 ///
 /// @SpringBootApplication()
 /// void main(List<String> args) => runApplication(args);

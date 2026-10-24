@@ -14,7 +14,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.beans.dart';
+import 'package:pkg/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -30,7 +30,7 @@ const _syntaxError = '$_header@Service()\nclass Greeter {\n';
 // Parses, but a private bean class is a generator error.
 const _validationError = '$_header@Service()\nclass _Greeter {}\n';
 
-final _output = AssetId('pkg', 'lib/src/beans.beans.dart');
+final _output = AssetId('pkg', 'lib/src/beans.spring.dart');
 
 SpringBuilder _builder({Future<String?> Function(AssetId)? read}) =>
     SpringBuilder(
@@ -90,7 +90,7 @@ void main() {
       expect(
         _warnings(logs).single,
         allOf(
-          contains('lib/src/beans.beans.dart is kept unchanged'),
+          contains('lib/src/beans.spring.dart is kept unchanged'),
           contains('lib/src/service.dart has syntax errors'),
         ),
       );
@@ -147,7 +147,7 @@ void main() {
     expect(
       result.errors.join('\n'),
       allOf(
-        contains('lib/src/beans.beans.dart is kept unchanged'),
+        contains('lib/src/beans.spring.dart is kept unchanged'),
         contains('Bean class _Greeter must be public'),
       ),
     );

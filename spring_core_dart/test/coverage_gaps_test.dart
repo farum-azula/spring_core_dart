@@ -143,7 +143,10 @@ void main() {
         isTrue,
       );
       expect(method.supports(2.5), isFalse);
-      expect(method.supports('skip'), isFalse);
+      // The type matches; the condition is checked separately.
+      expect(method.supports('skip'), isTrue);
+      expect(method.shouldHandle('skip'), isFalse);
+      expect(method.shouldHandle(1), isTrue);
       method.invoke(bean, PayloadApplicationEvent<Object>('s', 'x'));
       expect(bean, ['x']);
       expect(
@@ -156,6 +159,7 @@ void main() {
         invoke: (_, _) => null,
       );
       expect(unconditional.supports(1), isTrue);
+      expect(unconditional.shouldHandle(1), isTrue);
     });
 
     test('ApplicationContext.run and bean method listener description', () {

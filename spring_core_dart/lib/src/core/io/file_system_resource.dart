@@ -7,7 +7,8 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 /// A file, like Spring's `FileSystemResource`. Unavailable on the web,
 /// where it never exists.
 ///
-/// Supports synchronous reading (on platforms with `dart:io`).
+/// Supports synchronous reading (on platforms with `dart:io`). A directory
+/// exists but is not readable ([isReadable] is `false`), like in Spring.
 ///
 /// ```dart
 /// final resource = FileSystemResource('config/application.properties');
@@ -31,6 +32,33 @@ class FileSystemResource extends AbstractResource {
   /// The path is normalized: `.` segments and empty segments are removed
   /// and `..` collapses with the previous segment.
   FileSystemResource(String path) : path = _clean(path);
+
+  /// The file of a `file:` URL, percent-decoded like Spring's
+  /// `ResourceUtils.getFile` (`file:my%20dir/a.txt` is `my dir/a.txt`);
+  /// `file:///abs` and `file:/abs` are absolute. Invalid escapes are kept
+  /// as written.
+  ///
+  /// ```dart
+  /// FileSystemResource.fromFileUrl('file:///srv/my%20app/a.properties')
+  ///     .path; // /srv/my app/a.properties
+  /// ```
+  factory FileSystemResource.fromFileUrl(String url) {
+    var rest = url.startsWith('file:') ? url.substring(5) : url;
+    // `file://host/path`: only an empty (local) host is supported.
+    if (rest.startsWith('///')) {
+      rest = rest.substring(2);
+    } else if (rest.startsWith('//localhost/')) {
+      rest = rest.substring('//localhost'.length);
+    }
+    if (rest.contains('%')) {
+      try {
+        rest = Uri.decodeComponent(rest);
+      } on ArgumentError {
+        // Not a valid escape: a literal `%` in the path.
+      }
+    }
+    return FileSystemResource(rest);
+  }
 
   /// The normalized path, relative or absolute as given.
   final String path;
@@ -74,7 +102,14 @@ class FileSystemResource extends AbstractResource {
   }
 
   @override
-  bool exists() => FileAccess.isFile(path);
+  bool exists() => FileAccess.isFile(path) || FileAccess.isDirectory(path);
+
+  /// Whether this is a readable file (not a directory).
+  @override
+  bool get isReadable => FileAccess.isFile(path);
+
+  /// Whether [path] is an existing directory.
+  bool get isDirectory => FileAccess.isDirectory(path);
 
   @override
   String get filename => path.split('/').last;

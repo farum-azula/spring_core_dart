@@ -16,7 +16,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
-const _outputExtension = '.beans.dart';
+const _outputExtension = '.spring.dart';
 
 const _bootUrl = 'package:spring_boot_dart/spring_boot_dart.dart';
 
@@ -36,7 +36,7 @@ const autoConfigurationModuleChecker = TypeChecker.fromUrl(
 const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 
 /// For every library with a `@ComponentScan` variable, scans the library's
-/// directory recursively and writes `<file>.beans.dart` with a `BeanModule`.
+/// directory recursively and writes `<file>.spring.dart` with a `BeanModule`.
 ///
 /// The builder runs on every `.dart` input, but only does real work for a
 /// library with exactly one public top-level variable annotated with
@@ -61,7 +61,7 @@ const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 ///   final Clock clock;
 /// }
 ///
-/// // Output: lib/src/beans.beans.dart
+/// // Output: lib/src/beans.spring.dart
 /// /// Beans found by `@ComponentScan` in `lib/src/`.
 /// final BeanModule $appBeans = BeanModule(r'appBeans', [
 ///   BeanDefinition<Greeter>(
@@ -126,13 +126,13 @@ class SpringBuilder implements Builder {
   // a successful generation.
   final Set<AssetId> _warned = {};
 
-  /// Every `.dart` input may produce a `.beans.dart` output next to it.
+  /// Every `.dart` input may produce a `.spring.dart` output next to it.
   @override
   Map<String, List<String>> get buildExtensions => const {
     '.dart': [_outputExtension],
   };
 
-  /// Generates `<input>.beans.dart` when [buildStep]'s input declares a
+  /// Generates `<input>.spring.dart` when [buildStep]'s input declares a
   /// `@ComponentScan` variable; does nothing for any other input.
   ///
   /// Throws `InvalidGenerationSource` when a file has more than one

@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/beans/jakarta.dart';
+
 /// A factory of one object of [T], like Spring's `ObjectFactory`.
 ///
 /// An `ObjectFactory<T>` injection point receives an [ObjectProvider]: the
@@ -72,7 +74,7 @@ abstract interface class ObjectFactory<T extends Object> {
 /// }
 /// ```
 abstract interface class ObjectProvider<T extends Object>
-    implements ObjectFactory<T>, Iterable<T> {
+    implements ObjectFactory<T>, Provider<T>, Iterable<T> {
   /// The single matching bean; throws when none or several match.
   ///
   /// ```dart
@@ -80,6 +82,10 @@ abstract interface class ObjectProvider<T extends Object>
   /// ```
   @override
   T getObject();
+
+  /// The same as [getObject] (JSR-330's `Provider.get`).
+  @override
+  T get();
 
   /// The matching bean, [defaultSupplier]'s result, or `null` when none
   /// matches. Throws when several match without a primary.

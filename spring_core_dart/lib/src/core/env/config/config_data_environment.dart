@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:spring_core_dart/src/core/env/config/config_data_exceptions.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_loader.dart';
 import 'package:spring_core_dart/src/core/env/config/yaml_property_source_loader.dart';
+import 'package:spring_core_dart/src/core/env/configuration_property_name.dart';
 import 'package:spring_core_dart/src/core/env/configuration_property_sources.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/mutable_property_sources.dart';
@@ -234,8 +236,8 @@ class ConfigDataEnvironment {
         return;
       } on _NeedsContent catch (needed) {
         final resource = needed.resource;
-        cache[resource.description] = resource.exists()
-            ? await resource.readAsString()
+        cache[resource.description] = resource.isReadable
+            ? await resource.readAsString(encoding: needed.encoding)
             : null;
       }
     }
@@ -286,19 +288,17 @@ final class _Result {
 
 // Signals that [resource] must be read asynchronously before retrying.
 final class _NeedsContent implements Exception {
-  _NeedsContent(this.resource);
+  _NeedsContent(this.resource, this.encoding);
 
   final Resource resource;
+  final Encoding encoding;
 }
 
 // One loaded document (a file, or one `#---` section of it).
 final class _Document {
   _Document(this.source, this.location, {required this.profileSpecific})
     : onProfile = _guard(
-        _Run._value(
-          source.getProperty,
-          ConfigDataEnvironment.onProfileProperty,
-        ),
+        _Run._sourceValue(source, ConfigDataEnvironment.onProfileProperty),
       );
 
   // An empty on-profile is no guard at all, as in Boot (an empty array).
@@ -346,12 +346,17 @@ final class _Run {
   _Result process() {
     _names =
         _list(
-          _value(_env.getProperty, ConfigDataEnvironment.configNameProperty),
+          _bind(
+            _env.propertySources,
+            ConfigDataEnvironment.configNameProperty,
+            _env,
+          ),
         ) ??
         const ['application'];
     // Like Boot: `,` separates groups, `;` joins locations into a group.
     List<List<String>> groupsOf(String property, List<String> defaults) => [
-      for (final value in _list(_value(_env.getProperty, property)) ?? defaults)
+      for (final value
+          in _list(_bind(_env.propertySources, property, _env)) ?? defaults)
         if (_split(value, ';') case final group when group.isNotEmpty) group,
     ];
     // Boot's initial imports, lowest precedence first: `spring.config.import`
@@ -503,14 +508,16 @@ final class _Run {
   // resolved against the importing file's directory.
   List<_Document> _imports(_Document document, {required String? profile}) {
     final locations = document.importLocations ??= () {
-      final value = _value(
-        document.source.getProperty,
+      final value = _sourceValue(
+        document.source,
         ConfigDataEnvironment.importProperty,
       );
+      // Lenient, like Boot: an unresolvable placeholder stays as is, so an
+      // `optional:` import of it is just not found.
       return _list(
             value == null
                 ? null
-                : _resolver(document).resolveRequiredPlaceholders(value),
+                : _resolver(document).resolvePlaceholders(value),
           ) ??
           const <String>[];
     }();
@@ -527,8 +534,9 @@ final class _Run {
 
   // The sources bound for profiles, imports and placeholders, highest
   // precedence first: the environment's own, then the documents active so
-  // far, then `defaultProperties` (below config data, as in Boot).
-  List<AbstractPropertySource<Object>> _boundSources() {
+  // far (and [including], even while inactive), then `defaultProperties`
+  // (below config data, as in Boot).
+  List<AbstractPropertySource<Object>> _boundSources([_Document? including]) {
     final environment = _env.propertySources.where(
       (s) => s is! ConfigurationPropertySourcesPropertySource,
     );
@@ -536,18 +544,18 @@ final class _Run {
     return [
       ...environment.where((s) => s.name != defaults),
       for (final d in _documents.toList().reversed)
-        if (d.active) d.source,
+        if (d.active || d == including) d.source,
       ...environment.where((s) => s.name == defaults),
     ];
   }
 
-  // A resolver over the environment and the documents active so far, with
-  // [document] on top. Names are relaxed, as with Boot's binder.
+  // A resolver over the environment and the documents active so far, plus
+  // [document] at its own precedence (Boot's
+  // ConfigDataEnvironmentContributorPlaceholdersResolver), so the command
+  // line beats the document's own values. Names are relaxed, as with
+  // Boot's binder.
   PropertyResolver _resolver([_Document? document]) {
-    final sources = [
-      ?document?.source,
-      ..._boundSources().where((s) => s != document?.source),
-    ];
+    final sources = _boundSources(document);
     return PropertySourcesPropertyResolver(
       MutablePropertySources([
         ConfigurationPropertySourcesPropertySource(
@@ -583,9 +591,10 @@ final class _Run {
     for (final source in _boundSources()) {
       final profiles =
           _list(
-            _value(
-              source.getProperty,
+            _bind(
+              [source],
               ConfigDataEnvironment.includeProfilesProperty,
+              resolver,
             ),
           ) ??
           const <String>[];
@@ -614,7 +623,7 @@ final class _Run {
       final result = _unique(profiles);
       for (var i = 0; i < result.length; i++) {
         final group = '${ConfigDataEnvironment.profileGroupPrefix}${result[i]}';
-        final members = _list(_value(resolver.getProperty, group));
+        final members = _list(_bind(_boundSources(), group, resolver));
         check(members ?? const [], group);
         var insertAt = i + 1;
         for (final member in members ?? const <String>[]) {
@@ -646,8 +655,9 @@ final class _Run {
   }) {
     bool same(List<String> a, List<String> b) =>
         a.toSet().length == b.toSet().length && a.toSet().containsAll(b);
-    final fromProperty = _list(_value(_env.getProperty, property)) ?? const [];
-    final bound = _list(_value(resolver.getProperty, property));
+    final fromProperty =
+        _list(_bind(_env.propertySources, property, _env)) ?? const [];
+    final bound = _list(_bind(_boundSources(), property, resolver));
     final programmatic =
         !same(environmentProfiles, defaultValue) &&
         (fromProperty.isEmpty || !same(fromProperty, environmentProfiles));
@@ -708,7 +718,7 @@ final class _Run {
     final optional = rawLocation.startsWith(
       ConfigDataEnvironment.optionalPrefix,
     );
-    var location = _env.resolveRequiredPlaceholders(
+    var location = _env.resolvePlaceholders(
       optional
           ? rawLocation.substring(ConfigDataEnvironment.optionalPrefix.length)
           : rawLocation,
@@ -733,6 +743,13 @@ final class _Run {
       final directories = wildcard
           ? _subdirectories(location, location)
           : [location];
+      // Boot's check for a mandatory wildcard location.
+      if (wildcard && directories.isEmpty && !optional && profile == null) {
+        throw ConfigDataLocationNotFoundException(
+          rawLocation,
+          reason: 'contains no subdirectories',
+        );
+      }
       var found = false;
       final documents = <_Document>[];
       for (final name in _names) {
@@ -872,7 +889,7 @@ final class _Run {
     final resource = owner.resourceLoader.getResource(
       _isUrl(location) ? location : '${ResourceLoader.filePrefix}$location',
     );
-    final content = _read(resource, location);
+    final content = _read(resource, location, loader.encoding);
     if (content == null) {
       if (optional) {
         return null;
@@ -912,22 +929,23 @@ final class _Run {
     ];
   }
 
-  // Content of [resource] from the cache or a synchronous read; `null` if
-  // it does not exist. Cached by description so a re-run after an async
-  // read does not touch the resource again.
-  String? _read(Resource resource, String location) {
+  // Content of [resource] in [encoding] from the cache or a synchronous
+  // read; `null` if it does not exist (or is a directory). Cached by
+  // description so a re-run after an async read does not touch the
+  // resource again.
+  String? _read(Resource resource, String location, Encoding encoding) {
     final key = resource.description;
     if (cache.containsKey(key)) {
       return cache[key];
     }
-    if (!resource.exists()) {
+    if (!resource.isReadable) {
       return cache[key] = null;
     }
     if (resource.supportsSyncRead) {
-      return cache[key] = resource.readAsStringSync();
+      return cache[key] = resource.readAsStringSync(encoding: encoding);
     }
     if (allowAsync) {
-      throw _NeedsContent(resource);
+      throw _NeedsContent(resource, encoding);
     }
     throw ConfigDataLoadException(
       location,
@@ -948,6 +966,39 @@ final class _Run {
     for (final part in value.split(separator))
       if (part.trim().isNotEmpty) part.trim(),
   ];
+
+  // Boot's binder for a value or a list: in each of [sources] (highest
+  // precedence first, names relaxed), [key] or its indexed items; the
+  // first source that has any wins, so lists are not merged across
+  // sources (`--spring.profiles.active[0]=a` replaces a file's whole
+  // list). Placeholders are resolved with [resolver].
+  static String? _bind(
+    Iterable<AbstractPropertySource<Object>> sources,
+    String key,
+    PropertyResolver resolver,
+  ) {
+    for (final source in sources) {
+      if (source is ConfigurationPropertySourcesPropertySource) {
+        continue;
+      }
+      if (_sourceValue(source, key) case final value?) {
+        return resolver.resolveRequiredPlaceholders(value);
+      }
+    }
+    return null;
+  }
+
+  // [key] (or its indexed items) in [source], with relaxed names
+  // (`SPRING_PROFILES_INCLUDE_0_` is `spring.profiles.include[0]`).
+  static String? _sourceValue(
+    AbstractPropertySource<Object> source,
+    String key,
+  ) => _value((name) {
+    final relaxed = ConfigurationPropertyName.ofIfValid(name);
+    return relaxed == null
+        ? source.getProperty(name)
+        : ConfigurationPropertySources.getProperty(source, relaxed);
+  }, key);
 
   // The value of [key] from [get] as text: the value itself, or the items
   // of a YAML list (`key[0]`, `key[1]`, ...) joined with commas.

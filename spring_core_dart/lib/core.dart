@@ -38,6 +38,7 @@ export 'package:spring_core_dart/src/core/env/profiles.dart';
 export 'package:spring_core_dart/src/core/env/property_placeholder_helper.dart';
 export 'package:spring_core_dart/src/core/env/property_resolver.dart';
 export 'package:spring_core_dart/src/core/env/property_source.dart';
+export 'package:spring_core_dart/src/core/env/random_value_property_source.dart';
 export 'package:spring_core_dart/src/core/env/system_environment_property_source.dart';
 export 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 export 'package:spring_core_dart/src/core/io/file_system_resource.dart';

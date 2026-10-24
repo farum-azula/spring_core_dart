@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
-import 'package:pkg/src/beans.beans.dart';
+import 'package:pkg/src/beans.spring.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -78,11 +78,11 @@ Future<List<String>> _compileErrors(
   return resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/src/beans.beans.dart': output,
+      'pkg|lib/src/beans.spring.dart': output,
     },
     (resolver) async {
       final library = await resolver.libraryFor(
-        AssetId('pkg', 'lib/src/beans.beans.dart'),
+        AssetId('pkg', 'lib/src/beans.spring.dart'),
       );
       final errors = await library.session.getErrors(
         library.firstFragment.source.fullName,
@@ -94,7 +94,7 @@ Future<List<String>> _compileErrors(
       ];
     },
     rootPackage: 'pkg',
-    resolverFor: 'pkg|lib/src/beans.beans.dart',
+    resolverFor: 'pkg|lib/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
 }

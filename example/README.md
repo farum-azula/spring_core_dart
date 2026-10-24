@@ -4,7 +4,7 @@ Every feature of the library used in one small bookstore app. Run it and
 read what each feature actually did:
 
 ```bash
-dart run build_runner build      # regenerate lib/src/app.beans.dart and bin/shop.beans.dart (committed)
+dart run build_runner build      # regenerate lib/src/app.spring.dart and bin/shop.spring.dart (committed)
 dart run bin/main.dart           # the whole tour
 dart run bin/shop.dart           # the same shop as a Spring Boot app (@SpringBootApplication on main)
 dart run bin/main.dart --section=aop
@@ -35,7 +35,7 @@ dart test                        # asserts the tour's output
 | `shutdown` | `ContextClosedEvent`, lifecycle stop, destroy callbacks in reverse creation order | — |
 
 `bin/shop.dart` is the Spring Boot entry point: `@SpringBootApplication` on
-`main`, one import of the generated `shop.beans.dart`, a
+`main`, one import of the generated `shop.spring.dart`, a
 `@ConfigurationProperties('shop')` class and a `CommandLineRunner`
 (`lib/src/boot/`). Try `dart run bin/shop.dart --shop.max-basket-size=0` for
 the startup failure report.

@@ -1,13 +1,17 @@
 import 'dart:async';
 
+import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/auto_proxy_creator.dart';
+import 'package:spring_core_dart/src/beans/aware.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/beans/object_provider.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
+import 'package:spring_core_dart/src/beans/scope.dart';
 import 'package:spring_core_dart/src/context/bean_module.dart';
+import 'package:spring_core_dart/src/context/bean_registrar.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/context/context_aware.dart';
 import 'package:spring_core_dart/src/context/event/application_event.dart';
@@ -19,6 +23,8 @@ import 'package:spring_core_dart/src/context/lifecycle.dart';
 import 'package:spring_core_dart/src/context/message/abstract_message_source.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/context/shutdown_hook.dart';
+import 'package:spring_core_dart/src/context/task_executor.dart';
+import 'package:spring_core_dart/src/context/annotations.dart' show Async;
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
@@ -191,8 +197,19 @@ abstract interface class ConfigurableApplicationContext
   /// The underlying bean factory (available before refresh).
   ConfigurableListableBeanFactory get beanFactory;
 
-  /// Adds a module before [refresh].
-  void register(BeanModule module);
+  /// Adds a [BeanModule], a `BeanRegistrar`, an `ImportSelector` or an
+  /// `ImportBeanDefinitionRegistrar` before [refresh] (Spring's
+  /// `register(Class...)` / `register(BeanRegistrar...)`); they are
+  /// processed in registration order while the modules load. Throws an
+  /// `ArgumentError` for other objects and a `StateError` once [refresh]
+  /// has started.
+  ///
+  /// ```dart
+  /// context
+  ///   ..register(appBeans)
+  ///   ..register(const MessagingRegistrar());
+  /// ```
+  void register(Object component);
 
   /// Adds a post-processor applied during [refresh].
   void addBeanFactoryPostProcessor(BeanFactoryPostProcessor processor);
@@ -401,7 +418,7 @@ class AnnotationConfigApplicationContext
     ConfigurableEnvironment? environment,
     ResourceLoader? resourceLoader,
     String? id,
-  }) : _modules = [...modules],
+  }) : _components = [...modules],
        environment = environment ?? StandardEnvironment(),
        _resources = PathMatchingResourcePatternResolver(
          resourceLoader: resourceLoader ?? DefaultResourceLoader(),
@@ -425,6 +442,10 @@ class AnnotationConfigApplicationContext
 
   /// Name of the environment bean.
   static const environmentBeanName = 'environment';
+
+  /// Name of the `TaskExecutor` bean `@Async` falls back to when there are
+  /// several (Spring's `AsyncExecutionAspectSupport.DEFAULT_TASK_EXECUTOR_BEAN_NAME`).
+  static const defaultTaskExecutorBeanName = 'taskExecutor';
 
   /// Name of the context's [BeanIntrospector] bean.
   static const beanIntrospectorBeanName = 'beanIntrospector';
@@ -455,7 +476,8 @@ class AnnotationConfigApplicationContext
   final ConfigurableEnvironment environment;
 
   final DefaultListableBeanFactory _factory = DefaultListableBeanFactory();
-  final List<BeanModule> _modules;
+  // Modules, registrars and selectors, in registration order.
+  final List<Object> _components;
   final PathMatchingResourcePatternResolver _resources;
   final _factoryPostProcessors = <BeanFactoryPostProcessor>[];
   final _listeners = <GenericApplicationListener>[];
@@ -465,6 +487,7 @@ class AnnotationConfigApplicationContext
   List<Object>? _earlyEvents;
   MessageSource? _messageSource;
   LifecycleProcessor? _lifecycleProcessor;
+  TaskExecutor? _defaultAsyncExecutor;
   void Function()? _stopShutdownHook;
   _State _state = _State.created;
 
@@ -509,9 +532,82 @@ class AnnotationConfigApplicationContext
   bool get isClosed => _state == _State.closed;
 
   @override
-  void register(BeanModule module) {
-    _checkNotRefreshed();
-    _modules.add(module);
+  void register(Object component) {
+    _checkNotRefreshed('register $component');
+    if (component is! BeanModule &&
+        component is! BeanRegistrar &&
+        component is! ImportSelector &&
+        component is! ImportBeanDefinitionRegistrar) {
+      throw ArgumentError.value(
+        component,
+        'component',
+        'Expected a BeanModule, BeanRegistrar, ImportSelector or '
+            'ImportBeanDefinitionRegistrar',
+      );
+    }
+    _components.add(component);
+  }
+
+  /// Registers a bean of type [T] made by [supplier] before [refresh],
+  /// like Spring's `GenericApplicationContext.registerBean`; the options
+  /// are those of [BeanRegistry.registerBean]. The bean is registered
+  /// when the modules load, in registration order with [register]ed
+  /// components.
+  ///
+  /// ```dart
+  /// final context = AnnotationConfigApplicationContext([appBeans])
+  ///   ..registerBean<Clock>((_) => SystemClock(), name: 'clock')
+  ///   ..registerBean<Mailer>(
+  ///     (r) => SmtpMailer(r.dependency<Clock>()),
+  ///     primary: true,
+  ///   )
+  ///   ..refresh();
+  /// ```
+  ///
+  /// Spring (Java):
+  /// ```java
+  /// var context = new AnnotationConfigApplicationContext();
+  /// context.registerBean("clock", Clock.class, SystemClock::new);
+  /// context.registerBean(Mailer.class,
+  ///     () -> new SmtpMailer(context.getBean(Clock.class)),
+  ///     definition -> definition.setPrimary(true));
+  /// context.refresh();
+  /// ```
+  void registerBean<T extends Object>(
+    T Function(DependencyResolver context) supplier, {
+    String? name,
+    List<Type>? types,
+    String scope = ScopeType.singleton,
+    bool lazy = false,
+    bool primary = false,
+    bool fallback = false,
+    bool autowireCandidate = true,
+    bool defaultCandidate = true,
+    int? order,
+    String? description,
+    List<String> aliases = const [],
+    List<String> dependsOn = const [],
+  }) {
+    _checkNotRefreshed("register bean '${name ?? T}'");
+    _components.add(
+      _SingleBeanRegistrar(
+        (registry) => registry.registerBean<T>(
+          supplier,
+          name: name,
+          types: types,
+          scope: scope,
+          lazy: lazy,
+          primary: primary,
+          fallback: fallback,
+          autowireCandidate: autowireCandidate,
+          defaultCandidate: defaultCandidate,
+          order: order,
+          description: description,
+          aliases: aliases,
+          dependsOn: dependsOn,
+        ),
+      ),
+    );
   }
 
   @override
@@ -554,9 +650,13 @@ class AnnotationConfigApplicationContext
     loader.addProtocolResolver(resolver);
   }
 
-  void _checkNotRefreshed() {
+  void _checkNotRefreshed(String action) {
     if (_state != _State.created) {
-      throw StateError('Modules must be registered before refresh().');
+      throw StateError(
+        'Cannot $action: $displayName has been refreshed already '
+        '(${_state.name}). Register modules, registrars and beans before '
+        'refresh(), or create a new context.',
+      );
     }
   }
 
@@ -601,6 +701,7 @@ class AnnotationConfigApplicationContext
   Future<void> refreshAsync() async {
     _prepareRefresh();
     try {
+      await _preloadPropertySources();
       _refreshUntilSingletons();
       await _factory.preInstantiateSingletonsAsync();
       _finishRefresh();
@@ -703,8 +804,35 @@ class AnnotationConfigApplicationContext
       );
   }
 
+  // Loads `@PropertySource` files; shared with _preloadPropertySources.
+  late final _propertySources = PropertySourceProcessor(environment, this);
+
+  // Reads async-only `@PropertySource` resources (Flutter assets) ahead,
+  // so _loadModules can stay synchronous.
+  Future<void> _preloadPropertySources() async {
+    final seen = <BeanModule>{};
+    Future<void> preload(BeanModule module) async {
+      if (seen.add(module)) {
+        for (final imported in module.imports) {
+          await preload(imported);
+        }
+        for (final declaration in module.propertySources) {
+          await _propertySources.preload(declaration.locations);
+        }
+      }
+    }
+
+    // Registrars and selectors add their modules while loading; those are
+    // read synchronously (async-only resources belong in BeanModules).
+    for (final component in _components) {
+      if (component is BeanModule) {
+        await preload(component);
+      }
+    }
+  }
+
   void _loadModules() {
-    final processor = PropertySourceProcessor(environment, this);
+    final processor = _propertySources;
     final conditionContext = _ConditionContext(this);
     final seen = <BeanModule>{};
     // Depth-first: imports first; per module, property sources before
@@ -716,6 +844,15 @@ class AnnotationConfigApplicationContext
       }
       module.imports.forEach(load);
       conditionContext.definition = null;
+      final registrars = [
+        for (final declaration in module.registrars)
+          if (declaration.conditions.every((c) => c.matches(conditionContext)))
+            declaration.create(),
+      ];
+      // Like Spring: selected modules before the importing one.
+      for (final selector in registrars.whereType<ImportSelector>()) {
+        _processImport(selector, load);
+      }
       for (final declaration in module.propertySources) {
         if (!declaration.conditions.every((c) => c.matches(conditionContext))) {
           continue;
@@ -725,6 +862,7 @@ class AnnotationConfigApplicationContext
           name: declaration.name,
           ignoreResourceNotFound: declaration.ignoreResourceNotFound,
           factory: declaration.factory,
+          encoding: declaration.encoding,
         );
       }
       for (final definition in module.definitions) {
@@ -742,15 +880,63 @@ class AnnotationConfigApplicationContext
         ),
       );
       introspector.registerAll(module.introspections);
+      for (final registrar in registrars) {
+        if (registrar is! ImportSelector) {
+          _processImport(registrar, load);
+        }
+      }
     }
 
-    _modules.forEach(load);
+    for (final component in _components) {
+      if (component is BeanModule) {
+        load(component);
+      } else {
+        _processImport(component, load);
+      }
+    }
   }
 
-  // Spring's order: programmatic registry post-processors, then registry
-  // post-processor beans (repeatedly, since they may register more), then
+  // Like Spring's ConfigurationClassParser.processImports (with
+  // ParserStrategyUtils' Aware callbacks) and BeanRegistryAdapter.
+  void _processImport(Object import, void Function(BeanModule) load) {
+    if (import is EnvironmentAware) {
+      import.setEnvironment(environment);
+    }
+    if (import is BeanFactoryAware) {
+      import.setBeanFactory(_factory);
+    }
+    if (import is ResourceLoaderAware) {
+      import.setResourceLoader(this);
+    }
+    switch (import) {
+      case final ImportSelector selector:
+        selector.selectImports().forEach(load);
+      case final ImportBeanDefinitionRegistrar registrar:
+        registrar.registerBeanDefinitions(_factory);
+      case final BeanRegistrar registrar:
+        registrar.register(
+          _BeanRegistryAdapter(_factory, environment),
+          environment,
+        );
+      case final _SingleBeanRegistrar registrar:
+        registrar.register(_BeanRegistryAdapter(_factory, environment));
+      default:
+        throw ArgumentError.value(
+          import,
+          'import',
+          '@Import expects a BeanRegistrar, ImportSelector or '
+              'ImportBeanDefinitionRegistrar (configuration classes are '
+              'imported by the generator)',
+        );
+    }
+  }
+
+  // Spring's PostProcessorRegistrationDelegate: programmatic registry
+  // post-processors, then registry post-processor beans in phases
+  // (repeating the last while they register more of themselves), then
   // postProcessBeanFactory on all of those and on the programmatic regular
-  // ones, finally regular post-processor beans not handled yet.
+  // ones, finally the regular post-processor beans not handled yet, in
+  // phases too.
   void _invokeBeanFactoryPostProcessors() {
     final processed = <String>{};
     final registryProcessors = <BeanDefinitionRegistryPostProcessor>[];
@@ -763,32 +949,66 @@ class AnnotationConfigApplicationContext
         regular.add(processor);
       }
     }
-    // Registry post-processor beans may register more of themselves.
-    while (true) {
-      final names = _factory
-          .getBeanNamesForType(BeanDefinitionRegistryPostProcessor)
-          .where(processed.add)
-          .toList();
-      if (names.isEmpty) {
-        break;
-      }
-      for (final processor in _sortedBeans<BeanDefinitionRegistryPostProcessor>(
-        names,
-      )) {
+    _postProcessorPhases<BeanDefinitionRegistryPostProcessor>(
+      BeanDefinitionRegistryPostProcessor,
+      processed,
+      (processor) {
         processor.postProcessBeanDefinitionRegistry(_factory);
         registryProcessors.add(processor);
-      }
-    }
+      },
+      repeatLastPhase: true,
+    );
     for (final processor in [...registryProcessors, ...regular]) {
       processor.postProcessBeanFactory(_factory);
     }
-    final names = _factory
-        .getBeanNamesForType(BeanFactoryPostProcessor)
-        .where(processed.add)
-        .toList();
-    for (final processor in _sortedBeans<BeanFactoryPostProcessor>(names)) {
-      processor.postProcessBeanFactory(_factory);
+    _postProcessorPhases<BeanFactoryPostProcessor>(
+      BeanFactoryPostProcessor,
+      processed,
+      (processor) => processor.postProcessBeanFactory(_factory),
+    );
+  }
+
+  // Post-processor beans of [type] not [processed] yet, in Spring's phases:
+  // `PriorityOrdered`, then `Ordered` (or `@Order`), then the rest. A
+  // phase's beans are created only after the previous phase was handled
+  // (so a PriorityOrdered processor already applies to the creation of
+  // the Ordered ones), sorted, and passed to [handle] one by one; the
+  // names are queried again before each phase, so a phase sees what the
+  // previous ones registered. With [repeatLastPhase] the last phase runs
+  // until no new name appears. [beforePhase] runs before each phase.
+  void _postProcessorPhases<T extends Object>(
+    Type type,
+    Set<String> processed,
+    void Function(T processor) handle, {
+    bool repeatLastPhase = false,
+    void Function(int phase)? beforePhase,
+  }) {
+    for (var phase = 0; phase <= 2; phase++) {
+      beforePhase?.call(phase);
+      while (true) {
+        final names = [
+          for (final name in _factory.getBeanNamesForType(type))
+            if (!processed.contains(name) && _phaseOf(name) <= phase) name,
+        ];
+        processed.addAll(names);
+        _sortedBeans<T>(names).forEach(handle);
+        if (!repeatLastPhase || phase < 2 || names.isEmpty) {
+          break;
+        }
+      }
     }
+  }
+
+  // 0: PriorityOrdered, 1: Ordered or @Order, 2: the rest.
+  int _phaseOf(String name) {
+    if (_factory.isTypeMatch(name, PriorityOrdered)) {
+      return 0;
+    }
+    // Registered singletons have no definition.
+    final order = _factory.containsBeanDefinition(name)
+        ? _factory.getBeanDefinition(name).order
+        : null;
+    return _factory.isTypeMatch(name, Ordered) || order != null ? 1 : 2;
   }
 
   /// Beans [names] as [T], `PriorityOrdered` first, then by order.
@@ -803,37 +1023,36 @@ class AnnotationConfigApplicationContext
   }
 
   void _registerBeanPostProcessors() {
-    final names = _factory.getBeanNamesForType(BeanPostProcessor);
-    // Like Spring: PriorityOrdered processors are registered before the
-    // Ordered ones are created, and those before the rest.
-    final priority = <String>[];
-    final ordered = <String>[];
-    final rest = <String>[];
-    for (final name in names) {
-      // Registered singletons have no definition.
-      final order = _factory.containsBeanDefinition(name)
-          ? _factory.getBeanDefinition(name).order
-          : null;
-      if (_factory.isTypeMatch(name, PriorityOrdered)) {
-        priority.add(name);
-      } else if (_factory.isTypeMatch(name, Ordered) || order != null) {
-        ordered.add(name);
-      } else {
-        rest.add(name);
-      }
-    }
     // AOP is on as soon as an aspect or advisor exists (here or in an
     // ancestor); its proxy creator is the first Ordered processor (Spring:
     // HIGHEST_PRECEDENCE), so later processors see the proxies.
     final usesAop = AspectAutoProxyCreator.isRequiredFor(_factory);
-    for (final group in [priority, ordered, rest]) {
-      if (usesAop && identical(group, ordered)) {
-        _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
-      }
-      for (final processor in _sortedBeans<BeanPostProcessor>(group)) {
-        _factory.addBeanPostProcessor(processor);
-      }
+    // Like Spring's BeanPostProcessorChecker: counts the processors still
+    // to come, to report beans created before all of them exist (only
+    // needed when there are post-processor beans to create).
+    final names = _factory.getBeanNamesForType(BeanPostProcessor);
+    if (names.isNotEmpty) {
+      _factory.addBeanPostProcessor(
+        _BeanPostProcessorChecker(
+          this,
+          names,
+          _factory.beanPostProcessorCount +
+              1 +
+              names.length +
+              (usesAop ? 1 : 0),
+        ),
+      );
     }
+    _postProcessorPhases<BeanPostProcessor>(
+      BeanPostProcessor,
+      <String>{},
+      _factory.addBeanPostProcessor,
+      beforePhase: (phase) {
+        if (usesAop && phase == 1) {
+          _factory.addBeanPostProcessor(AspectAutoProxyCreator(_factory));
+        }
+      },
+    );
     // Last, so it sees the proxies (like Spring re-registering its
     // ApplicationListenerDetector at the end).
     _factory.addBeanPostProcessor(_listenerDetector);
@@ -1170,6 +1389,38 @@ class AnnotationConfigApplicationContext
     );
   }
 
+  // The executor of an `@Async` listener (Spring's
+  // AsyncExecutionAspectSupport.determineAsyncExecutor): the named bean,
+  // else the only (or primary) TaskExecutor, else the one named
+  // `taskExecutor`, else a SimpleAsyncTaskExecutor of the context. `null`
+  // while the context has no TaskExecutor bean at all: like Spring
+  // without `@EnableAsync`, `@Async` is ignored.
+  TaskExecutor? _asyncExecutor(
+    Async async,
+    EventListenerMethod<Object> method,
+  ) {
+    if (async.value case final name?) {
+      if (!_factory.containsBean(name) ||
+          !_factory.isTypeMatch(name, TaskExecutor)) {
+        throw StateError(
+          "No TaskExecutor bean named '$name' for @Async on "
+          '${method.id}; declare one or remove the qualifier.',
+        );
+      }
+      return _factory.getBeanByName(name) as TaskExecutor;
+    }
+    if (!_factory.containsBeanOfType(TaskExecutor)) {
+      return null;
+    }
+    return _defaultAsyncExecutor ??=
+        _factory.getBeanProvider<TaskExecutor>().getIfUnique() ??
+        (_factory.containsBean(defaultTaskExecutorBeanName) &&
+                _factory.isTypeMatch(defaultTaskExecutorBeanName, TaskExecutor)
+            ? _factory.getBeanByName(defaultTaskExecutorBeanName)
+                  as TaskExecutor
+            : SimpleAsyncTaskExecutor(errorHandler: _asyncListenerFailed));
+  }
+
   // ---------------------------------------------------------------------
   // Messages and resources
   // ---------------------------------------------------------------------
@@ -1362,8 +1613,20 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   @override
   bool supportsEvent(Object event) => _method.supports(event);
 
+  // Like Spring's ApplicationListenerMethodAdapter.processEvent: the
+  // condition is checked here, inside the multicaster's error handling;
+  // an `@Async` method then runs on its executor.
   @override
   void onApplicationEvent(Object event) {
+    if (!_method.shouldHandle(event)) {
+      return;
+    }
+    if (_method.async case final async?) {
+      if (_context._asyncExecutor(async, _method) case final executor?) {
+        executor.execute(() => _invokeAsync(event));
+        return;
+      }
+    }
     final result = _method.invoke(_target(), event);
     if (result is Future<Object?>) {
       // Like Spring's CompletionStage handling: the value is published
@@ -1372,6 +1635,20 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
       return;
     }
     _publishResult(result);
+  }
+
+  // An `@Async` invocation: a failure goes to the error handler (Spring's
+  // AsyncUncaughtExceptionHandler), a result is published when it arrives.
+  Future<void> _invokeAsync(Object event) async {
+    try {
+      var result = _method.invoke(_target(), event);
+      if (result is Future<Object?>) {
+        result = await result;
+      }
+      _publishResult(result);
+    } catch (error, stackTrace) {
+      _context._asyncListenerFailed(error, stackTrace);
+    }
   }
 
   // The bean declaring the method: for a FactoryBean, the factory itself
@@ -1453,6 +1730,122 @@ final class _ApplicationListenerDetector
     if (bean is GenericApplicationListener) {
       _context.removeApplicationListener(bean);
     }
+  }
+}
+
+/// A bean registered by `AnnotationConfigApplicationContext.registerBean`.
+final class _SingleBeanRegistrar {
+  _SingleBeanRegistrar(this.register);
+
+  final void Function(BeanRegistry registry) register;
+}
+
+/// The [BeanRegistry] handed to a [BeanRegistrar], like Spring 7's
+/// `BeanRegistryAdapter`.
+final class _BeanRegistryAdapter implements BeanRegistry {
+  _BeanRegistryAdapter(this._factory, this._environment);
+
+  final DefaultListableBeanFactory _factory;
+  final Environment _environment;
+
+  @override
+  String registerBean<T extends Object>(
+    T Function(DependencyResolver context) supplier, {
+    String? name,
+    List<Type>? types,
+    String scope = ScopeType.singleton,
+    bool lazy = false,
+    bool primary = false,
+    bool fallback = false,
+    bool autowireCandidate = true,
+    bool defaultCandidate = true,
+    int? order,
+    String? description,
+    List<String> aliases = const [],
+    List<String> dependsOn = const [],
+  }) {
+    final beanName = name ?? _uniqueName('$T');
+    _factory.registerBeanDefinition(
+      BeanDefinition<T>(
+        name: beanName,
+        create: supplier,
+        types: types,
+        scope: scope,
+        lazy: lazy,
+        primary: primary,
+        fallback: fallback,
+        autowireCandidate: autowireCandidate,
+        defaultCandidate: defaultCandidate,
+        order: order,
+        description: description,
+        aliases: aliases,
+        dependsOn: dependsOn,
+        source: 'BeanRegistrar',
+      ),
+    );
+    return beanName;
+  }
+
+  // Spring's BeanDefinitionReaderUtils.uniqueBeanName: `Type#0`, `Type#1`.
+  String _uniqueName(String base) {
+    for (var counter = 0; ; counter++) {
+      final candidate = '$base#$counter';
+      if (!_factory.containsBeanDefinition(candidate) &&
+          !_factory.containsBean(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  @override
+  void registerAlias(String name, String alias) =>
+      _factory.registerAlias(name, alias);
+
+  @override
+  void register(BeanRegistrar registrar) =>
+      registrar.register(this, _environment);
+}
+
+/// Spring's `BeanPostProcessorChecker`: logs (info) a bean created while
+/// the post-processors are registered, since the processors registered
+/// after it never see it (no AOP proxy, for example) — usually a
+/// post-processor depending on a regular bean.
+final class _BeanPostProcessorChecker extends BeanPostProcessor {
+  _BeanPostProcessorChecker(
+    this._context,
+    this._postProcessorNames,
+    this._targetCount,
+  );
+
+  final AnnotationConfigApplicationContext _context;
+  final List<String> _postProcessorNames;
+  final int _targetCount;
+
+  @override
+  Object postProcessAfterInitialization(Object bean, String beanName) {
+    final factory = _context._factory;
+    if (bean is BeanPostProcessor ||
+        bean is Advisor ||
+        factory.beanPostProcessorCount >= _targetCount ||
+        !factory.containsBeanDefinition(beanName) ||
+        factory.getBeanDefinition(beanName).aspect != null ||
+        !_log.isEnabled(SpringLogLevel.info)) {
+      return bean;
+    }
+    final creating = _postProcessorNames
+        .where(factory.isCurrentlyInCreation)
+        .firstOrNull;
+    _log.info(
+      "Bean '$beanName' of type [${bean.runtimeType}] is not eligible for "
+      'getting processed by all BeanPostProcessors (for example: not '
+      'eligible for auto-proxying).'
+      '${creating == null ? '' : ' Is this bean getting eagerly injected '
+                'into a currently created BeanPostProcessor [$creating]? '
+                'Check the corresponding BeanPostProcessor declaration and '
+                'its dependencies (an ObjectProvider or @Lazy dependency '
+                'defers the creation).'}',
+    );
+    return bean;
   }
 }
 

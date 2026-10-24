@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
 /// Parses the `.properties` format Spring uses for config and message files.
@@ -175,12 +177,18 @@ abstract final class PropertiesParser {
 ///     new FileSystemResource("config/app.properties"));
 /// ```
 abstract final class PropertiesLoaderUtils {
-  /// Reads and parses [resource] asynchronously.
-  static Future<Map<String, String>> loadProperties(Resource resource) async =>
-      PropertiesParser.parse(await resource.readAsString());
+  /// Reads and parses [resource] asynchronously, decoding it with
+  /// [encoding].
+  static Future<Map<String, String>> loadProperties(
+    Resource resource, {
+    Encoding encoding = utf8,
+  }) async =>
+      PropertiesParser.parse(await resource.readAsString(encoding: encoding));
 
-  /// Reads and parses [resource] synchronously; throws [UnsupportedError]
-  /// for async-only resources.
-  static Map<String, String> loadPropertiesSync(Resource resource) =>
-      PropertiesParser.parse(resource.readAsStringSync());
+  /// Reads and parses [resource] synchronously, decoding it with
+  /// [encoding]; throws [UnsupportedError] for async-only resources.
+  static Map<String, String> loadPropertiesSync(
+    Resource resource, {
+    Encoding encoding = utf8,
+  }) => PropertiesParser.parse(resource.readAsStringSync(encoding: encoding));
 }

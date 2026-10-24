@@ -251,7 +251,7 @@ final class SpringWorkspace {
         }
       } else if (entity is File) {
         if (name.endsWith('.dart') &&
-            !name.endsWith('.beans.dart') &&
+            !name.endsWith('.spring.dart') &&
             !name.endsWith('.g.dart')) {
           dart.add(entity.path);
           _readDart(entity);

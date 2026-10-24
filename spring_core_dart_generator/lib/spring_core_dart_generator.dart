@@ -2,7 +2,7 @@
 ///
 /// Add it as a dev dependency next to `build_runner`; `build.yaml` applies
 /// the builder automatically to packages that depend on it. Each library
-/// with a `@ComponentScan()` variable gets a `<file>.beans.dart` module.
+/// with a `@ComponentScan()` variable gets a `<file>.spring.dart` module.
 ///
 /// ```yaml
 /// dev_dependencies:

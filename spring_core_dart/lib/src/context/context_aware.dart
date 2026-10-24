@@ -137,17 +137,24 @@ abstract interface class MessageSourceAware implements Aware {
   void setMessageSource(MessageSource messageSource);
 }
 
-/// Receives a `${...}` resolver, like Spring's
-/// `EmbeddedValueResolverAware`.
+/// Receives a resolver of `${...}` placeholders and `#{...}` SpEL
+/// expressions, like Spring's `EmbeddedValueResolverAware` (its
+/// `EmbeddedValueResolver`): placeholders are resolved first, then the
+/// result is evaluated by the factory's `BeanExpressionResolver`; a
+/// non-string result is converted with `toString()` (`#{null}` gives an
+/// empty string).
 ///
 /// ```dart
 /// @Component()
 /// class Paths implements EmbeddedValueResolverAware {
 ///   late String home;
+///   late String cache;
 ///
 ///   @override
-///   void setEmbeddedValueResolver(StringValueResolver resolver) =>
-///       home = resolver(r'${app.home:/tmp}');
+///   void setEmbeddedValueResolver(StringValueResolver resolver) {
+///     home = resolver(r'${app.home:/tmp}');
+///     cache = resolver(r"#{'${app.home:/tmp}' + '/cache'}");
+///   }
 /// }
 /// ```
 ///
@@ -157,11 +164,12 @@ abstract interface class MessageSourceAware implements Aware {
 /// class Paths implements EmbeddedValueResolverAware {
 ///   public void setEmbeddedValueResolver(StringValueResolver resolver) {
 ///     home = resolver.resolveStringValue("${app.home:/tmp}");
+///     cache = resolver.resolveStringValue("#{'${app.home:/tmp}' + '/cache'}");
 ///   }
 /// }
 /// ```
 abstract interface class EmbeddedValueResolverAware implements Aware {
-  /// Called after injection with the factory's placeholder resolver.
+  /// Called after injection with the placeholder and SpEL resolver.
   void setEmbeddedValueResolver(StringValueResolver resolver);
 }
 
@@ -199,7 +207,7 @@ final class ApplicationContextAwareProcessor extends BeanPostProcessor {
       bean.setEnvironment(context.environment);
     }
     if (bean is EmbeddedValueResolverAware) {
-      bean.setEmbeddedValueResolver(context.beanFactory.resolveEmbeddedValue);
+      bean.setEmbeddedValueResolver(_resolveEmbeddedValue);
     }
     if (bean is ResourceLoaderAware) {
       bean.setResourceLoader(context);
@@ -214,5 +222,16 @@ final class ApplicationContextAwareProcessor extends BeanPostProcessor {
       bean.setApplicationContext(context);
     }
     return bean;
+  }
+
+  // Spring's EmbeddedValueResolver: `${...}` first, then `#{...}`.
+  String _resolveEmbeddedValue(String value) {
+    final factory = context.beanFactory;
+    final resolved = factory.resolveEmbeddedValue(value);
+    final expressions = factory.beanExpressionResolver;
+    if (expressions == null) {
+      return resolved;
+    }
+    return expressions.evaluate(resolved, factory)?.toString() ?? '';
   }
 }

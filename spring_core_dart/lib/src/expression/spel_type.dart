@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
+import 'package:spring_core_dart/src/expression/java_format.dart';
 import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 
 /// A type usable in `T(Name)`, `new Name(...)`, `new Name[n]` and
@@ -342,6 +343,11 @@ class StandardTypeLocator implements TypeLocator {
   static SpelType _javaInteger(String name, int min, int max) =>
       SpelType.of<int>(
         name,
+        // `new Integer(5)`, `new Long('5')`.
+        constructors: {
+          '': (Object value) =>
+              value is int ? value : _parseJavaInt(value.toString()),
+        },
         staticFields: {'MAX_VALUE': () => max, 'MIN_VALUE': () => min},
         staticMethods: {
           'parseInt': _parseJavaInt,
@@ -366,6 +372,10 @@ class StandardTypeLocator implements TypeLocator {
 
   static SpelType _javaDouble(String name) => SpelType.of<double>(
     name,
+    constructors: {
+      '': (Object value) =>
+          value is num ? value.toDouble() : double.parse(value.toString()),
+    },
     staticFields: {
       'MAX_VALUE': () => double.maxFinite,
       'MIN_VALUE': () => double.minPositive,
@@ -390,6 +400,10 @@ class StandardTypeLocator implements TypeLocator {
 
   static SpelType _javaBoolean(String name) => SpelType.of<bool>(
     name,
+    constructors: {
+      '': (Object? value) =>
+          value is bool ? value : '$value'.toLowerCase() == 'true',
+    },
     staticFields: {'TRUE': () => true, 'FALSE': () => false},
     staticMethods: {
       'parseBoolean': (String? value) => value?.toLowerCase() == 'true',
@@ -400,6 +414,31 @@ class StandardTypeLocator implements TypeLocator {
       'logicalXor': (bool a, bool b) => a != b,
     },
   );
+
+  // Java's Character, over single-character strings (SpEL has no char
+  // literals: 'a' is a String).
+  static SpelType _javaCharacter(String name) => SpelType(
+    name,
+    isInstance: (value) => value is String && value.length == 1,
+    type: String,
+    staticFields: {'MIN_VALUE': () => '\u0000', 'MAX_VALUE': () => '\uffff'},
+    staticMethods: {
+      'isDigit': (String c) => _single(c, RegExp(r'^\p{Nd}$', unicode: true)),
+      'isLetter': (String c) => _single(c, RegExp(r'^\p{L}$', unicode: true)),
+      'isLetterOrDigit': (String c) =>
+          _single(c, RegExp(r'^[\p{L}\p{Nd}]$', unicode: true)),
+      'isWhitespace': (String c) => _single(c, RegExp(r'^\s$')),
+      'isUpperCase': (String c) => c.toUpperCase() == c && c.toLowerCase() != c,
+      'isLowerCase': (String c) => c.toLowerCase() == c && c.toUpperCase() != c,
+      'toUpperCase': (String c) => c.toUpperCase(),
+      'toLowerCase': (String c) => c.toLowerCase(),
+      'valueOf': (Object? c) => '$c',
+      'toString': (Object? c) => '$c',
+      'getNumericValue': (String c) => int.tryParse(c, radix: 36) ?? -1,
+    },
+  );
+
+  static bool _single(String c, RegExp pattern) => pattern.hasMatch(c);
 
   static SpelType _list(String name) => SpelType.of<List<Object?>>(
     name,
@@ -481,6 +520,11 @@ class StandardTypeLocator implements TypeLocator {
       staticMethods: {
         'valueOf': (Object? value) => '$value',
         'fromCharCode': String.fromCharCode,
+        // Java's String.format(format, args...).
+        'format': VarargsFunction(
+          (Object? format, List<Object?> args) => javaFormat('$format', args),
+          fixedArity: 1,
+        ),
         'fromCharCodes': (Iterable<int> codes) => String.fromCharCodes(codes),
         // Java's String.join(delimiter, elements...) or (delimiter,
         // iterable).
@@ -543,6 +587,8 @@ class StandardTypeLocator implements TypeLocator {
     SpelType.of<num>('Number'),
     _javaBoolean('Boolean'),
     _javaBoolean('boolean'),
+    _javaCharacter('Character'),
+    _javaCharacter('char'),
     // java.lang.Math: real functions return doubles, like Java.
     SpelType(
       'Math',

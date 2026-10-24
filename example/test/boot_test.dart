@@ -1,5 +1,5 @@
 // The shop started the Spring Boot way (bin/shop.dart + generated
-// bin/shop.beans.dart), tested with spring_boot_starter_test.
+// bin/shop.spring.dart), tested with spring_boot_starter_test.
 @TestOn('vm')
 library;
 
@@ -11,7 +11,7 @@ import 'package:spring_core_dart_example/src/boot/shop_properties.dart';
 import 'package:spring_core_dart_example/src/payments/payments.dart';
 import 'package:test/test.dart';
 
-import '../bin/shop.beans.dart';
+import '../bin/shop.spring.dart';
 
 class FakeGateway implements PaymentGateway {
   final charged = <double>[];

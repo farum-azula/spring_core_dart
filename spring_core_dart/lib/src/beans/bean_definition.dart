@@ -58,6 +58,11 @@ enum DependencyKind {
 
   /// A `@Value` expression.
   value,
+
+  /// A `@Resource` field or setter: the bean named [Dependency.name], or
+  /// with [Dependency.fallbackToType] a bean of the type when no bean has
+  /// that name.
+  resource,
 }
 
 /// A declared dependency of a bean, used to validate the bean graph at
@@ -97,7 +102,8 @@ final class Dependency {
     this.name,
     this.optional = false,
   }) : kind = DependencyKind.single,
-       expression = null;
+       expression = null,
+       fallbackToType = false;
 
   /// All beans of [type] as a list or set.
   const Dependency.collection(
@@ -106,33 +112,50 @@ final class Dependency {
     this.optional = false,
   }) : kind = DependencyKind.collection,
        name = null,
-       expression = null;
+       expression = null,
+       fallbackToType = false;
 
   /// All beans of [type] by name.
   const Dependency.map(this.type, {this.qualifier, this.optional = false})
     : kind = DependencyKind.map,
       name = null,
-      expression = null;
+      expression = null,
+      fallbackToType = false;
 
   /// A lazy provider of [type]; [name] (the parameter or field name)
   /// selects among several candidates like for a single bean.
   const Dependency.provider(this.type, {this.qualifier, this.name})
     : kind = DependencyKind.provider,
       optional = true,
-      expression = null;
+      expression = null,
+      fallbackToType = false;
 
   /// A `@Lazy` bean of [type]: validated at refresh, resolved on first use.
   const Dependency.lazy(this.type, {this.qualifier, this.name})
     : kind = DependencyKind.lazy,
       optional = false,
-      expression = null;
+      expression = null,
+      fallbackToType = false;
 
   /// A `@Value` [expression].
   const Dependency.value(String this.expression, {this.optional = false})
     : kind = DependencyKind.value,
       type = String,
       qualifier = null,
-      name = null;
+      name = null,
+      fallbackToType = false;
+
+  /// A `@Resource` field or setter of [type]: the bean named [name]; with
+  /// [fallbackToType] (the name was not given explicitly) a bean of [type]
+  /// when no bean has that name.
+  const Dependency.resource(
+    this.type,
+    String this.name, {
+    this.fallbackToType = false,
+    this.optional = false,
+  }) : kind = DependencyKind.resource,
+       qualifier = null,
+       expression = null;
 
   /// How the dependency is injected.
   final DependencyKind kind;
@@ -153,9 +176,14 @@ final class Dependency {
   /// The `@Value` expression for [DependencyKind.value].
   final String? expression;
 
+  /// Whether a [DependencyKind.resource] falls back to injection by type
+  /// when no bean is named [name].
+  final bool fallbackToType;
+
   @override
   String toString() => switch (kind) {
     DependencyKind.value => '@Value("$expression")',
+    DependencyKind.resource => "@Resource $type '$name'",
     _ =>
       '${kind == DependencyKind.single ? '' : '${kind.name} of '}$type'
           '${qualifier == null ? '' : "('$qualifier')"}'
@@ -217,6 +245,11 @@ final class BeanDefinition<T extends Object> {
   ///   `@Bean(destroyMethod:)`); a returned `Future` is awaited by
   ///   `closeAsync()`.
   /// - [types]: lookup types; defaults to `[T]`.
+  /// - `scopedProxy`: for a custom-scoped (or prototype) bean, wraps a
+  ///   function returning the current instance into an object of `T`
+  ///   that forwards every call to it (`@Scope(proxyMode:)`, see
+  ///   [ScopedProxyMode]); it is injected and returned instead of the
+  ///   instance.
   BeanDefinition({
     required this.name,
     required this._create,
@@ -225,6 +258,7 @@ final class BeanDefinition<T extends Object> {
     this._initMethod,
     this._preDestroy,
     this._destroyMethod,
+    this._scopedProxy,
     List<Type>? types,
     this.scope = ScopeType.singleton,
     this.lazy = false,
@@ -387,6 +421,7 @@ final class BeanDefinition<T extends Object> {
   final FutureOr<void> Function(T bean)? _initMethod;
   final FutureOr<void> Function(T bean)? _preDestroy;
   final FutureOr<void> Function(T bean)? _destroyMethod;
+  final T Function(T Function() target)? _scopedProxy;
 
   /// The declared bean type.
   Type get beanType => T;
@@ -402,6 +437,14 @@ final class BeanDefinition<T extends Object> {
 
   /// Whether the definition has destroy callbacks of its own.
   bool get hasDestroyCallbacks => _preDestroy != null || _destroyMethod != null;
+
+  /// Whether lookups and injection get a scoped proxy instead of the
+  /// instance (see [createScopedProxy]); never for singletons.
+  bool get hasScopedProxy => _scopedProxy != null && !isSingleton;
+
+  /// The scoped proxy forwarding to the instance [target] returns.
+  Object createScopedProxy(Object Function() target) =>
+      _scopedProxy!(() => target() as T);
 
   /// Whether this bean is selected by [qualifier] (name, alias or
   /// qualifier).

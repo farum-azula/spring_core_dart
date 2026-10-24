@@ -157,6 +157,8 @@ class DefaultListableBeanFactory
   final _resolvable = <Type, Object>{};
   // (singleton, scoped bean) pairs already warned about.
   final _scopedInjectionWarnings = <(String, String)>{};
+  // Scoped proxies by bean name (definitions with a scopedProxy).
+  final _scopedProxies = <String, Object>{};
 
   // Raw instances of custom-scoped beans, keyed by the exposed object.
   final _scopedRaw = Expando<Object>('scopedRaw');
@@ -241,6 +243,9 @@ class DefaultListableBeanFactory
         if (_canonical(alias) == canonical) alias,
     ];
     aliases.forEach(_aliases.remove);
+    _scopedInjectionWarnings.removeWhere(
+      (pair) => pair.$1 == canonical || pair.$2 == canonical,
+    );
     _clearByTypeCache();
   }
 
@@ -388,13 +393,15 @@ class DefaultListableBeanFactory
     }
     // A synthetic definition makes the object visible to lookups by type;
     // the instance is stored directly, so `create` is never called. A
-    // FactoryBean is dereferenced by name (its product types are unknown).
+    // FactoryBean is dereferenced by name and found by its objectType.
     _manualDefinitions[name] = BeanDefinition<Object>(
       name: name,
       types: types ?? [singleton.runtimeType],
       create: (_) => singleton,
       source: 'registerSingleton',
-      factoryObjectTypes: singleton is FactoryBean<Object> ? const [] : null,
+      factoryObjectTypes: singleton is FactoryBean<Object>
+          ? [singleton.objectType]
+          : null,
     );
     _clearByTypeCache();
     _singletons[name] = singleton;
@@ -612,11 +619,11 @@ class DefaultListableBeanFactory
   ///
   /// Only autowire candidates take part; without a [qualifier] only
   /// default candidates. Spring's `isSelfReference`: the requester itself
-  /// and the beans of its own `@Bean` methods are never candidates for its
-  /// collections ([multiple]), and for a single dependency only when
+  /// and the beans of its own `@Bean` methods are candidates only when
   /// nothing else matches — so composites and decorators
   /// (`Composite(List<Greeter>)`, `Caching(Greeter delegate)`) get the
-  /// other beans of their own type.
+  /// other beans of their own type. As Spring's final pass, a collection
+  /// ([multiple]) then gets the own `@Bean` products, never the requester.
   List<_Candidate> _autowireCandidates(
     Type type,
     String? qualifier, {
@@ -638,7 +645,17 @@ class DefaultListableBeanFactory
       for (final candidate in all)
         if (!_isSelfReference(requester, candidate)) candidate,
     ];
-    return !multiple && others.isEmpty ? all : others;
+    if (others.isNotEmpty) {
+      return others;
+    }
+    return multiple
+        ? [
+            for (final candidate in all)
+              if (!identical(candidate.owner, this) ||
+                  candidate.beanName != requester)
+                candidate,
+          ]
+        : all;
   }
 
   bool _isSelfReference(String requester, _Candidate candidate) {
@@ -957,12 +974,15 @@ class DefaultListableBeanFactory
         requesting.isSingleton &&
         !target.isSingleton &&
         !target.isPrototype &&
+        !target.hasScopedProxy &&
         _scopedInjectionWarnings.add((requester, candidate.beanName))) {
       _log.warning(
         "Bean '${candidate.beanName}' of scope '${target.scope}' is injected "
         "directly into the singleton '$requester', which keeps the first "
-        'instance. Inject an ObjectProvider<${target.beanType}> or mark the '
-        'injection point @Lazy() to get the current instance on every use.',
+        'instance. Inject an ObjectProvider<${target.beanType}>, mark the '
+        'injection point @Lazy() or declare the bean with '
+        '@Scope(proxyMode: ScopedProxyMode.targetClass) to get the current '
+        'instance on every use.',
       );
     }
   }
@@ -1324,6 +1344,54 @@ class DefaultListableBeanFactory
   });
 
   @override
+  T resource<T extends Object>(String name, {bool fallbackToType = false}) =>
+      _injecting(
+        Dependency.resource(T, name, fallbackToType: fallbackToType),
+        () =>
+            _resource<T>(name, fallbackToType: fallbackToType, required: true)!,
+      );
+
+  @override
+  T? optionalResource<T extends Object>(
+    String name, {
+    bool fallbackToType = false,
+  }) => _injecting(
+    Dependency.resource(
+      T,
+      name,
+      fallbackToType: fallbackToType,
+      optional: true,
+    ),
+    () => _resource<T>(name, fallbackToType: fallbackToType, required: false),
+  );
+
+  /// Spring's `autowireResource`: by type when the name is the default one
+  /// and no bean has it, else the bean of that name.
+  T? _resource<T extends Object>(
+    String name, {
+    required bool fallbackToType,
+    required bool required,
+  }) {
+    final requester = _currentBean;
+    if (!containsBean(name)) {
+      if (fallbackToType) {
+        return _resolveDependency<T>(
+          name: name,
+          requester: requester,
+          required: required,
+          direct: true,
+        );
+      }
+      if (!required) {
+        return null;
+      }
+      throw NoSuchBeanDefinitionException.named(name, requiredBy: requester);
+    }
+    // getBeanByName records the dependency on a local bean.
+    return _castTo<T>(getBeanByName(name), name);
+  }
+
+  @override
   ObjectProvider<T> provider<T extends Object>({
     String? qualifier,
     String? name,
@@ -1423,6 +1491,20 @@ class DefaultListableBeanFactory
           _disposables.add(name);
         }
         return exposed;
+      case _ when definition.hasScopedProxy:
+        // One proxy asking the scope on every call (ScopedProxyMode).
+        return _scopedProxies[name] ??= definition.createScopedProxy(
+          () => _scopedInstance(definition),
+        );
+      case _:
+        return _scopedInstance(definition);
+    }
+  }
+
+  /// A new prototype, or the current instance of a custom scope.
+  Object _scopedInstance(BeanDefinition<Object> definition) {
+    final name = definition.name;
+    switch (definition.scope) {
       case ScopeType.prototype:
         // Prototypes are not tracked: no destroy callbacks.
         return _createBean(definition).$2;
@@ -1755,11 +1837,12 @@ class DefaultListableBeanFactory
     _definitions.keys.forEach(visit);
   }
 
-  /// Names of the local definitions among [candidates] (graph edges).
+  /// Names of the local definitions among [candidates] (graph edges); a
+  /// scoped proxy resolves its target on use, so it is no edge.
   List<String> _edges(Iterable<_Candidate> candidates) => [
     for (final candidate in candidates)
       if (identical(candidate.owner, this) &&
-          _definitions.containsKey(candidate.beanName))
+          !(_definitions[candidate.beanName]?.hasScopedProxy ?? true))
         candidate.beanName,
   ];
 
@@ -1822,6 +1905,29 @@ class DefaultListableBeanFactory
           );
         }
         return _edges(candidates);
+      case DependencyKind.resource:
+        final name = dependency.name!;
+        if (!containsBean(name)) {
+          if (dependency.fallbackToType) {
+            return _validateDependency(
+              definition,
+              Dependency(
+                dependency.type,
+                name: name,
+                optional: dependency.optional,
+              ),
+            );
+          }
+          if (!dependency.optional) {
+            throw NoSuchBeanDefinitionException.named(
+              name,
+              requiredBy: definition.name,
+            );
+          }
+          return const [];
+        }
+        final target = _canonical(_stripFactoryPrefix(name));
+        return [if (!(_definitions[target]?.hasScopedProxy ?? true)) target];
       case DependencyKind.lazy:
         // Checked like a single dependency, but resolved on first use: no
         // edge, so `@Lazy` breaks cycles (including self-injection).
@@ -1909,6 +2015,7 @@ class DefaultListableBeanFactory
       (name, _) => !_manualDefinitions.containsKey(name),
     );
     _factoryProducts.clear();
+    _scopedProxies.clear();
     _creationOrder.clear();
     _disposables.clear();
     _dependents.clear();
@@ -1957,6 +2064,7 @@ class DefaultListableBeanFactory
 
   void _forgetDependencies(String name) {
     _factoryProducts.remove(name);
+    _scopedProxies.remove(name);
     final dependencies = _dependencies.remove(name);
     if (dependencies != null) {
       for (final dependency in dependencies) {
@@ -2183,6 +2291,9 @@ final class _BeanObjectProvider<T extends Object> extends Iterable<T>
 
   @override
   T getObject() => _resolve(required: true)!;
+
+  @override
+  T get() => getObject();
 
   @override
   T? getIfAvailable([T Function()? defaultSupplier]) =>
