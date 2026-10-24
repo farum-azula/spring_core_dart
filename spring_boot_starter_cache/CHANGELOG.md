@@ -1,5 +1,10 @@
 ## Unreleased
 
+- the auto-configured `cacheManager` backs off for a `CacheManager` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application (there were two); its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`
+- `@CacheConfig` and class-level cache annotations are read from the class that declares the method's body, then its superclasses (the nearest wins, per annotation type for class-level ones), like Spring's `DefaultCacheConfig(method.getDeclaringClass())` and `findAnnotation`: a base class with `@CacheConfig(cacheNames:)` no longer fails the start, a base class with `@Cacheable` caches its methods in subclass beans, and a subclass's class-level annotations no longer apply to methods it inherits; needs the matching `spring_core_dart` and generator
+- Cache annotations on a superclass or mixin method apply to an override without its own (`MethodSignature.mergedAnnotations`, nearest first; its own and its interface declarations' win), like Spring's `AnnotationCacheOperationSource`; needs the matching `spring_core_dart` and generator
+- An empty `spring.cache.cache-names=` keeps the caches dynamic, like Boot (it fixed an empty set, so every cache was unknown).
+- On a method returning a `Future`, an error before the call (an invalid SpEL `key` or `condition`, a failing cache) is a failed `Future` instead of a synchronous throw.
 - Class-level `@Cacheable` / `@CachePut` / `@CacheEvict` / `@Caching` apply to every public method without cache annotations of its own, like Spring (they were ignored).
 - `#root.method.name` (and `returnType`, `parameterTypes`, `parameterNames`, `parameterCount`) in cache SpEL.
 - A `null` cache key fails the call with an `ArgumentError`, like Spring (it was used as a key).

@@ -194,16 +194,159 @@ class Never implements ConfigurationCondition {
   bool matches(ConditionContext context) => false;
 }
 
+class Always implements ConfigurationCondition {
+  const Always(this.phase);
+  final ConfigurationPhase phase;
+  @override
+  ConfigurationPhase get configurationPhase => phase;
+  @override
+  bool matches(ConditionContext context) {
+    log.add('always ${phase.name}');
+    return true;
+  }
+}
+
+class RecordingRegistrar implements ImportBeanDefinitionRegistrar {
+  RecordingRegistrar(this.name, this.registered);
+  final String name;
+  final List<String> registered;
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) =>
+      registered.add(name);
+}
+
+class AuditAll implements GenericApplicationListener {
+  final seen = <Object>[];
+  @override
+  bool supportsEvent(Object event) =>
+      event is PayloadApplicationEvent<Object> && event.payload is Ping;
+  @override
+  void onApplicationEvent(Object event) =>
+      seen.add((event as PayloadApplicationEvent<Object>).payload);
+}
+
+class PingAudit with SmartApplicationListener {
+  final seen = <Object>[];
+  @override
+  bool supportsEventType(Type eventType) =>
+      eventType == ContextRefreshedEvent ||
+      eventType == (PayloadApplicationEvent<Ping>);
+  @override
+  void onApplicationEvent(Object event) => seen.add(event);
+}
+
 BeanDefinition<Clock> clock(
   String name, {
   List<Condition> conditions = const [],
   bool beanMethod = true,
+  String configuration = 'config',
+  String? source,
 }) => BeanDefinition<Clock>(
   name: name,
   create: (_) => Clock(name),
   conditions: conditions,
-  factoryBeanName: beanMethod ? 'config' : null,
+  source: source,
+  factoryBeanName: beanMethod ? configuration : null,
   factoryMethodName: beanMethod ? name : null,
+);
+
+class ConfigClass {}
+
+// A @Configuration class.
+BeanDefinition<ConfigClass> configClass(
+  String name, {
+  List<Condition> conditions = const [],
+  String? source,
+}) => BeanDefinition<ConfigClass>(
+  name: name,
+  create: (_) => ConfigClass(),
+  conditions: conditions,
+  source: source,
+  annotations: const [Configuration()],
+);
+
+class OnClock implements ConfigurationCondition {
+  const OnClock(this.phase);
+  final ConfigurationPhase phase;
+  @override
+  ConfigurationPhase get configurationPhase => phase;
+  @override
+  bool matches(ConditionContext context) =>
+      context.beanFactory.getBeanNamesForType(Clock).isNotEmpty;
+}
+
+class PropertySet implements Condition {
+  const PropertySet(this.key);
+  final String key;
+  @override
+  bool matches(ConditionContext context) =>
+      context.environment.containsProperty(key);
+}
+
+class ClockRegistrar implements ImportBeanDefinitionRegistrar {
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) =>
+      registry.registerBeanDefinition(
+        BeanDefinition<Clock>(
+          name: 'registrarClock',
+          create: (_) => Clock('registrarClock'),
+        ),
+      );
+}
+
+class ClockBeanRegistrar implements BeanRegistrar {
+  @override
+  void register(BeanRegistry registry, Environment environment) =>
+      registry.registerBean<Clock>(
+        (_) => Clock('registrarClock'),
+        name: 'registrarClock',
+      );
+}
+
+// Counts its evaluations in [log].
+class Counted implements Condition {
+  const Counted();
+  @override
+  bool matches(ConditionContext context) {
+    log.add('counted');
+    return true;
+  }
+}
+
+// The generator's shapes for class [name] of library `lib`: its class
+// conditions as a ConditionGroup, the class, its @Bean methods, its imports.
+List<Condition> classGroup(String name, List<Condition> conditions) => [
+  ConditionGroup('lib#$name', conditions),
+];
+
+BeanDefinition<ConfigClass> config(
+  String name, [
+  List<Condition> conditions = const [],
+]) => configClass(
+  name.toLowerCase(),
+  conditions: conditions,
+  source: 'lib#$name',
+);
+
+BeanDefinition<Clock> clockOf(
+  String className,
+  String name, [
+  List<Condition> conditions = const [],
+]) => clock(
+  name,
+  conditions: conditions,
+  configuration: className.toLowerCase(),
+  source: 'lib#$className.$name',
+);
+
+ImportDeclaration importOf(
+  String className,
+  Object Function() create, [
+  List<Condition> conditions = const [],
+]) => ImportDeclaration(
+  create,
+  importer: 'lib#$className',
+  conditions: conditions,
 );
 
 void main() {
@@ -226,6 +369,57 @@ void main() {
       final second = context.getBean<PingListener>();
       context.publishEvent(const Ping(3));
       expect(second.seen, [3]);
+      context.close();
+    });
+
+    test('lazy GenericApplicationListener and SmartApplicationListener '
+        'beans are created by the first event and receive it', () {
+      final context = ctx([
+        [
+          BeanDefinition<AuditAll>(
+            name: 'audit',
+            types: const [AuditAll, GenericApplicationListener],
+            lazy: true,
+            create: (_) => AuditAll(),
+          ),
+          BeanDefinition<PingAudit>(
+            name: 'pingAudit',
+            types: const [
+              PingAudit,
+              SmartApplicationListener,
+              GenericApplicationListener,
+              Ordered,
+            ],
+            lazy: true,
+            create: (_) => PingAudit(),
+          ),
+        ],
+      ])..refresh();
+      final factory = factoryOf(context);
+      // ContextRefreshedEvent asked them (Spring creates such listener
+      // beans to ask them, too).
+      expect(factory.containsSingleton('audit'), isTrue);
+      context
+        ..publishEvent(const Ping(1))
+        ..publishEvent(const Ping(2));
+      final audit = context.getBean<AuditAll>();
+      final pingAudit = context.getBean<PingAudit>();
+      expect([for (final e in audit.seen) (e as Ping).id], [1, 2]);
+      expect(
+        [
+          for (final e in pingAudit.seen)
+            switch (e) {
+              PayloadApplicationEvent<Object>(:final Ping payload) =>
+                payload.id,
+              _ => e.runtimeType,
+            },
+        ],
+        // The event that created it reached it.
+        [ContextRefreshedEvent, 1, 2],
+      );
+      factory.destroySingleton('audit');
+      context.publishEvent(const Ping(3));
+      expect(audit.seen, hasLength(2));
       context.close();
     });
 
@@ -551,8 +745,58 @@ void main() {
       context.close();
     });
 
-    test('a registerBean condition does not stop imports and property '
-        'sources; a parseConfiguration one does', () {
+    test('the registrars and selected imports of a class skipped by a '
+        'registerBean condition do not run; those of a registered one run '
+        'after it', () {
+      final registered = <String>[];
+      const skippedClass = ConditionGroup('Skipped', [
+        Never(ConfigurationPhase.registerBean),
+      ]);
+      const keptClass = ConditionGroup('Kept', [
+        OnMissingClock(ConfigurationPhase.registerBean),
+      ]);
+      final context = ctx([
+        BeanModule(
+          'skipped',
+          [
+            clock('never', conditions: const [skippedClass]),
+          ],
+          registrars: [
+            ImportDeclaration(
+              () => RecordingRegistrar('skipped', registered),
+              conditions: const [skippedClass],
+            ),
+            ImportDeclaration(
+              () => PlainSelector(
+                BeanModule('selected', [clock('selected', beanMethod: false)]),
+              ),
+              conditions: const [skippedClass],
+            ),
+          ],
+        ),
+        BeanModule(
+          'kept',
+          [
+            clock('kept', conditions: const [keptClass]),
+          ],
+          registrars: [
+            ImportDeclaration(
+              () => RecordingRegistrar('kept', registered),
+              conditions: const [keptClass],
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(registered, ['kept']);
+      // Like Spring, the selector runs while parsing; what it selects is
+      // not registered (imported by a skipped class).
+      expect(log, contains('select plain'));
+      expect(context.getBeanNamesForType(Clock), ['kept']);
+      context.close();
+    });
+
+    test('a registerBean condition does not stop property sources; '
+        'a parseConfiguration one stops imports too', () {
       final imported = BeanModule('imported', [
         clock('imported', beanMethod: false),
       ]);
@@ -588,11 +832,214 @@ void main() {
           ],
         ),
       ])..refresh();
-      expect(context.getBeanNamesForType(Clock), ['imported']);
+      // Spring's TrackedConditionEvaluator: imported by a skipped class.
+      expect(context.getBeanNamesForType(Clock), isEmpty);
       context.close();
     });
 
-    test('a component with a registerBean condition is decided at once', () {
+    test('the modules selected by a class with a registerBean condition '
+        'register before its @Bean methods', () {
+      const configClass = ConditionGroup('Config', [
+        Always(ConfigurationPhase.registerBean),
+      ]);
+      final context = ctx([
+        BeanModule(
+          'config',
+          [
+            clock(
+              'fallbackClock',
+              conditions: const [
+                configClass,
+                OnMissingClock(ConfigurationPhase.registerBean),
+              ],
+            ),
+          ],
+          registrars: [
+            ImportDeclaration(
+              () => PlainSelector(
+                BeanModule('selected', [clock('selectedClock')]),
+              ),
+              conditions: const [configClass],
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(context.getBeanNamesForType(Clock), ['selectedClock']);
+      // The class's conditions are decided once.
+      expect(log.where((line) => line == 'always registerBean'), hasLength(1));
+      context.close();
+    });
+
+    test('a registerBean fallback in a selected module is decided before '
+        'the importing class\'s @Bean methods', () {
+      const configClass = ConditionGroup('Config', [
+        Always(ConfigurationPhase.registerBean),
+      ]);
+      final context = ctx([
+        BeanModule(
+          'config',
+          [
+            clock('appClock', conditions: const [configClass]),
+          ],
+          registrars: [
+            ImportDeclaration(
+              () => PlainSelector(
+                BeanModule('selected', [
+                  clock(
+                    'selectedFallback',
+                    conditions: const [
+                      OnMissingClock(ConfigurationPhase.registerBean),
+                    ],
+                  ),
+                ]),
+              ),
+              conditions: const [configClass],
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(context.getBeanNamesForType(Clock), [
+        'selectedFallback',
+        'appClock',
+      ]);
+      context.close();
+    });
+
+    test('an earlier class\'s registerBean @Bean is visible to a later '
+        'class\'s registerBean condition before its selected module', () {
+      const later = ConditionGroup('Later', [
+        OnClock(ConfigurationPhase.registerBean),
+      ]);
+      final context = ctx([
+        BeanModule(
+          'app',
+          [
+            configClass('earlier'),
+            clock(
+              'fooClock',
+              conditions: const [
+                OnMissingClock(ConfigurationPhase.registerBean),
+              ],
+              configuration: 'earlier',
+            ),
+            configClass('later', conditions: const [later]),
+          ],
+          registrars: [
+            ImportDeclaration(
+              () => PlainSelector(
+                BeanModule('selected', [configClass('selectedConfig')]),
+              ),
+              conditions: const [later],
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(context.beanDefinitionNames, [
+        'earlier',
+        'fooClock',
+        'selectedConfig',
+        'later',
+      ]);
+      context.close();
+    });
+
+    test('a registrar of an earlier class runs before a later class\'s '
+        'registerBean @Bean is decided', () {
+      for (final (name, conditions, importer) in [
+        (
+          'conditional',
+          const [
+            ConditionGroup('Earlier', [
+              Always(ConfigurationPhase.registerBean),
+            ]),
+          ],
+          null,
+        ),
+        // Placed by the generator's importer (no condition group).
+        ('unconditional', const <Condition>[], 'lib#Earlier'),
+      ]) {
+        final context = ctx([
+          BeanModule(
+            'app',
+            [
+              configClass(
+                'earlier',
+                conditions: conditions,
+                source: 'lib#Earlier',
+              ),
+              configClass('later', source: 'lib#Later'),
+              clock(
+                'laterClock',
+                conditions: const [
+                  OnMissingClock(ConfigurationPhase.registerBean),
+                ],
+                source: 'lib#Later.laterClock',
+              ),
+            ],
+            registrars: [
+              ImportDeclaration(
+                ClockRegistrar.new,
+                conditions: conditions,
+                importer: importer,
+              ),
+            ],
+          ),
+        ])..refresh();
+        expect(context.getBeanNamesForType(Clock), [
+          'registrarClock',
+        ], reason: name);
+        context.close();
+      }
+    });
+
+    test('a module selected by a class with a registerBean condition is '
+        'parsed at once: its property source is visible to later '
+        'parse-phase conditions', () {
+      const config = ConditionGroup('Config', [
+        Always(ConfigurationPhase.registerBean),
+      ]);
+      final context = ctx([
+        BeanModule(
+          'config',
+          [
+            configClass('config', conditions: const [config]),
+          ],
+          registrars: [
+            ImportDeclaration(
+              () => PlainSelector(
+                BeanModule(
+                  'selected',
+                  [configClass('selectedConfig')],
+                  propertySources: const [
+                    PropertySourceDeclaration([
+                      'classpath:spring7/selected.properties',
+                    ]),
+                  ],
+                  resources: const {
+                    'spring7/selected.properties': EmbeddedResource.text(
+                      'feature.on=true',
+                    ),
+                  },
+                ),
+              ),
+              conditions: const [config],
+            ),
+          ],
+        ),
+        BeanModule('later', [
+          clock('featureClock', conditions: const [PropertySet('feature.on')]),
+        ]),
+      ])..refresh();
+      expect(context.getBeanNamesForType(Clock), ['featureClock']);
+      expect(
+        context.beanDefinitionNames,
+        containsAll(['selectedConfig', 'config']),
+      );
+      context.close();
+    });
+
+    test('a hand-written definition without a class source or factory '
+        'method is decided at once', () {
       final context = ctx([
         BeanModule('a', [
           clock(
@@ -607,6 +1054,347 @@ void main() {
         'componentClock',
         'appClock',
       ]);
+      context.close();
+    });
+  });
+
+  group('one decision per configuration class (twelfth batch)', () {
+    const onClock = OnClock(ConfigurationPhase.registerBean);
+    const onMissingClock = OnMissingClock(ConfigurationPhase.registerBean);
+
+    test("a BeanRegistrar of an earlier class runs before a later class's "
+        'registerBean @Bean is decided', () {
+      final context = ctx([
+        BeanModule(
+          'app',
+          [
+            config('AEarlier'),
+            config('BLater'),
+            clockOf('BLater', 'laterClock', const [onMissingClock]),
+          ],
+          registrars: [importOf('AEarlier', ClockBeanRegistrar.new)],
+        ),
+      ])..refresh();
+      expect(context.getBeanNamesForType(Clock), ['registrarClock']);
+      context.close();
+    });
+
+    test('a kept class registers its beans, then its registrars; the '
+        'modules it selects come before it', () {
+      final registered = <String>[];
+      final audit = classGroup('BAudit', const [onClock]);
+      final context = ctx([
+        BeanModule(
+          'app',
+          [
+            config('AClocks'),
+            clockOf('AClocks', 'clock'),
+            config('BAudit', audit),
+            clockOf('BAudit', 'auditClock', audit),
+          ],
+          registrars: [
+            importOf(
+              'BAudit',
+              () => RecordingRegistrar('audit', registered),
+              audit,
+            ),
+            importOf(
+              'BAudit',
+              () => PlainSelector(BeanModule('feature', [config('Feature')])),
+              audit,
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(context.beanDefinitionNames, [
+        'aclocks',
+        'clock',
+        'feature',
+        'baudit',
+        'auditClock',
+      ]);
+      expect(registered, ['audit']);
+      context.close();
+    });
+
+    test('a skipped class registers nothing: no bean, registrar or '
+        'selected module', () {
+      final registered = <String>[];
+      final fallback = classGroup('BFallback', const [onMissingClock]);
+      final context = ctx([
+        BeanModule(
+          'app',
+          [
+            config('AClocks'),
+            clockOf('AClocks', 'clock'),
+            config('BFallback', fallback),
+            clockOf('BFallback', 'fallbackClock', fallback),
+          ],
+          registrars: [
+            importOf(
+              'BFallback',
+              () => RecordingRegistrar('fallback', registered),
+              fallback,
+            ),
+            importOf(
+              'BFallback',
+              () => PlainSelector(BeanModule('feature', [config('Feature')])),
+              fallback,
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(context.beanDefinitionNames, ['aclocks', 'clock']);
+      expect(registered, isEmpty);
+      context.close();
+    });
+
+    test('a class whose condition checks for the bean its imported class '
+        'defines stays registered (the decision is shared)', () {
+      final pooled = classGroup('Pooled', const [onMissingClock]);
+      // Generator @Import: the imported class first, nested conditions.
+      final hikari = classGroup('Hikari', pooled);
+      final imported = ctx([
+        BeanModule('app', [
+          config('Hikari', hikari),
+          clockOf('Hikari', 'hikariClock', hikari),
+          config('Pooled', pooled),
+        ]),
+      ])..refresh();
+      expect(imported.beanDefinitionNames, ['hikari', 'hikariClock', 'pooled']);
+      imported.close();
+      // A selector's import.
+      final selected = ctx([
+        BeanModule(
+          'app',
+          [config('Pooled', pooled)],
+          registrars: [
+            importOf(
+              'Pooled',
+              () => PlainSelector(
+                BeanModule('hikari', [
+                  config('Hikari'),
+                  clockOf('Hikari', 'hikariClock'),
+                ]),
+              ),
+              pooled,
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(selected.beanDefinitionNames, ['hikari', 'hikariClock', 'pooled']);
+      selected.close();
+    });
+
+    test('a class skipped in the registerBean phase still loads its '
+        '@PropertySource', () {
+      final skipped = classGroup('Settings', const [
+        Never(ConfigurationPhase.registerBean),
+      ]);
+      final context = ctx([
+        BeanModule(
+          'app',
+          [config('Settings', skipped)],
+          propertySources: [
+            PropertySourceDeclaration(const [
+              'classpath:spring7/settings.properties',
+            ], conditions: skipped),
+          ],
+          resources: const {
+            'spring7/settings.properties': EmbeddedResource.text(
+              'settings.loaded=yes',
+            ),
+          },
+        ),
+      ])..refresh();
+      expect(context.containsBean('settings'), isFalse);
+      expect(context.environment.getProperty('settings.loaded'), 'yes');
+      context.close();
+    });
+
+    test('a module selected by several classes is skipped only when all of '
+        'them are; registered directly, it is no longer imported', () {
+      final feature = BeanModule('feature', [config('Feature')]);
+      final skipped = classGroup('Skipped', const [
+        Never(ConfigurationPhase.registerBean),
+      ]);
+      final alsoSkipped = classGroup('AlsoSkipped', const [
+        Never(ConfigurationPhase.registerBean),
+      ]);
+      final kept = classGroup('Kept', const [
+        Always(ConfigurationPhase.registerBean),
+      ]);
+      BeanModule app(List<(String, List<Condition>)> importers) => BeanModule(
+        'app',
+        [for (final (name, conditions) in importers) config(name, conditions)],
+        registrars: [
+          for (final (name, conditions) in importers)
+            importOf(name, () => PlainSelector(feature), conditions),
+        ],
+      );
+      for (final (components, expected) in [
+        (
+          [
+            app([('Skipped', skipped), ('Kept', kept)]),
+          ],
+          true,
+        ),
+        (
+          [
+            app([('Skipped', skipped), ('AlsoSkipped', alsoSkipped)]),
+          ],
+          false,
+        ),
+        (
+          [
+            app([('Skipped', skipped)]),
+            feature,
+          ],
+          true,
+        ),
+      ]) {
+        final context = ctx(components)..refresh();
+        expect(context.containsBean('feature'), expected);
+        context.close();
+      }
+    });
+
+    test('a plain class condition is evaluated once for the class, its '
+        '@Bean methods and its imports', () {
+      final registered = <String>[];
+      final counted = classGroup('Counted', const [Counted()]);
+      final context = ctx([
+        BeanModule(
+          'app',
+          [
+            config('Counted', counted),
+            clockOf('Counted', 'countedClock', counted),
+          ],
+          registrars: [
+            importOf(
+              'Counted',
+              () => RecordingRegistrar('counted', registered),
+              counted,
+            ),
+          ],
+        ),
+      ])..refresh();
+      expect(log.where((line) => line == 'counted'), hasLength(1));
+      expect(registered, ['counted']);
+      expect(context.getBeanNamesForType(Clock), ['countedClock']);
+      context.close();
+    });
+
+    test('a component with @Bean methods is a (lite) configuration class: '
+        'decided in the reader', () {
+      final lite = classGroup('Lite', const [onMissingClock]);
+      final context = ctx([
+        BeanModule('app', [
+          BeanDefinition<ConfigClass>(
+            name: 'lite',
+            create: (_) => ConfigClass(),
+            conditions: lite,
+            source: 'lib#Lite',
+          ),
+          clockOf('Lite', 'liteClock', lite),
+        ]),
+        BeanModule('later', [clock('appClock', beanMethod: false)]),
+      ])..refresh();
+      expect(context.getBeanNamesForType(Clock), ['appClock']);
+      expect(context.containsBean('lite'), isFalse);
+      context.close();
+    });
+  });
+
+  group('components decided in the reader (thirteenth batch)', () {
+    const onClock = OnClock(ConfigurationPhase.registerBean);
+    const onMissingClock = OnMissingClock(ConfigurationPhase.registerBean);
+
+    // A scanned @Component class [name] with its class conditions.
+    BeanDefinition<Object> component(
+      String name, [
+      List<Condition> conditions = const [],
+    ]) {
+      final group = classGroup(name, conditions);
+      return name.endsWith('Clock')
+          ? clock(
+              name[0].toLowerCase() + name.substring(1),
+              beanMethod: false,
+              conditions: group,
+              source: 'lib#$name',
+            )
+          : BeanDefinition<ConfigClass>(
+              name: name[0].toLowerCase() + name.substring(1),
+              create: (_) => ConfigClass(),
+              conditions: group,
+              source: 'lib#$name',
+            );
+    }
+
+    test("a component's missing-bean condition sees an earlier class's "
+        'registrar bean', () {
+      for (final registrar in <Object Function()>[
+        ClockRegistrar.new,
+        ClockBeanRegistrar.new,
+      ]) {
+        final context = ctx([
+          BeanModule(
+            'app',
+            [
+              config('AConfig'),
+              component('DefaultClock', [onMissingClock]),
+            ],
+            registrars: [importOf('AConfig', registrar)],
+          ),
+        ])..refresh();
+        expect(context.getBeanNamesForType(Clock), ['registrarClock']);
+        context.close();
+      }
+    });
+
+    test("a component's on-bean condition sees an earlier class's "
+        'conditional @Bean', () {
+      final context = ctx([
+        BeanModule('app', [
+          config('BConfig'),
+          clockOf('BConfig', 'clock', const [onMissingClock]),
+          component('MailListener', [onClock]),
+        ]),
+      ])..refresh();
+      expect(context.beanDefinitionNames, ['bconfig', 'clock', 'mailListener']);
+      context.close();
+    });
+
+    test('a component before the @Bean it looks for is decided first '
+        '(class order)', () {
+      final context = ctx([
+        BeanModule('app', [
+          component('MailListener', [onClock]),
+          config('BConfig'),
+          clockOf('BConfig', 'clock', const [onMissingClock]),
+        ]),
+      ])..refresh();
+      expect(context.beanDefinitionNames, ['bconfig', 'clock']);
+      context.close();
+    });
+
+    test('an imported class without @Bean methods is decided in the reader '
+        "after the importer's earlier registrar", () {
+      // AConfig imports ClockRegistrar; BConfig imports DefaultClock (the
+      // generator inlines it before BConfig, under its own source).
+      final b = classGroup('BConfig', const []);
+      final context = ctx([
+        BeanModule(
+          'app',
+          [
+            config('AConfig'),
+            component('DefaultClock', [...b, onMissingClock]),
+            config('BConfig', b),
+          ],
+          registrars: [importOf('AConfig', ClockRegistrar.new)],
+        ),
+      ])..refresh();
+      expect(context.getBeanNamesForType(Clock), ['registrarClock']);
       context.close();
     });
   });

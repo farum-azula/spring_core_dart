@@ -236,6 +236,41 @@ void main() {
       }
     });
 
+    test('no overflow at high attempts, a zero delay keeps reconnecting', () {
+      const policy = WebSocketReconnectPolicy(
+        delay: Duration(milliseconds: 100),
+        maxDelay: Duration(seconds: 5),
+      );
+      for (final retry in [1074, 1075, 5000, 1 << 40]) {
+        expect(policy.delayFor(retry), const Duration(seconds: 5));
+      }
+      const jittered = WebSocketReconnectPolicy(
+        delay: Duration(milliseconds: 100),
+        maxDelay: Duration(seconds: 5),
+        jitter: Duration(milliseconds: 10),
+      );
+      expect(jittered.delayFor(1074, FixedRandom(0)).inMilliseconds, 4500);
+      expect(
+        jittered.delayFor(1074, FixedRandom(1)),
+        const Duration(seconds: 5),
+      );
+      const zero = WebSocketReconnectPolicy(delay: Duration.zero);
+      for (final retry in [1, 2, 1073, 1074, 1075, 100000]) {
+        expect(zero.delayFor(retry), Duration.zero);
+      }
+      const zeroJittered = WebSocketReconnectPolicy(
+        delay: Duration.zero,
+        jitter: Duration(milliseconds: 10),
+      );
+      for (final retry in [1, 1074, 100000]) {
+        expect(zeroJittered.delayFor(retry, FixedRandom(0)), Duration.zero);
+        expect(
+          zeroJittered.delayFor(retry, FixedRandom(1)),
+          const Duration(milliseconds: 10),
+        );
+      }
+    });
+
     test('read from reconnect.* properties', () {
       final config = WebSocketClientConfig.of(
         StandardEnvironment()
@@ -302,6 +337,25 @@ void main() {
       expect(delays[0], inInclusiveRange(10, 12));
       expect(delays[1], inInclusiveRange(24, 36));
       expect(delays[2], inInclusiveRange(72, 100));
+    });
+
+    test('a zero delay keeps reconnecting', () async {
+      await runner
+          .withPropertyValues([
+            'spring.websocket.client.config.chat.reconnect.delay=0ms',
+          ])
+          .runAsync((context) async {
+            final chat = context.getBean<ChatSocket>();
+            chat.raw().listen(null);
+            final first = await sockets.nextConnection;
+            for (var i = 0; i < 20; i++) {
+              sockets.failNextConnect();
+            }
+            await first.drop();
+            final next = await sockets.nextConnection;
+            await next.drop();
+            await sockets.nextConnection;
+          });
     });
   });
 

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `ResponseEntity.status(...).headers(h)` replaces the values of those names like Spring's `putAll` (it added them).
+- `ResponseEntity` and `ResponseEntity.status` take only three-digit status codes (100–999), like Spring's `HttpStatusCode.valueOf`; others throw an `ArgumentError`. `HttpResponse` and `StreamedHttpResponse` take those and 0, the opaque redirect a browser gives for `followRedirects: false` (any other code throws).
 - `HttpHeaders.addAll(name, values)`, `addHeaders`, `putAll`, `setAll`, `clear`, `size`, `containsHeaderValue`, `isNotEmpty`, `==` / `hashCode` (names in any case), `HttpHeaders.readOnly` (a view whose setters throw).
 - `ResponseEntity`: read-only headers, `==` / `hashCode`, `ResponseEntity.of` / `ofNullable` (200 with the body, 404 without one).
 - `HttpResponse.bodyText` decodes with the `charset` of the `Content-Type`, quoted or not and in any spelling Dart knows (only `charset=iso-8859-1` / `latin1` were seen); `HttpResponse.decodeBody`.

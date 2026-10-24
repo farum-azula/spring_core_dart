@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `logging.logback.rollingpolicy.max-history=0` (`FileAppender(maxHistory: 0)`) keeps every archive, like Logback (it deleted them all).
+- `logging.charset.*` takes Java's charset aliases too (`utf8`, `ISO8859_1`, `ascii7`, ...).
 - Logback's colour words `%black` ... `%white`, `%gray`, `%boldRed` ..., `%highlight`; `%replace(...){regex, replacement}`, `%kvp`, `%prefix(...)`, `%property{key}`.
 - `logging.charset.file` (UTF-8, ISO-8859-1, US-ASCII; `FileAppender(encoding:)`); `logging.charset.console` is checked.
 - `logging.logback.rollingpolicy.file-name-pattern` is ignored with a warning (rolling is by size only).

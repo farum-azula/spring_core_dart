@@ -1,5 +1,10 @@
 ## Unreleased
 
+- the auto-configured `webSocketTransport` backs off for a `WebSocketTransport` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application; its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`
+- `reconnect.delay=0` waits nothing (± `jitter`) on every attempt; from attempt 1074 the wait was NaN, which threw and stopped reconnecting.
+- After giving up on a server that accepts and closes at once, the retry count starts over for the next listener (it got a single attempt).
+- No reconnect is made once every listener cancelled (a scheduled attempt still connected); the next listener starts afresh.
+- `reconnect.*` is checked like Spring 7's `RetryPolicy.Builder` (`WebSocketReconnectPolicy.validate`): `delay` and `jitter` not negative, `multiplier` at least 1, `max-delay` positive, `max-retries` not negative; anything else fails the start naming the property, with the duration written like `1m` or `500ms`. A `delay` above `max-delay` is accepted, as in Spring (the waits are then `max-delay`).
 - The retry count is reset only once a connection proves stable (a message, or open for `reconnect.max-delay`): a server that accepts and closes at once no longer keeps `reconnect.max-retries` from stopping.
 - A send (or `connect()`) without a connection waits for the next attempt only and fails with it (it waited forever while listeners kept reconnecting without `max-retries`).
 - `WebSocketClientFactory.destroy()` returns a future that completes once the open connections are closed (awaited by `closeAsync()`).

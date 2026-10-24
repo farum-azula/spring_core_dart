@@ -122,7 +122,9 @@ a missing URL or one that does not start with `ws://` / `wss://`.
   longer than the delay plus `connect-timeout`. The retries count on
   until a connection proves stable (it delivers a message, or stays open
   for `reconnect.max-delay`), so a server that accepts and closes at once
-  still reaches `reconnect.max-retries`. A normal close by the server (1000) ends the streams; other
+  still reaches `reconnect.max-retries`; after giving up, the next
+  listener starts with every retry again, and once the last listener
+  cancels no further attempt is made. A normal close by the server (1000) ends the streams; other
   codes (1008 policy violation, ...) end them with a `WebSocketException`.
   The connection is managed by a `WebSocketConnectionManager` (Spring's
   name), the open connection is a `WebSocketSession` of `spring_web_dart`.
@@ -155,7 +157,11 @@ spring.websocket.client.config.chat.reconnect.max-retries=10
 ```
 
 The `reconnect.*` names are those of Spring Framework 7's `RetryPolicy`
-(`delay`, `multiplier`, `maxDelay`, `jitter`, `maxRetries`) and the
+(`delay`, `multiplier`, `maxDelay`, `jitter`, `maxRetries`), checked like
+its builder (`delay` and `jitter` not negative, `multiplier` at least 1,
+`max-delay` positive, `max-retries` not negative; a `delay` above
+`max-delay` is allowed and waits `max-delay`;
+otherwise the start fails), and the
 waits are computed like its `ExponentialBackOff`; the defaults suit
 reconnecting (a doubling delay, no limit) rather than `RetryPolicy`'s (a
 fixed 1 s delay, 3 retries). The policy is `WebSocketClientConfig.reconnect`

@@ -66,6 +66,34 @@ void main() {
 
   test('type arguments are ignored, also with spaces', () {
     expect(_matches('execution(* find(int, Map<String, int>))', _find), isTrue);
+    const lookup = MethodSignature(
+      name: 'lookup',
+      declaringType: 'Books',
+      targetType: 'Books',
+      returnType: 'Map',
+    );
+    // In the return type too.
+    expect(_matches('execution(Map<String, int> *(..))', lookup), isTrue);
+    expect(_matches('execution(Map<String,int> lookup())', lookup), isTrue);
+    expect(_matches('execution(Map<String, int> *(..))', _find), isFalse);
+    expect(
+      _matches('execution(public Map<String, List<int>> *(..))', lookup),
+      isTrue,
+    );
+  });
+
+  test('a negated type group: !(A || B)', () {
+    expect(_matches('execution(!(String || int) *(..))', _find), isFalse);
+    expect(_matches('execution(!(String || int) *(..))', _count), isFalse);
+    expect(_matches('execution(!(String || int) *(..))', _clear), isTrue);
+    expect(_matches('execution(* *(!(String || double)))', _count), isFalse);
+  });
+
+  test('a negated group: !(A || B)', () {
+    const expression = '!(execution(* find(..)) || execution(* count(..)))';
+    expect(_matches(expression, _find), isFalse);
+    expect(_matches(expression, _count), isFalse);
+    expect(_matches(expression, _clear), isTrue);
   });
 
   test('String||int without parentheses is a syntax error', () {

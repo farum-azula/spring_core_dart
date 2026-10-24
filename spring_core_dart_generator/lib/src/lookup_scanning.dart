@@ -222,9 +222,9 @@ extension _LookupScanning on BeanScanner {
       // Parameter types are public: the scanner checks every injection
       // point before coming here.
       constructorParameters: [
-        for (final parameter in constructor.formalParameters)
+        for (final (index, parameter) in constructor.formalParameters.indexed)
           ProxyParameter(
-            name: parameter.name ?? 'p',
+            name: forwardedParameterName(constructor.formalParameters, index),
             type: parameter.type,
             isNamed: parameter.isNamed,
             isRequired: parameter.isRequired,

@@ -328,7 +328,9 @@ class DataBinder {
   /// for a required non-nullable parameter (Java's primitive), records a
   /// `typeMismatch` error, and then the target stays `null` when it cannot
   /// be created. Without errors the binding result is reset for the new
-  /// target, so [bind] and [validate] can follow.
+  /// target, so [bind] and [validate] can follow. A list index at or above
+  /// [autoGrowCollectionLimit] throws an [InvalidPropertyException] before
+  /// the list is allocated, like Spring's `createList`.
   ///
   /// ```dart
   /// final binder = DataBinder(null, objectName: 'book', introspector: introspector)
@@ -615,7 +617,7 @@ final class _Composite implements TypeInfoVisitor<Object?> {
 
   @override
   Object? visitList<E>(ListType<E> type) {
-    final elements = _elements(type.element);
+    final elements = _elements(type.element, indexed: true);
     return elements == null ? null : type.create(elements);
   }
 
@@ -626,8 +628,12 @@ final class _Composite implements TypeInfoVisitor<Object?> {
   }
 
   // Elements at the indexes the names mention, in index order; elements
-  // that fail are reported and left out.
-  List<Object?>? _elements(TypeInfo<Object?> element) {
+  // that fail are reported and left out. [indexed] (a list, Spring's
+  // createList): each element stays at its index, gaps and failed
+  // elements are `null` (`tags[1]=t` gives `[null, t]`); when the element
+  // type is not nullable, a gap is reported like a missing primitive and
+  // left out.
+  List<Object?>? _elements(TypeInfo<Object?> element, {bool indexed = false}) {
     final pattern = RegExp('^${RegExp.escape(path)}\\[(\\d+)\\]');
     final indexes = {
       for (final name in resolver.names)
@@ -636,10 +642,56 @@ final class _Composite implements TypeInfoVisitor<Object?> {
     if (indexes.isEmpty) {
       return null;
     }
-    return [
-      for (final index in indexes)
-        if (_element(element, '$path[$index]') case (final value,)) value,
-    ];
+    if (!indexed) {
+      return [
+        for (final index in indexes)
+          if (_element(element, '$path[$index]') case (final value,)) value,
+      ];
+    }
+    // Like Spring's createList, the list is only padded below
+    // autoGrowCollectionLimit: a higher index fails before anything is
+    // allocated (Spring's list.set throws IndexOutOfBoundsException).
+    final last = indexes.last;
+    if (last >= binder.autoGrowCollectionLimit) {
+      throw InvalidPropertyException(
+        '$path[$last]',
+        'index $last is out of bounds: lists grow up to '
+            'autoGrowCollectionLimit (${binder.autoGrowCollectionLimit})',
+      );
+    }
+    final present = indexes.toSet();
+    final elements = <Object?>[];
+    for (var index = 0; index <= indexes.last; index++) {
+      final elementPath = '$path[$index]';
+      if (present.contains(index)) {
+        switch (_element(element, elementPath)) {
+          case (final value,):
+            elements.add(value);
+          case null when element.nullable:
+            elements.add(null);
+          case null:
+            break;
+        }
+      } else if (element.nullable) {
+        elements.add(null);
+      } else {
+        // Dart cannot hold null here; Spring reports a type mismatch for a
+        // missing primitive the same way.
+        binder.bindingResult.recordFieldError(
+          elementPath,
+          TypeMismatchException.errorCode,
+          null,
+          args: binder._bindErrorArguments(elementPath),
+          defaultMessage: TypeMismatchException(
+            elementPath,
+            null,
+            element.type,
+          ).message,
+          fieldType: element.type,
+        );
+      }
+    }
+    return elements;
   }
 
   @override

@@ -69,9 +69,9 @@ extension _ConfigurationScanning on BeanScanner {
       // Parameter types are public: the scanner checks every injection
       // point before coming here.
       constructorParameters: [
-        for (final parameter in constructor.formalParameters)
+        for (final (index, parameter) in constructor.formalParameters.indexed)
           ProxyParameter(
-            name: parameter.name ?? 'p',
+            name: forwardedParameterName(constructor.formalParameters, index),
             type: parameter.type,
             isNamed: parameter.isNamed,
             isRequired: parameter.isRequired,
@@ -105,8 +105,12 @@ extension _ConfigurationScanning on BeanScanner {
     // before coming here.
     final parameters = <ProxyParameter>[];
     final defaults = <String, DartObject>{};
-    for (final parameter in method.formalParameters) {
-      final parameterName = parameter.name!;
+    for (final (index, parameter) in method.formalParameters.indexed) {
+      // A wildcard (`_`) cannot be read, so the override names it afresh.
+      final parameterName = forwardedParameterName(
+        method.formalParameters,
+        index,
+      );
       if (parameter.hasDefaultValue) {
         defaults[parameterName] =
             parameter.computeConstantValue() ??

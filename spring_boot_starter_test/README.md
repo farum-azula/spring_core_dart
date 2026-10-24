@@ -129,7 +129,9 @@ The original definition is removed before any bean is created, so the real
 object is never built. The replacement keeps the name, aliases, qualifiers
 and `@Primary` / `@Fallback`, so `@Qualifier` injection points still get it.
 Use any fake or mock library (e.g. `mocktail`). Overriding a type with
-several beans without `name:` fails and lists them.
+several beans without `name:` replaces the `@Primary` one, like Spring;
+without a single primary bean it fails and lists them. `name:` may also be
+an alias of the bean.
 
 ## `ApplicationContextRunner`: testing auto-configuration
 
@@ -192,7 +194,9 @@ test('calls the client', () async {
 `hasSingleBean<T>()`, `hasBean<T>()`, `doesNotHaveBean<T>()`,
 `hasBeanNamed('name')`, `hasFailed([matcher])`. They accept an
 `AssertableApplicationContext`, a `springBootTest` context or any
-`ListableBeanFactory`, and say which beans were found when they fail.
+`ListableBeanFactory`, and say which beans were found when they fail. Like
+AssertJ's, the bean-count matchers include the parent contexts
+(`withParent`).
 
 ## `captureLogs`
 

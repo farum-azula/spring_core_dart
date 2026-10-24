@@ -86,7 +86,37 @@ void main() {
     runner.withParent(parent).run((context) {
       expect(context.context.parent, same(parent));
       expect(context.getBean<Counter>(), same(parent.getBean<Counter>()));
+      // AssertJ's hasSingleBean / doesNotHaveBean include the ancestors.
+      expect(context, hasSingleBean<Counter>());
+      expect(context, hasBean<Counter>());
+      expect(context, isNot(doesNotHaveBean<Counter>()));
     });
+    runner
+        .withParent(parent)
+        .withUserConfiguration(
+          BeanModule('child', [
+            BeanDefinition<Counter>(name: 'other', create: (_) => Counter()),
+          ]),
+        )
+        .run((context) {
+          expect(context, isNot(hasSingleBean<Counter>()));
+          expect(
+            hasSingleBean<Counter>()
+                .describeMismatch(context, StringDescription(), {}, false)
+                .toString(),
+            contains('other, counter'),
+          );
+        });
+    // A local bean with the parent's name hides it.
+    runner
+        .withParent(parent)
+        .withAllowBeanDefinitionOverriding(true)
+        .withUserConfiguration(
+          BeanModule('child', [
+            BeanDefinition<Counter>(name: 'counter', create: (_) => Counter()),
+          ]),
+        )
+        .run((context) => expect(context, hasSingleBean<Counter>()));
   });
 
   test('withAllowBeanDefinitionOverriding', () {

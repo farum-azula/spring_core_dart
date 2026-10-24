@@ -92,4 +92,35 @@ void main() {
           expect((scheduler as TimerTaskScheduler).errorHandler, same(handler));
         });
   });
+
+  test('two ErrorHandler beans: the primary one, or none', () {
+    final first = Collect();
+    final second = Collect();
+    BeanModule handlers({bool primary = false}) => BeanModule('handlers', [
+      BeanDefinition<ErrorHandler>(name: 'first', create: (_) => first),
+      BeanDefinition<ErrorHandler>(
+        name: 'second',
+        primary: primary,
+        create: (_) => second,
+      ),
+    ]);
+    const runner = ApplicationContextRunner();
+    runner
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterSchedulingAutoConfiguration)
+        .withUserConfiguration(handlers())
+        .run((context) {
+          expect(context.hasFailed, isFalse);
+          final scheduler = context.getBean<TaskScheduler>();
+          expect((scheduler as TimerTaskScheduler).errorHandler, isNull);
+        });
+    runner
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterSchedulingAutoConfiguration)
+        .withUserConfiguration(handlers(primary: true))
+        .run((context) {
+          final scheduler = context.getBean<TaskScheduler>();
+          expect((scheduler as TimerTaskScheduler).errorHandler, same(second));
+        });
+  });
 }

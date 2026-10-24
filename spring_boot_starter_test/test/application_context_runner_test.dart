@@ -170,6 +170,61 @@ void main() {
             );
           });
     });
+
+    BeanModule mailers({bool sesPrimary = false, bool smtpPrimary = false}) =>
+        BeanModule('mailers', [
+          BeanDefinition<SmtpMailer>(
+            name: 'smtpMailer',
+            types: const [SmtpMailer, Mailer],
+            primary: smtpPrimary,
+            create: (_) => SmtpMailer(),
+          ),
+          BeanDefinition<SesMailer>(
+            name: 'sesMailer',
+            types: const [SesMailer, Mailer],
+            primary: sesPrimary,
+            aliases: const ['amazonMailer'],
+            create: (_) => SesMailer(),
+          ),
+        ]);
+
+    test('by type: the single @Primary bean is replaced', () {
+      base
+          .withUserConfiguration(mailers(sesPrimary: true))
+          .withBeanOverride<Mailer>(FakeMailer())
+          .run((context) {
+            expect(context.hasFailed, isFalse);
+            expect(context.getBeanByName('sesMailer'), isA<FakeMailer>());
+            expect(context.getBeanByName('smtpMailer'), isA<SmtpMailer>());
+            expect(context.getBean<Mailer>(), isA<FakeMailer>());
+          });
+      base
+          .withUserConfiguration(mailers(sesPrimary: true, smtpPrimary: true))
+          .withBeanOverride<Mailer>(FakeMailer())
+          .run((context) => expect(context, hasFailed()));
+    });
+
+    test('by name: an alias replaces the bean it names', () {
+      base
+          .withUserConfiguration(mailers())
+          .withInitializer(
+            ApplicationContextInitializer.of(
+              (context) =>
+                  context.beanFactory.registerAlias('sesMailer', 'cloudMail'),
+            ),
+          )
+          .withBeanOverride<Mailer>(FakeMailer(), name: 'amazonMailer')
+          .run((context) {
+            expect(context.hasFailed, isFalse);
+            expect(context.getBeanNamesForType<Mailer>(), [
+              'smtpMailer',
+              'sesMailer',
+            ]);
+            expect(context.getBeanByName('sesMailer'), isA<FakeMailer>());
+            expect(context.getBeanByName('amazonMailer'), isA<FakeMailer>());
+            expect(context.getBeanByName('cloudMail'), isA<FakeMailer>());
+          });
+    });
   });
 
   test('a failed start is passed to the body', () {

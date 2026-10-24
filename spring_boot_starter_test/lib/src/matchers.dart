@@ -7,7 +7,8 @@ import 'package:spring_boot_starter_test/src/spring_boot_test.dart';
 /// `assertThat(context).hasSingleBean(T.class)`).
 ///
 /// Works on an [AssertableApplicationContext], a [SpringBootTestContext] or
-/// any [ListableBeanFactory].
+/// any [ListableBeanFactory]. Like AssertJ, the beans of the parent
+/// contexts count too (`withParent`).
 ///
 /// ```dart
 /// expect(context, hasSingleBean<MessageSource>());
@@ -42,6 +43,24 @@ ListableBeanFactory? _factory(Object? item) => switch (item) {
   _ => null,
 };
 
+// The names of the beans of [type] in [factory] and its ancestors (Spring's
+// `BeanFactoryUtils.beanNamesForTypeIncludingAncestors`, the scope
+// AssertJ's `hasSingleBean` / `doesNotHaveBean` use): a parent's bean
+// hidden by a local bean of the same name is not counted twice.
+List<String> _namesIncludingAncestors(ListableBeanFactory factory, Type type) {
+  final names = [...factory.getBeanNamesForType(type)];
+  if (factory case final HierarchicalBeanFactory local
+      when local.parentBeanFactory is ListableBeanFactory) {
+    final parent = local.parentBeanFactory! as ListableBeanFactory;
+    for (final name in _namesIncludingAncestors(parent, type)) {
+      if (!names.contains(name) && !local.containsLocalBean(name)) {
+        names.add(name);
+      }
+    }
+  }
+  return names;
+}
+
 final class _BeanCount<T extends Object> extends Matcher {
   _BeanCount(this._test, this._description);
 
@@ -51,7 +70,8 @@ final class _BeanCount<T extends Object> extends Matcher {
   @override
   bool matches(Object? item, Map<Object?, Object?> matchState) {
     final factory = _factory(item);
-    return factory != null && _test(factory.getBeanNamesForType(T).length);
+    return factory != null &&
+        _test(_namesIncludingAncestors(factory, T).length);
   }
 
   @override
@@ -72,7 +92,7 @@ final class _BeanCount<T extends Object> extends Matcher {
     if (factory == null) {
       return mismatchDescription.add('is not an application context');
     }
-    final names = factory.getBeanNamesForType(T);
+    final names = _namesIncludingAncestors(factory, T);
     return mismatchDescription.add(
       names.isEmpty
           ? 'has no bean of $T'

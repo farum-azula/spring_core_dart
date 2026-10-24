@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
+import 'package:spring_web_dart/src/client/response_status.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_status.dart';
 
@@ -25,13 +26,15 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// `WebClient`.
 final class StreamedHttpResponse {
   /// A response with [statusCode] and [headers] whose [body] is still
-  /// arriving.
+  /// arriving. Throws an [ArgumentError] unless [statusCode] has three
+  /// digits (100–999) or is 0 (the opaque redirect a browser gives when
+  /// redirects are not followed).
   StreamedHttpResponse(
     int statusCode, {
     required this.body,
     HttpHeaders? headers,
     this.request,
-  }) : statusCode = HttpStatusCode(statusCode),
+  }) : statusCode = clientResponseStatus(statusCode),
        headers = headers ?? HttpHeaders();
 
   /// The status code (an `int` with `is2xxSuccessful`, ...).

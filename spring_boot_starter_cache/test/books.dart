@@ -137,6 +137,12 @@ class Books {
     _count('refreshResult');
     return 'refreshed $isbn';
   }
+
+  @Cacheable('async', key: '#isbn.noSuchProperty')
+  Future<String> fetchBadKey(String isbn) async {
+    _count('fetchBadKey');
+    return 'fetched $isbn';
+  }
 }
 
 MethodSignature _sig(
@@ -248,6 +254,12 @@ final booksSignatures = [
         ],
       ),
     ],
+  ),
+  _sig(
+    'fetchBadKey',
+    ['isbn'],
+    const [Cacheable('async', key: '#isbn.noSuchProperty')],
+    returnType: 'Future',
   ),
 ];
 
@@ -375,6 +387,15 @@ class BooksProxy extends Books implements Advised {
   @override
   String refreshResult(String isbn) =>
       _call(18, [isbn], () => _target.refreshResult(isbn));
+
+  @override
+  Future<String> fetchBadKey(String isbn) => _invoker.invokeAsync<String>(
+    this,
+    _target,
+    19,
+    [isbn],
+    (args) => _target.fetchBadKey(args[0]! as String),
+  );
 }
 
 /// The proxy factory the generator writes into the bean definition.

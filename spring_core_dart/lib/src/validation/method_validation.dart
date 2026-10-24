@@ -104,9 +104,11 @@ final class MethodValidationInterceptor implements MethodInterceptor {
     return result;
   }
 
-  /// The groups of `@Validated` on the method, else on the bean class.
+  /// The groups of `@Validated` on the method (or on a declaration it
+  /// overrides, the nearest first, like Spring's
+  /// `AnnotationUtils.findAnnotation`), else on the bean class.
   static List<Type> determineValidationGroups(MethodSignature signature) =>
-      (signature.annotations.whereType<Validated>().firstOrNull ??
+      (signature.mergedAnnotations.whereType<Validated>().firstOrNull ??
               signature.targetAnnotations.whereType<Validated>().firstOrNull)
           ?.value ??
       const [];

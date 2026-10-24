@@ -74,17 +74,18 @@ CacheManager _cacheManager(Environment environment, List<Cache> caches) {
             .map<List<String>?>((names) => names)
             .orElse(null)
       : environment.getProperty('spring.cache.cache-names')?.split(',');
+  // Like Boot's SimpleCacheConfiguration: only a non-empty list fixes the
+  // caches (`spring.cache.cache-names=` keeps them dynamic).
+  final cacheNames = [
+    for (final name in names ?? const <String>[])
+      if (name.trim().isNotEmpty) name.trim(),
+  ];
   CacheSpec spec(String prefix) => CacheSpec(
     timeToLive: environment.getPropertyAs<Duration>('$prefix.time-to-live'),
     maxSize: environment.getPropertyAs<int>('$prefix.max-size'),
   );
   return InMemoryCacheManager(
-    cacheNames: names == null
-        ? null
-        : [
-            for (final name in names)
-              if (name.trim().isNotEmpty) name.trim(),
-          ],
+    cacheNames: cacheNames.isEmpty ? null : cacheNames,
     defaultSpec: spec('spring.cache.simple'),
     specFor: (name) {
       final prefix = 'spring.cache.simple.caches.$name';
@@ -111,6 +112,8 @@ CacheManager _cacheManager(Environment environment, List<Cache> caches) {
 final cacheAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<CacheManager>(
     name: 'cacheManager',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'cacheManager',
     source: _source,
     conditions: const [
       ConditionGroup('$_source.cacheManager', [

@@ -363,9 +363,23 @@ class CacheAutoConfiguration {
 
 The generator of every application that depends on the library — directly
 or transitively — finds these modules and passes them to the generated
-`springApplication`; nothing is listed by hand. They are registered after
-the application's beans, so `@ConditionalOnMissingBean` backs off when the
-application declares its own bean. `@ConditionalOnBean` /
+`springApplication`; nothing is listed by hand. They come after the
+application's classes, so `@ConditionalOnMissingBean` backs off when the
+application declares its own bean. Like Boot's `OnBeanCondition`,
+`@ConditionalOnBean`, `@ConditionalOnMissingBean` and
+`@ConditionalOnSingleCandidate` are decided when the configuration class
+is read (Spring's `registerBean` phase), class by class — a scanned
+`@Component` and an `@Import`ed class count as classes too, at their place
+in that order: by then every earlier class has registered its `@Bean`
+methods and run its `@Import`ed `BeanRegistrar` /
+`ImportBeanDefinitionRegistrar`, so a bean registered any of those ways
+counts (a component declared before the class whose bean it looks for is
+decided first, as in Spring). On a class, the condition decides the class,
+its `@Bean` methods and its imports once: a skipped class runs no
+registrar and what it selects is not registered; a class whose condition
+looks for the bean its imported class defines stays registered (Boot's
+`PooledDataSourceConfiguration` pattern); its `@PropertySource`s load
+anyway (they are read while parsing, as in Spring). `@ConditionalOnBean` /
 `@ConditionalOnMissingBean` take a type, `.named('...')`, or
 `.where(types:, names:, annotations:, search:)` (`ignored:` too for the
 missing one); without arguments they check the `@Bean` method's return
@@ -508,9 +522,14 @@ Good to know:
 - **Incompatible versions stop the build**: if `requires` does not match
   the application's `spring_boot_dart`, the generator says which version to
   use (see below).
-- **Registration order**: application beans first, then auto-configuration
-  in Boot's order (see above), so `@ConditionalOnMissingBean` sees what the
-  application declared.
+- **Registration order**: application classes first, then
+  auto-configuration in Boot's order (see above); bean conditions are
+  decided class by class in that order, so `@ConditionalOnMissingBean`
+  sees what the application declared, including the beans of its
+  `@Import`ed registrars. A hand-written auto-configuration bean needs a
+  `source` (its class, `library#Class`, as the generator sets it) or a
+  `factoryMethodName` (a `@Bean` method) for its bean conditions to be
+  decided in that order too; a definition with neither is decided at once.
 - Keep third-party constraints of the starter wide (`dio: '>=5.0.0 <7.0.0'`)
   so applications can resolve them together with other starters.
 

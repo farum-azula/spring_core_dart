@@ -9,6 +9,7 @@ import 'package:spring_core_dart/src/core/io/path_matcher.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
 import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
+import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
 /// Creates a property source from a resource, like Spring's
 /// `PropertySourceFactory` used by `@PropertySource(factory: ...)`.
@@ -228,7 +229,7 @@ class PropertySourceProcessor {
         continue;
       }
       final resource = resourceLoader.getResource(resolved);
-      if (!resource.exists()) {
+      if (!resource.exists() || _missing.contains(resource.description)) {
         if (ignoreResourceNotFound) {
           continue;
         }
@@ -270,7 +271,14 @@ class PropertySourceProcessor {
       final key = resource.description;
       if (resource.supportsSyncRead ||
           _preloaded.containsKey(key) ||
+          _missing.contains(key) ||
           !resource.exists()) {
+        continue;
+      }
+      // A URL is asked with a HEAD request first (Spring's
+      // UrlResource.exists()), so a 404 is a missing resource.
+      if (resource is UrlResource && !await resource.existsAsync()) {
+        _missing.add(key);
         continue;
       }
       _preloaded[key] = await resource.readAsBytes();
@@ -279,6 +287,9 @@ class PropertySourceProcessor {
 
   // Content of async-only resources read by [preload], by description.
   final _preloaded = <String, Uint8List>{};
+
+  // Descriptions of URL resources [preload] found missing.
+  final _missing = <String>{};
 
   // [resource], or its preloaded content when it is async-only.
   Resource _readable(Resource resource) {

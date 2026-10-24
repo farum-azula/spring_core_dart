@@ -15,6 +15,14 @@ enum Stock {
   final String json;
 }
 
+enum Level {
+  low(10),
+  high(20);
+
+  const Level(this.code);
+  final int code;
+}
+
 final _stock = EnumType<Stock>(Stock.values, jsonValue: (s) => s.json);
 
 BeanProperty<T> _p<T extends Object>(
@@ -870,6 +878,24 @@ void main() {
         mapper.readValue('1', const EnumType<Genre>(Genre.values)),
         Genre.science,
       );
+      // A stringified index too, without a leading zero (Jackson).
+      expect(
+        mapper.readValue('"1"', const EnumType<Genre>(Genre.values)),
+        Genre.science,
+      );
+      expect(
+        () => mapper.readValue('"01"', const EnumType<Genre>(Genre.values)),
+        _mappingError('expected one of'),
+      );
+    });
+
+    test('an int @JsonValue is matched by value, never as an index', () {
+      final level = EnumType<Level>(Level.values, jsonValue: (l) => l.code);
+      expect(mapper.readValue('20', level), Level.high);
+      expect(mapper.readValue('"20"', level), Level.high);
+      expect(mapper.readValue('10', level), Level.low);
+      expect(() => mapper.readValue('1', level), _mappingError('10, 20'));
+      expect(() => mapper.readValue('"1"', level), _mappingError('10, 20'));
     });
   });
 
@@ -1260,6 +1286,40 @@ void main() {
         JsonNode.from(jsonDecode('{"a":1}')),
         isNot(mapper.readTree('{"a":2}')),
       );
+    });
+
+    test('equality and coercion follow Jackson 3', () {
+      final nodeException = throwsA(isA<JsonNodeException>());
+      expect(NullNode.instance, isNot(MissingNode.instance));
+      expect(MissingNode.instance, isNot(NullNode.instance));
+      expect(NullNode.instance, JsonNode.from(null));
+      // intValue: exactly an int only.
+      expect(const NumericNode(2.0).intValue(), 2);
+      expect(() => const NumericNode(1.5).intValue(), nodeException);
+      expect(() => const NumericNode(double.nan).intValue(), nodeException);
+      // asInt: numbers truncate, strings must be integers, else the default
+      // or an exception.
+      expect(const NumericNode(1.5).asInt(), 1);
+      expect(() => const NumericNode(double.infinity).asInt(), nodeException);
+      expect(const StringNode('42').asInt(), 42);
+      expect(() => const StringNode('abc').asInt(), nodeException);
+      expect(() => const StringNode('1.5').asInt(), nodeException);
+      expect(() => const StringNode(' 1').asInt(), nodeException);
+      expect(const StringNode('abc').asInt(7), 7);
+      expect(const StringNode('1.5').asDouble(), 1.5);
+      expect(() => const StringNode('NaN').asDouble(), nodeException);
+      expect(() => const StringNode('yes').asBoolean(), nodeException);
+      expect(const StringNode('yes').asBoolean(true), isTrue);
+      expect(NullNode.instance.asInt(), 0);
+      expect(NullNode.instance.asInt(5), 5);
+      // asString: '' for null and missing; containers have no string.
+      expect(NullNode.instance.asString(), '');
+      expect(NullNode.instance.asString('n/a'), 'n/a');
+      expect(MissingNode.instance.asString(), '');
+      expect(const NumericNode(3).asString(), '3');
+      expect(() => ObjectNode().asString(), nodeException);
+      expect(ArrayNode().asString('[]'), '[]');
+      expect(() => ArrayNode().asInt(), nodeException);
     });
   });
 

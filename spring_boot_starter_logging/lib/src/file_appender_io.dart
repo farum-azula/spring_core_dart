@@ -15,8 +15,9 @@ import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 /// of the current microtask (one write instead of one per record); [flush]
 /// writes immediately and [close] writes the rest. When the file would grow
 /// past [maxFileSize], it is renamed to `<path>.1` (older files shift to
-/// `.2`, `.3`, ...); only [maxHistory] such archives are kept, and the
-/// oldest are deleted while together they exceed [totalSizeCap].
+/// `.2`, `.3`, ...); only [maxHistory] such archives are kept (all with
+/// `0`, like Logback), and the oldest are deleted while together they
+/// exceed [totalSizeCap].
 ///
 /// ```dart
 /// LoggingSystem.instance.addAppender(
@@ -66,7 +67,8 @@ class FileAppender extends LogAppender {
   /// Size that triggers a rollover, in bytes; `0` never rolls over.
   final int maxFileSize;
 
-  /// Number of rolled-over files kept (`<path>.1` is the newest).
+  /// Number of rolled-over files kept (`<path>.1` is the newest); `0`
+  /// keeps all, like Logback's `maxHistory`.
   final int maxHistory;
 
   /// The charset of the file (`logging.charset.file`, UTF-8 by default);
@@ -136,24 +138,35 @@ class FileAppender extends LogAppender {
 
   RandomAccessFile _rollOver() {
     _file!.closeSync();
-    final oldest = File('$path.$maxHistory');
-    if (oldest.existsSync()) {
-      oldest.deleteSync();
+    if (maxHistory > 0) {
+      final oldest = File('$path.$maxHistory');
+      if (oldest.existsSync()) {
+        oldest.deleteSync();
+      }
     }
-    for (var i = maxHistory - 1; i >= 1; i--) {
+    for (var i = _lastArchive(); i >= 1; i--) {
       final archive = File('$path.$i');
       if (archive.existsSync()) {
         archive.renameSync('$path.${i + 1}');
       }
     }
-    if (maxHistory > 0) {
-      File(path).renameSync('$path.1');
-    } else {
-      File(path).deleteSync();
-    }
+    File(path).renameSync('$path.1');
     _capTotalSize();
     _open();
     return _file!;
+  }
+
+  // The index of the oldest archive kept: maxHistory - 1 before a rollover
+  // with a limit, the last one in a row (`.1`, `.2`, ...) without (0).
+  int _lastArchive() {
+    if (maxHistory > 0) {
+      return maxHistory - 1;
+    }
+    var last = 0;
+    while (File('$path.${last + 1}').existsSync()) {
+      last++;
+    }
+    return last;
   }
 
   // Deletes the oldest archives while all of them exceed totalSizeCap.
@@ -161,8 +174,9 @@ class FileAppender extends LogAppender {
     if (totalSizeCap <= 0) {
       return;
     }
+    final last = maxHistory > 0 ? maxHistory : _lastArchive();
     final archives = [
-      for (var i = 1; i <= maxHistory; i++)
+      for (var i = 1; i <= last; i++)
         if (File('$path.$i') case final file when file.existsSync()) file,
     ];
     var total = archives.fold(0, (sum, file) => sum + file.lengthSync());

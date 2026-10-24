@@ -18,6 +18,8 @@ const _source =
 final webSocketAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<WebSocketTransport>(
     name: 'webSocketTransport',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'webSocketTransport',
     source: _source,
     conditions: const [
       ConditionGroup(_source, [ConditionalOnMissingBean(WebSocketTransport)]),

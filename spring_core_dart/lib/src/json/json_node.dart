@@ -118,26 +118,44 @@ sealed class JsonNode {
   /// Whether this is a string, number, boolean or `null`.
   bool get isValueNode => !isContainer && !isMissingNode;
 
-  /// The value as a string: the text of a string, number or boolean;
-  /// [defaultValue] for others.
-  String asString([String defaultValue = '']) => defaultValue;
+  /// The value as a string (Jackson 3): the text of a string, number or
+  /// boolean, `''` for `null` and a missing node. An object or array gives
+  /// [defaultValue], or throws a [JsonNodeException] without one; `null`
+  /// and a missing node give [defaultValue] when there is one.
+  String asString([String? defaultValue]) =>
+      defaultValue ?? (throw _cannotCoerce('asString()', 'String'));
 
-  /// The value as an int: a number (truncated), a numeric string or a
-  /// boolean (1 / 0); [defaultValue] otherwise.
-  int asInt([int defaultValue = 0]) => defaultValue;
+  /// The value as an int (Jackson 3): a finite number (truncated), a
+  /// string of an integer (`"42"`), a boolean (1 / 0), 0 for `null` and a
+  /// missing node. Anything else gives [defaultValue], or throws a
+  /// [JsonNodeException] without one; `null` and a missing node give
+  /// [defaultValue] when there is one.
+  int asInt([int? defaultValue]) =>
+      defaultValue ?? (throw _cannotCoerce('asInt()', 'int'));
 
-  /// The value as a double, converted like [asInt].
-  double asDouble([double defaultValue = 0]) => defaultValue;
+  /// The value as a double, converted like [asInt] (a string may be any
+  /// number, `"1.5"`).
+  double asDouble([double? defaultValue]) =>
+      defaultValue ?? (throw _cannotCoerce('asDouble()', 'double'));
 
-  /// The value as a bool: a boolean, `"true"` / `"false"` or a number (not
-  /// 0); [defaultValue] otherwise.
-  bool asBoolean([bool defaultValue = false]) => defaultValue;
+  /// The value as a bool: a boolean, `"true"` / `"false"`, a number (not
+  /// 0), `false` for `null` and a missing node; anything else gives
+  /// [defaultValue], or throws a [JsonNodeException] without one.
+  bool asBoolean([bool? defaultValue]) =>
+      defaultValue ?? (throw _cannotCoerce('asBoolean()', 'boolean'));
+
+  JsonNodeException _cannotCoerce(String method, String type) =>
+      JsonNodeException(
+        '$method: ${runtimeType.toString()} value cannot be converted to '
+        '$type',
+      );
 
   /// The text of a [StringNode]; throws a [JsonNodeException] for others.
   String stringValue() => throw _wrong('a string');
 
-  /// The value of a [NumericNode] as an int; throws a [JsonNodeException]
-  /// for others.
+  /// The value of a [NumericNode] as an int, when it is one exactly;
+  /// throws a [JsonNodeException] for a fraction (`1.5`), NaN, infinity
+  /// and other nodes.
   int intValue() => throw _wrong('a number');
 
   /// The value of a [NumericNode] as a double; throws for others.
@@ -181,9 +199,12 @@ sealed class JsonNode {
   String toPrettyString() =>
       const JsonEncoder.withIndent('  ').convert(toJson());
 
+  // A missing node equals only itself (its JSON is `null` too).
   @override
   bool operator ==(Object other) =>
-      other is JsonNode && _deepEquals(toJson(), other.toJson());
+      other is JsonNode &&
+      other.isMissingNode == isMissingNode &&
+      _deepEquals(toJson(), other.toJson());
 
   // Consistent with ==: object properties in any order hash alike, and
   // numbers equal by value (`1` and `1.0`) hash alike.
@@ -367,25 +388,28 @@ final class StringNode extends JsonNode {
   String stringValue() => value;
 
   @override
-  String asString([String defaultValue = '']) => value;
+  String asString([String? defaultValue]) => value;
+
+  // Like Jackson's NumberInput.looksLikeValidNumber: no blanks, hex, `NaN`.
+  static final _integer = RegExp(r'^[+-]?\d+$');
+  static final _number = RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$');
 
   @override
-  int asInt([int defaultValue = 0]) =>
-      int.tryParse(value.trim()) ??
-      double.tryParse(value.trim())?.truncate() ??
-      defaultValue;
+  int asInt([int? defaultValue]) =>
+      (_integer.hasMatch(value) ? int.tryParse(value) : null) ??
+      super.asInt(defaultValue);
 
   @override
-  double asDouble([double defaultValue = 0]) =>
-      double.tryParse(value.trim()) ?? defaultValue;
+  double asDouble([double? defaultValue]) =>
+      (_number.hasMatch(value) ? double.tryParse(value) : null) ??
+      super.asDouble(defaultValue);
 
   @override
-  bool asBoolean([bool defaultValue = false]) =>
-      switch (value.trim().toLowerCase()) {
-        'true' => true,
-        'false' => false,
-        _ => defaultValue,
-      };
+  bool asBoolean([bool? defaultValue]) => switch (value) {
+    'true' => true,
+    'false' => false,
+    _ => super.asBoolean(defaultValue),
+  };
 
   @override
   String toJson() => value;
@@ -409,22 +433,38 @@ final class NumericNode extends JsonNode {
   num numberValue() => value;
 
   @override
-  int intValue() => value.truncate();
+  int intValue() {
+    final value = this.value;
+    if (value is int) {
+      return value;
+    }
+    if (!value.isFinite) {
+      throw JsonNodeException('intValue(): $value cannot be converted to int');
+    }
+    if (value != value.truncateToDouble()) {
+      throw JsonNodeException(
+        'intValue(): $value has a fractional part, it cannot be converted to '
+        'int exactly',
+      );
+    }
+    return value.toInt();
+  }
 
   @override
   double doubleValue() => value.toDouble();
 
   @override
-  String asString([String defaultValue = '']) => '$value';
+  String asString([String? defaultValue]) => '$value';
 
   @override
-  int asInt([int defaultValue = 0]) => value.truncate();
+  int asInt([int? defaultValue]) =>
+      value.isFinite ? value.truncate() : super.asInt(defaultValue);
 
   @override
-  double asDouble([double defaultValue = 0]) => value.toDouble();
+  double asDouble([double? defaultValue]) => value.toDouble();
 
   @override
-  bool asBoolean([bool defaultValue = false]) => value != 0;
+  bool asBoolean([bool? defaultValue]) => value != 0;
 
   @override
   num toJson() => value;
@@ -445,16 +485,16 @@ final class BooleanNode extends JsonNode {
   bool booleanValue() => value;
 
   @override
-  String asString([String defaultValue = '']) => '$value';
+  String asString([String? defaultValue]) => '$value';
 
   @override
-  int asInt([int defaultValue = 0]) => value ? 1 : 0;
+  int asInt([int? defaultValue]) => value ? 1 : 0;
 
   @override
-  double asDouble([double defaultValue = 0]) => value ? 1 : 0;
+  double asDouble([double? defaultValue]) => value ? 1 : 0;
 
   @override
-  bool asBoolean([bool defaultValue = false]) => value;
+  bool asBoolean([bool? defaultValue]) => value;
 
   @override
   bool toJson() => value;
@@ -471,7 +511,16 @@ final class NullNode extends JsonNode {
   bool get isNull => true;
 
   @override
-  String asString([String defaultValue = '']) => 'null';
+  String asString([String? defaultValue]) => defaultValue ?? '';
+
+  @override
+  int asInt([int? defaultValue]) => defaultValue ?? 0;
+
+  @override
+  double asDouble([double? defaultValue]) => defaultValue ?? 0;
+
+  @override
+  bool asBoolean([bool? defaultValue]) => defaultValue ?? false;
 
   @override
   Object? toJson() => null;
@@ -486,6 +535,18 @@ final class MissingNode extends JsonNode {
 
   @override
   bool get isMissingNode => true;
+
+  @override
+  String asString([String? defaultValue]) => defaultValue ?? '';
+
+  @override
+  int asInt([int? defaultValue]) => defaultValue ?? 0;
+
+  @override
+  double asDouble([double? defaultValue]) => defaultValue ?? 0;
+
+  @override
+  bool asBoolean([bool? defaultValue]) => defaultValue ?? false;
 
   @override
   Object? toJson() => null;

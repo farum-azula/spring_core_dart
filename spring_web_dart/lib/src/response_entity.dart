@@ -28,9 +28,11 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// ```
 class ResponseEntity<T> {
   /// A response with [statusCode], [body] and [headers]; [headers] are
-  /// read-only from here on, like Spring's `HttpEntity`.
+  /// read-only from here on, like Spring's `HttpEntity`. Throws an
+  /// [ArgumentError] unless [statusCode] has three digits (100–999), like
+  /// Spring's `HttpStatusCode.valueOf`.
   ResponseEntity(int statusCode, {this.body, HttpHeaders? headers})
-    : statusCode = HttpStatusCode(statusCode),
+    : statusCode = HttpStatusCode.valueOf(statusCode),
       headers = HttpHeaders.readOnly(headers ?? HttpHeaders());
 
   /// A `200 OK` response with [body].
@@ -49,8 +51,8 @@ class ResponseEntity<T> {
       ? ResponseEntity<T>(HttpStatus.notFound)
       : ResponseEntity<T>(HttpStatus.ok, body: body);
 
-  /// A builder for a response with [statusCode], like Spring's
-  /// `ResponseEntity.status(...)`.
+  /// A builder for a response with [statusCode] (100–999, an
+  /// [ArgumentError] otherwise), like Spring's `ResponseEntity.status(...)`.
   static ResponseEntityBuilder status(int statusCode) =>
       ResponseEntityBuilder._(statusCode);
 
@@ -157,7 +159,8 @@ class ResponseEntity<T> {
 ///     .body(book);
 /// ```
 final class ResponseEntityBuilder {
-  ResponseEntityBuilder._(this._statusCode);
+  ResponseEntityBuilder._(int statusCode)
+    : _statusCode = HttpStatusCode.valueOf(statusCode);
 
   final int _statusCode;
   final _headers = HttpHeaders();
@@ -170,9 +173,10 @@ final class ResponseEntityBuilder {
     return this;
   }
 
-  /// Adds every header of [headers].
+  /// Sets every header of [headers], replacing the values of those names,
+  /// like Spring's `headers(HttpHeaders)` (`putAll`).
   ResponseEntityBuilder headers(HttpHeaders headers) {
-    headers.forEach((name, values) => header(name, values));
+    _headers.putAll(headers);
     return this;
   }
 

@@ -19,6 +19,8 @@ const _source = 'package:spring_boot_starter_feign#FeignAutoConfiguration';
 final feignAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<HttpTransport>(
     name: 'httpTransport',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'httpTransport',
     source: _source,
     conditions: const [
       ConditionGroup(_source, [ConditionalOnMissingBean(HttpTransport)]),

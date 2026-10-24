@@ -64,6 +64,7 @@ final class MethodSignature {
     this.parameterNames = const [],
     this.parameterAnnotations = const [],
     this.annotations = const [],
+    this._mergedAnnotations,
     this.targetTypes = const [],
     this.targetAnnotations = const [],
     this.annotationTypes = const [],
@@ -71,6 +72,7 @@ final class MethodSignature {
     this.implementingTypes = const [],
     this.implementingTypeAnnotations,
     this.implementingTypeAnnotationTypes,
+    this.superclassAnnotations = const [],
     this.isProtected = false,
   });
 
@@ -106,8 +108,23 @@ final class MethodSignature {
   /// has annotations.
   final List<List<Object>> parameterAnnotations;
 
-  /// Const annotations on the member (interface and implementation).
+  /// Const annotations on the member: those of the method that runs and of
+  /// its interface declarations, what `@annotation(...)` pointcuts match
+  /// (like AspectJ, not those of a superclass or mixin method it
+  /// overrides; see [mergedAnnotations]).
   final List<Object> annotations;
+
+  final List<Object>? _mergedAnnotations;
+
+  /// Const annotations on the member and on every declaration it
+  /// overrides or implements (superclasses, mixins, interfaces), most
+  /// specific first, like Spring's `AnnotatedElementUtils` find semantics.
+  ///
+  /// Annotation-driven advisors read these (`@Cacheable` on a superclass
+  /// method still applies to an override without it, as with Spring's
+  /// `AnnotationCacheOperationSource`); `@annotation(...)` matches
+  /// [annotations] only.
+  List<Object> get mergedAnnotations => _mergedAnnotations ?? annotations;
 
   /// Names of the bean class and all its supertypes.
   final List<String> targetTypes;
@@ -140,6 +157,22 @@ final class MethodSignature {
   /// Class names of [implementingTypeAnnotations]; `null` when it is the
   /// bean class ([targetAnnotationTypes]).
   final List<String>? implementingTypeAnnotationTypes;
+
+  /// Const annotations on each superclass and mixin (those that have some)
+  /// of the class whose body runs for the member ([implementingType]),
+  /// nearest first; see [implementingTypeHierarchyAnnotations].
+  final List<List<Object>> superclassAnnotations;
+
+  /// Const annotations on the class whose body runs for the member (the
+  /// bean class, or the superclass or mixin it inherits the member from),
+  /// then on its superclasses and mixins, nearest first: the class
+  /// hierarchy Spring's `AnnotationUtils.findAnnotation` searches from
+  /// `method.getDeclaringClass()` (`@CacheConfig`, class-level
+  /// `@Cacheable`).
+  List<Object> get implementingTypeHierarchyAnnotations => [
+    ...(implementingTypeAnnotations ?? targetAnnotations),
+    for (final level in superclassAnnotations) ...level,
+  ];
 
   /// Whether the member is annotated `@protected` (`package:meta`), the
   /// closest Dart has to Java's `protected` (`execution(protected ...)`).

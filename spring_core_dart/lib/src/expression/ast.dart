@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/introspection_access.dart';
+import 'package:spring_core_dart/src/expression/java_format.dart';
 import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/spel_patterns.dart';
@@ -323,7 +324,7 @@ final class _NullRef implements ValueRef {
 /// final expression =
 ///     SpelExpressionParser().parseExpression('a + 1') as SpelExpression;
 /// final SpelNode ast = expression.ast; // BinaryOperator(add)
-/// ast.toString(); // (a add 1)
+/// ast.toString(); // (a + 1), like Spring's toStringAST
 /// ```
 ///
 /// Spring (Java):
@@ -410,6 +411,12 @@ bool _isRealElement(Object collection, Object? key, Object? value) {
   return identical(marks, _allElements) ||
       (marks is Set<Object?> && marks.contains(key));
 }
+
+// Java's List.toString of [list] (SpEL-built): real elements that are
+// `int`s at run time (the web) print as doubles, `[2.0, 3]`.
+String _javaListString(List<Object?> list) =>
+    '[${[for (final (index, element) in list.indexed)
+      if (_isRealElement(list, index, element)) javaRealString(element! as int) else if (element is List<Object?> && _realElements[element] != null) _javaListString(element) else '$element'].join(', ')}]';
 
 // Methods of `T(Math)` that return a double in Java whatever the
 // arguments; `abs`, `max` and `min` do when an argument is real.
@@ -499,7 +506,9 @@ final class Literal extends SpelNode {
 
 /// An inline list, `{1, 2, 3}` (`{}` is an empty list).
 ///
-/// A new mutable `List` is created on each evaluation.
+/// Like Spring, a list of literals (and of such inline lists and maps) is
+/// unmodifiable; otherwise a new mutable `List` is created on each
+/// evaluation.
 ///
 /// ```dart
 /// SpelExpressionParser().parseExpression('{1, 2, 3}').getValue();
@@ -519,17 +528,26 @@ final class InlineList extends SpelNode {
   /// The item expressions, in order.
   final List<SpelNode> items;
 
+  /// Whether every item is a literal or a constant inline list or map
+  /// (Spring's `InlineList.isConstant`): the list is then unmodifiable.
+  late final bool isConstant = items.every(_isConstantNode);
+
   @override
   Object? getValue(ExpressionState state) {
     final list = <Object?>[];
+    final real = <int>[];
     for (final item in items) {
       final value = item.getValue(state);
       if (item._real && value is int) {
-        _markRealElement(list, list.length);
+        real.add(list.length);
       }
       list.add(value);
     }
-    return list;
+    final result = isConstant ? List<Object?>.unmodifiable(list) : list;
+    for (final index in real) {
+      _markRealElement(result, index);
+    }
+    return result;
   }
 
   @override
@@ -559,9 +577,19 @@ final class InlineMap extends SpelNode {
   /// The key and value expressions, in order.
   final List<(SpelNode, SpelNode)> entries;
 
+  /// Whether every key is a literal or a name and every value a literal or
+  /// a constant inline list or map (Spring's `InlineMap.isConstant`): the
+  /// map is then unmodifiable.
+  late final bool isConstant = entries.every(
+    (entry) =>
+        (entry.$1 is Literal || entry.$1 is PropertyOrFieldReference) &&
+        _isConstantNode(entry.$2),
+  );
+
   @override
   Object? getValue(ExpressionState state) {
     final map = <Object?, Object?>{};
+    final real = <Object?>[];
     for (final (key, value) in entries) {
       // An unquoted key is its own name, like Spring.
       final k = key is PropertyOrFieldReference
@@ -569,16 +597,27 @@ final class InlineMap extends SpelNode {
           : key.getValue(state);
       final v = value.getValue(state);
       if (value._real && v is int) {
-        _markRealElement(map, k);
+        real.add(k);
       }
       map[k] = v;
     }
-    return map;
+    final result = isConstant ? Map<Object?, Object?>.unmodifiable(map) : map;
+    for (final key in real) {
+      _markRealElement(result, key);
+    }
+    return result;
   }
 
   @override
   String toString() => '{${entries.map((e) => '${e.$1}:${e.$2}').join(',')}}';
 }
+
+// A literal, or an inline list or map of constants.
+bool _isConstantNode(SpelNode node) => switch (node) {
+  Literal() => true,
+  InlineList(:final isConstant) || InlineMap(:final isConstant) => isConstant,
+  _ => false,
+};
 
 // ---------------------------------------------------------------------------
 // References
@@ -819,12 +858,22 @@ final class MethodReference extends SpelNode {
       state.trackOperation();
       return javaRealString(target);
     }
+    // A list SpEL built with real numbers in it, on the web: Java's
+    // List.toString, `{2.0}.toString()` is '[2.0]'.
+    if (target is List<Object?> &&
+        name == 'toString' &&
+        arguments.isEmpty &&
+        _realElements[target] != null) {
+      state.trackOperation();
+      return _javaListString(target);
+    }
     // Arguments see the scope root as #this: in `a.b(#this)` the argument
     // is the object `a` was read from, not `a` itself.
     final args = [
       for (final argument in arguments)
         state.withThis(state.scopeRoot, argument, real: state.scopeRootIsReal),
     ];
+    _javaStringArguments(target, args);
     final context = state.context;
     final resolvers = [
       if (target is SpelType) const SpelTypeMethodResolver(),
@@ -865,6 +914,43 @@ final class MethodReference extends SpelNode {
       _signature(args),
       targetType,
     ]);
+  }
+
+  // Java's String.valueOf / format / join and String.formatted print real
+  // numbers as doubles (`2.0`); on the web an integral one is an `int` at
+  // run time, so the real arguments (and lists SpEL built holding real
+  // numbers) are handed over in their Java form.
+  void _javaStringArguments(Object target, List<Object?> args) {
+    final applies = switch (target) {
+      SpelType(name: 'String') => const {
+        'valueOf',
+        'format',
+        'join',
+      }.contains(name),
+      String() => name == 'formatted',
+      _ => false,
+    };
+    if (!applies) {
+      return;
+    }
+    for (var i = 0; i < args.length; i++) {
+      final arg = args[i];
+      if (arg is int && arguments[i]._real) {
+        // `format` keeps a number for `%f` / `%e`.
+        args[i] = name == 'valueOf' || name == 'join'
+            ? javaRealString(arg)
+            : JavaReal(arg);
+      } else if (arg is List<Object?> && _realElements[arg] != null) {
+        args[i] = name == 'join'
+            ? [
+                for (final (index, element) in arg.indexed)
+                  _isRealElement(arg, index, element)
+                      ? javaRealString(element! as int)
+                      : element,
+              ]
+            : _javaListString(arg);
+      }
+    }
   }
 
   String _signature(List<Object?> args) =>
@@ -1160,7 +1246,7 @@ final class Indexer extends SpelNode {
           return value;
         }, (value) => _store(state, target, value, () => target[key] = value));
       case List<Object?>():
-        final i = _intIndex(state, key);
+        final i = _intIndex(state, key, target.length);
         return _FunctionRef(
           () {
             _grow(state, target, i, reading: true);
@@ -1180,7 +1266,12 @@ final class Indexer extends SpelNode {
           },
         );
       case String():
-        final i = _intIndex(state, key);
+        final i = _intIndex(
+          state,
+          key,
+          target.length,
+          SpelMessage.stringIndexOutOfBounds,
+        );
         return _FunctionRef(
           () {
             if (i >= target.length) {
@@ -1250,7 +1341,7 @@ final class Indexer extends SpelNode {
       }
     }
     if (target is Iterable<Object?>) {
-      final i = _intIndex(state, key);
+      final i = _intIndex(state, key, target.length);
       return _FunctionRef(
         () {
           if (i >= target.length) {
@@ -1323,8 +1414,14 @@ final class Indexer extends SpelNode {
   }
 
   // Ints, integral doubles and anything the type converter turns into an
-  // int ('2'); negative indexes are out of bounds.
-  int _intIndex(ExpressionState state, Object? key) {
+  // int ('2'); negative indexes are out of bounds ([message] with the
+  // [length] of the target).
+  int _intIndex(
+    ExpressionState state,
+    Object? key,
+    int length, [
+    SpelMessage message = SpelMessage.collectionIndexOutOfBounds,
+  ]) {
     final int converted;
     if (key is int) {
       converted = key;
@@ -1346,10 +1443,7 @@ final class Indexer extends SpelNode {
       converted = value;
     }
     if (converted < 0) {
-      throw state.error(SpelMessage.collectionIndexOutOfBounds, start, [
-        '?',
-        converted,
-      ]);
+      throw state.error(message, start, [length, converted]);
     }
     return converted;
   }
@@ -1360,8 +1454,9 @@ final class Indexer extends SpelNode {
     int length,
   ) => state.error(SpelMessage.collectionIndexOutOfBounds, start, [length, i]);
 
+  // A `?.` before it is written by the enclosing CompoundExpression.
   @override
-  String toString() => '${nullSafe ? '?.' : ''}[$index]';
+  String toString() => '[$index]';
 }
 
 /// Which matches a [Selection] returns.
@@ -1649,23 +1744,18 @@ final class CompoundExpression extends SpelNode {
       final value = children.last.getValue(state);
       _real = children.last._real;
       return value;
-    }, () => null);
+    });
   }
 
   @override
-  ValueRef getValueRef(ExpressionState state) => _inScope(
-    state,
-    () => children.last.getValueRef(state),
-    () => const _NullRef(),
-  );
+  ValueRef getValueRef(ExpressionState state) =>
+      _inScope(state, () => children.last.getValueRef(state));
 
   /// Evaluates all children but the last, then [last] with the result as
-  /// the active object; [shortCircuit] when a `null` meets a `?.` step.
-  T _inScope<T>(
-    ExpressionState state,
-    T Function() last,
-    T Function() shortCircuit,
-  ) {
+  /// the active object. Like Spring's CompoundExpression, a `null` does not
+  /// end the chain: the next step gets it, a `?.` step gives `null` and any
+  /// other step fails on it.
+  T _inScope<T>(ExpressionState state, T Function() last) {
     // The object the chain starts from becomes the scope root, so
     // arguments inside the chain are evaluated against it.
     state.pushScope(
@@ -1680,12 +1770,6 @@ final class CompoundExpression extends SpelNode {
         final child = children[i];
         final previous = children[i - 1];
         if (value == null) {
-          // Safe navigation (Spring 6.2): a null before a `?.` step ends
-          // the whole chain; later steps are not evaluated, even without
-          // `?.`.
-          if (child.isNullSafe) {
-            return shortCircuit();
-          }
           if (previous is PropertyOrFieldReference &&
               state.configuration.autoGrowNullReferences &&
               (child is Indexer || child is PropertyOrFieldReference)) {
@@ -1709,8 +1793,24 @@ final class CompoundExpression extends SpelNode {
     }
   }
 
+  // Spring's toStringAST: `?.` before a null-safe step, no `.` before an
+  // index (`a?.b[0]`).
   @override
-  String toString() => children.join('.');
+  String toString() {
+    final text = StringBuffer('${children.first}');
+    for (final child in children.skip(1)) {
+      text
+        ..write(
+          child.isNullSafe
+              ? '?.'
+              : child is Indexer
+              ? ''
+              : '.',
+        )
+        ..write(child);
+    }
+    return text.toString();
+  }
 }
 
 /// A type reference, `T(Name)`, evaluating to a [SpelType].
@@ -2118,8 +2218,9 @@ enum BinaryKind {
 /// `matches` or `between`.
 ///
 /// Arithmetic follows Java: `int / int` truncates (`7 / 2` is `3`; an
-/// integer division by zero throws Dart's `IntegerDivisionByZeroException`
-/// unchanged, like Java's `ArithmeticException`), `%` keeps the sign of
+/// integer division (or `%`) by zero throws an `UnsupportedError`
+/// unchanged, on the VM and on the web, like Java's
+/// `ArithmeticException`), `%` keeps the sign of
 /// the left operand, `int ^ int` is computed as a double and truncated
 /// with saturation (`2 ^ -1` is `0`, `2 ^ 100` is the largest `int`), and
 /// `'d' - 3` is `'a'`. `+` concatenates when either side is a string,
@@ -2178,6 +2279,18 @@ final class BinaryOperator extends SpelNode {
             right.start,
             [ExpressionState.typeName(type)],
           );
+        }
+        // On the web an integral number is both an `int` and a `double` at
+        // run time: whether the operand is real decides (`2.0 instanceof
+        // T(Integer)` is false, `2 instanceof T(Double)` too).
+        if (value is int && value is double) {
+          final real = left._real;
+          if (type.type == int) {
+            return !real;
+          }
+          if (type.type == double) {
+            return real;
+          }
         }
         return value != null && type.isInstance(value);
       default:
@@ -2501,7 +2614,28 @@ final class BinaryOperator extends SpelNode {
   }
 
   @override
-  String toString() => '($left ${kind.name} $right)';
+  String toString() => '($left ${_symbols[kind]} $right)';
+
+  // The operator names of Spring's toStringAST (`gt` is written `>`).
+  static const _symbols = {
+    BinaryKind.add: '+',
+    BinaryKind.subtract: '-',
+    BinaryKind.multiply: '*',
+    BinaryKind.divide: '/',
+    BinaryKind.modulus: '%',
+    BinaryKind.power: '^',
+    BinaryKind.eq: '==',
+    BinaryKind.ne: '!=',
+    BinaryKind.lt: '<',
+    BinaryKind.le: '<=',
+    BinaryKind.gt: '>',
+    BinaryKind.ge: '>=',
+    BinaryKind.and: 'and',
+    BinaryKind.or: 'or',
+    BinaryKind.instanceOf: 'instanceof',
+    BinaryKind.matches: 'matches',
+    BinaryKind.between: 'between',
+  };
 }
 
 /// The operator of a [UnaryOperator].
@@ -2567,7 +2701,12 @@ final class UnaryOperator extends SpelNode {
   }
 
   @override
-  String toString() => '${kind.name}($operand)';
+  String toString() =>
+      '${switch (kind) {
+        UnaryKind.not => '!',
+        UnaryKind.minus => '-',
+        UnaryKind.plus => '+',
+      }}$operand';
 }
 
 /// The ternary operator, `cond ? a : b`; only the chosen branch is

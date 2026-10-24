@@ -7,7 +7,10 @@ final class _Call implements MethodInvocation {
   _Call(
     String name, {
     List<Object> annotations = const [],
+    List<Object>? mergedAnnotations,
     List<Object> classAnnotations = const [],
+    List<Object>? implementingClassAnnotations,
+    List<List<Object>> superclassAnnotations = const [],
     this.arg = 'a',
     MemberKind kind = MemberKind.method,
     this.onProceed,
@@ -20,7 +23,13 @@ final class _Call implements MethodInvocation {
          parameterTypes: const ['String'],
          parameterNames: const ['isbn'],
          annotations: annotations,
+         mergedAnnotations: mergedAnnotations,
          targetAnnotations: classAnnotations,
+         implementingTypes: implementingClassAnnotations == null
+             ? const []
+             : const ['Base'],
+         implementingTypeAnnotations: implementingClassAnnotations,
+         superclassAnnotations: superclassAnnotations,
        );
 
   @override
@@ -92,6 +101,73 @@ void main() {
           isEmpty,
         );
       }
+    });
+
+    test('those of an overridden superclass method apply to an override '
+        'without its own, before the class ones', () {
+      final manager = InMemoryCacheManager();
+      final interceptor = CacheInterceptor(cacheManager: manager);
+      var calls = 0;
+      _Call call() => _Call(
+        'find',
+        mergedAnnotations: const [Cacheable('base')],
+        classAnnotations: onClass,
+        onProceed: () => calls++,
+      );
+      expect(pointcut.matches(call().signature, 'shelf'), isTrue);
+      expect(interceptor.invoke(call()), 'find a');
+      expect(interceptor.invoke(call()), 'find a');
+      expect(calls, 1);
+      expect(manager.getCache('base')!.get('a'), isNotNull);
+      expect(manager.getCache('shelf')!.get('a'), isNull);
+
+      // The override's own annotations win over the overridden ones.
+      interceptor.invoke(
+        _Call(
+          'find',
+          annotations: const [Cacheable('own')],
+          mergedAnnotations: const [Cacheable('own'), Cacheable('other')],
+        ),
+      );
+      expect(manager.getCache('own')!.get('a'), isNotNull);
+      expect(manager.getCache('other')?.get('a'), isNull);
+    });
+
+    test('come from the class declaring the method, then its '
+        'superclasses (the nearest per annotation type), like Spring', () {
+      final manager = InMemoryCacheManager();
+      final interceptor = CacheInterceptor(cacheManager: manager);
+      // Shelf extends Base extends Root; find is inherited from Base.
+      interceptor.invoke(
+        _Call(
+          'find',
+          classAnnotations: const [Cacheable('subclass')],
+          implementingClassAnnotations: const [],
+          superclassAnnotations: const [
+            [
+              CacheConfig(cacheNames: ['base']),
+            ],
+            [
+              CacheConfig(cacheNames: ['root']),
+              Cacheable.of(),
+              CachePut('root'),
+            ],
+          ],
+        ),
+      );
+      // Not the subclass's @Cacheable('subclass').
+      expect(manager.cacheNames, ['base', 'root']);
+
+      final local = AnnotationCacheOperationSource.cacheAnnotationsOf(
+        _Call(
+          'find',
+          classAnnotations: const [Cacheable('own')],
+          superclassAnnotations: const [
+            [Cacheable('base'), CacheEvict('base')],
+          ],
+        ).signature,
+      );
+      expect(local, const [Cacheable('own'), CacheEvict('base')]);
     });
 
     test('@CacheConfig alone does not make a member cached', () {

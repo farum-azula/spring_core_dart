@@ -6,11 +6,15 @@ import 'package:spring_core_dart/src/core/env/environment.dart';
 /// Registers beans programmatically, like Spring 7's `BeanRegistrar`.
 ///
 /// Used through `@Import([MyRegistrar])` on a configuration class (the
-/// generator creates it with its no-argument constructor when the
-/// importing class is registered) or `context.register(MyRegistrar())`
-/// before refresh. [register] runs while the modules are loaded, in
-/// registration order (after the definitions of the importing module), so
-/// it can read the environment, including `@PropertySource` files.
+/// generator creates it with its no-argument constructor) or
+/// `context.register(MyRegistrar())` before refresh. Like Spring's
+/// configuration class reader, [register] runs right after the importing
+/// class's `@Bean` methods are registered, and only when that class is
+/// (its conditions, `registerBean`-phase ones such as Boot's
+/// `@ConditionalOnBean` included, decided once for the class and its
+/// imports); every later class and auto-configuration sees the beans, so
+/// their `@ConditionalOnMissingBean` backs off. It can read the
+/// environment, including `@PropertySource` files.
 ///
 /// ```dart
 /// class MessagingRegistrar implements BeanRegistrar {
@@ -100,8 +104,12 @@ abstract interface class BeanRegistry {
 /// Put the class in `@Import([...])` (it needs a no-argument constructor)
 /// or pass an instance to `context.register(...)`. It may implement
 /// `EnvironmentAware`, `BeanFactoryAware` and `ResourceLoaderAware`
-/// (called before [selectImports]). The selected modules are loaded before
-/// the definitions of the importing module, with their own conditions.
+/// (called before [selectImports]). It runs while the importing class is
+/// parsed (its parse-phase conditions matched); the selected modules are
+/// parsed at once and their classes are read before the importing class,
+/// with their own conditions. They are not registered when the importing
+/// class is skipped in the `registerBean` phase, unless another kept class
+/// imports them too.
 ///
 /// ```dart
 /// class StorageSelector implements ImportSelector, EnvironmentAware {
@@ -169,7 +177,8 @@ abstract interface class DeferredImportSelector implements ImportSelector {}
 /// Put the class in `@Import([...])` (it needs a no-argument constructor)
 /// or pass an instance to `context.register(...)`. It may implement
 /// `EnvironmentAware`, `BeanFactoryAware` and `ResourceLoaderAware`
-/// (called first). Runs after the definitions of the importing module.
+/// (called first). Runs right after the importing class's `@Bean` methods
+/// are registered, only when that class is (see [BeanRegistrar]).
 /// [BeanRegistrar] is the more convenient API.
 ///
 /// ```dart

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `hasSingleBean`, `hasBean` and `doesNotHaveBean` count the beans of the parent contexts too (`withParent`), like AssertJ's default `Scope.INCLUDE_ANCESTORS`.
+- `BeanOverride` by type replaces the single `@Primary` bean among several (it failed); `BeanOverride(name:)` takes an alias and replaces the bean it names, keeping every alias (it failed).
 - Breaking: initializers are `ApplicationContextInitializer` objects (`ApplicationContextInitializer.of((context) => ...)`), following `spring_boot_dart`.
 - `ApplicationContextRunner.runAsync` refreshes with `refreshAsync()` (asynchronous `@PostConstruct` / init methods are awaited; a failed start is closed with `closeAsync()`).
 - `ApplicationContextRunner` sorts its auto-configurations like Boot's `AutoConfigurations.of(...)`: by name, `order`, then `before` / `after` (`withAutoConfiguration(module, metadata)` takes the module's `@AutoConfigurationModule`).

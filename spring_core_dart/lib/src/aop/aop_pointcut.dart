@@ -42,13 +42,19 @@ abstract interface class AopPointcut {
 /// that saving; any other advisor bean of a starter turns it off, since
 /// the build cannot tell which beans it matches.
 ///
+/// Read [MethodSignature.mergedAnnotations] to also see the annotations of
+/// the superclass, mixin and interface declarations the member overrides
+/// (Spring's `AnnotatedElementUtils` find semantics), as the cache and
+/// method validation advisors do; [MethodSignature.annotations] is what
+/// `@annotation(...)` matches.
+///
 /// ```dart
 /// final class CacheAnnotationPointcut implements AnnotationPointcut {
 ///   const CacheAnnotationPointcut();
 ///
 ///   @override
 ///   bool matches(MethodSignature signature, String beanName) =>
-///       signature.annotations.any((a) => a is Cacheable);
+///       signature.mergedAnnotations.any((a) => a is Cacheable);
 /// }
 ///
 /// DefaultPointcutAdvisor(const CacheAnnotationPointcut(), interceptor);
@@ -162,46 +168,72 @@ final class AnnotationMatchingPointcut<A> implements AnnotationPointcut {
 final class ComposablePointcut implements AopPointcut {
   /// Starts from [pointcut] (every member by default).
   ComposablePointcut([AopPointcut pointcut = const TruePointcut()])
-    : _matches = ((s, name, aliases) =>
-          pointcutMatchesBean(pointcut, s, name, aliases));
+    : _matches = ((s, name, aliases, introduced) => pointcutMatchesBean(
+        pointcut,
+        s,
+        name,
+        aliases,
+        introducedTypes: introduced,
+      ));
 
-  bool Function(MethodSignature s, String beanName, List<String> aliases)
+  bool Function(
+    MethodSignature s,
+    String beanName,
+    List<String> aliases,
+    List<String> introducedTypes,
+  )
   _matches;
 
   /// Matches what this pointcut or [other] matches.
   ComposablePointcut union(AopPointcut other) {
     final current = _matches;
-    _matches = (s, name, aliases) =>
-        current(s, name, aliases) ||
-        pointcutMatchesBean(other, s, name, aliases);
+    _matches = (s, name, aliases, introduced) =>
+        current(s, name, aliases, introduced) ||
+        pointcutMatchesBean(
+          other,
+          s,
+          name,
+          aliases,
+          introducedTypes: introduced,
+        );
     return this;
   }
 
   /// Matches what both this pointcut and [other] match.
   ComposablePointcut intersection(AopPointcut other) {
     final current = _matches;
-    _matches = (s, name, aliases) =>
-        current(s, name, aliases) &&
-        pointcutMatchesBean(other, s, name, aliases);
+    _matches = (s, name, aliases, introduced) =>
+        current(s, name, aliases, introduced) &&
+        pointcutMatchesBean(
+          other,
+          s,
+          name,
+          aliases,
+          introducedTypes: introduced,
+        );
     return this;
   }
 
   @override
   bool matches(MethodSignature signature, String beanName) =>
-      _matches(signature, beanName, const []);
+      _matches(signature, beanName, const [], const []);
 
   /// Like [matches], with the bean's aliases and qualifier values for the
-  /// `bean(...)` parts.
+  /// `bean(...)` parts and the interfaces `@DeclareParents` adds to its
+  /// proxy ([introducedTypes]) for `this(...)`.
   bool matchesBean(
     MethodSignature signature,
     String beanName,
-    List<String> beanAliases,
-  ) => _matches(signature, beanName, beanAliases);
+    List<String> beanAliases, {
+    List<String> introducedTypes = const [],
+  }) => _matches(signature, beanName, beanAliases, introducedTypes);
 }
 
 /// Whether [pointcut] matches [signature] of the bean [beanName], with its
 /// aliases and qualifier values ([beanAliases]) for pointcuts that test
-/// bean names ([ExpressionPointcut], [ComposablePointcut]).
+/// bean names and the interfaces `@DeclareParents` adds to the bean's proxy
+/// ([introducedTypes]) for `this(...)` ([ExpressionPointcut],
+/// [ComposablePointcut]).
 ///
 /// ```dart
 /// pointcutMatchesBean(pointcut, signature, 'orders', ['primaryOrders']);
@@ -210,10 +242,21 @@ bool pointcutMatchesBean(
   AopPointcut pointcut,
   MethodSignature signature,
   String beanName,
-  List<String> beanAliases,
-) => switch (pointcut) {
-  final ExpressionPointcut p => p.matchesBean(signature, beanName, beanAliases),
-  final ComposablePointcut p => p.matchesBean(signature, beanName, beanAliases),
+  List<String> beanAliases, {
+  List<String> introducedTypes = const [],
+}) => switch (pointcut) {
+  final ExpressionPointcut p => p.matchesBean(
+    signature,
+    beanName,
+    beanAliases,
+    introducedTypes: introducedTypes,
+  ),
+  final ComposablePointcut p => p.matchesBean(
+    signature,
+    beanName,
+    beanAliases,
+    introducedTypes: introducedTypes,
+  ),
   _ => pointcut.matches(signature, beanName),
 };
 
@@ -410,12 +453,19 @@ final class ExpressionPointcut implements AopPointcut {
       matchesBean(signature, beanName, const []);
 
   /// Like [matches], with the bean's aliases and qualifier values for
-  /// `bean(...)` (Spring's `BeanFactoryAnnotationUtils.isQualifierMatch`).
+  /// `bean(...)` (Spring's `BeanFactoryAnnotationUtils.isQualifierMatch`)
+  /// and the interfaces `@DeclareParents` adds to the bean's proxy
+  /// ([introducedTypes]) for `this(...)`.
   bool matchesBean(
     MethodSignature signature,
     String beanName,
-    List<String> beanAliases,
-  ) => _root.check(_Static(signature, [beanName, ...beanAliases])) != false;
+    List<String> beanAliases, {
+    List<String> introducedTypes = const [],
+  }) =>
+      _root.check(
+        _Static(signature, [beanName, ...beanAliases], introducedTypes),
+      ) !=
+      false;
 
   /// Evaluates the expression for one call: the bound advice parameters
   /// (empty when nothing is bound), or `null` when the call does not
@@ -424,9 +474,13 @@ final class ExpressionPointcut implements AopPointcut {
     MethodInvocation invocation, {
     String beanName = '',
     List<String> beanAliases = const [],
+    List<String> introducedTypes = const [],
   }) {
     final bound = <String, Object?>{};
-    final context = _Dynamic(invocation, [beanName, ...beanAliases]);
+    final context = _Dynamic(invocation, [
+      beanName,
+      ...beanAliases,
+    ], introducedTypes);
     return _root.run(context, bound) ? Map.unmodifiable(bound) : null;
   }
 
@@ -436,16 +490,22 @@ final class ExpressionPointcut implements AopPointcut {
 
 // What a static check sees: the member and the bean's names.
 class _Static {
-  _Static(this.signature, this.beanNames);
+  _Static(this.signature, this.beanNames, [this.introducedTypes = const []]);
 
   final MethodSignature signature;
   final List<String> beanNames;
+
+  /// Interfaces `@DeclareParents` adds to the proxy (for `this(...)`).
+  final List<String> introducedTypes;
 }
 
 // What a call-time check sees: the static information plus the call.
 final class _Dynamic extends _Static {
-  _Dynamic(this.invocation, List<String> beanNames)
-    : super(invocation.signature, beanNames);
+  _Dynamic(
+    this.invocation,
+    List<String> beanNames, [
+    List<String> introducedTypes = const [],
+  ]) : super(invocation.signature, beanNames, introducedTypes);
 
   final MethodInvocation invocation;
 }
@@ -742,10 +802,12 @@ final class _PointcutParser {
     final binding = _binding(body);
     final type = binding?.typeName ?? _simple(body);
     final any = type == 'Object' || type == 'dynamic';
+    // `this`: the proxy, which also implements the introduced interfaces.
     bool named(_Static c) =>
         any ||
         c.signature.targetTypes.contains(type) ||
-        c.signature.targetType == type;
+        c.signature.targetType == type ||
+        (isThis && c.introducedTypes.contains(type));
     if (binding == null) {
       return _Leaf(named);
     }
@@ -1060,19 +1122,25 @@ final class _PointcutParser {
     final head = RegExp(
       r'^\s*((?:!?\s*(?:public|protected|private|static|final)\s+)*)',
     ).firstMatch(body)!;
-    // The return type pattern: one word, or a parenthesized combination
-    // (`(String || int)`), which may contain spaces.
+    // The return type pattern: one word, where a parenthesized combination
+    // (`(String || int)`, `!(String || int)`) and type arguments
+    // (`Map<String, int>`) may contain spaces.
     var rest = body.substring(head.end);
     String? returnText;
-    if (rest.startsWith('(')) {
-      final end = _closingParenthesis(rest);
-      if (end > 0) {
-        returnText = rest.substring(0, end + 1);
-        rest = rest.substring(end + 1);
+    var depth = 0;
+    var end = 0;
+    while (end < rest.length &&
+        (depth > 0 || !RegExp(r'\s').hasMatch(rest[end]))) {
+      if (rest[end] == '<' || rest[end] == '(') {
+        depth++;
+      } else if (rest[end] == '>' || rest[end] == ')') {
+        depth--;
       }
-    } else if (RegExp(r'^\S+').firstMatch(rest) case final word?) {
-      returnText = word[0];
-      rest = rest.substring(word.end);
+      end++;
+    }
+    if (end > 0) {
+      returnText = rest.substring(0, end);
+      rest = rest.substring(end);
     }
     final match = RegExp(r'^\s+([^\s(]+)\s*\((.*)\)\s*$').firstMatch(rest);
     if (returnText == null || match == null) {
@@ -1121,19 +1189,6 @@ final class _PointcutParser {
               _declaringMatches(typePattern.$1, typePattern.$2, c.signature)) &&
           _matchParams(params, c.signature.parameterTypes),
     );
-  }
-
-  // Index of the `)` closing the `(` at the start of [text]; -1 if none.
-  static int _closingParenthesis(String text) {
-    var depth = 0;
-    for (var i = 0; i < text.length; i++) {
-      if (text[i] == '(') {
-        depth++;
-      } else if (text[i] == ')' && --depth == 0) {
-        return i;
-      }
-    }
-    return -1;
   }
 
   // Subtypes `Type+` knows among the types signatures name (simple names

@@ -231,31 +231,49 @@ void main() {
       expect(eval('#this.name.substring(0, 6)', null, context), 'Nikola');
     });
 
-    test('safe navigation short-circuits the chain, like Spring 6.2', () {
+    test('safe navigation applies to one step, like Spring 7', () {
       final orphan = Inventor('Alone', 1900);
       final context = inventorContext(orphan);
       expect(eval('mentor?.name', null, context), isNull);
       expect(eval('mentor?.name?.length', null, context), isNull);
-      // A null before `?.` ends the whole chain: `.length`, `.greet()` and
-      // the index are not evaluated.
-      expect(eval('mentor?.name.length', null, context), isNull);
-      expect(eval('mentor?.name.length()', null, context), isNull);
-      expect(eval('mentor?.greet(1).length', null, context), isNull);
-      expect(eval('mentor?.inventions[0].length', null, context), isNull);
       expect(eval('mentor?.greet(1)', null, context), isNull);
+      expect(eval('mentor?.greet(1)?.length', null, context), isNull);
       expect(eval('mentor?.[0]', null, context), isNull);
       expect(eval('mentor?.?[true]', null, context), isNull);
       expect(eval('mentor?.![#this]', null, context), isNull);
-      expect(eval('mentor?.^[true].name', null, context), isNull);
-      expect(eval(r'mentor?.$[true].name', null, context), isNull);
-      // Only a null *before* `?.` short-circuits: a null result of `?.`
-      // does not protect the next step.
+      expect(eval('mentor?.^[true]?.name', null, context), isNull);
+      // A null does not end the chain (Spring's CompoundExpression): the
+      // `?.` step gives null and the next step without `?.` fails on it.
+      expect(
+        () => eval('mentor?.name.length', null, context),
+        spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
+      );
+      expect(
+        () => eval('mentor?.name.length()', null, context),
+        spelError(SpelMessage.methodCallOnNullObjectNotAllowed),
+      );
+      expect(
+        () => eval('mentor?.greet(1).length', null, context),
+        spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
+      );
+      expect(
+        () => eval('mentor?.inventions[0]', null, context),
+        spelError(SpelMessage.cannotIndexIntoNullValue),
+      );
+      expect(
+        () => eval(r'mentor?.$[true].name', null, context),
+        spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
+      );
       final root = {
         'a': {'b': null},
       };
       expect(eval('a?.b', root), isNull);
       expect(
         () => eval('a?.b.c', root),
+        spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
+      );
+      expect(
+        () => eval('x?.b.c', {'x': null}),
         spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
       );
       // Non-null chains are unaffected, and so are assignments.
@@ -266,9 +284,14 @@ void main() {
       parser.parseExpression('mentor?.name').setValue(context, null, 'Mia');
       expect(orphan.mentor!.name, 'Mia');
       orphan.mentor = null;
-      // Assignment through a short-circuited chain is a no-op.
+      // Assigning a `?.` step on null is a no-op; a later step fails.
       parser.parseExpression('mentor?.name').setValue(context, null, 'x');
-      parser.parseExpression('mentor?.name.length').setValue(context, null, 1);
+      expect(
+        () => parser
+            .parseExpression('mentor?.name.length')
+            .setValue(context, null, 1),
+        spelError(SpelMessage.propertyOrFieldNotWritableOnNull),
+      );
       expect(
         () => eval('mentor.name', null, context),
         spelError(SpelMessage.propertyOrFieldNotReadableOnNull),
@@ -881,6 +904,44 @@ void main() {
         "#a = ({k: 2}.size() > 1 ? -x : y ?: ++#z)",
       ) as SpelExpression).ast;
       expect(ast.toString(), isNotEmpty);
+      // Spring's toStringAST.
+      for (final (text, rendered) in [
+        ('a?.b.c', 'a?.b.c'),
+        ('a?.[0]', 'a?.[0]'),
+        ('a?.m(1)', 'a?.m(1)'),
+        ('a?.?[x]', 'a?.?[x]'),
+        ('a.b[0]', 'a.b[0]'),
+        ('a > b', '(a > b)'),
+        ('a gt b and c le d', '((a > b) and (c <= d))'),
+        ('a + b * 2', '(a + (b * 2))'),
+        ('a div b mod c', '((a / b) % c)'),
+        ('!a', '!a'),
+        ('-x', '-x'),
+        ('#list[-1]', '#list[-1]'),
+        ('a ? b : c', '(a ? b : c)'),
+        ('a ?: b', '(a ?: b)'),
+        ('a ? b ?: c : d', '(a ? (b ?: c) : d)'),
+      ]) {
+        expect(
+          (parser.parseExpression(text) as SpelExpression).ast.toString(),
+          rendered,
+          reason: text,
+        );
+      }
+      expect(
+        () => eval(
+          '#list[-1]',
+          null,
+          StandardEvaluationContext()..setVariable('list', [1, 2]),
+        ),
+        throwsA(
+          isA<SpelEvaluationException>().having(
+            (e) => e.message,
+            'message',
+            contains("The collection has '2' elements, index '-1' is invalid"),
+          ),
+        ),
+      );
       for (final text in [
         'a.?[x]',
         'a.^[x]',

@@ -1,6 +1,22 @@
 // Java's String.format for `T(String).format(...)` and `'...'.formatted(...)`
 // in SpEL (internal; not exported).
 
+import 'package:spring_core_dart/src/expression/spel_numbers.dart';
+
+/// A real number that is an `int` at run time (the web), as a format
+/// argument: `%s` prints it like Java's Double.toString (`2.0`), `%f` /
+/// `%e` take its value and `%d` rejects it, like a Java double.
+final class JavaReal {
+  /// The real number [value].
+  const JavaReal(this.value);
+
+  /// The value.
+  final int value;
+
+  @override
+  String toString() => javaRealString(value);
+}
+
 final _specifier = RegExp(r'%(\d+\$)?([-#+ 0,(<]*)?(\d+)?(\.\d+)?([a-zA-Z%])');
 
 /// [format] with [args] like Java's `String.format` (`Locale.ROOT`):
@@ -79,7 +95,9 @@ String _truncate(String text, int? precision) =>
     ? text
     : text.substring(0, precision);
 
-num _number(Object? arg, String specifier) => arg is num
+num _number(Object? arg, String specifier) => arg is JavaReal
+    ? arg.value
+    : arg is num
     ? arg
     : throw FormatException("'$specifier' needs a number, got $arg");
 

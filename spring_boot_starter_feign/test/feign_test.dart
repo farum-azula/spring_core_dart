@@ -15,6 +15,15 @@ final class TraceInterceptor implements RequestInterceptor {
       template.header('X-Client', template.clientName);
 }
 
+final class _TransportRegistrar implements BeanRegistrar {
+  _TransportRegistrar(this.transport);
+  final HttpTransport transport;
+
+  @override
+  void register(BeanRegistry registry, Environment environment) => registry
+      .registerBean<HttpTransport>((_) => transport, name: 'appTransport');
+}
+
 void main() {
   late MockHttpTransport server;
   late ApplicationContextRunner runner;
@@ -27,6 +36,40 @@ void main() {
         .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
         .withPropertyValues(['catalog.url=https://api.neon.test'])
         .withBean<HttpTransport>(() => server);
+  });
+
+  test('backs off for an HttpTransport of a registrar the application '
+      '@Imports', () {
+    // What the generator emits for `@Configuration()
+    // @Import([TransportRegistrar]) class AppConfig {}`.
+    final app = BeanModule(
+      'imports',
+      [
+        BeanDefinition<Object>(
+          name: 'appConfig',
+          source: 'package:app/app.dart#AppConfig',
+          annotations: const [Configuration()],
+          create: (_) => Object(),
+        ),
+      ],
+      registrars: [
+        ImportDeclaration(
+          () => _TransportRegistrar(server),
+          importer: 'package:app/app.dart#AppConfig',
+        ),
+      ],
+    );
+    const ApplicationContextRunner()
+        .withUserConfiguration(appModule)
+        .withUserConfiguration(app)
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+        .withPropertyValues(['catalog.url=https://api.neon.test'])
+        .run((context) {
+          expect(context, hasSingleBean<HttpTransport>());
+          expect(context.getBean<HttpTransport>(), same(server));
+          expect(context.getBean<CatalogClient>(), isNotNull);
+        });
   });
 
   test('GET with a path variable, JSON into an immutable class', () async {

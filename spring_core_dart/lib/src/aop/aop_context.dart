@@ -70,6 +70,18 @@ bool takeCallThroughProxy(Object proxy) {
   return false;
 }
 
+/// Marks the next call on [bean] as made through a reference to its proxy
+/// (a `@Lazy` injection point resolved to it), not through `this`: when
+/// [bean] is a subclass proxy whose own code is running, that call is
+/// advised, as in Spring where the reference is the CGLIB proxy.
+///
+/// Used by `DefaultListableBeanFactory.lazyDependency`; not exported.
+void callThroughProxyReference(Object bean) {
+  if (isInProxyBody(bean)) {
+    _throughProxy = bean;
+  }
+}
+
 // Subclass proxies (the bean is its own proxy) whose own code runs: in
 // the synchronous part of the call, and in the zone of a `Future` member.
 final _bodies = <Object>[];

@@ -80,6 +80,26 @@ void main() {
       expect(eval("'x' + 2.0"), 'x2.0');
     });
 
+    test('instanceof, String.valueOf / format / join and list strings', () {
+      expect(eval('2.0 instanceof T(Integer)'), isFalse);
+      expect(eval('2.0 instanceof T(Double)'), isTrue);
+      expect(eval('2 instanceof T(Integer)'), isTrue);
+      expect(eval('2 instanceof T(Double)'), isFalse);
+      expect(eval('(1.0 + 1) instanceof T(Long)'), isFalse);
+      expect(eval('2.0 instanceof T(Number)'), isTrue);
+      expect(eval('T(String).valueOf(2.0)'), '2.0');
+      expect(eval('T(String).valueOf(2)'), '2');
+      expect(eval("T(String).format('%s|%.1f', 2.0, 2.0)"), '2.0|2.0');
+      expect(eval("'%s %s'.formatted(2.0, 3)"), '2.0 3');
+      expect(eval("T(String).join('/', {2.0, 3})"), '2.0/3');
+      expect(eval("T(String).join('/', 2.0, 3)"), '2.0/3');
+      expect(eval('{2.0}.toString()'), '[2.0]');
+      expect(eval('{2.0, 3, {4.0}}.toString()'), '[2.0, 3, [4.0]]');
+      expect(eval('T(String).valueOf({2.0})'), '[2.0]');
+      // Java's IllegalFormatConversionException, rethrown as is.
+      expect(() => eval("T(String).format('%d', 2.0)"), throwsFormatException);
+    });
+
     test('literals out of the 64-bit range are rejected (EL1035E)', () {
       for (final text in ['99999999999999999999', '9223372036854775808']) {
         expect(

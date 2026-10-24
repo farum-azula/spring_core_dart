@@ -298,7 +298,7 @@ enum SearchStrategy {
 /// Spring (Java): `@ConditionalOnBean(DataSource.class)`,
 /// `@ConditionalOnBean(value = {DataSource.class, Clock.class},
 /// search = SearchStrategy.CURRENT)`.
-class ConditionalOnBean implements Condition {
+class ConditionalOnBean implements ConfigurationCondition {
   /// Requires a bean of [type]; without it, of the bean's own type.
   const ConditionalOnBean([this.type])
     : name = null,
@@ -346,6 +346,12 @@ class ConditionalOnBean implements Condition {
   /// The contexts searched.
   final SearchStrategy search;
 
+  /// Decided when the bean definitions are registered, after every
+  /// earlier configuration class (Boot's `OnBeanCondition` is a
+  /// `REGISTER_BEAN` `ConfigurationCondition`).
+  @override
+  ConfigurationPhase get configurationPhase => ConfigurationPhase.registerBean;
+
   @override
   bool matches(ConditionContext context) {
     final spec = _BeanSpec(
@@ -380,12 +386,18 @@ class ConditionalOnBean implements Condition {
 /// ```
 ///
 /// Spring (Java): `@ConditionalOnSingleCandidate(DataSource.class)`.
-class ConditionalOnSingleCandidate implements Condition {
+class ConditionalOnSingleCandidate implements ConfigurationCondition {
   /// Requires a single candidate of [type].
   const ConditionalOnSingleCandidate(this.type);
 
   /// The bean type.
   final Type type;
+
+  /// Decided when the bean definitions are registered, after every
+  /// earlier configuration class (Boot's `OnBeanCondition` is a
+  /// `REGISTER_BEAN` `ConfigurationCondition`).
+  @override
+  ConfigurationPhase get configurationPhase => ConfigurationPhase.registerBean;
 
   @override
   bool matches(ConditionContext context) {
@@ -442,7 +454,7 @@ class ConditionalOnSingleCandidate implements Condition {
 ///
 /// Spring (Java): `@ConditionalOnMissingBean`,
 /// `@ConditionalOnMissingBean(ignored = TestClock.class)`.
-class ConditionalOnMissingBean implements Condition {
+class ConditionalOnMissingBean implements ConfigurationCondition {
   /// Requires that no bean of [type] exists; without it, of the bean's own
   /// type.
   const ConditionalOnMissingBean([this.type])
@@ -496,6 +508,12 @@ class ConditionalOnMissingBean implements Condition {
 
   /// The contexts searched.
   final SearchStrategy search;
+
+  /// Decided when the bean definitions are registered, after every
+  /// earlier configuration class (Boot's `OnBeanCondition` is a
+  /// `REGISTER_BEAN` `ConfigurationCondition`).
+  @override
+  ConfigurationPhase get configurationPhase => ConfigurationPhase.registerBean;
 
   @override
   bool matches(ConditionContext context) {

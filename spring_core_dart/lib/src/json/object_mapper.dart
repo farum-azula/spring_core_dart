@@ -540,8 +540,27 @@ class ObjectMapper {
           'null map keys cannot be written as JSON',
           path: '$path',
         ),
-        final Object key => key.toString(),
+        final Object key => _jsonValueKey(key, path) ?? key.toString(),
       };
+
+  // A key whose class has a `@JsonValue` is written as that value, like
+  // Jackson's key serializer for such types.
+  String? _jsonValueKey(Object key, _Path path) {
+    final introspection = introspector.findIntrospection(key);
+    if (introspection == null) {
+      return null;
+    }
+    final info = _info(introspection);
+    final Object? value;
+    if (info.valueProperty case final property?) {
+      value = property.getValue(key);
+    } else if (info.valueMethod case final method?) {
+      value = method.invoke(key, const []);
+    } else {
+      return null;
+    }
+    return _writeKey(value, path);
+  }
 
   Duration? _formatOffset(JsonFormat? format) =>
       format == null || format.timezone.isEmpty
@@ -608,30 +627,41 @@ class ObjectMapper {
         '${(minutes % 60).toString().padLeft(2, '0')}';
   }
 
+  // Java's Duration.toString: every part carries the sign
+  // (`PT-1M-30S`), a fraction is a decimal of the seconds.
   static String _isoDuration(Duration duration) {
-    final negative = duration.isNegative;
-    var micros = duration.inMicroseconds.abs();
-    final hours = micros ~/ Duration.microsecondsPerHour;
-    micros -= hours * Duration.microsecondsPerHour;
-    final minutes = micros ~/ Duration.microsecondsPerMinute;
-    micros -= minutes * Duration.microsecondsPerMinute;
-    final seconds = micros / Duration.microsecondsPerSecond;
-    final text = StringBuffer(negative ? '-PT' : 'PT');
-    if (hours > 0) {
+    const microsPerSecond = Duration.microsecondsPerSecond;
+    final total = duration.inMicroseconds;
+    if (total == 0) {
+      return 'PT0S';
+    }
+    // Java's seconds (floored) and nanos (0 to 999999999).
+    final micros = total % microsPerSecond;
+    final seconds = (total - micros) ~/ microsPerSecond;
+    final nanos = micros * 1000;
+    final effective = seconds < 0 && nanos > 0 ? seconds + 1 : seconds;
+    final hours = effective ~/ 3600;
+    final minutes = effective.remainder(3600) ~/ 60;
+    final secs = effective.remainder(60);
+    final text = StringBuffer('PT');
+    if (hours != 0) {
       text.write('${hours}H');
     }
-    if (minutes > 0) {
+    if (minutes != 0) {
       text.write('${minutes}M');
     }
-    if (seconds > 0 || (hours == 0 && minutes == 0)) {
-      text
-        ..write(
-          seconds == seconds.truncateToDouble()
-              ? seconds.toInt()
-              : seconds.toString(),
-        )
-        ..write('S');
+    if (secs == 0 && nanos == 0 && text.length > 2) {
+      return text.toString();
     }
+    text.write(seconds < 0 && nanos > 0 && secs == 0 ? '-0' : '$secs');
+    if (nanos > 0) {
+      final fraction =
+          '${seconds < 0 ? 2000000000 - nanos : nanos + 1000000000}'
+              .substring(1)
+              .replaceFirst(RegExp(r'0+$'), '');
+      text.write('.$fraction');
+    }
+    text.write('S');
     return text.toString();
   }
 
@@ -879,6 +909,9 @@ class ObjectMapper {
 
   static final _numeric = RegExp(r'^-?\d+(\.\d+)?$');
 
+  // A stringified enum index: digits without a leading zero (Jackson).
+  static final _enumIndex = RegExp(r'^(0|[1-9]\d{0,8})$');
+
   // A timestamp: an integer is seconds (or milliseconds without
   // readDateTimestampsAsNanoseconds), a decimal is seconds with the
   // fraction; in microseconds.
@@ -953,20 +986,38 @@ class ObjectMapper {
   }
 
   Object _readEnum<E extends Enum>(EnumType<E> type, Object json, _Path path) {
+    // An int @JsonValue (Jackson's EnumResolver.isFromIntValue): numbers
+    // and numeric strings are matched against the values only, never read
+    // as an index.
+    final fromIntValue =
+        type.values.isNotEmpty &&
+        type.values.every((value) => type.toJsonValue(value) is int);
     for (final value in type.values) {
-      if (type.toJsonValue(value) == json) {
+      final jsonValue = type.toJsonValue(value);
+      if (jsonValue == json ||
+          (fromIntValue && json is String && '$jsonValue' == json.trim())) {
         return value;
       }
     }
     // The name is accepted too (also when @JsonValue gives another form),
-    // and an index (Jackson, unless FAIL_ON_NUMBERS_FOR_ENUMS).
+    // and an index, also as a string (Jackson, unless
+    // FAIL_ON_NUMBERS_FOR_ENUMS).
     for (final value in type.values) {
       if (value.name == json) {
         return value;
       }
     }
-    if (json is int && json >= 0 && json < type.values.length) {
-      return type.values[json];
+    if (!fromIntValue) {
+      final index = switch (json) {
+        final int index => index,
+        final String text when _enumIndex.hasMatch(text.trim()) => int.parse(
+          text.trim(),
+        ),
+        _ => null,
+      };
+      if (index != null && index >= 0 && index < type.values.length) {
+        return type.values[index];
+      }
     }
     throw _expected(
       'one of ${[for (final v in type.values) jsonEncode(type.toJsonValue(v))].join(', ')}',
@@ -1884,6 +1935,22 @@ final class _ClassInfo {
     }
   }
 
+  // A read-only property (`access: readOnly`) is never read, so a
+  // constructor parameter that needs it cannot get a value: says so
+  // instead of calling it missing.
+  JsonMappingException? _readOnlyParameter(
+    BeanParameter parameter,
+    _Path path,
+  ) => readOnlyNames.contains(parameter.name)
+      ? JsonMappingException(
+          'property "${jsonNames[parameter.name]}" is read-only '
+          '(JsonPropertyAccess.readOnly), so it is not read from JSON, but '
+          'the constructor of ${introspection.beanType} requires it: make '
+          'the parameter optional or nullable, or the property not read-only',
+          path: '$path',
+        )
+      : null;
+
   Object _construct(
     BeanConstructor<Object> constructor,
     Map<String, Object?> values,
@@ -1902,11 +1969,12 @@ final class _ClassInfo {
         }
       }
       if (!present && parameter.isRequired && !parameter.type.nullable) {
-        throw JsonMappingException(
-          'missing property "$name" (required by '
-          '${introspection.beanType})',
-          path: '$path',
-        );
+        throw _readOnlyParameter(parameter, path) ??
+            JsonMappingException(
+              'missing property "$name" (required by '
+              '${introspection.beanType})',
+              path: '$path',
+            );
       }
       if (parameter.isNamed) {
         if (present || parameter.isRequired) {
@@ -1923,11 +1991,12 @@ final class _ClassInfo {
     }
     for (final (parameter, _, given) in positional) {
       if (!given && !parameter.type.nullable) {
-        throw JsonMappingException(
-          'missing property "${jsonNames[parameter.name]}": a later '
-          'positional parameter is given, so this one cannot keep its default',
-          path: '$path',
-        );
+        throw _readOnlyParameter(parameter, path) ??
+            JsonMappingException(
+              'missing property "${jsonNames[parameter.name]}": a later '
+              'positional parameter is given, so this one cannot keep its default',
+              path: '$path',
+            );
       }
     }
     try {

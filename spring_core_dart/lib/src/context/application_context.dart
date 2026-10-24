@@ -236,7 +236,11 @@ abstract interface class ConfigurableApplicationContext
   void removeApplicationListener(GenericApplicationListener listener);
 
   /// The listeners added with [addApplicationListener] (Spring's
-  /// `getApplicationListeners`); listener beans are not included.
+  /// `getApplicationListeners`), including the singleton
+  /// [GenericApplicationListener] beans and `registerSingleton` objects
+  /// added once created, as Spring's `ApplicationListenerDetector` does;
+  /// `ApplicationListener<E>` beans (wired by bean name), lazy listener
+  /// beans not created yet and `@EventListener` methods are not included.
   List<GenericApplicationListener> get applicationListeners;
 
   /// Adds a resolver for a custom location scheme (for example `asset:`),
@@ -868,6 +872,54 @@ class AnnotationConfigApplicationContext
   List<ConditionEvaluation> get conditionEvaluations =>
       List.unmodifiable(_conditionEvaluations);
 
+  // How modules load: Spring Framework 7's ConfigurationClassParser, then
+  // its ConfigurationClassBeanDefinitionReader, per configuration class.
+  // A class is the definitions sharing one class key (the ConditionGroup
+  // key, else the `library#Class` of their source) plus the
+  // ImportDeclarations naming it (`importer`, else their ConditionGroup).
+  // It is a configuration class when it has `@Configuration`, `@Bean`
+  // methods or imports (Spring's full and lite modes); otherwise a
+  // component.
+  //
+  // Parse phase, per module (its BeanModule.imports first), then per class
+  // in definition order; only parse-phase conditions count (plain ones and
+  // parseConfiguration ConfigurationConditions; registerBean ones such as
+  // Boot's @ConditionalOnBean / @ConditionalOnMissingBean are ignored):
+  //  1. the module's @PropertySources (a registerBean-phase condition of
+  //     the declaring class does not stop them);
+  //  2. the class's imports in declaration order, when the class's
+  //     parse-phase conditions match (decided once per class key): an
+  //     ImportSelector runs now and the modules it selects are parsed
+  //     recursively, so their classes come before the importing class
+  //     (they are read first) and their property sources are visible to
+  //     later parse-phase conditions (a DeferredImportSelector waits until
+  //     everything else is parsed); registrars (BeanRegistrar,
+  //     ImportBeanDefinitionRegistrar) are collected on the class;
+  //  3. the class's definitions. One without a registerBean-phase
+  //     condition registers at once, unless every class importing it is
+  //     decided by the reader. One with such a condition waits for the
+  //     reader when it comes from a class (a `source`: a scanned
+  //     component or an imported class, which Spring parses as a lite
+  //     configuration class too) or its class is a configuration class;
+  //     only a hand-written definition with neither is decided in both
+  //     phases at once.
+  // Imports without a class (hand-written) act as a class of their own:
+  // selectors before the module's classes, registrars after them. A module
+  // selected again adds its importer (Spring's mergeImportedBy); loaded
+  // again directly, it is no longer imported.
+  //
+  // Reader phase, per class in parse order (user classes before the
+  // auto-configurations after them, imported classes before their
+  // importer), like its TrackedConditionEvaluator: the class is decided
+  // once — skipped when every class importing it was skipped, else by its
+  // registerBean-phase conditions (the ConditionGroup caches the decision
+  // per class key, so the class, its @Bean methods, its imports and the
+  // classes it imports share it). A kept class registers its waiting
+  // definitions (each @Bean method's own conditions decided now), then its
+  // registrars run; a skipped class registers nothing and runs no
+  // registrar. So an earlier class's @Bean or registrar bean is visible
+  // to every later class's @ConditionalOnBean / @ConditionalOnMissingBean,
+  // a component's as much as a configuration class's.
   void _loadModules() {
     _conditionEvaluations.clear();
     final processor = _propertySources;
@@ -890,39 +942,58 @@ class AnnotationConfigApplicationContext
       );
     }
 
+    // Spring's configurationClasses, in parse order.
+    final classes = <_ConfigurationClass>[];
+    // The classes of each loaded module, for a later importer.
+    final moduleClasses = Map<BeanModule, List<_ConfigurationClass>>.identity();
     // Spring's DeferredImportSelectorHandler: selectors collected while
-    // loading and run at the end (null while they run: then at once).
-    List<DeferredImportSelector>? deferredSelectors = [];
-    // Definitions of configuration classes and @Bean methods with a
-    // registerBean-phase condition, decided once everything is loaded
-    // (Spring's ConfigurationClassBeanDefinitionReader).
-    final deferredDefinitions = <BeanDefinition<Object>>[];
-    // Depth-first: imports first; per module, property sources before
-    // conditions so conditions can read the loaded properties. Each module
-    // is loaded once even if imported several times.
-    void load(BeanModule module) {
-      if (!seen.add(module)) {
+    // parsing and run at the end (null while they run: then at once).
+    final deferredSelectors =
+        Map<DeferredImportSelector, _ConfigurationClass?>.identity();
+    var deferring = true;
+
+    // [module] (and the modules it imports) loaded again: imported by
+    // [importedBy] too, or (with `null`) no longer imported.
+    void importAgain(
+      BeanModule module,
+      _ConfigurationClass? importedBy,
+      Set<BeanModule> visited,
+    ) {
+      if (!visited.add(module)) {
         return;
       }
-      module.imports.forEach(load);
-      final registrars = [
-        for (final declaration in module.registrars)
-          if (matchIn(
-            parse,
-            declaration.conditions,
-            '@Import (module ${module.name})',
-          ))
-            declaration.create(),
-      ];
-      // Like Spring: selected modules before the importing one; deferred
-      // selectors after everything else.
-      for (final selector in registrars.whereType<ImportSelector>()) {
-        if (selector is DeferredImportSelector && deferredSelectors != null) {
-          _awareCallbacks(selector);
-          deferredSelectors.add(selector);
-        } else {
-          _processImport(selector, load);
+      for (final imported in module.imports) {
+        importAgain(imported, importedBy, visited);
+      }
+      for (final configurationClass
+          in moduleClasses[module] ?? const <_ConfigurationClass>[]) {
+        final importers = configurationClass.importedBy;
+        if (importedBy == null) {
+          importers.clear();
+        } else if (importers.isNotEmpty && !importers.contains(importedBy)) {
+          importers.add(importedBy);
         }
+      }
+    }
+
+    void load(BeanModule module, _ConfigurationClass? importedBy) {
+      if (!seen.add(module)) {
+        importAgain(module, importedBy, {});
+        return;
+      }
+      final moduleOwn = moduleClasses[module] = [];
+      _ConfigurationClass newClass(String? key, List<Condition> conditions) {
+        final configurationClass = _ConfigurationClass(
+          key,
+          importedBy,
+          conditions,
+        );
+        moduleOwn.add(configurationClass);
+        return configurationClass;
+      }
+
+      for (final imported in module.imports) {
+        load(imported, importedBy);
       }
       for (final declaration in module.propertySources) {
         if (!matchIn(
@@ -941,23 +1012,99 @@ class AnnotationConfigApplicationContext
         );
         _keepDefaultPropertiesLast();
       }
+      // The module's classes, in definition order.
+      final byKey = <String, _ConfigurationClass>{};
+      _ConfigurationClass classFor(String key, List<Condition> conditions) =>
+          byKey.putIfAbsent(key, () => newClass(key, conditions));
       for (final definition in module.definitions) {
-        final conditions = definition.conditions;
-        final name = definition.name;
-        if (!hasPhaseCondition(conditions, registerBean)) {
-          conditionContext.definition = definition;
-          if (conditionContext.allMatch(conditions, name)) {
-            _factory.registerBeanDefinition(definition);
-          }
-        } else if (!_isConfigurationDefinition(definition)) {
-          // A plain component: both phases now, like Spring's scanning.
-          if (matchIn(parse, conditions, name, definition) &&
-              matchIn(registerBean, conditions, name, definition)) {
-            _factory.registerBeanDefinition(definition);
-          }
-        } else if (matchIn(parse, conditions, name, definition)) {
-          deferredDefinitions.add(definition);
+        final (key, group) = _classKeyOf(definition);
+        classFor(key, group).definitions.add(definition);
+      }
+      final ownImports = newClass(null, const []);
+      final leadingSelectors = <(_ConfigurationClass, ImportSelector)>[];
+      final source = '@Import (module ${module.name})';
+      for (final declaration in module.registrars) {
+        final group = declaration.conditions
+            .whereType<ConditionGroup>()
+            .firstOrNull;
+        final key = declaration.importer ?? group?.key;
+        if (key != null) {
+          // Decided with its class, when the class is parsed.
+          classFor(key, [?group]).imports.add(declaration);
+          continue;
         }
+        if (!matchIn(parse, declaration.conditions, source)) {
+          continue;
+        }
+        final import = declaration.create();
+        if (import is ImportSelector) {
+          leadingSelectors.add((
+            newClass(null, declaration.conditions),
+            import,
+          ));
+        } else {
+          ownImports.registrars.add((import, declaration.conditions, source));
+        }
+      }
+
+      void select(_ConfigurationClass importer, ImportSelector selector) {
+        if (selector is DeferredImportSelector && deferring) {
+          _awareCallbacks(selector);
+          deferredSelectors[selector] = importer;
+        } else {
+          _processImport(selector, (module) => load(module, importer));
+        }
+      }
+
+      for (final (importer, selector) in leadingSelectors) {
+        select(importer, selector);
+      }
+      // Imported only by classes the reader decides: everything waits.
+      final tracked = importedBy?.decidedByReader() ?? false;
+      for (final configurationClass in [...byKey.values, ownImports]) {
+        // Its imports, in declaration order, if the class is parsed.
+        for (final declaration in configurationClass.imports) {
+          if (!matchIn(
+            parse,
+            declaration.conditions,
+            source,
+            configurationClass.definitions.firstOrNull,
+          )) {
+            continue;
+          }
+          switch (declaration.create()) {
+            case final ImportSelector selector:
+              select(configurationClass, selector);
+            case final registrar:
+              configurationClass.registrars.add((
+                registrar,
+                declaration.conditions,
+                source,
+              ));
+          }
+        }
+        final configuration =
+            configurationClass.imports.isNotEmpty ||
+            configurationClass.registrars.isNotEmpty ||
+            configurationClass.definitions.any(_isConfigurationDefinition);
+        for (final definition in configurationClass.definitions) {
+          final conditions = definition.conditions;
+          final name = definition.name;
+          if (!matchIn(parse, conditions, name, definition)) {
+            continue;
+          }
+          final decidedLater = hasPhaseCondition(conditions, registerBean);
+          if (tracked ||
+              (decidedLater && (configuration || definition.source != null))) {
+            configurationClass.waiting.add(definition);
+          } else if (!decidedLater ||
+              matchIn(registerBean, conditions, name, definition)) {
+            // Nothing left to decide, or a hand-written definition without
+            // a class: both phases now.
+            _factory.registerBeanDefinition(definition);
+          }
+        }
+        classes.add(configurationClass);
       }
       module.configurers.forEach(
         (type, configurer) => _factory.registerConfigurer(
@@ -968,44 +1115,93 @@ class AnnotationConfigApplicationContext
         ),
       );
       introspector.registerAll(module.introspections);
-      for (final registrar in registrars) {
-        if (registrar is! ImportSelector) {
-          _processImport(registrar, load);
-        }
-      }
     }
 
     for (final component in _components) {
       if (component is BeanModule) {
-        load(component);
+        load(component, null);
       } else if (component is DeferredImportSelector) {
         _awareCallbacks(component);
-        deferredSelectors.add(component);
+        deferredSelectors[component] = null;
       } else {
-        _processImport(component, load);
+        _processImport(component, (module) => load(module, null));
       }
     }
     // Deferred selectors by order (stable); those they import run at once.
-    final selectors = OrderComparator.sort(deferredSelectors);
-    deferredSelectors = null;
-    for (final selector in selectors) {
-      selector.selectImports().forEach(load);
+    deferring = false;
+    for (final selector in OrderComparator.sort(deferredSelectors.keys)) {
+      selector.selectImports().forEach(
+        (module) => load(module, deferredSelectors[selector]),
+      );
     }
-    for (final definition in deferredDefinitions) {
-      if (matchIn(
-        registerBean,
-        definition.conditions,
-        definition.name,
-        definition,
-      )) {
-        _factory.registerBeanDefinition(definition);
+
+    // The reader's TrackedConditionEvaluator, memoized per class (a class
+    // on an import cycle counts as kept while it is being decided).
+    bool isSkipped(_ConfigurationClass configurationClass) {
+      if (configurationClass.skipped case final skipped?) {
+        return skipped;
+      }
+      configurationClass.skipped = false;
+      final importers = configurationClass.importedBy;
+      return configurationClass.skipped =
+          (importers.isNotEmpty && importers.every(isSkipped)) ||
+          (hasPhaseCondition(configurationClass.conditions, registerBean) &&
+              !matchIn(
+                registerBean,
+                configurationClass.conditions,
+                configurationClass.key ?? '@Import',
+                configurationClass.definitions.firstOrNull,
+              ));
+    }
+
+    for (final configurationClass in classes) {
+      if ((configurationClass.waiting.isEmpty &&
+              configurationClass.registrars.isEmpty) ||
+          isSkipped(configurationClass)) {
+        continue;
+      }
+      for (final definition in configurationClass.waiting) {
+        if (matchIn(
+          registerBean,
+          definition.conditions,
+          definition.name,
+          definition,
+        )) {
+          _factory.registerBeanDefinition(definition);
+        }
+      }
+      for (final (registrar, conditions, source)
+          in configurationClass.registrars) {
+        if (!hasPhaseCondition(conditions, registerBean) ||
+            matchIn(registerBean, conditions, source)) {
+          _processImport(registrar, (module) => load(module, null));
+        }
       }
     }
     conditionContext.definition = null;
   }
 
-  // A configuration class or `@Bean` method: decided in the registerBean
-  // phase after loading (Spring's reader); other components at once.
+  // The class a definition belongs to: the key of its class's
+  // ConditionGroup (with the group), else `library#Class` of its source
+  // (`library#Class.method` for a @Bean method), else its factory bean or
+  // its own name.
+  static (String, List<Condition>) _classKeyOf(
+    BeanDefinition<Object> definition,
+  ) {
+    final group = definition.conditions.whereType<ConditionGroup>().firstOrNull;
+    if (group != null) {
+      return (group.key, [group]);
+    }
+    if (definition.source case final source?) {
+      final hash = source.indexOf('#');
+      final dot = hash < 0 ? -1 : source.indexOf('.', hash);
+      return (dot < 0 ? source : source.substring(0, dot), const []);
+    }
+    return (definition.factoryBeanName ?? definition.name, const []);
+  }
+
+  // A configuration class or `@Bean` method: what its class holds waits
+  // for the reader (as does any definition with a class source).
   static bool _isConfigurationDefinition(BeanDefinition<Object> definition) =>
       definition.factoryMethodName != null ||
       definition.annotations.any((a) => a is Configuration);
@@ -1287,6 +1483,16 @@ class AnnotationConfigApplicationContext
             _BeanMethodListener(this, name, method),
           );
         }
+      }
+      // A lazy GenericApplicationListener / SmartApplicationListener bean
+      // is only known by name until the first event creates it (Spring's
+      // listener bean names: it cannot decide without the instance).
+      if (definition.lazy &&
+          definition.isSingleton &&
+          !definition.eventListeners.any(_isListenerInterface) &&
+          _factory.getSingleton(name) == null &&
+          _factory.isTypeMatch(name, GenericApplicationListener)) {
+        multicaster.addApplicationListener(_LazyListenerBean(this, name));
       }
     }
     // Clear the buffer first so the replayed events are really dispatched.
@@ -1891,6 +2097,50 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   String toString() => '_BeanMethodListener($_beanName, ${_method.id})';
 }
 
+/// A lazy [GenericApplicationListener] bean known by name, like a listener
+/// bean name in Spring's multicaster: the first event creates the bean
+/// (whose detector registration then receives the later events), asks it
+/// whether it handles the event, and retires this placeholder.
+final class _LazyListenerBean implements GenericApplicationListener, Ordered {
+  _LazyListenerBean(this._context, this._beanName);
+
+  final AnnotationConfigApplicationContext _context;
+  final String _beanName;
+  GenericApplicationListener? _bean;
+
+  // Its @Order / @Priority: the bean is not created to ask it.
+  @override
+  int get order {
+    final factory = _context._factory;
+    return (factory.containsBeanDefinition(_beanName)
+            ? DefaultListableBeanFactory.annotatedOrderOf(
+                factory.getBeanDefinition(_beanName),
+              )
+            : null) ??
+        Ordered.lowestPrecedence;
+  }
+
+  @override
+  bool supportsEvent(Object event) {
+    // The multicaster dispatches a copy, so leaving it now is safe.
+    _context._multicaster?.removeApplicationListener(this);
+    final factory = _context._factory;
+    if (factory.getSingleton(_beanName) != null) {
+      // Created meanwhile: registered by the detector already.
+      return false;
+    }
+    final bean = factory.getBeanByName(_beanName) as GenericApplicationListener;
+    _bean = bean;
+    return bean.supportsEvent(event);
+  }
+
+  @override
+  void onApplicationEvent(Object event) => _bean!.onApplicationEvent(event);
+
+  @override
+  String toString() => '_LazyListenerBean($_beanName)';
+}
+
 /// Registers listener beans with the context once they are created, like
 /// Spring's `ApplicationListenerDetector`: a singleton that is a
 /// [GenericApplicationListener] (an `ApplicationListener<E>` bean is wired
@@ -1960,6 +2210,10 @@ final class _ApplicationListenerDetector
       _context.removeApplicationListener(bean);
     }
     var removed = false;
+    _context._multicaster?.removeApplicationListeners(
+      (listener) =>
+          listener is _LazyListenerBean && listener._beanName == beanName,
+    );
     _context._multicaster?.removeApplicationListeners((listener) {
       final match =
           listener is _BeanMethodListener &&
@@ -1974,6 +2228,61 @@ final class _ApplicationListenerDetector
       _detached.add(beanName);
     }
   }
+}
+
+// A configuration class while modules load (Spring's ConfigurationClass):
+// its definitions, the imports it declares, and the classes importing it.
+final class _ConfigurationClass {
+  _ConfigurationClass(
+    this.key,
+    _ConfigurationClass? importedBy,
+    this.conditions,
+  ) : importedBy = [?importedBy];
+
+  // The class key; `null` for imports without a class.
+  final String? key;
+
+  // The classes whose selectors imported this one's module (Spring's
+  // importedBy); empty when it was not imported.
+  final List<_ConfigurationClass> importedBy;
+
+  // The class's ConditionGroup (or a classless import's conditions).
+  final List<Condition> conditions;
+
+  // Whether the reader decides if this class (and what it imports) is
+  // registered: it has a registerBean-phase condition, or every class
+  // importing it is decided by the reader.
+  // [path] guards against import cycles.
+  bool decidedByReader([Set<_ConfigurationClass>? path]) {
+    if (hasPhaseCondition(conditions, ConfigurationPhase.registerBean)) {
+      return true;
+    }
+    final importers = path ?? {};
+    if (importedBy.isEmpty || !importers.add(this)) {
+      return false;
+    }
+    try {
+      return importedBy.every(
+        (importer) => importer.decidedByReader(importers),
+      );
+    } finally {
+      importers.remove(this);
+    }
+  }
+
+  final definitions = <BeanDefinition<Object>>[];
+
+  // The @Imports naming this class.
+  final imports = <ImportDeclaration>[];
+
+  // Registrars with their declaration's conditions and source.
+  final registrars = <(Object, List<Condition>, String)>[];
+
+  // Definitions registered (or not) by the reader.
+  final waiting = <BeanDefinition<Object>>[];
+
+  // The reader's decision, once made.
+  bool? skipped;
 }
 
 /// A bean registered by `AnnotationConfigApplicationContext.registerBean`.
@@ -2111,27 +2420,19 @@ final class _ConditionContext
   final AnnotationConfigApplicationContext _context;
   final _results = <String, bool>{};
 
-  // Whether all of [conditions] match (stopping at the first that does
-  // not), recording each outcome under [source]; a ConditionGroup records
-  // its own conditions under its key.
-  bool allMatch(List<Condition> conditions, String source) {
-    for (final condition in conditions) {
-      final matched = condition.matches(this);
-      if (condition is! ConditionGroup) {
-        recordCondition(source, condition, matched);
-      }
-      if (!matched) {
-        return false;
-      }
-    }
-    return true;
-  }
+  // Outcomes recorded so far: a condition evaluated again with the same
+  // outcome (a plain condition of a class in both phases) is reported
+  // once, like Boot's ConditionAndOutcomes.
+  final _recorded = <(String, Condition, bool)>{};
 
   @override
-  void recordCondition(String source, Condition condition, bool matched) =>
+  void recordCondition(String source, Condition condition, bool matched) {
+    if (_recorded.add((source, condition, matched))) {
       _context._conditionEvaluations.add(
         ConditionEvaluation(source, condition, matched: matched),
       );
+    }
+  }
 
   @override
   BeanDefinition<Object>? definition;

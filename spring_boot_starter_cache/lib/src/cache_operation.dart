@@ -174,17 +174,39 @@ final class AnnotationCacheOperationSource {
       annotation is Caching;
 
   /// The cache annotations that apply to the member [signature], like
-  /// Spring's `AbstractFallbackCacheOperationSource`: its own, else those
-  /// on the class (`@Cacheable` on the class applies to every public
-  /// method, not to getters, setters or `Object`'s members).
+  /// Spring's `AbstractFallbackCacheOperationSource`: its own (and those
+  /// of its interface declarations), else those of the superclass or
+  /// mixin method it overrides ([MethodSignature.mergedAnnotations], the
+  /// nearest first), else those on the class that declares the method's
+  /// body and its superclasses
+  /// ([MethodSignature.implementingTypeHierarchyAnnotations], like Spring's
+  /// fallback to `method.getDeclaringClass()` with find semantics):
+  /// `@Cacheable` on the class applies to every public method, not to
+  /// getters, setters or `Object`'s members.
   static List<Object> cacheAnnotationsOf(MethodSignature signature) {
-    final own = signature.annotations.where(isCacheAnnotation).toList();
+    var own = signature.annotations.where(isCacheAnnotation).toList();
+    if (own.isEmpty) {
+      own = signature.mergedAnnotations.where(isCacheAnnotation).toList();
+    }
     if (own.isNotEmpty ||
         signature.kind != MemberKind.method ||
         _objectMembers.contains(signature.name)) {
       return own;
     }
-    return signature.targetAnnotations.where(isCacheAnnotation).toList();
+    // Spring finds them over the hierarchy and, when there is more than
+    // one operation, keeps the local ones: those of the class and the
+    // (@Inherited) ones of its superclasses whose type it does not have.
+    final found = <Object>[];
+    final types = <Type>{};
+    for (final level in [
+      signature.implementingTypeAnnotations ?? signature.targetAnnotations,
+      ...signature.superclassAnnotations,
+    ]) {
+      final annotations = level.where(isCacheAnnotation).toList();
+      found.addAll(annotations.where((a) => !types.contains(a.runtimeType)));
+      types.addAll(annotations.map((a) => a.runtimeType));
+    }
+    return found;
   }
 
   static const _objectMembers = {'toString', 'noSuchMethod', '==', 'hashCode'};
@@ -196,7 +218,10 @@ final class AnnotationCacheOperationSource {
       _operations[signature] ??= _parse(signature);
 
   static List<CacheOperation> _parse(MethodSignature signature) {
-    final config = signature.targetAnnotations.whereType<CacheConfig>();
+    // Spring's DefaultCacheConfig(method.getDeclaringClass()): the nearest
+    // @CacheConfig of the declaring class and its superclasses.
+    final config = signature.implementingTypeHierarchyAnnotations
+        .whereType<CacheConfig>();
     final defaults = config.isEmpty ? const CacheConfig() : config.first;
     final member = '${signature.declaringType}.${signature.name}';
     final operations = <CacheOperation>[];

@@ -1340,6 +1340,13 @@ class BeanScanner {
     if (reader.isType) {
       return _isWritableType(reader.typeValue);
     }
+    if (reader.isSymbol) {
+      return _isPublicSymbol(value);
+    }
+    if (value.toRecordValue() case final record?) {
+      return record.positional.every(_isRecreatable) &&
+          record.named.values.every(_isRecreatable);
+    }
     if (reader.isList) {
       return reader.listValue.every(_isRecreatable);
     }
@@ -1843,7 +1850,8 @@ class BeanScanner {
     final members = <ProxyMember>[];
     final seen = <String>{};
     final library = type.element.library;
-    for (final current in [type, ...type.allSupertypes]) {
+    final hierarchy = [type, ...type.allSupertypes];
+    for (final current in hierarchy) {
       if (current.isDartCoreObject) {
         continue;
       }
@@ -1858,7 +1866,7 @@ class BeanScanner {
           continue;
         }
         final implementation = type.lookUpMethod(name, library) ?? method;
-        final member = _proxyMethod(implementation, method, declaring);
+        final member = _proxyMethod(implementation, hierarchy, declaring);
         if (member == null) {
           _fail(
             'The introduced method $declaring.$name cannot be forwarded by a '
@@ -2135,6 +2143,28 @@ class BeanScanner {
     ConstructorElement? constructor,
   }) {
     _proxyFailure = null;
+    // A component class that cannot be implemented but has supertypes that
+    // can: a proxy implementing only those would hide the class (advice
+    // matched on it, or on its private-state members, would not run, and
+    // the bean could not be injected by its class). CGLIB subclasses it,
+    // so a subclass proxy is preferred; implementing the supertypes is the
+    // fallback when the class cannot be extended either.
+    if (constructor != null &&
+        implementSelf &&
+        (mode ?? proxyMode) == ProxyMode.all &&
+        !targetType.element.library.isInSdk &&
+        !_canImplement(targetType)) {
+      final subclass = _subclassProxyModel(
+        targetType,
+        className,
+        constructor,
+        '${targetType.element.name} cannot be implemented by a generated '
+        'class (it has private members, or is final, base or sealed).',
+      );
+      if (subclass?.subclass != null) {
+        return _withImplementations(_rejectCachedStreams(subclass));
+      }
+    }
     final model = _buildProxyModel(
       targetType,
       className,
@@ -2167,6 +2197,7 @@ class BeanScanner {
     }
     final target = model.targetType;
     final library = target.element.library;
+    final superclassAnnotations = <Element?, List<List<DartObject>>>{};
     bool isProtected(Element? element) =>
         element != null &&
         (element.metadata.hasProtected ||
@@ -2189,6 +2220,10 @@ class BeanScanner {
             }),
           );
       final owner = implementation?.enclosingElement;
+      member.superclassAnnotations = superclassAnnotations[owner] ??=
+          _superclassAnnotations(
+            owner is InterfaceElement ? owner : target.element,
+          );
       if (owner is! InterfaceElement || owner == target.element) {
         continue;
       }
@@ -2200,6 +2235,31 @@ class BeanScanner {
       member.implementingTypeAnnotations = _userAnnotations(owner);
     }
     return model;
+  }
+
+  // The annotations of each superclass and mixin of [element] that has
+  // some, nearest first (the order members are looked up in), like the
+  // class hierarchy Spring's `AnnotationUtils.findAnnotation` searches.
+  List<List<DartObject>> _superclassAnnotations(InterfaceElement element) {
+    final levels = <List<DartObject>>[];
+    void add(InterfaceElement type) {
+      if (_userAnnotations(type) case final annotations
+          when annotations.isNotEmpty) {
+        levels.add(annotations);
+      }
+    }
+
+    InterfaceElement? current = element;
+    while (current != null) {
+      current.mixins.reversed.map((mixin) => mixin.element).forEach(add);
+      final supertype = current.supertype;
+      if (supertype == null || supertype.isDartCoreObject) {
+        break;
+      }
+      add(supertype.element);
+      current = supertype.element;
+    }
+    return levels;
   }
 
   // A subclass proxy (see `SubclassProxy`) of a component class that no
@@ -2261,10 +2321,11 @@ class BeanScanner {
       '$typeName cannot override it ($reason).',
     );
     // `@nonVirtual` (package:meta) on any declaration of the member.
+    final hierarchy = [targetType, ...targetType.allSupertypes];
     bool nonVirtual(
       String name,
       ExecutableElement? Function(InterfaceType) of,
-    ) => [targetType, ...targetType.allSupertypes].any((type) {
+    ) => hierarchy.any((type) {
       final declaration = of(type);
       return declaration != null &&
           (declaration.metadata.hasNonVirtual ||
@@ -2297,7 +2358,7 @@ class BeanScanner {
           skip('method', name, nonVirtualReason);
           continue;
         }
-        final member = _proxyMethod(implementation, method, declaring);
+        final member = _proxyMethod(implementation, hierarchy, declaring);
         if (member == null) {
           skip(
             'method',
@@ -2407,9 +2468,9 @@ class BeanScanner {
       subclass: SubclassProxy(
         constructorName: _constructorName(constructor),
         constructorParameters: [
-          for (final parameter in constructor.formalParameters)
+          for (final (index, parameter) in constructor.formalParameters.indexed)
             ProxyParameter(
-              name: parameter.name ?? 'p',
+              name: forwardedParameterName(constructor.formalParameters, index),
               type: parameter.type,
               isNamed: parameter.isNamed,
               isRequired: parameter.isRequired,
@@ -2435,7 +2496,7 @@ class BeanScanner {
           !member.returnType.isDartAsyncStream) {
         continue;
       }
-      for (final annotation in member.annotations) {
+      for (final annotation in member.mergedAnnotations) {
         final type = annotation.type;
         if (type is! InterfaceType) {
           continue;
@@ -2498,9 +2559,9 @@ class BeanScanner {
             returnType: method.returnType,
             typeParameters: const [],
             parameters: [
-              for (final parameter in method.formalParameters)
+              for (final (index, parameter) in method.formalParameters.indexed)
                 ProxyParameter(
-                  name: parameter.name ?? 'p',
+                  name: forwardedParameterName(method.formalParameters, index),
                   type: parameter.type,
                   isNamed: parameter.isNamed,
                   isRequired: parameter.isRequired,
@@ -2594,6 +2655,7 @@ class BeanScanner {
     // on the target so the implementation's signature (with its defaults)
     // is used.
     final library = targetType.element.library;
+    final hierarchy = [targetType, ...targetType.allSupertypes];
     final members = <ProxyMember>[];
     final seen = <String>{};
     for (final interface in interfaces) {
@@ -2641,7 +2703,7 @@ class BeanScanner {
           final implementation = targetType.lookUpMethod(name, library);
           final member = implementation == null
               ? null
-              : _proxyMethod(implementation, method, declaring);
+              : _proxyMethod(implementation, hierarchy, declaring);
           if (member == null) {
             _proxyFailure =
                 'the method $typeName.$name cannot be forwarded by a proxy: '
@@ -2751,12 +2813,14 @@ class BeanScanner {
   // For each member: every type of [allTypes] that declares it (for
   // pointcuts such as `execution(* Api.*(..))`), as `declaringType` the
   // first abstract declaring type other than the target, and the
-  // annotations of every declaration (interface and class).
+  // annotations of its interface declarations plus the constraints and
+  // `@Valid` of every declaration (see [_inheritedAnnotations]).
   List<ProxyMember> _withDeclaringTypes(
     List<ProxyMember> members,
     List<InterfaceType> allTypes,
     InterfaceType targetType,
   ) {
+    final chain = _runningClasses(targetType);
     Iterable<Element> declarations(InterfaceType type, ProxyMember member) =>
         switch (member.kind) {
           ProxyMemberKind.method => type.element.methods.where(
@@ -2784,13 +2848,23 @@ class BeanScanner {
                 type.element.name!,
           ];
           final annotations = <DartObject>[...member.annotations];
-          for (final type in allTypes) {
-            for (final declaration in declarations(type, member)) {
-              for (final annotation in _userAnnotations(declaration)) {
-                if (!annotations.contains(annotation)) {
-                  annotations.add(annotation);
-                }
+          final all = [
+            for (final type in allTypes) ...declarations(type, member),
+          ];
+          for (final declaration in all) {
+            for (final annotation in _inheritedAnnotations(
+              declaration,
+              chain,
+            )) {
+              if (!annotations.contains(annotation)) {
+                annotations.add(annotation);
               }
+            }
+          }
+          final merged = <DartObject>[...member.mergedAnnotations];
+          for (final annotation in _mergedAnnotations(all, chain)) {
+            if (!merged.contains(annotation)) {
+              merged.add(annotation);
             }
           }
           return ProxyMember(
@@ -2802,27 +2876,67 @@ class BeanScanner {
             typeParameters: member.typeParameters,
             parameters: member.parameters,
             annotations: annotations,
+            mergedAnnotations: merged,
           );
         }(),
     ];
   }
 
   // A forwarded method, or `null` if its types or default values cannot be
-  // written in the generated library.
+  // written in the generated library. Constraints and `@Valid` of every
+  // declaration of the method in [hierarchy] (the target type and its
+  // supertypes: implemented interfaces, superclasses, mixins) apply, like
+  // Hibernate Validator's method constraint inheritance; other annotations
+  // (what `@annotation(...)` matches) only of the implementation and of
+  // interface declarations (see [_inheritedAnnotations]).
   ProxyMember? _proxyMethod(
     MethodElement implementation,
-    MethodElement declaration,
+    List<InterfaceType> hierarchy,
     String declaringType,
   ) {
     if (!_isEmittable(implementation.returnType)) {
       return null;
     }
+    final name = implementation.name!;
+    final declarations = <MethodElement>[
+      implementation,
+      for (final type in hierarchy)
+        for (final method in type.element.methods)
+          if (method.name == name &&
+              !method.isStatic &&
+              method.baseElement != implementation.baseElement)
+            method,
+    ];
+    final chain = _runningClasses(hierarchy.first);
     final parameters = <ProxyParameter>[];
-    final declared = {
-      for (final parameter in declaration.formalParameters)
-        parameter.name: parameter,
-    };
-    for (final parameter in implementation.formalParameters) {
+    // The annotations of the parameters of the other declarations matching
+    // one of the implementation: by name when named, else by position
+    // (wildcards have no usable name; positional parameters come first, so
+    // [index] is the position).
+    Iterable<List<DartObject>> declared(
+      int index,
+      FormalParameterElement parameter,
+    ) sync* {
+      for (final declaration in declarations.skip(1)) {
+        final FormalParameterElement? other;
+        if (parameter.isNamed) {
+          other = declaration.formalParameters
+              .where((p) => p.isNamed && p.name == parameter.name)
+              .firstOrNull;
+        } else {
+          final positional = [
+            for (final p in declaration.formalParameters)
+              if (p.isPositional) p,
+          ];
+          other = index < positional.length ? positional[index] : null;
+        }
+        if (other != null) {
+          yield _inheritedAnnotations(declaration, chain, other);
+        }
+      }
+    }
+
+    for (final (index, parameter) in implementation.formalParameters.indexed) {
       final type = parameter.type;
       if (!_isEmittable(type)) {
         return null;
@@ -2842,18 +2956,21 @@ class BeanScanner {
       // interface), for method validation.
       final annotations = _parameterAnnotations(
         parameter,
-        declared[parameter.name],
+        declared(index, parameter),
+      );
+      final parameterName = forwardedParameterName(
+        implementation.formalParameters,
+        index,
       );
       _checkConstraints(
         annotations,
         type,
-        '${implementation.enclosingElement?.name}.${implementation.name}'
-        '(${parameter.name})',
+        '${implementation.enclosingElement?.name}.$name($parameterName)',
         parameter,
       );
       parameters.add(
         ProxyParameter(
-          name: parameter.name!,
+          name: parameterName,
           type: type,
           isNamed: parameter.isNamed,
           isRequired: parameter.isRequired,
@@ -2871,28 +2988,48 @@ class BeanScanner {
     }
     return ProxyMember(
       kind: ProxyMemberKind.method,
-      name: implementation.name!,
+      name: name,
       declaringType: declaringType,
       returnType: implementation.returnType,
       typeParameters: implementation.typeParameters,
       parameters: parameters,
-      annotations: _checkedReturnAnnotations(implementation, declaration),
+      annotations: _checkedReturnAnnotations(
+        implementation,
+        declarations,
+        chain,
+      ),
+      mergedAnnotations: _mergedAnnotations(declarations, chain),
     );
   }
 
-  // ---------------------------------------------------------------------
-  // Method validation and constraint types
-  // ---------------------------------------------------------------------
-
-  // Annotations of a parameter and of the same parameter of the interface
-  // declaration (without duplicates).
-  List<DartObject> _parameterAnnotations(
-    FormalParameterElement parameter,
-    FormalParameterElement? declared,
+  // Every user annotation of [declarations] (the implementation first),
+  // most specific first: the implementation, the superclass and mixin
+  // members it overrides (nearest first), then the interface declarations,
+  // like Spring's `AnnotatedElementUtils` find semantics. Annotation-driven
+  // advisors (`@Cacheable` on an overridden superclass method) read these;
+  // `@annotation(...)` matches only the filtered set (see
+  // [_inheritedAnnotations]).
+  List<DartObject> _mergedAnnotations(
+    List<Element> declarations,
+    Set<InterfaceElement> chain,
   ) {
-    final annotations = _userAnnotations(parameter);
-    if (declared != null && !identical(declared, parameter)) {
-      for (final annotation in _userAnnotations(declared)) {
+    final classes = chain.toList();
+    int rank(int index) {
+      final position = classes.indexOf(
+        declarations[index].enclosingElement as InterfaceElement? ??
+            classes.first,
+      );
+      return position < 0 ? classes.length : position;
+    }
+
+    final order = [for (var i = 0; i < declarations.length; i++) i]
+      ..sort((a, b) {
+        final byRank = rank(a).compareTo(rank(b));
+        return byRank != 0 ? byRank : a.compareTo(b);
+      });
+    final annotations = <DartObject>[];
+    for (final index in order) {
+      for (final annotation in _userAnnotations(declarations[index])) {
         if (!annotations.contains(annotation)) {
           annotations.add(annotation);
         }
@@ -2901,17 +3038,83 @@ class BeanScanner {
     return annotations;
   }
 
-  // The method's annotations; constraints among them apply to the return
-  // value, so they must fit the return type.
+  // The classes whose members a bean of [type] runs, most specific first:
+  // the class, the mixins it applies (the last one first), then its
+  // superclass and so on.
+  static Set<InterfaceElement> _runningClasses(InterfaceType type) => {
+    for (
+      InterfaceType? current = type;
+      current != null;
+      current = current.superclass
+    ) ...[
+      current.element,
+      for (final mixin in current.mixins.reversed) mixin.element,
+    ],
+  };
+
+  // The annotations of [declaration] (or of its parameter [parameter]), a
+  // declaration of a proxied member other than its implementation, that
+  // the member carries. AspectJ's `@annotation(...)` sees the method that
+  // runs, not a superclass (or mixin) method it overrides, so such a
+  // declaration gives only its constraints and `@Valid` (Hibernate
+  // Validator's method constraint inheritance); an interface declaration
+  // (an abstract member, or one of a type the class only implements) gives
+  // all of its annotations, as documented for `@annotation`.
+  List<DartObject> _inheritedAnnotations(
+    Element declaration,
+    Set<InterfaceElement> chain, [
+    FormalParameterElement? parameter,
+  ]) {
+    final annotations = _userAnnotations(parameter ?? declaration);
+    if (declaration is ExecutableElement && declaration.isAbstract ||
+        !chain.contains(declaration.enclosingElement)) {
+      return annotations;
+    }
+    return [
+      for (final annotation in annotations)
+        if (annotation.type case final InterfaceType type
+            when _constraint.isAssignableFromType(type) ||
+                _valid.isExactlyType(type))
+          annotation,
+    ];
+  }
+
+  // ---------------------------------------------------------------------
+  // Method validation and constraint types
+  // ---------------------------------------------------------------------
+
+  // Annotations of a parameter and of the same parameter of the overridden
+  // declarations (without duplicates).
+  List<DartObject> _parameterAnnotations(
+    FormalParameterElement parameter,
+    Iterable<List<DartObject>> declared,
+  ) {
+    final annotations = _userAnnotations(parameter);
+    for (final other in declared) {
+      for (final annotation in other) {
+        if (!annotations.contains(annotation)) {
+          annotations.add(annotation);
+        }
+      }
+    }
+    return annotations;
+  }
+
+  // The annotations of the method's declarations; constraints among them
+  // apply to the return value, so they must fit the return type.
   List<DartObject> _checkedReturnAnnotations(
     MethodElement implementation,
-    MethodElement declaration,
+    List<MethodElement> declarations,
+    Set<InterfaceElement> chain,
   ) {
-    final annotations = [
-      ..._userAnnotations(implementation),
-      if (!identical(implementation, declaration))
-        ..._userAnnotations(declaration),
-    ];
+    final annotations = _userAnnotations(implementation);
+    for (final declaration in declarations.skip(1)) {
+      for (final annotation in _inheritedAnnotations(declaration, chain)) {
+        if (!annotations.contains(annotation)) {
+          annotations.add(annotation);
+        }
+      }
+    }
     _checkConstraints(
       annotations,
       implementation.returnType,
@@ -2952,6 +3155,13 @@ class BeanScanner {
     if (reader.isType) {
       return _isEmittable(reader.typeValue);
     }
+    if (reader.isSymbol) {
+      return _isPublicSymbol(value);
+    }
+    if (value.toRecordValue() case final record?) {
+      return record.positional.every(_isRevivable) &&
+          record.named.values.every(_isRevivable);
+    }
     if (reader.isList) {
       return reader.listValue.every(_isRevivable);
     }
@@ -2975,6 +3185,15 @@ class BeanScanner {
       return false;
     }
   }
+
+  // A symbol another library can write (`#name`, `#a.b`); `#_name` is
+  // private to its library.
+  static bool _isPublicSymbol(DartObject value) =>
+      value
+          .toSymbolValue()
+          ?.split('.')
+          .every((part) => part.isNotEmpty && !part.startsWith('_')) ??
+      false;
 
   static bool _isEmittable(DartType type) => switch (type) {
     VoidType() || DynamicType() || NeverType() || TypeParameterType() => true,
@@ -3966,7 +4185,12 @@ class BeanScanner {
       );
     }
     module.registrars.add(
-      RegistrarModel(imported.thisType, importer, conditions: conditions),
+      RegistrarModel(
+        imported.thisType,
+        importer,
+        importer: '${importer.library.uri}#${_requireName(importer)}',
+        conditions: conditions,
+      ),
     );
   }
 
@@ -4336,20 +4560,18 @@ class BeanScanner {
           returnType.isDartAsyncFuture &&
           returnType.nullabilitySuffix == NullabilitySuffix.none;
       final valueType = isFuture ? returnType.typeArguments.single : returnType;
-      final parameterElements = {
-        for (final parameter in method.formalParameters)
-          parameter.name: parameter,
-      };
+      // In declaration order (a wildcard `_` has no usable name).
+      final parameterElements = method.formalParameters;
       final parameters = [
-        for (final parameter in member.parameters)
+        for (final (index, parameter) in member.parameters.indexed)
           ConstructorParameterModel(
             name: parameter.name,
             type: parameter.type,
             isNamed: parameter.isNamed,
             isRequired: parameter.isRequired,
             annotations: [
-              if (parameterElements[parameter.name] case final element?)
-                ..._userAnnotations(element),
+              if (index < parameterElements.length)
+                ..._userAnnotations(parameterElements[index]),
             ],
           ),
       ];
@@ -4712,6 +4934,12 @@ class BeanScanner {
         final type? => describe(type.element),
         null => null,
       };
+    }
+    if (value.toRecordValue() case final record?) {
+      return [
+        ...record.positional,
+        ...record.named.values,
+      ].map(_privateConstantPart).nonNulls.firstOrNull;
     }
     if (reader.isList || reader.isSet || reader.isMap) {
       final items = reader.isList

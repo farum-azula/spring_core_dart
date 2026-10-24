@@ -1,5 +1,7 @@
 ## Unreleased
 
+- the auto-configured `httpTransport` backs off for an `HttpTransport` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application (two transports failed the start); its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`
+- `dismiss404`, `follow-redirects`, `event-stream.reconnect` and `spring.cloud.openfeign.client.decode-slash` take true / false in any case (and on / off, yes / no, 1 / 0); anything else fails naming the key (`yes` was off for `dismiss404`, `nope` was on for the others).
 - Form bodies: with `consumes: application/x-www-form-urlencoded` (or that `Content-Type` header) a `Map` or object body is sent as `name=value&...` like Spring Cloud OpenFeign's `SpringFormEncoder` (it was sent as JSON).
 - `Future<ResponseEntity<void>>` ignores the body (a non-JSON body failed the call).
 - `Future<HttpResponse>` returns the raw response for any status, without error decoding, like Feign's `Response`.

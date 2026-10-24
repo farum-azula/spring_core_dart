@@ -100,7 +100,9 @@ class Scheduled {
   /// allowed with [cron]. Alone, the method runs once after it.
   final Duration? initialDelay;
 
-  /// [fixedRate] as text: `'10s'`, `r'${jobs.rate}'`, `'500'` (ms).
+  /// [fixedRate] as text: `'10s'`, `r'${jobs.rate}'`, `'500'` (ms); blank
+  /// (also once resolved, `r'${jobs.rate:}'`) means not set, like Spring.
+  /// The same holds for [fixedDelayString] and [initialDelayString].
   final String? fixedRateString;
 
   /// [fixedDelay] as text: `'10s'`, `r'${jobs.delay:1m}'`.

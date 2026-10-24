@@ -239,7 +239,11 @@ bool _isAdvisor(BeanModel bean) => bean.exposedTypes.any(
 // Advisors of starters match by annotation (`@Cacheable`, `@Validated`).
 bool _mayBeAdvisedElsewhere(ProxyModel proxy) => [
   ...proxy.classAnnotations,
-  for (final member in proxy.members) ...member.annotations,
+  for (final member in proxy.members) ...[
+    ...member.mergedAnnotations,
+    ...member.implementingTypeAnnotations,
+    for (final level in member.superclassAnnotations) ...level,
+  ],
   for (final member in proxy.members)
     for (final parameter in member.parameters) ...parameter.annotations,
 ].any(_isForeignAnnotation);

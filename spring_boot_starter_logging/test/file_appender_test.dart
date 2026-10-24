@@ -76,6 +76,41 @@ void main() {
       expect(exists('r.log.3'), isFalse); // line-0001..3 dropped
     });
 
+    test('maxHistory 0 keeps every archive, like Logback', () {
+      final appender = FileAppender(
+        '${dir.path}/k.log',
+        pattern: LogPattern('%m'),
+        maxFileSize: 30,
+        maxHistory: 0,
+      );
+      for (var i = 1; i <= 10; i++) {
+        appender.append(record('line-${'$i'.padLeft(4, '0')}'));
+      }
+      appender.close();
+      expect(read('k.log'), 'line-0010\n');
+      expect(read('k.log.1'), 'line-0007\nline-0008\nline-0009\n');
+      expect(read('k.log.2'), 'line-0004\nline-0005\nline-0006\n');
+      expect(read('k.log.3'), 'line-0001\nline-0002\nline-0003\n');
+      expect(exists('k.log.4'), isFalse);
+    });
+
+    test('maxHistory 0 with totalSizeCap deletes only over the cap', () {
+      final appender = FileAppender(
+        '${dir.path}/z.log',
+        pattern: LogPattern('%m'),
+        maxFileSize: 30,
+        maxHistory: 0,
+        totalSizeCap: 60,
+      );
+      for (var i = 1; i <= 13; i++) {
+        appender.append(record('line-${'$i'.padLeft(4, '0')}'));
+      }
+      appender.close();
+      expect(read('z.log.1'), 'line-0010\nline-0011\nline-0012\n');
+      expect(read('z.log.2'), 'line-0007\nline-0008\nline-0009\n');
+      expect(exists('z.log.3'), isFalse);
+    });
+
     test('cleanHistoryOnStart removes rolled-over files', () {
       for (final name in ['c.log', 'c.log.1', 'c.log.2']) {
         File('${dir.path}/$name').writeAsStringSync('old\n');

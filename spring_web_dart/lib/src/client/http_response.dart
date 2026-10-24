@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:spring_web_dart/src/client/http_request.dart';
+import 'package:spring_web_dart/src/client/response_status.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_status.dart';
 import 'package:spring_web_dart/src/media_type.dart';
@@ -24,13 +25,15 @@ import 'package:spring_web_dart/src/media_type.dart';
 /// ```
 final class HttpResponse {
   /// A response with [statusCode], [headers] and [body] bytes for
-  /// [request].
+  /// [request]. Throws an [ArgumentError] unless [statusCode] has three
+  /// digits (100–999), like Spring's `HttpStatusCode.valueOf`, or is 0 (the
+  /// opaque redirect a browser gives when redirects are not followed).
   HttpResponse(
     int statusCode, {
     HttpHeaders? headers,
     List<int> body = const [],
     this.request,
-  }) : statusCode = HttpStatusCode(statusCode),
+  }) : statusCode = clientResponseStatus(statusCode),
        headers = headers ?? HttpHeaders(),
        _body = body is Uint8List ? body : Uint8List.fromList(body);
 

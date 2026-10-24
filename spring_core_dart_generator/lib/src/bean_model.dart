@@ -959,6 +959,7 @@ class ListenerModel {
 ///   ImportDeclaration(
 ///     MessagingRegistrar.new,
 ///     conditions: [ConditionGroup(..., [const ProfileCondition(['cloud'])])],
+///     importer: 'package:app/app.dart#AppConfig',
 ///   ),
 /// ],
 /// ```
@@ -973,7 +974,12 @@ class ListenerModel {
 /// ```
 class RegistrarModel {
   /// Creates a registrar model.
-  RegistrarModel(this.type, this.element, {this.conditions = const []});
+  RegistrarModel(
+    this.type,
+    this.element, {
+    required this.importer,
+    this.conditions = const [],
+  });
 
   /// The registrar or selector class (with a no-argument constructor).
   final InterfaceType type;
@@ -983,6 +989,10 @@ class RegistrarModel {
 
   /// Conditions of the importing class.
   final List<ConditionModel> conditions;
+
+  /// The importing class's source (`library#Class`): places the import
+  /// among the module's classes at runtime.
+  final String importer;
 }
 
 /// How an advice method parameter is filled.
@@ -1259,6 +1269,25 @@ class IntroductionModel {
   final List<ProxyMember> members;
 }
 
+/// The name generated code gives the parameter at [index] of
+/// [parameters]: its own, or for a wildcard (`_`, which cannot be read) or
+/// an unnamed one a fresh `p<index>` that no other parameter uses.
+String forwardedParameterName(
+  List<FormalParameterElement> parameters,
+  int index,
+) {
+  final name = parameters[index].name;
+  if (name != null && name.isNotEmpty && name != '_') {
+    return name;
+  }
+  final taken = {for (final parameter in parameters) parameter.name};
+  var candidate = 'p$index';
+  while (taken.contains(candidate)) {
+    candidate = '${candidate}_';
+  }
+  return candidate;
+}
+
 /// A parameter of a proxied method.
 ///
 /// ```dart
@@ -1367,7 +1396,8 @@ class ProxyMember {
     required this.typeParameters,
     required this.parameters,
     required this.annotations,
-  });
+    List<DartObject>? mergedAnnotations,
+  }) : mergedAnnotations = mergedAnnotations ?? annotations;
 
   /// The class whose body runs for the member and its supertypes, when it
   /// is not the target class (an inherited member): `within` and
@@ -1376,6 +1406,13 @@ class ProxyMember {
 
   /// Annotations of `implementingTypes.first`, for `@within`.
   List<DartObject> implementingTypeAnnotations = const [];
+
+  /// Annotations of each superclass and mixin (those that have some) of
+  /// the class whose body runs for the member (the target class when it is
+  /// not inherited), nearest first: `MethodSignature.superclassAnnotations`,
+  /// for find semantics on classes (`@CacheConfig`, class-level
+  /// `@Cacheable`).
+  List<List<DartObject>> superclassAnnotations = const [];
 
   /// Whether the member is `@protected` (package:meta), for
   /// `execution(protected ...)`.
@@ -1403,9 +1440,16 @@ class ProxyMember {
   /// The parameters, in declaration order.
   final List<ProxyParameter> parameters;
 
-  /// User annotations of the implementation and of every declaration,
-  /// matched by `@annotation(...)` pointcuts.
+  /// User annotations of the implementation and of its interface
+  /// declarations (plus the constraints and `@Valid` of every
+  /// declaration), matched by `@annotation(...)` pointcuts.
   final List<DartObject> annotations;
+
+  /// User annotations of the implementation and of every declaration it
+  /// overrides or implements (superclasses, mixins, interfaces), most
+  /// specific first: `MethodSignature.mergedAnnotations`, what
+  /// annotation-driven advisors (`@Cacheable`, `@Validated`) read.
+  final List<DartObject> mergedAnnotations;
 }
 
 /// A generated AOP proxy class for one bean.

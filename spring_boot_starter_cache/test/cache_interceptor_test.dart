@@ -159,6 +159,13 @@ void main() {
       expect(cache('async').get('1')?.value, 'fetched 1');
     });
 
+    test('a SpEL error in the key is a failed Future, not a throw', () async {
+      late Future<String> result;
+      expect(() => result = proxy.fetchBadKey('1'), returnsNormally);
+      await expectLater(result, throwsA(isA<SpelEvaluationException>()));
+      expect(proxy.count('fetchBadKey'), 0);
+    });
+
     test('errors are not cached', () async {
       await expectLater(proxy.fetch('bad'), throwsStateError);
       await expectLater(proxy.fetch('bad'), throwsStateError);

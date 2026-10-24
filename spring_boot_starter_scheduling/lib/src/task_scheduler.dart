@@ -149,7 +149,8 @@ const _log = SpringLog('spring.scheduling');
 
 /// Handles the errors of scheduled tasks, like Spring's `ErrorHandler`
 /// given to `ThreadPoolTaskScheduler.setErrorHandler`: the starter's
-/// scheduler uses the `ErrorHandler` bean, if there is one. An error
+/// scheduler uses the `ErrorHandler` bean, if there is a unique (or
+/// primary) one. An error
 /// thrown by the handler itself (Spring's `LOG_AND_PROPAGATE`) stops the
 /// task: it is logged and the task runs no more.
 ///

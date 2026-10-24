@@ -52,7 +52,7 @@ logging.pattern.file=%d %5p [%logger] %m%X%n%ex   # default: Boot's
 logging.threshold.file=info
 logging.charset.file=UTF-8               # also ISO-8859-1, US-ASCII
 logging.logback.rollingpolicy.max-file-size=10MB  # roll over into shop.log.1, .2, ...
-logging.logback.rollingpolicy.max-history=7       # rolled-over files kept
+logging.logback.rollingpolicy.max-history=7       # rolled-over files kept; 0: all
 logging.logback.rollingpolicy.total-size-cap=0B   # their total size; 0B: no limit
 logging.logback.rollingpolicy.clean-history-on-start=false
 logging.enabled=false                    # turn the starter off (on/off values: true / false in any case)
@@ -103,8 +103,8 @@ letter or variable) fails the start.
 burst are written together at the end of the microtask; the rest is
 written when the context closes. When the file would grow past
 `max-file-size` it becomes `shop.log.1` (older ones shift to `.2`, `.3`,
-...); only `max-history` of them are kept, and the oldest are deleted while
-together they exceed `total-size-cap`.
+...); only `max-history` of them are kept (all with `0`, like Logback), and
+the oldest are deleted while together they exceed `total-size-cap`.
 
 Relative locations are resolved against `LoggingSystem.instance.fileDirectory`
 when it is set, else against the working directory. In Flutter the
@@ -223,7 +223,8 @@ LoggingSystem.instance
   is ignored with a warning; `max-history` counts files, not days;
   archives are not compressed.
 - `logging.charset.file` takes the encodings Dart knows (UTF-8,
-  ISO-8859-1, US-ASCII); `logging.charset.console` is only checked: the
+  ISO-8859-1, US-ASCII, by their IANA or Java names such as `utf8`);
+  `logging.charset.console` is only checked: the
   console is `print`, which writes text, not bytes.
 - An empty `logging.pattern.console=` (or `logging.pattern.file=`) turns
   that output off, as Logback's appender does not start without a

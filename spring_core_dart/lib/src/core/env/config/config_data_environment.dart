@@ -18,6 +18,7 @@ import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
+import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
 /// Loads `application.properties` and `application.yml` config files into
 /// an environment, like Spring Boot's config data support.
@@ -260,7 +261,13 @@ class ConfigDataEnvironment {
         return;
       } on _NeedsContent catch (needed) {
         final resource = needed.resource;
-        cache[resource.description] = resource.isReadable
+        // A URL is asked with a HEAD request first, so a 404 is a missing
+        // resource (skipped when optional or profile-specific), like
+        // Boot's UrlResource.exists().
+        final exists = resource is UrlResource
+            ? await resource.existsAsync()
+            : resource.isReadable;
+        cache[resource.description] = exists
             ? await resource.readAsString(encoding: needed.encoding)
             : null;
       }

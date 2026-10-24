@@ -70,7 +70,39 @@ ConfigurableApplicationContext _run(
   out: (_) {},
 ).run(const [], systemEnvironment: const {});
 
+final class Recorder implements CommandLineRunner {
+  Recorder(this.calls);
+  final List<List<String>> calls;
+  @override
+  void run(List<String> args) => calls.add(args);
+}
+
 void main() {
+  test('a runner and a generator registered with registerSingleton (no '
+      'bean definition)', () {
+    final calls = <List<String>>[];
+    final context = SpringApplication(
+      [_module([])],
+      registerShutdownHook: false,
+      initializers: [
+        ApplicationContextInitializer.of(
+          (context) => context.beanFactory
+            ..registerSingleton(
+              'runner',
+              Recorder(calls),
+              types: [CommandLineRunner],
+            )
+            ..registerSingleton('code', Code(42), types: [ExitCodeGenerator]),
+        ),
+      ],
+      out: (_) {},
+    ).run(const ['--a'], systemEnvironment: const {});
+    expect(calls, [
+      ['--a'],
+    ]);
+    expect(SpringApplication.exit(context), 42);
+  });
+
   group('SpringApplication.exit', () {
     test('without generators the code is 0 and the context is closed', () {
       final events = <ExitCodeEvent>[];

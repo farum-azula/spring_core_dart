@@ -185,6 +185,110 @@ void main() {
     });
   });
 
+  group('URL resources are probed with HEAD (404 is not found)', () {
+    late String base;
+    final heads = <String>[];
+
+    setUp(() async {
+      heads.clear();
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) {
+        if (request.method == 'HEAD') {
+          heads.add(request.uri.path);
+        }
+        switch (request.uri.path) {
+          case '/app.properties':
+            request.response.write('from.url=1');
+          case '/no-head.properties':
+            if (request.method == 'HEAD') {
+              request.response.statusCode = HttpStatus.methodNotAllowed;
+            } else {
+              request.response.write('b=2');
+            }
+          default:
+            request.response.statusCode = HttpStatus.notFound;
+        }
+        request.response.close();
+      });
+      base = 'http://127.0.0.1:${server.port}';
+    });
+
+    test('existsAsync', () async {
+      final loader = DefaultResourceLoader();
+      final found = loader.getResource('$base/app.properties') as UrlResource;
+      final missing = loader.getResource('$base/missing.properties');
+      final noHead = loader.getResource('$base/no-head.properties');
+      expect(found.exists(), isTrue); // cannot ask synchronously
+      expect(await found.existsAsync(), isTrue);
+      expect(await (missing as UrlResource).existsAsync(), isFalse);
+      // 405 for HEAD: asked again with GET, like Spring.
+      expect(await (noHead as UrlResource).existsAsync(), isTrue);
+      expect(
+        await UrlResource(Uri.parse('http://127.0.0.1:1/x')).existsAsync(),
+        isFalse,
+      );
+    });
+
+    StandardEnvironment env(Map<String, Object?> props) =>
+        StandardEnvironment(systemEnvironment: {})
+          ..propertySources.addFirst(MapPropertySource('cli', props));
+
+    ConfigDataEnvironment config(StandardEnvironment environment) =>
+        ConfigDataEnvironment(
+          environment,
+          defaultLocations: const [],
+          loaders: const [PropertiesPropertySourceLoader()],
+        );
+
+    test('spring.config.import of a URL skips the missing profile variants '
+        'and missing optional URLs', () async {
+      final e = env({
+        'spring.profiles.active': 'dev',
+        'spring.config.import':
+            '$base/app.properties,optional:$base/missing.properties',
+      });
+      await config(e).processAndApply();
+      expect(e.getProperty('from.url'), '1');
+      expect(heads, contains('/app-dev.properties'));
+      expect(heads, contains('/missing.properties'));
+    });
+
+    test('a missing mandatory URL import fails', () async {
+      final e = env({'spring.config.import': '$base/missing.properties'});
+      await expectLater(
+        config(e).processAndApply(),
+        throwsA(isA<ConfigDataResourceNotFoundException>()),
+      );
+    });
+
+    test('@PropertySource(ignoreResourceNotFound: true) skips a 404; '
+        'without it the refresh fails', () async {
+      AnnotationConfigApplicationContext context(bool ignore) =>
+          AnnotationConfigApplicationContext([
+            BeanModule(
+              'm',
+              const [],
+              propertySources: [
+                PropertySourceDeclaration([
+                  '$base/missing.properties',
+                  '$base/app.properties',
+                ], ignoreResourceNotFound: ignore),
+              ],
+            ),
+          ], environment: StandardEnvironment(systemEnvironment: {}));
+      final lenient = context(true);
+      await lenient.refreshAsync();
+      expect(lenient.environment.getProperty('from.url'), '1');
+      lenient.close();
+      final strict = context(false);
+      await expectLater(
+        strict.refreshAsync(),
+        throwsA(isA<PropertySourceNotFoundException>()),
+      );
+    });
+  });
+
   test('@PropertySource with a file pattern loads every match', () {
     final directory = Directory.systemTemp.createTempSync('scd_ps_pattern_');
     addTearDown(() => directory.deleteSync(recursive: true));

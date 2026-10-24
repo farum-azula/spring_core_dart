@@ -45,6 +45,28 @@ abstract final class FileAccess {
     }
   }
 
+  /// Whether [url] exists, like Spring's `AbstractFileResolvingResource
+  /// .exists()`: a `HEAD` request (a `GET` when the server rejects `HEAD`
+  /// with 405 or 501) that answers below 400. A connection error means it
+  /// does not exist.
+  static Future<bool> urlExists(Uri url) async {
+    final client = HttpClient();
+    try {
+      var response = await (await client.headUrl(url)).close();
+      await response.drain<void>();
+      if (response.statusCode == HttpStatus.methodNotAllowed ||
+          response.statusCode == HttpStatus.notImplemented) {
+        response = await (await client.getUrl(url)).close();
+        await response.drain<void>();
+      }
+      return response.statusCode < 400;
+    } on IOException {
+      return false;
+    } finally {
+      client.close();
+    }
+  }
+
   /// [path] made absolute against the current directory.
   static String absolute(String path) => File(path).absolute.path;
 

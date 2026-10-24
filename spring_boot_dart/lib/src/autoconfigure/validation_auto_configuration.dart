@@ -16,6 +16,8 @@ const _source = 'package:spring_boot_dart#ValidationAutoConfiguration';
 final validationAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<BeanValidator>(
     name: 'defaultValidator',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'defaultValidator',
     types: const [BeanValidator, SmartValidator, Validator],
     source: _source,
     // Method-level conditions (Boot's @Bean @ConditionalOnMissingBean),
@@ -26,6 +28,8 @@ final validationAutoConfiguration = <BeanDefinition<Object>>[
   ),
   BeanDefinition<MethodValidationPostProcessor>(
     name: 'methodValidationPostProcessor',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'methodValidationPostProcessor',
     types: const [
       MethodValidationPostProcessor,
       PointcutAdvisor,

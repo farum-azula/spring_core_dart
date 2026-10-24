@@ -25,6 +25,32 @@ Future<void> main() async {
   result['status'] = response.statusCode;
   result['body'] = jsonDecode(response.bodyText);
   result['contentType'] = response.headers['content-type'];
+  // Redirects not followed: a browser gives an opaque redirect (status 0,
+  // accepted by HttpResponse); node's fetch gives the 302 itself.
+  final manual = await transport.send(
+    HttpRequest(
+      method: HttpMethod.get,
+      url: Uri.parse('http://$host/redirect'),
+      followRedirects: false,
+    ),
+  );
+  result['manual'] = manual.statusCode;
+  final manualStream = await transport.stream(
+    HttpRequest(
+      method: HttpMethod.get,
+      url: Uri.parse('http://$host/redirect'),
+      followRedirects: false,
+    ),
+  );
+  result['manualStream'] = manualStream.statusCode;
+  await manualStream.discard();
+  final followed = await transport.send(
+    HttpRequest(
+      method: HttpMethod.get,
+      url: Uri.parse('http://$host/redirect'),
+    ),
+  );
+  result['followed'] = '${followed.statusCode}:${followed.bodyText}';
   try {
     await transport.send(
       HttpRequest(

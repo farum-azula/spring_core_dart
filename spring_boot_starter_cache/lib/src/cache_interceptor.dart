@@ -207,8 +207,24 @@ final class CacheInterceptor implements MethodInterceptor {
     if (operations.isEmpty) {
       return invocation.proceed();
     }
+    if (invocation is AsyncMethodInvocation) {
+      // An async member fails through its Future, not synchronously: also
+      // for an invalid SpEL key or condition, or a failing cache.
+      try {
+        return _invoke(invocation, operations, isAsync: true);
+      } on Object catch (error, stackTrace) {
+        return Future<Object?>.error(error, stackTrace);
+      }
+    }
+    return _invoke(invocation, operations, isAsync: false);
+  }
+
+  Object? _invoke(
+    MethodInvocation invocation,
+    List<CacheOperation> operations, {
+    required bool isAsync,
+  }) {
     final call = _Call(this, invocation, operations);
-    final isAsync = invocation is AsyncMethodInvocation;
 
     for (final operation in operations) {
       if (operation is CacheEvictOperation &&
@@ -257,7 +273,7 @@ final class CacheInterceptor implements MethodInterceptor {
     }
 
     final result = invocation.proceed();
-    if (isAsync && result is Future) {
+    if (invocation is AsyncMethodInvocation && result is Future) {
       final future = invocation.chain(
         result as Future<Object?>,
         onValue: (value) => call.afterInvocation(value, missed),

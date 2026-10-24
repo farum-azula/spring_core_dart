@@ -19,6 +19,37 @@ void main() {
     SpringLog.resetLevels();
   });
 
+  test('hold() keeps every record until release() emits those that pass '
+      "the levels of that time (Boot's DeferredLog)", () {
+    const log = SpringLog('test.log.held');
+    const other = SpringLog('test.other');
+    final listened = <String>[];
+    final stop = SpringLog.listen((r) => listened.add(r.message));
+    addTearDown(stop);
+    final outer = SpringLog.hold();
+    final inner = SpringLog.hold();
+    expect(log.isEnabled(SpringLogLevel.trace), isTrue);
+    log
+      ..trace('trace')
+      ..debug('debug');
+    other.info('info elsewhere');
+    expect(records, isEmpty);
+    expect(listened, isEmpty);
+    // An inner hold passes its records to the outer one.
+    expect(inner.release(), hasLength(3));
+    expect(records, isEmpty);
+    log.warning('warning');
+    SpringLog.setLevel('test.log', SpringLogLevel.debug);
+    expect(outer.isHolding, isTrue);
+    final released = outer.release();
+    expect(outer.isHolding, isFalse);
+    expect(released.map((r) => r.message), ['debug', 'warning']);
+    expect(records.map((r) => r.message), ['debug', 'warning']);
+    expect(listened, ['debug', 'warning']);
+    expect(outer.release(), isEmpty);
+    expect(log.isEnabled(SpringLogLevel.trace), isFalse);
+  });
+
   test('warning is the default threshold', () {
     const log = SpringLog('test.log');
     log

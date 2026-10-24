@@ -155,11 +155,21 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     }
 
     Duration? duration(Duration? value, String? text, String attribute) {
-      if (value != null && text != null) {
+      // Like Spring: a text that is (or resolves to) blank is not set.
+      final resolved = switch (text) {
+        final text? when text.trim().isNotEmpty => switch (resolve(
+          text,
+          '${attribute}String',
+        )) {
+          '' => null,
+          final resolved => resolved,
+        },
+        _ => null,
+      };
+      if (value != null && resolved != null) {
         invalid('give $attribute or ${attribute}String, not both');
       }
-      if (text != null) {
-        final resolved = resolve(text, '${attribute}String');
+      if (resolved != null) {
         try {
           value = DurationStyle.parse(resolved);
         } on FormatException catch (error) {

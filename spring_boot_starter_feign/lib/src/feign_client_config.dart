@@ -144,11 +144,33 @@ final class FeignClientConfig {
 
   static const _prefix = 'spring.cloud.openfeign.client.config.';
 
+  // A boolean property like Boot's binding: true / false (also on / off,
+  // yes / no, 1 / 0) in any case; anything else fails.
+  static bool _flag(String? value, String key, {required bool defaultValue}) =>
+      switch (value?.trim().toLowerCase()) {
+        null || '' => defaultValue,
+        'true' || 'on' || 'yes' || '1' => true,
+        'false' || 'off' || 'no' || '0' => false,
+        _ => throw FormatException(
+          '$key: failed to convert to boolean (was "$value")',
+          value,
+        ),
+      };
+
   /// The settings of client [name] from [environment].
   static FeignClientConfig of(Environment environment, String name) {
     String? get(String key) =>
         environment.getProperty('$_prefix$name.$key') ??
         environment.getProperty('${_prefix}default.$key');
+    bool flag(String key, {required bool defaultValue}) {
+      final own = environment.getProperty('$_prefix$name.$key');
+      return _flag(
+        own ?? environment.getProperty('${_prefix}default.$key'),
+        own != null ? '$_prefix$name.$key' : '${_prefix}default.$key',
+        defaultValue: defaultValue,
+      );
+    }
+
     Duration? duration(String key) {
       final value = get(key);
       return value == null
@@ -176,18 +198,16 @@ final class FeignClientConfig {
       loggerLevel: level == null
           ? FeignLoggerLevel.none
           : FeignLoggerLevel.parse(level),
-      dismiss404: get('dismiss404')?.trim().toLowerCase() == 'true',
+      dismiss404: flag('dismiss404', defaultValue: false),
       defaultRequestHeaders: headers,
       defaultQueryParameters: queries,
-      followRedirects: get('follow-redirects')?.trim().toLowerCase() != 'false',
-      decodeSlash:
-          environment
-              .getProperty('spring.cloud.openfeign.client.decode-slash')
-              ?.trim()
-              .toLowerCase() !=
-          'false',
-      eventStreamReconnect:
-          get('event-stream.reconnect')?.trim().toLowerCase() != 'false',
+      followRedirects: flag('follow-redirects', defaultValue: true),
+      decodeSlash: _flag(
+        environment.getProperty('spring.cloud.openfeign.client.decode-slash'),
+        'spring.cloud.openfeign.client.decode-slash',
+        defaultValue: true,
+      ),
+      eventStreamReconnect: flag('event-stream.reconnect', defaultValue: true),
       eventStreamReconnectDelay:
           duration('event-stream.reconnect-delay') ??
           const Duration(seconds: 3),

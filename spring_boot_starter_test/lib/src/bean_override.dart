@@ -26,8 +26,10 @@ String defaultBeanName(String type) {
 /// The original definition is removed before any bean is created, so the
 /// real object (and whatever it would connect to) is never built. The
 /// replacement keeps the original's name, aliases, qualifiers and
-/// `@Primary` / `@Fallback` flags, so `@Qualifier` injection points still find it. Without
-/// an existing bean of [T] the instance is simply registered.
+/// `@Primary` / `@Fallback` flags, so `@Qualifier` injection points still
+/// find it. Among several beans of [T] the single `@Primary` one is
+/// replaced; [name] may also be an alias. Without an existing bean of [T]
+/// the instance is simply registered.
 ///
 /// ```dart
 /// final app = springBootTest(
@@ -50,7 +52,8 @@ final class BeanOverride<T extends Object> {
   /// The object to inject instead of the real bean.
   final T instance;
 
-  /// The bean to replace when several beans of [T] exist; also the name of
+  /// The bean (or an alias of it) to replace when several beans of [T]
+  /// exist and none is `@Primary`; also the name of
   /// a newly registered bean (default: [defaultBeanName] of [T], the rule
   /// of `ApplicationContextRunner.withBean`).
   final String? name;
@@ -68,19 +71,39 @@ final class BeanOverride<T extends Object> {
     final String target;
     final name = this.name;
     if (name != null) {
-      target = name;
+      // An alias overrides the bean it names (under its canonical name).
+      target = registry.isAlias(name)
+          ? registry.getBeanDefinition(name).name
+          : name;
     } else if (candidates.length > 1) {
-      throw StateError(
-        'BeanOverride<$T>: expected a single bean of $T to replace but '
-        'found ${candidates.length}: ${candidates.join(', ')}. '
-        'Pass name: to choose one.',
-      );
+      // Like Spring's BeanOverrideBeanFactoryPostProcessor: the single
+      // `@Primary` candidate wins.
+      final primary = [
+        for (final candidate in candidates)
+          if (registry.containsBeanDefinition(candidate) &&
+              registry.getBeanDefinition(candidate).primary)
+            candidate,
+      ];
+      if (primary.length != 1) {
+        throw StateError(
+          'BeanOverride<$T>: expected a single bean of $T to replace but '
+          'found ${candidates.length}: ${candidates.join(', ')}'
+          '${primary.length > 1 ? ' (${primary.length} marked primary)' : ''}. '
+          'Pass name: to choose one.',
+        );
+      }
+      target = primary.single;
     } else {
       target = candidates.isEmpty ? defaultBeanName('$T') : candidates.single;
     }
     final original = registry.containsBeanDefinition(target)
         ? registry.getBeanDefinition(target)
         : null;
+    // Aliases registered with registerAlias are removed with the
+    // definition; keep them.
+    final aliases = original == null
+        ? const <String>[]
+        : {...original.aliases, ...factory.getAliases(target)}.toList();
     if (original != null) {
       registry.removeBeanDefinition(target);
     }
@@ -95,7 +118,7 @@ final class BeanOverride<T extends Object> {
         autowireCandidate: original?.autowireCandidate ?? true,
         order: original?.order,
         qualifiers: original?.qualifiers ?? const {},
-        aliases: original?.aliases ?? const [],
+        aliases: aliases,
         source: 'BeanOverride<$T>',
       ),
     );

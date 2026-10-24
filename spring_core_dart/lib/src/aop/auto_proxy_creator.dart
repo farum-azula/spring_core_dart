@@ -79,13 +79,28 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
   /// [Advisor] bean, i.e. whether a context needs an auto proxy creator.
   static bool isRequiredFor(ConfigurableListableBeanFactory factory) =>
       [factory, ..._ancestors(factory)].any(
-        (f) => f.beanDefinitionNames.any((name) {
-          final definition = f.getBeanDefinition(name);
-          return definition.aspect != null ||
-              definition.types.contains(Advisor) ||
-              definition.types.contains(PointcutAdvisor);
-        }),
+        (f) =>
+            f.beanDefinitionNames.any((name) {
+              final definition = f.getBeanDefinition(name);
+              return definition.aspect != null ||
+                  definition.types.contains(Advisor) ||
+                  definition.types.contains(PointcutAdvisor);
+            }) ||
+            _manualAdvisorNames(f).isNotEmpty,
       );
+
+  // Advisors registered with `registerSingleton` (e.g. by a
+  // BeanFactoryPostProcessor): not bean definitions, found by instance like
+  // Spring's `getBeanNamesForType(Advisor.class)`, which includes manual
+  // singletons.
+  static List<String> _manualAdvisorNames(
+    ConfigurableListableBeanFactory factory,
+  ) => [
+    for (final name in factory.singletonNames)
+      if (!factory.containsBeanDefinition(name) &&
+          factory.getSingleton(name) is Advisor)
+        name,
+  ];
 
   /// Returns a proxy of [bean] when eligible advisors match one of its
   /// members, else [bean] itself.
@@ -165,6 +180,13 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
         }
       }
       seen.addAll(names);
+      final manual = _manualAdvisorNames(factory);
+      for (final name in manual) {
+        if (!seen.contains(name)) {
+          advisorNames.add((factory, name));
+        }
+      }
+      seen.addAll(manual);
     }
 
     _aspectTypes = {
@@ -219,7 +241,9 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
       }
       final order = OrderComparator.orderOf(
         advisor,
-        factory.getBeanDefinition(name).order,
+        factory.containsBeanDefinition(name)
+            ? factory.getBeanDefinition(name).order
+            : null,
       );
       entries.add((
         switch (advisor) {

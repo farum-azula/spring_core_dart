@@ -36,6 +36,16 @@ BeanModule _module(String name, List<String> log, [List<String>? classes]) =>
 
 const _meta = AutoConfigurationModule.new;
 
+// Registers one `_Bean` named [name].
+final class _NamedRegistrar implements BeanRegistrar {
+  _NamedRegistrar(this.name);
+  final String name;
+
+  @override
+  void register(BeanRegistry registry, Environment environment) =>
+      registry.registerBean<_Bean>((_) => _Bean(name), name: name);
+}
+
 ConfigurableApplicationContext _run(
   List<BeanModule> autoConfigurations, {
   Map<BeanModule, AutoConfigurationModule> metadata = const {},
@@ -187,6 +197,39 @@ void main() {
       expect(log, ['both.OtherAutoConfiguration']);
       expect(context.containsBean('both.CacheAutoConfiguration'), isFalse);
       expect(context.containsBean('both.OtherAutoConfiguration'), isTrue);
+      context.close();
+    });
+
+    test('excluding one class of a module keeps the imports of the others', () {
+      final module = BeanModule(
+        'both',
+        [
+          for (final owner in [
+            'CacheAutoConfiguration',
+            'OtherAutoConfiguration',
+          ])
+            BeanDefinition<_Bean>(
+              name: owner,
+              source: 'package:t/t.dart#$owner',
+              create: (_) => _Bean(owner),
+            ),
+        ],
+        registrars: [
+          for (final owner in [
+            'CacheAutoConfiguration',
+            'OtherAutoConfiguration',
+          ])
+            ImportDeclaration(
+              () => _NamedRegistrar('$owner.registered'),
+              importer: 'package:t/t.dart#$owner',
+            ),
+        ],
+      );
+      final context = _run([module], exclude: [CacheAutoConfiguration]);
+      expect(context.getBeanNamesForType(_Bean), [
+        'OtherAutoConfiguration',
+        'OtherAutoConfiguration.registered',
+      ]);
       context.close();
     });
 

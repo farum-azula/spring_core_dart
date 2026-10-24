@@ -287,6 +287,50 @@ void main() {
     expect(logs.map((r) => r.message), contains(contains("scope 'prototype'")));
   });
 
+  test('a *String that is or resolves to blank is not set, like Spring', () {
+    runner([
+      reportsDefinition({
+        // The fixedRate counts; the empty fixedRateString does not.
+        'refresh': [
+          const Scheduled(
+            fixedRate: Duration(minutes: 10),
+            fixedRateString: r'${jobs.rate:}',
+            initialDelayString: '',
+          ),
+        ],
+        'cleanup': [
+          const Scheduled(
+            fixedRateString: r'${jobs.rate:}',
+            fixedDelayString: '5m',
+            initialDelayString: r'${jobs.initial:}',
+          ),
+        ],
+      }),
+    ]).run((context) {
+      expect(context.hasFailed, isFalse);
+      final tasks = context
+          .getBean<ScheduledAnnotationBeanPostProcessor>()
+          .scheduledTasks;
+      final refresh = tasks.first.trigger as PeriodicTrigger;
+      expect(refresh.period, const Duration(minutes: 10));
+      expect(refresh.fixedRate, isTrue);
+      final cleanup = tasks.last.trigger as PeriodicTrigger;
+      expect(cleanup.period, const Duration(minutes: 5));
+      expect(cleanup.fixedRate, isFalse);
+    });
+    // Nothing left: the usual error.
+    runner([
+      reportsDefinition({
+        'refresh': [const Scheduled(fixedRateString: r'${jobs.rate:}')],
+      }),
+    ]).run((context) {
+      expect(
+        '${context.startupFailure}',
+        contains('give one of cron, fixedRate or fixedDelay'),
+      );
+    });
+  });
+
   group('misconfiguration fails the startup naming the method', () {
     final cases = <String, (Scheduled, String)>{
       'nothing': (

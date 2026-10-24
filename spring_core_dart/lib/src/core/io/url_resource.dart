@@ -9,8 +9,11 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 ///
 /// Reading is asynchronous only ([supportsSyncRead] is `false`); a status
 /// of 400 or above fails the read. [exists] cannot ask the server
-/// synchronously (Spring sends a `HEAD` request) and is `true`. Reading
-/// needs `dart:io` (not on the web).
+/// synchronously and is `true`; [existsAsync] sends the `HEAD` request
+/// Spring's `exists()` sends, so a 404 means not found. Config data
+/// (`spring.config.import=optional:http://…`) and `@PropertySource`
+/// (`ignoreResourceNotFound`) check it before reading. Reading needs
+/// `dart:io` (not on the web).
 ///
 /// ```dart
 /// final resource = DefaultResourceLoader()
@@ -31,8 +34,21 @@ class UrlResource extends AbstractResource {
   /// The URL read.
   final Uri url;
 
+  /// Always `true`: a synchronous request is not possible; see
+  /// [existsAsync].
   @override
   bool exists() => true;
+
+  /// Whether the server has the resource: a `HEAD` request (a `GET` if the
+  /// server rejects `HEAD`) answered below 400, like Spring's `exists()`.
+  /// A 404 or a connection error means it does not exist.
+  ///
+  /// ```dart
+  /// if (await resource.existsAsync()) {
+  ///   final text = await resource.readAsString();
+  /// }
+  /// ```
+  Future<bool> existsAsync() => FileAccess.urlExists(url);
 
   @override
   String get description => 'URL [$url]';

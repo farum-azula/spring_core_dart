@@ -496,7 +496,12 @@ implements `Condition` (attribute-style conditions such as
 `@ConditionalOnProperty('feature.x')`). Conditions see the environment, the
 definitions registered before them and, as `context.definition`, the
 definition being evaluated (its `annotations`, name and types — Spring's
-`AnnotatedTypeMetadata`; `null` for `@PropertySource` conditions).
+`AnnotatedTypeMetadata`; `null` for `@PropertySource` conditions). A
+`ConfigurationCondition` picks its `ConfigurationPhase`:
+`parseConfiguration` (decided while parsing; a failing one also stops the
+class's imports and `@PropertySource`s) or `registerBean` (decided when
+the class is read, after the classes before it registered their beans and
+ran their registrars — see Modules); plain conditions count in both.
 
 ### Modules
 
@@ -512,15 +517,28 @@ are visible to the child.
 Programmatic registration follows Spring 7. A `BeanRegistrar` registers
 beans with a supplier and Spring's `Spec` options; put it in
 `@Import([...])` (the generator creates it with its no-argument
-constructor when the importing class is registered, so it follows that
-class's conditions) or `context.register(...)` it. `ImportSelector`
-(returns `BeanModule`s, loaded before the importing module) and
-`ImportBeanDefinitionRegistrar` (gets the `BeanDefinitionRegistry`) work
-the same way and may implement `EnvironmentAware`, `BeanFactoryAware`,
-`ResourceLoaderAware`. `context.registerBean<T>(supplier, ...)` is
-Spring's `GenericApplicationContext.registerBean`. Registration happens
-while the modules load, in registration order; registering anything after
+constructor) or `context.register(...)` it. `ImportSelector` (returns
+`BeanModule`s) and `ImportBeanDefinitionRegistrar` (gets the
+`BeanDefinitionRegistry`) work the same way and may implement
+`EnvironmentAware`, `BeanFactoryAware`, `ResourceLoaderAware`.
+`context.registerBean<T>(supplier, ...)` is Spring's
+`GenericApplicationContext.registerBean`. Registering anything after
 `refresh()` fails with a `StateError` saying so.
+
+Imports follow Spring's configuration class parser and reader. Parsing
+(only parse-phase conditions count) loads a class's `@PropertySource`s
+and runs its selectors; the modules they select are parsed at once and
+their classes are read before the importing class. The reader then goes
+class by class (application classes before auto-configurations) and
+decides each class once — skipped when every class importing it was
+skipped, else by its `registerBean`-phase conditions
+(`ConfigurationCondition`, such as Boot's `@ConditionalOnBean`) — for the
+class, its `@Bean` methods and its imports alike (a scanned component or
+an `@Import`ed class with such a condition is a class too, decided at its
+place in that order). A kept class registers its `@Bean` methods (each
+one's own conditions decided at that moment), then runs its registrars,
+so every later class sees those beans; a skipped class registers nothing
+and runs no registrar.
 
 ```dart
 class MessagingRegistrar implements BeanRegistrar {
@@ -689,7 +707,7 @@ parser.parseExpression('Total: #{price * 2}', ParserContext.template).getValue(c
 ```
 
 Literals, inline lists/maps, properties, indexing, safe navigation (`?.`,
-short-circuiting the chain), methods, variables and functions, `T(Type)`
+one step each, like Spring), methods, variables and functions, `T(Type)`
 statics, constructors, `@bean` references, selection/projection,
 assignment and `++`/`--`, all operators (`div`, `between`, `matches`,
 Elvis, ternary). Numbers follow Spring 7's operators: `int` arithmetic
@@ -709,9 +727,10 @@ metadata (read by default from `BeanIntrospector.shared`),
 `FunctionPropertyAccessor` / `FunctionMethodResolver` or maps. `SimpleEvaluationContext` restricts expressions for data binding
 (no types, constructors, bean references or variable assignment).
 
-Safe navigation is Spring 6.2's: a `null` before a `?.` step ends the whole
-chain with `null` (`a?.b.c` is `null` when `a` is), for `?.[i]`, `?.?[...]`,
-`?.![...]`, `?.^[...]` and `?.$[...]` too. An exception thrown by a called
+Safe navigation is Spring 7's: a `?.` step on `null` gives `null` and the
+chain goes on, so `a?.b.c` fails with EL1007E on `.c` when `a` is `null`
+(write `a?.b?.c`); the same for `?.[i]`, `?.?[...]`, `?.![...]`, `?.^[...]`
+and `?.$[...]`. An exception thrown by a called
 method or constructor is rethrown as is; failures of accessors and of SpEL
 itself are `SpelParseException` / `SpelEvaluationException` with Spring's
 `SpelMessage` codes and the position (`Expression [1 + * 2] @4: EL1070E:
@@ -796,6 +815,10 @@ class ValidationConfig {
 }
 ```
 
+Constraints on the parameters and return value of an overridden declaration
+(an implemented interface, a superclass, a mixin) apply too, like Hibernate
+Validator's constraint inheritance.
+
 Immutable classes are bound through their constructor with
 `DataBinder.construct` (Spring 6.1's constructor binding).
 
@@ -872,7 +895,7 @@ constructor is the unnamed one, or the one marked `@JsonCreator()`.
 | `@JsonIgnoreProperties(value: ['x'], ignoreUnknown: true)` | on a class: names to ignore; accept unknown properties |
 | `@JsonPropertyOrder(['id', 'title'])` | on a class: these properties first, the rest after; `@JsonPropertyOrder.alphabetic()` sorts the rest whatever the mapper says |
 | `@JsonCreator()` | the constructor to read with |
-| `@JsonValue()` | on an enum field or getter: the JSON form of each value (also for enum map keys); on a property or method of a class: the object is written as that value and read back through its one-parameter constructor; one per class (else the build fails) |
+| `@JsonValue()` | on an enum field or getter: the JSON form of each value (also for enum map keys; an `int` one is matched by value, never as an index); on a property or method of a class: the object is written as that value (also as a map key) and read back through its one-parameter constructor; one per class (else the build fails) |
 | `@JsonAlias(['name', 'fullName'])` | other JSON names accepted when reading |
 | `@JsonFormat(pattern: 'dd.MM.yyyy', timezone: '+01:00', shape:)` | date pattern and offset; `JsonFormatShape.number` / `string` |
 | `@JsonAnyGetter()` / `@JsonAnySetter()` | a map property written as extra properties / receiving the unknown ones |
@@ -1094,7 +1117,7 @@ designator(pattern)  [&& | || | !  designator(pattern) ...]
 | `args(types)` | methods whose arguments have these types: the declared parameter type, else the runtime argument (`..` any number) | `args(String, ..)` |
 | `@args(Annotation, ..)` | methods whose arguments' classes carry the annotations | `@args(Audited)` |
 | `bean(namePattern)` | every member of beans with that name, an alias or a qualifier value | `bean(order*)` |
-| `@annotation(Annotation)` | methods carrying the annotation (also when it is on the interface method they implement) | `@annotation(Timed)` |
+| `@annotation(Annotation)` | methods carrying the annotation (also when it is on the interface method they implement, not when only a superclass method they override has it, like AspectJ; annotation-driven advisors such as `@Cacheable` and `@Validated` groups read `MethodSignature.mergedAnnotations`, which include the overridden methods' annotations, like Spring) | `@annotation(Timed)` |
 | `@within(Annotation)` | every member whose body is in a class carrying the annotation | `@within(Service)` |
 | `@target(Annotation)` | every member of beans whose class carries the annotation | `@target(Service)` |
 | `name()` | a named pointcut: a `@Pointcut` method of the same aspect; another aspect's as `Type.name()` | `orders()`, `AuditAspect.orders()` |
@@ -1218,7 +1241,12 @@ combines pointcuts with `union` and `intersection`;
 A call a bean makes to its own method skips the advice, as in Spring, also
 for a generated subclass proxy (the bean is its own proxy): while one of
 its advised members runs, including the code a `Future` member runs after
-an `await`, calls on the bean go straight to its code. Call through
+an `await`, calls on the bean go straight to its code, except calls
+through a `@Lazy` reference to the bean itself (`@Lazy() this._self`),
+which are advised as in Spring. The body of an
+`async*` (`Stream`) or `sync*` (`Iterable`) member runs only when its result
+is listened to or iterated, after the member returned: the calls it makes
+on the bean are advised. Call through
 `AopContext.currentProxy()` to get the advice (on a subclass proxy it
 advises the one call made right after it, so call it for each call); unlike Spring the proxy is
 always exposed (no `exposeProxy` flag), also in the asynchronous code an
@@ -1234,15 +1262,17 @@ Future<Book> refresh(String isbn) =>
 Proxies are generated classes that implement the bean class (when it has
 no private members and is not `final`, `base` or `sealed`) and its
 interfaces, so the bean can be injected by either. A component class that
-cannot be implemented (private members, operators, `base`) and has no
-interface is created as a generated subclass instead, which runs its
+cannot be implemented (private members, operators, `base`) is created as a
+generated subclass instead, also when it has an interface, superclass or
+mixin that could be implemented, which runs its
 public methods, getters and setters through the advice (Spring's CGLIB
 proxy): the bean is its own proxy, `AopUtils.isAopProxy` is true once
 advice is attached, and a member the subclass cannot override (a private
 type, a default value that is not a public constant, `@nonVirtual`) is
 inherited and not advised, with a build warning. A component class that can be neither
 implemented nor extended (`final`, `sealed`, `interface`, a factory
-constructor), like a `@Bean` method's type that cannot be proxied, keeps
+constructor, generic) is proxied through the interfaces it implements;
+without one, like a `@Bean` method's type that cannot be proxied, it keeps
 its signatures: advice matching it fails the context at startup with the
 reason and what to change; add an interface with the advised methods and
 inject the bean by it. `AopUtils.getTarget(bean)` unwraps a
@@ -1401,10 +1431,10 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `@Bean` definitions know only the declared return type until the bean is created (`beanClassName` is `null`) | The type of the returned expression(s) is known at build time and the definition is registered under it and its supertypes: `getBean<HikariDataSource>()`, `getBeanNamesForType`, `@ConditionalOnBean` / `@ConditionalOnMissingBean` and AOP (`within(Impl)`, annotations on implementation methods) see it before the bean exists | Deliberately better: the generator sees the method body |
 | Duplicate bean names are found at startup (Boot disables overriding) | Two unconditional declarations of one name fail the build; declarations with conditions (`@Profile`, `@Conditional...`) may share a name and are checked at refresh (`BeanDefinitionOverrideException` when both match) | Fail early when the clash is certain |
 | CGLIB / JDK proxies | Generated `implements` proxies; a class that cannot be implemented (private members, `base`) is created as a generated subclass, its own proxy; a `final`, `sealed` or `interface` class (or one with only factory constructors) is advised only through an interface it implements | No runtime bytecode generation; Dart cannot extend such classes from another library |
-| A CGLIB proxy wraps a separate target, so only the bean's `this.` calls skip the advice | A generated subclass is the bean itself: while one of its advised members runs (also after an `await` in a `Future` member), every call on the bean skips the advice, also one coming back through another bean; `AopContext.currentProxy()` advises the one call made right after it | Dart cannot tell a `this.` call from another call on the same object |
+| A CGLIB proxy wraps a separate target, so only the bean's `this.` calls skip the advice | A generated subclass is the bean itself: while one of its advised members runs (also after an `await` in a `Future` member), every call on the bean skips the advice, also one coming back through another bean; a call through a `@Lazy` reference to the bean is advised, and `AopContext.currentProxy()` advises the one call made right after it. The body of a `Stream` (`async*`) or lazy `Iterable` (`sync*`) member runs later, when the result is listened to or iterated, so the calls it makes on the bean are advised | Dart cannot tell a `this.` call from another call on the same object |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
-| A `ConfigurationCondition` of the `registerBean` phase on a `@Bean` method sees the `@Bean` methods of the configuration classes processed before it | It is decided once every module has loaded, so it also sees the unconditional beans of later modules | Modules are loaded as a whole |
-| `UrlResource.exists()` sends a `HEAD` request | `true`; reading fails for a status of 400 or above | No synchronous HTTP in Dart |
+| A `ConfigurationCondition` of the `registerBean` phase on a `@Bean` method sees the `@Bean` methods of the configuration classes processed before it | It is decided when its class is read, in the same class order, but `@Bean` methods without a `registerBean`-phase condition (in classes not decided by the reader) register while parsing, so it also sees those of later classes and modules | Only conditional definitions wait for the reader; the order of the others stays the definition order |
+| `UrlResource.exists()` sends a `HEAD` request | `exists()` is `true`; `existsAsync()` sends the `HEAD` request (config data imports, `optional:` and `@PropertySource(ignoreResourceNotFound: true)` use it, so a 404 is a missing file); reading fails for a status of 400 or above | No synchronous HTTP in Dart |
 | `SmartFactoryBean.getObject(Class)` | `getObjectForType(Type)`; the extra product types are served once the factory exists | No overloading; no reflection on types not created yet |
 | `@Lookup` methods with arguments (passed to the bean's constructor by `getBean(name, args)`) | Lookup methods take no parameters (build error): inject an `ObjectProvider<T>` or a factory and pass the values yourself | Generated bean definitions resolve the constructor arguments themselves |
 | CGLIB subclass for `@Lookup` methods | A generated subclass in the `.spring.dart` file: the class must be extendable from another library and the methods public; an abstract class may have no abstract members besides its lookup methods (a build error; Spring fails when one is called) | No runtime bytecode generation |
@@ -1414,7 +1444,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | `execution(* getName(..))` matches an explicit or generated getter (they are methods in Java) | `execution` matches methods only; a public field is an implicit getter / setter that the proxy advises (`MemberKind.getter` / `setter`, reached by `within`, `bean`, `@annotation`, custom advisors); an explicit getter is a getter too | Dart has getters and setters of its own and fields have implicit ones |
 | Package-qualified AOP type patterns | Simple type names; qualified wildcards are rejected | No packages in Dart |
 | `execution(Animal+ *(..))` matches subtypes of any return or parameter type | `Type+` as an `execution` return or parameter type knows `Object`, `num`, `Iterable` and `Pattern` only; another fails the build (list the types: `(Dog \|\| Cat)`) | Signatures carry the declared type's name, not its supertypes |
-| Annotations are read by reflection, whatever their values | An annotation whose values include a private constant or function is left out of the runtime metadata (`@annotation(X)` does not see it); a constraint or `@Valid` with one fails the build | Generated code cannot reference private declarations of another library |
+| Annotations are read by reflection, whatever their values | An annotation whose values include a private constant, function or symbol (`#_name`) is left out of the runtime metadata (public symbols and records are kept) (`@annotation(X)` does not see it); a constraint or `@Valid` with one fails the build | Generated code cannot reference private declarations of another library |
 | `execution(protected ...)`, `throws` patterns | `protected` matches `@protected` members (`package:meta`), `private` matches nothing; a `throws` clause fails the build | Dart has no protected modifier and declares no exceptions |
 | `args(Type)` / `@args(A)` test any runtime class (reflection) | Type tests the generator writes for the types named in the aspect and the scanned classes carrying the annotation | No reflection |
 | `@DeclareParents` applies to any matching bean | To the generated proxies (interface and subclass) of the matching beans of the aspect's module; a subclass proxy implements the interface even when a condition leaves the aspect out (its members then throw) | Proxy classes are written at build time |
@@ -1444,6 +1474,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Jackson reads `Range<Integer>` of `class Range<T extends Number>` | A generic class with bounded type parameters is described raw (`Range<num>`): writing works, reading it with type arguments fails with a message (register a `JsonDeserializer`) | Dart cannot build `Range<X>` for a type parameter `X` without that bound |
 | SpEL `1 instanceof T(Long)` is `false` (an `Integer`) | `true`: `T(Long)`, `T(Integer)`, `T(Short)` and `T(Byte)` are all Dart's `int` | Dart has one integer type |
 | Boot reads `.properties` config files as ISO-8859-1 | UTF-8 unless the loader says otherwise (`PropertiesPropertySourceLoader(encoding: latin1)`) | Dart files are UTF-8 |
+| SnakeYAML reads YAML 1.1: `yes` / `no` / `on` / `off` are booleans (a `String` property gets `true` / `false`), `017` is octal (15), `1_000` is 1000 | YAML 1.2 (core schema): those stay the strings `yes`, `on`, ... (a `bool` property still converts them), `017` is 17, `0o17` is octal, `1_000` is a string; quote such values to read the same in both | Dart's `package:yaml` implements YAML 1.2 |
 | `ConversionService.canConvert(Class, Class)` | `canConvertType<S>(Type target)`; `canConvert(Object? source, Type target)` checks a value | Dart cannot pass a source type and test subtypes on a `Type` value |
 | `ChronoUnit` (all `java.time` units) | `ChronoUnit` with `nanos` … `days` (no months / years), for `DurationStyle.parse(unit:)` | A Dart `Duration` has no calendar units |
 | `configtree:` reads any file system | File system paths only (not `classpath:` or assets); values are strings | Config trees are mounted volumes |

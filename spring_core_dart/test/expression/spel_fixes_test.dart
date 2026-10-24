@@ -165,11 +165,31 @@ void main() {
     });
 
     test('List methods', () {
-      expect(eval('{3, 1, 2}.removeAll({1})'), isTrue);
+      expect(
+        parser.parseExpression('removeAll({1})').getValue(null, [3, 1, 2]),
+        isTrue,
+      );
       final list = [3, 1, 2];
       parser.parseExpression('sort(null)').getValue(null, list);
       expect(list, [1, 2, 3]);
-      expect(eval('{1, 2, 3}.retainAll({2})'), isTrue);
+      expect(
+        parser.parseExpression('retainAll({2})').getValue(null, [1, 2, 3]),
+        isTrue,
+      );
+      // A non-constant inline list is a new mutable list.
+      expect(eval('{1, 1 + 1}.removeAll({1})'), isTrue);
+    });
+
+    test('inline lists and maps of constants are unmodifiable', () {
+      for (final text in [
+        '{3, 1}.removeAll({1})',
+        '{1, {2}}[1].add(3)',
+        "{a: 1}.put('b', 2)",
+      ]) {
+        expect(() => eval(text), throwsUnsupportedError, reason: text);
+      }
+      expect(eval('{1, -1}.add(3)'), isTrue);
+      expect(eval("{a: 1 + 1}.put('b', 2)"), isNull);
     });
   });
 

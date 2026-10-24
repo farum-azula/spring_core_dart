@@ -74,7 +74,7 @@ final class WebSocketClientConfig {
         maxDelay: duration('reconnect.max-delay') ?? policy.maxDelay,
         jitter: duration('reconnect.jitter') ?? policy.jitter,
         maxRetries: maxRetries == null ? null : int.parse(maxRetries.trim()),
-      ),
+      )..validate('$_prefix$name.reconnect'),
       defaultRequestHeaders: _merge(
         _headers(environment, '${_prefix}default.default-request-headers'),
         _headers(environment, '$_prefix$name.default-request-headers'),
@@ -191,15 +191,72 @@ final class WebSocketReconnectPolicy {
   /// default: no limit).
   final int? maxRetries;
 
+  /// Checks the values like Spring 7's `RetryPolicy.Builder`: `delay` and
+  /// `jitter` not negative, `multiplier` at least 1, `max-delay` positive,
+  /// `max-retries` not negative (a `delay` above `max-delay` is accepted:
+  /// the waits are then [maxDelay]); throws an [ArgumentError] naming the
+  /// property under [prefix] otherwise.
+  void validate([String prefix = 'reconnect']) {
+    void check(bool valid, Object value, String key, String message) {
+      if (!valid) {
+        throw ArgumentError.value(value, '$prefix.$key', message);
+      }
+    }
+
+    check(!delay.isNegative, _show(delay), 'delay', 'must not be negative');
+    check(!jitter.isNegative, _show(jitter), 'jitter', 'must not be negative');
+    check(
+      multiplier >= 1,
+      multiplier,
+      'multiplier',
+      'must be greater than or equal to 1 (1 is a fixed delay)',
+    );
+    check(
+      maxDelay > Duration.zero,
+      _show(maxDelay),
+      'max-delay',
+      'must be positive',
+    );
+    final maxRetries = this.maxRetries;
+    if (maxRetries != null) {
+      check(maxRetries >= 0, maxRetries, 'max-retries', 'must not be negative');
+    }
+  }
+
+  // A duration as `1m` / `500ms` style text rather than 0:01:00.000000.
+  static String _show(Duration value) {
+    if (value == Duration.zero) return '0s';
+    final micros = value.inMicroseconds;
+    for (final (unit, size) in [
+      ('d', Duration.microsecondsPerDay),
+      ('h', Duration.microsecondsPerHour),
+      ('m', Duration.microsecondsPerMinute),
+      ('s', Duration.microsecondsPerSecond),
+      ('ms', Duration.microsecondsPerMillisecond),
+    ]) {
+      if (micros % size == 0) return '${micros ~/ size}$unit';
+    }
+    return '${micros}us';
+  }
+
   /// The wait before attempt [retry] (1 for the first), like Spring's
   /// `ExponentialBackOff`: [delay] × [multiplier]^(retry − 1), at most
   /// [maxDelay], then ± [jitter] × (that wait / [delay]), but never below
-  /// [delay] nor above [maxDelay].
+  /// [delay] nor above [maxDelay] (which wins when [delay] is above it).
+  /// A zero [delay] gives zero waits (± [jitter]) on every attempt.
   Duration delayFor(int retry, [math.Random? random]) {
     final base = delay.inMicroseconds;
     final max = maxDelay.inMicroseconds;
-    final grown = base * math.pow(multiplier, math.max(retry - 1, 0));
-    final interval = math.min(grown, max.toDouble());
+    final double interval;
+    if (base == 0) {
+      // 0 × multiplier^n stays 0 (and 0 × Infinity would be NaN).
+      interval = 0;
+    } else {
+      // Once the wait reaches max-delay it stays there, also when
+      // multiplier^n overflows to Infinity.
+      final grown = base * math.pow(multiplier, math.max(retry - 1, 0));
+      interval = grown.isFinite && grown < max ? grown.toDouble() : max * 1.0;
+    }
     if (jitter <= Duration.zero) {
       return Duration(microseconds: interval.round());
     }
@@ -208,7 +265,8 @@ final class WebSocketReconnectPolicy {
     final low = math.max(interval - applicable, base.toDouble());
     final high = math.min(interval + applicable, max.toDouble());
     if (high <= low) {
-      return Duration(microseconds: low.round());
+      // Only when delay is above max-delay: the maximum wins.
+      return Duration(microseconds: math.min(low, high).round());
     }
     final next = (random ?? _random).nextDouble();
     return Duration(microseconds: (low + next * (high - low)).round());

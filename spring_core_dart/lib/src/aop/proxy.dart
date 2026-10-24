@@ -250,7 +250,16 @@ final class AopProxyFactory {
   }) => [
     for (final advisor in advisors)
       if (signatures.any(
-        (s) => pointcutMatchesBean(advisor.pointcut, s, beanName, beanAliases),
+        (s) => pointcutMatchesBean(
+          advisor.pointcut,
+          s,
+          beanName,
+          beanAliases,
+          introducedTypes: [
+            for (final introduction in introductions)
+              introduction.interfaceName,
+          ],
+        ),
       ))
         advisor,
   ];
@@ -404,6 +413,11 @@ final class ProxyInvoker {
   /// The `@DeclareParents` interfaces of the proxy, by index.
   final List<Introduction> introductions;
 
+  /// The names of the [introductions] interfaces, for `this(...)`.
+  late final List<String> introducedTypes = [
+    for (final introduction in introductions) introduction.interfaceName,
+  ];
+
   final List<Object?> _delegates;
 
   /// The delegate of introduction [index], created on first use (one per
@@ -461,6 +475,7 @@ final class ProxyInvoker {
           signature,
           beanName,
           beanAliases,
+          introducedTypes: introducedTypes,
         ))
           switch (advisor.pointcut) {
             final ExpressionPointcut pointcut when pointcut.isRuntime =>
@@ -604,6 +619,7 @@ final class _DynamicInterceptor implements MethodInterceptor {
       invocation,
       beanName: invoker.beanName,
       beanAliases: invoker.beanAliases,
+      introducedTypes: invoker.introducedTypes,
     );
     if (bindings == null) {
       return invocation.proceed();

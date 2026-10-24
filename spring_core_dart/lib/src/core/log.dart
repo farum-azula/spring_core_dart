@@ -132,7 +132,46 @@ final class SpringLog {
   static final _levels = <String, SpringLogLevel>{};
   static final _effective = <String, SpringLogLevel>{};
   static final _listeners = <SpringLogHandler>[];
+  static final _holds = <SpringLogHold>[];
   static final _fieldsKey = Object();
+
+  /// Holds back every record from now on, of any level, until
+  /// [SpringLogHold.release] emits those that pass the levels of that
+  /// time, like Spring Boot's `DeferredLog` before the logging system is
+  /// initialized. `SpringApplication` holds the records logged before the
+  /// `logging.level.*` properties are applied.
+  ///
+  /// While a hold is active every level is enabled ([isEnabled] is `true`)
+  /// and records reach neither [handler] nor the [listen]ers. Holds nest:
+  /// releasing an inner one passes its records to the outer one.
+  ///
+  /// ```dart
+  /// final hold = SpringLog.hold();
+  /// log.debug('early'); // held
+  /// SpringLog.setLevel('neon', SpringLogLevel.debug);
+  /// hold.release(); // emits 'early' now
+  /// ```
+  static SpringLogHold hold() {
+    final hold = SpringLogHold._();
+    _holds.add(hold);
+    return hold;
+  }
+
+  // Emits [record] to the handler and listeners, or to the innermost hold.
+  static void _dispatch(SpringLogRecord record) {
+    if (_holds.lastOrNull case final hold?) {
+      hold._records.add(record);
+      return;
+    }
+    handler(record);
+    for (final listener in List.of(_listeners)) {
+      try {
+        listener(record);
+      } catch (_) {
+        // A broken listener must not break the caller.
+      }
+    }
+  }
 
   /// The root level: the minimum level of loggers without a level of
   /// their own ([setLevel]); [SpringLogLevel.warning] by default.
@@ -218,7 +257,8 @@ final class SpringLog {
   /// Check it before building expensive messages (or pass a closure as
   /// the message).
   bool isEnabled(SpringLogLevel level) =>
-      level != SpringLogLevel.off && level.index >= levelOf(name).index;
+      level != SpringLogLevel.off &&
+      (_holds.isNotEmpty || level.index >= levelOf(name).index);
 
   /// Emits [message] at [level] if enabled. [message] may be a
   /// `String Function()`, called only when the record is emitted.
@@ -243,14 +283,7 @@ final class SpringLog {
           ? Map.unmodifiable(fields)
           : Map.unmodifiable({...context, ...fields}),
     );
-    handler(record);
-    for (final listener in List.of(_listeners)) {
-      try {
-        listener(record);
-      } catch (_) {
-        // A broken listener must not break the caller.
-      }
-    }
+    _dispatch(record);
   }
 
   /// Emits a [SpringLogLevel.trace] message.
@@ -295,6 +328,47 @@ final class SpringLog {
 
   @override
   String toString() => 'SpringLog($name)';
+}
+
+/// Records held back by [SpringLog.hold] until [release].
+///
+/// ```dart
+/// final hold = SpringLog.hold();
+/// try {
+///   configureLevels();
+/// } finally {
+///   hold.release();
+/// }
+/// ```
+///
+/// Spring Boot (Java): `DeferredLog.replayTo(destination)`.
+final class SpringLogHold {
+  SpringLogHold._();
+
+  final _records = <SpringLogRecord>[];
+
+  /// Whether records are still held (until [release]).
+  bool get isHolding => SpringLog._holds.contains(this);
+
+  /// Stops holding and emits, in order, the held records that pass the
+  /// current level of their logger (to an outer hold, if one is still
+  /// active); returns those. A second call does nothing.
+  List<SpringLogRecord> release() {
+    if (!SpringLog._holds.remove(this)) {
+      return const [];
+    }
+    final passed = [
+      for (final record in _records)
+        if (record.level != SpringLogLevel.off &&
+            (SpringLog._holds.isNotEmpty ||
+                record.level.index >=
+                    SpringLog.levelOf(record.loggerName).index))
+          record,
+    ];
+    _records.clear();
+    passed.forEach(SpringLog._dispatch);
+    return passed;
+  }
 }
 
 /// The default [SpringLog.handler]: prints the record (one line).

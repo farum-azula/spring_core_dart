@@ -414,7 +414,16 @@ class BeanWrapper {
   /// wrapper.setPropertyValue('score', '9.5'); // double 9.5
   /// wrapper.setPropertyValue("counts['math']", '3'); // int 3
   /// wrapper.setPropertyValue('tags[2]', 'x'); // index == length appends
+  /// wrapper.setPropertyValue('notes[1]', 'x'); // empty List<String?>: [null, x]
   /// ```
+  ///
+  /// An index beyond the end fills the gap with nulls, like Spring. A list
+  /// that cannot hold null gets, with [autoGrowNestedPaths], the element
+  /// type's empty value (`tags[2]` into an empty `List<String>` gives
+  /// `['', '', x]`, `''` being Spring's `new String()`; a new introspected
+  /// object, list, set or map); for other element types (`List<int>`), or
+  /// without [autoGrowNestedPaths], the write fails with Spring's "List
+  /// does not support filling up gaps with null elements".
   ///
   /// Throws [NotWritablePropertyException], [TypeMismatchException] or
   /// [NullValueInNestedPathException].
@@ -758,8 +767,7 @@ class BeanWrapper {
         final index = int.tryParse(key);
         if (index == null ||
             index < 0 ||
-            (index > container.length &&
-                !(autoGrowNestedPaths && index < autoGrowCollectionLimit))) {
+            (index > container.length && index >= autoGrowCollectionLimit)) {
           throw NotWritablePropertyException(
             wrappedInstance.runtimeType,
             path,
@@ -767,11 +775,35 @@ class BeanWrapper {
           );
         }
         final converted = _convertElement(value, elementType, path);
+        // Like Spring, a gap before [index] is filled with nulls (`tags[1]`
+        // into an empty list gives `[null, t]`). A list that cannot hold
+        // null gets, with [autoGrowNestedPaths], the element type's empty
+        // value (`''` like Spring's `new String()`, a new introspected
+        // object, list, set or map); else the write fails like Spring for
+        // a list that rejects null.
+        final size = container.length;
         while (container.length < index) {
-          final padding = elementType == null || elementType.nullable
-              ? null
-              : _newValue(elementType);
-          _add(container, padding, path);
+          if (elementType == null || elementType.nullable) {
+            try {
+              container.add(null);
+              continue;
+            } on TypeError {
+              // `List<String>` at run time: cannot hold null.
+            }
+          }
+          final element = autoGrowNestedPaths && elementType != null
+              ? _newValue(elementType)
+              : null;
+          if (element == null || !elementType!.isInstance(element)) {
+            throw NotWritablePropertyException(
+              wrappedInstance.runtimeType,
+              path,
+              'Cannot set element with index $index in List of size $size, '
+              "accessed using property path '$path': "
+              'List does not support filling up gaps with null elements',
+            );
+          }
+          _add(container, element, path);
         }
         if (index == container.length) {
           _add(container, converted, path);
@@ -891,8 +923,9 @@ class BeanWrapper {
   }
 }
 
-/// Creates empty values for auto-growing: introspected objects with a
-/// no-argument constructor, lists, sets and maps of the right static type.
+/// Creates empty values for auto-growing: `''` for `String` (Spring's
+/// `new String()`), introspected objects with a no-argument constructor,
+/// lists, sets and maps of the right static type.
 final class _NewValue implements TypeInfoVisitor<Object?> {
   _NewValue(this.wrapper);
 
@@ -900,6 +933,10 @@ final class _NewValue implements TypeInfoVisitor<Object?> {
 
   @override
   Object? visitClass<T>(ClassType<T> type) {
+    // Spring instantiates the type; of the scalars only `String` can be.
+    if (T == String) {
+      return '';
+    }
     final introspection = wrapper.introspector.forTypeArgument<T>();
     return introspection != null && introspection.isInstantiable
         ? introspection.instantiate()

@@ -1539,10 +1539,11 @@ class Form(var String email, {var int age = 0});
       expect(output, _has('create: (r) => Clock()'));
       // Private named parameter: called with its public name; the
       // `@Autowired` `new(...)` constructor wins over `new withDefaults(...)`.
+      // Private state: created as its subclass proxy.
       expect(
         output,
         _has(
-          "Gateway(r.dependency<Repository>(name: r'repository'), "
+          r"_$GatewayProxy(r.dependency<Repository>(name: r'repository'), "
           "retries: r.dependency<int>(name: r'retries'))",
         ),
       );
@@ -1557,7 +1558,10 @@ class Form(var String email, {var int age = 0});
           r"_$ConfigConfiguration(r, r.dependency<Settings>(name: r'settings'))",
         ),
       );
-      expect(output, _has(r'class _$GatewayProxy implements Api'));
+      expect(
+        output,
+        _has(r'class _$GatewayProxy extends Gateway implements Advised'),
+      );
       expect(
         output,
         _has(
@@ -1885,10 +1889,14 @@ abstract class Base { void base(); }
 @Configuration() class Config { @Bean() Api api() => Both(); @Bean() String text() => ''; }
 ''';
       final all = await _generate(source, proxyMode: ProxyMode.all);
+      // Private members: a subclass proxy (CGLIB), not one implementing
+      // only the interface.
       expect(
         all,
-        contains(r'class_$WithPrivateProxyimplementsApi,'),
-        reason: 'class with private members: interface only',
+        contains(
+          r'class_$WithPrivateProxyextendsWithPrivateimplementsAdvised{',
+        ),
+        reason: 'class with private members: subclass',
       );
       expect(all, contains(r'class_$PlainProxyimplementsPlain,'));
       expect(all, contains(r'class_$BothProxyimplementsBoth,Base,Api,'));
@@ -4126,12 +4134,19 @@ class Mailer {
         _has(
           'registrars: [ImportDeclaration(Registrar.new, conditions: '
           "[ConditionGroup(r'package:pkg/src/service.dart#Config', "
-          "[const ProfileCondition([r'cloud'])])]), "
+          "[const ProfileCondition([r'cloud'])])], "
+          "importer: r'package:pkg/src/service.dart#Config'), "
           'ImportDeclaration(Selector.new, conditions: [',
         ),
       );
       // Imported once: the first importer wins.
-      expect(output, _has('ImportDeclaration(Definitions.new)]'));
+      expect(
+        output,
+        _has(
+          'ImportDeclaration(Definitions.new, '
+          "importer: r'package:pkg/src/service.dart#Other')]",
+        ),
+      );
       expect(output, isNot(_has("name: r'registrar'")));
       expect(output, _has('async: const Async()'));
       expect(output, _has("async: const Async(r'pool')"));

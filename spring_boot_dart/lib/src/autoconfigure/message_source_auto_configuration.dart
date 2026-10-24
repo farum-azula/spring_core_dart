@@ -26,6 +26,8 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ReloadableResourceBundleMessageSource>(
     name: 'messageSource',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'messageSource',
     types: const [
       ReloadableResourceBundleMessageSource,
       MessageSource,

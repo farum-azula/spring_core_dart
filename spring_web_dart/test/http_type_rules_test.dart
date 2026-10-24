@@ -238,5 +238,51 @@ void main() {
       expect(missing.hasBody, isFalse);
       expect(ResponseEntity.ofNullable(1).statusCode, 200);
     });
+
+    test('headers() replaces the values of those names (putAll)', () {
+      final entity = ResponseEntity.status(200)
+          .header('X-A', ['1'])
+          .header('X-B', ['keep'])
+          .headers(
+            HttpHeaders.fromEntries([
+              const MapEntry('x-a', '2'),
+              const MapEntry('X-A', '3'),
+            ]),
+          )
+          .build<void>();
+      expect(entity.headers.getAll('X-A'), ['2', '3']);
+      expect(entity.headers.getAll('X-B'), ['keep']);
+    });
+
+    test('status codes need three digits, like HttpStatusCode.valueOf', () {
+      for (final code in [99, 42, 0, -1, 1000]) {
+        expect(() => ResponseEntity<void>(code), throwsArgumentError);
+        expect(() => ResponseEntity.status(code), throwsArgumentError);
+      }
+      for (final code in [99, 42, -1, 1000]) {
+        expect(() => HttpResponse(code), throwsArgumentError);
+        expect(
+          () => StreamedHttpResponse(code, body: const Stream.empty()),
+          throwsArgumentError,
+        );
+      }
+      expect(ResponseEntity<void>(100).statusCode, 100);
+      expect(HttpResponse(999).statusCode.isError, isFalse);
+      expect(ResponseEntity.status(599).build<void>().statusCode, 599);
+    });
+
+    test(
+      'client responses accept status 0, a browser opaque redirect',
+      () async {
+        final response = HttpResponse(0);
+        expect(response.statusCode, 0);
+        expect(response.statusCode.is2xxSuccessful, isFalse);
+        expect(response.statusCode.isError, isFalse);
+        final streamed = StreamedHttpResponse(0, body: const Stream.empty());
+        expect(streamed.statusCode, 0);
+        expect(streamed.isSuccess, isFalse);
+        expect((await streamed.read()).statusCode, 0);
+      },
+    );
   });
 }

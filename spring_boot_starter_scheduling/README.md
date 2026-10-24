@@ -63,7 +63,7 @@ Give exactly one of `cron`, `fixedRate` or `fixedDelay`.
 | `cron` | run at cron times; `-` switches the task off | `cron: '0 */15 * * * *'` |
 | `zone` | time zone of `cron`: leave out for local time, or `'UTC'` | `zone: 'UTC'` |
 | `scheduler` | the `TaskScheduler` bean to run on, by qualifier or bean name (`${...}` allowed); default: the only one, the primary one or `taskScheduler` | `scheduler: 'reportsScheduler'` |
-| `fixedRateString`, `fixedDelayString`, `initialDelayString` | the same as text, with `${...}` placeholders and Spring Boot durations | `fixedRateString: r'${reports.rate:5m}'` |
+| `fixedRateString`, `fixedDelayString`, `initialDelayString` | the same as text, with `${...}` placeholders and Spring Boot durations; blank (also once resolved) is not set | `fixedRateString: r'${reports.rate:5m}'` |
 
 Rules:
 
@@ -226,7 +226,7 @@ level to the `spring.scheduling` logger, with the task name; the task keeps
 its schedule. Handle errors in the method if you need retries or alerts,
 or declare an `ErrorHandler` bean (Spring's `ErrorHandler`, which Spring
 sets on its `ThreadPoolTaskScheduler`): it receives every error instead
-of the log. A handler that throws stops the task, like Spring's
+of the log. With several, the primary one is used (none without one). A handler that throws stops the task, like Spring's
 `LOG_AND_PROPAGATE`.
 
 ```dart

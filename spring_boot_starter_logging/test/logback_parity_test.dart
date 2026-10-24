@@ -187,6 +187,30 @@ void main() {
         warnings,
         contains(startsWith('logging.logback.rollingpolicy.file-name-pattern')),
       );
+      // Java's aliases (Charset.forName) work too.
+      for (final (name, charset) in [
+        ('utf8', 'UTF8'),
+        ('latin', 'ISO8859_1'),
+        ('ascii', 'ascii7'),
+      ]) {
+        runner
+            .withPropertyValues([
+              'logging.file.name=${dir.path}/$name.log',
+              'logging.pattern.file=%m',
+              'logging.charset.file=$charset',
+            ])
+            .run((context) {
+              expect(context.hasFailed, isFalse, reason: charset);
+              log.info('é');
+            });
+      }
+      expect(File('${dir.path}/utf8.log').readAsBytesSync(), [
+        0xc3,
+        0xa9,
+        0x0a,
+      ]);
+      expect(File('${dir.path}/latin.log').readAsBytesSync(), [0xe9, 0x0a]);
+      expect(File('${dir.path}/ascii.log').readAsBytesSync(), [0x3f, 0x0a]);
       runner
           .withPropertyValues([
             'logging.file.name=${dir.path}/other.log',

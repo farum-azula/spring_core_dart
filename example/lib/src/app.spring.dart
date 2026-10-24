@@ -211,60 +211,72 @@ class _$DefaultSlogansProxy
   ) as String);
 }
 
-class _$DefaultBasketPricingProxy implements _i4.BasketPricing, _i2.Advised {
-  _$DefaultBasketPricingProxy(this._target, this._invoker);
+class _$DefaultBasketPricingProxy extends _i4.DefaultBasketPricing
+    implements _i2.Advised {
+  _$DefaultBasketPricingProxy(super.p0);
 
-  final _i4.DefaultBasketPricing _target;
+  _i2.ProxyInvoker? _$invoker;
 
-  final _i2.ProxyInvoker _invoker;
+  _$DefaultBasketPricingProxy _$advise(_i2.ProxyInvoker invoker) {
+    _$invoker = invoker;
+    return this;
+  }
 
   @override
-  Object get aopTarget => _target;
+  Object get aopTarget => this;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
 
   @override
   void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
 
   @override
   bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
+        advisor,
+      );
 
   @override
   void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
 
   @override
   bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
+        advice,
+      );
 
   @override
-  String toString() => _target.toString();
+  double price(String isbn) {
+    final _$i = this._$invoker;
+    return _$i == null
+        ? super.price(isbn)
+        : (_$i.invoke(this, this, 0, [
+            isbn,
+          ], (args) => super.price((args[0] as String))) as double);
+  }
 
   @override
-  double price(String isbn) => (this._invoker.invoke(this, this._target, 0, [
-    isbn,
-  ], (args) => this._target.price((args[0] as String))) as double);
+  double total(List<String> isbns) {
+    final _$i = this._$invoker;
+    return _$i == null
+        ? super.total(isbns)
+        : (_$i.invoke(this, this, 1, [
+            isbns,
+          ], (args) => super.total((args[0] as List<String>))) as double);
+  }
 
   @override
-  double total(List<String> isbns) => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    [isbns],
-    (args) => this._target.total((args[0] as List<String>)),
-  ) as double);
-
-  @override
-  double totalDirect(List<String> isbns) => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    [isbns],
-    (args) => this._target.totalDirect((args[0] as List<String>)),
-  ) as double);
+  double totalDirect(List<String> isbns) {
+    final _$i = this._$invoker;
+    return _$i == null
+        ? super.totalDirect(isbns)
+        : (_$i.invoke(this, this, 2, [
+            isbns,
+          ], (args) => super.totalDirect((args[0] as List<String>))) as double);
+  }
 }
 
 class _$ConsoleLogScreenProxy
@@ -560,51 +572,61 @@ class _$PriceListProxy implements _i11.PriceList, _i2.Advised {
   }
 }
 
-class _$InMemoryBookRepositoryProxy implements _i9.BookRepository, _i2.Advised {
-  _$InMemoryBookRepositoryProxy(this._target, this._invoker);
+class _$InMemoryBookRepositoryProxy extends _i9.InMemoryBookRepository
+    implements _i2.Advised {
+  _$InMemoryBookRepositoryProxy();
 
-  final _i9.InMemoryBookRepository _target;
+  _i2.ProxyInvoker? _$invoker;
 
-  final _i2.ProxyInvoker _invoker;
+  _$InMemoryBookRepositoryProxy _$advise(_i2.ProxyInvoker invoker) {
+    _$invoker = invoker;
+    return this;
+  }
 
   @override
-  Object get aopTarget => _target;
+  Object get aopTarget => this;
 
   @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
 
   @override
   void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
 
   @override
   bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
+        advisor,
+      );
 
   @override
   void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
 
   @override
   bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
+        advice,
+      );
 
   @override
-  String toString() => _target.toString();
+  List<_i9.Book> findAll() {
+    final _$i = this._$invoker;
+    return _$i == null
+        ? super.findAll()
+        : (_$i.invoke(this, this, 0, const [], (args) => super.findAll())
+              as List<_i9.Book>);
+  }
 
   @override
-  List<_i9.Book> findAll() => (this._invoker.invoke(
-    this,
-    this._target,
-    0,
-    const [],
-    (args) => this._target.findAll(),
-  ) as List<_i9.Book>);
-
-  @override
-  _i9.Book? find(String isbn) => (this._invoker.invoke(this, this._target, 1, [
-    isbn,
-  ], (args) => this._target.find((args[0] as String))) as _i9.Book?);
+  _i9.Book? find(String isbn) {
+    final _$i = this._$invoker;
+    return _$i == null
+        ? super.find(isbn)
+        : (_$i.invoke(this, this, 1, [
+            isbn,
+          ], (args) => super.find((args[0] as String))) as _i9.Book?);
+  }
 }
 
 class _$LoyaltyDiscountProxy
@@ -3887,19 +3909,19 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       dependencies: const [
         _i2.Dependency.lazy(_i4.BasketPricing, name: r'_self'),
       ],
-      create: (r) => _i4.DefaultBasketPricing(
+      create: (r) => _$DefaultBasketPricingProxy(
         _$BasketPricingLazy(
           r.lazyDependency<_i4.BasketPricing>(name: r'_self'),
         ),
       ),
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
           _i2.MethodSignature(
             name: r'price',
             declaringType: r'BasketPricing',
             targetType: r'DefaultBasketPricing',
-            declaringTypes: [r'BasketPricing'],
+            declaringTypes: [r'DefaultBasketPricing', r'BasketPricing'],
             returnType: r'double',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -3913,7 +3935,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             name: r'total',
             declaringType: r'BasketPricing',
             targetType: r'DefaultBasketPricing',
-            declaringTypes: [r'BasketPricing'],
+            declaringTypes: [r'DefaultBasketPricing', r'BasketPricing'],
             returnType: r'double',
             parameterTypes: [r'List'],
             parameterNames: [r'isbns'],
@@ -3925,7 +3947,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             name: r'totalDirect',
             declaringType: r'BasketPricing',
             targetType: r'DefaultBasketPricing',
-            declaringTypes: [r'BasketPricing'],
+            declaringTypes: [r'DefaultBasketPricing', r'BasketPricing'],
             returnType: r'double',
             parameterTypes: [r'List'],
             parameterNames: [r'isbns'],
@@ -3934,10 +3956,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             targetAnnotationTypes: [r'Service'],
           ),
         ],
-        create: (target, invoker) => _$DefaultBasketPricingProxy(
-          (target as _i4.DefaultBasketPricing),
-          invoker,
-        ),
+        advise: (bean, invoker) =>
+            bean is _$DefaultBasketPricingProxy ? bean._$advise(invoker) : null,
       ),
     ),
     _i2.BeanDefinition<_i5.ConsoleLogScreen>(
@@ -4263,15 +4283,15 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       name: r'inMemoryBookRepository',
       source: r'package:spring_core_dart_example/src/catalog/catalog.dart#InMemoryBookRepository',
       types: const [_i9.InMemoryBookRepository, _i9.BookRepository],
-      create: (r) => _i9.InMemoryBookRepository(),
+      create: (r) => _$InMemoryBookRepositoryProxy(),
       annotations: const [_i2.Repository()],
-      aopProxy: _i2.AopProxyFactory(
+      aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
           _i2.MethodSignature(
             name: r'findAll',
             declaringType: r'BookRepository',
             targetType: r'InMemoryBookRepository',
-            declaringTypes: [r'BookRepository'],
+            declaringTypes: [r'InMemoryBookRepository', r'BookRepository'],
             returnType: r'List',
             targetTypes: [r'InMemoryBookRepository', r'BookRepository'],
             targetAnnotations: [_i2.Repository()],
@@ -4281,7 +4301,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             name: r'find',
             declaringType: r'BookRepository',
             targetType: r'InMemoryBookRepository',
-            declaringTypes: [r'BookRepository'],
+            declaringTypes: [r'InMemoryBookRepository', r'BookRepository'],
             returnType: r'Book',
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
@@ -4290,10 +4310,9 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             targetAnnotationTypes: [r'Repository'],
           ),
         ],
-        create: (target, invoker) => _$InMemoryBookRepositoryProxy(
-          (target as _i9.InMemoryBookRepository),
-          invoker,
-        ),
+        advise: (bean, invoker) => bean is _$InMemoryBookRepositoryProxy
+            ? bean._$advise(invoker)
+            : null,
       ),
     ),
     _i2.BeanDefinition<_i9.LoyaltyDiscount>(

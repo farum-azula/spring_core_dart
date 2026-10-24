@@ -189,6 +189,7 @@ class ModuleEmitter {
                     for (final condition in registrar.conditions)
                       _condition(condition, registrar.element),
                   ]),
+                'importer': _str(registrar.importer),
               },
             ),
         ]),
@@ -1223,6 +1224,13 @@ class ModuleEmitter {
         for (final annotation in member.annotations)
           _constant(annotation, element),
       ]),
+    // Only when the overridden declarations add some (else the runtime
+    // falls back to `annotations`).
+    if (!_sameAnnotations(member.mergedAnnotations, member.annotations))
+      'mergedAnnotations': literalConstList([
+        for (final annotation in member.mergedAnnotations)
+          _constant(annotation, element),
+      ]),
     if (member.annotations.isNotEmpty)
       'annotationTypes': literalConstList([
         for (final annotation in member.annotations)
@@ -1255,10 +1263,21 @@ class ModuleEmitter {
           _str(annotation.type!.element!.name!),
       ]),
     },
+    if (member.superclassAnnotations.isNotEmpty)
+      'superclassAnnotations': literalConstList([
+        for (final level in member.superclassAnnotations)
+          literalConstList([
+            for (final annotation in level) _constant(annotation, element),
+          ]),
+      ]),
     if (member.isProtected) 'isProtected': literalTrue,
   });
 
   // Type name used in signatures (`execution(int add(int, int))`).
+  static bool _sameAnnotations(List<DartObject> a, List<DartObject> b) =>
+      a.length == b.length &&
+      [for (var i = 0; i < a.length; i++) i].every((i) => a[i] == b[i]);
+
   static String _simpleName(DartType type) => switch (type) {
     InterfaceType() => type.element.name!,
     TypeParameterType() => type.element.name!,
@@ -2725,6 +2744,18 @@ class ModuleEmitter {
     }
     if (reader.isType) {
       return _type(reader.typeValue, element);
+    }
+    if (reader.isSymbol) {
+      return CodeExpression(Code('#${value.toSymbolValue()}'));
+    }
+    if (value.toRecordValue() case final record?) {
+      return literalConstRecord(
+        [for (final field in record.positional) _constant(field, element)],
+        {
+          for (final MapEntry(:key, value: field) in record.named.entries)
+            key: _constant(field, element),
+        },
+      );
     }
     if (reader.isList) {
       return literalConstList([

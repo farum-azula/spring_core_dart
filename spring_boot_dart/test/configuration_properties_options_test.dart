@@ -213,10 +213,12 @@ void main() {
     test('values that cannot be converted keep the defaults', () {
       final lenient = run([
         '--lenient.port=eighty',
-        '--lenient.ids=1,x',
+        '--lenient.ids=2,x,3',
         '--lenient.name=n',
       ]).getBean<Lenient>();
       expect(lenient.port, 7);
+      // One conversion of the whole comma list in Boot: the default stays,
+      // not the valid part.
       expect(lenient.ids, [1]);
       expect(lenient.name, 'n');
     });

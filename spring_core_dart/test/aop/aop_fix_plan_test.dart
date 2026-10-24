@@ -745,6 +745,28 @@ void main() {
   });
 
   group('@DeclareParents introductions', () {
+    test('unbound this(Introduced) matches the introduced interface', () {
+      final ctx = context([
+        ordersBean('tracked', introduce: true),
+        ordersBean('plain'),
+        BeanDefinition<CallCounter>(
+          name: 'usageTracking',
+          create: (_) => CallCounter(),
+          aspect: AspectMetadata<CallCounter>(typeName: 'UsageTracking'),
+        ),
+        counterAspect(
+          'counter',
+          perClause: '',
+          pointcut: 'this(UsageTracked) && execution(* count(..))',
+          scope: ScopeType.singleton,
+        ),
+      ]);
+      ctx.getBean<Orders>(qualifier: 'tracked').count();
+      ctx.getBean<Orders>(qualifier: 'plain').count();
+      expect(log, ['count #1']);
+      ctx.close();
+    });
+
     test('the proxy implements the interface with a delegate per proxy', () {
       final ctx = context([
         ordersBean('first', introduce: true),
@@ -775,4 +797,31 @@ void main() {
       ctx.close();
     });
   });
+
+  test('an Advisor registered with registerSingleton (from a '
+      'BeanFactoryPostProcessor) is applied', () {
+    final ctx = context([
+      ordersBean('orders'),
+      BeanDefinition<_RegistersAdvisor>(
+        name: 'registersAdvisor',
+        types: const [_RegistersAdvisor, BeanFactoryPostProcessor],
+        create: (_) => _RegistersAdvisor(),
+      ),
+    ]);
+    ctx.getBean<Orders>().count();
+    expect(log, ['manual count']);
+    ctx.close();
+  });
+}
+
+class _RegistersAdvisor implements BeanFactoryPostProcessor {
+  @override
+  void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) =>
+      beanFactory.registerSingleton(
+        'manualAdvisor',
+        DefaultPointcutAdvisor(
+          const NameMatchMethodPointcut(['count']),
+          _Tag('manual'),
+        ),
+      );
 }

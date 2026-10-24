@@ -329,7 +329,9 @@ class SpringApplication {
   }) {
     final watch = Stopwatch()..start();
     final run = _RunListeners(this, args)..starting();
-    final environment = _environment(args, systemEnvironment, properties);
+    final environment = run.releasingLogsOnError(
+      () => _environment(args, systemEnvironment, properties),
+    );
     final (context, arguments) = _guard(run, () {
       _postProcessEnvironment(environment, before: true);
       ConfigDataEnvironment(
@@ -339,6 +341,7 @@ class SpringApplication {
       ).processAndApplySync();
       _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
+      _applyLoggingLevels(run, environment);
       _printBanner(environment);
       return _start(run, args, environment, watch, (
         systemEnvironment,
@@ -418,7 +421,9 @@ class SpringApplication {
   }) async {
     final watch = Stopwatch()..start();
     final run = _RunListeners(this, args)..starting();
-    final environment = _environment(args, systemEnvironment, properties);
+    final environment = run.releasingLogsOnError(
+      () => _environment(args, systemEnvironment, properties),
+    );
     try {
       _postProcessEnvironment(environment, before: true);
       await ConfigDataEnvironment(
@@ -428,6 +433,7 @@ class SpringApplication {
       ).processAndApply();
       _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
+      _applyLoggingLevels(run, environment);
       _printBanner(environment, await _readBannerAsync(environment));
     } catch (error, stackTrace) {
       _report(run, error, stackTrace: stackTrace);
@@ -554,6 +560,17 @@ class SpringApplication {
     return environment;
   }
 
+  // The `logging.level.*` properties, then the lines held since the start
+  // of the run, at those levels (Boot's LoggingApplicationListener
+  // replaying the DeferredLogs once the logging system is initialized).
+  static void _applyLoggingLevels(
+    _RunListeners run,
+    ConfigurableEnvironment environment,
+  ) {
+    applyLoggingLevels(environment);
+    run.releaseLogs();
+  }
+
   T _guard<T>(_RunListeners run, T Function() body) {
     try {
       return body();
@@ -584,6 +601,7 @@ class SpringApplication {
     ConfigurableApplicationContext? context,
     StackTrace? stackTrace,
   }) {
+    run.releaseLogs();
     run.deferredLogs.switchOver();
     if (_reported.remove(error)) {
       return;
@@ -758,7 +776,6 @@ class SpringApplication {
     StandardEnvironment environment,
     (Map<String, String>?, Map<String, Object?>) launch,
   ) {
-    applyLoggingLevels(environment);
     // Spring Boot's ContextIdApplicationContextInitializer.
     final applicationName = environment
         .getProperty('spring.application.name')
@@ -953,11 +970,20 @@ class SpringApplication {
     ConfigurableApplicationContext context,
   ) => [
     for (final name in context.getBeanNamesForType(T))
-      (
-        context.getBeanByName(name) as T,
-        context.beanFactory.getBeanDefinition(name).order,
-      ),
+      (context.getBeanByName(name) as T, _definitionOrder(context, name)),
   ];
+
+  // The `@Order` of bean [name]'s definition; `null` for a singleton
+  // registered without one (`registerSingleton`).
+  static int? _definitionOrder(
+    ConfigurableApplicationContext context,
+    String name,
+  ) {
+    final factory = context.beanFactory;
+    return factory.containsBeanDefinition(name)
+        ? factory.getBeanDefinition(name).order
+        : null;
+  }
 
   /// The exit code a failed run chose for [error]: what the
   /// [ExitCodeExceptionMapper] beans say (they are asked while the context
@@ -1033,9 +1059,7 @@ class SpringApplication {
     final orders = <Object, int?>{
       for (final type in const [ApplicationRunner, CommandLineRunner])
         for (final name in context.getBeanNamesForType(type))
-          context.getBeanByName(name): context.beanFactory
-              .getBeanDefinition(name)
-              .order,
+          context.getBeanByName(name): _definitionOrder(context, name),
     };
     final beans = OrderComparator.sort(orders.keys, (bean) => orders[bean]);
     final calls = <FutureOr<void> Function()>[
@@ -1384,11 +1408,30 @@ final class _RunListeners {
   final List<String> args;
   final _multicaster = SimpleApplicationEventMulticaster();
 
+  // Every line logged before the `logging.level.*` properties are applied,
+  // emitted then at those levels (releaseLogs).
+  final _logHold = SpringLog.hold();
+
   // What is logged before a logging system takes over (replayed by it).
   final deferredLogs = DeferredLogs.capture();
 
-  void starting() =>
-      _multicaster.multicastEvent(ApplicationStartingEvent(application, args));
+  void releaseLogs() => _logHold.release();
+
+  // [body], releasing the held lines when it fails.
+  T releasingLogsOnError<T>(T Function() body) {
+    try {
+      return body();
+    } catch (_) {
+      releaseLogs();
+      rethrow;
+    }
+  }
+
+  void starting() => releasingLogsOnError(
+    () => _multicaster.multicastEvent(
+      ApplicationStartingEvent(application, args),
+    ),
+  );
 
   void environmentPrepared(ConfigurableEnvironment environment) =>
       _multicaster.multicastEvent(

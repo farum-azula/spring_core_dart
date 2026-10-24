@@ -33,7 +33,7 @@ class FileAppender extends LogAppender {
   /// Size that triggers a rollover, in bytes; `0` never rolls over.
   final int maxFileSize;
 
-  /// Number of rolled-over files kept.
+  /// Number of rolled-over files kept; `0` keeps all.
   final int maxHistory;
 
   /// The charset of the file (`logging.charset.file`, UTF-8 by default);

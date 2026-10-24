@@ -24,6 +24,8 @@ const _log = SpringLog('spring_boot_dart.JacksonAutoConfiguration');
 final jacksonAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ObjectMapper>(
     name: 'jacksonJsonMapper',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'jacksonJsonMapper',
     source: _source,
     conditions: const [
       ConditionGroup(_source, [ConditionalOnMissingBean(ObjectMapper)]),

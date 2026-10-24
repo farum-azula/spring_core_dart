@@ -24,7 +24,8 @@ const _enabled = ConditionalOnProperty(
 /// `spring.task.scheduling.shutdown.await-termination=true` the context's
 /// `closeAsync()` waits for the runs going on, at most
 /// `spring.task.scheduling.shutdown.await-termination-period`. An
-/// `ErrorHandler` bean receives the errors of the tasks.
+/// `ErrorHandler` bean (the only or the primary one) receives the errors
+/// of the tasks.
 ///
 /// ```properties
 /// spring.task.scheduling.enabled=false
@@ -34,6 +35,8 @@ const _enabled = ConditionalOnProperty(
 final schedulingAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<TaskExecutor>(
     name: 'applicationTaskExecutor',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'applicationTaskExecutor',
     aliases: const [
       AnnotationConfigApplicationContext.defaultTaskExecutorBeanName,
     ],
@@ -48,6 +51,8 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
   ),
   BeanDefinition<TaskScheduler>(
     name: 'taskScheduler',
+    // A @Bean method: its bean conditions are decided when it is read.
+    factoryMethodName: 'taskScheduler',
     types: const [TaskScheduler, TimerTaskScheduler, DisposableBean],
     source: _source,
     conditions: const [
@@ -68,7 +73,8 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
         awaitTerminationPeriod: environment.getPropertyAs<Duration>(
           'spring.task.scheduling.shutdown.await-termination-period',
         ),
-        errorHandler: r.optionalDependency<ErrorHandler>(),
+        // The only (or primary) ErrorHandler bean; none when ambiguous.
+        errorHandler: r.provider<ErrorHandler>().getIfUnique(),
       );
     },
   ),

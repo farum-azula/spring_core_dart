@@ -282,6 +282,11 @@ spring.cloud.openfeign.client.decode-slash=false
 | `follow-redirects` | `true` | whether redirects are followed |
 | `spring.cloud.openfeign.client.decode-slash` | `true` | for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: `%2F`) |
 
+The on/off properties (`dismiss404`, `follow-redirects`,
+`event-stream.reconnect`, `decode-slash`) take `true` / `false` in any case
+(also `on` / `off`, `yes` / `no`, `1` / `0`), like Boot's binding; other
+values fail naming the key.
+
 `@FeignClient(url:)` wins over the `url` property; `@FeignClient(path:)`
 prefixes every path. More attributes, as in Spring Cloud OpenFeign:
 

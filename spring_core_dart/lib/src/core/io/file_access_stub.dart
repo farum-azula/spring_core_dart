@@ -25,6 +25,9 @@ abstract final class FileAccess {
   static Future<Uint8List> readUrl(Uri url) async =>
       throw UnsupportedError('Reading URLs is not supported');
 
+  /// Always `true`: reading reports that URLs are not supported.
+  static Future<bool> urlExists(Uri url) async => true;
+
   /// Returns [path] unchanged.
   static String absolute(String path) => path;
 

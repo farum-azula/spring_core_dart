@@ -84,6 +84,12 @@ class Books implements BookService {
 to every public method that has no cache annotation of its own, like
 Spring (not to getters, setters or `toString`).
 
+As in Spring, both are read from the class that declares the method's body
+and, when it has none, from its superclasses (the nearest wins): a base
+class with `@CacheConfig` or `@Cacheable` serves the beans that extend it;
+a subclass's class-level annotations don't apply to the methods it
+inherits.
+
 `@Cacheable('books')` names one cache. For several caches, or to take them
 from `@CacheConfig`, use `.of`: `@Cacheable.of(cacheNames: ['books', 'isbn'])`,
 `@Cacheable.of(key: '#isbn')` (same for `CachePut.of` and `CacheEvict.of`).
@@ -216,7 +222,7 @@ application declares no `CacheManager` of its own):
 | Property | Default | Meaning |
 |---|---|---|
 | `spring.cache.type` | `generic` with `Cache` beans, else `simple` | `generic`: a `SimpleCacheManager` of the `Cache` beans; `simple`: caches in memory; `none`: cache nothing (annotations stay, methods always run) |
-| `spring.cache.cache-names` | — | A fixed set of caches, e.g. `books,authors` or a YAML list; an unknown name is then an error. Without it caches are created on first use. |
+| `spring.cache.cache-names` | — | A fixed set of caches, e.g. `books,authors` or a YAML list; an unknown name is then an error. Without it (or empty) caches are created on first use. |
 | `spring.cache.simple.time-to-live` | none | How long entries live: `10m`, `30s`, `PT1H`, or milliseconds. |
 | `spring.cache.simple.max-size` | none | Maximum entries per cache; the least recently used go first. |
 | `spring.cache.simple.caches.<name>.time-to-live` | — | The same for one cache. |

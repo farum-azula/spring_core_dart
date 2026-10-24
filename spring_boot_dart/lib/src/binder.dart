@@ -228,6 +228,9 @@ final class BindContext {
   /// One line per property that could not be bound.
   final errors = <String>[];
 
+  // Every failure, also those the handler ignored.
+  int _failures = 0;
+
   /// The names bound so far.
   final boundNames = <ConfigurationPropertyName>{};
 
@@ -249,6 +252,7 @@ final class BindContext {
 
   void _error(ConfigurationPropertyName name, String message, [Object? value]) {
     final error = '$name: $message${value == null ? '' : ' (was "$value")'}';
+    _failures++;
     if (handler.onFailure(name, error)) {
       errors.add(error);
     }
@@ -660,6 +664,7 @@ final class BindContext {
       if (whole != null) {
         final items = <Object?>[];
         final raw = _resolve(whole)!;
+        final failuresBefore = _failures;
         for (final (index, item) in elementsOf(raw).indexed) {
           final value = item == null
               ? unbound
@@ -670,7 +675,10 @@ final class BindContext {
             items.add(value);
           }
         }
-        return items;
+        // One conversion of the whole value in Boot: an invalid element
+        // fails the list, so `ignoreInvalidFields` keeps the default
+        // instead of the valid part.
+        return _failures > failuresBefore ? unbound : items;
       }
       final items = <Object?>[];
       var index = 0;

@@ -70,6 +70,11 @@ class Account {
   int version = 1;
 }
 
+class Ticket {
+  Ticket(this.code);
+  final String code;
+}
+
 class Counter {
   Counter(this.count, this.enabled, {this.ratio = 1});
   final int count;
@@ -205,6 +210,24 @@ final _introspector = BeanIntrospector(
         ),
       ),
     ),
+    BeanIntrospection<Ticket>(
+      properties: [
+        _p<Ticket>(
+          'code',
+          (b) => b.code,
+          const ClassType<String>(),
+          annotations: const [
+            JsonProperty('', access: JsonPropertyAccess.readOnly),
+          ],
+        ),
+      ],
+      constructor: BeanConstructor<Ticket>(
+        parameters: const [
+          BeanParameter('code', type: ClassType<String>(), isRequired: true),
+        ],
+        create: (positional, named) => Ticket(positional[0]! as String),
+      ),
+    ),
     BeanIntrospection<Counter>(
       properties: [
         _p<Counter>('count', (b) => b.count, const ClassType<int>()),
@@ -319,6 +342,11 @@ void main() {
       expect(mapper.readValue<Isbn>('"3"').value, '3');
     });
 
+    test('map keys are written as their @JsonValue', () {
+      expect(mapper.writeValueAsString({Isbn('978-0'): 1}), '{"978-0":1}');
+      expect(mapper.writeValueAsString({Label(): 2}), '{"L-1":2}');
+    });
+
     test('a method', () {
       expect(mapper.writeValueAsString(Label()), '"L-1"');
       expect(
@@ -340,6 +368,17 @@ void main() {
         'nickname': null,
         'v': 3,
       });
+    });
+
+    test('a read-only constructor property is not read, and says so', () {
+      expect(mapper.writeValueAsString(Ticket('t-1')), '{"code":"t-1"}');
+      expect(
+        () => mapper.readValue<Ticket>('{"code":"t-1"}'),
+        _mappingError(
+          'property "code" is read-only (JsonPropertyAccess.readOnly), so it '
+          'is not read from JSON, but the constructor of Ticket requires it',
+        ),
+      );
     });
 
     test('required constructor parameters must be present', () {
@@ -419,5 +458,25 @@ void main() {
     );
     expect(mapper.readTree('1.0'), mapper.readTree('1'));
     expect(mapper.readTree('1.0').hashCode, mapper.readTree('1').hashCode);
+  });
+
+  test('durations are written like Java Duration.toString()', () {
+    String write(Duration d) => mapper.writeValueAsString(d);
+    expect(write(const Duration(seconds: -90)), '"PT-1M-30S"');
+    expect(write(const Duration(hours: -1)), '"PT-1H"');
+    expect(write(const Duration(milliseconds: -1500)), '"PT-1.5S"');
+    expect(write(const Duration(milliseconds: -500)), '"PT-0.5S"');
+    expect(write(const Duration(minutes: 1, seconds: 30)), '"PT1M30S"');
+    expect(write(const Duration(milliseconds: 1500)), '"PT1.5S"');
+    expect(write(const Duration(hours: 2)), '"PT2H"');
+    expect(write(Duration.zero), '"PT0S"');
+    expect(
+      mapper.readValue<Duration>('"PT-1M-30S"'),
+      const Duration(seconds: -90),
+    );
+    expect(
+      mapper.readValue<Duration>('"PT-1.5S"'),
+      const Duration(milliseconds: -1500),
+    );
   });
 }

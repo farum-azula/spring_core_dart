@@ -15,6 +15,7 @@ class Line {
 class Cart {
   List<Line> lines = [];
   List<int> numbers = [];
+  List<String> tags = [];
   Map<int, double> prices = {};
   Map<String, Line> byCode = {};
   Line? main;
@@ -58,6 +59,13 @@ final _cartIntrospection = BeanIntrospection<Cart>(
       typeInfo: const ListType<int>(ClassType<int>()),
       get: (b) => b.numbers,
       set: (b, v) => b.numbers = v! as List<int>,
+    ),
+    BeanProperty<Cart>(
+      'tags',
+      type: List<String>,
+      typeInfo: const ListType<String>(ClassType<String>()),
+      get: (b) => b.tags,
+      set: (b, v) => b.tags = v! as List<String>,
     ),
     BeanProperty<Cart>(
       'prices',
@@ -740,6 +748,66 @@ void main() {
       expect(wrapper.getPropertyType('lines[0]'), Line);
     });
 
+    test('a gap in a List<String> is padded with empty strings (Spring\'s '
+        'new String()); other non-nullable elements fail', () {
+      const gap =
+          "Invalid property 'numbers[2]' of Cart: Cannot set element with "
+          "index 2 in List of size 0, accessed using property path "
+          "'numbers[2]': List does not support filling up gaps with null "
+          'elements';
+      final cart = Cart();
+      final growing = BeanWrapper(
+        cart,
+        introspector: _introspector(),
+        autoGrowNestedPaths: true,
+      )..setPropertyValue('tags[2]', 'z');
+      expect(cart.tags, ['', '', 'z']);
+      expect(
+        () => growing.setPropertyValue('numbers[2]', '7'),
+        throwsA(
+          isA<NotWritablePropertyException>().having(
+            (e) => e.message,
+            'message',
+            gap,
+          ),
+        ),
+      );
+      expect(cart.numbers, isEmpty);
+      // Without auto-grow a list that cannot hold null is not padded.
+      expect(
+        () => BeanWrapper(
+          Cart(),
+          introspector: _introspector(),
+        ).setPropertyValue('tags[1]', 'z'),
+        throwsA(isA<NotWritablePropertyException>()),
+      );
+    });
+
+    test('DataBinder pads a List<String> and never rejects the bound value '
+        'for a gap', () {
+      final cart = Cart();
+      final binder = DataBinder(
+        cart,
+        objectName: 'cart',
+        introspector: _introspector(),
+      )..bind({'tags[2]': 'z'});
+      expect(binder.bindingResult.hasErrors, isFalse);
+      expect(cart.tags, ['', '', 'z']);
+      // `List<int>` cannot be padded: the write fails like Spring's
+      // InvalidPropertyException, not as a type mismatch of `7`.
+      binder.bind({'numbers[2]': '7'});
+      expect(binder.bindingResult.hasErrors, isFalse);
+      expect(cart.numbers, isEmpty);
+      expect(
+        () => (DataBinder(
+          Cart(),
+          objectName: 'cart',
+          introspector: _introspector(),
+        )..ignoreUnknownFields = false).bind({'numbers[2]': '7'}),
+        throwsA(isA<NotWritablePropertyException>()),
+      );
+    });
+
     test('conversion failures of elements and keys are type mismatches', () {
       final wrapper = BeanWrapper(
         Cart(),
@@ -815,6 +883,69 @@ void main() {
         ..validators.add(BeanValidator(introspector: _introspector()))
         ..validate();
       expect(dataBinder.bindingResult.hasErrors, isFalse);
+    });
+
+    test('list elements keep their index; a gap Dart cannot fill with null '
+        'is reported', () {
+      final dataBinder = binder()
+        ..construct(
+          const MapValueResolver({
+            'isbn': '1',
+            'title': 'T',
+            'tags[1]': 'classic',
+          }),
+        );
+      // Spring gives [null, classic]; a List<String> cannot hold null.
+      expect(
+        dataBinder.bindingResult.fieldError('tags[0]')?.code,
+        'typeMismatch',
+      );
+      expect((dataBinder.target! as Book).tags, ['classic']);
+    });
+
+    test('list indexes stop at autoGrowCollectionLimit, like Spring\'s '
+        'createList', () {
+      // A hostile index fails before the list is allocated.
+      final stopwatch = Stopwatch()..start();
+      expect(
+        () => binder().construct(
+          const MapValueResolver({
+            'isbn': '1',
+            'title': 'T',
+            'tags[0]': 'sf',
+            'tags[50000000]': 'x',
+          }),
+        ),
+        throwsA(
+          isA<InvalidPropertyException>().having(
+            (error) => error.propertyName,
+            'propertyName',
+            'tags[50000000]',
+          ),
+        ),
+      );
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)));
+      final limited = binder()..autoGrowCollectionLimit = 3;
+      expect(
+        () => limited.construct(
+          const MapValueResolver({'isbn': '1', 'title': 'T', 'tags[3]': 'x'}),
+        ),
+        throwsA(isA<InvalidPropertyException>()),
+      );
+      // Indexes below the limit still work.
+      final dataBinder = binder()
+        ..autoGrowCollectionLimit = 3
+        ..construct(
+          const MapValueResolver({
+            'isbn': '1',
+            'title': 'T',
+            'tags[0]': 'a',
+            'tags[1]': 'b',
+            'tags[2]': 'c',
+          }),
+        );
+      expect(dataBinder.bindingResult.hasErrors, isFalse);
+      expect((dataBinder.target! as Book).tags, ['a', 'b', 'c']);
     });
 
     test('optional parameters keep their defaults', () {

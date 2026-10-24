@@ -1,5 +1,8 @@
 ## Unreleased
 
+- the auto-configured `applicationTaskExecutor` and `taskScheduler` back off for beans registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application; their conditions are decided when the auto-configuration is read, like Boot's `OnBeanCondition`
+- `fixedRateString`, `fixedDelayString` and `initialDelayString` that are or resolve to blank (`r'${jobs.rate:}'`) count as not set, like Spring (they failed as not a duration).
+- Two `ErrorHandler` beans no longer fail the start: the scheduler takes the unique or primary one, else none (`getIfUnique`).
 - `ErrorHandler` for the errors of scheduled tasks (`TimerTaskScheduler(errorHandler:)`; the auto-configured scheduler uses the `ErrorHandler` bean); a handler that throws stops the task, like Spring's `LOG_AND_PROPAGATE`.
 - `@Scheduled(initialDelay: ...)` (or `initialDelayString`) alone runs the method once after the delay, like Spring 6.1.
 - `TaskScheduler.scheduleAt(task, DateTime)` runs a task once at that time, like Spring's `schedule(Runnable, Instant)`.

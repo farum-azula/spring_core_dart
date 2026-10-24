@@ -436,18 +436,37 @@ final class LoggingSystem {
   }
 
   // `logging.charset.*`: an encoding Dart knows (UTF-8, ISO-8859-1,
-  // US-ASCII and their aliases), or a failed start.
+  // US-ASCII and their IANA or Java aliases, `Charset.forName`), or a
+  // failed start.
   static Encoding? _charset(PropertyResolver environment, String key) {
     final value = _blankToNull(environment.getProperty(key));
     if (value == null) {
       return null;
     }
-    return Encoding.getByName(value.toLowerCase()) ??
+    final name = value.trim().toLowerCase();
+    return Encoding.getByName(name) ??
+        _javaCharsetAliases[name] ??
         (throw FormatException(
           '$key: unsupported charset (use UTF-8, ISO-8859-1 or US-ASCII)',
           value,
         ));
   }
+
+  // Java's aliases of the charsets Dart knows, missing from the IANA names
+  // `Encoding.getByName` takes.
+  static const Map<String, Encoding> _javaCharsetAliases = {
+    'utf8': utf8,
+    'unicode-1-1-utf-8': utf8,
+    'iso8859_1': latin1,
+    'iso8859-1': latin1,
+    'iso_8859_1': latin1,
+    '8859_1': latin1,
+    '819': latin1,
+    'ibm-819': latin1,
+    'ascii7': ascii,
+    '646': ascii,
+    'default': ascii,
+  };
 
   // Records logged before this system took over (Spring Boot's
   // DeferredLogs): to every appender but the console, as the handler of

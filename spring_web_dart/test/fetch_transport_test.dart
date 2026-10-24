@@ -52,6 +52,21 @@ void main() {
         });
         return;
       }
+      if (request.uri.path == '/redirect') {
+        request.response
+          ..headers.set('Access-Control-Allow-Origin', '*')
+          ..statusCode = HttpStatus.found
+          ..headers.set('Location', '/target');
+        await request.response.close();
+        return;
+      }
+      if (request.uri.path == '/target') {
+        request.response
+          ..headers.set('Access-Control-Allow-Origin', '*')
+          ..write('there');
+        await request.response.close();
+        return;
+      }
       if (request.uri.path == '/stall') {
         // A first chunk, then silence: the read timeout runs out.
         final response = request.response
@@ -91,6 +106,10 @@ void main() {
       'status': 200,
       'body': {'isbn': '1'},
       'contentType': 'application/json',
+      // Node's fetch gives the redirect itself; a browser, status 0.
+      'manual': 302,
+      'manualStream': 302,
+      'followed': '200:there',
       'refused': 'error',
       'events': ['1:tick 1', '2:tick 2', '3:tick 3'],
       'readTimeout': 'timeout',

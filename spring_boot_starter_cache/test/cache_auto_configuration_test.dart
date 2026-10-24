@@ -17,6 +17,30 @@ final _app = BeanModule('app', [
   ),
 ]);
 
+final class _ManagerRegistrar implements BeanRegistrar {
+  _ManagerRegistrar(this.manager);
+  final CacheManager manager;
+
+  @override
+  void register(BeanRegistry registry, Environment environment) => registry
+      .registerBean<CacheManager>((_) => manager, name: 'appCacheManager');
+}
+
+final class _ManagerDefinitionRegistrar
+    implements ImportBeanDefinitionRegistrar {
+  _ManagerDefinitionRegistrar(this.manager);
+  final CacheManager manager;
+
+  @override
+  void registerBeanDefinitions(BeanDefinitionRegistry registry) =>
+      registry.registerBeanDefinition(
+        BeanDefinition<CacheManager>(
+          name: 'appCacheManager',
+          create: (_) => manager,
+        ),
+      );
+}
+
 void main() {
   final runner = const ApplicationContextRunner()
       .withUserConfiguration(_app)
@@ -51,6 +75,39 @@ void main() {
       context.getBean<Books>().find('1');
       expect(own.getCache('books')!.get('1'), isNotNull);
     });
+  });
+
+  test('backs off for a CacheManager of a registrar the application '
+      '@Imports', () {
+    final own = InMemoryCacheManager();
+    for (final registrar in <Object Function()>[
+      () => _ManagerRegistrar(own),
+      () => _ManagerDefinitionRegistrar(own),
+    ]) {
+      // What the generator emits for `@Configuration() @Import([...])
+      // class AppConfig {}`.
+      final app = BeanModule(
+        'imports',
+        [
+          BeanDefinition<Object>(
+            name: 'appConfig',
+            source: 'package:app/app.dart#AppConfig',
+            annotations: const [Configuration()],
+            create: (_) => Object(),
+          ),
+        ],
+        registrars: [
+          ImportDeclaration(
+            registrar,
+            importer: 'package:app/app.dart#AppConfig',
+          ),
+        ],
+      );
+      runner.withUserConfiguration(app).run((context) {
+        expect(context, hasSingleBean<CacheManager>());
+        expect(context.getBean<CacheManager>(), same(own));
+      });
+    }
   });
 
   test('a CacheManager bean named in the annotation', () {
@@ -94,6 +151,18 @@ void main() {
         ),
       );
     });
+  });
+
+  test('an empty spring.cache.cache-names keeps the caches dynamic', () {
+    for (final value in ['', ' , ']) {
+      runner.withPropertyValues(['spring.cache.cache-names=$value']).run((
+        context,
+      ) {
+        expect(context.hasFailed, isFalse);
+        expect(context.getBean<Books>().find('1'), isNotNull);
+        expect(context.getBean<CacheManager>().cacheNames, contains('books'));
+      });
+    }
   });
 
   test('spring.cache.cache-names as a YAML list', () {

@@ -91,9 +91,31 @@ final class WebSocketConnectionManager {
         _listeners.add(controller);
         _ensure().ignore();
       },
-      onCancel: () => _listeners.remove(controller),
+      onCancel: () {
+        _listeners.remove(controller);
+        _stopRetrying();
+      },
     );
     return controller.stream;
+  }
+
+  // The last listener left while a reconnect waited: no attempt is made
+  // (unless a send waits for it); the next listener starts afresh.
+  void _stopRetrying() {
+    final retry = _retry;
+    if (_listeners.isNotEmpty || retry == null || _waiters.isNotEmpty) {
+      return;
+    }
+    retry.cancel();
+    _retry = null;
+    _retries = 0;
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) {
+      pending.completeError(
+        WebSocketException('no listener is left to reconnect for', url: url),
+      );
+    }
   }
 
   /// Sends a text (`String`) or binary (`List<int>`) message, opening the
@@ -303,6 +325,8 @@ final class WebSocketConnectionManager {
       }
       _pending = null;
     }
+    // Given up (or nobody listens): the next listener starts afresh.
+    _retries = 0;
     if (code == CloseStatus.normal.code) {
       _end();
     } else {

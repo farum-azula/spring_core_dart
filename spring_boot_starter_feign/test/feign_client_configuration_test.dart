@@ -249,4 +249,61 @@ void main() {
     );
     expect(() => BasicAuthRequestInterceptor('名前', 'pw'), throwsArgumentError);
   });
+
+  group('on/off properties bind like Boot booleans', () {
+    FeignClientConfig config(Map<String, Object> properties) =>
+        FeignClientConfig.of(
+          StandardEnvironment(systemEnvironment: const {})
+            ..propertySources.addFirst(MapPropertySource('p', properties)),
+          'plain',
+        );
+    const prefix = 'spring.cloud.openfeign.client.config.';
+
+    test('on / yes / 1 and off / no / 0 in any case', () {
+      final on = config({
+        '${prefix}plain.dismiss404': 'ON',
+        '${prefix}default.follow-redirects': 'no',
+        'spring.cloud.openfeign.client.decode-slash': '0',
+        '${prefix}plain.event-stream.reconnect': 'off',
+      });
+      expect(on.dismiss404, isTrue);
+      expect(on.followRedirects, isFalse);
+      expect(on.decodeSlash, isFalse);
+      expect(on.eventStreamReconnect, isFalse);
+      final yes = config({
+        '${prefix}default.dismiss404': 'yes',
+        '${prefix}plain.follow-redirects': '1',
+        'spring.cloud.openfeign.client.decode-slash': 'True',
+      });
+      expect(yes.dismiss404, isTrue);
+      expect(yes.followRedirects, isTrue);
+      expect(yes.decodeSlash, isTrue);
+      final defaults = config({});
+      expect(defaults.dismiss404, isFalse);
+      expect(defaults.followRedirects, isTrue);
+      expect(defaults.decodeSlash, isTrue);
+      expect(defaults.eventStreamReconnect, isTrue);
+    });
+
+    test('anything else fails naming the key', () {
+      for (final (key, value) in [
+        ('${prefix}plain.dismiss404', 'sure'),
+        ('${prefix}default.follow-redirects', 'nope'),
+        ('spring.cloud.openfeign.client.decode-slash', 'maybe'),
+        ('${prefix}plain.event-stream.reconnect', '2'),
+      ]) {
+        expect(
+          () => config({key: value}),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains(key),
+            ),
+          ),
+          reason: key,
+        );
+      }
+    });
+  });
 }

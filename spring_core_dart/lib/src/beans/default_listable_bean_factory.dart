@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:spring_core_dart/src/aop/aop_context.dart'
+    show callThroughProxyReference;
 import 'package:spring_core_dart/src/beans/aware.dart';
 import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
@@ -1548,12 +1550,19 @@ class DefaultListableBeanFactory
     // Resolved later on behalf of the bean being created now, so a lazy
     // `Greeter` in a `@Primary` Greeter decorator still gets the other one.
     final requester = _currentBean;
-    return () => _resolveDependency<T>(
-      qualifier: qualifier,
-      name: name,
-      requester: requester,
-      required: true,
-    )!;
+    return () {
+      final bean = _resolveDependency<T>(
+        qualifier: qualifier,
+        name: name,
+        requester: requester,
+        required: true,
+      )!;
+      // The lazy proxy calls the bean right after: a call through a
+      // reference, advised even when the bean is a subclass proxy calling
+      // itself (`@Lazy` self-injection).
+      callThroughProxyReference(bean);
+      return bean;
+    };
   }
 
   @override

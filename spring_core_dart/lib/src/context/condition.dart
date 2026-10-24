@@ -178,8 +178,9 @@ abstract interface class ConditionEvaluationRecorder {
   void recordCondition(String source, Condition condition, bool matched);
 }
 
-/// The conditions of one configuration class, evaluated once for the class
-/// and all of its `@Bean` methods (and its `@PropertySource`s), like
+/// The conditions of one configuration class, evaluated once (per
+/// [ConfigurationPhase]) for the class, all of its `@Bean` methods, its
+/// `@Import`s, the classes it imports and its `@PropertySource`s, like
 /// Spring's per-class condition evaluation: the class is registered all or
 /// nothing.
 ///
@@ -253,9 +254,13 @@ enum ConfigurationPhase {
   parseConfiguration,
 
   /// When the bean definitions of configuration classes (the class itself
-  /// and its `@Bean` methods) are registered, after every module,
-  /// component and deferred import has been loaded, so such a condition
-  /// sees all of them (Spring's `ConfigurationClassBeanDefinitionReader`).
+  /// and its `@Bean` methods) are registered: after every module has been
+  /// parsed, class by class in parse order (Spring's
+  /// `ConfigurationClassBeanDefinitionReader`). Such a condition sees the
+  /// components and the beans registered while parsing, and the `@Bean`
+  /// methods and registrar beans of the classes read before (application
+  /// classes before auto-configurations, imported classes before their
+  /// importer).
   registerBean,
 }
 
@@ -263,9 +268,17 @@ enum ConfigurationPhase {
 /// `ConfigurationCondition`; plain conditions are evaluated in both.
 ///
 /// A `registerBean` condition does not stop a configuration class from
-/// being parsed (its imports and property sources load); it decides,
-/// once everything is loaded, whether the class and its `@Bean` methods
-/// are registered. Spring Boot's `@ConditionalOnBean` works that way.
+/// being parsed (its property sources load, its selectors run); it
+/// decides, when the class is read, whether the class, its `@Bean` methods
+/// and its imports (registrars, selected classes) are registered — one
+/// decision for all of them. On a `@Bean` method it is decided when that
+/// method is registered. Spring Boot's `@ConditionalOnBean`,
+/// `@ConditionalOnMissingBean` and `@ConditionalOnSingleCandidate` work
+/// that way (`OnBeanCondition`). A scanned or imported component is a
+/// lite configuration class: such a condition on it is decided when the
+/// component is read, at its place in class order. Only a hand-written
+/// definition with neither a `source` nor a `factoryMethodName` is decided
+/// at once.
 ///
 /// ```dart
 /// class OnMissingClock implements ConfigurationCondition {

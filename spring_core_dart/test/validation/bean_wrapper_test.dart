@@ -157,6 +157,25 @@ void main() {
     );
   });
 
+  test('an index beyond the end fills the gap with null, like Spring', () {
+    final notes = <String?>[];
+    BeanWrapper({'notes': notes}).setPropertyValue('notes[1]', 't');
+    expect(notes, [null, 't']);
+    // A list that cannot hold null.
+    final tags = <String>[];
+    expect(
+      () => BeanWrapper({'tags': tags}).setPropertyValue('tags[1]', 't'),
+      throwsA(
+        isA<NotWritablePropertyException>().having(
+          (e) => e.message,
+          'message',
+          contains('List does not support filling up gaps with null elements'),
+        ),
+      ),
+    );
+    expect(tags, isEmpty);
+  });
+
   test('auto-grow nested paths', () {
     person.address = null;
     final growing = BeanWrapper(

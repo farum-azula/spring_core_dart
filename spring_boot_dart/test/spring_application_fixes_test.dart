@@ -207,6 +207,79 @@ void main() {
     },
   );
 
+  group('lines logged before logging.level.* applies', () {
+    late List<String> logged;
+
+    setUp(() {
+      final savedLevel = SpringLog.level;
+      final savedLevels = SpringLog.configuredLevels;
+      final savedHandler = SpringLog.handler;
+      logged = [];
+      SpringLog.handler = (record) =>
+          logged.add('${record.loggerName} ${record.message}');
+      addTearDown(() {
+        SpringLog.handler = savedHandler;
+        SpringLog.resetLevels();
+        SpringLog.level = savedLevel;
+        savedLevels.forEach(SpringLog.setLevel);
+      });
+    });
+
+    SpringApplication app() => SpringApplication(
+      [module()],
+      out: (_) {},
+      listeners: [
+        ApplicationListenerAdapter.of<ApplicationStartingEvent>((_) {
+          const SpringLog('early.loud').debug('starting');
+          const SpringLog('early.quiet').info('starting');
+        }),
+        ApplicationListenerAdapter.of<ApplicationEnvironmentPreparedEvent>(
+          (_) => const SpringLog('early.loud').trace('environment'),
+        ),
+      ],
+    );
+
+    const args = [
+      '--logging.level.early.loud=trace',
+      '--logging.level.early.quiet=error',
+      '--spring.main.banner-mode=log',
+      '--logging.level.root=info',
+    ];
+
+    test('are replayed at the final levels (run)', () {
+      app().run(args, systemEnvironment: const {}).close();
+      expect(
+        logged,
+        containsAllInOrder(['early.loud starting', 'early.loud environment']),
+      );
+      expect(logged, isNot(contains('early.quiet starting')));
+      // The banner in log mode is an INFO line before the context exists.
+      expect(logged, contains(contains('Spring')));
+    });
+
+    test('are replayed at the final levels (runAsync)', () async {
+      (await app().runAsync(args, systemEnvironment: const {})).close();
+      expect(
+        logged,
+        containsAllInOrder(['early.loud starting', 'early.loud environment']),
+      );
+      expect(logged, isNot(contains('early.quiet starting')));
+    });
+
+    test('are released when the start fails early', () {
+      expect(
+        () => app().run([
+          ...args,
+          '--logging.level.other=loud',
+        ], systemEnvironment: const {}),
+        throwsA(isA<ConfigurationPropertiesBindException>()),
+      );
+      // The levels were not applied: the default threshold filters.
+      expect(logged, isNot(contains('early.loud starting')));
+      expect(const SpringLog('x').isEnabled(SpringLogLevel.trace), isFalse);
+    });
+  });
+
   group('spring.messages.*', () {
     ConfigurableApplicationContext start(List<String> args) {
       final context = SpringApplication(
