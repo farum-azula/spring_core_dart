@@ -41,8 +41,12 @@ const _everything = [
   '.github/workflows/',
 ];
 
-/// Files outside a package that a package's tests check.
+/// Files outside a package that a package's tests check (a package's
+/// dependents are affected too: spring_core_dart means everything).
 const _testedBy = {
+  // Its examples are loaded by spring_core_dart's and the Flutter
+  // starter's tests.
+  'docs/configuration.md': 'spring_core_dart',
   'extensions/zed/dart_spring/snippets/yaml.json':
       'spring_boot_starter_flutter',
   'extensions/zed/dart_spring/snippets/properties.json':

@@ -13,6 +13,10 @@ Repository: <https://github.com/farum-azula/spring_core_dart>.
 Flutter widgets (bean builders, event listeners in the widget tree) will be a
 separate library.
 
+Full documentation: [`docs/`](docs/README.md), starting with the
+[configuration reference](docs/configuration.md) (every property, YAML and
+`.properties` side by side).
+
 ## Packages
 
 | Package | Path | What it is |
