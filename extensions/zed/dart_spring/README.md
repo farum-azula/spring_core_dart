@@ -17,11 +17,13 @@ to those of the Dart language server:
 | `this.payments` in a bean constructor | the beans of the field's type |
 | a parameter or field with `@Qualifier('cash')`, or the `'cash'` string itself | the bean named / qualified `cash` |
 | `@DependsOn`, `@ConditionalOnBean`, `@ConditionalOnMissingBean.named` strings | those beans |
-| `getBean<Clock>()`, `getBeanProvider<T>()`, ... | the beans of that type |
+| `getBean<Clock>()`, `getBeanProvider<T>()`, `context.bean<T>()`, ... | the beans of that type |
+| `context.basket` (a getter generated for a `@BuildContextAccess` bean) | that bean |
+| a type in the bean record of a widget: `SpringStatelessWidget<(Basket, {Clock utc})>`, `SpringStatefulWidget<...>`, `SpringState<W, (...)>` | the beans of that type (a named field picks by its name) |
 | `${shop.name}` in `@Value` (and `getProperty('shop.name')`, `@ConditionalOnProperty`) | the key in every `application*.properties` that defines it |
 | `@ConfigurationProperties('shop')` | the `shop.*` keys |
 | a bean name in SpEL: `#{appConfig.name}`, `#{@clock.now()}` | that bean |
-| `classpath:legacy.properties` (in `@PropertySource`, `@Value`, `getResource`), `file:config/app.properties` | the file: `lib/resources/` of the package (`test/resources/` first in tests), `file:` relative to the package |
+| `classpath:legacy.properties` (in `@PropertySource`, `@Value`, `getResource`), `file:config/app.properties`, `asset:assets/logo.png` | the file: `lib/resources/` of the package (`test/resources/` first in tests), `file:` and `asset:` relative to the package |
 | in a pointcut (`@Pointcut`, `@Before`, `@Around`, ...): a type in `within(...)` / `execution(...)`, `@annotation(Timed)` | the class (wildcards like `*Service` give every match) |
 | `pricing()`, `AuditAspect.pricing()` in a pointcut | the `@Pointcut` method |
 | `#isbn` in a cache key or condition: `@Cacheable('books', key: '#isbn')` | the method parameter |
@@ -44,7 +46,10 @@ resolves to and the expression of a named pointcut.
   `#result`, `#p0`) is a warning listing the parameters;
 - `${key}` without a default that no properties file defines — a warning;
 - `@Value('${key}')` in a normal (non-raw) string — an error: in Dart that
-  is string interpolation; write `r'${key}'`.
+  is string interpolation; write `r'${key}'`;
+- `@Value('asset:...')` (spring_boot_starter_flutter): a missing file, or
+  one not declared under `flutter: assets:` in `pubspec.yaml` — a warning
+  with the entry to add, as the generator's build error says.
 
 **SpEL, placeholder and pointcut highlighting** inside annotation
 strings: keywords, operators, numbers, strings, `#variables`, `@beans`,
@@ -71,9 +76,20 @@ types, annotations, bean patterns, method names and named pointcuts
 | `splistener`, `sppublish` | `@EventListener`, publishing an event |
 | `spaspect` | an annotation and an `@Around` aspect for it |
 | `spprops`, `spcondprop`, `sprunner` | `@ConfigurationProperties`, `@ConditionalOnProperty`, `CommandLineRunner` |
-| `splog` | a `SpringLog` logger |
-| `spreload` | rebuilding the beans after a Flutter hot reload |
+| `splog`, `splogger` | `@Log` (a generated `log` getter), a `SpringLog` constant |
 | `sptest` | a test file with `springBootTest` and a `BeanOverride` |
+
+Flutter (`spring_boot_starter_flutter`):
+
+| Prefix | Inserts |
+|---|---|
+| `spflutter` | `main` with `@SpringBootApplication` under `SpringApplicationWidget` |
+| `spstateless`, `spstateful` | a `SpringStatelessWidget<(...)>`, a `SpringStatefulWidget` with its `SpringState`, reading `beans` |
+| `spnotifier` | a `@ChangeNotifierComponent` with `@BuildContextAccess` (state in a bean, `context.<name>`) |
+| `spaccess`, `spnotify` | `@BuildContextAccess(name: ...)`, a `ChangeNotifier` bean with `@NotifyListeners` |
+| `spasset` | a `@Value('asset:...')` parameter |
+| `splifecycle` | an `@EventListener` for `AppLifecycleStateEvent` |
+| `spwidgettest` | a widget test with `springBootTest` and `SpringScope` |
 
 ## New project
 

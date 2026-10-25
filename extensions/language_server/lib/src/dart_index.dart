@@ -14,6 +14,8 @@ const baseStereotypes = {
   'Named',
   'ConfigurationProperties',
   'AutoConfiguration',
+  // spring_boot_starter_flutter: a plain class whose proxy is a ChangeNotifier.
+  'ChangeNotifierComponent',
 };
 
 /// Stereotypes whose first argument is not the bean name.
@@ -142,6 +144,7 @@ final class BeanInfo {
     this.primary = false,
     this.profiles = const [],
     this.owner,
+    this.contextGetter,
   });
 
   /// Bean name.
@@ -176,6 +179,10 @@ final class BeanInfo {
 
   /// The configuration class of a `@Bean` method.
   final String? owner;
+
+  /// With `@BuildContextAccess` (spring_boot_starter_flutter): the name of
+  /// the generated `BuildContext` getter (`context.basket`).
+  final String? contextGetter;
 
   /// Every type the bean can be injected as (filled by the index).
   Set<String> providedTypes = const {};

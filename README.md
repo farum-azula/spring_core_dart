@@ -1544,6 +1544,7 @@ dart pub get
 dart run melos run check   # versions + dependencies + gen + analyze + format + test
 dart run tool/check_dependencies.dart   # only this repository, the Dart SDK and Dart-team packages
 dart run tool/test_all.dart   # tests of every package (also the example), from each package and from the root
+dart run tool/affected.dart --base origin/main   # packages a change affects (with their dependents); CI tests only those
 dart run melos run version -- 0.2.0   # release train: one version for every package
 dart run melos run coverage
 ```

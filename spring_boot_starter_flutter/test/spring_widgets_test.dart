@@ -26,7 +26,7 @@ class BasketBadge extends SpringStatelessWidget<(Basket, Clock)> {
   final String prefix;
 
   @override
-  Widget build(BuildContext context, (Basket, Clock) beans) {
+  Widget build(BuildContext context) {
     final (basket, clock) = beans;
     return Text(
       '$prefix${basket.count} at ${clock.name}',
@@ -40,7 +40,7 @@ class NamedBadge extends SpringStatelessWidget<({Clock utc})> {
   const NamedBadge({super.key});
 
   @override
-  Widget build(BuildContext context, ({Clock utc}) beans) =>
+  Widget build(BuildContext context) =>
       Text(beans.utc.name, textDirection: TextDirection.ltr);
 }
 
@@ -76,11 +76,22 @@ class _BasketPageState extends SpringState<BasketPage, (Basket, Clock)> {
   }
 }
 
+/// Reads beans in a callback, after build.
+class AddButton extends SpringStatelessWidget<(Basket, Clock)> {
+  const AddButton({super.key});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => beans.$1.add(),
+    child: Text('${beans.$1.count}', textDirection: TextDirection.ltr),
+  );
+}
+
 class Unbound extends SpringStatelessWidget<(Basket,)> {
   const Unbound({super.key});
 
   @override
-  Widget build(BuildContext context, (Basket,) beans) => const SizedBox();
+  Widget build(BuildContext context) => const SizedBox();
 }
 
 /// What the generator writes for the widgets above.
@@ -296,15 +307,45 @@ void main() {
     });
   });
 
-  testWidgets('build can be called with fakes directly', (tester) async {
+  testWidgets('buildWith builds with fakes', (tester) async {
     await tester.pumpWidget(
       Builder(
-        builder: (context) => const BasketBadge().build(context, (
+        builder: (context) => const BasketBadge().buildWith(context, (
           Basket()..count = 7,
           Clock('fake'),
         )),
       ),
     );
     expect(find.text('7 at fake'), findsOneWidget);
+  });
+
+  testWidgets('beans in a callback made in build: those of the build', (
+    tester,
+  ) async {
+    final context = await app().runAsync(const []);
+    addTearDown(context.close);
+    await tester.pumpWidget(
+      SpringScope(applicationContext: context, child: const AddButton()),
+    );
+    expect(find.text('3'), findsOneWidget);
+
+    await tester.tap(find.byType(AddButton));
+    await tester.pump();
+
+    // The callback reached the basket, which notified: a rebuild.
+    expect(find.text('4'), findsOneWidget);
+  });
+
+  test('beans before the first build fail with a hint', () {
+    expect(
+      () => const Unbound().beans,
+      throwsA(
+        isA<FlutterError>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains('Unbound.beans'), contains('buildWith')),
+        ),
+      ),
+    );
   });
 }

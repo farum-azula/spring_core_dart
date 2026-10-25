@@ -7,7 +7,37 @@ on:
   pull_request:
 
 jobs:
+  # Which packages the change affects (tool/affected.dart): those with
+  # changed files and their dependents; the tests below run only for them.
+  # Shared files (tool/, root pubspec, CI) affect everything, docs nothing.
+  changes:
+    runs-on: ubuntu-26.04
+    outputs:
+      packages: ${{ steps.affected.outputs.packages }}
+      core: ${{ steps.affected.outputs.core }}
+      tour: ${{ steps.affected.outputs.tour }}
+      flutter: ${{ steps.affected.outputs.flutter }}
+      flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
+      flutter_counter: ${{ steps.affected.outputs.flutter_counter }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # A pull request: its changes since it left the base branch. A push:
+      # the pushed commits (a new branch or a force push: everything).
+      - name: Affected packages
+        id: affected
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: dart run tool/affected.dart --base "$BASE" --github-output
+
   check:
+    needs: changes
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -61,20 +91,23 @@ jobs:
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
 
-      # Every workspace package (runtime, generator, Boot, starters, example),
-      # read from the root pubspec.yaml: from each package directory and from
-      # the workspace root (IDEs run tests from there).
-      - name: Tests of all packages
-        run: dart run tool/test_all.dart
+      # The affected workspace packages (all of them after a change to a
+      # shared file): from each package directory and from the workspace
+      # root (IDEs run tests from there).
+      - name: Tests of the affected packages
+        if: needs.changes.outputs.packages != ''
+        run: dart run tool/test_all.dart --only "${{ needs.changes.outputs.packages }}"
 
       # SpEL and the JSON mapper run on the web too, where an integral
       # double is an `int` at run time: their tests also run compiled to
       # JavaScript, on node.
       - name: SpEL and JSON tests on node
+        if: needs.changes.outputs.core == 'true'
         working-directory: spring_core_dart
         run: dart test -p node test/expression test/json
 
       - name: Example runs (tour and Spring Boot app)
+        if: needs.changes.outputs.tour == 'true'
         working-directory: example/spring_core_tour
         run: |
           dart run bin/main.dart
@@ -82,6 +115,7 @@ jobs:
           dart run bin/shop.dart --spring.task.scheduling.enabled=false
 
       - name: Release-mode check (minified JavaScript)
+        if: needs.changes.outputs.tour == 'true'
         working-directory: example/spring_core_tour
         run: |
           dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
@@ -91,7 +125,10 @@ jobs:
   # spring_boot_starter_flutter and the Flutter example: outside the pub workspace
   # (flutter_test pins versions that package:test of the workspace cannot
   # use), so they get the Flutter SDK and their own resolution.
+  # Only when spring_boot_starter_flutter or the Flutter example is affected.
   flutter:
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -124,10 +161,15 @@ jobs:
           (cd example/flutter_counter && flutter analyze --fatal-infos)
 
       # The golden screenshots run in the `goldens` job (macOS).
-      - name: Tests
-        run: |
-          (cd spring_boot_starter_flutter && flutter test)
-          (cd example/flutter_counter && flutter test --exclude-tags golden)
+      - name: Tests of spring_boot_starter_flutter
+        if: needs.changes.outputs.flutter_starter == 'true'
+        working-directory: spring_boot_starter_flutter
+        run: flutter test
+
+      - name: Tests of the Flutter example
+        if: needs.changes.outputs.flutter_counter == 'true'
+        working-directory: example/flutter_counter
+        run: flutter test --exclude-tags golden
 
       - name: The example builds for the web (release)
         working-directory: example/flutter_counter
@@ -137,6 +179,8 @@ jobs:
   # made on macOS, so compared on macOS; Linux draws the letters
   # differently (0.5–3% of the pixels of a screen with text).
   goldens:
+    needs: changes
+    if: needs.changes.outputs.flutter_counter == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7

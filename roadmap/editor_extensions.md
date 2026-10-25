@@ -8,7 +8,10 @@ properties files, SpEL and placeholder highlighting, checks for invalid
 SpEL, unknown keys and non-raw placeholder strings, hovers with property
 values and candidate beans, navigation to `classpath:` / `file:` resources,
 and pointcut highlighting, navigation (types, annotations, beans, named
-pointcuts) and checks, snippets, and new Spring Boot projects
+pointcuts) and checks, spring_boot_starter_flutter support (`context.<bean>`
+getters, `context.bean<T>()` and the bean records of Spring widgets go to
+the beans, `asset:` locations to the file, checked against `flutter:
+assets:`), snippets (Flutter ones included), and new Spring Boot projects
 (`dart_spring_lsp create my_app`). Still planned from the list below: bean
 markers, completion, reverse navigation (from a key or a bean to its usages,
 from a pointcut to the methods it advises), event navigation, beans of
@@ -65,5 +68,7 @@ errors; the editor-side watch is tracked in zed_editor_extensions.
 ## Zed extension for Flutter (`spring_boot_starter_flutter`)
 
 Everything `dart_spring` does (it uses the same language server under the
-hood) plus support for the `spring_boot_starter_flutter` starter: platform profiles,
-widget wrappers, hot reload helpers and Flutter snippets.
+hood) plus support for the `spring_boot_starter_flutter` starter. The
+starter's navigation, `asset:` checks and snippets already live in
+`dart_spring` (Zed runs both extensions on Dart files); still planned:
+platform profiles in run configurations and hot reload helpers.

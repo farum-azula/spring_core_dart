@@ -31,8 +31,7 @@ FloatingActionButton(onPressed: context.counter.increment, ...);
 // rebuilt after every increment, no ListenableBuilder
 class CounterText extends SpringStatelessWidget<(Counter,)> {
   @override
-  Widget build(BuildContext context, (Counter,) beans) =>
-      Text('${beans.$1.value}');
+  Widget build(BuildContext context) => Text('${beans.$1.value}');
 }
 ```
 
@@ -231,21 +230,28 @@ class Basket { ... }
 Text('${context.basket.count}');
 ```
 
-**`SpringStatelessWidget<(...)>`**: the beans a widget needs, in its type, handed to
-`build` as a record. The generator sees every `SpringStatelessWidget`, so the start
-fails when one of its beans is missing.
+**`SpringStatelessWidget<(...)>`**: the beans a widget needs, in its type;
+the widget reads them as `beans`, a record, like a `SpringState`. The
+generator sees every `SpringStatelessWidget`, so the start fails when one of
+its beans is missing.
 
 ```dart
 class BasketBadge extends SpringStatelessWidget<(Basket, Clock)> {
   const BasketBadge({super.key});
 
   @override
-  Widget build(BuildContext context, (Basket, Clock) beans) {
+  Widget build(BuildContext context) {
     final (basket, clock) = beans;
     return Badge(label: Text('${basket.count}'));
   }
 }
 ```
+
+`beans` is meant for `build` and the callbacks made there (`onPressed`).
+A widget is immutable and one `const` instance may be built in several
+places, so after `build` it holds the beans of the latest build; a widget
+built under two application contexts at once takes them into locals in
+`build`.
 
 A record with named fields (`({Clock utc})`) works too: when several beans
 have a field's type, its name picks one, like a constructor parameter's
@@ -431,6 +437,25 @@ bean replaces it, e.g. in tests); `asset:/assets/x.png` works too, and
 asset manifest. (`@Resource` is not used for this: in Spring, and here, it
 injects a bean by name.)
 
+The generator checks every `@Value('asset:...')`: a missing file, or one
+not declared under `flutter: assets:`, fails the build with the lines to
+add, instead of the app failing when it reads the asset:
+
+```
+@Value('asset:assets/sounds/tap.mp3') in ...#Sounds: assets/sounds/tap.mp3 is
+not declared in pubspec.yaml, so the app would not contain it. Add it under
+`flutter: assets:`:
+
+flutter:
+  assets:
+    - assets/sounds/
+```
+
+A directory entry (`- assets/sounds/`) takes in the new files of that
+directory by itself, but not those of its subdirectories (as in Flutter).
+Keys with placeholders (`asset:${sound.file}`) and other packages' assets
+(`asset:packages/...`) are only known at run time and not checked.
+
 ## Configuration at build time
 
 A Flutter app has no command line and, on a phone, no useful environment
@@ -484,8 +509,8 @@ void main() {
 }
 ```
 
-A `SpringStatelessWidget`'s `build` can also be called with fakes directly:
-`const BasketBadge().build(context, (FakeBasket(), FakeClock()))`.
+A `SpringStatelessWidget` can also be built with fakes directly:
+`const BasketBadge().buildWith(context, (FakeBasket(), FakeClock()))`.
 
 ## Platforms
 

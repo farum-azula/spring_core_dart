@@ -80,8 +80,8 @@ by hand.
   Watch((context) => Badge(label: Text('${context.basket.count}')));
   IconButton(onPressed: () => context.basket.add(book.isbn), ...);
   ```
-- **`SpringStatelessWidget<(...)>`**: the beans a widget needs in its type, handed
-  to `build` as a record. Good for a few widgets with a few beans; it
+- **`SpringStatelessWidget<(...)>`**: the beans a widget needs in its type,
+  read as `beans`, a record. Good for a few widgets with a few beans; it
   gets heavy when many widgets need many beans.
   ```dart
   class BasketBadge extends SpringStatelessWidget<(Basket, AppNavigator)> {
@@ -89,7 +89,7 @@ by hand.
     final bool compact;
 
     @override
-    Widget build(BuildContext context, (Basket, AppNavigator) beans) {
+    Widget build(BuildContext context) {
       final (basket, navigator) = beans;
       return Watch((_) => Badge(
             label: Text('${basket.count}'),

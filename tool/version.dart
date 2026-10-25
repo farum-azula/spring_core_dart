@@ -49,6 +49,16 @@ const extensions = [
   'extensions/language_server/pubspec.yaml',
 ];
 
+/// The Zed extension's Cargo.lock: its own `dart_spring` package entry
+/// carries the version of Cargo.toml (cargo rewrites it on every build).
+const _cargoLock = 'extensions/zed/dart_spring/Cargo.lock';
+
+/// The `dart_spring` entry of [_cargoLock]; group 2 is its version.
+final _cargoLockVersion = RegExp(
+  r'^(\[\[package\]\]\nname = "dart_spring"\nversion = ")([^"]*)"',
+  multiLine: true,
+);
+
 final _extensionVersion = RegExp(r'^version = "(.*)"$', multiLine: true);
 final _pubspecVersion = RegExp(r'^version: (.*)$', multiLine: true);
 
@@ -139,6 +149,11 @@ void setVersion(String version) {
       ),
     );
   }
+  _edit(
+    _cargoLock,
+    (text) =>
+        text.replaceFirstMapped(_cargoLockVersion, (m) => '${m[1]}$version"'),
+  );
 }
 
 /// Problems with the current versions (empty when consistent).
@@ -182,6 +197,15 @@ List<String> check() {
         : null;
     if (own != version) {
       problems.add('$manifest is $own, expected $version (lockstep)');
+    }
+  }
+  final lock = File(_cargoLock);
+  if (lock.existsSync()) {
+    final own = _cargoLockVersion
+        .firstMatch(lock.readAsStringSync().replaceAll('\r\n', '\n'))
+        ?.group(2);
+    if (own != version) {
+      problems.add('$_cargoLock: dart_spring is $own, expected $version');
     }
   }
   for (final path in _docFiles()) {

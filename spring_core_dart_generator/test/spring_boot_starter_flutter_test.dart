@@ -107,7 +107,8 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 
 abstract class SpringStatelessWidget<B extends Record> extends Widget {
   const SpringStatelessWidget({super.key});
-  Widget build(BuildContext context, B beans);
+  Widget build(BuildContext context);
+  B get beans => throw UnimplementedError();
 }
 
 abstract class SpringStatefulWidget<B extends Record> extends StatefulWidget {
@@ -426,7 +427,7 @@ class Basket {}
 class Badge extends SpringStatelessWidget<(Basket,)> {
   const Badge();
   @override
-  Widget build(BuildContext context, (Basket,) beans) => this;
+  Widget build(BuildContext context) => this;
 }
 ''',
         ..._stubs,
@@ -470,26 +471,26 @@ typedef BadgeBeans = (Basket, Navigator);
 class BasketBadge extends SpringStatelessWidget<BadgeBeans> {
   const BasketBadge({super.key});
   @override
-  Widget build(BuildContext context, BadgeBeans beans) => this;
+  Widget build(BuildContext context) => this;
 }
 
 // The same record: the first widget names the binding.
 class BasketBadge2 extends SpringStatelessWidget<(Basket, Navigator)> {
   const BasketBadge2({super.key});
   @override
-  Widget build(BuildContext context, (Basket, Navigator) beans) => this;
+  Widget build(BuildContext context) => this;
 }
 
 class _Header extends SpringStatelessWidget<({Basket basket, Clock clock, Analytics? analytics})> {
   const _Header();
   @override
-  Widget build(BuildContext context, ({Basket basket, Clock clock, Analytics? analytics}) beans) => this;
+  Widget build(BuildContext context) => this;
 }
 
 class Single extends SpringStatelessWidget<(Clock,)> {
   const Single({super.key});
   @override
-  Widget build(BuildContext context, (Clock,) beans) => this;
+  Widget build(BuildContext context) => this;
 }
 
 // A base class: its record is still a type parameter.
@@ -500,7 +501,7 @@ abstract class Page<B extends Record> extends SpringStatelessWidget<B> {
 class ClockPage extends Page<(Clock,)> {
   const ClockPage({super.key});
   @override
-  Widget build(BuildContext context, (Clock,) beans) => this;
+  Widget build(BuildContext context) => this;
 }
 
 Widget unused() => const _Header();
@@ -631,7 +632,7 @@ class Basket {}
 class Bad extends SpringStatelessWidget<$type> {
   const Bad();
   @override
-  Widget build(BuildContext context, $type beans) => this;
+  Widget build(BuildContext context) => this;
 }
 '''),
           contains('SpringStatelessWidget Bad: $shown ('),
@@ -646,7 +647,7 @@ class Bad extends SpringStatelessWidget<$type> {
 class Generic<B extends Record> extends SpringStatelessWidget<B> {
   const Generic();
   @override
-  Widget build(BuildContext context, B beans) => this;
+  Widget build(BuildContext context) => this;
 }
 '''),
         contains(
@@ -659,7 +660,7 @@ class Generic<B extends Record> extends SpringStatelessWidget<B> {
 class Any extends SpringStatelessWidget<Record> {
   const Any();
   @override
-  Widget build(BuildContext context, Record beans) => this;
+  Widget build(BuildContext context) => this;
 }
 '''),
         contains(
@@ -763,7 +764,7 @@ class Clock {}
 class Badge extends SpringStatelessWidget<(Basket, {Clock clock})> {
   const Badge();
   @override
-  Widget build(BuildContext context, (Basket, {Clock clock}) beans) => this;
+  Widget build(BuildContext context) => this;
 }
 ''');
     expect(

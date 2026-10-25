@@ -1,0 +1,200 @@
+// The packages a change affects: those with changed files and every
+// package that depends on them (directly or not, `dev_dependencies`
+// included), so CI runs only their tests. A change to spring_core_dart
+// affects everything; one to spring_boot_starter_cache only that starter.
+//
+//   dart run tool/affected.dart --base origin/main      # print the list
+//   dart run tool/affected.dart --base <sha> --github-output
+//
+// Everything is affected when the base cannot be compared (a new branch,
+// a force push) or a shared file changed: tool/, the root pubspec.yaml
+// and pubspec.lock, analysis_options.yaml, dart_test.yaml, the CI
+// workflows. Documentation (`*.md`, roadmap/) and the Zed extension affect
+// no package. With --github-output the result goes to $GITHUB_OUTPUT:
+//
+//   packages         workspace packages to test (comma-separated)
+//   core             spring_core_dart affected (its tests on node)
+//   tour             example/spring_core_tour affected (the example runs)
+//   flutter_starter  spring_boot_starter_flutter affected
+//   flutter_counter  example/flutter_counter affected (incl. goldens)
+//   flutter          either of the two
+import 'dart:io';
+
+import 'test_all.dart' show workspacePackages;
+
+/// Flutter packages outside the pub workspace.
+const flutterPackages = [
+  'spring_boot_starter_flutter',
+  'example/flutter_counter',
+];
+
+/// Changed paths (prefixes) that affect every package.
+const _everything = [
+  'tool/',
+  'pubspec.yaml',
+  'pubspec.lock',
+  'analysis_options.yaml',
+  'dart_test.yaml',
+  '.github/workflows/',
+];
+
+/// Changed paths that affect no package.
+bool _ignored(String path) =>
+    path.endsWith('.md') ||
+    path.startsWith('roadmap/') ||
+    path.startsWith('extensions/zed/') ||
+    const {'LICENSE', 'NOTICE', '.gitignore'}.contains(path.split('/').last);
+
+Future<void> main(List<String> args) async {
+  Directory.current = File.fromUri(Platform.script).parent.parent;
+  final base = args.contains('--base')
+      ? args[args.indexOf('--base') + 1]
+      : null;
+  final packages = [...workspacePackages(), ...flutterPackages];
+  final changed = base == null ? null : _changedFiles(base);
+  final affected = changed == null
+      ? packages.toSet()
+      : affectedPackages(changed, packages, localDependencies(packages));
+  final ordered = [
+    for (final package in packages)
+      if (affected.contains(package)) package,
+  ];
+
+  stdout.writeln(
+    changed == null
+        ? 'Everything is affected (no base to compare with).'
+        : '${changed.length} changed files since $base.',
+  );
+  stdout.writeln(
+    ordered.isEmpty
+        ? 'No package affected.'
+        : 'Affected: ${ordered.join(', ')}',
+  );
+
+  if (args.contains('--github-output')) {
+    final output = Platform.environment['GITHUB_OUTPUT'];
+    if (output == null) {
+      stderr.writeln('GITHUB_OUTPUT is not set.');
+      exit(64);
+    }
+    bool has(String package) => affected.contains(package);
+    final starter = has('spring_boot_starter_flutter');
+    final counter = has('example/flutter_counter');
+    File(output).writeAsStringSync(
+      [
+        'packages=${ordered.where((p) => !flutterPackages.contains(p)).join(',')}',
+        'core=${has('spring_core_dart')}',
+        'tour=${has('example/spring_core_tour')}',
+        'flutter_starter=$starter',
+        'flutter_counter=$counter',
+        'flutter=${starter || counter}',
+        '',
+      ].join('\n'),
+      mode: FileMode.append,
+    );
+  }
+}
+
+/// The packages [changed] affects, given each package's local
+/// [dependencies] (package directory → directories it depends on).
+Set<String> affectedPackages(
+  List<String> changed,
+  List<String> packages,
+  Map<String, Set<String>> dependencies,
+) {
+  final direct = <String>{};
+  for (final path in changed) {
+    if (_everything.any(
+      (prefix) =>
+          prefix.endsWith('/') ? path.startsWith(prefix) : path == prefix,
+    )) {
+      return packages.toSet();
+    }
+    if (_ignored(path)) {
+      continue;
+    }
+    // The innermost package holding the file (example/x before example/).
+    String? owner;
+    for (final package in packages) {
+      if (path.startsWith('$package/') &&
+          (owner == null || package.length > owner.length)) {
+        owner = package;
+      }
+    }
+    if (owner != null) {
+      direct.add(owner);
+    }
+  }
+  // Add the dependents until nothing changes.
+  final affected = {...direct};
+  var grew = true;
+  while (grew) {
+    grew = false;
+    for (final package in packages) {
+      if (!affected.contains(package) &&
+          (dependencies[package] ?? const {}).any(affected.contains)) {
+        grew = affected.add(package);
+      }
+    }
+  }
+  return affected;
+}
+
+/// Files changed between [base] and HEAD (from their merge base, as a pull
+/// request shows them), or `null` when they cannot be compared.
+List<String>? _changedFiles(String base) {
+  if (RegExp(r'^0+$').hasMatch(base)) {
+    return null; // GitHub's "before" of a new branch
+  }
+  final result = Process.runSync('git', [
+    'diff',
+    '--name-only',
+    '$base...HEAD',
+  ]);
+  if (result.exitCode != 0) {
+    stderr.writeln('git diff $base...HEAD failed: ${result.stderr}');
+    return null;
+  }
+  return [
+    for (final line in (result.stdout as String).split('\n'))
+      if (line.trim().isNotEmpty) line.trim(),
+  ];
+}
+
+/// For each package directory, the directories of the [packages] it
+/// lists under `dependencies:` or `dev_dependencies:`.
+Map<String, Set<String>> localDependencies(List<String> packages) {
+  final byName = <String, String>{};
+  final sections = <String, List<String>>{};
+  for (final package in packages) {
+    final file = File('$package/pubspec.yaml');
+    if (!file.existsSync()) {
+      continue;
+    }
+    final lines = file.readAsLinesSync();
+    final name = lines
+        .firstWhere((line) => line.startsWith('name:'), orElse: () => '')
+        .replaceFirst('name:', '')
+        .trim();
+    byName[name] = package;
+    sections[package] = [
+      for (final (index, line) in lines.indexed)
+        if (line == 'dependencies:' || line == 'dev_dependencies:')
+          for (final entry
+              in lines
+                  .skip(index + 1)
+                  .takeWhile((l) => l.trim().isEmpty || l.startsWith(' ')))
+            if (RegExp(r'^  ([a-z_][a-z0-9_]*):').firstMatch(entry)
+                case final match?)
+              match.group(1)!,
+    ];
+  }
+  return {
+    for (final MapEntry(key: package, value: names) in sections.entries)
+      package: {
+        for (final name in names)
+          if (byName[name] case final directory? when directory != package)
+            directory,
+      },
+  };
+}

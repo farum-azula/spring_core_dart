@@ -7,6 +7,8 @@
 //   dart run tool/test_all.dart            # both passes
 //   dart run tool/test_all.dart --packages # only from the package directories
 //   dart run tool/test_all.dart --root     # only from the workspace root
+//   dart run tool/test_all.dart --only a,b # only these packages (CI passes
+//                                          # those tool/affected.dart lists)
 //
 // The runs go in parallel (a pool sized by the CPU count), and slow test
 // suites are split into shards (`dart test --total-shards`), so the whole
@@ -29,6 +31,19 @@ Future<void> main(List<String> args) async {
     for (final package in workspacePackages())
       if (Directory('$package/test').existsSync()) package,
   ];
+  if (args.contains('--only')) {
+    final index = args.indexOf('--only') + 1;
+    final wanted = {
+      if (index < args.length)
+        for (final name in args[index].split(','))
+          if (name.trim().isNotEmpty) name.trim(),
+    };
+    packages.retainWhere(wanted.contains);
+    if (packages.isEmpty) {
+      stdout.writeln('No package to test.');
+      return;
+    }
+  }
   stdout.writeln('Packages with tests: ${packages.join(', ')}');
 
   final cpus = Platform.numberOfProcessors;

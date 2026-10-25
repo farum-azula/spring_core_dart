@@ -10,6 +10,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/asset_check.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:build/build.dart';
@@ -283,6 +284,7 @@ class SpringBuilder implements Builder {
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     scanBuildContextAccess(module, scanner.collectErrors);
+    await checkAssetValues(buildStep, module, scanner.collectErrors);
     scanner.throwErrors();
 
     // Any module may import this one, so its beans may be advised by
@@ -367,6 +369,7 @@ class SpringBuilder implements Builder {
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     scanBuildContextAccess(module, scanner.collectErrors);
+    await checkAssetValues(buildStep, module, scanner.collectErrors);
     scanner.throwErrors();
 
     final autoConfigurations = await _autoConfigurations(buildStep);

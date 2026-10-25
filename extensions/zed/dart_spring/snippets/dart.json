@@ -259,21 +259,142 @@
       "}"
     ]
   },
-  "Logger": {
+  "@Log": {
     "prefix": "splog",
-    "description": "A named SpringLog logger",
+    "description": "A class with a generated `log` getter, like Lombok's @Slf4j (import the .spring.dart file)",
+    "body": [
+      "@Log(${1:topic: '${2:app.name}'})$0"
+    ]
+  },
+  "SpringLog constant": {
+    "prefix": "splogger",
+    "description": "A named SpringLog logger constant",
     "body": [
       "const _log = SpringLog('${1:app.name}');$0"
     ]
   },
-  "Hot reload in Flutter": {
-    "prefix": "spreload",
-    "description": "Rebuild the beans after a hot reload (root widget State)",
+  "Flutter app": {
+    "prefix": "spflutter",
+    "description": "Flutter main with @SpringBootApplication under SpringApplicationWidget (spring_boot_starter_flutter); run build_runner to generate main.spring.dart",
     "body": [
-      "@override",
-      "void reassemble() {",
-      "  super.reassemble();",
-      "  ${1:context} = reloadApplication(${1:context}${2:, runners: false});$0",
+      "import 'package:flutter/widgets.dart';",
+      "import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';",
+      "",
+      "import '${1:main}.spring.dart';",
+      "",
+      "@SpringBootApplication()",
+      "void main() => runApp(",
+      "  SpringApplicationWidget(",
+      "    application: () => springApplication,",
+      "    child: const ${2:App}(),",
+      "  ),",
+      ");$0"
+    ]
+  },
+  "SpringStatelessWidget": {
+    "prefix": "spstateless",
+    "description": "A stateless widget that gets beans as `beans`, rebuilt when a Listenable one notifies",
+    "body": [
+      "class ${1:Name} extends SpringStatelessWidget<(${2:Bean},)> {",
+      "  const ${1:Name}({super.key});",
+      "",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    final (${3:bean},) = beans;",
+      "    return $0;",
+      "  }",
+      "}"
+    ]
+  },
+  "SpringStatefulWidget": {
+    "prefix": "spstateful",
+    "description": "A stateful widget whose SpringState gets beans as `beans` (from initState on)",
+    "body": [
+      "class ${1:Name} extends SpringStatefulWidget<(${2:Bean},)> {",
+      "  const ${1:Name}({super.key});",
+      "",
+      "  @override",
+      "  State<${1:Name}> createState() => _${1:Name}State();",
+      "}",
+      "",
+      "class _${1:Name}State extends SpringState<${1:Name}, (${2:Bean},)> {",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    final (${3:bean},) = beans;",
+      "    return $0;",
+      "  }",
+      "}"
+    ]
+  },
+  "@ChangeNotifierComponent": {
+    "prefix": "spnotifier",
+    "description": "State in a bean: its proxy notifies listeners after every method; context.<name> getter via @BuildContextAccess",
+    "body": [
+      "@ChangeNotifierComponent()",
+      "@BuildContextAccess()",
+      "class ${1:Counter} {",
+      "  int ${2:value} = 0;",
+      "",
+      "  void ${3:increment}() => ${2:value}++;$0",
+      "}"
+    ]
+  },
+  "@BuildContextAccess": {
+    "prefix": "spaccess",
+    "description": "Generates a context.<name> getter for the bean (spring_boot_starter_flutter)",
+    "body": [
+      "@BuildContextAccess(${1:name: '${2:name}'})$0"
+    ]
+  },
+  "@NotifyListeners": {
+    "prefix": "spnotify",
+    "description": "A ChangeNotifier bean that calls notifyListeners() after each method through its proxy",
+    "body": [
+      "@Component()",
+      "@NotifyListeners()",
+      "class ${1:Basket} extends ChangeNotifier {",
+      "  $0",
+      "}"
+    ]
+  },
+  "@Value asset": {
+    "prefix": "spasset",
+    "description": "Constructor parameter with a Flutter asset (AssetResource); the build checks it is declared in pubspec.yaml",
+    "body": [
+      "@Value('asset:${1:assets/images/logo.png}') this.${2:logo}$0"
+    ]
+  },
+  "App lifecycle listener": {
+    "prefix": "splifecycle",
+    "description": "Reacts to the app lifecycle (resumed, paused, ...) as an application event",
+    "body": [
+      "@EventListener()",
+      "void on${1:Lifecycle}(AppLifecycleStateEvent event) {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Widget test": {
+    "prefix": "spwidgettest",
+    "description": "Widget test with the application's beans (springBootTest + SpringScope)",
+    "body": [
+      "import 'package:flutter_test/flutter_test.dart';",
+      "import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';",
+      "import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';",
+      "",
+      "import '${1:package:app/main}.spring.dart';",
+      "",
+      "void main() {",
+      "  final app = springBootTest(springApplication);",
+      "",
+      "  setUp(app.markDirty); // fresh beans for every test",
+      "",
+      "  testWidgets('${2:works}', (tester) async {",
+      "    await tester.pumpWidget(",
+      "      SpringScope(applicationContext: app.context, child: const ${3:App}()),",
+      "    );",
+      "    $0",
+      "  });",
       "}"
     ]
   },

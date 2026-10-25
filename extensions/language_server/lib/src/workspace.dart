@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
+import 'package:dart_spring_language_server/src/flutter_assets.dart';
 import 'package:dart_spring_language_server/src/pointcuts.dart';
 import 'package:dart_spring_language_server/src/properties_index.dart';
 import 'package:dart_spring_language_server/src/templates.dart';
@@ -60,6 +61,9 @@ const _beanNameAnnotations = {
 /// Methods whose type argument is a bean type.
 const _beanLookupMethods = {
   'getBean',
+  // spring_boot_starter_flutter: `context.bean<T>()`, `SpringScope.beanOf<T>`.
+  'bean',
+  'beanOf',
   'getBeansOfType',
   'getBeanProvider',
   'getSortedBeans',
@@ -371,9 +375,10 @@ final class SpringWorkspace {
         final explicit = _unnamed(stereotype)
             ? null
             : stringValue(positionalArgument(stereotype));
+        final name = explicit ?? defaultBeanName(info.name);
         result.add(
           BeanInfo(
-            name: explicit ?? defaultBeanName(info.name),
+            name: name,
             typeName: info.name,
             kind: BeanKind.component,
             path: file.path,
@@ -382,6 +387,7 @@ final class SpringWorkspace {
             qualifiers: _qualifiers(info.annotations),
             primary: info.annotationNames.contains('Primary'),
             profiles: _profiles(info.annotations),
+            contextGetter: _contextGetter(info.annotations, name),
           ),
         );
         for (final member in info.declaration.body.members) {
@@ -395,11 +401,11 @@ final class SpringWorkspace {
           if (bean == null || returned == null) {
             continue;
           }
+          final name =
+              stringValue(namedArgument(bean, 'name')) ?? member.name.lexeme;
           result.add(
             BeanInfo(
-              name:
-                  stringValue(namedArgument(bean, 'name')) ??
-                  member.name.lexeme,
+              name: name,
               typeName: returned,
               kind: BeanKind.beanMethod,
               path: file.path,
@@ -412,6 +418,7 @@ final class SpringWorkspace {
               ),
               profiles: _profiles(member.metadata),
               owner: info.name,
+              contextGetter: _contextGetter(member.metadata, name),
             ),
           );
         }
@@ -421,6 +428,17 @@ final class SpringWorkspace {
       bean.providedTypes = supertypesOf(bean.typeName);
     }
     return result;
+  }
+
+  // The `BuildContext` getter `@BuildContextAccess` generates: its `name:`,
+  // else the bean name.
+  static String? _contextGetter(List<Annotation> annotations, String bean) {
+    for (final annotation in annotations) {
+      if (annotationName(annotation) == 'BuildContextAccess') {
+        return stringValue(namedArgument(annotation, 'name')) ?? bean;
+      }
+    }
+    return null;
   }
 
   bool _unnamed(Annotation annotation) =>
@@ -660,8 +678,28 @@ final class SpringWorkspace {
     if (namedType != null) {
       return _typeTarget(namedType);
     }
+    // `context.basket`: a getter generated for a `@BuildContextAccess` bean.
+    if (node is SimpleIdentifier && _isMemberName(node)) {
+      final beans = [
+        for (final bean in this.beans)
+          if (bean.contextGetter == node.name) bean,
+      ];
+      if (beans.isNotEmpty) {
+        return _BeanTarget(
+          beans,
+          '`context.${node.name}` (@BuildContextAccess)',
+        );
+      }
+    }
     return null;
   }
+
+  // `x.name` or `x?.name`: [node] is the member, not the target.
+  static bool _isMemberName(SimpleIdentifier node) => switch (node.parent) {
+    PrefixedIdentifier(:final identifier) => identical(identifier, node),
+    PropertyAccess(:final propertyName) => identical(propertyName, node),
+    _ => false,
+  };
 
   _Target? _beanTargetFor(String type, String? qualifier) {
     final description = qualifier == null
@@ -913,7 +951,7 @@ final class SpringWorkspace {
       const [];
 
   static final _resourceLocation = RegExp(
-    r'^(?:optional:)?(classpath\*?|file):(.+)$',
+    r'^(?:optional:)?(classpath\*?|file|asset):(.+)$',
   );
 
   // `classpath:legacy.properties` (in `@PropertySource`, `@Value`,
@@ -932,7 +970,15 @@ final class SpringWorkspace {
     }
     final package = _packageRoot(path);
     final List<String> searched;
-    if (match.group(1) == 'file') {
+    if (match.group(1) == 'asset') {
+      // A Flutter asset key (spring_boot_starter_flutter), relative to the
+      // package; other packages' assets (`packages/...`) are not followed.
+      final key = location.replaceFirst(RegExp(r'^/+'), '');
+      if (key.startsWith('packages/')) {
+        return null;
+      }
+      searched = ['$package/$key'];
+    } else if (match.group(1) == 'file') {
       searched = [
         if (File(location).isAbsolute) location else '$package/$location',
       ];
@@ -1029,6 +1075,19 @@ final class SpringWorkspace {
         )) {
       return _beanTargetFor(beanType, null);
     }
+    if (_widgetRecordField(type) case (final owner, final fieldName)) {
+      final beans = beansOfType(beanType);
+      // A named field picks among several beans by its name.
+      final named = [
+        if (fieldName != null && beans.length > 1)
+          for (final bean in beans)
+            if (bean.matches(fieldName)) bean,
+      ];
+      return _BeanTarget(
+        named.isNotEmpty ? named : beans,
+        'Beans of type $beanType (record of $owner)',
+      );
+    }
     final parameter = type.thisOrAncestorOfType<FormalParameter>();
     if (parameter != null) {
       if (_hasAnnotation(parameter.metadata, 'Value') ||
@@ -1047,6 +1106,37 @@ final class SpringWorkspace {
     }
     return null;
   }
+
+  // A field of the bean record of a spring_boot_starter_flutter widget:
+  // `SpringStatelessWidget<(Basket, {Clock utc})>`, `SpringStatefulWidget<...>`,
+  // `SpringState<W, (...)>`. The owner type and the field's name (named
+  // fields), or `null` for any other type.
+  static (String, String?)? _widgetRecordField(NamedType type) {
+    final field = type.parent;
+    final String? fieldName;
+    if (field is RecordTypeAnnotationPositionalField) {
+      fieldName = null;
+    } else if (field is RecordTypeAnnotationNamedField) {
+      fieldName = field.name.lexeme;
+    } else {
+      return null;
+    }
+    final record = type.thisOrAncestorOfType<RecordTypeAnnotation>();
+    final arguments = record?.parent;
+    final owner = arguments?.parent;
+    if (arguments is! TypeArgumentList ||
+        owner is! NamedType ||
+        !_springWidgetTypes.contains(owner.name.lexeme)) {
+      return null;
+    }
+    return (owner.name.lexeme, fieldName);
+  }
+
+  static const _springWidgetTypes = {
+    'SpringStatelessWidget',
+    'SpringStatefulWidget',
+    'SpringState',
+  };
 
   // The bean type for an injection point type: `T` for `T`, `List<T>`,
   // `Set<T>`, `ObjectProvider<T>`, `Map<String, T>`.
@@ -1421,7 +1511,72 @@ final class SpringWorkspace {
     }
     _pointcutProblems(file, problems);
     _spelArgumentProblems(file, problems);
+    _assetProblems(file, problems);
     return problems;
+  }
+
+  // `@Value('asset:...')` (spring_boot_starter_flutter), as the generator
+  // checks it: the file must exist and be declared under `flutter: assets:`
+  // in pubspec.yaml. Keys with placeholders or SpEL and other packages'
+  // assets are not checked.
+  void _assetProblems(DartFile file, List<Problem> problems) {
+    final strings = <SimpleStringLiteral>[];
+    file.unit.accept(_StringCollector(strings));
+    for (final literal in strings) {
+      final value = literal.value.trim();
+      final annotation = literal.thisOrAncestorOfType<Annotation>();
+      if (!value.startsWith('asset:') ||
+          annotation == null ||
+          annotationName(annotation) != 'Value' ||
+          value.contains(r'${') ||
+          value.contains('#{')) {
+        continue;
+      }
+      final key = value
+          .substring('asset:'.length)
+          .replaceFirst(RegExp(r'^/+'), '');
+      if (key.isEmpty || key.startsWith('packages/')) {
+        continue;
+      }
+      final package = _packageRoot(file.path);
+      final ref = _stringRef(literal);
+      final range = rangeOf(file, ref.contentStart, ref.contentEnd);
+      if (!File('$package/$key').existsSync()) {
+        problems.add(Problem(range, 'No file $key in this package'));
+        continue;
+      }
+      if (!declaredAsset(_pubspecAssets(package), key)) {
+        final directory = key.contains('/')
+            ? '${key.substring(0, key.lastIndexOf('/'))}/'
+            : key;
+        problems.add(
+          Problem(
+            range,
+            '$key is not declared in pubspec.yaml, so the app would not '
+            'contain it: add `- $directory` under `flutter: assets:`',
+          ),
+        );
+      }
+    }
+  }
+
+  final _pubspecs = <String, (DateTime, List<String>)>{};
+
+  // The `flutter: assets:` entries of [package]'s pubspec.yaml (re-read
+  // when it changes).
+  List<String> _pubspecAssets(String package) {
+    final file = File('$package/pubspec.yaml');
+    if (!file.existsSync()) {
+      return const [];
+    }
+    final modified = file.lastModifiedSync();
+    final cached = _pubspecs[package];
+    if (cached != null && cached.$1 == modified) {
+      return cached.$2;
+    }
+    final assets = flutterAssets(file.readAsStringSync());
+    _pubspecs[package] = (modified, assets);
+    return assets;
   }
 
   // Cache keys and conditions: SpEL syntax, and `#name` must be a

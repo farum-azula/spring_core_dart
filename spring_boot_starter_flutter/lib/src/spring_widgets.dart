@@ -2,9 +2,10 @@ import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// A widget that gets the beans named in its type, handed to [build] as a
-/// record. The generator sees every `SpringStatelessWidget` and writes how its
-/// record is filled, so the start fails when a bean is missing.
+/// A widget that gets the beans named in its type as [beans], like a
+/// `SpringState`. The generator sees every `SpringStatelessWidget` and
+/// writes how its record is filled, so the start fails when a bean is
+/// missing.
 ///
 /// The constructor stays yours: nothing is injected into it.
 ///
@@ -14,26 +15,59 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///   final bool compact;
 ///
 ///   @override
-///   Widget build(BuildContext context, (Basket, AppNavigator) beans) {
+///   Widget build(BuildContext context) {
 ///     final (basket, navigator) = beans;
 ///     return Badge(label: Text('${basket.count}'));
 ///   }
 /// }
 /// ```
 ///
-/// A record with named fields (`({Basket basket, Clock clock})`) works too;
-/// when several beans have a field's type, the field's name picks one
-/// (like a constructor parameter's name in Spring). Tests call
-/// `build(context, (FakeBasket(), FakeNavigator()))` directly, or put the
-/// widget under a `SpringScope`.
+/// A record with named fields (`({Basket basket, Clock clock})`, read as
+/// `beans.basket`) works too; when several beans have a field's type, the
+/// field's name picks one (like a constructor parameter's name in Spring).
+/// Tests put the widget under a `SpringScope`, or call
+/// `buildWith(context, (FakeBasket(), FakeNavigator()))` directly.
 abstract class SpringStatelessWidget<B extends Record> extends Widget {
   /// Const constructor for subclasses.
   const SpringStatelessWidget({super.key});
 
-  /// Describes the part of the UI this widget is, with [beans] from the
-  /// application context; like `StatelessWidget.build`. Tests may call it
-  /// with fakes.
-  Widget build(BuildContext context, B beans);
+  /// Describes the part of the UI this widget is, like
+  /// `StatelessWidget.build`; the beans are in [beans].
+  Widget build(BuildContext context);
+
+  /// The beans named in this widget's type, from the application context
+  /// of the place it is built in. The widget rebuilds when one of them
+  /// that is a `Listenable` (a `ChangeNotifier`, a
+  /// `@ChangeNotifierComponent` bean) notifies.
+  ///
+  /// Read it in [build] and in the callbacks made there (`onPressed`). A
+  /// widget is immutable and one `const` instance may be built in several
+  /// places, so after [build] it holds the beans of the latest build; a
+  /// widget built under two application contexts at once takes them into
+  /// locals in [build] (`final (basket, clock) = beans;`).
+  B get beans {
+    final building = _building;
+    if (building != null && identical(building.widget, this)) {
+      return building.beans as B;
+    }
+    final latest = _latestBeans[this];
+    if (latest != null) {
+      return latest as B;
+    }
+    throw FlutterError.fromParts([
+      ErrorSummary('$runtimeType.beans was read before the widget was built.'),
+      ErrorHint(
+        'Read beans in build (or in callbacks made there); tests can call '
+        'buildWith(context, beans) with fakes.',
+      ),
+    ]);
+  }
+
+  /// Builds this widget with [beans] instead of the application context's:
+  /// tests call it with fakes (`buildWith(context, (FakeBasket(),
+  /// FakeClock()))`).
+  @visibleForTesting
+  Widget buildWith(BuildContext context, B beans) => _buildWith(context, beans);
 
   /// The record type this widget gets (`B`).
   Type get beansType => B;
@@ -41,9 +75,25 @@ abstract class SpringStatelessWidget<B extends Record> extends Widget {
   @override
   SpringStatelessElement createElement() => SpringStatelessElement(this);
 
-  Widget _buildWith(BuildContext context, Record beans) =>
-      build(context, beans as B);
+  Widget _buildWith(BuildContext context, Record beans) {
+    _latestBeans[this] = beans;
+    final previous = _building;
+    _building = (widget: this, beans: beans);
+    try {
+      return build(context);
+    } finally {
+      _building = previous;
+    }
+  }
 }
+
+/// The widget being built and its beans: what [SpringStatelessWidget.beans]
+/// gives during `build`.
+({SpringStatelessWidget<Record> widget, Record beans})? _building;
+
+/// The beans of each [SpringStatelessWidget]'s latest build, for callbacks
+/// that read `beans` after `build`.
+final _latestBeans = Expando<Record>('SpringStatelessWidget beans');
 
 /// A stateful widget whose [SpringState] gets the beans named in its type
 /// — the stateful counterpart of [SpringStatelessWidget], like
