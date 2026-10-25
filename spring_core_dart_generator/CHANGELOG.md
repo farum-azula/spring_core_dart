@@ -1,3 +1,8 @@
+## 0.2.3
+
+- add spring application handling
+- docs(spring_boot_starter_flutter): add an example for pub.dev
+
 ## 0.2.2
 
 - `@Value('asset:...')` is checked at build time: a missing file, or one not declared under `flutter: assets:` in pubspec.yaml, fails the build with the lines to add (placeholders and `packages/...` keys are not checked).

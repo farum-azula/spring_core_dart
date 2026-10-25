@@ -1,7 +1,7 @@
 name: spring_boot_starter_feign
 description: >-
   Feign clients for spring_boot_dart: annotate an interface with @FeignClient and @GetMapping, inject it as a bean; JSON via ObjectMapper, interceptors, retries, fallbacks.
-version: 0.2.2
+version: 0.2.3
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_feign
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -15,9 +15,9 @@ environment:
 resolution: workspace
 
 dependencies:
-  spring_boot_dart: ^0.2.2
-  spring_web_dart: ^0.2.2
+  spring_boot_dart: ^0.2.3
+  spring_web_dart: ^0.2.3
 
 dev_dependencies:
-  spring_boot_starter_test: ^0.2.2
+  spring_boot_starter_test: ^0.2.3
   test: ^1.33.0

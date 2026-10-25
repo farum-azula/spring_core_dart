@@ -1,3 +1,8 @@
+## 0.2.3
+
+- add spring application handling
+- docs(spring_boot_starter_flutter): add an example for pub.dev
+
 ## 0.2.2
 
 - ci: run only the tests of the packages a change affects

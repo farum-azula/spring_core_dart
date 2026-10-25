@@ -11,7 +11,7 @@ and `flutter_test`.
 
 ```yaml
 dev_dependencies:
-  spring_boot_starter_test: ^0.2.2
+  spring_boot_starter_test: ^0.2.3
   test: ^1.25.0          # or flutter_test
 ```
 
