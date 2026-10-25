@@ -6,10 +6,8 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 ///
 /// `@ChangeNotifierComponent` makes it a bean whose proxy is a
 /// `ChangeNotifier` and notifies the listeners after every method: no
-/// `extends ChangeNotifier`, no `notifyListeners()`. `@BuildContextAccess`
-/// generates the `context.counter` getter.
+/// `extends ChangeNotifier`, no `notifyListeners()`.
 @ChangeNotifierComponent()
-@BuildContextAccess()
 class Counter {
   Counter(this._properties);
 

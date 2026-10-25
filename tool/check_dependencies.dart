@@ -48,6 +48,7 @@ const repositoryOnly = {
 const flutterPackages = [
   'spring_boot_starter_flutter',
   'example/flutter_counter',
+  'example/flutter_themes',
 ];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
@@ -90,7 +91,11 @@ const allowedPackages = {
   'material_color_utilities': AllowedPackage(
     "Part of the Flutter SDK (package:flutter depends on it, pinned by the "
     "SDK); published by Google's material.io.",
-    onlyIn: {'spring_boot_starter_flutter', 'flutter_counter'},
+    onlyIn: {
+      'spring_boot_starter_flutter',
+      'flutter_counter',
+      'flutter_themes',
+    },
   ),
   'node_preamble': AllowedPackage(
     'Pulled by package:test (Dart team) for browser tests; it has no '

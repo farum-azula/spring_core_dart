@@ -11,7 +11,7 @@ and pointcut highlighting, navigation (types, annotations, beans, named
 pointcuts) and checks, spring_boot_starter_flutter support (`context.<bean>`
 getters, `context.bean<T>()` and the bean records of Spring widgets go to
 the beans, `asset:` locations to the file, checked against `flutter:
-assets:`), snippets (Flutter ones included), and new Spring Boot projects
+assets:`), snippets (Flutter ones included, and theme snippets for `application.yml` and `.properties`), and new Spring Boot projects
 (`dart_spring_lsp create my_app`). Still planned from the list below: bean
 markers, completion, reverse navigation (from a key or a bean to its usages,
 from a pointcut to the methods it advises), event navigation, beans of

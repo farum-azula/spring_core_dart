@@ -1,0 +1,167 @@
+{
+  "Flutter app widget": {
+    "prefix": "spapp",
+    "description": "spring.flutter.app: the app widget SpringApplicationWidget(home:) builds",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    app:",
+      "      type: ${1:material}           # widgets (default) | material | cupertino",
+      "      title: ${2:My app}",
+      "      debug-banner: ${3:true}",
+      "      # locales: [en, ja]           # default: the languages of messages_*.properties",
+      "$0"
+    ]
+  },
+  "Theme": {
+    "prefix": "sptheme",
+    "description": "spring.flutter.theme: the shared part, the active theme and the dark one",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      active: ${1:system}            # system | light | dark | a theme of themes",
+      "      seed-color: ${2:deepPurple}    # a Colors name or '#RRGGBB'",
+      "      typography:",
+      "        font-family: ${3:Roboto}",
+      "        display: { weight: bold }",
+      "      shape:",
+      "        medium: ${4:16}",
+      "      components:",
+      "        app-bar: { center-title: true }",
+      "        card: { shape: large, color: surface-container-low }",
+      "        input: { style: outline }",
+      "      themes:",
+      "        dark:",
+      "          seed-color: ${5:deepPurple.shade200}",
+      "$0"
+    ]
+  },
+  "Theme, every property": {
+    "prefix": "spthemeall",
+    "description": "spring.flutter.theme with every property (commented out: uncomment what differs)",
+    "body": [
+      "spring:",
+      "  flutter:",
+      "    theme:",
+      "      active: ${1:system}              # system | light | dark | a theme of themes",
+      "      system-light: light",
+      "      system-dark: dark",
+      "      seed-color: '${2:#6750A4}'",
+      "      # scheme-variant: tonalSpot     # tonalSpot | fidelity | content | vibrant | expressive | monochrome | neutral | rainbow | fruitSalad",
+      "      # contrast: 0                   # -1 … 1",
+      "      # colors:                       # any ColorScheme role (primary, on-primary, primary-container, surface, surface-container-low, outline, ...)",
+      "      #   error: '#B3261E'",
+      "      # typography:",
+      "      #   font-family: Roboto",
+      "      #   font-family-fallback: [Noto Sans JP]",
+      "      #   defaults: { letter-spacing: 0.1 }",
+      "      #   display: { font-family: Roboto Condensed, weight: bold }   # display / headline / title / body / label: all three sizes",
+      "      #   title-large: { size: 22, weight: 500, height: 1.27 }      # or one of the 15 TextTheme styles",
+      "      #   code: { font-family: monospace, size: 14 }",
+      "      # shape: { extra-small: 4, small: 8, medium: 12, large: 16, extra-large: 28 }",
+      "      # elevation: { level1: 1, level2: 3, level3: 6 }",
+      "      # visual-density: adaptive      # adaptive | standard | comfortable | compact",
+      "      # tap-target-size: padded       # padded | shrinkWrap",
+      "      # splash: sparkle               # ripple | sparkle | none",
+      "      # motion:",
+      "      #   page-transition: platform   # platform | fadeUpwards | zoom | cupertino | none",
+      "      #   duration-medium: 250ms",
+      "      #   easing-standard: '0.2, 0, 0, 1'",
+      "      # spacing: { xs: 4, s: 8, m: 16, l: 24, xl: 32 }",
+      "      # components:                   # app-bar, button, filled-button, elevated-button, outlined-button, text-button, card, input, chip, dialog, bottom-sheet, navigation-bar, snack-bar, tooltip, list-tile, divider, floating-action-button, tab-bar, popup-menu",
+      "      #   card: { shape: large, color: surface-container-low, elevation: level1 }",
+      "      # tokens:                       # the app's own: SpringTheme.of(context).tokenColor('brand.accent')",
+      "      #   brand: { accent: '#FF6B00' }",
+      "      # cupertino: { primary-color: '#007AFF' }",
+      "      themes:",
+      "        dark:",
+      "          seed-color: '${3:#D0BCFF}'",
+      "$0"
+    ]
+  },
+  "New theme (own file)": {
+    "prefix": "spthemenew",
+    "description": "A custom theme in its own file (import it with spring.config.import)",
+    "body": [
+      "spring.flutter.theme.themes.${1:ocean}:",
+      "  extends: ${2:light}                # light | dark | another theme",
+      "  brightness: ${3:light}",
+      "  seed-color: ${4:teal}",
+      "$0"
+    ]
+  },
+  "Theme colors": {
+    "prefix": "spcolors",
+    "description": "Color roles over the seed's palette",
+    "body": [
+      "spring.flutter.theme.colors:",
+      "  primary: '${1:#6750A4}'",
+      "  secondary: '${2:#625B71}'",
+      "  error: '${3:#B3261E}'",
+      "  surface: '${4:#FEF7FF}'",
+      "$0"
+    ]
+  },
+  "Theme typography": {
+    "prefix": "sptypography",
+    "description": "Fonts per text role (font files: any asset directory, found by family)",
+    "body": [
+      "spring.flutter.theme.typography:",
+      "  font-family: ${1:Roboto}",
+      "  font-family-fallback: [${2:Noto Sans JP}]",
+      "  display: { font-family: ${3:Roboto Condensed}, weight: bold }",
+      "  headline: { font-family: ${3:Roboto Condensed} }",
+      "  title-large: { weight: 500 }",
+      "  code: { font-family: ${4:monospace}, size: 13 }",
+      "$0"
+    ]
+  },
+  "Theme shapes": {
+    "prefix": "spshape",
+    "description": "The Material 3 shape scale (corner radii)",
+    "body": [
+      "spring.flutter.theme.shape:",
+      "  small: ${1:8}",
+      "  medium: ${2:12}",
+      "  large: ${3:16}",
+      "  extra-large: ${4:28}",
+      "$0"
+    ]
+  },
+  "Theme components": {
+    "prefix": "spcomponents",
+    "description": "Material components from the theme's tokens",
+    "body": [
+      "spring.flutter.theme.components:",
+      "  app-bar: { center-title: ${1:true}, scrolled-under-elevation: level2 }",
+      "  button: { shape: ${2:full} }",
+      "  card: { shape: ${3:large}, color: surface-container-low, elevation: level1 }",
+      "  input: { style: ${4:outline}, shape: small }",
+      "  navigation-bar: { label-behavior: onlyShowSelected }",
+      "  snack-bar: { behavior: floating }",
+      "$0"
+    ]
+  },
+  "Theme tokens": {
+    "prefix": "sptokens",
+    "description": "The app's own tokens: SpringTheme.of(context).tokenColor / tokenNumber",
+    "body": [
+      "spring.flutter.theme.tokens:",
+      "  ${1:brand}:",
+      "    accent: '${2:#FF6B00}'",
+      "    hero-height: ${3:240}",
+      "$0"
+    ]
+  },
+  "Fonts": {
+    "prefix": "spfonts",
+    "description": "Font files among the assets: switch off, leave some out",
+    "body": [
+      "spring.flutter.fonts:",
+      "  auto-load: ${1:true}",
+      "  exclude: [${2:assets/pdf/**}]",
+      "$0"
+    ]
+  }
+}

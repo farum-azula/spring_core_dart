@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
 /// Which app widget [SpringApp] builds (`spring.flutter.app.type`).
 enum AppType {
@@ -38,23 +40,18 @@ abstract interface class FlutterAppCustomizer {
 }
 
 /// What [SpringApp] builds the app widget from: the
-/// `spring.flutter.app.*` properties, the theme beans and the
-/// `NavigatorObserver` beans, then whatever [FlutterAppCustomizer]s
-/// change. Made once per application context.
+/// `spring.flutter.app.*` properties and the `NavigatorObserver` beans,
+/// then whatever [FlutterAppCustomizer]s change. Made once per
+/// application context. The theme comes from [SpringThemes].
 final class FlutterAppSettings {
   /// Settings for an app of [type]; the rest has Flutter's defaults.
   FlutterAppSettings({
     this.type = AppType.widgets,
     this.title = '',
     this.debugShowCheckedModeBanner = true,
-    this.themeMode = ThemeMode.system,
-    this.color = const Color(0xFF6750A4),
     List<Locale>? supportedLocales,
     List<LocalizationsDelegate<Object?>>? localizationsDelegates,
     List<NavigatorObserver>? navigatorObservers,
-    this.theme,
-    this.darkTheme,
-    this.cupertinoTheme,
   }) : supportedLocales = supportedLocales ?? [const Locale('en')],
        localizationsDelegates = localizationsDelegates ?? [],
        navigatorObservers = navigatorObservers ?? [];
@@ -69,13 +66,6 @@ final class FlutterAppSettings {
   /// `spring.flutter.app.debug-banner`.
   bool debugShowCheckedModeBanner;
 
-  /// `spring.flutter.app.theme-mode` (Material): `system`, `light`, `dark`.
-  ThemeMode themeMode;
-
-  /// The app's color for the OS (`WidgetsApp.color`); the theme's primary
-  /// color when there is a `ThemeData` bean.
-  Color color;
-
   /// `spring.flutter.app.locales`, by default the languages of the messages
   /// files (`messages.properties` counts as English, `messages_ja` adds
   /// `ja`).
@@ -87,15 +77,6 @@ final class FlutterAppSettings {
 
   /// The `NavigatorObserver` beans.
   List<NavigatorObserver> navigatorObservers;
-
-  /// The `ThemeData` bean `theme` (or the only one not named `darkTheme`).
-  ThemeData? theme;
-
-  /// The `ThemeData` bean `darkTheme`.
-  ThemeData? darkTheme;
-
-  /// The `CupertinoThemeData` bean.
-  CupertinoThemeData? cupertinoTheme;
 
   /// Wraps every route (`MaterialApp.builder`).
   TransitionBuilder? builder;
@@ -123,13 +104,6 @@ final class FlutterAppSettings {
 
     final type =
         _enum(AppType.values, 'type', property('type')) ?? AppType.widgets;
-    final themes = context.getBeansOfType<ThemeData>();
-    final theme =
-        themes['theme'] ??
-        [
-          for (final MapEntry(:key, :value) in themes.entries)
-            if (key != 'darkTheme') value,
-        ].singleOrNull;
     final locales = switch (property('locales')) {
       final list? => [
         for (final tag in list.split(','))
@@ -142,10 +116,6 @@ final class FlutterAppSettings {
       title: property('title') ?? '',
       debugShowCheckedModeBanner:
           _bool('debug-banner', property('debug-banner')) ?? true,
-      themeMode:
-          _enum(ThemeMode.values, 'theme-mode', property('theme-mode')) ??
-          ThemeMode.system,
-      color: theme?.colorScheme.primary ?? const Color(0xFF6750A4),
       supportedLocales: locales,
       localizationsDelegates: switch (type) {
         AppType.material => [...GlobalMaterialLocalizations.delegates],
@@ -153,12 +123,6 @@ final class FlutterAppSettings {
         AppType.widgets => [GlobalWidgetsLocalizations.delegate],
       },
       navigatorObservers: context.getSortedBeans<NavigatorObserver>(),
-      theme: theme,
-      darkTheme: themes['darkTheme'],
-      cupertinoTheme: context
-          .getBeansOfType<CupertinoThemeData>()
-          .values
-          .singleOrNull,
     );
     for (final customizer in context.getSortedBeans<FlutterAppCustomizer>()) {
       customizer.customize(settings);
@@ -198,18 +162,20 @@ final class FlutterAppSettings {
   // `en`, `pt_BR`, `pt-BR`, `zh_Hant_TW`.
   static Locale _locale(String tag) {
     final parts = tag.split(RegExp('[_-]'));
-    return switch (parts) {
-      [final language] => Locale(language),
-      [final language, final script, final country] => Locale.fromSubtags(
+    final language = parts.first;
+    if (parts.length == 1) {
+      return Locale(language);
+    }
+    if (parts.length >= 3) {
+      return Locale.fromSubtags(
         languageCode: language,
-        scriptCode: script,
-        countryCode: country,
-      ),
-      [final language, final second, ...] when second.length == 4 =>
-        Locale.fromSubtags(languageCode: language, scriptCode: second),
-      [final language, final country, ...] => Locale(language, country),
-      _ => Locale(tag),
-    };
+        scriptCode: parts[1],
+        countryCode: parts[2],
+      );
+    }
+    return parts[1].length == 4
+        ? Locale.fromSubtags(languageCode: language, scriptCode: parts[1])
+        : Locale(language, parts[1]);
   }
 
   static T? _enum<T extends Enum>(List<T> values, String key, String? value) {
@@ -243,18 +209,20 @@ final class FlutterAppSettings {
 
 /// The app widget built from the application's configuration: a
 /// `WidgetsApp`, `MaterialApp` or `CupertinoApp` (`spring.flutter.app.type`)
-/// with the title, debug banner, theme mode and locales of
-/// `spring.flutter.app.*`, the `ThemeData` / `CupertinoThemeData` beans,
-/// the `NavigatorObserver` beans and the [FlutterAppCustomizer]s' changes
-/// (see [FlutterAppSettings]). `SpringApplicationWidget(home: ...)` puts it
-/// at the root; tests may put it under a `SpringScope`.
+/// with the title, debug banner and locales of `spring.flutter.app.*`
+/// ([FlutterAppSettings]) and the theme `ThemeSelection` picks among the
+/// `SpringThemes` of `spring.flutter.theme.*`; a [SpringTheme] above it
+/// gives that theme to the app's own widgets. A theme picked at run time
+/// (or one loaded from a server) shows at once.
+/// `SpringApplicationWidget(home: ...)` puts it at the root; tests may put
+/// it under a `SpringScope`.
 ///
 /// ```properties
 /// spring.flutter.app.type=material
 /// spring.flutter.app.title=Counter
-/// spring.flutter.app.debug-banner=false
+/// spring.flutter.theme.seed-color=deepPurple
 /// ```
-class SpringApp extends StatelessWidget {
+class SpringApp extends StatefulWidget {
   /// The app with [home] as its first page.
   const SpringApp({required this.home, super.key});
 
@@ -262,16 +230,66 @@ class SpringApp extends StatelessWidget {
   final Widget home;
 
   @override
+  State<SpringApp> createState() => _SpringAppState();
+}
+
+class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // `system`: the device switched between light and dark mode.
+  @override
+  void didChangePlatformBrightness() => setState(() {});
+
+  @override
   Widget build(BuildContext context) {
-    final app = FlutterAppSettings.of(SpringScope.of(context));
+    final spring = SpringScope.of(context);
+    final app = FlutterAppSettings.of(spring);
+    final themes = SpringThemes.of(spring);
+    final selection = ThemeSelection.of(spring);
+    return ListenableBuilder(
+      listenable: Listenable.merge([themes, selection]),
+      builder: (context, _) {
+        final platform =
+            WidgetsBinding.instance.platformDispatcher.platformBrightness;
+        final shown = themes.data(selection.current(platform));
+        return SpringTheme(
+          data: shown,
+          child: _app(app, themes, selection, shown),
+        );
+      },
+    );
+  }
+
+  Widget _app(
+    FlutterAppSettings app,
+    SpringThemes themes,
+    ThemeSelection selection,
+    SpringThemeData shown,
+  ) {
+    final home = widget.home;
     return switch (app.type) {
       AppType.material => MaterialApp(
         title: app.title,
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        theme: app.theme,
-        darkTheme: app.darkTheme,
-        themeMode: app.themeMode,
-        color: app.color,
+        // `system`: Material switches between the two with the device.
+        theme: themes.material(
+          selection.followsSystem ? selection.systemLight : shown.name,
+        ),
+        darkTheme: selection.followsSystem
+            ? themes.material(selection.systemDark)
+            : null,
+        themeMode: selection.followsSystem ? ThemeMode.system : ThemeMode.light,
+        color: shown.appColor,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
@@ -283,8 +301,8 @@ class SpringApp extends StatelessWidget {
       AppType.cupertino => CupertinoApp(
         title: app.title,
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        theme: app.cupertinoTheme,
-        color: app.color,
+        theme: themes.cupertino(shown.name),
+        color: shown.appColor,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,
@@ -296,7 +314,8 @@ class SpringApp extends StatelessWidget {
       AppType.widgets => WidgetsApp(
         title: app.title,
         debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        color: app.color,
+        color: shown.appColor,
+        textStyle: shown.widgetsTextStyle,
         supportedLocales: app.supportedLocales,
         localizationsDelegates: app.localizationsDelegates,
         navigatorObservers: app.navigatorObservers,

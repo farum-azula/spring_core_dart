@@ -19,6 +19,8 @@ jobs:
       flutter: ${{ steps.affected.outputs.flutter }}
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
       flutter_counter: ${{ steps.affected.outputs.flutter_counter }}
+      flutter_themes: ${{ steps.affected.outputs.flutter_themes }}
+      flutter_examples: ${{ steps.affected.outputs.flutter_examples }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -144,21 +146,24 @@ jobs:
           dart pub get
           (cd spring_boot_starter_flutter && flutter pub get)
           (cd example/flutter_counter && flutter pub get)
+          (cd example/flutter_themes && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
 
-      - name: Generated code is up to date (Flutter example)
-        working-directory: example/flutter_counter
+      - name: Generated code is up to date (Flutter examples)
         run: |
-          dart run build_runner build
-          git diff --exit-code -- .
-          test -z "$(git status --porcelain -- .)"
+          for example in example/flutter_counter example/flutter_themes; do
+            (cd $example && dart run build_runner build)
+            git diff --exit-code -- $example
+            test -z "$(git status --porcelain -- $example)"
+          done
 
       - name: Analyze
         run: |
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
           (cd example/flutter_counter && flutter analyze --fatal-infos)
+          (cd example/flutter_themes && flutter analyze --fatal-infos)
 
       # The golden screenshots run in the `goldens` job (macOS).
       - name: Tests of spring_boot_starter_flutter
@@ -166,21 +171,26 @@ jobs:
         working-directory: spring_boot_starter_flutter
         run: flutter test
 
-      - name: Tests of the Flutter example
+      - name: Tests of the Flutter counter example
         if: needs.changes.outputs.flutter_counter == 'true'
         working-directory: example/flutter_counter
+        run: flutter test --exclude-tags golden
+
+      - name: Tests of the Flutter themes example
+        if: needs.changes.outputs.flutter_themes == 'true'
+        working-directory: example/flutter_themes
         run: flutter test --exclude-tags golden
 
       - name: The example builds for the web (release)
         working-directory: example/flutter_counter
         run: flutter build web --release
 
-  # The golden screenshots of the Flutter example (test/golden_test.dart):
+  # The golden screenshots of the Flutter examples (test/golden_test.dart):
   # made on macOS, so compared on macOS; Linux draws the letters
   # differently (0.5–3% of the pixels of a screen with text).
   goldens:
     needs: changes
-    if: needs.changes.outputs.flutter_counter == 'true'
+    if: needs.changes.outputs.flutter_examples == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
@@ -195,9 +205,16 @@ jobs:
           flutter --version
           dart pub get
           (cd example/flutter_counter && flutter pub get)
+          (cd example/flutter_themes && flutter pub get)
 
-      - name: Golden screenshots
+      - name: Golden screenshots (counter)
+        if: needs.changes.outputs.flutter_counter == 'true'
         working-directory: example/flutter_counter
+        run: flutter test --tags golden
+
+      - name: Golden screenshots (themes)
+        if: needs.changes.outputs.flutter_themes == 'true'
+        working-directory: example/flutter_themes
         run: flutter test --tags golden
 
       # The screenshots that no longer match: the expected and actual images
@@ -207,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: golden-failures
-          path: example/flutter_counter/test/failures/
+          path: example/flutter_*/test/failures/
           if-no-files-found: ignore
 
   # The lowest versions allowed by our constraints must still work: resolve

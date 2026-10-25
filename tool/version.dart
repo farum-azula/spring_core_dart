@@ -36,6 +36,7 @@ const dependents = [
   'example/spring_core_tour',
   'example/spring_boot_feign',
   'example/flutter_counter',
+  'example/flutter_themes',
   'extensions/language_server',
 ];
 

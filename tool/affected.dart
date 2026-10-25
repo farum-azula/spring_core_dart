@@ -17,7 +17,9 @@
 //   tour             example/spring_core_tour affected (the example runs)
 //   flutter_starter  spring_boot_starter_flutter affected
 //   flutter_counter  example/flutter_counter affected (incl. goldens)
-//   flutter          either of the two
+//   flutter_themes   example/flutter_themes affected (incl. goldens)
+//   flutter_examples either Flutter example (the goldens job)
+//   flutter          any of the three
 import 'dart:io';
 
 import 'test_all.dart' show workspacePackages;
@@ -26,6 +28,7 @@ import 'test_all.dart' show workspacePackages;
 const flutterPackages = [
   'spring_boot_starter_flutter',
   'example/flutter_counter',
+  'example/flutter_themes',
 ];
 
 /// Changed paths (prefixes) that affect every package.
@@ -37,6 +40,14 @@ const _everything = [
   'dart_test.yaml',
   '.github/workflows/',
 ];
+
+/// Files outside a package that a package's tests check.
+const _testedBy = {
+  'extensions/zed/dart_spring/snippets/yaml.json':
+      'spring_boot_starter_flutter',
+  'extensions/zed/dart_spring/snippets/properties.json':
+      'spring_boot_starter_flutter',
+};
 
 /// Changed paths that affect no package.
 bool _ignored(String path) =>
@@ -80,6 +91,7 @@ Future<void> main(List<String> args) async {
     bool has(String package) => affected.contains(package);
     final starter = has('spring_boot_starter_flutter');
     final counter = has('example/flutter_counter');
+    final themes = has('example/flutter_themes');
     File(output).writeAsStringSync(
       [
         'packages=${ordered.where((p) => !flutterPackages.contains(p)).join(',')}',
@@ -87,7 +99,9 @@ Future<void> main(List<String> args) async {
         'tour=${has('example/spring_core_tour')}',
         'flutter_starter=$starter',
         'flutter_counter=$counter',
-        'flutter=${starter || counter}',
+        'flutter_themes=$themes',
+        'flutter_examples=${counter || themes}',
+        'flutter=${starter || counter || themes}',
         '',
       ].join('\n'),
       mode: FileMode.append,
@@ -109,6 +123,15 @@ Set<String> affectedPackages(
           prefix.endsWith('/') ? path.startsWith(prefix) : path == prefix,
     )) {
       return packages.toSet();
+    }
+    // The theme snippets are checked by the starter's tests.
+    if (_testedBy.entries
+            .where((e) => path.startsWith(e.key))
+            .map((e) => e.value)
+            .firstOrNull
+        case final package?) {
+      direct.add(package);
+      continue;
     }
     if (_ignored(path)) {
       continue;

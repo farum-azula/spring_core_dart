@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
@@ -37,8 +38,10 @@ abstract class SpringStatelessWidget<B extends Record> extends Widget {
 
   /// The beans named in this widget's type, from the application context
   /// of the place it is built in. The widget rebuilds when one of them
-  /// that is a `Listenable` (a `ChangeNotifier`, a
-  /// `@ChangeNotifierComponent` bean) notifies.
+  /// that is a `Listenable` notifies — a `@ChangeNotifierComponent` (or
+  /// `@NotifyListeners`) bean only when [build] read its state (a getter,
+  /// a field); calling its methods (`onPressed: counter.increment`) costs
+  /// no rebuilds.
   ///
   /// Read it in [build] and in the callbacks made there (`onPressed`). A
   /// widget is immutable and one `const` instance may be built in several
@@ -132,6 +135,21 @@ abstract class SpringStatefulWidget<B extends Record> extends StatefulWidget {
 
   /// The record type this widget's state gets (`B`).
   Type get beansType => B;
+
+  @override
+  StatefulElement createElement() => _SpringStatefulElement(this);
+}
+
+/// Notes the beans a [SpringState] reads in `build`.
+class _SpringStatefulElement extends StatefulElement {
+  _SpringStatefulElement(super.widget);
+
+  @override
+  Widget build() => switch (state) {
+    final SpringState<SpringStatefulWidget<Record>, Record> state =>
+      state._listening.track(super.build),
+    _ => super.build(),
+  };
 }
 
 /// The `State` of a [SpringStatefulWidget]: [beans] holds the beans named
@@ -147,11 +165,13 @@ abstract class SpringState<W extends SpringStatefulWidget<B>, B extends Record>
   ApplicationContext? _context;
   B? _beans;
 
-  final _listening = _BeanListeners();
+  late final _listening = BeanReads(_onBeanChanged);
 
   /// The beans named in this state's type, from the application context.
-  /// The state rebuilds when one of them that is a `Listenable` (a
-  /// `ChangeNotifier`, a `@ChangeNotifierComponent` bean) notifies.
+  /// The state rebuilds when one of them that is a `Listenable` notifies
+  /// — a `@ChangeNotifierComponent` (or `@NotifyListeners`) bean only
+  /// when `build` read its state (a getter, a field); calling its methods
+  /// costs no rebuilds.
   B get beans {
     final current = _beans;
     if (current != null) {
@@ -159,10 +179,7 @@ abstract class SpringState<W extends SpringStatefulWidget<B>, B extends Record>
     }
     final context = _context ?? SpringScope.of(this.context, listen: false);
     final beans = SpringWidgetBindings.resolve(context, B, runtimeType) as B;
-    _listening.listenTo(
-      SpringWidgetBindings.valuesOf(context, B, beans),
-      _onBeanChanged,
-    );
+    _listening.setBeans(SpringWidgetBindings.valuesOf(context, B, beans));
     return _beans = beans;
   }
 
@@ -196,7 +213,7 @@ class SpringStatelessElement extends ComponentElement {
   /// An element for [widget].
   SpringStatelessElement(SpringStatelessWidget<Record> super.widget);
 
-  final _listening = _BeanListeners();
+  late final _listening = BeanReads(markNeedsBuild);
 
   @override
   Widget build() {
@@ -207,11 +224,10 @@ class SpringStatelessElement extends ComponentElement {
       widget.beansType,
       widget.runtimeType,
     );
-    _listening.listenTo(
+    _listening.setBeans(
       SpringWidgetBindings.valuesOf(context, widget.beansType, beans),
-      markNeedsBuild,
     );
-    return widget._buildWith(this, beans);
+    return _listening.track(() => widget._buildWith(this, beans));
   }
 
   @override
@@ -224,44 +240,6 @@ class SpringStatelessElement extends ComponentElement {
   void unmount() {
     _listening.dispose();
     super.unmount();
-  }
-}
-
-/// The `Listenable` beans a Spring widget is subscribed to.
-final class _BeanListeners {
-  List<Listenable> _listenables = const [];
-  VoidCallback? _onChange;
-
-  void listenTo(List<Object?> beans, VoidCallback onChange) {
-    final listenables = [
-      for (final bean in beans)
-        if (bean is Listenable) bean,
-    ];
-    if (_same(listenables) && onChange == _onChange) {
-      return;
-    }
-    dispose();
-    _listenables = listenables;
-    _onChange = onChange;
-    for (final listenable in listenables) {
-      listenable.addListener(onChange);
-    }
-  }
-
-  bool _same(List<Listenable> other) =>
-      other.length == _listenables.length &&
-      [for (var i = 0; i < other.length; i++) i]
-          .every((i) => identical(other[i], _listenables[i]));
-
-  void dispose() {
-    final onChange = _onChange;
-    if (onChange != null) {
-      for (final listenable in _listenables) {
-        listenable.removeListener(onChange);
-      }
-    }
-    _listenables = const [];
-    _onChange = null;
   }
 }
 

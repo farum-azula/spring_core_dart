@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_counter/main.spring.dart';
+import 'package:flutter_counter/src/about/app_assets.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 /// The About page: the logo and a text, both assets injected into the
 /// `AppAssets` bean.
-class AboutPage extends StatelessWidget {
+class AboutPage extends SpringStatelessWidget<(AppAssets,)> {
   const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // `context.appAssets`: generated for the @BuildContextAccess bean.
-    final assets = context.appAssets;
+    final (assets,) = beans;
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(

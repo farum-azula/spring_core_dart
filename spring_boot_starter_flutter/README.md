@@ -19,19 +19,22 @@ void main() => runApp(
 );
 
 @ChangeNotifierComponent()   // a bean whose proxy is a ChangeNotifier,
-@BuildContextAccess()        // notifying after every method
-class Counter {
+class Counter {              // notifying after every method
   int value = 0;
   void increment() => value++;
 }
 
-// in any widget below SpringApplicationWidget
-FloatingActionButton(onPressed: context.counter.increment, ...);
-
-// rebuilt after every increment, no ListenableBuilder
+// reads counter.value in build: rebuilt after every increment
 class CounterText extends SpringStatelessWidget<(Counter,)> {
   @override
   Widget build(BuildContext context) => Text('${beans.$1.value}');
+}
+
+// only calls a method: an increment does not rebuild it
+class AddButton extends SpringStatelessWidget<(Counter,)> {
+  @override
+  Widget build(BuildContext context) =>
+      FloatingActionButton(onPressed: beans.$1.increment, ...);
 }
 ```
 
@@ -139,7 +142,6 @@ SpringApplicationWidget(
 spring.flutter.app.type=material        # widgets (default) | material | cupertino
 spring.flutter.app.title=${counter.title}
 spring.flutter.app.debug-banner=false   # default true, as in Flutter
-spring.flutter.app.theme-mode=system    # system | light | dark (Material)
 spring.flutter.app.locales=en,ja        # default: the languages of the messages files
 ```
 
@@ -147,17 +149,7 @@ spring.flutter.app.locales=en,ja        # default: the languages of the messages
   property asks for it. `Scaffold`, `AppBar` and other Material widgets
   need `material`. With the platform profiles, `type=cupertino` in
   `application-ios.properties` gives iPhones the iOS look.
-- **Theme as a bean.** A `ThemeData` bean named `theme` (or the only one)
-  and one named `darkTheme` go into the `MaterialApp`, a
-  `CupertinoThemeData` bean into the `CupertinoApp`:
-  ```dart
-  @Configuration()
-  class AppTheme {
-    @Bean()
-    ThemeData theme() =>
-        ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple));
-  }
-  ```
+- **Theme.** From `spring.flutter.theme.*`, see the next section.
 - **Locales.** By default the languages of `lib/resources/messages*.properties`
   (`spring.messages.basename`): `messages.properties` counts as English,
   `messages_ja.properties` adds `ja`, so `context.message` and the app's
@@ -179,6 +171,150 @@ spring.flutter.app.locales=en,ja        # default: the languages of the messages
 - **Once per context.** The settings are made once when the application
   starts (`FlutterAppSettings.of(context)`), and an invalid value
   (`type=swing`) fails the start with the failure report.
+
+## Themes from properties
+
+The look of the app is configuration too: the shared part of the theme,
+the standard `light` and `dark` themes and any number of custom ones, in
+`.properties` or `.yml`, per profile, even loaded from a server at run
+time. No `ThemeData` in the code; every value the properties leave out is
+Flutter's Material 3 default.
+
+```yaml
+# lib/resources/application.yml
+spring:
+  flutter:
+    theme:
+      active: system              # system | light | dark | a custom theme
+      system-light: light         # what `system` shows in the device's light mode
+      system-dark: dark           # ... and in its dark mode
+
+      # Shared by every theme
+      seed-color: deepPurple      # a Colors name or '#RRGGBB'
+      scheme-variant: tonalSpot   # tonalSpot | fidelity | content | vibrant | expressive | ...
+      contrast: 0                 # -1 … 1
+      colors:                     # any ColorScheme role over the seed's palette
+        error: '#B3261E'
+        surface-container-low: grey.shade100
+      typography:
+        font-family: Inter
+        font-family-fallback: [Noto Sans JP]
+        defaults: { letter-spacing: 0.1 }
+        display: { font-family: Playfair Display, weight: bold }   # display large/medium/small
+        title-large: { weight: 600, size: 22, height: 1.3 }       # one of the 15 TextTheme styles
+        code: { font-family: JetBrains Mono, size: 13 }           # SpringTheme.of(context).textStyle('code')
+      shape: { medium: 16, large: 20 }        # the Material 3 scale: none … extra-large, full
+      elevation: { level1: 2 }
+      visual-density: compact                 # adaptive | standard | comfortable | compact
+      tap-target-size: padded
+      splash: sparkle                         # ripple | sparkle | none
+      motion:
+        page-transition: zoom                 # platform | fadeUpwards | zoom | cupertino | none
+        duration-medium: 250ms
+        easing-standard: '0.2, 0, 0, 1'
+      spacing: { s: 8, m: 16 }                # SpringTheme.of(context).space('m')
+      components:                             # values reference the tokens above
+        app-bar: { center-title: true, scrolled-under-elevation: level2, title-style: title-large }
+        button: { shape: full, padding: '24, 10' }
+        filled-button: { shape: medium }
+        card: { shape: large, color: surface-container-low, elevation: level1 }
+        input: { style: outline, shape: small }
+        navigation-bar: { label-behavior: onlyShowSelected }
+        snack-bar: { behavior: floating }
+      tokens:                                 # the app's own, read through SpringTheme
+        brand: { accent: '#FF6B00', hero-height: 240 }
+
+      # Themes: only what differs from the shared part
+      themes:
+        dark:
+          seed-color: deepPurple.shade200
+        ocean:
+          seed-color: teal
+          shape: { large: 28 }
+        ocean-night:
+          extends: ocean                      # ocean's properties, then these
+          brightness: dark
+```
+
+- **Standard and custom themes.** `light` and `dark` always exist (made
+  from the shared part, Material's light and dark palettes); a custom
+  theme is light unless it says `brightness: dark` or extends a dark one.
+  `extends` chains themes; a cycle or an unknown name fails the start.
+  Custom themes can live in their own files:
+  `spring.config.import: classpath:themes/ocean.yml`.
+- **Components** are Material's, built from the tokens as Material 3
+  specifies; `components.*` only changes what differs. A changed shape
+  value reaches the components using it (`shape.medium` → cards). The
+  components: `app-bar`, `button` (all four buttons) and
+  `filled-button` / `elevated-button` / `outlined-button` / `text-button`,
+  `card`, `input`, `chip`, `dialog`, `bottom-sheet`, `navigation-bar`,
+  `snack-bar`, `tooltip`, `list-tile`, `divider`,
+  `floating-action-button`, `tab-bar`, `popup-menu`.
+- **Checked at the start.** Every theme is read when the application
+  starts; an invalid value (`seed-color: purpel`, `shape: hugee`) or a
+  misspelled key (`seed-colour`, `typography.body.colour`, an unknown
+  component or component property) fails the start with the property's
+  name and what it may be.
+- **Made once.** Each theme becomes a `SpringThemeData`, a Material
+  `ThemeData` and a `CupertinoThemeData` once; switching only picks
+  another one.
+- **Switching at run time.** The `ThemeSelection` bean picks the theme
+  (`select('ocean')`, `select('system')`); the app follows at once, with
+  Flutter's animation:
+  ```dart
+  class ThemeMenu extends SpringStatelessWidget<(ThemeSelection, SpringThemes)> {
+    @override
+    Widget build(BuildContext context) {
+      final (selection, themes) = beans;
+      return PopupMenuButton<String>(
+        onSelected: selection.select,
+        itemBuilder: (_) => [
+          for (final name in ['system', ...themes.names])
+            CheckedPopupMenuItem(value: name, checked: selection.active == name, child: Text(name)),
+        ],
+      );
+    }
+  }
+  ```
+- **Themes from a server.** `SpringThemes.loadYaml(yaml)` (or `load(map)`)
+  adds or changes themes at run time, over the files' properties; they are
+  checked first, so an invalid one throws and changes nothing.
+  `unload()` drops them again.
+  ```dart
+  themes.loadYaml(await http.read(Uri.parse('https://cdn.example.com/themes.yml')));
+  selection.select('winter');
+  ```
+- **The app's own widgets** read the theme shown, whatever the app type,
+  with `SpringTheme.of(context)`: `colorScheme`, `textStyle('code')`,
+  `shape('large')`, `space('m')`, `duration('medium')`,
+  `tokenColor('brand.accent')`, `tokenNumber('brand.hero-height')`.
+- **Cupertino and Widgets apps.** `type: cupertino` gets a
+  `CupertinoThemeData` from the same theme (primary color, text styles,
+  backgrounds where set; iOS's defaults otherwise), `type: widgets` its
+  text style and color.
+- **Replacing a part.** A `ThemeData` bean named `theme` / `darkTheme`
+  replaces the made `light` / `dark` Material theme, a
+  `CupertinoThemeData` bean the Cupertino ones; `ThemeCustomizer` /
+  `CupertinoThemeCustomizer` beans adjust every made theme (in `@Order`).
+
+### Fonts
+
+Font files go into any directory under `flutter: assets:` and are listed
+nowhere else: when the application starts (behind the splash screen) the
+starter loads every `.ttf` / `.otf` among the app's assets, in the family
+the file itself names (`Inter-SemiBold.ttf` → `Inter`, a weight of the
+family). The theme then names families only. Families declared under
+`flutter: fonts:` keep working. A family the theme names but neither the
+assets nor `flutter: fonts:` have is logged as a warning (it may still be
+the platform's own, like `.SF UI Text`).
+
+```properties
+spring.flutter.fonts.auto-load=true         # false: load nothing
+spring.flutter.fonts.exclude=assets/pdf/**  # files for other uses
+```
+
+A complete app with every theme feature and golden screenshots of each
+theme: [`example/flutter_themes`](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_themes).
 
 ## Hot reload
 
@@ -344,7 +480,8 @@ class _BasketPageState extends SpringState<BasketPage, (Basket, Clock)> {
 
 Spring widgets rebuild when one of their beans that is a `Listenable`
 notifies (a `ChangeNotifier`, a `@ChangeNotifierComponent` bean; see
-*State beans*). Widgets that read beans are also rebuilt when the context
+*State beans*) — a `@ChangeNotifierComponent` or `@NotifyListeners` bean
+only when the widget read its state: see *Reading is free*. Widgets that read beans are also rebuilt when the context
 is replaced. A bean
 that notifies (a `ChangeNotifier`, a `Stream`) is listened to as usual
 (`ListenableBuilder`, `StreamBuilder`).
@@ -381,7 +518,7 @@ The class itself is no `Listenable` (Dart cannot give it a superclass from
 generated code); the bean the container hands out is. So:
 
 - `SpringStatelessWidget` and `SpringState` subscribe to the `Listenable`
-  beans of their record and rebuild when one notifies; no
+  beans of their record they read and rebuild when one notifies; no
   `ListenableBuilder` needed;
 - elsewhere, `listenableOf(bean)` gives the `Listenable`:
   `ListenableBuilder(listenable: listenableOf(context.basket), builder: ...)`.
@@ -389,6 +526,34 @@ generated code); the bean the container hands out is. So:
 The build checks that every name in `exclude` is a method, setter or field
 of the class, and that the class declares none of `ChangeNotifier`'s own
 members (`addListener`, `dispose`, ...).
+
+**Reading is free.** A Spring widget listens to a `@ChangeNotifierComponent`
+or `@NotifyListeners` bean of its record only when its `build` read the
+bean's state (a getter, a field). Calling a method (`onPressed:
+counter.increment`) costs no rebuilds, so a page can hold the counter for
+its button while only the `Text` showing the count rebuilds:
+
+```dart
+class CounterPage extends SpringStatelessWidget<(Counter,)> {
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: const CounterText(),                  // rebuilt after a tap
+    floatingActionButton: FloatingActionButton( // the page is not
+      onPressed: beans.$1.increment,
+      child: const Icon(Icons.add),
+    ),
+  );
+}
+```
+
+The reads go through the bean's AOP proxy, so the rule follows the state
+the widget actually shows: a build that stops reading the bean stops
+listening, the next one that reads it listens again. A read outside the
+widget's own build — in a `ListView.builder` item builder or a `Builder`
+below it, in a callback — cannot be told apart from the UI's, so after one
+the widget keeps listening (never a stale screen). The bean's reads of
+itself in its methods do not count. A `ChangeNotifier` bean without either
+annotation (no proxy) is listened to always.
 
 **`@NotifyListeners`**: the same advice for a class that extends
 `ChangeNotifier` itself, on the class (with `exclude`) or on single

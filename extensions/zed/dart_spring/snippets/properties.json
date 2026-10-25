@@ -1,0 +1,108 @@
+{
+  "Flutter app widget": {
+    "prefix": "spapp",
+    "description": "spring.flutter.app: the app widget SpringApplicationWidget(home:) builds",
+    "body": [
+      "# widgets (default) | material | cupertino",
+      "spring.flutter.app.type=${1:material}",
+      "spring.flutter.app.title=${2:My app}",
+      "spring.flutter.app.debug-banner=${3:true}",
+      "# default: the languages of messages_*.properties",
+      "#spring.flutter.app.locales=en,ja",
+      "$0"
+    ]
+  },
+  "Theme": {
+    "prefix": "sptheme",
+    "description": "spring.flutter.theme: the shared part, the active theme and the dark one",
+    "body": [
+      "# system | light | dark | a theme of themes",
+      "spring.flutter.theme.active=${1:system}",
+      "spring.flutter.theme.seed-color=${2:deepPurple}",
+      "spring.flutter.theme.typography.font-family=${3:Roboto}",
+      "spring.flutter.theme.typography.display.weight=bold",
+      "spring.flutter.theme.shape.medium=${4:16}",
+      "spring.flutter.theme.components.app-bar.center-title=true",
+      "spring.flutter.theme.components.card.shape=large",
+      "spring.flutter.theme.components.input.style=outline",
+      "spring.flutter.theme.themes.dark.seed-color=${5:deepPurple.shade200}",
+      "$0"
+    ]
+  },
+  "New theme": {
+    "prefix": "spthemenew",
+    "description": "A custom theme: themes.<name>.*",
+    "body": [
+      "spring.flutter.theme.themes.${1:ocean}.extends=${2:light}",
+      "spring.flutter.theme.themes.${1:ocean}.brightness=${3:light}",
+      "spring.flutter.theme.themes.${1:ocean}.seed-color=${4:teal}",
+      "$0"
+    ]
+  },
+  "Theme colors": {
+    "prefix": "spcolors",
+    "description": "Color roles over the seed's palette",
+    "body": [
+      "spring.flutter.theme.colors.primary=${1:#6750A4}",
+      "spring.flutter.theme.colors.secondary=${2:#625B71}",
+      "spring.flutter.theme.colors.error=${3:#B3261E}",
+      "spring.flutter.theme.colors.surface=${4:#FEF7FF}",
+      "$0"
+    ]
+  },
+  "Theme typography": {
+    "prefix": "sptypography",
+    "description": "Fonts per text role (font files: any asset directory, found by family)",
+    "body": [
+      "spring.flutter.theme.typography.font-family=${1:Roboto}",
+      "spring.flutter.theme.typography.font-family-fallback=${2:Noto Sans JP}",
+      "spring.flutter.theme.typography.display.font-family=${3:Roboto Condensed}",
+      "spring.flutter.theme.typography.display.weight=bold",
+      "spring.flutter.theme.typography.title-large.weight=500",
+      "spring.flutter.theme.typography.code.font-family=${4:monospace}",
+      "$0"
+    ]
+  },
+  "Theme shapes": {
+    "prefix": "spshape",
+    "description": "The Material 3 shape scale (corner radii)",
+    "body": [
+      "spring.flutter.theme.shape.small=${1:8}",
+      "spring.flutter.theme.shape.medium=${2:12}",
+      "spring.flutter.theme.shape.large=${3:16}",
+      "spring.flutter.theme.shape.extra-large=${4:28}",
+      "$0"
+    ]
+  },
+  "Theme components": {
+    "prefix": "spcomponents",
+    "description": "Material components from the theme's tokens",
+    "body": [
+      "spring.flutter.theme.components.app-bar.center-title=${1:true}",
+      "spring.flutter.theme.components.button.shape=${2:full}",
+      "spring.flutter.theme.components.card.shape=${3:large}",
+      "spring.flutter.theme.components.card.color=surface-container-low",
+      "spring.flutter.theme.components.input.style=${4:outline}",
+      "spring.flutter.theme.components.snack-bar.behavior=floating",
+      "$0"
+    ]
+  },
+  "Theme tokens": {
+    "prefix": "sptokens",
+    "description": "The app's own tokens: SpringTheme.of(context).tokenColor / tokenNumber",
+    "body": [
+      "spring.flutter.theme.tokens.${1:brand}.accent=${2:#FF6B00}",
+      "spring.flutter.theme.tokens.${1:brand}.hero-height=${3:240}",
+      "$0"
+    ]
+  },
+  "Fonts": {
+    "prefix": "spfonts",
+    "description": "Font files among the assets: switch off, leave some out",
+    "body": [
+      "spring.flutter.fonts.auto-load=${1:true}",
+      "spring.flutter.fonts.exclude=${2:assets/pdf/**}",
+      "$0"
+    ]
+  }
+}

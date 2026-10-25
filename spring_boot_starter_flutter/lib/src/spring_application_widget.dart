@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
@@ -8,6 +9,8 @@ import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// The root widget of a Spring app: starts the application, shows [splash]
@@ -127,6 +130,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       );
       SpringWidgetBindings.check(context);
       _checkApp(context);
+      await _loadFonts(context);
       if (!mounted) {
         await context.closeAsync();
         return;
@@ -143,7 +147,25 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   void _checkApp(ApplicationContext context) {
     if (widget.home != null) {
       FlutterAppSettings.of(context);
+      ThemeSelection.of(context); // reads and checks every theme
     }
+  }
+
+  // The app's font files, before the first frame.
+  static Future<void> _loadFonts(ApplicationContext context) {
+    final manifest = AssetProtocolResolver.rootManifest;
+    if (manifest == null) {
+      return Future.value();
+    }
+    final themes = SpringThemes.of(context);
+    return ThemeFonts.loadFor(
+      context,
+      rootBundle,
+      manifest.listAssets(),
+      themeFamilies: {
+        for (final name in themes.names) ...themes.data(name).fontFamilies,
+      },
+    );
   }
 
   static bool _scanOsEnvironment(SpringApplication application) {

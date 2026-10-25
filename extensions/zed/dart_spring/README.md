@@ -91,6 +91,20 @@ Flutter (`spring_boot_starter_flutter`):
 | `splifecycle` | an `@EventListener` for `AppLifecycleStateEvent` |
 | `spwidgettest` | a widget test with `springBootTest` and `SpringScope` |
 
+Themes and the app widget, in `application.yml` and in `.properties` files
+(the same prefixes in both; the `.properties` ones need a Properties
+language, e.g. from the Java extension):
+
+| Prefix | Inserts |
+|---|---|
+| `spapp` | `spring.flutter.app`: type, title, debug banner |
+| `sptheme` | `spring.flutter.theme`: active theme, seed color, fonts, shapes, components, the dark theme |
+| `spthemeall` | (YAML) every theme property, commented out, with its values |
+| `spthemenew` | a custom theme (`themes.<name>`, `extends`), in its own file in YAML |
+| `spcolors`, `sptypography`, `spshape` | color roles, fonts per text role, the shape scale |
+| `spcomponents`, `sptokens` | Material components from the tokens, the app's own tokens |
+| `spfonts` | `spring.flutter.fonts`: auto-load, exclude |
+
 ## New project
 
 The language server also creates Spring Boot applications, like Spring

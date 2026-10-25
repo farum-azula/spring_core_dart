@@ -1,0 +1,3 @@
+spring.flutter.theme.themes.ocean-night:
+  extends: ocean
+  brightness: dark

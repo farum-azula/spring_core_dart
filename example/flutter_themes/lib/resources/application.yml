@@ -1,0 +1,55 @@
+spring:
+  config:
+    # One file per custom theme.
+    import: >-
+      classpath:themes/ocean.yml, classpath:themes/ocean-night.yml,
+      classpath:themes/sepia.yml, classpath:themes/high-contrast.yml
+
+  flutter:
+    app:
+      type: material
+      title: Spring themes
+      debug-banner: false     # it would cover the theme menu
+
+    theme:
+      # system | light | dark | ocean | ocean-night | sepia | high-contrast
+      active: system
+      system-dark: dark
+
+      # Shared by every theme.
+      seed-color: deepPurple
+      typography:
+        font-family: Roboto
+        display: { font-family: Roboto Condensed, weight: bold }
+        headline: { font-family: Roboto Condensed }
+        title-large: { weight: 500 }
+        # A monospaced font file would go into res/fonts/ like the others
+        # (none comes with the Flutter SDK); Roboto Condensed stands in.
+        code: { font-family: Roboto Condensed, size: 13 }
+      shape:
+        medium: 16
+      components:
+        app-bar:
+          center-title: true
+          scrolled-under-elevation: level2
+        card:
+          shape: large
+          color: surface-container-low
+        input:
+          style: outline
+          shape: small
+        snack-bar:
+          behavior: floating
+      spacing:
+        m: 16
+      tokens:
+        brand:
+          accent: '#FF6B00'
+          banner-height: 120
+
+      # The standard themes: only what differs from the shared part.
+      themes:
+        dark:
+          seed-color: deepPurple.shade200
+          components:
+            card: { color: surface-container }

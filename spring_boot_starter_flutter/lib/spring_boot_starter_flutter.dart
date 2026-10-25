@@ -22,6 +22,7 @@ export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart'
 
 export 'src/annotations.dart';
 export 'src/asset_resource.dart';
+export 'src/bean_reads.dart' show BeanReadsPointcut, BeanReadsInterceptor;
 export 'src/app_lifecycle.dart';
 export 'src/context_extensions.dart';
 export 'src/notify_listeners.dart';
@@ -30,6 +31,11 @@ export 'src/spring_app.dart';
 export 'src/spring_application_widget.dart';
 export 'src/spring_scope.dart';
 export 'src/spring_widgets.dart';
+export 'src/theme/spring_theme_data.dart'
+    show SpringThemeData, SpringTextSpec, SpringThemeExtension;
+export 'src/theme/spring_themes.dart';
+export 'src/theme/theme_fonts.dart';
+export 'src/theme/theme_values.dart' show ThemePropertyException;
 
 /// The validation constraint `@Size` of `spring_core_dart` (Jakarta's
 /// `@Size`): a string's length or a collection's size between `min` and

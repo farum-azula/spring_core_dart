@@ -1,0 +1,8 @@
+spring.flutter.theme.themes.high-contrast:
+  extends: light
+  contrast: 1.0
+  typography:
+    defaults: { weight: 500 }
+  components:
+    divider: { thickness: 2, color: outline }
+    outlined-button: { border-color: on-surface }

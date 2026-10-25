@@ -1,0 +1,14 @@
+# A theme as a server could send it: SpringThemes.loadYaml adds it at run
+# time, checked first, shown at once.
+spring:
+  flutter:
+    theme:
+      themes:
+        winter:
+          seed-color: lightBlue
+          scheme-variant: expressive
+          shape: { medium: 24, large: 32 }
+          components:
+            button: { shape: full }
+          tokens:
+            brand: { accent: '#0288D1' }

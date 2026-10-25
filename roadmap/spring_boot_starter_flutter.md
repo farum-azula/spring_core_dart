@@ -36,10 +36,16 @@ pause / restart of the context, platform profiles, `--dart-define` as a
 property source, the OS environment switch, `context.message`, tests with
 `SpringScope` and `springBootTest`; the example `example/flutter_counter`.
 
-The app widget from configuration has its first part: `SpringApp` from
-`spring.flutter.app.*` (type, title, debug banner, theme mode, locales from
-the messages files), theme beans, observers and customizers; still to come
-from that section: `SpringThemeData` from properties, colors, fonts.
+The app widget from configuration is done: `SpringApp` from
+`spring.flutter.app.*` (type, title, debug banner, locales from the
+messages files), observers and customizers, and themes from
+`spring.flutter.theme.*` (shared part, `light` / `dark` / custom themes
+with `extends`, the full Material 3 token set and 19 components, the
+app's own tokens, switching at run time, themes loaded from a server,
+fonts from any asset directory); the example `example/flutter_themes`.
+Next for themes: the remaining Material components, typed tokens
+(`@ThemeTokens` classes generated into `ThemeExtension`s), the user's
+choice kept in `shared_preferences` (see *Settings*).
 
 Next: `@ConditionalOnPlatform(include: [AppPlatform.android, AppPlatform.ios],
 exclude: [AppPlatform.web])` on top of the platform profiles (an
@@ -60,13 +66,15 @@ the context to the tree (see *Beans in widgets*).
 
 ## The app widget from configuration
 
-Done: `SpringApplicationWidget(home: ...)` builds the app widget
-(`SpringApp`) from `spring.flutter.app.*` — type (`widgets` by default),
-title, debug banner, theme mode, locales (from the messages files) — with
-the `ThemeData` / `CupertinoThemeData` beans, `NavigatorObserver` beans and
-`FlutterAppCustomizer` beans. Planned below: the theme itself from
-properties. Before, the app wrote its `MaterialApp` by hand: theme,
-locales, debug banner, title, all in code. Like Boot configures Jackson or the web server from `spring.*`
+Done (see the starter's README, *The app widget from configuration* and
+*Themes from properties*, and `example/flutter_themes`): the app widget
+from `spring.flutter.app.*`, themes from `spring.flutter.theme.*` as
+named themes (`active: system | light | dark | <name>`, `themes.<name>`,
+`extends`), switched by `ThemeSelection`, loaded from a server by
+`SpringThemes.loadYaml`, and fonts from any asset directory. The design
+notes below are what it started from; where they differ, the README is
+current (e.g. `mode` became `active`, a `dark:` section became the theme
+`themes.dark`, fonts are found among all assets). Like Boot configures Jackson or the web server from `spring.*`
 properties and customizer beans, the starter builds the app widget itself,
 so the look of the app is configuration — per profile, per platform,
 changed without code, in `.properties` or `.yml` alike:

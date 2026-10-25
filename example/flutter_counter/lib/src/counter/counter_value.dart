@@ -3,8 +3,8 @@ import 'package:flutter_counter/src/counter/counter.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 /// The number: a `SpringStatelessWidget` gets the beans named in its type
-/// as `beans` and rebuilds when one of them notifies (the `Counter` after
-/// each tap).
+/// as `beans`; it reads `counter.value` in build, so it rebuilds after
+/// each tap (and only it, not the page).
 class CounterValue extends SpringStatelessWidget<(Counter,)> {
   const CounterValue({super.key});
 

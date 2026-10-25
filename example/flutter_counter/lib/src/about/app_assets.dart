@@ -4,10 +4,7 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 /// The app's assets (`assets/` in pubspec.yaml) as injected resources:
 /// `@Value('asset:...')` gives an `AssetResource`, as
 /// `@Value('classpath:...')` gives a file of `lib/resources/` in Spring.
-///
-/// `@BuildContextAccess` generates the `context.appAssets` getter.
 @Component()
-@BuildContextAccess()
 class AppAssets {
   AppAssets(
     @Value('asset:assets/images/leaf.png') this.logo,
