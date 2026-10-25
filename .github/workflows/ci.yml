@@ -123,13 +123,41 @@ jobs:
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
           (cd example/flutter_counter && flutter analyze --fatal-infos)
 
+      # The golden screenshots run in the `goldens` job (macOS).
       - name: Tests
         run: |
           (cd spring_boot_starter_flutter && flutter test)
-          (cd example/flutter_counter && flutter test)
+          (cd example/flutter_counter && flutter test --exclude-tags golden)
 
-      # The golden screenshots of the example that no longer match: the
-      # expected and actual images and their difference.
+      - name: The example builds for the web (release)
+        working-directory: example/flutter_counter
+        run: flutter build web --release
+
+  # The golden screenshots of the Flutter example (test/golden_test.dart):
+  # made on macOS, so compared on macOS; Linux draws the letters
+  # differently (0.5–3% of the pixels of a screen with text).
+  goldens:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: |
+          flutter --version
+          dart pub get
+          (cd example/flutter_counter && flutter pub get)
+
+      - name: Golden screenshots
+        working-directory: example/flutter_counter
+        run: flutter test --tags golden
+
+      # The screenshots that no longer match: the expected and actual images
+      # and their difference.
       - name: Golden differences
         if: failure()
         uses: actions/upload-artifact@v7
@@ -137,10 +165,6 @@ jobs:
           name: golden-failures
           path: example/flutter_counter/test/failures/
           if-no-files-found: ignore
-
-      - name: The example builds for the web (release)
-        working-directory: example/flutter_counter
-        run: flutter build web --release
 
   # The lowest versions allowed by our constraints must still work: resolve
   # them and analyze (transitive test tooling at its minimum does not run on

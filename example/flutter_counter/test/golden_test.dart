@@ -3,6 +3,12 @@
 //
 //   flutter test test/golden_test.dart                    # compare
 //   flutter test test/golden_test.dart --update-goldens   # accept the new look
+//
+// The PNGs are made on macOS and only match there (Linux and Windows draw
+// the letters differently), so CI runs this file on a macOS runner; the
+// `golden` tag keeps it out of the other runs (`--exclude-tags golden`).
+@Tags(['golden'])
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

@@ -38,7 +38,8 @@ dart run build_runner build      # or `watch` while developing
 screen with its PNG in `test/goldens/`, with real fonts (Roboto and the
 Material icons of the Flutter SDK) so the PNGs are readable. When a screen
 changes, the test fails and `test/failures/` shows the expected image, the
-actual one and the difference (in CI: the `golden-failures` artifact).
+actual one and the difference (in CI: the `golden-failures` artifact of the
+`goldens` job).
 A change on purpose is accepted with:
 
 ```sh
@@ -57,5 +58,9 @@ pyftsubset NotoSansJP-Regular.otf --layout-features='*' \
   --output-file=test/fonts/NotoSansJP-Subset.otf
 ```
 
-The images are made on macOS; small anti-aliasing differences on other
-systems (0.5% of the pixels) are tolerated (`test/flutter_test_config.dart`).
+The images are made on macOS and only match on macOS: Linux and Windows
+draw the letters differently (0.5–3% of the pixels of a screen with text,
+more than a changed digit). So CI compares them on a macOS runner, the file
+is tagged `golden`, and elsewhere it is left out with
+`flutter test --exclude-tags golden`. Small differences between macOS
+versions (0.5% of the pixels) are tolerated (`test/flutter_test_config.dart`).

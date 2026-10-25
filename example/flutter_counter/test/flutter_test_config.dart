@@ -1,7 +1,8 @@
 // Runs before every test file of this folder: real fonts for the golden
-// screenshots, and a comparator that tolerates the tiny anti-aliasing
-// differences between operating systems (goldens are made on macOS, CI
-// compares them on Linux).
+// screenshots, and a comparator that tolerates tiny anti-aliasing
+// differences between macOS versions (goldens are made on macOS and CI
+// compares them on a macOS runner; Linux draws the letters too differently
+// for any tolerance).
 import 'dart:async';
 import 'dart:io';
 
