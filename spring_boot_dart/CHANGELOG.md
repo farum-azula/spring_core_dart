@@ -1,3 +1,7 @@
+## 0.2.2
+
+- ci: run only the tests of the packages a change affects
+
 ## 0.2.1
 
 - `--dart-define` values as properties: `SpringApplication(dartDefines: ...)` (filled by the generator) adds them right below the command-line arguments with relaxed names like environment variables (`API_URL` answers `api.url`; `SPRING_PROFILES_ACTIVE` activates profiles)

@@ -1,3 +1,7 @@
+## 0.2.2
+
+- ci: run only the tests of the packages a change affects
+
 ## 0.2.1
 
 - feat: spring_boot_starter_flutter, @Log, --dart-define properties, Flutter counter example

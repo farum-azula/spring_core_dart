@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.2
 
 - **Breaking:** `SpringStatelessWidget.build` takes only the `BuildContext`; the widget reads its beans as `beans`, like a `SpringState` (in `build` and the callbacks made there). Tests build it with fakes through `buildWith(context, beans)`.
 - README: the generator's check of `@Value('asset:...')`.

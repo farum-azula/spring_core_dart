@@ -1,3 +1,7 @@
+## 0.2.2
+
+- ci: run only the tests of the packages a change affects
+
 ## 0.2.1
 
 - `@Log(topic:, fieldName:)`: a `log` getter generated for the class, like Lombok's `@Slf4j` (needs the matching generator)
