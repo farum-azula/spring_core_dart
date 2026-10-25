@@ -26,6 +26,7 @@ export 'src/app_lifecycle.dart';
 export 'src/context_extensions.dart';
 export 'src/notify_listeners.dart';
 export 'src/platform_profiles.dart';
+export 'src/spring_app.dart';
 export 'src/spring_application_widget.dart';
 export 'src/spring_scope.dart';
 export 'src/spring_widgets.dart';

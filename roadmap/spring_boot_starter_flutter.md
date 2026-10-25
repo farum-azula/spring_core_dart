@@ -36,8 +36,12 @@ pause / restart of the context, platform profiles, `--dart-define` as a
 property source, the OS environment switch, `context.message`, tests with
 `SpringScope` and `springBootTest`; the example `example/flutter_counter`.
 
-Next: the app widget from configuration (`MaterialApp` / `CupertinoApp` /
-`WidgetsApp` built from properties and beans), `@ConditionalOnPlatform(include: [AppPlatform.android, AppPlatform.ios],
+The app widget from configuration has its first part: `SpringApp` from
+`spring.flutter.app.*` (type, title, debug banner, theme mode, locales from
+the messages files), theme beans, observers and customizers; still to come
+from that section: `SpringThemeData` from properties, colors, fonts.
+
+Next: `@ConditionalOnPlatform(include: [AppPlatform.android, AppPlatform.ios],
 exclude: [AppPlatform.web])` on top of the platform profiles (an
 annotation with enums that the generator turns into a profile expression;
 not `@Platform`, which `dart:io` already has), navigation (`@Route`, the
@@ -56,9 +60,13 @@ the context to the tree (see *Beans in widgets*).
 
 ## The app widget from configuration
 
-Today the app writes its `MaterialApp` by hand under
-`SpringApplicationWidget`: theme, locales, debug banner, title, all in
-code. Like Boot configures Jackson or the web server from `spring.*`
+Done: `SpringApplicationWidget(home: ...)` builds the app widget
+(`SpringApp`) from `spring.flutter.app.*` — type (`widgets` by default),
+title, debug banner, theme mode, locales (from the messages files) — with
+the `ThemeData` / `CupertinoThemeData` beans, `NavigatorObserver` beans and
+`FlutterAppCustomizer` beans. Planned below: the theme itself from
+properties. Before, the app wrote its `MaterialApp` by hand: theme,
+locales, debug banner, title, all in code. Like Boot configures Jackson or the web server from `spring.*`
 properties and customizer beans, the starter builds the app widget itself,
 so the look of the app is configuration — per profile, per platform,
 changed without code, in `.properties` or `.yml` alike:

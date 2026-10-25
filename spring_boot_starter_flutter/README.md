@@ -14,7 +14,7 @@ lifecycle drives the context's, and the platform is a profile.
 void main() => runApp(
   SpringApplicationWidget(
     application: () => springApplication,
-    child: const CounterApp(),
+    home: const CounterPage(),   // the app widget is built from spring.flutter.app.*
   ),
 );
 
@@ -117,13 +117,68 @@ SpringApplicationWidget(
   application: () => springApplication,  // a function: hot reload gets the new beans
   splash: (context) => const ColoredBox(color: Colors.white),
   failure: (context, error) => ErrorScreen(error),
-  child: const CounterApp(),
+  home: const CounterPage(),              // or child: your own MaterialApp
 )
 ```
 
-- **Hot reload.** Handled by the widget, see the next section.
+- **The app widget.** With `home:` it builds the app widget itself from the
+  configuration (next section); with `child:` the app writes its own
+  `MaterialApp` / `CupertinoApp` / `WidgetsApp`. Exactly one of them.
+- **Hot reload.** Handled by the widget, see *Hot reload*.
 - **Closing.** Removing `SpringApplicationWidget` closes the context (`@PreDestroy`,
   lifecycle stops).
+
+## The app widget from configuration
+
+`SpringApplicationWidget(home: ...)` puts a `SpringApp` at the root: a
+`WidgetsApp`, `MaterialApp` or `CupertinoApp`, set up by properties
+(`.properties` or `.yml`, per profile) instead of code:
+
+```properties
+# lib/resources/application.properties
+spring.flutter.app.type=material        # widgets (default) | material | cupertino
+spring.flutter.app.title=${counter.title}
+spring.flutter.app.debug-banner=false   # default true, as in Flutter
+spring.flutter.app.theme-mode=system    # system | light | dark (Material)
+spring.flutter.app.locales=en,ja        # default: the languages of the messages files
+```
+
+- **Type.** `widgets` by default: no Material or Cupertino design until a
+  property asks for it. `Scaffold`, `AppBar` and other Material widgets
+  need `material`. With the platform profiles, `type=cupertino` in
+  `application-ios.properties` gives iPhones the iOS look.
+- **Theme as a bean.** A `ThemeData` bean named `theme` (or the only one)
+  and one named `darkTheme` go into the `MaterialApp`, a
+  `CupertinoThemeData` bean into the `CupertinoApp`:
+  ```dart
+  @Configuration()
+  class AppTheme {
+    @Bean()
+    ThemeData theme() =>
+        ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple));
+  }
+  ```
+- **Locales.** By default the languages of `lib/resources/messages*.properties`
+  (`spring.messages.basename`): `messages.properties` counts as English,
+  `messages_ja.properties` adds `ja`, so `context.message` and the app's
+  locales agree. Flutter's own delegates for the type (texts of its
+  widgets in every language) are added; `flutter_localizations` comes
+  with the starter.
+- **`NavigatorObserver` beans** become the app's observers.
+- **`FlutterAppCustomizer` beans** change anything else before the widget
+  is built (`builder`, `shortcuts`, `scrollBehavior`, the app's own
+  localization delegates), in `@Order`:
+  ```dart
+  @Component()
+  class AppLocalizations implements FlutterAppCustomizer {
+    @override
+    void customize(FlutterAppSettings app) =>
+        app.localizationsDelegates.add(LegalTerms.delegate);
+  }
+  ```
+- **Once per context.** The settings are made once when the application
+  starts (`FlutterAppSettings.of(context)`), and an invalid value
+  (`type=swing`) fails the start with the failure report.
 
 ## Hot reload
 
@@ -500,7 +555,10 @@ void main() {
 
   testWidgets('a tap adds the step', (tester) async {
     await tester.pumpWidget(
-      SpringScope(applicationContext: app.context, child: const CounterApp()),
+      SpringScope(
+        applicationContext: app.context,
+        child: const SpringApp(home: CounterPage()),
+      ),
     );
     await tester.tap(find.byIcon(Icons.add));
     await tester.pump();

@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_counter/main.spring.dart';
 import 'package:flutter_counter/src/about/about_page.dart';
-import 'package:flutter_counter/src/counter_app.dart';
+import 'package:flutter_counter/src/counter/counter_page.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,7 +32,7 @@ Future<void> startApp(
     SpringApplicationWidget(
       application: () => springApplication,
       args: args,
-      child: const CounterApp(),
+      home: const CounterPage(),
     ),
   );
   await tester.pumpAndSettle();
@@ -85,7 +85,7 @@ void main() {
   goldenTest('start screen (mobile profile)', (tester) async {
     await startApp(tester);
     await expectLater(
-      find.byType(CounterApp),
+      find.byType(SpringApp),
       matchesGoldenFile('goldens/start_mobile.png'),
     );
   });
@@ -95,7 +95,7 @@ void main() {
     await tapPlus(tester, 3);
     expect(find.text('6'), findsOneWidget);
     await expectLater(
-      find.byType(CounterApp),
+      find.byType(SpringApp),
       matchesGoldenFile('goldens/three_taps_step_2.png'),
     );
   });
@@ -106,7 +106,7 @@ void main() {
     await startApp(tester);
     await tapPlus(tester, 1);
     await expectLater(
-      find.byType(CounterApp),
+      find.byType(SpringApp),
       matchesGoldenFile('goldens/japanese.png'),
     );
   });
@@ -116,7 +116,7 @@ void main() {
     await openAbout(tester);
     expect(find.byType(AboutPage), findsOneWidget);
     await expectLater(
-      find.byType(CounterApp),
+      find.byType(SpringApp),
       matchesGoldenFile('goldens/about.png'),
     );
   });
@@ -127,7 +127,7 @@ void main() {
     await startApp(tester);
     await openAbout(tester);
     await expectLater(
-      find.byType(CounterApp),
+      find.byType(SpringApp),
       matchesGoldenFile('goldens/about_japanese.png'),
     );
   });
@@ -136,7 +136,7 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     await startApp(tester, size: const Size(1024, 640));
     await expectLater(
-      find.byType(CounterApp),
+      find.byType(SpringApp),
       matchesGoldenFile('goldens/desktop.png'),
     );
     debugDefaultTargetPlatformOverride = null;

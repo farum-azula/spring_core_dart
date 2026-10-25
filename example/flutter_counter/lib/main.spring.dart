@@ -11,23 +11,27 @@ import 'dart:async' as _i3;
 import 'dart:ui' as _i4;
 
 import 'package:flutter/foundation.dart' as _i7;
+import 'package:flutter/src/foundation/diagnostics.dart' as _i11;
+import 'package:flutter/src/material/theme_data.dart' as _i12;
 import 'package:flutter/src/painting/image_provider.dart' as _i5;
-import 'package:flutter/widgets.dart' as _i18;
+import 'package:flutter/widgets.dart' as _i22;
 import 'package:flutter_counter/src/about/app_assets.dart' as _i1;
 import 'package:flutter_counter/src/counter/counter.dart' as _i6;
 import 'package:flutter_counter/src/counter/counter_properties.dart' as _i8;
 import 'package:flutter_counter/src/lifecycle_log.dart' as _i9;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i14;
+import 'package:flutter_counter/src/theme/app_theme.dart' as _i13;
+import 'package:meta/meta.dart' as _i17;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i19;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i18;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i16;
+    as _i20;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i13;
-import 'package:spring_boot_starter_flutter/src/annotations.dart' as _i11;
+    as _i16;
+import 'package:spring_boot_starter_flutter/src/annotations.dart' as _i14;
 import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart' as _i10;
-import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i12;
+import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i15;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i17;
+    as _i21;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 class _$AppAssetsProxy extends _i1.AppAssets implements _i2.Advised {
@@ -272,6 +276,96 @@ class _$LifecycleLogProxy implements _i9.LifecycleLog, _i2.Advised {
   }
 }
 
+class _$AppTheme$ThemeProxy implements _i11.Diagnosticable, _i2.Advised {
+  _$AppTheme$ThemeProxy(this._target, this._invoker);
+
+  final _i12.ThemeData _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toStringShort() => (this._invoker.invoke(
+    this,
+    this._target,
+    0,
+    const [],
+    (args) => this._target.toStringShort(),
+  ) as String);
+
+  @override
+  String toString({
+    _i11.DiagnosticLevel minLevel = _i11.DiagnosticLevel.info,
+  }) => (this._invoker.invoke(
+    this,
+    this._target,
+    1,
+    [minLevel],
+    (args) =>
+        this._target.toString(minLevel: (args[0] as _i11.DiagnosticLevel)),
+  ) as String);
+
+  @override
+  _i11.DiagnosticsNode toDiagnosticsNode({
+    String? name,
+    _i11.DiagnosticsTreeStyle? style,
+  }) => (this._invoker.invoke(
+    this,
+    this._target,
+    2,
+    [name, style],
+    (args) => this._target.toDiagnosticsNode(
+      name: (args[0] as String?),
+      style: (args[1] as _i11.DiagnosticsTreeStyle?),
+    ),
+  ) as _i11.DiagnosticsNode);
+
+  @override
+  void debugFillProperties(_i11.DiagnosticPropertiesBuilder properties) {
+    this._invoker.invoke(this, this._target, 3, [properties], (args) {
+      this._target.debugFillProperties(
+        (args[0] as _i11.DiagnosticPropertiesBuilder),
+      );
+      return null;
+    });
+  }
+}
+
+/// `AppTheme` whose `@Bean` methods return the beans of the container
+/// (full-mode `@Configuration`).
+class _$AppThemeConfiguration extends _i13.AppTheme {
+  _$AppThemeConfiguration(this._$beanFactory);
+
+  final _i2.BeanFactory _$beanFactory;
+
+  @override
+  _i12.ThemeData theme() =>
+      (this._$beanFactory.getBeanByName(r'theme') as _i12.ThemeData);
+
+  _i12.ThemeData _$theme(_i2.DependencyResolver r) => super.theme();
+}
+
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
 
@@ -291,7 +385,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         r.value<_i2.Resource>(r'asset:assets/images/leaf.png'),
         r.value<_i2.Resource>(r'asset:assets/texts/about.txt'),
       ),
-      annotations: const [_i2.Component(), _i11.BuildContextAccess()],
+      annotations: const [_i2.Component(), _i14.BuildContextAccess()],
       aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
           _i2.MethodSignature(
@@ -303,7 +397,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'Locale'],
             parameterNames: [r'locale'],
             targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component(), _i11.BuildContextAccess()],
+            targetAnnotations: [_i2.Component(), _i14.BuildContextAccess()],
             targetAnnotationTypes: [r'Component', r'BuildContextAccess'],
           ),
           _i2.MethodSignature(
@@ -314,7 +408,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Resource',
             targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component(), _i11.BuildContextAccess()],
+            targetAnnotations: [_i2.Component(), _i14.BuildContextAccess()],
             targetAnnotationTypes: [r'Component', r'BuildContextAccess'],
           ),
           _i2.MethodSignature(
@@ -325,7 +419,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Resource',
             targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component(), _i11.BuildContextAccess()],
+            targetAnnotations: [_i2.Component(), _i14.BuildContextAccess()],
             targetAnnotationTypes: [r'Component', r'BuildContextAccess'],
           ),
           _i2.MethodSignature(
@@ -336,7 +430,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'ImageProvider',
             targetTypes: [r'AppAssets'],
-            targetAnnotations: [_i2.Component(), _i11.BuildContextAccess()],
+            targetAnnotations: [_i2.Component(), _i14.BuildContextAccess()],
             targetAnnotationTypes: [r'Component', r'BuildContextAccess'],
           ),
         ],
@@ -355,8 +449,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
         r.dependency<_i8.CounterProperties>(name: r'_properties'),
       ),
       annotations: const [
-        _i12.ChangeNotifierComponent(),
-        _i11.BuildContextAccess(),
+        _i15.ChangeNotifierComponent(),
+        _i14.BuildContextAccess(),
       ],
       aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
@@ -368,8 +462,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'void',
             targetTypes: [r'Counter'],
             targetAnnotations: [
-              _i12.ChangeNotifierComponent(),
-              _i11.BuildContextAccess(),
+              _i15.ChangeNotifierComponent(),
+              _i14.BuildContextAccess(),
             ],
             targetAnnotationTypes: [
               r'ChangeNotifierComponent',
@@ -385,8 +479,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'int',
             targetTypes: [r'Counter'],
             targetAnnotations: [
-              _i12.ChangeNotifierComponent(),
-              _i11.BuildContextAccess(),
+              _i15.ChangeNotifierComponent(),
+              _i14.BuildContextAccess(),
             ],
             targetAnnotationTypes: [
               r'ChangeNotifierComponent',
@@ -404,7 +498,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       types: const [_i8.CounterProperties],
       create: (r) => _i8.CounterProperties(),
       annotations: const [
-        _i13.ConfigurationProperties(r'counter'),
+        _i16.ConfigurationProperties(r'counter'),
         _i2.Validated(),
       ],
       aopProxy: _i2.AopProxyFactory(
@@ -418,7 +512,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'String',
             targetTypes: [r'CounterProperties'],
             targetAnnotations: [
-              _i13.ConfigurationProperties(r'counter'),
+              _i16.ConfigurationProperties(r'counter'),
               _i2.Validated(),
             ],
             targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
@@ -432,7 +526,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'int',
             targetTypes: [r'CounterProperties'],
             targetAnnotations: [
-              _i13.ConfigurationProperties(r'counter'),
+              _i16.ConfigurationProperties(r'counter'),
               _i2.Validated(),
             ],
             targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
@@ -446,7 +540,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'String',
             targetTypes: [r'CounterProperties'],
             targetAnnotations: [
-              _i13.ConfigurationProperties(r'counter'),
+              _i16.ConfigurationProperties(r'counter'),
               _i2.Validated(),
             ],
             targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
@@ -460,7 +554,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'int',
             targetTypes: [r'CounterProperties'],
             targetAnnotations: [
-              _i13.ConfigurationProperties(r'counter'),
+              _i16.ConfigurationProperties(r'counter'),
               _i2.Validated(),
             ],
             targetAnnotationTypes: [r'ConfigurationProperties', r'Validated'],
@@ -512,17 +606,101 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$LifecycleLogProxy((target as _i9.LifecycleLog), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i13.SpringWidgetBindings>(
+    _i2.BeanDefinition<_i13.AppTheme>(
+      name: r'appTheme',
+      source: r'package:flutter_counter/src/theme/app_theme.dart#AppTheme',
+      types: const [_i13.AppTheme],
+      create: (r) => _$AppThemeConfiguration(r),
+      annotations: const [_i2.Configuration()],
+    ),
+    _i2.BeanDefinition<_i12.ThemeData>(
+      name: r'theme',
+      source:
+          r'package:flutter_counter/src/theme/app_theme.dart#AppTheme.theme',
+      types: const [_i12.ThemeData, _i11.Diagnosticable],
+      factoryBeanName: r'appTheme',
+      factoryMethodName: r'theme',
+      dependencies: const [
+        _i2.Dependency(_i13.AppTheme, qualifier: r'appTheme'),
+      ],
+      create: (r) => (r.dependency<_i13.AppTheme>(
+        qualifier: r'appTheme',
+      ) as _$AppThemeConfiguration)._$theme(r),
+      annotations: const [_i2.Bean(), _i17.Immutable()],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'toStringShort',
+            declaringType: r'Diagnosticable',
+            targetType: r'ThemeData',
+            declaringTypes: [r'Diagnosticable'],
+            returnType: r'String',
+            targetTypes: [r'ThemeData', r'Diagnosticable'],
+            targetAnnotations: [_i17.Immutable()],
+            targetAnnotationTypes: [r'Immutable'],
+            implementingTypes: [r'Diagnosticable'],
+            implementingTypeAnnotations: [],
+            implementingTypeAnnotationTypes: [],
+          ),
+          _i2.MethodSignature(
+            name: r'toString',
+            declaringType: r'Diagnosticable',
+            targetType: r'ThemeData',
+            declaringTypes: [r'Diagnosticable'],
+            returnType: r'String',
+            parameterTypes: [r'DiagnosticLevel'],
+            parameterNames: [r'minLevel'],
+            targetTypes: [r'ThemeData', r'Diagnosticable'],
+            targetAnnotations: [_i17.Immutable()],
+            targetAnnotationTypes: [r'Immutable'],
+            implementingTypes: [r'Diagnosticable'],
+            implementingTypeAnnotations: [],
+            implementingTypeAnnotationTypes: [],
+          ),
+          _i2.MethodSignature(
+            name: r'toDiagnosticsNode',
+            declaringType: r'Diagnosticable',
+            targetType: r'ThemeData',
+            declaringTypes: [r'Diagnosticable'],
+            returnType: r'DiagnosticsNode',
+            parameterTypes: [r'String', r'DiagnosticsTreeStyle'],
+            parameterNames: [r'name', r'style'],
+            targetTypes: [r'ThemeData', r'Diagnosticable'],
+            targetAnnotations: [_i17.Immutable()],
+            targetAnnotationTypes: [r'Immutable'],
+            implementingTypes: [r'Diagnosticable'],
+            implementingTypeAnnotations: [],
+            implementingTypeAnnotationTypes: [],
+          ),
+          _i2.MethodSignature(
+            name: r'debugFillProperties',
+            declaringType: r'Diagnosticable',
+            targetType: r'ThemeData',
+            declaringTypes: [r'Diagnosticable'],
+            returnType: r'void',
+            parameterTypes: [r'DiagnosticPropertiesBuilder'],
+            parameterNames: [r'properties'],
+            targetTypes: [r'ThemeData', r'Diagnosticable'],
+            targetAnnotations: [_i17.Immutable()],
+            targetAnnotationTypes: [r'Immutable'],
+            isProtected: true,
+          ),
+        ],
+        create: (target, invoker) =>
+            _$AppTheme$ThemeProxy((target as _i12.ThemeData), invoker),
+      ),
+    ),
+    _i2.BeanDefinition<_i16.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-      types: const [_i13.SpringWidgetBindings],
+      types: const [_i16.SpringWidgetBindings],
       autowireCandidate: false,
-      create: (r) => _i13.SpringWidgetBindings([
-        _i13.SpringWidgetBinding(
+      create: (r) => _i16.SpringWidgetBindings([
+        _i16.SpringWidgetBinding(
           widget: r'package:flutter_counter/src/counter/counter_value.dart#CounterValue',
           beans: _$typeOf<(_i6.Counter,)>(),
           types: const [_i6.Counter],
-          resolve: (f) => (_i13.SpringWidgetBinding.bean<_i6.Counter>(f),),
+          resolve: (f) => (_i16.SpringWidgetBinding.bean<_i6.Counter>(f),),
           values: (r) {
             final v = (r as (_i6.Counter,));
             return [v.$1];
@@ -542,7 +720,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       'counter.title=Flutter Demo Home Page (web)\n',
     ),
     r'application.properties': _i2.EmbeddedResource.text(
-      'counter.title=Flutter Demo Home Page\ncounter.step=1\n',
+      'counter.title=Flutter Demo Home Page\ncounter.step=1\n\n# The app widget: a MaterialApp (Scaffold and AppBar need it) without the\n# debug banner, which would cover the app bar\'s About button. The locales\n# come from messages.properties and messages_ja.properties.\nspring.flutter.app.type=material\nspring.flutter.app.title=\${counter.title}\nspring.flutter.app.debug-banner=false\n',
     ),
     r'messages.properties': _i2.EmbeddedResource.text(
       'counter.pushed=You have pushed the button this many times:\ncounter.increment=Increment\nabout.open=About\nabout.title=About this app\nabout.source=Loaded from {0} and {1}\n',
@@ -573,7 +751,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ],
       annotations: const [
-        _i13.ConfigurationProperties(r'counter'),
+        _i16.ConfigurationProperties(r'counter'),
         _i2.Validated(),
       ],
       instantiate: () => _i8.CounterProperties(),
@@ -589,12 +767,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i14.SpringApplication get springApplication => _i14.SpringApplication(
+_i18.SpringApplication get springApplication => _i18.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i15.springBootAutoConfiguration,
-    _i16.springBootStarterFlutterAutoConfiguration,
-    _i17.springBootStarterLoggingAutoConfiguration,
+    _i19.springBootAutoConfiguration,
+    _i20.springBootStarterFlutterAutoConfiguration,
+    _i21.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('COUNTER_STEP'))
@@ -605,6 +783,18 @@ _i14.SpringApplication get springApplication => _i14.SpringApplication(
       'DEBUG': const String.fromEnvironment('DEBUG'),
     if (const bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
       'LOGGING_LEVEL_ROOT': const String.fromEnvironment('LOGGING_LEVEL_ROOT'),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_APP_DEBUGBANNER'))
+      'SPRING_FLUTTER_APP_DEBUGBANNER': const String.fromEnvironment(
+        'SPRING_FLUTTER_APP_DEBUGBANNER',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_APP_TITLE'))
+      'SPRING_FLUTTER_APP_TITLE': const String.fromEnvironment(
+        'SPRING_FLUTTER_APP_TITLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_APP_TYPE'))
+      'SPRING_FLUTTER_APP_TYPE': const String.fromEnvironment(
+        'SPRING_FLUTTER_APP_TYPE',
+      ),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
         'SPRING_FLUTTER_SCANOSENVIRONMENT',
@@ -631,6 +821,18 @@ _i14.SpringApplication get springApplication => _i14.SpringApplication(
       'debug': const String.fromEnvironment('debug'),
     if (const bool.hasEnvironment('logging.level.root'))
       'logging.level.root': const String.fromEnvironment('logging.level.root'),
+    if (const bool.hasEnvironment('spring.flutter.app.debug-banner'))
+      'spring.flutter.app.debug-banner': const String.fromEnvironment(
+        'spring.flutter.app.debug-banner',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.app.title'))
+      'spring.flutter.app.title': const String.fromEnvironment(
+        'spring.flutter.app.title',
+      ),
+    if (const bool.hasEnvironment('spring.flutter.app.type'))
+      'spring.flutter.app.type': const String.fromEnvironment(
+        'spring.flutter.app.type',
+      ),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
         'spring.flutter.scan-os-environment',
@@ -650,44 +852,44 @@ _i14.SpringApplication get springApplication => _i14.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'd6ecd58c',
+  fingerprint: 'c9757054',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i14.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i18.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i14.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i18.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i14.ConfigurableApplicationContext reloadApplication(
-  _i14.ConfigurableApplicationContext running, {
+_i18.ConfigurableApplicationContext reloadApplication(
+  _i18.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i14.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i14.ConfigurableApplicationContext running, {
+Future<_i18.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i18.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// Getters for the `@BuildContextAccess` beans, for widgets below `SpringApplicationWidget`.
-extension SpringBeans on _i18.BuildContext {
+extension SpringBeans on _i22.BuildContext {
   /// The bean 'appAssets'.
   _i1.AppAssets get appAssets =>
-      _i13.SpringScope.beanOf<_i1.AppAssets>(this, qualifier: r'appAssets');
+      _i16.SpringScope.beanOf<_i1.AppAssets>(this, qualifier: r'appAssets');
 
   /// The bean 'counter'.
   _i6.Counter get counter =>
-      _i13.SpringScope.beanOf<_i6.Counter>(this, qualifier: r'counter');
+      _i16.SpringScope.beanOf<_i6.Counter>(this, qualifier: r'counter');
 }
 
 /// `@Log` of [LifecycleLog]: the logger 'counter.lifecycle'.

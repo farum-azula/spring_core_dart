@@ -16,6 +16,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   spring_boot_dart: ^0.2.2
   spring_boot_starter_logging: ^0.2.2
 

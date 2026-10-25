@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `SpringApplicationWidget(home: ...)` builds the app widget from the configuration (`SpringApp`): `spring.flutter.app.type` (`widgets` by default, `material`, `cupertino`), `title`, `debug-banner`, `theme-mode`, `locales` (by default the languages of the messages files), the `ThemeData` beans `theme` / `darkTheme` and a `CupertinoThemeData` bean, `NavigatorObserver` beans, `FlutterAppCustomizer` beans; Flutter's localization delegates come with the starter (`flutter_localizations`). `child:` keeps working for an app's own `MaterialApp`.
 - An example (`example/`): the counter app in one runnable file, and the way with the generator step by step.
 
 ## 0.2.2

@@ -5,21 +5,27 @@ import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/app_lifecycle.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/platform_profiles.dart';
+import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// The root widget of a Spring app: starts the application, shows [splash]
 /// until it is ready (runners included) or [failure] when the start
-/// fails, then gives the context to [child] and its descendants
-/// (`context.bean<T>()`, generated getters, `SpringStatelessWidget`).
+/// fails, then gives the context to its widgets (`context.bean<T>()`,
+/// generated getters, `SpringStatelessWidget`).
+///
+/// With [home] it also builds the app widget from the configuration
+/// ([SpringApp]: `WidgetsApp`, `MaterialApp` or `CupertinoApp` by
+/// `spring.flutter.app.type`, title, debug banner, locales, theme beans);
+/// with [child] the app builds its own:
 ///
 /// ```dart
 /// import 'main.spring.dart';
 ///
 /// @SpringBootApplication()
 /// void main() => runApp(
-///   SpringApplicationWidget(application: () => springApplication, child: const CounterApp()),
+///   SpringApplicationWidget(application: () => springApplication, home: const CounterPage()),
 /// );
 /// ```
 ///
@@ -47,22 +53,32 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///   `spring.flutter.lifecycle.pause-in-background=false`;
 /// - the context is closed when this widget is removed.
 class SpringApplicationWidget extends StatefulWidget {
-  /// Runs the application [application] returns, then shows [child].
+  /// Runs the application [application] returns, then shows [home] in a
+  /// [SpringApp] or [child]: exactly one of them.
   const SpringApplicationWidget({
     required this.application,
-    required this.child,
+    this.child,
+    this.home,
     this.splash,
     this.failure,
     this.args = const [],
     this.rerunRunnersOnReload = false,
     super.key,
-  });
+  }) : assert(
+         (child == null) != (home == null),
+         'SpringApplicationWidget needs a home or a child, not both',
+       );
 
   /// The application to run: `() => springApplication` (generated).
   final SpringApplication Function() application;
 
-  /// The app, shown once the application has started.
-  final Widget child;
+  /// The app, shown once the application has started; it builds its own
+  /// app widget (`MaterialApp`, ...).
+  final Widget? child;
+
+  /// The first page of a [SpringApp] built from the configuration, shown
+  /// once the application has started.
+  final Widget? home;
 
   /// Shown while the application starts (nothing by default).
   final WidgetBuilder? splash;
@@ -110,6 +126,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
         additionalProfiles: platformProfiles(),
       );
       SpringWidgetBindings.check(context);
+      _checkApp(context);
       if (!mounted) {
         await context.closeAsync();
         return;
@@ -119,6 +136,13 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       if (mounted) {
         setState(() => _error = error);
       }
+    }
+  }
+
+  // An invalid `spring.flutter.app.*` value fails the start.
+  void _checkApp(ApplicationContext context) {
+    if (widget.home != null) {
+      FlutterAppSettings.of(context);
     }
   }
 
@@ -152,6 +176,7 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       );
       if (!identical(context, running)) {
         SpringWidgetBindings.check(context);
+        _checkApp(context);
         _paused = false;
         setState(() => _context = context);
       }
@@ -244,7 +269,10 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       applicationContext: running,
       // A new context starts the widgets afresh: none keeps a bean of the
       // closed one in its state.
-      child: KeyedSubtree(key: ObjectKey(running), child: widget.child),
+      child: KeyedSubtree(
+        key: ObjectKey(running),
+        child: widget.child ?? SpringApp(home: widget.home!),
+      ),
     );
   }
 }

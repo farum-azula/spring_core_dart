@@ -275,7 +275,7 @@
   },
   "Flutter app": {
     "prefix": "spflutter",
-    "description": "Flutter main with @SpringBootApplication under SpringApplicationWidget (spring_boot_starter_flutter); run build_runner to generate main.spring.dart",
+    "description": "Flutter main with @SpringBootApplication; SpringApplicationWidget(home:) builds the app widget from spring.flutter.app.* (spring_boot_starter_flutter)",
     "body": [
       "import 'package:flutter/widgets.dart';",
       "import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';",
@@ -286,7 +286,7 @@
       "void main() => runApp(",
       "  SpringApplicationWidget(",
       "    application: () => springApplication,",
-      "    child: const ${2:App}(),",
+      "    home: const ${2:HomePage}(),",
       "  ),",
       ");$0"
     ]

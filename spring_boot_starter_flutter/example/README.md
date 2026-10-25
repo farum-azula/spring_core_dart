@@ -35,9 +35,15 @@ import 'main.spring.dart'; // generated
 void main() => runApp(
   SpringApplicationWidget(
     application: () => springApplication,
-    child: const MaterialApp(home: CounterPage()),
+    home: const CounterPage(), // the app widget comes from spring.flutter.app.*
   ),
 );
+```
+
+```properties
+# lib/resources/application.properties
+spring.flutter.app.type=material   # Scaffold and AppBar need a MaterialApp
+spring.flutter.app.title=Counter
 ```
 
 ```bash

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_counter/main.spring.dart';
 import 'package:flutter_counter/src/about/app_assets.dart';
 import 'package:flutter_counter/src/counter/counter.dart';
-import 'package:flutter_counter/src/counter_app.dart';
+import 'package:flutter_counter/src/counter/counter_page.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -21,7 +21,10 @@ void main() {
 
     testWidgets('a tap adds counter.step', (tester) async {
       await tester.pumpWidget(
-        SpringScope(applicationContext: app.context, child: const CounterApp()),
+        SpringScope(
+          applicationContext: app.context,
+          child: const SpringApp(home: CounterPage()),
+        ),
       );
 
       expect(find.text('0'), findsOneWidget);
@@ -42,7 +45,7 @@ void main() {
     await tester.pumpWidget(
       SpringApplicationWidget(
         application: () => springApplication,
-        child: const CounterApp(),
+        home: const CounterPage(),
       ),
     );
     await tester.pumpAndSettle();
@@ -60,7 +63,7 @@ void main() {
     await tester.pumpWidget(
       SpringApplicationWidget(
         application: () => springApplication,
-        child: const CounterApp(),
+        home: const CounterPage(),
       ),
     );
     await tester.pumpAndSettle();
@@ -92,7 +95,7 @@ void main() {
       SpringApplicationWidget(
         application: () => springApplication,
         args: const ['--counter.step=0'],
-        child: const CounterApp(),
+        home: const CounterPage(),
       ),
     );
     await tester.pumpAndSettle();
