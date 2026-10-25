@@ -26,9 +26,11 @@ separate library.
 | `spring_boot_starter_feign` | [`spring_boot_starter_feign/`](spring_boot_starter_feign/README.md) | Feign clients: an abstract class with `@FeignClient` and mapping annotations becomes an injectable HTTP client; JSON via `ObjectMapper`, interceptors, retries, fallbacks, `spring.cloud.openfeign.client.config.*`. |
 | `spring_boot_starter_websocket` | [`spring_boot_starter_websocket/`](spring_boot_starter_websocket/README.md) | Declarative WebSocket clients: an abstract class with `@WebSocketClient`, `@OnMessage` (`Stream<T>`) and `@SendMessage` methods becomes an injectable socket; JSON via `ObjectMapper`, one shared connection opened on demand, reconnection with backoff, handshake interceptors. Spring has no declarative WebSocket client: this follows the `@FeignClient` style. |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`. Works with `package:test` and `flutter_test`. |
+| `spring_boot_starter_flutter` | [`spring_boot_starter_flutter/`](spring_boot_starter_flutter/README.md) | Spring Boot in Flutter apps: `SpringApplicationWidget` starts the application and gives its beans to the widgets (`context.bean<T>()`, getters for `@BuildContextAccess` beans, `SpringStatelessWidget<(...)>`, `SpringStatefulWidget<(...)>`); brings and exports the core and Boot, so an app depends on it alone; the app lifecycle pauses and restarts the context; the platform is a profile (`android`, `ios`, `mobile`, `desktop`, `web`, ...); `context.message` in the app's locale. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.spring.dart` modules. |
 | `spring_boot_feign_example` | [`example/spring_boot_feign/`](example/spring_boot_feign/README.md) | A small Spring Boot app against real public servers: a Feign client (REST, JSONPlaceholder), server-sent events (Wikimedia, `EventStream<T>`) and a `@WebSocketClient` (an echo server): run it with `dart run bin/main.dart`. |
-| `spring_core_dart_example` | [`example/`](example/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
+| `flutter_counter` | [`example/flutter_counter/`](example/flutter_counter/README.md) | The `flutter create` counter on `spring_boot_starter_flutter`: the count in a bean, title and step from properties per platform, texts from messages files (English, Japanese). `flutter run` in its folder. |
+| `spring_core_dart_example` | [`example/spring_core_tour/`](example/spring_core_tour/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
 
 Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_dart.dart` for all):
 
@@ -46,11 +48,11 @@ Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_d
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.1.0
+  spring_core_dart: ^0.2.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.1.0
+  spring_core_dart_generator: ^0.2.0
 ```
 
 Unreleased versions can be used from git with
@@ -1524,7 +1526,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 
 Plans and sketches of coming features are in [`roadmap/`](roadmap/README.md),
 one file per package: Spring Web, Security, Data, retry, HTTP client, next
-steps of the existing starters, Flutter (`flutter_spring` with signals, Flutter
+steps of the existing starters, Flutter (`spring_boot_starter_flutter` with signals, Flutter
 Scene and Rust), the editor extensions, and the
 [fix plan](roadmap/fix_plan.md) — open differences from Spring found in
 reviews.

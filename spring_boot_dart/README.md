@@ -10,10 +10,10 @@ own repository later; it depends only on `spring_core_dart`.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.1.0
+  spring_boot_dart: ^0.2.0
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.1.0
+  spring_core_dart_generator: ^0.2.0
 ```
 
 ## The whole application entry point
@@ -623,6 +623,49 @@ consistent and making incompatibilities readable:
   (`dart pub downgrade`) and analyzes them.
 - **Escape hatch:** `dependency_overrides` in the application's
   `pubspec.yaml`, like overriding a managed version in Maven.
+
+## Build-time values (`--dart-define`)
+
+A Flutter app has no command line, and on phones and in browsers no
+useful environment variables, so values chosen when the app is built come
+in as `--dart-define`s (`-DKEY=value` for `dart run` and `dart compile`).
+They become a property source right below the command-line arguments,
+above the OS environment and the config files:
+
+```sh
+flutter build apk --dart-define=SPRING_PROFILES_ACTIVE=prod \
+  --dart-define=API_URL=https://api.neon.books
+# or --dart-define-from-file=config/prod.json
+```
+
+```dart
+@Value(r'${API_URL}') String apiUrl            // https://api.neon.books
+@Value(r'${api.url}') String sameUrl           // relaxed, like env variables
+```
+
+`SPRING_PROFILES_ACTIVE` activates `application-prod.properties`, so Spring
+profiles replace flavors. Names are relaxed like environment variables
+(`API_URL` answers `api.url`, `SHOP_MAXBASKETSIZE` binds
+`shop.max-basket-size`).
+
+On the web and in AOT builds `String.fromEnvironment` works only as a
+`const` with a literal key, so a define must be known at build time: the
+generator lists every key the application can read — the `${...}`
+placeholders of annotations, `@ConditionalOnProperty` names, the fields of
+`@ConfigurationProperties` classes, the keys and placeholders of the
+`application*` config files, and `spring.profiles.active` — each also in
+its environment form (`SPRING_PROFILES_ACTIVE`), as
+`SpringApplication(dartDefines: ...)`. A key read only in code
+(`environment.getProperty('x')`) is not listed: put it in
+`application.properties` (even empty) or pass it to
+`SpringApplication(dartDefines: {...})` yourself.
+
+Defines are compiled into the program and can be read from an APK, an IPA
+or `main.dart.js`: never pass passwords or private keys this way; a client
+app gets tokens from a server instead.
+
+Spring has no counterpart; the closest is passing `-Dkey=value` system
+properties to the JVM.
 
 ## Hot reload (Flutter)
 

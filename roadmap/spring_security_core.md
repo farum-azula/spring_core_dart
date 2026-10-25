@@ -48,5 +48,5 @@ like every other expression.
 In a client app this is a convenience for the UI (hide a button, keep a
 service from being called), not protection: the app can be taken apart
 and patched. The real check is always the server's — like secrets, which
-never belong in an app (see [flutter_spring](flutter_spring.md),
+never belong in an app (see [spring_boot_starter_flutter](spring_boot_starter_flutter.md),
 `--dart-define`).

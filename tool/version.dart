@@ -3,8 +3,13 @@
 // with `^<that version>`, so starters and the core always come from one
 // compatible set.
 //
-//   dart run tool/version.dart 0.2.0   # set the version everywhere
-//   dart run tool/version.dart --check # verify (CI)
+//   dart run tool/version.dart 0.2.0       # set the version everywhere
+//   dart run tool/version.dart --check     # verify (CI)
+//   dart run tool/version.dart --fix-docs  # only the snippets in the docs
+//
+// Everywhere includes the install snippets of the READMEs, the examples'
+// READMEs and doc comments (`spring_boot_dart: ^0.2.0`), so pub.dev never
+// shows an older version than the release it belongs to.
 //
 // The check also keeps each published package's description within the
 // 60–180 characters pub.dev asks for (otherwise it costs 10 pub points).
@@ -22,12 +27,15 @@ const family = [
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_test',
+  // Flutter: outside the pub workspace, published with `flutter pub`.
+  'spring_boot_starter_flutter',
 ];
 
 /// Packages that only depend on the family (not published).
 const dependents = [
-  'example',
+  'example/spring_core_tour',
   'example/spring_boot_feign',
+  'example/flutter_counter',
   'extensions/language_server',
 ];
 
@@ -49,7 +57,9 @@ RegExp _versionPattern(String path) =>
 
 void main(List<String> args) {
   if (args.length != 1) {
-    stderr.writeln('usage: dart run tool/version.dart <version> | --check');
+    stderr.writeln(
+      'usage: dart run tool/version.dart <version> | --check | --fix-docs',
+    );
     exit(64);
   }
   if (args.single == '--check') {
@@ -60,6 +70,12 @@ void main(List<String> args) {
     }
     problems.forEach(stderr.writeln);
     exit(1);
+  }
+  if (args.single == '--fix-docs') {
+    final version = _version(family.first);
+    _setDocVersions(version);
+    stdout.writeln('docs set to ^$version');
+    return;
   }
   final version = args.single;
   if (!RegExp(r'^\d+\.\d+\.\d+([-+].*)?$').hasMatch(version)) {
@@ -111,6 +127,7 @@ void setVersion(String version) {
       "const springBootVersion = '$version';",
     ),
   );
+  _setDocVersions(version);
   for (final manifest in extensions) {
     _edit(
       manifest,
@@ -167,6 +184,19 @@ List<String> check() {
       problems.add('$manifest is $own, expected $version (lockstep)');
     }
   }
+  for (final path in _docFiles()) {
+    final text = File(path).readAsStringSync();
+    for (final match in _docConstraint.allMatches(text)) {
+      if (match[2] != '^$version') {
+        final line = '\n'.allMatches(text.substring(0, match.start)).length + 1;
+        problems.add(
+          '$path:$line: ${match[1]!.replaceAll('///', '').trim()} '
+          '${match[2]}, expected ^$version '
+          '(dart run tool/version.dart --fix-docs)',
+        );
+      }
+    }
+  }
   for (final package in family) {
     final length = description(package).length;
     if (length < 60 || length > 180) {
@@ -177,6 +207,46 @@ List<String> check() {
     }
   }
   return problems;
+}
+
+/// Sets [version] in the install snippets of the docs
+/// (`spring_boot_dart: ^0.2.0`).
+void _setDocVersions(String version) {
+  for (final path in _docFiles()) {
+    _edit(
+      path,
+      (text) =>
+          text.replaceAllMapped(_docConstraint, (m) => '${m[1]}^$version'),
+    );
+  }
+}
+
+/// A family package's version in a documentation snippet: a YAML line
+/// (also inside a `///` doc comment) like `  spring_boot_dart: ^0.2.0`;
+/// group 1 is everything before the version, group 2 the version.
+final _docConstraint = RegExp(
+  '^((?:\\s*///)?\\s*(?:${family.join('|')}): *)(\\^?[0-9][^\\s#]*)',
+  multiLine: true,
+);
+
+/// The Markdown files (but CHANGELOGs, which are history) and Dart
+/// libraries of the repository root, the family and the dependents, where
+/// install snippets name family versions.
+List<String> _docFiles() {
+  final files = <String>[
+    'README.md',
+    for (final package in [...family, ...dependents])
+      for (final entity in Directory(package).listSync(recursive: true))
+        if (entity is File &&
+            !entity.path.contains('/.dart_tool/') &&
+            !entity.path.contains('/build/') &&
+            ((entity.path.endsWith('.md') &&
+                    !entity.path.endsWith('CHANGELOG.md')) ||
+                (entity.path.endsWith('.dart') &&
+                    !entity.path.endsWith('.spring.dart'))))
+          entity.path,
+  ];
+  return files..sort();
 }
 
 /// The `description:` of [package]'s pubspec as pub.dev reads it: a plain,
@@ -211,6 +281,10 @@ String _version(String package) => RegExp(r'^version: (.*)$', multiLine: true)
 void _edit(String path, String Function(String text) change) {
   final file = File(path);
   if (file.existsSync()) {
-    file.writeAsStringSync(change(file.readAsStringSync()));
+    final text = file.readAsStringSync();
+    final changed = change(text);
+    if (changed != text) {
+      file.writeAsStringSync(changed);
+    }
   }
 }

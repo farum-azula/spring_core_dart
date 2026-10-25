@@ -10,7 +10,7 @@ Works with `package:test` and `flutter_test`.
 
 ```yaml
 dev_dependencies:
-  spring_boot_starter_test: ^0.1.0
+  spring_boot_starter_test: ^0.2.0
   test: ^1.25.0          # or flutter_test
 ```
 

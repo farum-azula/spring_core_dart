@@ -1,0 +1,4 @@
+# The editor-session test starts the language server and analyzes a
+# workspace: seconds alone, longer while the other packages' tests run in
+# parallel (tool/test_all.dart, CI).
+timeout: 4x

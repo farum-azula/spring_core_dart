@@ -68,8 +68,10 @@ Future<void> main(List<String> args) async {
     stdout.writeln(
       '\n=== ${dryRun ? 'Validating' : 'Publishing'} $package $version ===',
     );
+    // Flutter packages need the Flutter SDK's pub (FLUTTER_ROOT).
+    final flutter = _usesFlutter(package);
     final process = await Process.start(
-      Platform.resolvedExecutable,
+      flutter ? 'flutter' : Platform.resolvedExecutable,
       ['pub', 'publish', if (dryRun) '--dry-run' else '--force'],
       workingDirectory: package,
       mode: ProcessStartMode.inheritStdio,
@@ -147,3 +149,9 @@ String _version(String package) => RegExp(r'^version: (.*)$', multiLine: true)
     .firstMatch(File('$package/pubspec.yaml').readAsStringSync())!
     .group(1)!
     .trim();
+
+/// Whether [package] depends on the Flutter SDK.
+bool _usesFlutter(String package) =>
+    File('$package/pubspec.yaml')
+        .readAsLinesSync()
+        .any((line) => line.trim() == 'sdk: flutter');

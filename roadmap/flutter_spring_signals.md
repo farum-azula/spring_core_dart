@@ -1,7 +1,7 @@
 # flutter_spring_signals (planned)
 
 On `signals` — an allowed exception to the dependency policy, only in this
-starter. Part of the [Flutter plan](flutter_spring.md).
+starter. Part of the [Flutter plan](spring_boot_starter_flutter.md).
 
 ## Reactive state in beans
 

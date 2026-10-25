@@ -1,3 +1,11 @@
+## Unreleased
+
+- `@Log`: an extension with a `log` getter (`fieldName:`) returning `const SpringLog('<package>.<Class>')` (`topic:`); private classes, invalid or reserved names and members with the getter's name fail the build
+- spring_boot_starter_flutter: the proxy of a `@ChangeNotifierComponent` class mixes `ChangeNotifier` in; `exclude` names that are no members of the class, and `ChangeNotifier` members declared by such a class, fail the build; widget bindings list the beans of a record (`values`) so the widgets can subscribe to the `Listenable` ones
+- `springApplication` gets `dartDefines:` with a `const String.fromEnvironment` for every key the application can read (annotation placeholders, `@ConditionalOnProperty` names, `@ConfigurationProperties` fields, the keys and placeholders of the `application*` config files, `spring.profiles.active`), each also in its environment form, so `--dart-define` / `-D` values reach the environment on the VM, in AOT builds and on the web (needs the matching `spring_boot_dart`)
+- spring_boot_starter_flutter: `@BuildContextAccess` beans get getters in a generated `extension SpringBeans on BuildContext` (named after the bean or `name:`, typed with the bean's class or the `@Bean` method's declared return type); invalid, reserved, clashing (with `BuildContext`, `Object` or `SpringBuildContext` members) or duplicate getter names and `@BuildContextAccess` on a class that is no bean fail the build
+- spring_boot_starter_flutter: `SpringStatelessWidget<R>` classes and `SpringState<W, R>` states get a `SpringWidgetBindings` bean per module that fills their bean records (positional fields by type, named fields by type then by name, nullable fields optional); a record field that is no bean type or an unresolved type parameter fails the build
+
 ## 0.2.0
 
 - `@Import` of a registrar or selector emits `ImportDeclaration(..., importer: 'library#Class')`, so the import is ordered with its importing class also when that class has no conditions (needs the matching `spring_core_dart`)

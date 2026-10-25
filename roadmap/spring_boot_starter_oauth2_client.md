@@ -48,7 +48,7 @@ abstract interface class OrdersClient { ... }   // the token is added by itself
 
 - Authorized clients in an `OAuth2AuthorizedClientRepository`: in memory on
   servers, the `TokenStore` (Keychain / Keystore) of
-  [flutter_spring](flutter_spring.md) in apps, so a restarted app is still
+  [spring_boot_starter_flutter](spring_boot_starter_flutter.md) in apps, so a restarted app is still
   logged in.
 - Logout: token revocation, the context cleared, `LogoutSuccessEvent`
   published.

@@ -14,11 +14,11 @@ Full guide: [spring_core_dart](https://pub.dev/packages/spring_core_dart).
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.1.0
+  spring_core_dart: ^0.2.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.1.0
+  spring_core_dart_generator: ^0.2.0
 ```
 
 Mark a scan root and run `dart run build_runner build` (or `watch`):
@@ -50,6 +50,57 @@ See the [example](https://pub.dev/packages/spring_core_dart_generator/example).
   (passed under their public name).
 - Does NOT depend on the runtime package: annotations are matched by name in
   `package:spring_core_dart`.
+
+## `@Log`
+
+A class of the scan with `@Log()` gets `extension $<Class>Log on <Class>`
+with a getter (`log`, or `fieldName:`) returning
+`const SpringLog('<package>.<Class>')` (or `topic:`). A private class (an
+extension elsewhere cannot name it), an invalid or reserved getter name, or
+a member of the class or its supertypes with that name (it would win over
+the getter) fail the build.
+
+## Flutter (`spring_boot_starter_flutter`)
+
+For apps on `spring_boot_starter_flutter` (matched by URL like the starters'
+annotations, so the generator does not depend on it):
+
+- `@BuildContextAccess()` on a bean class or a `@Bean` method adds a getter to
+  `extension SpringBeans on BuildContext`, written into the `.spring.dart`
+  of the `@SpringBootApplication` / `@ComponentScan` (after the run and
+  reload functions); import that file where widgets use the getters:
+
+  ```dart
+  @Component()
+  @BuildContextAccess()
+  class Basket { ... }
+
+  // generated
+  extension SpringBeans on BuildContext {
+    Basket get basket => SpringScope.beanOf<Basket>(this, qualifier: r'basket');
+  }
+  ```
+
+  The getter is named after the bean (`@BuildContextAccess(name: 'cart')` for
+  another name) and typed with the bean's class (a `@Bean` method's
+  declared return type, a `FactoryBean`'s product). A name that is not a
+  public identifier, a reserved word, a member of `BuildContext` /
+  `Object` / spring_boot_starter_flutter's `SpringBuildContext` (`bean`, `message`,
+  `springContext`), two beans with one getter name, or `@BuildContextAccess` on
+  a class that is no bean fail the build.
+- Every class of the scan extending `SpringStatelessWidget<R>` (or a `State` extending
+  `SpringState<W, R>`) with a concrete
+  record `R` gets a binding in one `SpringWidgetBindings` bean of the
+  module (`flutterSpringWidgetBindings#<module>`, not an autowire
+  candidate): positional fields are beans by type, named fields by type
+  and then by the field's name among several candidates, nullable fields
+  optional (`findBean`). `SpringApplicationWidget` checks at startup that the required
+  beans exist. A field that is no class or interface type (`dynamic`,
+  `Object`, functions, records) or a concrete widget whose `R` is a type
+  parameter fails the build; an abstract base class with a type parameter
+  is skipped.
+
+Nothing Flutter is written for modules without these.
 
 ## Options
 

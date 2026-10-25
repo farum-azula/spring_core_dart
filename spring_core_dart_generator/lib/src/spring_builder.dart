@@ -9,6 +9,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
@@ -280,6 +282,7 @@ class SpringBuilder implements Builder {
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
+    scanBuildContextAccess(module, scanner.collectErrors);
     scanner.throwErrors();
 
     // Any module may import this one, so its beans may be advised by
@@ -363,6 +366,7 @@ class SpringBuilder implements Builder {
     final scanner = BeanScanner(module, proxyMode: proxyMode);
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
+    scanBuildContextAccess(module, scanner.collectErrors);
     scanner.throwErrors();
 
     final autoConfigurations = await _autoConfigurations(buildStep);
@@ -376,12 +380,14 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
+    final resources = await _resources(buildStep);
+    final defines = await _dartDefineKeys(buildStep, assets, resources);
     final source = emitter.emit(
       moduleName: 'application',
       variableName: r'$application',
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
-      resources: await _resources(buildStep),
+      resources: resources,
       extra: [
         Method(
           (m) => m
@@ -411,6 +417,18 @@ class SpringBuilder implements Builder {
                     if (exclude.isNotEmpty) 'exclude': literalList(exclude),
                     if (excludeName.isNotEmpty)
                       'excludeName': literalList(excludeName),
+                    if (defines.isNotEmpty)
+                      'dartDefines': CodeExpression(
+                        Code(
+                          [
+                            '{',
+                            for (final key in defines)
+                              "if (const bool.hasEnvironment('$key')) "
+                                  "'$key': const String.fromEnvironment('$key'),",
+                            '}',
+                          ].join('\n'),
+                        ),
+                      ),
                     'fingerprint': literalString(_fingerprintPlaceholder),
                   },
                 )
@@ -523,6 +541,29 @@ class SpringBuilder implements Builder {
   }
 
   static const _fingerprintPlaceholder = '00000000';
+
+  // The keys a `--dart-define` may set (see DartDefineKeys): read from the
+  // scanned libraries and the application's config files.
+  static Future<List<String>> _dartDefineKeys(
+    BuildStep buildStep,
+    List<AssetId> assets,
+    Map<String, ({String? text, String? base64})> resources,
+  ) async {
+    final keys = DartDefineKeys();
+    final resolver = buildStep.resolver;
+    for (final asset in assets) {
+      if (await resolver.isLibrary(asset)) {
+        keys.addLibrary(await resolver.libraryFor(asset));
+      }
+    }
+    for (final MapEntry(key: path, value: (:text, base64: _))
+        in resources.entries) {
+      if (text != null) {
+        keys.addConfigFile(path, text);
+      }
+    }
+    return keys.keys;
+  }
 
   // Runs [visitor] over the resolved declarations of [library]; `false`
   // when one cannot be resolved.

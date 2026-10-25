@@ -22,7 +22,7 @@ The coming web server will use the same annotations on controllers.
 
 ```yaml
 dependencies:
-  spring_web_dart: ^0.1.0
+  spring_web_dart: ^0.2.0
 ```
 
 ## Annotations

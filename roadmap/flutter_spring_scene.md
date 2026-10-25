@@ -1,7 +1,7 @@
 # flutter_spring_scene (planned)
 
 On `flutter_scene` — an allowed exception to the dependency policy, only in
-this starter. Part of the [Flutter plan](flutter_spring.md).
+this starter. Part of the [Flutter plan](spring_boot_starter_flutter.md).
 
 ## 3D scenes
 

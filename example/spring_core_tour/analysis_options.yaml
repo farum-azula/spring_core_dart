@@ -1,0 +1,6 @@
+include: ../../analysis_options.yaml
+
+linter:
+  rules:
+    # An application, not a library: no API docs required.
+    public_member_api_docs: false

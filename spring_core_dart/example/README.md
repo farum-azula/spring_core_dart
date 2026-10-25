@@ -69,11 +69,11 @@ packages:
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.1.0
+  spring_core_dart: ^0.2.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.1.0
+  spring_core_dart_generator: ^0.2.0
 ```
 
 One file tells the generator what to scan (everything under `lib/src/`):

@@ -16,6 +16,8 @@ import 'package:build/build.dart' show log;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/constraint_checker.dart';
+import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
+import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 
 part 'bean_type_inference.dart';
@@ -514,6 +516,10 @@ class BeanScanner {
           scanClass(element, annotation: annotation);
         }
       });
+      // spring_boot_starter_flutter: widgets whose bean records the module fills.
+      collectErrors(() => scanSpringWidget(element, module));
+      collectErrors(() => checkChangeNotifierComponent(element));
+      collectErrors(() => scanLog(element, module));
     }
     _rejectUnsupportedTargets(library);
   }

@@ -37,11 +37,11 @@ Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_d
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.1.0
+  spring_core_dart: ^0.2.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.1.0
+  spring_core_dart_generator: ^0.2.0
 ```
 
 Generator option (in your `build.yaml`):
@@ -1334,6 +1334,28 @@ SpringLog.withFields({'request': id}, () => handle(request)); // like MDC
 ```
 
 With Spring Boot, levels come from `logging.level.*` properties.
+
+`@Log()` on a class generates the logger instead, like Lombok's `@Slf4j`: a
+`log` getter (an extension in the scan's `.spring.dart` file, which the
+class's library imports) returning `SpringLog('<package>.<Class>')`.
+`topic:` sets the logger name, `fieldName:` the getter's name (needed where
+`dart:math` or `dart:developer`, which declare a function `log`, are
+imported):
+
+```dart
+import 'package:neon/app.spring.dart'; // the generated file
+
+@Service()
+@Log()                                        // logger 'neon.Checkout'
+class Checkout {
+  void pay(Order order) => log.info('paid ${order.id}');
+}
+
+@Log(topic: 'neon.payments', fieldName: 'logger')
+class Payments {
+  void refund() => logger.warning('refund');
+}
+```
 
 ### Other extension points
 

@@ -51,12 +51,12 @@ catalog.url=https://api.neon.books
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.1.0
-  spring_boot_starter_feign: ^0.1.0
+  spring_boot_dart: ^0.2.0
+  spring_boot_starter_feign: ^0.2.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.1.0   # required: writes the client implementations
+  spring_core_dart_generator: ^0.2.0   # required: writes the client implementations
 ```
 
 ```bash

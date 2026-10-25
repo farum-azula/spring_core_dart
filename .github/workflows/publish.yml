@@ -9,6 +9,7 @@ name: 'Release: publish to pub.dev'
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
 #           spring_boot_starter_cache, spring_boot_starter_feign,
 #           spring_boot_starter_websocket, spring_boot_starter_test
+#         → spring_boot_starter_flutter (with the Flutter SDK)
 #
 # No password or token: pub.dev trusts this repository through GitHub's
 # OpenID Connect token once automated publishing is enabled on each package's
@@ -95,3 +96,31 @@ jobs:
           sdk: stable
       - run: dart pub get
       - run: dart run tool/publish.dart --package ${{ matrix.package }}
+
+  # spring_boot_starter_flutter needs the Flutter SDK; it is outside the pub workspace,
+  # so without its pubspec_overrides.yaml it resolves the family versions
+  # just published above.
+  flutter:
+    name: Publish spring_boot_starter_flutter
+    needs: starters
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      # Sets up pub.dev's OpenID Connect token, which `flutter pub` uses too.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: dart pub get
+      - name: Tests against the published family
+        working-directory: spring_boot_starter_flutter
+        run: |
+          rm pubspec_overrides.yaml
+          flutter pub get
+          flutter test
+      - run: dart run tool/publish.dart --package spring_boot_starter_flutter

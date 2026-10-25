@@ -92,6 +92,50 @@ final class SpringLogRecord {
 /// Receives the records that pass the logger's level.
 typedef SpringLogHandler = void Function(SpringLogRecord record);
 
+/// Generates a `log` getter for the class, like Lombok's `@Slf4j`: the
+/// generator writes an extension with a constant [SpringLog] named after
+/// the class (`<package>.<Class>`, like `spring_boot_dart.SpringApplication`),
+/// so methods log without declaring a logger.
+///
+/// ```dart
+/// import 'package:my_app/main.spring.dart'; // the generated file
+///
+/// @Component()
+/// @Log()
+/// class Checkout {
+///   void pay(Order order) => log.info('paid ${order.id}'); // my_app.Checkout
+/// }
+///
+/// @Log(topic: 'neon.payments', fieldName: 'logger')
+/// class Payments {
+///   void refund() => logger.warning('refund');
+/// }
+/// ```
+///
+/// The getter lives in the `.spring.dart` file of the `@ComponentScan` /
+/// `@SpringBootApplication` that scans the class: import it in the class's
+/// library. A `log` declared in that library's scope wins over the getter
+/// — `dart:math` and `dart:developer` declare a function `log` — so with
+/// one of them imported, pick another [fieldName]. Any class of the scan
+/// may carry it, bean or not.
+///
+/// Spring (Java), with Lombok:
+/// ```java
+/// @Slf4j(topic = "neon.payments")
+/// class Payments { void refund() { log.warn("refund"); } }
+/// ```
+class Log {
+  /// A getter named [fieldName] (`log`) returning the logger [topic]
+  /// (`<package>.<Class>` by default).
+  const Log({this.topic, this.fieldName = 'log'});
+
+  /// The logger name; `<package>.<Class>` by default.
+  final String? topic;
+
+  /// The getter's name.
+  final String fieldName;
+}
+
 /// A named logger, like the `Log` instances Spring obtains from
 /// `LogFactory` (or SLF4J's `Logger`).
 ///

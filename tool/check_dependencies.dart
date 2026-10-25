@@ -6,9 +6,14 @@
 //
 //   dart pub get
 //   dart run tool/check_dependencies.dart
+//   dart run tool/check_dependencies.dart --flutter   # the Flutter packages
 //
 // Run in CI after `dart pub get`; it asks pub.dev who publishes each hosted
-// package.
+// package. The Flutter packages are outside the pub workspace (flutter_test
+// pins package versions that the workspace's package:test cannot use):
+// `--flutter` checks each of [flutterPackages] from its own lock file
+// (after `flutter pub get` there), with the packages of this repository it
+// reaches by path.
 import 'dart:convert';
 import 'dart:io';
 
@@ -34,7 +39,16 @@ const repositoryOnly = {
   'spring_web_dart',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
+  'spring_boot_starter_flutter',
 };
+
+/// Packages outside the pub workspace, with their own resolution (Flutter:
+/// `flutter_test` pins versions the workspace cannot use); checked with
+/// `--flutter`. The Flutter SDK's packages count as the SDK.
+const flutterPackages = [
+  'spring_boot_starter_flutter',
+  'example/flutter_counter',
+];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
 /// with the reason (their own dependencies must still be the Dart team's).
@@ -73,21 +87,41 @@ const allowedPackages = {
     'workspace root, never a dependency of a package.',
     onlyIn: {'spring_core_dart_workspace'},
   ),
+  'material_color_utilities': AllowedPackage(
+    "Part of the Flutter SDK (package:flutter depends on it, pinned by the "
+    "SDK); published by Google's material.io.",
+    onlyIn: {'spring_boot_starter_flutter', 'flutter_counter'},
+  ),
   'node_preamble': AllowedPackage(
     'Pulled by package:test (Dart team) for browser tests; it has no '
     'publisher on pub.dev.',
   ),
 };
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
+  if (args.contains('--flutter')) {
+    for (final directory in flutterPackages) {
+      await _check(directory, standalone: true);
+    }
+  } else {
+    await _check('.', standalone: false);
+  }
+}
+
+/// Checks the resolution of [directory]: the workspace root, or a
+/// [standalone] package whose repository packages come by path.
+Future<void> _check(String directory, {required bool standalone}) async {
   final result = await Process.run(Platform.resolvedExecutable, [
     'pub',
     'deps',
     '--json',
-  ]);
+  ], workingDirectory: directory);
   if (result.exitCode != 0) {
-    stderr.writeln('dart pub deps failed (run `dart pub get` first):');
+    stderr.writeln(
+      'pub deps failed in $directory (run `${standalone ? 'flutter' : 'dart'} '
+      'pub get` there first):',
+    );
     stderr.write(result.stderr);
     exit(1);
   }
@@ -97,15 +131,27 @@ Future<void> main() async {
         in (json['packages']! as List).cast<Map<String, Object?>>())
       package['name']! as String: package,
   };
+  // The workspace packages; for a standalone package, itself and the
+  // packages of this repository it reaches by path (checked by the
+  // workspace run themselves).
   final workspace = {
     for (final MapEntry(:key, :value) in packages.entries)
-      if (value['kind'] == 'root') key,
+      if (value['kind'] == 'root' || (standalone && value['source'] == 'path'))
+        key,
   };
 
   // Every package reachable from a workspace package, with one path to it;
   // packages under an allowed exception are skipped.
   final reached = <String, List<String>>{};
-  final unusedExceptions = {...allowedPackages.keys};
+  // Exceptions only for the Flutter packages are reported by those runs.
+  final flutterNames = {
+    for (final path in flutterPackages) path.split('/').last,
+  };
+  final unusedExceptions = {
+    for (final MapEntry(:key, :value) in allowedPackages.entries)
+      if (standalone == (value.onlyIn?.every(flutterNames.contains) ?? false))
+        key,
+  };
   for (final root in workspace) {
     final pending = <List<String>>[
       for (final dependency in _dependencies(packages[root]!))
@@ -137,6 +183,12 @@ Future<void> main() async {
   final problems = <String>[];
   for (final name in repositoryOnly) {
     final package = packages[name];
+    final here = standalone
+        ? (package != null && package['kind'] == 'root')
+        : !flutterPackages.contains(name);
+    if (!here) {
+      continue; // checked with (or without) --flutter
+    }
     if (package == null) {
       problems.add('$name: listed in repositoryOnly but not in the workspace');
       continue;
@@ -144,7 +196,9 @@ Future<void> main() async {
     for (final dependency
         in ((package['directDependencies'] as List?) ?? const [])
             .cast<String>()) {
+      // The Flutter SDK (`flutter: sdk: flutter`) counts as the SDK.
       if (!workspace.contains(dependency) &&
+          packages[dependency]?['source'] != 'sdk' &&
           !repositoryOnlyExceptions.containsKey(dependency)) {
         problems.add(
           '$dependency: a dependency of $name, which may depend only on '
@@ -179,7 +233,7 @@ Future<void> main() async {
   if (problems.isNotEmpty) {
     stderr
       ..writeln(
-        'Dependencies outside the policy (this repository, the Dart SDK and '
+        '${standalone ? '$directory: ' : ''}Dependencies outside the policy (this repository, the Dart SDK and '
         'packages published by ${allowedPublishers.join(', ')}):',
       )
       ..writeln(problems.map((problem) => '  - $problem').join('\n'))
@@ -188,6 +242,13 @@ Future<void> main() async {
         'in tool/check_dependencies.dart.',
       );
     exit(1);
+  }
+  if (standalone) {
+    stdout.writeln(
+      '$directory: dependencies ok (${hosted.length} packages from pub.dev, '
+      'all published by the Dart and Flutter teams).',
+    );
+    return;
   }
   stdout.writeln(
     'Dependencies ok: ${repositoryOnly.join(', ')} depend only on this '

@@ -12,6 +12,8 @@ import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/aop_analysis.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
+import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 
 part 'configuration_emitter.dart';
@@ -222,8 +224,14 @@ class ModuleEmitter {
     };
     final moduleExpression = _spring('BeanModule').newInstance([
       _str(moduleName),
-      literalList([for (final bean in module.beans) _definition(bean)]),
+      literalList([
+        for (final bean in module.beans) _definition(bean),
+        if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
+      ]),
     ], arguments);
+    final buildContextAccess = module.buildContextAccess.isEmpty
+        ? null
+        : _contextAccessExtension();
     final library = Library(
       (b) => b
         ..body.addAll([
@@ -280,7 +288,9 @@ class ModuleEmitter {
               ..body = moduleExpression.code,
           ),
         )
-        ..body.addAll(extra),
+        ..body.addAll(extra)
+        ..body.addAll([?buildContextAccess])
+        ..body.addAll([for (final log in module.loggers) _logExtension(log)]),
     );
     final emitter = DartEmitter(
       allocator: Allocator.simplePrefixing(),
@@ -1293,6 +1303,14 @@ class ModuleEmitter {
     _ => null,
   };
 
+  // `ChangeNotifier` for the proxy of a `@ChangeNotifierComponent` class
+  // that is no ChangeNotifier itself (spring_boot_starter_flutter): the
+  // bean the container hands out is the Listenable widgets subscribe to.
+  static List<Reference> _proxyMixins(ProxyModel proxy) =>
+      mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType)
+      ? [refer('ChangeNotifier', 'package:flutter/foundation.dart')]
+      : const [];
+
   // The proxy class: holds the target and the invoker, implements
   // `Advised`, forwards `toString` without advice and overrides every
   // member from `proxy.members`.
@@ -1308,6 +1326,7 @@ class ModuleEmitter {
     return Class(
       (c) => c
         ..name = proxy.className
+        ..mixins.addAll(_proxyMixins(proxy))
         ..implements.addAll([
           for (final interface in proxy.interfaces) _type(interface, element),
           for (final introduction in proxy.introductions)
@@ -1467,6 +1486,7 @@ class ModuleEmitter {
         ..extend = lookup == null
             ? _type(proxy.targetType, element)
             : refer(lookup.className)
+        ..mixins.addAll(_proxyMixins(proxy))
         ..implements.addAll([
           for (final introduction in proxy.introductions)
             _type(introduction.interfaceType, element),
@@ -2929,6 +2949,156 @@ class ModuleEmitter {
     throw InvalidGenerationSource(
       'Cannot import $uri from ${output.uri}.',
       element: element,
+    );
+  }
+
+  // spring_boot_starter_flutter: the runtime library its generated code refers to.
+  static const _flutterSpringUrl =
+      'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+  static const _flutterWidgetsUrl = 'package:flutter/widgets.dart';
+
+  // `extension $CheckoutLog on Checkout { SpringLog get log => ...; }` for
+  // a `@Log` class (the raw type: a generic class's instances all match).
+  Extension _logExtension(LogModel log) {
+    final name = log.element.name!;
+    return Extension(
+      (e) => e
+        ..docs.add("/// `@Log` of [$name]: the logger '${log.topic}'.")
+        ..name = '\$${name}Log'
+        ..on = refer(
+          name,
+          _importUrl(log.element.library.uri, log.element, name: name),
+        )
+        ..methods.add(
+          Method(
+            (m) => m
+              ..type = MethodType.getter
+              ..returns = _spring('SpringLog')
+              ..name = log.fieldName
+              ..lambda = true
+              ..body = _spring('SpringLog')
+                  .constInstance([_str(log.topic)])
+                  .code,
+          ),
+        ),
+    );
+  }
+
+  // `extension SpringBeans on BuildContext { Basket get basket => ...; }`
+  // for the `@BuildContextAccess` beans.
+  Extension _contextAccessExtension() => Extension(
+    (e) => e
+      ..docs.add(
+        '/// Getters for the `@BuildContextAccess` beans, for widgets below '
+        '`SpringApplicationWidget`.',
+      )
+      ..name = 'SpringBeans'
+      ..on = refer('BuildContext', _flutterWidgetsUrl)
+      ..methods.addAll([
+        for (final access in _module.buildContextAccess)
+          Method(
+            (m) => m
+              ..docs.add("/// The bean '${access.bean.name}'.")
+              ..type = MethodType.getter
+              ..returns = _anyType(access.type, access.bean.element)
+              ..name = access.getter
+              ..lambda = true
+              ..body = refer('SpringScope', _flutterSpringUrl)
+                  .property('beanOf')
+                  .call(
+                    [refer('this')],
+                    {'qualifier': _str(access.bean.name)},
+                    [_anyType(access.type, access.bean.element)],
+                  )
+                  .code,
+          ),
+      ]),
+  );
+
+  // The `SpringWidgetBindings` bean of the module: how the bean record of
+  // each `SpringStatelessWidget<R>` is filled (one binding per distinct R, the
+  // first widget in scan order names it). Not an autowire candidate:
+  // `SpringStatelessWidget` finds it with `getBeansOfType`.
+  Expression _springWidgetBindings(String moduleName) {
+    final bindings = refer('SpringWidgetBindings', _flutterSpringUrl);
+    final binding = refer('SpringWidgetBinding', _flutterSpringUrl);
+    final distinct = <SpringWidgetModel>[];
+    for (final widget in _module.springWidgets) {
+      if (!distinct.any((other) => other.beans == widget.beans)) {
+        distinct.add(widget);
+      }
+    }
+    Expression field(SpringWidgetField field, Element element) => field.optional
+        ? refer('f')
+              .property('findBean')
+              .call([], {}, [_type(field.type, element)])
+        : binding
+              .property('bean')
+              .call(
+                [refer('f'), if (field.name case final name?) _str(name)],
+                {},
+                [_type(field.type, element)],
+              );
+    return _spring('BeanDefinition').newInstance(
+      [],
+      {
+        'name': _str('flutterSpringWidgetBindings#$moduleName'),
+        'source': _str('$_flutterSpringUrl#SpringWidgetBindings'),
+        'types': literalConstList([bindings]),
+        'autowireCandidate': literalFalse,
+        'create': _closure(
+          ['r'],
+          bindings.call([
+            literalList([
+              for (final widget in distinct)
+                binding.call([], {
+                  'widget': _str(widget.source),
+                  'beans': _typeValue(widget.beans, widget.widget),
+                  'types': literalConstList([
+                    for (final type in widget.requiredTypes)
+                      _type(type, widget.widget),
+                  ]),
+                  'resolve': _closure(
+                    ['f'],
+                    literalRecord(
+                      [
+                        for (final f in widget.positional)
+                          field(f, widget.widget),
+                      ],
+                      {
+                        for (final f in widget.named)
+                          f.name!: field(f, widget.widget),
+                      },
+                    ).code,
+                    lambda: true,
+                  ),
+                  // The beans of a filled record, for the widgets to
+                  // subscribe to the Listenable ones.
+                  'values': Method(
+                    (m) => m
+                      ..requiredParameters.add(Parameter((p) => p..name = 'r'))
+                      ..body = Block.of([
+                        declareFinal('v')
+                            .assign(
+                              refer('r')
+                                  .asA(_anyType(widget.beans, widget.widget)),
+                            )
+                            .statement,
+                        literalList([
+                          for (var i = 0; i < widget.positional.length; i++)
+                            refer('v').property('\$${i + 1}'),
+                          for (final f in widget.named)
+                            refer('v').property(f.name!),
+                        ]).returned.statement,
+                      ]),
+                  ).closure,
+                }),
+            ]),
+          ]).code,
+          lambda: true,
+        ),
+      },
+      [bindings],
     );
   }
 }

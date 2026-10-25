@@ -7,6 +7,8 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
+import 'package:spring_core_dart_generator/src/log_scanning.dart';
 
 /// How an injection point is satisfied.
 ///
@@ -2269,6 +2271,16 @@ class ModuleModel {
   /// Every public class of the scanned libraries (for `@args(...)`: which
   /// classes carry an annotation).
   final classes = <ClassElement>[];
+
+  /// `@BuildContextAccess` beans (spring_boot_starter_flutter): generated `BuildContext`
+  /// getters.
+  final buildContextAccess = <BuildContextAccessModel>[];
+
+  /// `SpringStatelessWidget<(...)>` classes (spring_boot_starter_flutter), in scan order.
+  final springWidgets = <SpringWidgetModel>[];
+
+  /// `@Log` classes: a generated `log` getter for each.
+  final loggers = <LogModel>[];
 
   final _proxyNames = <String>{};
 

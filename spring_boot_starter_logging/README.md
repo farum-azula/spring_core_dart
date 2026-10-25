@@ -11,8 +11,8 @@ the auto-configuration and a `LoggingSystem` is installed behind the
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.1.0
-  spring_boot_starter_logging: ^0.1.0
+  spring_boot_dart: ^0.2.0
+  spring_boot_starter_logging: ^0.2.0
 ```
 
 ```dart

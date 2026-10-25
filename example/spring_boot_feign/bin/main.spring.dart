@@ -1647,7 +1647,179 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     _i20.springBootStarterLoggingAutoConfiguration,
     _i21.springBootStarterWebsocketAutoConfiguration,
   ],
-  fingerprint: '4973bd74',
+  dartDefines: {
+    if (const bool.hasEnvironment('DEBUG'))
+      'DEBUG': const String.fromEnvironment('DEBUG'),
+    if (const bool.hasEnvironment('ECHO_URL'))
+      'ECHO_URL': const String.fromEnvironment('ECHO_URL'),
+    if (const bool.hasEnvironment('JSONPLACEHOLDER_URL'))
+      'JSONPLACEHOLDER_URL': const String.fromEnvironment(
+        'JSONPLACEHOLDER_URL',
+      ),
+    if (const bool.hasEnvironment('LOGGING_LEVEL_FEIGN'))
+      'LOGGING_LEVEL_FEIGN': const String.fromEnvironment(
+        'LOGGING_LEVEL_FEIGN',
+      ),
+    if (const bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
+      'LOGGING_LEVEL_ROOT': const String.fromEnvironment('LOGGING_LEVEL_ROOT'),
+    if (const bool.hasEnvironment('LOGGING_LEVEL_WEBSOCKET'))
+      'LOGGING_LEVEL_WEBSOCKET': const String.fromEnvironment(
+        'LOGGING_LEVEL_WEBSOCKET',
+      ),
+    if (const bool.hasEnvironment('LOGGING_PATTERN_CONSOLE'))
+      'LOGGING_PATTERN_CONSOLE': const String.fromEnvironment(
+        'LOGGING_PATTERN_CONSOLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_APPLICATION_NAME'))
+      'SPRING_APPLICATION_NAME': const String.fromEnvironment(
+        'SPRING_APPLICATION_NAME',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_JSONPLACEHOLDER_LOGGERLEVEL',
+    ))
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_JSONPLACEHOLDER_LOGGERLEVEL':
+          const String.fromEnvironment(
+            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_JSONPLACEHOLDER_LOGGERLEVEL',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_JSONPLACEHOLDER_READTIMEOUT',
+    ))
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_JSONPLACEHOLDER_READTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_JSONPLACEHOLDER_READTIMEOUT',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_WIKIMEDIA_LOGGERLEVEL',
+    ))
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_WIKIMEDIA_LOGGERLEVEL':
+          const String.fromEnvironment(
+            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_WIKIMEDIA_LOGGERLEVEL',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_WIKIMEDIA_READTIMEOUT',
+    ))
+      'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_WIKIMEDIA_READTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_WIKIMEDIA_READTIMEOUT',
+          ),
+    if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
+      'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
+        'SPRING_FLUTTER_SCANOSENVIRONMENT',
+      ),
+    if (const bool.hasEnvironment('SPRING_MAIN_BANNERMODE'))
+      'SPRING_MAIN_BANNERMODE': const String.fromEnvironment(
+        'SPRING_MAIN_BANNERMODE',
+      ),
+    if (const bool.hasEnvironment('SPRING_PROFILES_ACTIVE'))
+      'SPRING_PROFILES_ACTIVE': const String.fromEnvironment(
+        'SPRING_PROFILES_ACTIVE',
+      ),
+    if (const bool.hasEnvironment('SPRING_PROFILES_INCLUDE'))
+      'SPRING_PROFILES_INCLUDE': const String.fromEnvironment(
+        'SPRING_PROFILES_INCLUDE',
+      ),
+    if (const bool.hasEnvironment(
+      'SPRING_WEBSOCKET_CLIENT_CONFIG_ECHO_CONNECTTIMEOUT',
+    ))
+      'SPRING_WEBSOCKET_CLIENT_CONFIG_ECHO_CONNECTTIMEOUT':
+          const String.fromEnvironment(
+            'SPRING_WEBSOCKET_CLIENT_CONFIG_ECHO_CONNECTTIMEOUT',
+          ),
+    if (const bool.hasEnvironment('TRACE'))
+      'TRACE': const String.fromEnvironment('TRACE'),
+    if (const bool.hasEnvironment('WIKIMEDIA_URL'))
+      'WIKIMEDIA_URL': const String.fromEnvironment('WIKIMEDIA_URL'),
+    if (const bool.hasEnvironment('WIKIMEDIA_USERAGENT'))
+      'WIKIMEDIA_USERAGENT': const String.fromEnvironment(
+        'WIKIMEDIA_USERAGENT',
+      ),
+    if (const bool.hasEnvironment('debug'))
+      'debug': const String.fromEnvironment('debug'),
+    if (const bool.hasEnvironment('echo.url'))
+      'echo.url': const String.fromEnvironment('echo.url'),
+    if (const bool.hasEnvironment('jsonplaceholder.url'))
+      'jsonplaceholder.url': const String.fromEnvironment(
+        'jsonplaceholder.url',
+      ),
+    if (const bool.hasEnvironment('logging.level.feign'))
+      'logging.level.feign': const String.fromEnvironment(
+        'logging.level.feign',
+      ),
+    if (const bool.hasEnvironment('logging.level.root'))
+      'logging.level.root': const String.fromEnvironment('logging.level.root'),
+    if (const bool.hasEnvironment('logging.level.websocket'))
+      'logging.level.websocket': const String.fromEnvironment(
+        'logging.level.websocket',
+      ),
+    if (const bool.hasEnvironment('logging.pattern.console'))
+      'logging.pattern.console': const String.fromEnvironment(
+        'logging.pattern.console',
+      ),
+    if (const bool.hasEnvironment('spring.application.name'))
+      'spring.application.name': const String.fromEnvironment(
+        'spring.application.name',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.cloud.openfeign.client.config.jsonplaceholder.logger-level',
+    ))
+      'spring.cloud.openfeign.client.config.jsonplaceholder.logger-level':
+          const String.fromEnvironment(
+            'spring.cloud.openfeign.client.config.jsonplaceholder.logger-level',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.cloud.openfeign.client.config.jsonplaceholder.read-timeout',
+    ))
+      'spring.cloud.openfeign.client.config.jsonplaceholder.read-timeout':
+          const String.fromEnvironment(
+            'spring.cloud.openfeign.client.config.jsonplaceholder.read-timeout',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.cloud.openfeign.client.config.wikimedia.logger-level',
+    ))
+      'spring.cloud.openfeign.client.config.wikimedia.logger-level':
+          const String.fromEnvironment(
+            'spring.cloud.openfeign.client.config.wikimedia.logger-level',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.cloud.openfeign.client.config.wikimedia.read-timeout',
+    ))
+      'spring.cloud.openfeign.client.config.wikimedia.read-timeout':
+          const String.fromEnvironment(
+            'spring.cloud.openfeign.client.config.wikimedia.read-timeout',
+          ),
+    if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
+      'spring.flutter.scan-os-environment': const String.fromEnvironment(
+        'spring.flutter.scan-os-environment',
+      ),
+    if (const bool.hasEnvironment('spring.main.banner-mode'))
+      'spring.main.banner-mode': const String.fromEnvironment(
+        'spring.main.banner-mode',
+      ),
+    if (const bool.hasEnvironment('spring.profiles.active'))
+      'spring.profiles.active': const String.fromEnvironment(
+        'spring.profiles.active',
+      ),
+    if (const bool.hasEnvironment('spring.profiles.include'))
+      'spring.profiles.include': const String.fromEnvironment(
+        'spring.profiles.include',
+      ),
+    if (const bool.hasEnvironment(
+      'spring.websocket.client.config.echo.connect-timeout',
+    ))
+      'spring.websocket.client.config.echo.connect-timeout':
+          const String.fromEnvironment(
+            'spring.websocket.client.config.echo.connect-timeout',
+          ),
+    if (const bool.hasEnvironment('trace'))
+      'trace': const String.fromEnvironment('trace'),
+    if (const bool.hasEnvironment('wikimedia.url'))
+      'wikimedia.url': const String.fromEnvironment('wikimedia.url'),
+    if (const bool.hasEnvironment('wikimedia.user-agent'))
+      'wikimedia.user-agent': const String.fromEnvironment(
+        'wikimedia.user-agent',
+      ),
+  },
+  fingerprint: '8487da2d',
 );
 
 /// Starts the application: config files, environment, context, runners

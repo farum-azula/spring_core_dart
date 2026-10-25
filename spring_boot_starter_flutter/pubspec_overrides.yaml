@@ -1,0 +1,10 @@
+# Inside this repository: the family's packages from their folders.
+dependency_overrides:
+  spring_core_dart:
+    path: ../spring_core_dart
+  spring_boot_dart:
+    path: ../spring_boot_dart
+  spring_boot_starter_logging:
+    path: ../spring_boot_starter_logging
+  spring_boot_starter_test:
+    path: ../spring_boot_starter_test

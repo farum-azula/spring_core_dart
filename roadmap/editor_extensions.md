@@ -62,8 +62,8 @@ release train, set by `tool/version.dart` and checked in CI), so extension
 The generator keeps the generated code untouched while the sources have
 errors; the editor-side watch is tracked in zed_editor_extensions.
 
-## Zed extension for Flutter (`flutter_spring`)
+## Zed extension for Flutter (`spring_boot_starter_flutter`)
 
 Everything `dart_spring` does (it uses the same language server under the
-hood) plus support for the `flutter_spring` starter: platform profiles,
+hood) plus support for the `spring_boot_starter_flutter` starter: platform profiles,
 widget wrappers, hot reload helpers and Flutter snippets.

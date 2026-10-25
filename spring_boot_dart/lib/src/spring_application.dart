@@ -84,6 +84,7 @@ class SpringApplication {
     Map<String, Object?> defaultProperties = const {},
     List<String> additionalProfiles = const [],
     List<EnvironmentPostProcessor> environmentPostProcessors = const [],
+    Map<String, String> dartDefines = const {},
     this.banner,
     this.bannerMode = BannerMode.console,
     this.resourceLoader,
@@ -99,6 +100,7 @@ class SpringApplication {
        _listeners = [...listeners],
        _defaultProperties = {...defaultProperties},
        additionalProfiles = List.unmodifiable(additionalProfiles),
+       dartDefines = Map.unmodifiable(dartDefines),
        environmentPostProcessors = List.unmodifiable(environmentPostProcessors);
 
   /// The application's own modules.
@@ -194,8 +196,34 @@ class SpringApplication {
 
   /// Profiles activated on top of the configured ones (Spring Boot's
   /// `setAdditionalProfiles`); they come first, so their files have the
-  /// lowest precedence of the profile-specific ones.
+  /// lowest precedence of the profile-specific ones. [run] and [runAsync]
+  /// can add more for one launch.
   final List<String> additionalProfiles;
+
+  /// Values given at compile time with `--dart-define=KEY=value` (or
+  /// `-DKEY=value` for `dart compile` / `dart run`), as properties right
+  /// below the command-line arguments: above the OS environment and the
+  /// config files.
+  ///
+  /// Names are relaxed like environment variables: a define `API_URL`
+  /// answers `${API_URL}` and `api.url`, and `SPRING_PROFILES_ACTIVE`
+  /// activates profiles. The generator fills this from the keys the
+  /// application can read (placeholders, `@ConfigurationProperties`,
+  /// config files), because `String.fromEnvironment` works on the web
+  /// and in AOT builds only as a `const` with a literal key; only defines
+  /// that were given end up here.
+  ///
+  /// ```sh
+  /// flutter build apk --dart-define=SPRING_PROFILES_ACTIVE=prod \
+  ///   --dart-define=API_URL=https://api.neon.books
+  /// ```
+  ///
+  /// The values are compiled into the program and can be read from it:
+  /// never pass secrets this way.
+  final Map<String, String> dartDefines;
+
+  /// Name of the property source holding [dartDefines].
+  static const dartDefinesPropertySourceName = 'dartDefines';
 
   /// The banner printed at startup (Spring Boot's `setBanner`); a
   /// `classpath:banner.txt` (or `spring.banner.location`) wins, the default
@@ -315,16 +343,29 @@ class SpringApplication {
   /// running one after another, and if one fails the context is closed and
   /// the error is rethrown (uncaught, it ends the program). Use [runAsync]
   /// to wait for the runners, as Spring Boot's `run` does.
+  ///
+  /// [additionalProfiles] are activated for this launch after the
+  /// application's own [SpringApplication.additionalProfiles] (more
+  /// specific last), before config files are read, so their
+  /// `application-{profile}` files load; a reload keeps them.
   ConfigurableApplicationContext run(
     List<String> args, {
     Map<String, String>? systemEnvironment,
     Map<String, Object?> properties = const {},
-  }) => _run(args, systemEnvironment, properties, runners: true);
+    List<String> additionalProfiles = const [],
+  }) => _run(
+    args,
+    systemEnvironment,
+    properties,
+    List.unmodifiable(additionalProfiles),
+    runners: true,
+  );
 
   ConfigurableApplicationContext _run(
     List<String> args,
     Map<String, String>? systemEnvironment,
-    Map<String, Object?> properties, {
+    Map<String, Object?> properties,
+    List<String> launchProfiles, {
     required bool runners,
   }) {
     final watch = Stopwatch()..start();
@@ -337,7 +378,7 @@ class SpringApplication {
       ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
-        additionalProfiles: additionalProfiles,
+        additionalProfiles: [...additionalProfiles, ...launchProfiles],
       ).processAndApplySync();
       _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
@@ -346,6 +387,7 @@ class SpringApplication {
       return _start(run, args, environment, watch, (
         systemEnvironment,
         properties,
+        launchProfiles,
       ));
     });
     final FutureOr<void> called;
@@ -407,16 +449,26 @@ class SpringApplication {
   /// `SpringApplication.run`, which returns after the runners. A failing
   /// runner fails the returned `Future` (the context is closed with
   /// `closeAsync()`).
+  ///
+  /// [additionalProfiles]: as for [run].
   Future<ConfigurableApplicationContext> runAsync(
     List<String> args, {
     Map<String, String>? systemEnvironment,
     Map<String, Object?> properties = const {},
-  }) => _runAsync(args, systemEnvironment, properties, runners: true);
+    List<String> additionalProfiles = const [],
+  }) => _runAsync(
+    args,
+    systemEnvironment,
+    properties,
+    List.unmodifiable(additionalProfiles),
+    runners: true,
+  );
 
   Future<ConfigurableApplicationContext> _runAsync(
     List<String> args,
     Map<String, String>? systemEnvironment,
-    Map<String, Object?> properties, {
+    Map<String, Object?> properties,
+    List<String> launchProfiles, {
     required bool runners,
   }) async {
     final watch = Stopwatch()..start();
@@ -429,7 +481,7 @@ class SpringApplication {
       await ConfigDataEnvironment(
         environment,
         resourceLoader: resourceLoader,
-        additionalProfiles: additionalProfiles,
+        additionalProfiles: [...additionalProfiles, ...launchProfiles],
       ).processAndApply();
       _postProcessEnvironment(environment, before: false);
       run.environmentPrepared(environment);
@@ -444,6 +496,7 @@ class SpringApplication {
       () => _startAsync(run, args, environment, watch, (
         systemEnvironment,
         properties,
+        launchProfiles,
       )),
     );
     try {
@@ -498,6 +551,7 @@ class SpringApplication {
       previous?.args ?? const [],
       previous?.systemEnvironment,
       previous?.properties ?? const {},
+      previous?.additionalProfiles ?? const [],
       runners: runners,
     );
   }
@@ -520,6 +574,7 @@ class SpringApplication {
       previous?.args ?? const [],
       previous?.systemEnvironment,
       previous?.properties ?? const {},
+      previous?.additionalProfiles ?? const [],
       runners: runners,
     );
   }
@@ -541,6 +596,17 @@ class SpringApplication {
     final environment = StandardEnvironment(
       systemEnvironment: systemEnvironment,
     )..propertySources.addFirst(SimpleCommandLinePropertySource(args));
+    if (dartDefines.isNotEmpty) {
+      // Relaxed names like environment variables, right below the
+      // command line.
+      environment.propertySources.addAfter(
+        SimpleCommandLinePropertySource.defaultName,
+        SystemEnvironmentPropertySource(
+          dartDefinesPropertySourceName,
+          Map.of(dartDefines),
+        ),
+      );
+    }
     if (properties.isNotEmpty) {
       environment.propertySources.addFirst(
         MapPropertySource('inlinedProperties', Map.of(properties)),
@@ -687,7 +753,7 @@ class SpringApplication {
     List<String> args,
     StandardEnvironment environment,
     Stopwatch watch,
-    (Map<String, String>?, Map<String, Object?>) launch,
+    (Map<String, String>?, Map<String, Object?>, List<String>) launch,
   ) {
     final prepared = _prepare(run, args, environment, launch);
     final context = prepared.context;
@@ -715,7 +781,7 @@ class SpringApplication {
     List<String> args,
     StandardEnvironment environment,
     Stopwatch watch,
-    (Map<String, String>?, Map<String, Object?>) launch,
+    (Map<String, String>?, Map<String, Object?>, List<String>) launch,
   ) async {
     final prepared = _prepare(run, args, environment, launch);
     final context = prepared.context;
@@ -774,7 +840,7 @@ class SpringApplication {
     _RunListeners run,
     List<String> args,
     StandardEnvironment environment,
-    (Map<String, String>?, Map<String, Object?>) launch,
+    (Map<String, String>?, Map<String, Object?>, List<String>) launch,
   ) {
     // Spring Boot's ContextIdApplicationContextInitializer.
     final applicationName = environment
@@ -793,6 +859,7 @@ class SpringApplication {
       List.unmodifiable(args),
       launch.$1,
       launch.$2,
+      launch.$3,
     );
     final arguments = ApplicationArguments(args);
     final logStartupInfo =
@@ -1492,10 +1559,17 @@ final class _RunListeners {
 }
 
 final class _Launch {
-  _Launch(this.fingerprint, this.args, this.systemEnvironment, this.properties);
+  _Launch(
+    this.fingerprint,
+    this.args,
+    this.systemEnvironment,
+    this.properties,
+    this.additionalProfiles,
+  );
 
   final String? fingerprint;
   final List<String> args;
   final Map<String, String>? systemEnvironment;
   final Map<String, Object?> properties;
+  final List<String> additionalProfiles;
 }

@@ -9,7 +9,7 @@ alone; Feign clients need `spring_core_dart_generator`.
 
 ```yaml
 dependencies:
-  spring_web_dart: ^0.1.0
+  spring_web_dart: ^0.2.0
 ```
 
 ## 1. Describe an API with annotations
