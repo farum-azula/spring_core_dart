@@ -1,7 +1,7 @@
 name: spring_boot_starter_logging
 description: >-
   Logging starter for spring_boot_dart: console patterns, log files with rollover, logging.* properties and an in-memory log buffer for in-app log viewers.
-version: 0.2.3
+version: 0.3.0
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_logging
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -15,8 +15,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  spring_boot_dart: ^0.2.3
+  spring_boot_dart: ^0.3.0
 
 dev_dependencies:
-  spring_boot_starter_test: ^0.2.3
+  spring_boot_starter_test: ^0.3.0
   test: ^1.33.0

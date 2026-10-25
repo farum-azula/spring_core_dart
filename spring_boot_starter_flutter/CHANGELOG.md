@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.0
 
 - Reading is free: a `SpringStatelessWidget` or `SpringState` listens to a `@ChangeNotifierComponent` or `@NotifyListeners` bean of its record only when its `build` read the bean's state (a getter, a field, through the proxy); calling its methods (`onPressed: counter.increment`) no longer rebuilds the widget. A read outside the widget's build (an item builder, a `Builder` below it, a callback) keeps it listening; a `ChangeNotifier` bean without either annotation is listened to always, as before.
 - The `flutter_counter` example uses Spring widgets for every widget that takes beans (`CounterPage`, `AboutPage`).

@@ -47,14 +47,14 @@ the `flutter create` counter split into beans, properties and messages.
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter: ^0.2.3
+  spring_boot_starter_flutter: ^0.3.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.2.3
+  spring_core_dart_generator: ^0.3.0
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.2.3   # springBootTest, BeanOverride
+  spring_boot_starter_test: ^0.3.0   # springBootTest, BeanOverride
 ```
 
 `spring_boot_starter_flutter` brings `spring_core_dart`, `spring_boot_dart`

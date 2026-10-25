@@ -10,10 +10,10 @@ own repository later; it depends only on `spring_core_dart`.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.2.3
+  spring_boot_dart: ^0.3.0
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.2.3
+  spring_core_dart_generator: ^0.3.0
 ```
 
 ## The whole application entry point

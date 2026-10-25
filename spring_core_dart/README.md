@@ -37,11 +37,11 @@ Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_d
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.2.3
+  spring_core_dart: ^0.3.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.2.3
+  spring_core_dart_generator: ^0.3.0
 ```
 
 Generator option (in your `build.yaml`):

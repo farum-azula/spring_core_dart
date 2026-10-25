@@ -1,3 +1,7 @@
+## 0.3.0
+
+- feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets
+
 ## 0.2.3
 
 - add spring application handling

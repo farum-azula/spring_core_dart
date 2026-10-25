@@ -9,12 +9,12 @@ write the interface; the generator writes the implementation.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.2.3
-  spring_boot_starter_feign: ^0.2.3
+  spring_boot_dart: ^0.3.0
+  spring_boot_starter_feign: ^0.3.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.2.3   # required: writes the client implementations
+  spring_core_dart_generator: ^0.3.0   # required: writes the client implementations
 ```
 
 ```bash
