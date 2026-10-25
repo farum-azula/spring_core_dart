@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - `ResponseEntity.status(...).headers(h)` replaces the values of those names like Spring's `putAll` (it added them).
 - `ResponseEntity` and `ResponseEntity.status` take only three-digit status codes (100–999), like Spring's `HttpStatusCode.valueOf`; others throw an `ArgumentError`. `HttpResponse` and `StreamedHttpResponse` take those and 0, the opaque redirect a browser gives for `followRedirects: false` (any other code throws).

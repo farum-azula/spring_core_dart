@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - `@Import` of a registrar or selector emits `ImportDeclaration(..., importer: 'library#Class')`, so the import is ordered with its importing class also when that class has no conditions (needs the matching `spring_core_dart`)
 - AOP: the proxy metadata carries `superclassAnnotations` (the annotations of the superclasses and mixins of the class declaring the member's body), so `@CacheConfig` and class-level cache annotations on a base class reach the cache starter; proxy pruning sees them and the class annotations of inherited members (needs the matching `spring_core_dart`)

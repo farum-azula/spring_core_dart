@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - the auto-configured `webSocketTransport` backs off for a `WebSocketTransport` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application; its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`
 - `reconnect.delay=0` waits nothing (± `jitter`) on every attempt; from attempt 1074 the wait was NaN, which threw and stopped reconnecting.

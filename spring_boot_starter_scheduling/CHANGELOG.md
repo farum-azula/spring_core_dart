@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - the auto-configured `applicationTaskExecutor` and `taskScheduler` back off for beans registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application; their conditions are decided when the auto-configuration is read, like Boot's `OnBeanCondition`
 - `fixedRateString`, `fixedDelayString` and `initialDelayString` that are or resolve to blank (`r'${jobs.rate:}'`) count as not set, like Spring (they failed as not a duration).

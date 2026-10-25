@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - the auto-configured `cacheManager` backs off for a `CacheManager` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application (there were two); its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`
 - `@CacheConfig` and class-level cache annotations are read from the class that declares the method's body, then its superclasses (the nearest wins, per annotation type for class-level ones), like Spring's `DefaultCacheConfig(method.getDeclaringClass())` and `findAnnotation`: a base class with `@CacheConfig(cacheNames:)` no longer fails the start, a base class with `@Cacheable` caches its methods in subclass beans, and a subclass's class-level annotations no longer apply to methods it inherits; needs the matching `spring_core_dart` and generator

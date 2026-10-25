@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - `hasSingleBean`, `hasBean` and `doesNotHaveBean` count the beans of the parent contexts too (`withParent`), like AssertJ's default `Scope.INCLUDE_ANCESTORS`.
 - `BeanOverride` by type replaces the single `@Primary` bean among several (it failed); `BeanOverride(name:)` takes an alias and replaces the bean it names, keeping every alias (it failed).

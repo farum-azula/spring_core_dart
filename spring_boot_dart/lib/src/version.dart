@@ -4,4 +4,4 @@
 /// Starters declare the Boot versions they work with in
 /// `@AutoConfigurationModule(requires: ...)`; the generator compares the
 /// range with this constant at build time.
-const springBootVersion = '0.1.7';
+const springBootVersion = '0.2.0';

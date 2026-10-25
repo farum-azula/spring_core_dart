@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - AOP: `MethodSignature.mergedAnnotations`: the annotations of the member and of every declaration it overrides or implements (superclasses, mixins, interfaces), most specific first, like Spring's `AnnotatedElementUtils` find semantics (`annotations` stays what `@annotation(...)` matches); method validation reads `@Validated` groups on a method from it, so those on an overridden superclass method apply (needs the matching `spring_core_dart_generator`)
 - resources: `UrlResource.existsAsync()` sends a `HEAD` request (a `GET` when the server rejects `HEAD`), like Spring's `exists()`; config data (`spring.config.import=http://…`, its `-<profile>` variants, `optional:`) and `@PropertySource(ignoreResourceNotFound: true)` use it, so a 404 is a missing resource instead of a failed read

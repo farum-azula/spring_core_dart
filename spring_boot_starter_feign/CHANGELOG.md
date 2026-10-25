@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - the auto-configured `httpTransport` backs off for an `HttpTransport` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application (two transports failed the start); its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`
 - `dismiss404`, `follow-redirects`, `event-stream.reconnect` and `spring.cloud.openfeign.client.decode-slash` take true / false in any case (and on / off, yes / no, 1 / 0); anything else fails naming the key (`yes` was off for `dismiss404`, `nope` was on for the others).

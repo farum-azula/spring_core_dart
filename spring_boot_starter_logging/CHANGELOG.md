@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - `logging.logback.rollingpolicy.max-history=0` (`FileAppender(maxHistory: 0)`) keeps every archive, like Logback (it deleted them all).
 - `logging.charset.*` takes Java's charset aliases too (`utf8`, `ISO8859_1`, `ascii7`, ...).

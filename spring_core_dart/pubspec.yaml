@@ -1,7 +1,7 @@
 name: spring_core_dart
 description: >-
   Spring Core for Dart and Flutter: annotation-based dependency injection, application.properties configuration, profiles, events, SpEL, validation and AOP.
-version: 0.1.7
+version: 0.2.0
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_core_dart
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
