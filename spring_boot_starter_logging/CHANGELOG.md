@@ -1,3 +1,7 @@
+## 0.2.1
+
+- feat: spring_boot_starter_flutter, @Log, --dart-define properties, Flutter counter example
+
 ## 0.2.0
 
 - `logging.logback.rollingpolicy.max-history=0` (`FileAppender(maxHistory: 0)`) keeps every archive, like Logback (it deleted them all).

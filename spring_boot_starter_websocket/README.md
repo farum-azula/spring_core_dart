@@ -77,12 +77,12 @@ after Spring 7's `RetryPolicy`).
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.2.0
-  spring_boot_starter_websocket: ^0.2.0
+  spring_boot_dart: ^0.2.1
+  spring_boot_starter_websocket: ^0.2.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.2.0   # required: writes the client implementations
+  spring_core_dart_generator: ^0.2.1   # required: writes the client implementations
 ```
 
 ```bash

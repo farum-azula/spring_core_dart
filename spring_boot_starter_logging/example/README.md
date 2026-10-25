@@ -12,12 +12,12 @@ is found and switched on automatically.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.2.0
-  spring_boot_starter_logging: ^0.2.0
+  spring_boot_dart: ^0.2.1
+  spring_boot_starter_logging: ^0.2.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.2.0   # required: turns annotations into code
+  spring_core_dart_generator: ^0.2.1   # required: turns annotations into code
 ```
 
 ```bash

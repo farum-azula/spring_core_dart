@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.1
 
 - First version: `SpringApplicationWidget` (starts the application, splash and failure screens, restarts the context on a hot reload when the generated code changed, switched off with `spring.devtools.restart.enabled=false`, closes the context when removed), `SpringScope`, `context.bean<T>()`, getters generated for `@BuildContextAccess` beans, `SpringStatelessWidget<(...)>` and `SpringStatefulWidget<(...)>` with `SpringState<W, (...)>`, beans checked at startup, `AppLifecycleStateEvent` with the context paused in the background and restarted in the foreground (`spring.flutter.lifecycle.pause-in-background`), platform profiles (`android`, `ios`, `web`, `macos`, `windows`, `linux`, `mobile`, `desktop`), the OS environment off unless `spring.flutter.scan-os-environment`, `context.message` in the app's locale.
 - `@ChangeNotifierComponent(exclude: [...])`: a stereotype for a plain class whose proxy mixes `ChangeNotifier` in and notifies after every public method and setter; `listenableOf(bean)`.

@@ -1,3 +1,7 @@
+## 0.2.1
+
+- feat: spring_boot_starter_flutter, @Log, --dart-define properties, Flutter counter example
+
 ## 0.2.0
 
 - the auto-configured `webSocketTransport` backs off for a `WebSocketTransport` registered by an `@Import`ed `BeanRegistrar` / `ImportBeanDefinitionRegistrar` of the application; its condition is decided when the auto-configuration is read, like Boot's `OnBeanCondition`

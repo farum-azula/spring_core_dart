@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.1
 
 - `--dart-define` values as properties: `SpringApplication(dartDefines: ...)` (filled by the generator) adds them right below the command-line arguments with relaxed names like environment variables (`API_URL` answers `api.url`; `SPRING_PROFILES_ACTIVE` activates profiles)
 - `run` / `runAsync(additionalProfiles: [...])`: profiles for one launch after the application's own `additionalProfiles`, kept by `reload` / `reloadAsync` (Flutter's platform profiles)

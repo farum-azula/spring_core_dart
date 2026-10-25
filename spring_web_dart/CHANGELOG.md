@@ -1,3 +1,7 @@
+## 0.2.1
+
+- feat: spring_boot_starter_flutter, @Log, --dart-define properties, Flutter counter example
+
 ## 0.2.0
 
 - `ResponseEntity.status(...).headers(h)` replaces the values of those names like Spring's `putAll` (it added them).

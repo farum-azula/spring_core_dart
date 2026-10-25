@@ -1,3 +1,7 @@
+## 0.2.1
+
+- feat: spring_boot_starter_flutter, @Log, --dart-define properties, Flutter counter example
+
 ## 0.2.0
 
 - `hasSingleBean`, `hasBean` and `doesNotHaveBean` count the beans of the parent contexts too (`withParent`), like AssertJ's default `Scope.INCLUDE_ANCESTORS`.

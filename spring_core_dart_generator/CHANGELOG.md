@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.1
 
 - `@Log`: an extension with a `log` getter (`fieldName:`) returning `const SpringLog('<package>.<Class>')` (`topic:`); private classes, invalid or reserved names and members with the getter's name fail the build
 - spring_boot_starter_flutter: the proxy of a `@ChangeNotifierComponent` class mixes `ChangeNotifier` in; `exclude` names that are no members of the class, and `ChangeNotifier` members declared by such a class, fail the build; widget bindings list the beans of a record (`values`) so the widgets can subscribe to the `Listenable` ones
