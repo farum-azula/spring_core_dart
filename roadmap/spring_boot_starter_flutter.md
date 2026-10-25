@@ -18,6 +18,7 @@ signals (reactive state) and a Rust bridge.
 | `json_serializable`, `freezed` (JSON) | `ObjectMapper` on generated metadata (done) |
 | `bloc`, `getx`, `mobx` (state) | beans with `@Signal` fields (`flutter_spring_signals`), application events, `@EventListener` |
 | `go_router`, `auto_route` (navigation) | `@Route` widgets and a generated router on the Flutter SDK's `Router` |
+| a hand-written `MaterialApp` (theme, locales, debug banner) | the app widget from `spring.flutter.app.*`, one `SpringThemeData` bean from `spring.flutter.theme.*` (Material and Cupertino themes made from it once), customizer beans |
 | `flutter_dotenv`, `envied`, flavors (configuration) | `application-{profile}.properties`, `--dart-define` as a property source, platform profiles |
 | `hive`, `shared_preferences` wrappers (settings, storage) | `@ConfigurationProperties` saved in `shared_preferences`; SQLite through the Data starter |
 | `easy_localization` (texts) | `MessageSource` with `messages_{locale}.properties`, following the app's `Locale` |
@@ -35,7 +36,8 @@ pause / restart of the context, platform profiles, `--dart-define` as a
 property source, the OS environment switch, `context.message`, tests with
 `SpringScope` and `springBootTest`; the example `example/flutter_counter`.
 
-Next: `@ConditionalOnPlatform(include: [AppPlatform.android, AppPlatform.ios],
+Next: the app widget from configuration (`MaterialApp` / `CupertinoApp` /
+`WidgetsApp` built from properties and beans), `@ConditionalOnPlatform(include: [AppPlatform.android, AppPlatform.ios],
 exclude: [AppPlatform.web])` on top of the platform profiles (an
 annotation with enums that the generator turns into a profile expression;
 not `@Platform`, which `dart:io` already has), navigation (`@Route`, the
@@ -51,6 +53,151 @@ Optional starters: [signals](flutter_spring_signals.md), [Flutter Scene](flutter
 The root widget. Starts the application (`runApplicationAsync`), shows a
 splash screen until the runners are done (or the failure report), and gives
 the context to the tree (see *Beans in widgets*).
+
+## The app widget from configuration
+
+Today the app writes its `MaterialApp` by hand under
+`SpringApplicationWidget`: theme, locales, debug banner, title, all in
+code. Like Boot configures Jackson or the web server from `spring.*`
+properties and customizer beans, the starter builds the app widget itself,
+so the look of the app is configuration — per profile, per platform,
+changed without code, in `.properties` or `.yml` alike:
+
+```yaml
+# lib/resources/application.yml
+spring:
+  flutter:
+    app:
+      type: material              # widgets (default) | material | cupertino
+      title: ${counter.title}
+      debug-banner: false         # default true, as in Flutter
+      locales: [en, ja]           # default: the languages of messages_*.properties
+    theme:                        # SpringThemeData, bound once
+      mode: system                # system | light | dark
+      seed-color: deepPurple      # a `Colors` name or '#673AB7'
+      colors:
+        error: '#B3261E'          # any color the seed would compute
+      typography:
+        font-family: Inter
+        font-family-fallback: [Noto Sans JP]
+        display: { font-family: Playfair Display, weight: 700 }
+        code: { font-family: JetBrains Mono }
+      shape:
+        corner-radius: 12
+      dark:
+        seed-color: deepPurple
+```
+```properties
+# lib/resources/application-ios.properties: the iOS look on iPhones
+spring.flutter.app.type=cupertino
+```
+```dart
+@SpringBootApplication()
+void main() => runApp(SpringApplicationWidget(
+  application: () => springApplication,
+  home: const CounterPage(),       // passed into the generated app widget
+));
+```
+`child:` stays for an app that builds its own `MaterialApp`; with `home:`
+the starter builds it. Planned pieces:
+
+- **Properties** as `@ConfigurationProperties` beans
+  (`FlutterAppProperties`, `FlutterThemeProperties`): validated at start,
+  completed and checked by the editor like any key.
+- **One theme of the family, `SpringThemeData`**: the theme is not Material
+  or Cupertino first, but the app's own: colors (a seed and any color set
+  explicitly), typography, shapes, a dark variant. It is bound from
+  `spring.flutter.theme.*` **once**, at the start, into a singleton bean
+  that lives as long as the context (a hot reload with changed
+  configuration restarts the context, so a new one is bound then). Every
+  conversion runs once too: the starter registers the `ThemeData` beans
+  `theme` and `darkTheme` (`springTheme.toMaterial(Brightness.light)`) and
+  a `CupertinoThemeData` bean (`springTheme.toCupertino()`) at the start,
+  never in `build`.
+- **Several fonts, by text role** (a first design, not final): the
+  typography has a default `font-family` and `font-family-fallback`, and
+  roles that override them — `display`, `headline`, `title`, `body`,
+  `label` (Material's `TextTheme` groups; Cupertino gets `display` as the
+  large navigation title, `title` as the navigation title, `body` as the
+  text style, `label` for actions and tabs) and `code` (no Material role,
+  read through `SpringTheme`). A role sets `font-family`, `weight`,
+  `letter-spacing`, optionally `size`; the rest stays Material's.
+  ```yaml
+  typography:
+    font-family: Inter
+    display:  { font-family: Playfair Display, weight: 700 }
+    title:    { weight: 600 }
+    code:     { font-family: JetBrains Mono }
+  ```
+- **Font files by convention, listed nowhere**: one directory under
+  `flutter: assets:` (`assets/fonts/`, `spring.flutter.fonts.location`,
+  empty to switch it off). At the start, behind the splash screen, the
+  starter loads every `.ttf` / `.otf` / `.ttc` the asset manifest lists
+  there with `FontLoader`, the family read from the font's own `name`
+  table (`PlayfairDisplay-Bold.ttf` → "Playfair Display"; the Inter files
+  join one family, their weights read from the files). Adding a font is
+  dropping the file in; nothing repeats the pubspec. Families declared
+  under `flutter: fonts:` keep working by name. A `font-family` that is
+  neither loaded nor declared fails the start with the families found
+  (Flutter would silently fall back). Tests load them too, so
+  `example/flutter_counter` drops the hand-loaded Japanese font of its
+  `flutter_test_config.dart`.
+- **`SpringTheme`**, an inherited widget like `Theme`, gives the
+  `SpringThemeData` to the tree (`SpringTheme.of(context)`), so the app's
+  own widgets use one theme whatever the app type is.
+- **The app type** picks the widget, **`widgets` by default** → `WidgetsApp`
+  straight from `SpringThemeData` (`color`, `textStyle`, a page route of
+  the starter for `home:`, which `WidgetsApp` needs), with no Material or
+  Cupertino theme in between; an app of its own design system needs
+  nothing more. `material` → `MaterialApp` (the
+  `ThemeData` beans and the theme mode), `cupertino` → `CupertinoApp` (the
+  `CupertinoThemeData` bean); Material widgets (`Scaffold`, `AppBar`) need
+  `material`, so an app using them says so (`example/flutter_counter`
+  does). With the platform profiles one app can be Material on
+  Android and Cupertino on iOS by configuration only; beans for one type
+  use `@ConditionalOnProperty('spring.flutter.app.type', havingValue: 'cupertino')`.
+- **Replacing or adjusting it**: every bean above is
+  `@ConditionalOnMissingBean`, so an app replaces the `SpringThemeData`
+  (built from properties too) or only one conversion
+  (`@Bean ThemeData theme(SpringThemeData springTheme) => ...`), or adjusts
+  a result with `ThemeCustomizer` / `CupertinoThemeCustomizer` beans (in
+  `@Order`), like Boot's `Jackson2ObjectMapperBuilderCustomizer`.
+- **Customizers for the rest**: `FlutterAppCustomizer` beans get the
+  app's settings before the widget is built (`builder`, `scrollBehavior`,
+  `shortcuts`, anything without a property), like Boot's
+  `WebServerFactoryCustomizer`.
+- **Collected beans**: every `LocalizationsDelegate` bean joins the app's
+  delegates (Material, Cupertino and Widgets ones added by the starter
+  when a locale other than English is supported: it depends on the SDK's
+  `flutter_localizations`), every `NavigatorObserver` bean its observers.
+- **Locales from the messages files**: `messages_ja.properties` makes `ja`
+  supported, so the texts of `context.message` and the app's locales
+  cannot drift apart; `spring.flutter.app.locales` overrides it.
+- **Values that are not strings**: the starter's converters bind `Color`
+  (`deepPurple`, `deepPurple.shade200`, `#RGB`, `#RRGGBB`, `#AARRGGBB`),
+  `ThemeMode`, `Brightness` and `Locale` (`en`, `pt_BR`) from properties.
+  The names come from a `const` table of Flutter's `Colors` in the
+  starter's source, generated once by a tool script (no reflection, no
+  work at run time).
+- **Changes at run time**: a changed `application.yml` restarts the context
+  on hot reload (the generated code changes), so the new theme shows at
+  once; a theme mode the user picks is a setting kept in
+  `shared_preferences` (see *Settings*) above the files.
+- **Routes**: with `@Route` widgets (see *Navigation*) the starter builds
+  `MaterialApp.router` / `CupertinoApp.router` on the generated router
+  instead of `home:`.
+- **Defaults**: a `WidgetsApp` with Flutter's defaults (debug banner on,
+  Flutter's default seed color), so the app pulls in neither Material nor
+  Cupertino until a property asks for it; the properties only state what
+  differs. The localization delegates follow the type: Widgets ones always
+  (when a locale other than English is supported), Material or Cupertino
+  ones only for that type.
+- **Tests**: `springBootTest(springApplication, properties:
+  {'spring.flutter.theme.mode': 'dark'})` and a golden screenshot of the
+  dark theme, without code for it in the app.
+
+In `example/flutter_counter` the `CounterApp` widget then goes away: its
+theme, locales and banner move to `application.yml`.
 
 ## Beans in widgets
 
@@ -105,8 +252,8 @@ Both are resolved by generated code, without reflection; the generator
 sees every use, so the start fails on a missing bean (or a route bean
 used outside its route), and the editor navigates from a use to the
 bean. Tests replace beans in a test `SpringApplicationWidget`
-(`overrides: [BeanOverride<Basket>(fake)]`), or call
-`build(context, (FakeBasket(), FakeNavigator()))` directly. Services
+(`overrides: [BeanOverride<Basket>(fake)]`), or build a widget with fakes
+directly: `buildWith(context, (FakeBasket(), FakeNavigator()))`. Services
 keep constructor injection and never see a `BuildContext`.
 
 ## The app lifecycle as the Spring lifecycle
