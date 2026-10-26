@@ -4,5 +4,9 @@ int? get processId => null;
 /// The name of the current isolate (`%thread`): always `main` here.
 String get isolateName => 'main';
 
-/// Whether standard output understands ANSI colours: never here.
-bool get stdoutSupportsAnsi => false;
+/// Whether the console shows ANSI colours: in a Flutter web app's debug or
+/// profile build (the browser's DevTools console and `flutter run` show
+/// them), not otherwise.
+bool get stdoutSupportsAnsi =>
+    const bool.fromEnvironment('dart.library.ui') &&
+    !const bool.fromEnvironment('dart.vm.product');

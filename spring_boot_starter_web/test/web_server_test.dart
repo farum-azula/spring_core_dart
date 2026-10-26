@@ -324,6 +324,16 @@ void main() {
     client.close();
   });
 
+  test('a context closed while the socket opens leaves no server', () async {
+    WebServer? server;
+    webRunner().run((context) {
+      server = context.context.getBean<WebServerStartStopLifecycle>().webServer;
+    }); // closes right away, before the bind completes
+    expect(server, isNotNull);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(server!.port, -1);
+  });
+
   test('spring.main.web-application-type=none starts no server', () async {
     await webRunner(['spring.main.web-application-type=none']).runAsync((
       context,

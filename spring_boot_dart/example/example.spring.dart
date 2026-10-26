@@ -440,20 +440,20 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c5948e65',
+  fingerprint: '1c28b41d',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
 _i5.ConfigurableApplicationContext runApplication(List<String> args) =>
-    springApplication.run(args);
+    springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
 Future<_i5.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
-) => springApplication.runAsync(args);
+) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;

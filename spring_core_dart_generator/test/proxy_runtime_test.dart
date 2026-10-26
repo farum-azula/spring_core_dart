@@ -91,6 +91,8 @@ Future<void> main(List<String> args) async {
   final context = await runApplicationAsync([
     '--spring.main.banner-mode=off',
     '--logging.level.root=off',
+    // The workspace's auto-configurations are all found: no web server.
+    '--spring.main.web-application-type=none',
   ]);
   $calls
   print('RESULT \${jsonEncode(context.getBean<Tracer>().calls)}');

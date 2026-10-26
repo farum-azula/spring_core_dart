@@ -50,6 +50,7 @@ const flutterPackages = [
   'spring_boot_starter_flutter',
   'example/flutter_counter',
   'example/flutter_themes',
+  'example/flutter_notes',
 ];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
@@ -96,6 +97,7 @@ const allowedPackages = {
       'spring_boot_starter_flutter',
       'flutter_counter',
       'flutter_themes',
+      'flutter_notes',
     },
   ),
   'node_preamble': AllowedPackage(

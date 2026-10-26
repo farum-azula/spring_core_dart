@@ -62,11 +62,24 @@ class _$BookServiceProxy extends _i1.BookService implements _i2.Advised {
       );
 
   @override
+  void init() {
+    final _$i = this._$invoker;
+    if (_$i == null) {
+      super.init();
+    } else {
+      _$i.invoke(this, this, 0, const [], (args) {
+        super.init();
+        return null;
+      });
+    }
+  }
+
+  @override
   _i1.Book find(String isbn) {
     final _$i = this._$invoker;
     return _$i == null
         ? super.find(isbn)
-        : (_$i.invoke(this, this, 0, [
+        : (_$i.invoke(this, this, 1, [
             isbn,
           ], (args) => super.find((args[0] as String))) as _i1.Book);
   }
@@ -76,7 +89,7 @@ class _$BookServiceProxy extends _i1.BookService implements _i2.Advised {
     final _$i = this._$invoker;
     return _$i == null
         ? super.add(book)
-        : (_$i.invoke(this, this, 1, [
+        : (_$i.invoke(this, this, 2, [
             book,
           ], (args) => super.add((args[0] as _i1.NewBook))) as _i1.Book);
   }
@@ -86,7 +99,7 @@ class _$BookServiceProxy extends _i1.BookService implements _i2.Advised {
     final _$i = this._$invoker;
     return _$i == null
         ? super.added
-        : (_$i.invoke(this, this, 2, const [], (_) => super.added)
+        : (_$i.invoke(this, this, 3, const [], (_) => super.added)
               as _i3.Stream<_i1.Book>);
   }
 }
@@ -175,9 +188,22 @@ _i2.BeanModule get $application => _i2.BeanModule(
       source: r'asset:spring_boot_starter_web/example/example.dart#BookService',
       types: const [_i1.BookService],
       create: (r) => _$BookServiceProxy(),
+      postConstruct: (bean) {
+        bean.init();
+      },
       annotations: const [_i2.Service()],
       aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
+          _i2.MethodSignature(
+            name: r'init',
+            declaringType: r'BookService',
+            targetType: r'BookService',
+            declaringTypes: [r'BookService'],
+            returnType: r'void',
+            targetTypes: [r'BookService'],
+            targetAnnotations: [_i2.Service()],
+            targetAnnotationTypes: [r'Service'],
+          ),
           _i2.MethodSignature(
             name: r'find',
             declaringType: r'BookService',
@@ -380,6 +406,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       ),
     ),
   ],
+  resources: const {
+    r'application.properties': _i2.EmbeddedResource.text('server.port=8085\n'),
+  },
   introspections: [
     _i2.BeanIntrospection<_i1.Book>(
       className: r'Book',
@@ -494,6 +523,8 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
       'DEBUG': const String.fromEnvironment('DEBUG'),
     if (const bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
       'LOGGING_LEVEL_ROOT': const String.fromEnvironment('LOGGING_LEVEL_ROOT'),
+    if (const bool.hasEnvironment('SERVER_PORT'))
+      'SERVER_PORT': const String.fromEnvironment('SERVER_PORT'),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
         'SPRING_FLUTTER_SCANOSENVIRONMENT',
@@ -516,6 +547,8 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
       'debug': const String.fromEnvironment('debug'),
     if (const bool.hasEnvironment('logging.level.root'))
       'logging.level.root': const String.fromEnvironment('logging.level.root'),
+    if (const bool.hasEnvironment('server.port'))
+      'server.port': const String.fromEnvironment('server.port'),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
         'spring.flutter.scan-os-environment',
@@ -535,20 +568,20 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'b1dc80c9',
+  fingerprint: '5c133397',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
 _i9.ConfigurableApplicationContext runApplication(List<String> args) =>
-    springApplication.run(args);
+    springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
 Future<_i9.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
-) => springApplication.runAsync(args);
+) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;

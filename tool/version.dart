@@ -38,6 +38,7 @@ const dependents = [
   'example/spring_boot_feign',
   'example/flutter_counter',
   'example/flutter_themes',
+  'example/flutter_notes',
   'extensions/language_server',
 ];
 

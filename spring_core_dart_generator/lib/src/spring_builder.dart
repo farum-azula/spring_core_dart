@@ -307,21 +307,41 @@ class SpringBuilder implements Builder {
   /// so `classpath:` works everywhere without Flutter asset declarations.
   /// Text files stay readable; other files are base64-encoded; files above
   /// [_maxEmbeddedBytes] are skipped with a warning.
+  ///
+  /// An application whose `main` is outside `lib/` (`example/`,
+  /// `example/shop/bin/`, `tool/demo/`) also gets the `lib/resources/` of
+  /// every directory from the package root down to its own: an example's
+  /// `example/lib/resources/application.properties` wins over the package's,
+  /// as an application's config wins over a library's; the nearer to `main`,
+  /// the higher the precedence, however deep it is.
   static Future<Map<String, ({String? text, String? base64})>> _resources(
-    BuildStep buildStep,
-  ) async {
-    final assets = await buildStep
-        .findAssets(Glob('lib/resources/**'))
-        .where((asset) => !asset.path.endsWith('.dart'))
-        .toList();
-    assets.sort((a, b) => a.path.compareTo(b.path));
+    BuildStep buildStep, {
+    String? entryDirectory,
+  }) async {
     final result = <String, ({String? text, String? base64})>{};
+    for (final directory in resourceDirectories(entryDirectory)) {
+      final assets = await buildStep
+          .findAssets(Glob('$directory**'))
+          .where((asset) => !asset.path.endsWith('.dart'))
+          .toList();
+      assets.sort((a, b) => a.path.compareTo(b.path));
+      await _embed(buildStep, assets, directory, result);
+    }
+    return result;
+  }
+
+  static Future<void> _embed(
+    BuildStep buildStep,
+    List<AssetId> assets,
+    String directory,
+    Map<String, ({String? text, String? base64})> result,
+  ) async {
     for (final asset in assets) {
       final bytes = await buildStep.readAsBytes(asset);
-      final path = asset.path.substring('lib/resources/'.length);
+      final path = asset.path.substring(directory.length);
       if (bytes.length > _maxEmbeddedBytes) {
         log.warning(
-          'lib/resources/$path is larger than $_maxEmbeddedBytes bytes and '
+          '$directory$path is larger than $_maxEmbeddedBytes bytes and '
           'is not embedded; ship it as a Flutter asset or a file instead.',
         );
         continue;
@@ -332,10 +352,41 @@ class SpringBuilder implements Builder {
         result[path] = (text: null, base64: base64Encode(bytes));
       }
     }
-    return result;
   }
 
   static const _maxEmbeddedBytes = 1024 * 1024;
+
+  /// The resource directories of an application whose `main` is in
+  /// [entryDirectory] (package-relative, `/`-separated), lowest precedence
+  /// first: `lib/resources/`, then `<dir>/lib/resources/` for each directory
+  /// from the top one down to [entryDirectory]. Within `lib/` only
+  /// `lib/resources/`.
+  static List<String> resourceDirectories(String? entryDirectory) {
+    final directories = ['lib/resources/'];
+    if (entryDirectory == null ||
+        entryDirectory == 'lib' ||
+        p.url.isWithin('lib', entryDirectory)) {
+      return directories;
+    }
+    final parts = p.url.split(p.url.normalize(entryDirectory));
+    for (var i = 1; i <= parts.length; i++) {
+      final directory = p.url.joinAll(parts.take(i));
+      if (directory == '.' || directory.isEmpty) {
+        continue;
+      }
+      directories.add('$directory/lib/resources/');
+    }
+    return directories;
+  }
+
+  // `() => springApplication`: the application as the code is after a hot
+  // reload on the Dart VM (SpringHotReload restarts the context when its
+  // generated code changed).
+  static Expression _currentApplication(Expression springApplication) => Method(
+    (m) => m
+      ..lambda = true
+      ..body = springApplication.code,
+  ).closure;
 
   // `@SpringBootApplication` on `main`: like Spring Boot's component scan
   // from the application class, the whole package is scanned — `lib/` and
@@ -401,7 +452,7 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    final resources = await _resources(buildStep);
+    final resources = await _resources(buildStep, entryDirectory: directory);
     final defines = await _dartDefineKeys(buildStep, assets, resources);
     final source = emitter.emit(
       moduleName: 'application',
@@ -474,9 +525,13 @@ class SpringBuilder implements Builder {
               ),
             )
             ..lambda = true
-            ..body = springApplication.property('run').call([
-              refer('args'),
-            ]).code,
+            ..body = springApplication
+                .property('run')
+                .call(
+                  [refer('args')],
+                  {'hotReload': _currentApplication(springApplication)},
+                )
+                .code,
         ),
         Method(
           (m) => m
@@ -499,9 +554,13 @@ class SpringBuilder implements Builder {
               ),
             )
             ..lambda = true
-            ..body = springApplication.property('runAsync').call([
-              refer('args'),
-            ]).code,
+            ..body = springApplication
+                .property('runAsync')
+                .call(
+                  [refer('args')],
+                  {'hotReload': _currentApplication(springApplication)},
+                )
+                .code,
         ),
         for (final (name, call, doc) in const [
           (
@@ -633,9 +692,11 @@ class SpringBuilder implements Builder {
     }
     final root = buildStep.inputId.package;
     final config = await buildStep.packageConfig;
+    final reachable = await _reachablePackages(buildStep);
     for (final package in config.packages) {
       final id = AssetId(package.name, autoConfigurationLibrary);
       if ((package.name == root && !includeOwn) ||
+          (reachable != null && !reachable.contains(package.name)) ||
           !await buildStep.canRead(id) ||
           !await resolver.isLibrary(id)) {
         continue;
@@ -725,9 +786,13 @@ class SpringBuilder implements Builder {
     final root = buildStep.inputId.package;
     final found = <(Expression?, String, String, String)>[];
     final config = await buildStep.packageConfig;
+    final reachable = await _reachablePackages(buildStep);
     for (final package in config.packages) {
       if (package.name == root && !includeOwn) {
         continue;
+      }
+      if (reachable != null && !reachable.contains(package.name)) {
+        continue; // a sibling of a pub workspace, not a dependency
       }
       final id = AssetId(package.name, autoConfigurationLibrary);
       if (!await buildStep.canRead(id) ||
@@ -912,6 +977,90 @@ class SpringBuilder implements Builder {
   /// dependencies only outside `lib/` and `bin/`, as the
   /// `depend_on_referenced_packages` lint checks); `null` when it cannot be
   /// read.
+  /// The packages the application of [buildStep]'s input depends on,
+  /// directly or not (its own [_dependencies], then the `dependencies` of
+  /// each, read from their `pubspec.yaml`), or `null` when its pubspec
+  /// cannot be read. In a pub workspace the package config lists every
+  /// member, so being in it does not make a package a dependency: an app
+  /// must not get the auto-configurations of its siblings.
+  static Future<Set<String>?> _reachablePackages(BuildStep buildStep) async {
+    final direct = await _dependencies(buildStep);
+    if (direct == null) {
+      return null;
+    }
+    final config = await buildStep.packageConfig;
+    final byName = {
+      for (final package in config.packages) package.name: package,
+    };
+    final reachable = <String>{};
+    final pending = [...direct];
+    while (pending.isNotEmpty) {
+      final name = pending.removeLast();
+      if (!reachable.add(name) || name == buildStep.inputId.package) {
+        continue;
+      }
+      final package = byName[name];
+      if (package != null) {
+        final dependencies = await _pubspecDependencies(
+          buildStep,
+          package.name,
+          package.root,
+        );
+        if (dependencies == null) {
+          // Unknown: better every package of the config than a missing
+          // auto-configuration.
+          return null;
+        }
+        pending.addAll(dependencies);
+      }
+    }
+    return reachable;
+  }
+
+  // The `dependencies` of package [name] (at [root]): its pubspec.yaml read through the
+  // build, else from disk where the package config says it is; `null` when
+  // neither works (the caller then filters nothing).
+  static Future<List<String>?> _pubspecDependencies(
+    BuildStep buildStep,
+    String name,
+    Uri root,
+  ) async {
+    String? text;
+    final id = AssetId(name, 'pubspec.yaml');
+    try {
+      if (await buildStep.canRead(id)) {
+        text = await buildStep.readAsString(id);
+      }
+    } on Object {
+      // Not readable through the build.
+    }
+    if (text == null) {
+      try {
+        if (root.isScheme('file')) {
+          final file = io.File.fromUri(root.resolve('pubspec.yaml'));
+          if (file.existsSync()) {
+            text = file.readAsStringSync();
+          }
+        }
+      } on Object {
+        // Unreadable.
+      }
+    }
+    if (text == null) {
+      return null;
+    }
+    try {
+      final yaml = loadYaml(text);
+      final dependencies = yaml is Map ? yaml['dependencies'] : null;
+      if (dependencies is Map) {
+        return [for (final name in dependencies.keys) '$name'];
+      }
+      return const [];
+    } on YamlException {
+      return null;
+    }
+  }
+
   static Future<Set<String>?> _dependencies(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
     final pubspec = AssetId(package, 'pubspec.yaml');

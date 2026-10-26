@@ -1299,7 +1299,7 @@ Levels: `trace`, `debug`, `info`, `warn` (or `warning`), `error` (or
 | `logging.logback.rollingpolicy.max-history` | int | `7` | Rolled files kept (a count) |
 | `logging.logback.rollingpolicy.total-size-cap` | data size | `0B` (no limit) | Total size of the rolled files |
 | `logging.logback.rollingpolicy.clean-history-on-start` | bool | `false` | Delete rolled files when the app starts |
-| `spring.output.ansi.enabled` | `detect` / `always` / `never` | `detect` | Colors (`%clr`) on the console |
+| `spring.output.ansi.enabled` | `detect` / `always` / `never` | `detect` | Colors (`%clr`) on the console; `detect`: a terminal, or a Flutter debug/profile build |
 
 Files are not written on the web (a warning says so).
 `logging.logback.rollingpolicy.file-name-pattern` and the old
@@ -2331,7 +2331,7 @@ spring.devtools.restart.enabled=true
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `spring.flutter.lifecycle.pause-in-background` | bool | `true` | Pause the context in the background (`@Scheduled` tasks, WebSocket connections stop) and restart it in the foreground |
-| `spring.devtools.restart.enabled` | bool | `true` | A hot reload restarts the context when the generated code changed (beans, annotations, `lib/resources/`) |
+| `spring.devtools.restart.enabled` | bool | `true` | A hot reload restarts the context when the generated code changed (beans, annotations, `lib/resources/`); `false` keeps it (and the web server, its connections, the beans' state) until a hot restart. Flutter, and the Dart VM (`SpringHotReload`) |
 | `spring.flutter.scan-os-environment` | bool, **`--dart-define` only** | `false` | Read the OS environment variables (desktop); a config file cannot set it, as it decides whether the environment is read at all |
 
 ```bash

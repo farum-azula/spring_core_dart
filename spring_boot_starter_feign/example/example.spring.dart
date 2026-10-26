@@ -317,6 +317,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
       ),
     ),
   ],
+  resources: const {
+    r'application.properties': _i2.EmbeddedResource.text(
+      'catalog.url=https://api.neon.books\n',
+    ),
+  },
   introspections: [
     _i2.BeanIntrospection<_i1.Book>(
       className: r'Book',
@@ -451,20 +456,20 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '67b19176',
+  fingerprint: '2cbced21',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
 _i7.ConfigurableApplicationContext runApplication(List<String> args) =>
-    springApplication.run(args);
+    springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
 Future<_i7.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
-) => springApplication.runAsync(args);
+) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;

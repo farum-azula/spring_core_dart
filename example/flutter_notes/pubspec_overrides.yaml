@@ -1,0 +1,19 @@
+# Inside this repository: the family's packages from their folders (the
+# app is not in the pub workspace, because flutter_test pins test_api).
+dependency_overrides:
+  spring_boot_starter_flutter:
+    path: ../../spring_boot_starter_flutter
+  spring_boot_starter_web:
+    path: ../../spring_boot_starter_web
+  spring_core_dart:
+    path: ../../spring_core_dart
+  spring_core_dart_generator:
+    path: ../../spring_core_dart_generator
+  spring_boot_dart:
+    path: ../../spring_boot_dart
+  spring_boot_starter_logging:
+    path: ../../spring_boot_starter_logging
+  spring_boot_starter_test:
+    path: ../../spring_boot_starter_test
+  spring_web_dart:
+    path: ../../spring_web_dart

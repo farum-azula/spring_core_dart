@@ -43,10 +43,13 @@ final class IoWebServer implements WebServer {
   int get port => _server?.port ?? -1;
 
   @override
-  Future<void> start() async {
-    if (_server != null) {
-      return;
-    }
+  Future<void> start() => _starting ??= _bind();
+
+  // The bind in progress: a stop() waits for it, so a server stopped while
+  // its socket was still opening does not keep listening.
+  Future<void>? _starting;
+
+  Future<void> _bind() async {
     final address = await _address(settings.address);
     final ssl = settings.ssl;
     try {
@@ -70,8 +73,10 @@ final class IoWebServer implements WebServer {
     final server = _server!
       ..autoCompress = settings.compression
       ..serverHeader = null;
-    // Like Spring Boot without Spring Security: no protection headers
-    // beyond these two (X-XSS-Protection is obsolete).
+    // dart:io's defaults: X-Frame-Options: SAMEORIGIN and
+    // X-Content-Type-Options: nosniff stay (Spring Boot without Spring
+    // Security sends neither; the security starter will own these headers);
+    // X-XSS-Protection is obsolete.
     server.defaultResponseHeaders.removeAll('x-xss-protection');
     server.listen(
       _serve,
@@ -83,6 +88,15 @@ final class IoWebServer implements WebServer {
 
   @override
   Future<void> stop({Duration? timeout}) async {
+    final starting = _starting;
+    _starting = null;
+    if (starting != null) {
+      try {
+        await starting;
+      } on Object {
+        // It did not start: nothing to stop.
+      }
+    }
     final server = _server;
     if (server == null) {
       return;

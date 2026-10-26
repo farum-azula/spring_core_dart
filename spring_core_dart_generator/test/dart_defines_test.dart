@@ -27,6 +27,8 @@ void main(List<String> args) {
   final context = runApplication([
     '--spring.main.banner-mode=off',
     '--logging.level.root=off',
+    // The workspace's auto-configurations are all found: no web server.
+    '--spring.main.web-application-type=none',
   ]);
   final api = context.getBean<Api>();
   print('RESULT ${jsonEncode({

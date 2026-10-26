@@ -74,6 +74,7 @@ dart run tool/check_dependencies.dart            # the pub workspace
 (cd spring_boot_starter_flutter && flutter pub get)
 (cd example/flutter_counter && flutter pub get)
 (cd example/flutter_themes && flutter pub get)
+(cd example/flutter_notes && flutter pub get)
 dart run tool/check_dependencies.dart --flutter
 ```
 

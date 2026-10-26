@@ -110,6 +110,13 @@ final class WebServerStartStopLifecycle
     final started = _started;
     server.start().then(
       (_) {
+        if (!_running || !identical(_server, server)) {
+          // Stopped while the socket was opening: stop() closes it.
+          if (!started.isCompleted) {
+            started.complete(null);
+          }
+          return;
+        }
         _setLocalPort(server.port);
         final scheme = environment.getProperty('server.ssl.certificate') == null
             ? 'http'

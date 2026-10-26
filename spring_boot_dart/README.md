@@ -766,6 +766,31 @@ Notes:
 - The default matches Spring Boot DevTools, which runs the runners after
   every automatic restart.
 
+## Hot reload (Dart VM: servers, CLIs)
+
+A program on the Dart VM (a server of `spring_boot_starter_web`, a CLI) hot
+reloads too, like Spring Boot DevTools' restart: the generated
+`runApplication` registers the context, and after the VM reloaded the code
+(`reloadSources`, from a tool) the tool calls the service extension
+`ext.spring_boot.reload` (`SpringHotReload.extensionName`):
+
+- only method bodies changed: the context keeps running, with the new code;
+- the generated code changed (beans, annotations, `lib/resources/`, such as
+  a new `@GetMapping` or another `server.port`): the context is closed and
+  starts again with the same arguments (the web server stops and listens
+  again).
+
+The `dart run: <file>` tasks of the Flutter tools Zed extension do it on
+save: they run the program with the VM service on, reload it when a `.dart`
+file of the package (generated ones included: `build_runner watch` rewrites
+`*.spring.dart`) or a config file changes, then call the extension. Any tool
+can do the same with the VM service protocol.
+`spring.devtools.restart.enabled=false` keeps the context (the server, its
+connections, the beans' state) running whatever changed; new beans and
+config then take effect when the program restarts. Not in AOT or product builds,
+on the web, nor in Flutter (above: the root widget restarts the context).
+
+
 ## Flutter
 
 `runApplicationAsync(args)` (also generated) reads the config files

@@ -11,6 +11,7 @@ import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
 import 'package:spring_boot_dart/src/deferred_logs.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
+import 'package:spring_boot_dart/src/hot_reload.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
@@ -348,18 +349,30 @@ class SpringApplication {
   /// application's own [SpringApplication.additionalProfiles] (more
   /// specific last), before config files are read, so their
   /// `application-{profile}` files load; a reload keeps them.
+  ///
+  /// [hotReload] (the generated `runApplication` passes it) returns the
+  /// application as the code is now: with it, a hot reload on the Dart VM
+  /// restarts the context when the generated code changed
+  /// ([SpringHotReload]).
   ConfigurableApplicationContext run(
     List<String> args, {
     Map<String, String>? systemEnvironment,
     Map<String, Object?> properties = const {},
     List<String> additionalProfiles = const [],
-  }) => _run(
-    args,
-    systemEnvironment,
-    properties,
-    List.unmodifiable(additionalProfiles),
-    runners: true,
-  );
+    SpringApplication Function()? hotReload,
+  }) {
+    final context = _run(
+      args,
+      systemEnvironment,
+      properties,
+      List.unmodifiable(additionalProfiles),
+      runners: true,
+    );
+    if (hotReload != null) {
+      SpringHotReload.track(context, hotReload);
+    }
+    return context;
+  }
 
   ConfigurableApplicationContext _run(
     List<String> args,
@@ -451,18 +464,27 @@ class SpringApplication {
   /// `closeAsync()`).
   ///
   /// [additionalProfiles]: as for [run].
+  ///
+  /// [hotReload]: see [run].
   Future<ConfigurableApplicationContext> runAsync(
     List<String> args, {
     Map<String, String>? systemEnvironment,
     Map<String, Object?> properties = const {},
     List<String> additionalProfiles = const [],
-  }) => _runAsync(
-    args,
-    systemEnvironment,
-    properties,
-    List.unmodifiable(additionalProfiles),
-    runners: true,
-  );
+    SpringApplication Function()? hotReload,
+  }) async {
+    final context = await _runAsync(
+      args,
+      systemEnvironment,
+      properties,
+      List.unmodifiable(additionalProfiles),
+      runners: true,
+    );
+    if (hotReload != null) {
+      SpringHotReload.track(context, hotReload);
+    }
+    return context;
+  }
 
   Future<ConfigurableApplicationContext> _runAsync(
     List<String> args,

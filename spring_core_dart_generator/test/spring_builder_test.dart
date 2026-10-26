@@ -2195,7 +2195,7 @@ class DbProps { String url = ''; }
         expect(
           output,
           contains(
-            'runApplicationAsync(List<String>args)=>springApplication.runAsync(args)',
+            'runApplicationAsync(List<String>args)=>springApplication.runAsync(args,hotReload:()=>springApplication)',
           ),
         );
         expect(output, _has("BeanDefinition<CliRunner>(name: r'cliRunner'"));
@@ -2214,7 +2214,8 @@ class DbProps { String url = ''; }
         expect(
           output,
           _has(
-            'runApplication(List<String> args) => springApplication.run(args);',
+            'runApplication(List<String> args) => '
+            'springApplication.run(args, hotReload: () => springApplication);',
           ),
         );
         expect(

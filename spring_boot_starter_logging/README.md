@@ -45,7 +45,7 @@ logging.pattern.correlation=             # after [thread] in the default pattern
 logging.exception-conversion-word=%wEx   # the error of the default patterns
 logging.include-application-name=true    # [spring.application.name] in the default patterns
 logging.include-application-group=true   # [spring.application.group]
-spring.output.ansi.enabled=detect        # %clr colours: detect (a terminal), always, never
+spring.output.ansi.enabled=detect        # %clr colours: detect (a terminal, Flutter debug), always, never
 logging.threshold.console=warn           # console: warnings and errors only
 logging.console.enabled=true
 logging.buffer.enabled=true
@@ -215,7 +215,11 @@ LoggingSystem.instance
 - Not supported: `%marker`, `%contextName`, `%d` time zones other than UTC
   (Dart has no time zone database), `logback.xml` / `logback-spring.xml`.
 - `%clr` colours are on when `spring.output.ansi.enabled` says so; `detect`
-  means a terminal on standard output (never on the web or in a file).
+  means a terminal on standard output, or a Flutter app in a debug or
+  profile build (`flutter run`, the IDEs and the browser's DevTools show
+  the colours; never in a release build or a file). Viewing a Flutter
+  app's raw device log (Xcode's console, `adb logcat`) shows the codes as
+  text: set `spring.output.ansi.enabled=never` there.
   Logback's colour words (`%red(...)`, `%boldRed(...)`, `%highlight(...)`)
   always write ANSI codes, as Logback does.
 - `%kvp` prints the record's fields (Dart has no SLF4J key-value pairs);

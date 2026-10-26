@@ -18,8 +18,9 @@
 //   flutter_starter  spring_boot_starter_flutter affected
 //   flutter_counter  example/flutter_counter affected (incl. goldens)
 //   flutter_themes   example/flutter_themes affected (incl. goldens)
-//   flutter_examples either Flutter example (the goldens job)
-//   flutter          any of the three
+//   flutter_notes    example/flutter_notes affected (no goldens)
+//   flutter_examples flutter_counter or flutter_themes (the goldens job)
+//   flutter          any Flutter package
 //   family           a published Dart package of the family (the
 //                    applications of tool/check_app_dependencies.dart)
 import 'dart:io';
@@ -35,6 +36,7 @@ const flutterPackages = [
   'spring_boot_starter_flutter',
   'example/flutter_counter',
   'example/flutter_themes',
+  'example/flutter_notes',
 ];
 
 /// Changed paths (prefixes) that affect every package.
@@ -102,6 +104,7 @@ Future<void> main(List<String> args) async {
     final starter = has('spring_boot_starter_flutter');
     final counter = has('example/flutter_counter');
     final themes = has('example/flutter_themes');
+    final notes = has('example/flutter_notes');
     File(output).writeAsStringSync(
       [
         'packages=${ordered.where((p) => !flutterPackages.contains(p)).join(',')}',
@@ -110,8 +113,9 @@ Future<void> main(List<String> args) async {
         'flutter_starter=$starter',
         'flutter_counter=$counter',
         'flutter_themes=$themes',
+        'flutter_notes=$notes',
         'flutter_examples=${counter || themes}',
-        'flutter=${starter || counter || themes}',
+        'flutter=${starter || counter || themes || notes}',
         'family=${familyAffected(affected)}',
         '',
       ].join('\n'),

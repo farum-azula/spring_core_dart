@@ -48,7 +48,14 @@ password printed at startup).
 ## Around it
 
 - CORS, CSRF for session logins, security headers (HSTS, frame options,
-  content type options).
+  content type options). Spring Security's defaults: `X-Content-Type-Options:
+  nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 0`, `Cache-Control:
+  no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache`,
+  `Expires: 0`, HSTS over HTTPS. Today the web starter sends dart:io's
+  defaults (`X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options:
+  nosniff`; `io_web_server.dart`): the security starter takes them over
+  (removes them from `defaultResponseHeaders` and writes its own set,
+  configurable like `http.headers(...)`).
 - 401 / 403 as `ProblemDetail`, with `WWW-Authenticate`.
 - Method security from the core on the controllers' and services' beans.
 - Tests: a user per test, like `@WithMockUser`

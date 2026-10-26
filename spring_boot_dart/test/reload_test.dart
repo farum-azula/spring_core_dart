@@ -115,4 +115,49 @@ void main() {
       expect(StartupTask.runs, 1);
     });
   });
+
+  group('SpringHotReload (the Dart VM)', () {
+    test(
+      'a reload restarts a context only when its generated code changed',
+      () async {
+        var current = app('v1');
+        final context = current.run(
+          ['--name=Ada'],
+          systemEnvironment: const {},
+          hotReload: () => current,
+        );
+        context.getBean<Counter>().value = 3;
+        expect(SpringHotReload.isEnabled, isTrue);
+
+        expect(await SpringHotReload.reloadAll(), 0);
+        expect(context.isActive, isTrue);
+        expect(context.getBean<Counter>().value, 3);
+
+        current = app('v2', greeting: 'hi');
+        expect(await SpringHotReload.reloadAll(), 1);
+        expect(context.isActive, isFalse);
+
+        // The restarted context is tracked in its place.
+        current = app('v3', greeting: 'hey');
+        expect(await SpringHotReload.reloadAll(), 1);
+        expect(await SpringHotReload.reloadAll(), 0);
+      },
+    );
+
+    test('spring.devtools.restart.enabled=false keeps the context', () async {
+      var current = app('v1');
+      final context = current.run(
+        ['--spring.devtools.restart.enabled=false'],
+        systemEnvironment: const {},
+        hotReload: () => current,
+      );
+      context.getBean<Counter>().value = 3;
+
+      current = app('v2', greeting: 'hi');
+      expect(await SpringHotReload.reloadAll(), 0);
+      expect(context.isActive, isTrue);
+      expect(context.getBean<Counter>().value, 3);
+      context.close();
+    });
+  });
 }

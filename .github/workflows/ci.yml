@@ -31,6 +31,7 @@ jobs:
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
       flutter_counter: ${{ steps.affected.outputs.flutter_counter }}
       flutter_themes: ${{ steps.affected.outputs.flutter_themes }}
+      flutter_notes: ${{ steps.affected.outputs.flutter_notes }}
       flutter_examples: ${{ steps.affected.outputs.flutter_examples }}
       family: ${{ steps.affected.outputs.family }}
     steps:
@@ -252,10 +253,10 @@ jobs:
           # dart2js code expects the browser's `self` (timers of @Scheduled).
           node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 
-  # spring_boot_starter_flutter and the Flutter example: outside the pub workspace
+  # spring_boot_starter_flutter and the Flutter examples: outside the pub workspace
   # (flutter_test pins versions that package:test of the workspace cannot
   # use), so they get the Flutter SDK and their own resolution.
-  # Only when spring_boot_starter_flutter or the Flutter example is affected.
+  # Only when spring_boot_starter_flutter or a Flutter example is affected.
   flutter:
     needs: changes
     if: needs.changes.outputs.flutter == 'true'
@@ -275,13 +276,14 @@ jobs:
           (cd spring_boot_starter_flutter && flutter pub get)
           (cd example/flutter_counter && flutter pub get)
           (cd example/flutter_themes && flutter pub get)
+          (cd example/flutter_notes && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
 
       - name: Generated code is up to date (Flutter examples)
         run: |
-          for example in example/flutter_counter example/flutter_themes spring_boot_starter_flutter; do
+          for example in example/flutter_counter example/flutter_themes example/flutter_notes spring_boot_starter_flutter; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -292,6 +294,7 @@ jobs:
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
           (cd example/flutter_counter && flutter analyze --fatal-infos)
           (cd example/flutter_themes && flutter analyze --fatal-infos)
+          (cd example/flutter_notes && flutter analyze --fatal-infos)
 
       # The golden screenshots run in the `goldens` job (macOS).
       - name: Tests of spring_boot_starter_flutter
@@ -308,6 +311,12 @@ jobs:
         if: needs.changes.outputs.flutter_themes == 'true'
         working-directory: example/flutter_themes
         run: flutter test --exclude-tags golden
+
+      # The app's REST API: MockMvc and a real server on a free port.
+      - name: Tests of the Flutter notes example (REST API in the app)
+        if: needs.changes.outputs.flutter_notes == 'true'
+        working-directory: example/flutter_notes
+        run: flutter test
 
       - name: The example builds for the web (release)
         working-directory: example/flutter_counter
