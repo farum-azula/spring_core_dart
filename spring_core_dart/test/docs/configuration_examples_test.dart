@@ -9,7 +9,10 @@ import 'dart:io';
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:test/test.dart';
 
-const _doc = '../docs/configuration.md';
+/// docs/configuration.md, from the package folder or the repository root.
+final _doc = File('docs/configuration.md').existsSync()
+    ? 'docs/configuration.md'
+    : '../docs/configuration.md';
 
 /// The fenced blocks of [markdown]: (language, code, line).
 List<(String, String, int)> blocks(String markdown) {

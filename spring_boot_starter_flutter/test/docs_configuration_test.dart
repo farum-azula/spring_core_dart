@@ -7,7 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
-const _doc = '../docs/configuration.md';
+/// docs/configuration.md, from the package folder or the repository root.
+final _doc = File('docs/configuration.md').existsSync()
+    ? 'docs/configuration.md'
+    : '../docs/configuration.md';
 
 void main() {
   final available = File(_doc).existsSync();
