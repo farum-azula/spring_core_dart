@@ -26,7 +26,7 @@ which serves them on top of the server types below. WebSocket interfaces
 
 ```yaml
 dependencies:
-  spring_web_dart: ^0.3.1
+  spring_web_dart: ^0.3.2
 ```
 
 ## Annotations

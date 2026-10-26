@@ -1,3 +1,7 @@
+## 0.3.2
+
+- feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds
+
 ## 0.3.1
 
 - **Brings logging, like every Spring Boot starter:** depends on and re-exports `spring_boot_starter_logging` (and through it `spring_boot_dart` and `spring_core_dart`), so the starter is the only dependency an application lists, and one import gives everything. An application using it now gets the logging system (Boot's console format, `logging.*` properties) without adding the logging starter; `logging.enabled=false` turns it off.

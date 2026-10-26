@@ -1,3 +1,7 @@
+## 0.3.2
+
+- feat: spring_boot_starter_web, WebSocket server endpoints, uploads and downloads
+
 ## 0.3.1
 
 - No changes of its own.

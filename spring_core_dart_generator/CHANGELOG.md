@@ -1,3 +1,8 @@
+## 0.3.2
+
+- feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds
+- feat: spring_boot_starter_web, WebSocket server endpoints, uploads and downloads
+
 ## 0.3.1
 
 - **Test classes, the way Spring writes tests.** A new builder (`spring_test`, applied like the main one) reads every `test/**_test.dart` with `@SpringBootTest` classes and writes `test/spring/<path>.test.spring.dart` with `runSpringTests()`: `@Autowired`, `@Value` and `@CapturedOutput` fields injected before each test, `@TestBean` fields as bean overrides, `@Test` methods (`@DisplayName`, `@Disabled`, `@Tag`, `@TestOptions`), `@BeforeAll` / `@BeforeEach` / `@AfterEach` / `@AfterAll`, `@DirtiesContext`, `@Nested` groups, the class annotations `@ActiveProfiles`, `@TestPropertySource`, `@TestEnvironment`, `@DynamicPropertySource`, `@ContextInitializer`. Fields of type `List`, `Set`, `Map<String, T>`, `ObjectProvider` and nullable ones work as in constructor injection; annotated members of a superclass in the same file count. The application is the package's `@SpringBootApplication` entry point (or `@SpringBootTest(application: 'bin/x.dart')`). Mistakes fail the build with the file, line and column; while the test file does not parse, its generated file is kept. See `docs/testing.md`.

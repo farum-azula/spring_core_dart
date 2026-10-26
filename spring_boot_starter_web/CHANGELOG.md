@@ -1,3 +1,3 @@
-## Unreleased
+## 0.3.2
 
 - Initial version: Spring MVC for Dart. `@RestController` classes with `@GetMapping`, `@PostMapping`, ... on `dart:io`'s `HttpServer` (`server.*` properties), path variables, request parameters, headers and cookies, JSON bodies through the `ObjectMapper`, `@Valid` bodies, `ResponseEntity`, errors as `ProblemDetail` with `@ExceptionHandler` and `@RestControllerAdvice`, server-sent events (`EventStream`, `SseEmitter`), filters, interceptors, CORS, WebSocket endpoints of `spring_boot_starter_websocket` on the same server; `MockMvc` and `springBootTest(webEnvironment:)` in `spring_boot_starter_test`.

@@ -1,3 +1,8 @@
+## 0.3.2
+
+- feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds
+- feat: spring_boot_starter_web, WebSocket server endpoints, uploads and downloads
+
 ## 0.3.1
 
 - The example is a small Spring Boot application written by the generator (beans, `@Value`, SpEL, events) instead of hand-written bean definitions.

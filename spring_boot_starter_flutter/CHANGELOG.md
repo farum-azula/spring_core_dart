@@ -1,3 +1,7 @@
+## 0.3.2
+
+- feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds
+
 ## 0.3.1
 
 - The example is a Spring Boot application written by the generator: a `@ChangeNotifierComponent` counter and Spring widgets.
