@@ -7,7 +7,10 @@
 /// - [ApplicationContextRunner]: small contexts to test auto-configuration;
 /// - matchers: [hasSingleBean], [hasBean], [doesNotHaveBean],
 ///   [hasBeanNamed], [hasFailed];
-/// - [captureLogs]: records logged through `SpringLog` in each test.
+/// - [captureLogs]: records logged through `SpringLog` in each test;
+/// - test classes: [SpringBootTest], [Autowired] fields, [TestBean],
+///   [Test] methods and the other annotations, turned into tests by
+///   `spring_core_dart_generator` (`void main() => runSpringTests();`).
 ///
 /// Built on `test_api` and `matcher`, so it works with both `package:test`
 /// and `flutter_test`. Re-exports `spring_boot_dart`.
@@ -20,3 +23,4 @@ export 'package:spring_boot_starter_test/src/dynamic_property_registry.dart';
 export 'package:spring_boot_starter_test/src/log_capture.dart';
 export 'package:spring_boot_starter_test/src/matchers.dart';
 export 'package:spring_boot_starter_test/src/spring_boot_test.dart';
+export 'package:spring_boot_starter_test/src/test_annotations.dart';

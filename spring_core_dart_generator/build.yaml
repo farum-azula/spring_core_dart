@@ -5,3 +5,9 @@ builders:
     build_extensions: {".dart": [".spring.dart"]}
     auto_apply: dependents
     build_to: source
+  spring_test:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springTestBuilder"]
+    build_extensions: {"^test/{{}}_test.dart": ["test/spring/{{}}.test.spring.dart"]}
+    auto_apply: dependents
+    build_to: source

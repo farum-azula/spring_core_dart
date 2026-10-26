@@ -107,7 +107,7 @@ properties.
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter_test/spring_boot_starter_flutter_test.dart';
 
-import 'counter_page.test.spring.dart';
+import 'spring/counter_page.test.spring.dart';
 
 @SpringBootTest(properties: {'counter.step': 2})
 @DirtiesContext() // a fresh Counter for every test
@@ -138,7 +138,7 @@ void main() => runSpringTests();
   `WidgetTester` and returns `Future<void>`. It runs as `testWidgets`, in
   Flutter's fake async zone.
 - **`@Test()`** methods still work in the same class, run as `test`.
-- `@Skip`, `@Timeout`, `@Tags` from `flutter_test` apply as for `@Test`;
+- `@Disabled`, `@Tag` and `@TestOptions` apply as for `@Test`;
   `@WidgetTest(variant: TargetPlatformVariant.mobile())` runs it once per
   variant, like `testWidgets(variant:)`.
 
@@ -323,7 +323,7 @@ class HomeGoldens {
 
 - Golden images depend on the operating system's text rendering; this
   repository renders them on macOS in CI. Keep one OS for your goldens
-  too and tag them (`@Tags(['golden'])`) to run them only there.
+  too and tag them (`@Tag('golden')`) to run them only there.
 - `flutter test --update-goldens` writes the files.
 
 ## 10. Plain tests next to widget tests
@@ -337,7 +337,7 @@ in its own Dart package, tested with `spring_boot_starter_test` and
 ## 11. What the generator writes
 
 The same generated file as in [Testing](testing.md#15-what-the-generator-writes):
-`counter_page.test.spring.dart` with `runSpringTests()`. The Flutter
+`test/spring/counter_page.test.spring.dart` with `runSpringTests()`. The Flutter
 starter adds:
 
 - `@WidgetTest` methods as `testWidgets(name, (tester) =>

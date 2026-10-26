@@ -47,6 +47,7 @@ library;
 
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/test_builder.dart';
 import 'package:build/build.dart';
 
 /// Creates the [SpringBuilder]; referenced from the package's `build.yaml`
@@ -97,3 +98,8 @@ Builder springCoreDartBuilder(BuilderOptions options) {
     ),
   );
 }
+
+/// Creates the [SpringTestBuilder]: `<name>_test.dart` files with
+/// `@SpringBootTest` classes get `<name>.test.spring.dart` with
+/// `runSpringTests()` (build.yaml `spring_test`).
+Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();

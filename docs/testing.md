@@ -1,12 +1,9 @@
 # Testing
 
-> **Status.** Sections 1–2 and 12–14 describe what works today
-> (`spring_boot_starter_test`: `springBootTest`, `ApplicationContextRunner`,
-> the matchers, `captureLogs`). Sections 3–11, 15 and 16 describe **test
-> classes with annotations**, the way Spring writes tests; they are
-> **planned** ([roadmap](../roadmap/spring_boot_starter_test.md)) and this
-> page is their specification: the code shows the intended API and may
-> still change.
+> Tests come in two forms, both working: **functions** in `main`
+> (`springBootTest(...)`, section 2) and **test classes with annotations**,
+> the way Spring writes them (sections 3–11), which
+> `spring_core_dart_generator` turns into the same functions (section 15).
 
 Spring tests start the application (or a slice of it) once, inject beans
 into the test, replace some beans with fakes and set properties for the
@@ -20,21 +17,21 @@ widgets with the test's beans, themes and platforms.
 
 | Spring (Java) | Here |
 |---|---|
-| `@SpringBootTest` on a class | `@SpringBootTest()` on a class (planned), or `springBootTest(...)` in `main` (today) |
-| `@Autowired` field in a test | `@Autowired() late Checkout checkout;` (planned), or `app.getBean<Checkout>()` (today) |
-| `@MockitoBean`, `@TestBean` | `@TestBean()` field (planned), or `BeanOverride` (today) |
-| `@TestPropertySource`, `@ActiveProfiles`, `@DynamicPropertySource` | the same annotations (planned), or `properties:`, `profiles:`, `dynamicProperties:` (today) |
-| `@Test`, `@DisplayName`, `@Nested` | the same annotations (planned), or `test(...)` and `group(...)` (today) |
-| `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll` | the same annotations (planned), or `setUp`, `tearDown`, `setUpAll`, `tearDownAll` (today) |
-| `@DirtiesContext` | the same annotation (planned), or `app.markDirty()` (today) |
-| `OutputCaptureExtension` | `@CapturedOutput()` field (planned), or `captureLogs()` (today) |
+| `@SpringBootTest` on a class | `@SpringBootTest()` on a class, or `springBootTest(...)` in `main` |
+| `@Autowired` field in a test | `@Autowired() late Checkout checkout;`, or `app.getBean<Checkout>()` |
+| `@MockitoBean`, `@TestBean` | `@TestBean()` field, or `BeanOverride` |
+| `@TestPropertySource`, `@ActiveProfiles`, `@DynamicPropertySource` | the same annotations, or `properties:`, `profiles:`, `dynamicProperties:` |
+| `@Test`, `@DisplayName`, `@Nested`, `@Disabled`, `@Tag` | the same annotations, or `test(...)` and `group(...)` |
+| `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll` | the same annotations, or `setUp`, `tearDown`, `setUpAll`, `tearDownAll` |
+| `@DirtiesContext` | the same annotation, or `app.markDirty()` |
+| `OutputCaptureExtension` | `@CapturedOutput()` field, or `captureLogs()` |
 | `ApplicationContextRunner` | `ApplicationContextRunner` |
 | `src/test/resources` | `test/resources/` |
 
 ## Contents
 
 1. [Setup](#1-setup)
-2. [A test today](#2-a-test-today)
+2. [Tests as functions](#2-tests-as-functions)
 3. [A test class](#3-a-test-class)
 4. [Which application](#4-which-application)
 5. [Injecting beans](#5-injecting-beans)
@@ -72,10 +69,11 @@ test/
   checkout_test.dart
 ```
 
-Test classes (planned) need the generator to run over `test/` too; it does
-by default with `dart run build_runner build` or `watch`.
+Test classes need `spring_core_dart_generator` (already a dev dependency
+of the application) and `build_runner`; it runs over `test/` by default
+with `dart run build_runner build` or `watch`.
 
-## 2. A test today
+## 2. Tests as functions
 
 The whole application, once for the test file, with a fake gateway:
 
@@ -124,13 +122,13 @@ is listed in [section 3](#3-a-test-class), next to its annotation.
 
 ## 3. A test class
 
-*Planned.* The same test as a class:
+The same test as a class:
 
 ```dart
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import 'checkout.test.spring.dart'; // generated next to this file
+import 'spring/checkout.test.spring.dart'; // generated, in test/spring/
 
 @SpringBootTest(args: ['--shop.name=Night Books'])
 @ActiveProfiles(['dev', 'test'])
@@ -165,7 +163,8 @@ void main() => runSpringTests();
   annotations above it say how the application starts.
 - **`main`** stays: `dart test` runs a file's `main`, and the generator
   cannot write into your file. `runSpringTests()` comes from the generated
-  `checkout.test.spring.dart` and runs every test class of the file.
+  `test/spring/checkout.test.spring.dart` and runs every test class of the
+  file.
 - **Plain tests** can sit next to it in `main`, for what needs no context:
 
   ```dart
@@ -178,7 +177,7 @@ void main() => runSpringTests();
 
 ### `@SpringBootTest` options
 
-| Option | Type | Default | Today's parameter | Spring |
+| Option | Type | Default | `springBootTest` parameter | Spring |
 |---|---|---|---|---|
 | `application` | `String` | the package's only application ([section 4](#4-which-application)) | the first argument | `classes` |
 | `args` | `List<String>` | `[]` | `args:` | `args` |
@@ -188,7 +187,7 @@ void main() => runSpringTests();
 The other options are their own annotations, so that a test reads like
 Spring's:
 
-| Annotation | On | Today's parameter | Spring |
+| Annotation | On | `springBootTest` parameter | Spring |
 |---|---|---|---|
 | `@ActiveProfiles(['dev', 'test'])` | class | `profiles:` | `@ActiveProfiles` |
 | `@TestPropertySource(properties: {...}, locations: [...])` | class | `properties:`, `propertyFiles:` | `@TestPropertySource` |
@@ -287,10 +286,15 @@ class PaymentTest {
 }
 ```
 
-| Option | Default | Meaning |
+Which bean is replaced:
+
+| Given | Replaces | Generated |
 |---|---|---|
-| `name` | the only bean of the type | which bean to replace |
-| `type` | the field's declared type | replace a bean of another type than the field's (`@TestBean(type: PaymentGateway) final fake = FakeGateway();`) |
+| `name` | the bean (or alias) with that name, keeping the types it is registered under; without one, adds the value under that name | `BeanOverride.named(value, name: ...)` |
+| `type` (with or without `name`) | the only (or `@Primary`, or named) bean of `type` | `BeanOverride<Type>(value)` |
+| neither | the only bean of the field's declared type; the type must be written (`final Clock clock = ...`), else the build fails | `BeanOverride<Clock>(value)` |
+
+Without such a bean, the value is added as a new bean.
 
 - The field is a normal field, so the test reads its fake directly
   (`gateway.charged`), with its own type, not the bean's interface.
@@ -298,8 +302,8 @@ class PaymentTest {
   between tests, reset it in `@BeforeEach` or use `@DirtiesContext`.
 - Mocks from `package:mocktail` work as values; the starter has no mocking
   library of its own (Spring ships Mockito).
-- Today: `overrides: [BeanOverride<PaymentGateway>(gateway, name:
-  'sandbox')]`.
+- As a function: `overrides: [BeanOverride.named(gateway, name:
+  'sandbox')]`, or `BeanOverride<PaymentGateway>(gateway)`.
 
 ## 7. Properties and profiles
 
@@ -381,10 +385,10 @@ class BasketTest {
   Future<void> checkoutSendsAnEmail() async => ...;
 
   @Test()
-  @Skip('the payment sandbox is down')          // package:test's annotations
-  @Timeout(Duration(seconds: 5))
-  @Tags(['slow'])
-  void paysOnline() => ...;
+  @Disabled('the payment sandbox is down')      // skipped, with the reason
+  @Tag('slow')                                  // dart test --tags slow
+  @TestOptions(timeout: Timeout(Duration(seconds: 5)), retry: 2)
+  Future<void> paysOnline() async => ...;
 }
 ```
 
@@ -392,7 +396,14 @@ class BasketTest {
 |---|---|
 | `@Test([name])` | a test; without a name, the method name split into words (`addsABook` → `adds a book`) |
 | `@DisplayName(name)` | the test's name, the same as `@Test(name)` |
-| `@Skip([reason])`, `@Timeout(...)`, `@Tags([...])`, `@Retry(n)`, `@OnPlatform({...})`, `@TestOn(...)` | `package:test`'s own annotations; on a method they apply to that test, on the class to all of them |
+| `@Disabled([reason])` | skips the test (on the class: every test), like JUnit's `@Disabled` |
+| `@Tag(name)` | a tag for `dart test --tags` / `--exclude-tags`; several allowed; on the class for every test |
+| `@TestOptions(timeout:, retry:, testOn:, onPlatform:)` | `test()`'s other options; on the class for every test |
+
+`package:test`'s own `@Skip`, `@Timeout`, `@Tags`, `@Retry`, `@TestOn` and
+`@OnPlatform` can only annotate a library (`@TestOn('vm') library;` at the
+top of the file still works); `@Disabled`, `@Tag` and `@TestOptions` are
+their per-test counterparts.
 
 The order of the tests is the order of the methods in the class.
 
@@ -418,7 +429,7 @@ class OrdersTest {
 }
 ```
 
-| Annotation | Runs | Today |
+| Annotation | Runs | As a function |
 |---|---|---|
 | `@BeforeAll()` | once, before the context starts; a static method | `setUpAll` registered before `springBootTest(...)` |
 | `@BeforeEach()` | before every test, with the beans injected | `setUp` |
@@ -456,7 +467,7 @@ class CounterTest {
 class FreshCounterTest { ... }
 ```
 
-Today: `app.markDirty()` in the test, or `setUp(app.markDirty)` for every
+As a function: `app.markDirty()` in the test, or `setUp(app.markDirty)` for every
 test.
 
 ## 11. Groups: `@Nested`
@@ -492,7 +503,7 @@ the group is a field of its own class.
 
 ## 12. Logs and console output
 
-*Today.* `captureLogs()` records what is logged through `SpringLog` in
+As a function, `captureLogs()` records what is logged through `SpringLog` in
 each test; `app.output` is what the application printed (the failure
 report of a context that did not start, the banner when on).
 
@@ -508,7 +519,7 @@ void main() {
 }
 ```
 
-*Planned.* A `@CapturedOutput()` field:
+In a test class, a `@CapturedOutput()` field:
 
 ```dart
 @SpringBootTest()
@@ -532,7 +543,7 @@ that level.
 
 ## 13. Auto-configuration: `ApplicationContextRunner`
 
-*Today, and it stays a function, as in Spring.* A small context per test,
+A function, as in Spring: a small context per test,
 to check what an auto-configuration creates under which properties. No
 application, no config files.
 
@@ -584,49 +595,81 @@ They take a `SpringBootTestContext`, an `ApplicationContext` or an
 
 ## 15. What the generator writes
 
-*Planned.* For `test/checkout_test.dart` the generator writes
-`test/checkout.test.spring.dart` (the `_test` suffix becomes `.test`, so
-`dart test` does not run the generated file as a test of its own). It
-holds `runSpringTests()`, which writes the class out with today's
-functions:
+The generated files go to their own folder, `test/spring/`, with the
+same structure as `test/`:
+
+```
+test/
+  checkout_test.dart
+  orders/
+    basket_test.dart
+  spring/                              generated, do not edit
+    checkout.test.spring.dart
+    orders/basket.test.spring.dart
+```
+
+The `_test` suffix becomes `.test`, so `dart test` never runs a generated
+file as a test of its own. Each test file has its own generated file, not
+one for all: `dart test` compiles every test file separately, and a shared
+file would make each of them compile all the tests (and an error in one
+break them all). The generated file of `test/checkout_test.dart`
+holds `runSpringTests()`, which writes the class out with the functions of
+[section 2](#2-tests-as-functions). For the class of section 3:
 
 ```dart
 // GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
-import '../bin/shop.spring.dart';
-import 'checkout_test.dart';
+import '../checkout_test.dart';
+
+import 'package:spring_boot_starter_test/generated.dart' as _sbt;
+
+import '../../bin/shop.spring.dart' as _app0;
 
 void runSpringTests() {
-  group('CheckoutTest', () {
+  _sbt.group('CheckoutTest', () {
     final instance = CheckoutTest();
-    final app = springBootTest(
-      springApplication,
+    final app = _sbt.springBootTest(
+      _app0.springApplication,
       args: ['--shop.name=Night Books'],
       profiles: ['dev', 'test'],
       systemEnvironment: {'SHOP_MAX_BASKET_SIZE': '25'},
-      overrides: [
-        BeanOverride<PaymentGateway>(instance.gateway, name: 'sandbox'),
-      ],
+      overrides: [_sbt.BeanOverride.named(instance.gateway, name: 'sandbox')],
     );
-    void inject() => instance
-      ..properties = app.getBean<ShopProperties>()
-      ..checkout = app.getBean<Checkout>();
-
-    setUp(inject); // after a restart too
-    test('properties from the command line and the environment',
-        () => instance.propertiesFromTheCommandLineAndTheEnvironment());
-    test('checkout pays through the fake', () => instance.pays());
+    _sbt.setUp(() {
+      instance.properties = app.getBean();
+      instance.checkout = app.getBean();
+    });
+    _sbt.test(
+      'properties from the command line and the environment',
+      () => instance.propertiesFromTheCommandLineAndTheEnvironment(),
+    );
+    _sbt.test('checkout pays through the fake', () => instance.pays());
   });
 }
 ```
 
+- **The test file is read as written**, not resolved: the generated file
+  imports what the test file imports (same prefixes, `show` and `hide`)
+  plus the test file itself (relative imports re-pointed from
+  `test/spring/`), so every type and constant in the
+  annotations means the same there. Annotations are recognized by name
+  (`@Test`, also `@spring.Test` with a prefix).
+- **Bean types are not repeated**: `instance.checkout = app.getBean();`
+  takes `Checkout` from the field. A nullable field uses `findBean()`, a
+  `List` field `getBeans()`, a `@Value` field `value(...)`.
+- **`@TestBean(name:)`** becomes `BeanOverride.named`, which keeps the
+  types of the bean it replaces, so a `FakeGateway` field replaces the
+  `PaymentGateway` called `sandbox`.
+- **The application** is the package's `@SpringBootApplication` entry point
+  in `bin/` or `lib/` (its generated `springApplication`).
+- **Order**: `@BeforeAll` and `@AfterAll` are declared before
+  `springBootTest`, so they run before the context starts and after it
+  closes; the fields are injected in a `setUp` before every test (new beans
+  after a restart), then the `@BeforeEach` methods run.
 - The test file and the generated file import each other, which Dart
   allows; no `part` is needed, the generated code uses only public members.
-- The generator for test classes is open to other starters:
-  `spring_boot_starter_flutter_test` adds its own method annotations
-  (`@WidgetTest`) to the same generated file.
 - Each test class becomes a `group` named after it, so `dart test --name`
   and the editor's run buttons find its tests.
 - The generated file is plain code: open it to see what a test does, and
@@ -636,20 +679,30 @@ void runSpringTests() {
 
 ## 16. Build errors
 
-*Planned.* The generator stops the build with a message pointing at the
+The generator stops the build with a message pointing at the
 member:
 
 | Message | Fix |
 |---|---|
-| `@Autowired field 'checkout' must be late and not final` | `@Autowired() late Checkout checkout;` |
-| `'_checkout' is private; the generated test cannot set it` | make it public |
+| `@Autowired field 'checkout' must be late and not final or static` | `@Autowired() late Checkout checkout;` (also `@Value`, `@CapturedOutput`) |
+| `@Autowired field 'checkout' needs its type written` | `late Checkout checkout;`, not `late var checkout;` |
+| `'_checkout' is private; the generated test cannot reach it` | make it public |
 | `@TestBean field 'gateway' needs a value` | `final gateway = FakeGateway();` |
-| `@BeforeAll method 'start' must be static` | `static Future<void> start() ...` (it runs before the class is created) |
-| `@Test method 'pays' has parameters` | test methods take none (widget tests with a `WidgetTester`: [Flutter testing](flutter-testing.md)) |
-| `@ActiveProfiles on a method: profiles belong to the class` | move it to the class, or a second class |
-| `No application in this package` / `Several applications: name one` | `@SpringBootTest(application: 'bin/shop.dart')` |
-| `@SpringBootTest class 'CheckoutTest' needs a default constructor` | remove the constructor's parameters |
-| `checkout_test.dart does not import checkout.test.spring.dart` (a warning) | add the import and `void main() => runSpringTests();` |
+| `@TestBean field 'gateway' needs the type of the bean it replaces` | `final PaymentGateway gateway = ...`, `@TestBean(type: PaymentGateway)` or `@TestBean(name: 'sandbox')` |
+| `@TestBean field 'gateway' in a @Nested class` | move it to the `@SpringBootTest` class (one context) |
+| `@BeforeAll method start must be static` | `static Future<void> start() ...` (also `@AfterAll`, `@DynamicPropertySource`, `@ContextInitializer`) |
+| `@BeforeEach method before must not be static` | an instance method (also `@AfterEach`, `@Test`) |
+| `@Test method pays has parameters` | test methods take none (widget tests with a `WidgetTester`: [Flutter testing](flutter-testing.md)) |
+| `@ActiveProfiles on a method: it belongs to the class` | move it to the class, or a second class (also `@SpringBootTest`, `@TestPropertySource`, `@TestEnvironment`) |
+| `@Disabled on helper, which is not a @Test method` | add `@Test()` (also `@DisplayName`, `@Tag`, `@TestOptions`) |
+| `@Nested field 'inner' must be created with a class of this file` | declare the class in the test file: `final inner = Inner();` |
+| `'CheckoutTest' needs a constructor without required parameters` | remove the constructor's parameters |
+| `No application in this package` | a `@SpringBootApplication` entry point in `bin/` or `lib/` |
+| `Several applications in this package (...)` | `@SpringBootTest(application: 'bin/shop.dart')` |
+| `'bin/x.dart' is not an entry point with @SpringBootApplication` | the path of an entry point |
+| `test/checkout_test.dart does not import 'spring/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
+
+Each message starts with the place: `test/checkout_test.dart:12:3: ...`.
 
 A missing bean is not a build error: the test fails when the context
 starts, with the same report as the application (`No bean of type

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:yaml/yaml.dart';
+
 /// One `key=value` entry of a properties file, with its position.
 final class PropertyEntry {
   /// Creates an entry.
@@ -10,7 +12,13 @@ final class PropertyEntry {
     required this.line,
     required this.keyStart,
     required this.keyEnd,
+    this.environment = false,
   });
+
+  /// Whether [key] is an environment variable (`SHOP_MAX_BASKET_SIZE`, from
+  /// a test's `@TestEnvironment`), matched the way Spring maps property
+  /// names to variables.
+  final bool environment;
 
   /// File path.
   final String path;
@@ -30,12 +38,15 @@ final class PropertyEntry {
   /// End column of the key.
   final int keyEnd;
 
-  /// `application-prod` for `.../application-prod.properties`.
+  /// `application-prod` for `.../application-prod.properties` (or `.yml`).
   String get fileName {
     final name = path.split(Platform.pathSeparator).last;
-    return name.endsWith('.properties')
-        ? name.substring(0, name.length - '.properties'.length)
-        : name;
+    for (final extension in ['.properties', '.yml', '.yaml']) {
+      if (name.endsWith(extension)) {
+        return name.substring(0, name.length - extension.length);
+      }
+    }
+    return name;
   }
 }
 
@@ -106,4 +117,69 @@ bool _continues(String line) {
     slashes++;
   }
   return slashes.isOdd;
+}
+
+/// Parses a YAML config file ([content], one or more `---` documents) into
+/// flat entries like the config loader's: `shop.payment.provider`,
+/// `shop.servers[0].host`; a list of scalars also gives the whole list
+/// under its key (`shop.currencies` = `EUR,USD`). Each entry points at its
+/// key in the file. A file that does not parse gives what was read before
+/// the error (nothing for a broken first document).
+List<PropertyEntry> parseYamlProperties(String path, String content) {
+  final entries = <PropertyEntry>[];
+  final List<YamlDocument> documents;
+  try {
+    documents = loadYamlDocuments(content);
+  } on YamlException {
+    return entries;
+  }
+
+  void add(String key, YamlNode at, String value) {
+    final span = at.span;
+    entries.add(
+      PropertyEntry(
+        path: path,
+        key: key,
+        value: value,
+        line: span.start.line,
+        keyStart: span.start.column,
+        keyEnd: span.start.line == span.end.line
+            ? span.end.column
+            : span.start.column + key.length,
+      ),
+    );
+  }
+
+  // [at]: the node the entry points at (its key, or the list element).
+  void walk(YamlNode node, String prefix, YamlNode at) {
+    switch (node) {
+      case YamlMap(:final nodes):
+        for (final MapEntry(key: keyNode, value: child) in nodes.entries) {
+          final key = keyNode is YamlScalar ? '${keyNode.value}' : '$keyNode';
+          walk(
+            child,
+            prefix.isEmpty ? key : '$prefix.$key',
+            keyNode is YamlNode ? keyNode : child,
+          );
+        }
+      case YamlList(:final nodes):
+        if (nodes.every((n) => n is YamlScalar)) {
+          add(prefix, at, nodes.map((n) => '${n.value}').join(','));
+        }
+        for (var i = 0; i < nodes.length; i++) {
+          final child = nodes[i];
+          walk(child, '$prefix[$i]', child is YamlScalar ? child : at);
+        }
+      case YamlScalar(:final value):
+        if (prefix.isNotEmpty) {
+          add(prefix, at, value == null ? '' : '$value');
+        }
+    }
+  }
+
+  for (final document in documents) {
+    final root = document.contents;
+    walk(root, '', root);
+  }
+  return entries;
 }

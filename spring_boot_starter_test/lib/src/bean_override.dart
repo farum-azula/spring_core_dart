@@ -47,7 +47,20 @@ String defaultBeanName(String type) {
 /// ```
 final class BeanOverride<T extends Object> {
   /// Overrides the bean of type [T] (or the bean called [name]).
-  const BeanOverride(this.instance, {this.name});
+  const BeanOverride(this.instance, {this.name}) : _keepTypes = false;
+
+  /// Overrides the bean called [name] with [instance], keeping the types
+  /// the bean is registered under (so a fake of another class replaces
+  /// it); without such a bean, [instance] is registered under [name] with
+  /// its runtime type. What a `@TestBean(name: ...)` field generates.
+  ///
+  /// ```dart
+  /// BeanOverride.named(FakeGateway(), name: 'sandbox')
+  /// ```
+  const BeanOverride.named(this.instance, {required String this.name})
+    : _keepTypes = true;
+
+  final bool _keepTypes;
 
   /// The object to inject instead of the real bean.
   final T instance;
@@ -111,7 +124,7 @@ final class BeanOverride<T extends Object> {
     registry.registerBeanDefinition(
       BeanDefinition<T>(
         name: target,
-        types: [T],
+        types: _keepTypes ? (original?.types ?? [instance.runtimeType]) : [T],
         create: (_) => instance,
         primary: original?.primary ?? false,
         fallback: original?.fallback ?? false,

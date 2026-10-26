@@ -168,6 +168,29 @@ final class SpringBootTestContext {
   /// The bean named [name].
   Object getBeanByName(String name) => context.getBeanByName(name);
 
+  /// The bean of type [T] (optionally with [qualifier]), or `null` when
+  /// there is none: an optional `@Autowired` field (`late Mailer? mailer`).
+  T? findBean<T extends Object>({String? qualifier}) =>
+      context.getBeanProvider<T>(qualifier: qualifier).getIfAvailable();
+
+  /// Every bean of type [T] (optionally only those [qualifier] selects),
+  /// in `@Order` order: an `@Autowired` list field.
+  List<T> getBeans<T extends Object>({String? qualifier}) =>
+      context.beanFactory.getSortedBeans<T>(qualifier: qualifier);
+
+  /// A `@Value` expression converted to [T]: `${...}` placeholders, then
+  /// `#{...}` expressions, as for a bean's `@Value` field.
+  T value<T>(String expression) => _resolver.value<T>(expression);
+
+  /// A `@Value` expression, `null` when a placeholder has no value.
+  T? optionalValue<T>(String expression) =>
+      _resolver.optionalValue<T>(expression);
+
+  DependencyResolver get _resolver => switch (context.beanFactory) {
+    final DependencyResolver resolver => resolver,
+    _ => throw StateError('The bean factory cannot resolve @Value'),
+  };
+
   /// Closes the context after the current test; the next test gets a
   /// fresh one (Spring's `@DirtiesContext`).
   void markDirty() => _dirty = true;

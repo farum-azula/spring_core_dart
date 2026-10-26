@@ -6,6 +6,7 @@ import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/flutter_assets.dart';
 import 'package:dart_spring_language_server/src/pointcuts.dart';
 import 'package:dart_spring_language_server/src/properties_index.dart';
+import 'package:dart_spring_language_server/src/test_properties.dart';
 import 'package:dart_spring_language_server/src/templates.dart';
 import 'package:spring_core_dart/aop.dart' show ExpressionPointcut;
 import 'package:spring_core_dart/expression.dart';
@@ -259,7 +260,8 @@ final class SpringWorkspace {
             !name.endsWith('.g.dart')) {
           dart.add(entity.path);
           _readDart(entity);
-        } else if (name.endsWith('.properties')) {
+        } else if (name.endsWith('.properties') ||
+            (_isYaml(name) && _inResources(entity.path))) {
           properties.add(entity.path);
           _readProperties(entity);
         }
@@ -292,10 +294,10 @@ final class SpringWorkspace {
     }
     _propertiesModified[file.path] = modified;
     try {
-      _properties[file.path] = parseProperties(
-        file.path,
-        file.readAsStringSync(),
-      );
+      final text = file.readAsStringSync();
+      _properties[file.path] = _isYaml(file.path)
+          ? parseYamlProperties(file.path, text)
+          : parseProperties(file.path, text);
     } on FileSystemException {
       _properties.remove(file.path);
     }
@@ -499,27 +501,130 @@ final class SpringWorkspace {
   // ---------------------------------------------------------------------
 
   /// Entries for [key] in every properties file (relaxed: `my-key`,
-  /// `myKey` and `MY_KEY` match), `application.properties` first.
-  List<PropertyEntry> property(String key) {
+  /// `myKey` and `MY_KEY` match), `application.properties` first. In a
+  /// test file ([from]), the properties the test sets for its context
+  /// come first (see [testProperties]).
+  List<PropertyEntry> property(String key, {DartFile? from}) {
     final wanted = _canonical(key);
+    final variable = _environmentName(key);
+    bool matches(PropertyEntry entry) => entry.environment
+        ? _environmentName(entry.key) == variable
+        : entry.key == key || _canonical(entry.key) == wanted;
+    final bundles = _messageBundles();
     final result = [
-      for (final entries in _properties.values)
-        for (final entry in entries)
-          if (entry.key == key || _canonical(entry.key) == wanted) entry,
+      for (final MapEntry(key: path, value: entries) in _properties.entries)
+        if (!bundles.contains(path))
+          for (final entry in entries)
+            if (matches(entry)) entry,
     ];
     result.sort((a, b) => _fileOrder(a).compareTo(_fileOrder(b)));
-    return result;
+    return [
+      if (from != null)
+        for (final entry in testProperties(from))
+          if (matches(entry)) entry,
+      ...result,
+    ];
   }
+
+  // A property name or an environment variable without separators, as the
+  // relaxed binding compares them: `shop.max-basket-size`,
+  // `SHOP_MAX_BASKET_SIZE` and `SHOP_MAXBASKETSIZE` all give
+  // `SHOPMAXBASKETSIZE`.
+  static String _environmentName(String key) =>
+      key.replaceAll(RegExp('[._-]'), '').toUpperCase();
 
   /// Entries whose key starts with [prefix] + `.`.
   List<PropertyEntry> propertiesWithPrefix(String prefix) {
     final wanted = '${_canonical(prefix)}.';
+    final bundles = _messageBundles();
     return [
-      for (final entries in _properties.values)
-        for (final entry in entries)
-          if (_canonical(entry.key).startsWith(wanted)) entry,
+      for (final MapEntry(key: path, value: entries) in _properties.entries)
+        if (!bundles.contains(path))
+          for (final entry in entries)
+            if (_canonical(entry.key).startsWith(wanted)) entry,
     ]..sort((a, b) => _fileOrder(a).compareTo(_fileOrder(b)));
   }
+
+  /// The message [code] in every message bundle (`messages.properties`,
+  /// `messages_ja.properties`, ... or the bundles of
+  /// `spring.messages.basename`), the default bundle first; with [from],
+  /// only the bundles of that file's package.
+  List<PropertyEntry> messages(String code, {String? from}) {
+    final package = from == null ? null : _packageRoot(from);
+    return [
+      for (final MapEntry(key: path, value: bundlePackage)
+          in _messageBundlePackages().entries)
+        if (package == null || bundlePackage == package)
+          for (final entry in _properties[path] ?? const <PropertyEntry>[])
+            if (entry.key == code) entry,
+    ]..sort((a, b) => a.fileName.compareTo(b.fileName));
+  }
+
+  /// Whether the package of [path] has a message bundle.
+  bool hasMessageBundles(String path) {
+    final package = _packageRoot(path);
+    return _messageBundlePackages().values.contains(package);
+  }
+
+  Set<String> _messageBundles() => _messageBundlePackages().keys.toSet();
+
+  // The message bundles by path, with their package: `.properties` files
+  // under a `resources/` directory whose name (without the locale suffix)
+  // is a basename of their package's `spring.messages.basename`
+  // (`messages` by default; dots or slashes separate folders:
+  // `i18n/messages`). Each package has its own setting.
+  Map<String, String> _messageBundlePackages() {
+    final basenames = <String, Set<String>>{};
+    for (final MapEntry(key: path, value: entries) in _properties.entries) {
+      for (final entry in entries) {
+        if (entry.key == 'spring.messages.basename') {
+          final names = basenames.putIfAbsent(_packageRoot(path), () => {});
+          for (final name in entry.value.split(',')) {
+            final trimmed = name.trim().replaceFirst('classpath:', '');
+            if (trimmed.isNotEmpty) {
+              names.add(trimmed.replaceAll('.', '/'));
+            }
+          }
+        }
+      }
+    }
+    final result = <String, String>{};
+    for (final path in _properties.keys) {
+      if (!path.endsWith('.properties')) {
+        continue;
+      }
+      final relative = _resourcePath(path);
+      if (relative == null) {
+        continue;
+      }
+      final package = _packageRoot(path);
+      final names = basenames[package] ?? const {'messages'};
+      if (names.any(
+        (basename) =>
+            relative == basename || relative.startsWith('${basename}_'),
+      )) {
+        result[path] = package;
+      }
+    }
+    return result;
+  }
+
+  // `i18n/messages_ja` for `.../lib/resources/i18n/messages_ja.properties`.
+  static String? _resourcePath(String path) {
+    final normalized = path.replaceAll(r'\', '/');
+    final index = normalized.lastIndexOf('/resources/');
+    if (index < 0) {
+      return null;
+    }
+    final relative = normalized.substring(index + '/resources/'.length);
+    return relative.substring(0, relative.lastIndexOf('.'));
+  }
+
+  static bool _isYaml(String name) =>
+      name.endsWith('.yml') || name.endsWith('.yaml');
+
+  static bool _inResources(String path) =>
+      path.replaceAll(r'\', '/').contains('/resources/');
 
   static String _fileOrder(PropertyEntry entry) =>
       '${entry.fileName == 'application' ? 0 : 1}${entry.fileName}'
@@ -585,12 +690,14 @@ final class SpringWorkspace {
           for (final bean in beans)
             '- ${bean.summary} — `${_shortPath(bean.path)}`',
         ].join('\n');
-      case _PropertyTarget(:final key, :final entries):
+      case _PropertyTarget(:final key, :final entries, :final message):
         if (entries.isEmpty) {
-          return '**`$key`**: not defined in any properties file';
+          return message
+              ? '**`$key`**: no such message in the message bundles'
+              : '**`$key`**: not defined in any properties file';
         }
         return [
-          '**`$key`**',
+          message ? '**`$key`** (message)' : '**`$key`**',
           '',
           for (final entry in entries)
             '- `${entry.fileName}`: `${entry.value}`',
@@ -735,7 +842,7 @@ final class SpringWorkspace {
     }
     if (annotation == 'ConditionalOnProperty' ||
         annotation == 'ConditionalOnBooleanProperty') {
-      return _PropertyTarget(value, property(value));
+      return _PropertyTarget(value, property(value, from: file));
     }
     if (annotation == 'ConfigurationProperties') {
       return _PropertyTarget('$value.*', propertiesWithPrefix(value));
@@ -751,13 +858,20 @@ final class SpringWorkspace {
         }
         if (part.kind == TemplatePartKind.placeholder) {
           final key = part.inner(source);
-          return _PropertyTarget(key, property(key));
+          return _PropertyTarget(key, property(key, from: file));
         }
         return _expressionTarget(source, part, relative);
       }
     }
+    if (_isMessageCode(ref.literal)) {
+      return _PropertyTarget(
+        value,
+        messages(value, from: file.path),
+        message: true,
+      );
+    }
     if (ref.method != null && _propertyMethods.contains(ref.method)) {
-      return _PropertyTarget(value, property(value));
+      return _PropertyTarget(value, property(value, from: file));
     }
     return null;
   }
@@ -1449,6 +1563,21 @@ final class SpringWorkspace {
         );
       }
     }
+    if (hasMessageBundles(file.path)) {
+      final calls = _MessageCallCollector();
+      file.unit.accept(calls);
+      for (final code in calls.codes) {
+        if (messages(code.value, from: file.path).isEmpty) {
+          problems.add(
+            Problem(
+              rangeOf(file, code.contentsOffset, code.contentsEnd),
+              "No message '${code.value}' in the message bundles "
+              '(messages*.properties)',
+            ),
+          );
+        }
+      }
+    }
     for (final ref in _templateStrings(file)) {
       final base = ref.contentStart;
       final source = file.text.substring(ref.contentStart, ref.contentEnd);
@@ -1474,7 +1603,7 @@ final class SpringWorkspace {
               key.isNotEmpty &&
               !_looksLikeEnvironmentVariable(key) &&
               !_targetIsNullable(ref.literal) &&
-              property(key).isEmpty) {
+              property(key, from: file).isEmpty) {
             problems.add(
               Problem(
                 rangeOf(file, base + part.innerStart, base + part.keyEnd!),
@@ -1709,10 +1838,47 @@ final class _BeanTarget extends _Target {
 }
 
 final class _PropertyTarget extends _Target {
-  _PropertyTarget(this.key, this.entries);
+  _PropertyTarget(this.key, this.entries, {this.message = false});
 
   final String key;
   final List<PropertyEntry> entries;
+
+  /// A message code (`context.message('key')`), not a property.
+  final bool message;
+}
+
+/// Methods whose first argument is a message code.
+const _messageMethods = {'message', 'getMessage'};
+
+// The first argument of `context.message(...)` / `getMessage(...)`.
+bool _isMessageCode(SimpleStringLiteral literal) {
+  final parent = literal.parent;
+  final invocation = parent is ArgumentList ? parent.parent : null;
+  return invocation is MethodInvocation &&
+      _messageMethods.contains(invocation.methodName.name) &&
+      identical(
+        invocation.argumentList.arguments.firstOrNull?.argumentExpression,
+        literal,
+      );
+}
+
+// Calls with a message code and no `defaultMessage:`.
+final class _MessageCallCollector extends RecursiveAstVisitor<void> {
+  final codes = <SimpleStringLiteral>[];
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final arguments = node.argumentList.arguments;
+    final code = arguments.firstOrNull?.argumentExpression;
+    if (_messageMethods.contains(node.methodName.name) &&
+        code is SimpleStringLiteral &&
+        !arguments.any(
+          (a) => a is NamedArgument && a.name.lexeme == 'defaultMessage',
+        )) {
+      codes.add(code);
+    }
+    super.visitMethodInvocation(node);
+  }
 }
 
 /// A `@Pointcut` method of an `@Aspect` class.
