@@ -27,14 +27,19 @@ class Counter {              // notifying after every method
 // reads counter.value in build: rebuilt after every increment
 class CounterText extends SpringStatelessWidget<(Counter,)> {
   @override
-  Widget build(BuildContext context) => Text('${beans.$1.value}');
+  Widget build(BuildContext context) {
+    final (counter,) = beans; // the beans by name
+    return Text('${counter.value}');
+  }
 }
 
 // only calls a method: an increment does not rebuild it
 class AddButton extends SpringStatelessWidget<(Counter,)> {
   @override
-  Widget build(BuildContext context) =>
-      FloatingActionButton(onPressed: beans.$1.increment, ...);
+  Widget build(BuildContext context) {
+    final (counter,) = beans;
+    return FloatingActionButton(onPressed: counter.increment, ...);
+  }
 }
 ```
 
@@ -536,13 +541,16 @@ its button while only the `Text` showing the count rebuilds:
 ```dart
 class CounterPage extends SpringStatelessWidget<(Counter,)> {
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: const CounterText(),                  // rebuilt after a tap
-    floatingActionButton: FloatingActionButton( // the page is not
-      onPressed: beans.$1.increment,
-      child: const Icon(Icons.add),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final (counter,) = beans;
+    return Scaffold(
+      body: const CounterText(),                  // rebuilt after a tap
+      floatingActionButton: FloatingActionButton( // the page is not
+        onPressed: counter.increment,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
 }
 ```
 

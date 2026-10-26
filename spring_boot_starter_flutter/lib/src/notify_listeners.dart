@@ -59,8 +59,10 @@ class NotifyListeners {
 ///
 /// class CounterValue extends SpringStatelessWidget<(Counter,)> {
 ///   @override
-///   Widget build(BuildContext context) =>
-///       Text('${beans.$1.value}');   // rebuilt on every notification
+///   Widget build(BuildContext context) {
+///     final (counter,) = beans;
+///     return Text('${counter.value}');   // rebuilt on every notification
+///   }
 /// }
 /// ```
 ///
