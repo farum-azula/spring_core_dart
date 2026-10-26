@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.1
 
 - The example is a Spring Boot application; the logger comes from `@Log` (the README shows `@Log` first and the hand-made `SpringLog('name')` as the alternative for code outside a scan).
 - `spring_auto_configuration.dart` re-exports `spring_boot_dart`'s auto-configuration, so a test naming `springBootAutoConfiguration` (`ApplicationContextRunner`) needs no other dependency.

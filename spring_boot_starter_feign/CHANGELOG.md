@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.1
 
 - **Brings logging, like every Spring Boot starter:** depends on and re-exports `spring_boot_starter_logging` (and through it `spring_boot_dart` and `spring_core_dart`), so the starter is the only dependency an application lists, and one import gives everything. An application using it now gets the logging system (Boot's console format, `logging.*` properties) without adding the logging starter; `logging.enabled=false` turns it off.
 - The example is a Spring Boot application: a `@FeignClient` against a local server (a book, a 404 as `null`, a search, an event stream).

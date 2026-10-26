@@ -53,11 +53,11 @@ Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_d
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.3.0
+  spring_core_dart: ^0.3.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.3.0
+  spring_core_dart_generator: ^0.3.1
 ```
 
 Unreleased versions can be used from git with

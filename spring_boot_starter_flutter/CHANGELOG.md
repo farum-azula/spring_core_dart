@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.1
 
 - The example is a Spring Boot application written by the generator: a `@ChangeNotifierComponent` counter and Spring widgets.
 - `spring_auto_configuration.dart` re-exports the logging starter's (and through it `spring_boot_dart`'s) auto-configuration, so a test naming `springBootAutoConfiguration` (`ApplicationContextRunner`) needs no other dependency.
