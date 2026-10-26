@@ -8,10 +8,15 @@ name: 'Release'
 # commit `chore(release): vX.Y.Z` is pushed to main together with the tag
 # `vX.Y.Z` — which starts step 2, publish.yml ("Release: publish to pub.dev").
 #
+#   prepare: CI must not have failed on the commit; the bump, kept as a patch
+#   tests:   the tests with the new version, in four parts (one machine each)
+#   tag:     the same patch committed, tagged and pushed
+#
 # No release branch and no merges: main is the only branch, a release is a
 # commit and a tag on it. Pushes to main only run CI. The push uses
 # RELEASE_TOKEN: pushes made with the default GITHUB_TOKEN do not start
-# other workflows (the tag must start publish.yml).
+# other workflows (the tag must start publish.yml). publish.yml does not
+# run the tests again when they passed here for the tagged commit.
 
 # The bump is part of the run's name, so the list of runs shows what was
 # chosen.
@@ -37,18 +42,47 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
-  release:
+  prepare:
+    name: Bump versions and changelogs
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-26.04
     permissions:
-      contents: write
+      contents: read
+      actions: read # CI's result for the commit
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Commit to release
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # A red main is not released (re-run CI when it was a flake). Still
+      # running or no run: the tests below decide.
+      - name: CI did not fail on the commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          conclusion=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=1" \
+            --jq '.workflow_runs[0] | if . == null then "none" else (.conclusion // .status) end')
+          echo "CI on $SHA: $conclusion"
+          case "$conclusion" in
+            success) ;;
+            failure|timed_out|startup_failure)
+              echo "::error::CI failed on $SHA ($conclusion): fix main or re-run CI before releasing."
+              exit 1 ;;
+            *) echo "::warning::CI on $SHA: $conclusion; releasing on the tests of this workflow." ;;
+          esac
 
       - uses: dart-lang/setup-dart@v1
         with:
@@ -67,20 +101,83 @@ jobs:
           fi
           echo "Bump: $BUMP"
           dart run tool/release.dart --bump="$BUMP"
+          git diff --binary > "$RUNNER_TEMP/release.patch"
+          git diff --stat
 
-      # Test with the new version before tagging (tests may check it, e.g.
-      # compatibility messages): a failure leaves no tag behind.
-      - name: Tests with the new version
+      # The tests and the commit use exactly this change.
+      - uses: actions/upload-artifact@v7
         if: steps.release.outputs.version != ''
-        run: dart run tool/test_all.dart --packages
+        with:
+          name: release-patch
+          path: ${{ runner.temp }}/release.patch
+          if-no-files-found: error
+
+      - name: Summary
+        if: steps.release.outputs.version == ''
+        run: |
+          echo "Nothing to release: no package changed since the last tag." >> "$GITHUB_STEP_SUMMARY"
+
+  # Test with the new version before tagging (tests may check it, e.g.
+  # compatibility messages): a failure leaves no tag behind. Every package,
+  # from its directory, integration tests included (tool/test_all.dart
+  # --packages), dealt to four machines.
+  tests:
+    name: Tests with the new version (part ${{ matrix.part }}/4)
+    needs: prepare
+    if: needs.prepare.outputs.version != ''
+    runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        part: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-patch
+          path: ${{ runner.temp }}
+
+      - run: git apply "$RUNNER_TEMP/release.patch"
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - name: Tests
+        env:
+          PART: ${{ matrix.part }}
+        run: dart run tool/test_all.dart --packages --job "$PART/4"
+
+  tag:
+    name: Commit, tag and push
+    needs: [prepare, tests]
+    if: needs.prepare.outputs.version != ''
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-patch
+          path: ${{ runner.temp }}
 
       # Atomic: the commit and the tag land together or not at all (e.g. when
       # main moved meanwhile; then run the workflow again).
       - name: Commit, tag and push
-        if: steps.release.outputs.version != ''
         env:
-          VERSION: ${{ steps.release.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
+          git apply "$RUNNER_TEMP/release.patch"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "chore(release): v$VERSION"
@@ -89,10 +186,7 @@ jobs:
 
       - name: Summary
         env:
-          VERSION: ${{ steps.release.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BUMP: ${{ inputs.bump }}
         run: |
-          if [ -z "$VERSION" ]; then
-            echo "Nothing to release: no package changed since the last tag." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "Released v$VERSION (${{ inputs.bump }}): \"Release: publish to pub.dev\" publishes it now." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "Released v$VERSION ($BUMP): \"Release: publish to pub.dev\" publishes it now." >> "$GITHUB_STEP_SUMMARY"

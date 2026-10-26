@@ -388,7 +388,7 @@ final class SpringWorkspace {
           continue;
         }
         final explicit = _unnamed(stereotype)
-            ? null
+            ? stringValue(namedArgument(stereotype, 'name'))
             : stringValue(positionalArgument(stereotype));
         final name = explicit ?? defaultBeanName(info.name);
         result.add(

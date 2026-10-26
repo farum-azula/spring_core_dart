@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_test/src/bean_override.dart';
 import 'package:spring_boot_starter_test/src/dynamic_property_registry.dart';
+import 'package:spring_boot_starter_test/src/mock_mvc.dart';
 import 'package:test_api/scaffolding.dart';
 
 /// Starts [application] for the tests of the enclosing `main` or `group`,
@@ -71,11 +72,14 @@ SpringBootTestContext springBootTest(
   Map<String, String> systemEnvironment = const {},
   List<BeanOverride<Object>> overrides = const [],
   List<ApplicationContextInitializer> initializers = const [],
+  WebEnvironment webEnvironment = WebEnvironment.mock,
 }) {
   final test = SpringBootTestContext._(
     application,
     args: List.unmodifiable(args),
+    webEnvironment: webEnvironment,
     properties: {
+      'spring.test.web-environment': webEnvironment._value,
       ...properties,
       if (profiles.isNotEmpty) 'spring.profiles.active': profiles.join(','),
     },
@@ -115,10 +119,32 @@ SpringBootTestContext springBootTest(
   return test;
 }
 
+/// Which web server a [springBootTest] starts (with
+/// `spring_boot_starter_web`), like Spring's `SpringBootTest.WebEnvironment`.
+enum WebEnvironment {
+  /// No server: [SpringBootTestContext.mockMvc] calls the controllers in
+  /// memory (the default).
+  mock('mock'),
+
+  /// A real server on a free port: [SpringBootTestContext.localServerPort].
+  randomPort('random-port'),
+
+  /// A real server on `server.port`.
+  definedPort('defined-port'),
+
+  /// No server and no mock.
+  none('none');
+
+  const WebEnvironment(this._value);
+
+  final String _value;
+}
+
 /// The running context of a [springBootTest].
 final class SpringBootTestContext {
   SpringBootTestContext._(
     this._application, {
+    required this.webEnvironment,
     required this.args,
     required this._properties,
     required this._systemEnvironment,
@@ -145,6 +171,25 @@ final class SpringBootTestContext {
 
   /// The command-line arguments the application is started with.
   final List<String> args;
+
+  /// The web server the test starts.
+  final WebEnvironment webEnvironment;
+
+  /// The port of the real server (`WebEnvironment.randomPort` or
+  /// `definedPort`), like Spring's `@LocalServerPort`.
+  int get localServerPort =>
+      switch (environment.getProperty('local.server.port')) {
+        final port? => int.parse(port),
+        null => throw StateError(
+          'No web server runs: use springBootTest(webEnvironment: '
+          'WebEnvironment.randomPort) with spring_boot_starter_web',
+        ),
+      };
+
+  /// Calls the controllers in memory (spring_boot_starter_web), like
+  /// Spring's `@AutoConfigureMockMvc`.
+  MockMvc get mockMvc => _mockMvc ??= MockMvc.of(context);
+  MockMvc? _mockMvc;
 
   /// The application context. Available inside tests and `setUp`.
   ConfigurableApplicationContext get context =>
@@ -227,11 +272,41 @@ final class SpringBootTestContext {
         printOnFailure(line);
       },
     );
-    _context = await application.runAsync(
+    final context = await application.runAsync(
       args,
       systemEnvironment: _systemEnvironment,
       properties: {...fromFiles, ..._properties},
     );
+    _context = context;
+    _mockMvc = null;
+    if (webEnvironment == WebEnvironment.randomPort ||
+        webEnvironment == WebEnvironment.definedPort) {
+      await _awaitServer(context);
+    }
+  }
+
+  // The server binds its socket asynchronously; it publishes
+  // `local.server.port` once it listens (or closes the context when it
+  // cannot start).
+  static Future<void> _awaitServer(
+    ConfigurableApplicationContext context,
+  ) async {
+    final watch = Stopwatch()..start();
+    while (context.environment.getProperty('local.server.port') == null) {
+      if (!context.isActive) {
+        throw StateError('The web server failed to start (see the log)');
+      }
+      if (!context.containsBean('webServerStartStopLifecycle')) {
+        throw StateError(
+          'webEnvironment: ${WebEnvironment.randomPort.name} needs '
+          'spring_boot_starter_web',
+        );
+      }
+      if (watch.elapsed > const Duration(seconds: 30)) {
+        throw StateError('The web server did not start within 30 seconds');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
   }
 
   // Like SpringApplication's shutdown: closeAsync() awaits asynchronous

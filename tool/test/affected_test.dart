@@ -140,6 +140,10 @@ targets:
     test('a generator change reaches the apps whose tests run its code', () {
       expect(affected('spring_core_dart_generator/lib/x.dart'), {
         'spring_core_dart_generator',
+        // Their tests start what the generator writes: server endpoints
+        // (test/server/), controllers (test/app/).
+        'spring_boot_starter_websocket',
+        'spring_boot_starter_web',
         'example/spring_core_tour',
         'example/spring_boot_feign',
       });
@@ -147,6 +151,26 @@ targets:
 
     test('a core change reaches everything', () {
       expect(affected('spring_core_dart/lib/x.dart'), packages.toSet());
+    });
+
+    test('the starters\' applications are checked when the family changes', () {
+      expect(
+        familyAffected(affected('spring_boot_starter_cache/lib/x.dart')),
+        isTrue,
+      );
+      expect(
+        familyAffected(affected('spring_core_dart_generator/lib/x.dart')),
+        isTrue,
+      );
+      expect(
+        familyAffected(affected('example/spring_core_tour/bin/x.dart')),
+        isFalse,
+      );
+      expect(
+        familyAffected(affected('spring_boot_starter_flutter/lib/x.dart')),
+        isFalse,
+      );
+      expect(familyAffected(affected('README.md')), isFalse);
     });
   });
 }

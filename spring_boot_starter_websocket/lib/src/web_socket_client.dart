@@ -72,8 +72,12 @@ class WebSocketClient {
 /// Stream<ChatMessage> messages();
 /// ```
 ///
+/// On a `@WebSocketEndpoint` (server) class it marks the method handling
+/// each message of a connection instead (see `WebSocketEndpoint`).
+///
 /// Spring (Java): no declarative counterpart; the closest is
 /// `WebSocketHandler.handleMessage` or STOMP's `@SubscribeMapping`.
+@BeanMethodAnnotation()
 class OnMessage {
   /// Marks a method returning the incoming messages.
   const OnMessage();

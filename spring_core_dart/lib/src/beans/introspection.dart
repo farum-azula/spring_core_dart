@@ -138,14 +138,21 @@ final class BeanProperty<T extends Object> {
 /// hello.invoke(person, "Ann");
 /// ```
 final class BeanMethod<T extends Object> {
-  /// Describes method [name] of [T], called through `invoke`.
+  /// Describes method [name] of [T], called through `invoke` (and
+  /// `invokeNamed` for named parameters).
   BeanMethod(
     this.name, {
     required this._invoke,
+    this._invokeNamed,
     this.returnType,
     List<Type> parameterTypes = const [],
+    List<BeanParameter> parameters = const [],
+    this.returnTypeInfo,
+    this.isFuture = false,
+    this.isVoid = false,
     List<Object> annotations = const [],
   }) : parameterTypes = List.unmodifiable(parameterTypes),
+       parameters = List.unmodifiable(parameters),
        annotations = List.unmodifiable(annotations);
 
   /// The method name.
@@ -157,14 +164,58 @@ final class BeanMethod<T extends Object> {
   /// Declared types of the positional parameters.
   final List<Type> parameterTypes;
 
+  /// Every parameter (positional, then named) with its name, full type and
+  /// annotations. Written by the generator for the methods of
+  /// `BeanDefinition.annotatedMethods` (what a request handler needs to
+  /// bind its arguments); empty in other descriptions.
+  final List<BeanParameter> parameters;
+
+  /// The full result type, for a `Future<T>` the type `T`; written with
+  /// [parameters], else `null`.
+  final TypeInfo<Object?>? returnTypeInfo;
+
+  /// Whether the method returns a non-nullable `Future` (see
+  /// [returnTypeInfo]).
+  final bool isFuture;
+
+  /// Whether the result (or the future's value) is `void`.
+  final bool isVoid;
+
   /// Const annotations on the method.
   final List<Object> annotations;
   final Object? Function(T bean, List<Object?> arguments) _invoke;
+  final Object? Function(
+    T bean,
+    List<Object?> positional,
+    Map<Symbol, Object?> named,
+  )?
+  _invokeNamed;
 
   /// Calls the method on [bean] with positional [arguments] (already of
-  /// the parameter types); returns its result (`null` for `void`).
-  Object? invoke(Object bean, List<Object?> arguments) =>
-      _invoke(bean as T, arguments);
+  /// the parameter types) and [namedArguments] (by [BeanParameter.symbol];
+  /// an omitted optional one keeps its default value); returns its result
+  /// (`null` for `void`).
+  Object? invoke(
+    Object bean,
+    List<Object?> arguments, [
+    Map<Symbol, Object?> namedArguments = const {},
+  ]) {
+    if (namedArguments.isEmpty) {
+      return _invoke(bean as T, arguments);
+    }
+    final invokeNamed = _invokeNamed;
+    if (invokeNamed == null) {
+      throw ArgumentError.value(
+        namedArguments.keys.toList(),
+        'namedArguments',
+        '$T.$name takes no named parameters',
+      );
+    }
+    return invokeNamed(bean as T, arguments, namedArguments);
+  }
+
+  /// The first annotation of type [A] on the method, or `null`.
+  A? annotation<A>() => annotations.whereType<A>().firstOrNull;
 
   /// Whether [bean] can be passed to [invoke]: an instance of `T`. A proxy
   /// that implements only the bean's interfaces (`aop_proxies: interfaces`)

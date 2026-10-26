@@ -1,4 +1,5 @@
 @TestOn('vm')
+@Tags(['integration'])
 library;
 
 import 'dart:async';

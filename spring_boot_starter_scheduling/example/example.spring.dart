@@ -151,6 +151,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     annotatedMethods: [
       _i2.BeanMethod<_i1.Heartbeat>(
         r'beat',
+        isVoid: true,
         invoke: (bean, arguments) => Function.apply(bean.beat, arguments),
         annotations: const [
           _i6.Scheduled(fixedRateString: r'${heartbeat.rate:1s}'),
@@ -158,6 +159,8 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       ),
       _i2.BeanMethod<_i1.Heartbeat>(
         r'report',
+        isFuture: true,
+        isVoid: true,
         invoke: (bean, arguments) => Function.apply(bean.report, arguments),
         annotations: const [_i6.Scheduled(cron: r'*/2 * * * * *')],
       ),
@@ -318,7 +321,7 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'cdd79b4f',
+  fingerprint: 'aab715d6',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -111,6 +111,7 @@ Parameters:
 | `@RequestHeader() Map<String, String> headers` | one header per entry |
 | `@CookieValue('SESSION') String session` | a cookie: the cookies of a call go in one `Cookie: a=1; b=2` header; `null` is left out |
 | `@RequestBody() Book book` | the body: objects as JSON (`ObjectMapper`), `String` as text, `Uint8List` as bytes; with `consumes: MediaType.applicationFormUrlencoded` (or that `Content-Type` header) a `Map` or object is sent as a form (`name=value&...`, see below) |
+| `@RequestPart('file') MultipartFile file` | a part of a `multipart/form-data` body (files, text fields, JSON parts; see Files and multipart) |
 | a parameter without annotation | the body (only one such parameter) |
 
 `@PathVariable`, `@RequestParam` and `@RequestHeader` follow Spring's
@@ -171,6 +172,55 @@ startup with the reason, for instance:
 Invalid Feign client CatalogClient:
   - CatalogClient.find: the path variable {isbn} of "/books/{isbn}" has no @PathVariable parameter
 ```
+
+## Files and multipart
+
+A method with `@RequestPart` parameters sends a `multipart/form-data`
+body, like Spring Cloud OpenFeign with `@RequestPart` / `MultipartFile`
+(`consumes: MediaType.multipartFormData` is optional; another `consumes`
+stops the application at startup):
+
+```dart
+@PostMapping.of(path: '/books/{isbn}/files', consumes: MediaType.multipartFormData)
+Future<UploadResult> upload(
+  @PathVariable() String isbn,
+  @RequestPart('file') MultipartFile file,   // a file part
+  @RequestPart('meta') FileMeta meta,        // an object → a JSON part
+  @RequestPart('note') String note,          // a text field
+  @RequestParam('draft') bool draft,         // still a query parameter: ?draft=true
+);
+
+await books.upload(
+  '978-0',
+  InMemoryMultipartFile('file', bytes, originalFilename: 'cover.png'),
+  FileMeta(title: 'Cover'),
+  'first edition',
+  false,
+);
+```
+
+| `@RequestPart('x')` parameter | Part |
+|---|---|
+| `MultipartFile` | a file: `filename` and content type from the file (else from the file name, else `application/octet-stream`); the part is named after the annotation, not `file.name` |
+| `List<MultipartFile>` | one file part per file, all named `x` |
+| `Uint8List`, `List<int>` | a file part without file name (`application/octet-stream`) |
+| `String`, numbers, `bool`, enums, `DateTime` (or a `List` of them) | a text field (one per item), written like query parameters |
+| an object, a `Map`, a `List` of objects | a JSON part (`application/json`), written with the client's `ObjectMapper` |
+
+`MultipartFile` is the type controllers receive (from `spring_web_dart`);
+`InMemoryMultipartFile` builds one from bytes or text (and a received file
+can be passed on as it is). `@RequestPart.of(name: 'note', required:
+false)`, or a nullable parameter, leaves the part out for `null`; a
+required part that is `null` is an `ArgumentError`, before anything is
+sent. `@RequestParam`, `@RequestHeader` and `@PathVariable` work as on any
+method — `@RequestParam` stays in the query, like Spring Cloud OpenFeign.
+The `Content-Type` is `multipart/form-data; boundary=...` (it replaces
+`consumes`). At startup, `@RequestPart` together with `@RequestBody`, or a
+parameter with `@RequestPart` and another annotation, stops the
+application.
+
+The body is built in memory once per call (each file read once), so
+retries send the same bytes; there is no streaming upload yet.
 
 ## Server-sent events
 
@@ -526,5 +576,7 @@ the responses.
 - Form bodies take the object's properties as the `ObjectMapper` writes
   them (`@JsonProperty` names), not feign-form's `@FormProperty`; a nested
   object in a form fails the call with an `EncodeException`.
-- Not yet: multipart bodies, `@SpringQueryMap`, streaming of other
-  response bodies (downloads).
+- Multipart bodies are built in memory (no streaming upload); a list of
+  plain values in a `@RequestPart` is sent as one text field per item.
+- Not yet: `@SpringQueryMap`, streaming of other response bodies
+  (downloads).

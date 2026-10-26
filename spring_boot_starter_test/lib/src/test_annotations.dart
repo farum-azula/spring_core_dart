@@ -16,6 +16,8 @@
 // which declares the tests with springBootTest, group, test, setUp and
 // tearDown (see docs/testing.md).
 
+import 'package:spring_boot_starter_test/src/spring_boot_test.dart'
+    show WebEnvironment;
 import 'package:test_api/scaffolding.dart' show Timeout;
 
 /// A class of tests run against the application, like Spring's
@@ -39,7 +41,13 @@ final class SpringBootTest {
     this.args = const [],
     this.properties = const {},
     this.resourceDirectories = const ['test/resources'],
+    this.webEnvironment = WebEnvironment.mock,
   });
+
+  /// The web server the test starts (with `spring_boot_starter_web`):
+  /// none and `MockMvc` by default, a real one with
+  /// `WebEnvironment.randomPort` (see `@LocalServerPort`).
+  final WebEnvironment webEnvironment;
 
   /// The entry point of the application, relative to the package
   /// (`bin/admin.dart`, `lib/main.dart`); only needed when the package has
@@ -296,4 +304,25 @@ final class Nested {
 final class CapturedOutput {
   /// Marks the field.
   const CapturedOutput();
+}
+
+/// Injects the port of the real server into a `late int` field, like
+/// Spring's `@LocalServerPort` (with
+/// `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`).
+///
+/// ```dart
+/// @LocalServerPort()
+/// late int port;
+/// ```
+final class LocalServerPort {
+  /// Marks the field.
+  const LocalServerPort();
+}
+
+/// Marks a test class whose `@Autowired() late MockMvc mvc;` calls the
+/// controllers in memory, like Spring's `@AutoConfigureMockMvc`. `MockMvc`
+/// fields work without it; it states the intent.
+final class AutoConfigureMockMvc {
+  /// Marks the class.
+  const AutoConfigureMockMvc();
 }

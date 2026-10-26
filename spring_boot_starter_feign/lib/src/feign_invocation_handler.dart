@@ -164,7 +164,12 @@ final class FeignInvocationHandler implements InvocationHandler {
     String? lastEventId,
   ) async {
     final request = _request(
-      await _prepare(plan, arguments, lastEventId: lastEventId),
+      await _prepare(
+        plan,
+        arguments,
+        await plan.multipart(arguments),
+        lastEventId: lastEventId,
+      ),
     );
     final watch = Stopwatch()..start();
     _logRequest(request);
@@ -208,14 +213,16 @@ final class FeignInvocationHandler implements InvocationHandler {
   /// the `dismiss404` property.
   bool get dismiss404 => client.dismiss404 || config.dismiss404;
 
-  // A fresh template for a call with [arguments], changed by the
-  // interceptors, then completed with the configured defaults.
+  // A fresh template for a call with [arguments] (and its [multipart]
+  // body), changed by the interceptors, then completed with the configured
+  // defaults.
   Future<RequestTemplate> _prepare(
     _Plan plan,
-    List<Object?> arguments, {
+    List<Object?> arguments,
+    _Multipart? multipart, {
     String? lastEventId,
   }) async {
-    final template = plan.template(arguments);
+    final template = plan.template(arguments, multipart);
     if (lastEventId != null) {
       template.headers.set('Last-Event-ID', lastEventId);
     }
@@ -261,10 +268,13 @@ final class FeignInvocationHandler implements InvocationHandler {
     ProxyMethod method,
     List<Object?> arguments,
   ) async {
+    // A multipart body is built once (files are read once): every attempt
+    // sends the same bytes with the same boundary.
+    final multipart = await plan.multipart(arguments);
     for (var attempt = 1; ; attempt++) {
       // Like Feign, the interceptors run for every attempt — here on a
       // fresh template, so a refreshed token reaches the retry.
-      final request = _request(await _prepare(plan, arguments));
+      final request = _request(await _prepare(plan, arguments, multipart));
       try {
         final response = await _send(request, plan, method);
         return plan.decode(response, method);
@@ -389,6 +399,9 @@ typedef _Binding = ({
   String? defaultValue,
 });
 
+/// An encoded multipart body and its `Content-Type` (with the boundary).
+typedef _Multipart = ({Uint8List bytes, String contentType});
+
 /// How one method becomes a request, worked out once.
 final class _Plan {
   _Plan._(
@@ -404,6 +417,7 @@ final class _Plan {
     this.cookies,
     this.staticHeaders,
     this.body,
+    this.parts,
     this.produces,
     this.consumes,
     this.parameters,
@@ -452,6 +466,7 @@ final class _Plan {
     final headers = <_Binding>[];
     final headerMaps = <int>[];
     final cookies = <(String, int)>[];
+    final parts = <_Binding>[];
     int? body;
     final unannotated = <int>[];
     // Values of path variables, query parameters, headers and cookies must
@@ -493,12 +508,14 @@ final class _Plan {
       final requestHeader = annotations.whereType<RequestHeader>().firstOrNull;
       final cookieValue = annotations.whereType<CookieValue>().firstOrNull;
       final requestBody = annotations.whereType<RequestBody>().firstOrNull;
+      final requestPart = annotations.whereType<RequestPart>().firstOrNull;
       final count = [
         pathVariable,
         requestParam,
         requestHeader,
         cookieValue,
         requestBody,
+        requestPart,
       ].whereType<Object>().length;
       if (count > 1) {
         problems.add('$name: parameter ${parameter.name} has several roles');
@@ -553,20 +570,42 @@ final class _Plan {
           problems.add('$name has more than one @RequestBody');
         }
         body = index;
+      } else if (requestPart != null) {
+        parts.add(
+          bind(requestPart.name ?? parameter.name, index, requestPart.required),
+        );
       } else {
         unannotated.add(index);
       }
     }
-    // Like Feign: one parameter without annotation is the body.
+    // A multipart body: `consumes: multipart/form-data` or a @RequestPart
+    // parameter (which needs no other consumes).
+    final consumes = mapping.consumes;
+    final multipart =
+        parts.isNotEmpty || (consumes != null && _isMultipart(consumes));
+    if (parts.isNotEmpty && consumes != null && !_isMultipart(consumes)) {
+      problems.add(
+        '$name has @RequestPart parameters but consumes "$consumes": a '
+        'multipart body needs consumes: MediaType.multipartFormData (or none)',
+      );
+    }
+    if (multipart && body != null) {
+      problems.add(
+        '$name: a multipart method takes @RequestPart parameters, not '
+        '@RequestBody (${method.parameters[body].name})',
+      );
+    }
+    // Like Feign: one parameter without annotation is the body (of a
+    // method without parts).
     if (unannotated.isNotEmpty) {
-      if (body == null && unannotated.length == 1) {
+      if (body == null && unannotated.length == 1 && !multipart) {
         body = unannotated.single;
       } else {
         for (final index in unannotated) {
           problems.add(
             '$name: parameter ${method.parameters[index].name} needs '
-            '@PathVariable, @RequestParam, @RequestHeader, @CookieValue or '
-            '@RequestBody',
+            '@PathVariable, @RequestParam, @RequestHeader, @CookieValue, '
+            '${multipart ? '@RequestPart' : '@RequestBody or @RequestPart'}',
           );
         }
       }
@@ -632,8 +671,9 @@ final class _Plan {
       cookies,
       staticHeaders,
       body,
+      multipart ? parts : null,
       mapping.produces,
-      mapping.consumes,
+      consumes,
       method.parameters,
       method.isFuture ? null : eventType,
     );
@@ -695,6 +735,10 @@ final class _Plan {
   final List<(String, int)> cookies;
   final List<(String, String)> staticHeaders;
   final int? body;
+
+  /// The `@RequestPart` parameters of a multipart method (`null`: not
+  /// multipart).
+  final List<_Binding>? parts;
   final String? produces;
   final String? consumes;
   final List<BeanParameter> parameters;
@@ -739,8 +783,9 @@ final class _Plan {
 
   /// A new template for a call with [arguments]: path, query, headers and
   /// body from the method (the configured defaults come after the
-  /// interceptors, see [applyDefaults]).
-  RequestTemplate template(List<Object?> arguments) {
+  /// interceptors, see [applyDefaults]); a multipart method sends
+  /// [multipart] (see [multipart]).
+  RequestTemplate template(List<Object?> arguments, _Multipart? multipart) {
     final decodeSlash = handler.config.decodeSlash;
     var expanded = path;
     for (final MapEntry(key: name, value: binding) in pathVariables.entries) {
@@ -841,7 +886,12 @@ final class _Plan {
     }
     List<int>? bytes;
     final bodyIndex = body;
-    if (bodyIndex != null && arguments[bodyIndex] != null) {
+    if (multipart != null) {
+      // The encoder's type with the boundary replaces any other (an
+      // explicit `consumes: multipart/form-data` too).
+      bytes = multipart.bytes;
+      requestHeaders.contentType = multipart.contentType;
+    } else if (bodyIndex != null && arguments[bodyIndex] != null) {
       final value = arguments[bodyIndex]!;
       final String contentType;
       final declared = requestHeaders.contentType ?? consumes;
@@ -884,13 +934,131 @@ final class _Plan {
     );
   }
 
-  static bool _isForm(String contentType) {
+  static bool _isForm(String contentType) =>
+      _is(contentType, MediaType.applicationFormUrlencoded);
+
+  static bool _isMultipart(String contentType) =>
+      _is(contentType, MediaType.multipartFormData);
+
+  static bool _is(String contentType, String expected) {
     try {
-      return MediaType.parse(contentType).equalsTypeAndSubtype(
-        MediaType.parse(MediaType.applicationFormUrlencoded),
-      );
+      return MediaType.parse(contentType)
+          .equalsTypeAndSubtype(MediaType.parse(expected));
     } on ArgumentError {
       return false;
+    }
+  }
+
+  /// The `multipart/form-data` body of a call with [arguments], or `null`
+  /// for a method without one. Like Spring Cloud OpenFeign's
+  /// `SpringFormEncoder`, each `@RequestPart` becomes:
+  /// - a `MultipartFile` (or a list of them): a file part each, with the
+  ///   file's name and content type;
+  /// - `Uint8List` / `List<int>`: a file part without file name;
+  /// - a String, number, bool, enum or DateTime (or a list of them): a
+  ///   text field each;
+  /// - anything else (an object, a Map, a list of objects): a JSON part
+  ///   written with the client's `ObjectMapper`.
+  ///
+  /// A null argument leaves the part out (an error when it is required).
+  Future<_Multipart?> multipart(List<Object?> arguments) async {
+    final bindings = parts;
+    if (bindings == null) {
+      return null;
+    }
+    final encoded = <MultipartBodyPart>[];
+    for (final binding in bindings) {
+      final value = arguments[binding.index];
+      if (value == null) {
+        if (binding.required) {
+          throw _missing('@RequestPart', binding);
+        }
+        continue;
+      }
+      encoded.addAll(
+        await _parts(binding.name, value, parameters[binding.index].type),
+      );
+    }
+    final body = MultipartBody(encoded);
+    return (bytes: body.encode(), contentType: body.contentType);
+  }
+
+  Future<List<MultipartBodyPart>> _parts(
+    String name,
+    Object value,
+    TypeInfo<Object?> type,
+  ) async {
+    final what = '@RequestPart "$name"';
+    switch (value) {
+      case MultipartFile():
+        return [await _file(name, value)];
+      case Uint8List():
+        return [MultipartBodyPart.file(name, value)];
+      case String() || num() || bool() || DateTime() || Enum():
+        return [MultipartBodyPart.field(name, _text(value, type, what))];
+      case List<int>() when _isBytes(type):
+        return [MultipartBodyPart.file(name, value)];
+      case Iterable<Object?>()
+          when value.every((item) => item == null || item is MultipartFile):
+        return [
+          for (final file in value.whereType<MultipartFile>())
+            await _file(name, file),
+        ];
+      case Iterable<Object?>()
+          when value.every((item) => item == null || _isSimple(item)):
+        return [
+          for (final text in _texts(value, type, what))
+            MultipartBodyPart.field(name, text),
+        ];
+      case Map() || Iterable():
+        return [MultipartBodyPart.json(name, _json(value, what))];
+    }
+    // A value type with a JSON form of its own (e.g. `Money` as "10 EUR")
+    // is a text field; an object a JSON part.
+    final Object? tree;
+    try {
+      tree = mapper.valueToTree(value, type);
+    } on JsonMappingException catch (error) {
+      throw EncodeException(
+        'cannot write $what of $methodKey: $error',
+        cause: error,
+      );
+    }
+    return switch (tree) {
+      String() || num() || bool() => [MultipartBodyPart.field(name, '$tree')],
+      _ => [MultipartBodyPart.json(name, _json(value, what))],
+    };
+  }
+
+  static bool _isSimple(Object value) =>
+      value is String ||
+      value is num ||
+      value is bool ||
+      value is DateTime ||
+      value is Enum;
+
+  // Whether [type] is `List<int>` (bytes, like Java's `byte[]`).
+  static bool _isBytes(TypeInfo<Object?> type) =>
+      type is ListType<Object?> && type.element.type == int;
+
+  static Future<MultipartBodyPart> _file(
+    String name,
+    MultipartFile file,
+  ) async => MultipartBodyPart.file(
+    name,
+    await file.bytes,
+    filename: file.originalFilename,
+    contentType: file.contentType,
+  );
+
+  String _json(Object value, String what) {
+    try {
+      return mapper.writeValueAsString(value);
+    } on Object catch (error) {
+      throw EncodeException(
+        'cannot write $what of $methodKey: $error',
+        cause: error,
+      );
     }
   }
 

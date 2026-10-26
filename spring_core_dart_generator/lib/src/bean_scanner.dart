@@ -4662,11 +4662,43 @@ class BeanScanner {
         if (method.isStatic || method.isPrivate) {
           _fail('$what must be a public instance method.', method);
         }
-        if (method.formalParameters.any((p) => p.isNamed && p.isRequired)) {
-          _fail('$what must not have required named parameters.', method);
+        if (method.typeParameters.isNotEmpty) {
+          _fail('$what must not be generic.', method);
+        }
+        final returnType = method.returnType;
+        final isFuture =
+            returnType is InterfaceType &&
+            returnType.isDartAsyncFuture &&
+            returnType.nullabilitySuffix == NullabilitySuffix.none;
+        final valueType = isFuture
+            ? returnType.typeArguments.single
+            : returnType;
+        final parameters = [
+          for (final parameter in method.formalParameters)
+            ConstructorParameterModel(
+              name: parameter.name ?? '_',
+              type: parameter.type,
+              isNamed: parameter.isNamed,
+              isRequired: parameter.isRequired,
+              hasDefault: parameter.hasDefaultValue,
+              annotations: _userAnnotations(parameter),
+            ),
+        ];
+        // Request and response classes of the bean's package are
+        // introspected (a controller's bodies), like an interface proxy's.
+        final owner = type.element;
+        if (owner is ClassElement) {
+          _introspectUsed(valueType, owner);
+          for (final parameter in parameters) {
+            _introspectUsed(parameter.type, owner);
+          }
         }
         result[name] = AnnotatedMethodModel(
           name: name,
+          parameters: parameters,
+          valueType: valueType,
+          isFuture: isFuture,
+          isVoid: valueType is VoidType,
           parameterTypes: [
             for (final parameter in method.formalParameters)
               if (parameter.isPositional)

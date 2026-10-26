@@ -23,21 +23,47 @@ Rules every plan follows:
   `spring_core_dart` next to `spring_boot_dart`, or `spring_web_dart` next
   to Feign. See [dependencies.md](dependencies.md).
 
+## Priorities
+
+What comes next, in order:
+
+1. ~~**Files on the web starter:** multipart uploads (`MultipartFile`,
+   `@RequestPart`), `Resource` responses (`ByteArrayResource`,
+   `FileSystemResource`, `Range` requests), byte streams and
+   `StreamingResponseBody`, `MockMvc.multipart`, multipart bodies in
+   Feign.~~ Done; what is left (byte-range lists, `ETag`, streamed Feign
+   uploads) is in [spring_boot_starter_web.md](spring_boot_starter_web.md#files-multipart-resources-byte-streams).
+2. **Spring Security** ([spring_security_core](spring_security_core.md),
+   [spring_boot_starter_security](spring_boot_starter_security.md)), with
+   the verification plan of [security_verification.md](security_verification.md):
+   it must be shown to be safe, not assumed.
+3. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
+   of the providers (Anthropic, OpenAI, Gemini, Ollama, ...) behind one
+   `ChatClient`.
+4. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
+   *MVC: views and static resources*): first find out whether it is worth
+   it.
+5. Later: the [MCP server starter](spring_ai_starter_mcp_server.md), the
+   actuator, data, the rest of the table.
+
 | File | Package | Status |
 |---|---|---|
 | [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, incremental generation per library, Jakarta annotations under question |
 | [dependencies.md](dependencies.md) | all packages | what an application must list (one package and the generator), what each package re-exports, the gaps left |
 | [fix_plan.md](fix_plan.md) | all packages | open differences from Spring 7 / Boot 4 found in reviews, how close each area is |
-| [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | planned: controllers, SSE, WebSocket endpoints, `MockMvc` |
-| [spring_boot_actuator.md](spring_boot_actuator.md) | `spring_boot_actuator` | planned after the web starter: beans, env, conditions, loggers, logs, health — over HTTP, in the editor extensions, in apps |
+| [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | first version on `dart:io` behind a replaceable `WebServerFactory` (done): controllers, `ProblemDetail`, SSE and `SseEmitter`, files (multipart uploads, `Resource` downloads with `Range`, byte streams), filters, CORS, WebSocket endpoints, `MockMvc`, the slots for Spring Security; next: `HttpSession`, static files, forwarded headers, Flutter isolates (blocking warnings, JSON offload, background server), `shelf` |
+| [spring_boot_actuator.md](spring_boot_actuator.md) | `spring_boot_actuator` | planned on the web starter: beans, env, conditions, loggers, logs, health — over HTTP, in the editor extensions, in apps |
 | [spring_security_core.md](spring_security_core.md) | `spring_security_core` | planned: security context, `@PreAuthorize` (server and app) |
 | [spring_boot_starter_security.md](spring_boot_starter_security.md) | `spring_boot_starter_security` | planned: incoming requests — filter chain, Basic, sessions, JWT |
+| [security_verification.md](security_verification.md) | security packages | how security is shown to be safe: threat model, attack catalog as tests, differential tests against Spring Security, fuzzing, test vectors, scanners |
+| [spring_ai.md](spring_ai.md) | `spring_ai_*` | planned after security: `ChatClient`, model providers as starters, streaming, tool calling, structured output, chat memory, embeddings |
+| [spring_ai_starter_mcp_server.md](spring_ai_starter_mcp_server.md) | `spring_ai_starter_mcp_server` | later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | planned: tokens for Feign / WebSocket, PKCE login in apps |
 | [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data_*` | planned: entities, repositories, `@Transactional` |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
 | [spring_boot_starter_http.md](spring_boot_starter_http.md) | `spring_boot_starter_http` | planned: `RestClient`, `@HttpExchange` |
 | [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | next steps: files and forms, `FallbackFactory`, circuit breaker |
-| [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | next steps: STOMP, connection state |
+| [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |
 | [spring_boot_starter_scheduling.md](spring_boot_starter_scheduling.md) | `spring_boot_starter_scheduling` | next: `TaskExecutor` (a pool of worker isolates), `@Async` on it |
 | [spring_boot_starter_cache.md](spring_boot_starter_cache.md) | `spring_boot_starter_cache` | next: persistent stores |
 | [spring_boot_starter_test.md](spring_boot_starter_test.md) | `spring_boot_starter_test` | test classes with annotations (done, [docs/testing.md](../docs/testing.md)); next: editor run buttons and snippets |

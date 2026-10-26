@@ -476,4 +476,40 @@ class Books {
     workspace.refresh(force: true);
     expect(workspace.beansNamed('cash'), hasLength(1));
   });
+
+  test('controllers, advice and WebSocket endpoints are beans', () {
+    workspace.setOverlay('${root.path}/lib/src/web.dart', r'''
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
+import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
+
+@RestController()
+class BookController {}
+
+@RestController('library')
+class LibraryController {}
+
+@ControllerAdvice()
+class Errors {}
+
+@RestControllerAdvice()
+class ApiErrors {}
+
+@WebSocketEndpoint('/ws/chat')
+class ChatEndpoint {}
+
+@WebSocketEndpoint('/ws/echo', name: 'echo')
+class EchoEndpoint {}
+''');
+    for (final name in [
+      'bookController',
+      'library',
+      'errors',
+      'apiErrors',
+      'chatEndpoint',
+      'echo',
+    ]) {
+      expect(workspace.beansNamed(name), hasLength(1), reason: name);
+    }
+    expect(workspace.beansNamed('/ws/chat'), isEmpty);
+  });
 }

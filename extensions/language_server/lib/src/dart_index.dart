@@ -16,10 +16,23 @@ const baseStereotypes = {
   'AutoConfiguration',
   // spring_boot_starter_flutter: a plain class whose proxy is a ChangeNotifier.
   'ChangeNotifierComponent',
+  // spring_web_dart (spring_boot_starter_web): the classes they extend are
+  // in a dependency, which is not indexed, so they are listed by name.
+  'RestController',
+  'ControllerAdvice',
+  'RestControllerAdvice',
+  // spring_boot_starter_websocket: a server endpoint.
+  'WebSocketEndpoint',
 };
 
-/// Stereotypes whose first argument is not the bean name.
-const unnamedStereotypes = {'ConfigurationProperties', 'AutoConfiguration'};
+/// Stereotypes whose first argument is not the bean name (a `name:`
+/// argument is, when they have one).
+const unnamedStereotypes = {
+  'ConfigurationProperties',
+  'AutoConfiguration',
+  // The first argument is the path.
+  'WebSocketEndpoint',
+};
 
 /// A parsed Dart file.
 final class DartFile {

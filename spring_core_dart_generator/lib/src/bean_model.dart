@@ -2357,6 +2357,10 @@ class AnnotatedMethodModel {
   AnnotatedMethodModel({
     required this.name,
     required this.parameterTypes,
+    required this.parameters,
+    required this.valueType,
+    required this.isFuture,
+    required this.isVoid,
     required this.annotations,
   });
 
@@ -2365,6 +2369,19 @@ class AnnotatedMethodModel {
 
   /// Types of the positional parameters (`Object` for non-class types).
   final List<InterfaceType?> parameterTypes;
+
+  /// Every parameter in declaration order (positional, then named), for
+  /// `BeanMethod.parameters`.
+  final List<ConstructorParameterModel> parameters;
+
+  /// The result type; for `Future<T>` the type `T`.
+  final DartType valueType;
+
+  /// Whether the method returns a non-nullable `Future`.
+  final bool isFuture;
+
+  /// Whether the result (or the future's value) is `void`.
+  final bool isVoid;
 
   /// All user annotations of the method.
   final List<DartObject> annotations;

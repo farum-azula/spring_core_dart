@@ -53,7 +53,7 @@ class IoWebSocketTransport implements WebSocketTransport {
                 throw TimeoutException('handshake', timeout);
               },
             );
-      return _IoSession(socket, url);
+      return IoWebSocketSession(socket, url);
     } on TimeoutException catch (error) {
       throw WebSocketException(
         'no handshake within ${timeout!.inMilliseconds} ms',
@@ -74,8 +74,12 @@ class IoWebSocketTransport implements WebSocketTransport {
   }
 }
 
-final class _IoSession implements WebSocketSession {
-  _IoSession(this._socket, this.uri);
+/// A [WebSocketSession] over `dart:io`'s `WebSocket`: what
+/// [IoWebSocketTransport] connects, and what the web starter's server
+/// accepts (`ServerHttpRequest.upgradeToWebSocket`).
+final class IoWebSocketSession implements WebSocketSession {
+  /// The session of the open [socket], connected to [uri].
+  IoWebSocketSession(this._socket, this.uri);
 
   final io.WebSocket _socket;
 

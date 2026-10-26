@@ -1,4 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart';
+import 'package:spring_boot_starter_websocket/src/server/web_socket_handler_mapping.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client_factory.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -39,6 +41,33 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
       interceptors:
           r.optionalDependencyList<WebSocketHandshakeInterceptor>() ??
           const <WebSocketHandshakeInterceptor>[],
+    ),
+  ),
+  // The server side (with spring_boot_starter_web): the open sessions and
+  // the handshakes' mapping, which the web starter's dispatcher asks.
+  BeanDefinition<WebSocketSessionRegistry>(
+    name: 'webSocketSessionRegistry',
+    source: _source,
+    create: (_) => WebSocketSessionRegistry(),
+  ),
+  BeanDefinition<WebSocketHandlerMapping>(
+    name: 'webSocketHandlerMapping',
+    source: _source,
+    types: const [
+      WebSocketHandlerMapping,
+      HandlerMapping,
+      Ordered,
+      SmartInitializingSingleton,
+    ],
+    create: (r) => WebSocketHandlerMapping(
+      beanFactory: r.dependency<ListableBeanFactory>(),
+      mapper:
+          r.optionalDependency<ObjectMapper>() ??
+          ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+      sessions: r.dependency<WebSocketSessionRegistry>(),
+      configurers:
+          r.optionalDependencyList<WebSocketConfigurer>() ??
+          const <WebSocketConfigurer>[],
     ),
   ),
 ];

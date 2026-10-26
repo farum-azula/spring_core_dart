@@ -2,6 +2,7 @@
 // next to its sources and started in a separate process, so the advice the
 // tests expect is the advice the generated code really applies.
 @TestOn('vm')
+@Tags(['integration'])
 library;
 
 import 'dart:convert';

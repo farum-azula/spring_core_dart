@@ -30,9 +30,10 @@ the differences are listed where they apply and at the
 15. [Reference: Feign clients](#15-reference-feign-clients)
 16. [Reference: WebSocket clients](#16-reference-websocket-clients)
 17. [Reference: Flutter](#17-reference-flutter)
-18. [Tests](#18-tests)
-19. [Code generation options (`build.yaml`)](#19-code-generation-options)
-20. [Differences from Spring Boot](#differences-from-spring-boot)
+18. [Reference: web server](#18-reference-web-server)
+19. [Tests](#19-tests)
+20. [Code generation options (`build.yaml`)](#20-code-generation-options)
+21. [Differences from Spring Boot](#differences-from-spring-boot)
 
 ---
 
@@ -2342,7 +2343,123 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 
 ---
 
-## 18. Tests
+## 18. Reference: web server
+
+`spring_boot_starter_web`: Spring Boot's `server.*` keys for the `dart:io`
+server, the shutdown, the server-sent events of the controllers, and the
+limits of uploads (`spring.servlet.multipart.*`, see the starter's
+[Files](../spring_boot_starter_web/README.md#files-uploads-and-downloads)
+section).
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+server:
+  port: 8080
+  address: 0.0.0.0
+  shutdown: graceful
+  servlet:
+    context-path: /shop
+  max-http-request-body-size: 10MB
+  compression:
+    enabled: true
+  ssl:
+    certificate: /etc/shop/cert.pem
+    certificate-private-key: /etc/shop/key.pem
+    key-password: s3cret
+    trust-certificate: /etc/shop/clients.pem
+    client-auth: want
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  mvc:
+    async:
+      request-timeout: 30m
+    sse:
+      heartbeat-interval: 15s
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 20MB
+      file-size-threshold: 64KB
+      location: /var/tmp/shop-uploads
+```
+
+</td><td>
+
+```properties
+server.port=8080
+server.address=0.0.0.0
+server.shutdown=graceful
+server.servlet.context-path=/shop
+server.max-http-request-body-size=10MB
+server.compression.enabled=true
+server.ssl.certificate=/etc/shop/cert.pem
+server.ssl.certificate-private-key=/etc/shop/key.pem
+server.ssl.key-password=s3cret
+server.ssl.trust-certificate=/etc/shop/clients.pem
+server.ssl.client-auth=want
+spring.lifecycle.timeout-per-shutdown-phase=20s
+spring.mvc.async.request-timeout=30m
+spring.mvc.sse.heartbeat-interval=15s
+spring.servlet.multipart.enabled=true
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=20MB
+spring.servlet.multipart.file-size-threshold=64KB
+spring.servlet.multipart.location=/var/tmp/shop-uploads
+```
+
+</td></tr>
+</table>
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `server.port` | int | `8080` | The port; `0` picks a free one (the real one is then `local.server.port`) |
+| `server.address` | IP or host name | all interfaces; **`127.0.0.1` in Flutter apps** | The address to listen on (`localhost` is `127.0.0.1`; a host name is looked up) |
+| `server.shutdown` | `graceful` / `immediate` | `graceful` | Graceful: no new connections, running requests may finish; open event streams and WebSockets are closed at once (1001) |
+| `spring.lifecycle.timeout-per-shutdown-phase` | duration | `30s` | How long a graceful shutdown waits for running requests (read by the web server only) |
+| `server.servlet.context-path` | path | — | A prefix of every mapping (`/shop`; a missing leading `/` is added, a trailing one dropped); other paths are 404 |
+| `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is a 413; `-1`: no limit (this starter's own key). Not applied to `multipart/*` requests: uploads have the `spring.servlet.multipart.*` limits |
+| `server.compression.enabled` | bool (`true` only) | `false` | gzip for clients that accept it (`dart:io`'s `autoCompress`) |
+| `server.ssl.enabled` | bool | `true` | `false` ignores the other `server.ssl.*` keys |
+| `server.ssl.certificate` | file path (PEM) | — | The certificate chain; TLS is on when it is set |
+| `server.ssl.certificate-private-key` | file path (PEM) | — | The private key; required with `certificate` |
+| `server.ssl.key-password` | string | — | The password of an encrypted private key |
+| `server.ssl.trust-certificate` | file path (PEM) | — | Certificates of trusted clients, for `client-auth` |
+| `server.ssl.client-auth` | `none` / `want` / `need` | `none` | Ask clients for a certificate; with `need` a request without one is a 403 |
+| `spring.main.web-application-type` | `none`, or anything else | — | `none`: the beans (and `MockMvc`) exist, no server starts; other values start it |
+| `spring.mvc.async.request-timeout` | duration | no limit | The timeout of an `SseEmitter` created without one; it then completes (its `onTimeout` callbacks first) |
+| `spring.mvc.sse.heartbeat-interval` | duration | — (none) | A comment line in every open event stream at this interval, so proxies keep idle streams open (this starter's own key) |
+| `spring.servlet.multipart.enabled` | bool | `true` | `false`: `multipart/*` requests are not parsed (`@RequestPart` parameters then answer 400) |
+| `spring.servlet.multipart.max-file-size` | data size, or `-1` | `1MB` | The largest file (or other part) of an upload; above it 413 (`MaxUploadSizeExceededException`); `-1`: no limit |
+| `spring.servlet.multipart.max-request-size` | data size, or `-1` | `10MB` | The largest whole multipart request; above it 413; `-1`: no limit |
+| `spring.servlet.multipart.file-size-threshold` | data size | `0B` | Files above this size are written to a temporary file, smaller ones stay in memory; `0B`: every file goes to a temporary file (in memory where there is no `dart:io`). Temporary files are deleted after the request |
+| `spring.servlet.multipart.location` | directory path | the system's temporary directory | Where the temporary files of uploads are written |
+| `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`); only `random-port` (port `0`) and `defined-port` start a server in tests |
+| `local.server.port` | int, **written** | — | The port the server listens on, set once it listens (also in `WebServerInitializedEvent`); read it, do not set it |
+
+An invalid `server.port`, `server.shutdown` or `server.ssl.client-auth`,
+or a certificate without its private key, fails the start naming the key.
+The certificate files are paths in the file system, not `classpath:`
+locations. Mappings are logged at debug level under `spring.web.mvc`
+(`logging.level.spring.web.mvc=debug`), the server under
+`spring.web.server`.
+
+Not supported: `server.http2.*` (`dart:io` speaks HTTP/1.1),
+`server.forward-headers-strategy`, `server.max-http-request-header-size`,
+`server.compression.mime-types` / `min-response-size`, key stores and SSL
+bundles (`server.ssl.key-store`, `server.ssl.bundle`), `server.error.*`
+and `spring.mvc.problemdetails.enabled` (errors are always
+`ProblemDetail`s), `spring.web.cors.*`, `spring.web.resources.*` (no
+static files yet), the `server.tomcat.*` / `jetty` / `undertow` /
+`netty` keys.
+
+---
+
+## 19. Tests
 
 `spring_boot_starter_test`:
 
@@ -2364,10 +2481,15 @@ final app = springBootTest(
 - Log levels set by a test's configuration are restored afterwards.
 - `ApplicationContextRunner().withPropertyValues(['shop.beta=true'])` for
   auto-configuration tests (no config files read there).
+- With `spring_boot_starter_web`, a test starts no server unless it asks
+  for one: `springBootTest(webEnvironment: WebEnvironment.randomPort)`
+  (`server.port` becomes `0`, the real port is `local.server.port`), or
+  `spring.test.web-environment=random-port` in an
+  `ApplicationContextRunner` (see [section 18](#18-reference-web-server)).
 
 ---
 
-## 19. Code generation options
+## 20. Code generation options
 
 The generator (`spring_core_dart_generator`) is configured in the package's
 `build.yaml`, not in property files:
@@ -2403,12 +2525,20 @@ Compile-time settings (`--dart-define`, not properties):
   wildcards.
 - `spring.messages.default-locale` and `spring.cache.simple.*` are this
   project's additions; so are all `spring.websocket.client.*` and
-  `spring.flutter.*` keys.
-- No web server yet (planned: spring_boot_starter_web), so no `server.*`
-  keys (`server.port`, …): the `shop.*` keys in the examples are an
-  application's own.
-- Not read: `spring.main.web-application-type`,
-  `allow-circular-references`, `keep-alive`, `spring.lifecycle.*`,
+  `spring.flutter.*` keys, `server.max-http-request-body-size` and
+  `spring.mvc.sse.heartbeat-interval`.
+- The web server (`spring_boot_starter_web`) reads the `server.*` and
+  `spring.servlet.multipart.*` keys of
+  [section 18](#18-reference-web-server) only (Boot's names, though there
+  is no servlet container): no HTTP/2, forwarded
+  headers, key stores, `server.error.*` or server-specific
+  (`server.tomcat.*`, ...) keys. `server.ssl.*` takes PEM file paths.
+  Errors are always `ProblemDetail`s. The `shop.*` keys in the examples
+  are an application's own.
+- `spring.main.web-application-type` knows only `none` (no server);
+  `spring.lifecycle.timeout-per-shutdown-phase` applies to the web
+  server's graceful shutdown only.
+- Not read: `allow-circular-references`, `keep-alive`,
   `spring.task.execution.*`, `spring.task.scheduling.pool.*`,
   `spring.aop.*`, `management.*`, `info.*`, `logging.config`,
   `logging.structured.*`, other `spring.jackson.*` keys than listed (warned

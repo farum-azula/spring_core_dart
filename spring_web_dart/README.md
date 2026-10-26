@@ -6,19 +6,23 @@
 
 Spring's `spring-web` for Dart: the **request mapping annotations**
 (`@GetMapping`, `@PostMapping`, `@PathVariable`, `@RequestParam`,
-`@RequestHeader`, `@CookieValue`, `@RequestBody`), **HTTP types**
-(`ResponseEntity`, `HttpHeaders`, `HttpStatus`, `HttpMethod`, `MediaType`),
-**HTTP and
-WebSocket client transports** for the VM, Flutter and the web, and
-**server-sent events** (`EventStream<T>`). Only `spring_core_dart` as a
-dependency.
+`@RequestHeader`, `@CookieValue`, `@RequestBody`), the **controller
+annotations** (`@RestController`, `@ExceptionHandler`, `@ControllerAdvice`,
+`@ResponseStatus`, `@CrossOrigin`), **HTTP types** (`ResponseEntity`,
+`HttpHeaders`, `HttpStatus`, `HttpMethod`, `MediaType`, `ProblemDetail`),
+**HTTP and WebSocket client transports** for the VM, Flutter and the web,
+**server-sent events** (`EventStream<T>`), and the **server-side
+contracts** (`ServerHttpRequest`, `ServerHttpResponse`, `HttpHandler`,
+`HandlerMapping`, `PathPattern`). Only `spring_core_dart` as a dependency.
 
 The annotations are read by Feign clients
 ([`spring_boot_starter_feign`](https://pub.dev/packages/spring_boot_starter_feign)):
-an annotated interface becomes an injectable HTTP client. WebSocket
-interfaces (`@WebSocketClient`) come from
+an annotated interface becomes an injectable HTTP client. The same
+annotations map controllers in
+[`spring_boot_starter_web`](https://pub.dev/packages/spring_boot_starter_web),
+which serves them on top of the server types below. WebSocket interfaces
+(`@WebSocketClient`) and endpoints (`@WebSocketEndpoint`) come from
 [`spring_boot_starter_websocket`](https://pub.dev/packages/spring_boot_starter_websocket).
-The coming web server will use the same annotations on controllers.
 
 ```yaml
 dependencies:
@@ -63,6 +67,7 @@ abstract interface class CatalogClient {
 | `@RequestHeader(['name'])`, `@RequestHeader.of({name, required, defaultValue})` | parameter | a header; `null` is left out, a list gives several values, a `Map` one header per entry |
 | `@CookieValue(['name'])` | parameter | a cookie (`Cookie: name=value; ...`); `null` is left out |
 | `@RequestBody({required})` | parameter | the body (JSON) |
+| `@RequestPart(['name'])`, `@RequestPart.of({name, required})` | parameter | a part of a `multipart/form-data` body: a file (`MultipartFile`, `List<MultipartFile>`), a text field, or an object as a JSON part |
 
 Without a name, `@PathVariable()`, `@RequestParam()`, `@RequestHeader()` and
 `@CookieValue()` use the parameter name (the generator keeps parameter
@@ -78,6 +83,27 @@ required is left out. The parameter type counts too, as for Kotlin or
 `required` says, and a Dart default value (`{int page = 0}`) is simply the
 argument. A path variable is required unless `required: false` (whatever
 its type); then `null` gives an empty string.
+
+## Controller annotations
+
+Read by `spring_boot_starter_web` (they live here so other starters can
+see them without depending on the server):
+
+| Annotation | On | Spring | Meaning |
+|---|---|---|---|
+| `@RestController([name])` | class | `@RestController` | a bean (a `@Controller`) whose mapped methods answer requests; the return value is the body |
+| `@RequestMapping('/api/books')` | class | the same | the path prefix (and `produces`, `consumes`, `headers`) of every method |
+| `@ResponseStatus(HttpStatus.created, reason: ...)` | method, class | the same | the status of a normal answer; with `reason` an error with that detail |
+| `@ExceptionHandler([types])` | method | the same | handles exceptions of the controller's handlers (or of all, in an advice); the types come from the exception parameter, or `types` (exact runtime types) |
+| `@ControllerAdvice([name])`, `@RestControllerAdvice([name])` | class | the same | exception handlers for every controller, tried in `@Order` |
+| `@CrossOrigin(origins:, originPatterns:, methods:, allowedHeaders:, exposedHeaders:, allowCredentials:, maxAge:)` | class, method | the same | allows cross-origin requests; `maxAge` in seconds |
+
+On a server, `@RequestMapping.of(headers: [...])` is a condition
+(`'Name'`, `'!Name'`, `'Name=value'`, `'Name!=value'`), and `produces` /
+`consumes` take comma-separated media types. The mapping annotations and
+`@ExceptionHandler` are marked `@BeanMethodAnnotation()`, so the generator
+describes such methods (parameters, annotations, result type) in the bean
+definition.
 
 ## HTTP types
 
@@ -102,9 +128,53 @@ if (response.statusCode == HttpStatus.notFound) { ... }
 HttpStatus.valueOf(503).reasonPhrase;   // 'Service Unavailable'
 ```
 
+### Errors: `ProblemDetail`
+
+| Type | Spring | What |
+|---|---|---|
+| `ProblemDetail` | `ProblemDetail` | an RFC 9457 body (`application/problem+json`): `type` (`about:blank`), `title` (the status's reason phrase by default), `status`, `detail`, `instance`, extra `properties`; `forStatus`, `forStatusAndDetail`, `setProperty`, `toJson`, `fromJson` |
+| `ErrorResponse` | `ErrorResponse` | an exception that knows its answer: `statusCode`, `headers`, `body` (a `ProblemDetail`) |
+| `ErrorResponseException` | the same | an `ErrorResponse` to throw or extend: `ErrorResponseException(status, body:, headers:, cause:)` |
+| `ResponseStatusException` | the same | `throw ResponseStatusException(HttpStatus.notFound, 'No book 9')` |
+
+```dart
+final problem = ProblemDetail.forStatusAndDetail(HttpStatus.notFound, 'No book 978-0')
+  ..setProperty('isbn', '978-0');
+problem.toJson();
+// {type: about:blank, title: Not Found, status: 404, detail: No book 978-0, isbn: 978-0}
+```
+
 `HttpHeaders`, `HttpStatus`, `HttpRequest` and `HttpResponse` share their
 names with `dart:io` classes; in a file that needs both, import `dart:io`
 with a prefix (`import 'dart:io' as io;`) or `hide` them.
+
+### Multipart and files
+
+The types behind uploads, shared by the server (`spring_boot_starter_web`)
+and the clients (Feign):
+
+| Type | Spring | What |
+|---|---|---|
+| `MultipartFile` | `MultipartFile` | an uploaded file: `name`, `originalFilename`, `contentType`, `size`, `isEmpty`, `headers`, `bytes`, `openRead()`, `transferTo(path)` |
+| `InMemoryMultipartFile` | `MockMultipartFile` (roughly) | a `MultipartFile` held in memory (`InMemoryMultipartFile.fromString(name, text)`); a file a client sends |
+| `MultipartParser` | the parsing of `StandardServletMultipartResolver` | reads a `multipart/*` body part by part, streaming (`MultipartParser.boundaryOf(contentType)`, `bind(body)`) |
+| `MultipartBody`, `MultipartBodyPart` | `MultipartBodyBuilder` | writes a `multipart/form-data` body: `MultipartBodyPart.field`, `.file`, `.json`; `contentType` (with the boundary), `encode()` |
+| `MediaTypeFactory` | `MediaTypeFactory` | `MediaTypeFactory.getMediaType('cover.png')` → `image/png` (from the extension; `null` when unknown) |
+
+```dart
+final body = MultipartBody([
+  MultipartBodyPart.field('title', 'Dune'),
+  MultipartBodyPart.file('cover', bytes, filename: 'dune.png'),   // image/png from the name
+]);
+request.headers.contentType = body.contentType;
+request.add(body.encode());
+```
+
+How a controller binds the parts, the upload limits and `Resource`
+downloads are in the web starter's
+[Files](../spring_boot_starter_web/README.md#files-uploads-and-downloads)
+section; `MockMultipartFile` (in `package:spring_web_dart/testing.dart`)
+is Spring's test file for `MockMvc.multipart`.
 
 ## HTTP transport
 
@@ -232,6 +302,43 @@ await session.close();          // CloseStatus.normal; or e.g.
 Browsers send no custom headers with the WebSocket handshake:
 `BrowserWebSocketTransport` fails when `headers` is not empty, so pass a
 token as a query parameter or a protocol on the web.
+
+## Server side
+
+The contracts a web server and the application meet on. The web starter's
+`dart:io` server and `MockMvc` both implement them, so filters,
+controllers and WebSocket endpoints never see the server behind them.
+
+| Type | Spring | What |
+|---|---|---|
+| `ServerHttpRequest` | `ServerHttpRequest` | `method`, `uri`, `path`, `headers`, `queryParameters`, `cookies`, `remoteAddress`, `isSecure`, `attributes`, `principal`, `body` (a stream, read once; `readBodyBytes`, `readBodyText`, `contentType`), `isWebSocketUpgrade`, `upgradeToWebSocket` |
+| `ServerHttpResponse` | `ServerHttpResponse` | `statusCode`, `headers` (until `isCommitted`), `addCookie(ResponseCookie(...))`, `add`, `write`, `flush`, `addStream`, `close`, `done` (closed or the client went away); `send(status, text)` |
+| `ServerHttpRequestDecorator`, `ServerHttpResponseDecorator` | the same | forward everything to a delegate; override one member (a filter changing the path or the principal) |
+| `ResponseCookie` | `ResponseCookie` | a `Set-Cookie` value: `maxAge`, `domain`, `path`, `secure`, `httpOnly`, `sameSite`, `partitioned` |
+| `Principal` | `java.security.Principal` | who sent the request (`name`); set by an authentication filter |
+| `HttpHandler`, `FunctionHttpHandler` | `HttpHandler` | answers one request; the web starter's dispatcher is one |
+| `HandlerMapping` | `HandlerMapping` | finds the handler of a request (`getHandler`, or `null`); the web starter asks every `HandlerMapping` bean in `@Order` |
+| `RequestContextHolder` | `RequestContextHolder` | `currentRequest`: the request being handled, anywhere in its handling (each request runs in its own `Zone`) |
+| `PathPattern` | `PathPattern` | `/books/{isbn}`, `{isbn:\d+}`, `{*rest}`, `*`, `?`, `**`; `match(path)?.variables`, `matches`, `combine`; the most specific first (`compareTo`) |
+
+```dart
+final pattern = PathPattern.parse('/books/{isbn}');
+pattern.match('/books/978-0')?.variables;   // {isbn: 978-0}
+pattern.matches('/books/');                 // false: a trailing slash matters, as in Spring 6
+
+final class HealthMapping implements HandlerMapping {
+  @override
+  HttpHandler? getHandler(ServerHttpRequest request) => request.path == '/health'
+      ? FunctionHttpHandler((request, response) => response.send(200, 'UP'))
+      : null;
+}
+```
+
+For tests, `MockServerHttpRequest` and `MockServerHttpResponse` (with
+`bodyText`, `json`, `events` and `eventStream` for server-sent events) and
+`WebSocketSessionPair` (two connected sessions in memory) are in
+`package:spring_web_dart/testing.dart`; an application gets them, with
+`MockMvc` on top, from `spring_boot_starter_test`.
 
 ## Testing: `MockHttpTransport`
 

@@ -2653,6 +2653,9 @@ class Config {
         _has(
           "annotatedMethods: [BeanMethod<Poller>(r'check', "
           'parameterTypes: const [int, String], '
+          'parameters: [BeanParameter(r\'attempt\', type: const ClassType<int>(), isRequired: true), '
+          'BeanParameter(r\'label\', type: const ClassType<String>(nullable: true))], '
+          'isFuture: true, isVoid: true, '
           'invoke: (bean, arguments) => Function.apply(bean.check, arguments), '
           'annotations: const [Every(Duration(seconds: 30), name: r\'inbox\'), Plain()])',
         ),
@@ -2661,7 +2664,7 @@ class Config {
       expect(
         output,
         _has(
-          "BeanMethod<Poller>(r'tick', "
+          "BeanMethod<Poller>(r'tick', isVoid: true, "
           'invoke: (bean, arguments) => Function.apply(bean.tick, arguments), '
           'annotations: const [Every(Duration(minutes: 1))])',
         ),
@@ -2671,7 +2674,7 @@ class Config {
       expect(
         output,
         _has(
-          "annotatedMethods: [BeanMethod<Report>(r'hourly', "
+          "annotatedMethods: [BeanMethod<Report>(r'hourly', isVoid: true, "
           'invoke: (bean, arguments) => Function.apply(bean.hourly, arguments), '
           'annotations: const [Every(Duration(hours: 1))])]',
         ),
@@ -2682,7 +2685,54 @@ class Config {
       expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
     });
 
-    test('private, static and required named methods are rejected', () async {
+    test(
+      'named parameters, the result type and annotated parameters',
+      () async {
+        final output = await _generate(r"""
+@BeanMethodAnnotation()
+class Handles {
+  const Handles();
+}
+
+class Param {
+  const Param(this.name);
+  final String name;
+}
+
+class Item {
+  const Item(this.id);
+  final int id;
+}
+
+@Component()
+class Api {
+  @Handles()
+  Future<List<Item>> find(@Param('q') String query, {required int page, int size = 20}) async => [];
+}
+""");
+        expect(
+          output,
+          _has(
+            "parameters: [BeanParameter(r'query', type: const ClassType<String>(), "
+            "isRequired: true, annotations: const [Param(r'q')]), "
+            "BeanParameter(r'page', type: const ClassType<int>(), symbol: #page, isRequired: true), "
+            "BeanParameter(r'size', type: const ClassType<int>(), symbol: #size)], "
+            'returnTypeInfo: const ListType<Item>(ClassType<Item>()), isFuture: true, ',
+          ),
+        );
+        expect(
+          output,
+          _has(
+            'invokeNamed: (bean, positional, named) => '
+            'Function.apply(bean.find, positional, named)',
+          ),
+        );
+        // The result type of the bean's package is introspected.
+        expect(output, contains('BeanIntrospection<Item>'));
+      },
+    );
+
+    test('private, static and generic methods are rejected', () async {
       const every = r"""
 @BeanMethodAnnotation()
 class Every {
@@ -2698,8 +2748,8 @@ class Every {
         'must be a public instance method',
       );
       await _expectError(
-        '$every@Component() class A { @Every() void run({required int n}) {} }',
-        'must not have required named parameters',
+        '$every@Component() class A { @Every() void run<T>() {} }',
+        'must not be generic',
       );
     });
   });

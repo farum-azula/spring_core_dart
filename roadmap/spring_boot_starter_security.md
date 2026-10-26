@@ -5,6 +5,11 @@ Spring Security for incoming requests, on the
 controllers. The security context and `@PreAuthorize` come from
 [spring_security_core](spring_security_core.md).
 
+The web starter prepares the slots this starter uses (filter order,
+request matchers, the request `Zone`, argument resolvers, exception
+translation, sessions, `MockMvc` post-processors): see
+[Ready for Spring Security](spring_boot_starter_web.md#ready-for-spring-security).
+
 ## Filter chain
 
 A `SecurityFilterChain` bean with Spring's builder, so a Spring

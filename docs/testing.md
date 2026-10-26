@@ -26,6 +26,8 @@ widgets with the test's beans, themes and platforms.
 | `@DirtiesContext` | the same annotation, or `app.markDirty()` |
 | `OutputCaptureExtension` | `@CapturedOutput()` field, or `captureLogs()` |
 | `ApplicationContextRunner` | `ApplicationContextRunner` |
+| `@SpringBootTest(webEnvironment = RANDOM_PORT)`, `@LocalServerPort` | `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`, `@LocalServerPort()` field, or `webEnvironment:` and `app.localServerPort` |
+| `@AutoConfigureMockMvc`, `MockMvc` | `@Autowired() late MockMvc mvc;`, or `app.mockMvc` |
 | `src/test/resources` | `test/resources/` |
 
 ## Contents
@@ -46,7 +48,8 @@ widgets with the test's beans, themes and platforms.
 14. [Matchers](#14-matchers)
 15. [What the generator writes](#15-what-the-generator-writes)
 16. [Build errors](#16-build-errors)
-17. [Differences from Spring](#17-differences-from-spring)
+17. [Web tests: `MockMvc`](#17-web-tests-mockmvc)
+18. [Differences from Spring](#18-differences-from-spring)
 
 ## 1. Setup
 
@@ -60,7 +63,7 @@ dev_dependencies:
 
 Test configuration goes to `test/resources/`, which comes first on the
 classpath during tests, like `src/test/resources` (see
-[Configuration, section 18](configuration.md#18-tests)):
+[Configuration, section 19](configuration.md#19-tests)):
 
 ```
 test/
@@ -183,6 +186,7 @@ void main() => runSpringTests();
 | `args` | `List<String>` | `[]` | `args:` | `args` |
 | `properties` | `Map<String, Object?>` | `{}` | `properties:` | `properties` |
 | `resourceDirectories` | `List<String>` | `['test/resources']` | `resourceDirectories:` | (the test classpath) |
+| `webEnvironment` | `WebEnvironment` | `WebEnvironment.mock` | `webEnvironment:` | `webEnvironment` ([section 17](#17-web-tests-mockmvc)) |
 
 The other options are their own annotations, so that a test reads like
 Spring's:
@@ -191,7 +195,7 @@ Spring's:
 |---|---|---|---|
 | `@ActiveProfiles(['dev', 'test'])` | class | `profiles:` | `@ActiveProfiles` |
 | `@TestPropertySource(properties: {...}, locations: [...])` | class | `properties:`, `propertyFiles:` | `@TestPropertySource` |
-| `@TestEnvironment({'NAME': 'value'})` | class | `systemEnvironment:` | none ([section 17](#17-differences-from-spring)) |
+| `@TestEnvironment({'NAME': 'value'})` | class | `systemEnvironment:` | none ([section 18](#18-differences-from-spring)) |
 | `@DynamicPropertySource()` | static method | `dynamicProperties:` | `@DynamicPropertySource` |
 | `@ContextInitializer()` | static method | `initializers:` | `@ContextConfiguration(initializers = ...)` |
 | `@TestBean()` | field | `overrides:` | `@TestBean`, `@MockitoBean` |
@@ -245,8 +249,15 @@ class OrdersTest {
 
   @Autowired()
   late Environment environment;
+
+  @Autowired()
+  late MockMvc mvc;                       // the controllers in memory (web starter)
 }
 ```
+
+With the web starter, `@LocalServerPort() late int port;` is the port of
+the real server (`webEnvironment: WebEnvironment.randomPort`, see
+[section 17](#17-web-tests-mockmvc)).
 
 - A field must be `late`, public and not `final` (the generated code sets
   it from outside the class).
@@ -700,7 +711,7 @@ member:
 
 | Message | Fix |
 |---|---|
-| `@Autowired field 'checkout' must be late and not final or static` | `@Autowired() late Checkout checkout;` (also `@Value`, `@CapturedOutput`) |
+| `@Autowired field 'checkout' must be late and not final or static` | `@Autowired() late Checkout checkout;` (also `@Value`, `@CapturedOutput`, `@LocalServerPort`) |
 | `@Autowired field 'checkout' needs its type written` | `late Checkout checkout;`, not `late var checkout;` |
 | `'_checkout' is private; the generated test cannot reach it` | make it public |
 | `@TestBean field 'gateway' needs a value` | `final gateway = FakeGateway();` |
@@ -728,7 +739,256 @@ A missing bean is not a build error: the test fails when the context
 starts, with the same report as the application (`No bean of type
 Mailer`).
 
-## 17. Differences from Spring
+## 17. Web tests: `MockMvc`
+
+With `spring_boot_starter_web`, a test calls the controllers either in
+memory through `MockMvc` (the default: no server starts) or over a real
+socket on a free port. `MockMvc` runs the same `HttpHandler` as the
+server: filters, mapping, binding, `@Valid`, exception handlers and the
+`ProblemDetail` answers, only without the socket.
+
+As a class:
+
+```dart
+@SpringBootTest()
+@AutoConfigureMockMvc()                  // optional: states the intent, as in Spring
+class BookControllerTest {
+  @Autowired()
+  late MockMvc mvc;
+
+  @Test()
+  Future<void> findsABook() async {
+    await mvc.get('/api/books/1111').andExpect(
+      status: 200,
+      contentType: MediaType.applicationJson,
+      json: {'isbn': '1111', 'title': 'Dune'},
+    );
+  }
+
+  @Test()
+  Future<void> rejectsAnInvalidBook() async {
+    await mvc
+        .post('/api/books', json: {'isbn': '', 'title': ''})
+        .andExpect(status: 400, contentType: MediaType.applicationProblemJson);
+  }
+}
+
+void main() => runSpringTests();
+```
+
+As functions:
+
+```dart
+void main() {
+  final app = springBootTest(springApplication);
+
+  test('finds a book', () async {
+    await app.mockMvc.get('/api/books/1111').andExpect(status: 200, json: containsPair('title', 'Dune'));
+  });
+}
+```
+
+Spring (Java):
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class BookControllerTest {
+  @Autowired MockMvc mvc;
+
+  @Test
+  void findsABook() throws Exception {
+    mvc.perform(get("/api/books/1111"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("Dune"));
+  }
+}
+```
+
+### Requests and expectations
+
+| Call | Request |
+|---|---|
+| `mvc.get(path, headers:, params:)` | `GET`; `params: {'q': 'dune', 'id': [1, 2]}` adds query parameters |
+| `mvc.post(path, json:, body:, headers:)`, `put`, `patch` | a JSON body (`Content-Type: application/json`), or `body` (a `String` or bytes) |
+| `mvc.delete(path, headers:)` | `DELETE` |
+| `mvc.multipart(path, files: [...], params: {...}, headers:, method:)` | a `multipart/form-data` upload (a `POST` unless `method` says otherwise), like `MockMvcRequestBuilders.multipart`; see below |
+| `mvc.perform(MockRequestBuilder(HttpMethod.get, '/api/books/{isbn}', ['978-0']))` | anything else: the builder has `headers`, `params`, `cookies`, `principal`, `content(...)`, `json(...)`, `with_(postProcessor)`; `{name}` is filled from the list, encoded |
+| `mvc.webSocket(path, headers:)` | a WebSocket handshake in memory (see below) |
+
+| On the result | Spring |
+|---|---|
+| `.andExpect(status: 201, contentType: ..., headers: {...}, body: ..., json: ...)` | `andExpect(status().isCreated())`, `content().contentType(...)`, `header().string(...)`, `content().string(...)`, `content().json(...)`; `body` and `json` take a value or a matcher (`hasLength(1)`, `containsPair(...)`) |
+| `.andDo((result) => print(result.response.bodyText))` | `andDo(print())` |
+| `await ....andReturn()` → `MvcResult` (`request`, `response`) | `andReturn()` |
+
+A failed expectation is a test failure naming the request and showing the
+response (`GET http://localhost/api/books/1111: expected status 404, got
+200`). The response is a `MockServerHttpResponse`: `statusCode`,
+`headers`, `cookies`, `bodyText`, `bodyBytes`, `json`.
+
+### Files: uploads and downloads
+
+`mvc.multipart` sends `MockMultipartFile`s (field name, original file
+name, content type, bytes, like Spring's) and text fields (`params`) as
+one `multipart/form-data` body, through the same multipart parsing and
+limits as the server. A `MockMultipartFile` without a file name is a
+plain part; with `application/json` it fills a `@RequestPart` object:
+
+```dart
+test('uploads a cover', () async {
+  await app.mockMvc.multipart('/api/books', files: [
+    MockMultipartFile('cover', 'dune.png', 'image/png', pngBytes),
+    MockMultipartFile('book', null, 'application/json',
+        utf8.encode(jsonEncode({'isbn': '9780441013593', 'title': 'Dune'}))),
+  ], params: {'note': 'first edition'}).andExpect(status: 200);
+});
+
+test('a missing part, a file too large', () async {
+  await app.mockMvc
+      .multipart('/api/books', params: {'note': 'x'})
+      .andExpect(status: 400, json: containsPair('detail', "Required part 'book' is not present."));
+  await app.mockMvc.multipart('/api/books', files: [
+    MockMultipartFile('cover', 'big.png', 'image/png', List.filled(2 * 1024 * 1024, 0)),
+  ]).andExpect(status: 413);                    // above max-file-size (1MB)
+});
+```
+
+`MockMultipartFile` comes with `spring_boot_starter_test`; set the limits
+for a test with `properties: {'spring.servlet.multipart.max-file-size': '64KB'}`.
+
+A download (`Resource`, a byte stream, `StreamingResponseBody`) is read
+from `response.bodyBytes` (or `bodyText`); headers such as `Range` and
+`If-Modified-Since` are sent like any other:
+
+```dart
+test('downloads part of a cover', () async {
+  final result = await app.mockMvc
+      .get('/api/books/9780441013593/cover', headers: {'Range': 'bytes=0-99'})
+      .andExpect(status: 206, contentType: 'image/png', headers: {'Accept-Ranges': 'bytes'})
+      .andReturn();
+  expect(result.response.bodyBytes, hasLength(100));
+
+  final modified = result.response.headers['Last-Modified']!;
+  await app.mockMvc
+      .get('/api/books/9780441013593/cover', headers: {'If-Modified-Since': modified})
+      .andExpect(status: 304, body: '');
+});
+```
+
+Over a real server (`WebEnvironment.randomPort`), a Feign client sends
+files as described in the Feign starter's
+[Files and multipart](../spring_boot_starter_feign/README.md#files-and-multipart).
+
+### Server-sent events
+
+A stream answers before it ends: `andReturn()` completes once the
+headers are out. Read the events as they come, and end the stream from
+the client's side:
+
+```dart
+test('streams changes', () async {
+  final result = await app.mockMvc.get('/api/books/changes').andReturn();
+  expect(result.response.headers.contentType, startsWith('text/event-stream'));
+  final next = result.response.eventStream.firstWhere((e) => e.data != null);
+
+  await app.mockMvc.post('/api/books', json: {'isbn': '5555', 'title': 'Vurt'});
+
+  final event = await next;
+  expect(event.id, '5555');
+  expect(event.data, contains('Vurt'));         // the data as sent (JSON text)
+  await result.cancel();                        // the client goes away
+});
+```
+
+`response.events` holds the events written so far, `response.chunks` the
+raw body from now on, `result.completion` completes when the application
+ended the response. `SseEmitter`s are read the same way.
+
+### WebSocket endpoints
+
+With `spring_boot_starter_websocket`, `mvc.webSocket(path)` performs the
+handshake in memory (through the filters, the origin check and the
+handshake interceptors) and returns the client's end of the connection;
+the endpoint gets the other end:
+
+```dart
+test('echoes', () async {
+  final session = await app.mockMvc.webSocket('/ws/echo/bob');
+  final replies = StreamIterator(session.messages);
+  session.sendMessage('hey');
+  expect(await replies.moveNext(), isTrue);
+  expect(jsonDecode(replies.current as String), {'text': 'bob: HEY'});
+  await session.close();
+});
+```
+
+A refused handshake throws a `WebSocketException` with the status and
+body of the answer.
+
+### A real server: `webEnvironment`
+
+| `webEnvironment` | Spring | What starts |
+|---|---|---|
+| `WebEnvironment.mock` (default) | `MOCK` | no server; `MockMvc` |
+| `WebEnvironment.randomPort` | `RANDOM_PORT` | the server on a free port; the context is ready once it listens |
+| `WebEnvironment.definedPort` | `DEFINED_PORT` | the server on `server.port` |
+| `WebEnvironment.none` | `NONE` | no server |
+
+```dart
+import 'dart:io' as io;
+
+@SpringBootTest(webEnvironment: WebEnvironment.randomPort)
+class ServerTest {
+  @LocalServerPort()
+  late int port;                          // also app.localServerPort
+
+  @Test()
+  Future<void> answersOverHttp() async {
+    final client = io.HttpClient();
+    final request = await client.getUrl(Uri.parse('http://localhost:$port/api/books/1111'));
+    final response = await request.close();
+    expect(response.statusCode, 200);
+    client.close();
+  }
+}
+```
+
+`app.localServerPort` (and a `@LocalServerPort()` field) is the
+`local.server.port` property; reading it without a running server is a
+`StateError`. A port in use fails the start with Spring Boot's report.
+`MockMvc` works in every web environment except when the application has
+no web starter.
+
+### Changing every request: `RequestPostProcessor`
+
+A `RequestPostProcessor` changes a request before it is performed, like
+Spring's (Spring Security's `user(...)`, `jwt()` and `csrf()` are ones;
+the planned security starter adds them):
+
+```dart
+final asAdmin = FunctionRequestPostProcessor(
+  (request) => request..principal = User('admin')..headers.set('X-Role', 'admin'),
+);
+
+await app.mockMvc.perform(
+  MockRequestBuilder(HttpMethod.delete, '/api/books/1111')..with_(asAdmin),
+).andExpect(status: 204);
+
+// For every request of a MockMvc:
+final mvc = MockMvc(app.getBean<DispatcherHandler>(), defaultPostProcessors: [asAdmin]);
+```
+
+### `ApplicationContextRunner`
+
+The runner starts no server either (it sets
+`spring.test.web-environment=mock`), so auto-configuration tests of a web
+application never open a port. For a real server in a runner:
+`.withPropertyValues(['spring.test.web-environment=random-port'])`, then
+`await context.getBean<WebServerStartStopLifecycle>().started` for the
+`WebServer` and its port.
+
+## 18. Differences from Spring
 
 - **`main` stays.** `dart test` runs `main`; a test file keeps one line,
   `void main() => runSpringTests();`.
@@ -746,7 +1006,12 @@ Mailer`).
 - **One context per class**, not shared between classes with the same
   configuration (Spring's context cache). Each class starts its own;
   starting is fast (no classpath scanning: everything is generated).
-- **No web environment** (`webEnvironment = RANDOM_PORT`, `MockMvc`): there
-  is no web server yet ([roadmap](../roadmap/spring_boot_starter_web.md)).
+- **Web tests** ([section 17](#17-web-tests-mockmvc)): `MockMvc` needs no
+  `@AutoConfigureMockMvc` (an `@Autowired MockMvc` field or `app.mockMvc`
+  always works with the web starter), its expectations are named
+  parameters with matchers instead of `status().isOk()` and
+  `jsonPath(...)`, and there is no `WebTestClient` or
+  `TestRestTemplate`: use a Feign client or `HttpClient` against
+  `localServerPort`.
 - **No test slices** (`@WebMvcTest`, `@DataJpaTest`) yet; use
   `ApplicationContextRunner` for a part of the configuration.

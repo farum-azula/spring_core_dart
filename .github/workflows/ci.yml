@@ -1,10 +1,21 @@
 name: CI
 
 # Tests and checks on main and on pull requests.
+#
+# Independent jobs on separate machines, so the run takes about as long as
+# its slowest job (not the sum of every step): static checks, generated
+# code, the starters' applications, the unit tests in four parts, the
+# integration tests (real sockets and processes), node/examples, Flutter.
 on:
   push:
     branches: [main]
   pull_request:
+
+# A new push to a pull request cancels its older run; every commit on main
+# keeps its own run (the Release workflow looks at main's result).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Which packages the change affects (tool/affected.dart): those with
@@ -21,6 +32,7 @@ jobs:
       flutter_counter: ${{ steps.affected.outputs.flutter_counter }}
       flutter_themes: ${{ steps.affected.outputs.flutter_themes }}
       flutter_examples: ${{ steps.affected.outputs.flutter_examples }}
+      family: ${{ steps.affected.outputs.family }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -38,8 +50,145 @@ jobs:
           BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
         run: dart run tool/affected.dart --base "$BASE" --github-output
 
+  # Fast checks of the whole repository (every change).
   check:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Lockstep versions and pubspec descriptions
+        run: dart run tool/version.dart --check
+
+      - name: Dependencies only from this repository and the Dart team
+        run: dart run tool/check_dependencies.dart
+
+      # tool/affected.dart, test_all.dart, version.dart and release.dart,
+      # and the docs' install snippets (roadmap/dependencies.md).
+      - name: Tests of the tools
+        run: dart test tool/test
+
+      - name: Analyze
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_boot_starter_test example/spring_core_tour example/spring_boot_feign extensions/language_server tool
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Zed extension dart_spring builds
+        working-directory: extensions/zed/dart_spring
+        run: |
+          jq empty snippets/dart.json
+          rustup target add wasm32-wasip2
+          cargo build --release --target wasm32-wasip2
+
+      - name: Language server compiles to a native executable
+        run: dart compile exe extensions/language_server/bin/dart_spring_lsp.dart -o /tmp/dart_spring_lsp
+
+  # The generated code is committed: build_runner must not change it. The
+  # tour app is not run here (it calls real public servers); its tests run
+  # with all the others, against local servers. The packages' own examples
+  # (example/example.dart on pub.dev) are Spring Boot applications written
+  # by the generator. Two machines, about 2 minutes of builds each.
+  generated:
+    name: Generated code is up to date (${{ matrix.part }})
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - part: examples and core
+            directories: example/spring_core_tour example/spring_boot_feign spring_core_dart spring_boot_dart
+          - part: starters
+            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: build_runner build changes nothing
+        env:
+          DIRECTORIES: ${{ matrix.directories }}
+        run: |
+          for directory in $DIRECTORIES; do
+            echo "::group::$directory"
+            case $directory in
+              example/*) (cd $directory && dart run build_runner build --delete-conflicting-outputs) ;;
+              *) (cd $directory && dart run build_runner build) ;;
+            esac
+            echo "::endgroup::"
+            git diff --exit-code -- $directory
+            test -z "$(git status --porcelain -- $directory)"
+          done
+
+  # An application per starter that lists only that starter: generator,
+  # analyze --fatal-infos (depend_on_referenced_packages) and its tests.
+  # The applications use every published Dart package of the family (by
+  # path), so only when one of them is affected (tool/ changes: all).
+  app-dependencies:
+    name: Each starter is an application's only dependency
     needs: changes
+    if: needs.changes.outputs.family == 'true'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - run: dart run tool/check_app_dependencies.dart
+
+  # The affected workspace packages (all of them after a change to a shared
+  # file), from each package directory and from the workspace root (IDEs
+  # run tests from there), without the integration tests. tool/test_all.dart
+  # deals the runs (both passes, the generator's shards) to four parts of
+  # about the same weight, one per machine.
+  test:
+    name: Tests (part ${{ matrix.part }}/4)
+    needs: changes
+    if: needs.changes.outputs.packages != ''
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Tests of the affected packages
+        env:
+          PACKAGES: ${{ needs.changes.outputs.packages }}
+          PART: ${{ matrix.part }}
+        run: dart run tool/test_all.dart --only "$PACKAGES" --exclude-tags integration --job "$PART/4"
+
+  # The tests tagged `integration` (@Tags(['integration'])): real HTTP and
+  # WebSocket servers on sockets, started processes, the fetch transport on
+  # node. Both passes, like the others.
+  integration:
+    name: Integration tests
+    needs: changes
+    if: needs.changes.outputs.packages != ''
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -55,74 +204,33 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
-      - name: Lockstep versions and pubspec descriptions
-        run: dart run tool/version.dart --check
+      - name: Integration tests of the affected packages
+        env:
+          PACKAGES: ${{ needs.changes.outputs.packages }}
+        run: dart run tool/test_all.dart --only "$PACKAGES" --tags integration
 
-      - name: Dependencies only from this repository and the Dart team
-        run: dart run tool/check_dependencies.dart
+  # SpEL and the JSON mapper run on the web too, where an integral double is
+  # an `int` at run time: their tests also run compiled to JavaScript, on
+  # node. And the tour's applications run, also minified.
+  web:
+    name: Node and the example applications
+    needs: changes
+    if: needs.changes.outputs.core == 'true' || needs.changes.outputs.tour == 'true'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
 
-      # tool/affected.dart, version.dart and release.dart, and the docs'
-      # install snippets (roadmap/dependencies.md).
-      - name: Tests of the tools
-        run: dart test tool/test
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
 
-      # An application per starter that lists only that starter: generator,
-      # analyze --fatal-infos (depend_on_referenced_packages) and its tests.
-      - name: Each starter is an application's only dependency
-        run: dart run tool/check_app_dependencies.dart
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
-      - name: Zed extension dart_spring builds
-        working-directory: extensions/zed/dart_spring
-        run: |
-          jq empty snippets/dart.json
-          rustup target add wasm32-wasip2
-          cargo build --release --target wasm32-wasip2
+      - name: Install dependencies
+        run: dart pub get
 
-      - name: Language server compiles to a native executable
-        run: dart compile exe extensions/language_server/bin/dart_spring_lsp.dart -o /tmp/dart_spring_lsp
-
-      - name: Generated code is up to date
-        working-directory: example/spring_core_tour
-        run: |
-          dart run build_runner build --delete-conflicting-outputs
-          git diff --exit-code -- .
-          test -z "$(git status --porcelain -- .)"
-
-      # The app itself is not run here (it calls real public servers); its
-      # tests run with all the others, against local servers.
-      # The packages' own examples (example/example.dart on pub.dev) are
-      # Spring Boot applications written by the generator.
-      - name: Generated code is up to date (package examples)
-        run: |
-          for package in spring_core_dart spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket; do
-            (cd $package && dart run build_runner build)
-            git diff --exit-code -- $package
-            test -z "$(git status --porcelain -- $package)"
-          done
-
-      - name: Generated code is up to date (Spring Boot + Feign example)
-        working-directory: example/spring_boot_feign
-        run: |
-          dart run build_runner build --delete-conflicting-outputs
-          git diff --exit-code -- .
-          test -z "$(git status --porcelain -- .)"
-
-      - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_test example/spring_core_tour example/spring_boot_feign extensions/language_server tool
-
-      - name: Format
-        run: dart format --output=none --set-exit-if-changed .
-
-      # The affected workspace packages (all of them after a change to a
-      # shared file): from each package directory and from the workspace
-      # root (IDEs run tests from there).
-      - name: Tests of the affected packages
-        if: needs.changes.outputs.packages != ''
-        run: dart run tool/test_all.dart --only "${{ needs.changes.outputs.packages }}"
-
-      # SpEL and the JSON mapper run on the web too, where an integral
-      # double is an `int` at run time: their tests also run compiled to
-      # JavaScript, on node.
       - name: SpEL and JSON tests on node
         if: needs.changes.outputs.core == 'true'
         working-directory: spring_core_dart
@@ -258,4 +366,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_test
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_boot_starter_test

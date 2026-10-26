@@ -24,6 +24,11 @@ abstract final class FileAccess {
   /// The bytes of the file at [path], read asynchronously.
   static Future<Uint8List> readBytes(String path) => File(path).readAsBytes();
 
+  /// The bytes of the file at [path] from [start] (inclusive) to [end]
+  /// (exclusive), streamed.
+  static Stream<List<int>> openRead(String path, [int? start, int? end]) =>
+      File(path).openRead(start, end);
+
   /// The body of a GET request to [url]; a status of 400 or above throws
   /// an [HttpException].
   static Future<Uint8List> readUrl(Uri url) async {

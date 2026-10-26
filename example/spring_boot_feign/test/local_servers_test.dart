@@ -4,6 +4,7 @@
 // local stand-ins for JSONPlaceholder, Wikimedia EventStreams and the echo
 // server (test/support/local_servers.dart). Runs in CI.
 @TestOn('vm')
+@Tags(['integration'])
 library;
 
 import 'dart:convert';

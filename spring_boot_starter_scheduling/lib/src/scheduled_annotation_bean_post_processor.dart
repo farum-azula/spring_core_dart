@@ -86,7 +86,7 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     final found = <_ScheduledMethod>[];
     for (final method in methods) {
       final name = '$owner.${method.name}';
-      if (method.parameterTypes.isNotEmpty) {
+      if (method.parameterTypes.isNotEmpty || method.parameters.isNotEmpty) {
         throw StateError(
           'Invalid @Scheduled method $name: it must not take parameters',
         );

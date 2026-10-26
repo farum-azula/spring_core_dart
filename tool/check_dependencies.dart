@@ -39,6 +39,7 @@ const repositoryOnly = {
   'spring_web_dart',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
+  'spring_boot_starter_web',
   'spring_boot_starter_flutter',
 };
 

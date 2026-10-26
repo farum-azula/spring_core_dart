@@ -118,6 +118,88 @@ final app = springBootTest(
 Declare the `setUpAll` that provides the value before `springBootTest`, so
 it runs first.
 
+## Web tests: `MockMvc`, `webEnvironment`
+
+With [`spring_boot_starter_web`](../spring_boot_starter_web/README.md),
+`app.mockMvc` calls the controllers in memory, like Spring's `MockMvc`:
+the same dispatcher a real server runs (filters, mapping, binding, error
+handling), no socket. By default (`WebEnvironment.mock`) a test starts no
+server at all.
+
+```dart
+final app = springBootTest(springApplication);
+
+test('finds a book', () async {
+  final mvc = app.mockMvc;
+  await mvc.get('/api/books/1111').andExpect(
+    status: 200,
+    contentType: MediaType.applicationJson,
+    headers: {'X-Trace': 'on'},
+    json: {'isbn': '1111', 'title': 'Dune'},       // or a matcher: containsPair('title', 'Dune')
+  );
+  await mvc.get('/api/books', params: {'q': 'dune'}).andExpect(json: hasLength(1));
+  await mvc
+      .post('/api/books', json: {'isbn': '', 'title': ''})
+      .andExpect(status: 400, contentType: MediaType.applicationProblemJson);
+  await mvc.delete('/api/books/2222').andExpect(status: 204);
+});
+```
+
+- `get(path, headers:, params:)`, `post` / `put` / `patch(path, json:, body:, headers:)`,
+  `delete(path, headers:)`, and `perform(MockRequestBuilder(...))` for
+  anything else (`MockRequestBuilder(HttpMethod.get, '/api/books/{isbn}', ['978-0'])`
+  with `headers`, `params`, `cookies`, `principal`, `content`, `json`).
+- `andExpect(status:, contentType:, headers:, body:, json:)` (`body` and
+  `json` take a value or a matcher; a failure names the request and shows
+  the response), `andDo((result) => ...)`, `andReturn()` (an `MvcResult`
+  with `request` and `response`). `ResultActions` is a `Future`, so
+  `await` it.
+- **Server-sent events:** the result is ready as soon as the headers are
+  out; read the events as they come from `result.response.eventStream`
+  (`events` for those so far) and end the stream with `result.cancel()`.
+- **Uploads:** `mvc.multipart(path, files: [...], params: {...})` sends a
+  `multipart/form-data` request; `MockMultipartFile('cover', 'dune.png',
+  'image/png', bytes)` is a file, one without a file name and with
+  `application/json` a JSON part for `@RequestPart`. Downloads are read
+  from `result.response.bodyBytes` (with `Range` / `If-Modified-Since`
+  headers as needed).
+- **WebSocket endpoints** (`spring_boot_starter_websocket`):
+  `await mvc.webSocket('/ws/chat')` opens a connection in memory and
+  returns the client's `WebSocketSession`.
+- **`RequestPostProcessor`** changes a request before it is performed
+  (Spring's `.with(...)`; Spring Security's `user(...)` and `csrf()` are
+  ones): `builder.with_(processor)`, or for every request
+  `MockMvc(app.getBean<DispatcherHandler>(), defaultPostProcessors: [...])`.
+
+A real server on a free port, for clients that need a socket (a Feign
+client, `dart:io`'s `HttpClient`, a WebSocket client):
+
+```dart
+final app = springBootTest(springApplication, webEnvironment: WebEnvironment.randomPort);
+
+test('over HTTP', () async {
+  final url = 'http://localhost:${app.localServerPort}/api/books/1111';
+  ...
+});
+```
+
+| `webEnvironment` | Spring | Server |
+|---|---|---|
+| `WebEnvironment.mock` (default) | `MOCK` | none; `app.mockMvc` |
+| `WebEnvironment.randomPort` | `RANDOM_PORT` | a real one on a free port: `app.localServerPort` (`local.server.port`); the context starts once it listens |
+| `WebEnvironment.definedPort` | `DEFINED_PORT` | a real one on `server.port` |
+| `WebEnvironment.none` | `NONE` | none |
+
+As a test class: `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`,
+`@LocalServerPort() late int port;`, and `@Autowired() late MockMvc mvc;`
+(`@AutoConfigureMockMvc()` on the class states it, as in Spring; it is
+not required).
+
+`ApplicationContextRunner` starts no server either (it sets
+`spring.test.web-environment=mock`); add
+`withPropertyValues(['spring.test.web-environment=random-port'])` for a
+real one.
+
 ## `BeanOverride`: fakes and mocks (`@MockitoBean`, `@TestBean`)
 
 ```dart
@@ -215,10 +297,17 @@ Every test starts with an empty capture.
 
 ## Differences from Spring
 
-- `springBootTest` is a function for the tests of a `main` or `group`, not
-  an annotation on a test class; no `webEnvironment` (there is no embedded
-  web server), no test slices (`@WebMvcTest`, `@DataJpaTest`, ...) and no
+- `springBootTest` is a function for the tests of a `main` or `group`
+  (test classes with `@SpringBootTest` are generated into it); no test
+  slices (`@WebMvcTest`, `@DataJpaTest`, ...) and no
   `@TestConfiguration`: pass extra modules to the `SpringApplication`.
+- `webEnvironment` defaults to `mock` as in Spring, but `MockMvc` needs no
+  `@AutoConfigureMockMvc`: `app.mockMvc` (or an `@Autowired MockMvc`
+  field) always works with the web starter. `andExpect` takes named
+  expectations (`status:`, `json:` with matchers) instead of
+  `status().isOk()` and `jsonPath(...)`; there is no `WebTestClient` or
+  `TestRestTemplate` (use a Feign client or `HttpClient` against
+  `localServerPort`).
 - `BeanOverride` replaces the bean definition with a ready-made object of
   your own (like `@TestBean`); there are no generated mocks or spies and no
   automatic reset between tests (`@MockitoBean(reset)`): use any mock

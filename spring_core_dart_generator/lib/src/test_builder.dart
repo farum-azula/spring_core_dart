@@ -581,6 +581,10 @@ final class TestEmitter {
         case final directories?) {
       _body.writeln('resourceDirectories: $directories,');
     }
+    if (_code(namedNode(springBootTest, 'webEnvironment'))
+        case final environment?) {
+      _body.writeln('webEnvironment: $environment,');
+    }
     if (annotation(metadata, 'ActiveProfiles') case final profiles?) {
       _body.writeln('profiles: ${_code(positionalNode(profiles, 0))},');
     }
@@ -683,6 +687,9 @@ final class TestEmitter {
     final type = field.type!;
     final nullable = type.endsWith('?');
     final scope = _Scope.of(file, field.owner);
+    if (annotation(field.metadata, 'LocalServerPort') != null) {
+      return '$_app.localServerPort';
+    }
     if (annotation(field.metadata, 'Value') case final value?) {
       final expression = _code(positionalNode(value, 0), scope: scope);
       return nullable
@@ -697,6 +704,8 @@ final class TestEmitter {
     switch (field.simpleTypeName) {
       case 'SpringBootTestContext':
         return _app;
+      case 'MockMvc':
+        return '$_app.mockMvc';
       case 'ApplicationContext' || 'ConfigurableApplicationContext':
         return '$_app.context';
       case 'Environment' || 'ConfigurableEnvironment':
@@ -1156,13 +1165,16 @@ final class _Members {
     final metadata = field.metadata;
     final injected =
         annotation(metadata, 'Autowired') != null ||
-        annotation(metadata, 'Value') != null;
+        annotation(metadata, 'Value') != null ||
+        annotation(metadata, 'LocalServerPort') != null;
     final captured = annotation(metadata, 'CapturedOutput') != null;
     if (injected || captured) {
       final what = captured
           ? 'CapturedOutput'
           : annotation(metadata, 'Value') != null
           ? 'Value'
+          : annotation(metadata, 'LocalServerPort') != null
+          ? 'LocalServerPort'
           : 'Autowired';
       if (node.isStatic ||
           field.declarations.lateKeyword == null ||

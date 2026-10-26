@@ -132,6 +132,11 @@ class FileSystemResource extends AbstractResource {
   @override
   Future<Uint8List> readAsBytes() => FileAccess.readBytes(path);
 
+  /// The content from [start] (inclusive) to [end] (exclusive), streamed
+  /// without reading the whole file (a download, a `Range` request).
+  Stream<List<int>> openRead([int? start, int? end]) =>
+      FileAccess.openRead(path, start, end);
+
   @override
   Uint8List readAsBytesSync() => FileAccess.readBytesSync(path);
 

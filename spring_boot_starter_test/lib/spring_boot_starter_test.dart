@@ -27,5 +27,6 @@ export 'package:spring_boot_starter_test/src/bean_override.dart';
 export 'package:spring_boot_starter_test/src/dynamic_property_registry.dart';
 export 'package:spring_boot_starter_test/src/log_capture.dart';
 export 'package:spring_boot_starter_test/src/matchers.dart';
+export 'package:spring_boot_starter_test/src/mock_mvc.dart';
 export 'package:spring_boot_starter_test/src/spring_boot_test.dart';
 export 'package:spring_boot_starter_test/src/test_annotations.dart';

@@ -126,6 +126,30 @@ abstract interface class ChatSocket {
   });
 ''',
   ),
+  _Starter(
+    'spring_boot_starter_web',
+    feature: r'''
+class Greeting {
+  const Greeting({required this.text});
+  final String text;
+}
+
+@RestController()
+@RequestMapping('/api/greetings')
+class GreetingController {
+  @GetMapping('/{name}')
+  Greeting greet(@PathVariable() String name) => Greeting(text: 'Hello, $name');
+}
+''',
+    featureTest: r'''
+  test('@RestController through MockMvc from the test starter', () async {
+    await app.mockMvc
+        .get('/api/greetings/Ada')
+        .andExpect(status: 200, json: {'text': 'Hello, Ada'});
+    expect(app, hasSingleBean<GreetingController>());
+  });
+''',
+  ),
 ];
 
 Future<void> main(List<String> args) async {

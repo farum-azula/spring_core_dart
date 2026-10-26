@@ -180,6 +180,25 @@ class ShopTest {
     );
   });
 
+  test('a web environment, MockMvc and @LocalServerPort', () async {
+    final source = _squash(
+      await _generated(r'''
+@SpringBootTest(webEnvironment: WebEnvironment.randomPort)
+@AutoConfigureMockMvc()
+class ApiTest {
+  @Autowired()
+  late MockMvc mvc;
+
+  @LocalServerPort()
+  late int port;
+}
+'''),
+    );
+    expect(source, _has('webEnvironment: WebEnvironment.randomPort'));
+    expect(source, _has('instance.mvc = app.mockMvc;'));
+    expect(source, _has('instance.port = app.localServerPort;'));
+  });
+
   test('fields are injected before every test, by kind', () async {
     final source = _squash(
       await _generated(r'''

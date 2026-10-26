@@ -323,4 +323,17 @@ h = = x
       );
     });
   });
+
+  test('FileSystemResource.openRead streams a byte range', () async {
+    final dir = Directory.systemTemp.createTempSync('open_read_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final file = File('${dir.path}/data.txt')..writeAsStringSync('0123456789');
+    final resource = FileSystemResource(file.path);
+    Future<String> read([int? start, int? end]) async => utf8.decode(
+      await resource.openRead(start, end).expand((c) => c).toList(),
+    );
+    expect(await read(), '0123456789');
+    expect(await read(2, 5), '234');
+    expect(await read(7), '789');
+  });
 }

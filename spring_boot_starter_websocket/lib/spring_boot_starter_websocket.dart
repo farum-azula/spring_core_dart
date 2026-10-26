@@ -29,6 +29,9 @@ library;
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
 
+export 'src/server/web_socket_endpoint.dart';
+export 'src/server/web_socket_handler.dart';
+export 'src/server/web_socket_handler_mapping.dart';
 export 'src/web_socket_client.dart';
 export 'src/web_socket_client_config.dart';
 export 'src/web_socket_client_factory.dart';

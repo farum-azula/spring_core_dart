@@ -5911,6 +5911,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       annotatedMethods: [
         _i2.BeanMethod<_i20.StockJobs>(
           r'refreshStock',
+          isVoid: true,
           invoke: (bean, arguments) =>
               Function.apply(bean.refreshStock, arguments),
           annotations: const [
@@ -5919,6 +5920,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         ),
         _i2.BeanMethod<_i20.StockJobs>(
           r'nightlyReport',
+          isVoid: true,
           invoke: (bean, arguments) =>
               Function.apply(bean.nightlyReport, arguments),
           annotations: const [_i30.Scheduled(cron: r'0 0 3 * * *')],
@@ -6800,6 +6802,16 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       source: r'package:spring_core_dart_example/src/remote/catalog_api.dart#OfflineMotd',
       types: const [_i22.OfflineMotd, _i22.MotdApi],
       create: (r) => _i22.OfflineMotd(),
+      annotatedMethods: [
+        _i2.BeanMethod<_i22.OfflineMotd>(
+          r'messageOfTheDay',
+          returnTypeInfo: const _i2.ClassType<String>(),
+          isFuture: true,
+          invoke: (bean, arguments) =>
+              Function.apply(bean.messageOfTheDay, arguments),
+          annotations: const [_i24.GetMapping(r'/motd')],
+        ),
+      ],
       annotations: const [_i2.Component()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [

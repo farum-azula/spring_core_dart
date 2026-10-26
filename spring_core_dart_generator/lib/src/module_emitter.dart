@@ -969,6 +969,28 @@ class ModuleEmitter {
           for (final type in method.parameterTypes)
             type == null ? refer('Object') : _type(type, element),
         ]),
+      if (method.parameters.isNotEmpty)
+        'parameters': literalList([
+          for (final parameter in method.parameters)
+            _spring('BeanParameter').newInstance(
+              [_str(parameter.name)],
+              {
+                'type': _typeInfo(parameter.type, element).$1,
+                if (parameter.isNamed)
+                  'symbol': CodeExpression(Code('#${parameter.name}')),
+                if (parameter.isRequired) 'isRequired': literalTrue,
+                if (parameter.annotations.isNotEmpty)
+                  'annotations': literalConstList([
+                    for (final annotation in parameter.annotations)
+                      _constant(annotation, element),
+                  ]),
+              },
+            ),
+        ]),
+      if (!method.isVoid)
+        'returnTypeInfo': _typeInfo(method.valueType, element).$1,
+      if (method.isFuture) 'isFuture': literalTrue,
+      if (method.isVoid) 'isVoid': literalTrue,
       'invoke': _closure(
         ['bean', 'arguments'],
         refer('Function')
@@ -977,6 +999,16 @@ class ModuleEmitter {
             .code,
         lambda: true,
       ),
+      if (method.parameters.any((p) => p.isNamed))
+        'invokeNamed': _closure(
+          ['bean', 'positional', 'named'],
+          refer('Function').property('apply').call([
+            refer('bean').property(method.name),
+            refer('positional'),
+            refer('named'),
+          ]).code,
+          lambda: true,
+        ),
       if (method.annotations.isNotEmpty)
         'annotations': literalConstList([
           for (final annotation in method.annotations)

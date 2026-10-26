@@ -1,8 +1,15 @@
+import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 
 /// What every request mapping annotation (`@GetMapping`, `@PostMapping`,
 /// ..., `@RequestMapping`) exposes, so code reading annotations can find
 /// any of them with `annotations.whereType<Mapping>()`.
+///
+/// The same annotations describe Feign clients (`@FeignClient` interfaces)
+/// and controllers (`@RestController` classes of
+/// `spring_boot_starter_web`). They are marked `@BeanMethodAnnotation()`,
+/// so the generator describes a controller's mapped methods (parameters,
+/// their annotations, the result type) in its bean definition.
 ///
 /// ```dart
 /// final mapping = method.annotations.whereType<Mapping>().single;
@@ -51,6 +58,7 @@ abstract interface class Mapping {
 /// @RequestMapping(path = "/books/{isbn}", method = RequestMethod.HEAD)
 /// ResponseEntity<Void> exists(@PathVariable("isbn") String isbn);
 /// ```
+@BeanMethodAnnotation()
 class RequestMapping implements Mapping {
   /// Maps [path] (none by default: the path of the client or of the class)
   /// with `GET`.
@@ -109,6 +117,7 @@ class RequestMapping implements Mapping {
 /// @GetMapping(path = "/books", produces = MediaType.APPLICATION_JSON_VALUE)
 /// List<Book> all();
 /// ```
+@BeanMethodAnnotation()
 class GetMapping implements Mapping {
   /// Maps `GET` [path] (none by default: the path of the client or of
   /// the class).
@@ -155,6 +164,7 @@ class GetMapping implements Mapping {
 /// @PostMapping("/books")
 /// Book create(@RequestBody Book book);
 /// ```
+@BeanMethodAnnotation()
 class PostMapping implements Mapping {
   /// Maps `POST` [path] (none by default: the path of the client or of
   /// the class).
@@ -201,6 +211,7 @@ class PostMapping implements Mapping {
 /// @PutMapping("/books/{isbn}")
 /// Book replace(@PathVariable("isbn") String isbn, @RequestBody Book book);
 /// ```
+@BeanMethodAnnotation()
 class PutMapping implements Mapping {
   /// Maps `PUT` [path] (none by default: the path of the client or of
   /// the class).
@@ -247,6 +258,7 @@ class PutMapping implements Mapping {
 /// @PatchMapping("/books/{isbn}")
 /// Book rename(@PathVariable("isbn") String isbn, @RequestBody Map<String, Object> changes);
 /// ```
+@BeanMethodAnnotation()
 class PatchMapping implements Mapping {
   /// Maps `PATCH` [path] (none by default: the path of the client or of
   /// the class).
@@ -293,6 +305,7 @@ class PatchMapping implements Mapping {
 /// @DeleteMapping("/books/{isbn}")
 /// void delete(@PathVariable("isbn") String isbn);
 /// ```
+@BeanMethodAnnotation()
 class DeleteMapping implements Mapping {
   /// Maps `DELETE` [path] (none by default: the path of the client or of
   /// the class).
@@ -505,5 +518,35 @@ class RequestBody {
 
   /// Whether a body is required (for a server; a client sends none for a
   /// `null` argument either way).
+  final bool required;
+}
+
+/// Binds a part of a `multipart/form-data` request, like Spring's
+/// `@RequestPart`: a file (`MultipartFile`, `List<MultipartFile>`), a text
+/// field (`String`), or a part read into an object by its `Content-Type`
+/// (JSON). Without a [name] the parameter name is used.
+///
+/// ```dart
+/// @PostMapping.of(path: '/books', consumes: MediaType.multipartFormData)
+/// Future<Book> create(
+///   @RequestPart('book') @Valid() NewBook book,
+///   @RequestPart('cover') MultipartFile cover,
+/// ) => books.create(book, cover);
+/// ```
+///
+/// A Feign client sends such a parameter as a part of a multipart body.
+///
+/// Spring (Java): `@RequestPart("cover") MultipartFile cover`.
+class RequestPart {
+  /// Binds the part [name] (default: the parameter name); required.
+  const RequestPart([this.name]) : required = true;
+
+  /// Binds the part [name]; [required] is `true` by default.
+  const RequestPart.of({this.name, this.required = true});
+
+  /// The part name, or `null` for the parameter name.
+  final String? name;
+
+  /// Whether the part must be present.
   final bool required;
 }

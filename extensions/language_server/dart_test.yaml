@@ -2,3 +2,11 @@
 # workspace: seconds alone, longer while the other packages' tests run in
 # parallel (tool/test_all.dart, CI).
 timeout: 4x
+
+tags:
+  # Tests that open real sockets/servers or start processes (@Tags at the
+  # top of the file). CI runs them in their own job:
+  #   dart run tool/test_all.dart --tags integration
+  # and the rest with --exclude-tags integration.
+  integration:
+    timeout: 2x

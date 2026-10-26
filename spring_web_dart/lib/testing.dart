@@ -14,4 +14,5 @@
 library;
 
 export 'package:spring_web_dart/src/testing/mock_http_transport.dart';
+export 'package:spring_web_dart/src/testing/mock_server_http.dart';
 export 'package:spring_web_dart/src/testing/mock_web_socket_transport.dart';

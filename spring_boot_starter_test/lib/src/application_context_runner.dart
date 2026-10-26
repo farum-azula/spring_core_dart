@@ -344,6 +344,14 @@ final class ApplicationContextRunner {
         MapPropertySource('test', Map.of(properties)),
       );
     }
+    // Like Spring's ApplicationContextRunner (not the web one): a web
+    // starter starts no server unless the test asks for one
+    // (`spring.test.web-environment=random-port`).
+    environment.propertySources.addLast(
+      const MapPropertySource('applicationContextRunnerDefaults', {
+        'spring.test.web-environment': 'mock',
+      }),
+    );
     // Relaxed names, as in an application started by SpringApplication.
     ConfigurationPropertySources.attach(environment);
     final context = AnnotationConfigApplicationContext(

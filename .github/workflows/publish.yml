@@ -8,8 +8,12 @@ name: 'Release: publish to pub.dev'
 #           spring_web_dart
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
 #           spring_boot_starter_cache, spring_boot_starter_feign,
-#           spring_boot_starter_websocket, spring_boot_starter_test
+#           spring_boot_starter_websocket, spring_boot_starter_web,
+#           spring_boot_starter_test
 #         → spring_boot_starter_flutter (with the Flutter SDK)
+#
+# (tests: not run again when the "Release" workflow tested the tagged
+# commit.)
 #
 # No password or token: pub.dev trusts this repository through GitHub's
 # OpenID Connect token once automated publishing is enabled on each package's
@@ -30,16 +34,65 @@ permissions:
   contents: read
 
 jobs:
+  # The tests of the tagged commit. A tag pushed by the "Release" workflow
+  # was tested there with exactly this change (its "Tests with the new
+  # version" jobs passed before it pushed the commit `chore(release): <tag>`
+  # onto the commit it started from), so they are not run again; any other
+  # tag (pushed by hand) is tested here.
   tests:
     name: Tests
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      actions: read # the Release workflow's runs
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Tested by the Release workflow?
+        id: released
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          tested=false
+          parent=$(git rev-parse --verify --quiet HEAD^ || true)
+          subject=$(git log -1 --format=%s)
+          if [ -n "$parent" ] && [ "$subject" = "chore(release): $TAG" ]; then
+            for run in $(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/runs?head_sha=$parent&event=workflow_dispatch" --jq '.workflow_runs[].id'); do
+              # All four test parts passed and this run pushed (its push
+              # step succeeded; it may still be finishing as the tag that
+              # started this workflow arrives, so wait for it a little).
+              for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                verdict=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs?per_page=100" --jq '
+                  [.jobs[] | select(.name | startswith("Tests with the new version"))] as $tests
+                  | [.jobs[] | select(.name == "Commit, tag and push") | .steps[]?
+                     | select(.name == "Commit, tag and push")] as $push
+                  | if ($tests | length) == 0 or ($tests | any(.conclusion != "success")) then "no"
+                    elif ($push | any(.conclusion == "success")) then "tested"
+                    elif ($push | any(.status != "completed")) then "pending"
+                    else "no" end')
+                echo "Release run $run: $verdict"
+                if [ "$verdict" != pending ]; then break; fi
+                sleep 5
+              done
+              if [ "$verdict" = tested ]; then tested=true; fi
+            done
+          fi
+          echo "tested=$tested" >> "$GITHUB_OUTPUT"
+          if [ "$tested" = true ]; then
+            echo "Tested by the Release workflow: the tests are not run again." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: dart-lang/setup-dart@v1
+        if: steps.released.outputs.tested != 'true'
         with:
           sdk: stable
-      - run: dart pub get
-      - run: dart run tool/test_all.dart --packages
+      - if: steps.released.outputs.tested != 'true'
+        run: dart pub get
+      - if: steps.released.outputs.tested != 'true'
+        run: dart run tool/test_all.dart --packages
 
   core:
     name: Publish spring_core_dart
@@ -88,6 +141,7 @@ jobs:
           - spring_boot_starter_cache
           - spring_boot_starter_feign
           - spring_boot_starter_websocket
+          - spring_boot_starter_web
           - spring_boot_starter_test
     steps:
       - uses: actions/checkout@v7

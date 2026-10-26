@@ -20,12 +20,15 @@
 //   flutter_themes   example/flutter_themes affected (incl. goldens)
 //   flutter_examples either Flutter example (the goldens job)
 //   flutter          any of the three
+//   family           a published Dart package of the family (the
+//                    applications of tool/check_app_dependencies.dart)
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import 'test_all.dart' show workspacePackages;
+import 'version.dart' as version;
 
 /// Flutter packages outside the pub workspace.
 const flutterPackages = [
@@ -109,12 +112,20 @@ Future<void> main(List<String> args) async {
         'flutter_themes=$themes',
         'flutter_examples=${counter || themes}',
         'flutter=${starter || counter || themes}',
+        'family=${familyAffected(affected)}',
         '',
       ].join('\n'),
       mode: FileMode.append,
     );
   }
 }
+
+/// Whether [affected] holds a published Dart package of the family: the
+/// applications of tool/check_app_dependencies.dart use them all (by path).
+bool familyAffected(Set<String> affected) => version.family.any(
+  (package) =>
+      package != 'spring_boot_starter_flutter' && affected.contains(package),
+);
 
 /// The packages [changed] affects, given each package's local
 /// [dependencies] (package directory → directories it depends on).

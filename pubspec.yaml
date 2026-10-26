@@ -16,6 +16,7 @@ workspace:
   - spring_web_dart
   - spring_boot_starter_feign
   - spring_boot_starter_websocket
+  - spring_boot_starter_web
   - example/spring_core_tour
   - example/spring_boot_feign
   - extensions/language_server

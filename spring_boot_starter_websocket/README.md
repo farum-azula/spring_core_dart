@@ -4,13 +4,21 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-Declarative WebSocket clients for
+WebSocket for
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
-applications: describe a socket as an abstract class with `@OnMessage` and
-`@SendMessage` methods and inject it like any bean. The generator writes
-the implementation (no reflection), messages go through the `ObjectMapper`
-of `spring_core_dart` as JSON. Works on the VM, in Flutter (mobile,
-desktop, web) and in the browser.
+applications, both sides:
+
+- **Clients:** describe a socket as an abstract class with `@OnMessage`
+  and `@SendMessage` methods and inject it like any bean. Works on the VM,
+  in Flutter (mobile, desktop, web) and in the browser.
+- **Server endpoints:** a `@WebSocketEndpoint` bean with `@OnOpen`,
+  `@OnMessage`, `@OnClose` methods, or Spring's `WebSocketHandler` with a
+  `WebSocketConfigurer`, served by
+  [`spring_boot_starter_web`](https://pub.dev/packages/spring_boot_starter_web)
+  (see [Server endpoints](#server-endpoints)).
+
+The generator writes the code (no reflection), messages go through the
+`ObjectMapper` of `spring_core_dart` as JSON.
 
 ```dart
 @WebSocketClient('chat', url: r'${chat.url}')
@@ -96,6 +104,10 @@ re-exports `spring_boot_dart`, `spring_web_dart` and
 `spring_boot_starter_logging`. The starter is the only dependency an
 application needs: it brings the others, logging included, like every
 Spring Boot starter.
+
+For server endpoints, list `spring_boot_starter_web` as well (it brings
+the server; see [Server endpoints](#server-endpoints)). This starter does
+not depend on it, so a Flutter app with clients only starts no server.
 
 ## Methods
 
@@ -201,6 +213,155 @@ The `webSocketTransport` bean is `platformWebSocketTransport()`:
 desktop, `BrowserWebSocketTransport` on the web. Declare your own
 `WebSocketTransport` bean to replace it.
 
+## Server endpoints
+
+With [`spring_boot_starter_web`](../spring_boot_starter_web/README.md) in
+the application's dependencies, the same starter serves WebSocket
+endpoints on the web server's port. The handshake is an ordinary request:
+it passes the web starter's filters (so a security filter authenticates
+it like any other) before the endpoint takes it.
+
+```yaml
+dependencies:
+  spring_boot_starter_web: ^0.3.1
+  spring_boot_starter_websocket: ^0.3.1
+```
+
+### `@WebSocketEndpoint`
+
+A bean whose methods handle the connections to a path, like Jakarta's
+`@ServerEndpoint`:
+
+```dart
+@WebSocketEndpoint('/ws/rooms/{room}', allowedOrigins: ['https://chat.example'])
+class ChatEndpoint {
+  ChatEndpoint(this.sessions);
+  final WebSocketSessionRegistry sessions;
+
+  @OnOpen()
+  void open(ServerWebSocketSession session, @PathVariable() String room) =>
+      session.attributes['room'] = room;
+
+  @OnMessage()
+  Ack message(@PathVariable() String room, ChatMessage message) {
+    sessions.broadcast('/ws/rooms/{room}', message);   // to every open session
+    return Ack(room: room, received: message.text);     // sent back as JSON
+  }
+
+  @OnClose()
+  void close(ServerWebSocketSession session, CloseStatus status) =>
+      print('${session.id} left: ${status.code}');
+
+  @OnError()
+  void error(ServerWebSocketSession session, Object error) =>
+      session.sendMessage('error: $error');
+}
+```
+
+The methods take what they need, in any order:
+
+| Parameter | Value |
+|---|---|
+| `ServerWebSocketSession` (or `WebSocketSession`) | the connection |
+| `@PathVariable() String room` | a `{room}` of the path (`@PathVariable('id')` for another name) |
+| `Principal?` | the user of the handshake (`null` when anonymous) |
+| the message, in `@OnMessage` | `String` (text), `Uint8List` (binary), any other type read as JSON through the `ObjectMapper` |
+| `CloseStatus`, in `@OnClose` | why the connection closed |
+| the error, in `@OnError` | what a method threw, or the connection's error |
+
+- What `@OnMessage` returns (a `Future` is awaited) is sent back: a
+  `String` as text, bytes as binary, anything else as JSON; `void` and
+  `null` send nothing. `@OnMessage` is the annotation the clients use;
+  on a `@WebSocketEndpoint` class it marks the method handling each
+  message.
+- The messages of one connection are handled one after the other, in
+  order.
+- An exception goes to `@OnError` and the connection stays open; without
+  an `@OnError` method it is logged and the connection is closed with
+  1011 (server error).
+- The path is a path pattern (`{room}`, `{*rest}`, like the controllers').
+  A request to it that is not a WebSocket handshake is a 400.
+- `protocols: ['chat.v2']` lists the sub-protocols the endpoint speaks;
+  the first one the client offers (`Sec-WebSocket-Protocol`) is chosen.
+- Checked at startup: two handlers for one path, an `@PathVariable` that
+  is not in the path, a parameter that is none of the above, several
+  `@OnMessage` methods, an endpoint without `@OnOpen`, `@OnMessage` or
+  `@OnClose` stop the application with the list.
+
+**Differs from Spring.** Spring has no annotated endpoint of its own: it
+registers a `WebSocketHandler` (below), or Jakarta's `@ServerEndpoint`
+classes through a `ServerEndpointExporter`. `@WebSocketEndpoint`,
+`@OnOpen`, `@OnClose` and `@OnError` follow Jakarta's names, but the
+endpoint is a singleton bean (Jakarta creates one per connection) with
+constructor injection, and `@PathVariable` replaces `@PathParam`.
+
+### `WebSocketHandler` and `WebSocketConfigurer`
+
+Spring's style works too: a handler registered by a `WebSocketConfigurer`
+bean, with handshake interceptors.
+
+```dart
+@Configuration()
+class WsConfig implements WebSocketConfigurer {
+  @override
+  void registerWebSocketHandlers(WebSocketHandlerRegistry registry) => registry
+      .addHandler(EchoHandler(), ['/ws/echo'])
+      .setAllowedOrigins(['https://shop.example'])
+      .setSupportedProtocols(['echo.v1'])
+      .addInterceptors([TokenInterceptor()]);
+}
+
+final class EchoHandler extends TextWebSocketHandler {
+  @override
+  void handleTextMessage(ServerWebSocketSession session, String text) =>
+      session.sendMessage('echo: $text (${session.attributes['token']})');
+}
+
+final class TokenInterceptor with HandshakeInterceptor {
+  @override
+  bool beforeHandshake(request, response, attributes) {
+    final token = request.queryParameters['token']?.firstOrNull;
+    if (token == null) return false;                  // 403
+    attributes['token'] = token;                      // session.attributes
+    return true;
+  }
+}
+```
+
+| Type | Spring | What |
+|---|---|---|
+| `WebSocketHandler` | `WebSocketHandler` | `afterConnectionEstablished`, `handleMessage` (`String` or `Uint8List`), `handleTransportError`, `afterConnectionClosed` |
+| `AbstractWebSocketHandler`, `TextWebSocketHandler` | the same | text and binary apart; a binary message closes a `TextWebSocketHandler`'s connection (1003) |
+| `WebSocketConfigurer`, `WebSocketHandlerRegistry` | the same | `addHandler(handler, paths)` then `setAllowedOrigins`, `setAllowedOriginPatterns`, `setSupportedProtocols`, `addInterceptors` |
+| `HandshakeInterceptor` | the same | `beforeHandshake(request, response, attributes)`: `false` refuses (403 unless it answered); `afterHandshake(request, error)` |
+| `ServerWebSocketSession` | server-side `WebSocketSession` | `id`, `handshakeHeaders`, `attributes`, `principal`, `pathVariables`, `sendMessage`, `sendJson`, `close`, `messages` |
+| `WebSocketSessionRegistry` | (none) | the open sessions: `sessions([pattern])`, `broadcast(pattern, message)` (`null`: every endpoint) |
+| `WebSocketHandlerMapping` | `WebSocketHandlerMapping` | maps the handshakes; the web starter's dispatcher asks it after the controllers |
+
+### Origins
+
+Like Spring: a browser connecting from the server's own origin is
+accepted, one from another origin only when it is in `allowedOrigins`
+(`'*'` for any) or matches `allowedOriginPatterns`
+(`'https://*.example'`); others get a 403. A client that sends no
+`Origin` (not a browser: an app, a server) is accepted. Authenticate
+those with a filter or a `HandshakeInterceptor`.
+
+### Broadcasting
+
+`WebSocketSessionRegistry` (a bean) holds the open sessions per endpoint
+path, as written on the endpoint; a session leaves it when it closes:
+
+```dart
+@Service()
+class Announcer {
+  Announcer(this.sessions);
+  final WebSocketSessionRegistry sessions;
+
+  void announce(Object news) => sessions.broadcast('/ws/news', news);  // JSON
+}
+```
+
 ## Testing
 
 `MockWebSocketTransport` (from `spring_boot_starter_test`, the dev
@@ -231,3 +392,36 @@ await const ApplicationContextRunner()
 
 With `springBootTest`, override the bean with
 `BeanOverride<WebSocketTransport>(sockets)`.
+
+### Server endpoints
+
+`MockMvc.webSocket(path)` opens a connection to an endpoint in memory, through
+the same filters and handshake, and returns the client's end:
+
+```dart
+final app = springBootTest(springApplication);
+
+test('echoes', () async {
+  final session = await app.mockMvc.webSocket('/ws/rooms/neon',
+      headers: {'Origin': 'https://chat.example'});
+  final replies = StreamIterator(session.messages);
+  session.sendMessage('{"user": "ann", "text": "hi"}');
+  expect(await replies.moveNext(), isTrue);
+  expect(jsonDecode(replies.current as String), {'room': 'neon', 'received': 'hi'});
+  await session.close();
+});
+```
+
+A refused handshake (an origin, an interceptor) throws a
+`WebSocketException` with the status. Over a real socket, start the server
+on a free port and connect with the client transport:
+
+```dart
+final app = springBootTest(springApplication, webEnvironment: WebEnvironment.randomPort);
+
+test('over a socket', () async {
+  final session = await platformWebSocketTransport()
+      .connect(Uri.parse('ws://127.0.0.1:${app.localServerPort}/ws/rooms/neon'));
+  ...
+});
+```
