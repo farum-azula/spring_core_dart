@@ -1580,14 +1580,17 @@ Dependency policy: the packages use only each other, the Dart SDK and
 packages published on pub.dev by the Dart and Google teams (`dart.dev`,
 `tools.dart.dev`, `labs.dart.dev`, `google.dev`, `flutter.dev`),
 transitive dependencies included; the packages that end up in
-applications (`spring_core_dart`, `spring_boot_dart`,
-`spring_boot_starter_logging`) depend on nothing outside this repository
-except the Dart team's `package:yaml` (for `application.yml`). CI enforces
+applications (`spring_core_dart`, `spring_boot_dart`, `spring_web_dart`
+and every runtime starter) depend on nothing outside this repository
+except the Dart team's `package:yaml` (for `application.yml`) and, for
+the Flutter starter, the Flutter SDK. CI enforces
 it with
 `tool/check_dependencies.dart`; any other package needs an exception there
 with a reason and the packages allowed to use it (today: `melos` for the
-workspace scripts, `node_preamble` pulled by `package:test`; database
-drivers will be added the same way).
+workspace scripts, `node_preamble` pulled by `package:test`,
+`material_color_utilities` pinned by the Flutter SDK; database drivers
+will be added the same way). Every package, its publisher and the full
+graph: [docs/dependencies.md](docs/dependencies.md).
 
 The library is developed outside any Flutter workspace on purpose: Flutter
 pins `test_api`, which keeps `package:test` and `build_test` on an older
