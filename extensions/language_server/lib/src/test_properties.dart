@@ -25,7 +25,11 @@ List<PropertyEntry> testProperties(DartFile file) {
 
 final _cache = Expando<List<PropertyEntry>>('testProperties');
 
-bool _isTest(String path) => path.replaceAll(r'\', '/').contains('/test/');
+bool _isTest(String path) {
+  final normalized = path.replaceAll(r'\', '/');
+  return normalized.contains('/test/') ||
+      normalized.contains('/integration_test/');
+}
 
 List<PropertyEntry> _collect(DartFile file) {
   final visitor = _Collector(file);
@@ -74,6 +78,8 @@ final class _Collector extends RecursiveAstVisitor<void> {
         if (arguments.firstOrNull?.argumentExpression case final list?) {
           _args(list, dashes: false);
         }
+      case 'withSystemEnvironment':
+        _map(arguments.firstOrNull?.argumentExpression, environment: true);
       case 'add'
           when arguments.length == 2 &&
               arguments[1].argumentExpression is FunctionExpression:
@@ -104,7 +110,9 @@ final class _Collector extends RecursiveAstVisitor<void> {
     }
   }
 
-  // `['--key=value']` (dashes) or `['key=value']`.
+  // `['--key=value', '--flag']` (dashes, as on a command line) or
+  // `['key=value', 'key: value', 'flag']` (withPropertyValues: split at the
+  // first `=` or `:`, trimmed).
   void _args(Expression? expression, {required bool dashes}) {
     if (expression is! ListLiteral) {
       return;
@@ -114,17 +122,26 @@ final class _Collector extends RecursiveAstVisitor<void> {
         continue;
       }
       final text = element.value;
-      final start = dashes ? (text.startsWith('--') ? 2 : -1) : 0;
-      final equals = text.indexOf('=');
-      if (start < 0 || equals <= start) {
+      if (dashes && !text.startsWith('--')) {
         continue;
       }
+      final start = dashes ? 2 : 0;
+      final separator = dashes
+          ? text.indexOf('=')
+          : text.indexOf(RegExp('[=:]'));
+      final end = separator < 0 ? text.length : separator;
+      final raw = text.substring(start, end);
+      final key = raw.trim();
+      if (key.isEmpty) {
+        continue;
+      }
+      final keyStart = start + raw.indexOf(key);
       _entry(
         element,
-        text.substring(start, equals),
-        element.contentsOffset + start,
-        element.contentsOffset + equals,
-        value: text.substring(equals + 1),
+        key,
+        element.contentsOffset + keyStart,
+        element.contentsOffset + keyStart + key.length,
+        value: separator < 0 ? '' : text.substring(separator + 1).trim(),
       );
     }
   }

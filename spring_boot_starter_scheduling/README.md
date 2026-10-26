@@ -13,13 +13,16 @@ when the context closes.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_scheduling: ^0.3.0
 
 dev_dependencies:
   build_runner: ^2.17.0
   spring_core_dart_generator: ^0.3.0   # required: makes @Scheduled methods callable
 ```
+
+The starter is the only dependency an application needs: it brings
+`spring_boot_dart` and `spring_boot_starter_logging` (and re-exports them),
+like every Spring Boot starter.
 
 ```bash
 dart run build_runner build

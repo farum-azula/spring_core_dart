@@ -2,6 +2,7 @@
 //
 // Spring (Java): @Profile("dev"), profile expressions, @Qualifier.
 import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:spring_core_dart_example/src/app.spring.dart';
 
 abstract interface class PaymentGateway {
   String charge(double amount);
@@ -35,10 +36,10 @@ class OfflineGateway implements PaymentGateway {
 @Profile(['dev-tools & !prod'])
 class DebugToolbar {}
 
-/// The logging facade: a named logger, levels from `logging.level.*`.
-const _log = SpringLog('neon.checkout');
-
+/// `@Log` generates the `log` getter (in app.spring.dart), like Lombok's
+/// `@Slf4j`: a named logger, levels from `logging.level.*`.
 @Service()
+@Log(topic: 'neon.checkout')
 class Checkout {
   Checkout(this.gateway, @Qualifier('offline') this.backup);
 
@@ -48,8 +49,8 @@ class Checkout {
   /// Charges [amount], logging the result with structured fields.
   String pay(double amount) {
     final result = gateway.charge(amount);
-    _log.info('paid $amount', fields: {'gateway': gateway.runtimeType});
-    _log.debug(() => 'gateway answered: $result'); // built only if enabled
+    log.info('paid $amount', fields: {'gateway': gateway.runtimeType});
+    log.debug(() => 'gateway answered: $result'); // built only if enabled
     return result;
   }
 }

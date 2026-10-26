@@ -4,8 +4,9 @@
 count lives in a bean, widgets get it from the application context, and the
 texts and settings come from properties files.
 
-`example.dart` runs as it is, with the bean module written by hand. In an
-application the generator writes it; the steps below show that way. A
+`example.dart` is the whole app: a `@ChangeNotifierComponent` counter,
+Spring widgets and `@SpringBootApplication` on `main`; the generator
+writes `example.spring.dart`. The steps below show the same in a project. A
 complete app with tests and golden screenshots:
 [`example/flutter_counter`](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_counter).
 

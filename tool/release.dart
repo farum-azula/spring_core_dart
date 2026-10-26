@@ -15,8 +15,11 @@
 // as it is.
 //
 // Every package gets the version (tool/version.dart). Changelogs: an
-// `## Unreleased` section becomes `## <version>`; packages without one get
-// a section listing the commit subjects. The version is printed and, on
+// `## Unreleased` section (written by hand, only what concerns that
+// package) becomes `## <version>`; a package without one gets the subjects
+// of the commits that changed its own folder, or a line saying it has no
+// changes of its own — never the commits of the other packages. The
+// version is printed and, on
 // GitHub Actions, written to `$GITHUB_OUTPUT` as `version` (empty when
 // there is nothing to release).
 import 'dart:io';
@@ -61,7 +64,11 @@ void main(List<String> args) {
   }
   family.setVersion(next);
   for (final package in family.family) {
-    _updateChangelog('$package/CHANGELOG.md', next, commits);
+    updateChangelog(
+      '$package/CHANGELOG.md',
+      next,
+      _commitsSince(lastTag, paths: [package]),
+    );
   }
   final problems = family.check();
   if (problems.isNotEmpty) {
@@ -71,15 +78,17 @@ void main(List<String> args) {
   _output(next);
 }
 
-final class _Commit {
-  _Commit(this.subject, this.body);
+/// A commit: its subject and body.
+final class Commit {
+  Commit(this.subject, this.body);
   final String subject;
   final String body;
 }
 
 // Only commits that change a published package count: editor extensions,
 // CI, tools and the repository README do not make a new pub.dev release.
-List<_Commit> _commitsSince(String? tag) {
+// [paths]: only commits changing these (by default any published package).
+List<Commit> _commitsSince(String? tag, {List<String>? paths}) {
   const separator = '\x1e';
   final log = _git([
     'log',
@@ -87,14 +96,15 @@ List<_Commit> _commitsSince(String? tag) {
     '--format=%s%x1f%b$separator',
     if (tag != null) '$tag..HEAD',
     '--',
-    ...family.family,
+    ...?paths,
+    if (paths == null) ...family.family,
   ]);
   return [
     for (final entry in log.split(separator))
       if (entry.trim().isNotEmpty)
         () {
           final [subject, ...body] = entry.trim().split('\x1f');
-          return _Commit(subject.trim(), body.join().trim());
+          return Commit(subject.trim(), body.join().trim());
         }(),
   ].where((c) => !c.subject.startsWith('chore(release)')).toList();
 }
@@ -114,7 +124,11 @@ String _bump(String version, String bump) {
 // a second, older `## <version>` heading (a version that was never
 // published) is merged into it. Without such a section the commit subjects
 // become one.
-void _updateChangelog(String path, String version, List<_Commit> commits) {
+/// Puts the [version] section into the changelog at [path]: its
+/// `## Unreleased` section if it has one, else the subjects of [commits]
+/// (the commits that changed this package), else a line saying it has no
+/// changes of its own.
+void updateChangelog(String path, String version, List<Commit> commits) {
   final file = File(path);
   final heading = '## $version';
   var text = file.existsSync() ? file.readAsStringSync() : '';
@@ -130,7 +144,7 @@ void _updateChangelog(String path, String version, List<_Commit> commits) {
     return;
   }
   final entries = commits.isEmpty
-      ? ['- Released with the family version $version.']
+      ? ['- No changes of its own; released with the family version $version.']
       : [for (final commit in commits) '- ${commit.subject}'];
   file.writeAsStringSync('$heading\n\n${entries.join('\n')}\n\n$text');
 }

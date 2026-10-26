@@ -61,6 +61,16 @@ jobs:
       - name: Dependencies only from this repository and the Dart team
         run: dart run tool/check_dependencies.dart
 
+      # tool/affected.dart, version.dart and release.dart, and the docs'
+      # install snippets (roadmap/dependencies.md).
+      - name: Tests of the tools
+        run: dart test tool/test
+
+      # An application per starter that lists only that starter: generator,
+      # analyze --fatal-infos (depend_on_referenced_packages) and its tests.
+      - name: Each starter is an application's only dependency
+        run: dart run tool/check_app_dependencies.dart
+
       - name: Zed extension dart_spring builds
         working-directory: extensions/zed/dart_spring
         run: |
@@ -80,6 +90,16 @@ jobs:
 
       # The app itself is not run here (it calls real public servers); its
       # tests run with all the others, against local servers.
+      # The packages' own examples (example/example.dart on pub.dev) are
+      # Spring Boot applications written by the generator.
+      - name: Generated code is up to date (package examples)
+        run: |
+          for package in spring_core_dart spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket; do
+            (cd $package && dart run build_runner build)
+            git diff --exit-code -- $package
+            test -z "$(git status --porcelain -- $package)"
+          done
+
       - name: Generated code is up to date (Spring Boot + Feign example)
         working-directory: example/spring_boot_feign
         run: |
@@ -153,7 +173,7 @@ jobs:
 
       - name: Generated code is up to date (Flutter examples)
         run: |
-          for example in example/flutter_counter example/flutter_themes; do
+          for example in example/flutter_counter example/flutter_themes spring_boot_starter_flutter; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"

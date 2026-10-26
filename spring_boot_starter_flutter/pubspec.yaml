@@ -22,6 +22,9 @@ dependencies:
   spring_boot_starter_logging: ^0.3.0
 
 dev_dependencies:
+  # For example/: the generator writes example/example.spring.dart.
+  build_runner: ^2.17.0
+  spring_core_dart_generator: ^0.3.0
   flutter_test:
     sdk: flutter
   spring_boot_starter_test: ^0.3.0

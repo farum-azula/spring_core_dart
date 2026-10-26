@@ -202,6 +202,7 @@ final class SpringWorkspace {
     }
     _beans = null;
     _classes = null;
+    _addedMessages = null;
   }
 
   /// Re-reads changed files (at most every [interval] unless [force]).
@@ -231,10 +232,18 @@ final class SpringWorkspace {
         changed = true;
       }
     }
+    final before = _properties.length;
     _properties.removeWhere((path, _) => !seenProperties.contains(path));
+    if (_properties.length != before) {
+      _bundles = null;
+    }
+    // A pubspec.yaml may have appeared or gone: package roots are looked
+    // up again.
+    _packageRoots.clear();
     if (changed || _beans == null) {
       _beans = null;
       _classes = null;
+      _addedMessages = null;
     }
   }
 
@@ -261,7 +270,9 @@ final class SpringWorkspace {
           dart.add(entity.path);
           _readDart(entity);
         } else if (name.endsWith('.properties') ||
-            (_isYaml(name) && _inResources(entity.path))) {
+            (_isYaml(name) &&
+                (_inResources(entity.path) ||
+                    name.startsWith('application')))) {
           properties.add(entity.path);
           _readProperties(entity);
         }
@@ -285,6 +296,7 @@ final class SpringWorkspace {
     }
     _beans = null;
     _classes = null;
+    _addedMessages = null;
   }
 
   void _readProperties(File file) {
@@ -293,6 +305,7 @@ final class SpringWorkspace {
       return;
     }
     _propertiesModified[file.path] = modified;
+    _bundles = null;
     try {
       final text = file.readAsStringSync();
       _properties[file.path] = _isYaml(file.path)
@@ -506,9 +519,9 @@ final class SpringWorkspace {
   /// come first (see [testProperties]).
   List<PropertyEntry> property(String key, {DartFile? from}) {
     final wanted = _canonical(key);
-    final variable = _environmentName(key);
+    final variables = _environmentNames(key);
     bool matches(PropertyEntry entry) => entry.environment
-        ? _environmentName(entry.key) == variable
+        ? variables.contains(entry.key)
         : entry.key == key || _canonical(entry.key) == wanted;
     final bundles = _messageBundles();
     final result = [
@@ -526,12 +539,23 @@ final class SpringWorkspace {
     ];
   }
 
-  // A property name or an environment variable without separators, as the
-  // relaxed binding compares them: `shop.max-basket-size`,
-  // `SHOP_MAX_BASKET_SIZE` and `SHOP_MAXBASKETSIZE` all give
-  // `SHOPMAXBASKETSIZE`.
-  static String _environmentName(String key) =>
-      key.replaceAll(RegExp('[._-]'), '').toUpperCase();
+  // The environment variables that give the property [key], as the
+  // framework's SystemEnvironmentPropertySource looks them up:
+  // `shop.max-basket-size` → `SHOP_MAX_BASKET_SIZE`, `SHOP_MAXBASKETSIZE`,
+  // `shop_max_basket_size`, ...
+  static Set<String> _environmentNames(String key) {
+    final variants = [
+      key,
+      key.replaceAll('.', '_'),
+      key.replaceAll('-', '_'),
+      key.replaceAll('.', '_').replaceAll('-', '_'),
+    ];
+    return {
+      ...variants,
+      ...variants.map((v) => v.toUpperCase()),
+      key.replaceAll('-', '').replaceAll('.', '_').toUpperCase(),
+    };
+  }
 
   /// Entries whose key starts with [prefix] + `.`.
   List<PropertyEntry> propertiesWithPrefix(String prefix) {
@@ -560,6 +584,20 @@ final class SpringWorkspace {
     ]..sort((a, b) => a.fileName.compareTo(b.fileName));
   }
 
+  // Codes registered in code in the package of [path]
+  // (`StaticMessageSource().addMessage('code', ...)`, `addMessages`).
+  Set<String> _messagesAddedInCode(String path) {
+    final package = _packageRoot(path);
+    final byPackage = _addedMessages ??= {};
+    return byPackage[package] ??= {
+      for (final file in _files.values)
+        if (_packageRoot(file.path) == package)
+          ..._AddedMessageCollector.of(file.unit),
+    };
+  }
+
+  Map<String, Set<String>>? _addedMessages;
+
   /// Whether the package of [path] has a message bundle.
   bool hasMessageBundles(String path) {
     final package = _packageRoot(path);
@@ -573,10 +611,42 @@ final class SpringWorkspace {
   // is a basename of their package's `spring.messages.basename`
   // (`messages` by default; dots or slashes separate folders:
   // `i18n/messages`). Each package has its own setting.
-  Map<String, String> _messageBundlePackages() {
+  Map<String, String> _messageBundlePackages() =>
+      _bundles ??= _findMessageBundles();
+
+  Map<String, String>? _bundles;
+
+  // Packages with `spring.messages.use-code-as-default-message=true`: an
+  // unknown code is not an error there.
+  final Set<String> _codeAsDefault = {};
+
+  Map<String, String> _findMessageBundles() {
     final basenames = <String, Set<String>>{};
+    final common = <String, Set<String>>{};
+    _codeAsDefault.clear();
     for (final MapEntry(key: path, value: entries) in _properties.entries) {
       for (final entry in entries) {
+        if (entry.key == 'spring.messages.use-code-as-default-message' &&
+            entry.value.trim().toLowerCase() == 'true') {
+          _codeAsDefault.add(_packageRoot(path));
+        }
+        if (entry.key == 'spring.messages.common-messages') {
+          for (final name in entry.value.split(',')) {
+            final trimmed = name.trim().replaceFirst('classpath:', '');
+            if (trimmed.isNotEmpty) {
+              common
+                  .putIfAbsent(_packageRoot(path), () => {})
+                  .add(
+                    trimmed.substring(
+                      0,
+                      trimmed.lastIndexOf('.') < 0
+                          ? trimmed.length
+                          : trimmed.lastIndexOf('.'),
+                    ),
+                  );
+            }
+          }
+        }
         if (entry.key == 'spring.messages.basename') {
           final names = basenames.putIfAbsent(_packageRoot(path), () => {});
           for (final name in entry.value.split(',')) {
@@ -600,9 +670,10 @@ final class SpringWorkspace {
       final package = _packageRoot(path);
       final names = basenames[package] ?? const {'messages'};
       if (names.any(
-        (basename) =>
-            relative == basename || relative.startsWith('${basename}_'),
-      )) {
+            (basename) =>
+                relative == basename || relative.startsWith('${basename}_'),
+          ) ||
+          (common[package]?.contains(relative) ?? false)) {
         result[path] = package;
       }
     }
@@ -630,8 +701,9 @@ final class SpringWorkspace {
       '${entry.fileName == 'application' ? 0 : 1}${entry.fileName}'
       '${entry.line.toString().padLeft(6, '0')}';
 
+  // Relaxed binding: `my-key`, `my_key` and `myKey` are the same name.
   static String _canonical(String key) =>
-      key.toLowerCase().replaceAll('-', '').replaceAll('_', '.');
+      key.toLowerCase().replaceAll('-', '').replaceAll('_', '');
 
   // ---------------------------------------------------------------------
   // Queries
@@ -1563,11 +1635,14 @@ final class SpringWorkspace {
         );
       }
     }
-    if (hasMessageBundles(file.path)) {
+    if (hasMessageBundles(file.path) &&
+        !_codeAsDefault.contains(_packageRoot(file.path))) {
       final calls = _MessageCallCollector();
       file.unit.accept(calls);
+      final added = _messagesAddedInCode(file.path);
       for (final code in calls.codes) {
-        if (messages(code.value, from: file.path).isEmpty) {
+        if (!added.contains(code.value) &&
+            messages(code.value, from: file.path).isEmpty) {
           problems.add(
             Problem(
               rangeOf(file, code.contentsOffset, code.contentsEnd),
@@ -1852,14 +1927,41 @@ const _messageMethods = {'message', 'getMessage'};
 
 // The first argument of `context.message(...)` / `getMessage(...)`.
 bool _isMessageCode(SimpleStringLiteral literal) {
-  final parent = literal.parent;
-  final invocation = parent is ArgumentList ? parent.parent : null;
-  return invocation is MethodInvocation &&
-      _messageMethods.contains(invocation.methodName.name) &&
+  final invocation = literal.thisOrAncestorOfType<MethodInvocation>();
+  return invocation != null &&
+      _isMessageCall(invocation) &&
       identical(
-        invocation.argumentList.arguments.firstOrNull?.argumentExpression,
+        invocation.argumentList.arguments.first.argumentExpression,
         literal,
       );
+}
+
+// `context.message('code')`, `getMessage('code')`: a message method whose
+// first argument is positional; not `Intl.message('text', name: ...)`.
+bool _isMessageCall(MethodInvocation invocation) {
+  final first = invocation.argumentList.arguments.firstOrNull;
+  final target = invocation.target;
+  return _messageMethods.contains(invocation.methodName.name) &&
+      first != null &&
+      first is! NamedArgument &&
+      !(target is SimpleIdentifier && target.name == 'Intl');
+}
+
+// The first string of `addMessage('code', ...)` calls.
+final class _AddedMessageCollector extends RecursiveAstVisitor<void> {
+  final codes = <String>{};
+
+  static Set<String> of(CompilationUnit unit) =>
+      (_AddedMessageCollector()..visitCompilationUnit(unit)).codes;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final code = node.argumentList.arguments.firstOrNull?.argumentExpression;
+    if (node.methodName.name == 'addMessage' && code is SimpleStringLiteral) {
+      codes.add(code.value);
+    }
+    super.visitMethodInvocation(node);
+  }
 }
 
 // Calls with a message code and no `defaultMessage:`.
@@ -1870,7 +1972,7 @@ final class _MessageCallCollector extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     final arguments = node.argumentList.arguments;
     final code = arguments.firstOrNull?.argumentExpression;
-    if (_messageMethods.contains(node.methodName.name) &&
+    if (_isMessageCall(node) &&
         code is SimpleStringLiteral &&
         !arguments.any(
           (a) => a is NamedArgument && a.name.lexeme == 'defaultMessage',

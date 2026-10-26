@@ -1,0 +1,9 @@
+# The generator only writes the example's application (example/example.spring.dart);
+# the package itself is written by hand.
+targets:
+  $default:
+    builders:
+      spring_core_dart_generator:spring_core_dart:
+        generate_for: [example/**]
+      spring_core_dart_generator:spring_test:
+        enabled: false

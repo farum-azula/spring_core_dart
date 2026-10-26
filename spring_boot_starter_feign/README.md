@@ -51,7 +51,6 @@ catalog.url=https://api.neon.books
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_feign: ^0.3.0
 
 dev_dependencies:
@@ -67,8 +66,10 @@ The starter is found automatically (no `@EnableFeignClients`): every
 abstract class with `@FeignClient` in the scanned package becomes a bean,
 named after the interface (`catalogClient`). One import is enough:
 `package:spring_boot_starter_feign/spring_boot_starter_feign.dart`
-re-exports `spring_boot_dart` and `spring_web_dart` (the mapping
-annotations).
+re-exports `spring_boot_dart`, `spring_web_dart` (the mapping
+annotations) and `spring_boot_starter_logging`. The starter is the only
+dependency an application needs: it brings the others, logging included,
+like every Spring Boot starter.
 
 Classes used by the clients (parameters and results) are introspected for
 JSON automatically when they are in the same package.
@@ -459,7 +460,8 @@ else (e.g. a small adapter over another HTTP library).
 ## Testing
 
 Replace the transport with `MockHttpTransport` from
-`package:spring_web_dart/testing.dart`:
+`spring_boot_starter_test` (the dev dependency of the tests; like
+Spring's `MockRestServiceServer` in `spring-test`):
 
 ```dart
 final server = MockHttpTransport();

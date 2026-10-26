@@ -15,10 +15,14 @@
 /// }
 /// ```
 ///
-/// Re-exports `spring_boot_dart`.
+/// Re-exports `spring_boot_starter_logging` and through it `spring_boot_dart`
+/// and `spring_core_dart`: the starter is the only dependency an
+/// application lists.
 library;
 
-export 'package:spring_boot_dart/spring_boot_dart.dart';
+// Logging and spring_boot_dart (re-exported by the logging starter), so
+// this starter is the only dependency an application needs.
+export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 export 'src/annotations.dart';
 export 'src/cache.dart';

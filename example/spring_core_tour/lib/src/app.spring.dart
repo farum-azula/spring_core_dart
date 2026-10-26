@@ -4145,7 +4145,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         r.dependency<_i9.CatalogService>(name: r'catalog'),
         r.dependency<_i10.Checkout>(name: r'checkout'),
       ),
-      annotations: const [_i2.Component(), _i2.Order(1)],
+      annotations: const [
+        _i2.Component(),
+        _i2.Order(1),
+        _i2.Log(topic: r'neon.shop'),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4157,8 +4161,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'args'],
             targetTypes: [r'OpeningAnnouncement', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'neon.shop'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'properties',
@@ -4168,8 +4175,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'ShopProperties',
             targetTypes: [r'OpeningAnnouncement', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'neon.shop'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'catalog',
@@ -4179,8 +4189,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'CatalogService',
             targetTypes: [r'OpeningAnnouncement', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'neon.shop'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'checkout',
@@ -4190,8 +4203,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Checkout',
             targetTypes: [r'OpeningAnnouncement', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'neon.shop'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
         ],
         create: (target, invoker) => _$OpeningAnnouncementProxy(
@@ -6599,7 +6615,10 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
           name: r'backup',
         ),
       ),
-      annotations: const [_i2.Service()],
+      annotations: const [
+        _i2.Service(),
+        _i2.Log(topic: r'neon.checkout'),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -6611,8 +6630,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             parameterTypes: [r'double'],
             parameterNames: [r'amount'],
             targetTypes: [r'Checkout'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
+            targetAnnotations: [
+              _i2.Service(),
+              _i2.Log(topic: r'neon.checkout'),
+            ],
+            targetAnnotationTypes: [r'Service', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'gateway',
@@ -6622,8 +6644,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'PaymentGateway',
             targetTypes: [r'Checkout'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
+            targetAnnotations: [
+              _i2.Service(),
+              _i2.Log(topic: r'neon.checkout'),
+            ],
+            targetAnnotationTypes: [r'Service', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'backup',
@@ -6633,8 +6658,11 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'PaymentGateway',
             targetTypes: [r'Checkout'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
+            targetAnnotations: [
+              _i2.Service(),
+              _i2.Log(topic: r'neon.checkout'),
+            ],
+            targetAnnotationTypes: [r'Service', r'Log'],
           ),
         ],
         create: (target, invoker) =>
@@ -7394,3 +7422,13 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
     },
   },
 );
+
+/// `@Log` of [OpeningAnnouncement]: the logger 'neon.shop'.
+extension $OpeningAnnouncementLog on _i8.OpeningAnnouncement {
+  _i2.SpringLog get log => const _i2.SpringLog(r'neon.shop');
+}
+
+/// `@Log` of [Checkout]: the logger 'neon.checkout'.
+extension $CheckoutLog on _i10.Checkout {
+  _i2.SpringLog get log => const _i2.SpringLog(r'neon.checkout');
+}

@@ -1,57 +1,49 @@
-// In an app built with spring_core_dart_generator you only write the
-// @Component class with @Scheduled methods; the generator registers it and
-// the starter is picked up automatically. This example writes the bean
-// definition the generator would produce, so it runs without code
-// generation.
+// Scheduled tasks in a Spring Boot application: @Scheduled methods on a
+// bean; the generator registers them and picks the starter up
+// (example.spring.dart, from `dart run build_runner build`).
+//
+//   dart run example/example.dart
+//   dart run example/example.dart --heartbeat.rate=500ms
 import 'dart:async';
 
-import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart';
+
+import 'example.spring.dart';
 
 @Component()
 class Heartbeat {
   var beats = 0;
 
+  /// Every second, or `heartbeat.rate`.
   @Scheduled(fixedRateString: r'${heartbeat.rate:1s}')
   void beat() => print('beat ${++beats}');
 
-  @Scheduled(cron: '*/2 * * * * *') // every 2 seconds
+  /// Every 2 seconds, by a cron expression (with seconds).
+  @Scheduled(cron: '*/2 * * * * *')
   Future<void> report() async => print('report at ${DateTime.now()}');
 }
 
-// Written by the generator for `Heartbeat` (in main.spring.dart).
-final heartbeatDefinition = BeanDefinition<Heartbeat>(
-  name: 'heartbeat',
-  create: (_) => Heartbeat(),
-  annotatedMethods: [
-    BeanMethod<Heartbeat>(
-      'beat',
-      invoke: (bean, arguments) => Function.apply(bean.beat, arguments),
-      annotations: const [Scheduled(fixedRateString: r'${heartbeat.rate:1s}')],
-    ),
-    BeanMethod<Heartbeat>(
-      'report',
-      invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-      annotations: const [Scheduled(cron: '*/2 * * * * *')],
-    ),
-  ],
-);
+/// Code can schedule work too, through the `TaskScheduler` bean.
+@Component()
+class Reminder implements CommandLineRunner {
+  Reminder(this.scheduler);
 
-Future<void> main() async {
-  final context = AnnotationConfigApplicationContext([
-    BeanModule('app', [heartbeatDefinition]),
-    springBootStarterSchedulingAutoConfiguration,
-  ])..refresh(); // @Scheduled methods start here
+  final TaskScheduler scheduler;
 
-  // Code can schedule work too.
-  final scheduler = context.getBean<TaskScheduler>();
-  scheduler.schedule(
+  @override
+  void run(List<String> args) => scheduler.schedule(
     () => print('one-off after 1.5 s'),
     OneShotTrigger(scheduler.now().add(const Duration(milliseconds: 1500))),
   );
+}
 
+@SpringBootApplication()
+Future<void> main(List<String> args) async {
+  // Scheduled tasks keep an application running; this one stops after
+  // three seconds. Closing the context cancels every task.
+  final context = runApplication(args);
   await Future<void>.delayed(const Duration(seconds: 3));
   final heartbeat = context.getBean<Heartbeat>();
-  context.close(); // cancels every task
+  await context.closeAsync();
   print('${heartbeat.beats} beats');
 }

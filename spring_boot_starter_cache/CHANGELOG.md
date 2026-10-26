@@ -1,3 +1,9 @@
+## Unreleased
+
+- **Brings logging, like every Spring Boot starter:** depends on and re-exports `spring_boot_starter_logging` (and through it `spring_boot_dart` and `spring_core_dart`), so the starter is the only dependency an application lists, and one import gives everything. An application using it now gets the logging system (Boot's console format, `logging.*` properties) without adding the logging starter; `logging.enabled=false` turns it off.
+- The example is a Spring Boot application (`@Cacheable` service, its own `CacheManager`), written by the generator.
+- `spring_auto_configuration.dart` re-exports the logging starter's (and through it `spring_boot_dart`'s) auto-configuration, so a test naming `springBootAutoConfiguration` (`ApplicationContextRunner`) needs no other dependency.
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

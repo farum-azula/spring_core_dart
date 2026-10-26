@@ -1,5 +1,10 @@
 import 'package:analyzer/dart/analysis/utilities.dart';
+
+import 'dart:io' as io;
+
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/source/line_info.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
@@ -68,18 +73,36 @@ class SpringTestBuilder implements Builder {
       path: input.path,
       throwIfDiagnostics: false,
     );
-    final file = TestFile(input.path, parsed.unit, parsed.lineInfo);
+    final output = springTestOutput(input);
+    // While the file does not parse (being edited under `build_runner
+    // watch`) the generated file stays as it is, so the test's import of
+    // it keeps working.
+    final syntaxErrors = parsed.errors
+        .where((e) => e.diagnosticCode.severity == DiagnosticSeverity.ERROR)
+        .toList();
+    if (syntaxErrors.isNotEmpty) {
+      final existing = io.File(output.path);
+      log.warning(
+        '${input.path} has syntax errors; ${output.path} is kept as it is '
+        'until it parses again:\n${syntaxErrors.first.message}',
+      );
+      if (existing.existsSync()) {
+        await buildStep.writeAsString(output, existing.readAsStringSync());
+      }
+      return;
+    }
+    final file = TestFile(input.path, parsed.unit, parsed.lineInfo, text);
     if (file.testClasses.isEmpty) {
       return;
     }
-    final output = springTestOutput(input);
     final applications = <String>[];
     await for (final asset in buildStep.findAssets(Glob('{bin,lib}/**.dart'))) {
       if (asset.path.endsWith('.spring.dart')) {
         continue;
       }
       final source = await buildStep.readAsString(asset);
-      if (_entryPoint.hasMatch(source)) {
+      if (source.contains('SpringBootApplication') &&
+          _isEntryPoint(asset.path, source)) {
         applications.add(asset.path);
       }
     }
@@ -101,11 +124,21 @@ class SpringTestBuilder implements Builder {
   }
 }
 
-// `@SpringBootApplication()` at the start of a line, not in a comment.
-final _entryPoint = RegExp(
-  r'^\s*@(\w+\.)?SpringBootApplication\(',
-  multiLine: true,
-);
+// Whether [source] declares a top-level function annotated with
+// `@SpringBootApplication` (read as syntax: comments and strings that
+// mention it do not count).
+bool _isEntryPoint(String path, String source) {
+  final unit = parseString(
+    content: source,
+    path: path,
+    throwIfDiagnostics: false,
+  ).unit;
+  return unit.declarations.any(
+    (d) =>
+        d is FunctionDeclaration &&
+        annotation(d.metadata, 'SpringBootApplication') != null,
+  );
+}
 
 /// Where the generated file of the test [input] goes:
 /// `test/orders/basket_test.dart` → `test/spring/orders/basket.test.spring.dart`.
@@ -137,7 +170,14 @@ final class TestClassException implements Exception {
 /// The parsed test file: its imports and `@SpringBootTest` classes.
 final class TestFile {
   /// Reads [unit], the syntax of the file at [path].
-  TestFile(this.path, this.unit, this.lineInfo);
+  TestFile(this.path, this.unit, this.lineInfo, [String? text])
+    : text = text ?? unit.toSource();
+
+  /// The file's text.
+  final String text;
+
+  /// Superclasses of other files already warned about.
+  final Set<String> warnedSuperclasses = {};
 
   /// The file's path in its package (`test/checkout_test.dart`).
   final String path;
@@ -244,6 +284,31 @@ const _classOnly = {
   'TestEnvironment',
 };
 
+/// The expression of [annotation]'s positional argument [index], or `null`.
+Expression? positionalNode(Annotation annotation, int index) {
+  final arguments = [
+    for (final argument in annotation.arguments?.arguments ?? <Argument>[])
+      if (argument is! NamedArgument) argument.argumentExpression,
+  ];
+  return index < arguments.length ? arguments[index] : null;
+}
+
+/// The expression of [annotation]'s named argument [name], or `null`.
+Expression? namedNode(Annotation annotation, String name) {
+  for (final argument in annotation.arguments?.arguments ?? <Argument>[]) {
+    if (argument is NamedArgument && argument.name.lexeme == name) {
+      return argument.argumentExpression;
+    }
+  }
+  return null;
+}
+
+// The generated code's own names; `$` keeps them apart from the user's
+// names and import prefixes.
+const _instance = r'$instance';
+const _app = r'$app';
+const _logs = r'$logs';
+
 /// Writes the generated library for a [TestFile].
 final class TestEmitter {
   /// An emitter for [file], written to [output] in [package], whose
@@ -285,26 +350,19 @@ final class TestEmitter {
         'classes of ${p.url.basename(file.path)}.',
       )
       ..writeln()
+      // The test file's imports are copied whole: some are unused here.
       ..writeln(
-        '// ignore_for_file: directives_ordering, unused_import, '
-        'no_leading_underscores_for_library_prefixes, '
-        'unnecessary_import, unnecessary_lambdas',
+        '// ignore_for_file: type=lint, unused_import, unused_shown_name, '
+        'duplicate_import',
       )
       ..writeln();
-    // The test file's imports; relative ones re-pointed from test/spring/.
+    // The test file's imports; relative ones (and those of conditional
+    // imports) re-pointed from test/spring/.
     for (final directive in file.imports) {
-      final target = file.resolve(directive);
-      if (target == output.path) {
+      if (file.resolve(directive) == output.path) {
         continue;
       }
-      var source = directive.toSource();
-      if (target != null) {
-        source = source.replaceFirst(
-          directive.uri.toSource(),
-          "'${_relative(target)}'",
-        );
-      }
-      out.writeln(source);
+      out.writeln(_repointed(directive));
     }
     out
       ..writeln("import '${_relative(file.path)}';")
@@ -328,6 +386,35 @@ final class TestEmitter {
         .format(out.toString());
   }
 
+  String _repointed(ImportDirective directive) {
+    final source = directive.toSource();
+    final replacements = <(int, int, String)>[];
+    void repoint(StringLiteral uri) {
+      final value = uri.stringValue;
+      if (value == null || Uri.parse(value).hasScheme) {
+        return;
+      }
+      final target = p.url.normalize(
+        p.url.join(p.url.dirname(file.path), value),
+      );
+      replacements.add((
+        uri.offset - directive.offset,
+        uri.end - directive.offset,
+        "'${_relative(target)}'",
+      ));
+    }
+
+    repoint(directive.uri);
+    for (final configuration in directive.configurations) {
+      repoint(configuration.uri);
+    }
+    var result = source;
+    for (final (start, end, text) in replacements.reversed) {
+      result = result.replaceRange(start, end, text);
+    }
+    return result;
+  }
+
   String _applicationImport(String entry) {
     final generated = '${entry.substring(0, entry.length - 5)}.spring.dart';
     if (generated.startsWith('lib/')) {
@@ -339,6 +426,51 @@ final class TestEmitter {
   // [path] in the package, relative to the generated file.
   String _relative(String path) =>
       p.url.relative(path, from: p.url.dirname(output.path));
+
+  /// The source of [expression] (an annotation argument) as the generated
+  /// library can use it: names of static members of [scope] (the class a
+  /// member annotation is in, whose scope Dart resolves them in) are
+  /// qualified with their class; a private name fails the build.
+  String? _code(Expression? expression, {_Scope? scope}) {
+    if (expression == null) {
+      return null;
+    }
+    final names = _Identifiers()..visit(expression);
+    final replacements = <(int, int, String)>[];
+    for (final identifier in names.found) {
+      final owner = scope?.statics[identifier.name];
+      if (owner != null) {
+        if (owner.startsWith('_') || identifier.name.startsWith('_')) {
+          throw file.error(
+            identifier,
+            "'${identifier.name}' is private; the generated test cannot "
+            'reach it: make it public.',
+          );
+        }
+        replacements.add((
+          identifier.offset - expression.offset,
+          identifier.end - expression.offset,
+          '$owner.${identifier.name}',
+        ));
+      } else if (identifier.name.startsWith('_')) {
+        throw file.error(
+          identifier,
+          "'${identifier.name}' is private to the test file; the generated "
+          'test cannot reach it: make it public.',
+        );
+      }
+    }
+    var source = expression.toSource();
+    if (replacements.isEmpty) {
+      return source;
+    }
+    // toSource() may differ from the text in spacing: use the text.
+    source = file.text.substring(expression.offset, expression.end);
+    for (final (start, end, text) in replacements.reversed) {
+      source = source.replaceRange(start, end, text);
+    }
+    return source;
+  }
 
   String _application(ClassDeclaration testClass, Annotation springBootTest) {
     final given = named(springBootTest, 'application');
@@ -359,7 +491,7 @@ final class TestEmitter {
       throw file.error(
         springBootTest,
         'No application in this package: @SpringBootTest needs a '
-        "@SpringBootApplication entry point in bin/ or lib/.",
+        '@SpringBootApplication entry point in bin/ or lib/.',
       );
     } else {
       throw file.error(
@@ -378,45 +510,62 @@ final class TestEmitter {
   void _testClass(ClassDeclaration testClass) {
     final name = testClass.namePart.typeName.lexeme;
     final springBootTest = annotation(testClass.metadata, 'SpringBootTest')!;
-    _checkConstructor(testClass);
+    _checkCreatable(testClass, testClass);
     final members = _Members.of(file, testClass, outer: true);
 
-    _body.writeln("_sbt.group(${_literal(name)}, () {");
+    _body.writeln('_sbt.group(${_literal(name)}, () {');
     for (final method in members.beforeAll) {
-      _body.writeln('_sbt.setUpAll(() => $name.$method());');
+      _body.writeln('_sbt.setUpAll(() => $method());');
     }
     // Declared before springBootTest: tearDownAll runs in reverse order, so
     // these run after the context is closed.
     for (final method in members.afterAll) {
-      _body.writeln('_sbt.tearDownAll(() => $name.$method());');
+      _body.writeln('_sbt.tearDownAll(() => $method());');
     }
-    _body.writeln('final instance = $name();');
-    if (members.capturedOutput.isNotEmpty) {
-      _body.writeln('final logs = _sbt.captureLogs();');
+    _body.writeln('final $_instance = $name();');
+    if (_capturesOutput(testClass, members)) {
+      _body.writeln('final $_logs = _sbt.captureLogs();');
     }
     _body.writeln(
-      'final app = _sbt.springBootTest(${_application(testClass, springBootTest)},',
+      'final $_app = _sbt.springBootTest(${_application(testClass, springBootTest)},',
     );
-    _startOptions(testClass, springBootTest, members, name);
+    _startOptions(testClass, springBootTest, members);
     _body.writeln(');');
-    _classBody(testClass, members, 'instance');
+    _classBody(testClass, members, _instance, testClass.metadata);
     _body.writeln('}${_groupOptions(testClass.metadata)});');
+  }
+
+  // Whether the class or one of its @Nested classes has a @CapturedOutput
+  // field.
+  bool _capturesOutput(ClassDeclaration declaration, _Members members) {
+    if (members.capturedOutput.isNotEmpty) {
+      return true;
+    }
+    for (final member in members.ordered) {
+      if (member is _Field) {
+        final nested = _nestedClass(member);
+        if (_capturesOutput(nested, _Members.of(file, nested, outer: false))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   void _startOptions(
     ClassDeclaration testClass,
     Annotation springBootTest,
     _Members members,
-    String name,
   ) {
     final metadata = testClass.metadata;
-    if (named(springBootTest, 'args') case final args?) {
+    if (_code(namedNode(springBootTest, 'args')) case final args?) {
       _body.writeln('args: $args,');
     }
     final propertySource = annotation(metadata, 'TestPropertySource');
     final properties = [
-      ?named(springBootTest, 'properties'),
-      if (propertySource != null) ?named(propertySource, 'properties'),
+      ?_code(namedNode(springBootTest, 'properties')),
+      if (propertySource != null)
+        ?_code(namedNode(propertySource, 'properties')),
     ];
     if (properties.length == 1) {
       _body.writeln('properties: ${properties.single},');
@@ -424,31 +573,34 @@ final class TestEmitter {
       _body.writeln('properties: {...${properties[0]}, ...${properties[1]}},');
     }
     if (propertySource != null) {
-      if (named(propertySource, 'locations') case final locations?) {
+      if (_code(namedNode(propertySource, 'locations')) case final locations?) {
         _body.writeln('propertyFiles: $locations,');
       }
     }
-    if (named(springBootTest, 'resourceDirectories') case final directories?) {
+    if (_code(namedNode(springBootTest, 'resourceDirectories'))
+        case final directories?) {
       _body.writeln('resourceDirectories: $directories,');
     }
     if (annotation(metadata, 'ActiveProfiles') case final profiles?) {
-      _body.writeln('profiles: ${positional(profiles, 0)},');
+      _body.writeln('profiles: ${_code(positionalNode(profiles, 0))},');
     }
     if (annotation(metadata, 'TestEnvironment') case final environment?) {
-      _body.writeln('systemEnvironment: ${positional(environment, 0)},');
+      _body.writeln(
+        'systemEnvironment: ${_code(positionalNode(environment, 0))},',
+      );
     }
     switch (members.dynamicProperties) {
       case [final method]:
-        _body.writeln('dynamicProperties: $name.$method,');
+        _body.writeln('dynamicProperties: $method,');
       case [_, _, ...] && final methods:
         _body.writeln(
           'dynamicProperties: (registry) {'
-          '${methods.map((m) => '$name.$m(registry);').join()}},',
+          '${methods.map((m) => '$m(registry);').join()}},',
         );
     }
     if (members.initializers.isNotEmpty) {
       _body.writeln(
-        'initializers: [${members.initializers.map((m) => '_sbt.ApplicationContextInitializer.of($name.$m)').join(', ')}],',
+        'initializers: [${members.initializers.map((m) => '_sbt.ApplicationContextInitializer.of($m)').join(', ')}],',
       );
     }
     if (members.testBeans.isNotEmpty) {
@@ -462,9 +614,10 @@ final class TestEmitter {
 
   String _override(_Field bean) {
     final testBean = annotation(bean.metadata, 'TestBean')!;
-    final value = 'instance.${bean.name}';
-    final name = named(testBean, 'name');
-    final type = named(testBean, 'type');
+    final value = '$_instance.${bean.name}';
+    final scope = _Scope.of(file, bean.owner);
+    final name = _code(namedNode(testBean, 'name'), scope: scope);
+    final type = _code(namedNode(testBean, 'type'), scope: scope);
     if (type != null) {
       return '_sbt.BeanOverride<$type>($value${name == null ? '' : ', name: $name'})';
     }
@@ -487,25 +640,28 @@ final class TestEmitter {
   }
 
   // Injection, lifecycle and tests of a class (the test class or a
-  // @Nested one) whose instance is [instance].
+  // @Nested one) whose instance is [instance]; [metadata]: the
+  // annotations that apply to the whole group (the class's, and for a
+  // @Nested class also its field's).
   void _classBody(
     ClassDeclaration declaration,
     _Members members,
     String instance,
+    List<Annotation> metadata,
   ) {
     final inject = <String>[
       for (final field in members.autowired)
         '$instance.${field.name} = ${_injection(field)};',
       for (final field in members.capturedOutput)
-        '$instance.${field.name} = logs;',
+        '$instance.${field.name} = $_logs;',
     ];
     if (inject.isNotEmpty) {
       // Before every test: after a @DirtiesContext restart the beans are
       // new.
       _body.writeln('_sbt.setUp(() {${inject.join()}});');
     }
-    if (annotation(declaration.metadata, 'DirtiesContext') != null) {
-      _body.writeln('_sbt.setUp(app.markDirty);');
+    if (annotation(metadata, 'DirtiesContext') != null) {
+      _body.writeln('_sbt.setUp($_app.markDirty);');
     }
     for (final method in members.beforeEach) {
       _body.writeln('_sbt.setUp(() => $instance.$method());');
@@ -526,46 +682,60 @@ final class TestEmitter {
   String _injection(_Field field) {
     final type = field.type!;
     final nullable = type.endsWith('?');
+    final scope = _Scope.of(file, field.owner);
     if (annotation(field.metadata, 'Value') case final value?) {
-      final expression = positional(value, 0);
+      final expression = _code(positionalNode(value, 0), scope: scope);
       return nullable
-          ? 'app.optionalValue($expression)'
-          : 'app.value($expression)';
+          ? '$_app.optionalValue($expression)'
+          : '$_app.value($expression)';
     }
     final qualifier = switch (annotation(field.metadata, 'Qualifier')) {
-      final q? => 'qualifier: ${positional(q, 0)}',
+      final q? => 'qualifier: ${_code(positionalNode(q, 0), scope: scope)}',
       null => '',
     };
-    final simple = field.simpleTypeName;
-    switch (simple) {
+    final arguments = field.typeArguments;
+    switch (field.simpleTypeName) {
       case 'SpringBootTestContext':
-        return 'app';
+        return _app;
       case 'ApplicationContext' || 'ConfigurableApplicationContext':
-        return 'app.context';
+        return '$_app.context';
       case 'Environment' || 'ConfigurableEnvironment':
-        return 'app.environment';
+        return '$_app.environment';
       case 'List' || 'Iterable':
-        return 'app.getBeans($qualifier)';
+        return '$_app.getBeans($qualifier)';
+      case 'Set' when arguments.length == 1:
+        return '$_app.getBeans<${arguments.single}>($qualifier).toSet()';
+      case 'Map' when arguments.length == 2:
+        return '$_app.context.getBeansOfType<${arguments.last}>()';
+      case 'ObjectProvider' || 'ObjectFactory' || 'Provider':
+        return '$_app.context.getBeanProvider($qualifier)';
     }
-    return nullable ? 'app.findBean($qualifier)' : 'app.getBean($qualifier)';
+    return nullable
+        ? '$_app.findBean($qualifier)'
+        : '$_app.getBean($qualifier)';
   }
 
   void _test(_Method method, String instance) {
     final metadata = method.metadata;
+    final scope = _Scope.of(file, method.owner);
+    final display = annotation(metadata, 'DisplayName');
     final name =
-        positional(annotation(metadata, 'DisplayName') ?? _none, 0) ??
-        positional(annotation(metadata, 'Test')!, 0) ??
+        (display == null
+            ? null
+            : _code(positionalNode(display, 0), scope: scope)) ??
+        _code(positionalNode(annotation(metadata, 'Test')!, 0), scope: scope) ??
         _literal(_words(method.name));
     final dirties = annotation(metadata, 'DirtiesContext') != null;
     final call = '$instance.${method.name}()';
     final body = dirties
-        ? '() {app.markDirty(); return $call;}'
+        ? '() {$_app.markDirty(); return $call;}'
         : '() => $call';
-    _body.writeln('_sbt.test($name, $body${_groupOptions(metadata)});');
+    _body.writeln(
+      '_sbt.test($name, $body${_groupOptions(metadata, scope: scope)});',
+    );
   }
 
-  void _nested(_Field field, String instance) {
-    final nested = annotation(field.metadata, 'Nested')!;
+  ClassDeclaration _nestedClass(_Field field) {
     final type = field.initializerClass;
     final declaration = type == null ? null : file.classNamed(type);
     if (declaration == null) {
@@ -575,31 +745,65 @@ final class TestEmitter {
         'file: final ${field.name} = WithOneBook();',
       );
     }
-    _checkConstructor(declaration);
+    return declaration;
+  }
+
+  void _nested(_Field field, String instance) {
+    final nested = annotation(field.metadata, 'Nested')!;
+    final declaration = _nestedClass(field);
+    _checkCreatable(declaration, field.node);
     final members = _Members.of(file, declaration, outer: false);
-    final name = positional(nested, 0) ?? _literal(_words(field.name));
+    final scope = _Scope.of(file, field.owner);
+    final name =
+        _code(positionalNode(nested, 0), scope: scope) ??
+        _literal(_words(field.name));
     final inner = '$instance.${field.name}';
+    // The field's @Disabled, @Tag, @TestOptions and @DirtiesContext apply
+    // to the group as the class's do.
+    final metadata = [...declaration.metadata, ...field.metadata];
     _body.writeln('_sbt.group($name, () {');
-    _classBody(declaration, members, inner);
-    _body.writeln('}${_groupOptions(declaration.metadata)});');
+    _classBody(declaration, members, inner, metadata);
+    _body.writeln(
+      '}${_groupOptions(declaration.metadata, also: field.metadata, scope: scope)});',
+    );
   }
 
   // `, skip: ..., tags: [...], timeout: ...` from @Disabled, @Tag and
-  // @TestOptions.
-  String _groupOptions(List<Annotation> metadata) {
+  // @TestOptions of [metadata] (and of [also], which wins).
+  String _groupOptions(
+    List<Annotation> metadata, {
+    List<Annotation> also = const [],
+    _Scope? scope,
+  }) {
     final options = <String>[];
-    if (annotation(metadata, 'Disabled') case final disabled?) {
-      options.add('skip: ${positional(disabled, 0) ?? 'true'}');
+    final all = [...metadata, ...also];
+    final disabled =
+        annotation(also, 'Disabled') ?? annotation(metadata, 'Disabled');
+    if (disabled != null) {
+      final inScope = identical(disabled, annotation(also, 'Disabled'))
+          ? scope
+          : (also.isEmpty ? scope : null);
+      options.add(
+        'skip: ${_code(positionalNode(disabled, 0), scope: inScope) ?? 'true'}',
+      );
     }
     final tags = [
-      for (final tag in annotations(metadata, 'Tag')) ?positional(tag, 0),
+      for (final tag in annotations(all, 'Tag'))
+        ?_code(
+          positionalNode(tag, 0),
+          scope: also.contains(tag) || also.isEmpty ? scope : null,
+        ),
     ];
     if (tags.isNotEmpty) {
       options.add('tags: [${tags.join(', ')}]');
     }
-    if (annotation(metadata, 'TestOptions') case final testOptions?) {
+    final testOptions =
+        annotation(also, 'TestOptions') ?? annotation(metadata, 'TestOptions');
+    if (testOptions != null) {
+      final inScope = also.contains(testOptions) || also.isEmpty ? scope : null;
       for (final option in ['timeout', 'retry', 'testOn', 'onPlatform']) {
-        if (named(testOptions, option) case final value?) {
+        if (_code(namedNode(testOptions, option), scope: inScope)
+            case final value?) {
           options.add('$option: $value');
         }
       }
@@ -607,27 +811,44 @@ final class TestEmitter {
     return options.isEmpty ? '' : ', ${options.join(', ')}';
   }
 
-  void _checkConstructor(ClassDeclaration declaration) {
-    for (final member in declaration.body.members) {
-      if (member is ConstructorDeclaration &&
-          member.name == null &&
-          member.factoryKeyword == null &&
-          member.parameters.parameters.any((p) => p.isRequired)) {
-        throw file.error(
-          member,
-          "'${declaration.namePart.typeName.lexeme}' needs a constructor "
-          'without required parameters: the generated test creates it.',
-        );
-      }
+  // The generated code creates the class with `Name()`: it must be public
+  // and have an unnamed constructor without required parameters.
+  void _checkCreatable(ClassDeclaration declaration, AstNode at) {
+    final name = declaration.namePart.typeName.lexeme;
+    if (name.startsWith('_')) {
+      throw file.error(
+        at,
+        "'$name' is private; the generated test cannot create it: make it "
+        'public.',
+      );
+    }
+    if (declaration.abstractKeyword != null) {
+      throw file.error(
+        at,
+        "'$name' is abstract; the generated test cannot create it.",
+      );
+    }
+    final constructors = [
+      for (final member in declaration.body.members)
+        if (member is ConstructorDeclaration) member,
+    ];
+    final unnamed = constructors.where((c) => c.name == null).firstOrNull;
+    if (constructors.isNotEmpty && unnamed == null) {
+      throw file.error(
+        constructors.first,
+        "'$name' has no unnamed constructor: the generated test creates "
+        'it with $name().',
+      );
+    }
+    if (unnamed != null &&
+        unnamed.parameters.parameters.any((p) => p.isRequired)) {
+      throw file.error(
+        unnamed,
+        "'$name' needs a constructor without required parameters: the "
+        'generated test creates it.',
+      );
     }
   }
-
-  static final Annotation _none = parseString(content: '@_N() void _n() {}')
-      .unit
-      .declarations
-      .single
-      .metadata
-      .single;
 }
 
 /// A Dart string literal of [value].
@@ -640,11 +861,14 @@ String _literal(String value) {
   return "'$escaped'";
 }
 
-/// `paysThroughTheFake` → `pays through the fake`; `checkout_pays` →
+/// `paysThroughTheFake` → `pays through the fake`, `addsABook` → `adds a
+/// book`, `readsURLService` → `reads url service`, `checkout_pays` →
 /// `checkout pays`.
 String _words(String name) => name
     .replaceAllMapped(RegExp('([a-z0-9])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+    .replaceAllMapped(RegExp('([A-Z])([A-Z][a-z])'), (m) => '${m[1]} ${m[2]}')
     .replaceAll('_', ' ')
+    .replaceAll(RegExp(' +'), ' ')
     .toLowerCase()
     .trim();
 
@@ -653,14 +877,99 @@ String? _stringValue(String source) {
   return match?[2];
 }
 
+// The plain names in an expression that a scope resolves (not the
+// property of `a.b`, a named argument's label or a type).
+final class _Identifiers extends RecursiveAstVisitor<void> {
+  final found = <SimpleIdentifier>[];
+
+  void visit(Expression expression) => expression.accept(this);
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    final parent = node.parent;
+    final qualified = switch (parent) {
+      PrefixedIdentifier(:final identifier) => identical(identifier, node),
+      PropertyAccess(:final propertyName) => identical(propertyName, node),
+      MethodInvocation(:final methodName, :final target) =>
+        identical(methodName, node) && target != null,
+      Label() => true,
+      _ => false,
+    };
+    if (!qualified) {
+      found.add(node);
+    }
+  }
+}
+
+// The static members visible by their plain name inside a class of the
+// file: its own and those of its superclasses declared in the file, with
+// the class that declares each (Dart does not inherit statics, so the
+// generated code names the declaring class).
+final class _Scope {
+  _Scope._(this.statics);
+
+  final Map<String, String> statics;
+
+  static _Scope of(TestFile file, ClassDeclaration owner) {
+    final statics = <String, String>{};
+    for (final declaration in _chain(file, owner)) {
+      final name = declaration.namePart.typeName.lexeme;
+      for (final member in declaration.body.members) {
+        switch (member) {
+          case MethodDeclaration(isStatic: true, name: final method):
+            statics[method.lexeme] = name;
+          case FieldDeclaration(isStatic: true, :final fields):
+            for (final variable in fields.variables) {
+              statics[variable.name.lexeme] = name;
+            }
+          default:
+        }
+      }
+    }
+    return _Scope._(statics);
+  }
+}
+
+// [declaration] and its superclasses declared in [file], the farthest
+// first; a superclass of another file is reported once (its members are
+// not seen: the file is read as syntax).
+List<ClassDeclaration> _chain(TestFile file, ClassDeclaration declaration) {
+  final chain = <ClassDeclaration>[declaration];
+  var current = declaration;
+  while (true) {
+    final superclass = current.extendsClause?.superclass.name.lexeme;
+    if (superclass == null || superclass == 'Object') {
+      break;
+    }
+    final next = file.classNamed(superclass);
+    if (next == null || chain.contains(next)) {
+      if (next == null && file.warnedSuperclasses.add(superclass)) {
+        log.warning(
+          '${file.path}: ${current.namePart.typeName.lexeme} extends '
+          '$superclass from another file; its @Test, @Autowired and other '
+          'annotated members are not seen. Declare it in the test file.',
+        );
+      }
+      break;
+    }
+    chain.insert(0, next);
+    current = next;
+  }
+  return chain;
+}
+
 sealed class _Member {
+  ClassDeclaration get owner;
   List<Annotation> get metadata;
 }
 
 final class _Method extends _Member {
-  _Method(this.node);
+  _Method(this.node, this.owner);
 
   final MethodDeclaration node;
+
+  @override
+  final ClassDeclaration owner;
 
   String get name => node.name.lexeme;
 
@@ -669,11 +978,14 @@ final class _Method extends _Member {
 }
 
 final class _Field extends _Member {
-  _Field(this.node, this.declarations, this.variable);
+  _Field(this.node, this.declarations, this.variable, this.owner);
 
   final FieldDeclaration node;
   final VariableDeclarationList declarations;
   final VariableDeclaration variable;
+
+  @override
+  final ClassDeclaration owner;
 
   String get name => variable.name.lexeme;
 
@@ -689,6 +1001,15 @@ final class _Field extends _Member {
     _ => null,
   };
 
+  /// The type arguments as written: `[String, PaymentGateway]` for
+  /// `Map<String, PaymentGateway>`.
+  List<String> get typeArguments => switch (declarations.type) {
+    NamedType(:final typeArguments?) => [
+      for (final argument in typeArguments.arguments) argument.toSource(),
+    ],
+    _ => const [],
+  };
+
   /// `WithOneBook` for `= WithOneBook()`.
   String? get initializerClass => switch (variable.initializer) {
     InstanceCreationExpression(:final constructorName) =>
@@ -698,7 +1019,9 @@ final class _Field extends _Member {
   };
 }
 
-// The annotated members of a test class (or a @Nested class), checked.
+// The annotated members of a test class (or a @Nested class) and of its
+// superclasses in the file, checked. Static methods are qualified with the
+// class that declares them (`Base.start`).
 final class _Members {
   _Members._();
 
@@ -712,7 +1035,8 @@ final class _Members {
   final List<_Field> testBeans = [];
   final List<_Field> capturedOutput = [];
 
-  /// Tests and @Nested groups, in the order of the class.
+  /// Tests and @Nested groups, in the order of the classes (superclass
+  /// first).
   final List<_Member> ordered = [];
 
   static _Members of(
@@ -721,19 +1045,21 @@ final class _Members {
     required bool outer,
   }) {
     final members = _Members._();
-    for (final member in declaration.body.members) {
-      switch (member) {
-        case MethodDeclaration():
-          members._method(file, _Method(member), outer: outer);
-        case FieldDeclaration(:final fields):
-          for (final variable in fields.variables) {
-            members._field(
-              file,
-              _Field(member, fields, variable),
-              outer: outer,
-            );
-          }
-        default:
+    for (final owner in _chain(file, declaration)) {
+      for (final member in owner.body.members) {
+        switch (member) {
+          case MethodDeclaration():
+            members._method(file, _Method(member, owner), outer: outer);
+          case FieldDeclaration(:final fields):
+            for (final variable in fields.variables) {
+              members._field(
+                file,
+                _Field(member, fields, variable, owner),
+                outer: outer,
+              );
+            }
+          default:
+        }
       }
     }
     return members;
@@ -751,12 +1077,13 @@ final class _Members {
         );
       }
     }
+    final owner = method.owner.namePart.typeName.lexeme;
     String staticMethod(String annotationName) {
       if (!node.isStatic) {
         throw file.error(
           node,
           '@$annotationName method ${method.name} must be static: '
-          '${annotationName == 'BeforeAll' || annotationName == 'DynamicPropertySource' || annotationName == 'ContextInitializer' ? 'it runs before the class is created' : 'it runs after the tests'}.',
+          '${annotationName == 'AfterAll' ? 'it runs after the tests' : 'it runs before the class is created'}.',
         );
       }
       if (!outer) {
@@ -767,7 +1094,8 @@ final class _Members {
         );
       }
       _public(file, node, method.name);
-      return method.name;
+      _public(file, node, owner);
+      return '$owner.${method.name}';
     }
 
     String instanceMethod(String annotationName) {
@@ -872,6 +1200,15 @@ final class _Members {
       }
       _public(file, node, field.name);
       testBeans.add(field);
+    } else if (annotation(metadata, 'Nested') == null) {
+      for (final name in ['Disabled', 'Tag', 'TestOptions', 'DirtiesContext']) {
+        if (annotation(metadata, name) != null) {
+          throw file.error(
+            node,
+            '@$name on the field ${field.name}, which is not @Nested.',
+          );
+        }
+      }
     }
     if (annotation(metadata, 'Nested') != null) {
       if (node.isStatic || field.variable.initializer == null) {

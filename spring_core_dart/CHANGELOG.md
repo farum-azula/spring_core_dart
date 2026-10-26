@@ -1,3 +1,8 @@
+## Unreleased
+
+- The example is a small Spring Boot application written by the generator (beans, `@Value`, SpEL, events) instead of hand-written bean definitions.
+- README: loggers come from `@Log` (the logging section starts with it).
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

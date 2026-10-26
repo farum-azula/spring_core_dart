@@ -77,7 +77,6 @@ after Spring 7's `RetryPolicy`).
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_websocket: ^0.3.0
 
 dev_dependencies:
@@ -93,7 +92,10 @@ The starter is found automatically: every abstract class with
 `@WebSocketClient` in the scanned package becomes a bean, named after the
 interface (`chatSocket`). One import is enough:
 `package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart`
-re-exports `spring_boot_dart` and `spring_web_dart`.
+re-exports `spring_boot_dart`, `spring_web_dart` and
+`spring_boot_starter_logging`. The starter is the only dependency an
+application needs: it brings the others, logging included, like every
+Spring Boot starter.
 
 ## Methods
 
@@ -201,8 +203,8 @@ desktop, `BrowserWebSocketTransport` on the web. Declare your own
 
 ## Testing
 
-`MockWebSocketTransport` (`package:spring_web_dart/testing.dart`) plays
-the server:
+`MockWebSocketTransport` (from `spring_boot_starter_test`, the dev
+dependency of the tests) plays the server:
 
 ```dart
 final sockets = MockWebSocketTransport();

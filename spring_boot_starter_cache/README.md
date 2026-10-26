@@ -30,7 +30,6 @@ switched on automatically — no `@EnableCaching`.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_cache: ^0.3.0
 
 dev_dependencies:
@@ -44,7 +43,9 @@ dart run build_runner build
 
 One import is enough:
 `package:spring_boot_starter_cache/spring_boot_starter_cache.dart`
-re-exports `spring_boot_dart`.
+re-exports `spring_boot_dart` and `spring_boot_starter_logging`. The
+starter is the only dependency an application needs: it brings the others,
+logging included, like every Spring Boot starter.
 
 How it works: the generator writes an AOP proxy for each bean (option
 `aop_proxies`, `all` by default), and the starter registers an advisor

@@ -50,9 +50,12 @@ final class BeanOverride<T extends Object> {
   const BeanOverride(this.instance, {this.name}) : _keepTypes = false;
 
   /// Overrides the bean called [name] with [instance], keeping the types
-  /// the bean is registered under (so a fake of another class replaces
-  /// it); without such a bean, [instance] is registered under [name] with
-  /// its runtime type. What a `@TestBean(name: ...)` field generates.
+  /// the bean is registered under but its own class (so a fake of another
+  /// class replaces it: injection points of an interface get the fake, a
+  /// lookup of the real class finds nothing), plus the class of
+  /// [instance]; without such a bean, [instance] is registered under
+  /// [name] with its runtime type. What a `@TestBean(name: ...)` field
+  /// generates.
   ///
   /// ```dart
   /// BeanOverride.named(FakeGateway(), name: 'sandbox')
@@ -61,6 +64,19 @@ final class BeanOverride<T extends Object> {
     : _keepTypes = true;
 
   final bool _keepTypes;
+
+  // The types of a [named] override: those of the replaced bean but its own
+  // class (the fake is another class; a lookup of the real class must not
+  // return it), plus the fake's class.
+  static List<Type> _namedTypes(
+    BeanDefinition<Object>? original,
+    Object instance,
+  ) => {
+    if (original != null)
+      for (final type in original.types)
+        if (type != original.beanType) type,
+    instance.runtimeType,
+  }.toList();
 
   /// The object to inject instead of the real bean.
   final T instance;
@@ -124,7 +140,7 @@ final class BeanOverride<T extends Object> {
     registry.registerBeanDefinition(
       BeanDefinition<T>(
         name: target,
-        types: _keepTypes ? (original?.types ?? [instance.runtimeType]) : [T],
+        types: _keepTypes ? _namedTypes(original, instance) : [T],
         create: (_) => instance,
         primary: original?.primary ?? false,
         fallback: original?.fallback ?? false,

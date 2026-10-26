@@ -15,10 +15,18 @@ Rules every plan follows:
   nothing here should replace (Flutter Scene, signals, a Rust bridge,
   database drivers) is an exception allowed only in its own starter
   (`tool/check_dependencies.dart`).
+- Fewest dependencies for the user: an application lists only what it
+  chooses — `spring_boot_dart` (or one starter) and, as a dev dependency,
+  the generator. Everything a package builds on comes with it and is
+  re-exported, so its code is usable without listing it and the analyzer
+  never asks for it (`depend_on_referenced_packages`): nobody adds
+  `spring_core_dart` next to `spring_boot_dart`, or `spring_web_dart` next
+  to Feign. See [dependencies.md](dependencies.md).
 
 | File | Package | Status |
 |---|---|---|
-| [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, incremental generation per library |
+| [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, incremental generation per library, Jakarta annotations under question |
+| [dependencies.md](dependencies.md) | all packages | what an application must list (one package and the generator), what each package re-exports, the gaps left |
 | [fix_plan.md](fix_plan.md) | all packages | open differences from Spring 7 / Boot 4 found in reviews, how close each area is |
 | [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | planned: controllers, SSE, WebSocket endpoints, `MockMvc` |
 | [spring_boot_actuator.md](spring_boot_actuator.md) | `spring_boot_actuator` | planned after the web starter: beans, env, conditions, loggers, logs, health — over HTTP, in the editor extensions, in apps |

@@ -1,3 +1,7 @@
+## Unreleased
+
+- No changes of its own.
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

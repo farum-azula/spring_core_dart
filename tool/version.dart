@@ -209,9 +209,9 @@ List<String> check() {
       problems.add('$_cargoLock: dart_spring is $own, expected $version');
     }
   }
-  for (final path in _docFiles()) {
+  for (final path in docFiles()) {
     final text = File(path).readAsStringSync();
-    for (final match in _docConstraint.allMatches(text)) {
+    for (final match in docConstraint.allMatches(text)) {
       if (match[2] != '^$version') {
         final line = '\n'.allMatches(text.substring(0, match.start)).length + 1;
         problems.add(
@@ -237,11 +237,10 @@ List<String> check() {
 /// Sets [version] in the install snippets of the docs
 /// (`spring_boot_dart: ^0.2.0`).
 void _setDocVersions(String version) {
-  for (final path in _docFiles()) {
+  for (final path in docFiles()) {
     _edit(
       path,
-      (text) =>
-          text.replaceAllMapped(_docConstraint, (m) => '${m[1]}^$version'),
+      (text) => text.replaceAllMapped(docConstraint, (m) => '${m[1]}^$version'),
     );
   }
 }
@@ -249,17 +248,19 @@ void _setDocVersions(String version) {
 /// A family package's version in a documentation snippet: a YAML line
 /// (also inside a `///` doc comment) like `  spring_boot_dart: ^0.2.0`;
 /// group 1 is everything before the version, group 2 the version.
-final _docConstraint = RegExp(
+final docConstraint = RegExp(
   '^((?:\\s*///)?\\s*(?:${family.join('|')}): *)(\\^?[0-9][^\\s#]*)',
   multiLine: true,
 );
 
-/// The Markdown files (but CHANGELOGs, which are history) and Dart
-/// libraries of the repository root, the family and the dependents, where
-/// install snippets name family versions.
-List<String> _docFiles() {
+/// The files whose install snippets carry the family version: the root
+/// README, `docs/`, and the Markdown and Dart files of the family and its
+/// dependents (CHANGELOGs and generated files excluded).
+List<String> docFiles() {
   final files = <String>[
     'README.md',
+    for (final entity in Directory('docs').listSync(recursive: true))
+      if (entity is File && entity.path.endsWith('.md')) entity.path,
     for (final package in [...family, ...dependents])
       for (final entity in Directory(package).listSync(recursive: true))
         if (entity is File &&

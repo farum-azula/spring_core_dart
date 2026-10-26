@@ -139,7 +139,7 @@ following it.
 | `platformHttpTransport()` | picks the one below | `package:spring_web_dart/spring_web_dart.dart` |
 | `IoHttpTransport` | VM, Flutter Android/iOS/desktop (`dart:io` `HttpClient`) | `package:spring_web_dart/io.dart` |
 | `FetchHttpTransport` | web, Flutter web (`fetch` through `dart:js_interop`) | `package:spring_web_dart/browser.dart` |
-| `MockHttpTransport` | tests | `package:spring_web_dart/testing.dart` |
+| `MockHttpTransport` | tests | `package:spring_web_dart/testing.dart` (in an application: from `spring_boot_starter_test`) |
 | your own | e.g. on Dio or `package:http` | implement `HttpTransport` (`send`, `stream`, `close`) |
 
 `IoHttpTransport` follows redirects as far as `HttpClient` does (`GET` and
@@ -227,7 +227,7 @@ await session.close();          // CloseStatus.normal; or e.g.
 | `platformWebSocketTransport()` | picks the one below | `package:spring_web_dart/spring_web_dart.dart` |
 | `IoWebSocketTransport` | VM, Flutter Android/iOS/desktop (`dart:io` `WebSocket`) | `package:spring_web_dart/io.dart` |
 | `BrowserWebSocketTransport` | web, Flutter web (`WebSocket` through `dart:js_interop`) | `package:spring_web_dart/browser.dart` |
-| `MockWebSocketTransport` | tests | `package:spring_web_dart/testing.dart` |
+| `MockWebSocketTransport` | tests | `package:spring_web_dart/testing.dart` (in an application: from `spring_boot_starter_test`) |
 
 Browsers send no custom headers with the WebSocket handshake:
 `BrowserWebSocketTransport` fails when `headers` is not empty, so pass a
@@ -236,7 +236,9 @@ token as a query parameter or a protocol on the web.
 ## Testing: `MockHttpTransport`
 
 Prepared answers instead of a server, and a record of what was sent (like
-Spring's `MockRestServiceServer`):
+Spring's `MockRestServiceServer`). In a Spring Boot application with Feign
+or WebSocket, import them from `spring_boot_starter_test` (the test
+dependency it has anyway) instead:
 
 ```dart
 import 'package:spring_web_dart/testing.dart';

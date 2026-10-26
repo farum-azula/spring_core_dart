@@ -44,7 +44,7 @@ dev_dependencies:
   spring_boot_starter_flutter_test: ^0.4.0  # brings spring_boot_starter_test
   flutter_test:
     sdk: flutter
-  build_runner: ^2.4.0
+  build_runner: ^2.17.0
 ```
 
 One import gives everything: `springBootTest`, the annotations of

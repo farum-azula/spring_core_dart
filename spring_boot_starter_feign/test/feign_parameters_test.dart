@@ -1,8 +1,6 @@
-import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
-import 'package:spring_web_dart/testing.dart';
 import 'package:test/test.dart';
 
 import 'parameters.dart';

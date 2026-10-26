@@ -9,7 +9,6 @@ write the interface; the generator writes the implementation.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_feign: ^0.3.0
 
 dev_dependencies:
@@ -108,7 +107,7 @@ Not in Spring: OpenFeign cannot stream; Spring reads events as
 ## 6. Test without a server
 
 ```dart
-final server = MockHttpTransport();               // package:spring_web_dart/testing.dart
+final server = MockHttpTransport();               // from spring_boot_starter_test
 final app = springBootTest(springApplication,
     overrides: [BeanOverride<HttpTransport>(server)]);
 
@@ -128,7 +127,8 @@ test('reads stock changes', () async {
 });
 ```
 
-[`example.dart`](example.dart) runs the pieces that need no generated code
-(errors, retries, interceptors, an event stream). Everything else — configuration, retries,
+[`example.dart`](example.dart) is a Spring Boot application with the
+client above against a local server: a book, a 404 as `null`, a search and
+an event stream. Everything else — configuration, retries,
 fallbacks, logging: the package
 [README](https://pub.dev/packages/spring_boot_starter_feign).

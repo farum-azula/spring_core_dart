@@ -48,6 +48,9 @@ print('${response.statusCode} ${response.bodyText}');
 
 ## 3. Fake the server in tests
 
+(In a Spring Boot application, `spring_boot_starter_test` re-exports these
+mocks.)
+
 ```dart
 import 'package:spring_web_dart/testing.dart';
 

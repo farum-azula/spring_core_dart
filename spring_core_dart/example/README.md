@@ -437,8 +437,8 @@ class Audit extends BeanPostProcessor {
 - A runnable app that uses every feature (with tests):
   [example/ in the repository](https://github.com/farum-azula/spring_core_dart/tree/main/example)
   — `dart run bin/main.dart` prints what each feature does.
-- [`main.dart`](main.dart) next to this file: the same ideas written without
-  the generator (bean definitions by hand), runnable with
+- [`main.dart`](main.dart) next to this file: the same ideas as a small
+  Spring Boot application (beans, `@Value`, SpEL, events), runnable with
   `dart run example/main.dart`.
 - [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart): starts
   everything above from one annotation.

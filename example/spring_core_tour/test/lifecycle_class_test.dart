@@ -42,17 +42,26 @@ class LifecycleTest {
   static void initialize(ConfigurableApplicationContext context) =>
       events.add('initializer');
 
+  // The order of what ran. `dart test --total-shards` (CI) and `--name`
+  // run only some of the tests of a file, so the check is about the tests
+  // that ran, not a fixed list.
   @AfterAll()
   static void checkOrder() {
-    expect(firstContext!.isActive, isFalse);
-    expect(events, [
-      'beforeAll',
-      'initializer',
-      'beforeEach', 'first', 'afterEach', // then a new context
-      'initializer',
-      'beforeEach', 'second', 'afterEach',
-      'beforeEach', 'options', 'afterEach',
-    ]);
+    expect(events.take(2), ['beforeAll', 'initializer']);
+    const tests = {'first', 'second', 'options'};
+    for (var i = 0; i < events.length; i++) {
+      if (tests.contains(events[i])) {
+        expect(events[i - 1], 'beforeEach', reason: 'before ${events[i]}');
+        expect(events[i + 1], 'afterEach', reason: 'after ${events[i]}');
+      }
+    }
+    // @DirtiesContext on `first`: the next test starts a new context.
+    final first = events.indexOf('first');
+    if (first >= 0 && first + 2 < events.length) {
+      expect(events[first + 2], 'initializer');
+    }
+    // After the context is closed (it is, by the time @AfterAll runs).
+    expect(firstContext?.isActive ?? false, isFalse);
   }
 
   // A type and a name: replaces 'sandbox', registered as PaymentGateway.

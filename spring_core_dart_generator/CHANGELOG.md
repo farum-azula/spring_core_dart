@@ -1,3 +1,8 @@
+## Unreleased
+
+- **Test classes, the way Spring writes tests.** A new builder (`spring_test`, applied like the main one) reads every `test/**_test.dart` with `@SpringBootTest` classes and writes `test/spring/<path>.test.spring.dart` with `runSpringTests()`: `@Autowired`, `@Value` and `@CapturedOutput` fields injected before each test, `@TestBean` fields as bean overrides, `@Test` methods (`@DisplayName`, `@Disabled`, `@Tag`, `@TestOptions`), `@BeforeAll` / `@BeforeEach` / `@AfterEach` / `@AfterAll`, `@DirtiesContext`, `@Nested` groups, the class annotations `@ActiveProfiles`, `@TestPropertySource`, `@TestEnvironment`, `@DynamicPropertySource`, `@ContextInitializer`. Fields of type `List`, `Set`, `Map<String, T>`, `ObjectProvider` and nullable ones work as in constructor injection; annotated members of a superclass in the same file count. The application is the package's `@SpringBootApplication` entry point (or `@SpringBootTest(application: 'bin/x.dart')`). Mistakes fail the build with the file, line and column; while the test file does not parse, its generated file is kept. See `docs/testing.md`.
+- `@SpringBootApplication` under `example/` (a library's or starter's example on pub.dev) scans only `example/` and uses the package's own auto-configuration, as for any application depending on the package; elsewhere nothing changes.
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

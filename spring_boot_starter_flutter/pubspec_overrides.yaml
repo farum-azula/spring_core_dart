@@ -8,3 +8,7 @@ dependency_overrides:
     path: ../spring_boot_starter_logging
   spring_boot_starter_test:
     path: ../spring_boot_starter_test
+  spring_core_dart_generator:
+    path: ../spring_core_dart_generator
+  spring_web_dart:
+    path: ../spring_web_dart

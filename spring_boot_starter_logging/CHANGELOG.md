@@ -1,3 +1,8 @@
+## Unreleased
+
+- The example is a Spring Boot application; the logger comes from `@Log` (the README shows `@Log` first and the hand-made `SpringLog('name')` as the alternative for code outside a scan).
+- `spring_auto_configuration.dart` re-exports `spring_boot_dart`'s auto-configuration, so a test naming `springBootAutoConfiguration` (`ApplicationContextRunner`) needs no other dependency.
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

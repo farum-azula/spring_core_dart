@@ -7,9 +7,7 @@ import 'dart:convert';
 import 'package:spring_boot_feign_example/src/blog_runner.dart';
 import 'package:spring_boot_feign_example/src/live_runners.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
-    show ApplicationContextRunner, SpringLogLevel, captureLogs;
-import 'package:spring_web_dart/testing.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

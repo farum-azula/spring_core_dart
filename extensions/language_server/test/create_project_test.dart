@@ -48,8 +48,10 @@ void main() {
       expect(read('pubspec.yaml'), contains('name: my_shop'));
       expect(
         read('pubspec.yaml'),
-        contains('spring_boot_dart: ^$springBootVersion'),
+        contains('spring_boot_starter_logging: ^$springBootVersion'),
       );
+      // The starter brings spring_boot_dart and spring_core_dart.
+      expect(read('pubspec.yaml'), isNot(contains('spring_boot_dart:')));
       expect(read('bin/main.dart'), contains('@SpringBootApplication()'));
       expect(
         read('lib/src/greeting/greeting_service.dart'),

@@ -13,3 +13,5 @@ dependency_overrides:
     path: ../../spring_boot_starter_logging
   spring_boot_starter_test:
     path: ../../spring_boot_starter_test
+  spring_web_dart:
+    path: ../../spring_web_dart

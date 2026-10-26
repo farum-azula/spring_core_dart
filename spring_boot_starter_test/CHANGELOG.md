@@ -1,3 +1,10 @@
+## Unreleased
+
+- **Test classes:** the annotations `@SpringBootTest`, `@ActiveProfiles`, `@TestPropertySource`, `@TestEnvironment`, `@DynamicPropertySource`, `@ContextInitializer`, `@TestBean`, `@DirtiesContext`, `@Test`, `@TestOptions`, `@Disabled`, `@Tag`, `@DisplayName`, `@BeforeAll`, `@BeforeEach`, `@AfterEach`, `@AfterAll`, `@Nested` and `@CapturedOutput`, turned into tests by `spring_core_dart_generator` (`void main() => runSpringTests();`). See `docs/testing.md`.
+- `SpringBootTestContext.findBean`, `getBeans`, `value` and `optionalValue` (an optional bean, every bean of a type, a `@Value` expression).
+- `BeanOverride.named(instance, name:)`: replaces the bean with that name, keeping the types it is registered under but its own class and adding the fake's, so a fake of another class can replace it.
+- Re-exports `MockHttpTransport` and `MockWebSocketTransport` (`spring_web_dart`'s `testing.dart`, now a dependency), like `MockRestServiceServer` in `spring-test`: tests of Feign and WebSocket clients need no other dependency.
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

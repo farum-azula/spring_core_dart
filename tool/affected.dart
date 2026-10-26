@@ -22,6 +22,9 @@
 //   flutter          any of the three
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
+
 import 'test_all.dart' show workspacePackages;
 
 /// Flutter packages outside the pub workspace.
@@ -188,40 +191,103 @@ List<String>? _changedFiles(String base) {
   ];
 }
 
-/// For each package directory, the directories of the [packages] it
-/// lists under `dependencies:` or `dev_dependencies:`.
-Map<String, Set<String>> localDependencies(List<String> packages) {
+/// For each package directory, the directories of the [packages] its
+/// tests depend on: every package it lists under `dependencies:`, and a
+/// `dev_dependencies:` one when [testsUse] says the tests use it. Paths are
+/// relative to [root].
+Map<String, Set<String>> localDependencies(
+  List<String> packages, {
+  String root = '.',
+}) {
   final byName = <String, String>{};
-  final sections = <String, List<String>>{};
+  final pubspecs = <String, YamlMap>{};
   for (final package in packages) {
-    final file = File('$package/pubspec.yaml');
+    final file = File(p.join(root, package, 'pubspec.yaml'));
     if (!file.existsSync()) {
       continue;
     }
-    final lines = file.readAsLinesSync();
-    final name = lines
-        .firstWhere((line) => line.startsWith('name:'), orElse: () => '')
-        .replaceFirst('name:', '')
-        .trim();
-    byName[name] = package;
-    sections[package] = [
-      for (final (index, line) in lines.indexed)
-        if (line == 'dependencies:' || line == 'dev_dependencies:')
-          for (final entry
-              in lines
-                  .skip(index + 1)
-                  .takeWhile((l) => l.trim().isEmpty || l.startsWith(' ')))
-            if (RegExp(r'^  ([a-z_][a-z0-9_]*):').firstMatch(entry)
-                case final match?)
-              match.group(1)!,
-    ];
+    final pubspec = loadYaml(file.readAsStringSync());
+    if (pubspec is! YamlMap) {
+      continue;
+    }
+    pubspecs[package] = pubspec;
+    if (pubspec['name'] case final String name) {
+      byName[name] = package;
+    }
   }
+  Set<String> names(Object? section) =>
+      section is YamlMap ? {for (final key in section.keys) '$key'} : {};
   return {
-    for (final MapEntry(key: package, value: names) in sections.entries)
+    for (final MapEntry(key: package, value: pubspec) in pubspecs.entries)
       package: {
-        for (final name in names)
+        for (final name in {
+          ...names(pubspec['dependencies']),
+          for (final name in names(pubspec['dev_dependencies']))
+            if (testsUse(p.join(root, package), name)) name,
+        })
           if (byName[name] case final directory? when directory != package)
             directory,
       },
   };
+}
+
+/// Whether the tests of the package at [directory] use its dev dependency
+/// [name]: a Dart file under `test/` or `integration_test/` imports or
+/// exports one of its libraries, or [name] is the generator and writes
+/// code the tests run.
+///
+/// The generator does not when the package's `build.yaml` limits it to
+/// `example/` (`generate_for` of `spring_core_dart_generator:spring_core_dart`
+/// only under `example/`) and turns its test builder off
+/// (`spring_core_dart_generator:spring_test`, `enabled: false`): then it
+/// only writes the package's example, which no test runs.
+bool testsUse(String directory, String name) {
+  if (name == 'spring_core_dart_generator') {
+    return !_generatorOnlyForExample(directory);
+  }
+  final directive = RegExp(
+    '^\\s*(import|export)\\s+[\'"]package:${RegExp.escape(name)}/',
+    multiLine: true,
+  );
+  for (final folder in ['test', 'integration_test']) {
+    final tests = Directory(p.join(directory, folder));
+    if (!tests.existsSync()) {
+      continue;
+    }
+    for (final entity in tests.listSync(recursive: true)) {
+      if (entity is File &&
+          entity.path.endsWith('.dart') &&
+          directive.hasMatch(entity.readAsStringSync())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool _generatorOnlyForExample(String directory) {
+  final file = File(p.join(directory, 'build.yaml'));
+  if (!file.existsSync()) {
+    return false;
+  }
+  final builders = switch (loadYaml(file.readAsStringSync())) {
+    {'targets': {r'$default': {'builders': final YamlMap builders}}} =>
+      builders,
+    _ => null,
+  };
+  if (builders == null) {
+    return false;
+  }
+  final main = builders['spring_core_dart_generator:spring_core_dart'];
+  final tests = builders['spring_core_dart_generator:spring_test'];
+  final onlyExample = switch (main) {
+    {'generate_for': final YamlList globs} =>
+      globs.isNotEmpty && globs.every((g) => '$g'.startsWith('example/')),
+    _ => false,
+  };
+  final testsOff = switch (tests) {
+    {'enabled': false} => true,
+    _ => false,
+  };
+  return onlyExample && testsOff;
 }

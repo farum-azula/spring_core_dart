@@ -4,6 +4,7 @@
 // (BlogRunner first, see @Order).
 import 'dart:async';
 
+import 'package:spring_boot_feign_example/src/app.spring.dart';
 import 'package:spring_boot_feign_example/src/echo_socket.dart';
 import 'package:spring_boot_feign_example/src/models.dart';
 import 'package:spring_boot_feign_example/src/wikimedia_client.dart';
@@ -13,12 +14,11 @@ import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 /// connection is closed).
 @Component()
 @Order(2)
+@Log(topic: 'wikipedia')
 class WikipediaRunner implements ApplicationRunner {
   WikipediaRunner(this.streams);
 
   final WikimediaStreams streams;
-
-  static const _log = SpringLog('wikipedia');
 
   @override
   Future<void> run(ApplicationArguments args) async {
@@ -27,7 +27,7 @@ class WikipediaRunner implements ApplicationRunner {
       await for (final change in streams.recentChanges().timeout(
         const Duration(seconds: 30),
       )) {
-        _log.info(
+        log.info(
           '${change.wiki} ${change.type}: "${change.title}" by ${change.user}'
           '${change.bot ? ' (bot)' : ''}',
         );
@@ -36,9 +36,9 @@ class WikipediaRunner implements ApplicationRunner {
         }
       }
     } on TimeoutException {
-      _log.error('Wikimedia sent no event within 30 s');
+      log.error('Wikimedia sent no event within 30 s');
     } on FeignException catch (error) {
-      _log.error('Wikimedia answered with an error: $error');
+      log.error('Wikimedia answered with an error: $error');
     }
   }
 }
@@ -46,12 +46,11 @@ class WikipediaRunner implements ApplicationRunner {
 /// Sends two messages to the echo server and prints what comes back.
 @Component()
 @Order(3)
+@Log(topic: 'echo')
 class EchoRunner implements ApplicationRunner {
   EchoRunner(this.socket);
 
   final EchoSocket socket;
-
-  static const _log = SpringLog('echo');
 
   @override
   Future<void> run(ApplicationArguments args) async {
@@ -63,12 +62,12 @@ class EchoRunner implements ApplicationRunner {
       await socket.send(const ChatMessage(from: 'dart', text: 'hello'));
       await socket.send(const ChatMessage(from: 'dart', text: 'spring'));
       for (final reply in await replies.timeout(const Duration(seconds: 15))) {
-        _log.info('echo: ${reply.from} says "${reply.text}"');
+        log.info('echo: ${reply.from} says "${reply.text}"');
       }
     } on TimeoutException {
-      _log.error('the echo server did not answer within 15 s');
+      log.error('the echo server did not answer within 15 s');
     } on WebSocketException catch (error) {
-      _log.error('the echo server is not reachable: ${error.message}');
+      log.error('the echo server is not reachable: ${error.message}');
     }
   }
 }

@@ -12,7 +12,6 @@ switched on automatically.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_scheduling: ^0.3.0
 
 dev_dependencies:
@@ -96,9 +95,9 @@ final app = springBootTest(
 
 ## Runnable example
 
-[`example.dart`](example.dart) starts a context with a scheduled bean (the
-bean definition is written by hand there, so it runs without code
-generation), lets it run for three seconds and closes it:
+[`example.dart`](example.dart) is a Spring Boot application with a
+scheduled bean and a one-off task from the `TaskScheduler` bean; it runs
+for three seconds and closes the context:
 
 ```bash
 dart run example/example.dart

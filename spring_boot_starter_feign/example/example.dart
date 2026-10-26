@@ -1,12 +1,16 @@
-// In an application the starter is picked up automatically: add the
-// dependency, describe the API as below and run the generator (it writes
-// the implementation of CatalogClient). main() runs the parts that need no
-// generated code.
+// A declarative HTTP client in a Spring Boot application: describe the API,
+// the generator writes its implementation and picks the starter up
+// (example.spring.dart, from `dart run build_runner build`). JSON goes
+// through the ObjectMapper, error statuses become FeignExceptions.
+//
+//   dart run example/example.dart
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
 
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_web_dart/testing.dart';
+
+import 'example.spring.dart';
 
 @FeignClient('catalog', url: r'${catalog.url}')
 abstract interface class CatalogClient {
@@ -16,11 +20,8 @@ abstract interface class CatalogClient {
   @GetMapping('/books')
   Future<List<Book>> search(@RequestParam('q') String query);
 
-  @PostMapping('/books')
-  Future<ResponseEntity<Book>> create(@RequestBody() Book book);
-
-  /// Server-sent events (`text/event-stream`): a `Stream<StockChange>`
-  /// that reconnects by itself; `.events` adds id, event name and retry.
+  /// Server-sent events (`text/event-stream`): a stream that reconnects by
+  /// itself with `Last-Event-ID` and ends when the server answers 204.
   @GetMapping('/stock/events')
   EventStream<StockChange> stock();
 }
@@ -32,6 +33,7 @@ class Book {
   final String title;
 }
 
+@Introspected()
 class StockChange {
   const StockChange({required this.isbn, required this.copies});
   final String isbn;
@@ -43,6 +45,7 @@ class Shop {
   Shop(this.catalog);
   final CatalogClient catalog;
 
+  /// The title, or `null` when the catalog answers 404.
   Future<String?> title(String isbn) async {
     try {
       return (await catalog.find(isbn)).title;
@@ -50,72 +53,57 @@ class Shop {
       return null;
     }
   }
-
-  /// Prints stock changes as they arrive (cancel the subscription to
-  /// close the connection).
-  StreamSubscription<StockChange> watchStock() => catalog.stock().listen(
-    (change) => print('${change.isbn}: ${change.copies} left'),
-  );
 }
 
-Future<void> main() async {
-  // How an error response becomes an exception.
-  final notFound = FeignException.errorStatus(
-    'CatalogClient#find(String)',
-    HttpResponse(
-      404,
-      body: utf8.encode('no such book'),
-      request: HttpRequest(
-        method: HttpMethod.get,
-        url: Uri.parse('https://api.neon.books/books/1'),
-      ),
-    ),
+@SpringBootApplication()
+Future<void> main(List<String> args) async {
+  final server = await _catalogServer();
+  final context = springApplication.run(
+    args,
+    properties: {'catalog.url': 'http://127.0.0.1:${server.port}'},
   );
-  print(notFound.runtimeType); // FeignNotFound
+  final shop = context.getBean<Shop>();
+  final catalog = context.getBean<CatalogClient>();
 
-  // An interceptor adding a token to a request.
-  final template = RequestTemplate(
-    method: HttpMethod.get,
-    url: Uri.parse('https://api.neon.books/books/1'),
-    methodKey: 'CatalogClient#find(String)',
-    clientName: 'catalog',
-  );
-  await BearerTokenRequestInterceptor(() => 'secret').apply(template);
-  print(template.headers[HttpHeaders.authorizationHeader]); // Bearer secret
-
-  // The pauses of the default retryer.
-  const retryer = DefaultRetryer(maxAttempts: 3);
-  final error = RetryableException(-1, 'connection reset');
-  print([
-    retryer.nextDelay(1, error),
-    retryer.nextDelay(2, error),
-    retryer.nextDelay(3, error),
-  ]); // [0:00:00.100000, 0:00:00.150000, null]
-
-  // What an EventStream method does under the hood: read the event
-  // stream, reconnect with Last-Event-ID, stop on 204.
-  final server = MockHttpTransport()
-    ..when(HttpMethod.get, '/stock/events').respondEvents([
-      ServerSentEvent({'isbn': '978-0', 'copies': 4}, id: '1'),
-      ServerSentEvent({'isbn': '978-1', 'copies': 0}, id: '2'),
-    ])
-    ..when(HttpMethod.get, '/stock/events').respond(204);
-  final stock = EventStream<String>(
-    () => connectServerSentEvents(
-      (lastEventId) => server.stream(
-        HttpRequest(
-          method: HttpMethod.get,
-          url: Uri.parse('https://api.neon.books/stock/events'),
-          headers: HttpHeaders({'Last-Event-ID': ?lastEventId}),
-        ),
-      ),
-      reconnect: const SseReconnect(delay: Duration(milliseconds: 10)),
-    ),
-  );
-  await for (final data in stock) {
-    print(
-      data,
-    ); // {"isbn":"978-0","copies":4}, then {"isbn":"978-1","copies":0}
+  print(await shop.title('978-0')); // Dune
+  print(await shop.title('404')); // null
+  print([for (final book in await catalog.search('du')) book.isbn]); // [978-0]
+  await for (final change in catalog.stock()) {
+    print('${change.isbn}: ${change.copies} left'); // 978-0: 4, 978-1: 0
   }
-  print(server.requests.last.headers['Last-Event-ID']); // 2
+
+  await context.closeAsync();
+  await server.close(force: true);
+}
+
+/// A local server standing in for the real catalog.
+Future<io.HttpServer> _catalogServer() async {
+  final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
+  var streamed = false;
+  server.listen((request) async {
+    final response = request.response;
+    void json(Object body) => response
+      ..headers.contentType = io.ContentType.json
+      ..write(jsonEncode(body));
+    switch (request.uri.path) {
+      case '/books/978-0':
+        json({'isbn': '978-0', 'title': 'Dune'});
+      case '/books':
+        json([
+          {'isbn': '978-0', 'title': 'Dune'},
+        ]);
+      case '/stock/events' when !streamed:
+        streamed = true;
+        response
+          ..headers.contentType = io.ContentType('text', 'event-stream')
+          ..write('id: 1\ndata: {"isbn":"978-0","copies":4}\n\n')
+          ..write('id: 2\ndata: {"isbn":"978-1","copies":0}\n\n');
+      case '/stock/events':
+        response.statusCode = io.HttpStatus.noContent; // no more events
+      default:
+        response.statusCode = io.HttpStatus.notFound;
+    }
+    await response.close();
+  });
+  return server;
 }

@@ -3,9 +3,7 @@
 import 'package:spring_boot_feign_example/src/echo_socket.dart';
 import 'package:spring_boot_feign_example/src/models.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
-    show ApplicationContextRunner;
-import 'package:spring_web_dart/testing.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
 import 'support/app.dart';

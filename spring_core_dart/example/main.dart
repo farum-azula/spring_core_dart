@@ -1,18 +1,24 @@
-// A runnable tour of spring_core_dart without code generation.
+// A tour of spring_core_dart in a Spring Boot application: beans are
+// annotated classes, dependencies come through constructors, settings
+// through @Value, and events through @EventListener. The generator writes
+// the bean definitions (main.spring.dart, from `dart run build_runner
+// build`).
 //
-// Real applications annotate classes (`@Service()`, `@Autowired()`,
-// `@Value(...)`) and let `spring_core_dart_generator` write the bean
-// definitions; here they are written by hand so the example runs with a
-// plain `dart run example/main.dart`.
+//   dart run example/main.dart
+//   dart run example/main.dart '--greeting.punctuation=?'
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-import 'package:spring_core_dart/spring_core_dart.dart';
+import 'main.spring.dart';
 
+/// Several implementations can stand behind one interface.
 abstract interface class Greeter {
   String greet(String name);
 }
 
+@Component()
 class EnglishGreeter implements Greeter {
-  EnglishGreeter(this.punctuation);
+  /// A setting, with its default after the colon.
+  EnglishGreeter(@Value(r'${greeting.punctuation:!}') this.punctuation);
 
   final String punctuation;
 
@@ -20,12 +26,14 @@ class EnglishGreeter implements Greeter {
   String greet(String name) => 'Hello, $name$punctuation';
 }
 
+/// An application event: any object.
 class UserRegistered {
   const UserRegistered(this.name);
 
   final String name;
 }
 
+@Service()
 class Registration {
   Registration(this.greeter, this.events);
 
@@ -38,54 +46,28 @@ class Registration {
   }
 }
 
-/// What the generator would produce for the classes above.
-final exampleBeans = BeanModule('example', [
-  BeanDefinition<EnglishGreeter>(
-    name: 'englishGreeter',
-    types: const [EnglishGreeter, Greeter],
-    dependencies: const [Dependency.value(r'${greeting.punctuation:!}')],
-    create: (r) =>
-        EnglishGreeter(r.value<String>(r'${greeting.punctuation:!}')),
-  ),
-  BeanDefinition<Registration>(
-    name: 'registration',
-    dependencies: const [Dependency(Greeter)],
-    create: (r) => Registration(
-      r.dependency<Greeter>(),
-      r.dependency<ApplicationEventPublisher>(),
-    ),
-  ),
-]);
-
-Future<void> main() async {
-  // Configuration comes from properties (here: an in-memory application
-  // file; normally ./application.properties or ./config/).
-  final environment = StandardEnvironment();
-  await ConfigDataEnvironment(
-    environment,
-    resourceLoader: DefaultResourceLoader(
-      protocolResolvers: [
-        InMemoryProtocolResolver('memory:', {
-          'application.properties': 'greeting.punctuation=?\napp.users=3',
-        }),
-      ],
-    ),
-    defaultLocations: const ['memory:/'],
-  ).processAndApply();
-
-  final context = ApplicationContext.run(
-    [exampleBeans],
-    environment: environment,
-  )..addListener<UserRegistered>((e) => print('event: ${e.name} registered'));
-
-  print(context.getBean<Registration>().register('Ada'));
-  print('users: ${environment.getPropertyAs<int>('app.users')}');
-
-  // SpEL over a map root.
-  final total = SpelExpressionParser()
-      .parseExpression('price * quantity')
-      .getValue(StandardEvaluationContext({'price': 2, 'quantity': 21}));
-  print('total: $total');
-
-  context.close();
+@Component()
+class WelcomeMail {
+  @EventListener()
+  void onRegistered(UserRegistered event) =>
+      print('event: ${event.name} registered');
 }
+
+@Component()
+class Tour implements CommandLineRunner {
+  Tour(this.registration, @Value('#{2 * 21}') this.answer);
+
+  final Registration registration;
+
+  /// A SpEL expression, evaluated once.
+  final int answer;
+
+  @override
+  void run(List<String> args) {
+    print(registration.register('Ada'));
+    print('answer: $answer');
+  }
+}
+
+@SpringBootApplication()
+void main(List<String> args) => runApplication(args);

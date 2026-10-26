@@ -3,7 +3,6 @@
 // it (a subclass proxy mixing ChangeNotifier in).
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 

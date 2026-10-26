@@ -30,8 +30,8 @@ class Shop {
   @Value(r'${shop.name}')
   late String name;
 
-  @Value(r'${shop.currencies}')
-  late List<String> currencies;
+  @Value(r'${shop.currencies[0]}')
+  late String currency;
 
   @Value(r'${shop.servers[0].host}')
   late String host;
@@ -56,7 +56,6 @@ void main() {
     ];
     expect(keys, [
       'shop.name=NEON Books@1:2',
-      'shop.currencies=EUR,USD@2:2',
       'shop.currencies[0]=EUR@2:15',
       'shop.currencies[1]=USD@2:20',
       'shop.servers[0].host=a.example@4:6',
@@ -202,5 +201,142 @@ void main() {
     // The other package's messages are not this file's.
     expect(workspace.messages('greeting', from: appFile), isEmpty);
     expect(workspace.property('about.title'), isEmpty);
+  });
+  group('YAML as the framework reads it', () {
+    List<String> keys(String yaml) => [
+      for (final e in parseYamlProperties('application.yml', yaml))
+        '${e.key}=${e.value}',
+    ];
+
+    test('merge keys, bracket and number keys, empty values', () {
+      expect(
+        keys(
+          'defaults: &d\n  timeout: 5\nsvc:\n  <<: *d\n  name: x\n'
+          'map:\n  "[a.b]": 1\nints:\n  1: one\nempty: {}\nnone:\nlist: []\n',
+        ),
+        [
+          'defaults.timeout=5',
+          'svc.name=x',
+          'svc.timeout=5',
+          'map[a.b]=1',
+          'ints[1]=one',
+          'empty=',
+          'none=',
+          'list=',
+        ],
+      );
+    });
+
+    test('a list of scalars has only indexed keys, as at run time', () {
+      expect(keys('hosts: [a, b]\n'), ['hosts[0]=a', 'hosts[1]=b']);
+    });
+
+    test('a broken document leaves the others', () {
+      expect(keys('a: 1\n---\nb: [\n---\nc: 3\n'), ['a=1', 'c=3']);
+      final entries = parseYamlProperties('a.yml', 'a: 1\n---\nc: 3\n');
+      expect(entries.last.line, 2);
+    });
+  });
+
+  group('workspace: relaxed names, messages, test properties', () {
+    late Directory root;
+    late SpringWorkspace workspace;
+
+    String write(String path, String text) {
+      final file = File('${root.path}/$path')
+        ..createSync(recursive: true)
+        ..writeAsStringSync(text);
+      return file.path;
+    }
+
+    List<String> problems(String path) => [
+      for (final p in workspace.problems(path)) p.message,
+    ];
+
+    setUpAll(() {
+      root = Directory.systemTemp.createTempSync('lsp_review_');
+      write('pubspec.yaml', 'name: app\n');
+      write('lib/resources/messages.properties', 'known=Known\n');
+      write('config/application.yml', 'cfg:\n  root: x\n  my_key: y\n');
+      workspace = SpringWorkspace([root.path]);
+    });
+
+    tearDownAll(() => root.deleteSync(recursive: true));
+
+    test('config/application.yml is config; my-key finds my_key', () {
+      final path = write(
+        'lib/a.dart',
+        "class A {\n  @Value(r'\${cfg.root}')\n  late String root;\n"
+            "  @Value(r'\${cfg.my-key}')\n  late String key;\n}\n",
+      );
+      workspace.refresh(force: true);
+      expect(problems(path), isEmpty);
+    });
+
+    test('Intl.message, named first arguments and added codes', () {
+      final path = write(
+        'lib/b.dart',
+        'void f(BuildContext context, StaticMessageSource source) {\n'
+            "  Intl.message('Hello world', name: 'hello');\n"
+            "  context.message(title: 'Saved');\n"
+            "  source.addMessage('added.code', 'en', 'Added');\n"
+            "  context.message('added.code');\n"
+            "  context.message('known');\n"
+            "  context.message('really.missing');\n"
+            '}\n',
+      );
+      workspace.refresh(force: true);
+      expect(problems(path), [
+        "No message 'really.missing' in the message bundles "
+            '(messages*.properties)',
+      ]);
+    });
+
+    test('use-code-as-default-message turns the warning off', () {
+      write('other/pubspec.yaml', 'name: other\n');
+      write('other/lib/resources/messages.properties', 'a=A\n');
+      write(
+        'other/lib/resources/application.properties',
+        'spring.messages.use-code-as-default-message=true\n',
+      );
+      final path = write(
+        'other/lib/c.dart',
+        "void f(c) => c.message('nope');\n",
+      );
+      workspace.refresh(force: true);
+      expect(problems(path), isEmpty);
+    });
+
+    test('withPropertyValues as at run time; environment names exactly', () {
+      final path = write(
+        'test/d_test.dart',
+        'void main() {\n'
+            '  ApplicationContextRunner()\n'
+            "      .withPropertyValues(['shop.url: http://x', 'shop.name = Books', 'flag'])\n"
+            "      .withSystemEnvironment({'SHOPPING': '1', 'APP_MAX_SIZE': '2'});\n"
+            '}\n'
+            'class D {\n'
+            "  @Value(r'\${shop.url}') late String url;\n"
+            "  @Value(r'\${shop.name}') late String name;\n"
+            "  @Value(r'\${flag}') late String flag;\n"
+            "  @Value(r'\${app.max-size}') late String size;\n"
+            "  @Value(r'\${shop.ping}') late String ping;\n"
+            '}\n',
+      );
+      workspace.refresh(force: true);
+      expect(problems(path), [
+        "Cannot resolve property 'shop.ping' in any properties file",
+      ]);
+    });
+
+    test('integration_test files set properties too', () {
+      final path = write(
+        'integration_test/app_test.dart',
+        "@SpringBootTest(properties: {'it.key': 'x'})\n"
+            "class AppTest {\n  @Value(r'\${it.key}') late String key;\n}\n",
+      );
+      workspace.refresh(force: true);
+      expect(problems(path), isEmpty);
+    });
   });
 }

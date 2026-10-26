@@ -5,7 +5,7 @@
 //
 //   dart run build_runner build   # after changing beans or clients
 //   dart run bin/main.dart
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 
 import 'main.spring.dart';
 

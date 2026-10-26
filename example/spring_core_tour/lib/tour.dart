@@ -3,7 +3,6 @@
 /// actually happened.
 library;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';

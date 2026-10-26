@@ -1,3 +1,8 @@
+## Unreleased
+
+- The example is a Spring Boot application written by the generator: a `@ChangeNotifierComponent` counter and Spring widgets.
+- `spring_auto_configuration.dart` re-exports the logging starter's (and through it `spring_boot_dart`'s) auto-configuration, so a test naming `springBootAutoConfiguration` (`ApplicationContextRunner`) needs no other dependency.
+
 ## 0.3.0
 
 - Reading is free: a `SpringStatelessWidget` or `SpringState` listens to a `@ChangeNotifierComponent` or `@NotifyListeners` bean of its record only when its `build` read the bean's state (a getter, a field, through the proxy); calling its methods (`onPressed: counter.increment`) no longer rebuilds the widget. A read outside the widget's build (an item builder, a `Builder` below it, a callback) keeps it listening; a `ChangeNotifier` bean without either annotation is listened to always, as before.

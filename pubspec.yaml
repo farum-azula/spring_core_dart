@@ -23,6 +23,10 @@ workspace:
 dev_dependencies:
   lints: ^6.0.0
   melos: ^8.9.0
+  # tool/ and its tests (tool/test/).
+  path: ^1.9.0
+  test: ^1.33.0
+  yaml: ^3.1.0
 
 melos:
   scripts:

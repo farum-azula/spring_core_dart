@@ -120,19 +120,15 @@ bool _continues(String line) {
 }
 
 /// Parses a YAML config file ([content], one or more `---` documents) into
-/// flat entries like the config loader's: `shop.payment.provider`,
-/// `shop.servers[0].host`; a list of scalars also gives the whole list
-/// under its key (`shop.currencies` = `EUR,USD`). Each entry points at its
-/// key in the file. A file that does not parse gives what was read before
-/// the error (nothing for a broken first document).
+/// flat entries exactly as the framework's `YamlPropertySourceLoader` does:
+/// `shop.payment.provider`, `shop.servers[0].host`, merge keys (`<<: *d`)
+/// applied, non-string keys as `[1]`, an empty map, list or `null` as `''`.
+/// A list of scalars gives only its indexed keys (`${shop.currencies}`
+/// does not resolve at run time either, as in Spring). Each entry points
+/// at its key in the file. Each document is parsed on its own, so a
+/// broken one leaves the others' keys.
 List<PropertyEntry> parseYamlProperties(String path, String content) {
   final entries = <PropertyEntry>[];
-  final List<YamlDocument> documents;
-  try {
-    documents = loadYamlDocuments(content);
-  } on YamlException {
-    return entries;
-  }
 
   void add(String key, YamlNode at, String value) {
     final span = at.span;
@@ -151,35 +147,101 @@ List<PropertyEntry> parseYamlProperties(String path, String content) {
   }
 
   // [at]: the node the entry points at (its key, or the list element).
-  void walk(YamlNode node, String prefix, YamlNode at) {
+  void walk(YamlNode node, String path, YamlNode at) {
     switch (node) {
-      case YamlMap(:final nodes):
-        for (final MapEntry(key: keyNode, value: child) in nodes.entries) {
-          final key = keyNode is YamlScalar ? '${keyNode.value}' : '$keyNode';
-          walk(
-            child,
-            prefix.isEmpty ? key : '$prefix.$key',
-            keyNode is YamlNode ? keyNode : child,
-          );
+      case YamlMap():
+        final members = _members(node);
+        if (members.isEmpty) {
+          if (path.isNotEmpty) {
+            add(path, at, '');
+          }
+          return;
+        }
+        for (final (key, keyNode, child) in members) {
+          final name = path.isEmpty
+              ? key
+              : key.startsWith('[')
+              ? '$path$key'
+              : '$path.$key';
+          walk(child, name, keyNode);
         }
       case YamlList(:final nodes):
-        if (nodes.every((n) => n is YamlScalar)) {
-          add(prefix, at, nodes.map((n) => '${n.value}').join(','));
+        if (nodes.isEmpty) {
+          add(path, at, '');
         }
         for (var i = 0; i < nodes.length; i++) {
           final child = nodes[i];
-          walk(child, '$prefix[$i]', child is YamlScalar ? child : at);
+          walk(child, '$path[$i]', child is YamlScalar ? child : at);
         }
       case YamlScalar(:final value):
-        if (prefix.isNotEmpty) {
-          add(prefix, at, value == null ? '' : '$value');
+        if (path.isNotEmpty) {
+          add(path, at, value == null ? '' : '$value');
         }
     }
   }
 
-  for (final document in documents) {
-    final root = document.contents;
+  for (final (start, text) in _documents(content)) {
+    final YamlNode root;
+    try {
+      // Blank lines in front keep the spans' line numbers those of the file.
+      root = loadYamlNode('${'\n' * start}$text');
+    } on YamlException {
+      continue;
+    }
     walk(root, '', root);
   }
   return entries;
+}
+
+// The documents of a YAML stream with the line each starts on (split at
+// `---` and `...` lines, as a loader would).
+List<(int, String)> _documents(String content) {
+  final lines = content.split('\n');
+  final result = <(int, String)>[];
+  var start = 0;
+  for (var i = 0; i <= lines.length; i++) {
+    final end =
+        i == lines.length ||
+        RegExp(r'^(---|\.\.\.)(\s.*)?\r?$').hasMatch(lines[i]);
+    if (end) {
+      if (i > start) {
+        result.add((start, lines.sublist(start, i).join('\n')));
+      }
+      start = i + 1;
+    }
+  }
+  return result;
+}
+
+// The members of a mapping as the loader sees them: merge keys (`<<`)
+// applied — the mapping's own keys win, then earlier merged mappings —
+// and non-string keys written as `[key]`.
+List<(String, YamlNode, YamlNode)> _members(YamlMap map) {
+  final own = <String, (YamlNode, YamlNode)>{};
+  final merged = <String, (YamlNode, YamlNode)>{};
+  for (final MapEntry(:key, :value) in map.nodes.entries) {
+    final keyNode = key is YamlNode ? key : value;
+    final keyValue = key is YamlNode ? key.value : key;
+    if (keyValue == '<<' &&
+        keyNode is YamlScalar &&
+        keyNode.style == ScalarStyle.PLAIN) {
+      final sources = value is YamlList ? value.nodes : [value];
+      for (final source in sources) {
+        if (source is YamlMap) {
+          for (final (name, node, child) in _members(source)) {
+            merged.putIfAbsent(name, () => (node, child));
+          }
+        }
+      }
+      continue;
+    }
+    own[keyValue is String ? keyValue : '[$keyValue]'] = (keyNode, value);
+  }
+  for (final entry in merged.entries) {
+    own.putIfAbsent(entry.key, () => entry.value);
+  }
+  return [
+    for (final MapEntry(key: name, value: (node, child)) in own.entries)
+      (name, node, child),
+  ];
 }

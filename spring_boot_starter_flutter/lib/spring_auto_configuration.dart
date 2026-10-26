@@ -11,6 +11,9 @@ import 'package:flutter/material.dart' show ThemeData;
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
+// The auto-configurations this starter builds on (logging, and through it spring_boot_dart's), so a test of an application that lists only this starter can name them.
+export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
+
 const _source =
     'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 

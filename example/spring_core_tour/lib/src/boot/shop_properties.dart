@@ -1,9 +1,8 @@
 // Spring Boot: @ConfigurationProperties and a CommandLineRunner.
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_core_dart_example/src/app.spring.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
 import 'package:spring_core_dart_example/src/payments/payments.dart';
-
-const _log = SpringLog('neon.shop');
 
 /// Bound from `shop.*` (config files, `--shop.opening-hours=...`, or the
 /// environment variable `SHOP_OPENING_HOURS`); validated because of
@@ -26,6 +25,7 @@ class ShopProperties {
 /// runners of both kinds are ordered together).
 @Component()
 @Order(1)
+@Log(topic: 'neon.shop')
 class OpeningAnnouncement implements CommandLineRunner {
   OpeningAnnouncement(this.properties, this.catalog, this.checkout);
 
@@ -35,7 +35,7 @@ class OpeningAnnouncement implements CommandLineRunner {
 
   @override
   void run(List<String> args) {
-    _log.info(
+    log.info(
       '${properties.name} is open ${properties.openingHours}, '
       'delivery in ${properties.deliveryTime.inDays} days, '
       'basket up to ${properties.maxBasketSize} books, '

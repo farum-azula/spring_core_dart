@@ -69,9 +69,17 @@ String _squash(String source) => source
     .replaceAllMapped(RegExp(r'([(\[{])\s+'), (m) => m[1]!)
     .replaceAllMapped(RegExp(r'\s+([)\]}])'), (m) => m[1]!);
 
+// The generated code's own names without their `$` (`$instance` →
+// `instance`), so the expectations read like the code a user would write;
+// 'generated names cannot clash' checks the real names.
+String _plainNames(String source) => source
+    .replaceAll(r'$instance', 'instance')
+    .replaceAll(r'$app', 'app')
+    .replaceAll(r'$logs', 'logs');
+
 /// [source] (squashed) contains [expected] (squashed the same way).
 Matcher _has(String expected) => predicate<String>(
-  (source) => _squash(source).contains(_squash(expected)),
+  (source) => _squash(_plainNames(source)).contains(_squash(expected)),
   'contains $expected',
 );
 
@@ -108,6 +116,9 @@ class ShopTest {}
     expect(source, _has("import '../shop_test.dart';"));
     expect(source, _has("import '../../bin/app.spring.dart' as _app0;"));
     expect(source, isNot(contains('shop.test.spring.dart')));
+    // Copied imports may be unused here: a warning type=lint does not
+    // cover (an app analyzed with --fatal-warnings would fail).
+    expect(source, contains('unused_import'));
     expect(
       source,
       _has(
@@ -588,5 +599,192 @@ class Inner {
         "'spring/shop.test.spring.dart';",
       ),
     );
+  });
+
+  group('review fixes', () {
+    test('generated names cannot clash with the user\'s', () async {
+      final source = await _generated('''
+@SpringBootTest()
+class ShopTest {
+  @TestBean(type: Clock)
+  final FixedClock clock = FixedClock();
+}
+''');
+      expect(source, contains(r'final $instance = ShopTest();'));
+      expect(source, contains(r'final $app = _sbt.springBootTest('));
+    });
+
+    test('@CapturedOutput in a @Nested class', () async {
+      final source = await _generated('''
+@SpringBootTest()
+class OuterTest {
+  @Nested()
+  final inner = Inner();
+}
+
+class Inner {
+  @CapturedOutput()
+  late CapturedLogs logs;
+
+  @Test()
+  void t() {}
+}
+''');
+      expect(source, contains(r'final $logs = _sbt.captureLogs();'));
+      expect(source, contains(r'$instance.inner.logs = $logs;'));
+    });
+
+    test('static members in member annotations are qualified', () async {
+      final source = await _generated('''
+@SpringBootTest()
+class ShopTest {
+  static const slow = 'slow';
+  static const name = 'sandbox';
+
+  @TestBean(name: name)
+  final gateway = FakeGateway();
+
+  @Test()
+  @Tag(slow)
+  void works() {}
+}
+''');
+      expect(source, contains('tags: [ShopTest.slow]'));
+      expect(source, contains('name: ShopTest.name'));
+    });
+
+    test('a private name in an annotation fails the build', () async {
+      expect(
+        await _error('''
+const _env = {'A': 'b'};
+
+@SpringBootTest()
+@TestEnvironment(_env)
+class ShopTest {}
+'''),
+        contains("'_env' is private to the test file"),
+      );
+    });
+
+    test('Set, Map and ObjectProvider fields', () async {
+      final source = await _generated('''
+@SpringBootTest()
+class ShopTest {
+  @Autowired()
+  late Set<Gateway> set;
+
+  @Autowired()
+  late Map<String, Gateway> map;
+
+  @Autowired()
+  late ObjectProvider<Gateway> provider;
+}
+''');
+      expect(source, contains(r'$app.getBeans<Gateway>().toSet()'));
+      expect(source, contains(r'$app.context.getBeansOfType<Gateway>()'));
+      expect(source, contains(r'$app.context.getBeanProvider()'));
+    });
+
+    test('members of a superclass in the file are inherited', () async {
+      final source = await _generated('''
+class BaseTest {
+  @Autowired()
+  late Checkout checkout;
+
+  @BeforeAll()
+  static void start() {}
+
+  @Test()
+  void inherited() {}
+}
+
+@SpringBootTest()
+class ShopTest extends BaseTest {
+  @Test()
+  void own() {}
+}
+''');
+      expect(source, contains(r'$instance.checkout = $app.getBean();'));
+      expect(source, contains('_sbt.setUpAll(() => BaseTest.start());'));
+      expect(source, contains(r'() => $instance.inherited()'));
+      expect(source.indexOf("'inherited'"), lessThan(source.indexOf("'own'")));
+    });
+
+    test('a class the generated code cannot create fails the build', () async {
+      expect(
+        await _error('@SpringBootTest()\nclass _ShopTest {}\n'),
+        contains("'_ShopTest' is private"),
+      );
+      expect(
+        await _error(
+          '@SpringBootTest()\nclass ShopTest {\n  ShopTest.create();\n}\n',
+        ),
+        contains("'ShopTest' has no unnamed constructor"),
+      );
+    });
+
+    test('conditional imports are re-pointed too', () async {
+      final source = await _generated(
+        "import 'helper.dart' if (dart.library.io) 'helper_io.dart';\n"
+        '@SpringBootTest()\nclass ShopTest {}\n',
+      );
+      expect(
+        source,
+        contains(
+          "import '../helper.dart' if (dart.library.io) '../helper_io.dart';",
+        ),
+      );
+    });
+
+    test('test names split acronyms', () async {
+      final source = await _generated('''
+@SpringBootTest()
+class ShopTest {
+  @Test()
+  void addsABook() {}
+
+  @Test()
+  void readsURLService() {}
+}
+''');
+      expect(source, contains("'adds a book'"));
+      expect(source, contains("'reads url service'"));
+    });
+
+    test('the entry point is found as syntax, not by text', () async {
+      final source = await _generated(
+        '@SpringBootTest()\nclass ShopTest {}\n',
+        files: {
+          'bin/app.dart':
+              "import 'package:spring_boot_dart/spring_boot_dart.dart';\n"
+              "import 'app.spring.dart';\n"
+              "@pragma('vm:entry-point') @SpringBootApplication()\n"
+              'void main(List<String> args) => runApplication(args);\n',
+          'lib/template.dart': "const template = '''\n@SpringBootApplication()\nvoid main() {}\n''';\n",
+        },
+      );
+      expect(source, contains("import '../../bin/app.spring.dart' as _app0;"));
+    });
+
+    test('annotations on a @Nested field apply to its group', () async {
+      final source = await _generated('''
+@SpringBootTest()
+class ShopTest {
+  @Nested()
+  @Disabled('off')
+  @Tag('slow')
+  @DirtiesContext()
+  final inner = Inner();
+}
+
+class Inner {
+  @Test()
+  void t() {}
+}
+''');
+      expect(source, contains(r'_sbt.setUp($app.markDirty);'));
+      expect(source, contains("skip: 'off'"));
+      expect(source, contains("tags: ['slow']"));
+    });
   });
 }

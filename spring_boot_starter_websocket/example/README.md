@@ -1,12 +1,11 @@
 # spring_boot_starter_websocket: examples
 
-[`example.dart`](example.dart) declares a `@WebSocketClient` interface and
-a service using it, and talks to a local echo server through the
-transport the starter uses.
+[`example.dart`](example.dart) is a Spring Boot application with a
+`@WebSocketClient` interface and a service using it, talking to a local
+echo server.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_websocket: ^0.3.0
 
 dev_dependencies:

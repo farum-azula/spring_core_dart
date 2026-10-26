@@ -10,10 +10,14 @@
 /// - tasks stop when the context closes (and so after a hot-reload
 ///   restart).
 ///
-/// Re-exports `spring_boot_dart`.
+/// Re-exports `spring_boot_starter_logging` and through it `spring_boot_dart`
+/// and `spring_core_dart`: the starter is the only dependency an
+/// application lists.
 library;
 
-export 'package:spring_boot_dart/spring_boot_dart.dart';
+// Logging and spring_boot_dart (re-exported by the logging starter), so
+// this starter is the only dependency an application needs.
+export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_boot_starter_scheduling/src/cron_expression.dart';
 export 'package:spring_boot_starter_scheduling/src/scheduled.dart';
 export 'package:spring_boot_starter_scheduling/src/scheduled_annotation_bean_post_processor.dart';

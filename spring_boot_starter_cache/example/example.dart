@@ -1,11 +1,13 @@
-// In an application the starter is picked up automatically: add the
-// dependency, annotate bean methods and run the generator (it writes the
-// proxies caching runs on). The service below is what you would write;
-// main() uses the cache manager directly, so it runs without code
-// generation.
+// Caching in a Spring Boot application: annotate bean methods, the
+// generator writes the proxies caching runs on and picks the starter up
+// (example.spring.dart, from `dart run build_runner build`).
+//
+//   dart run example/example.dart
 import 'dart:convert';
 
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
+
+import 'example.spring.dart';
 
 class Book {
   const Book(this.isbn, this.title);
@@ -13,9 +15,18 @@ class Book {
   final String title;
 }
 
-abstract interface class CatalogApi {
-  Future<Book> load(String isbn);
-  Future<void> remove(String isbn);
+/// The slow source behind the cache (a remote API in a real app); counts
+/// its loads.
+@Component()
+class CatalogApi {
+  var loads = 0;
+
+  Future<Book> load(String isbn) async {
+    loads++;
+    return Book(isbn, 'Dune');
+  }
+
+  Future<void> remove(String isbn) async {}
 }
 
 @Service()
@@ -28,7 +39,7 @@ class Books {
   @Cacheable.of()
   Future<Book> find(String isbn) => api.load(isbn);
 
-  /// Concurrent calls for the same ISBN share one request.
+  /// Concurrent calls for the same ISBN share one computation.
   @Cacheable('prices', sync: true)
   Future<double> price(String isbn) async => 12.5;
 
@@ -67,6 +78,9 @@ final class MapStore implements KeyValueStore {
   @override
   void deleteAll({required String prefix}) =>
       _data.removeWhere((key, _) => key.startsWith(prefix));
+
+  /// The stored keys.
+  Iterable<String> get keys => _data.keys;
 }
 
 /// A cache kept in a [KeyValueStore] as JSON. `CacheDefaults` adds
@@ -97,7 +111,7 @@ final class StoreCache with CacheDefaults implements Cache {
   void clear() => store.deleteAll(prefix: '$name:');
 }
 
-/// Registered like this, it replaces the starter's in-memory manager:
+/// A `CacheManager` bean replaces the starter's in-memory manager.
 @Configuration()
 class CacheSetup {
   @Bean()
@@ -105,40 +119,30 @@ class CacheSetup {
 
   @Bean()
   CacheManager cacheManager(KeyValueStore store) => SimpleCacheManager([
-    StoreCache('books', store), // in the store
-    InMemoryCache('prices'), // in memory
+    InMemoryCache('books'), // in memory
+    StoreCache('prices', store), // in the store, as JSON
   ]);
 }
 
-void main() {
-  // spring.cache.simple.time-to-live=10m, spring.cache.simple.max-size=100
-  final caches = InMemoryCacheManager(
-    defaultSpec: const CacheSpec(
-      timeToLive: Duration(minutes: 10),
-      maxSize: 100,
-    ),
-  );
-  final books = caches.getCache('books')!
-    ..put('978-0', const Book('978-0', 'Dart in Spring'));
+@SpringBootApplication()
+Future<void> main(List<String> args) async {
+  final context = springApplication.run(args);
+  final books = context.getBean<Books>();
+  final api = context.getBean<CatalogApi>();
 
-  final hit = books.get('978-0');
-  print('cached: ${(hit?.value as Book?)?.title}'); // cached: Dart in Spring
+  await books.find('978-0');
+  await books.find('978-0');
+  print('loads: ${api.loads}'); // loads: 1 (the second call was cached)
 
-  // The default key of a call with several arguments.
-  print(
-    SimpleKeyGenerator.generateKey(['978-0', 'en']),
-  ); // SimpleKey [978-0,en]
+  await books.remove('978-0');
+  await books.find('978-0');
+  print('loads after evict: ${api.loads}'); // loads after evict: 2
 
-  books.evict('978-0');
-  print('after evict: ${books.get('978-0')}'); // after evict: null
+  // The prices cache is the StoreCache of CacheSetup: entries are JSON in
+  // the store, so they would survive a restart with a persistent store.
+  print(await books.price('978-0')); // 12.5
+  final store = context.getBean<KeyValueStore>() as MapStore;
+  print(store.keys); // (prices:978-0)
 
-  // Your own cache: entries are in the store, so a new manager over the
-  // same store (e.g. after a restart) still has them.
-  final store = MapStore();
-  SimpleCacheManager([StoreCache('titles', store)])
-      .getCache('titles')!
-      .put('978-0', 'Dart in Spring');
-  final again = SimpleCacheManager([StoreCache('titles', store)]);
-  print('after restart: ${again.getCache('titles')!.get('978-0')?.value}');
-  // after restart: Dart in Spring
+  context.close();
 }

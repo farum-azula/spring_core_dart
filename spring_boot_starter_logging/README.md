@@ -11,14 +11,18 @@ the auto-configuration and a `LoggingSystem` is installed behind the
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_logging: ^0.3.0
 ```
 
 ```dart
-const log = SpringLog('neon.checkout');
+import 'package:neon/app.spring.dart'; // the generated file
 
-log.info('paid 12.5', fields: {'order': 1});
+@Service()
+@Log(topic: 'neon.checkout') // generates the `log` getter, like Lombok's @Slf4j
+class Checkout {
+  void pay(int order, double amount) =>
+      log.info('paid $amount', fields: {'order': order});
+}
 ```
 
 Spring Boot's console line (with `spring.application.name=shop`):

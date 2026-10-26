@@ -32,3 +32,28 @@ Plan: split the work like source_gen's `SharedPartBuilder` +
 
 Goal: editing one class regenerates only what depends on it; build_runner's
 own invalidation then does the rest.
+
+## Jakarta annotations: keep or remove (open)
+
+The JSR-330 / JSR-250 names Spring accepts besides its own are here only
+for Java EE compatibility, which a Dart application has no use for, and
+each duplicates a Spring one:
+
+| Jakarta | Spring's own |
+|---|---|
+| `@Inject` | `@Autowired` |
+| `@Named` (class / parameter) | `@Component('name')` / `@Qualifier('name')` |
+| `Provider<T>` | `ObjectProvider<T>` |
+| `@Resource` (a bean by name, not a file) | `@Autowired` + `@Qualifier` |
+| `@Priority` | `@Order` |
+
+`@Inject` and `@Named` are in the main library, the other three in
+`package:spring_core_dart/jakarta.dart` (their names clash with `Resource`
+and with other packages' `Provider`). Two ways for a reader to do one
+thing, and `@Resource` next to the file type `Resource` confuses.
+
+**Under question:** remove them all (annotations, `jakarta.dart`, their
+handling in the bean factory and the generator, tests, docs, language
+server) as a breaking change before 1.0. Stays for now. Not affected:
+`@PostConstruct` / `@PreDestroy` and the validation constraints
+(`@NotBlank`, `@Min`, ...), which Spring applications use every day.

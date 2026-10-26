@@ -151,7 +151,9 @@ A starter is a package that brings ready-made beans. Add it to
 
 ```yaml
 dependencies:
-  spring_boot_starter_logging: ^0.3.0   # console, log files, in-app log buffer
+  # in place of spring_boot_dart: it brings it, with console, log files and
+  # an in-app log buffer
+  spring_boot_starter_logging: ^0.3.0
 dev_dependencies:
   spring_boot_starter_test: ^0.3.0      # testing the whole app
 ```
@@ -222,8 +224,10 @@ context = reloadApplication(context, runners: false);
 
 ## Try it
 
-[`example.dart`](example.dart) next to this file runs without the generator
-(bean definitions written by hand):
+[`example.dart`](example.dart) next to this file is a whole application:
+`@ConfigurationProperties`, a `@Service`, a `CommandLineRunner` and
+`@SpringBootApplication` on `main` (the generator writes
+`example.spring.dart`):
 `dart run example/example.dart --greeting.name=Ada` → `Hello, Ada!`
 
 A full Spring Boot app with tests:

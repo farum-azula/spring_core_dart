@@ -81,7 +81,7 @@ final class ActiveProfiles {
 ///
 /// ```dart
 /// @TestPropertySource(
-///   locations: ['test/resources/big-shop.properties'],
+///   locations: ['classpath:big-shop.properties'], // test/resources/
 ///   properties: {'shop.max-basket-size': 100},
 /// )
 /// ```

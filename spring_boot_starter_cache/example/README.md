@@ -12,7 +12,6 @@ is found and switched on automatically.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_cache: ^0.3.0
 
 dev_dependencies:
@@ -135,6 +134,8 @@ storage (SQLite, `shared_preferences`) keep entries in memory and write
 them back in the background — see "Your own cache or manager" in the
 README.
 
-[`example.dart`](example.dart) shows the service and runs the cache API
-without code generation. All options: the package
+[`example.dart`](example.dart) is a Spring Boot application with the
+`@Cacheable` service above and its own `CacheManager` (the generator writes
+`example.spring.dart`): `dart run example/example.dart`. All options: the
+package
 [README](https://pub.dev/packages/spring_boot_starter_cache).

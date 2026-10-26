@@ -1,3 +1,7 @@
+## Unreleased
+
+- The example is a Spring Boot application written by the generator (`@ConfigurationProperties`, a `@Service`, a `CommandLineRunner`).
+
 ## 0.3.0
 
 - feat(spring_boot_starter_flutter): themes from properties, free reads in Spring widgets

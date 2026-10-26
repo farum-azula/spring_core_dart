@@ -69,11 +69,11 @@ version: 0.1.0
 environment:
   sdk: ^3.13.0
 
+# The base starter: spring_boot_dart, spring_core_dart and logging. Add
+# others (spring_boot_starter_feign, ..._cache, ...) the same way; each
+# brings what it needs.
 dependencies:
-  spring_boot_dart: ^__VERSION__
-  # Discovered by the generator: installs the logging system (no code).
   spring_boot_starter_logging: ^__VERSION__
-  spring_core_dart: ^__VERSION__
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -123,7 +123,7 @@ During development `dart run build_runner watch` regenerates on every save.
 | `test/resources/` | test-only config (`application-test.properties`) and data |
 ''',
   'bin/main.dart': r'''
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 import 'main.spring.dart'; // generated: dart run build_runner build
 
@@ -135,7 +135,7 @@ import 'main.spring.dart'; // generated: dart run build_runner build
 void main(List<String> args) => runApplication(args);
 ''',
   'lib/src/greeting/app_properties.dart': r'''
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 /// The `app.*` keys of application.properties, bound at startup
 /// (`app.greeting`, `--app.greeting=Hi`, or the `APP_GREETING` variable).
@@ -148,7 +148,7 @@ class AppProperties {
 ''',
   'lib/src/greeting/greeting_service.dart': r'''
 import 'package:__NAME__/src/greeting/app_properties.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 /// A bean: created by the container, injected wherever it is needed.
 @Service()
@@ -165,7 +165,7 @@ class GreetingService {
 ''',
   'lib/src/greeting/greeting_runner.dart': r'''
 import 'package:__NAME__/src/greeting/greeting_service.dart';
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 /// Runs once the application has started (Spring's ApplicationRunner).
 @Component()

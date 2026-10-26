@@ -1,19 +1,24 @@
-// In an application the starter is picked up automatically: add the
-// dependency, describe the socket as below and run the generator (it
-// writes the implementation of ChatSocket). main() talks to a WebSocket
-// server through the transport the starter uses, without generated code.
+// A declarative WebSocket client in a Spring Boot application: describe the
+// socket, the generator writes its implementation and picks the starter up
+// (example.spring.dart, from `dart run build_runner build`). Messages are
+// JSON through the ObjectMapper; the connection opens on first use and
+// closes with the application.
+//
+//   dart run example/example.dart
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
-import 'package:spring_web_dart/io.dart';
+
+import 'example.spring.dart';
 
 @WebSocketClient('chat', url: r'${chat.url}')
 abstract interface class ChatSocket {
+  /// Incoming messages, JSON → ChatMessage.
   @OnMessage()
   Stream<ChatMessage> messages();
 
+  /// ChatMessage → JSON.
   @SendMessage()
   Future<void> send(ChatMessage message);
 }
@@ -30,27 +35,30 @@ class Chat {
   Chat(this.socket);
   final ChatSocket socket;
 
-  void start() =>
-      socket.messages().listen((m) => print('${m.from}: ${m.text}'));
-
-  Future<void> say(String text) =>
-      socket.send(ChatMessage(from: 'me', text: text));
+  /// Sends [text] and waits for the first message back.
+  Future<ChatMessage> ask(String text) async {
+    final reply = socket.messages().first;
+    await socket.send(ChatMessage(from: 'me', text: text));
+    return reply;
+  }
 }
 
-Future<void> main() async {
-  // A local echo server.
+@SpringBootApplication()
+Future<void> main(List<String> args) async {
+  // A local echo server standing in for a real chat server.
   final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
   server.listen((request) async {
     final socket = await io.WebSocketTransformer.upgrade(request);
-    socket.listen((message) => socket.add('echo: $message'));
+    socket.listen(socket.add); // sends every message back
   });
 
-  final session = await IoWebSocketTransport().connect(
-    Uri.parse('ws://127.0.0.1:${server.port}/ws'),
+  final context = springApplication.run(
+    args,
+    properties: {'chat.url': 'ws://127.0.0.1:${server.port}/ws'},
   );
-  final reply = session.messages.first;
-  session.sendMessage(jsonEncode({'from': 'me', 'text': 'hello'}));
-  print(await reply); // echo: {"from":"me","text":"hello"}
-  await session.close(CloseStatus.normal);
+  final reply = await context.getBean<Chat>().ask('hello');
+  print('${reply.from}: ${reply.text}'); // me: hello
+
+  await context.closeAsync(); // closes the socket
   await server.close(force: true);
 }

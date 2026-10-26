@@ -341,6 +341,11 @@ class SpringBuilder implements Builder {
   // from the application class, the whole package is scanned — `lib/` and
   // the directory of `main` (e.g. `bin/`) — and the output also declares
   // `springApplication` and `runApplication(args)`.
+  //
+  // An entry point under `example/` is the example of a library or
+  // starter: only `example/` is scanned, and the package's own
+  // auto-configuration is used (its `lib/` reaches the application that
+  // way, as for any application depending on it).
   Future<String> _buildApplication(
     BuildStep buildStep,
     List<TopLevelFunctionElement> boots,
@@ -354,8 +359,13 @@ class SpringBuilder implements Builder {
     }
     final input = buildStep.inputId;
     final directory = p.url.dirname(input.path);
-    final roots = {'lib', directory}
-      ..removeWhere((root) => root != 'lib' && p.url.isWithin('lib', root));
+    final example =
+        directory == 'example' || p.url.isWithin('example', directory);
+    final roots = example
+        ? {'example'}
+        : ({'lib', directory}..removeWhere(
+            (root) => root != 'lib' && p.url.isWithin('lib', root),
+          ));
     final module = ModuleModel();
     final nested = <AssetId>[];
     final assets = await _scannedAssets(
@@ -372,14 +382,22 @@ class SpringBuilder implements Builder {
     await checkAssetValues(buildStep, module, scanner.collectErrors);
     scanner.throwErrors();
 
-    final autoConfigurations = await _autoConfigurations(buildStep);
+    final autoConfigurations = await _autoConfigurations(
+      buildStep,
+      includeOwn: example,
+    );
     final springApplication = refer('springApplication');
     final emitter = ModuleEmitter(
       output,
       dependencies: await _dependencies(buildStep),
       pruneProxies: pruneProxies,
       foreignAdvice: pruneProxies
-          ? await _foreignAdvice(buildStep, scanner, nested)
+          ? await _foreignAdvice(
+              buildStep,
+              scanner,
+              nested,
+              includeOwn: example,
+            )
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
@@ -603,8 +621,9 @@ class SpringBuilder implements Builder {
   Future<ForeignAdvice> _foreignAdvice(
     BuildStep buildStep,
     BeanScanner scanner,
-    List<AssetId> nested,
-  ) async {
+    List<AssetId> nested, {
+    bool includeOwn = false,
+  }) async {
     final foreign = ForeignAdvice();
     final resolver = buildStep.resolver;
     for (final asset in nested) {
@@ -616,7 +635,7 @@ class SpringBuilder implements Builder {
     final config = await buildStep.packageConfig;
     for (final package in config.packages) {
       final id = AssetId(package.name, autoConfigurationLibrary);
-      if (package.name == root ||
+      if ((package.name == root && !includeOwn) ||
           !await buildStep.canRead(id) ||
           !await resolver.isLibrary(id)) {
         continue;
@@ -698,14 +717,16 @@ class SpringBuilder implements Builder {
   // `lib/spring_auto_configuration.dart`, with an expression for their
   // `order` / `before` / `after` when set. `SpringApplication` sorts them
   // (Boot's AutoConfigurationSorter); here they are by package, then name.
+  // With [includeOwn] (an example), the package's own too.
   static Future<List<(Expression, Expression?)>> _autoConfigurations(
-    BuildStep buildStep,
-  ) async {
+    BuildStep buildStep, {
+    bool includeOwn = false,
+  }) async {
     final root = buildStep.inputId.package;
     final found = <(Expression?, String, String, String)>[];
     final config = await buildStep.packageConfig;
     for (final package in config.packages) {
-      if (package.name == root) {
+      if (package.name == root && !includeOwn) {
         continue;
       }
       final id = AssetId(package.name, autoConfigurationLibrary);

@@ -55,7 +55,7 @@ widgets with the test's beans, themes and platforms.
 dev_dependencies:
   spring_boot_starter_test: ^0.3.0
   test: ^1.25.0
-  build_runner: ^2.4.0   # already there for the application
+  build_runner: ^2.17.0   # already there for the application
 ```
 
 Test configuration goes to `test/resources/`, which comes first on the
@@ -238,9 +238,9 @@ class OrdersTest {
   late ApplicationContext context;        // the context itself
 
   @Autowired()
-  late SpringBootTestContext app;         // output(), markDirty(), getBean
+  late SpringBootTestContext app;         // output, markDirty(), getBean
 
-  @Value('${shop.max-basket-size}')
+  @Value(r'${shop.max-basket-size}')
   late int maxBasketSize;                 // a property, converted
 
   @Autowired()
@@ -251,10 +251,17 @@ class OrdersTest {
 - A field must be `late`, public and not `final` (the generated code sets
   it from outside the class).
 - The types and qualifiers are the ones of constructor injection: an
-  optional bean is a nullable field (`late Mailer? mailer;`).
+  optional bean is a nullable field (`late Mailer? mailer;`), and
+  `List<T>` / `Iterable<T>` / `Set<T>`, `Map<String, T>` (by name) and
+  `ObjectProvider<T>` work too.
 - Spring Java allows constructor injection in tests too; here the fields
-  are the only way, the test class is created by the generated code with
-  its default constructor.
+  are the only way: the generated code creates the class with `Name()`,
+  so it must be public with an unnamed constructor without required
+  parameters.
+- **Superclasses:** annotated members of a superclass declared in the same
+  file count (a base class of shared beans, tests and set-up). One in
+  another file is not seen (the test file is read as written) and the
+  build warns.
 
 ## 6. Replacing beans
 
@@ -320,7 +327,7 @@ Where test properties come from, highest first:
 @SpringBootTest(properties: {'shop.name': 'Test Books'})
 @ActiveProfiles(['test'])                       // application-test.yml
 @TestPropertySource(
-  locations: ['test/resources/big-shop.properties'],
+  locations: ['classpath:big-shop.properties'],    // test/resources/
   properties: {'shop.max-basket-size': 100},
 )
 @TestEnvironment({'SHOP_CURRENCY': 'EUR'})
@@ -501,6 +508,10 @@ class WithOneBook {
 Spring nests inner classes (`@Nested class WithOneBook`); Dart has none, so
 the group is a field of its own class.
 
+`@Disabled`, `@Tag`, `@TestOptions` and `@DirtiesContext` on the field (or
+on the nested class) apply to the whole group. The nested class must be
+declared in the test file; it may have `@CapturedOutput` fields.
+
 ## 12. Logs and console output
 
 As a function, `captureLogs()` records what is logged through `SpringLog` in
@@ -629,39 +640,44 @@ import '../../bin/shop.spring.dart' as _app0;
 
 void runSpringTests() {
   _sbt.group('CheckoutTest', () {
-    final instance = CheckoutTest();
-    final app = _sbt.springBootTest(
+    final $instance = CheckoutTest();
+    final $app = _sbt.springBootTest(
       _app0.springApplication,
       args: ['--shop.name=Night Books'],
       profiles: ['dev', 'test'],
       systemEnvironment: {'SHOP_MAX_BASKET_SIZE': '25'},
-      overrides: [_sbt.BeanOverride.named(instance.gateway, name: 'sandbox')],
+      overrides: [_sbt.BeanOverride.named($instance.gateway, name: 'sandbox')],
     );
     _sbt.setUp(() {
-      instance.properties = app.getBean();
-      instance.checkout = app.getBean();
+      $instance.properties = $app.getBean();
+      $instance.checkout = $app.getBean();
     });
     _sbt.test(
       'properties from the command line and the environment',
-      () => instance.propertiesFromTheCommandLineAndTheEnvironment(),
+      () => $instance.propertiesFromTheCommandLineAndTheEnvironment(),
     );
-    _sbt.test('checkout pays through the fake', () => instance.pays());
+    _sbt.test('checkout pays through the fake', () => $instance.pays());
   });
 }
 ```
 
 - **The test file is read as written**, not resolved: the generated file
   imports what the test file imports (same prefixes, `show` and `hide`)
-  plus the test file itself (relative imports re-pointed from
-  `test/spring/`), so every type and constant in the
-  annotations means the same there. Annotations are recognized by name
-  (`@Test`, also `@spring.Test` with a prefix).
-- **Bean types are not repeated**: `instance.checkout = app.getBean();`
+  plus the test file itself (relative imports, conditional ones included,
+  re-pointed from `test/spring/`), so every type and constant in the
+  annotations means the same there; a static constant of the class used in
+  a member's annotation (`@Tag(slow)`) is written `ShopTest.slow`, and a
+  private name fails the build (another library cannot reach it).
+  Annotations are recognized by name (`@Test`, also `@spring.Test` with a
+  prefix). The generated names start with `$` (`$instance`, `$app`) so
+  they never hide one of the test file's.
+- **Bean types are not repeated**: `$instance.checkout = $app.getBean();`
   takes `Checkout` from the field. A nullable field uses `findBean()`, a
   `List` field `getBeans()`, a `@Value` field `value(...)`.
 - **`@TestBean(name:)`** becomes `BeanOverride.named`, which keeps the
-  types of the bean it replaces, so a `FakeGateway` field replaces the
-  `PaymentGateway` called `sandbox`.
+  types of the bean it replaces but its own class, and adds the fake's:
+  a `FakeGateway` field replaces the `PaymentGateway` called `sandbox`;
+  `getBean<SandboxGateway>()` then finds nothing.
 - **The application** is the package's `@SpringBootApplication` entry point
   in `bin/` or `lib/` (its generated `springApplication`).
 - **Order**: `@BeforeAll` and `@AfterAll` are declared before
@@ -697,6 +713,10 @@ member:
 | `@Disabled on helper, which is not a @Test method` | add `@Test()` (also `@DisplayName`, `@Tag`, `@TestOptions`) |
 | `@Nested field 'inner' must be created with a class of this file` | declare the class in the test file: `final inner = Inner();` |
 | `'CheckoutTest' needs a constructor without required parameters` | remove the constructor's parameters |
+| `'CheckoutTest' has no unnamed constructor` | add `CheckoutTest();` (the generated code calls it) |
+| `'_CheckoutTest' is private` | make the class public (also a `@Nested` class) |
+| `'_env' is private to the test file` | a constant used in an annotation must be public |
+| `@Disabled on the field x, which is not @Nested` | `@Disabled`, `@Tag`, `@TestOptions`, `@DirtiesContext` go on `@Test` methods, classes and `@Nested` fields |
 | `No application in this package` | a `@SpringBootApplication` entry point in `bin/` or `lib/` |
 | `Several applications in this package (...)` | `@SpringBootTest(application: 'bin/shop.dart')` |
 | `'bin/x.dart' is not an entry point with @SpringBootApplication` | the path of an entry point |

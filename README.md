@@ -1367,23 +1367,45 @@ with a `@DeclareParents` introduction, or for subclass proxies.
 
 ### Logging
 
-`SpringLog` is the logging facade (Spring's commons-logging / SLF4J): the
-framework, starters and applications log through it; a backend such as
+`@Log()` on a class gives it a logger, like Lombok's `@Slf4j`: the
+generator writes a `log` getter (an extension in the scan's `.spring.dart`
+file, which the class's library imports) returning the logger
+`<package>.<Class>`; `topic:` sets another name, `fieldName:` another
+getter name (needed where `dart:math` or `dart:developer`, which declare a
+function `log`, are imported). The logger is a `SpringLog`, the logging
+facade (Spring's commons-logging / SLF4J): the framework, starters and
+applications log through it; a backend such as
 `spring_boot_starter_logging` decides where records go. Without one,
 warnings and errors are printed.
 
 ```dart
-const log = SpringLog('neon.checkout');
+import 'package:neon/app.spring.dart'; // the generated file
 
-log.info('order placed', fields: {'order': 42});
-log.debug(() => 'basket: ${basket.dump()}');   // built only if enabled
-log.error('payment failed', error: e, stackTrace: s);
+@Service()
+@Log(topic: 'neon.checkout')
+class Checkout {
+  void pay(Order order) {
+    log.info('order placed', fields: {'order': order.id});
+    log.debug(() => 'basket: ${order.dump()}'); // built only if enabled
+    try {
+      gateway.charge(order);
+    } on PaymentException catch (e, s) {
+      log.error('payment failed', error: e, stackTrace: s);
+    }
+  }
+}
 
-SpringLog.setLevel('neon.checkout', SpringLogLevel.debug); // and below
-SpringLog.withFields({'request': id}, () => handle(request)); // like MDC
+@Component()
+@Log(fieldName: 'logger')                       // logger 'neon.Payments'
+class Payments {
+  void refund() => logger.warning('refund');
+}
 ```
 
-With Spring Boot, levels come from `logging.level.*` properties.
+Fields for every line logged inside a call (like an MDC):
+`SpringLog.withFields({'request': id}, () => handle(request))`. With
+Spring Boot, levels come from `logging.level.*` properties
+(`logging.level.neon.checkout=debug`).
 
 ### Other extension points
 

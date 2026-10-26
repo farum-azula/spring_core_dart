@@ -12,7 +12,6 @@ is found and switched on automatically.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.3.0
   spring_boot_starter_logging: ^0.3.0
 
 dev_dependencies:
@@ -26,12 +25,15 @@ dart run build_runner build
 
 ## 1. Write logs
 
-Create a named logger and use it anywhere:
+`@Log` on a class gives it a `log` getter, like Lombok's `@Slf4j`. The
+generator writes it into the `.spring.dart` file of the scan; import that
+file:
 
 ```dart
-const log = SpringLog('shop.checkout');
+import 'package:shop/app.spring.dart'; // the generated file
 
 @Service()
+@Log(topic: 'shop.checkout') // without topic: 'shop.Checkout'
 class Checkout {
   void pay(double amount) {
     log.info('paid $amount');
@@ -39,6 +41,17 @@ class Checkout {
     log.error('payment failed', error: e, stackTrace: s);
   }
 }
+```
+
+### Without the annotation
+
+Where no generated file is at hand (a library, a script, a top-level
+function), create the logger yourself: the same `SpringLog`, named by you.
+
+```dart
+const log = SpringLog('shop.checkout');
+
+void pay(double amount) => log.info('paid $amount');
 ```
 
 Spring Boot's line (`[shop]` is `spring.application.name`, `[main]` the
@@ -145,5 +158,6 @@ context.getBean<LoggingSystem>().setLogLevel('ROOT', SpringLogLevel.warning);
 
 ## Try it
 
-[`example.dart`](example.dart) next to this file shows levels, fields and
-the buffer without code generation: `dart run example/example.dart`.
+[`example.dart`](example.dart) next to this file is a Spring Boot
+application showing levels, fields and the buffer:
+`dart run example/example.dart --logging.level.shop=debug`.

@@ -1,73 +1,67 @@
-// The Flutter counter on spring_boot_starter_flutter, in one file.
-//
-// In an application the generator writes the beans: annotate the classes
-// (`@SpringBootApplication()` on main, `@ChangeNotifierComponent()` on
-// Counter) and run `dart run build_runner build` — see README.md. Here the
-// bean module is written by hand, so the example runs without code
-// generation.
+// The Flutter counter as a Spring Boot application: the count is a bean,
+// widgets get beans by type, and the generator writes the rest
+// (example.spring.dart, from `dart run build_runner build`).
 import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
+import 'example.spring.dart';
+
 /// The count: state in a bean instead of a `State`, so any widget (and any
-/// service) can read and change it.
-class Counter extends ChangeNotifier {
+/// service) can read and change it. The generator makes it a
+/// `ChangeNotifier` that notifies after every method.
+@ChangeNotifierComponent()
+class Counter {
   int _value = 0;
 
   /// The current count.
   int get value => _value;
 
-  /// Adds one and tells the listeners.
-  void increment() {
-    _value++;
-    notifyListeners();
-  }
+  /// Adds one.
+  void increment() => _value++;
 }
 
-/// What the generator writes for the annotated classes of an application.
-SpringApplication application() => SpringApplication([
-  BeanModule('example', [
-    BeanDefinition<Counter>(
-      name: 'counter',
-      types: const [Counter],
-      create: (_) => Counter(),
-    ),
-  ]),
-]);
-
+@SpringBootApplication()
 void main() => runApp(
   // Starts the application (a splash screen meanwhile, a report when it
   // fails) and gives its beans to every widget below.
   SpringApplicationWidget(
-    application: application,
+    application: () => springApplication,
     child: const MaterialApp(home: CounterPage()),
   ),
 );
 
-/// The page of the template; stateless, the count is the `Counter` bean.
-class CounterPage extends StatelessWidget {
+/// The page of the template, stateless: the count is the `Counter` bean.
+class CounterPage extends SpringStatelessWidget<(Counter,)> {
   /// Creates the page.
   const CounterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Any bean by type.
-    final counter = context.bean<Counter>();
+    final (counter,) = beans;
     return Scaffold(
       appBar: AppBar(title: const Text('spring_boot_starter_flutter')),
-      body: Center(
-        child: ListenableBuilder(
-          listenable: counter,
-          builder: (context, _) => Text(
-            '${counter.value}',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-        ),
-      ),
+      body: const Center(child: CounterText()),
+      // Only calls a method: a tap does not rebuild the page.
       floatingActionButton: FloatingActionButton(
         onPressed: counter.increment,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+/// Reads `counter.value`, so it rebuilds after every increment.
+class CounterText extends SpringStatelessWidget<(Counter,)> {
+  /// Creates the text.
+  const CounterText({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final (counter,) = beans;
+    return Text(
+      '${counter.value}',
+      style: Theme.of(context).textTheme.headlineMedium,
     );
   }
 }
