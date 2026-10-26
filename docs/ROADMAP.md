@@ -20,7 +20,8 @@ introductions pub.dev shows; `docs/` is the full manual.
 | Logging | planned (its properties are in Configuration) |
 | Scheduling, caching | planned |
 | HTTP, Feign, WebSocket | planned |
-| Testing | planned |
+| [Testing](testing.md) | written: today's `springBootTest`, `ApplicationContextRunner`, matchers, logs; the specification of test classes with annotations (planned, [roadmap](../roadmap/spring_boot_starter_test.md)) |
+| [Flutter testing](flutter-testing.md) | written as a specification: `spring_boot_starter_flutter_test` (planned, [roadmap](../roadmap/spring_boot_starter_flutter_test.md)), widget tests, `pumpSpring`, themes, platforms, goldens; today's `SpringScope` way |
 | Flutter | planned: the app widget, beans in widgets, themes, fonts, assets, lifecycle, platform profiles, hot reload |
 | Code generation | planned: what the generator writes, its options (`build.yaml`), its build errors |
 | Editor support | planned: the Zed extensions, the language server, snippets |

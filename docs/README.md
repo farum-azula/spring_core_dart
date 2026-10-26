@@ -8,6 +8,8 @@ written to become the project's website; see the [roadmap](ROADMAP.md).
 | Page | What it covers |
 |---|---|
 | [Configuration](configuration.md) | Everything that can be configured: config files (YAML and `.properties` side by side), where they are read from and in which order, profiles, imports, placeholders, every property of the framework and of each starter, Flutter's app widget, themes and fonts |
+| [Testing](testing.md) | Tests of the application and its starters: `springBootTest`, replacing beans, test properties and profiles, logs, `ApplicationContextRunner`, matchers; and the planned test classes with annotations, as in Spring |
+| [Flutter testing](flutter-testing.md) | Widget tests with the application's beans and fakes, themes, platforms and golden files; the planned `spring_boot_starter_flutter_test` |
 
 More pages are planned in the [documentation roadmap](ROADMAP.md).
 
