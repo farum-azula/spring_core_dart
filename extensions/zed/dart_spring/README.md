@@ -59,6 +59,20 @@ designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
 types, annotations, bean patterns, method names and named pointcuts
 (needs the `semantic_tokens` setting below).
 
+**Config files**: `${key}`, `${key:default}` and `#{...}` in the values of
+`application*.yml` / `.yaml`, of YAML under `resources/` and of
+`.properties` files are highlighted like in annotations (comments left
+out; in YAML, SpEL counts only in quotes, as YAML reads an unquoted `#` as a
+comment). Unsaved keys of an open config file count for navigation and
+the unknown-key check.
+
+**`.properties` files**: the extension brings the Properties language
+(tree-sitter-properties, as Zed's Java extension uses it): keys, values,
+`#` / `!` comments, escapes and `\` line continuations, Spring's
+`${key}` / `${key:default}` placeholders (environment variables like
+`${PORT:8080}` in another color), list indexes (`servers[0].host`); `cmd-/`
+comments lines out.
+
 **Snippets**: type the prefix in a Dart file and press Tab.
 
 | Prefix | Inserts |
@@ -92,8 +106,7 @@ Flutter (`spring_boot_starter_flutter`):
 | `spwidgettest` | a widget test with `springBootTest` and `SpringScope` |
 
 Themes and the app widget, in `application.yml` and in `.properties` files
-(the same prefixes in both; the `.properties` ones need a Properties
-language, e.g. from the Java extension):
+(the same prefixes in both):
 
 | Prefix | Inserts |
 |---|---|
@@ -168,12 +181,14 @@ is no palette entry for this.
 1. **Install the extension** in Zed: command palette →
    `zed: install dev extension` → choose `extensions/zed/dart_spring`
    (Zed builds the Rust part itself; it needs Rust from rustup).
-2. **Turn on semantic highlighting** for Dart (for the SpEL colours) in
-   Zed's `settings.json`:
+2. **Turn on semantic highlighting** (the SpEL and placeholder colours) in
+   Zed's `settings.json`, for Dart and the config files:
    ```json
    {
      "languages": {
-       "Dart": { "semantic_tokens": "combined" }
+       "Dart": { "semantic_tokens": "combined" },
+       "YAML": { "semantic_tokens": "combined" },
+       "Properties": { "semantic_tokens": "combined" }
      }
    }
    ```

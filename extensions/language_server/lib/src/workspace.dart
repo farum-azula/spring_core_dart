@@ -185,14 +185,20 @@ final class SpringWorkspace {
   final _files = <String, DartFile>{};
   final _modified = <String, DateTime>{};
   final _overlays = <String, String>{};
+  final _configOverlays = <String, String>{};
   final _properties = <String, List<PropertyEntry>>{};
   final _propertiesModified = <String, DateTime>{};
   List<BeanInfo>? _beans;
   Map<String, List<ClassInfo>>? _classes;
   DateTime _lastScan = DateTime.fromMillisecondsSinceEpoch(0);
 
-  /// Text of an open document (or `null` to fall back to disk).
+  /// Text of an open document (or `null` to fall back to disk). A config
+  /// file ([isConfigFile]) is read as properties, anything else as Dart.
   void setOverlay(String path, String? text) {
+    if (!path.endsWith('.dart')) {
+      _setConfigOverlay(path, text);
+      return;
+    }
     if (text == null) {
       _overlays.remove(path);
       _modified.remove(path);
@@ -203,6 +209,33 @@ final class SpringWorkspace {
     _beans = null;
     _classes = null;
     _addedMessages = null;
+  }
+
+  void _setConfigOverlay(String path, String? text) {
+    if (!isConfigFile(path)) {
+      return;
+    }
+    if (text == null) {
+      _configOverlays.remove(path);
+      _propertiesModified.remove(path); // read from disk again
+    } else {
+      _configOverlays[path] = text;
+      // Unsaved keys count for navigation and checks right away.
+      _properties[path] = _isYaml(path)
+          ? parseYamlProperties(path, text)
+          : parseProperties(path, text);
+    }
+    _bundles = null;
+  }
+
+  /// Whether [path] is a config file of the application: any `.properties`
+  /// file, and YAML named `application*` or under a `resources/` directory
+  /// (not every YAML: `${{ }}` in a CI workflow is no placeholder).
+  static bool isConfigFile(String path) {
+    final name = path.split(RegExp(r'[\\/]')).last;
+    return name.endsWith('.properties') ||
+        (_isYaml(name) &&
+            (_inResources(path) || name.startsWith('application')));
   }
 
   /// Re-reads changed files (at most every [interval] unless [force]).
@@ -300,6 +333,9 @@ final class SpringWorkspace {
   }
 
   void _readProperties(File file) {
+    if (_configOverlays.containsKey(file.path)) {
+      return; // the open document wins
+    }
     final modified = file.lastModifiedSync();
     if (_propertiesModified[file.path] == modified) {
       return;
@@ -316,8 +352,12 @@ final class SpringWorkspace {
     }
   }
 
-  /// The parsed file at [path] (open document or disk).
+  /// The parsed Dart file at [path] (open document or disk); `null` for
+  /// other files.
   DartFile? file(String path) {
+    if (!path.endsWith('.dart')) {
+      return null;
+    }
     final existing = _files[path];
     if (existing != null) {
       return existing;
@@ -1413,8 +1453,12 @@ final class SpringWorkspace {
     }
   }
 
-  /// Semantic tokens for placeholders and SpEL in [path].
+  /// Semantic tokens for placeholders and SpEL in [path]: in the strings of
+  /// annotations of a Dart file, in the values of a config file.
   List<SemanticToken> semanticTokens(String path) {
+    if (!path.endsWith('.dart')) {
+      return _configTokens(path);
+    }
     final file = this.file(path);
     if (file == null) {
       return const [];
@@ -1440,24 +1484,11 @@ final class SpringWorkspace {
     }
 
     for (final ref in _templateStrings(file)) {
-      final base = ref.contentStart;
-      final source = file.text.substring(ref.contentStart, ref.contentEnd);
-      for (final part in scanTemplate(source)) {
-        final s = base + part.start;
-        if (part.kind == TemplatePartKind.placeholder) {
-          add(s, base + part.innerStart, 'operator');
-          add(base + part.innerStart, base + part.keyEnd!, 'property');
-          if (!part.unclosed) {
-            add(base + part.innerEnd, base + part.end, 'operator');
-          }
-          continue;
-        }
-        add(s, base + part.innerStart, 'keyword');
-        _expressionTokens(source, part, base, add);
-        if (!part.unclosed) {
-          add(base + part.innerEnd, base + part.end, 'keyword');
-        }
-      }
+      _templateTokens(
+        file.text.substring(ref.contentStart, ref.contentEnd),
+        ref.contentStart,
+        add,
+      );
     }
     for (final ref in _spelArgumentStrings(file)) {
       _spelTokens(
@@ -1486,6 +1517,101 @@ final class SpringWorkspace {
       (a, b) => a.line != b.line ? a.line - b.line : a.column - b.column,
     );
     return tokens;
+  }
+
+  // Tokens of the placeholders and expressions in [source], which starts at
+  // [base] in the file.
+  void _templateTokens(
+    String source,
+    int base,
+    void Function(int start, int end, String type) add,
+  ) {
+    for (final part in scanTemplate(source)) {
+      final s = base + part.start;
+      if (part.kind == TemplatePartKind.placeholder) {
+        add(s, base + part.innerStart, 'operator');
+        add(base + part.innerStart, base + part.keyEnd!, 'property');
+        if (!part.unclosed) {
+          add(base + part.innerEnd, base + part.end, 'operator');
+        }
+        continue;
+      }
+      add(s, base + part.innerStart, 'keyword');
+      _expressionTokens(source, part, base, add);
+      if (!part.unclosed) {
+        add(base + part.innerEnd, base + part.end, 'keyword');
+      }
+    }
+  }
+
+  // Placeholders and SpEL in the values of a config file, line by line;
+  // comments left out (`#` / `!` lines of `.properties`, `#` after a space
+  // in YAML).
+  List<SemanticToken> _configTokens(String path) {
+    if (!isConfigFile(path)) {
+      return const [];
+    }
+    final String text;
+    if (_configOverlays[path] case final open?) {
+      text = open;
+    } else {
+      try {
+        text = File(path).readAsStringSync();
+      } on FileSystemException {
+        return const [];
+      }
+    }
+    final yaml = _isYaml(path);
+    final tokens = <SemanticToken>[];
+    final lines = text.split('\n');
+    for (var row = 0; row < lines.length; row++) {
+      final line = lines[row];
+      final content = yaml ? _yamlContent(line) : _propertiesContent(line);
+      if (!content.contains(r'${') && !content.contains('#{')) {
+        continue;
+      }
+      _templateTokens(content, 0, (start, end, type) {
+        if (end > start) {
+          tokens.add(
+            SemanticToken(
+              row,
+              start,
+              end - start,
+              semanticTokenTypes.indexOf(type),
+            ),
+          );
+        }
+      });
+    }
+    return tokens;
+  }
+
+  // A `.properties` line without a comment: comments are whole lines.
+  static String _propertiesContent(String line) {
+    final trimmed = line.trimLeft();
+    return trimmed.startsWith('#') || trimmed.startsWith('!') ? '' : line;
+  }
+
+  // A YAML line up to its comment: `#` at the start or after a space,
+  // outside quoted scalars. Unquoted, `key: #{...}` is a comment for YAML
+  // too, so SpEL is only found in quotes.
+  static String _yamlContent(String line) {
+    String? quote;
+    for (var i = 0; i < line.length; i++) {
+      final c = line[i];
+      if (quote != null) {
+        if (c == quote) {
+          quote = null;
+        }
+      } else if ((c == '"' || c == "'") &&
+          (i == 0 || ' \t:[{,-'.contains(line[i - 1]))) {
+        quote = c; // a quoted scalar starts here, not an apostrophe
+      } else if (c == '#' &&
+          (i == 0 || line[i - 1] == ' ' || line[i - 1] == '\t')) {
+        return line.substring(0, i);
+      }
+    }
+    return line;
   }
 
   Iterable<_StringRef> _spelArgumentStrings(DartFile file) sync* {

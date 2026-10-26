@@ -1,6 +1,6 @@
 id = "dart-spring"
 name = "dart_spring"
-description = "Spring for Dart and Flutter (spring_core_dart, spring_boot_dart): navigation from injection points to beans and from @Value to properties, SpEL highlighting and checks, snippets (Dart, and themes in YAML and .properties)."
+description = "Spring for Dart and Flutter (spring_core_dart, spring_boot_dart): navigation from injection points to beans and from @Value to properties, SpEL highlighting and checks, snippets (Dart, and themes in YAML and .properties), the Properties language (.properties files)."
 # Always the version of the spring_core_dart family it supports
 # (set by tool/version.dart together with the packages).
 version = "0.3.1"
@@ -13,6 +13,15 @@ snippets = [
   "./snippets/properties.json",
 ]
 
+# The Properties language (languages/properties): `.properties` files with Spring's
+# `${key:default}` placeholders. The grammar and commit the Java extension uses, so both
+# highlight the same way when both are installed.
+[grammars.properties]
+repository = "https://github.com/tree-sitter-grammars/tree-sitter-properties"
+commit = "579b62f5ad8d96c2bb331f07d1408c92767531d9"
+
+# Dart files, and config files for the placeholders and SpEL in their values (the server
+# answers only application* YAML, YAML under resources/ and .properties files).
 [language_servers.dart-spring]
 name = "dart_spring"
-languages = ["Dart"]
+languages = ["Dart", "YAML", "Properties"]

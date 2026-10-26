@@ -1,0 +1,8 @@
+# `.properties` files: application.properties, messages*.properties, test properties.
+# Same name as the Java extension's language, so snippets/properties.json applies either way.
+name = "Properties"
+grammar = "properties"
+path_suffixes = ["properties"]
+line_comments = ["# "]
+brackets = [{ start = "[", end = "]", close = true, newline = false }]
+word_characters = [".", "-"]
