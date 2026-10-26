@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.1
 
 - The example is a Spring Boot application written by the generator (`@ConfigurationProperties`, a `@Service`, a `CommandLineRunner`).
 

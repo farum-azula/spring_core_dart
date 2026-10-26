@@ -12,11 +12,11 @@ switched on automatically.
 
 ```yaml
 dependencies:
-  spring_boot_starter_scheduling: ^0.3.0
+  spring_boot_starter_scheduling: ^0.3.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.3.0   # required: turns annotations into code
+  spring_core_dart_generator: ^0.3.1   # required: turns annotations into code
 ```
 
 ```bash

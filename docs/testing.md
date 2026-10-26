@@ -53,7 +53,7 @@ widgets with the test's beans, themes and platforms.
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  spring_boot_starter_test: ^0.3.0
+  spring_boot_starter_test: ^0.3.1
   test: ^1.25.0
   build_runner: ^2.17.0   # already there for the application
 ```

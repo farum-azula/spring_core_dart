@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.1
 
 - The example is a small Spring Boot application written by the generator (beans, `@Value`, SpEL, events) instead of hand-written bean definitions.
 - README: loggers come from `@Log` (the logging section starts with it).

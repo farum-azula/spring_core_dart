@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.1
 
 - **Test classes:** the annotations `@SpringBootTest`, `@ActiveProfiles`, `@TestPropertySource`, `@TestEnvironment`, `@DynamicPropertySource`, `@ContextInitializer`, `@TestBean`, `@DirtiesContext`, `@Test`, `@TestOptions`, `@Disabled`, `@Tag`, `@DisplayName`, `@BeforeAll`, `@BeforeEach`, `@AfterEach`, `@AfterAll`, `@Nested` and `@CapturedOutput`, turned into tests by `spring_core_dart_generator` (`void main() => runSpringTests();`). See `docs/testing.md`.
 - `SpringBootTestContext.findBean`, `getBeans`, `value` and `optionalValue` (an optional bean, every bean of a type, a `@Value` expression).
