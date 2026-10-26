@@ -13,3 +13,8 @@ linter:
     - unawaited_futures
     - curly_braces_in_flow_control_structures
     - public_member_api_docs
+
+# The width CI checks with `dart format --set-exit-if-changed .`. An editor set
+# to another line length (Zed: lsp.dart.settings.lineLength) formats differently.
+formatter:
+  page_width: 80

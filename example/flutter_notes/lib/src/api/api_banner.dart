@@ -15,21 +15,16 @@ class ApiBanner extends SpringStatelessWidget<(LocalApi,)> {
     return Material(
       color: colors.secondaryContainer,
       child: ListTile(
-        leading: Icon(
-          url == null ? Icons.cloud_off : Icons.cloud_done,
-        ),
-        title: Text(
-          url == null ? 'The API is not running' : 'GET $url',
-        ),
+        leading: Icon(url == null ? Icons.cloud_off : Icons.cloud_done),
+        title: Text(url == null ? 'The API is not running' : 'GET $url'),
         subtitle: url == null
             ? null
             : const Text('The same notes as here, over HTTP'),
         trailing: url == null
             ? null
             : IconButton(
-                onPressed: () => Clipboard.setData(
-                  ClipboardData(text: 'curl $url'),
-                ),
+                onPressed: () =>
+                    Clipboard.setData(ClipboardData(text: 'curl $url')),
                 tooltip: 'Copy curl command',
                 icon: const Icon(Icons.copy),
               ),

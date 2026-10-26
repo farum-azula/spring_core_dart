@@ -46,14 +46,10 @@ class BookService {
     _books['978-0'] = const Book(isbn: '978-0', title: 'Dune');
   }
 
-  Book find(String isbn) =>
-      _books[isbn] ?? (throw BookNotFound(isbn));
+  Book find(String isbn) => _books[isbn] ?? (throw BookNotFound(isbn));
 
   Book add(NewBook book) {
-    final added = _books[book.isbn] = Book(
-      isbn: book.isbn,
-      title: book.title,
-    );
+    final added = _books[book.isbn] = Book(isbn: book.isbn, title: book.title);
     _added.add(added);
     return added;
   }
@@ -74,27 +70,23 @@ class BookController {
   @PostMapping()
   ResponseEntity<Book> create(@RequestBody() @Valid() NewBook book) {
     final added = books.add(book);
-    return ResponseEntity.created(
-      Uri.parse('/api/books/${added.isbn}'),
-    ).body(added);
+    return ResponseEntity.created(Uri.parse('/api/books/${added.isbn}'))
+        .body(added);
   }
 
   /// Each added book as a server-sent event (`text/event-stream`).
   @GetMapping('/added')
   EventStream<Book> added() => EventStream(
-    () => books.added.map(
-      (book) => ServerSentEvent(book, id: book.isbn),
-    ),
+    () => books.added.map((book) => ServerSentEvent(book, id: book.isbn)),
   );
 
   /// `application/problem+json`: `{"status": 404, "detail": ...}`.
   @ExceptionHandler()
   @ResponseStatus(HttpStatus.notFound)
-  ProblemDetail notFound(BookNotFound e) =>
-      ProblemDetail.forStatusAndDetail(
-        HttpStatus.notFound,
-        'No book ${e.isbn}',
-      );
+  ProblemDetail notFound(BookNotFound e) => ProblemDetail.forStatusAndDetail(
+    HttpStatus.notFound,
+    'No book ${e.isbn}',
+  );
 }
 
 @SpringBootApplication()

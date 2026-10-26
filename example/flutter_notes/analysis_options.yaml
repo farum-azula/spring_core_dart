@@ -36,3 +36,8 @@ linter:
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+
+# The width CI checks with `dart format --set-exit-if-changed .`. An editor set
+# to another line length (Zed: lsp.dart.settings.lineLength) formats differently.
+formatter:
+  page_width: 80
