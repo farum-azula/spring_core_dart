@@ -36,11 +36,14 @@ be safe: [security_verification.md](security_verification.md) and
 
 ## SSO: oauth2Login with OpenID Connect
 
-The next step, before everything below. Today the starter is a resource
-server: it accepts the tokens an identity provider issued to a client
-(a single-page or Flutter app logs in, the server checks each request).
-What Spring Security also does, and this starter does not yet, is the
-login itself in the browser:
+Not decided: only together with MVC views (server-rendered pages,
+[spring_boot_starter_web.md](spring_boot_starter_web.md)) or a
+backend-for-frontend, the cases where the server, not the client, logs the
+user in. Today the starter is a resource server: it accepts the tokens an
+identity provider issued to a client (a single-page or Flutter app logs
+in, the server checks each request), which covers apps. What Spring
+Security also does, and this starter does not, is the login itself in the
+browser:
 
 ```dart
 @Bean()

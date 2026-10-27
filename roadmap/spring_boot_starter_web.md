@@ -232,6 +232,11 @@ rendered by a template engine, and Spring Boot serves static files from
 - **Worth it?** Who would render HTML on a Dart server rather than with
   Flutter web or a JS front end; admin pages and the actuator's dashboard
   are the likely users. Decide after a prototype.
+- **Browser SSO with it (not decided):** server-rendered pages log their
+  users in on the server, Spring Security's `oauth2Login()` with OpenID
+  Connect ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)).
+  Without views it is not needed: apps log in on the client and send
+  tokens, which the resource server already checks.
 
 ## Filters, interceptors, CORS, static files
 
