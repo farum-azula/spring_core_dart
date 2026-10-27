@@ -1,7 +1,7 @@
 name: spring_boot_starter_security
 description: >-
   Spring Security for the web starter: a filter chain configured with HttpSecurity, HTTP Basic, form login, sessions, CSRF, CORS, security headers, JWT resource servers.
-version: 0.4.0
+version: 0.4.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_security
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -20,17 +20,17 @@ dependencies:
   # Bouncy Castle's Dart port, RSA and ECDSA signatures of JWTs. Used only
   # by lib/src/jwt/signature_primitives.dart.
   pointycastle: ^4.0.0
-  spring_boot_dart: ^0.4.0
-  spring_boot_starter_web: ^0.4.0
-  spring_security_core: ^0.4.0
+  spring_boot_dart: ^0.4.1
+  spring_boot_starter_web: ^0.4.1
+  spring_security_core: ^0.4.1
   # MockServerHttpRequest and RequestPostProcessor of testing.dart.
-  spring_web_dart: ^0.4.0
+  spring_web_dart: ^0.4.1
 
 dev_dependencies:
   # For example/ and test/app/: the generator writes the *.spring.dart files.
   build_runner: ^2.17.0
-  spring_boot_starter_test: ^0.4.0
+  spring_boot_starter_test: ^0.4.1
   # WebSocket endpoints behind the security chain (test/websocket_test.dart).
-  spring_boot_starter_websocket: ^0.4.0
-  spring_core_dart_generator: ^0.4.0
+  spring_boot_starter_websocket: ^0.4.1
+  spring_core_dart_generator: ^0.4.1
   test: ^1.33.0

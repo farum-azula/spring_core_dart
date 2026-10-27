@@ -1,3 +1,8 @@
+## 0.4.1
+
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+
 ## 0.4.0
 
 - `Principal` (who acts, like `java.security.Principal`) moved here from `spring_web_dart`, which still exports it: the web layer and Spring Security share it without depending on each other.

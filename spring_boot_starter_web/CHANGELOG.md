@@ -1,3 +1,8 @@
+## 0.4.1
+
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+
 ## 0.4.0
 
 - `HttpSession`: `request.getSession()`, an in-memory `HttpSessionRepository` with expiry and a limit (`server.servlet.session.timeout`, `.max-sessions`, `.cookie.*`; `SameSite=Lax` by default), `changeSessionId()`; the session cookie is written by `HttpSessionFilter`.

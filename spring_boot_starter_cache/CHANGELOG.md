@@ -1,3 +1,7 @@
+## 0.4.1
+
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+
 ## 0.4.0
 
 - No more "Bean 'cacheInterceptor' ... is not eligible for getting processed by all BeanPostProcessors" at startup: the annotation validator asks for the interceptor at the first cached bean (`CacheOperationValidator.lazy`; the constructor taking the interceptor stays).
