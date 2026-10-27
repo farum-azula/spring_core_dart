@@ -2,6 +2,7 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart' show springBootVersion;
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
@@ -71,13 +72,17 @@ void main() {
   });
 
   test('an incompatible starter stops the build with an explanation', () async {
-    final result = await _build('^0.4.0');
+    // The next breaking version of today's (0.4.0 → 0.5.0): never compatible,
+    // whatever the release bumps to.
+    final incompatible = '^${Version.parse(springBootVersion).nextBreaking}';
+    final result = await _build(incompatible);
     expect(result.succeeded, isFalse);
     final errors = result.errors.join('\n');
     expect(
       errors,
       contains(
-        'Incompatible starter: neon_cache requires spring_boot_dart ^0.4.0',
+        'Incompatible starter: neon_cache requires spring_boot_dart '
+        '$incompatible',
       ),
     );
     expect(errors, contains('but $springBootVersion is used'));

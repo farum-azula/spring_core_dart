@@ -95,7 +95,8 @@ oversized tokens are refused; `exp` / `nbf` with 60 s of skew; keys are
 cached and fetched again for an unknown `kid` (at most every 30 s).
 
 **Not yet: logging in through the provider in the browser**
-(`oauth2Login()`, SSO with OpenID Connect): the next step
+(`oauth2Login()`, SSO with OpenID Connect), for pages rendered by the
+server; maybe later
 ([roadmap](../roadmap/spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)).
 Today an application that logs its users in through Keycloak, Auth0, ...
 gets the token on the client side (a single-page or Flutter app) and the

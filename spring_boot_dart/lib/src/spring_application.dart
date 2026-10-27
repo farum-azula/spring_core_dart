@@ -15,6 +15,7 @@ import 'package:spring_boot_dart/src/hot_reload.dart';
 import 'package:spring_boot_dart/src/runners.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
+import 'package:spring_boot_dart/src/startup_runtime.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _log = SpringLog('spring_boot_dart.SpringApplication');
@@ -37,7 +38,8 @@ const _log = SpringLog('spring_boot_dart.SpringApplication');
 ///    the [initializers], [ApplicationContextInitializedEvent],
 ///    [ApplicationPreparedEvent], then the refresh;
 /// 5. startup info logged through [SpringLog] at INFO like Spring Boot's
-///    (`Starting app using Dart 3.9.0 with PID 42`, the active profiles,
+///    (`Starting app using Dart 3.9.0 with PID 42`, in a Flutter app
+///    `using Flutter 3.47.7 (Dart 3.13.5)`, the active profiles,
 ///    `Started app in 0.042 seconds`; off with
 ///    `spring.main.log-startup-info=false`) and [ApplicationStartedEvent];
 ///    or [ApplicationFailedEvent] and a readable
@@ -1322,11 +1324,11 @@ final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
 
   @override
   void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
-    final version = dartVersion();
+    final runtime = runtimeDescription(dart: dartVersion());
     final pid = processId();
     _log.info(
       'Starting $name'
-      '${version == null ? '' : ' using Dart $version'}'
+      '${runtime == null ? '' : ' using $runtime'}'
       '${pid == null ? '' : ' with PID $pid'}',
     );
     String quoted(List<String> profiles) =>
