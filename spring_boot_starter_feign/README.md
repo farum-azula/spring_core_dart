@@ -47,6 +47,8 @@ class Shop {
 catalog.url=https://api.neon.books
 ```
 
+*In the guides:* [server, 9. Feign](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#9-feign), [app, 6. Server access](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#6-server-access).
+
 ## Setup
 
 ```yaml

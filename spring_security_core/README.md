@@ -14,6 +14,8 @@ dependencies:
 It brings and re-exports `spring_boot_dart` and the logging starter: an
 application lists it (or the security starter) alone.
 
+*In the guides:* [server, 4. Security](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#4-security), [app, 7. Login & roles](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#7-login--roles).
+
 ## Method security
 
 ```dart

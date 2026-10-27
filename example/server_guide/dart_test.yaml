@@ -1,0 +1,9 @@
+tags:
+  # Tests that open real sockets (@Tags(['integration']) at the top of the
+  # file). CI runs them in their own job:
+  #   dart run tool/test_all.dart --tags integration
+  # and the rest with --exclude-tags integration.
+  integration:
+    timeout: 2x
+  # Tests about logging (a @Tag of test/shop_class_test.dart).
+  logs:

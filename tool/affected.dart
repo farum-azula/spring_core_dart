@@ -14,14 +14,13 @@
 //
 //   packages         workspace packages to test (comma-separated)
 //   core             spring_core_dart affected (its tests on node)
-//   tour             example/spring_core_tour affected (the example runs)
+//   server_guide     example/server_guide affected (it runs, also as
+//                    minified JavaScript)
 //   security         spring_boot_starter_security affected (compared with
 //                    Spring Security itself)
 //   flutter_starter  spring_boot_starter_flutter affected
-//   flutter_counter  example/flutter_counter affected (incl. goldens)
-//   flutter_themes   example/flutter_themes affected (incl. goldens)
-//   flutter_notes    example/flutter_notes affected (no goldens)
-//   flutter_examples flutter_counter or flutter_themes (the goldens job)
+//   flutter_guide    example/flutter_guide affected, or the server guide
+//                    its end-to-end tests run against (incl. goldens)
 //   flutter          any Flutter package
 //   family           a published Dart package of the family (the
 //                    applications of tool/check_app_dependencies.dart)
@@ -36,9 +35,7 @@ import 'version.dart' as version;
 /// Flutter packages outside the pub workspace.
 const flutterPackages = [
   'spring_boot_starter_flutter',
-  'example/flutter_counter',
-  'example/flutter_themes',
-  'example/flutter_notes',
+  'example/flutter_guide',
 ];
 
 /// Changed paths (prefixes) that affect every package.
@@ -105,9 +102,10 @@ Future<void> main(List<String> args) async {
     }
     bool has(String package) => affected.contains(package);
     final starter = has('spring_boot_starter_flutter');
-    final counter = has('example/flutter_counter');
-    final themes = has('example/flutter_themes');
-    final notes = has('example/flutter_notes');
+    final server = has('example/server_guide');
+    // The app's end-to-end tests run against the server guide: a change of
+    // the server tests the app too.
+    final app = has('example/flutter_guide') || server;
     final dartPackages = ordered
         .where((p) => !flutterPackages.contains(p))
         .join(',');
@@ -115,14 +113,11 @@ Future<void> main(List<String> args) async {
       [
         'packages=$dartPackages',
         'core=${has('spring_core_dart')}',
-        'tour=${has('example/spring_core_tour')}',
+        'server_guide=$server',
         'security=${has('spring_boot_starter_security')}',
         'flutter_starter=$starter',
-        'flutter_counter=$counter',
-        'flutter_themes=$themes',
-        'flutter_notes=$notes',
-        'flutter_examples=${counter || themes}',
-        'flutter=${starter || counter || themes || notes}',
+        'flutter_guide=$app',
+        'flutter=${starter || app}',
         'family=${familyAffected(affected)}',
         '',
       ].join('\n'),

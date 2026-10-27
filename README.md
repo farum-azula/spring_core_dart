@@ -35,11 +35,8 @@ Full documentation: [`docs/`](docs/README.md), starting with the
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, matchers, `captureLogs`, `MockMvc` and `webEnvironment` (`@LocalServerPort`) for the web starter. Works with `package:test` and `flutter_test`. |
 | `spring_boot_starter_flutter` | [`spring_boot_starter_flutter/`](spring_boot_starter_flutter/README.md) | Spring Boot in Flutter apps: `SpringApplicationWidget` starts the application and gives its beans to the widgets (`context.bean<T>()`, getters for `@BuildContextAccess` beans, `SpringStatelessWidget<(...)>`, `SpringStatefulWidget<(...)>`); brings and exports the core and Boot, so an app depends on it alone; the app lifecycle pauses and restarts the context; the platform is a profile (`android`, `ios`, `mobile`, `desktop`, `web`, ...); `context.message` in the app's locale. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | `build_runner` builder that turns annotations into `*.spring.dart` modules. |
-| `spring_boot_feign_example` | [`example/spring_boot_feign/`](example/spring_boot_feign/README.md) | A small Spring Boot app against real public servers: a Feign client (REST, JSONPlaceholder), server-sent events (Wikimedia, `EventStream<T>`) and a `@WebSocketClient` (an echo server): run it with `dart run bin/main.dart`. |
-| `flutter_themes` | [`example/flutter_themes/`](example/flutter_themes/README.md) | Themes from properties on `spring_boot_starter_flutter`: light, dark, system and custom themes, fonts from the assets, switched at run time and loaded from a server. `flutter run` in its folder. |
-| `flutter_notes` | [`example/flutter_notes/`](example/flutter_notes/README.md) | A Flutter app with its own REST API (`spring_boot_starter_web` on `127.0.0.1`): notes added on the screen are at `GET /api/notes`, notes POSTed there show up on the screen; `MockMvc` and real-server widget tests. `flutter run` in its folder. |
-| `flutter_counter` | [`example/flutter_counter/`](example/flutter_counter/README.md) | The `flutter create` counter on `spring_boot_starter_flutter`: the count in a bean, title and step from properties per platform, texts from messages files (English, Japanese). `flutter run` in its folder. |
-| `spring_core_dart_example` | [`example/spring_core_tour/`](example/spring_core_tour/README.md) | NEON Books: a runnable tour (`dart run bin/main.dart`) where every feature is used and prints its result, with end-to-end tests over the generated code. |
+| `neon_books_server` | [`example/server_guide/`](example/server_guide/README.md) | **The server guide.** NEON Books, a bookstore's server that uses everything a Dart server can: beans, configuration, a REST API with files and server-sent events, Spring Security (sessions, CSRF, roles, method security), WebSocket, events and AOP, cache, scheduling, Feign, validation, logging, tests; read it chapter by chapter. `dart run bin/main.dart` in its folder. |
+| `neon_books_app` | [`example/flutter_guide/`](example/flutter_guide/README.md) | **The Flutter guide.** The bookstore's app, a client of the server guide: state in beans, themes and texts from properties, assets, Feign clients and a WebSocket with a session, login and roles with Spring Security, cache, scheduling, validation, a log screen, widget tests and goldens, end-to-end tests against the server. `flutter run` in its folder. |
 
 Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_dart.dart` for all):
 
@@ -77,6 +74,33 @@ targets:
           aop_proxies: all   # all (default) | interfaces | none
           aop_prune: true    # all: skip proxies of beans no pointcut matches
 ```
+
+## Editor: Zed
+
+Use [Zed](https://zed.dev) with the extensions below: for now it is the
+only editor with support for the framework (Spring annotations, SpEL,
+`${...}` placeholders and `.properties` files are plain Dart strings and
+text to other editors).
+
+| Extension | What it gives |
+|---|---|
+| [`dart_spring`](extensions/zed/dart_spring/README.md) (this repository) | Spring as in IntelliJ IDEA: from an injection point to its beans, from `@Value('${...}')` to the property, SpEL, pointcuts and placeholders highlighted and checked while you type (invalid expressions, unknown pointcuts, a `${key}` no properties file defines, `'${key}'` without `r`), the Properties language, snippets |
+| [Flutter Tools](https://github.com/farum-azula/zed_editor_extensions/tree/main/flutter-extension) | Dart and Flutter as in VS Code: run and debug on every platform, hot reload on save, DevTools; `build_runner watch`, so the generated code follows your edits |
+| [HTTP Client](https://github.com/farum-azula/zed_editor_extensions/tree/main/http-client-extension) | IntelliJ's HTTP client: a request from every `@GetMapping` of a controller or Feign client, run from the gutter |
+
+They are installed as dev extensions:
+
+```sh
+git clone https://github.com/farum-azula/zed_editor_extensions.git
+cd zed_editor_extensions && ./install.sh   # Flutter Tools and HTTP Client
+```
+
+and, for `dart_spring`, Zed's command palette → `zed: install dev
+extension` → `extensions/zed/dart_spring` of this repository (setup
+details in [its README](extensions/zed/dart_spring/README.md#setup)).
+
+The recommended code style — formatting, analysis, how a widget names its
+beans — is one file to copy: [docs/style.md](docs/style.md).
 
 ## Quick start
 
@@ -168,6 +192,8 @@ Future<void> main(List<String> args) async {
 ## Guide
 
 ### Declaring beans
+
+*In the guides:* [server, 1. The application](example/server_guide/README.md#1-the-application), [app, 2. State in beans](example/flutter_guide/README.md#2-state-in-beans).
 
 | Annotation | Meaning |
 |---|---|
@@ -404,6 +430,8 @@ before that check.
 
 ### Lifecycle
 
+*In the guides:* [server, 1. The application](example/server_guide/README.md#1-the-application), [app, 1. The application](example/flutter_guide/README.md#1-the-application).
+
 Creation: constructor → fields/setters/methods → `BeanNameAware` /
 `BeanFactoryAware` → context aware interfaces (`EnvironmentAware`,
 `ApplicationContextAware`, ...) → `postProcessBeforeInitialization` →
@@ -470,6 +498,8 @@ Problems the framework recovers from are logged through `SpringLog`
 `SpringLog.handler` to route them, e.g. to `package:logging`.
 
 ### Environment and configuration
+
+*In the guides:* [server, 2. Configuration](example/server_guide/README.md#2-configuration), [app, 1. The application](example/flutter_guide/README.md#1-the-application).
 
 - `StandardEnvironment`: property sources (command line, OS environment,
   config files, `@PropertySource`), `${...}` placeholders with defaults,
@@ -559,6 +589,8 @@ ran their registrars — see Modules); plain conditions count in both.
 
 ### Modules
 
+*In the guides:* [server, 13. Advanced](example/server_guide/README.md#13-advanced).
+
 `@ComponentScan` (on a top-level variable) generates a `BeanModule` per
 package (directory). Combine modules in the application;
 `@Import([OtherConfig])` pulls in configuration classes outside the scan. A
@@ -638,6 +670,8 @@ its library and the fix.
 
 ### Events
 
+*In the guides:* [server, 6. Events and AOP](example/server_guide/README.md#6-events-and-aop).
+
 ```dart
 @Component()
 class Shipping {
@@ -698,6 +732,8 @@ class Mailer {
 
 ### Messages, resources, conversion
 
+*In the guides:* [server, 2. Configuration](example/server_guide/README.md#2-configuration), [app, 4. Texts](example/flutter_guide/README.md#4-texts), [app, 5. Assets](example/flutter_guide/README.md#5-assets).
+
 - `MessageSource`: `StaticMessageSource`,
   `ReloadableResourceBundleMessageSource` (`messages_ru_RU.properties` →
   `messages_ru` → default or system locale → base, `cacheSeconds`
@@ -753,6 +789,8 @@ class Mailer {
   ancestor context) is used for `@Value` conversion.
 
 ### SpEL
+
+*In the guides:* [server, 10. Validation and SpEL](example/server_guide/README.md#10-validation-and-spel).
 
 ```dart
 final parser = SpelExpressionParser();
@@ -816,6 +854,8 @@ limit of `@Value` expressions.
 
 ### Validation and data binding
 
+*In the guides:* [server, 10. Validation and SpEL](example/server_guide/README.md#10-validation-and-spel), [app, 9. Validation](example/flutter_guide/README.md#9-validation).
+
 ```dart
 @Introspected()
 @PasswordsMatch()                   // class-level constraint
@@ -877,6 +917,8 @@ Immutable classes are bound through their constructor with
 `DataBinder.construct` (Spring 6.1's constructor binding).
 
 ### JSON (`ObjectMapper`)
+
+*In the guides:* [server, 3. Web](example/server_guide/README.md#3-web), [app, 6. Server access](example/flutter_guide/README.md#6-server-access).
 
 `ObjectMapper` converts objects to JSON and back, like Jackson — on metadata
 the generator writes, so no reflection and no `fromJson` / `toJson`
@@ -1005,6 +1047,8 @@ Jackson's feature enums (`SerializationFeature`, `DeserializationFeature`,
 field.
 
 ### AOP
+
+*In the guides:* [server, 6. Events and AOP](example/server_guide/README.md#6-events-and-aop).
 
 AOP (aspect-oriented programming) runs your code before, after or around
 methods of other beans without editing them. Use it for things that cut
@@ -1371,6 +1415,8 @@ with a `@DeclareParents` introduction, or for subclass proxies.
 
 ### Logging
 
+*In the guides:* [server, 11. Logging](example/server_guide/README.md#11-logging), [app, 10. Logging](example/flutter_guide/README.md#10-logging).
+
 `@Log()` on a class gives it a logger, like Lombok's `@Slf4j`: the
 generator writes a `log` getter (an extension in the scan's `.spring.dart`
 file, which the class's library imports) returning the logger
@@ -1412,6 +1458,8 @@ Spring Boot, levels come from `logging.level.*` properties
 (`logging.level.neon.checkout=debug`).
 
 ### Other extension points
+
+*In the guides:* [server, 13. Advanced](example/server_guide/README.md#13-advanced).
 
 `BeanFactoryPostProcessor` / `BeanDefinitionRegistryPostProcessor`,
 `BeanPostProcessor`, custom scopes, hand-written `BeanDefinition`s and

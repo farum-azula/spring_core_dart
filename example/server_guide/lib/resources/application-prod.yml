@@ -1,0 +1,27 @@
+# The prod profile, in YAML (application.properties and YAML files mix;
+# a .properties file wins over a YAML file in the same place). No sample
+# data, logs to a file, secrets from the environment.
+server:
+  address: 0.0.0.0
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+neon:
+  stock:
+    restock-interval: 5m
+  # The Flutter web build is served from the shop's own site.
+  cors:
+    allowed-origin-patterns: https://*.neon.books
+
+logging:
+  level:
+    shop: info
+    feign: info
+  file:
+    name: build/logs/neon-books.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 5

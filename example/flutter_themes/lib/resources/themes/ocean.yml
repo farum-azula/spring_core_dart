@@ -1,9 +1,0 @@
-spring.flutter.theme.themes.ocean:
-  seed-color: teal
-  scheme-variant: vibrant
-  shape: { medium: 20, large: 28 }
-  components:
-    card: { elevation: level0, color: surface-container }
-    button: { shape: medium }
-  tokens:
-    brand: { accent: '#00ACC1' }

@@ -10,14 +10,24 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 /// The constructor stays yours: nothing is injected into it.
 ///
+/// With more than one bean, a typedef names the record:
+///
 /// ```dart
-/// class BasketBadge extends SpringStatelessWidget<(Basket, AppNavigator)> {
+/// typedef BasketBadgeBeans = (
+///   Basket,
+///   AppNavigator,
+/// );
+///
+/// class BasketBadge extends SpringStatelessWidget<BasketBadgeBeans> {
 ///   const BasketBadge({this.compact = false, super.key});
 ///   final bool compact;
 ///
 ///   @override
 ///   Widget build(BuildContext context) {
-///     final (basket, navigator) = beans;
+///     final (
+///       basket,
+///       navigator,
+///     ) = beans;
 ///     return Badge(label: Text('${basket.count}'));
 ///   }
 /// }
@@ -103,24 +113,35 @@ final _latestBeans = Expando<Record>('SpringStatelessWidget beans');
 /// `StatefulWidget` next to `StatelessWidget`.
 ///
 /// ```dart
-/// class BasketPage extends SpringStatefulWidget<(Basket, Clock)> {
+/// typedef BasketPageBeans = (
+///   Basket,
+///   Clock,
+/// );
+///
+/// class BasketPage extends SpringStatefulWidget<BasketPageBeans> {
 ///   const BasketPage({super.key});
 ///
 ///   @override
 ///   State<BasketPage> createState() => _BasketPageState();
 /// }
 ///
-/// class _BasketPageState extends SpringState<BasketPage, (Basket, Clock)> {
+/// class _BasketPageState extends SpringState<BasketPage, BasketPageBeans> {
 ///   @override
 ///   void initState() {
 ///     super.initState();
-///     final (basket, _) = beans; // already available here
+///     final ( // already available here
+///       basket,
+///       _,
+///     ) = beans;
 ///     basket.load();
 ///   }
 ///
 ///   @override
 ///   Widget build(BuildContext context) {
-///     final (basket, clock) = beans;
+///     final (
+///       basket,
+///       clock,
+///     ) = beans;
 ///     return Text('${basket.count} at ${clock.now}');
 ///   }
 /// }

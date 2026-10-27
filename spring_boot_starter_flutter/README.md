@@ -43,8 +43,10 @@ class AddButton extends SpringStatelessWidget<(Counter,)> {
 }
 ```
 
-A complete app: [`example/flutter_counter`](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_counter),
-the `flutter create` counter split into beans, properties and messages.
+A complete app: the [Flutter guide](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide), a bookstore's app
+using everything the family offers a Flutter app, chapter by chapter.
+
+*In the guides:* [app, 1. The application](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#1-the-application), [2. State in beans](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#2-state-in-beans), [3. Themes](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#3-themes).
 
 ## Setup
 
@@ -267,10 +269,18 @@ spring:
   (`select('ocean')`, `select('system')`); the app follows at once, with
   Flutter's animation:
   ```dart
-  class ThemeMenu extends SpringStatelessWidget<(ThemeSelection, SpringThemes)> {
+  typedef ThemeMenuBeans = (
+    ThemeSelection,
+    SpringThemes,
+  );
+
+  class ThemeMenu extends SpringStatelessWidget<ThemeMenuBeans> {
     @override
     Widget build(BuildContext context) {
-      final (selection, themes) = beans;
+      final (
+        selection,
+        themes,
+      ) = beans;
       return PopupMenuButton<String>(
         onSelected: selection.select,
         itemBuilder: (_) => [
@@ -319,7 +329,7 @@ spring.flutter.fonts.exclude=assets/pdf/**  # files for other uses
 ```
 
 A complete app with every theme feature and golden screenshots of each
-theme: [`example/flutter_themes`](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_themes).
+theme: [the Flutter guide, 3. Themes](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#3-themes).
 
 ## Hot reload
 
@@ -429,15 +439,26 @@ Text('${context.basket.count}');
 **`SpringStatelessWidget<(...)>`**: the beans a widget needs, in its type;
 the widget reads them as `beans`, a record, like a `SpringState`. The
 generator sees every `SpringStatelessWidget`, so the start fails when one of
-its beans is missing.
+its beans is missing. One bean reads well in place (`<(Basket,)>`); with
+more, name the record with a typedef (`BasketBadgeBeans`): the class line
+stays short, and a stateful widget and its `State` share it.
 
 ```dart
-class BasketBadge extends SpringStatelessWidget<(Basket, Clock)> {
+/// The beans of [BasketBadge].
+typedef BasketBadgeBeans = (
+  Basket,
+  Clock,
+);
+
+class BasketBadge extends SpringStatelessWidget<BasketBadgeBeans> {
   const BasketBadge({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final (basket, clock) = beans;
+    final (
+      basket,
+      clock,
+    ) = beans;
     return Badge(label: Text('${basket.count}'));
   }
 }
@@ -460,24 +481,36 @@ the widget); the compiler checks that they match, and a typedef keeps it in
 one place.
 
 ```dart
-class BasketPage extends SpringStatefulWidget<(Basket, Clock)> {
+/// The beans of [BasketPage].
+typedef BasketPageBeans = (
+  Basket,
+  Clock,
+);
+
+class BasketPage extends SpringStatefulWidget<BasketPageBeans> {
   const BasketPage({super.key});
 
   @override
   State<BasketPage> createState() => _BasketPageState();
 }
 
-class _BasketPageState extends SpringState<BasketPage, (Basket, Clock)> {
+class _BasketPageState extends SpringState<BasketPage, BasketPageBeans> {
   @override
   void initState() {
     super.initState();
-    final (basket, _) = beans;
+    final (
+      basket,
+      _,
+    ) = beans;
     basket.load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final (basket, clock) = beans;
+    final (
+      basket,
+      clock,
+    ) = beans;
     return Text('${basket.count} at ${clock.now}');
   }
 }

@@ -75,9 +75,7 @@ dart run tool/check_dependencies.dart            # the pub workspace
 
 # The Flutter packages resolve on their own (see section 3):
 (cd spring_boot_starter_flutter && flutter pub get)
-(cd example/flutter_counter && flutter pub get)
-(cd example/flutter_themes && flutter pub get)
-(cd example/flutter_notes && flutter pub get)
+(cd example/flutter_guide && flutter pub get)
 dart run tool/check_dependencies.dart --flutter
 ```
 
@@ -179,14 +177,13 @@ published.
 | `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets | yes | `flutter`, `flutter_localizations` (SDK), `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
-| `spring_core_dart_example` (`example/spring_core_tour`) | Tour of every feature | no | `spring_boot_dart`, `spring_core_dart`, the logging, scheduling, cache, Feign and WebSocket starters | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
-| `spring_boot_feign_example` (`example/spring_boot_feign`) | Feign, SSE and WebSocket against real servers | no | `spring_boot_starter_feign`, `spring_boot_starter_websocket` | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
-| `flutter_counter`, `flutter_themes` (`example/`) | Flutter examples | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
+| `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | `spring_boot_dart`, `spring_core_dart`, `spring_web_dart`, `spring_security_core` and the logging, scheduling, cache, Feign, WebSocket, web and security starters | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
+| `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter`, `spring_security_core`, the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
 | `spring_core_dart_workspace` (root) | The pub workspace | no | — | `lints`, `melos`, `path`, `test`, `yaml` |
 
 **Two resolutions.** Everything except the Flutter packages is one pub
 workspace with one `pubspec.lock` at the root. `spring_boot_starter_flutter`
-and the two Flutter examples resolve on their own (each with its own
+and the Flutter guide (`example/flutter_guide`) resolve on their own (each with its own
 `pubspec.lock`) and reach the repository's packages by path. The reason is
 that `flutter_test` pins `test_api`, which would hold the workspace's
 `test` and `build_test` on an analyzer older than `build_runner` and
@@ -427,8 +424,8 @@ on `package:test`. That way it works both under `package:test` and under
 
 ## 9. Every package
 
-Every package from outside the repository in the four resolutions (the
-pub workspace and the three Flutter packages).
+Every package from outside the repository in the three resolutions (the
+pub workspace and the two Flutter packages).
 
 - **Publisher:** the publisher on pub.dev. ⚠️ marks a package outside the
   rule, with the exception that allows it.
@@ -453,7 +450,7 @@ pub workspace and the three Flutter packages).
 | `build` | `dart.dev` | codegen, tests | `analyzer`, `crypto`, `glob`, `logging`, `package_config`, `path` | `build_runner`, `build_test`, `source_gen`, `spring_core_dart_generator` |
 | `build_config` | `tools.dart.dev` | codegen, tests | `checked_yaml`, `json_annotation`, `path`, `pubspec_parse` | `build_runner`, `build_test` |
 | `build_daemon` | `tools.dart.dev` | codegen, tests | `built_collection`, `built_value`, `crypto`, `http_multi_server`, `logging`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_runner` |
-| `build_runner` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `async`, `build`, `build_config`, `build_daemon`, `built_collection`, `built_value`, `collection`, `convert`, `crypto`, `dart_style`, `glob`, `graphs`, `http_multi_server`, `io`, `json_annotation`, `logging`, `meta`, `mime`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_test`, `flutter_counter` (dev), `flutter_themes` (dev), `spring_boot_dart` (dev), `spring_boot_feign_example` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `spring_core_dart_example` (dev) |
+| `build_runner` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `async`, `build`, `build_config`, `build_daemon`, `built_collection`, `built_value`, `collection`, `convert`, `crypto`, `dart_style`, `glob`, `graphs`, `http_multi_server`, `io`, `json_annotation`, `logging`, `meta`, `mime`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_test`, `neon_books_app` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `neon_books_server` (dev) |
 | `build_test` | `tools.dart.dev` | tests | `build`, `build_config`, `build_runner`, `built_collection`, `crypto`, `glob`, `html`, `logging`, `matcher`, `package_config`, `path`, `stream_transform`, `test`, `test_core`, `watcher` | `spring_core_dart_generator` (dev) |
 | `built_collection` | `dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test`, `built_value`, `code_builder` |
 | `built_value` | `dart.dev` | codegen, tests | `built_collection`, `collection`, `fixnum`, `meta` | `build_daemon`, `build_runner`, `code_builder` |
@@ -476,10 +473,10 @@ pub workspace and the three Flutter packages).
 | `ffi` | `dart.dev` | tests, melos | — | `cli_util` |
 | `file` | `tools.dart.dev` | codegen, tests, language server, melos | `meta`, `path` | `glob`, `melos`, `process` |
 | `fixnum` | `dart.dev` | codegen, tests | — | `built_value` |
-| `flutter` | Flutter SDK | app, tests | `characters`, `collection`, `material_color_utilities`, `meta`, `sky_engine`, `vector_math` | `flutter_counter`, `flutter_localizations`, `flutter_test`, `flutter_themes`, `leak_tracker_flutter_testing`, `spring_boot_starter_flutter` |
-| `flutter_lints` | `flutter.dev` | lints | `lints` | `flutter_counter` (dev), `flutter_themes` (dev) |
+| `flutter` | Flutter SDK | app, tests | `characters`, `collection`, `material_color_utilities`, `meta`, `sky_engine`, `vector_math` | `flutter_localizations`, `flutter_test`, `leak_tracker_flutter_testing`, `neon_books_app`, `spring_boot_starter_flutter` |
+| `flutter_lints` | `flutter.dev` | lints | `lints` | `neon_books_app` (dev) |
 | `flutter_localizations` | Flutter SDK | app | `flutter`, `intl`, `path` | `spring_boot_starter_flutter` |
-| `flutter_test` | Flutter SDK | tests | `clock`, `collection`, `fake_async`, `flutter`, `leak_tracker_flutter_testing`, `matcher`, `meta`, `path`, `stack_trace`, `stream_channel`, `test_api`, `vector_math` | `flutter_counter` (dev), `flutter_themes` (dev), `spring_boot_starter_flutter` (dev) |
+| `flutter_test` | Flutter SDK | tests | `clock`, `collection`, `fake_async`, `flutter`, `leak_tracker_flutter_testing`, `matcher`, `meta`, `path`, `stack_trace`, `stream_channel`, `test_api`, `vector_math` | `neon_books_app` (dev), `spring_boot_starter_flutter` (dev) |
 | `frontend_server_client` | `tools.dart.dev` | tests | `async`, `package_config`, `path` | `test_core` |
 | `glob` | `tools.dart.dev` | codegen, tests, language server, melos | `async`, `collection`, `file`, `path`, `string_scanner` | `analyzer`, `build`, `build_runner`, `build_test`, `coverage`, `melos`, `source_gen`, `spring_core_dart_generator`, `test_core` |
 | `graphs` | `tools.dart.dev` | codegen, tests, melos | `collection` | `build_runner`, `melos` |
@@ -527,7 +524,7 @@ pub workspace and the three Flutter packages).
 | `stream_transform` | `tools.dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test` |
 | `string_scanner` | `tools.dart.dev` | app, codegen, tests, language server, melos | `source_span` | `boolean_selector`, `glob`, `http_parser`, `io`, `melos`, `test_api`, `yaml` |
 | `term_glyph` | `tools.dart.dev` | app, codegen, tests, language server, melos | — | `matcher`, `source_span`, `test_api` |
-| `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_dart` (dev), `spring_boot_feign_example` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `spring_core_dart_example` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
+| `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `neon_books_server` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
 | `test_api` | `tools.dart.dev` | codegen, tests | `async`, `boolean_selector`, `collection`, `meta`, `source_span`, `stack_trace`, `stream_channel`, `string_scanner`, `term_glyph` | `flutter_test`, `matcher`, `spring_boot_starter_test`, `test`, `test_core` |
 | `test_core` | `tools.dart.dev` | tests | `analyzer`, `args`, `async`, `boolean_selector`, `collection`, `coverage`, `frontend_server_client`, `glob`, `io`, `meta`, `package_config`, `path`, `pool`, `source_map_stack_trace`, `source_maps`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `vm_service`, `yaml` | `build_test`, `test` |
 | `typed_data` | `dart.dev` | app (security), codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `test` |

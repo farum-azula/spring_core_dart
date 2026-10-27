@@ -9,6 +9,8 @@ applications, like Spring's `@Scheduled`: annotate a bean method and it runs
 every few seconds, after each run with a pause, or at cron times. Tasks stop
 when the context closes.
 
+*In the guides:* [server, 8. Cache and scheduling](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#8-cache-and-scheduling), [app, 8. Cache & scheduling](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#8-cache--scheduling).
+
 ## Installation
 
 ```yaml

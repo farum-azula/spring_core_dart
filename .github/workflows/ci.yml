@@ -26,14 +26,11 @@ jobs:
     outputs:
       packages: ${{ steps.affected.outputs.packages }}
       core: ${{ steps.affected.outputs.core }}
-      tour: ${{ steps.affected.outputs.tour }}
+      server_guide: ${{ steps.affected.outputs.server_guide }}
       security: ${{ steps.affected.outputs.security }}
       flutter: ${{ steps.affected.outputs.flutter }}
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
-      flutter_counter: ${{ steps.affected.outputs.flutter_counter }}
-      flutter_themes: ${{ steps.affected.outputs.flutter_themes }}
-      flutter_notes: ${{ steps.affected.outputs.flutter_notes }}
-      flutter_examples: ${{ steps.affected.outputs.flutter_examples }}
+      flutter_guide: ${{ steps.affected.outputs.flutter_guide }}
       family: ${{ steps.affected.outputs.family }}
     steps:
       - uses: actions/checkout@v7
@@ -80,7 +77,7 @@ jobs:
       # The workspace packages (the Flutter ones resolve outside it and are
       # analyzed by the `flutter` job).
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security spring_boot_starter_test example/spring_core_tour example/spring_boot_feign extensions/language_server tool
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security spring_boot_starter_test example/server_guide extensions/language_server tool
 
       # coverage:test_with_coverage in each published Dart package, the
       # lcov files merged into coverage/lcov.info.
@@ -174,8 +171,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - part: examples and core
-            directories: example/spring_core_tour example/spring_boot_feign spring_core_dart spring_boot_dart
+          - part: server guide and core
+            directories: example/server_guide spring_core_dart spring_boot_dart
           - part: starters
             directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security
     steps:
@@ -329,11 +326,11 @@ jobs:
 
   # SpEL and the JSON mapper run on the web too, where an integral double is
   # an `int` at run time: their tests also run compiled to JavaScript, on
-  # node. And the tour's applications run, also minified.
+  # node. And the server guide runs, also minified.
   web:
-    name: Node and the example applications
+    name: Node and the server guide
     needs: changes
-    if: needs.changes.outputs.core == 'true' || needs.changes.outputs.tour == 'true'
+    if: needs.changes.outputs.core == 'true' || needs.changes.outputs.server_guide == 'true'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -354,26 +351,26 @@ jobs:
         working-directory: spring_core_dart
         run: dart test -p node test/expression test/json
 
-      - name: Example runs (tour and Spring Boot app)
-        if: needs.changes.outputs.tour == 'true'
-        working-directory: example/spring_core_tour
-        run: |
-          dart run bin/main.dart
-          # @Scheduled tasks keep a Boot app running; switched off to exit.
-          dart run bin/shop.dart --spring.task.scheduling.enabled=false
+      # The server itself is tested by its tests (the integration job starts
+      # it on a free port); here the chapter 13 program runs to its end.
+      - name: The server guide's advanced chapter runs
+        if: needs.changes.outputs.server_guide == 'true'
+        working-directory: example/server_guide
+        run: dart run bin/advanced.dart
 
       - name: Release-mode check (minified JavaScript)
-        if: needs.changes.outputs.tour == 'true'
-        working-directory: example/spring_core_tour
+        if: needs.changes.outputs.server_guide == 'true'
+        working-directory: example/server_guide
         run: |
           dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
           # dart2js code expects the browser's `self` (timers of @Scheduled).
           node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 
-  # spring_boot_starter_flutter and the Flutter examples: outside the pub workspace
-  # (flutter_test pins versions that package:test of the workspace cannot
-  # use), so they get the Flutter SDK and their own resolution.
-  # Only when spring_boot_starter_flutter or a Flutter example is affected.
+  # spring_boot_starter_flutter and the Flutter guide: outside the pub
+  # workspace (flutter_test pins versions that package:test of the workspace
+  # cannot use), so they get the Flutter SDK and their own resolution.
+  # Only when spring_boot_starter_flutter, the Flutter guide or the server
+  # guide it talks to is affected.
   flutter:
     needs: changes
     if: needs.changes.outputs.flutter == 'true'
@@ -391,9 +388,7 @@ jobs:
           flutter --version
           dart pub get
           (cd spring_boot_starter_flutter && flutter pub get)
-          (cd example/flutter_counter && flutter pub get)
-          (cd example/flutter_themes && flutter pub get)
-          (cd example/flutter_notes && flutter pub get)
+          (cd example/flutter_guide && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
@@ -401,9 +396,9 @@ jobs:
       - name: No known vulnerabilities in the dependencies (Flutter packages)
         run: dart run tool/check_vulnerabilities.dart --flutter
 
-      - name: Generated code is up to date (Flutter examples)
+      - name: Generated code is up to date (Flutter guide and starter)
         run: |
-          for example in example/flutter_counter example/flutter_themes example/flutter_notes spring_boot_starter_flutter; do
+          for example in example/flutter_guide spring_boot_starter_flutter; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -412,9 +407,7 @@ jobs:
       - name: Analyze
         run: |
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
-          (cd example/flutter_counter && flutter analyze --fatal-infos)
-          (cd example/flutter_themes && flutter analyze --fatal-infos)
-          (cd example/flutter_notes && flutter analyze --fatal-infos)
+          (cd example/flutter_guide && flutter analyze --fatal-infos)
 
       # The golden screenshots run in the `goldens` job (macOS).
       - name: Tests of spring_boot_starter_flutter
@@ -422,32 +415,30 @@ jobs:
         working-directory: spring_boot_starter_flutter
         run: flutter test
 
-      - name: Tests of the Flutter counter example
-        if: needs.changes.outputs.flutter_counter == 'true'
-        working-directory: example/flutter_counter
-        run: flutter test --exclude-tags golden
+      # The app's tests, the end-to-end ones (tag e2e) against the server
+      # guide running here.
+      - name: Tests of the Flutter guide, against the server guide
+        if: needs.changes.outputs.flutter_guide == 'true'
+        run: |
+          (cd example/server_guide && dart run bin/main.dart > "$RUNNER_TEMP/server.log" 2>&1 &)
+          for attempt in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:8080/api/books && break
+            sleep 1
+          done
+          cd example/flutter_guide
+          flutter test --exclude-tags golden || { cat "$RUNNER_TEMP/server.log"; exit 1; }
 
-      - name: Tests of the Flutter themes example
-        if: needs.changes.outputs.flutter_themes == 'true'
-        working-directory: example/flutter_themes
-        run: flutter test --exclude-tags golden
-
-      # The app's REST API: MockMvc and a real server on a free port.
-      - name: Tests of the Flutter notes example (REST API in the app)
-        if: needs.changes.outputs.flutter_notes == 'true'
-        working-directory: example/flutter_notes
-        run: flutter test
-
-      - name: The example builds for the web (release)
-        working-directory: example/flutter_counter
+      - name: The Flutter guide builds for the web (release)
+        if: needs.changes.outputs.flutter_guide == 'true'
+        working-directory: example/flutter_guide
         run: flutter build web --release
 
-  # The golden screenshots of the Flutter examples (test/golden_test.dart):
+  # The golden screenshots of the Flutter guide (test/golden_test.dart):
   # made on macOS, so compared on macOS; Linux draws the letters
   # differently (0.5–3% of the pixels of a screen with text).
   goldens:
     needs: changes
-    if: needs.changes.outputs.flutter_examples == 'true'
+    if: needs.changes.outputs.flutter_guide == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
@@ -461,17 +452,10 @@ jobs:
         run: |
           flutter --version
           dart pub get
-          (cd example/flutter_counter && flutter pub get)
-          (cd example/flutter_themes && flutter pub get)
+          (cd example/flutter_guide && flutter pub get)
 
-      - name: Golden screenshots (counter)
-        if: needs.changes.outputs.flutter_counter == 'true'
-        working-directory: example/flutter_counter
-        run: flutter test --tags golden
-
-      - name: Golden screenshots (themes)
-        if: needs.changes.outputs.flutter_themes == 'true'
-        working-directory: example/flutter_themes
+      - name: Golden screenshots of the Flutter guide
+        working-directory: example/flutter_guide
         run: flutter test --tags golden
 
       # The screenshots that no longer match: the expected and actual images
@@ -481,7 +465,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: golden-failures
-          path: example/flutter_*/test/failures/
+          path: example/flutter_guide/test/failures/
           if-no-files-found: ignore
 
   # The lowest versions allowed by our constraints must still work: resolve

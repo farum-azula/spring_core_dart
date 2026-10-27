@@ -1,0 +1,3 @@
+NEON Books is the bookstore of the Spring guides, and this is its app: a Flutter client of the NEON Books server.
+
+The app keeps its state in beans, talks to the server through Feign clients and a WebSocket, checks roles with Spring Security, and reads this page from two assets injected into a bean with @Value('asset:...'): the leaf above, an image, and this text, read when the page opens.

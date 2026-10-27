@@ -15,6 +15,8 @@ dev_dependencies:
   test: ^1.25.0          # or flutter_test
 ```
 
+*In the guides:* [server, 12. Testing](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#12-testing), [app, 11. Testing](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#11-testing).
+
 ## `springBootTest`: the whole application (`@SpringBootTest`)
 
 ```dart

@@ -1,0 +1,12 @@
+# The bookstore's own look: pink and cyan on deep violet.
+spring.flutter.theme.themes.neon:
+  seed-color: '#FF40A0'
+  scheme-variant: vibrant
+  colors:
+    secondary: '#00B8D4'
+  shape: { medium: 20, large: 28 }
+  components:
+    button: { shape: full }
+    card: { elevation: level0, color: surface-container }
+  tokens:
+    brand: { accent: '#00E5FF' }

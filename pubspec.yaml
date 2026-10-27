@@ -19,8 +19,7 @@ workspace:
   - spring_boot_starter_web
   - spring_security_core
   - spring_boot_starter_security
-  - example/spring_core_tour
-  - example/spring_boot_feign
+  - example/server_guide
   - extensions/language_server
 
 dev_dependencies:
