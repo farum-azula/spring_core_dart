@@ -142,6 +142,9 @@ const semanticTokenTypes = [
   'method',
   'type',
   'class',
+  // A closure's parameter, where it is declared and where the closure's
+  // body uses it (an editor rule gives it a colour of its own).
+  'closureParameter',
 ];
 
 /// One semantic token (absolute position, single line).
@@ -1526,6 +1529,9 @@ final class SpringWorkspace {
         });
       }
     }
+    file.unit.accept(
+      _ClosureParameters((start, end) => add(start, end, 'closureParameter')),
+    );
     tokens.sort(
       (a, b) => a.line != b.line ? a.line - b.line : a.column - b.column,
     );
@@ -2241,4 +2247,143 @@ final class _AliasUse extends RecursiveAstVisitor<void> {
     }
     super.visitNamedType(node);
   }
+}
+
+/// Finds the parameters of closures (`(alert) => ...`) and the places in
+/// their bodies that use them, for [SpringWorkspace.semanticTokens]. A name
+/// declared again inside (a local variable, a loop or catch variable, a
+/// pattern, a parameter of a nested function) hides the parameter there.
+final class _ClosureParameters extends RecursiveAstVisitor<void> {
+  _ClosureParameters(this._add);
+
+  final void Function(int start, int end) _add;
+
+  // Innermost last: name -> whether it is a closure parameter.
+  final _scopes = <Map<String, bool>>[];
+
+  bool _isClosureParameter(String name) {
+    for (final scope in _scopes.reversed) {
+      if (scope[name] case final closure?) {
+        return closure;
+      }
+    }
+    return false;
+  }
+
+  void _declare(String name) {
+    if (_scopes.isNotEmpty) {
+      _scopes.last[name] = false;
+    }
+  }
+
+  void _inScope(Map<String, bool> scope, void Function() body) {
+    _scopes.add(scope);
+    try {
+      body();
+    } finally {
+      _scopes.removeLast();
+    }
+  }
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {
+    // A local or top-level function is a FunctionExpression too; only
+    // the others are closures.
+    final closure = node.parent is! FunctionDeclaration;
+    final scope = <String, bool>{};
+    for (final parameter
+        in node.parameters?.parameters ?? const <FormalParameter>[]) {
+      final name = parameter.name;
+      if (name == null) {
+        continue;
+      }
+      scope[name.lexeme] = closure;
+      if (closure) {
+        _add(name.offset, name.end);
+      }
+    }
+    node.typeParameters?.accept(this);
+    node.parameters?.accept(this);
+    _inScope(scope, () => node.body.accept(this));
+  }
+
+  @override
+  void visitMethodDeclaration(MethodDeclaration node) => _inScope({
+    for (final parameter
+        in node.parameters?.parameters ?? const <FormalParameter>[])
+      if (parameter.name case final name?) name.lexeme: false,
+  }, () => super.visitMethodDeclaration(node));
+
+  @override
+  void visitBlock(Block node) => _inScope({}, () => super.visitBlock(node));
+
+  // Loop, catch and pattern variables live only in their statement.
+  @override
+  void visitForStatement(ForStatement node) =>
+      _inScope({}, () => super.visitForStatement(node));
+
+  @override
+  void visitForElement(ForElement node) =>
+      _inScope({}, () => super.visitForElement(node));
+
+  @override
+  void visitCatchClause(CatchClause node) =>
+      _inScope({}, () => super.visitCatchClause(node));
+
+  @override
+  void visitIfStatement(IfStatement node) =>
+      _inScope({}, () => super.visitIfStatement(node));
+
+  @override
+  void visitIfElement(IfElement node) =>
+      _inScope({}, () => super.visitIfElement(node));
+
+  @override
+  void visitSwitchPatternCase(SwitchPatternCase node) =>
+      _inScope({}, () => super.visitSwitchPatternCase(node));
+
+  @override
+  void visitSwitchExpressionCase(SwitchExpressionCase node) =>
+      _inScope({}, () => super.visitSwitchExpressionCase(node));
+
+  @override
+  void visitVariableDeclaration(VariableDeclaration node) {
+    _declare(node.name.lexeme);
+    super.visitVariableDeclaration(node);
+  }
+
+  @override
+  void visitDeclaredIdentifier(DeclaredIdentifier node) {
+    _declare(node.name.lexeme);
+    super.visitDeclaredIdentifier(node);
+  }
+
+  @override
+  void visitCatchClauseParameter(CatchClauseParameter node) {
+    _declare(node.name.lexeme);
+    super.visitCatchClauseParameter(node);
+  }
+
+  @override
+  void visitDeclaredVariablePattern(DeclaredVariablePattern node) {
+    _declare(node.name.lexeme);
+    super.visitDeclaredVariablePattern(node);
+  }
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    if (_isClosureParameter(node.name) && _isReference(node)) {
+      _add(node.offset, node.end);
+    }
+  }
+
+  // Not a use of a variable: `x.alert`, `x?.alert`, `x.alert()`, `alert:`.
+  static bool _isReference(SimpleIdentifier node) => switch (node.parent) {
+    PropertyAccess(:final propertyName) => propertyName != node,
+    PrefixedIdentifier(:final identifier) => identifier != node,
+    MethodInvocation(:final methodName, :final realTarget) =>
+      methodName != node || realTarget == null,
+    Label() => false,
+    _ => true,
+  };
 }

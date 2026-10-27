@@ -59,6 +59,13 @@ designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
 types, annotations, bean patterns, method names and named pointcuts
 (needs the `semantic_tokens` setting below).
 
+**A closure's parameters** where they are declared and everywhere the
+closure's body uses them (`(alert) => heard.add('${alert.isbn}')`), a
+semantic token of their own (`closureParameter`) that a rule gives a
+colour (setup step 3). A name declared again inside the
+closure (a local variable, a loop variable, a nested function's parameter)
+hides it; parameters of functions and methods are left as they are.
+
 **Config files**: `${key}`, `${key:default}` and `#{...}` in the values of
 `application*.yml` / `.yaml`, of YAML under `resources/` and of
 `.properties` files are highlighted like in annotations (comments left
@@ -192,6 +199,44 @@ is no palette entry for this.
      }
    }
    ```
+3. **A colour for a closure's parameters** (optional): a rule mapping the
+   server's `closureParameter` token to a theme style, for example
+   `variable.parameter.closure` (the Farum Azula themes colour it; any
+   style of your theme works, such as `variable.special`). The Flutter
+   extension for Zed (`flutter-tools`) ships these rules with its Dart
+   language; with another Dart extension, put them in Zed's
+   `settings.json`:
+   ```json
+   {
+     "global_lsp_settings": {
+       "semantic_token_rules": [
+         { "token_type": "class", "token_modifiers": ["annotation"] },
+         { "token_type": "property", "token_modifiers": ["annotation"] },
+         { "token_type": "method", "token_modifiers": ["annotation"] },
+         { "token_type": "annotation" },
+         { "token_type": "parameter" },
+         {
+           "token_type": "closureParameter",
+           "style": ["variable.parameter.closure"]
+         }
+       ]
+     }
+   }
+   ```
+   With `semantic_tokens` on for Dart, Zed also shows the Dart analysis
+   server's tokens over the tree-sitter colours. A rule without a style
+   takes a token's colour away, leaving it to the tree-sitter colours:
+   - the analysis server marks every parameter `parameter`, a closure's
+     too; without that rule its token would hide `closureParameter`;
+   - it marks an annotation's name as a class, a property or a
+     constructor (`@Autowired`, `@override`, `@RequestParam.of`), and
+     `@ . ( )` as `annotation`: the first four rules keep annotations in
+     their own colour.
+
+   Zed honours a rule without a style only when it is the first rule that
+   applies to the token's type, so give each type at most one, before the
+   type's other rules, and give each a `token_type` (a rule without one
+   applies to every type and would come first for all of them).
 
 The language server is downloaded automatically the first time a Dart
 file is opened: the extension takes the native binary of its own version
