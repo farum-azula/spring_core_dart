@@ -1,3 +1,7 @@
+## 0.4.0
+
+- feat: spring_security_core, spring_boot_starter_security and a CI quality gate
+
 ## 0.3.2
 
 - feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds

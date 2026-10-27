@@ -7,12 +7,12 @@ JWT resource servers, CSRF, CORS and security headers.
 
 ```yaml
 dependencies:
-  spring_boot_starter_security: ^0.3.2
+  spring_boot_starter_security: ^0.4.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.3.2
-  spring_boot_starter_test: ^0.3.2     # MockMvc, springBootTest
+  spring_core_dart_generator: ^0.4.0
+  spring_boot_starter_test: ^0.4.0     # MockMvc, springBootTest
 ```
 
 It brings the web starter and [`spring_security_core`](../spring_security_core/README.md)

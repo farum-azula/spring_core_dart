@@ -1,3 +1,7 @@
+## 0.4.0
+
+- feat: spring_security_core, spring_boot_starter_security and a CI quality gate
+
 ## 0.3.2
 
 - feat: spring_boot_starter_web, WebSocket server endpoints, uploads and downloads

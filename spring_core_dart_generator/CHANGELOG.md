@@ -1,3 +1,9 @@
+## 0.4.0
+
+- fix: the release tests at any version; Flutter and Dart in the startu… (#6)
+- chore(deps): bump package_config from 2.2.0 to 3.0.0 (#5)
+- feat: spring_security_core, spring_boot_starter_security and a CI quality gate
+
 ## 0.3.2
 
 - feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds

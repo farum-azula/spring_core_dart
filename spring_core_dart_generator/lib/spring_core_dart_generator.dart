@@ -7,7 +7,7 @@
 /// ```yaml
 /// dev_dependencies:
 ///   build_runner: ^2.17.0
-///   spring_core_dart_generator: ^0.3.2
+///   spring_core_dart_generator: ^0.4.0
 /// ```
 ///
 /// Spring (Java) has no build step: the same work happens at runtime through

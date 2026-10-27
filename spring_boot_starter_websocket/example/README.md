@@ -6,11 +6,11 @@ echo server.
 
 ```yaml
 dependencies:
-  spring_boot_starter_websocket: ^0.3.2
+  spring_boot_starter_websocket: ^0.4.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.3.2
+  spring_core_dart_generator: ^0.4.0
 ```
 
 ```bash

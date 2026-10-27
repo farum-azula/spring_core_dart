@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0
 
 - The startup line names the runtime: `Starting app using Dart 3.13.5 with PID 42`, in a Flutter app `using Flutter 3.47.7 (Dart 3.13.5)` (also on the web, where the Dart version comes from the Flutter tool).
 

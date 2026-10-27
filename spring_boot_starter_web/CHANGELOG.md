@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0
 
 - `HttpSession`: `request.getSession()`, an in-memory `HttpSessionRepository` with expiry and a limit (`server.servlet.session.timeout`, `.max-sessions`, `.cookie.*`; `SameSite=Lax` by default), `changeSessionId()`; the session cookie is written by `HttpSessionFilter`.
 - `@RequestParam` reads the fields of `application/x-www-form-urlencoded` bodies too, like Spring MVC (`readFormParameters`).
