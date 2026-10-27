@@ -71,8 +71,12 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
+      # The Flutter guide is formatted in the `flutter` job: its
+      # analysis_options.yaml includes flutter_lints, which only resolves
+      # after `flutter pub get`; unresolved, the formatter drops the whole
+      # file (trailing_commas: preserve too) and joins the bean columns.
       - name: Format
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed $(git ls-files '*.dart' ':!:example/flutter_guide/**')
 
       # The workspace packages (the Flutter ones resolve outside it and are
       # analyzed by the `flutter` job).
@@ -403,6 +407,9 @@ jobs:
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
           done
+
+      - name: Format (Flutter guide; the rest in the `quality` job)
+        run: dart format --output=none --set-exit-if-changed example/flutter_guide
 
       - name: Analyze
         run: |

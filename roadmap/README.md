@@ -39,10 +39,14 @@ What comes next, in order:
    it must be shown to be safe, not assumed.~~ Done, with the evidence of
    [docs/security.md](../docs/security.md); what is left (BCrypt, multi-factor,
    session registry, opaque tokens, the ZAP scan) is in the two files.
-3. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
+3. **Documentation comments, first after the 0.4.x release**
+   ([documentation.md](documentation.md)): every `///` of every package
+   rewritten to say what the thing is, why it exists and when you need it,
+   understandable without knowing Spring.
+4. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
    of the providers (Anthropic, OpenAI, Gemini, Ollama, ...) behind one
    `ChatClient`.
-4. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
+5. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
    *MVC: views and static resources*): first find out whether it is worth
    it. With it, maybe (not decided): browser SSO on the server,
    `oauth2Login()` with OpenID Connect
@@ -50,9 +54,9 @@ What comes next, in order:
    which only pages rendered by the server (or a backend-for-frontend)
    need; apps log in on the client and send tokens, which the resource
    server already checks.
-5. Later: the [MCP server starter](spring_ai_starter_mcp_server.md), the
+6. Later: the [MCP server starter](spring_ai_starter_mcp_server.md), the
    actuator, data, the rest of the table.
-6. Under question, far off: **the starters on the generator** —
+7. Under question, far off: **the starters on the generator** —
    `@AutoConfiguration` classes with `@Bean` methods instead of the
    hand-written `BeanDefinition`s of their auto-configurations. For now
    hand-written stays: it reads better for this code and needs no
