@@ -50,9 +50,7 @@ const repositoryOnly = {
 /// `--flutter`. The Flutter SDK's packages count as the SDK.
 const flutterPackages = [
   'spring_boot_starter_flutter',
-  'example/flutter_counter',
-  'example/flutter_themes',
-  'example/flutter_notes',
+  'example/flutter_guide',
 ];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
@@ -106,12 +104,7 @@ const allowedPackages = {
   'material_color_utilities': AllowedPackage(
     'Part of the Flutter SDK (package:flutter depends on it, pinned by the '
     "SDK); published by Google's material.io.",
-    onlyIn: {
-      'spring_boot_starter_flutter',
-      'flutter_counter',
-      'flutter_themes',
-      'flutter_notes',
-    },
+    onlyIn: {'spring_boot_starter_flutter', 'neon_books_app'},
   ),
   'pointycastle': AllowedPackage(
     "THIRD-PARTY, to be removed: Bouncy Castle's Dart port (verified "

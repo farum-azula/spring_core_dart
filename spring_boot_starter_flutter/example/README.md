@@ -7,8 +7,8 @@ texts and settings come from properties files.
 `example.dart` is the whole app: a `@ChangeNotifierComponent` counter,
 Spring widgets and `@SpringBootApplication` on `main`; the generator
 writes `example.spring.dart`. The steps below show the same in a project. A
-complete app with tests and golden screenshots:
-[`example/flutter_counter`](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_counter).
+complete app with tests and golden screenshots: the
+[Flutter guide](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide).
 
 ## Setup
 

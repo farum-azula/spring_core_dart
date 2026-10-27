@@ -1,0 +1,3 @@
+NEON Books は Spring ガイドの書店です。このアプリは NEON Books サーバーの Flutter クライアントです。
+
+状態は Bean に入り、サーバーとは Feign クライアントと WebSocket で通信し、ロールは Spring Security で確認します。このページには、@Value('asset:...') で Bean に注入された二つのアセットを表示しています。上の葉の画像と、ページを開いたときに読み込むこのテキストです。

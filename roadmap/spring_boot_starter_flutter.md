@@ -34,7 +34,7 @@ beans in widgets (`context.bean<T>()`, `@BuildContextAccess` getters,
 `SpringStatelessWidget<(...)>` / `SpringStatefulWidget<(...)>` checked at startup), the app lifecycle as events with
 pause / restart of the context, platform profiles, `--dart-define` as a
 property source, the OS environment switch, `context.message`, tests with
-`SpringScope` and `springBootTest`; the example `example/flutter_counter`.
+`SpringScope` and `springBootTest`; the [Flutter guide](../example/flutter_guide/README.md).
 
 The app widget from configuration is done: `SpringApp` from
 `spring.flutter.app.*` (type, title, debug banner, locales from the
@@ -42,7 +42,7 @@ messages files), observers and customizers, and themes from
 `spring.flutter.theme.*` (shared part, `light` / `dark` / custom themes
 with `extends`, the full Material 3 token set and 19 components, the
 app's own tokens, switching at run time, themes loaded from a server,
-fonts from any asset directory); the example `example/flutter_themes`.
+fonts from any asset directory); the Flutter guide's chapter 3.
 Next for themes: the remaining Material components, typed tokens
 (`@ThemeTokens` classes generated into `ThemeExtension`s), the user's
 choice kept in `shared_preferences` (see *Settings*).
@@ -67,7 +67,7 @@ the context to the tree (see *Beans in widgets*).
 ## The app widget from configuration
 
 Done (see the starter's README, *The app widget from configuration* and
-*Themes from properties*, and `example/flutter_themes`): the app widget
+*Themes from properties*, and the Flutter guide): the app widget
 from `spring.flutter.app.*`, themes from `spring.flutter.theme.*` as
 named themes (`active: system | light | dark | <name>`, `themes.<name>`,
 `extends`), switched by `ThemeSelection`, loaded from a server by
@@ -156,7 +156,7 @@ the starter builds it. Planned pieces:
   under `flutter: fonts:` keep working by name. A `font-family` that is
   neither loaded nor declared fails the start with the families found
   (Flutter would silently fall back). Tests load them too, so
-  `example/flutter_counter` drops the hand-loaded Japanese font of its
+  the Flutter guide drops the hand-loaded Japanese font of its
   `flutter_test_config.dart`.
 - **`SpringTheme`**, an inherited widget like `Theme`, gives the
   `SpringThemeData` to the tree (`SpringTheme.of(context)`), so the app's
@@ -168,7 +168,7 @@ the starter builds it. Planned pieces:
   nothing more. `material` → `MaterialApp` (the
   `ThemeData` beans and the theme mode), `cupertino` → `CupertinoApp` (the
   `CupertinoThemeData` bean); Material widgets (`Scaffold`, `AppBar`) need
-  `material`, so an app using them says so (`example/flutter_counter`
+  `material`, so an app using them says so (the Flutter guide
   does). With the platform profiles one app can be Material on
   Android and Cupertino on iOS by configuration only; beans for one type
   use `@ConditionalOnProperty('spring.flutter.app.type', havingValue: 'cupertino')`.
@@ -212,7 +212,7 @@ the starter builds it. Planned pieces:
   {'spring.flutter.theme.mode': 'dark'})` and a golden screenshot of the
   dark theme, without code for it in the app.
 
-In `example/flutter_counter` the `CounterApp` widget then goes away: its
+In an app the hand-written `MaterialApp` widget then goes away: its
 theme, locales and banner move to `application.yml`.
 
 ## Beans in widgets
@@ -247,13 +247,21 @@ by hand.
   read as `beans`, a record. Good for a few widgets with a few beans; it
   gets heavy when many widgets need many beans.
   ```dart
-  class BasketBadge extends SpringStatelessWidget<(Basket, AppNavigator)> {
+  typedef BasketBadgeBeans = (
+    Basket,
+    AppNavigator,
+  );
+
+  class BasketBadge extends SpringStatelessWidget<BasketBadgeBeans> {
     const BasketBadge({this.compact = false, super.key}); // your constructor
     final bool compact;
 
     @override
     Widget build(BuildContext context) {
-      final (basket, navigator) = beans;
+      final (
+        basket,
+        navigator,
+      ) = beans;
       return Watch((_) => Badge(
             label: Text('${basket.count}'),
             child: IconButton(

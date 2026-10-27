@@ -1,0 +1,5 @@
+tags:
+  # test/golden_test.dart: screenshots made on macOS, compared only there.
+  golden:
+  # test/e2e_test.dart: the app against the running server guide.
+  e2e:

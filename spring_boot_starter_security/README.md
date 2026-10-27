@@ -18,6 +18,8 @@ dev_dependencies:
 It brings the web starter and [`spring_security_core`](../spring_security_core/README.md)
 (users, passwords, `@PreAuthorize`): one dependency.
 
+*In the guides:* [server, 4. Security](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#4-security).
+
 ## Secure by default
 
 With the starter listed and nothing configured, like Spring Boot:

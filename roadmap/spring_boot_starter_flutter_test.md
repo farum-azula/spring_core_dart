@@ -13,7 +13,7 @@ The specification is the documentation page
 
 Flutter tests use `spring_boot_starter_test` with `flutter_test` and wrap
 the widget in `SpringScope(applicationContext: app.context, child:
-SpringApp(home: ...))` (see `example/flutter_counter/test/widget_test.dart`).
+SpringApp(home: ...))` (see the Flutter guide's tests, `example/flutter_guide/test/`).
 
 ## Planned
 
@@ -38,7 +38,7 @@ must be open to annotations of other starters).
 6. **`@Golden(themes:, size:)`**: one widget test per theme, compared with
    `goldens/<method>.<theme>.png`.
 7. **Build errors** of docs/flutter-testing.md section 12.
-8. **Examples**: `example/flutter_counter` and `example/flutter_themes`
+8. **Examples**: the Flutter guide's
    tests as classes; the docs examples run in CI (on the macOS runner for
    goldens).
 

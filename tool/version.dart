@@ -36,11 +36,8 @@ const family = [
 
 /// Packages that only depend on the family (not published).
 const dependents = [
-  'example/spring_core_tour',
-  'example/spring_boot_feign',
-  'example/flutter_counter',
-  'example/flutter_themes',
-  'example/flutter_notes',
+  'example/server_guide',
+  'example/flutter_guide',
   'extensions/language_server',
 ];
 

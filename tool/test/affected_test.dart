@@ -109,8 +109,7 @@ targets:
         : Directory.current.path;
     final packages = [
       ...family.family,
-      'example/spring_core_tour',
-      'example/spring_boot_feign',
+      'example/server_guide',
       'extensions/language_server',
     ];
     late Map<String, Set<String>> dependencies;
@@ -146,8 +145,7 @@ targets:
         'spring_boot_starter_websocket',
         'spring_boot_starter_web',
         'spring_boot_starter_security',
-        'example/spring_core_tour',
-        'example/spring_boot_feign',
+        'example/server_guide',
       });
     });
 
@@ -165,7 +163,7 @@ targets:
         isTrue,
       );
       expect(
-        familyAffected(affected('example/spring_core_tour/bin/x.dart')),
+        familyAffected(affected('example/server_guide/bin/x.dart')),
         isFalse,
       );
       expect(

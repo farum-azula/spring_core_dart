@@ -1,0 +1,10 @@
+[
+  {"isbn": "9780441013593", "title": "Dune", "author": "Frank Herbert", "price": 9.99, "year": 1965, "tags": ["fiction", "science-fiction"], "format": "PAPERBACK", "stock": 5},
+  {"isbn": "9780345391803", "title": "The Hitchhiker's Guide to the Galaxy", "author": "Douglas Adams", "price": 7.99, "year": 1979, "tags": ["fiction", "humour"], "format": "PAPERBACK", "stock": 3},
+  {"isbn": "9780345539434", "title": "Cosmos", "author": "Carl Sagan", "price": 12.5, "year": 1980, "tags": ["science"], "format": "HARDCOVER", "stock": 2},
+  {"isbn": "9780140421996", "title": "Leaves of Grass", "author": "Walt Whitman", "price": 8.0, "year": 1855, "tags": ["poetry"], "format": "PAPERBACK", "stock": 1},
+  {"isbn": "9780451524935", "title": "1984", "author": "George Orwell", "price": 8.99, "year": 1949, "tags": ["fiction"], "format": "PAPERBACK", "stock": 4},
+  {"isbn": "9780547928227", "title": "The Hobbit", "author": "J. R. R. Tolkien", "price": 10.99, "year": 1937, "tags": ["fiction", "fantasy"], "format": "HARDCOVER", "stock": 6},
+  {"isbn": "9780156012195", "title": "The Little Prince", "author": "Antoine de Saint-Exupéry", "price": 6.99, "year": 1943, "tags": ["fiction", "children"], "format": "EBOOK", "stock": 0},
+  {"isbn": "9784101006055", "title": "人間失格", "author": "太宰治", "price": 5.5, "year": 1948, "tags": ["fiction", "japanese"], "format": "PAPERBACK", "stock": 2}
+]

@@ -53,6 +53,8 @@ class Chat {
 chat.url=wss://chat.neon.books/ws
 ```
 
+*In the guides:* [server, 5. WebSocket](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#5-websocket), [app, 6. Server access](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#6-server-access).
+
 ## Differs from Spring
 
 Spring has **no declarative WebSocket client**. In Spring you write a

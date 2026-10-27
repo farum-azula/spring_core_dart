@@ -1,0 +1,4 @@
+Dear {0},
+
+thank you for your order {1} at NEON Books: {2} for {3} EUR.
+It ships within {4} days.

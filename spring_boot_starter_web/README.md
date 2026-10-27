@@ -84,6 +84,8 @@ class BookController {
 }
 ```
 
+*In the guides:* [server, 3. Web](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#3-web).
+
 ## Setup
 
 ```yaml

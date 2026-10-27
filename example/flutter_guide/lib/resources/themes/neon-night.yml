@@ -1,0 +1,4 @@
+# The neon theme at night: everything of `neon`, dark.
+spring.flutter.theme.themes.neon-night:
+  extends: neon
+  brightness: dark

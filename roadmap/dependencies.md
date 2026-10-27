@@ -62,7 +62,7 @@ application does list.
 - `spring_boot_starter_test` re-exports the transport mocks
   (`MockHttpTransport`, `MockWebSocketTransport`); tests need no other
   dependency.
-- The docs' setup blocks, the package examples, `example/spring_boot_feign`
+- The docs' setup blocks, the package examples, the guides (`example/`)
   and the project template (`dart_spring_lsp create`) list only the chosen
   packages.
 
@@ -86,7 +86,7 @@ application does list.
    check it in the analyzer test below.
 4. **The analyzer test** — done (`tool/check_app_dependencies.dart`, in
    CI). Not yet for the Flutter starter (it needs the Flutter SDK).
-5. **`example/spring_core_tour`** still lists `spring_core_dart`,
-   `spring_boot_dart` and `spring_boot_starter_logging` next to its
-   starters, and imports them directly (a tour of the core's layers). Move
-   its imports to the starters it uses and drop the three.
+5. **`example/server_guide`** lists `spring_core_dart`, `spring_boot_dart`,
+   `spring_web_dart`, `spring_security_core` and the logging starter next
+   to its starters, and imports them directly. Move its imports to the
+   starters it uses and drop the packages that come with them.

@@ -23,6 +23,8 @@ class Books {
 }
 ```
 
+*In the guides:* [server, 8. Cache and scheduling](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#8-cache-and-scheduling), [app, 8. Cache & scheduling](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#8-cache--scheduling).
+
 ## Setup
 
 Add the dependency and run the generator again. The starter is found and

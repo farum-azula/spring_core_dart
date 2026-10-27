@@ -15,9 +15,7 @@ import 'package:yaml/yaml.dart';
 /// The lock files of the Flutter packages (outside the pub workspace).
 const _flutterLocks = [
   'spring_boot_starter_flutter/pubspec.lock',
-  'example/flutter_counter/pubspec.lock',
-  'example/flutter_themes/pubspec.lock',
-  'example/flutter_notes/pubspec.lock',
+  'example/flutter_guide/pubspec.lock',
 ];
 
 /// The hosted packages of the lock file at [path]: name → version.

@@ -19,7 +19,7 @@ separate library.
 |---|---|---|
 | `spring_core_dart` | [`spring_core_dart/`](https://github.com/farum-azula/spring_core_dart/tree/main/spring_core_dart) | Runtime: annotations, container, environment, events, SpEL, validation, AOP. Only the Dart team's `package:yaml`. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](https://pub.dev/packages/spring_core_dart_generator) | `build_runner` builder that turns annotations into `*.spring.dart` modules. |
-| `spring_core_dart_example` | [`example/`](https://github.com/farum-azula/spring_core_dart/tree/main/example) | Every feature in use, with end-to-end tests over the generated code. |
+| `neon_books_server`, `neon_books_app` | [`example/`](https://github.com/farum-azula/spring_core_dart/tree/main/example) | The guides: a bookstore's server and its Flutter app using every feature, chapter by chapter, with tests. |
 
 Libraries of the runtime (import one, or `package:spring_core_dart/spring_core_dart.dart` for all):
 

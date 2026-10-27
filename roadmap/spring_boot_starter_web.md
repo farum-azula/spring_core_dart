@@ -113,8 +113,7 @@ exists.
   platform checks at startup, hot restart and the port.
 - Other servers (`shelf`, Rust), HTTP/2.
 - Test slices (`@WebMvcTest`); replacing the examples' hand-written
-  `dart:io` stand-in servers (`example/spring_boot_feign`,
-  `example/spring_core_tour`, the `spring_web_dart` example and tests)
+  `dart:io` stand-in servers (the `spring_web_dart` example and tests)
   with controllers.
 - Later: STOMP, the [actuator](spring_boot_actuator.md) over HTTP, the
   [security starter](spring_boot_starter_security.md), the
@@ -474,8 +473,7 @@ WebEnvironment.randomPort)` runs the real server with `@LocalServerPort`,
 so a Feign client and the controller can be tested together.
 
 Left: test slices (`@WebMvcTest`), and the examples' hand-written
-`dart:io` stand-in servers (`example/spring_boot_feign`,
-`example/spring_core_tour`, the `spring_web_dart` example and tests)
+`dart:io` stand-in servers (the `spring_web_dart` example and tests)
 becoming Spring controllers.
 
 ## Order of work

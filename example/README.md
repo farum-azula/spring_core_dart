@@ -1,11 +1,15 @@
-# Examples
+# The guides
 
-Separate projects; each one runs on its own from its folder.
+Two applications of one bookstore, NEON Books, that use everything the
+family offers, written to be read chapter by chapter: each chapter says
+what it shows, which files to open, what to try and which test proves it.
+The documentation links to their chapters.
 
 | Folder | What | Run |
 |---|---|---|
-| [`spring_core_tour/`](spring_core_tour/README.md) | NEON Books: a tour where every feature of `spring_core_dart` and `spring_boot_dart` is used and prints what it did, with end-to-end tests over the generated code | `dart run bin/main.dart` |
-| [`spring_boot_feign/`](spring_boot_feign/README.md) | A small Spring Boot app against real public servers: a Feign client (REST), server-sent events, a WebSocket client | `dart run bin/main.dart` |
-| [`flutter_themes/`](flutter_themes/README.md) | Themes from properties: light, dark, system and custom themes (one YAML file each), every Material component, fonts from the assets, switching at run time and a theme loaded from a "server"; golden screenshots of each theme | `flutter run` |
-| [`flutter_notes/`](flutter_notes/README.md) | Notes in a Flutter app with its own REST API (`spring_boot_starter_web` inside the app): add a note on the screen and read it with `curl`, or POST one and see it appear | `flutter run -d macos` |
-| [`flutter_counter/`](flutter_counter/README.md) | The `flutter create` counter on `spring_boot_starter_flutter`: the count in a bean, properties per platform, texts in English and Japanese | `flutter run` |
+| [`server_guide/`](server_guide/README.md) | The bookstore's server: beans, configuration, a REST API with files and server-sent events, Spring Security (sessions, CSRF, roles, method security), WebSocket, events and AOP, cache, scheduling, Feign, validation, logging, testing, the advanced extension points | `dart run bin/main.dart` |
+| [`flutter_guide/`](flutter_guide/README.md) | The bookstore's Flutter app, a client of the server: state in beans, themes and texts from properties, assets, Feign clients and a WebSocket with a session, login and roles, cache, scheduling, validation, a log screen, widget tests, goldens and end-to-end tests against the server | `flutter run` |
+
+Both are kept working by CI: their tests, the generated code, the app's
+end-to-end tests against the running server, the server as minified
+JavaScript and the app's golden screenshots.

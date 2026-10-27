@@ -67,7 +67,7 @@ void main() => runSpringTests();
 - **Tests**: `spring_core_dart_generator/test/spring_test_builder_test.dart`
   (the generated code for every annotation, every build error),
   `spring_boot_starter_test/test/test_class_support_test.dart` (the
-  runtime), and running classes in `example/spring_core_tour/test/`
+  runtime), and running classes in `example/server_guide/test/`
   (`boot_class_test.dart`, the class version of `boot_test.dart`;
   `lifecycle_class_test.dart`, every annotation and the order they run in).
 

@@ -58,12 +58,13 @@ Test configuration goes to `test/resources/`, as in a Dart package.
 
 ## 2. A widget test today
 
-*Works today*, with `spring_boot_starter_test` and `SpringScope` (from
-`example/flutter_counter/test/widget_test.dart`):
+*Works today*, with `spring_boot_starter_test` and `SpringScope` (a
+counter app; the [Flutter guide](../example/flutter_guide/README.md#11-testing)
+tests every screen this way):
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:flutter_counter/main.spring.dart';
+import 'package:my_app/main.spring.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';

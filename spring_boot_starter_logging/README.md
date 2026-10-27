@@ -31,6 +31,8 @@ Spring Boot's console line (with `spring.application.name=shop`):
 2026-10-23T23:08:01.580+02:00  INFO 4711 --- [shop] [           main] neon.checkout                            : paid 12.5 {order=1}
 ```
 
+*In the guides:* [server, 11. Logging](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#11-logging), [app, 10. Logging](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#10-logging).
+
 ## Properties
 
 ```properties

@@ -1,3 +1,0 @@
-The counter app of flutter create, on Spring Boot for Flutter.
-
-The count lives in a bean, the texts come from messages files, and this page shows two assets injected into a bean with @Value('asset:...'): the leaf above, an image, and this text, read when the page opens.

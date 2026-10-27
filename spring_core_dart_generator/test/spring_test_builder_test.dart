@@ -1,6 +1,6 @@
 // Test classes (@SpringBootTest): what <name>.test.spring.dart declares
 // for each annotation, and the build errors. Running the generated tests
-// is covered by example/spring_core_tour/test/*_class_test.dart.
+// is covered by example/server_guide/test/*_class_test.dart.
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';

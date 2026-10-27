@@ -16,6 +16,8 @@ dev_dependencies:
   spring_core_dart_generator: ^0.3.2
 ```
 
+*In the guides:* [server, 1. The application](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#1-the-application), [2. Configuration](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#2-configuration).
+
 ## The whole application entry point
 
 ```dart

@@ -1,0 +1,55 @@
+# The look of the app: the shared part of every theme and the standard
+# `dark` theme's differences. Each custom theme has a file of its own in
+# themes/. No ThemeData in the code.
+spring:
+  config:
+    import: >-
+      classpath:themes/neon.yml, classpath:themes/neon-night.yml,
+      classpath:themes/sepia.yml, classpath:themes/high-contrast.yml
+
+  flutter:
+    theme:
+      # system | light | dark | neon | neon-night | sepia | high-contrast
+      # (and `winter` once loaded at run time, see Settings)
+      active: system
+      system-dark: dark
+
+      seed-color: deepPurple
+      typography:
+        font-family: Roboto
+        # Japanese glyphs: the system's fonts on devices, in tests the
+        # cut-down font of test/fonts/.
+        font-family-fallback: [Noto Sans JP]
+        display: { font-family: Roboto Condensed, weight: bold }
+        headline: { font-family: Roboto Condensed }
+        title-large: { weight: 500 }
+        # A monospaced font file would go into res/fonts/ like the others;
+        # Roboto Condensed stands in (the Logs screen).
+        code: { font-family: Roboto Condensed, size: 12 }
+      shape:
+        medium: 16
+      components:
+        app-bar:
+          scrolled-under-elevation: level2
+        card:
+          shape: large
+          color: surface-container-low
+        input:
+          style: outline
+          shape: small
+        snack-bar:
+          behavior: floating
+      spacing:
+        s: 8
+        m: 16
+        l: 24
+      tokens:
+        brand:
+          accent: '#FF40A0'
+          banner-height: 96
+
+      themes:
+        dark:
+          seed-color: deepPurple.shade200
+          components:
+            card: { color: surface-container }
