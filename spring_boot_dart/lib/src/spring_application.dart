@@ -1324,7 +1324,11 @@ final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
 
   @override
   void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
-    final runtime = runtimeDescription(dart: dartVersion());
+    final runtime = runtimeDescription(
+      dart: dartVersion(),
+      flutter: flutterVersionDefine,
+      flutterDart: flutterDartVersionDefine,
+    );
     final pid = processId();
     _log.info(
       'Starting $name'

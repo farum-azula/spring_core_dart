@@ -14,8 +14,8 @@ const flutterDartVersionDefine = String.fromEnvironment('FLUTTER_DART_VERSION');
 /// [flutterDart] what the Flutter tool passed.
 String? runtimeDescription({
   required String? dart,
-  String flutter = flutterVersionDefine,
-  String flutterDart = flutterDartVersionDefine,
+  required String flutter,
+  required String flutterDart,
 }) {
   // `3.13.5 (build 3.13.5-...)`: the version alone.
   final fromFlutter = flutterDart.trim().split(' ').first;
