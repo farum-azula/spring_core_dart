@@ -113,7 +113,7 @@ void main() {
   });
 
   group('additionalProfiles of run', () {
-    test('come after the application\'s own, before config files are '
+    test("come after the application's own, before config files are "
         'read; the more specific last wins', () {
       final context = app(additionalProfiles: const ['base']).run(
         location(),

@@ -13,11 +13,11 @@ import 'package:source_gen/source_gen.dart';
 // // throws: 'Isbn has more than one @JsonValue (a, b) ...'
 // ```
 
-final _jsonValue = TypeChecker.typeNamedLiterally(
+const _jsonValue = TypeChecker.typeNamedLiterally(
   'JsonValue',
   inPackage: 'spring_core_dart',
 );
-final _jsonProperty = TypeChecker.typeNamedLiterally(
+const _jsonProperty = TypeChecker.typeNamedLiterally(
   'JsonProperty',
   inPackage: 'spring_core_dart',
 );

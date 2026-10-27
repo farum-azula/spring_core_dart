@@ -22,7 +22,10 @@ import 'package:test_api/hooks.dart' show TestFailure;
 ///   );
 ///   await mvc
 ///       .post('/api/books', json: {'isbn': ''})
-///       .andExpect(status: 400, contentType: MediaType.applicationProblemJson);
+///       .andExpect(
+///         status: 400,
+///         contentType: MediaType.applicationProblemJson,
+///       );
 /// });
 /// ```
 ///
@@ -167,7 +170,7 @@ final class MockMvc {
       ..headers.addAll(headers)
       ..headers[HttpHeaders.contentTypeHeader] = body.contentType
       ..content(body.encode());
-    return _perform(builder);
+    return await _perform(builder);
   }());
 
   /// Opens a WebSocket to [path] in memory (the application's endpoint
@@ -184,9 +187,7 @@ final class MockMvc {
         'Sec-WebSocket-Version': '13',
         ...headers,
       });
-    for (final processor in postProcessors) {
-      builder.with_(processor);
-    }
+    postProcessors.forEach(builder.with_);
     var request = builder.build();
     for (final processor in [
       ...defaultPostProcessors,
@@ -224,27 +225,6 @@ final class MockMvc {
     }
     return builder;
   }
-}
-
-/// Changes a request before it is performed, like Spring's
-/// `RequestPostProcessor` (Spring Security's `user(...)`, `jwt()` and
-/// `csrf()` are ones).
-abstract interface class RequestPostProcessor {
-  /// The request to perform instead of [request] (usually it, changed).
-  MockServerHttpRequest postProcessRequest(MockServerHttpRequest request);
-}
-
-/// A [RequestPostProcessor] from a function.
-final class FunctionRequestPostProcessor implements RequestPostProcessor {
-  /// Applies [process].
-  const FunctionRequestPostProcessor(this.process);
-
-  /// The function.
-  final MockServerHttpRequest Function(MockServerHttpRequest request) process;
-
-  @override
-  MockServerHttpRequest postProcessRequest(MockServerHttpRequest request) =>
-      process(request);
 }
 
 /// Builds a request for [MockMvc.perform], like Spring's
@@ -288,6 +268,9 @@ final class MockRequestBuilder {
   final _postProcessors = <RequestPostProcessor>[];
 
   /// The body: a `String` or bytes.
+  // Spring's `content(...)` request builder method, used in cascades: public
+  // API, not a property.
+  // ignore: use_setters_to_change_properties
   void content(Object body) => _content = body;
 
   /// A JSON body (`Content-Type: application/json`).

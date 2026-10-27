@@ -16,7 +16,7 @@ void main() {
     expect(service.canConvertType<String>(DataSize), isTrue);
   });
 
-  test('a double converts to int truncated, like Spring\'s NumberUtils', () {
+  test("a double converts to int truncated, like Spring's NumberUtils", () {
     expect(service.convert<int>(1.9), 1);
     expect(service.convert<int>(-1.9), -1);
     expect(
@@ -25,7 +25,7 @@ void main() {
     );
   });
 
-  test('DataSize parses Spring\'s units (powers of 1024)', () {
+  test("DataSize parses Spring's units (powers of 1024)", () {
     expect(DataSize.parse('10MB').toBytes(), 10 * 1024 * 1024);
     expect(DataSize.parse('512kb').toKilobytes(), 512);
     expect(DataSize.parse('100').toBytes(), 100);

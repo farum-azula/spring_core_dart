@@ -57,9 +57,10 @@ class ConditionalOnProperty implements Condition {
   /// The full names of the checked properties.
   List<String> get propertyNames => [
     for (final property in [?name, ...names])
-      prefix.isEmpty
-          ? property
-          : '${prefix.endsWith('.') ? prefix : '$prefix.'}$property',
+      if (prefix.isEmpty)
+        property
+      else
+        '${prefix.endsWith('.') ? prefix : '$prefix.'}$property',
   ];
 
   @override
@@ -135,9 +136,10 @@ class ConditionalOnBooleanProperty implements Condition {
   /// The full names of the checked properties.
   List<String> get propertyNames => [
     for (final property in [?name, ...names])
-      prefix.isEmpty
-          ? property
-          : '${prefix.endsWith('.') ? prefix : '$prefix.'}$property',
+      if (prefix.isEmpty)
+        property
+      else
+        '${prefix.endsWith('.') ? prefix : '$prefix.'}$property',
   ];
 
   @override
@@ -369,8 +371,16 @@ class ConditionalOnBean implements ConfigurationCondition {
   }
 
   @override
-  String toString() =>
-      '@ConditionalOnBean (${_describe([?type, ...types], [?name, ...names], annotations, const [], search)})';
+  String toString() {
+    final description = _describe(
+      [?type, ...types],
+      [?name, ...names],
+      annotations,
+      const [],
+      search,
+    );
+    return '@ConditionalOnBean ($description)';
+  }
 }
 
 /// Registers the bean only when exactly one bean of [type] can be injected
@@ -532,8 +542,16 @@ class ConditionalOnMissingBean implements ConfigurationCondition {
   }
 
   @override
-  String toString() =>
-      '@ConditionalOnMissingBean (${_describe([?type, ...types], [?name, ...names], annotations, ignored, search)})';
+  String toString() {
+    final description = _describe(
+      [?type, ...types],
+      [?name, ...names],
+      annotations,
+      ignored,
+      search,
+    );
+    return '@ConditionalOnMissingBean ($description)';
+  }
 }
 
 String _describe(

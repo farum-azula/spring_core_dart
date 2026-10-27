@@ -81,7 +81,7 @@ class ServiceProxy implements Service, Advised {
   final PriceService _target;
   final ProxyInvoker _invoker;
 
-  static final signatures = [
+  static final List<MethodSignature> signatures = [
     sig('price', annotations: const [Timed()]),
     sig('fetch', returnType: 'Future'),
     sig('reset', returnType: 'void', params: const []),
@@ -405,8 +405,7 @@ void main() {
             accepts: (e) => e is StateError,
           ),
         ),
-      ]) as Service;
-      proxy.price(1);
+      ]) as Service..price(1);
       expect(() => proxy.price(-1), throwsArgumentError);
       expect(log, isEmpty);
       expect(proxy.name, 'prices');
@@ -418,7 +417,7 @@ void main() {
       () {
         // As generated for `@AfterReturning void any(Object? result)` and
         // `void some(Object result)`.
-        final proxy = factory.createProxy(PriceService(), [
+        (factory.createProxy(PriceService(), [
           advisor(
             interceptor(
               AdviceKind.afterReturning,
@@ -428,12 +427,11 @@ void main() {
           advisor(
             interceptor(
               AdviceKind.afterReturning,
-              (a, jp, v) => a.record('some:${v as Object}'),
+              (a, jp, v) => a.record('some:${v!}'),
               accepts: (v) => v is Object,
             ),
           ),
-        ]) as Service;
-        proxy.reset();
+        ]) as Service).reset();
         expect(log, ['any:null']);
       },
     );
@@ -444,7 +442,8 @@ void main() {
           interceptor(AdviceKind.around, (a, jp, _) {
             final pjp = jp as ProceedingJoinPoint;
             a.record(
-              '${pjp.toShortString()} ${pjp.signature} target=${pjp.target.runtimeType} '
+              '${pjp.toShortString()} ${pjp.signature} '
+              'target=${pjp.target.runtimeType} '
               'proxy=${pjp.proxy is ServiceProxy} $pjp',
             );
             return (pjp.proceed([10])! as int) + 1;
@@ -456,7 +455,8 @@ void main() {
       expect(
         log.single,
         contains(
-          'execution(Service.price(..)) int Service.price(int) target=PriceService proxy=true',
+          'execution(Service.price(..)) int Service.price(int) '
+          'target=PriceService proxy=true',
         ),
       );
       expect(proxy.name, 'prices', reason: 'not matched');
@@ -711,27 +711,28 @@ void main() {
 
     test('event listeners receive the target of proxied beans', () {
       final seen = <int>[];
-      final context = AnnotationConfigApplicationContext([
-        BeanModule('aop', [
-          BeanDefinition<PriceService>(
-            name: 'priceService',
-            types: const [PriceService, Service],
-            aopProxy: factory,
-            create: (_) => PriceService(),
-            eventListeners: [
-              EventListenerMethod.of<PriceService, int>('PriceService.on', (
-                bean,
-                e,
-              ) {
-                seen.add(bean.price(e));
-                return null;
-              }),
-            ],
-          ),
-          aspect(),
-        ]),
-      ], environment: StandardEnvironment(systemEnvironment: {}))..refresh();
-      context.publishEvent(5);
+      AnnotationConfigApplicationContext([
+          BeanModule('aop', [
+            BeanDefinition<PriceService>(
+              name: 'priceService',
+              types: const [PriceService, Service],
+              aopProxy: factory,
+              create: (_) => PriceService(),
+              eventListeners: [
+                EventListenerMethod.of<PriceService, int>('PriceService.on', (
+                  bean,
+                  e,
+                ) {
+                  seen.add(bean.price(e));
+                  return null;
+                }),
+              ],
+            ),
+            aspect(),
+          ]),
+        ], environment: StandardEnvironment(systemEnvironment: {}))
+        ..refresh()
+        ..publishEvent(5);
       expect(seen, [10]);
     });
   });

@@ -5,8 +5,8 @@ import 'dart:io' as io;
 
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart';
-import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
+import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';
 
 import 'app/app.dart';
 
@@ -39,7 +39,7 @@ final class Reply {
   String toString() => '$status $body';
 }
 
-/// Sends requests to the server of [context].
+/// Sends requests to the server of `context`.
 final class Client {
   Client(this.port);
 
@@ -82,7 +82,7 @@ final class Client {
   }) async {
     final request = await _http.getUrl(uri(path));
     headers.forEach(request.headers.set);
-    return request.close();
+    return await request.close();
   }
 
   void close() => _http.close(force: true);

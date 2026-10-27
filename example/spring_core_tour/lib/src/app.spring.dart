@@ -799,8 +799,8 @@ class _$CatalogServiceProxy extends _i9.CatalogService implements _i2.Advised {
     super.p0,
     super.p1,
     super.p2, {
-    super.pageSize,
     required super.currency,
+    super.pageSize,
     super.retries,
   });
 
@@ -3971,7 +3971,7 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
       create: (r) => _i5.ConsoleLogScreen(
         r.optionalDependency<_i7.LogBuffer>(name: r'buffer'),
       ),
-      annotations: const [_i2.Component(), _i2.Order(2147483647)],
+      annotations: const [_i2.Component(), _i2.Order()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -4466,8 +4466,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         _i2.Dependency(_i9.BookRepository, name: r'books'),
         _i2.Dependency(_i9.Discount, name: r'discount'),
         _i2.Dependency.collection(_i9.Plugin, optional: true),
-        _i2.Dependency.value(r'${catalog.page-size:20}', optional: true),
         _i2.Dependency.value(r'${app.currency}'),
+        _i2.Dependency.value(r'${catalog.page-size:20}', optional: true),
         _i2.Dependency(int, optional: true, name: r'retries'),
         _i2.Dependency.value(r'${shop.delivery-time}'),
         _i2.Dependency.value(r'${shop.tags}'),
@@ -4484,8 +4484,8 @@ _i2.BeanModule get $shopBeans => _i2.BeanModule(
         r.dependency<_i9.BookRepository>(name: r'books'),
         r.dependency<_i9.Discount>(name: r'discount'),
         r.optionalDependencyList<_i9.Plugin>() ?? <_i9.Plugin>[],
-        pageSize: r.optionalValue<int>(r'${catalog.page-size:20}') ?? 20,
         currency: r.value<String>(r'${app.currency}'),
+        pageSize: r.optionalValue<int>(r'${catalog.page-size:20}') ?? 20,
         retries: r.optionalDependency<int>(name: r'retries') ?? 3,
       ),
       inject: (bean, r) {

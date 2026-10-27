@@ -37,7 +37,7 @@ void main() {
     expect(app.getBean<Notifier>().notify('Ada'), 'fake: Hey, Ada');
   });
 
-  test('BeanOverride.named drops the real class and adds the fake\'s', () {
+  test("BeanOverride.named drops the real class and adds the fake's", () {
     // The fake is not an SmtpMailer: nothing answers to that class now.
     expect(app.findBean<SmtpMailer>(), isNull);
     expect(app.getBeans<SmtpMailer>(), isEmpty);

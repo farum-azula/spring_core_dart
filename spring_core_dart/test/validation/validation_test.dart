@@ -36,10 +36,10 @@ void main() {
         (const Negative(), 0, false),
         (const NegativeOrZero(), 0, true),
         (const NegativeOrZero(), 1, false),
-        (const Matches(r'[a-z]+'), 'abc', true),
-        (const Matches(r'[a-z]+'), 'abc1', false),
+        (const Matches('[a-z]+'), 'abc', true),
+        (const Matches('[a-z]+'), 'abc1', false),
         (
-          const Matches(r'[a-z]+', flags: [PatternFlag.caseInsensitive]),
+          const Matches('[a-z]+', flags: [PatternFlag.caseInsensitive]),
           'ABC',
           true,
         ),
@@ -261,8 +261,9 @@ void main() {
       expect(errors.model.keys, ['person', 'BindingResult.person']);
       errors.nestedPath = 'address';
       expect(errors.nestedPath, 'address.');
-      errors.nestedPath = '';
-      errors.rejectValue('', 'empty');
+      errors
+        ..nestedPath = ''
+        ..rejectValue('', 'empty');
       expect(errors.globalErrors, hasLength(2));
     });
 
@@ -517,7 +518,7 @@ final _failingIntrospection = BeanIntrospection<_Failing>(
       'value',
       type: String,
       get: (b) => b.value,
-      set: (b, v) => throw BeanDefinitionStoreException('setter failed'),
+      set: (b, v) => throw const BeanDefinitionStoreException('setter failed'),
     ),
   ],
 );

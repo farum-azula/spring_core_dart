@@ -225,7 +225,7 @@ final class Tokenizer {
 
   // Word operators; only treated as operators when not right after a dot
   // (see _previousIsDot), so `map.div` stays a property name.
-  static const _textualOperators = {
+  static const Map<String, TokenKind> _textualOperators = {
     'div': TokenKind.div,
     'mod': TokenKind.mod,
     'and': TokenKind.and,

@@ -748,11 +748,11 @@ void main() {
       expect(wrapper.getPropertyType('lines[0]'), Line);
     });
 
-    test('a gap in a List<String> is padded with empty strings (Spring\'s '
+    test("a gap in a List<String> is padded with empty strings (Spring's "
         'new String()); other non-nullable elements fail', () {
       const gap =
           "Invalid property 'numbers[2]' of Cart: Cannot set element with "
-          "index 2 in List of size 0, accessed using property path "
+          'index 2 in List of size 0, accessed using property path '
           "'numbers[2]': List does not support filling up gaps with null "
           'elements';
       final cart = Cart();
@@ -903,7 +903,7 @@ void main() {
       expect((dataBinder.target! as Book).tags, ['classic']);
     });
 
-    test('list indexes stop at autoGrowCollectionLimit, like Spring\'s '
+    test("list indexes stop at autoGrowCollectionLimit, like Spring's "
         'createList', () {
       // A hostile index fails before the list is allocated.
       final stopwatch = Stopwatch()..start();

@@ -185,10 +185,11 @@ void main() {
         () => factory.getBeanDefinition('x'),
         throwsA(isA<NoSuchBeanDefinitionException>()),
       );
-      factory.registerBeanDefinition(
-        lifecycleDefinition('user', onCreate: (r) => r.getBeanByName('x')),
-      );
-      factory.getBeanByName('user');
+      factory
+        ..registerBeanDefinition(
+          lifecycleDefinition('user', onCreate: (r) => r.getBeanByName('x')),
+        )
+        ..getBeanByName('user');
       expect(factory.isBeanNameInUse('x'), isTrue);
     });
 
@@ -200,10 +201,9 @@ void main() {
 
     test('destruction-aware processors default to every bean', () {
       final cleanup = _Cleanup();
-      final factory = DefaultListableBeanFactory()
+      DefaultListableBeanFactory()
         ..addBeanPostProcessor(cleanup)
-        ..registerBeanDefinition(english());
-      factory
+        ..registerBeanDefinition(english())
         ..preInstantiateSingletons()
         ..destroySingletons();
       expect(cleanup.destroyed, ['english']);
@@ -216,7 +216,7 @@ void main() {
     });
 
     test('properties parser edge cases', () {
-      expect(PropertiesParser.parse('a = b\\'), {'a': 'b'});
+      expect(PropertiesParser.parse(r'a = b\'), {'a': 'b'});
       expect(PropertiesParser.parse('key   =value'), {'key': 'value'});
       expect(PropertiesParser.parse('key   :value'), {'key': 'value'});
     });
@@ -244,8 +244,7 @@ void main() {
       final wrapper = BeanWrapper(
         matrix,
         introspector: BeanIntrospector(introspections: [_matrixIntrospection]),
-      );
-      wrapper.setPropertyValue('rows[0][1]', 9);
+      )..setPropertyValue('rows[0][1]', 9);
       expect(matrix.rows[0], [1, 9]);
       expect(
         () => wrapper.getPropertyValue('rows[1][0]'),
@@ -364,7 +363,7 @@ void main() {
       expect(eval('T(double).INFINITY'), double.infinity);
       expect(eval("T(double).parse('1.5')"), 1.5);
       expect(eval("T(double).tryParse('x')"), isNull);
-      expect(eval("T(String).valueOf(1) + T(String).fromCharCode(65)"), '1A');
+      expect(eval('T(String).valueOf(1) + T(String).fromCharCode(65)'), '1A');
       expect(eval('T(List).of(1, 2)'), [1, 2]);
       expect(eval('new Map()'), isEmpty);
       expect(eval('new Set()'), isEmpty);

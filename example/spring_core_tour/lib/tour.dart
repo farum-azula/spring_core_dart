@@ -5,27 +5,27 @@ library;
 
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
-import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
     show FeignNotFound;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
     show ScheduledAnnotationBeanPostProcessor;
+import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/external/legacy_config.dart';
 import 'package:spring_core_dart_example/src/aop/aspects.dart';
-import 'package:spring_core_dart_example/src/api/book_dto.dart';
 import 'package:spring_core_dart_example/src/aop/self_invocation.dart';
-import 'package:spring_core_dart_example/src/cache/price_list.dart';
+import 'package:spring_core_dart_example/src/api/book_dto.dart';
 import 'package:spring_core_dart_example/src/app.dart';
+import 'package:spring_core_dart_example/src/cache/price_list.dart';
 import 'package:spring_core_dart_example/src/catalog/catalog.dart';
 import 'package:spring_core_dart_example/src/catalog/welcome_letter.dart';
 import 'package:spring_core_dart_example/src/config/data_config.dart';
 import 'package:spring_core_dart_example/src/config/greetings.dart';
 import 'package:spring_core_dart_example/src/config/shop_config.dart';
 import 'package:spring_core_dart_example/src/events/orders.dart';
-import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
 import 'package:spring_core_dart_example/src/extension/extension_points.dart';
+import 'package:spring_core_dart_example/src/jobs/stock_jobs.dart';
 import 'package:spring_core_dart_example/src/payments/payments.dart';
 import 'package:spring_core_dart_example/src/remote/catalog_api.dart';
 import 'package:spring_core_dart_example/src/remote/demo_catalog_server.dart';
@@ -281,7 +281,8 @@ class _Tour {
     show('clock (setter injection)', catalog.clock.runtimeType);
     show('wire (method injection)', catalog.wiredWith);
     show('Map<String, Discount>', context.getBeansOfType<Discount>().keys);
-    // Primary constructor, field in the body: r.optionalDependencyList<String>().
+    // Primary constructor, field in the body:
+    // r.optionalDependencyList<String>().
     show('greetings collected', context.getBean<Greeter>().greetings);
     show('prototype ids', [
       context.getBean<IdGenerator>().id,
@@ -334,8 +335,9 @@ class _Tour {
   void lifecycle() {
     out('  (the probe was created at refresh; its callbacks in order:)');
     tourLog.addAll(startup);
-    context.stop();
-    context.start();
+    context
+      ..stop()
+      ..start();
   }
 
   void extensions() {
@@ -371,9 +373,9 @@ class _Tour {
   }
 
   void events() {
-    final orders = context.getBean<OrderService>();
-    orders.place(1, 25);
-    orders.place(2, 250);
+    final orders = context.getBean<OrderService>()
+      ..place(1, 25)
+      ..place(2, 250);
     final seen = <String>[];
     final registration = context.addListener<OrderPlaced>(
       (order) => seen.add('lambda listener: order ${order.id}'),
@@ -445,7 +447,7 @@ class _Tour {
         .build();
     show(
       'SimpleEvaluationContext',
-      parser.parseExpression("name").getValue(restricted),
+      parser.parseExpression('name').getValue(restricted),
     );
   }
 
@@ -463,7 +465,7 @@ class _Tour {
             'quantity': 'lots',
             'address.city': '',
             'address.zip': '123',
-            "giftNote": 'sneaky',
+            'giftNote': 'sneaky',
           })
           ..validate();
     show('suppressed (disallowedFields)', binder.suppressedFields);
@@ -558,8 +560,7 @@ class _Tour {
 
   // @Cacheable / @CacheEvict (spring_boot_starter_cache).
   Future<void> cache() async {
-    final prices = context.getBean<PriceList>();
-    prices
+    final prices = context.getBean<PriceList>()
       ..price('1')
       ..price('1');
     show('price twice, real lookups', prices.lookups);
@@ -590,6 +591,8 @@ class _Tour {
     );
     show('writeValueAsString', mapper.writeValueAsString(dune));
     final read = mapper.readValue<BookDto>(
+      // The pieces join without a space on purpose: they are JSON text.
+      // ignore: missing_whitespace_between_adjacent_strings
       '{"isbn":"1","title":"Solaris","author":{"name":"Stanislaw Lem"},'
       '"published_at":"1961-01-01T00:00:00.000Z","rating":5}',
     );

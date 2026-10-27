@@ -1,3 +1,7 @@
+// The property strings are lists of independent entries, each one a single
+// string; a long key cannot be split in two (adjacent strings in a list).
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'dart:async';
 
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
@@ -8,7 +12,7 @@ import 'package:test/test.dart';
 import 'orders.dart';
 
 final class TokenInterceptor implements RequestInterceptor {
-  var calls = 0;
+  int calls = 0;
 
   @override
   void apply(RequestTemplate template) =>

@@ -41,7 +41,7 @@ void main() {
         );
         socket.listen((message) {
           if (message == 'bye') {
-            socket.close(4000, 'asked');
+            unawaited(socket.close(4000, 'asked'));
           } else {
             socket.add(message); // echo
           }
@@ -124,7 +124,7 @@ void main() {
     });
   });
 
-  test('CloseStatus: Spring\'s constants, withReason, equalsCode', () {
+  test("CloseStatus: Spring's constants, withReason, equalsCode", () {
     expect(CloseStatus.normal.code, 1000);
     expect(CloseStatus.noCloseFrame.code, 1006);
     expect(CloseStatus.serverError.code, 1011);

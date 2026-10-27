@@ -193,7 +193,11 @@ abstract interface class ConditionEvaluationRecorder {
 /// const group = ConditionGroup('package:app/cache.dart#CacheConfig', [
 ///   OnMissingCache(),
 /// ]);
-/// BeanDefinition<CacheConfig>(name: 'cacheConfig', conditions: const [group], ...);
+/// BeanDefinition<CacheConfig>(
+///   name: 'cacheConfig',
+///   conditions: const [group],
+///   ...,
+/// );
 /// BeanDefinition<Cache>(name: 'cache', conditions: const [group], ...);
 /// ```
 ///
@@ -300,7 +304,8 @@ enum ConfigurationPhase {
 ///   public ConfigurationPhase getConfigurationPhase() {
 ///     return ConfigurationPhase.REGISTER_BEAN;
 ///   }
-///   public boolean matches(ConditionContext c, AnnotatedTypeMetadata m) { ... }
+///   public boolean matches(
+///       ConditionContext c, AnnotatedTypeMetadata m) { ... }
 /// }
 /// ```
 abstract interface class ConfigurationCondition implements Condition {

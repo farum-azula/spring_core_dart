@@ -9,11 +9,11 @@ resolution: workspace
 
 dependencies:
   spring_boot_dart: ^0.3.2
+  spring_boot_starter_cache: ^0.3.2
+  spring_boot_starter_feign: ^0.3.2
   # Discovered by the generator: installs the logging system (no code).
   spring_boot_starter_logging: ^0.3.2
   spring_boot_starter_scheduling: ^0.3.2
-  spring_boot_starter_cache: ^0.3.2
-  spring_boot_starter_feign: ^0.3.2
   spring_boot_starter_websocket: ^0.3.2
   spring_core_dart: ^0.3.2
 

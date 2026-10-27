@@ -77,8 +77,8 @@ void main() {
   });
 
   test('a closed context is started again; reloadAsync', () async {
-    final context = app('v1').run(const [], systemEnvironment: const {});
-    context.close();
+    final context = app('v1').run(const [], systemEnvironment: const {})
+      ..close();
     final restarted = await app('v1').reloadAsync(context);
     addTearDown(restarted.close);
     expect(restarted.isActive, isTrue);

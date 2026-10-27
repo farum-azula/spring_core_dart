@@ -54,10 +54,12 @@ class Slow with SmartLifecycle {
   @override
   void stopWithCallback(void Function() callback) {
     final later = this.later = Completer<void>();
-    later.future.then((_) {
-      stop();
-      callback();
-    });
+    unawaited(
+      later.future.then((_) {
+        stop();
+        callback();
+      }),
+    );
   }
 }
 
@@ -246,16 +248,17 @@ void main() {
 
     test('stop() then start() starts it after the callback', () async {
       final slow = Slow('slow');
-      final context = ctx([
-        BeanDefinition<Slow>(
-          name: 'slow',
-          types: const [Slow, SmartLifecycle, Lifecycle],
-          create: (_) => slow,
-        ),
-      ])..refresh();
-      context
-        ..stop()
-        ..start();
+      final context =
+          ctx([
+              BeanDefinition<Slow>(
+                name: 'slow',
+                types: const [Slow, SmartLifecycle, Lifecycle],
+                create: (_) => slow,
+              ),
+            ])
+            ..refresh()
+            ..stop()
+            ..start();
       slow.later!.complete();
       await pumpEventQueue();
       expect(log, ['slow:start', 'slow:stop', 'slow:start']);
@@ -265,16 +268,17 @@ void main() {
 
     test('a stop after the restart cancels the pending start', () async {
       final slow = Slow('slow');
-      final context = ctx([
-        BeanDefinition<Slow>(
-          name: 'slow',
-          types: const [Slow, SmartLifecycle, Lifecycle],
-          create: (_) => slow,
-        ),
-      ])..refresh();
-      context
-        ..restart()
-        ..stop();
+      final context =
+          ctx([
+              BeanDefinition<Slow>(
+                name: 'slow',
+                types: const [Slow, SmartLifecycle, Lifecycle],
+                create: (_) => slow,
+              ),
+            ])
+            ..refresh()
+            ..restart()
+            ..stop();
       slow.later!.complete();
       await pumpEventQueue();
       expect(log, ['slow:start', 'slow:stop']);

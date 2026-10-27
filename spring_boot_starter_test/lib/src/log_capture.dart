@@ -54,11 +54,11 @@ final class CapturedLogs {
   List<String> get messages => [for (final record in _records) record.message];
 
   /// Every record as `LEVEL [logger] message`, one per line.
-  String get text => [
-    for (final record in _records)
+  String get text => [for (final record in _records) _line(record)].join('\n');
+
+  static String _line(SpringLogRecord record) =>
       '${record.level.name.toUpperCase()} [${record.loggerName}] '
-          '${record.message}',
-  ].join('\n');
+      '${record.message}';
 
   /// Records of exactly [level].
   List<SpringLogRecord> atLevel(SpringLogLevel level) => [

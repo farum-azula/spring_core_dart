@@ -217,7 +217,7 @@ class ConfigDataEnvironment {
   static const onNotFoundProperty = 'spring.config.on-not-found';
 
   // Properties that may only appear in non-profile documents.
-  static const _profileProperties = [
+  static const List<String> _profileProperties = [
     StandardEnvironment.activeProfilesPropertyName,
     StandardEnvironment.defaultProfilesPropertyName,
     includeProfilesProperty,
@@ -564,7 +564,8 @@ final class _Run {
       throw ConfigDataLoadException(
         document.location,
         "invalid '${ConfigDataEnvironment.onCloudPlatformProperty}' value "
-        "'$value' (one of ${CloudPlatform.values.map((p) => p.name).join(', ')})",
+        "'$value' (one of "
+        "${CloudPlatform.values.map((p) => p.name).join(', ')})",
       );
     }
     return wanted == (_platform ?? CloudPlatform.none);
@@ -649,7 +650,7 @@ final class _Run {
     final environment = _env.propertySources.where(
       (s) => s is! ConfigurationPropertySourcesPropertySource,
     );
-    final defaults = ConfigDataEnvironment.defaultPropertiesSourceName;
+    const defaults = ConfigDataEnvironment.defaultPropertiesSourceName;
     return [
       ...environment.where((s) => s.name != defaults),
       for (final d in _documents.toList().reversed)
@@ -1123,7 +1124,8 @@ final class _Run {
           throw InvalidConfigDataPropertyException(
             legacy,
             source.name,
-            "it should be replaced with '${ConfigDataEnvironment.onProfileProperty}'",
+            'it should be replaced with '
+            "'${ConfigDataEnvironment.onProfileProperty}'",
           );
         }
       }
@@ -1230,14 +1232,14 @@ final class _Run {
 
   // A `scheme:` prefix of two or more letters (`file:`, `classpath:`).
   static bool _isUrl(String location) =>
-      RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location);
+      RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location);
 
   // Directory part of [location] (with trailing `/`), or just its prefix
   // (`file:`) when there is no slash.
   // [location] with `.` and `dir/..` path segments removed (the scheme
   // prefix such as `file:` is kept).
   static String _normalized(String location) {
-    final match = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*:').firstMatch(location);
+    final match = RegExp('^[a-zA-Z][a-zA-Z0-9+.-]*:').firstMatch(location);
     final scheme =
         match == null ||
             match.end == 2 && location.length > 2 && location[2] == r'\'

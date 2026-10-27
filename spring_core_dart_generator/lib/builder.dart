@@ -45,10 +45,10 @@
 /// ```
 library;
 
+import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
-import 'package:build/build.dart';
 
 /// Creates the [SpringBuilder]; referenced from the package's `build.yaml`
 /// (`builder_factories: ["springCoreDartBuilder"]`).

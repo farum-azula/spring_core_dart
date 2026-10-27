@@ -28,7 +28,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
@@ -67,7 +67,7 @@ Future<String> _errors(Map<String, String> files) async {
 
 Future<String> _error(String beans) => _errors({'lib/src/service.dart': beans});
 
-/// The diagnostics of the generated library at [severities] (errors and
+/// The diagnostics of the generated library at `severities` (errors and
 /// warnings by default), resolved with the real runtime.
 Future<List<String>> _diagnostics(
   Map<String, String> files, {
@@ -80,7 +80,7 @@ Future<List<String>> _diagnostics(
   final result = await _build(sources, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
   final output = result.readerWriter.testing.readString(result.outputs.single);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|lib/src/beans.spring.dart': output,
@@ -94,9 +94,9 @@ Future<List<String>> _diagnostics(
       );
       return [
         if (errors case ErrorsResult(:final diagnostics))
-          for (final diagnostic in diagnostics)
-            if (diagnostic.severity != Severity.info)
-              '${diagnostic.diagnosticCode.lowerCaseName}: ${diagnostic.message}',
+          for (final d in diagnostics)
+            if (d.severity != Severity.info)
+              '${d.diagnosticCode.lowerCaseName}: ${d.message}',
       ];
     },
     rootPackage: 'pkg',
@@ -116,7 +116,9 @@ import 'package:pkg/a/beans.spring.dart';
 @ComponentScan()
 final BeanModule aBeans = $aBeans;
 ''',
-      'lib/a/settings.dart': '''$_header
+      'lib/a/settings.dart':
+          '''
+$_header
 @Component()
 class Settings(
   @Value(r'\${app.name:demo}') final String name,
@@ -133,7 +135,9 @@ import 'package:pkg/b/beans.spring.dart';
 @ComponentScan()
 final BeanModule bBeans = $bBeans;
 ''',
-      'lib/b/config.dart': '''${_header}import 'package:pkg/a/settings.dart';
+      'lib/b/config.dart':
+          '''
+${_header}import 'package:pkg/a/settings.dart';
 
 @Configuration()
 @Import([Settings])
@@ -149,7 +153,7 @@ class BConfig {
       expect(
         output,
         _has(
-          "Settings(r.value<String>(r'\${app.name:demo}'), "
+          r"Settings(r.value<String>(r'${app.name:demo}'), "
           "r.optionalDependency<Object>(qualifier: r'clock', name: r'clock'))",
         ),
         reason: path,
@@ -181,12 +185,14 @@ class BConfig {
       ('@ComponentScan() class Scanned {}', '@ComponentScan on class Scanned'),
       (
         'extension type Meters(int value) {}\n'
-            '@Component() class Track { Track(this.length); final Meters length; }',
+            '@Component() class Track { Track(this.length); final Meters '
+            'length; }',
         'Cannot inject extension type Meters',
       ),
       (
         'extension type Meters(int value) {}\n'
-            '@Configuration() class Config { @Bean() Meters m() => Meters(1); }',
+            '@Configuration() class Config { @Bean() Meters m() => Meters(1); '
+            '}',
         '@Bean method m returns extension type Meters',
       ),
     ]) {
@@ -282,7 +288,7 @@ final BeanModule deepBeans = $deepBeans;
 
     test('@SpringBootApplication imports @ComponentScan modules', () async {
       final result = await _build({
-        'bin/main.dart': r'''
+        'bin/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'main.spring.dart';
 
@@ -335,17 +341,19 @@ final BeanModule v1Beans = $v1Beans;
     for (final (source, message) in [
       (
         "@Component('') class A {}",
-        "The bean name of A is empty: give a name, or remove it to use the "
+        'The bean name of A is empty: give a name, or remove it to use the '
             "default name 'a'.",
       ),
       ("@Service('  ') class A {}", 'The bean name of A is blank'),
       (
-        "class A {}\n@Configuration() class C { @Bean(name: ' a') A a() => A(); }",
+        "class A {}\n@Configuration() class C { @Bean(name: ' a') A a() => "
+            'A(); }',
         "The bean name of @Bean method C.a ' a' starts or ends with "
             "whitespace: use 'a'.",
       ),
       (
-        "class A {}\n@Configuration() class C { @Bean(aliases: ['']) A a() => A(); }",
+        "class A {}\n@Configuration() class C { @Bean(aliases: ['']) A a() => "
+            'A(); }',
         'An alias of @Bean method C.a is empty',
       ),
     ]) {
@@ -379,11 +387,11 @@ class Own extends Base {
       expect(
         output,
         _has(
-          "Child(r.value<String>(r'\${app.url}'), "
+          r"Child(r.value<String>(r'${app.url}'), "
           "r.dependency<Clock>(qualifier: r'utc', name: r'clock'))",
         ),
       );
-      expect(output, _has("Own(r.value<String>(r'\${own.url}')"));
+      expect(output, _has(r"Own(r.value<String>(r'${own.url}')"));
     });
 
     test('several @Autowired(required: false) constructors: the greediest '
@@ -415,7 +423,7 @@ class Report {
       expect(
         output,
         _has(
-          "create: (r) => r.containsBeanOfType(Clock) && "
+          'create: (r) => r.containsBeanOfType(Clock) && '
           "r.containsBeanOfType(Zone, qualifier: r'utc') "
           "? Report.full(r.dependency<Clock>(name: r'clock'), "
           "r.dependency<Zone>(qualifier: r'utc', name: r'zone')) "
@@ -456,13 +464,15 @@ class NoArgument {
 
     for (final (source, message) in [
       (
-        'class Clock {}\n@Component() class A { A(Clock c); A.other(Clock c); }',
+        'class Clock {}\n@Component() class A { A(Clock c); A.other(Clock c); '
+            '}',
         'Cannot choose a constructor for A: it has several public '
             'constructors (A, A.other), neither a primary one nor a single '
             'one callable without arguments.',
       ),
       (
-        '@Component() class A { @Autowired() A(); @Autowired(required: false) A.b(); }',
+        '@Component() class A { @Autowired() A(); @Autowired(required: false) '
+            'A.b(); }',
         'Only one constructor may be @Autowired when one of them is '
             'required: A is required',
       ),
@@ -471,7 +481,8 @@ class NoArgument {
         'Bean class A has no public constructor',
       ),
       (
-        'class Clock {}\n@Component() class A { @Autowired(required: false) late final Clock clock; }',
+        'class Clock {}\n@Component() class A { @Autowired(required: false) '
+            'late final Clock clock; }',
         '@Autowired(required: false) on field clock of A',
       ),
     ]) {

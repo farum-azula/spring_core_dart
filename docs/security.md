@@ -1,0 +1,101 @@
+# Security of the security packages
+
+What `spring_security_core` and `spring_boot_starter_security` promise,
+against whom, and how it is shown, for anyone to check.
+
+**Found a security problem?** Open a regular
+[issue](https://github.com/farum-azula/spring_core_dart/issues): the code is
+open source, and everyone using it should know. Include the package and
+version, what an attacker can do, and a request or a test that shows it.
+Fixes go into the latest version of the family.
+
+## What the security packages promise
+
+`spring_security_core` (users, passwords, the security context, method
+security) and `spring_boot_starter_security` (the filter chain in front of
+the web starter's controllers). This section is the threat model they are
+built and tested against ([roadmap/security_verification.md](../roadmap/security_verification.md)
+describes how the tests show it).
+
+### What is protected
+
+- **Endpoints** of `spring_boot_starter_web`: controllers, functional
+  handlers, static resources, WebSocket handshakes and server-sent event
+  streams. Every request passes the same filter chain.
+- **Method calls** on beans with `@PreAuthorize`, `@PostAuthorize` and
+  `@Secured`, through the bean's proxy (from controllers, other beans,
+  scheduled tasks).
+- **Credentials**: passwords as stored hashes, session ids, CSRF tokens,
+  bearer tokens (JWT).
+
+### Against whom
+
+| Attacker | Can | Must not be able to |
+|---|---|---|
+| Anonymous client | send any bytes over HTTP | reach a protected endpoint or method; learn whether a user exists; make the server spend unbounded work on one request |
+| Another user | log in with their own account | act with more authorities than theirs; read or reuse someone else's session |
+| Holder of a stolen or forged token | replay a token, alter it, sign it with another key or algorithm | use an expired, not-yet-valid, wrongly signed, `alg: none` or wrong-audience token |
+| A malicious web page in the user's browser | make the browser send requests with its cookies | change state with the user's session (CSRF); read responses across origins unless CORS allows it; frame the application |
+| A crafted URL | percent-encoding, `..`, `;`, `//`, backslashes, Unicode | be matched by a security rule differently than by the router |
+
+### Out of scope
+
+- The host, the operating system and the Dart VM.
+- TLS: terminate it in front of the application (a reverse proxy) or with
+  the web starter's `server.ssl.*`; the packages see whether a request was
+  secure.
+- The application's own business logic, and the data it chooses to
+  return to an authorized user.
+- Rate limiting and lockout after failed logins: put them in front (the
+  proxy) or in an `AuthenticationEventPublisher` listener; the packages do
+  not count attempts.
+- A Flutter app's local checks: `@PreAuthorize` in an app protects the UI
+  flow, not the data; an app can be taken apart, so the server must check
+  again.
+
+### Rules the code follows
+
+1. **Secure by default**, like Spring Boot: with the starter listed every
+   request needs authentication; a request no rule matches is denied;
+   security headers are on; CSRF protection is on for state-changing
+   requests.
+2. **Fail closed:** an error inside a security filter, a matcher, a
+   decoder or an expression ends the request with 400, 401 or 403, never
+   with the request passing on.
+3. **One path model:** the security matchers and the router use the same
+   `PathPattern` on the same path; requests whose path could be read two
+   ways (encoded `/`, `\`, `.` and `%`, `..` and `.` segments, `;`, `//`,
+   control characters) are rejected with 400 before any rule is looked at,
+   like Spring Security's `StrictHttpFirewall`.
+4. **No secrets in answers or logs:** a failed login says only "bad
+   credentials", for an unknown user as for a wrong password, in about the
+   same time; passwords, tokens and session ids are never logged.
+5. **Vetted cryptography only:** signatures, MACs and key derivation come
+   from Bouncy Castle's Dart port (`pointycastle`), nothing is written by
+   hand; secrets are compared in constant time; random values come from
+   `Random.secure()`. `pointycastle` is a third-party package, used by one
+   file per package and to be replaced by a Dart team package when one
+   covers these algorithms
+   ([docs/dependencies.md](dependencies.md#pointycastle-third-party-to-be-removed));
+   CI checks it for known vulnerabilities.
+6. **Bounded work:** bearer tokens (64 KB) and login bodies (1 MB) have
+   size limits, and so do sessions (`server.servlet.session.max-sessions`);
+   password hashing runs only for requests that carry credentials.
+
+## How it is shown
+
+Evidence that can be checked without reading the code
+([roadmap/security_verification.md](../roadmap/security_verification.md)):
+
+| Evidence | Where | Result |
+|---|---|---|
+| The attack catalog as tests: ambiguous paths, malformed credentials, CSRF, CORS, cookies, headers, JWT attacks (`alg: none`, algorithm confusion, embedded keys, `kid` tricks, expiry), method security | `spring_boot_starter_security/test/`, `spring_security_core/test/` | 342 tests in the core, 549 in the starter (plus the integration tests on a real server), all passing |
+| The same requests to Spring Security 7.1 (Spring Boot 4.1) and to the starter: statuses, challenges, redirects, headers, cookies | `tool/security_reference`, `test/differential_test.dart`, CI job "Security compared with Spring Security" | equal, except the differences listed in the starter's README |
+| Password hashes written by Spring, checked here, and the other way | `tool/security_reference`, `spring_security_core/test/vectors/` | all match |
+| RFC 7515 test vectors (JWS) | `test/vectors/rfc7515.json` | all verify |
+| Generated inputs (seeded): random paths through the firewall, random rule sets, random `Authorization` headers, mutated tokens | `test/fuzz_test.dart` | no input lets an ambiguous path through, allows what the rules deny, or throws anything unexpected |
+| Mutation testing: small changes to the code must make a test fail | `tool/mutation_test.dart` | 98.1 % (core) and 98.6 % (starter) of the changes are noticed; the rest change nothing observable, each explained in [docs/security-mutation.md](security-mutation.md) |
+| Line coverage | `dart test --coverage` | 99.9 % of the core's lines (one unreachable defensive line), 100 % of the starter's |
+| OWASP ASVS 4.0.3 level 2 (V2, V3, V4, V13, V14) | [docs/security-asvs.md](security-asvs.md) | each requirement with its status and test |
+
+Not done yet: an OWASP ZAP scan in CI, and an external review.

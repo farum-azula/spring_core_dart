@@ -168,7 +168,11 @@ final class PeriodicTrigger implements Trigger {
   }
 
   @override
-  String toString() =>
-      'PeriodicTrigger(${fixedRate ? 'fixedRate' : 'fixedDelay'}: $period'
-      '${initialDelay == Duration.zero ? '' : ', initialDelay: $initialDelay'})';
+  String toString() {
+    final delay = initialDelay == Duration.zero
+        ? ''
+        : ', initialDelay: $initialDelay';
+    return 'PeriodicTrigger(${fixedRate ? 'fixedRate' : 'fixedDelay'}: $period'
+        '$delay)';
+  }
 }

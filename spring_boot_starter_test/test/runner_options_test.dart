@@ -127,10 +127,11 @@ void main() {
         create: (_) => FakeGreeter(),
       ),
     ]);
-    final twice = runner
-        .withUserConfiguration(appModule())
-        .withUserConfiguration(module('other'));
-    twice.run((context) => expect(context, hasFailed()));
+    final twice =
+        runner
+            .withUserConfiguration(appModule())
+            .withUserConfiguration(module('other'))
+          ..run((context) => expect(context, hasFailed()));
     twice.withAllowBeanDefinitionOverriding(true).run((context) {
       expect(context.hasFailed, isFalse);
       expect(context.getBeanByName('greeter'), isA<FakeGreeter>());

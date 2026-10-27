@@ -517,7 +517,11 @@ final class MultipartBody {
     const chars =
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();
-    return 'spring-${List.generate(24, (_) => chars[random.nextInt(chars.length)]).join()}';
+    final suffix = List.generate(
+      24,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
+    return 'spring-$suffix';
   }
 }
 

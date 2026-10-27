@@ -61,7 +61,7 @@ void main() {
 
   test('a cache of your own behind @Cacheable', () {
     final store = <String, String>{};
-    final runner = const ApplicationContextRunner()
+    const ApplicationContextRunner()
         .withUserConfiguration(
           BeanModule('app', [
             BeanDefinition<Books>(
@@ -74,18 +74,18 @@ void main() {
         .withBean<CacheManager>(
           () => SimpleCacheManager([StoreCache('books', store)]),
         )
-        .withAutoConfiguration(springBootStarterCacheAutoConfiguration);
-    runner.run((context) {
-      final books = context.getBean<Books>()
-        ..find('1')
-        ..find('1');
-      expect(books.count('find'), 1);
-      expect(store, contains('books:1'));
-    });
-    // The entries are in the store: a new context (a restart) finds them.
-    runner.run((context) {
-      final books = context.getBean<Books>()..find('1');
-      expect(books.count('find'), 0);
-    });
+        .withAutoConfiguration(springBootStarterCacheAutoConfiguration)
+      ..run((context) {
+        final books = context.getBean<Books>()
+          ..find('1')
+          ..find('1');
+        expect(books.count('find'), 1);
+        expect(store, contains('books:1'));
+      })
+      // The entries are in the store: a new context (a restart) finds them.
+      ..run((context) {
+        final books = context.getBean<Books>()..find('1');
+        expect(books.count('find'), 0);
+      });
   });
 }

@@ -169,7 +169,7 @@ MethodSignature _sig(
   targetAnnotationTypes: const ['CacheConfig'],
 );
 
-final booksSignatures = [
+final List<MethodSignature> booksSignatures = [
   _sig('find', ['isbn'], const [Cacheable('books')]),
   _sig(
     'findFresh',

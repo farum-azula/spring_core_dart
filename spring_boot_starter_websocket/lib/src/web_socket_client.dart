@@ -39,7 +39,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```java
 /// WebSocketClient client = new StandardWebSocketClient();
 /// client.execute(new TextWebSocketHandler() {
-///   protected void handleTextMessage(WebSocketSession session, TextMessage message) { ... }
+///   protected void handleTextMessage(
+///       WebSocketSession session, TextMessage message) { ... }
 /// }, "wss://chat.neon.books/ws");
 /// // or STOMP: new WebSocketStompClient(client).connectAsync(url, new StompSessionHandlerAdapter() { ... });
 /// ```

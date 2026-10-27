@@ -30,7 +30,7 @@ List<String> _dependencies(String yaml) {
     } else if (!line.startsWith(' ') && line.trim().isNotEmpty) {
       inside = false;
     } else if (inside) {
-      final match = RegExp(r'^  ([a-z_][a-z0-9_]*):').firstMatch(line);
+      final match = RegExp('^  ([a-z_][a-z0-9_]*):').firstMatch(line);
       if (match != null) {
         names.add(match[1]!);
       }
@@ -42,7 +42,8 @@ List<String> _dependencies(String yaml) {
 void main() {
   final files = _markdown();
 
-  test('an install snippet with a starter lists nothing that comes with it', () {
+  test('an install snippet with a starter lists nothing that comes '
+      'with it', () {
     final problems = <String>[];
     for (final path in files) {
       final text = File(path).readAsStringSync();
@@ -65,9 +66,11 @@ void main() {
         }
         if (starters.length > 1 &&
             starters.contains('spring_boot_starter_logging')) {
+          final others = starters
+              .where((s) => s != 'spring_boot_starter_logging')
+              .join(', ');
           problems.add(
-            '$path:$line: spring_boot_starter_logging comes with '
-            '${starters.where((s) => s != 'spring_boot_starter_logging').join(', ')}',
+            '$path:$line: spring_boot_starter_logging comes with $others',
           );
         }
       }

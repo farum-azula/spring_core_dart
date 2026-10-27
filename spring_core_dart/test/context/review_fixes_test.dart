@@ -155,15 +155,19 @@ void main() {
   group('close() is exception-safe (Spring doClose)', () {
     test('a failing ContextClosedEvent listener does not stop shutdown', () {
       final log = <String>[];
-      final c = ctx([
-        BeanDefinition<Worker>(
-          name: 'worker',
-          types: const [Worker, SmartLifecycle, Lifecycle],
-          create: (_) => Worker('worker', log),
-        ),
-      ])..refresh();
-      c.addListener<ContextClosedEvent>((_) => throw StateError('listener'));
-      c.close();
+      final c =
+          ctx([
+              BeanDefinition<Worker>(
+                name: 'worker',
+                types: const [Worker, SmartLifecycle, Lifecycle],
+                create: (_) => Worker('worker', log),
+              ),
+            ])
+            ..refresh()
+            ..addListener<ContextClosedEvent>(
+              (_) => throw StateError('listener'),
+            )
+            ..close();
       expect(log, ['worker:stop']);
       expect(c.isClosed, isTrue);
       expect(logged.single.message, contains('ContextClosedEvent'));
@@ -171,19 +175,20 @@ void main() {
 
     test('a bean that fails to stop does not keep the others running', () {
       final log = <String>[];
-      final c = ctx([
-        BeanDefinition<Worker>(
-          name: 'a',
-          types: const [Worker, SmartLifecycle, Lifecycle],
-          create: (_) => Worker('a', log),
-        ),
-        BeanDefinition<Worker>(
-          name: 'b',
-          types: const [Worker, SmartLifecycle, Lifecycle],
-          create: (_) => Worker('b', log, failOnStop: true),
-        ),
-      ])..refresh();
-      c.close();
+      ctx([
+          BeanDefinition<Worker>(
+            name: 'a',
+            types: const [Worker, SmartLifecycle, Lifecycle],
+            create: (_) => Worker('a', log),
+          ),
+          BeanDefinition<Worker>(
+            name: 'b',
+            types: const [Worker, SmartLifecycle, Lifecycle],
+            create: (_) => Worker('b', log, failOnStop: true),
+          ),
+        ])
+        ..refresh()
+        ..close();
       expect(log, ['a:stop']);
       expect(logged.single.message, contains('Failed to stop'));
     });

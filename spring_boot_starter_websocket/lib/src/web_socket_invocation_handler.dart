@@ -225,7 +225,8 @@ final class WebSocketInvocationHandler implements InvocationHandler {
 /// });
 /// ```
 ///
-/// Spring (Java): `org.springframework.messaging.converter.MessageConversionException`.
+/// Spring (Java):
+/// `org.springframework.messaging.converter.MessageConversionException`.
 class MessageConversionException implements Exception {
   /// A conversion failure described by [description].
   MessageConversionException(this.description, {this.message, this.cause});

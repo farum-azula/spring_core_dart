@@ -27,6 +27,8 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// ```
 abstract class SpringApplicationEvent extends ApplicationEvent {
   /// An event of [application] started with [args].
+  // Positional, and named after what the event carries.
+  // ignore: matching_super_parameters
   SpringApplicationEvent(SpringApplication super.application, List<String> args)
     : args = List.unmodifiable(args);
 

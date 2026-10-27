@@ -22,21 +22,22 @@ void main() {
   /// `text: type` of each token of [path], whose text is [text].
   List<String> tokens(String path, String text) {
     final lines = text.split('\n');
+    String tokenText(SemanticToken token) =>
+        lines[token.line].substring(token.column, token.column + token.length);
     return [
       for (final token in workspace.semanticTokens(path))
-        '${lines[token.line].substring(token.column, token.column + token.length)}'
-            ': ${semanticTokenTypes[token.type]}',
+        '${tokenText(token)}: ${semanticTokenTypes[token.type]}',
     ];
   }
 
   test('placeholders and SpEL in application.yml values, not comments', () {
-    const text = '''
+    const text = r'''
 server:
-  port: \${PORT:8080} # \${not.this}
+  port: ${PORT:8080} # ${not.this}
 app:
-  title: "\${app.name} #{1 + 2}"
-  motto: Don't panic # \${nor.this}
-# \${commented.out}
+  title: "${app.name} #{1 + 2}"
+  motto: Don't panic # ${nor.this}
+# ${commented.out}
 ''';
     final path = '${root.path}/lib/resources/application.yml';
     workspace.setOverlay(path, text);
@@ -56,10 +57,10 @@ app:
   });
 
   test('placeholders in .properties values, not comment lines', () {
-    const text = '''
-# \${commented.out}
-! \${also.out}
-greeting=Hello, \${user.name:you}
+    const text = r'''
+# ${commented.out}
+! ${also.out}
+greeting=Hello, ${user.name:you}
 ''';
     final path = '${root.path}/lib/resources/application.properties';
     File(path).writeAsStringSync(text);
@@ -84,12 +85,12 @@ greeting=Hello, \${user.name:you}
   });
 
   test('an open config document counts before it is saved', () {
-    const dart = '''
+    const dart = r'''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 @Component()
 class Shop {
-  Shop(@Value(r'\${shop.name}') String name);
+  Shop(@Value(r'${shop.name}') String name);
 }
 ''';
     final dartPath = '${root.path}/lib/shop.dart';
@@ -104,13 +105,15 @@ class Shop {
       "Cannot resolve property 'shop.name' in any properties file",
     ]);
 
-    workspace.setOverlay(properties, 'other=1\nshop.name=NEON\n');
-    workspace.refresh(force: true);
+    workspace
+      ..setOverlay(properties, 'other=1\nshop.name=NEON\n')
+      ..refresh(force: true);
     expect(problems(), isEmpty);
 
     // Closed without saving: the file on disk counts again.
-    workspace.setOverlay(properties, null);
-    workspace.refresh(force: true);
+    workspace
+      ..setOverlay(properties, null)
+      ..refresh(force: true);
     expect(problems(), hasLength(1));
   });
 }

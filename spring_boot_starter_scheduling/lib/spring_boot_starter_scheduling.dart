@@ -1,12 +1,12 @@
 /// Scheduling for `spring_boot_dart` applications, like Spring's
 /// `@Scheduled` support: add the dependency and annotate bean methods.
 ///
-/// - [Scheduled]: fixed rate, fixed delay or cron, with `${...}`
+/// - `Scheduled`: fixed rate, fixed delay or cron, with `${...}`
 ///   placeholders and Spring Boot durations;
-/// - [CronExpression]: Spring's six-field cron format, with `L`, `W`, `#`
+/// - `CronExpression`: Spring's six-field cron format, with `L`, `W`, `#`
 ///   and macros;
-/// - [TaskScheduler]: schedule work in code ([Trigger], [CronTrigger],
-///   [PeriodicTrigger], [OneShotTrigger]);
+/// - `TaskScheduler`: schedule work in code (`Trigger`, `CronTrigger`,
+///   `PeriodicTrigger`, `OneShotTrigger`);
 /// - tasks stop when the context closes (and so after a hot-reload
 ///   restart).
 ///

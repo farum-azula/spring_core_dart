@@ -119,7 +119,7 @@ void main() {
     test('go to definition of a YAML key', () {
       final targets = workspace.definition(
         appPath,
-        offsetOf(r'shop.servers[0].host', shift: 2),
+        offsetOf('shop.servers[0].host', shift: 2),
       );
       expect(targets.single.path, ymlPath);
       expect(targets.single.startLine, 4);
@@ -139,10 +139,10 @@ void main() {
     });
 
     test('an unknown message code without defaultMessage is reported', () {
-      expect(messages().where((m) => m.startsWith('No message')), [
-        "No message 'about.missing' in the message bundles "
-            '(messages*.properties)',
-      ]);
+      const message =
+          "No message 'about.missing' in the message bundles "
+          '(messages*.properties)';
+      expect(messages().where((m) => m.startsWith('No message')), [message]);
     });
 
     test('hover lists the translations', () {
@@ -286,10 +286,10 @@ void main() {
             '}\n',
       );
       workspace.refresh(force: true);
-      expect(problems(path), [
-        "No message 'really.missing' in the message bundles "
-            '(messages*.properties)',
-      ]);
+      const message =
+          "No message 'really.missing' in the message bundles "
+          '(messages*.properties)';
+      expect(problems(path), [message]);
     });
 
     test('use-code-as-default-message turns the warning off', () {
@@ -313,7 +313,8 @@ void main() {
         'void main() {\n'
             '  ApplicationContextRunner()\n'
             "      .withPropertyValues(['shop.url: http://x', 'shop.name = Books', 'flag'])\n"
-            "      .withSystemEnvironment({'SHOPPING': '1', 'APP_MAX_SIZE': '2'});\n"
+            "      .withSystemEnvironment({'SHOPPING': '1', "
+            "'APP_MAX_SIZE': '2'});\n"
             '}\n'
             'class D {\n'
             "  @Value(r'\${shop.url}') late String url;\n"

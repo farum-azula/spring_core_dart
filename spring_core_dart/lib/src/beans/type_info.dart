@@ -20,7 +20,8 @@
 /// Spring (Java): `ResolvableType` / `TypeDescriptor`, read from generic
 /// signatures by reflection:
 /// ```java
-/// ResolvableType books = ResolvableType.forClassWithGenerics(List.class, Book.class);
+/// ResolvableType books =
+///     ResolvableType.forClassWithGenerics(List.class, Book.class);
 /// ```
 sealed class TypeInfo<T> {
   const TypeInfo({this.nullable = false});

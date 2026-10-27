@@ -65,7 +65,7 @@ void main() {
   });
 
   test(
-    'maps the endpoint and the configurer\'s handler',
+    "maps the endpoint and the configurer's handler",
     () => withMapping((mapping, _) async {
       expect(mapping.paths, containsAll(['/ws/rooms/{room}', '/ws/echo']));
       expect(await _connect(mapping, '/ws/other'), isNull);

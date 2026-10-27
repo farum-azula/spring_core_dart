@@ -42,7 +42,8 @@ final class EmbeddedResource {
 /// embedded file with the same path.
 ///
 /// ```dart
-/// final resource = DefaultResourceLoader().getResource('classpath:banner.txt');
+/// final resource =
+///     DefaultResourceLoader().getResource('classpath:banner.txt');
 /// print(resource.readAsStringSync());
 /// ```
 ///
@@ -170,8 +171,9 @@ final class _EmbeddedClasspathResource extends ByteArrayResource {
   Resource createRelative(String relativePath) {
     final slash = path.lastIndexOf('/');
     final directory = slash < 0 ? '' : path.substring(0, slash + 1);
-    return ClasspathResources.resolve(
-      '$directory${relativePath.startsWith('/') ? relativePath.substring(1) : relativePath}',
-    );
+    final relative = relativePath.startsWith('/')
+        ? relativePath.substring(1)
+        : relativePath;
+    return ClasspathResources.resolve('$directory$relative');
   }
 }

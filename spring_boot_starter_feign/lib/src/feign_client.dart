@@ -37,7 +37,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 /// Spring (Java):
 /// ```java
-/// @FeignClient(name = "catalog", url = "${catalog.url}", fallback = CatalogFallback.class)
+/// @FeignClient(name = "catalog", url = "${catalog.url}",
+///     fallback = CatalogFallback.class)
 /// interface CatalogClient {
 ///   @GetMapping("/books/{isbn}")
 ///   Book find(@PathVariable String isbn);

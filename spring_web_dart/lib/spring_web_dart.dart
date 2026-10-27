@@ -25,12 +25,15 @@
 /// `org.springframework.http`, `org.springframework.http.client`).
 library;
 
+// Who sent a request (spring_core_dart's, shared with Spring Security).
+export 'package:spring_core_dart/core.dart' show Principal;
+
 export 'package:spring_web_dart/src/annotations.dart';
-export 'package:spring_web_dart/src/controller_annotations.dart';
 export 'package:spring_web_dart/src/client/http_request.dart';
 export 'package:spring_web_dart/src/client/http_response.dart';
 export 'package:spring_web_dart/src/client/http_transport.dart';
 export 'package:spring_web_dart/src/client/streamed_http_response.dart';
+export 'package:spring_web_dart/src/controller_annotations.dart';
 export 'package:spring_web_dart/src/http_headers.dart';
 export 'package:spring_web_dart/src/http_method.dart';
 export 'package:spring_web_dart/src/http_status.dart';

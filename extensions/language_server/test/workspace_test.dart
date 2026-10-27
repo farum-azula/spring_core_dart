@@ -192,7 +192,7 @@ void main() {
 
   group('resources', () {
     test('classpath: and file: locations go to the file', () {
-      const config = r'''
+      const config = '''
 @Configuration()
 @PropertySource(['classpath:legacy.properties', 'optional:classpath:none.properties'])
 class LegacyConfig {
@@ -254,7 +254,7 @@ class LegacyConfig {
   });
 
   group('pointcuts', () {
-    const aspects = r'''
+    const aspects = '''
 class Timed {
   const Timed();
 }
@@ -299,12 +299,12 @@ class AuditAspect {
     ];
 
     test('types, annotations, beans and named pointcuts navigate', () {
-      final aspectsFile = 'aspects.dart';
+      const aspectsFile = 'aspects.dart';
       expect(targets('OrderService)'), [
         '$aspectsFile:${line('class OrderService', aspects)}',
       ]);
       expect(targets('Timed)'), ['$aspectsFile:0']);
-      expect(targets("orders() &&"), [
+      expect(targets('orders() &&'), [
         '$aspectsFile:${line('void orders()', aspects)}',
       ]);
       expect(targets('AuditAspect.orders()', 13), [
@@ -332,7 +332,7 @@ class AuditAspect {
         return semanticTokenTypes[token.type];
       }
 
-      expect(typeAt("within(OrderService)"), 'keyword');
+      expect(typeAt('within(OrderService)'), 'keyword');
       expect(typeAt('OrderService)'), 'type');
       expect(typeAt('&& !bean'), 'operator');
       expect(typeAt('cash*'), 'variable');
@@ -433,7 +433,7 @@ class Books {
       expect(problems.where((p) => p.message.contains("'shop.name'")), isEmpty);
       expect(
         problems.singleWhere((p) => p.error).range.startLine,
-        line("#{1 +}"),
+        line('#{1 +}'),
       );
     });
 
@@ -472,13 +472,14 @@ class Books {
     );
     expect(workspace.beansNamed('cashier'), hasLength(1));
     expect(workspace.beansNamed('cash'), isEmpty);
-    workspace.setOverlay(shopPath, null);
-    workspace.refresh(force: true);
+    workspace
+      ..setOverlay(shopPath, null)
+      ..refresh(force: true);
     expect(workspace.beansNamed('cash'), hasLength(1));
   });
 
   test('controllers, advice and WebSocket endpoints are beans', () {
-    workspace.setOverlay('${root.path}/lib/src/web.dart', r'''
+    workspace.setOverlay('${root.path}/lib/src/web.dart', '''
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 

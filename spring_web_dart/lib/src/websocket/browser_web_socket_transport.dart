@@ -189,6 +189,7 @@ final class _BrowserSession implements WebSocketSession {
 @JS('WebSocket')
 extension type _WebSocket._(JSObject _) implements JSObject {
   external factory _WebSocket(JSString url, JSArray<JSString> protocols);
+  external JSString get binaryType;
   external set binaryType(JSString value);
   external int get readyState;
   external JSString get protocol;

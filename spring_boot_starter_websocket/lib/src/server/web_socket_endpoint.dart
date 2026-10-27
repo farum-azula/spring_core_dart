@@ -8,14 +8,14 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 /// The methods take what they need, in any order:
 ///
-/// | Parameter | Value |
-/// |---|---|
-/// | `ServerWebSocketSession` / `WebSocketSession` | the connection |
-/// | `@PathVariable() String room` | a `{room}` of [path] |
-/// | `Principal` | the user of the handshake (null when anonymous and nullable) |
-/// | the message (`@OnMessage`) | `String` (text), `Uint8List` (binary), any other type read as JSON |
-/// | `CloseStatus` (`@OnClose`) | why it closed |
-/// | the error (`@OnError`) | what a handler threw, or the transport error |
+/// - `ServerWebSocketSession` / `WebSocketSession`: the connection;
+/// - `@PathVariable() String room`: a `{room}` of [path];
+/// - `Principal`: the user of the handshake (null when anonymous and
+///   nullable);
+/// - the message (`@OnMessage`): `String` (text), `Uint8List` (binary), any
+///   other type read as JSON;
+/// - `CloseStatus` (`@OnClose`): why it closed;
+/// - the error (`@OnError`): what a handler threw, or the transport error.
 ///
 /// What an `@OnMessage` method returns (a `Future` is awaited) is sent
 /// back: a `String` as text, bytes as binary, anything else as JSON.

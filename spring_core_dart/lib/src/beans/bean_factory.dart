@@ -371,6 +371,9 @@ abstract interface class BeanExpressionResolver {
 /// ```
 abstract interface class ConfigurableBeanFactory
     implements HierarchicalBeanFactory, SingletonBeanRegistry {
+  @override
+  BeanFactory? get parentBeanFactory;
+
   /// Sets the parent factory used for lookups that fail locally.
   set parentBeanFactory(BeanFactory? parent);
 
@@ -674,7 +677,9 @@ abstract interface class DependencyResolver
   /// points: the generated lazy proxy calls it on every member access).
   ///
   /// ```dart
-  /// create: (r) => BookService(_$BookServiceLazy(r.lazyDependency<BookService>())),
+  /// create: (r) => BookService(
+  ///   _$BookServiceLazy(r.lazyDependency<BookService>()),
+  /// ),
   /// ```
   T Function() lazyDependency<T extends Object>({
     String? qualifier,
@@ -689,7 +694,8 @@ abstract interface class DependencyResolver
   ///
   /// ```dart
   /// inject: (bean, r) =>
-  ///     bean.dataSource = r.resource<DataSource>('dataSource', fallbackToType: true),
+  ///     bean.dataSource =
+  ///         r.resource<DataSource>('dataSource', fallbackToType: true),
   /// ```
   T resource<T extends Object>(String name, {bool fallbackToType = false});
 

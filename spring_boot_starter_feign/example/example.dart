@@ -4,6 +4,10 @@
 // through the ObjectMapper, error statuses become FeignExceptions.
 //
 //   dart run example/example.dart
+
+// The example shows its results on the console.
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;

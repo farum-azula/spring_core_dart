@@ -36,9 +36,7 @@ final class SseDecoder
   static List<ServerSentEvent<String?>> parse(String body) {
     final events = <ServerSentEvent<String?>>[];
     final sink = _SseSink(_ListSink(events));
-    for (final line in const LineSplitter().convert(body)) {
-      sink.add(line);
-    }
+    const LineSplitter().convert(body).forEach(sink.add);
     // A body ending with an empty line has dispatched everything already.
     return events;
   }
@@ -73,7 +71,8 @@ final class _SseSink implements EventSink<String> {
   bool _any = false;
 
   @override
-  void add(String line) {
+  void add(String input) {
+    var line = input;
     if (_first) {
       _first = false;
       if (line.startsWith('﻿')) {
@@ -102,8 +101,7 @@ final class _SseSink implements EventSink<String> {
     }
     switch (field) {
       case 'data':
-        final data = _data ??= StringBuffer();
-        data
+        (_data ??= StringBuffer())
           ..write(value)
           ..write('\n');
       case 'id':

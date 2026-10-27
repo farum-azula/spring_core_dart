@@ -111,7 +111,11 @@ void main() {
       expect(changed.copyWith(minLevel: null).minLevel, isNull);
       expect(
         changed,
-        LogQuery(minLevel: SpringLogLevel.info, text: 'slow', logger: 'neon'),
+        const LogQuery(
+          minLevel: SpringLogLevel.info,
+          text: 'slow',
+          logger: 'neon',
+        ),
       );
       expect(changed.hashCode, changed.copyWith().hashCode);
       expect(changed, isNot(query));

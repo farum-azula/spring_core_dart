@@ -3,6 +3,10 @@
 // (example.spring.dart, from `dart run build_runner build`).
 //
 //   dart run example/example.dart
+
+// The example shows its result on the console: printing is the point.
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
@@ -19,7 +23,7 @@ class Book {
 /// its loads.
 @Component()
 class CatalogApi {
-  var loads = 0;
+  int loads = 0;
 
   Future<Book> load(String isbn) async {
     loads++;

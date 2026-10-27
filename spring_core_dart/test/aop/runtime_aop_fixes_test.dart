@@ -95,7 +95,7 @@ MethodSignature _calc(
   targetAnnotationTypes: const ['Audited'],
 );
 
-final calcSignatures = [
+final List<MethodSignature> calcSignatures = [
   _calc(
     'add',
     'int',
@@ -377,8 +377,8 @@ BeanDefinition<SimpleCalc> calcBean({
 BeanDefinition<Recorder> aspectBean(
   String name, {
   required String typeName,
-  Map<String, String> pointcuts = const {},
   required List<(AdviceKind, String)> advice,
+  Map<String, String> pointcuts = const {},
   int? order,
   Recorder Function()? create,
   List<Type>? types,
@@ -551,15 +551,14 @@ void main() {
     test('@within and @target bind the class annotation', () {
       for (final designator in ['@within', '@target']) {
         log.clear();
-        final calc = proxy([
+        proxy([
           advice(
             AdviceKind.before,
             '$designator(audited) && execution(* echo(..))',
             (_, _, bound) => log.add('${bound['audited']}'),
             bindings: {'audited': binding<Audited>('Audited')},
           ),
-        ]);
-        calc.echo(1);
+        ]).echo(1);
         expect(log, ["Instance of 'Audited'"], reason: designator);
       }
     });
@@ -618,8 +617,7 @@ void main() {
           (_, _, bound) => log.add('last ${bound['last']}'),
           bindings: {'last': binding<int>('int')},
         ),
-      ]);
-      calc.echo('x');
+      ])..echo('x');
       expect(log, ['text x']);
       log.clear();
       calc.echo(42);
@@ -630,16 +628,15 @@ void main() {
 
       // A plain interceptor with such a pointcut is decided per call too.
       log.clear();
-      final plain = proxy([
-        DefaultPointcutAdvisor(
-          ExpressionPointcut(
-            'args(text)',
-            bindings: {'text': binding<String>('String')},
+      proxy([
+          DefaultPointcutAdvisor(
+            ExpressionPointcut(
+              'args(text)',
+              bindings: {'text': binding<String>('String')},
+            ),
+            _Tag('dynamic'),
           ),
-          _Tag('dynamic'),
-        ),
-      ]);
-      plain
+        ])
         ..echo('x')
         ..echo(1);
       expect(log, ['dynamic echo']);
@@ -662,8 +659,7 @@ void main() {
           (_, _, bound) => log.add('either $bound'),
           bindings: bindings,
         ),
-      ]);
-      calc.echo('x');
+      ])..echo('x');
       expect(log, ['either {text: x}']);
       log.clear();
       calc.echo(1);
@@ -752,8 +748,7 @@ void main() {
           order: 2,
         ),
       ]);
-      final calc = app.getBean<Calc>();
-      calc.add(1, 2);
+      final calc = app.getBean<Calc>()..add(1, 2);
       expect(log, ['first:before add', 'second:after add']);
       log.clear();
       calc.echo(1);
@@ -1100,9 +1095,9 @@ void main() {
           create: (_) => _PlainAdvisor(),
         ),
       ]);
-      final calc = app.getBean<Calc>();
-      calc.add(1, 2);
-      calc.echo(1);
+      app.getBean<Calc>()
+        ..add(1, 2)
+        ..echo(1);
       expect(log, ['plain add', 'plain echo']);
       app.close();
     });
@@ -1160,8 +1155,7 @@ void main() {
       ]);
       final child = context([calcBean()], parent: parent);
       expect(AspectAutoProxyCreator.isRequiredFor(child.beanFactory), isTrue);
-      final calc = child.getBean<Calc>();
-      calc
+      child.getBean<Calc>()
         ..add(1, 2)
         ..echo(1);
       expect(log, ['parentAspect:before add', 'parentAdvisor echo']);

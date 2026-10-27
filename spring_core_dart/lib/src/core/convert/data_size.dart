@@ -18,7 +18,7 @@
 /// DataSize.parse("2", DataUnit.KILOBYTES);
 /// ```
 final class DataSize implements Comparable<DataSize> {
-  /// [bytes] bytes.
+  /// `bytes` bytes.
   const DataSize.ofBytes(this._bytes);
 
   /// [kilobytes] KB (1024 bytes each).
@@ -111,7 +111,7 @@ enum DataUnit {
   /// Terabytes (`TB`).
   terabytes('TB', 1024 * 1024 * 1024 * 1024);
 
-  const DataUnit(this.suffix, this.byteCount);
+  DataUnit(this.suffix, this.byteCount);
 
   /// The suffix in sizes such as `10MB`.
   final String suffix;

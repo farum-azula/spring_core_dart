@@ -269,8 +269,9 @@ void main() {
         () => factory.registerAlias('french', 'x'),
         throwsA(isA<BeanDefinitionOverrideException>()),
       );
-      factory.allowBeanDefinitionOverriding = true;
-      factory.registerAlias('french', 'x');
+      factory
+        ..allowBeanDefinitionOverriding = true
+        ..registerAlias('french', 'x');
       expect(factory.getBeanByName('x'), isA<French>());
       factory.registerBeanDefinition(german(name: 'x'));
       expect(factory.isAlias('x'), isFalse);
@@ -281,8 +282,8 @@ void main() {
       final factory = factoryWith([english()])
         ..registerAlias('english', 'en')
         ..registerAlias('en', 'e')
-        ..registerAlias('e', 'ee');
-      factory.removeBeanDefinition('english');
+        ..registerAlias('e', 'ee')
+        ..removeBeanDefinition('english');
       expect(factory.isAlias('en'), isFalse);
       expect(factory.isAlias('e'), isFalse);
       expect(factory.isAlias('ee'), isFalse);
@@ -417,8 +418,7 @@ void main() {
           create: (r) => Holder(r.dependency<Greeter>()),
         ),
         english(),
-      ]);
-      factory.getBean<Holder>();
+      ])..getBean<Holder>();
       expect(factory.getDependentBeans('english'), ['holder']);
       factory.removeBeanDefinition('holder');
       expect(factory.getDependentBeans('english'), isEmpty);
@@ -475,23 +475,24 @@ void main() {
       final saved = SpringLog.handler;
       SpringLog.handler = records.add;
       addTearDown(() => SpringLog.handler = saved);
-      final factory = factoryWith([
-        BeanDefinition<Scoped>(
-          name: 'scoped',
-          scope: 'screen',
-          create: (_) => Scoped(),
-        ),
-        BeanDefinition<Owner>(
-          name: 'owner',
-          create: (r) => Owner(r.dependency<Scoped>()),
-        ),
-        BeanDefinition<Owner>(
-          name: 'lazyOwner',
-          create: (r) => Owner(r.lazyDependency<Scoped>()()),
-        ),
-      ])..registerScope('screen', SimpleMapScope());
-      factory.getBeanByName('owner');
-      factory.getBeanByName('lazyOwner');
+      factoryWith([
+          BeanDefinition<Scoped>(
+            name: 'scoped',
+            scope: 'screen',
+            create: (_) => Scoped(),
+          ),
+          BeanDefinition<Owner>(
+            name: 'owner',
+            create: (r) => Owner(r.dependency<Scoped>()),
+          ),
+          BeanDefinition<Owner>(
+            name: 'lazyOwner',
+            create: (r) => Owner(r.lazyDependency<Scoped>()()),
+          ),
+        ])
+        ..registerScope('screen', SimpleMapScope())
+        ..getBeanByName('owner')
+        ..getBeanByName('lazyOwner');
       expect(records, hasLength(1));
       expect(records.single.message, contains("'scoped'"));
       expect(records.single.message, contains("'owner'"));

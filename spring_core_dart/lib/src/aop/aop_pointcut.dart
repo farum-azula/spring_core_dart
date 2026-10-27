@@ -324,9 +324,9 @@ final class AdviceBinding {
 ///   `Type+`: or a subtype of it);
 /// - `target(Type)` / `this(Type)` — the bean class or any supertype;
 /// - `args(...)` — the parameters (`..` for any number): the declared
-///   type, or the runtime argument when [typeTests] has the type;
+///   type, or the runtime argument when `typeTests` has the type;
 /// - `@args(...)` — arguments whose runtime class carries the annotation
-///   ([argumentAnnotations]);
+///   (`argumentAnnotations`);
 /// - `bean(namePattern)` — the bean name, an alias or a qualifier value;
 /// - `@annotation(Name)` — an annotation on the member;
 /// - `@within(Name)` — an annotation on the class whose body runs;
@@ -1177,7 +1177,7 @@ final class _PointcutParser {
     final params = [
       for (final p in _splitParameters(match[2]!))
         if (p.trim().isNotEmpty)
-          p.trim() == '..' ? null : _typeExpression(p.trim()),
+          if (p.trim() == '..') null else _typeExpression(p.trim()),
     ];
     return _Leaf(
       (c) =>

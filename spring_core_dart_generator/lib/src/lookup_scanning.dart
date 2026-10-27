@@ -160,13 +160,14 @@ extension _LookupScanning on BeanScanner {
         }
       }
       if (abstract.isNotEmpty) {
+        final one = abstract.length == 1;
         BeanScanner._fail(
           '$className has @Lookup methods, which a generated subclass '
           'overrides to return beans of the container, but it also has the '
           'abstract member${abstract.length == 1 ? '' : 's'} '
           '${abstract.join(', ')}, which the generated subclass cannot '
-          'implement: give ${abstract.length == 1 ? 'it a body' : 'them bodies'}'
-          ' or make ${abstract.length == 1 ? 'it a @Lookup method' : 'them @Lookup methods'}.',
+          'implement: give ${one ? 'it a body' : 'them bodies'}'
+          ' or make ${one ? 'it a @Lookup method' : 'them @Lookup methods'}.',
           element,
         );
       }

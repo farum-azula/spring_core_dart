@@ -322,7 +322,7 @@ class AntPathMatcher implements PathMatcher {
   List<String> _tokenize(String path) => [
     for (final token in path.split(pathSeparator))
       if ((trimTokens ? token.trim() : token).isNotEmpty)
-        trimTokens ? token.trim() : token,
+        if (trimTokens) token.trim() else token,
   ];
 
   bool _matchStrings(

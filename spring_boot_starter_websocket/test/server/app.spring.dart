@@ -16,7 +16,6 @@ import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_web_dart/src/annotations.dart' as _i5;
 import 'package:spring_web_dart/src/http_headers.dart' as _i8;
-import 'package:spring_web_dart/src/server/server_http_request.dart' as _i9;
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart' as _i4;
 
 import 'chat.dart' as _i1;
@@ -496,9 +495,9 @@ _i2.BeanModule get $wsServerBeans => _i2.BeanModule(
         ),
         _i2.BeanProperty<_i3.ServerWebSocketSession>(
           r'principal',
-          type: _i9.Principal,
+          type: _i2.Principal,
           nullable: true,
-          typeInfo: const _i2.ClassType<_i9.Principal>(nullable: true),
+          typeInfo: const _i2.ClassType<_i2.Principal>(nullable: true),
           get: (bean) => bean.principal,
         ),
         _i2.BeanProperty<_i3.ServerWebSocketSession>(

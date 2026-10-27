@@ -28,6 +28,8 @@ final class Failing implements CommandLineRunner {
   Failing(this.error);
   final Object error;
   @override
+  // The test hands in objects that are not Exceptions on purpose.
+  // ignore: only_throw_errors
   void run(Object args) => throw error;
 }
 
@@ -58,7 +60,6 @@ ConfigurableApplicationContext _run(
   List<ExitCodeEvent>? events,
 }) => SpringApplication(
   [_module(beans)],
-  registerShutdownHook: false,
   initializers: [
     if (events != null)
       ApplicationContextInitializer.of(
@@ -83,7 +84,6 @@ void main() {
     final calls = <List<String>>[];
     final context = SpringApplication(
       [_module([])],
-      registerShutdownHook: false,
       initializers: [
         ApplicationContextInitializer.of(
           (context) => context.beanFactory
@@ -165,11 +165,11 @@ void main() {
   group('failed runs', () {
     test('an ExitCodeExceptionMapper bean maps the error of a runner', () {
       final events = <ExitCodeEvent>[];
-      final error = FormatException('bad input');
+      const error = FormatException('bad input');
       Object? caught;
       try {
         _run([MapStartupError(), Failing(error)], events: events);
-      } catch (e) {
+      } on Object catch (e) {
         caught = e;
       }
       expect(caught, same(error));

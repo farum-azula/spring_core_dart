@@ -226,7 +226,9 @@ class JsonIgnoreProperties {
 /// Spring (Java):
 /// ```java
 /// @JsonCreator
-/// Money(@JsonProperty("amount") int amount, @JsonProperty("currency") String currency) { ... }
+/// Money(
+///     @JsonProperty("amount") int amount,
+///     @JsonProperty("currency") String currency) { ... }
 /// ```
 class JsonCreator {
   /// Marks the constructor.
@@ -485,7 +487,10 @@ class JsonView {
 /// ```dart
 /// @Introspected()
 /// @JsonTypeInfo(property: 'kind')
-/// @JsonSubTypes([JsonSubType(Dog, name: 'dog'), JsonSubType(Cat, name: 'cat')])
+/// @JsonSubTypes([
+///   JsonSubType(Dog, name: 'dog'),
+///   JsonSubType(Cat, name: 'cat'),
+/// ])
 /// abstract class Animal { ... }
 /// // Dog(...)  ↔  {"kind": "dog", "name": "Rex"}
 /// ```

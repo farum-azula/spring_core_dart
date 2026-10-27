@@ -1,10 +1,10 @@
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
-import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/client/platform_transport_stub.dart'
     if (dart.library.io) 'package:spring_web_dart/src/client/platform_transport_io.dart'
     if (dart.library.js_interop) 'package:spring_web_dart/src/client/platform_transport_web.dart'
     as platform;
+import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 
 /// Sends HTTP requests: what Feign clients (and later other clients) talk
 /// to. Like Spring's `ClientHttpRequestFactory`. Implementations:
@@ -24,7 +24,8 @@ import 'package:spring_web_dart/src/client/platform_transport_stub.dart'
 /// Spring (Java):
 /// ```java
 /// ClientHttpRequestFactory factory = new JdkClientHttpRequestFactory();
-/// ClientHttpResponse response = factory.createRequest(uri, HttpMethod.GET).execute();
+/// ClientHttpResponse response =
+///     factory.createRequest(uri, HttpMethod.GET).execute();
 /// ```
 abstract interface class HttpTransport {
   /// Sends [request] and reads the whole response. Any status code is a
@@ -49,7 +50,8 @@ abstract interface class HttpTransport {
 /// [connectTimeout] limits opening a connection (ignored by `fetch`).
 ///
 /// ```dart
-/// final transport = platformHttpTransport(connectTimeout: const Duration(seconds: 3));
+/// final transport =
+///     platformHttpTransport(connectTimeout: const Duration(seconds: 3));
 /// ```
 ///
 /// Spring (Java): Spring Boot picks a `ClientHttpRequestFactory` from the

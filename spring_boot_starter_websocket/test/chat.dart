@@ -184,15 +184,15 @@ class ChatSocketImpl implements ChatSocket {
 
   @override
   Stream<ChatMessage> messages() =>
-      _handler.invoke(_metadata.methods[0], const []) as Stream<ChatMessage>;
+      _handler.invoke(_metadata.methods[0], const [])! as Stream<ChatMessage>;
 
   @override
   Stream<String> raw() =>
-      _handler.invoke(_metadata.methods[1], const []) as Stream<String>;
+      _handler.invoke(_metadata.methods[1], const [])! as Stream<String>;
 
   @override
   Stream<Uint8List> binary() =>
-      _handler.invoke(_metadata.methods[2], const []) as Stream<Uint8List>;
+      _handler.invoke(_metadata.methods[2], const [])! as Stream<Uint8List>;
 
   @override
   Future<void> send(ChatMessage message) =>

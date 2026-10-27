@@ -49,10 +49,12 @@ class Part with SmartLifecycle {
       super.stopWithCallback(callback);
       return;
     }
-    later.future.then((_) {
-      stop();
-      callback();
-    });
+    unawaited(
+      later.future.then((_) {
+        stop();
+        callback();
+      }),
+    );
   }
 }
 
@@ -147,23 +149,23 @@ void main() {
 
     setUp(() {
       events = [];
-      context = ctx([
-        part(Part('web')),
-        part(Part('keeper', isPauseable: false)),
-        part(Part('manual', isAutoStartup: false)),
-        BeanDefinition<Plain>(
-          name: 'plain',
-          types: const [Plain, Lifecycle],
-          create: (_) => Plain(),
-        ),
-      ]);
-      context
-        ..addListener<ContextPausedEvent>((_) => events.add('paused'))
-        ..addListener<ContextStoppedEvent>((_) => events.add('stopped'))
-        ..addListener<ContextRestartedEvent>((_) => events.add('restarted'))
-        ..addListener<ContextStartedEvent>((_) => events.add('started'))
-        ..refresh()
-        ..start();
+      context =
+          ctx([
+              part(Part('web')),
+              part(Part('keeper', isPauseable: false)),
+              part(Part('manual', isAutoStartup: false)),
+              BeanDefinition<Plain>(
+                name: 'plain',
+                types: const [Plain, Lifecycle],
+                create: (_) => Plain(),
+              ),
+            ])
+            ..addListener<ContextPausedEvent>((_) => events.add('paused'))
+            ..addListener<ContextStoppedEvent>((_) => events.add('stopped'))
+            ..addListener<ContextRestartedEvent>((_) => events.add('restarted'))
+            ..addListener<ContextStartedEvent>((_) => events.add('started'))
+            ..refresh()
+            ..start();
       log.clear();
     });
 
@@ -311,23 +313,24 @@ void main() {
 
     test('a generated PayloadApplicationEvent<T> listener matches on the '
         'runtime payload type', () {
-      final context = ctx([
-        BeanDefinition<Audit>(
-          name: 'audit',
-          create: (_) => Audit(),
-          eventListeners: [
-            EventListenerMethod.forPayload<Audit, Order>(
-              'Audit.on',
-              (bean, event) => bean.on(event),
-              condition: (event) => event.payload.id > 0,
-            ),
-          ],
-        ),
-      ])..refresh();
-      context
-        ..publishEvent<Object>(Order(2))
-        ..publishEvent(Order(0))
-        ..publishEvent('x');
+      final context =
+          ctx([
+              BeanDefinition<Audit>(
+                name: 'audit',
+                create: (_) => Audit(),
+                eventListeners: [
+                  EventListenerMethod.forPayload<Audit, Order>(
+                    'Audit.on',
+                    (bean, event) => bean.on(event),
+                    condition: (event) => event.payload.id > 0,
+                  ),
+                ],
+              ),
+            ])
+            ..refresh()
+            ..publishEvent<Object>(Order(2))
+            ..publishEvent(Order(0))
+            ..publishEvent('x');
       final seen = context.getBean<Audit>().seen;
       expect(seen.map((e) => e.payload.id), [2]);
       expect(seen.single.source, same(context));
@@ -335,24 +338,26 @@ void main() {
     });
 
     test('@EventListener methods of a FactoryBean run on the factory', () {
-      final context = ctx([
-        BeanDefinition<WidgetFactory>(
-          name: 'widget',
-          types: const [WidgetFactory],
-          factoryObjectTypes: const [Widget],
-          create: (_) => WidgetFactory(),
-          eventListeners: [
-            EventListenerMethod.of<WidgetFactory, Order>('WidgetFactory.on', (
-              bean,
-              order,
-            ) {
-              bean.on(order);
-              return null;
-            }),
-          ],
-        ),
-      ])..refresh();
-      context.publishEvent(Order(7));
+      final context =
+          ctx([
+              BeanDefinition<WidgetFactory>(
+                name: 'widget',
+                types: const [WidgetFactory],
+                factoryObjectTypes: const [Widget],
+                create: (_) => WidgetFactory(),
+                eventListeners: [
+                  EventListenerMethod.of<WidgetFactory, Order>(
+                    'WidgetFactory.on',
+                    (bean, order) {
+                      bean.on(order);
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ])
+            ..refresh()
+            ..publishEvent(Order(7));
       expect(context.getBean<Widget>(), isA<Widget>());
       expect((context.getBeanByName('&widget') as WidgetFactory).orders, [7]);
       context.close();

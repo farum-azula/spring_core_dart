@@ -17,8 +17,8 @@ import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/constraint_checker.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
+import 'package:spring_core_dart_generator/src/log_scanning.dart';
 
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
@@ -30,71 +30,71 @@ part 'lookup_scanning.dart';
 TypeChecker _spring(String name) =>
     TypeChecker.typeNamedLiterally(name, inPackage: 'spring_core_dart');
 
-final _component = _spring('Component');
-final _configuration = _spring('Configuration');
-final _named = _spring('Named');
-final _bean = _spring('Bean');
-final _scope = _spring('Scope');
-final _lazy = _spring('Lazy');
-final _primary = _spring('Primary');
-final _fallback = _spring('Fallback');
-final _qualifier = _spring('Qualifier');
-final _dependsOn = _spring('DependsOn');
-final _description = _spring('Description');
-final _order = _spring('Order');
-final _autowired = _spring('Autowired');
-final _lookup = _spring('Lookup');
-final _value = _spring('Value');
-final _postConstruct = _spring('PostConstruct');
-final _preDestroy = _spring('PreDestroy');
-final _profile = _spring('Profile');
-final _conditional = _spring('Conditional');
-final _condition = _spring('Condition');
-final _import = _spring('Import');
-final _async = _spring('Async');
+final TypeChecker _component = _spring('Component');
+final TypeChecker _configuration = _spring('Configuration');
+final TypeChecker _named = _spring('Named');
+final TypeChecker _bean = _spring('Bean');
+final TypeChecker _scope = _spring('Scope');
+final TypeChecker _lazy = _spring('Lazy');
+final TypeChecker _primary = _spring('Primary');
+final TypeChecker _fallback = _spring('Fallback');
+final TypeChecker _qualifier = _spring('Qualifier');
+final TypeChecker _dependsOn = _spring('DependsOn');
+final TypeChecker _description = _spring('Description');
+final TypeChecker _order = _spring('Order');
+final TypeChecker _autowired = _spring('Autowired');
+final TypeChecker _lookup = _spring('Lookup');
+final TypeChecker _value = _spring('Value');
+final TypeChecker _postConstruct = _spring('PostConstruct');
+final TypeChecker _preDestroy = _spring('PreDestroy');
+final TypeChecker _profile = _spring('Profile');
+final TypeChecker _conditional = _spring('Conditional');
+final TypeChecker _condition = _spring('Condition');
+final TypeChecker _import = _spring('Import');
+final TypeChecker _async = _spring('Async');
 // `@Import`ed classes the runtime instantiates instead of scanning.
-final _importRegistrars = [
+final List<TypeChecker> _importRegistrars = [
   _spring('BeanRegistrar'),
   _spring('ImportSelector'),
   _spring('ImportBeanDefinitionRegistrar'),
 ];
-final _propertySource = _spring('PropertySource');
-final _configurable = _spring('Configurable');
-final _eventListener = _spring('EventListener');
-final _beanMethodAnnotation = _spring('BeanMethodAnnotation');
-final _jsonCreator = _spring('JsonCreator');
-final _jsonSubTypes = _spring('JsonSubTypes');
-final _jsonTypeInfo = _spring('JsonTypeInfo');
-final _jsonView = _spring('JsonView');
+final TypeChecker _propertySource = _spring('PropertySource');
+final TypeChecker _configurable = _spring('Configurable');
+final TypeChecker _eventListener = _spring('EventListener');
+final TypeChecker _beanMethodAnnotation = _spring('BeanMethodAnnotation');
+final TypeChecker _jsonCreator = _spring('JsonCreator');
+final TypeChecker _jsonSubTypes = _spring('JsonSubTypes');
+final TypeChecker _jsonTypeInfo = _spring('JsonTypeInfo');
+final TypeChecker _jsonView = _spring('JsonView');
 
 // `@ConfigurationProperties` from spring_boot_dart (matched by URL, so the
 // generator does not depend on that package): constructor binding.
 const _configurationProperties = TypeChecker.fromUrl(
   'package:spring_boot_dart/src/annotations.dart#ConfigurationProperties',
 );
-final _interfaceProxy = _spring('InterfaceProxy');
-final _factoryBean = _spring('FactoryBean');
-final _applicationListener = _spring('ApplicationListener');
-final _objectProvider = _spring('ObjectProvider');
-final _objectFactory = _spring('ObjectFactory');
-final _provider = _spring('Provider');
-final _resource = _spring('Resource');
-final _introspected = _spring('Introspected');
-final _aspectAnnotation = _spring('Aspect');
-final _constraint = _spring('Constraint');
-final _valid = _spring('Valid');
-final _pointcutAnnotation = _spring('Pointcut');
-final _adviceAnnotations = {
+final TypeChecker _interfaceProxy = _spring('InterfaceProxy');
+final TypeChecker _factoryBean = _spring('FactoryBean');
+final TypeChecker _applicationListener = _spring('ApplicationListener');
+final TypeChecker _objectProvider = _spring('ObjectProvider');
+final TypeChecker _objectFactory = _spring('ObjectFactory');
+final TypeChecker _provider = _spring('Provider');
+final TypeChecker _resource = _spring('Resource');
+final TypeChecker _introspected = _spring('Introspected');
+final TypeChecker _aspectAnnotation = _spring('Aspect');
+final TypeChecker _constraint = _spring('Constraint');
+final TypeChecker _valid = _spring('Valid');
+final TypeChecker _pointcutAnnotation = _spring('Pointcut');
+final Map<String, TypeChecker> _adviceAnnotations = {
   'around': _spring('Around'),
   'before': _spring('Before'),
   'after': _spring('After'),
   'afterReturning': _spring('AfterReturning'),
   'afterThrowing': _spring('AfterThrowing'),
 };
-final _declareParents = _spring('DeclareParents');
-final _advisor = _spring('Advisor');
-final _joinPoint = _spring('JoinPoint');
-final _proceedingJoinPoint = _spring('ProceedingJoinPoint');
+final TypeChecker _declareParents = _spring('DeclareParents');
+final TypeChecker _advisor = _spring('Advisor');
+final TypeChecker _joinPoint = _spring('JoinPoint');
+final TypeChecker _proceedingJoinPoint = _spring('ProceedingJoinPoint');
 
 // spring_boot_starter_cache annotations, matched by URL (no dependency).
 const _cacheAnnotations =
@@ -121,7 +121,7 @@ String _reservedMessage(String? type, String member) =>
     '$type.$member has the name of a member every proxy declares '
     '(Advised.$member). Rename it.';
 
-final _notProxied = [
+final List<TypeChecker> _notProxied = [
   _spring('BeanPostProcessor'),
   _spring('BeanFactoryPostProcessor'),
   _spring('Advisor'),
@@ -252,7 +252,7 @@ const _diAnnotations = {
 /// @ComponentScan
 /// class AppConfig {}
 /// ```
-final componentScanChecker = _spring('ComponentScan');
+final TypeChecker componentScanChecker = _spring('ComponentScan');
 
 /// Several independent validation errors of one build, reported together
 /// (each with its message, library URI and location) instead of one per
@@ -516,7 +516,8 @@ class BeanScanner {
           scanClass(element, annotation: annotation);
         }
       });
-      // spring_boot_starter_flutter: widgets whose bean records the module fills.
+      // spring_boot_starter_flutter: widgets whose bean records the module
+      // fills.
       collectErrors(() => scanSpringWidget(element, module));
       collectErrors(() => checkChangeNotifierComponent(element));
       collectErrors(() => scanLog(element, module));
@@ -929,8 +930,9 @@ class BeanScanner {
     final chain = <InterfaceType>[];
     InterfaceType? current = type;
     while (current != null && !current.isDartCoreObject) {
-      chain.add(current);
-      chain.addAll(current.mixins.reversed);
+      chain
+        ..add(current)
+        ..addAll(current.mixins.reversed);
       current = current.superclass;
     }
     return chain;
@@ -1118,7 +1120,8 @@ class BeanScanner {
         continue;
       }
       for (final listed
-          in ConstantReader(value).peek('classes')?.listValue ?? const []) {
+          in ConstantReader(value).peek('classes')?.listValue ??
+              const <DartObject>[]) {
         if (listed.toTypeValue() case final InterfaceType listedType
             when listedType.element is ClassElement) {
           _scanIntrospected(listedType.element as ClassElement);
@@ -1511,7 +1514,7 @@ class BeanScanner {
         // A static method is not inherited: it is called on its declaring
         // class.
         ownerType: method.isStatic
-            ? (method.enclosingElement as InterfaceElement).thisType
+            ? (method.enclosingElement! as InterfaceElement).thisType
             : owner.type,
         ownerName: owner.name,
         methodName: methodName,
@@ -2014,7 +2017,7 @@ class BeanScanner {
     }
     if (valueName != null && valueType == null) {
       _fail(
-        "$annotationName advice $name names the $valueField parameter "
+        '$annotationName advice $name names the $valueField parameter '
         "'$valueName', which it does not declare.",
         method,
       );
@@ -2211,7 +2214,7 @@ class BeanScanner {
                 element.variable.metadata.hasProtected));
     for (final member in model.members) {
       final name = member.name;
-      final ExecutableElement? implementation = switch (member.kind) {
+      final implementation = switch (member.kind) {
         ProxyMemberKind.method => target.lookUpMethod(name, library),
         ProxyMemberKind.getter => target.lookUpGetter(name, library),
         ProxyMemberKind.setter => target.lookUpSetter(name, library),
@@ -2233,12 +2236,13 @@ class BeanScanner {
       if (owner is! InterfaceElement || owner == target.element) {
         continue;
       }
-      member.implementingTypes = [
-        owner.name!,
-        for (final supertype in owner.allSupertypes)
-          if (!supertype.isDartCoreObject) supertype.element.name!,
-      ];
-      member.implementingTypeAnnotations = _userAnnotations(owner);
+      member
+        ..implementingTypes = [
+          owner.name!,
+          for (final supertype in owner.allSupertypes)
+            if (!supertype.isDartCoreObject) supertype.element.name!,
+        ]
+        ..implementingTypeAnnotations = _userAnnotations(owner);
     }
     return model;
   }
@@ -3146,7 +3150,7 @@ class BeanScanner {
     }
   }
 
-  /// Whether generated code can name [type].
+  /// Whether generated code can name `type`.
   // Whether generated code can re-create the constant [value] (public
   // types, constructors and constants only).
   static bool _isRevivable(DartObject value) {
@@ -4779,10 +4783,10 @@ class BeanScanner {
   // Private declarations
   // ---------------------------------------------------------------------
 
-  /// Fails when [type] (or a type argument) is private to its library: the
-  /// generated module is another library and cannot name it. [use] says
+  /// Fails when `type` (or a type argument) is private to its library: the
+  /// generated module is another library and cannot name it. `use` says
   /// what references it ("constructor parameter dep of Cache has"),
-  /// [alternative] a second way out besides making the type public.
+  /// `alternative` a second way out besides making the type public.
   /// Public types of the scanned libraries and of the runtime, by name:
   /// where to import a type from when the analyzer cannot resolve it (a
   /// missing import). Filled by the builder before scanning.

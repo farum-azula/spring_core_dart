@@ -189,7 +189,10 @@ abstract interface class DeferredImportSelector implements ImportSelector {}
 ///   void registerBeanDefinitions(BeanDefinitionRegistry registry) {
 ///     if (!registry.containsBeanDefinition('auditLog')) {
 ///       registry.registerBeanDefinition(
-///         BeanDefinition<AuditLog>(name: 'auditLog', create: (_) => AuditLog()),
+///         BeanDefinition<AuditLog>(
+///           name: 'auditLog',
+///           create: (_) => AuditLog(),
+///         ),
 ///       );
 ///     }
 ///   }

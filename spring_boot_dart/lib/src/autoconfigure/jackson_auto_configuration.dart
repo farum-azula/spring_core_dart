@@ -1,15 +1,18 @@
+// Rows of Markdown tables and sample log lines in documentation cannot wrap.
+// ignore_for_file: lines_longer_than_80_chars
 import 'package:spring_boot_dart/src/conditions.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _source = 'package:spring_boot_dart#JacksonAutoConfiguration';
 const _log = SpringLog('spring_boot_dart.JacksonAutoConfiguration');
 
-/// Registers a `jacksonJsonMapper` bean (Boot 4's name) built from `spring.jackson.*` when the
-/// application declares no `ObjectMapper`, like Spring Boot's
-/// `JacksonAutoConfiguration`. It reads the classes of the context's
-/// `BeanIntrospector` and adds every `JsonSerializer` / `JsonDeserializer`
-/// bean (Boot's `@JsonComponent`) and every `JsonModule` bean, then lets
-/// the [JsonMapperBuilderCustomizer] beans change the builder (in order).
+/// Registers a `jacksonJsonMapper` bean (Boot 4's name) built from
+/// `spring.jackson.*` when the application declares no `ObjectMapper`, like
+/// Spring Boot's `JacksonAutoConfiguration`. It reads the classes of the
+/// context's `BeanIntrospector` and adds every `JsonSerializer` /
+/// `JsonDeserializer` bean (Boot's `@JsonComponent`) and every `JsonModule`
+/// bean, then lets the [JsonMapperBuilderCustomizer] beans change the builder
+/// (in order).
 ///
 /// ```properties
 /// # lib/resources/application.properties
@@ -66,7 +69,8 @@ final jacksonAutoConfiguration = <BeanDefinition<Object>>[
 /// ```java
 /// @Bean
 /// JsonMapperBuilderCustomizer snakeCase() {
-///   return builder -> builder.propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+///   return builder -> builder.propertyNamingStrategy(
+///       PropertyNamingStrategies.SNAKE_CASE);
 /// }
 /// ```
 abstract interface class JsonMapperBuilderCustomizer {

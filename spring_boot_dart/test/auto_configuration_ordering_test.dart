@@ -34,7 +34,13 @@ BeanModule _module(String name, List<String> log, [List<String>? classes]) =>
         ),
     ]);
 
-const _meta = AutoConfigurationModule.new;
+const AutoConfigurationModule Function({
+  List<String> after,
+  List<String> before,
+  int order,
+  String? requires,
+})
+_meta = AutoConfigurationModule.new;
 
 // Registers one `_Bean` named [name].
 final class _NamedRegistrar implements BeanRegistrar {
@@ -59,7 +65,6 @@ ConfigurableApplicationContext _run(
   exclude: exclude,
   excludeName: excludeName,
   out: (_) {},
-  registerShutdownHook: false,
 ).run(args, systemEnvironment: const {});
 
 class CacheAutoConfiguration {}
@@ -272,7 +277,6 @@ void main() {
             [],
             autoConfigurations: [_module('a', log), _module('b', log)],
             out: (_) {},
-            registerShutdownHook: false,
           ).run(
             const [],
             systemEnvironment: const {},

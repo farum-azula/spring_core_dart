@@ -53,3 +53,4 @@ export 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 export 'package:spring_core_dart/src/core/io/url_resource.dart';
 export 'package:spring_core_dart/src/core/log.dart';
 export 'package:spring_core_dart/src/core/order.dart';
+export 'package:spring_core_dart/src/core/principal.dart';

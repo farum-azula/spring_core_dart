@@ -16,7 +16,8 @@ import 'package:spring_boot_starter_cache/src/cache.dart';
 ///
 /// Spring (Java) has no limits on `ConcurrentMapCache`; with Caffeine:
 /// ```java
-/// Caffeine.newBuilder().expireAfterWrite(Duration.ofMinutes(10)).maximumSize(1000)
+/// Caffeine.newBuilder()
+///     .expireAfterWrite(Duration.ofMinutes(10)).maximumSize(1000)
 /// ```
 final class CacheSpec {
   /// Entries expire [timeToLive] after they were written (never when

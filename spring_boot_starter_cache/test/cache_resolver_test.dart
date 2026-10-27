@@ -3,7 +3,7 @@
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 import 'package:test/test.dart';
 
-/// A call of `Catalog.<name>(isbn)` carrying [annotations].
+/// A call of `Catalog.<name>(isbn)` carrying `annotations`.
 final class _Invocation implements MethodInvocation {
   _Invocation(
     List<Object> annotations, {
@@ -25,7 +25,7 @@ final class _Invocation implements MethodInvocation {
   @override
   List<Object?> get args => const ['1'];
 
-  var calls = 0;
+  int calls = 0;
 
   @override
   Object get target => this;
@@ -355,10 +355,9 @@ void main() {
 
     test('@CacheConfig(cacheResolver:) for the class', () {
       final manager = InMemoryCacheManager();
-      final interceptor = CacheInterceptor(
+      CacheInterceptor(
         beanFactory: _Beans({'tenants': _TenantResolver(manager)}),
-      );
-      interceptor.invoke(
+      ).invoke(
         _Invocation(
           const [Cacheable.of()],
           classAnnotations: const [

@@ -8,6 +8,9 @@
 //
 // Minification renames classes, so anything that matched annotations by
 // `runtimeType.toString()` would silently stop working here.
+
+// A command line tool: the result goes to the console.
+// ignore_for_file: avoid_print
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart';

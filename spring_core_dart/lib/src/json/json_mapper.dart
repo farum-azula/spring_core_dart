@@ -18,7 +18,7 @@ enum SerializationFeature implements JsonFeature {
   /// Pretty-prints `writeValueAsString` (`INDENT_OUTPUT`).
   indentOutput(false);
 
-  const SerializationFeature(this.enabledByDefault);
+  SerializationFeature(this.enabledByDefault);
 
   @override
   final bool enabledByDefault;
@@ -41,7 +41,7 @@ enum DeserializationFeature implements JsonFeature {
   /// `0` / `false`.
   failOnNullForPrimitives(true);
 
-  const DeserializationFeature(this.enabledByDefault);
+  DeserializationFeature(this.enabledByDefault);
 
   @override
   final bool enabledByDefault;
@@ -64,7 +64,7 @@ enum DateTimeFeature implements JsonFeature {
   /// (`READ_DATE_TIMESTAMPS_AS_NANOSECONDS`).
   readDateTimestampsAsNanoseconds(true);
 
-  const DateTimeFeature(this.enabledByDefault);
+  DateTimeFeature(this.enabledByDefault);
 
   @override
   final bool enabledByDefault;
@@ -80,7 +80,7 @@ enum MapperFeature implements JsonFeature {
   /// (`DEFAULT_VIEW_INCLUSION`, off in Jackson 3).
   defaultViewInclusion(false);
 
-  const MapperFeature(this.enabledByDefault);
+  MapperFeature(this.enabledByDefault);
 
   @override
   final bool enabledByDefault;
@@ -95,7 +95,10 @@ enum MapperFeature implements JsonFeature {
 ///     .enable(DeserializationFeature.failOnUnknownProperties)
 ///     .addModule(moneyModule)
 ///     .build();
-/// final strict = mapper.rebuild().disable(MapperFeature.sortPropertiesAlphabetically).build();
+/// final strict = mapper
+///     .rebuild()
+///     .disable(MapperFeature.sortPropertiesAlphabetically)
+///     .build();
 /// ```
 ///
 /// Spring (Java):

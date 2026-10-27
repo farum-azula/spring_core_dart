@@ -40,6 +40,8 @@ const repositoryOnly = {
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',
+  'spring_security_core',
+  'spring_boot_starter_security',
   'spring_boot_starter_flutter',
 };
 
@@ -58,7 +60,12 @@ const flutterPackages = [
 const repositoryOnlyExceptions = {
   'yaml':
       "application.yml config files out of the box, like Spring Boot's "
-      'SnakeYAML; the Dart team\'s YAML parser (spring_core_dart).',
+      "SnakeYAML; the Dart team's YAML parser (spring_core_dart).",
+  'pointycastle':
+      "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
+      '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2 and scrypt for the '
+      'security packages until a Dart team package has them; one file per '
+      'package uses it (docs/dependencies.md).',
 };
 
 /// A package allowed although it is not published by the Dart team.
@@ -85,13 +92,19 @@ final class AllowedPackage {
 /// ),
 /// ```
 const allowedPackages = {
+  'very_good_analysis': AllowedPackage(
+    "Lint rules of analysis_options.yaml (Very Good Ventures'), the "
+    'quality gate of CI; only rules, no code, and only a dev dependency of '
+    'the workspace root.',
+    onlyIn: {'spring_core_dart_workspace'},
+  ),
   'melos': AllowedPackage(
     'Workspace scripts (`dart run melos run check`); a dev tool of the '
     'workspace root, never a dependency of a package.',
     onlyIn: {'spring_core_dart_workspace'},
   ),
   'material_color_utilities': AllowedPackage(
-    "Part of the Flutter SDK (package:flutter depends on it, pinned by the "
+    'Part of the Flutter SDK (package:flutter depends on it, pinned by the '
     "SDK); published by Google's material.io.",
     onlyIn: {
       'spring_boot_starter_flutter',
@@ -99,6 +112,13 @@ const allowedPackages = {
       'flutter_themes',
       'flutter_notes',
     },
+  ),
+  'pointycastle': AllowedPackage(
+    "THIRD-PARTY, to be removed: Bouncy Castle's Dart port (verified "
+    'publisher bouncycastle.org), the signatures of JWTs and the password '
+    'hashes of the security packages; cryptography must not be written by '
+    'hand (docs/security.md). See docs/dependencies.md.',
+    onlyIn: {'spring_security_core', 'spring_boot_starter_security'},
   ),
   'node_preamble': AllowedPackage(
     'Pulled by package:test (Dart team) for browser tests; it has no '
@@ -126,11 +146,12 @@ Future<void> _check(String directory, {required bool standalone}) async {
     '--json',
   ], workingDirectory: directory);
   if (result.exitCode != 0) {
-    stderr.writeln(
-      'pub deps failed in $directory (run `${standalone ? 'flutter' : 'dart'} '
-      'pub get` there first):',
-    );
-    stderr.write(result.stderr);
+    stderr
+      ..writeln(
+        'pub deps failed in $directory '
+        '(run `${standalone ? 'flutter' : 'dart'} pub get` there first):',
+      )
+      ..write(result.stderr);
     exit(1);
   }
   final json = jsonDecode(result.stdout as String) as Map<String, Object?>;
@@ -239,10 +260,11 @@ Future<void> _check(String directory, {required bool standalone}) async {
   }
 
   if (problems.isNotEmpty) {
+    final scope = standalone ? '$directory: ' : '';
     stderr
       ..writeln(
-        '${standalone ? '$directory: ' : ''}Dependencies outside the policy (this repository, the Dart SDK and '
-        'packages published by ${allowedPublishers.join(', ')}):',
+        '${scope}Dependencies outside the policy (this repository, the Dart '
+        'SDK and packages published by ${allowedPublishers.join(', ')}):',
       )
       ..writeln(problems.map((problem) => '  - $problem').join('\n'))
       ..writeln(
@@ -260,7 +282,8 @@ Future<void> _check(String directory, {required bool standalone}) async {
   }
   stdout.writeln(
     'Dependencies ok: ${repositoryOnly.join(', ')} depend only on this '
-    'repository (and ${repositoryOnlyExceptions.keys.join(', ')}); ${hosted.length} packages from pub.dev, all published by '
+    'repository (and ${repositoryOnlyExceptions.keys.join(', ')}); '
+    '${hosted.length} packages from pub.dev, all published by '
     'the Dart team; exceptions: ${allowedPackages.keys.join(', ')}.',
   );
   if (unusedExceptions.isNotEmpty) {

@@ -85,7 +85,7 @@ final class ExitCodeGenerators {
           exitCode = value;
           break;
         }
-      } catch (_) {
+      } on Object catch (_) {
         exitCode = 1;
       }
     }

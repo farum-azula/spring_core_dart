@@ -8,7 +8,8 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// records still reach the `SpringLog.handler` of the time, as usual.
 ///
 /// ```dart
-/// final logs = beanFactory.getBeanByName(DeferredLogs.beanName) as DeferredLogs;
+/// final logs =
+///     beanFactory.getBeanByName(DeferredLogs.beanName) as DeferredLogs;
 /// logs.switchOver().forEach(appender.append);
 /// ```
 final class DeferredLogs {

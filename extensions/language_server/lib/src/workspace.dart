@@ -6,10 +6,11 @@ import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/flutter_assets.dart';
 import 'package:dart_spring_language_server/src/pointcuts.dart';
 import 'package:dart_spring_language_server/src/properties_index.dart';
-import 'package:dart_spring_language_server/src/test_properties.dart';
 import 'package:dart_spring_language_server/src/templates.dart';
+import 'package:dart_spring_language_server/src/test_properties.dart';
 import 'package:spring_core_dart/aop.dart' show ExpressionPointcut;
 import 'package:spring_core_dart/expression.dart';
+// The SpEL tokenizer is not exported: the highlighting reads its tokens.
 // ignore: implementation_imports
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
 
@@ -518,8 +519,7 @@ final class SpringWorkspace {
       for (final bean in beans)
         if (bean.providedTypes.contains(type))
           if (qualifier == null || bean.matches(qualifier)) bean,
-    ];
-    candidates.sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0));
+    ]..sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0));
     return candidates;
   }
 
@@ -569,8 +569,7 @@ final class SpringWorkspace {
         if (!bundles.contains(path))
           for (final entry in entries)
             if (matches(entry)) entry,
-    ];
-    result.sort((a, b) => _fileOrder(a).compareTo(_fileOrder(b)));
+    ]..sort((a, b) => _fileOrder(a).compareTo(_fileOrder(b)));
     return [
       if (from != null)
         for (final entry in testProperties(from))
@@ -809,7 +808,7 @@ final class SpringWorkspace {
               : '**`$key`**: not defined in any properties file';
         }
         return [
-          message ? '**`$key`** (message)' : '**`$key`**',
+          if (message) '**`$key`** (message)' else '**`$key`**',
           '',
           for (final entry in entries)
             '- `${entry.fileName}`: `${entry.value}`',
@@ -1199,7 +1198,7 @@ final class SpringWorkspace {
     if (match.group(1) == 'asset') {
       // A Flutter asset key (spring_boot_starter_flutter), relative to the
       // package; other packages' assets (`packages/...`) are not followed.
-      final key = location.replaceFirst(RegExp(r'^/+'), '');
+      final key = location.replaceFirst(RegExp('^/+'), '');
       if (key.startsWith('packages/')) {
         return null;
       }
@@ -1209,7 +1208,7 @@ final class SpringWorkspace {
         if (File(location).isAbsolute) location else '$package/$location',
       ];
     } else {
-      final relative = location.replaceFirst(RegExp(r'^/+'), '');
+      final relative = location.replaceFirst(RegExp('^/+'), '');
       searched = [
         if (path
             .substring(package.length)
@@ -1334,9 +1333,9 @@ final class SpringWorkspace {
   }
 
   // A field of the bean record of a spring_boot_starter_flutter widget:
-  // `SpringStatelessWidget<(Basket, {Clock utc})>`, `SpringStatefulWidget<...>`,
-  // `SpringState<W, (...)>`. The owner type and the field's name (named
-  // fields), or `null` for any other type.
+  // `SpringStatelessWidget<(Basket, {Clock utc})>`,
+  // `SpringStatefulWidget<...>`, `SpringState<W, (...)>`. The owner type and
+  // the field's name (named fields), or `null` for any other type.
   static (String, String?)? _widgetRecordField(NamedType type) {
     final field = type.parent;
     final String? fieldName;
@@ -1731,7 +1730,34 @@ final class SpringWorkspace {
             TokenKind.colon ||
             TokenKind.dot:
           break;
-        default:
+        case TokenKind.plus ||
+            TokenKind.minus ||
+            TokenKind.star ||
+            TokenKind.div ||
+            TokenKind.mod ||
+            TokenKind.power ||
+            TokenKind.not ||
+            TokenKind.assign ||
+            TokenKind.eq ||
+            TokenKind.ne ||
+            TokenKind.lt ||
+            TokenKind.le ||
+            TokenKind.gt ||
+            TokenKind.ge ||
+            TokenKind.and ||
+            TokenKind.or ||
+            TokenKind.qmark ||
+            TokenKind.elvis ||
+            TokenKind.safeNavi ||
+            TokenKind.select ||
+            TokenKind.selectFirst ||
+            TokenKind.selectLast ||
+            TokenKind.project ||
+            TokenKind.inc ||
+            TokenKind.dec ||
+            TokenKind.instanceOf ||
+            TokenKind.matches ||
+            TokenKind.between:
           add(start, end, 'operator');
       }
     }
@@ -1864,7 +1890,7 @@ final class SpringWorkspace {
       }
       final key = value
           .substring('asset:'.length)
-          .replaceFirst(RegExp(r'^/+'), '');
+          .replaceFirst(RegExp('^/+'), '');
       if (key.isEmpty || key.startsWith('packages/')) {
         continue;
       }
@@ -1949,11 +1975,13 @@ final class SpringWorkspace {
         if (parameters.contains(name) || _builtinSpelVariable.hasMatch(name)) {
           continue;
         }
+        final known = parameters.isEmpty
+            ? ''
+            : '; parameters: ${parameters.map((p) => '#$p').join(', ')}';
         problems.add(
           Problem(
             rangeOf(file, start + token.start - 1, start + token.end),
-            "Unknown variable '#$name'"
-            '${parameters.isEmpty ? '' : '; parameters: ${parameters.map((p) => '#$p').join(', ')}'}',
+            "Unknown variable '#$name'$known",
           ),
         );
       }

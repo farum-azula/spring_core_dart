@@ -64,8 +64,10 @@ void main() {
   }
 
   test('a preamble and an epilogue are ignored', () async {
-    final text =
-        'preamble\r\n--b\r\nContent-Disposition: form-data; name="a"\r\n\r\n1\r\n--b--\r\nepilogue';
+    const text =
+        'preamble\r\n--b\r\n'
+        'Content-Disposition: form-data; name="a"\r\n\r\n1\r\n'
+        '--b--\r\nepilogue';
     final parts = await _parse(utf8.encode(text), 'b');
     expect(parts.single.$1.name, 'a');
     expect(utf8.decode(parts.single.$2), '1');

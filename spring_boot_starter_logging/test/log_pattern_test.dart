@@ -51,7 +51,7 @@ void main() {
       '%X{order}/%X{none}/%X{none:-n/a}': '42//n/a',
       '%mdc{user}': 'ada',
       '%m%X': 'paid {order=42, user=ada}',
-      r'\%m \(%m\) (%m) \\': '%m (paid) (paid) \\',
+      r'\%m \(%m\) (%m) \\': r'%m (paid) (paid) \',
       '%t|%thread': '',
       '%r': '',
     };

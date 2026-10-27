@@ -178,7 +178,7 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
 
   // Spring's getProperties / refreshProperties.
   Map<String, String> _properties(String path) {
-    final Resource resource = resourceLoader.getResource(path);
+    final resource = resourceLoader.getResource(path);
     final cached = _cache[path];
     if (cached != null) {
       // Async-only content always comes from the preload cache.

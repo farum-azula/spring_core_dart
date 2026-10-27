@@ -146,6 +146,8 @@ final class IntrospectionMethodResolver implements MethodResolver {
         () => SpelEvaluationException(
           SpelMessage.methodNotFound,
           inserts: [
+            // A string that cannot be split without changing it.
+            // ignore: lines_longer_than_80_chars
             '$name(${args.map((a) => a == null ? 'null' : a.runtimeType).join(',')})',
             target.runtimeType,
           ],

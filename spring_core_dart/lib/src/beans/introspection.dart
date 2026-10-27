@@ -292,7 +292,7 @@ final class BeanParameter {
 /// Book book = Book.class.getConstructor(String.class).newInstance("978-0");
 /// ```
 final class BeanConstructor<T extends Object> {
-  /// A constructor with [parameters], called through [create].
+  /// A constructor with [parameters], called through `create`.
   BeanConstructor({
     required List<BeanParameter> parameters,
     required this._create,

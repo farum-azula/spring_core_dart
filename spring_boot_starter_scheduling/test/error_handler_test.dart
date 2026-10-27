@@ -39,13 +39,14 @@ void main() {
     );
     addTearDown(scheduler.shutdown);
     var runs = 0;
-    scheduler.scheduleAtFixedRate(() {
-      runs++;
-      throw StateError('sync $runs');
-    }, const Duration(seconds: 1));
-    scheduler.scheduleAtFixedRate(() async {
-      throw StateError('async');
-    }, const Duration(seconds: 1));
+    scheduler
+      ..scheduleAtFixedRate(() {
+        runs++;
+        throw StateError('sync $runs');
+      }, const Duration(seconds: 1))
+      ..scheduleAtFixedRate(() async {
+        throw StateError('async');
+      }, const Duration(seconds: 1));
     await clock.elapseAsync(const Duration(seconds: 2));
     expect(runs, 3);
     expect(handler.errors.whereType<StateError>().map((e) => e.message), [

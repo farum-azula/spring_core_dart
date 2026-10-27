@@ -9,8 +9,11 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///   const IsbnKeys();
 ///
 ///   @override
-///   Object? generate(Object target, MethodSignature method, List<Object?> args) =>
-///       (args.first! as String).replaceAll('-', '');
+///   Object? generate(
+///     Object target,
+///     MethodSignature method,
+///     List<Object?> args,
+///   ) => (args.first! as String).replaceAll('-', '');
 /// }
 ///
 /// @Configuration()

@@ -280,11 +280,10 @@ class DefaultListableBeanFactory
     _definitions.remove(canonical);
     _resetMergedDefinition(canonical);
     // Every alias leading to the bean, also through other aliases.
-    final aliases = [
+    [
       for (final alias in _aliases.keys)
         if (_canonical(alias) == canonical) alias,
-    ];
-    aliases.forEach(_aliases.remove);
+    ].forEach(_aliases.remove);
     _scopedInjectionWarnings.removeWhere(
       (pair) => pair.$1 == canonical || pair.$2 == canonical,
     );
@@ -306,6 +305,9 @@ class DefaultListableBeanFactory
       _rawSingletons.remove(canonical);
       _clearByTypeCache();
     }
+    // A returned Future is not awaited in this synchronous API:
+    // it is logged by _guardDestruction (see destroySingletonsAsync).
+    // ignore: discarded_futures
     _destroySingleton(canonical);
   }
 
@@ -683,8 +685,8 @@ class DefaultListableBeanFactory
   List<_Candidate> _autowireCandidates(
     Type type,
     String? qualifier, {
-    String? requester,
     required bool multiple,
+    String? requester,
   }) {
     final all = [
       for (final candidate in _candidatesIncludingAncestors(type))
@@ -1000,10 +1002,10 @@ class DefaultListableBeanFactory
   /// the beans. [direct] marks a point injected while the requester is
   /// created (not through a provider or lazy proxy).
   T? _resolveDependency<T extends Object>({
+    required bool required,
     String? qualifier,
     String? name,
     String? requester,
-    required bool required,
     bool direct = false,
   }) {
     final key = (T, qualifier, name, requester, true);
@@ -1587,7 +1589,7 @@ class DefaultListableBeanFactory
       rethrow;
     }
     final expressionResolver = beanExpressionResolver;
-    final Object? evaluated = expressionResolver == null
+    final evaluated = expressionResolver == null
         ? resolved
         : expressionResolver.evaluate(resolved, this);
     // A Resource comes from the context's loader, like Spring's
@@ -1994,6 +1996,9 @@ class DefaultListableBeanFactory
     if (beanName != null) {
       final definition = getBeanDefinition(beanName);
       final raw = _canExpando(existingBean) ? _scopedRaw[existingBean] : null;
+      // A returned Future is not awaited in this synchronous API:
+      // it is logged by _guardDestruction (see destroySingletonsAsync).
+      // ignore: discarded_futures
       _destroyBean(definition, raw ?? existingBean, existingBean);
       return;
     }
@@ -2001,9 +2006,15 @@ class DefaultListableBeanFactory
     _destructionAwareCallbacks(existingBean, name);
     if (_configurablePreDestroy[existingBean.runtimeType]
         case final callback?) {
+      // A returned Future is not awaited in this synchronous API:
+      // it is logged by _guardDestruction (see destroySingletonsAsync).
+      // ignore: discarded_futures
       _guardDestruction(name, () => callback(existingBean));
     }
     if (existingBean is DisposableBean) {
+      // A returned Future is not awaited in this synchronous API:
+      // it is logged by _guardDestruction (see destroySingletonsAsync).
+      // ignore: discarded_futures
       _guardDestruction(name, existingBean.destroy);
     }
   }
@@ -2289,10 +2300,8 @@ class DefaultListableBeanFactory
     _destructionErrors.clear();
     _destroyingSingletons = true;
     try {
-      for (final name in _creationOrder.toList().reversed) {
-        // Synchronous: a returned Future is logged by _guardDestruction.
-        _destroySingleton(name);
-      }
+      // Synchronous: a returned Future is logged by _guardDestruction.
+      _creationOrder.toList().reversed.forEach(_destroySingleton);
     } finally {
       _destroyingSingletons = false;
     }
@@ -2419,6 +2428,9 @@ class DefaultListableBeanFactory
     for (final processor in _postProcessors) {
       if (processor is DestructionAwareBeanPostProcessor &&
           processor.requiresDestruction(exposed)) {
+        // A returned Future is not awaited in this synchronous API:
+        // it is logged by _guardDestruction (see destroySingletonsAsync).
+        // ignore: discarded_futures
         _guardDestruction(
           name,
           () => processor.postProcessBeforeDestruction(exposed, name),
@@ -2454,7 +2466,7 @@ class DefaultListableBeanFactory
           StackTrace.current,
         );
       }
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _destructionFailed(name, error, stackTrace);
     }
   }
@@ -2484,6 +2496,9 @@ class DefaultListableBeanFactory
     final bean = scope.remove(definition.name);
     if (bean != null) {
       final raw = _canExpando(bean) ? _scopedRaw[bean] : null;
+      // A returned Future is not awaited in this synchronous API:
+      // it is logged by _guardDestruction (see destroySingletonsAsync).
+      // ignore: discarded_futures
       _destroyBean(definition, raw ?? bean, bean);
     }
   }

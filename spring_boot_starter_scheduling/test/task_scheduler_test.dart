@@ -217,19 +217,20 @@ void main() {
 
     test('errors are logged and the task keeps running', () async {
       var calls = 0;
-      scheduler.scheduleAtFixedRate(
-        () {
-          calls++;
-          throw StateError('boom $calls');
-        },
-        const Duration(seconds: 1),
-        name: 'Jobs.flaky',
-      );
-      scheduler.scheduleAtFixedRate(
-        () => Future<void>.error(ArgumentError('async boom')),
-        const Duration(seconds: 1),
-        name: 'Jobs.asyncFlaky',
-      );
+      scheduler
+        ..scheduleAtFixedRate(
+          () {
+            calls++;
+            throw StateError('boom $calls');
+          },
+          const Duration(seconds: 1),
+          name: 'Jobs.flaky',
+        )
+        ..scheduleAtFixedRate(
+          () => Future<void>.error(ArgumentError('async boom')),
+          const Duration(seconds: 1),
+          name: 'Jobs.asyncFlaky',
+        );
       await clock.elapseAsync(const Duration(seconds: 2));
       expect(calls, 3);
       final errors = logs
@@ -261,8 +262,9 @@ void main() {
       expect(runs, 3);
       expect(clock.pendingTimers, 0);
 
-      scheduler.scheduleAtFixedRate(() => runs++, const Duration(seconds: 1));
-      scheduler.shutdown();
+      scheduler
+        ..scheduleAtFixedRate(() => runs++, const Duration(seconds: 1))
+        ..shutdown();
       expect(scheduler.isShutdown, isTrue);
       expect(scheduler.tasks, isEmpty);
       expect(clock.pendingTimers, 0);

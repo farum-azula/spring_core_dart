@@ -1,7 +1,7 @@
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 import 'package:test/test.dart';
 
-/// A call of `find(isbn)` carrying [annotations].
+/// A call of `find(isbn)` carrying `annotations`.
 final class _Invocation implements MethodInvocation {
   _Invocation(
     List<Object> annotations, {
@@ -113,11 +113,7 @@ final class _Factory implements BeanFactory {
 void spelExamples() {
   test('SpEL examples of the README', () {
     final manager = InMemoryCacheManager();
-    final interceptor = CacheInterceptor(
-      cacheManager: manager,
-      beanFactory: _Factory(),
-    );
-    interceptor.invoke(
+    CacheInterceptor(cacheManager: manager, beanFactory: _Factory()).invoke(
       _Invocation(const [
         Cacheable(
           'a',

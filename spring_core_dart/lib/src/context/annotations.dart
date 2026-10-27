@@ -131,8 +131,9 @@ class Controller extends Component {
 /// with Spring's CGLIB enhancement. Static `@Bean` methods are not
 /// intercepted. A class with instance `@Bean` methods must be extendable
 /// (not `final`, `sealed` or `interface`) with a public generative
-/// constructor; otherwise the build fails. With [proxyBeanMethods] `false` ("lite" mode) the methods are
-/// called as written: take other beans as method parameters instead.
+/// constructor; otherwise the build fails. With [proxyBeanMethods] `false`
+/// ("lite" mode) the methods are called as written: take other beans as method
+/// parameters instead.
 ///
 /// ```dart
 /// @Configuration()
@@ -937,7 +938,9 @@ class PropertySource {
 ///
 /// ```dart
 /// @ComponentScan(
-///   includeFilters: [Filter(type: FilterType.assignableType, classes: [Plugin])],
+///   includeFilters: [
+///     Filter(type: FilterType.assignableType, classes: [Plugin]),
+///   ],
 ///   excludeFilters: [Filter(type: FilterType.regex, pattern: ['.*Stub$'])],
 ///   lazyInit: true,
 /// )

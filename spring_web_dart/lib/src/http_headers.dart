@@ -309,9 +309,7 @@ class HttpHeaders {
   /// Spring's `putAll(HttpHeaders)`.
   void putAll(HttpHeaders headers) {
     final other = List.of(headers._entries);
-    for (final name in headers.names.toList()) {
-      remove(name);
-    }
+    headers.names.toList().forEach(remove);
     _checkWritable();
     _entries.addAll(other);
   }
@@ -438,8 +436,10 @@ class HttpHeaders {
     ifNoneMatchHeader,
     eTags.isEmpty
         ? null
-        : [for (final tag in eTags) tag == '*' ? tag : _quoteETag(tag)]
-              .join(', '),
+        : [
+            for (final tag in eTags)
+              if (tag == '*') tag else _quoteETag(tag),
+          ].join(', '),
   );
 
   /// The `Last-Modified` date (UTC), or `null` when there is none or it
@@ -795,7 +795,7 @@ final class ContentDisposition {
   }
 
   // RFC 5987 attr-char: ALPHA / DIGIT / "!#$&+-.^_`|~".
-  static final _attrChar = RegExp(r"[A-Za-z0-9!#$&+\-.^_`|~]");
+  static final _attrChar = RegExp(r'[A-Za-z0-9!#$&+\-.^_`|~]');
 
   static String _encodeExtended(String value) => [
     for (final byte in utf8.encode(value))

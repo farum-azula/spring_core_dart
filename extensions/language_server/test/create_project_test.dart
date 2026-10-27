@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:dart_spring_language_server/src/create_project.dart';
 import 'package:dart_spring_language_server/src/project_template.dart';
-// ignore: implementation_imports
 import 'package:spring_boot_dart/src/version.dart';
 import 'package:test/test.dart';
 

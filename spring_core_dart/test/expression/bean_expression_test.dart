@@ -97,7 +97,7 @@ void main() {
       ..registerSingleton('environment', environment)
       ..beanExpressionResolver = StandardBeanExpressionResolver();
     expect(factory.value<String>("#{systemEnvironment['HOME']}"), '/home/neon');
-    expect(factory.value<String>("#{systemEnvironment.HOME}"), '/home/neon');
+    expect(factory.value<String>('#{systemEnvironment.HOME}'), '/home/neon');
     // Dart has no system properties: the command-line arguments stand in.
     expect(factory.value<String>("#{systemProperties['server.port']}"), '9000');
     expect(factory.value<int>("#{systemProperties['server.port']}"), 9000);

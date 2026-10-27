@@ -101,21 +101,36 @@ abstract interface class ConfigurablePropertyResolver
   set conversionService(ConversionService value);
 
   /// Start of a placeholder; defaults to `${`.
+  // Write-only configuration, as Spring's setX methods of this interface;
+  // a getter would be a new abstract member for every implementer.
+  // ignore: avoid_setters_without_getters
   set placeholderPrefix(String value);
 
   /// End of a placeholder; defaults to `}`.
+  // Write-only configuration, as Spring's setX methods of this interface;
+  // a getter would be a new abstract member for every implementer.
+  // ignore: avoid_setters_without_getters
   set placeholderSuffix(String value);
 
   /// Separator between key and default (`:` by default); `null` disables
   /// defaults.
+  // Write-only configuration, as Spring's setX methods of this interface;
+  // a getter would be a new abstract member for every implementer.
+  // ignore: avoid_setters_without_getters
   set valueSeparator(String? value);
 
   /// Escape for prefix and separator (`\` by default); `null` disables
   /// escaping.
+  // Write-only configuration, as Spring's setX methods of this interface;
+  // a getter would be a new abstract member for every implementer.
+  // ignore: avoid_setters_without_getters
   set escapeCharacter(String? value);
 
   /// When `true`, unresolvable placeholders inside property values are
   /// kept instead of throwing.
+  // Write-only configuration, as Spring's setX methods of this interface;
+  // a getter would be a new abstract member for every implementer.
+  // ignore: avoid_setters_without_getters
   set ignoreUnresolvableNestedPlaceholders(bool value);
 
   /// Keys that [validateRequiredProperties] checks; adds to the keys set

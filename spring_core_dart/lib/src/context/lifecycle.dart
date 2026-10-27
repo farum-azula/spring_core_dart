@@ -506,7 +506,9 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
       } else {
         bean.stop();
       }
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
+      // Removes the entry from the map; no future is started here.
+      // ignore: discarded_futures
       pending?.remove(name);
       if (_stopping.remove(name) case final stopped?
           when !stopped.isCompleted) {
@@ -535,7 +537,7 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
     }
     try {
       bean.start();
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _log.warning(
         "Failed to start bean '$name' after its stop callback",
         error: error,

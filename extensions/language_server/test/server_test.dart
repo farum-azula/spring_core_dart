@@ -129,11 +129,13 @@ class Shop {
 
   test('a full editor session', () async {
     final uri = Uri.file(path).toString();
-    final init = await client.request('initialize', {
-      'processId': pid,
-      'rootUri': Uri.directory(root.path).toString(),
-      'capabilities': <String, Object?>{},
-    }) as Map;
+    final init =
+        (await client.request('initialize', {
+              'processId': pid,
+              'rootUri': Uri.directory(root.path).toString(),
+              'capabilities': <String, Object?>{},
+            }))!
+            as Map;
     final capabilities = init['capabilities'] as Map;
     expect(capabilities['definitionProvider'], isTrue);
     expect(capabilities['semanticTokensProvider'], isNotNull);
@@ -152,10 +154,12 @@ class Shop {
     });
 
     // Injection point → bean.
-    final toBean = await client.request('textDocument/definition', {
-      'textDocument': {'uri': uri},
-      'position': position('Clock clock'),
-    }) as List;
+    final toBean =
+        (await client.request('textDocument/definition', {
+              'textDocument': {'uri': uri},
+              'position': position('Clock clock'),
+            }))!
+            as List;
     expect((toBean.single as Map)['uri'], uri);
     expect(((toBean.single as Map)['range'] as Map)['start'], {
       'line': position('class SystemClock')['line'],
@@ -163,10 +167,12 @@ class Shop {
     });
 
     // @Value placeholder → properties file.
-    final toProperty = await client.request('textDocument/definition', {
-      'textDocument': {'uri': uri},
-      'position': position(r'${shop.name}', 4),
-    }) as List;
+    final toProperty =
+        (await client.request('textDocument/definition', {
+              'textDocument': {'uri': uri},
+              'position': position(r'${shop.name}', 4),
+            }))!
+            as List;
     expect(
       (toProperty.single as Map)['uri'],
       endsWith('lib/resources/application.properties'),
@@ -177,21 +183,25 @@ class Shop {
       expect(range['end'], range['start']);
     }
 
-    final hover = await client.request('textDocument/hover', {
-      'textDocument': {'uri': uri},
-      'position': position(r'${shop.name}', 4),
-    }) as Map;
+    final hover =
+        (await client.request('textDocument/hover', {
+              'textDocument': {'uri': uri},
+              'position': position(r'${shop.name}', 4),
+            }))!
+            as Map;
     expect((hover['contents'] as Map)['value'], contains('NEON'));
 
-    final tokens = await client.request('textDocument/semanticTokens/full', {
-      'textDocument': {'uri': uri},
-    }) as Map;
+    final tokens =
+        (await client.request('textDocument/semanticTokens/full', {
+              'textDocument': {'uri': uri},
+            }))!
+            as Map;
     expect((tokens['data'] as List).length % 5, 0);
     expect(tokens['data'], isNotEmpty);
 
     final published = await diagnostics.timeout(const Duration(seconds: 10));
     final messages = [
-      for (final d in (published['params'] as Map)['diagnostics'] as List)
+      for (final d in (published['params']! as Map)['diagnostics'] as List)
         (d as Map)['message'],
     ];
     expect(messages, [

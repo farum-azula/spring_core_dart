@@ -173,10 +173,10 @@ class PoolProperties {
     this.url, {
     required this.maxSize,
     required this.tags,
-    this.timeout = const Duration(seconds: 5),
-    this.owner,
     required this.endpoint,
     required this.replicas,
+    this.timeout = const Duration(seconds: 5),
+    this.owner,
   });
 
   final String url;
@@ -649,7 +649,7 @@ app:
     test('works without SpringApplication too', () {
       final environment = StandardEnvironment(systemEnvironment: {})
         ..propertySources.addFirst(
-          MapPropertySource('test', {'pool.url': 'jdbc:y'}),
+          const MapPropertySource('test', {'pool.url': 'jdbc:y'}),
         );
       final context = AnnotationConfigApplicationContext([
         module(),

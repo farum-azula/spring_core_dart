@@ -55,8 +55,9 @@ final class ConstraintViolation {
   /// and {max}`.
   final String? messageTemplate;
 
-  /// The object validation started from; `null` for [BeanValidator.validateValue],
-  /// where no instance exists (Spring's `getRootBean()` is `null` there too).
+  /// The object validation started from; `null` for
+  /// [BeanValidator.validateValue], where no instance exists (Spring's
+  /// `getRootBean()` is `null` there too).
   final Object? rootBean;
 
   /// The object holding the failed property (the validated object itself

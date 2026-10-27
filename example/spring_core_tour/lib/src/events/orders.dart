@@ -1,7 +1,8 @@
 // Events: payload events, ApplicationEvent subclasses, @EventListener
 // (condition, @Order, classes, returned events), ApplicationListener.
 //
-// Spring (Java): ApplicationEventPublisher, @EventListener, ApplicationListener.
+// Spring (Java): ApplicationEventPublisher, @EventListener,
+// ApplicationListener.
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_core_dart_example/src/tour_log.dart';
 

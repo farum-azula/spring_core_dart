@@ -85,7 +85,7 @@ enum HttpStatusSeries {
   /// 5xx.
   serverError(5);
 
-  const HttpStatusSeries(this.value);
+  HttpStatusSeries(this.value);
 
   /// The first digit of the codes in this series.
   final int value;
@@ -323,7 +323,7 @@ extension type const HttpStatus._(int value) implements HttpStatusCode {
   static const networkAuthenticationRequired = HttpStatus._(511);
 
   /// Every constant, by code.
-  static const values = [
+  static const List<HttpStatus> values = [
     continue_,
     switchingProtocols,
     processing,

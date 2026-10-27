@@ -3,18 +3,18 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
-import 'package:code_builder/code_builder.dart' hide FunctionType, RecordType;
 import 'package:code_builder/code_builder.dart'
     as cb
     show FunctionType, RecordType;
+import 'package:code_builder/code_builder.dart' hide FunctionType, RecordType;
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/aop_analysis.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
+import 'package:spring_core_dart_generator/src/log_scanning.dart';
 
 part 'configuration_emitter.dart';
 part 'lookup_emitter.dart';
@@ -870,9 +870,10 @@ class ModuleEmitter {
       final isConst = infos.every((info) => info.$2);
       final typeArguments = [
         for (final argument in arguments)
-          _isDynamicInfo(argument)
-              ? refer('dynamic')
-              : _anyType(argument, element),
+          if (_isDynamicInfo(argument))
+            refer('dynamic')
+          else
+            _anyType(argument, element),
       ];
       final positional = [for (final info in infos) info.$1];
       return (
@@ -967,7 +968,7 @@ class ModuleEmitter {
       if (method.parameterTypes.isNotEmpty)
         'parameterTypes': literalConstList([
           for (final type in method.parameterTypes)
-            type == null ? refer('Object') : _type(type, element),
+            if (type == null) refer('Object') else _type(type, element),
         ]),
       if (method.parameters.isNotEmpty)
         'parameters': literalList([
@@ -1783,12 +1784,13 @@ class ModuleEmitter {
                         .property('_metadata')
                         .property('methods')
                         .index(literalNum(index)),
-                    member.parameters.isEmpty
-                        ? literalConstList([])
-                        : literalList([
-                            for (final parameter in member.parameters)
-                              refer(parameter.name),
-                          ]),
+                    if (member.parameters.isEmpty)
+                      literalConstList([])
+                    else
+                      literalList([
+                        for (final parameter in member.parameters)
+                          refer(parameter.name),
+                      ]),
                   ]);
               final Code body;
               var lambda = true;
@@ -1983,17 +1985,22 @@ class ModuleEmitter {
     final target = subclass ? self : self.property('_target');
     // The local holding a subclass proxy's invoker: `_$i`, or a name no
     // parameter has.
-    var local = r'_$i';
-    while (member.parameters.any((p) => p.name == local)) {
-      local = '$local\$';
+    var dollars = 0;
+    String localName() => '_\$i${r'$' * dollars}';
+    while (member.parameters.any((p) => p.name == localName())) {
+      dollars++;
     }
+    final local = localName();
     final invokerRef = subclass ? refer(local) : self.property('_invoker');
     Expression invoke(List<Expression> arguments, Expression call) =>
         invokerRef.property('invoke').call([
           refer('this'),
           target,
           literalNum(index),
-          arguments.isEmpty ? literalConstList([]) : literalList(arguments),
+          if (arguments.isEmpty)
+            literalConstList([])
+          else
+            literalList(arguments),
           call,
         ]);
     // A `Future<T>` result goes through `invokeAsync<T>` and a
@@ -2019,7 +2026,10 @@ class ModuleEmitter {
               refer('this'),
               target,
               literalNum(index),
-              arguments.isEmpty ? literalConstList([]) : literalList(arguments),
+              if (arguments.isEmpty)
+                literalConstList([])
+              else
+                literalList(arguments),
               call,
             ],
             {},
@@ -2984,7 +2994,8 @@ class ModuleEmitter {
     );
   }
 
-  // spring_boot_starter_flutter: the runtime library its generated code refers to.
+  // spring_boot_starter_flutter: the runtime library its generated code refers
+  // to.
   static const _flutterSpringUrl =
       'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
   static const _flutterWidgetsUrl = 'package:flutter/widgets.dart';

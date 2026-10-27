@@ -84,8 +84,9 @@ void main() {
     });
 
     test('is neither initialized nor destroyed', () {
-      factory.preInstantiateSingletons();
-      factory.destroySingletons();
+      factory
+        ..preInstantiateSingletons()
+        ..destroySingletons();
       expect(calls, isEmpty);
     });
 

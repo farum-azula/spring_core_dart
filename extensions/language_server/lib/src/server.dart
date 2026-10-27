@@ -10,7 +10,7 @@ import 'package:dart_spring_language_server/src/workspace.dart';
 /// Supported: definition (beans, properties), hover, semantic tokens for
 /// placeholders and SpEL, diagnostics (unknown keys, invalid SpEL).
 final class SpringLanguageServer {
-  /// A server reading [input] and writing to [output].
+  /// A server reading `input` and writing to `output`.
   SpringLanguageServer(this._input, this._output);
 
   final Stream<List<int>> _input;
@@ -138,7 +138,10 @@ final class SpringLanguageServer {
           _workspace?.setOverlay(path, null);
           _send({
             'method': 'textDocument/publishDiagnostics',
-            'params': {'uri': Uri.file(path).toString(), 'diagnostics': []},
+            'params': {
+              'uri': Uri.file(path).toString(),
+              'diagnostics': <Object?>[],
+            },
           });
         case 'textDocument/didSave' || 'workspace/didChangeWatchedFiles':
           _workspace?.refresh(force: true);

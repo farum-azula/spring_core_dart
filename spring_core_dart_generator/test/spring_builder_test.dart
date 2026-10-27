@@ -27,7 +27,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode, pruneProxies: prune),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
@@ -127,7 +127,7 @@ Future<List<String>> _compileErrors(
   final result = await _build(sources, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
   final output = result.readerWriter.testing.readString(result.outputs.single);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|lib/src/beans.spring.dart': output,
@@ -153,10 +153,7 @@ Future<List<String>> _compileErrors(
 
 void main() {
   test('builder factory', () {
-    expect(
-      springCoreDartBuilder(const BuilderOptions({})),
-      isA<SpringBuilder>(),
-    );
+    expect(springCoreDartBuilder(BuilderOptions.empty), isA<SpringBuilder>());
     expect(SpringBuilder().buildExtensions, {
       '.dart': ['.spring.dart'],
     });
@@ -217,7 +214,7 @@ class Advisory {
     test('toString with parameters', () async {
       expect(
         await _compileErrors({
-          'lib/src/s.dart': '''
+          'lib/src/s.dart': r'''
 @Component()
 class S {
   @override
@@ -231,7 +228,7 @@ class N implements Named {
   @override
   String name() => 'n';
   @override
-  String toString([String prefix = '']) => '\${prefix}N';
+  String toString([String prefix = '']) => '${prefix}N';
 }
 ''',
         }),
@@ -306,7 +303,7 @@ class Report {
       expect(
         output,
         _has(
-          "if (r.optionalValue<String>(r'\${report.title}') case final value?) "
+          r"if (r.optionalValue<String>(r'${report.title}') case final value?) "
           '{ bean.title = value; }',
         ),
       );
@@ -318,12 +315,13 @@ class Report {
         ),
       );
       // Required points are assigned as before.
-      expect(output, _has("bean.size = r.value<int>(r'\${report.size:10}');"));
+      expect(output, _has(r"bean.size = r.value<int>(r'${report.size:10}');"));
     },
   );
 
-  test('a bean that cannot be proxied keeps its signatures and the reason', () async {
-    final output = await _generate(r'''
+  test('a bean that cannot be proxied keeps its signatures and '
+      'the reason', () async {
+    final output = await _generate('''
 class Counter {
   int _n = 0;
   @Timed()
@@ -340,7 +338,7 @@ class Config {
   Counter counter() => Counter();
 }
 ''', proxyMode: ProxyMode.all);
-    expect(output, isNot(contains('class_\$Config_counterProxy')));
+    expect(output, isNot(contains(r'class_$Config_counterProxy')));
     expect(output, _has('aopProxy: AopProxyFactory.unavailable('));
     expect(output, _has("name: r'next'"));
     expect(output, _has("annotationTypes: [r'Timed']"));
@@ -356,7 +354,7 @@ class Config {
   });
 
   group('pointcut validation and pruning', () {
-    const header = r"""
+    const header = '''
 class Timed {
   const Timed();
 }
@@ -376,7 +374,7 @@ class Slow {
   @Timed()
   void run() {}
 }
-""";
+''';
 
     Future<String> generate(String aspect, {bool prune = true}) => _generateApp(
       '$header\n@Aspect() @Component() class A { $aspect }',
@@ -385,25 +383,29 @@ class Slow {
 
     test('a syntax error fails the build with the position', () async {
       await _expectError(
-        "$header\n@Aspect() @Component() class A { @Before('execution(* *(..)) &&') void b() {} }",
+        "$header\n@Aspect() @Component() class A { @Before('execution(* *(..)) "
+            "&&') void b() {} }",
         'is invalid: Invalid pointcut (unexpected end of expression) at '
             "character 21 of 'execution(* *(..)) &&'",
         proxyMode: ProxyMode.all,
       );
       await _expectError(
-        "$header\n@Aspect() @Component() class A { @Before('within(Orders) && frobnicate(Mail)') void b() {} }",
+        "$header\n@Aspect() @Component() class A { @Before('within(Orders) && "
+            "frobnicate(Mail)') void b() {} }",
         "unknown designator 'frobnicate') at character 18",
         proxyMode: ProxyMode.all,
       );
       await _expectError(
-        "$header\n@Aspect() @Component() class A { @Before('execution(* *(..))') void b() {} "
+        "$header\n@Aspect() @Component() class A { @Before('execution(* "
+            "*(..))') void b() {} "
             "@Pointcut('execution(String)') void bad() {} }",
         'The @Pointcut A.bad is invalid',
         proxyMode: ProxyMode.all,
       );
       // Also without proxies: the expression is wrong either way.
       await _expectError(
-        "$header\n@Aspect() @Component() class A { @Before('bean(') void b() {} }",
+        "$header\n@Aspect() @Component() class A { @Before('bean(') void b() "
+            '{} }',
         'is invalid',
       );
     });
@@ -461,7 +463,7 @@ class Slow {
       // A @ComponentScan module may be imported by any other module, whose
       // aspects the build cannot see: it is never pruned.
       final module = await _generate(
-        "$header\n@Aspect() @Component() class A { "
+        '$header\n@Aspect() @Component() class A { '
         "@Before('execution(* Orders.*(..))') void b() {} }",
         proxyMode: ProxyMode.all,
       );
@@ -493,7 +495,7 @@ class Cacheable { const Cacheable(); }
   });
 
   group('subclass proxies', () {
-    const counter = r'''
+    const counter = '''
 class Counter {
   Counter(this.step, {this.name = 'n'});
   final int step;
@@ -527,33 +529,42 @@ class Counter {
       expect(
         output,
         _has(
-          r'_$CounterProxy _$advise(ProxyInvoker invoker) { _$invoker = invoker; return this; }',
+          r'_$CounterProxy _$advise(ProxyInvoker invoker) { _$invoker = '
+          'invoker; return this; }',
         ),
       );
       expect(output, _has('Object get aopTarget => this;'));
       expect(
         output,
         _has(
-          r'List<PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];',
+          r'List<PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? '
+          'const [];',
         ),
       );
       expect(
         output,
         _has(
-          r'int next() { final _$i = this._$invoker; return _$i == null ? super.next() : (_$i.invoke(this, this, 0, const [], (args) => super.next()) as int); }',
+          r'int next() { final _$i = this._$invoker; return _$i == null ? '
+          r'super.next() : (_$i.invoke(this, this, 0, const [], (args) => '
+          'super.next()) as int); '
+          '}',
         ),
       );
       expect(
         output,
         _has(
-          r'void reset() { final _$i = this._$invoker; if (_$i == null) { super.reset(); } else { _$i.invoke(this, this, 1, const [], (args) { super.reset(); return null; }); } }',
+          r'void reset() { final _$i = this._$invoker; if (_$i == null) { '
+          r'super.reset(); } else { _$i.invoke(this, this, 1, const [], (args) '
+          '{ super.reset(); return null; }); } '
+          '}',
         ),
       );
       expect(output, _has(r'Future<int> later() { final _$i'));
       expect(
         output,
         _has(
-          r'_$i.invokeAsync<int>(this, this, 2, const [], (args) => super.later())',
+          r'_$i.invokeAsync<int>(this, this, 2, const [], (args) => '
+          'super.later())',
         ),
       );
       // A constant default value is re-created, like an annotation.
@@ -565,7 +576,8 @@ class Counter {
       expect(
         output,
         _has(
-          r'int get count { final _$i = this._$invoker; return _$i == null ? super.count : (_$i.invoke(',
+          r'int get count { final _$i = this._$invoker; return _$i == null ? '
+          r'super.count : (_$i.invoke(',
         ),
       );
       expect(output, _has(r'set count(int value) { final _$i'));
@@ -579,20 +591,22 @@ class Counter {
       expect(
         output,
         _has(
-          'aopProxy: AopProxyFactory.subclass(signatures: const [MethodSignature(',
+          'aopProxy: AopProxyFactory.subclass(signatures: const '
+          '[MethodSignature(',
         ),
       );
       expect(
         output,
         _has(
-          r'advise: (bean, invoker) => bean is _$CounterProxy ? bean._$advise(invoker) : null',
+          r'advise: (bean, invoker) => bean is _$CounterProxy ? '
+          r'bean._$advise(invoker) : null',
         ),
       );
       expect(output, _has(r'create: (r) => _$CounterProxy('));
     });
 
     test('a named constructor and a base class', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 @Component()
 class Named {
   @Autowired()
@@ -668,7 +682,8 @@ base class Guarded {
       );
       expect(
         await _generate(
-          '@Component() interface class Api { int _n = 0; int next() => _n++; }',
+          '@Component() interface class Api { int _n = 0; int next() => _n++; '
+          '}',
           proxyMode: ProxyMode.all,
         ),
         _has('Api cannot be extended (it is interface). Remove `interface`'),
@@ -706,7 +721,7 @@ class Config {
 
   group('argument binding', () {
     test('bound parameters are read from the bindings map', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 class Timed {
   const Timed();
 }
@@ -739,8 +754,10 @@ class Audit {
       expect(
         output,
         _has(
-          "aspect.tagged(joinPoint, (bindings[r'timed'] as Timed), (bindings[r'id'] as int)), "
-          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed), "
+          "aspect.tagged(joinPoint, (bindings[r'timed'] as Timed), "
+          "(bindings[r'id'] as int)), "
+          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is "
+          'Timed), '
           "r'id': AdviceBinding(r'int', (value) => value is int)}",
         ),
       );
@@ -758,16 +775,20 @@ class Audit {
       expect(
         output,
         _has(
-          "aspect.failed((bindings[r'timed'] as Timed), (value as StateError)), "
-          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed)}, "
+          "aspect.failed((bindings[r'timed'] as Timed), (value as "
+          'StateError)), '
+          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is "
+          'Timed)}, '
           'accepts: (value) => value is StateError',
         ),
       );
       expect(
         output,
         _has(
-          "aspect.around((joinPoint as ProceedingJoinPoint), (bindings[r'timed'] as Timed), (bindings[r'id'] as int?)), "
-          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed), "
+          'aspect.around((joinPoint as ProceedingJoinPoint), '
+          "(bindings[r'timed'] as Timed), (bindings[r'id'] as int?)), "
+          "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is "
+          'Timed), '
           "r'id': AdviceBinding(r'int', (value) => value is int?)}",
         ),
       );
@@ -776,7 +797,7 @@ class Audit {
     test(
       'advice and pointcuts of superclasses and mixins are inherited',
       () async {
-        final output = await _generate(r'''
+        final output = await _generate('''
 class Timed {
   const Timed();
 }
@@ -810,8 +831,10 @@ class Child extends BaseAspect with Logging {
         expect(
           output,
           _has(
-            "methodName: r'inherited', invoke: (aspect, joinPoint, value, bindings) => aspect.inherited((bindings[r'timed'] as Timed)), "
-            "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is Timed)}",
+            "methodName: r'inherited', invoke: (aspect, joinPoint, value, "
+            "bindings) => aspect.inherited((bindings[r'timed'] as Timed)), "
+            "bindings: {r'timed': AdviceBinding(r'Timed', (value) => value is "
+            'Timed)}',
           ),
         );
         expect(output, _has("methodName: r'logged'"));
@@ -823,9 +846,9 @@ class Child extends BaseAspect with Logging {
     );
 
     test(
-      'a parameter of another class\'s pointcut is bound at runtime',
+      "a parameter of another class's pointcut is bound at runtime",
       () async {
-        final output = await _generate(r'''
+        final output = await _generate('''
 @Aspect()
 @Component()
 class Audit {
@@ -839,24 +862,28 @@ class Audit {
 
     test('binding mistakes fail the build', () async {
       await _expectError(
-        "@Aspect() @Component() class A { @Before('execution(* *(..))') void b(String s) {} }",
+        "@Aspect() @Component() class A { @Before('execution(* *(..))') void "
+            'b(String s) {} }',
         'Unexpected parameter s of @Before advice b: the pointcut does not '
             'bind it. Bind it with @annotation(s), @within(s), @target(s), '
             'this(s), target(s) or args(s, ..).',
       );
       await _expectError(
-        "@Aspect() @Component() class A { @AfterReturning('execution(* *(..))', returning: 'r') void b(Object? r, String s) {} }",
+        "@Aspect() @Component() class A { @AfterReturning('execution(* "
+            "*(..))', returning: 'r') void b(Object? r, String s) {} }",
         'or name it in `returning:`.',
       );
       await _expectError(
-        "@Aspect() @Component() class A { @Before('@annotation(timed)') void b() {} }",
+        "@Aspect() @Component() class A { @Before('@annotation(timed)') void "
+            'b() {} }',
         "The pointcut of @Before advice b binds 'timed', which is not a "
             'parameter of the advice method. Add a parameter named timed, or '
             'match by type with a type name (starting with an uppercase '
             'letter).',
       );
       await _expectError(
-        "@Aspect() @Component() class A { @AfterThrowing('x()', throwing: 'e') void b(Object? error) {} }",
+        "@Aspect() @Component() class A { @AfterThrowing('x()', throwing: 'e') "
+            'void b(Object? error) {} }',
         "@AfterThrowing advice b names the throwing parameter 'e', which it "
             'does not declare.',
       );
@@ -896,7 +923,8 @@ class Other {}
         output,
         _has(
           "ApiImpl(r.dependency<Other>(name: r'dep'), "
-          "other: r.optionalDependency<Other>(qualifier: r'x', name: r'other'),)",
+          "other: r.optionalDependency<Other>(qualifier: r'x', name: "
+          "r'other'),)",
         ),
       );
       expect(output, _has("Dependency(Other, name: r'dep')"));
@@ -1025,7 +1053,8 @@ class Child extends Base {
       expect(
         output,
         _has(
-          "if (r.optionalDependency<Dep>(name: r'dep') case final value?) { bean.dep = value; }",
+          "if (r.optionalDependency<Dep>(name: r'dep') case final value?) { "
+          'bean.dep = value; }',
         ),
       );
       expect(
@@ -1035,7 +1064,8 @@ class Child extends Base {
       expect(
         output,
         _has(
-          r"bean.wire(r.dependency<Dep>(name: r'dep'), x: r.optionalValue<int>(r'${x:1}') ?? 0,);",
+          "bean.wire(r.dependency<Dep>(name: r'dep'), x: "
+          r"r.optionalValue<int>(r'${x:1}') ?? 0,);",
         ),
       );
       expect(
@@ -1094,7 +1124,7 @@ class Config {
           output,
           _has(
             "(r.dependency<Config>(qualifier: r'config') "
-            r"as _$ConfigConfiguration)._$closable(r)",
+            r'as _$ConfigConfiguration)._$closable(r)',
           ),
         );
         expect(output, _has("const ProfileCondition([r'cloud'])"));
@@ -1171,14 +1201,16 @@ class Listener implements ApplicationListener<Shipped> {
       expect(
         output,
         _has(
-          "EventListenerMethod.of<ProductFactory, Placed>(r'ProductFactory.onPlaced'",
+          'EventListenerMethod.of<ProductFactory, '
+          "Placed>(r'ProductFactory.onPlaced'",
         ),
       );
       // A PayloadApplicationEvent<P> listener matches on the payload type.
       expect(
         output,
         _has(
-          "EventListenerMethod.forPayload<Listener, Placed>(r'Listener.onPayload'",
+          'EventListenerMethod.forPayload<Listener, '
+          "Placed>(r'Listener.onPayload'",
         ),
       );
       // The raw `FactoryBean` (instantiated to bounds) finds every factory.
@@ -1192,8 +1224,10 @@ class Listener implements ApplicationListener<Shipped> {
       expect(
         output,
         _has(
-          "EventListenerMethod.of<Listener, Shipped>(r'Listener.onApplicationEvent', "
-          '(bean, event) {bean.onApplicationEvent(event); return null;}, order: 5,)',
+          'EventListenerMethod.of<Listener, '
+          "Shipped>(r'Listener.onApplicationEvent', "
+          '(bean, event) {bean.onApplicationEvent(event); return null;}, '
+          'order: 5,)',
         ),
       );
       expect(
@@ -1214,7 +1248,8 @@ class Listener implements ApplicationListener<Shipped> {
       expect(
         output,
         _has(
-          'return bean.onTyped((EventListenerMethod.match(event, (candidate) => candidate is Placed) as Object));',
+          'return bean.onTyped((EventListenerMethod.match(event, (candidate) '
+          '=> candidate is Placed) as Object));',
         ),
       );
       expect(output, _has('bean.onAsync(event); return null;'));
@@ -1296,7 +1331,8 @@ class Screen {
         output,
         _has(
           "const OnMode(Mode.on, names: [r'a'], weights: {r'w': 1.5}, "
-          'flags: {true}, type: String, nested: Nested(), check: OnMode.always, nothing: null)',
+          'flags: {true}, type: String, nested: Nested(), check: '
+          'OnMode.always, nothing: null)',
         ),
       );
       expect(output, _has('const OnMode(Mode.off)'));
@@ -1382,29 +1418,35 @@ class NoCtor {
         output,
         _has(
           "BeanProperty<Form>(r'nick', type: String, nullable: true, "
-          'typeInfo: const ClassType<String>(nullable: true), get: (bean) => bean.nick, '
-          'set: (bean, value) => bean.nick = (value as String?), annotations: const [Size(max: 3)])',
+          'typeInfo: const ClassType<String>(nullable: true), get: (bean) => '
+          'bean.nick, '
+          'set: (bean, value) => bean.nick = (value as String?), annotations: '
+          'const [Size(max: 3)])',
         ),
       );
       expect(
         output,
         _has(
-          "BeanProperty<Form>(r'id', type: int, typeInfo: const ClassType<int>(), get: (bean) => bean.id)",
+          "BeanProperty<Form>(r'id', type: int, typeInfo: const "
+          'ClassType<int>(), get: (bean) => bean.id)',
         ),
       );
       expect(
         output,
         _has(
-          "r'computed', type: int, typeInfo: const ClassType<int>(), get: (bean) => bean.computed, set: (bean, value) => bean.computed = (value as int)",
+          "r'computed', type: int, typeInfo: const ClassType<int>(), get: "
+          '(bean) => bean.computed, set: (bean, value) => bean.computed = '
+          '(value as int)',
         ),
       );
-      expect(output, _has("annotations: const [Marker()]"));
+      expect(output, _has('annotations: const [Marker()]'));
       expect(output, _has("r'baseName'"));
       expect(output, isNot(contains('callback')));
       expect(
         output,
         _has(
-          "BeanMethod<Form>(r'greet', returnType: String, parameterTypes: const [String, int], "
+          "BeanMethod<Form>(r'greet', returnType: String, parameterTypes: "
+          'const [String, int], '
           'invoke: (bean, arguments) => Function.apply(bean.greet, arguments))',
         ),
       );
@@ -1527,7 +1569,7 @@ class Config(final Settings settings) {
 @Introspected()
 class Form(var String email, {var int age = 0});
 ''', proxyMode: ProxyMode.all);
-      expect(output, _has("Settings(r.value<String>(r'\${app.name:demo}'))"));
+      expect(output, _has(r"Settings(r.value<String>(r'${app.name:demo}'))"));
       expect(
         output,
         _has(
@@ -1555,7 +1597,8 @@ class Form(var String email, {var int age = 0});
       expect(
         output,
         _has(
-          r"_$ConfigConfiguration(r, r.dependency<Settings>(name: r'settings'))",
+          r'_$ConfigConfiguration(r, r.dependency<Settings>(name: '
+          "r'settings'))",
         ),
       );
       expect(
@@ -1614,7 +1657,9 @@ class Audit {
       expect(
         output,
         _has(
-          "kind: AdviceKind.before, pointcut: r'all()', methodName: r'before', invoke: (aspect, joinPoint, value, bindings) => aspect.before(joinPoint))",
+          "kind: AdviceKind.before, pointcut: r'all()', methodName: r'before', "
+          'invoke: (aspect, joinPoint, value, bindings) => '
+          'aspect.before(joinPoint))',
         ),
       );
       expect(
@@ -1624,7 +1669,8 @@ class Audit {
       expect(
         output,
         _has(
-          "aspect.returned(joinPoint, (value as String)), accepts: (value) => value is String",
+          'aspect.returned(joinPoint, (value as String)), accepts: (value) => '
+          'value is String',
         ),
       );
       expect(output, _has('aspect.anyResult((value as Object?))'));
@@ -1644,7 +1690,7 @@ class Audit {
       expect(output, _has("pointcuts: {r'all': r'execution(* *(..))'}"));
       expect(
         output,
-        isNot(contains('_\$AuditProxy')),
+        isNot(contains(r'_$AuditProxy')),
         reason: 'aspects are not proxied',
       );
     });
@@ -1687,9 +1733,9 @@ class Impl implements Api {
 ''', proxyMode: ProxyMode.all);
       expect(
         output,
-        _has('class _\$ImplProxy implements Impl, Api, Advised {'),
+        _has(r'class _$ImplProxy implements Impl, Api, Advised {'),
       );
-      expect(output, _has('_\$ImplProxy(this._target, this._invoker);'));
+      expect(output, _has(r'_$ImplProxy(this._target, this._invoker);'));
       expect(output, _has('Object get aopTarget => _target;'));
       expect(
         output,
@@ -1699,52 +1745,67 @@ class Impl implements Api {
       expect(
         output,
         _has(
-          'String plain(int a, [int b = 2, String? c]) => (this._invoker.invoke(this, this._target, 0, [a, b, c], '
-          '(args) => this._target.plain((args[0] as int), (args[1] as int), (args[2] as String?))) as String);',
+          'String plain(int a, [int b = 2, String? c]) => '
+          '(this._invoker.invoke(this, this._target, 0, [a, b, c], '
+          '(args) => this._target.plain((args[0] as int), (args[1] as int), '
+          '(args[2] as String?))) as String);',
         ),
       );
       expect(
         output,
         _has(
-          'T generic<T extends Object>(T value, {required String key, int retries = 3}) => '
-          '(this._invoker.invoke(this, this._target, 1, [value, key, retries], (args) => this._target.generic<T>((args[0] as T), '
+          'T generic<T extends Object>(T value, {required String key, int '
+          'retries = 3}) => '
+          '(this._invoker.invoke(this, this._target, 1, [value, key, retries], '
+          '(args) => this._target.generic<T>((args[0] as T), '
           'key: (args[1] as String), retries: (args[2] as int))) as T);',
         ),
       );
       expect(
         output,
         _has(
-          'void act() {this._invoker.invoke(this, this._target, 2, const [], (args) {this._target.act(); return null;});}',
+          'void act() {this._invoker.invoke(this, this._target, 2, const [], '
+          '(args) {this._target.act(); return null;});}',
         ),
       );
       expect(
         output,
         _has(
-          'Future<int> later() => this._invoker.invokeAsync<int>(this, this._target, 3, const [], (args) => this._target.later());',
+          'Future<int> later() => this._invoker.invokeAsync<int>(this, '
+          'this._target, 3, const [], (args) => this._target.later());',
         ),
       );
       expect(
         output,
         _has(
-          'int get count => (this._invoker.invoke(this, this._target, 5, const [], (_) => this._target.count) as int);',
+          'int get count => (this._invoker.invoke(this, this._target, 5, const '
+          '[], (_) => this._target.count) as int);',
         ),
       );
       expect(
         output,
         _has(
-          'set count(int value) {this._invoker.invoke(this, this._target, 6, [value], (args) {this._target.count = (args[0] as int); return null;});}',
+          'set count(int value) {this._invoker.invoke(this, this._target, 6, '
+          '[value], (args) {this._target.count = (args[0] as int); return '
+          'null;});}',
         ),
       );
       expect(
         output,
         _has(
-          'String transform(String Function(int) f, (int, {String name}) record)',
+          'String transform(String Function(int) f, (int, {String name}) '
+          'record)',
         ),
       );
       expect(
         output,
         _has(
-          "MethodSignature(name: r'plain', declaringType: r'Api', targetType: r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', parameterTypes: [r'int', r'int', r'String'], parameterNames: [r'a', r'b', r'c'], annotations: [Note()], annotationTypes: [r'Note'], targetTypes: [r'Impl', r'Api'], targetAnnotations: [Service(), Note()], targetAnnotationTypes: [r'Service', r'Note'])",
+          "MethodSignature(name: r'plain', declaringType: r'Api', targetType: "
+          "r'Impl', declaringTypes: [r'Impl', r'Api'], returnType: r'String', "
+          "parameterTypes: [r'int', r'int', r'String'], parameterNames: [r'a', "
+          "r'b', r'c'], annotations: [Note()], annotationTypes: [r'Note'], "
+          "targetTypes: [r'Impl', r'Api'], targetAnnotations: [Service(), "
+          "Note()], targetAnnotationTypes: [r'Service', r'Note'])",
         ),
       );
       expect(output, _has('kind: MemberKind.getter'));
@@ -1753,7 +1814,8 @@ class Impl implements Api {
       expect(
         output,
         _has(
-          'create: (target, invoker) => _\$ImplProxy((target as Impl), invoker)',
+          r'create: (target, invoker) => _$ImplProxy((target as Impl), '
+          'invoker)',
         ),
       );
     });
@@ -1761,7 +1823,7 @@ class Impl implements Api {
     test(
       'public fields are advised like explicit getters and setters',
       () async {
-        final output = await _generate(r'''
+        final output = await _generate('''
 class Note {
   const Note();
 }
@@ -1802,7 +1864,8 @@ class Hidden {
         expect(
           output,
           _has(
-            "MethodSignature(name: r'title', declaringType: r'Plain', targetType: r'Plain'",
+            "MethodSignature(name: r'title', declaringType: r'Plain', "
+            "targetType: r'Plain'",
           ),
         );
         expect(output, _has('annotations: [Note()]'));
@@ -1816,7 +1879,8 @@ class Hidden {
         expect(
           output,
           _has(
-            r'int get count { final _$i = this._$invoker; return _$i == null ? super.count : (_$i.invoke(',
+            r'int get count { final _$i = this._$invoker; return _$i == null ? '
+            r'super.count : (_$i.invoke(',
           ),
         );
         expect(output, _has(r'set count(int value) { final _$i'));
@@ -1965,7 +2029,7 @@ abstract class Base { void base(); }
 
   group('review fixes', () {
     test('@Lazy injection points get a generated lazy proxy', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 abstract interface class Pricing {
   double price(String isbn, {int quantity = 1});
   T convert<T extends num>(T value);
@@ -1994,8 +2058,8 @@ class DefaultPricing implements Pricing {
       expect(
         output,
         _has(
-          'class _\$PricingLazy implements Pricing { '
-          '_\$PricingLazy(this._resolve); '
+          r'class _$PricingLazy implements Pricing { '
+          r'_$PricingLazy(this._resolve); '
           'final Pricing Function() _resolve; '
           '@override String toString() => this._resolve().toString(); '
           '@override double price(String isbn, {int quantity = 1}) => '
@@ -2010,12 +2074,13 @@ class DefaultPricing implements Pricing {
       expect(RegExp(r'class_\$PricingLazy').allMatches(output), hasLength(1));
       expect(
         output,
-        _has("_\$PricingLazy(r.lazyDependency<Pricing>(name: r'self'))"),
+        _has(r"_$PricingLazy(r.lazyDependency<Pricing>(name: r'self'))"),
       );
       expect(
         output,
         _has(
-          "bean.other = _\$PricingLazy(r.lazyDependency<Pricing>(name: r'other'));",
+          r'bean.other = _$PricingLazy(r.lazyDependency<Pricing>(name: '
+          "r'other'));",
         ),
       );
       expect(output, _has("Dependency.lazy(Pricing, name: r'self')"));
@@ -2064,7 +2129,7 @@ class Retrying {
     });
 
     test('objects returned from @Bean methods are processed', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 abstract interface class Clock {}
 
 @Component()
@@ -2103,7 +2168,7 @@ class PoolConfig {
       // CloudData is not a component itself: it is reachable only through
       // the import (a component in the scan root is registered regardless
       // of importers, as in Spring).
-      final output = await _generate(r'''
+      final output = await _generate('''
 class CloudData {
   @Bean()
   String store() => 'cloud';
@@ -2156,7 +2221,7 @@ class CloudConfig {}
       'scans lib/ and the directory of main, declares runApplication',
       () async {
         final result = await _build({
-          'bin/main.dart': r'''
+          'bin/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'main.spring.dart';
 
@@ -2167,7 +2232,7 @@ void main(List<String> args) => runApplication(args);
 class CliRunner {}
 ''',
           'lib/src/deep/service.dart': '$_header@Service() class Deep {}',
-          'lib/props.dart': r'''
+          'lib/props.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 @ConfigurationProperties('db')
 class DbProps { String url = ''; }
@@ -2194,8 +2259,11 @@ class DbProps { String url = ''; }
         }
         expect(
           output,
-          contains(
-            'runApplicationAsync(List<String>args)=>springApplication.runAsync(args,hotReload:()=>springApplication)',
+          _has(
+            'runApplicationAsync(List<String> args) '
+            '=> '
+            'springApplication.runAsync(args, hotReload: () => '
+            'springApplication)',
           ),
         );
         expect(output, _has("BeanDefinition<CliRunner>(name: r'cliRunner'"));
@@ -2266,7 +2334,8 @@ void main(List<String> args) => runApplication(args);
       );
       expect(
         await fingerprint(
-          "@Service() class A { A(@Value(r'\${x:1}') this.x); final String x; }",
+          r"@Service() class A { A(@Value(r'${x:1}') this.x); final String x; "
+          '}',
         ),
         isNot(first), // a changed injection point
       );
@@ -2299,7 +2368,7 @@ class DbProperties {
         output,
         matches(
           RegExp(
-            r"create:\(r\)=>ConstructorBound\.from<DbProperties>"
+            r'create:\(r\)=>ConstructorBound\.from<DbProperties>'
             r"\(r,r'dbProperties'\)",
           ),
         ),
@@ -2352,7 +2421,7 @@ class ShopProperties {
 
   group('asynchronous lifecycle methods', () {
     test('are awaited by async callbacks (refreshAsync / closeAsync)', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 class Conn {
   Future<void> open() async {}
   Future<void> close() async {}
@@ -2431,7 +2500,8 @@ class Config {
         'Cannot choose a constructor',
       ),
       'async @Bean method': (
-        'class B {} @Configuration() class C { @Bean() Future<B> b() async => B(); }',
+        'class B {} @Configuration() class C { @Bean() Future<B> b() async => '
+            'B(); }',
         'must not be async',
       ),
       'void @Bean method': (
@@ -2447,11 +2517,13 @@ class Config {
         'Generic @Bean method',
       ),
       'missing initMethod': (
-        "class B {} @Configuration() class C { @Bean(initMethod: 'nope') B b() => B(); }",
+        "class B {} @Configuration() class C { @Bean(initMethod: 'nope') B b() "
+            '=> B(); }',
         "initMethod 'nope'",
       ),
       'missing destroyMethod': (
-        "class B {} @Configuration() class C { @Bean(destroyMethod: 'nope') B b() => B(); }",
+        "class B {} @Configuration() class C { @Bean(destroyMethod: 'nope') B "
+            'b() => B(); }',
         "destroyMethod 'nope'",
       ),
       // A single function-typed dependency is injected by its type.
@@ -2476,7 +2548,8 @@ class Config {
         'without required parameters',
       ),
       'async lifecycle method of a @Configurable': (
-        '@Configurable() class A { @PreDestroy() Future<void> close() async {} }',
+        '@Configurable() class A { @PreDestroy() Future<void> close() async {} '
+            '}',
         'must not be async',
       ),
       'listener with two parameters': (
@@ -2496,7 +2569,8 @@ class Config {
         'must implement Condition',
       ),
       'condition with arguments': (
-        'class C implements Condition { C(this.x); final int x; @override bool matches(ConditionContext c) => true; }\n'
+        'class C implements Condition { C(this.x); final int x; @override bool '
+            'matches(ConditionContext c) => true; }\n'
             '@Component() @Conditional([C]) class A {}',
         'no-argument constructor',
       ),
@@ -2516,19 +2590,23 @@ class Config {
         'public instance method',
       ),
       'named advice parameter': (
-        "@Aspect() @Component() class A { @Before('x()') void b({JoinPoint? jp}) {} }",
+        "@Aspect() @Component() class A { @Before('x()') void b({JoinPoint? "
+            'jp}) {} }',
         'positional parameters',
       ),
       'unexpected advice parameter': (
-        "@Aspect() @Component() class A { @Before('execution(* *(..))') void b(String s) {} }",
+        "@Aspect() @Component() class A { @Before('execution(* *(..))') void "
+            'b(String s) {} }',
         'Unexpected parameter s of @Before',
       ),
       'around without proceeding join point': (
-        "@Aspect() @Component() class A { @Around('x()') Object? b(JoinPoint jp) => null; }",
+        "@Aspect() @Component() class A { @Around('x()') Object? b(JoinPoint "
+            'jp) => null; }',
         'needs a ProceedingJoinPoint',
       ),
       'proceeding join point outside around': (
-        "@Aspect() @Component() class A { @Before('x()') void b(ProceedingJoinPoint jp) {} }",
+        "@Aspect() @Component() class A { @Before('x()') void "
+            'b(ProceedingJoinPoint jp) {} }',
         'Only @Around advice',
       ),
       'generic configurable': (
@@ -2540,7 +2618,8 @@ class Config {
         "Bean name 'same' is used by both",
       ),
       'alias clash': (
-        "class B {}\n@Configuration() class C { @Bean(aliases: ['c']) B b() => B(); }",
+        "class B {}\n@Configuration() class C { @Bean(aliases: ['c']) B b() => "
+            'B(); }',
         "Bean name 'c' is used by both",
       ),
       'lazy nullable': (
@@ -2554,7 +2633,8 @@ class Config {
         'only a single bean can be injected lazily',
       ),
       'lazy value': (
-        "@Component() class S { S(@Lazy() @Value('x') this.v); final String v; }",
+        "@Component() class S { S(@Lazy() @Value('x') this.v); final String v; "
+            '}',
         'only beans can be injected lazily',
       ),
       'lazy class with private members': (
@@ -2572,7 +2652,8 @@ class Config {
         'the lazy proxy must implement StringBuffer',
       ),
       'private constant condition': (
-        'class _P implements Condition { const _P(); @override bool matches(ConditionContext c) => true; }\n'
+        'class _P implements Condition { const _P(); @override bool '
+            'matches(ConditionContext c) => true; }\n'
             '@Component() @_P() class A {}',
         'private constant',
       ),
@@ -2583,7 +2664,7 @@ class Config {
 
     test('two @ComponentScan in one file', () async {
       final result = await _build({
-        'lib/src/beans.dart': r'''
+        'lib/src/beans.dart': '''
 import 'package:spring_core_dart/spring_core_dart.dart';
 @ComponentScan() final BeanModule a = BeanModule('a', []);
 @ComponentScan() final BeanModule b = BeanModule('b', []);
@@ -2605,7 +2686,7 @@ import 'package:spring_core_dart/spring_core_dart.dart';
   });
 
   group('@BeanMethodAnnotation', () {
-    const source = r"""
+    const source = """
 @BeanMethodAnnotation()
 class Every {
   const Every(this.period, {this.name});
@@ -2654,11 +2735,14 @@ class Config {
         _has(
           "annotatedMethods: [BeanMethod<Poller>(r'check', "
           'parameterTypes: const [int, String], '
-          'parameters: [BeanParameter(r\'attempt\', type: const ClassType<int>(), isRequired: true), '
-          'BeanParameter(r\'label\', type: const ClassType<String>(nullable: true))], '
+          "parameters: [BeanParameter(r'attempt', type: const "
+          'ClassType<int>(), isRequired: true), '
+          "BeanParameter(r'label', type: const ClassType<String>(nullable: "
+          'true))], '
           'isFuture: true, isVoid: true, '
           'invoke: (bean, arguments) => Function.apply(bean.check, arguments), '
-          'annotations: const [Every(Duration(seconds: 30), name: r\'inbox\'), Plain()])',
+          "annotations: const [Every(Duration(seconds: 30), name: r'inbox'), "
+          'Plain()])',
         ),
       );
       // Declared on the interface, implemented by the bean.
@@ -2676,7 +2760,8 @@ class Config {
         output,
         _has(
           "annotatedMethods: [BeanMethod<Report>(r'hourly', isVoid: true, "
-          'invoke: (bean, arguments) => Function.apply(bean.hourly, arguments), '
+          'invoke: (bean, arguments) => Function.apply(bean.hourly, '
+          'arguments), '
           'annotations: const [Every(Duration(hours: 1))])]',
         ),
       );
@@ -2689,7 +2774,7 @@ class Config {
     test(
       'named parameters, the result type and annotated parameters',
       () async {
-        final output = await _generate(r"""
+        final output = await _generate("""
 @BeanMethodAnnotation()
 class Handles {
   const Handles();
@@ -2714,11 +2799,15 @@ class Api {
         expect(
           output,
           _has(
-            "parameters: [BeanParameter(r'query', type: const ClassType<String>(), "
+            "parameters: [BeanParameter(r'query', type: const "
+            'ClassType<String>(), '
             "isRequired: true, annotations: const [Param(r'q')]), "
-            "BeanParameter(r'page', type: const ClassType<int>(), symbol: #page, isRequired: true), "
-            "BeanParameter(r'size', type: const ClassType<int>(), symbol: #size)], "
-            'returnTypeInfo: const ListType<Item>(ClassType<Item>()), isFuture: true, ',
+            "BeanParameter(r'page', type: const ClassType<int>(), symbol: "
+            '#page, isRequired: true), '
+            "BeanParameter(r'size', type: const ClassType<int>(), symbol: "
+            '#size)], '
+            'returnTypeInfo: const ListType<Item>(ClassType<Item>()), '
+            'isFuture: true, ',
           ),
         );
         expect(
@@ -2734,12 +2823,12 @@ class Api {
     );
 
     test('private, static and generic methods are rejected', () async {
-      const every = r"""
+      const every = '''
 @BeanMethodAnnotation()
 class Every {
   const Every();
 }
-""";
+''';
       await _expectError(
         '$every@Component() class A { @Every() void _run() {} }',
         'must be a public instance method',
@@ -2756,7 +2845,7 @@ class Every {
   });
 
   test('proxy signatures carry the parameter names', () async {
-    final output = await _generate(r"""
+    final output = await _generate('''
 class Timed {
   const Timed();
 }
@@ -2766,17 +2855,18 @@ class Books {
   @Timed()
   String find(String isbn, {int page = 0}) => isbn;
 }
-""", proxyMode: ProxyMode.all);
+''', proxyMode: ProxyMode.all);
     expect(
       output,
       _has(
-        "parameterTypes: [r'String', r'int'], parameterNames: [r'isbn', r'page']",
+        "parameterTypes: [r'String', r'int'], parameterNames: [r'isbn', "
+        "r'page']",
       ),
     );
   });
 
   group('@Introspected for JSON', () {
-    const source = r"""
+    const source = """
 enum Genre { fiction, science }
 
 enum Stock {
@@ -2860,7 +2950,7 @@ class Holder {
       expect(
         output,
         _has(
-          'typeInfo: const MapType<String, dynamic>('
+          'typeInfo: const MapType<String, dynamic>( '
           'ClassType<String>(), DynamicType())',
         ),
       );
@@ -2892,7 +2982,7 @@ class Holder {
       expect(
         output,
         _has(
-          'typeInfo: const ListType<Money?>('
+          'typeInfo: const ListType<Money?>( '
           'ClassType<Money>(nullable: true))',
         ),
       );
@@ -2918,7 +3008,7 @@ class Holder {
   });
 
   group('@InterfaceProxy', () {
-    const source = r"""
+    const source = """
 @InterfaceProxy(primary: true)
 class Remote {
   const Remote(this.name);
@@ -2970,21 +3060,24 @@ abstract interface class CatalogClient {
       expect(
         output,
         _has(
-          r"final metadata = InterfaceMetadata<CatalogClient>(typeName: r'CatalogClient', "
-          r"annotations: const [Remote(r'catalog')],",
+          'final metadata = InterfaceMetadata<CatalogClient>(typeName: '
+          "r'CatalogClient', "
+          "annotations: const [Remote(r'catalog')],",
         ),
       );
       expect(
         output,
         _has(
           '@override Future<Book> find(String isbn, {int page = 0}) => '
-          'retypeFuture<Book>(this._handler.invoke(this._metadata.methods[0], [isbn, page]));',
+          'retypeFuture<Book>(this._handler.invoke(this._metadata.methods[0], '
+          '[isbn, page]));',
         ),
       );
       expect(
         output,
         _has(
-          "BeanParameter(r'isbn', type: const ClassType<String>(), isRequired: true, "
+          "BeanParameter(r'isbn', type: const ClassType<String>(), isRequired: "
+          'true, '
           "annotations: const [Tag(r'isbn')])",
         ),
       );
@@ -2997,7 +3090,7 @@ abstract interface class CatalogClient {
       expect(
         output,
         _has(
-          'call: (target, arguments) => (target as CatalogClient).find('
+          'call: (target, arguments) => (target as CatalogClient).find( '
           '(arguments[0] as String), page: (arguments[1] as int))',
         ),
       );
@@ -3010,13 +3103,17 @@ abstract interface class CatalogClient {
       expect(
         output,
         _has(
-          '@override String version() => (this._handler.invoke(this._metadata.methods[4], const []) as String);',
+          '@override String version() '
+          '=> '
+          '(this._handler.invoke(this._metadata.methods[4], const []) as '
+          'String);',
         ),
       );
       expect(
         output,
         _has(
-          '@override void ping() { this._handler.invoke(this._metadata.methods[5], const []); }',
+          '@override void ping() { '
+          'this._handler.invoke(this._metadata.methods[5], const []); }',
         ),
       );
       // A sync generic result (e.g. a Feign EventStream<T>): described with
@@ -3031,7 +3128,8 @@ abstract interface class CatalogClient {
         output,
         _has(
           '@override Stream<Book> changes() => '
-          '(this._handler.invoke(this._metadata.methods[6], const []) as Stream<Book>);',
+          '(this._handler.invoke(this._metadata.methods[6], const []) as '
+          'Stream<Book>);',
         ),
       );
       // A `void` type argument (`ResponseEntity<void>`): the handler can
@@ -3039,7 +3137,8 @@ abstract interface class CatalogClient {
       expect(
         output,
         _has(
-          'returnType: const GenericType<Stream<void>>([DynamicType.forVoid()])',
+          'returnType: const '
+          'GenericType<Stream<void>>([DynamicType.forVoid()])',
         ),
       );
       // The bean: primary (from @InterfaceProxy(primary: true)), created by
@@ -3063,7 +3162,7 @@ abstract interface class CatalogClient {
 
     test('primary and qualifiers of the annotation itself, like '
         '@FeignClient(primary: false, qualifiers: [...])', () async {
-      final output = await _generate(r"""
+      final output = await _generate("""
 @InterfaceProxy(primary: true)
 class Remote {
   const Remote(this.name, {this.primary = true, this.qualifiers = const []});
@@ -3102,12 +3201,12 @@ abstract interface class StockClient {
     });
 
     test('rejects what cannot be implemented', () async {
-      const remote = r"""
+      const remote = '''
 @InterfaceProxy()
 class Remote {
   const Remote();
 }
-""";
+''';
       await _expectError(
         '$remote@Remote() class NotAbstract {}',
         'must be abstract',
@@ -3152,7 +3251,8 @@ class Remote {
           '@Min on Form.any',
         ),
         'constructor parameter': (
-          '@Introspected() class Form { Form(@Email() this.id); final int id; }',
+          '@Introspected() class Form { Form(@Email() this.id); final int id; '
+              '}',
           '@Email on Form(id)',
         ),
         'method parameter': (
@@ -3170,7 +3270,8 @@ class Remote {
           'Invalid @Size on Form.name: the min parameter cannot be negative',
         ),
         'Size min > max': (
-          '@Introspected() class Form { @Size(min: 5, max: 2) String name = ""; }',
+          '@Introspected() class Form { @Size(min: 5, max: 2) String name = '
+              '""; }',
           'Invalid @Size on Form.name: min (5) is greater than max (2)',
         ),
         'negative Digits': (
@@ -3189,7 +3290,8 @@ class Remote {
         'Each element type': (
           '@Introspected() class Form { '
               '@Each([NotBlank()]) List<int> ids = []; }',
-          '@NotBlank on Form.ids (element): it validates String values, not int',
+          '@NotBlank on Form.ids (element): it validates String values, not '
+              'int',
         ),
         'EachKey key type': (
           '@Introspected() class Form { '
@@ -3219,7 +3321,7 @@ class Remote {
     });
 
     test('supported types build', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 @Introspected()
 class Form {
   @NotBlank() @Matches('[a-z]+') @Email() String? name;
@@ -3249,14 +3351,14 @@ class Users {
     });
 
     test('proxy signatures carry the parameter annotations', () async {
-      final output = await _generate(r"""
+      final output = await _generate('''
 @Service()
 @Validated()
 class Users {
   @NotBlank()
   String register(@NotBlank() @Email() String email, int age, {@Valid() Object? extra}) => email;
 }
-""", proxyMode: ProxyMode.all);
+''', proxyMode: ProxyMode.all);
       expect(
         output,
         _has(
@@ -3269,7 +3371,7 @@ class Users {
     test('the generated code compiles', () async {
       expect(
         await _compileErrors({
-          'lib/src/service.dart': r"""
+          'lib/src/service.dart': '''
 abstract interface class Registration {
   String register(@NotBlank() String email, {@Min(18) int age = 18});
 }
@@ -3281,7 +3383,7 @@ class DefaultRegistration implements Registration {
   @Size(max: 20)
   String register(String email, {int age = 18}) => email;
 }
-""",
+''',
         }),
         isEmpty,
       );
@@ -3289,7 +3391,7 @@ class DefaultRegistration implements Registration {
   });
 
   group('container metadata', () {
-    const source = r'''
+    const source = '''
 abstract interface class Store<T> {}
 class User {}
 
@@ -3429,14 +3531,14 @@ class Screen {
       expect(
         output,
         _has(
-          'configurablePostConstruct: {Screen: (bean) {'
+          'configurablePostConstruct: {Screen: (bean) { '
           'final target = (bean as Screen); target.init();}}',
         ),
       );
       expect(
         output,
         _has(
-          'configurablePreDestroy: {Screen: (bean) {'
+          'configurablePreDestroy: {Screen: (bean) { '
           'final target = (bean as Screen); target.dispose();}}',
         ),
       );
@@ -3448,7 +3550,7 @@ class Screen {
   });
 
   group('full-mode @Configuration', () {
-    const source = r"""
+    const source = """
 class Calculator {}
 class Pricing { Pricing(this.calculator); final Calculator calculator; }
 class Id {}
@@ -3489,24 +3591,24 @@ base class BaseConfig {
 }
 """;
 
-    test('a generated subclass returns the container\'s beans', () async {
+    test("a generated subclass returns the container's beans", () async {
       final output = await _generate(source);
       // The subclass forwards the constructor arguments (super parameters
       // keep types and defaults); a `base` class gets a `final` subclass.
       expect(
         output,
         _has(
-          r'class _$AppConfigConfiguration extends AppConfig {'
+          r'class _$AppConfigConfiguration extends AppConfig { '
           r'_$AppConfigConfiguration(this._$beanFactory, super.p0, '
-          r'[super.p1]) : super.named();',
+          '[super.p1]) : super.named();',
         ),
       );
       expect(
         output,
         _has(
-          r'final class _$BaseConfigConfiguration extends BaseConfig {'
+          r'final class _$BaseConfigConfiguration extends BaseConfig { '
           r'_$BaseConfigConfiguration(this._$beanFactory, '
-          r'{required super.name, super.size});',
+          '{required super.name, super.size});',
         ),
       );
       // Inter-bean calls get the bean of the container.
@@ -3525,16 +3627,16 @@ base class BaseConfig {
           // Defaulted parameters left out are resolved like the container
           // does (see aop_and_bean_types_test.dart).
           r'Pricing pricing(Calculator calc, {Object? n = const _$Absent(), '
-          r'Object? d = const _$Absent()}) {'
-          r'final _$args = <Object?>[calc, n, d];'
+          r'Object? d = const _$Absent()}) { '
+          r'final _$args = <Object?>[calc, n, d]; '
           r"this._$arguments[r'pricing'] = _$args;",
         ),
       );
       expect(
         output,
         _has(
-          r"final _$args = this._$arguments.remove(r'pricing');"
-          r'if (_$args != null) {return super.pricing('
+          r"final _$args = this._$arguments.remove(r'pricing'); "
+          r'if (_$args != null) {return super.pricing( '
           r'(_$args[0] as Calculator), n: _$args[1] is _$Absent ? ',
         ),
       );
@@ -3551,7 +3653,7 @@ base class BaseConfig {
       expect(
         output,
         _has(
-          r'Id id([String? tag]) {final _$args = <Object?>[tag];'
+          r'Id id([String? tag]) {final _$args = <Object?>[tag]; '
           r"this._$arguments[r'id'] = _$args;",
         ),
       );
@@ -3582,7 +3684,7 @@ base class BaseConfig {
 
     test('lite mode: proxyBeanMethods false, @Component, imported classes, '
         '@AutoConfiguration', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 class Calculator {}
 
@@ -3617,7 +3719,7 @@ class Importer {}
     });
 
     test('FactoryBean @Bean methods return the factory itself', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 class Client {}
 class ClientFactory implements FactoryBean<Client> {
   @override Client getObject() => Client();
@@ -3678,7 +3780,7 @@ class Config { @Bean() ClientFactory client() => ClientFactory(); }
   });
 
   group('conditional declarations may share a bean name', () {
-    const source = r"""
+    const source = """
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 abstract interface class DataSource {}
 class Embedded implements DataSource {}
@@ -3740,7 +3842,7 @@ class Config {
   });
 
   group('@Bean types inferred from the method body', () {
-    const source = r"""
+    const source = """
 abstract interface class DataSource {}
 class HikariDataSource implements DataSource {
   void close() {}
@@ -3794,7 +3896,7 @@ class Config {
           output,
           _has(
             "create: (r) => ((r.dependency<Config>(qualifier: r'config') "
-            r'as _$ConfigConfiguration)._$dataSource(r) as HikariDataSource),'
+            r'as _$ConfigConfiguration)._$dataSource(r) as HikariDataSource), '
             'destroyMethod: (bean) {bean.close();}',
           ),
         );
@@ -3824,7 +3926,7 @@ class Config {
     );
 
     test('AOP proxies see the concrete class', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 abstract interface class Api { void run(); }
 class Impl implements Api {
   @override void run() {}
@@ -3868,7 +3970,8 @@ class Config { @Bean() Api api() => Impl(); }
             'declare a public supertype as the return type.',
       ),
       '@Bean parameter (full mode)': (
-        'class _P {} @Configuration() class C { @Bean() Object o(_P? p) => 1; }',
+        'class _P {} @Configuration() class C { @Bean() Object o(_P? p) => 1; '
+            '}',
         'Parameter p of @Bean method C.o has the private type _P',
       ),
       'injected field': (
@@ -3916,7 +4019,7 @@ class Config { @Bean() Api api() => Impl(); }
 
   group('inherited members', () {
     test('@Bean methods of superclasses and mixins', () async {
-      final output = await _generate(r'''
+      final output = await _generate('''
 class Pool {}
 class Clock {}
 abstract class BaseConfig {
@@ -3951,7 +4054,7 @@ class AppConfig extends BaseConfig with Extra {
 
     test('a full-mode subclass overrides inherited @Bean methods, with the '
         'type arguments of a generic superclass substituted', () async {
-      const source = r'''
+      const source = '''
 class Store<T> {}
 class User {}
 abstract class BaseConfig<T> {
@@ -3973,7 +4076,7 @@ class UserConfig extends BaseConfig<User> {}
 
     test('lifecycle methods of mixins and the members of a generic '
         'superclass', () async {
-      const source = r'''
+      const source = '''
 class User {}
 class UserEvent {}
 class Repo<T> {}
@@ -4015,7 +4118,8 @@ class UserService extends BaseService<User, UserEvent> with Audited {
       expect(
         output,
         _has(
-          "if (r.optionalDependency<Repo<User>>(name: r'otherRepo') case final value?) { bean.otherRepo = value; }",
+          "if (r.optionalDependency<Repo<User>>(name: r'otherRepo') case final "
+          'value?) { bean.otherRepo = value; }',
         ),
       );
       expect(output, contains('dependencyList<Repo<User>>()'));
@@ -4028,13 +4132,15 @@ class UserService extends BaseService<User, UserEvent> with Audited {
       expect(
         output,
         _has(
-          'postConstruct: (bean) {bean.baseInit(); bean.auditInit(); bean.init();}',
+          'postConstruct: (bean) {bean.baseInit(); bean.auditInit(); '
+          'bean.init();}',
         ),
       );
       expect(
         output,
         _has(
-          'preDestroy: (bean) {bean.destroy(); bean.auditDestroy(); bean.baseDestroy();}',
+          'preDestroy: (bean) {bean.destroy(); bean.auditDestroy(); '
+          'bean.baseDestroy();}',
         ),
       );
       expect(await _compileErrors({'lib/src/service.dart': source}), isEmpty);
@@ -4042,7 +4148,7 @@ class UserService extends BaseService<User, UserEvent> with Audited {
   });
 
   group('@ComponentScan filters and lazyInit', () {
-    const classes = r'''
+    const classes = '''
 class Plugin { const Plugin(); }
 abstract class Handler {}
 @Plugin() class Audit {}
@@ -4076,12 +4182,12 @@ final BeanModule pkgBeans = \$pkgBeans;
 
     test('include filters add beans without @Component, excludes win, '
         'abstract classes are skipped', () async {
-      final output = await generate('''
+      final output = await generate(r'''
 includeFilters: [
   Filter(classes: [Plugin]),
   Filter(type: FilterType.assignableType, classes: [Handler]),
 ],
-excludeFilters: [Filter(type: FilterType.regex, pattern: [r'Stub\$'])],
+excludeFilters: [Filter(type: FilterType.regex, pattern: [r'Stub$'])],
 ''');
       expect(output, _has("name: r'audit'"));
       expect(output, _has("name: r'loginHandler'"));
@@ -4218,7 +4324,8 @@ class Registrar implements BeanRegistrar {
 @Import([Registrar])
 class Config {}
 ''',
-        'must be a public, non-abstract, non-generic class with a no-argument constructor',
+        'must be a public, non-abstract, non-generic class with a no-argument '
+            'constructor',
       );
       await _expectError('''
 @Component()

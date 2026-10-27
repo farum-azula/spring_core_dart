@@ -121,19 +121,20 @@ void main() {
 
     test('the proxy breaks cycles and is dropped with the definition', () {
       final proxy = factory.getBean<Cart>();
-      factory.removeBeanDefinition('cart');
-      factory.registerBeanDefinition(
-        BeanDefinition<Cart>(
-          name: 'cart',
-          scope: 'session',
-          scopedProxy: CartProxy.new,
-          dependencies: const [Dependency(Shop)],
-          create: (r) {
-            r.dependency<Shop>();
-            return Cart();
-          },
-        ),
-      );
+      factory
+        ..removeBeanDefinition('cart')
+        ..registerBeanDefinition(
+          BeanDefinition<Cart>(
+            name: 'cart',
+            scope: 'session',
+            scopedProxy: CartProxy.new,
+            dependencies: const [Dependency(Shop)],
+            create: (r) {
+              r.dependency<Shop>();
+              return Cart();
+            },
+          ),
+        );
       expect(factory.validateBeanGraph, returnsNormally);
       expect(factory.getBean<Cart>(), isNot(same(proxy)));
     });
@@ -174,8 +175,7 @@ void main() {
             Dependency.resource(Greeter, 'missing', optional: true),
           ],
         ),
-      ]);
-      factory.validateBeanGraph();
+      ])..validateBeanGraph();
       final bean = factory.getBean<ByName>();
       expect(bean.greeter, isA<French>());
       expect(bean.other, isNull);

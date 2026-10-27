@@ -6,7 +6,8 @@
 /// ```dart
 /// import 'package:spring_web_dart/io.dart';
 ///
-/// final transport = IoHttpTransport(connectTimeout: const Duration(seconds: 3));
+/// final transport =
+///     IoHttpTransport(connectTimeout: const Duration(seconds: 3));
 /// ```
 ///
 /// Spring (Java): `JdkClientHttpRequestFactory`.

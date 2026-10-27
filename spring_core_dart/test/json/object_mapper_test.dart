@@ -7,7 +7,7 @@ enum Stock {
   inStock('in_stock'),
   soldOut('sold_out');
 
-  const Stock(this.json);
+  Stock(this.json);
   final String json;
 }
 
@@ -426,7 +426,8 @@ void main() {
         writeDatesAsTimestamps: true,
       );
       final tree = snake.valueToTree(book)! as Map<String, Object?>;
-      // Jackson 3: seconds with the fraction (WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS).
+      // Jackson 3: seconds with the fraction
+      // (WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS).
       expect(tree['published'], -139449600.0);
       expect(tree.containsKey('note'), isFalse);
       final read = snake.treeToValue<Book>(tree);
@@ -581,6 +582,8 @@ void main() {
     test('wrong types, nulls, missing values, cycles', () {
       expectError(
         () => mapper.readList<Book>(
+          // A string that cannot be split without changing it.
+          // ignore: lines_longer_than_80_chars
           '[{"isbn":"1","title":"A"},{"isbn":"2","title":"B","ratings":{"x":"five"}}]',
         ),
         '[1].ratings.x: expected an integer, got "five"',

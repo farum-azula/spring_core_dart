@@ -88,7 +88,7 @@ class RetryingClient {
 }
 
 class ClientFactory extends SmartFactoryBean<Client> {
-  var calls = 0;
+  int calls = 0;
   @override
   Client getObject() {
     calls++;
@@ -871,7 +871,7 @@ void main() {
     });
 
     test('a registerBean fallback in a selected module is decided before '
-        'the importing class\'s @Bean methods', () {
+        "the importing class's @Bean methods", () {
       const configClass = ConditionGroup('Config', [
         Always(ConfigurationPhase.registerBean),
       ]);
@@ -905,8 +905,8 @@ void main() {
       context.close();
     });
 
-    test('an earlier class\'s registerBean @Bean is visible to a later '
-        'class\'s registerBean condition before its selected module', () {
+    test("an earlier class's registerBean @Bean is visible to a later "
+        "class's registerBean condition before its selected module", () {
       const later = ConditionGroup('Later', [
         OnClock(ConfigurationPhase.registerBean),
       ]);
@@ -943,7 +943,7 @@ void main() {
       context.close();
     });
 
-    test('a registrar of an earlier class runs before a later class\'s '
+    test("a registrar of an earlier class runs before a later class's "
         'registerBean @Bean is decided', () {
       for (final (name, conditions, importer) in [
         (

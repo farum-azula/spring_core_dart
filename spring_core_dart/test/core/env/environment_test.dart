@@ -93,8 +93,9 @@ void main() {
         ..valueSeparator = '?'
         ..escapeCharacter = '~';
       expect(e.resolveRequiredPlaceholders('%{a} %{x?d} ~%{b}'), '1 d %{b}');
-      e.valueSeparator = null;
-      e.escapeCharacter = null;
+      e
+        ..valueSeparator = null
+        ..escapeCharacter = null;
       expect(e.resolvePlaceholders('%{x?d}'), '%{x?d}');
     });
 

@@ -1,8 +1,8 @@
 /// Caching for `spring_boot_dart` applications, like
 /// `spring-boot-starter-cache`: `@Cacheable`, `@CachePut`, `@CacheEvict`,
-/// `@Caching` and `@CacheConfig` on bean methods, a [CacheManager] with
+/// `@Caching` and `@CacheConfig` on bean methods, a `CacheManager` with
 /// time-to-live and size limits configured by `spring.cache.*`,
-/// [CacheResolver]s and [CachingConfigurer] defaults.
+/// `CacheResolver`s and `CachingConfigurer` defaults.
 ///
 /// ```dart
 /// @Service()

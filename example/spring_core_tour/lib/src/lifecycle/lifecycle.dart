@@ -20,6 +20,8 @@ class LifecycleProbe
   }
 
   @Autowired()
+  // Setter injection is what this example shows; nothing to read back.
+  // ignore: avoid_setters_without_getters
   set clockName(Environment environment) =>
       tourLog.add('probe: @Autowired setter');
 

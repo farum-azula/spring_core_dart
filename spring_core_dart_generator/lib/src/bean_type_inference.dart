@@ -168,7 +168,7 @@ extension _BeanTypeInference on BeanScanner {
 // incomplete (no inference).
 class _ReturnCollector extends RecursiveAstVisitor<void> {
   final types = <DartType>[];
-  var incomplete = false;
+  bool incomplete = false;
 
   @override
   void visitReturnStatement(ReturnStatement node) {

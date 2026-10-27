@@ -1,3 +1,6 @@
+// The properties example in the documentation has lines that cannot be wrapped.
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// How much a Feign client logs (Feign's `Logger.Level`), under the logger

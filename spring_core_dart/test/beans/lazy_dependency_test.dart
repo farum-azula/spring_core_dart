@@ -214,8 +214,9 @@ void main() {
     ]);
     final loud = context.getBean<Loud>();
     expect(created, 0); // nothing resolved yet
-    loud.greet();
-    loud.greet();
+    loud
+      ..greet()
+      ..greet();
     expect(created, 2);
   });
 }

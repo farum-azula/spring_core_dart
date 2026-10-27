@@ -31,7 +31,7 @@ abstract final class SpringHotReload {
   /// `{"restarted": <number of restarted contexts>}`.
   static const extensionName = 'ext.spring_boot.reload';
 
-  static const _enabled =
+  static const bool _enabled =
       !bool.fromEnvironment('dart.vm.product') &&
       !bool.fromEnvironment('dart.library.ui') &&
       !bool.fromEnvironment('dart.library.js_interop');

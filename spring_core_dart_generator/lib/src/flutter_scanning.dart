@@ -1,7 +1,7 @@
-// Scanning for spring_boot_starter_flutter: `@BuildContextAccess` beans (generated
-// `BuildContext` getters) and `SpringStatelessWidget<(...)>` classes (generated
-// bindings that fill their bean records). Matched by URL, so the generator
-// does not depend on spring_boot_starter_flutter.
+// Scanning for spring_boot_starter_flutter: `@BuildContextAccess` beans
+// (generated `BuildContext` getters) and `SpringStatelessWidget<(...)>`
+// classes (generated bindings that fill their bean records). Matched by URL,
+// so the generator does not depend on spring_boot_starter_flutter.
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -19,8 +19,8 @@ const springWidgetChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/spring_widgets.dart#SpringStatelessWidget',
 );
 
-/// `SpringState` of spring_boot_starter_flutter (the `State` of a stateful widget that
-/// gets beans: `SpringState<W, R>`).
+/// `SpringState` of spring_boot_starter_flutter (the `State` of a stateful
+/// widget that gets beans: `SpringState<W, R>`).
 const springStateChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/spring_widgets.dart#SpringState',
 );
@@ -53,7 +53,7 @@ class BuildContextAccessModel {
 /// A record field of a `SpringStatelessWidget`'s beans.
 class SpringWidgetField {
   /// A field of bean type [type]; [name] for a named field.
-  SpringWidgetField(this.type, {this.name, required this.optional});
+  SpringWidgetField(this.type, {required this.optional, this.name});
 
   /// The bean type (without `?`).
   final InterfaceType type;
@@ -69,7 +69,8 @@ class SpringWidgetField {
 ///
 /// ```dart
 /// // Input:
-/// class BasketBadge extends SpringStatelessWidget<(Basket, AppNavigator)> { ... }
+/// class BasketBadge
+///     extends SpringStatelessWidget<(Basket, AppNavigator)> { ... }
 ///
 /// // Output (in the module, one definition for all widgets):
 /// SpringWidgetBinding(
@@ -136,10 +137,12 @@ void scanSpringWidget(ClassElement element, ModuleModel module) {
   }
   if (beans is! RecordType ||
       beans.nullabilitySuffix == NullabilitySuffix.question) {
+    final example = kind == 'SpringState'
+        ? 'SpringState<MyWidget, (Basket, AppNavigator)>'
+        : 'SpringStatelessWidget<(Basket, AppNavigator)>';
     throw InvalidGenerationSource(
       '$kind $name: its beans must be a record of bean types, like '
-      '${kind == 'SpringState' ? 'SpringState<MyWidget, (Basket, AppNavigator)>' : 'SpringStatelessWidget<(Basket, AppNavigator)>'}, not '
-      '${beans.getDisplayString()}.',
+      '$example, not ${beans.getDisplayString()}.',
       element: element,
     );
   }
@@ -185,9 +188,9 @@ void scanSpringWidget(ClassElement element, ModuleModel module) {
 /// Collects the `@BuildContextAccess` getters of `module.beans` into
 /// `module.buildContextAccess`, reporting each invalid one through
 /// [collectErrors]: a name that is no public identifier, a reserved word,
-/// a member of `BuildContext`, `Object` or spring_boot_starter_flutter's own extension,
-/// two beans with the same getter, or `@BuildContextAccess` on a class that is
-/// no bean of this module.
+/// a member of `BuildContext`, `Object` or spring_boot_starter_flutter's own
+/// extension, two beans with the same getter, or `@BuildContextAccess` on a
+/// class that is no bean of this module.
 void scanBuildContextAccess(
   ModuleModel module,
   void Function(void Function() action) collectErrors,
@@ -292,7 +295,8 @@ const _reservedWords = {
 };
 
 // Members a generated extension getter on BuildContext cannot shadow:
-// Flutter's BuildContext, Object, and spring_boot_starter_flutter's SpringBuildContext.
+// Flutter's BuildContext, Object, and spring_boot_starter_flutter's
+// SpringBuildContext.
 const _takenMembers = {
   'widget': 'BuildContext',
   'owner': 'BuildContext',

@@ -211,7 +211,7 @@ final class SpringLog {
     for (final listener in List.of(_listeners)) {
       try {
         listener(record);
-      } catch (_) {
+      } on Object catch (_) {
         // A broken listener must not break the caller.
       }
     }
@@ -417,6 +417,7 @@ final class SpringLogHold {
 
 /// The default [SpringLog.handler]: prints the record (one line).
 void printLogHandler(SpringLogRecord record) {
+  // Printing is the point of this handler.
   // ignore: avoid_print
   print(record);
 }

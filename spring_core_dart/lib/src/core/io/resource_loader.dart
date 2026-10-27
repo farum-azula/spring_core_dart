@@ -226,7 +226,7 @@ class DefaultResourceLoader implements ResourceLoader {
     }
     // Another `scheme:` prefix (at least two letters, so a Windows drive
     // like `C:\` is still a plain path).
-    if (RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location)) {
+    if (RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(location)) {
       return DescriptiveResource('resource [$location] (unsupported protocol)');
     }
     // A plain path is a classpath resource, like Spring's getResourceByPath

@@ -62,7 +62,7 @@ class InterfaceProxy {
 /// Spring (Java): the `java.lang.reflect.Method` passed to
 /// `InvocationHandler.invoke`.
 final class ProxyMethod {
-  /// Describes method [name]; [call] invokes it on any implementation of
+  /// Describes method [name]; `call` invokes it on any implementation of
   /// the interface (e.g. a fallback bean).
   ProxyMethod(
     this.name, {

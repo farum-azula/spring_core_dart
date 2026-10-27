@@ -1,9 +1,9 @@
-// spring_boot_starter_flutter support: `@BuildContextAccess` beans get generated
-// `BuildContext` getters, and `SpringStatelessWidget<(...)>` classes get a
-// `SpringWidgetBindings` bean that fills their bean records. Built next to
-// stub `flutter` and `spring_boot_starter_flutter` packages (only the declarations the
-// generator and the generated code look at); the output is compiled
-// against them.
+// spring_boot_starter_flutter support: `@BuildContextAccess` beans get
+// generated `BuildContext` getters, and `SpringStatelessWidget<(...)>` classes
+// get a `SpringWidgetBindings` bean that fills their bean records. Built next
+// to stub `flutter` and `spring_boot_starter_flutter` packages (only the
+// declarations the generator and the generated code look at); the output is
+// compiled against them.
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -11,7 +11,6 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
@@ -176,8 +175,8 @@ Future<TestBuilderResult> _build(String beans) async {
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
-    SpringBuilder(proxyMode: ProxyMode.all),
+  return await testBuilder(
+    SpringBuilder(),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': '$_header$beans',
@@ -277,19 +276,22 @@ class AppConfig {
         _has(
           'extension SpringBeans on BuildContext {'
           "  /// The bean 'basket'.\n"
-          "  Basket get basket => SpringScope.beanOf<Basket>(this, qualifier: r'basket');",
+          '  Basket get basket => SpringScope.beanOf<Basket>(this, qualifier: '
+          "r'basket');",
         ),
       );
       expect(
         output,
         _has(
-          "BookSearch get search => SpringScope.beanOf<BookSearch>(this, qualifier: r'bookSearch');",
+          'BookSearch get search => SpringScope.beanOf<BookSearch>(this, '
+          "qualifier: r'bookSearch');",
         ),
       );
       expect(
         output,
         _has(
-          "Store get store => SpringScope.beanOf<Store>(this, qualifier: r'store');",
+          'Store get store => SpringScope.beanOf<Store>(this, qualifier: '
+          "r'store');",
         ),
       );
       expect(
@@ -321,8 +323,8 @@ class Basket {}
 class Basket {}
 '''),
         contains(
-          "@BuildContextAccess on bean 'my-basket' (package:pkg/src/app.dart#Basket)"
-          ": 'my-basket' is not a valid Dart identifier for a getter. Give the "
+          "@BuildContextAccess on bean 'my-basket' (package:pkg/src/app.dart#Basket):"
+          " 'my-basket' is not a valid Dart identifier for a getter. Give the "
           "getter a name: @BuildContextAccess(name: 'myGetter').",
         ),
       );
@@ -344,8 +346,8 @@ class Basket {}
       );
     });
 
-    test('a getter clashing with BuildContext, Object or spring_boot_starter_flutter '
-        'fails the build', () async {
+    test('a getter clashing with BuildContext, Object or '
+        'spring_boot_starter_flutter fails the build', () async {
       for (final (name, owner) in [
         ('widget', 'BuildContext'),
         ('size', 'BuildContext'),
@@ -387,7 +389,8 @@ class WishList {}
       );
     });
 
-    test('@BuildContextAccess on a class that is no bean fails the build', () async {
+    test('@BuildContextAccess on a class that is no bean '
+        'fails the build', () async {
       expect(
         await _errors('''
 @BuildContextAccess()
@@ -408,7 +411,7 @@ class Basket {}
     );
     await readerWriter.testing.loadIsolateSources();
     final result = await testBuilder(
-      SpringBuilder(proxyMode: ProxyMode.all),
+      SpringBuilder(),
       {
         'pkg|lib/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -451,7 +454,8 @@ class Badge extends SpringStatelessWidget<(Basket,)> {
   });
 
   group('SpringStatelessWidget', () {
-    test('one SpringWidgetBindings bean with a binding per record type', () async {
+    test('one SpringWidgetBindings bean with a binding per '
+        'record type', () async {
       final output = await _generate('''
 @Component()
 class Basket {}
@@ -526,7 +530,7 @@ Widget unused() => const _Header();
           '  types: const [Basket, Navigator],'
           '  resolve: (f) => (SpringWidgetBinding.bean<Basket>(f), '
           'SpringWidgetBinding.bean<Navigator>(f)),'
-          r'values: (r) { final v = (r as (Basket, Navigator)); '
+          'values: (r) { final v = (r as (Basket, Navigator)); '
           r'return [v.$1, v.$2]; })',
         ),
       );
@@ -536,13 +540,14 @@ Widget unused() => const _Header();
         _has(
           'SpringWidgetBinding('
           "  widget: r'package:pkg/src/app.dart#_Header',"
-          '  beans: _\$typeOf<({Analytics? analytics, Basket basket, Clock clock})>(),'
+          r'  beans: _$typeOf<({Analytics? analytics, Basket basket, Clock '
+          'clock})>(),'
           '  types: const [Basket, Clock],'
           '  resolve: (f) => ('
           '    analytics: f.findBean<Analytics>(),'
           "    basket: SpringWidgetBinding.bean<Basket>(f, r'basket'),"
           "    clock: SpringWidgetBinding.bean<Clock>(f, r'clock'),"
-          '  ),'
+          '  ), '
           'values: (r) { final v = (r as ({Analytics? analytics, Basket '
           'basket, Clock clock})); return [v.analytics, v.basket, v.clock]; })',
         ),
@@ -553,7 +558,7 @@ Widget unused() => const _Header();
           "widget: r'package:pkg/src/app.dart#Single',"
           // Normalized: the one-field record's comma is dropped here; the
           // compile check above proves it is written.
-          '  beans: _\$typeOf<(Clock)>(),'
+          r'  beans: _$typeOf<(Clock)>(),'
           '  types: const [Clock],'
           '  resolve: (f) => (SpringWidgetBinding.bean<Clock>(f))',
         ),
@@ -591,11 +596,11 @@ abstract class PageState<W extends SpringStatefulWidget<B>, B extends Record>
         _has(
           'SpringWidgetBinding('
           "  widget: r'package:pkg/src/app.dart#_BasketPageState',"
-          '  beans: _\$typeOf<(Basket, Clock)>(),'
+          r'  beans: _$typeOf<(Basket, Clock)>(),'
           '  types: const [Basket, Clock],'
           '  resolve: (f) => (SpringWidgetBinding.bean<Basket>(f), '
           'SpringWidgetBinding.bean<Clock>(f)),'
-          r'values: (r) { final v = (r as (Basket, Clock)); '
+          'values: (r) { final v = (r as (Basket, Clock)); '
           r'return [v.$1, v.$2]; })',
         ),
       );
@@ -641,7 +646,8 @@ class Bad extends SpringStatelessWidget<$type> {
       }
     });
 
-    test('a record type parameter on a concrete widget fails the build', () async {
+    test('a record type parameter on a concrete widget '
+        'fails the build', () async {
       expect(
         await _errors('''
 class Generic<B extends Record> extends SpringStatelessWidget<B> {
@@ -651,7 +657,8 @@ class Generic<B extends Record> extends SpringStatelessWidget<B> {
 }
 '''),
         contains(
-          'SpringStatelessWidget Generic: its beans must be a record of bean types, '
+          'SpringStatelessWidget Generic: its beans must be a record of bean '
+          'types, '
           'like SpringStatelessWidget<(Basket, AppNavigator)>, not B.',
         ),
       );

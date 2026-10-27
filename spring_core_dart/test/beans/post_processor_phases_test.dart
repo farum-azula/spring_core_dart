@@ -165,10 +165,10 @@ void main() {
 
     test('a bare factory without it runs @PostConstruct after every '
         'postProcessBeforeInitialization', () {
-      final factory = DefaultListableBeanFactory()
+      DefaultListableBeanFactory()
         ..addBeanPostProcessor(OrderedLogging('a', 1))
-        ..registerBeanDefinition(repo());
-      factory.getBean<Repo>();
+        ..registerBeanDefinition(repo())
+        ..getBean<Repo>();
       expect(log, [
         'repo:create',
         'repo:inject',
@@ -179,12 +179,12 @@ void main() {
     });
 
     test('a bare factory with it runs @PostConstruct at its place', () {
-      final factory = DefaultListableBeanFactory()
+      DefaultListableBeanFactory()
         ..addBeanPostProcessor(Logging('first'))
         ..addBeanPostProcessor(CommonAnnotationBeanPostProcessor())
         ..addBeanPostProcessor(Logging('second'))
-        ..registerBeanDefinition(repo());
-      factory.getBean<Repo>();
+        ..registerBeanDefinition(repo())
+        ..getBean<Repo>();
       expect(log, [
         'repo:create',
         'repo:inject',
@@ -218,10 +218,10 @@ void main() {
     });
 
     test('postProcessAfterInstantiation and postProcessProperties', () {
-      final factory = DefaultListableBeanFactory()
+      DefaultListableBeanFactory()
         ..addBeanPostProcessor(Instantiation())
-        ..registerBeanDefinition(repo());
-      factory.getBean<Repo>();
+        ..registerBeanDefinition(repo())
+        ..getBean<Repo>();
       expect(log, [
         'beforeInstantiation(Repo, repo)',
         'repo:create',
@@ -253,10 +253,9 @@ void main() {
 
   group('MergedBeanDefinitionPostProcessor', () {
     test('called once per definition, before injection', () {
-      final factory = DefaultListableBeanFactory()
+      DefaultListableBeanFactory()
         ..addBeanPostProcessor(Merged())
-        ..registerBeanDefinition(repo(scope: ScopeType.prototype));
-      factory
+        ..registerBeanDefinition(repo(scope: ScopeType.prototype))
         ..getBean<Repo>()
         ..getBean<Repo>();
       expect(log.where((e) => e.startsWith('merged')), ['merged(Repo, repo)']);
@@ -271,9 +270,9 @@ void main() {
       final factory = DefaultListableBeanFactory()
         ..allowBeanDefinitionOverriding = true
         ..addBeanPostProcessor(Merged())
+        ..registerBeanDefinition(repo())
+        ..getBean<Repo>()
         ..registerBeanDefinition(repo());
-      factory.getBean<Repo>();
-      factory.registerBeanDefinition(repo());
       expect(log, contains('reset(repo)'));
       log.clear();
       factory.getBean<Repo>();

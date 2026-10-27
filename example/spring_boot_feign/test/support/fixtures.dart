@@ -2,7 +2,7 @@
 // fields the models do not have, as the real ones send).
 
 /// `GET /users/1` of JSONPlaceholder.
-const user = {
+const Map<String, Object> user = {
   'id': 1,
   'name': 'Leanne Graham',
   'username': 'Bret',
@@ -23,13 +23,13 @@ const user = {
 };
 
 /// `GET /posts?userId=1`.
-const posts = [
+const List<Map<String, Object>> posts = [
   {'userId': 1, 'id': 1, 'title': 'first post', 'body': 'one'},
   {'userId': 1, 'id': 2, 'title': 'second post', 'body': 'two'},
 ];
 
 /// `GET /posts/1/comments`.
-const comments = [
+const List<Map<String, Object>> comments = [
   {
     'postId': 1,
     'id': 1,

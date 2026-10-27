@@ -193,7 +193,8 @@ List<_Run> _runs(
             : '$where $package (shard ${shard + 1}/$shards)',
         fromRoot ? '.' : package,
         [
-          for (final file in files) fromRoot ? '$package/$file' : file,
+          for (final file in files)
+            if (fromRoot) '$package/$file' else file,
           if (shards > 1) ...['--total-shards=$shards', '--shard-index=$shard'],
           ...filters,
         ],
@@ -212,7 +213,7 @@ List<_Run> _runs(
 /// the parts together run everything once.
 List<_Run> _part(List<_Run> all, int job, int jobs) {
   if (jobs == 1) return [...all];
-  final load = List.filled(jobs, 0.0);
+  final load = List<double>.filled(jobs, 0);
   final part = <_Run>[];
   final order = [...all]
     ..sort((a, b) {

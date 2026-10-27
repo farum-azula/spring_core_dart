@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:spring_web_dart/src/http_headers.dart';
 
-/// The response a server sends for a [ServerHttpRequest], like Spring's
+/// The response a server sends for a `ServerHttpRequest`, like Spring's
 /// `ServerHttpResponse`: status and headers until the first body bytes are
 /// written ([isCommitted]), then the body, possibly in parts (server-sent
 /// events, downloads).
@@ -103,10 +103,12 @@ final class ResponseCookie {
   String toString() {
     final out = StringBuffer('$name=$value');
     if (maxAge case final maxAge?) {
-      out.write('; Max-Age=${maxAge.inSeconds}');
-      out.write(
-        '; Expires=${HttpHeaders.formatDate(DateTime.now().toUtc().add(maxAge))}',
-      );
+      out
+        ..write('; Max-Age=${maxAge.inSeconds}')
+        ..write(
+          '; Expires='
+          '${HttpHeaders.formatDate(DateTime.now().toUtc().add(maxAge))}',
+        );
     }
     if (domain case final domain?) {
       out.write('; Domain=$domain');

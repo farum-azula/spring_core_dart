@@ -20,7 +20,8 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// Spring (Java):
 /// ```java
 /// ResponseEntity<Book> response = catalog.create(book);
-/// response.getStatusCode(); response.getHeaders().getLocation(); response.getBody();
+/// response.getStatusCode(); response.getHeaders().getLocation();
+/// response.getBody();
 /// response.getStatusCode().is2xxSuccessful();
 /// ResponseEntity.ok(book);
 /// ResponseEntity.created(URI.create("/books/1")).body(book);

@@ -100,11 +100,13 @@ abstract class Constraint {
   ///
   /// ```dart
   /// @override
-  /// bool isValidWithContext(Object? value, ConstraintValidatorContext context) {
+  /// bool isValidWithContext(
+  ///     Object? value, ConstraintValidatorContext context) {
   ///   if (isValid(value)) return true;
   ///   context
   ///     ..disableDefaultConstraintViolation()
-  ///     ..buildConstraintViolationWithTemplate(context.defaultConstraintMessageTemplate)
+  ///     ..buildConstraintViolationWithTemplate(
+  ///         context.defaultConstraintMessageTemplate)
   ///         .addPropertyNode('confirm')
   ///         .addConstraintViolation();
   ///   return false;
@@ -310,6 +312,8 @@ class ValidationException implements Exception {
   final String message;
 
   @override
+  // Subclasses show their own name.
+  // ignore: no_runtimetype_tostring
   String toString() => '$runtimeType: $message';
 }
 
@@ -431,7 +435,7 @@ class GroupSequence {
 /// ```
 class ConvertGroup {
   /// Converts [from] (default: [Default]) into [to].
-  const ConvertGroup({this.from = Default, required this.to});
+  const ConvertGroup({required this.to, this.from = Default});
 
   /// The group of the outer validation.
   final Type from;
@@ -1400,6 +1404,8 @@ class Email extends Constraint {
 
   static const _atom = r"[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-￿-]";
   static const _quotedAtom =
+      // The pieces join without a space on purpose: they are a regex.
+      // ignore: missing_whitespace_between_adjacent_strings
       r"(?:[a-z0-9!#$%&'*.(),<>\[\]:; @+/=?^_`{|}~\u0080-￿-]|\\\\|"
       r'\\")';
   static const _word = '(?:$_atom+|"$_quotedAtom+")';
@@ -1415,15 +1421,15 @@ class Email extends Constraint {
   );
   static final _ipLiteral = RegExp(
     r'^\[(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|IPv6:'
-    r'(?:([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|'
-    r'([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|'
-    r'([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|'
-    r'([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|'
-    r'([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|'
-    r'([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|'
-    r'[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}|:)|'
-    r'fe80:(:[0-9a-f]{0,4}){0,4}%[0-9a-z]{1,}|'
-    r'::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}'
+    '(?:([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|'
+    '([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|'
+    '([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|'
+    '([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|'
+    '([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|'
+    '([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|'
+    '[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}|:)|'
+    'fe80:(:[0-9a-f]{0,4}){0,4}%[0-9a-z]{1,}|'
+    '::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}'
     r'[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|'
     r'([0-9a-f]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.)'
     r'{3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])))\]$',
@@ -1545,7 +1551,8 @@ class Digits extends Constraint {
 
   @override
   String get defaultMessage =>
-      'numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)';
+      'numeric value out of bounds (<{integer} digits>.<{fraction} digits> '
+      'expected)';
 
   @override
   Map<String, Object?> get attributes => {

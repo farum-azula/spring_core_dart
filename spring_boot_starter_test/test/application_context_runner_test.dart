@@ -57,8 +57,7 @@ void main() {
 
   group('withBean registers a bean before the configurations', () {
     test('auto-configuration backs off; runners are immutable', () {
-      final withFake = runner.withBean<Greeter>(FakeGreeter.new);
-      withFake.run((context) {
+      runner.withBean<Greeter>(FakeGreeter.new).run((context) {
         expect(context, hasSingleBean<Greeter>());
         expect(context, hasBeanNamed('greeter'));
         expect(context.containsBean('defaultGreeter'), isFalse);
@@ -79,16 +78,16 @@ void main() {
 
     test('each run gets a new instance from the supplier', () {
       final created = <Counter>[];
-      final withCounter = base.withBean(() {
-        final counter = Counter();
-        created.add(counter);
-        return counter;
-      });
-      withCounter.run((context) => context.getBean<Counter>().value = 7);
-      withCounter.run((context) {
-        // Not the instance the first (closed) context destroyed.
-        expect(context.getBean<Counter>().value, isNot(7));
-      });
+      base.withBean(() {
+          final counter = Counter();
+          created.add(counter);
+          return counter;
+        })
+        ..run((context) => context.getBean<Counter>().value = 7)
+        ..run((context) {
+          // Not the instance the first (closed) context destroyed.
+          expect(context.getBean<Counter>().value, isNot(7));
+        });
       expect(created, hasLength(2));
       expect(identical(created[0], created[1]), isFalse);
     });

@@ -57,7 +57,7 @@ List<PropertyEntry> parseProperties(String path, String content) {
   var i = 0;
   while (i < lines.length) {
     final lineNumber = i;
-    var line = lines[i].replaceAll('\r', '');
+    final line = lines[i].replaceAll('\r', '');
     i++;
     final trimmed = line.trimLeft();
     if (trimmed.isEmpty || trimmed.startsWith('#') || trimmed.startsWith('!')) {

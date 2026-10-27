@@ -175,14 +175,14 @@ final class WebSocketHandlerMapping
     ServerHttpResponse response,
   ) async {
     if (!request.isWebSocketUpgrade) {
-      return response.send(400, 'Can "Upgrade" only to "WebSocket".');
+      return await response.send(400, 'Can "Upgrade" only to "WebSocket".');
     }
     if (!route.allowsOrigin(request)) {
       _log.debug(
         'Handshake from origin ${request.headers[HttpHeaders.originHeader]} '
         'refused for ${route.pattern.pattern}',
       );
-      return response.send(403, 'Origin not allowed');
+      return await response.send(403, 'Origin not allowed');
     }
     final offered = [
       for (final value in request.headers.getAll('Sec-WebSocket-Protocol'))

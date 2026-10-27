@@ -8,14 +8,16 @@ import 'package:spring_core_dart/src/json/object_mapper.dart';
 /// final class MoneySerializer extends JsonSerializer<Money> {
 ///   const MoneySerializer();
 ///   @override
-///   Object? serialize(Money value, ObjectMapper mapper) => '${value.amount} ${value.currency}';
+///   Object? serialize(Money value, ObjectMapper mapper) =>
+///       '${value.amount} ${value.currency}';
 /// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// class MoneySerializer extends JsonSerializer<Money> {
-///   public void serialize(Money value, JsonGenerator gen, SerializerProvider p) { ... }
+///   public void serialize(
+///       Money value, JsonGenerator gen, SerializerProvider p) { ... }
 /// }
 /// ```
 abstract class JsonSerializer<T extends Object> {

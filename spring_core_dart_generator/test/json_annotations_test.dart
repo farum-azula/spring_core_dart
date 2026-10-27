@@ -24,7 +24,7 @@ Future<TestBuilderResult> _build(String models) async {
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(),
     {
       'pkg|lib/src/beans.dart': _scan,
@@ -80,7 +80,7 @@ String _normalize(String code) => code
 
 Matcher _has(String code) => contains(_normalize(code));
 
-const _models = '''
+const _models = r'''
 enum Stock {
   inStock('in_stock'),
   soldOut('sold_out');
@@ -110,7 +110,7 @@ class Code {
   const Code(this.raw);
   final String raw;
   @JsonValue()
-  String get text => 'C-\$raw';
+  String get text => 'C-$raw';
 }
 
 @Introspected()
@@ -155,7 +155,7 @@ void main() {
     expect(
       output,
       _has(
-        "EnumType<Color>(Color.values, jsonValue: (value) => "
+        'EnumType<Color>(Color.values, jsonValue: (value) => '
         "const {Color.red: r'RED'}[value] ?? value.name)",
       ),
     );

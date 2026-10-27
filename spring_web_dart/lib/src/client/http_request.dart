@@ -13,7 +13,9 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// final request = HttpRequest(
 ///   method: HttpMethod.post,
 ///   url: Uri.parse('https://api.neon.books/books'),
-///   headers: HttpHeaders({HttpHeaders.contentTypeHeader: MediaType.applicationJson}),
+///   headers: HttpHeaders({
+///     HttpHeaders.contentTypeHeader: MediaType.applicationJson,
+///   }),
 ///   body: utf8.encode('{"isbn":"1"}'),
 ///   readTimeout: const Duration(seconds: 60),
 /// );

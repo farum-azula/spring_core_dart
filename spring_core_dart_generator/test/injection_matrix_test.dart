@@ -25,7 +25,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
@@ -75,7 +75,7 @@ Future<List<String>> _compileErrors(
   final result = await _build(sources, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
   final output = result.readerWriter.testing.readString(result.outputs.single);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|lib/src/beans.spring.dart': output,
@@ -99,7 +99,7 @@ Future<List<String>> _compileErrors(
   );
 }
 
-/// An injection style: the class [name] taking the injected type [k], and
+/// An injection style: the class `name` taking the injected type `k`, and
 /// the name of the injection point (the parameter, field or setter name).
 typedef _Style = ({String source, String point});
 
@@ -240,9 +240,10 @@ void main() {
             style('S$i', kind.type(element)),
         ];
         Future<String>? generated;
-        Future<String> generate() => generated ??= _generate(
-          '$config\n${[for (final s in styled) '@Component() ${s.source}'].join('\n')}',
-        );
+        String sources() =>
+            [for (final s in styled) '@Component() ${s.source}'].join('\n');
+        Future<String> generate() =>
+            generated ??= _generate('$config\n${sources()}');
         for (final (i, kind) in _kinds.indexed) {
           test('${kind.label} of $element', () async {
             final point = styled[i].point;

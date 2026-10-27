@@ -15,7 +15,8 @@ import 'package:spring_web_dart/src/sse/sse_decoder.dart';
 /// SseReconnect.never
 /// ```
 ///
-/// Spring (Java): no built-in reconnection; `Flux.retryWhen(Retry.fixedDelay(...))`.
+/// Spring (Java): no built-in reconnection;
+/// `Flux.retryWhen(Retry.fixedDelay(...))`.
 final class SseReconnect {
   /// Reconnects after [delay]; [maxAttempts] limits the connections in a
   /// row that bring no event (`null`: no limit); [retryIf] picks the
@@ -77,8 +78,9 @@ final class SseReconnect {
 /// final orders = EventStream<String>(() => events);
 /// ```
 ///
-/// Spring (Java): `WebClient.get().retrieve().bodyToFlux(ServerSentEvent.class)`
-/// with `retryWhen`.
+/// Spring (Java):
+/// `WebClient.get().retrieve().bodyToFlux(ServerSentEvent.class)` with
+/// `retryWhen`.
 Stream<ServerSentEvent<String>> connectServerSentEvents(
   Future<StreamedHttpResponse> Function(String? lastEventId) connect, {
   SseReconnect reconnect = const SseReconnect(),
@@ -143,6 +145,8 @@ Stream<ServerSentEvent<String>> connectServerSentEvents(
       finish();
       return;
     }
+    // Kept in `current`, which onCancel cancels.
+    // ignore: cancel_subscriptions
     final subscription = current = response.body
         .transform(const SseDecoder())
         .listen(

@@ -36,7 +36,7 @@ List<(String, String, int)> blocks(String markdown) {
 /// The documents of [code] in [language], flattened like the config loader.
 List<Map<String, String>> load(String language, String code) {
   final sources = language == 'yaml'
-      ? YamlPropertySourceLoader().load('doc', code)
+      ? const YamlPropertySourceLoader().load('doc', code)
       : const PropertiesPropertySourceLoader().load('doc', code);
   return [
     for (final source in sources.cast<EnumerablePropertySource<Object>>())

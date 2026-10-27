@@ -150,5 +150,5 @@ Future<int> _runProcess(
     runInShell: Platform.isWindows,
     mode: ProcessStartMode.inheritStdio,
   );
-  return process.exitCode;
+  return await process.exitCode;
 }

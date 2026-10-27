@@ -163,7 +163,7 @@ final class IoWebServer implements WebServer {
         return;
       }
       await handler.handle(exchange.request(method), exchange.response);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _log.error(
         'Request ${ioRequest.method} ${ioRequest.uri} failed',
         error: error,
@@ -236,7 +236,7 @@ final class _Exchange {
   final io.HttpRequest ioRequest;
   final _IoResponse response;
   final _finished = Completer<void>();
-  var upgraded = false;
+  bool upgraded = false;
 
   Future<void> get finished => _finished.future;
 
@@ -279,16 +279,24 @@ final class _IoRequest implements ServerHttpRequest {
     final host = headers[HttpHeaders.hostHeader];
     final base = Uri.parse(
       '${secure ? 'https' : 'http'}://'
+      // The interpolation cannot be wrapped (dart format keeps it).
+      // ignore: lines_longer_than_80_chars
       '${host == null || host.isEmpty ? 'localhost:${_exchange.server.port}' : host}',
     );
     return base.replace(
-      path: _io.uri.path,
+      path: path,
       query: _io.uri.hasQuery ? _io.uri.query : null,
     );
   }();
 
+  /// The path of the request target. Dart reads a target starting with
+  /// `//` (`//admin/api`, a path with an empty first segment in HTTP) as
+  /// a host and a path; the full path is put back together, so the router
+  /// and the security rules never take `/api` for it.
   @override
-  String get path => _io.uri.path;
+  late final String path = _io.uri.hasAuthority && !_io.uri.hasScheme
+      ? '//${_io.uri.authority}${_io.uri.path}'
+      : _io.uri.path;
 
   @override
   late final Map<String, List<String>> queryParameters = Map.unmodifiable(
@@ -337,8 +345,9 @@ final class _IoRequest implements ServerHttpRequest {
         handleData: (chunk, sink) {
           read += chunk.length;
           if (read > limit) {
-            sink.addError(PayloadTooLargeException(limit));
-            sink.close();
+            sink
+              ..addError(PayloadTooLargeException(limit))
+              ..close();
           } else {
             sink.add(chunk);
           }
@@ -454,7 +463,7 @@ final class _IoResponse implements ServerHttpResponse {
   @override
   Future<void> close() async {
     if (_closed) {
-      return _io.done.then((_) {}, onError: (_) {});
+      return await _io.done.then((_) {}, onError: (_) {});
     }
     _closed = true;
     _commit();

@@ -33,7 +33,8 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 ///
 /// Spring (Java):
 /// ```java
-/// MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+/// MockRestServiceServer server =
+///     MockRestServiceServer.bindTo(builder).build();
 /// server.expect(requestTo("/books/1"))
 ///     .andRespond(withSuccess("{\"isbn\":\"1\"}", MediaType.APPLICATION_JSON));
 /// ```
@@ -69,7 +70,7 @@ class MockHttpTransport implements HttpTransport {
 
   @override
   Future<HttpResponse> send(HttpRequest request) async =>
-      (await _answer(request)).read();
+      await (await _answer(request)).read();
 
   @override
   Future<StreamedHttpResponse> stream(HttpRequest request) => _answer(request);
@@ -95,7 +96,7 @@ class MockHttpTransport implements HttpTransport {
         (throw StateError(
           'MockHttpTransport: when($expectation) has no respond(...)',
         ));
-    return answer(request);
+    return await answer(request);
   }
 
   @override
@@ -204,6 +205,8 @@ class MockResponseBuilder {
   /// Fails the request with [error] (e.g. an `HttpTransportException` to
   /// test retries).
   void fail(Object error) =>
+      // Any object can be prepared as the failure, as the caller passes it.
+      // ignore: only_throw_errors
       _expectation.answer = (request) async => throw error;
 }
 

@@ -169,11 +169,11 @@ void main() {
 
     test('ternary, Elvis, matches, between, instanceof', () {
       expect(eval("1 > 2 ? 'a' : 'b'"), 'b');
-      expect(eval("true ? 1 : 2"), 1);
+      expect(eval('true ? 1 : 2'), 1);
       expect(eval("null ?: 'Unknown'"), 'Unknown');
       expect(eval("'' ?: 'empty'"), 'empty');
       expect(eval("'x' ?: 'y'"), 'x');
-      expect(eval("'5.00' matches '^-?\\d+(\\.\\d{2})?\$'"), isTrue);
+      expect(eval(r"'5.00' matches '^-?\d+(\.\d{2})?$'"), isTrue);
       expect(eval("'abc' matches 'b'"), isFalse, reason: 'full match');
       expect(
         () => eval("'a' matches '('"),
@@ -427,11 +427,11 @@ void main() {
         spelError(SpelMessage.invalidTypeForSelection),
       );
       expect(
-        () => eval('.?[true]', null),
+        () => eval('.?[true]'),
         spelError(SpelMessage.invalidTypeForSelection),
       );
       expect(
-        () => eval('.![1]', null),
+        () => eval('.![1]'),
         spelError(SpelMessage.projectionNotSupportedOnType),
       );
       expect(
@@ -522,7 +522,8 @@ void main() {
       );
       expect(
         eval(
-          'T(Math).pow(2, 3) + T(Math).round(1.4) + T(Math).floor(1.9) + T(Math).ceil(1.1)',
+          'T(Math).pow(2, 3) + T(Math).round(1.4) + T(Math).floor(1.9) + '
+          'T(Math).ceil(1.1)',
         ),
         12,
       );
@@ -574,7 +575,7 @@ void main() {
         spelError(SpelMessage.indexingNotSupportedForType),
       );
       expect(
-        () => eval("{1}.toSet()[0] = 1"),
+        () => eval('{1}.toSet()[0] = 1'),
         spelError(SpelMessage.indexingNotSupportedForType),
       );
       expect(() => eval('1 = 2'), spelError(SpelMessage.setvalueNotSupported));
@@ -816,7 +817,7 @@ void main() {
 
   group('parse errors', () {
     test('positions and messages', () {
-      final cases = {
+      <String, SpelMessage>{
         '': SpelMessage.ood,
         '1 +': SpelMessage.rightOperandProblem,
         '* 2': SpelMessage.leftOperandProblem,
@@ -842,8 +843,7 @@ void main() {
         'T(1)': SpelMessage.notExpectedToken,
         'new Foo': SpelMessage.missingConstructorArgs,
         'list.?[]': SpelMessage.missingSelectionExpression,
-      };
-      cases.forEach(
+      }.forEach(
         (text, code) => expect(
           () => parser.parseExpression(text),
           parseError(code),
@@ -901,7 +901,7 @@ void main() {
     test('AST and expression rendering', () {
       expect(parser.parseExpression("a.b[0] + 'x'").toString(), "a.b[0] + 'x'");
       final ast = (parser.parseExpression(
-        "#a = ({k: 2}.size() > 1 ? -x : y ?: ++#z)",
+        '#a = ({k: 2}.size() > 1 ? -x : y ?: ++#z)',
       ) as SpelExpression).ast;
       expect(ast.toString(), isNotEmpty);
       // Spring's toStringAST.
@@ -979,7 +979,8 @@ void main() {
       expect(eval("'abcdef'.substring(2, 4)"), 'cd');
       expect(
         eval(
-          "'abc'.startsWith('a') and 'abc'.endsWith('c') and 'abc'.contains('b')",
+          "'abc'.startsWith('a') and 'abc'.endsWith('c') and "
+          "'abc'.contains('b')",
         ),
         isTrue,
       );
@@ -993,7 +994,7 @@ void main() {
       expect(eval("'ab'.repeat(2)"), 'abab');
       expect(eval("'7'.padLeft(3, '0') + '7'.padRight(2)"), '0077 ');
       expect(eval("'ABC'.equalsIgnoreCase('abc')"), isTrue);
-      expect(eval("'123'.matches('\\d+')"), isTrue);
+      expect(eval(r"'123'.matches('\d+')"), isTrue);
       expect(
         eval("'  '.isBlank() and ''.isEmpty() and 'x'.isNotEmpty()"),
         isTrue,
@@ -1067,7 +1068,7 @@ void main() {
       expect(eval('map.values', root), [1, 2]);
       expect(eval('map.keySet', root), ['a', 'b']);
       expect(eval('map.entrySet.size()', root), 2);
-      expect(eval("map.entries.![key]", root), ['a', 'b']);
+      expect(eval('map.entries.![key]', root), ['a', 'b']);
     });
 
     test('numbers, dates, durations, enums', () {
@@ -1081,7 +1082,8 @@ void main() {
       expect(eval('15.clamp(0, 10) + 7.remainder(4)'), 13);
       expect(
         eval(
-          '(-2).isNegative and !1.5.isNaN and 1.isFinite and !1.isInfinite and (-3).sign == -1',
+          '(-2).isNegative and !1.5.isNaN and 1.isFinite and !1.isInfinite and '
+          '(-3).sign == -1',
         ),
         isTrue,
       );
@@ -1116,7 +1118,8 @@ void main() {
       );
       expect(
         eval(
-          'duration.inSeconds + duration.inMilliseconds + duration.inMicroseconds',
+          'duration.inSeconds + duration.inMilliseconds + '
+          'duration.inMicroseconds',
           root,
         ),
         176401 + 176401500 + 176401500000,

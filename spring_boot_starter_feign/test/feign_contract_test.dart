@@ -1,3 +1,7 @@
+// The property strings are lists of independent entries, each one a single
+// string; a long key cannot be split in two (adjacent strings in a list).
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'dart:convert';
 
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
@@ -10,7 +14,7 @@ import 'contract.dart';
 
 /// A token that changes on every call, like a refreshed access token.
 final class RotatingToken implements RequestInterceptor {
-  var calls = 0;
+  int calls = 0;
 
   @override
   void apply(RequestTemplate template) =>
@@ -267,7 +271,7 @@ void main() {
   });
 
   group('configuration', () {
-    test('Feign\'s default timeouts: connect 10 s, read 60 s', () async {
+    test("Feign's default timeouts: connect 10 s, read 60 s", () async {
       server.when(HttpMethod.get, '/static').respond(200, body: 'ok');
       await runner.runAsync((context) async {
         await context.getBean<ContractClient>().statics();

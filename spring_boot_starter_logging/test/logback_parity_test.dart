@@ -150,7 +150,7 @@ void main() {
       expect(console, isEmpty);
       final environment = StandardEnvironment(systemEnvironment: const {})
         ..propertySources.addFirst(
-          MapPropertySource('yaml', {
+          const MapPropertySource('yaml', {
             'logging.level.root': false,
             'logging.level.neon': 'FALSE',
           }),

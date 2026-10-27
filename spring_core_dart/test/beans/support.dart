@@ -38,10 +38,10 @@ class PriorityGreeter implements Greeter, PriorityOrdered {
 }
 
 class Counter {
-  static int created = 0;
   Counter() {
     created++;
   }
+  static int created = 0;
 }
 
 class Holder {

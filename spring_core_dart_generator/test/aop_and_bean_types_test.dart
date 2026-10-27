@@ -35,7 +35,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
@@ -79,7 +79,7 @@ Future<String> _errors(String beans) async {
   return result.errors.join('\n');
 }
 
-/// The analyzer errors of the generated library [output] built from
+/// The analyzer errors of the generated library `output` built from
 /// [files] (plus the scan root unless [app]): the code must compile.
 Future<List<String>> _compileErrors(
   Map<String, String> files, {
@@ -93,7 +93,7 @@ Future<List<String>> _compileErrors(
   expect(result.errors, isEmpty);
   final path = app ? 'bin/main.spring.dart' : 'lib/src/beans.spring.dart';
   final output = _output(result, path);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|$path': output,
@@ -115,7 +115,7 @@ Future<List<String>> _compileErrors(
   );
 }
 
-const _orders = r'''
+const _orders = '''
 @Service()
 class Orders {
   void place() {}
@@ -237,7 +237,7 @@ class Made {
         '_resolve compile', () async {
       expect(
         await _compileErrors({
-          'lib/src/service.dart': r'''
+          'lib/src/service.dart': '''
 abstract interface class Api {
   int run(int _target, int _invoker, {int args = 0});
   int other(int _resolve);
@@ -470,7 +470,7 @@ class Broken {
 
     test('@DeclareParents: matching proxies implement the interface and '
         'forward it to one defaultImpl per proxy', () async {
-      const source = r'''
+      const source = '''
 abstract interface class UsageTracked {
   int get useCount;
   void increment();
@@ -604,7 +604,7 @@ class User {
     });
 
     test('a @Bean method may return null (a NullBean)', () async {
-      const source = r'''
+      const source = '''
 class Cache {}
 
 class Store {
@@ -632,8 +632,8 @@ class Lite {
       expect(
         output,
         _has(
-          "Cache? cache() => NullBean.orNull<Cache>("
-          "this._\$beanFactory.getBeanByName(r'cache'));",
+          'Cache? cache() => NullBean.orNull<Cache>( '
+          r"this._$beanFactory.getBeanByName(r'cache'));",
         ),
       );
       expect(output, _has('BeanDefinition<Cache>('));
@@ -642,7 +642,7 @@ class Lite {
     test(
       'generic bean and @Configuration classes use their raw type',
       () async {
-        const source = r'''
+        const source = '''
 class Item {}
 
 @Component()

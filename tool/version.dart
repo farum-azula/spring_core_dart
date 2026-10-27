@@ -22,11 +22,13 @@ const family = [
   'spring_boot_dart',
   'spring_web_dart',
   'spring_boot_starter_logging',
+  'spring_security_core',
   'spring_boot_starter_scheduling',
   'spring_boot_starter_cache',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',
+  'spring_boot_starter_security',
   'spring_boot_starter_test',
   // Flutter: outside the pub workspace, published with `flutter pub`.
   'spring_boot_starter_flutter',
@@ -96,8 +98,7 @@ void main(List<String> args) {
     exit(64);
   }
   setVersion(version);
-  final problems = check();
-  problems.forEach(stderr.writeln);
+  check().forEach(stderr.writeln);
   stdout.writeln('set $version in ${family.join(', ')}');
 }
 
@@ -136,7 +137,7 @@ void setVersion(String version) {
   _edit(
     _versionFile,
     (text) => text.replaceFirst(
-      RegExp(r"const springBootVersion = '.*';"),
+      RegExp("const springBootVersion = '.*';"),
       "const springBootVersion = '$version';",
     ),
   );
@@ -184,7 +185,7 @@ List<String> check() {
       }
     }
   }
-  final constant = RegExp(r"const springBootVersion = '(.*)';")
+  final constant = RegExp("const springBootVersion = '(.*)';")
       .firstMatch(File(_versionFile).readAsStringSync())
       ?.group(1);
   if (constant != version) {

@@ -65,10 +65,10 @@ class ApiRetry {
 class BetaFeature {}
 ''';
 
-const _properties = '''
+const _properties = r'''
 # comment
 api.fallback-url=https://fallback
-shop.greeting = Hello \${shop.owner:nobody}
+shop.greeting = Hello ${shop.owner:nobody}
 spring.application.name: app
 ''';
 

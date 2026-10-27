@@ -1,3 +1,6 @@
+// The documentation has Markdown table rows, which cannot be wrapped.
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';

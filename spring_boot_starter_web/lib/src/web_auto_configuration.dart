@@ -2,6 +2,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
+import 'package:spring_boot_starter_web/src/http_session.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
 import 'package:spring_boot_starter_web/src/platform_web_server_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_web/src/platform_web_server_io.dart'
@@ -23,6 +24,8 @@ const _isFlutter = bool.fromEnvironment('dart.library.ui');
 ServerProperties serverProperties(Environment environment) =>
     ServerProperties.of(
       environment,
+      // Not redundant: `_isFlutter` is only false where analyzed (the VM).
+      // ignore: avoid_redundant_argument_values
       defaultAddress: _isFlutter ? '127.0.0.1' : null,
     ).copyWith(
       port:
@@ -45,6 +48,9 @@ ServerProperties serverProperties(Environment environment) =>
 /// - `requestMappingHandlerMapping` — the controllers, with the
 ///   `WebMvcConfigurer` beans' interceptors, CORS mappings and argument
 ///   resolvers, and a `CorsConfigurationSource` bean;
+/// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
+///   `request.getSession()` (`server.servlet.session.*`), sessions in
+///   memory unless the application declares an [HttpSessionRepository];
 /// - `dispatcherHandler` — the [HttpHandler]: the [WebFilter] beans, then
 ///   the [HandlerMapping] beans;
 /// - `webServerStartStopLifecycle` — starts and stops the server with the
@@ -144,6 +150,43 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
         multipartResolver: r.dependency<MultipartResolver>(),
       );
     },
+  ),
+  BeanDefinition<HttpSessionRepository>(
+    name: 'httpSessionRepository',
+    factoryMethodName: 'httpSessionRepository',
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.httpSessionRepository', [
+        ConditionalOnMissingBean(HttpSessionRepository),
+      ]),
+    ],
+    create: (r) {
+      final properties = HttpSessionProperties.of(r.dependency<Environment>());
+      return InMemoryHttpSessionRepository(
+        timeout: properties.timeout,
+        maxSessions: properties.maxSessions,
+      );
+    },
+  ),
+  BeanDefinition<HttpSessionManager>(
+    name: 'httpSessionManager',
+    source: _source,
+    create: (r) {
+      final environment = r.dependency<Environment>();
+      return HttpSessionManager(
+        r.dependency<HttpSessionRepository>(),
+        HttpSessionProperties.of(
+          environment,
+          contextPath: serverProperties(environment).contextPath,
+        ),
+      );
+    },
+  ),
+  BeanDefinition<HttpSessionFilter>(
+    name: 'httpSessionFilter',
+    types: const [HttpSessionFilter, WebFilter, Ordered],
+    source: _source,
+    create: (r) => HttpSessionFilter(r.dependency<HttpSessionManager>()),
   ),
   BeanDefinition<DispatcherHandler>(
     name: 'dispatcherHandler',
