@@ -47,7 +47,7 @@ logging.pattern.correlation=             # after [thread] in the default pattern
 logging.exception-conversion-word=%wEx   # the error of the default patterns
 logging.include-application-name=true    # [spring.application.name] in the default patterns
 logging.include-application-group=true   # [spring.application.group]
-spring.output.ansi.enabled=detect        # %clr colours: detect (a terminal, Flutter debug), always, never
+spring.output.ansi.enabled=always        # console colours: always (default), detect (a terminal, Flutter debug), never
 logging.threshold.console=warn           # console: warnings and errors only
 logging.console.enabled=true
 logging.buffer.enabled=true
@@ -216,12 +216,15 @@ LoggingSystem.instance
   stop the start as unknown words).
 - Not supported: `%marker`, `%contextName`, `%d` time zones other than UTC
   (Dart has no time zone database), `logback.xml` / `logback-spring.xml`.
-- `%clr` colours are on when `spring.output.ansi.enabled` says so; `detect`
-  means a terminal on standard output, or a Flutter app in a debug or
-  profile build (`flutter run`, the IDEs and the browser's DevTools show
-  the colours; never in a release build or a file). Viewing a Flutter
-  app's raw device log (Xcode's console, `adb logcat`) shows the codes as
-  text: set `spring.output.ansi.enabled=never` there.
+- The console is coloured by default (`spring.output.ansi.enabled=always`;
+  Spring Boot's default is `detect`): `%clr`, and in a pattern that
+  colours nothing itself (no `%clr`, no Logback colour) the time faint,
+  the level by level and the logger cyan, as in Spring Boot's pattern. So
+  a short `logging.pattern.console=%d %5p [%logger] %m` is coloured too.
+  Files are never coloured. Where a program reads the output (a log
+  collector, Xcode's console, `adb logcat`, output redirected to a file),
+  set `never`; `detect` colours only a terminal on standard output or a
+  Flutter debug or profile build.
   Logback's colour words (`%red(...)`, `%boldRed(...)`, `%highlight(...)`)
   always write ANSI codes, as Logback does.
 - `%kvp` prints the record's fields (Dart has no SLF4J key-value pairs);

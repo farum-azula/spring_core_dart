@@ -41,8 +41,8 @@ void main() {
     });
   });
 
-  group('defaultValue', () {
-    test('is sent for a null argument, an argument wins', () async {
+  group('a default value', () {
+    test('is sent without an argument, an argument wins', () async {
       server.when(HttpMethod.get, '/api/search').respond(200, body: 'ok');
       await runner.runAsync((context) async {
         final client = context.getBean<ParamsClient>();
@@ -69,7 +69,7 @@ void main() {
         final client = context.getBean<ParamsClient>();
         await client.search('dune');
         final request = server.lastRequest;
-        // page: required false; lang and trace: nullable parameters.
+        // page, lang and trace: nullable parameters.
         expect(request.url.queryParametersAll.keys, ['q', 'sort']);
         expect(request.headers.contains('X-Trace'), isFalse);
 
@@ -87,24 +87,14 @@ void main() {
     test('a null path variable is an empty string', () async {
       server
         ..when(HttpMethod.get, '/api/books/42/pages').respond(200, body: 'p')
-        ..when(HttpMethod.get, '/api/books//pages').respond(200, body: 'none');
+        ..when(HttpMethod.get, '/api/books//pages').respond(200, body: 'none')
+        ..when(HttpMethod.get, '/api/loose/').respond(200, body: 'loose');
       await runner.runAsync((context) async {
         final client = context.getBean<ParamsClient>();
         expect(await client.pages('42'), 'p');
         expect(await client.pages(null), 'none');
         expect(server.lastRequest.url.path, '/api/books//pages');
-      });
-    });
-
-    test('required: false lets a non-nullable parameter be null', () async {
-      server.when(HttpMethod.get, '/api/lenient').respond(200, body: 'ok');
-      await runner.runAsync((context) async {
-        final client = context.getBean<ParamsClient>() as dynamic;
-        // Not reachable with the typed interface; the proxy accepts null.
-        // ignore: avoid_dynamic_calls
-        await client.lenient(null, null);
-        expect(server.lastRequest.url.hasQuery, isFalse);
-        expect(server.lastRequest.headers.contains('X-Q'), isFalse);
+        expect(await client.loose(null), 'loose');
       });
     });
   });
@@ -136,15 +126,6 @@ void main() {
                   allOf(contains('@PathVariable "id"'), contains('strict')),
                 ),
           ),
-        );
-      });
-    });
-
-    test('a null path variable is required whatever its type', () async {
-      await runner.runAsync((context) async {
-        await expectLater(
-          context.getBean<ParamsClient>().loose(null),
-          throwsA(isA<ArgumentError>().having((e) => e.name, 'name', 'id')),
         );
       });
     });

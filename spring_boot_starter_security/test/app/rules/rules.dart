@@ -37,15 +37,15 @@ class RulesSecurityConfig {
   ]);
 
   @Bean()
-  CorsConfigurationSource cors() => UrlBasedCorsConfigurationSource()
-    ..registerCorsConfiguration(
-      '/api/**',
-      CorsConfiguration(
-        allowedOrigins: ['https://trusted.example'],
-        allowedMethods: ['GET', 'POST'],
-        allowCredentials: true,
-      ),
-    );
+  CorsConfigurationSource cors() =>
+      UrlBasedCorsConfigurationSource()..registerCorsConfiguration(
+        '/api/**',
+        CorsConfiguration(
+          allowedOrigins: ['https://trusted.example'],
+          allowedMethods: ['GET', 'POST'],
+          allowCredentials: true,
+        ),
+      );
 }
 
 /// `/api/users/{id}`: the user themself or an admin.

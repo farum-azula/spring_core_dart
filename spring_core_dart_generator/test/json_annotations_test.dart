@@ -122,7 +122,6 @@ class Label {
 @Introspected()
 class Account {
   Account(this.id, {this.nickname, this.stock = Stock.inStock, this.color = Color.green});
-  @JsonProperty('', required: true)
   final String id;
   final String? nickname;
   final Stock stock;
@@ -172,7 +171,6 @@ void main() {
         output,
         _has("JsonProperty(r'pwd', access: JsonPropertyAccess.writeOnly)"),
       );
-      expect(output, _has("JsonProperty(r'', required: true)"));
     },
   );
 

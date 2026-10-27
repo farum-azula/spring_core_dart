@@ -361,17 +361,6 @@ final class RequestMappingHandlerMapping
       return null;
     }
     final type = parameter.type;
-    final optional = type.nullable || !parameter.parameter.isRequired;
-    void requireOptional(String role) {
-      if (!optional) {
-        problems.add(
-          '$name: the $role parameter ${parameter.name} is not required '
-          '(required: false) but its type is not nullable and it has no '
-          'default value',
-        );
-      }
-    }
-
     switch (roles.firstOrNull) {
       case final PathVariable variable:
         final key = variable.name ?? parameter.name;
@@ -384,25 +373,13 @@ final class RequestMappingHandlerMapping
         return _Binder(parameter, (call) {
           final value = call.variables[key];
           if (value == null) {
-            return _absentOr(parameter, 'path variable', key, null, true);
+            return _absentOr(parameter, 'path variable', key);
           }
           return _convert([value], parameter, key);
         });
       case final RequestParam param:
-        if (!param.required) {
-          requireOptional('@RequestParam');
-        }
-        return _requestParam(
-          param.name ?? parameter.name,
-          param.required,
-          param.defaultValue,
-          parameter,
-          problems,
-        );
+        return _requestParam(param.name ?? parameter.name, parameter, problems);
       case final RequestHeader header:
-        if (!header.required) {
-          requireOptional('@RequestHeader');
-        }
         final key = header.name ?? parameter.name;
         if (type.type == HttpHeaders) {
           return _Binder(parameter, (call) => call.request.headers);
@@ -426,13 +403,7 @@ final class RequestMappingHandlerMapping
         return _Binder(parameter, (call) {
           final values = call.request.headers.getAll(key);
           if (values.isEmpty) {
-            return _absentOr(
-              parameter,
-              'header',
-              key,
-              header.defaultValue,
-              header.required,
-            );
+            return _absentOr(parameter, 'header', key);
           }
           return _convert(values, parameter, key);
         });
@@ -442,24 +413,21 @@ final class RequestMappingHandlerMapping
         return _Binder(parameter, (call) {
           final value = call.request.cookies[key];
           if (value == null) {
-            return _absentOr(parameter, 'cookie', key, null, true);
+            return _absentOr(parameter, 'cookie', key);
           }
           return _convert([value], parameter, key);
         });
-      case final RequestBody body:
+      case RequestBody():
         return _Binder(
           parameter,
-          (call) => _readBody(call, parameter, required: body.required),
+          (call) => _readBody(call, parameter),
           isBody: true,
         );
       case final RequestPart part:
-        if (!part.required) {
-          requireOptional('@RequestPart');
-        }
         final key = part.name ?? parameter.name;
         return _Binder(
           parameter,
-          (call) => _requestPart(call, parameter, key, part.required),
+          (call) => _requestPart(call, parameter, key),
         );
     }
     // Without an annotation: the request itself, or a simple value as a
@@ -488,7 +456,7 @@ final class RequestMappingHandlerMapping
         });
     }
     if (_isSimple(type) || _isFileType(type)) {
-      return _requestParam(parameter.name, true, null, parameter, problems);
+      return _requestParam(parameter.name, parameter, problems);
     }
     problems.add(
       '$name: parameter ${parameter.name} (${parameter.type}) needs '
@@ -500,8 +468,6 @@ final class RequestMappingHandlerMapping
 
   _Binder _requestParam(
     String key,
-    bool required,
-    String? defaultValue,
     MethodParameter parameter,
     List<String> problems,
   ) {
@@ -509,7 +475,7 @@ final class RequestMappingHandlerMapping
     if (_isFileType(type)) {
       return _Binder(
         parameter,
-        (call) => _requestPart(call, parameter, key, required),
+        (call) => _requestPart(call, parameter, key),
       );
     }
     if (type is MapType) {
@@ -542,13 +508,7 @@ final class RequestMappingHandlerMapping
         return readFormParameters(request).then((form) {
           final fields = form.$2?[key];
           if (fields == null || fields.isEmpty) {
-            return _absentOr(
-              parameter,
-              'parameter',
-              key,
-              defaultValue,
-              required,
-            );
+            return _absentOr(parameter, 'parameter', key);
           }
           return _convert(fields, parameter, key);
         });
@@ -557,18 +517,12 @@ final class RequestMappingHandlerMapping
         return multipartResolver.resolve(request).then((multipart) {
           final fields = multipart.fields[key];
           if (fields == null || fields.isEmpty) {
-            return _absentOr(
-              parameter,
-              'parameter',
-              key,
-              defaultValue,
-              required,
-            );
+            return _absentOr(parameter, 'parameter', key);
           }
           return _convert(fields, parameter, key);
         });
       }
-      return _absentOr(parameter, 'parameter', key, defaultValue, required);
+      return _absentOr(parameter, 'parameter', key);
     });
   }
 
@@ -582,7 +536,6 @@ final class RequestMappingHandlerMapping
     _Call call,
     MethodParameter parameter,
     String key,
-    bool required,
   ) async {
     final request = call.request;
     if (!multipartResolver.isMultipart(request)) {
@@ -593,7 +546,7 @@ final class RequestMappingHandlerMapping
     }
     final multipart = await multipartResolver.resolve(request);
     final type = parameter.type;
-    Object? missing() => _absentOr(parameter, 'part', key, null, required);
+    Object? missing() => _absentOr(parameter, 'part', key);
     if (type is ListType<Object?> && type.element.type == MultipartFile) {
       final files = multipart.files[key];
       if (files == null || files.isEmpty) {
@@ -607,7 +560,7 @@ final class RequestMappingHandlerMapping
     if (type.type == MultipartFile) {
       return multipart.files[key]?.firstOrNull ?? missing();
     }
-    final base = type.capture(<T>() => _base<T>());
+    final base = type.type;
     final file = multipart.files[key]?.firstOrNull;
     final raw = multipart.part(key);
     if (base == Uint8List || base == List<int>) {
@@ -657,20 +610,10 @@ final class RequestMappingHandlerMapping
     return value;
   }
 
-  // A missing value: the default value, else absent (null, or the Dart
-  // default of an optional parameter), else a 400.
-  Object? _absentOr(
-    MethodParameter parameter,
-    String kind,
-    String key,
-    String? defaultValue,
-    bool required,
-  ) {
-    if (defaultValue != null) {
-      return _convert([defaultValue], parameter, key);
-    }
-    final optional = parameter.type.nullable || !parameter.parameter.isRequired;
-    if (required && !optional) {
+  // A missing value: absent (null, or the Dart default) for a nullable
+  // parameter or one with a default value, else a 400.
+  Object? _absentOr(MethodParameter parameter, String kind, String key) {
+    if (!parameter.type.nullable && parameter.parameter.isRequired) {
       throw MissingRequestValueException(kind, key);
     }
     return absent;
@@ -714,11 +657,9 @@ final class RequestMappingHandlerMapping
     EnumType() || DynamicType() => true,
     ListType(:final element) || SetType(:final element) =>
       element is! ListType && element is! SetType && _isSimple(element),
-    ClassType() => _simpleTypes.contains(type.capture(<T>() => _base<T>())),
+    ClassType() => _simpleTypes.contains(type.type),
     _ => false,
   };
-
-  static Type _base<T>() => T;
 
   Object? _convert(List<String> values, MethodParameter parameter, String key) {
     final type = parameter.type;
@@ -757,7 +698,7 @@ final class RequestMappingHandlerMapping
     if (type is EnumType<Enum>) {
       return _enum(text, type, key);
     }
-    final target = type.capture(<T>() => _base<T>());
+    final target = type.type;
     if (target == String || target == Object || type is DynamicType) {
       return text;
     }
@@ -827,14 +768,10 @@ final class RequestMappingHandlerMapping
     );
   }
 
-  Future<Object?> _readBody(
-    _Call call,
-    MethodParameter parameter, {
-    required bool required,
-  }) async {
+  Future<Object?> _readBody(_Call call, MethodParameter parameter) async {
     final request = call.request;
     final type = parameter.type;
-    final base = type.capture(<T>() => _base<T>());
+    final base = type.type;
     Object? value;
     if (type is GenericType<Object?> && type.isSubtypeOf<Stream<Object?>>()) {
       return request.body;
@@ -845,8 +782,7 @@ final class RequestMappingHandlerMapping
     } on PayloadTooLargeException catch (error) {
       throw PayloadTooLargeErrorException(error.maxLength);
     }
-    final optional =
-        !required || type.nullable || !parameter.parameter.isRequired;
+    final optional = type.nullable || !parameter.parameter.isRequired;
     if (bytes.isEmpty) {
       if (optional) {
         return type.nullable ? null : absent;

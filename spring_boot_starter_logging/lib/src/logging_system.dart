@@ -64,7 +64,7 @@ int parseDataSize(String value) {
 /// logging.pattern.level=%5p
 /// logging.include-application-name=true   # [spring.application.name] in lines
 /// logging.threshold.console=warn          # console: warnings only
-/// spring.output.ansi.enabled=detect       # %clr colours: detect/always/never
+/// spring.output.ansi.enabled=always       # colours: always (default)/detect/never
 /// logging.console.enabled=true
 /// logging.buffer.enabled=true
 /// logging.buffer.capacity=2000
@@ -285,12 +285,13 @@ final class LoggingSystem {
     return environment.getProperty(key);
   }
 
-  // `spring.output.ansi.enabled`: the colours of `%clr` on the console.
+  // `spring.output.ansi.enabled`: the console's colours. On by default
+  // (Spring Boot detects a terminal: `detect`); `never` for plain text.
   static bool _ansi(PropertyResolver environment) {
     final value = environment.getProperty('spring.output.ansi.enabled');
     return switch (value?.trim().toLowerCase()) {
-      null || '' || 'detect' => platform.stdoutSupportsAnsi,
-      'always' => true,
+      'detect' => platform.stdoutSupportsAnsi,
+      null || '' || 'always' => true,
       'never' => false,
       _ => throw FormatException(
         'spring.output.ansi.enabled must be detect, always or never',

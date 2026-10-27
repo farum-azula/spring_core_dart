@@ -192,15 +192,11 @@ void main() {
   });
 
   group('optional parts', () {
-    test('null leaves out a part that is not required', () async {
+    test('null leaves out a nullable part', () async {
       server.when(HttpMethod.post, '/optional').respond(200, body: 'ok');
       await runner.runAsync((context) async {
-        final client = context.getBean<UploadClient>() as dynamic;
-        // Not reachable with the typed interface; the proxy accepts null.
-        // ignore: avoid_dynamic_calls
-        await client.optional(
+        await context.getBean<UploadClient>().optional(
           InMemoryMultipartFile('f', [1], originalFilename: 'f.txt'),
-          note: null,
         );
         final parts = await partsOf(server.lastRequest);
         expect(parts.map((p) => p.name), ['file']);

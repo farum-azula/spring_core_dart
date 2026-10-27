@@ -1348,6 +1348,12 @@ final class SpringWorkspace {
     }
     final record = type.thisOrAncestorOfType<RecordTypeAnnotation>();
     final arguments = record?.parent;
+    // `typedef BasketPageBeans = (Basket, Clock);` used as
+    // `SpringStatefulWidget<BasketPageBeans>` in the same file.
+    if (arguments is GenericTypeAlias) {
+      final widget = _widgetUsing(arguments.name.lexeme, arguments.root);
+      return widget == null ? null : (widget, fieldName);
+    }
     final owner = arguments?.parent;
     if (arguments is! TypeArgumentList ||
         owner is! NamedType ||
@@ -1355,6 +1361,14 @@ final class SpringWorkspace {
       return null;
     }
     return (owner.name.lexeme, fieldName);
+  }
+
+  // The Spring widget type that takes the record type [alias] as its beans
+  // somewhere in [unit], or null.
+  static String? _widgetUsing(String alias, AstNode unit) {
+    final finder = _AliasUse(alias);
+    unit.accept(finder);
+    return finder.widget;
   }
 
   static const _springWidgetTypes = {
@@ -2206,5 +2220,25 @@ final class _InterpolationCollector extends RecursiveAstVisitor<void> {
   void visitStringInterpolation(StringInterpolation node) {
     nodes.add(node);
     super.visitStringInterpolation(node);
+  }
+}
+
+// Finds a Spring widget type with a given record type alias among its type
+// arguments (`SpringState<W, BasketPageBeans>`).
+final class _AliasUse extends RecursiveAstVisitor<void> {
+  _AliasUse(this.alias);
+
+  final String alias;
+  String? widget;
+
+  @override
+  void visitNamedType(NamedType node) {
+    final arguments = node.typeArguments?.arguments ?? const <TypeAnnotation>[];
+    if (widget == null &&
+        SpringWorkspace._springWidgetTypes.contains(node.name.lexeme) &&
+        arguments.any((a) => a is NamedType && a.name.lexeme == alias)) {
+      widget = node.name.lexeme;
+    }
+    super.visitNamedType(node);
   }
 }

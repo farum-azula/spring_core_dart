@@ -1124,8 +1124,8 @@ void main() {
   });
 
   group('cors', () {
-    Future<Reply> preflight(HttpSecurity http) => ChainClient(http.build())
-        .send(
+    Future<Reply> preflight(HttpSecurity http) =>
+        ChainClient(http.build()).send(
           HttpMethod.options,
           '/open/x',
           headers: {

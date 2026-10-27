@@ -28,8 +28,8 @@ class BookController {
   /// `GET /api/books?q=dune&page=0`: both parameters are optional.
   @GetMapping()
   BookPage search({
-    @RequestParam.of(name: 'q', defaultValue: '') String query = '',
-    @RequestParam.of(name: 'page', defaultValue: '0') int page = 0,
+    @RequestParam('q') String query = '',
+    @RequestParam('page') int page = 0,
   }) {
     if (page < 0) {
       throw ResponseStatusException(HttpStatus.badRequest, 'page must be >= 0');

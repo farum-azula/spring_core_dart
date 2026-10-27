@@ -18,8 +18,8 @@ class BookController {
   @GetMapping()
   Future<List<Book>> search(
     @RequestParam('q') String query, {
-    @RequestParam.of(name: 'page', defaultValue: '0') int page = 0,
-    @RequestParam.of(name: 'genre', required: false) Genre? genre,
+    @RequestParam('page') int page = 0,
+    @RequestParam('genre') Genre? genre,
   }) => books.search(query, page: page, genre: genre);
 
   @PostMapping('/form')
@@ -27,6 +27,16 @@ class BookController {
     @RequestParam('title') String title,
     @RequestParam('count') int count,
   ) => '$title x$count';
+
+  // A missing parameter takes the Dart default, a nullable one null.
+  @GetMapping('/sample/defaults')
+  String sample({
+    @RequestParam('size') int size = 3,
+    @RequestParam() String sort = 'title',
+    @RequestParam('tag') String? tag,
+    @RequestParam('limit') int? limit,
+    @RequestHeader('X-Lang') String? lang,
+  }) => '$size by $sort, $tag, $limit, $lang';
 
   @PostMapping()
   Future<ResponseEntity<Book>> create(

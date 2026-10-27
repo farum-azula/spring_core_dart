@@ -201,7 +201,6 @@ final _introspector = BeanIntrospector(
             'nickname',
             type: ClassType<String>(nullable: true),
             symbol: #nickname,
-            annotations: [JsonProperty('', required: true)],
           ),
         ],
         create: (positional, named) => Account(
@@ -356,7 +355,7 @@ void main() {
     });
   });
 
-  group('@JsonProperty(access:, required:)', () {
+  group('@JsonProperty(access:), required parameters', () {
     test('writeOnly is read, not written; readOnly is written, not read', () {
       final account = mapper.readValue<Account>(
         '{"id":"a","nickname":null,"password":"secret","v":7}',
@@ -381,15 +380,13 @@ void main() {
       );
     });
 
-    test('required constructor parameters must be present', () {
+    test('a constructor parameter that is neither nullable nor has a '
+        'default must be present; a nullable one may be missing', () {
       expect(
-        () => mapper.readValue<Account>('{"id":"a"}'),
-        _mappingError('missing required creator property "nickname"'),
+        () => mapper.readValue<Account>('{"nickname":"n"}'),
+        _mappingError('missing property "id" (required by Account)'),
       );
-      expect(
-        mapper.readValue<Account>('{"id":"a","nickname":"n"}').nickname,
-        'n',
-      );
+      expect(mapper.readValue<Account>('{"id":"a"}').nickname, isNull);
     });
   });
 

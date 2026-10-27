@@ -58,7 +58,7 @@ class FilesController {
   @PostMapping('/book')
   Stored book(
     @RequestPart('book') @Valid() NewBook book, {
-    @RequestPart.of(name: 'cover', required: false) MultipartFile? cover,
+    @RequestPart('cover') MultipartFile? cover,
   }) => Stored(title: book.title, files: const [], cover: cover?.size);
 
   @PostMapping('/save')

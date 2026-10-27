@@ -62,6 +62,18 @@ class BasketPage extends SpringStatefulWidget<(Basket,)> {
 }
 
 class _BasketPageState extends SpringState<BasketPage, (Basket,)> {}
+
+/// The beans of [OrdersPage].
+typedef OrdersPageBeans = (Basket, Clock);
+
+class OrdersPage extends SpringStatefulWidget<OrdersPageBeans> {
+  const OrdersPage({super.key});
+}
+
+class _OrdersPageState extends SpringState<OrdersPage, OrdersPageBeans> {}
+
+/// A record no Spring widget uses.
+typedef Pair = (Basket, Clock);
 ''';
 
 void main() {
@@ -142,6 +154,15 @@ flutter:
     expect(lines(at('BasketPage, (Basket') + 'BasketPage, ('.length + 1), [
       line('class Basket'),
     ]);
+  });
+
+  test("a typedef of a Spring widget's bean record goes to the beans", () {
+    expect(
+      lines(at('OrdersPageBeans = (Basket') + 'OrdersPageBeans = ('.length + 1),
+      [line('class Basket')],
+    );
+    // A record no Spring widget takes: not beans.
+    expect(lines(at('Pair = (Basket') + 'Pair = ('.length + 1), isEmpty);
   });
 
   test('asset: goes to the file of the package', () {

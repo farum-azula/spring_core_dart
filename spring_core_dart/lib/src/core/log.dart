@@ -415,11 +415,24 @@ final class SpringLogHold {
   }
 }
 
-/// The default [SpringLog.handler]: prints the record (one line).
+/// The default [SpringLog.handler]: prints the record (one line), in
+/// colour like Spring Boot's console: the logger cyan, the level by level
+/// (error red, warning yellow, the others green). For plain text:
+/// `SpringLog.handler = print;` (a record prints as its `toString`).
 void printLogHandler(SpringLogRecord record) {
+  final level = switch (record.level) {
+    SpringLogLevel.error => '31',
+    SpringLogLevel.warning => '33',
+    _ => '32',
+  };
+  final error = record.error;
   // Printing is the point of this handler.
   // ignore: avoid_print
-  print(record);
+  print(
+    '[\x1B[36m${record.loggerName}\x1B[0;39m] '
+    '\x1B[${level}m${record.level.name.toUpperCase()}\x1B[0;39m: '
+    '${record.message}${error == null ? '' : ': $error'}',
+  );
 }
 
 /// Parses a level name as used in properties (`logging.level.*`):

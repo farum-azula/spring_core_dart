@@ -1,5 +1,5 @@
-// Clients with a mapping without a path and parameters with Spring's
-// `required` / `defaultValue`, with the code the generator writes for them.
+// Clients with a mapping without a path and optional (nullable) and
+// default parameters, with the code the generator writes for them.
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 
 /// `@GetMapping()` uses the base path of the client (`url` + `path`).
@@ -11,19 +11,19 @@ abstract interface class ParamsClient {
   @GetMapping('/search')
   Future<String> search(
     @RequestParam('q') String query, {
-    @RequestParam.of(name: 'sort', defaultValue: 'asc') String? sort,
-    @RequestParam.of(name: 'page', required: false) int? page,
+    @RequestParam('sort') String sort = 'asc',
+    @RequestParam('page') int? page,
     @RequestParam('lang') String? lang,
-    @RequestHeader.of(name: 'X-Tenant', defaultValue: 'public') String? tenant,
+    @RequestHeader('X-Tenant') String tenant = 'public',
     @RequestHeader('X-Trace') String? trace,
   });
 
   @GetMapping('/books/{isbn}/pages')
   Future<String> pages(
-    @PathVariable.of(name: 'isbn', required: false) String? isbn,
+    @PathVariable('isbn') String? isbn,
   );
 
-  /// A nullable path variable is still required.
+  /// A nullable path variable named after the parameter.
   @GetMapping('/loose/{id}')
   Future<String> loose(@PathVariable() String? id);
 
@@ -32,12 +32,6 @@ abstract interface class ParamsClient {
     @PathVariable() String id,
     @RequestParam('q') String query,
     @RequestHeader('X-Id') String requestId,
-  );
-
-  @GetMapping('/lenient')
-  Future<String> lenient(
-    @RequestParam.of(name: 'q', required: false) String query,
-    @RequestHeader.of(name: 'X-Q', required: false) String header,
   );
 }
 
@@ -81,15 +75,15 @@ class ParamsClientImpl implements ParamsClient {
             ),
             BeanParameter(
               'sort',
-              type: ClassType<String>(nullable: true),
+              type: ClassType<String>(),
               symbol: #sort,
-              annotations: [RequestParam.of(name: 'sort', defaultValue: 'asc')],
+              annotations: [RequestParam('sort')],
             ),
             BeanParameter(
               'page',
               type: ClassType<int>(nullable: true),
               symbol: #page,
-              annotations: [RequestParam.of(name: 'page', required: false)],
+              annotations: [RequestParam('page')],
             ),
             BeanParameter(
               'lang',
@@ -99,11 +93,9 @@ class ParamsClientImpl implements ParamsClient {
             ),
             BeanParameter(
               'tenant',
-              type: ClassType<String>(nullable: true),
+              type: ClassType<String>(),
               symbol: #tenant,
-              annotations: [
-                RequestHeader.of(name: 'X-Tenant', defaultValue: 'public'),
-              ],
+              annotations: [RequestHeader('X-Tenant')],
             ),
             BeanParameter(
               'trace',
@@ -117,10 +109,10 @@ class ParamsClientImpl implements ParamsClient {
           annotations: const [GetMapping('/search')],
           call: (target, arguments) => (target as ParamsClient).search(
             arguments[0]! as String,
-            sort: arguments[1] as String?,
+            sort: arguments[1]! as String,
             page: arguments[2] as int?,
             lang: arguments[3] as String?,
-            tenant: arguments[4] as String?,
+            tenant: arguments[4]! as String,
             trace: arguments[5] as String?,
           ),
         ),
@@ -131,7 +123,7 @@ class ParamsClientImpl implements ParamsClient {
               'isbn',
               type: ClassType<String>(nullable: true),
               isRequired: true,
-              annotations: [PathVariable.of(name: 'isbn', required: false)],
+              annotations: [PathVariable('isbn')],
             ),
           ],
           returnType: const ClassType<String>(),
@@ -187,30 +179,6 @@ class ParamsClientImpl implements ParamsClient {
             arguments[2]! as String,
           ),
         ),
-        ProxyMethod(
-          'lenient',
-          parameters: const [
-            BeanParameter(
-              'query',
-              type: ClassType<String>(),
-              isRequired: true,
-              annotations: [RequestParam.of(name: 'q', required: false)],
-            ),
-            BeanParameter(
-              'header',
-              type: ClassType<String>(),
-              isRequired: true,
-              annotations: [RequestHeader.of(name: 'X-Q', required: false)],
-            ),
-          ],
-          returnType: const ClassType<String>(),
-          isFuture: true,
-          annotations: const [GetMapping('/lenient')],
-          call: (target, arguments) => (target as ParamsClient).lenient(
-            arguments[0]! as String,
-            arguments[1]! as String,
-          ),
-        ),
       ],
     );
     return ParamsClientImpl(InterfaceProxies.handlerFor(r, metadata), metadata);
@@ -226,10 +194,10 @@ class ParamsClientImpl implements ParamsClient {
   @override
   Future<String> search(
     String query, {
-    String? sort,
+    String sort = 'asc',
     int? page,
     String? lang,
-    String? tenant,
+    String tenant = 'public',
     String? trace,
   }) => retypeFuture<String>(
     _handler.invoke(_metadata.methods[1], [
@@ -257,11 +225,6 @@ class ParamsClientImpl implements ParamsClient {
       retypeFuture<String>(
         _handler.invoke(_metadata.methods[4], [id, query, requestId]),
       );
-
-  @override
-  Future<String> lenient(String? query, String? header) => retypeFuture<String>(
-    _handler.invoke(_metadata.methods[5], [query, header]),
-  );
 }
 
 class RootClientImpl implements RootClient {

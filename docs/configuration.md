@@ -1248,7 +1248,7 @@ logging:
 spring:
   output:
     ansi:
-      enabled: always
+      enabled: never
 ```
 
 </td><td>
@@ -1265,7 +1265,7 @@ logging.logback.rollingpolicy.max-file-size=10MB
 logging.logback.rollingpolicy.max-history=7
 logging.threshold.file=info
 logging.buffer.capacity=2000
-spring.output.ansi.enabled=always
+spring.output.ansi.enabled=never
 ```
 
 </td></tr>
@@ -1299,7 +1299,7 @@ Levels: `trace`, `debug`, `info`, `warn` (or `warning`), `error` (or
 | `logging.logback.rollingpolicy.max-history` | int | `7` | Rolled files kept (a count) |
 | `logging.logback.rollingpolicy.total-size-cap` | data size | `0B` (no limit) | Total size of the rolled files |
 | `logging.logback.rollingpolicy.clean-history-on-start` | bool | `false` | Delete rolled files when the app starts |
-| `spring.output.ansi.enabled` | `detect` / `always` / `never` | `detect` | Colors (`%clr`) on the console; `detect`: a terminal, or a Flutter debug/profile build |
+| `spring.output.ansi.enabled` | `always` / `detect` / `never` | `always` | Colors on the console: `%clr`, or the time, level and logger of a pattern without colors. `never`: plain text (logs read by a program); `detect`: only on a terminal or in a Flutter debug/profile build (Spring Boot's default) |
 
 Files are not written on the web (a warning says so).
 `logging.logback.rollingpolicy.file-name-pattern` and the old
@@ -1952,12 +1952,21 @@ The `ThemeSelection` bean picks the theme shown; the app follows at once,
 with Flutter's animation.
 
 ```dart
-class ThemeMenu extends SpringStatelessWidget<(ThemeSelection, SpringThemes)> {
+typedef ThemeMenuBeans = (
+  ThemeSelection,
+  SpringThemes,
+);
+
+class ThemeMenu extends SpringStatelessWidget<ThemeMenuBeans> {
   const ThemeMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final (selection, themes) = beans;   // rebuilt when either changes
+    // Rebuilt when either changes.
+    final (
+      selection,
+      themes,
+    ) = beans;
     return PopupMenuButton<String>(
       onSelected: selection.select,
       itemBuilder: (_) => [

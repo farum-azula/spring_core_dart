@@ -393,14 +393,9 @@ final class FeignInvocationHandler implements InvocationHandler {
   }
 }
 
-/// A parameter bound to a path variable, query parameter or header, with
-/// what Spring's `required` / `defaultValue` make of it.
-typedef _Binding = ({
-  String name,
-  int index,
-  bool required,
-  String? defaultValue,
-});
+/// A parameter bound to a path variable, query parameter, header or part:
+/// required unless the parameter is nullable.
+typedef _Binding = ({String name, int index, bool required});
 
 /// An encoded multipart body and its `Content-Type` (with the boundary).
 typedef _Multipart = ({Uint8List bytes, String contentType});
@@ -487,22 +482,13 @@ final class _Plan {
       }
     }
 
-    // Like Spring: a value is required unless the annotation says
-    // `required: false`, there is a default value, or the parameter is
-    // nullable (Kotlin, `@Nullable`).
-    _Binding bind(
-      String name,
-      int index,
-      bool required, [
-      String? defaultValue,
-    ]) => (
+    // A nullable parameter is optional (a null argument is left out, an
+    // empty path variable); any other is required. A default value of the
+    // Dart parameter is simply the argument.
+    _Binding bind(String name, int index) => (
       name: name,
       index: index,
-      required:
-          required &&
-          defaultValue == null &&
-          !method.parameters[index].type.nullable,
-      defaultValue: defaultValue,
+      required: !method.parameters[index].type.nullable,
     );
 
     for (final (index, parameter) in method.parameters.indexed) {
@@ -529,14 +515,7 @@ final class _Plan {
       if (pathVariable != null) {
         check(parameter, '@PathVariable');
         final name = pathVariable.name ?? parameter.name;
-        // Only `required: false` makes a path variable optional: a null
-        // would silently change the URL.
-        pathVariables[name] = (
-          name: name,
-          index: index,
-          required: pathVariable.required,
-          defaultValue: null,
-        );
+        pathVariables[name] = bind(name, index);
       } else if (requestParam != null) {
         check(parameter, '@RequestParam', map: true);
         // Like Spring Cloud OpenFeign: a Map is a query map, its name unused.
@@ -544,12 +523,7 @@ final class _Plan {
           queryMaps.add(index);
         } else {
           queries.add(
-            bind(
-              requestParam.name ?? parameter.name,
-              index,
-              requestParam.required,
-              requestParam.defaultValue,
-            ),
+            bind(requestParam.name ?? parameter.name, index),
           );
         }
       } else if (requestHeader != null) {
@@ -558,12 +532,7 @@ final class _Plan {
           headerMaps.add(index);
         } else {
           headers.add(
-            bind(
-              requestHeader.name ?? parameter.name,
-              index,
-              requestHeader.required,
-              requestHeader.defaultValue,
-            ),
+            bind(requestHeader.name ?? parameter.name, index),
           );
         }
       } else if (cookieValue != null) {
@@ -576,7 +545,7 @@ final class _Plan {
         body = index;
       } else if (requestPart != null) {
         parts.add(
-          bind(requestPart.name ?? parameter.name, index, requestPart.required),
+          bind(requestPart.name ?? parameter.name, index),
         );
       } else {
         unannotated.add(index);
@@ -764,15 +733,12 @@ final class _Plan {
     return '$a$b';
   }
 
-  // The argument of [binding]: for null the default value, else null
-  // (not required) or an error naming the parameter.
+  // The argument of [binding]: null for an optional one, else an error
+  // naming the parameter.
   Object? _valueOf(List<Object?> arguments, _Binding binding, String role) {
     final value = arguments[binding.index];
     if (value != null) {
       return value;
-    }
-    if (binding.defaultValue != null) {
-      return binding.defaultValue;
     }
     if (binding.required) {
       throw _missing(role, binding);

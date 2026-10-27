@@ -684,11 +684,12 @@ app:
 
     test('list elements of value-object type with none of their keys', () {
       expect(
-        () => binder({'app.list[0].user': 'ada', 'app.list[1].unknown': 'x'})
-            .bind(
-              'app.list',
-              const ListType<Credentials>(ClassType<Credentials>()),
-            ),
+        () =>
+            binder({'app.list[0].user': 'ada', 'app.list[1].unknown': 'x'})
+                .bind(
+                  'app.list',
+                  const ListType<Credentials>(ClassType<Credentials>()),
+                ),
         throwsA(
           isA<ConfigurationPropertiesBindException>().having(
             (e) => e.errors.single,
