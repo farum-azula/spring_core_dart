@@ -90,12 +90,12 @@ class BookController {
 
 ```yaml
 dependencies:
-  spring_boot_starter_web: ^0.4.0
+  spring_boot_starter_web: ^0.4.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.0   # required: describes the controllers
-  spring_boot_starter_test: ^0.4.0     # MockMvc, springBootTest
+  spring_core_dart_generator: ^0.4.1   # required: describes the controllers
+  spring_boot_starter_test: ^0.4.1     # MockMvc, springBootTest
   test: ^1.25.0
 ```
 

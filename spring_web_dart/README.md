@@ -26,7 +26,7 @@ which serves them on top of the server types below. WebSocket interfaces
 
 ```yaml
 dependencies:
-  spring_web_dart: ^0.4.0
+  spring_web_dart: ^0.4.1
 ```
 
 *In the guides:* [server, 3. Web](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#3-web), [app, 6. Server access](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#6-server-access).

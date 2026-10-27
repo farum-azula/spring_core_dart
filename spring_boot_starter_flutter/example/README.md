@@ -16,11 +16,11 @@ complete app with tests and golden screenshots: the
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter: ^0.4.0
+  spring_boot_starter_flutter: ^0.4.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.0
+  spring_core_dart_generator: ^0.4.1
 ```
 
 ## 1. Start the application
