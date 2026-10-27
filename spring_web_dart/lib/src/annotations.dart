@@ -20,7 +20,8 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// and friends carry, read with `AnnotatedElementUtils`:
 /// ```java
 /// RequestMapping mapping =
-///     AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
+///     AnnotatedElementUtils.findMergedAnnotation(
+///         method, RequestMapping.class);
 /// ```
 abstract interface class Mapping {
   /// The HTTP method.
@@ -203,7 +204,10 @@ class PostMapping implements Mapping {
 ///
 /// ```dart
 /// @PutMapping('/books/{isbn}')
-/// Future<Book> replace(@PathVariable('isbn') String isbn, @RequestBody() Book book);
+/// Future<Book> replace(
+///   @PathVariable('isbn') String isbn,
+///   @RequestBody() Book book,
+/// );
 /// ```
 ///
 /// Spring (Java):
@@ -250,13 +254,17 @@ class PutMapping implements Mapping {
 ///
 /// ```dart
 /// @PatchMapping('/books/{isbn}')
-/// Future<Book> rename(@PathVariable('isbn') String isbn, @RequestBody() Map<String, Object?> changes);
+/// Future<Book> rename(
+///   @PathVariable('isbn') String isbn,
+///   @RequestBody() Map<String, Object?> changes,
+/// );
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// @PatchMapping("/books/{isbn}")
-/// Book rename(@PathVariable("isbn") String isbn, @RequestBody Map<String, Object> changes);
+/// Book rename(@PathVariable("isbn") String isbn,
+///     @RequestBody Map<String, Object> changes);
 /// ```
 @BeanMethodAnnotation()
 class PatchMapping implements Mapping {
@@ -441,20 +449,31 @@ class RequestParam {
 ///
 /// ```dart
 /// @PostMapping('/orders')
-/// Future<Order> place(@RequestBody() Order order, @RequestHeader('X-Request-Id') String requestId);
+/// Future<Order> place(
+///   @RequestBody() Order order,
+///   @RequestHeader('X-Request-Id') String requestId,
+/// );
 ///
 /// @GetMapping('/orders')
 /// Future<List<Order>> list(@RequestHeader() Map<String, String> headers);
 ///
 /// @GetMapping('/orders')
-/// Future<List<Order>> mine(@RequestHeader.of(name: 'X-Tenant', defaultValue: 'public') String? tenant);
+/// Future<List<Order>> mine(
+///   @RequestHeader.of(
+///     name: 'X-Tenant',
+///     defaultValue: 'public',
+///   ) String? tenant,
+/// );
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// Order place(@RequestBody Order order, @RequestHeader("X-Request-Id") String requestId);
+/// Order place(@RequestBody Order order,
+///     @RequestHeader("X-Request-Id") String requestId);
 /// List<Order> list(@RequestHeader Map<String, String> headers);
-/// List<Order> mine(@RequestHeader(name = "X-Tenant", defaultValue = "public") String tenant);
+/// List<Order> mine(
+///     @RequestHeader(name = "X-Tenant", defaultValue = "public")
+///     String tenant);
 /// ```
 class RequestHeader {
   /// Binds the header [name] (default: the parameter name); required.
@@ -503,13 +522,17 @@ class CookieValue {
 /// Future<Book> create(@RequestBody() Book book); // JSON body
 ///
 /// @PatchMapping('/books/{isbn}')
-/// Future<Book> touch(@PathVariable() String isbn, @RequestBody(required: false) Book? book);
+/// Future<Book> touch(
+///   @PathVariable() String isbn,
+///   @RequestBody(required: false) Book? book,
+/// );
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// Book create(@RequestBody Book book);
-/// Book touch(@PathVariable String isbn, @RequestBody(required = false) Book book);
+/// Book touch(@PathVariable String isbn,
+///     @RequestBody(required = false) Book book);
 /// ```
 class RequestBody {
   /// Marks the parameter; with [required] `false` the body may be absent

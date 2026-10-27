@@ -27,7 +27,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
@@ -66,7 +66,7 @@ Future<String> _errors(Map<String, String> files) async {
 
 Future<String> _error(String beans) => _errors({'lib/src/service.dart': beans});
 
-/// The diagnostics of the generated library at [severities] (errors and
+/// The diagnostics of the generated library at `severities` (errors and
 /// warnings by default), resolved with the real runtime.
 Future<List<String>> _diagnostics(
   Map<String, String> files, {
@@ -79,7 +79,7 @@ Future<List<String>> _diagnostics(
   final result = await _build(sources, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
   final output = result.readerWriter.testing.readString(result.outputs.single);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|lib/src/beans.spring.dart': output,
@@ -93,9 +93,9 @@ Future<List<String>> _diagnostics(
       );
       return [
         if (errors case ErrorsResult(:final diagnostics))
-          for (final diagnostic in diagnostics)
-            if (diagnostic.severity != Severity.info)
-              '${diagnostic.diagnosticCode.lowerCaseName}: ${diagnostic.message}',
+          for (final d in diagnostics)
+            if (d.severity != Severity.info)
+              '${d.diagnosticCode.lowerCaseName}: ${d.message}',
       ];
     },
     rootPackage: 'pkg',
@@ -160,7 +160,8 @@ class Reports {
     expect(
       code,
       _has(
-        "bean.viaSetter = r.resource<Greeter>(r'viaSetter', fallbackToType: true)",
+        "bean.viaSetter = r.resource<Greeter>(r'viaSetter', fallbackToType: "
+        'true)',
       ),
     );
     expect(

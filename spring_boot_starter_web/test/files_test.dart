@@ -74,7 +74,7 @@ void main() {
           )
           .andExpect(
             status: 200,
-            json: {'title': 'Ubik', 'files': [], 'cover': null},
+            json: {'title': 'Ubik', 'files': <Object?>[], 'cover': null},
           );
       await app.mockMvc
           .multipart(

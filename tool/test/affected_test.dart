@@ -46,7 +46,7 @@ void main() {
       // Mentioned in a comment or string only: not used.
       write(
         'app/test/a_test.dart',
-        "// package:boot/boot.dart\nvoid main() {}\n",
+        '// package:boot/boot.dart\nvoid main() {}\n',
       );
       expect(dependencies(['boot', 'mocks', 'app'])['app'], {'mocks'});
     });
@@ -141,9 +141,11 @@ targets:
       expect(affected('spring_core_dart_generator/lib/x.dart'), {
         'spring_core_dart_generator',
         // Their tests start what the generator writes: server endpoints
-        // (test/server/), controllers (test/app/).
+        // (test/server/), controllers and secured beans (test/app/).
+        'spring_security_core',
         'spring_boot_starter_websocket',
         'spring_boot_starter_web',
+        'spring_boot_starter_security',
         'example/spring_core_tour',
         'example/spring_boot_feign',
       });
@@ -153,7 +155,7 @@ targets:
       expect(affected('spring_core_dart/lib/x.dart'), packages.toSet());
     });
 
-    test('the starters\' applications are checked when the family changes', () {
+    test("the starters' applications are checked when the family changes", () {
       expect(
         familyAffected(affected('spring_boot_starter_cache/lib/x.dart')),
         isTrue,

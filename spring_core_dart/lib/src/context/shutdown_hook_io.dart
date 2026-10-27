@@ -18,7 +18,7 @@ void Function() watchShutdownSignals(void Function(int exitCode) onSignal) {
   }
   return () {
     for (final subscription in subscriptions) {
-      subscription.cancel();
+      unawaited(subscription.cancel());
     }
   };
 }

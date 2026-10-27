@@ -6,10 +6,10 @@ import 'package:spring_boot_dart/src/banner.dart';
 import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_boot_dart/src/condition_evaluation_report.dart';
 import 'package:spring_boot_dart/src/configuration_properties.dart';
+import 'package:spring_boot_dart/src/deferred_logs.dart';
 import 'package:spring_boot_dart/src/environment_post_processor.dart';
 import 'package:spring_boot_dart/src/events.dart';
 import 'package:spring_boot_dart/src/exit_code.dart';
-import 'package:spring_boot_dart/src/deferred_logs.dart';
 import 'package:spring_boot_dart/src/failure_analyzer.dart';
 import 'package:spring_boot_dart/src/hot_reload.dart';
 import 'package:spring_boot_dart/src/runners.dart';
@@ -67,7 +67,8 @@ const _log = SpringLog('spring_boot_dart.SpringApplication');
 ///
 /// Spring (Java):
 /// ```java
-/// ConfigurableApplicationContext context = SpringApplication.run(App.class, args);
+/// ConfigurableApplicationContext context =
+///     SpringApplication.run(App.class, args);
 /// ```
 class SpringApplication {
   /// An application made of [modules] plus library [autoConfigurations].
@@ -249,6 +250,8 @@ class SpringApplication {
       'console' => BannerMode.console,
       'log' => BannerMode.log,
       _ => throw ConfigurationPropertiesBindException('spring.main', null, [
+        // One element, split for the line width.
+        // ignore: no_adjacent_strings_in_list
         'spring.main.banner-mode: failed to convert to BannerMode (one of '
             'off, console, log) (was "$property")',
       ]),
@@ -257,13 +260,13 @@ class SpringApplication {
       return;
     }
     final resource = preloaded ?? _bannerResource(environment);
-    final chosen = resource.supportsSyncRead && resource.exists()
-        ? ResourceBanner(resource)
-        : banner ?? const SpringBootBanner();
-    chosen.printBanner(
-      environment,
-      mode == BannerMode.log ? (text) => _log.info(text) : print,
-    );
+    (resource.supportsSyncRead && resource.exists()
+            ? ResourceBanner(resource)
+            : banner ?? const SpringBootBanner())
+        .printBanner(
+          environment,
+          mode == BannerMode.log ? (text) => _log.info(text) : print,
+        );
   }
 
   Resource _bannerResource(Environment environment) =>
@@ -592,7 +595,7 @@ class SpringApplication {
     if (running.isActive) {
       await running.closeAsync();
     }
-    return _runAsync(
+    return await _runAsync(
       previous?.args ?? const [],
       previous?.systemEnvironment,
       previous?.properties ?? const {},
@@ -738,7 +741,7 @@ class SpringApplication {
         for (final name in factory.getBeanNamesForType(FailureAnalyzer)) {
           beans.add(factory.getBeanByName(name) as FailureAnalyzer);
         }
-      } catch (_) {
+      } on Object catch (_) {
         // A context that failed early cannot provide them.
       }
       if (!context.isActive) {
@@ -835,7 +838,7 @@ class SpringApplication {
       _reportLog.info('${ConditionEvaluationReport.of(context)}');
     } else if (crash) {
       _reportLog.info(
-        "Error starting ApplicationContext. To display the condition "
+        'Error starting ApplicationContext. To display the condition '
         "evaluation report re-run your application with 'debug' enabled.",
       );
     }
@@ -1023,7 +1026,7 @@ class SpringApplication {
           generators.addMapped(error, mapper, order);
         }
         code = generators.exitCode;
-      } catch (_) {
+      } on Object catch (_) {
         // Mappers that cannot be created map nothing.
       }
     }
@@ -1126,7 +1129,7 @@ class SpringApplication {
       } finally {
         context.close();
       }
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _log.warning(
         'Failed to exit the application',
         error: error,
@@ -1219,7 +1222,7 @@ class SpringApplication {
         .orElse(const {});
     final levels = <String, SpringLogLevel>{};
     final invalid = <String>[];
-    for (final MapEntry(key: logger, value: value) in values.entries) {
+    for (final MapEntry(key: logger, :value) in values.entries) {
       if (value.trim().isEmpty) {
         continue; // no level: inherited
       }
@@ -1336,11 +1339,10 @@ final class _StartupInfoLogger implements BeanFactoryPostProcessor, Ordered {
         '${defaults.length <= 1 ? 'profile' : 'profiles'}: ${quoted(defaults)}',
       );
     } else {
-      _log.info(
-        'The following '
-        '${active.length == 1 ? '1 profile is' : '${active.length} profiles are'}'
-        ' active: ${quoted(active)}',
-      );
+      final profiles = active.length == 1
+          ? '1 profile is'
+          : '${active.length} profiles are';
+      _log.info('The following $profiles active: ${quoted(active)}');
     }
   }
 
@@ -1358,8 +1360,9 @@ typedef _Prepared = ({
 
 /// Keeps beans eager under `spring.main.lazy-initialization=true`, like
 /// Spring Boot's `LazyInitializationExcludeFilter`: declare one as a bean
-/// (a `@Bean` method, static in Boot) and [LazyInitializationBeanFactoryPostProcessor]
-/// leaves the beans it excludes alone.
+/// (a `@Bean` method, static in Boot) and
+/// [LazyInitializationBeanFactoryPostProcessor] leaves the beans it excludes
+/// alone.
 ///
 /// ```dart
 /// @Bean()
@@ -1488,9 +1491,7 @@ final class _FunctionInitializer
 // through the context.
 final class _RunListeners {
   _RunListeners(this.application, this.args) {
-    for (final listener in application._listeners) {
-      _multicaster.addApplicationListener(listener);
-    }
+    application._listeners.forEach(_multicaster.addApplicationListener);
   }
 
   final SpringApplication application;
@@ -1499,7 +1500,7 @@ final class _RunListeners {
 
   // Every line logged before the `logging.level.*` properties are applied,
   // emitted then at those levels (releaseLogs).
-  final _logHold = SpringLog.hold();
+  final SpringLogHold _logHold = SpringLog.hold();
 
   // What is logged before a logging system takes over (replayed by it).
   final deferredLogs = DeferredLogs.capture();
@@ -1533,9 +1534,7 @@ final class _RunListeners {
       );
 
   void contextLoaded(ConfigurableApplicationContext context) {
-    for (final listener in application._listeners) {
-      context.addApplicationListener(listener);
-    }
+    application._listeners.forEach(context.addApplicationListener);
     _multicaster.multicastEvent(
       ApplicationPreparedEvent(application, args, context),
     );
@@ -1570,7 +1569,7 @@ final class _RunListeners {
         }
         _multicaster.multicastEvent(event);
       }
-    } catch (listenerError, stackTrace) {
+    } on Object catch (listenerError, stackTrace) {
       _log.warning(
         'Error handling failed',
         error: listenerError,

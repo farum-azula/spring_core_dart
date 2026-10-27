@@ -1,10 +1,13 @@
 // spring_boot_starter_logging: the in-memory LogBuffer behind a log viewer,
 // shown in the console. A Flutter screen would use `buffer.watch(query)` in
 // a StreamBuilder; this prints the same data once the application started.
+
+// This screen exists to show the log viewer in the console.
+// ignore_for_file: avoid_print
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 @Component()
-@Order(Ordered.lowestPrecedence)
+@Order()
 class ConsoleLogScreen implements ApplicationRunner {
   ConsoleLogScreen(this.buffer);
 

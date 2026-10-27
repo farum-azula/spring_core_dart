@@ -1,0 +1,13 @@
+# Weekly updates of the pub dependencies (the workspace at the root) and of
+# the GitHub Actions of the workflows. tool/check_dependencies.dart still
+# decides which packages may come in (docs/dependencies.md).
+version: 2
+updates:
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -67,7 +67,7 @@ enum SpelMessage {
   constructorInvocationProblem(
     SpelMessageKind.error,
     1003,
-    "A problem occurred whilst attempting to construct an object of type "
+    'A problem occurred whilst attempting to construct an object of type '
     "''{0}'' using arguments ''{1}''",
   ),
 
@@ -679,7 +679,7 @@ enum SpelMessage {
     'SpEL expression nesting depth exceeds the threshold of {0}',
   );
 
-  const SpelMessage(this.kind, this.code, this.message);
+  SpelMessage(this.kind, this.code, this.message);
 
   /// The severity.
   final SpelMessageKind kind;
@@ -777,7 +777,7 @@ abstract final class SpelLimits {
   static const maxConcatenatedStringLength = 100000;
 
   /// Maximum number of elements of an array built by `new int[n]`.
-  static const maxArrayElements = 256 * 1024;
+  static const int maxArrayElements = 256 * 1024;
 }
 
 /// Base class of expression errors, like Spring's `ExpressionException`.
@@ -843,6 +843,8 @@ class ExpressionException implements Exception {
 
   @override
   String toString() =>
+      // Subclasses show their own name.
+      // ignore: no_runtimetype_tostring
       '$runtimeType: $message${cause == null ? '' : '; caused by $cause'}';
 }
 

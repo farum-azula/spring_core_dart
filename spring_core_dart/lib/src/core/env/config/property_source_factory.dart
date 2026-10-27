@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
-import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/path_matcher.dart';
+import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
 import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
@@ -319,10 +319,12 @@ class PropertySourceProcessor {
     if (_added.contains(name)) {
       final existing = sources.get(name);
       if (existing != null) {
-        final composite = existing is CompositePropertySource
-            ? existing
-            : (CompositePropertySource(name)..addPropertySource(existing));
-        composite.addFirstPropertySource(source);
+        final composite =
+            (existing is CompositePropertySource
+                  ? existing
+                  : (CompositePropertySource(name)
+                      ..addPropertySource(existing)))
+              ..addFirstPropertySource(source);
         sources.replace(name, composite);
         return;
       }

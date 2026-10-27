@@ -320,15 +320,15 @@ class Tracer {
   final calls = <String>[];
 }
 ''',
-      _main('''
+      _main(r'''
   final tracer = context.getBean<Tracer>();
   final greeting = context.getBean<Greeting>();
   tracer.calls.add(greeting.label.text);
   tracer.calls.add(
-    '\${identical(greeting.label, context.getBean<Label>())}',
+    '${identical(greeting.label, context.getBean<Label>())}',
   );
   tracer.calls.add(
-    '\${identical(context.getBean<Wiring>().label(2, 'y'), greeting.label)}',
+    '${identical(context.getBean<Wiring>().label(2, 'y'), greeting.label)}',
   );
 '''),
     );
@@ -376,15 +376,15 @@ class Tracer {
   final calls = <String>[];
 }
 ''',
-          _main('''
+          _main(r'''
   final tracer = context.getBean<Tracer>();
   final accounts = context.getBean<Accounts>();
   void call(Object? Function() action) {
     try {
-      tracer.calls.add('\${action()}');
+      tracer.calls.add('${action()}');
     } on ConstraintViolationException catch (e) {
       tracer.calls.addAll([
-        for (final v in e.constraintViolations) '\${v.propertyPath}: \${v.message}',
+        for (final v in e.constraintViolations) '${v.propertyPath}: ${v.message}',
       ]);
     }
   }
@@ -492,7 +492,7 @@ class Tracer {
   }
   for (final proxyMode in ProxyMode.values.where((m) => m != ProxyMode.none)) {
     test('@Cacheable and @Validated on an overridden superclass method apply '
-        'to the override (like Spring\'s annotation sources), while '
+        "to the override (like Spring's annotation sources), while "
         '@annotation does not match it ($proxyMode proxies)', () async {
       final calls = await _run(
         r'''
@@ -541,15 +541,15 @@ class Tracer {
       calls.add('audited ${joinPoint.signature.name}');
 }
 ''',
-        _main('''
+        _main(r'''
   final tracer = context.getBean<Tracer>();
   final catalog = context.getBean<Catalog>();
   void call(Object? Function() action) {
     try {
-      tracer.calls.add('\${action()}');
+      tracer.calls.add('${action()}');
     } on ConstraintViolationException catch (e) {
       tracer.calls.addAll([
-        for (final v in e.constraintViolations) '\${v.propertyPath}: \${v.message}',
+        for (final v in e.constraintViolations) '${v.propertyPath}: ${v.message}',
       ]);
     }
   }

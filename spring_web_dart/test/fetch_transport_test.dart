@@ -2,6 +2,7 @@
 @Tags(['integration'])
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -46,7 +47,7 @@ void main() {
         final socket = await WebSocketTransformer.upgrade(request);
         socket.listen((message) {
           if (message == 'bye') {
-            socket.close(4000, 'asked');
+            unawaited(socket.close(4000, 'asked'));
           } else {
             socket.add(message);
           }
@@ -93,6 +94,8 @@ void main() {
     });
     final run = await Process.run('node', [
       '-e',
+      // One script, written on several lines to stay within 80 columns.
+      // ignore: no_adjacent_strings_in_list
       'globalThis.self = globalThis; '
           'globalThis.testServer = "127.0.0.1:${server.port}"; '
           'require(${jsonEncode(output)})',

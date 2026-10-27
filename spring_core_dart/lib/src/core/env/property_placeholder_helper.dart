@@ -150,7 +150,7 @@ class PropertyPlaceholderHelper {
         [...visited, value],
       );
     }
-    var resolved = resolver(key);
+    final resolved = resolver(key);
     if (resolved == null && rawDefault != null) {
       return _parse(rawDefault, resolver, visited);
     }
@@ -167,8 +167,7 @@ class PropertyPlaceholderHelper {
     }
     // The value itself may contain placeholders; resolve them with [key]
     // marked as visited to detect `a -> b -> a` cycles.
-    resolved = _parse(resolved, resolver, [...visited, key]);
-    return resolved;
+    return _parse(resolved, resolver, [...visited, key]);
   }
 
   // Splits `key:default` at the first unescaped, top-level separator;

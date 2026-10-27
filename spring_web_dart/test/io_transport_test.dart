@@ -40,11 +40,13 @@ void main() {
             'X-Tags',
             request.headers['x-tag']?.join(' | ') ?? '',
           );
-          response.statusCode = 201;
-          response.write(body);
+          response
+            ..statusCode = 201
+            ..write(body);
         case '/missing':
-          response.statusCode = 404;
-          response.write('nope');
+          response
+            ..statusCode = 404
+            ..write('nope');
         case '/old':
           await response.redirect(base.resolve('/json'));
           return;
@@ -83,8 +85,9 @@ void main() {
           }
         case '/stall':
           // Headers and a first chunk, then silence.
-          response.bufferOutput = false;
-          response.write('first');
+          response
+            ..bufferOutput = false
+            ..write('first');
           await response.flush();
           await Future<void>.delayed(const Duration(milliseconds: 600));
           response.write('late');

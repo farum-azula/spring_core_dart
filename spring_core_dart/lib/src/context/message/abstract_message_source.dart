@@ -188,9 +188,10 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   /// Resolves [MessageSourceResolvable] arguments to strings.
   List<Object?> resolveArguments(List<Object?> args, String? locale) => [
     for (final arg in args)
-      arg is MessageSourceResolvable
-          ? getMessageFromResolvable(arg, locale: locale)
-          : arg,
+      if (arg is MessageSourceResolvable)
+        getMessageFromResolvable(arg, locale: locale)
+      else
+        arg,
   ];
 
   /// Applies [MessageFormat] unless there are no arguments (and

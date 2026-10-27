@@ -130,5 +130,7 @@ Future<void> main() async {
     'closeCode': socket.closeStatus?.code,
     'headers': headers,
   };
+  // The test reads this line from the output of the node process.
+  // ignore: avoid_print
   print('RESULT ${jsonEncode(result)}');
 }

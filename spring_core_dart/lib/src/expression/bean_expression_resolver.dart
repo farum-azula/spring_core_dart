@@ -256,7 +256,7 @@ final class EnvironmentMethodResolver implements MethodResolver {
     if (target is! PropertyResolver) {
       return null;
     }
-    final Object? function = switch (name) {
+    final function = switch (name) {
       'getProperty' => ([
         String? key,
         String? defaultValue,
@@ -456,17 +456,16 @@ class StandardBeanExpressionResolver implements BeanExpressionResolver {
         () => beanFactory.conversionService,
       );
     }
-    for (final accessor in [
+    [
       ..._accessors,
       const BeanExpressionContextAccessor(),
       const BeanFactoryAccessor(),
       const EnvironmentAccessor(),
-    ]) {
-      context.addPropertyAccessor(accessor);
-    }
-    for (final resolver in [..._resolvers, const EnvironmentMethodResolver()]) {
-      context.addMethodResolver(resolver);
-    }
+    ].forEach(context.addPropertyAccessor);
+    [
+      ..._resolvers,
+      const EnvironmentMethodResolver(),
+    ].forEach(context.addMethodResolver);
     customizeEvaluationContext(context);
     return context;
   }

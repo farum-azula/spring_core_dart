@@ -264,9 +264,9 @@ void main() {
           [BeanDefinition<Repo>(name: 'repo', create: (_) => Repo())],
           registrars: [
             const ImportDeclaration(GreeterRegistrar.new),
-            ImportDeclaration(
+            const ImportDeclaration(
               ClockRegistrar.new,
-              conditions: const [
+              conditions: [
                 ProfileCondition(['cloud']),
               ],
             ),
@@ -400,23 +400,27 @@ void main() {
     test('@Async picks the named executor; ignored without any', () async {
       final first = SimpleAsyncTaskExecutor();
       final second = SimpleAsyncTaskExecutor();
-      final ctx = context([
-        BeanModule('m', [
-          mailer(async: const Async('second')),
-          executor('first', first),
-          executor('second', second),
-        ]),
-      ])..refresh();
-      ctx.publishEvent('a');
+      final ctx =
+          context([
+              BeanModule('m', [
+                mailer(async: const Async('second')),
+                executor('first', first),
+                executor('second', second),
+              ]),
+            ])
+            ..refresh()
+            ..publishEvent('a');
       expect(second.activeCount, 1);
       expect(first.activeCount, 0);
       await second.whenIdle;
       expect(ctx.getBean<Mailer>().received, ['a']);
 
-      final sync = context([
-        BeanModule('m', [mailer(async: const Async())]),
-      ])..refresh();
-      sync.publishEvent('b');
+      final sync =
+          context([
+              BeanModule('m', [mailer(async: const Async())]),
+            ])
+            ..refresh()
+            ..publishEvent('b');
       expect(sync.getBean<Mailer>().received, ['b']);
 
       final missing = context([

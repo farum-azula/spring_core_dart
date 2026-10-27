@@ -56,7 +56,7 @@ String? unsupportedConstraint(
   }
   final shown = type.getDisplayString().replaceAll('?', '');
   return '@$name on $target: it validates ${kinds.join(', ')} values, not '
-      '$shown (like Hibernate Validator\'s UnexpectedTypeException). Remove '
+      "$shown (like Hibernate Validator's UnexpectedTypeException). Remove "
       'it or change the type.';
 }
 
@@ -137,8 +137,10 @@ String? _elementConstraints(
   }
   if (element == null) {
     final shown = type.getDisplayString().replaceAll('?', '');
-    return '@$kind on $target: it constrains the '
-        '${kind == 'EachKey' ? 'keys of a Map' : 'elements of an Iterable or the values of a Map'}'
+    final constrained = kind == 'EachKey'
+        ? 'keys of a Map'
+        : 'elements of an Iterable or the values of a Map';
+    return '@$kind on $target: it constrains the $constrained'
         ', not $shown. Remove it or change the type.';
   }
   final constraints = _field(annotation, 'constraints')?.toListValue() ?? [];

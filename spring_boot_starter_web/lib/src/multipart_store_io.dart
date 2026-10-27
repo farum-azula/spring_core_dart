@@ -55,7 +55,8 @@ final class FileWriter {
       }
       final file = File(
         '${directory.path}${Platform.pathSeparator}'
-        'upload_${DateTime.now().microsecondsSinceEpoch}_${identityHashCode(this)}.tmp',
+        'upload_${DateTime.now().microsecondsSinceEpoch}_'
+        '${identityHashCode(this)}.tmp',
       );
       _file = file;
       final sink = file.openWrite();

@@ -22,6 +22,12 @@ class BookController {
     @RequestParam.of(name: 'genre', required: false) Genre? genre,
   }) => books.search(query, page: page, genre: genre);
 
+  @PostMapping('/form')
+  String form(
+    @RequestParam('title') String title,
+    @RequestParam('count') int count,
+  ) => '$title x$count';
+
   @PostMapping()
   Future<ResponseEntity<Book>> create(
     @RequestBody() @Valid() NewBook book,

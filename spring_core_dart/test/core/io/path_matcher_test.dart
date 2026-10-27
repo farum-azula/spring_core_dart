@@ -201,7 +201,7 @@ void main() {
     });
     expect(
       m.extractUriTemplateVariables(
-        '/{symbolicName:[\\w\\.]+}-{version:[\\w\\.]+}.jar',
+        r'/{symbolicName:[\w\.]+}-{version:[\w\.]+}.jar',
         '/com.example-1.0.0.jar',
       ),
       {'symbolicName': 'com.example', 'version': '1.0.0'},

@@ -4,7 +4,6 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
@@ -65,8 +64,8 @@ Future<TestBuilderResult> _build(String service) async {
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
-    SpringBuilder(proxyMode: ProxyMode.all),
+  return await testBuilder(
+    SpringBuilder(),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/service.dart':

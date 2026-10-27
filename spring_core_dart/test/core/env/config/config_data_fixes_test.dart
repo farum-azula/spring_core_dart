@@ -56,8 +56,8 @@ void main() {
 
   group('imports and guards', () {
     test('an optional import with an unresolvable placeholder is skipped', () {
-      write('application.properties', '''
-spring.config.import=optional:file:\${missing.dir}/x.properties
+      write('application.properties', r'''
+spring.config.import=optional:file:${missing.dir}/x.properties
 a=1
 ''');
       final environment = env();
@@ -213,6 +213,8 @@ spring.profiles.active[1]=b
         source.getProperty('random.uuid'),
         matches(
           RegExp(
+            // A string that cannot be split without changing it.
+            // ignore: lines_longer_than_80_chars
             r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
           ),
         ),
@@ -270,22 +272,22 @@ spring.profiles.active[1]=b
     });
 
     test('refreshAsync preloads @PropertySource assets', () async {
-      final context = AnnotationConfigApplicationContext([
-        BeanModule(
-          'assets',
-          const [],
-          propertySources: const [
-            PropertySourceDeclaration(['asset:a.properties']),
-          ],
-        ),
-      ], environment: env());
-      context.addProtocolResolver(
-        FunctionProtocolResolver(
-          (location, _) => location == 'asset:a.properties'
-              ? _AsyncResource(location, 'fromAsset=yes')
-              : null,
-        ),
-      );
+      final context =
+          AnnotationConfigApplicationContext([
+            BeanModule(
+              'assets',
+              const [],
+              propertySources: const [
+                PropertySourceDeclaration(['asset:a.properties']),
+              ],
+            ),
+          ], environment: env())..addProtocolResolver(
+            FunctionProtocolResolver(
+              (location, _) => location == 'asset:a.properties'
+                  ? _AsyncResource(location, 'fromAsset=yes')
+                  : null,
+            ),
+          );
       await context.refreshAsync();
       expect(context.environment.getProperty('fromAsset'), 'yes');
       context.close();

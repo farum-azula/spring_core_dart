@@ -9,13 +9,17 @@ const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 /// The [CacheManager] described by the `spring.cache.*` properties, like
 /// Spring Boot's `CacheAutoConfiguration`:
 ///
-/// | Property | Meaning |
-/// |---|---|
-/// | `spring.cache.type` | `generic` (the default when [caches] are given: the `Cache` beans): a [SimpleCacheManager] of them; `simple` (the default otherwise): [InMemoryCacheManager]; `none`: [NoOpCacheManager] |
-/// | `spring.cache.cache-names` | a fixed set of caches (`books,authors`); otherwise caches are created on demand |
-/// | `spring.cache.simple.time-to-live` | how long entries live (`10m`, `PT1H`, milliseconds) |
-/// | `spring.cache.simple.max-size` | maximum entries per cache |
-/// | `spring.cache.simple.caches.<name>.time-to-live` / `.max-size` | the same for one cache |
+/// - `spring.cache.type`: `generic` (the default when [caches] are given:
+///   the `Cache` beans) is a [SimpleCacheManager] of them; `simple` (the
+///   default otherwise) is [InMemoryCacheManager]; `none` is
+///   [NoOpCacheManager];
+/// - `spring.cache.cache-names`: a fixed set of caches (`books,authors`);
+///   otherwise caches are created on demand;
+/// - `spring.cache.simple.time-to-live`: how long entries live (`10m`,
+///   `PT1H`, milliseconds);
+/// - `spring.cache.simple.max-size`: maximum entries per cache;
+/// - `spring.cache.simple.caches.<name>.time-to-live` / `.max-size`: the
+///   same for one cache.
 ///
 /// ```dart
 /// final manager = cacheManagerFromProperties(context.environment);
@@ -141,7 +145,12 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
     name: 'cacheOperationValidator',
     types: const [CacheOperationValidator, BeanPostProcessor, BeanFactoryAware],
     source: _source,
-    create: (r) => CacheOperationValidator(r.dependency<CacheInterceptor>()),
+    create: (r) {
+      final factory = r.dependency<BeanFactory>();
+      return CacheOperationValidator.lazy(
+        () => factory.getBean<CacheInterceptor>(),
+      );
+    },
   ),
   BeanDefinition<DefaultPointcutAdvisor>(
     name: 'cacheAdvisor',

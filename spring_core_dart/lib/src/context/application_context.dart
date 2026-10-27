@@ -10,6 +10,8 @@ import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/beans/object_provider.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
 import 'package:spring_core_dart/src/beans/scope.dart';
+import 'package:spring_core_dart/src/context/annotations.dart'
+    show Async, Configuration;
 import 'package:spring_core_dart/src/context/bean_module.dart';
 import 'package:spring_core_dart/src/context/bean_registrar.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
@@ -24,8 +26,6 @@ import 'package:spring_core_dart/src/context/message/abstract_message_source.dar
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/context/shutdown_hook.dart';
 import 'package:spring_core_dart/src/context/task_executor.dart';
-import 'package:spring_core_dart/src/context/annotations.dart'
-    show Async, Configuration;
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/env/config/config_data_environment.dart'
     show ConfigDataEnvironment;
@@ -33,9 +33,9 @@ import 'package:spring_core_dart/src/core/env/config/property_source_factory.dar
 import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_resolver.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
-import 'package:spring_core_dart/src/core/log.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
+import 'package:spring_core_dart/src/core/log.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 import 'package:spring_core_dart/src/expression/bean_expression_resolver.dart';
 import 'package:spring_core_dart/src/expression/introspection_access.dart';
@@ -193,6 +193,9 @@ abstract interface class ConfigurableApplicationContext
     implements ApplicationContext, Lifecycle {
   @override
   ConfigurableEnvironment get environment;
+
+  @override
+  ApplicationContext? get parent;
 
   /// Sets the parent context; its environment is merged into this one.
   set parent(ApplicationContext? parent);
@@ -459,7 +462,8 @@ class AnnotationConfigApplicationContext
   static const environmentBeanName = 'environment';
 
   /// Name of the `TaskExecutor` bean `@Async` falls back to when there are
-  /// several (Spring's `AsyncExecutionAspectSupport.DEFAULT_TASK_EXECUTOR_BEAN_NAME`).
+  /// several (Spring's
+  /// `AsyncExecutionAspectSupport.DEFAULT_TASK_EXECUTOR_BEAN_NAME`).
   static const defaultTaskExecutorBeanName = 'taskExecutor';
 
   /// Name of the context's [BeanIntrospector] bean.
@@ -771,7 +775,7 @@ class AnnotationConfigApplicationContext
     }
     try {
       _lifecycleProcessor?.onClose();
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _log.warning(
         'Exception thrown from the LifecycleProcessor cancelling the refresh',
         error: error,
@@ -852,7 +856,8 @@ class AnnotationConfigApplicationContext
   }
 
   // `@PropertySource` files go last, but `defaultProperties` stays the
-  // lowest source (Spring Boot's PropertySourceOrderingBeanFactoryPostProcessor).
+  // lowest source (Spring Boot's
+  // PropertySourceOrderingBeanFactoryPostProcessor).
   void _keepDefaultPropertiesLast() {
     final sources = environment.propertySources;
     final defaults = sources.remove(
@@ -1642,7 +1647,7 @@ class AnnotationConfigApplicationContext
     }
     try {
       _lifecycleProcessor?.onClose();
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _lifecycleCloseFailed(error, stackTrace);
     }
     _factory.destroySingletons();
@@ -1689,7 +1694,7 @@ class AnnotationConfigApplicationContext
     }
     try {
       await _lifecycleProcessor?.onCloseAsync();
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _lifecycleCloseFailed(error, stackTrace);
     }
     await _factory.destroySingletonsAsync();
@@ -1710,7 +1715,7 @@ class AnnotationConfigApplicationContext
     _stopShutdownHook = null;
     try {
       publishEvent(ContextClosedEvent(this));
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _log.warning(
         'Exception thrown from a listener handling ContextClosedEvent',
         error: error,
@@ -1744,9 +1749,9 @@ class AnnotationConfigApplicationContext
   /// parent context. Non-[ApplicationEvent] objects are wrapped in a
   /// [PayloadApplicationEvent] of their static type [T] (Spring uses the
   /// runtime type), so `addListener<PayloadApplicationEvent<OrderPlaced>>`
-  /// sees `publishEvent(OrderPlaced(...))`. Like Spring 7, before [refresh], after a
-  /// failed refresh and after [close] the event is not delivered locally
-  /// (only to the parent).
+  /// sees `publishEvent(OrderPlaced(...))`. Like Spring 7, before [refresh],
+  /// after a failed refresh and after [close] the event is not delivered
+  /// locally (only to the parent).
   ///
   /// ```dart
   /// context.publishEvent(OrderPlaced(1, 250)); // payload event
@@ -2040,7 +2045,9 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
     if (result is Future<Object?>) {
       // Like Spring's CompletionStage handling: the value is published
       // when it arrives, a failure goes to the error handler.
-      result.then(_publishResult, onError: _context._asyncListenerFailed);
+      unawaited(
+        result.then(_publishResult, onError: _context._asyncListenerFailed),
+      );
       return;
     }
     _publishResult(result);
@@ -2055,7 +2062,7 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
         result = await result;
       }
       _publishResult(result);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _context._asyncListenerFailed(error, stackTrace);
     }
   }
@@ -2106,7 +2113,7 @@ final class _LazyListenerBean implements GenericApplicationListener, Ordered {
 
   final AnnotationConfigApplicationContext _context;
   final String _beanName;
-  GenericApplicationListener? _bean;
+  late GenericApplicationListener _bean;
 
   // Its @Order / @Priority: the bean is not created to ask it.
   @override
@@ -2135,7 +2142,7 @@ final class _LazyListenerBean implements GenericApplicationListener, Ordered {
   }
 
   @override
-  void onApplicationEvent(Object event) => _bean!.onApplicationEvent(event);
+  void onApplicationEvent(Object event) => _bean.onApplicationEvent(event);
 
   @override
   String toString() => '_LazyListenerBean($_beanName)';

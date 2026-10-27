@@ -5,6 +5,9 @@
 //   dart run example/example.dart
 //   dart run example/example.dart --greeting.name=Ada
 //   GREETING_NAME=Grace dart run example/example.dart
+
+// An example: printing to the console is how it shows its result.
+// ignore_for_file: avoid_print
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'example.spring.dart';

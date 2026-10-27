@@ -339,15 +339,14 @@ void main() {
     });
 
     test('@within binds the declaring class annotation', () {
-      final orders = proxy([
-        before(
-          '@within(audited)',
-          bindings: {'audited': binding<Audited>('Audited')},
-          body: (joinPoint, bound) =>
-              log.add('${joinPoint.signature.name} ${bound['audited']}'),
-        ),
-      ]);
-      orders
+      proxy([
+          before(
+            '@within(audited)',
+            bindings: {'audited': binding<Audited>('Audited')},
+            body: (joinPoint, bound) =>
+                log.add('${joinPoint.signature.name} ${bound['audited']}'),
+          ),
+        ])
         ..count()
         ..place('x');
       expect(log, ["count Instance of 'Audited'"]);
@@ -356,13 +355,12 @@ void main() {
 
   group('args by runtime type', () {
     test('args(Type) tests the argument (instanceof) with a type test', () {
-      final orders = proxy([
-        before(
-          'args(String)',
-          typeTests: {'String': (value) => value is String},
-        ),
-      ]);
-      orders
+      proxy([
+          before(
+            'args(String)',
+            typeTests: {'String': (value) => value is String},
+          ),
+        ])
         ..place('book')
         ..place(42);
       expect(log, ['before place']);
@@ -372,8 +370,7 @@ void main() {
       expect(matches('args(String)', 'place'), isFalse);
       expect(matches('args(Object)', 'place'), isTrue);
       expect(matches('args(*)', 'place'), isTrue);
-      final orders = proxy([before('args(Object)')]);
-      orders.place(42);
+      proxy([before('args(Object)')]).place(42);
       expect(log, ['before place']);
     });
 
@@ -410,10 +407,9 @@ void main() {
         value is AuditedItem ? const Audited() : null;
 
     test('matches arguments whose class carries the annotation', () {
-      final orders = proxy([
-        before('@args(Audited)', argumentAnnotations: {'Audited': audited}),
-      ]);
-      orders
+      proxy([
+          before('@args(Audited)', argumentAnnotations: {'Audited': audited}),
+        ])
         ..place(const AuditedItem())
         ..place('plain')
         ..count();
@@ -421,15 +417,14 @@ void main() {
     });
 
     test('binds the annotation; unknown annotations never match', () {
-      final orders = proxy([
+      proxy([
         before(
           '@args(a, ..)',
           bindings: {'a': binding<Audited>('Audited')},
           argumentAnnotations: {'Audited': audited},
           body: (_, bound) => log.add('bound ${bound['a']}'),
         ),
-      ]);
-      orders.place(const AuditedItem());
+      ]).place(const AuditedItem());
       expect(log, ["bound Instance of 'Audited'"]);
       expect(matches('@args(Audited)', 'place'), isFalse);
       expect(() => ExpressionPointcut('@args(audited)'), throwsFormatException);
@@ -458,16 +453,16 @@ void main() {
     });
 
     test('this(t) of an introduced interface is decided per call', () {
-      final orders = proxy([
-        before(
-          'execution(* place(..)) && this(usage)',
-          bindings: {'usage': binding<UsageTracked>('UsageTracked')},
-          body: (_, bound) => (bound['usage']! as UsageTracked).use(),
-        ),
-      ]);
-      orders
-        ..place('a')
-        ..place('b');
+      final orders =
+          proxy([
+              before(
+                'execution(* place(..)) && this(usage)',
+                bindings: {'usage': binding<UsageTracked>('UsageTracked')},
+                body: (_, bound) => (bound['usage']! as UsageTracked).use(),
+              ),
+            ])
+            ..place('a')
+            ..place('b');
       expect((orders as UsageTracked).uses, 2);
     });
   });
@@ -516,13 +511,12 @@ void main() {
 
     test('bean(...) parts see aliases through the proxy factory', () {
       final pointcut = ComposablePointcut(ExpressionPointcut('bean(main)'));
-      final orders = ordersFactory().createProxy(
+      (ordersFactory().createProxy(
         DefaultOrders(),
         [DefaultPointcutAdvisor(pointcut, _Tag('t'))],
         beanName: 'orders',
         beanAliases: const ['main'],
-      ) as Orders;
-      orders.count();
+      ) as Orders).count();
       expect(log, ['t count']);
     });
   });
@@ -584,8 +578,7 @@ void main() {
       final ctx = context([ordersBean('orders')]);
       final factory = ProxyFactory.forBean(ctx.beanFactory, 'orders')
         ..addAdvice(_Tag('x'));
-      final orders = factory.getProxy() as Orders;
-      orders.count();
+      final orders = factory.getProxy() as Orders..count();
       expect(log, ['x count']);
       expect(
         AopUtils.getTarget(orders),
@@ -650,8 +643,7 @@ void main() {
       );
       final factory = AspectJProxyFactory(DefaultOrders(), ordersFactory())
         ..addAspect(aspect, metadata);
-      final orders = factory.getProxy() as Orders;
-      orders
+      factory.getProxy() as Orders
         ..place('x')
         ..count();
       expect(log, ['before 1', 'after 1']);

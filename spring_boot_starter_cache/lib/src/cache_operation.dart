@@ -9,7 +9,10 @@ import 'package:spring_boot_starter_cache/src/annotations.dart';
 /// final class TenantCacheResolver implements CacheResolver {
 ///   @override
 ///   Iterable<Cache> resolveCaches(CacheOperationInvocationContext context) =>
-///       [for (final name in context.operation.cacheNames) manager.cache('$tenant.$name')];
+///       [
+///         for (final name in context.operation.cacheNames)
+///           manager.cache('$tenant.$name'),
+///       ];
 /// }
 /// ```
 ///

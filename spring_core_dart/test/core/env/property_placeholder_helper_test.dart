@@ -50,7 +50,7 @@ void main() {
 
   test('unbalanced text is kept', () {
     expect(replace(r'${name'), r'${name');
-    expect(replace(r'a } b'), 'a } b');
+    expect(replace('a } b'), 'a } b');
   });
 
   test('braces inside values are honored', () {
@@ -109,7 +109,6 @@ void main() {
   test('custom syntax, no separator, no escape', () {
     final custom = PropertyPlaceholderHelper(
       prefix: '@{',
-      suffix: '}',
       valueSeparator: null,
       escapeCharacter: null,
     );

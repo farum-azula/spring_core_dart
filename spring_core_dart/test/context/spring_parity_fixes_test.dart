@@ -181,31 +181,37 @@ void main() {
   group('events', () {
     test('Object listeners receive the payload, not the wrapper', () {
       final received = <Object>[];
-      final ctx = context([
-        BeanDefinition<Recorded>(
-          name: 'methods',
-          create: (_) => Recorded('m'),
-          eventListeners: [
-            EventListenerMethod.of<Recorded, Object>('Recorded.any', (_, e) {
-              received.add('method:$e');
-              return null;
-            }),
-            EventListenerMethod<Recorded>.matching(
-              id: 'Recorded.matching',
-              accepts: (candidate) => true,
-              invoke: (_, event) {
-                received.add(
-                  'matching:${EventListenerMethod.match(event, (c) => true)}',
-                );
-                return null;
-              },
-            ),
-          ],
-        ),
-      ])..addListener<Object>(received.add);
-      ctx
-        ..refresh()
-        ..publishEvent('hello');
+      final ctx =
+          context([
+              BeanDefinition<Recorded>(
+                name: 'methods',
+                create: (_) => Recorded('m'),
+                eventListeners: [
+                  EventListenerMethod.of<Recorded, Object>('Recorded.any', (
+                    _,
+                    e,
+                  ) {
+                    received.add('method:$e');
+                    return null;
+                  }),
+                  EventListenerMethod<Recorded>.matching(
+                    id: 'Recorded.matching',
+                    accepts: (candidate) => true,
+                    invoke: (_, event) {
+                      final matched = EventListenerMethod.match(
+                        event,
+                        (c) => true,
+                      );
+                      received.add('matching:$matched');
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ])
+            ..addListener<Object>(received.add)
+            ..refresh()
+            ..publishEvent('hello');
       expect(
         received,
         containsAll(['hello', 'method:hello', 'matching:hello']),

@@ -1,3 +1,8 @@
+## Unreleased
+
+- `Principal` now comes from `spring_core_dart` (still exported here, the same type).
+- `RequestPostProcessor` and `FunctionRequestPostProcessor` moved here from `spring_boot_starter_test` (`package:spring_web_dart/testing.dart`), so other starters can offer post-processors (the security starter's `user()`, `jwt()`, `csrf()`); the test starter still exports them.
+
 ## 0.3.2
 
 - feat: spring_boot_starter_web, WebSocket server endpoints, uploads and downloads

@@ -136,10 +136,10 @@ void main() {
     test('the first source with the property wins, whatever its form', () {
       final e = StandardEnvironment(systemEnvironment: const {})
         ..propertySources.addFirst(
-          MapPropertySource('low', {'app.read-timeout': 'low'}),
+          const MapPropertySource('low', {'app.read-timeout': 'low'}),
         )
         ..propertySources.addFirst(
-          MapPropertySource('high', {'app.readTimeout': 'high'}),
+          const MapPropertySource('high', {'app.readTimeout': 'high'}),
         );
       ConfigurationPropertySources.attach(e);
       expect(e.getProperty('app.read-timeout'), 'high');
@@ -161,7 +161,7 @@ void main() {
 
     test('attaching twice keeps one source, first', () {
       final e = env(const {'a': '1'});
-      e.propertySources.addFirst(MapPropertySource('top', const {}));
+      e.propertySources.addFirst(const MapPropertySource('top', {}));
       ConfigurationPropertySources.attach(e);
       expect(e.propertySources.first.name, 'configurationProperties');
       expect(
@@ -173,7 +173,7 @@ void main() {
 
     test('propertyNames gives adapted names for binders', () {
       final names = ConfigurationPropertySources.propertyNames(
-        MapPropertySource('m', {
+        const MapPropertySource('m', {
           'app.headers.X-Shop': 'neon',
           'app.defaultRequestHeaders.X-Trace': 't',
         }),

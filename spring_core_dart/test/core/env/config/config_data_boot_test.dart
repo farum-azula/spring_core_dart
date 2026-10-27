@@ -25,6 +25,8 @@ void main() {
 
   // Spring Boot's file group, rooted at the temp directory.
   const fileGroup = [
+    // One element, split for the line width.
+    // ignore: no_adjacent_strings_in_list
     'optional:file:{root}/;optional:file:{root}/config/;'
         'optional:file:{root}/config/*/',
   ];

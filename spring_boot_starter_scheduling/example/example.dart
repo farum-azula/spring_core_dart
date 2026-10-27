@@ -4,6 +4,9 @@
 //
 //   dart run example/example.dart
 //   dart run example/example.dart --heartbeat.rate=500ms
+
+// An example: printing to the console is how it shows its result.
+// ignore_for_file: avoid_print
 import 'dart:async';
 
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart';
@@ -12,7 +15,7 @@ import 'example.spring.dart';
 
 @Component()
 class Heartbeat {
-  var beats = 0;
+  int beats = 0;
 
   /// Every second, or `heartbeat.rate`.
   @Scheduled(fixedRateString: r'${heartbeat.rate:1s}')

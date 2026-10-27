@@ -27,6 +27,7 @@ jobs:
       packages: ${{ steps.affected.outputs.packages }}
       core: ${{ steps.affected.outputs.core }}
       tour: ${{ steps.affected.outputs.tour }}
+      security: ${{ steps.affected.outputs.security }}
       flutter: ${{ steps.affected.outputs.flutter }}
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
       flutter_counter: ${{ steps.affected.outputs.flutter_counter }}
@@ -51,6 +52,82 @@ jobs:
           BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
         run: dart run tool/affected.dart --base "$BASE" --github-output
 
+  # The quality gate (a required status check: keep the job's name):
+  # formatting, the analyzer with very_good_analysis, and the tests of the
+  # published Dart packages with line coverage that may not drop.
+  quality:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # pubspec.lock is not committed: the cache is keyed on the pubspecs.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed .
+
+      # The workspace packages (the Flutter ones resolve outside it and are
+      # analyzed by the `flutter` job).
+      - name: Analyze
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security spring_boot_starter_test example/spring_core_tour example/spring_boot_feign extensions/language_server tool
+
+      # coverage:test_with_coverage in each published Dart package, the
+      # lcov files merged into coverage/lcov.info.
+      - name: Tests with coverage
+        run: |
+          dart pub global activate coverage
+          dart run tool/coverage.dart
+
+      - name: Coverage does not drop
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          # The coverage of today (88.88 % of the lines, rounded down): it may
+          # rise, not drop. Raise it when the coverage rises.
+          min_coverage: 88
+
+  # Known vulnerabilities of the resolved dependencies (a required status
+  # check: keep the job's name), with Google's osv-scanner on the lock file
+  # `dart pub get` writes. The Flutter packages' lock files are checked in
+  # the `flutter` job (tool/check_vulnerabilities.dart --flutter).
+  vulnerabilities:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: osv-scanner
+        run: |
+          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+          "$(go env GOPATH)/bin/osv-scanner" scan --lockfile=pubspec.lock
+
   # Fast checks of the whole repository (every change).
   check:
     runs-on: ubuntu-26.04
@@ -74,12 +151,6 @@ jobs:
       # and the docs' install snippets (roadmap/dependencies.md).
       - name: Tests of the tools
         run: dart test tool/test
-
-      - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_boot_starter_test example/spring_core_tour example/spring_boot_feign extensions/language_server tool
-
-      - name: Format
-        run: dart format --output=none --set-exit-if-changed .
 
       - name: Zed extension dart_spring builds
         working-directory: extensions/zed/dart_spring
@@ -106,7 +177,7 @@ jobs:
           - part: examples and core
             directories: example/spring_core_tour example/spring_boot_feign spring_core_dart spring_boot_dart
           - part: starters
-            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web
+            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security
     steps:
       - uses: actions/checkout@v7
 
@@ -181,7 +252,7 @@ jobs:
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
           PART: ${{ matrix.part }}
-        run: dart run tool/test_all.dart --only "$PACKAGES" --exclude-tags integration --job "$PART/4"
+        run: dart run tool/test_all.dart --only "$PACKAGES" --exclude-tags "integration || differential" --job "$PART/4"
 
   # The tests tagged `integration` (@Tags(['integration'])): real HTTP and
   # WebSocket servers on sockets, started processes, the fetch transport on
@@ -209,6 +280,52 @@ jobs:
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
         run: dart run tool/test_all.dart --only "$PACKAGES" --tags integration
+
+  # The security starter against Spring Security itself
+  # (roadmap/security_verification.md, section 3): the same raw requests to
+  # the Spring Boot twin of its test application (tool/security_reference)
+  # and to the Dart one; and password hashes written by each side, checked
+  # by the other.
+  differential:
+    name: Security compared with Spring Security
+    needs: changes
+    if: needs.changes.outputs.security == 'true'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+          cache-dependency-path: tool/security_reference/pom.xml
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Build the Spring application
+        working-directory: tool/security_reference
+        run: mvn -B -q -DskipTests package
+
+      - name: Spring checks the Dart password hashes
+        run: |
+          (cd spring_security_core && dart run test/vectors/write_password_hashes.dart /tmp/dart_password_hashes.json)
+          cd tool/security_reference
+          java -Dloader.main=dev.farumazula.reference.PasswordVectors \
+            -cp target/security-reference-0.0.0.jar \
+            org.springframework.boot.loader.launch.PropertiesLauncher \
+            check /tmp/dart_password_hashes.json
+
+      - name: The same requests to both
+        working-directory: spring_boot_starter_security
+        env:
+          SECURITY_REFERENCE_REQUIRED: 'true' # no skipping without the jar
+        run: dart test --tags differential --reporter expanded
 
   # SpEL and the JSON mapper run on the web too, where an integral double is
   # an `int` at run time: their tests also run compiled to JavaScript, on
@@ -280,6 +397,9 @@ jobs:
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
+
+      - name: No known vulnerabilities in the dependencies (Flutter packages)
+        run: dart run tool/check_vulnerabilities.dart --flutter
 
       - name: Generated code is up to date (Flutter examples)
         run: |
@@ -375,4 +495,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_boot_starter_test
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security spring_boot_starter_test

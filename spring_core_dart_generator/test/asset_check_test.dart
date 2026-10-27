@@ -14,7 +14,7 @@ import 'package:pkg/src/beans.spring.dart';
 final BeanModule pkgBeans = $pkgBeans;
 ''';
 
-const _assets = r'''
+const _assets = '''
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 @Component()
@@ -31,6 +31,11 @@ flutter:
     - assets/images/
 ''';
 
+// A pubspec declaring an asset as a `path:` entry with flavors.
+const _pathEntryPubspec =
+    'name: pkg\nflutter:\n  assets:\n    - path: assets/images/\n'
+    '      flavors: [prod]\n';
+
 Future<TestBuilderResult> _build(
   Map<String, String> files, {
   String app = _assets,
@@ -40,7 +45,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(),
     {
       'pkg|lib/src/beans.dart': _scan,
@@ -74,8 +79,7 @@ void main() {
   test('a file entry and a path: entry declare it too', () async {
     for (final pubspec in [
       'name: pkg\nflutter:\n  assets:\n    - assets/images/logo.png\n',
-      'name: pkg\nflutter:\n  assets:\n    - path: assets/images/\n'
-          '      flavors: [prod]\n',
+      _pathEntryPubspec,
     ]) {
       final result = await _build({
         'pubspec.yaml': pubspec,
@@ -119,7 +123,7 @@ void main() {
   test('every problem in one build', () async {
     final errors = await _errors(
       {'pubspec.yaml': 'name: pkg\n', 'assets/a.txt': 'a'},
-      app: r'''
+      app: '''
 import 'package:spring_core_dart/spring_core_dart.dart';
 
 @Component()

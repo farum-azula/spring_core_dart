@@ -38,7 +38,7 @@ abstract class BeansException implements Exception {
   /// ```
   Object? get rootCause {
     Object? root;
-    for (Object? current = cause; current != null;) {
+    for (var current = cause; current != null;) {
       root = current;
       current = current is BeansException ? current.cause : null;
     }

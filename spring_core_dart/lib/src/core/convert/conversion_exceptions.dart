@@ -27,6 +27,8 @@ sealed class ConversionException implements Exception {
   final String message;
 
   @override
+  // Subclasses show their own name.
+  // ignore: no_runtimetype_tostring
   String toString() => '$runtimeType: $message';
 }
 

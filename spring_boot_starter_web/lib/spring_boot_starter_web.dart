@@ -24,7 +24,9 @@ export 'package:spring_web_dart/spring_web_dart.dart';
 
 export 'src/cors.dart';
 export 'src/dispatcher.dart';
+export 'src/form_parameters.dart';
 export 'src/handler_method.dart';
+export 'src/http_session.dart';
 export 'src/multipart_resolver.dart';
 export 'src/request_mapping.dart' hide absent;
 export 'src/response_writer.dart';

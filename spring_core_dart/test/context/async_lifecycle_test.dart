@@ -321,8 +321,8 @@ void main() {
           slow: true,
           stopDelay: const Duration(milliseconds: 20),
         ),
-        server('stuck', phase: 0, slow: true),
-        server('quick', phase: 0),
+        server('stuck', slow: true),
+        server('quick'),
         BeanDefinition<LifecycleProcessor>(
           name: AnnotationConfigApplicationContext.lifecycleProcessorBeanName,
           create: (r) => DefaultLifecycleProcessor(
@@ -428,53 +428,57 @@ void main() {
   group('listeners', () {
     test('GenericApplicationListener and SmartApplicationListener beans '
         'receive events, also behind another declared type', () {
-      final c = ctx([
-        BeanDefinition<Recorder>(
-          name: 'recorder',
-          types: const [Recorder, GenericApplicationListener],
-          create: (_) => Recorder('recorder'),
-        ),
-        // Like a `@Bean Object hidden()` method: the type says nothing.
-        BeanDefinition<Object>(
-          name: 'hidden',
-          create: (_) => Recorder('hidden'),
-        ),
-        BeanDefinition<SmartRecorder>(
-          name: 'smart',
-          create: (_) => SmartRecorder(),
-        ),
-      ])..refresh();
-      c.publishEvent('hello');
+      final c =
+          ctx([
+              BeanDefinition<Recorder>(
+                name: 'recorder',
+                types: const [Recorder, GenericApplicationListener],
+                create: (_) => Recorder('recorder'),
+              ),
+              // Like a `@Bean Object hidden()` method: the type says nothing.
+              BeanDefinition<Object>(
+                name: 'hidden',
+                create: (_) => Recorder('hidden'),
+              ),
+              BeanDefinition<SmartRecorder>(
+                name: 'smart',
+                create: (_) => SmartRecorder(),
+              ),
+            ])
+            ..refresh()
+            ..publishEvent('hello');
       expect(log, [
         'smart:ContextRefreshedEvent',
         'recorder:hello',
         'hidden:hello',
       ]);
-      c.close();
-      c.publishEvent('after');
+      c
+        ..close()
+        ..publishEvent('after');
       expect(log, hasLength(3));
     });
 
     test('a listener registered as a singleton receives events once', () {
       final listener = Recorder('singleton');
-      final c = ctx([])
+      ctx([])
         ..beanFactory.registerSingleton('audit', listener)
         ..addApplicationListener(listener)
-        ..refresh();
-      c.publishEvent('hello');
+        ..refresh()
+        ..publishEvent('hello');
       expect(log, ['singleton:hello']);
     });
 
     test('a prototype GenericApplicationListener bean is warned about', () {
-      final c = ctx([
-        BeanDefinition<Recorder>(
-          name: 'proto',
-          scope: ScopeType.prototype,
-          create: (_) => Recorder('proto'),
-        ),
-      ])..refresh();
-      c.getBean<Recorder>();
-      c.publishEvent('hello');
+      ctx([
+          BeanDefinition<Recorder>(
+            name: 'proto',
+            scope: ScopeType.prototype,
+            create: (_) => Recorder('proto'),
+          ),
+        ])
+        ..refresh()
+        ..getBean<Recorder>()
+        ..publishEvent('hello');
       expect(log, isEmpty);
       expect(
         logged.map((r) => r.message),
@@ -507,9 +511,10 @@ void main() {
         ),
       ])..refresh();
       final lengths = <int>[];
-      c.addListener<int>(lengths.add);
-      c.publishEvent('hello');
-      c.publishEvent('fail');
+      c
+        ..addListener<int>(lengths.add)
+        ..publishEvent('hello')
+        ..publishEvent('fail');
       expect(lengths, isEmpty, reason: 'published when the Future completes');
       await tick();
       await tick();
@@ -518,19 +523,20 @@ void main() {
     });
 
     test('without an error handler the asynchronous error is logged', () async {
-      final c = ctx([
-        BeanDefinition<Handler>(
-          name: 'handler',
-          create: (_) => Handler(),
-          eventListeners: [
-            EventListenerMethod.of<Handler, String>(
-              'Handler.handle',
-              (bean, event) => bean.handle(event),
-            ),
-          ],
-        ),
-      ])..refresh();
-      c.publishEvent('fail');
+      ctx([
+          BeanDefinition<Handler>(
+            name: 'handler',
+            create: (_) => Handler(),
+            eventListeners: [
+              EventListenerMethod.of<Handler, String>(
+                'Handler.handle',
+                (bean, event) => bean.handle(event),
+              ),
+            ],
+          ),
+        ])
+        ..refresh()
+        ..publishEvent('fail');
       await tick();
       await tick();
       expect(
@@ -538,34 +544,38 @@ void main() {
             .where((r) => r.level == SpringLogLevel.error)
             .map((r) => '${r.message}: ${r.error}'),
         [
-          'Unexpected error occurred in asynchronous listener: Bad state: cannot handle',
+          // One element, split for the line width.
+          // ignore: no_adjacent_strings_in_list
+          'Unexpected error occurred in asynchronous listener: Bad state: '
+              'cannot handle',
         ],
       );
     });
 
     test('early events are replayed once the listeners are registered; events '
         'published while singletons are created are delivered right away', () {
-      final c = ctx([
-        BeanDefinition<EarlyPublisher>(
-          name: 'earlyPublisher',
-          types: const [EarlyPublisher, BeanFactoryPostProcessor],
-          create: (r) =>
-              EarlyPublisher(r.dependency<ApplicationEventPublisher>()),
-        ),
-        BeanDefinition<Recorder>(
-          name: 'recorder',
-          create: (_) => Recorder('recorder'),
-        ),
-        BeanDefinition<Object>(
-          name: 'publisher',
-          create: (r) {
-            r.dependency<ApplicationEventPublisher>().publishEvent('during');
-            log.add('publisher:created');
-            return Object();
-          },
-        ),
-      ])..addApplicationListener(Recorder('programmatic'));
-      c.refresh();
+      ctx([
+          BeanDefinition<EarlyPublisher>(
+            name: 'earlyPublisher',
+            types: const [EarlyPublisher, BeanFactoryPostProcessor],
+            create: (r) =>
+                EarlyPublisher(r.dependency<ApplicationEventPublisher>()),
+          ),
+          BeanDefinition<Recorder>(
+            name: 'recorder',
+            create: (_) => Recorder('recorder'),
+          ),
+          BeanDefinition<Object>(
+            name: 'publisher',
+            create: (r) {
+              r.dependency<ApplicationEventPublisher>().publishEvent('during');
+              log.add('publisher:created');
+              return Object();
+            },
+          ),
+        ])
+        ..addApplicationListener(Recorder('programmatic'))
+        ..refresh();
       expect(log, [
         'programmatic:early',
         'programmatic:during',

@@ -43,7 +43,7 @@ abstract interface class EnvironmentPostProcessor {
   /// The order of config data loading (Spring Boot's
   /// `ConfigDataEnvironmentPostProcessor.ORDER`): post-processors with a
   /// smaller order run before the config files are read.
-  static const configDataOrder = Ordered.highestPrecedence + 10;
+  static const int configDataOrder = Ordered.highestPrecedence + 10;
 
   /// Post-processes [environment] of [application].
   void postProcessEnvironment(

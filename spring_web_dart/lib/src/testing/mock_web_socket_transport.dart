@@ -65,6 +65,8 @@ class MockWebSocketTransport implements WebSocketTransport {
   }) async {
     await Future<void>.delayed(Duration.zero);
     if (_failures.isNotEmpty) {
+      // Any object can be prepared as the failure (failNextConnect).
+      // ignore: only_throw_errors
       throw _failures.removeFirst();
     }
     final socket = MockWebSocket._(

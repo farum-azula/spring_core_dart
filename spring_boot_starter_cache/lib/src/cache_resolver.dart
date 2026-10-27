@@ -32,7 +32,9 @@ abstract interface class CacheOperationInvocationContext {
 ///   final TenantContext tenants;
 ///
 ///   @override
-///   Iterable<Cache> resolveCaches(CacheOperationInvocationContext context) => [
+///   Iterable<Cache> resolveCaches(
+///     CacheOperationInvocationContext context,
+///   ) => [
 ///     for (final name in context.operation.cacheNames)
 ///       manager.getCache('${tenants.current}.$name')!,
 ///   ];

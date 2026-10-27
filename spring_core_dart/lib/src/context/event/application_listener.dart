@@ -123,7 +123,8 @@ abstract interface class GenericApplicationListener {
 /// @Component
 /// class ContextAudit implements SmartApplicationListener {
 ///   public boolean supportsEventType(Class<? extends ApplicationEvent> t) {
-///     return t == ContextRefreshedEvent.class || t == ContextClosedEvent.class;
+///     return t == ContextRefreshedEvent.class
+///         || t == ContextClosedEvent.class;
 ///   }
 ///   public void onApplicationEvent(ApplicationEvent event) { ... }
 /// }

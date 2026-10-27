@@ -52,7 +52,8 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     if (problems.isNotEmpty) {
       throw StateError(
-        'Invalid Feign client $typeName:\n${problems.map((p) => '  - $p').join('\n')}',
+        'Invalid Feign client $typeName:\n'
+        '${problems.map((p) => '  - $p').join('\n')}',
       );
     }
   }
@@ -370,6 +371,8 @@ final class FeignInvocationHandler implements InvocationHandler {
       return;
     }
     final lines = [
+      // One entry, written on two lines to stay within 80 columns.
+      // ignore: no_adjacent_strings_in_list
       '<--- ${response.statusCode}${_phrase(response.statusCode)} '
           '(${elapsed.inMilliseconds} ms)',
     ];
@@ -478,7 +481,8 @@ final class _Plan {
         problems.add(
           '$name: the $role parameter ${parameter.name} is $reason '
           '(${parameter.type}); use a String, number, bool, enum, DateTime '
-          'or a List of them${map ? ', or a Map<String, ...> for one per entry' : ''}',
+          'or a List of them'
+          '${map ? ', or a Map<String, ...> for one per entry' : ''}',
         );
       }
     }
@@ -812,6 +816,8 @@ final class _Plan {
     // parameters of the call are appended to it.
     final query = <String, List<String>>{};
     void addQuery(String name, Object? value, TypeInfo<Object?> type) {
+      // forEach would create the entry of a parameter without values too.
+      // ignore: prefer_foreach
       for (final text in _texts(value, type, '@RequestParam "$name"')) {
         (query[name] ??= []).add(text);
       }
@@ -872,6 +878,8 @@ final class _Plan {
     final cookieValues = [
       for (final (name, index) in cookies)
         if (arguments[index] case final value?)
+          // The interpolation cannot be wrapped (dart format keeps it).
+          // ignore: lines_longer_than_80_chars
           '$name=${_joined(value, parameters[index].type, '@CookieValue "$name"')}',
     ];
     if (cookieValues.isNotEmpty) {
@@ -1067,7 +1075,7 @@ final class _Plan {
   // [contentType] (UTF-8 by default): one `name=value` per entry, one per
   // item of a list, null values left out.
   String _formBody(Object value, TypeInfo<Object?> type, String contentType) {
-    final what = 'the form body';
+    const what = 'the form body';
     final Object? tree;
     try {
       tree = value is Map ? value : mapper.valueToTree(value, type);
@@ -1422,9 +1430,8 @@ final class _EventStreamFactory
                     ? result.events
                     : (result! as Stream<T>).map(ServerSentEvent<T>.new);
               } on Object catch (fallbackError, fallbackStack) {
-                controller
-                  ..addError(fallbackError, fallbackStack)
-                  ..close();
+                controller.addError(fallbackError, fallbackStack);
+                unawaited(controller.close());
                 return;
               }
               follow(backup, primary: false);

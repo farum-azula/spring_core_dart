@@ -1,52 +1,57 @@
-# spring_security_core (planned)
+# spring_security_core
 
 Spring Security, split like Spring itself into halves that work alone:
 
-| Package | What | Needs |
+| Package | What | Status |
 |---|---|---|
-| `spring_security_core` (this file) | who is logged in, `@PreAuthorize` on beans | `spring_core_dart` only |
-| [`spring_boot_starter_security`](spring_boot_starter_security.md) | incoming requests: filter chain, Basic, sessions, JWT resource server | the [web starter](spring_boot_starter_web.md) |
-| [`spring_boot_starter_oauth2_client`](spring_boot_starter_oauth2_client.md) | outgoing requests: tokens for Feign, WebSocket and HTTP clients, login with PKCE in Flutter | the Feign / WebSocket starters |
+| `spring_security_core` (this file) | who is logged in, users and passwords, `@PreAuthorize` on beans | done ([README](../spring_security_core/README.md)) |
+| [`spring_boot_starter_security`](spring_boot_starter_security.md) | incoming requests: filter chain, Basic, form login, sessions, JWT resource server | done |
+| [`spring_boot_starter_oauth2_client`](spring_boot_starter_oauth2_client.md) | outgoing requests: tokens for Feign, WebSocket and HTTP clients, login with PKCE in Flutter | planned |
 
-A server takes the core and the security starter; a Flutter app takes the
-core and the OAuth2 client; `@PreAuthorize` and the `SecurityContext` are
-the same in both.
+A server takes the security starter (it brings the core); a Flutter app
+takes the core and, later, the OAuth2 client; `@PreAuthorize` and the
+`SecurityContext` are the same in both. How it is shown to be safe:
+[security_verification.md](security_verification.md), [docs/security.md](../docs/security.md).
 
-## Security context
+## Done
 
-- `Authentication` (principal, authorities, details) and
-  `SecurityContextHolder`, kept in a `Zone` value — Dart's counterpart of
-  Spring's `ThreadLocal`, so it survives `await`. On a server it is the
-  request's user, in a Flutter app the logged-in user.
-- Events: `AuthenticationSuccessEvent`, `AuthenticationFailureEvent`,
-  `LogoutSuccessEvent` — e.g. a basket bean clears itself on logout with an
-  `@EventListener`.
-- `PasswordEncoder` (BCrypt, Argon2) in pure Dart, for the servers'
-  `UserDetailsService`.
+- `Authentication`, `SecurityContextHolder` kept per `Zone` (Dart's
+  `ThreadLocal`, survives `await`) with one global context outside every
+  scope (the logged-in user of a Flutter app).
+- Users: `UserDetails`, `User.withUsername`, `UserDetailsService`,
+  `InMemoryUserDetailsManager`, account status checks.
+- `AuthenticationManager`, `ProviderManager`, `DaoAuthenticationProvider`
+  (no user enumeration by message or timing, re-hashing of old hashes,
+  hashing on another isolate), events (success, failures, logout).
+- Password encoders on Bouncy Castle's Dart port (`pointycastle`): Argon2
+  (default), PBKDF2, scrypt, delegating; Spring's formats, hashes checked
+  both ways against Spring Security 7.1.
+- Method security: `@PreAuthorize`, `@PostAuthorize`, `@Secured`,
+  `@PreFilter`, `@PostFilter` on the AOP proxies with SpEL (`hasRole`,
+  `principal`, `#arg`, `returnObject`, `hasPermission`, `@bean`), always
+  on, expressions parsed at startup, unproxied annotated beans fail the
+  startup, run before `@Cacheable`. `RoleHierarchy`,
+  `GrantedAuthorityDefaults`.
+- Tests: `withMockUser`, `withAuthentication`, `withAnonymousUser`.
 
-## Method security
-
-`@PreAuthorize`, `@PostAuthorize` and `@Secured` on bean methods, on the
-existing AOP proxies, with the existing SpEL: `hasRole`, `hasAuthority`,
-`isAuthenticated()`, `principal`, method parameters (`#isbn`) and
-`returnObject`.
-
-```dart
-@Service()
-class OrderService {
-  @PreAuthorize("hasRole('ADMIN') or #order.owner == principal.name")
-  Future<void> cancel(Order order) async { ... }
-
-  @PostAuthorize('returnObject.owner == principal.name')
-  Future<Order> find(String id) async { ... }
-}
-```
-
-A denied call throws `AccessDeniedException`; the editor checks the SpEL
-like every other expression.
-
-In a client app this is a convenience for the UI (hide a button, keep a
-service from being called), not protection: the app can be taken apart
-and patched. The real check is always the server's — like secrets, which
-never belong in an app (see [spring_boot_starter_flutter](spring_boot_starter_flutter.md),
+In a client app method security is a convenience for the UI (hide a
+button, keep a service from being called), not protection: the app can be
+taken apart and patched. The real check is always the server's — like
+secrets, which never belong in an app (see
+[spring_boot_starter_flutter](spring_boot_starter_flutter.md),
 `--dart-define`).
+
+## Next
+
+- **Remove `pointycastle`** (third-party, [docs/dependencies.md](../docs/dependencies.md#pointycastle-third-party-to-be-removed)):
+  rewrite `lib/src/crypto/kdf_primitives.dart` on a Dart team (or Google)
+  package once one has Argon2, PBKDF2 and scrypt; the hashes of
+  `test/vectors/` (written by Spring) show whether it computes the same.
+- **BCrypt** (`{bcrypt}`, Spring's default): only when a vetted Dart
+  implementation exists; never written here by hand.
+- **Multi-factor authentication** (Spring Security 7's `FACTOR_*`
+  authorities, `@EnableMultiFactorAuthentication`).
+- **The editor:** the language server checks `@PreAuthorize` expressions
+  like other SpEL (names of arguments, beans).
+- **Flutter:** the logged-in user as a listenable for widgets, logout
+  clearing beans (`LogoutSuccessEvent`), with the OAuth2 client.

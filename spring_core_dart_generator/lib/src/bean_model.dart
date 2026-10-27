@@ -1283,11 +1283,12 @@ String forwardedParameterName(
     return name;
   }
   final taken = {for (final parameter in parameters) parameter.name};
-  var candidate = 'p$index';
-  while (taken.contains(candidate)) {
-    candidate = '${candidate}_';
+  var underscores = 0;
+  String candidate() => 'p$index${'_' * underscores}';
+  while (taken.contains(candidate())) {
+    underscores++;
   }
-  return candidate;
+  return candidate();
 }
 
 /// A parameter of a proxied method.
@@ -1393,11 +1394,11 @@ class ProxyMember {
     required this.kind,
     required this.name,
     required this.declaringType,
-    this.declaringTypes = const [],
     required this.returnType,
     required this.typeParameters,
     required this.parameters,
     required this.annotations,
+    this.declaringTypes = const [],
     List<DartObject>? mergedAnnotations,
   }) : mergedAnnotations = mergedAnnotations ?? annotations;
 
@@ -2272,11 +2273,12 @@ class ModuleModel {
   /// classes carry an annotation).
   final classes = <ClassElement>[];
 
-  /// `@BuildContextAccess` beans (spring_boot_starter_flutter): generated `BuildContext`
-  /// getters.
+  /// `@BuildContextAccess` beans (spring_boot_starter_flutter): generated
+  /// `BuildContext` getters.
   final buildContextAccess = <BuildContextAccessModel>[];
 
-  /// `SpringStatelessWidget<(...)>` classes (spring_boot_starter_flutter), in scan order.
+  /// `SpringStatelessWidget<(...)>` classes (spring_boot_starter_flutter), in
+  /// scan order.
   final springWidgets = <SpringWidgetModel>[];
 
   /// `@Log` classes: a generated `log` getter for each.

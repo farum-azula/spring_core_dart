@@ -11,7 +11,7 @@ enum Stock {
   inStock('in_stock'),
   soldOut('sold_out');
 
-  const Stock(this.json);
+  Stock(this.json);
   final String json;
 }
 
@@ -19,7 +19,7 @@ enum Level {
   low(10),
   high(20);
 
-  const Level(this.code);
+  Level(this.code);
   final int code;
 }
 

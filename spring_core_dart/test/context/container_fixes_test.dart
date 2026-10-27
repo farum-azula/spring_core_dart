@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -22,35 +23,36 @@ void main() {
   group('@EventListener results with their declared type', () {
     test('reach PayloadApplicationEvent<R> listeners', () {
       final seen = <String>[];
-      final context = AnnotationConfigApplicationContext([
-        BeanModule('m', [
-          BeanDefinition<Audit>(
-            name: 'audit',
-            eventListeners: [
-              EventListenerMethod.of<Audit, Placed>(
-                'Audit.onPlaced',
-                (bean, event) => Shipped(event.id),
-                resultType: const EventResultType<Shipped>(),
-              ),
-              EventListenerMethod.of<Audit, int>(
-                'Audit.onNumber',
-                (bean, event) => [Shipped(event), Shipped(event + 1)],
-                resultType: const EventResultType<Shipped>(),
-              ),
-            ],
-            create: (_) => Audit(),
-          ),
-        ]),
-      ]);
-      context
-        ..addListener<PayloadApplicationEvent<Shipped>>(
-          (event) => seen.add('payload ${event.payload.id}'),
-        )
-        ..addListener<Shipped>((event) => seen.add('plain ${event.id}'))
-        ..refresh();
+      final context =
+          AnnotationConfigApplicationContext([
+              BeanModule('m', [
+                BeanDefinition<Audit>(
+                  name: 'audit',
+                  eventListeners: [
+                    EventListenerMethod.of<Audit, Placed>(
+                      'Audit.onPlaced',
+                      (bean, event) => Shipped(event.id),
+                      resultType: const EventResultType<Shipped>(),
+                    ),
+                    EventListenerMethod.of<Audit, int>(
+                      'Audit.onNumber',
+                      (bean, event) => [Shipped(event), Shipped(event + 1)],
+                      resultType: const EventResultType<Shipped>(),
+                    ),
+                  ],
+                  create: (_) => Audit(),
+                ),
+              ]),
+            ])
+            ..addListener<PayloadApplicationEvent<Shipped>>(
+              (event) => seen.add('payload ${event.payload.id}'),
+            )
+            ..addListener<Shipped>((event) => seen.add('plain ${event.id}'))
+            ..refresh();
       addTearDown(context.close);
-      context.publishEvent(Placed(1));
-      context.publishEvent(5);
+      context
+        ..publishEvent(Placed(1))
+        ..publishEvent(5);
       expect(seen, [
         'payload 1',
         'plain 1',
@@ -78,8 +80,7 @@ void main() {
       ]),
     ])..refresh();
     addTearDown(context.close);
-    final ConfigurableListableBeanFactory factory = context.beanFactory;
-    factory.registerAlias('audit', 'auditor');
+    context.beanFactory.registerAlias('audit', 'auditor');
     expect(context.getBeanByName('auditor'), same(context.getBean<Audit>()));
   });
 
@@ -124,7 +125,7 @@ void main() {
       expect(service.convert<String>(Color.darkBlue), 'darkBlue');
       final environment = StandardEnvironment(systemEnvironment: {})
         ..propertySources.addFirst(
-          MapPropertySource('enums', {'color': Color.red}),
+          const MapPropertySource('enums', {'color': Color.red}),
         );
       expect(environment.getProperty('color'), 'red');
       expect(environment.resolvePlaceholders(r'is ${color}'), 'is red');
@@ -164,7 +165,7 @@ void main() {
         } else {
           request.response.statusCode = 404;
         }
-        request.response.close();
+        unawaited(request.response.close());
       });
       final base = 'http://127.0.0.1:${server.port}';
       final resource = DefaultResourceLoader().getResource(
@@ -209,7 +210,7 @@ void main() {
           default:
             request.response.statusCode = HttpStatus.notFound;
         }
-        request.response.close();
+        unawaited(request.response.close());
       });
       base = 'http://127.0.0.1:${server.port}';
     });

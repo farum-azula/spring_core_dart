@@ -4,11 +4,11 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 /// Give exactly one of [cron], [fixedRate] / [fixedRateString] or
 /// [fixedDelay] / [fixedDelayString] — or only [initialDelay] /
-/// [initialDelayString] for a single run after that delay (Spring 6.1). The method must be public and take
-/// no parameters; it may return a `Future`, which is awaited. Put several
-/// `@Scheduled` on one method for several schedules. Requires
-/// `spring_core_dart_generator` (it makes the method callable without
-/// reflection) and this starter as a dependency.
+/// [initialDelayString] for a single run after that delay (Spring 6.1). The
+/// method must be public and take no parameters; it may return a `Future`,
+/// which is awaited. Put several `@Scheduled` on one method for several
+/// schedules. Requires `spring_core_dart_generator` (it makes the method
+/// callable without reflection) and this starter as a dependency.
 ///
 /// ```dart
 /// @Component()
@@ -117,7 +117,10 @@ class Scheduled {
   /// `taskScheduler`).
   ///
   /// ```dart
-  /// @Scheduled(fixedDelay: Duration(minutes: 1), scheduler: 'reportsScheduler')
+  /// @Scheduled(
+  ///   fixedDelay: Duration(minutes: 1),
+  ///   scheduler: 'reportsScheduler',
+  /// )
   /// void export() { ... }
   /// ```
   final String? scheduler;

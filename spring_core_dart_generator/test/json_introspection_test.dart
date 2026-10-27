@@ -173,7 +173,8 @@ void main() {
     expect(
       output,
       _has(
-        "BeanParameter(r'first', type: (arguments[0] as TypeInfo<T>).asNullable(), "
+        "BeanParameter(r'first', type: (arguments[0] as "
+        'TypeInfo<T>).asNullable(), '
         'symbol: #first)',
       ),
     );
@@ -185,7 +186,8 @@ void main() {
         'create: (positional, named) => Page<T>((positional[0] as List<T>), '
         'first: named.containsKey(#first) ? (named[#first] as T?) : null, '
         'total: named.containsKey(#total) ? (named[#total] as int) : 0, '
-        'extra: named.containsKey(#extra) ? (named[#extra] as List<T>) : const [])',
+        'extra: named.containsKey(#extra) ? (named[#extra] as List<T>) : const '
+        '[])',
       ),
     );
     expect(output, isNot(contains('Function.apply(Page')));
@@ -232,7 +234,8 @@ void main() {
     expect(
       output,
       _has(
-        "annotations: const [JsonTypeInfo(property: r'kind', defaultImpl: Dog), "
+        "annotations: const [JsonTypeInfo(property: r'kind', defaultImpl: "
+        'Dog), '
         "JsonSubTypes([JsonSubType(Dog, name: r'dog')])]",
       ),
     );

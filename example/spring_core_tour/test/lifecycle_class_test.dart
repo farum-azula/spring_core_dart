@@ -26,7 +26,7 @@ class FakeGateway implements PaymentGateway {
 class LifecycleTest {
   static final events = <String>[];
   static ConfigurableApplicationContext? firstContext;
-  static var port = 0;
+  static int port = 0;
 
   @BeforeAll()
   static void startServer() {

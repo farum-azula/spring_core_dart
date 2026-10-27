@@ -33,7 +33,7 @@ void main() {
     expect(f('{0,number,0.00}', [3.1]), '3.10');
     expect(f('{0,number,#,##0.0}', [12345.67]), '12,345.7');
     expect(f('{0,number,000}', [7]), '007');
-    expect(f('{0,number,\$#.00}', [5]), r'$5.00');
+    expect(f(r'{0,number,$#.00}', [5]), r'$5.00');
     expect(f('{0,number,#%}', [0.5]), '50%');
     expect(f('{0,number,#.#}', [0.25]), '.2');
     expect(f('{0,number}', ['not a number']), 'not a number');
@@ -58,7 +58,7 @@ void main() {
     expect(f('{0,time,long}', [date]), '9:05:07 AM UTC');
     expect(f('{0}', [date]), '10/20/26, 9:05 AM');
     expect(f('{0,time}', [DateTime.utc(2026, 1, 1, 15, 30)]), '3:30:00 PM');
-    expect(f('{0,time,short}', [DateTime.utc(2026, 1, 1)]), '12:00 AM');
+    expect(f('{0,time,short}', [DateTime.utc(2026)]), '12:00 AM');
     expect(f('{0,date}', ['x']), 'x');
     expect(f('{0,time}', ['y']), 'y');
   });
@@ -79,7 +79,8 @@ void main() {
 
   test('choice', () {
     const pattern =
-        'There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.';
+        'There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} '
+        'files}.';
     expect(f(pattern, [0]), 'There are no files.');
     expect(f(pattern, [1]), 'There is one file.');
     expect(f(pattern, [1234]), 'There are 1,234 files.');

@@ -104,12 +104,10 @@ void main() {
   group('violation messages are shown as written (Spring)', () {
     test('quotes and regex braces survive', () {
       final code = Code()..value = '';
-      final binder = DataBinder(
-        code,
-        objectName: 'code',
-        introspector: introspector,
-      )..validators.add(BeanValidator(introspector: introspector));
-      binder.validate();
+      final binder =
+          DataBinder(code, objectName: 'code', introspector: introspector)
+            ..validators.add(BeanValidator(introspector: introspector))
+            ..validate();
       final messages = StaticMessageSource();
       final rendered = [
         for (final error in binder.bindingResult.fieldErrors())
@@ -137,7 +135,6 @@ void main() {
         const ['NotBlank'],
         arguments: const ['value'],
         defaultMessage: '{0} is required',
-        shouldRenderDefaultMessage: true,
       );
       expect(
         StaticMessageSource().getMessageFromResolvable(error),

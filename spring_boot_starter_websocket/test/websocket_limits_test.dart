@@ -7,6 +7,9 @@ import 'package:test/test.dart';
 
 import 'chat.dart';
 
+// The properties of the client sockets, for the lines that would not fit.
+const _clientConfig = 'spring.websocket.client.config';
+
 void main() {
   late MockWebSocketTransport sockets;
   late ApplicationContextRunner runner;
@@ -114,8 +117,8 @@ void main() {
   test("a client's header replaces default's in any case", () async {
     await runner
         .withPropertyValues([
-          'spring.websocket.client.config.default.default-request-headers.X-Shop=neon',
-          'spring.websocket.client.config.chat.default-request-headers.x-shop=books',
+          '$_clientConfig.default.default-request-headers.X-Shop=neon',
+          '$_clientConfig.chat.default-request-headers.x-shop=books',
         ])
         .runAsync((context) async {
           await context.getBean<ChatSocket>().connect();

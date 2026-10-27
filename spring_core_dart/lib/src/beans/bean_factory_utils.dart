@@ -21,7 +21,8 @@ import 'package:spring_core_dart/src/beans/bean_factory.dart';
 /// String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 ///     childContext, Greeter.class);
 /// Map<String, Greeter> greeters =
-///     BeanFactoryUtils.beansOfTypeIncludingAncestors(childContext, Greeter.class);
+///     BeanFactoryUtils.beansOfTypeIncludingAncestors(
+///         childContext, Greeter.class);
 /// ```
 abstract final class BeanFactoryUtils {
   /// Whether [name] refers to a factory bean itself (`&name`).

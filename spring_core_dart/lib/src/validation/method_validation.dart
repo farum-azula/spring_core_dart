@@ -129,7 +129,8 @@ final class MethodValidationInterceptor implements MethodInterceptor {
 ///   @Bean()
 ///   MethodValidationPostProcessor methodValidationPostProcessor(
 ///     BeanIntrospector introspector,
-///   ) => MethodValidationPostProcessor(BeanValidator(introspector: introspector));
+///   ) => MethodValidationPostProcessor(
+///       BeanValidator(introspector: introspector));
 /// }
 /// ```
 ///

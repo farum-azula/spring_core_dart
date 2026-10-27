@@ -389,9 +389,7 @@ class StandardTypeLocator implements TypeLocator {
   /// Creates a locator with the pre-registered types and the import
   /// prefixes `java.lang`, `java.util` and `dart.core`.
   StandardTypeLocator() {
-    for (final type in _defaults()) {
-      registerType(type);
-    }
+    _defaults().forEach(registerType);
   }
 
   final _types = <String, SpelType>{};
@@ -548,7 +546,7 @@ class StandardTypeLocator implements TypeLocator {
     },
     staticMethods: {
       // Java's List.of(E...): an unmodifiable list of the arguments.
-      'of': VarargsFunction(List<Object?>.unmodifiable),
+      'of': const VarargsFunction(List<Object?>.unmodifiable),
       'copyOf': (Iterable<Object?> items) => List<Object?>.unmodifiable(items),
     },
   );
@@ -583,7 +581,7 @@ class StandardTypeLocator implements TypeLocator {
     },
     staticMethods: {
       // Java's Set.of(E...).
-      'of': VarargsFunction(Set<Object?>.unmodifiable),
+      'of': const VarargsFunction(Set<Object?>.unmodifiable),
       'copyOf': (Iterable<Object?> items) => Set<Object?>.unmodifiable(items),
     },
   );
@@ -757,7 +755,7 @@ class StandardTypeLocator implements TypeLocator {
       'equals': (Object? a, Object? b) => a == b,
       'deepEquals': (Object? a, Object? b) => _deepEquals(a, b),
       'hashCode': (Object? value) => value?.hashCode ?? 0,
-      'hash': VarargsFunction(Object.hashAll),
+      'hash': const VarargsFunction(Object.hashAll),
       'toString': (Object? value, [String? nullDefault]) =>
           value == null ? nullDefault ?? 'null' : '$value',
       'isNull': (Object? value) => value == null,

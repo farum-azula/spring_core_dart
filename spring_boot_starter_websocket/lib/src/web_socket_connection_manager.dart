@@ -27,7 +27,7 @@ final class WebSocketConnectionManager {
 
   /// Close codes after which the connection is opened again: none, going
   /// away, no status, lost, and the server's temporary failures.
-  static final retryableCloseCodes = {
+  static final Set<int?> retryableCloseCodes = {
     null,
     CloseStatus.goingAway.code,
     CloseStatus.noStatusCode.code,
@@ -83,9 +83,8 @@ final class WebSocketConnectionManager {
     controller = StreamController<Object>(
       onListen: () {
         if (_disposed) {
-          controller
-            ..addError(_disposedError())
-            ..close();
+          controller.addError(_disposedError());
+          unawaited(controller.close());
           return;
         }
         _listeners.add(controller);
@@ -139,7 +138,7 @@ final class WebSocketConnectionManager {
     }
     final waiter = Completer<WebSocketSession>();
     _waiters.add(waiter);
-    _ensure().then(_resolveWaiters, onError: _failWaiters);
+    unawaited(_ensure().then(_resolveWaiters, onError: _failWaiters));
     return waiter.future;
   }
 
@@ -313,8 +312,9 @@ final class WebSocketConnectionManager {
     final status = connection.closeStatus;
     final code = status?.code;
     final reason = status?.reason;
+    final why = reason == null || reason.isEmpty ? '' : ' $reason';
     _log.debug(
-      'closed by the server ($code${reason == null || reason.isEmpty ? '' : ' $reason'})',
+      'closed by the server ($code$why)',
       fields: {'client': clientName},
     );
     if (_listeners.isNotEmpty && retryableCloseCodes.contains(code)) {

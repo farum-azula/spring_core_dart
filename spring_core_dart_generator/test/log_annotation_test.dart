@@ -4,7 +4,6 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
@@ -27,8 +26,8 @@ Future<TestBuilderResult> _build(String app) async {
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
-    SpringBuilder(proxyMode: ProxyMode.all),
+  return await testBuilder(
+    SpringBuilder(),
     {'pkg|lib/src/beans.dart': _scan, 'pkg|lib/src/app.dart': '$_header$app'},
     rootPackage: 'pkg',
     readerWriter: readerWriter,

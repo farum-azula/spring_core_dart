@@ -13,7 +13,7 @@ import 'package:package_config/package_config.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
-const _main = r'''
+const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'main.spring.dart';
 
@@ -24,14 +24,14 @@ class ExampleGreeter {}
 void main(List<String> args) => runApplication(args);
 ''';
 
-const _ownAutoConfiguration = r'''
+const _ownAutoConfiguration = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 @AutoConfigurationModule()
 final BeanModule pkgAutoConfiguration = BeanModule('pkg', []);
 ''';
 
-const _libComponent = r'''
+const _libComponent = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 @Component()
@@ -134,24 +134,18 @@ void main() {
     ]);
   });
 
-  test(
-    'a pub workspace: only the dependencies\' auto-configurations',
-    () async {
-      // The package config lists every package of this repository (a
-      // workspace), the web starter among them; the app depends on
-      // spring_boot_dart only.
-      final output = await _generate(
-        'bin/main.dart',
-        pubspec: 'name: pkg\ndependencies:\n  spring_boot_dart: any\n',
-      );
-      expect(output, contains('springBootAutoConfiguration'));
-      expect(output, isNot(contains('springBootStarterWebAutoConfiguration')));
-      expect(
-        output,
-        isNot(contains('springBootStarterFeignAutoConfiguration')),
-      );
-    },
-  );
+  test("a pub workspace: only the dependencies' auto-configurations", () async {
+    // The package config lists every package of this repository (a
+    // workspace), the web starter among them; the app depends on
+    // spring_boot_dart only.
+    final output = await _generate(
+      'bin/main.dart',
+      pubspec: 'name: pkg\ndependencies:\n  spring_boot_dart: any\n',
+    );
+    expect(output, contains('springBootAutoConfiguration'));
+    expect(output, isNot(contains('springBootStarterWebAutoConfiguration')));
+    expect(output, isNot(contains('springBootStarterFeignAutoConfiguration')));
+  });
 
   test('bin/: only lib/resources/ embedded', () async {
     final output = await _generate('bin/main.dart');

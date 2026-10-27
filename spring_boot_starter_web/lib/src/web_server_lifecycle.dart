@@ -108,44 +108,47 @@ final class WebServerStartStopLifecycle
     final server = factory.getWebServer(handler);
     _server = server;
     final started = _started;
-    server.start().then(
-      (_) {
-        if (!_running || !identical(_server, server)) {
-          // Stopped while the socket was opening: stop() closes it.
-          if (!started.isCompleted) {
-            started.complete(null);
+    unawaited(
+      server.start().then(
+        (_) {
+          if (!_running || !identical(_server, server)) {
+            // Stopped while the socket was opening: stop() closes it.
+            if (!started.isCompleted) {
+              started.complete(null);
+            }
+            return;
           }
-          return;
-        }
-        _setLocalPort(server.port);
-        final scheme = environment.getProperty('server.ssl.certificate') == null
-            ? 'http'
-            : 'https';
-        _log.info('Web server started on port ${server.port} ($scheme)');
-        final context = _context;
-        if (context is ConfigurableApplicationContext && context.isActive) {
-          context.publishEvent(
-            WebServerInitializedEvent(context, server, server.port),
-          );
-        }
-        if (!started.isCompleted) {
-          started.complete(server);
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        _running = false;
-        _server = null;
-        _report(error, stackTrace);
-        if (!started.isCompleted) {
-          started.completeError(error, stackTrace);
-          // Nobody may listen (a plain run): no unhandled error then.
-          started.future.ignore();
-        }
-        final context = _context;
-        if (context is ConfigurableApplicationContext && context.isActive) {
-          unawaited(context.closeAsync());
-        }
-      },
+          _setLocalPort(server.port);
+          final scheme =
+              environment.getProperty('server.ssl.certificate') == null
+              ? 'http'
+              : 'https';
+          _log.info('Web server started on port ${server.port} ($scheme)');
+          final context = _context;
+          if (context is ConfigurableApplicationContext && context.isActive) {
+            context.publishEvent(
+              WebServerInitializedEvent(context, server, server.port),
+            );
+          }
+          if (!started.isCompleted) {
+            started.complete(server);
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          _running = false;
+          _server = null;
+          _report(error, stackTrace);
+          if (!started.isCompleted) {
+            started.completeError(error, stackTrace);
+            // Nobody may listen (a plain run): no unhandled error then.
+            started.future.ignore();
+          }
+          final context = _context;
+          if (context is ConfigurableApplicationContext && context.isActive) {
+            unawaited(context.closeAsync());
+          }
+        },
+      ),
     );
   }
 
@@ -192,16 +195,18 @@ final class WebServerStartStopLifecycle
       callback();
       return;
     }
-    server
-        .stop(timeout: shutdownTimeout)
-        .then(
-          (_) => _log.info('Web server stopped'),
-          onError: (Object error, StackTrace stackTrace) => _log.warning(
-            'Web server failed to stop',
-            error: error,
-            stackTrace: stackTrace,
-          ),
-        )
-        .whenComplete(callback);
+    unawaited(
+      server
+          .stop(timeout: shutdownTimeout)
+          .then(
+            (_) => _log.info('Web server stopped'),
+            onError: (Object error, StackTrace stackTrace) => _log.warning(
+              'Web server failed to stop',
+              error: error,
+              stackTrace: stackTrace,
+            ),
+          )
+          .whenComplete(callback),
+    );
   }
 }

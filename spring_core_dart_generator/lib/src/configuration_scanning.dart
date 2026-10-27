@@ -33,7 +33,7 @@ extension _ConfigurationScanning on BeanScanner {
     Never fail(String problem, String change, [Element? at]) =>
         BeanScanner._fail(
           '@Configuration class $name $problem. Its @Bean methods are '
-          'intercepted by a generated subclass (Spring\'s proxyBeanMethods) '
+          "intercepted by a generated subclass (Spring's proxyBeanMethods) "
           'so that a @Bean method calling another one gets the bean of the '
           'container: $change, or use @Configuration(proxyBeanMethods: '
           'false) to call the methods as written.',

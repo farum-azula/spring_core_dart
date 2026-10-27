@@ -102,7 +102,9 @@ class SpringBootApplication {
 /// Spring (Java):
 /// ```java
 /// @ConfigurationProperties("db") @Validated
-/// public class DbProperties { String url; int maxSize = 10; Duration timeout; }
+/// public class DbProperties {
+///   String url; int maxSize = 10; Duration timeout;
+/// }
 ///
 /// @ConfigurationProperties("db")
 /// public record DbProperties(String url, @DefaultValue("10") int maxSize) {}
@@ -158,7 +160,8 @@ class ConfigurationProperties extends Component implements Introspected {
 /// Spring (Java):
 /// ```java
 /// public record AppProperties(@DefaultValue("8080") int port,
-///     @DefaultValue({"a", "b"}) List<String> hosts, @DefaultValue Pool pool) {}
+///     @DefaultValue({"a", "b"}) List<String> hosts,
+///     @DefaultValue Pool pool) {}
 /// ```
 class DefaultValue {
   /// The default: a `String`, a `List<String>` or nothing.
@@ -173,7 +176,7 @@ class DefaultValue {
 ///
 /// Auto-configuration modules are registered after the application's own
 /// beans (see `SpringApplication.autoConfigurations`), so conditions such as
-/// [ConditionalOnMissingBean] back off when the application declares its own
+/// `ConditionalOnMissingBean` back off when the application declares its own
 /// bean. Like Boot's, its `@Bean` methods are not intercepted
 /// (`proxyBeanMethods: false`): take other beans as method parameters.
 class AutoConfiguration extends Configuration {

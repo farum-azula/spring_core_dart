@@ -1,3 +1,7 @@
+// The property strings are lists of independent entries, each one a single
+// string; a long key cannot be split in two (adjacent strings in a list).
+// ignore_for_file: no_adjacent_strings_in_list, lines_longer_than_80_chars
+
 import 'dart:convert';
 
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart';

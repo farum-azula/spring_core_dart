@@ -2,17 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:spring_core_dart/core.dart' show Principal;
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 import 'package:spring_web_dart/src/media_type.dart';
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 
-/// Who sent a request, like `java.security.Principal`: set by an
-/// authentication filter (Spring Security's `Authentication` is one).
-abstract interface class Principal {
-  /// The name of the user (or client).
-  String get name;
-}
+// Principal was declared here before it moved to spring_core_dart: code
+// generated then imports it from this library.
+export 'package:spring_core_dart/core.dart' show Principal;
 
 /// An incoming HTTP request as a server hands it to the application, like
 /// Spring's `ServerHttpRequest`. The web starter's server (`dart:io`) and

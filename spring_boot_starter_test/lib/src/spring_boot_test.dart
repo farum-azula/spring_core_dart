@@ -135,7 +135,7 @@ enum WebEnvironment {
   /// No server and no mock.
   none('none');
 
-  const WebEnvironment(this._value);
+  WebEnvironment(this._value);
 
   final String _value;
 }
@@ -264,9 +264,11 @@ final class SpringBootTestContext {
       autoConfigurationMetadata: _application.autoConfigurationMetadata,
       exclude: _application.exclude,
       excludeName: _application.excludeName,
-      registerShutdownHook: false, // the test closes its context
       initializers: [..._application.initializers, ..._initializers],
       resourceLoader: _application.resourceLoader,
+      // Explicit, whatever the default: the test closes its context.
+      // ignore: avoid_redundant_argument_values
+      registerShutdownHook: false,
       out: (line) {
         _output.add(line);
         printOnFailure(line);

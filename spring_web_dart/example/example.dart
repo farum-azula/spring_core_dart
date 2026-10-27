@@ -2,6 +2,10 @@
 // small local server, and MockHttpTransport as used in tests. In an
 // application you rarely call the transport yourself: Feign clients
 // (spring_boot_starter_feign) build requests from the mapping annotations.
+
+// The example shows its results on the console.
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'dart:io' as io;
 

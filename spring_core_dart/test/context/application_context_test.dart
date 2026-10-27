@@ -353,7 +353,7 @@ void main() {
       expect(ctx.containsBean('flagged'), isTrue);
     });
 
-    test('@PropertySource files stay above defaultProperties (Boot\'s '
+    test("@PropertySource files stay above defaultProperties (Boot's "
         'PropertySourceOrderingBeanFactoryPostProcessor)', () {
       final loader = DefaultResourceLoader(
         protocolResolvers: [
@@ -362,10 +362,10 @@ void main() {
       );
       final environment = StandardEnvironment(systemEnvironment: {})
         ..propertySources.addLast(
-          MapPropertySource(ConfigDataEnvironment.defaultPropertiesSourceName, {
-            'name': 'default',
-            'only': 'default',
-          }),
+          const MapPropertySource(
+            ConfigDataEnvironment.defaultPropertiesSourceName,
+            {'name': 'default', 'only': 'default'},
+          ),
         );
       final ctx = AnnotationConfigApplicationContext(
         [
@@ -497,8 +497,8 @@ void main() {
             ])
             ..addBeanFactoryPostProcessor(_Programmatic())
             ..refresh();
-      // Spring's order: registry post-processing, then postProcessBeanFactory of
-      // registry processors, then of regular programmatic ones, then beans.
+      // Spring's order: registry post-processing, then postProcessBeanFactory
+      // of registry processors, then of regular programmatic ones, then beans.
       expect(log, ['registry', 'registry:factory', 'programmatic', 'bfpp']);
       expect(ctx.containsBean('german'), isTrue);
       expect(ctx.beanFactory.getBeanDefinition('french').lazy, isTrue);
@@ -584,33 +584,35 @@ void main() {
     test(
       'payload and ApplicationEvent listeners, return values republished',
       () {
-        final ctx = context([
-          audit(
-            listeners: [
-              EventListenerMethod.of<Audit, OrderPlaced>('Audit.onPlaced', (
-                bean,
-                event,
-              ) {
-                bean.events.add('placed ${event.id}');
-                return OrderShipped(bean, event.id);
-              }),
-              EventListenerMethod.of<Audit, OrderShipped>('Audit.onShipped', (
-                bean,
-                event,
-              ) {
-                bean.events.add('shipped ${event.id}');
-                return ['note ${event.id}', null];
-              }),
-              EventListenerMethod.of<Audit, String>(
-                'Audit.onNote',
-                (bean, note) => bean.events.add(note),
-                condition: (note) => note.startsWith('note'),
-              ),
-            ],
-          ),
-        ])..refresh();
-        ctx.publishEvent(OrderPlaced(7));
-        ctx.publishEvent('ignored by condition');
+        final ctx =
+            context([
+                audit(
+                  listeners: [
+                    EventListenerMethod.of<Audit, OrderPlaced>(
+                      'Audit.onPlaced',
+                      (bean, event) {
+                        bean.events.add('placed ${event.id}');
+                        return OrderShipped(bean, event.id);
+                      },
+                    ),
+                    EventListenerMethod.of<Audit, OrderShipped>(
+                      'Audit.onShipped',
+                      (bean, event) {
+                        bean.events.add('shipped ${event.id}');
+                        return ['note ${event.id}', null];
+                      },
+                    ),
+                    EventListenerMethod.of<Audit, String>(
+                      'Audit.onNote',
+                      (bean, note) => bean.events.add(note),
+                      condition: (note) => note.startsWith('note'),
+                    ),
+                  ],
+                ),
+              ])
+              ..refresh()
+              ..publishEvent(OrderPlaced(7))
+              ..publishEvent('ignored by condition');
         expect(ctx.getBean<Audit>().events, [
           'placed 7',
           'shipped 7',
@@ -680,18 +682,18 @@ void main() {
     );
 
     test('lazy and prototype listener beans are created per event', () {
-      final ctx = context([
-        audit(
-          scope: ScopeType.prototype,
-          listeners: [
-            EventListenerMethod.of<Audit, int>('Audit.n', (b, e) {
-              log.add('event $e');
-              return null;
-            }),
-          ],
-        ),
-      ])..refresh();
-      ctx
+      context([
+          audit(
+            scope: ScopeType.prototype,
+            listeners: [
+              EventListenerMethod.of<Audit, int>('Audit.n', (b, e) {
+                log.add('event $e');
+                return null;
+              }),
+            ],
+          ),
+        ])
+        ..refresh()
         ..publishEvent(1)
         ..publishEvent(2);
       expect(log, ['event 1', 'event 2']);
@@ -701,8 +703,9 @@ void main() {
       final ctx = context([]);
       final seen = <int>[];
       final early = ctx.addListener<int>(seen.add, order: 1);
-      ctx.refresh();
-      ctx.publishEvent(1);
+      ctx
+        ..refresh()
+        ..publishEvent(1);
       early.remove();
       expect(early.isRemoved, isTrue);
       early.remove();
@@ -714,10 +717,11 @@ void main() {
       final listener = ApplicationListenerAdapter.forListener(
         _IntListener(seen),
       );
-      ctx.addApplicationListener(listener);
-      ctx.publishEvent(4);
-      ctx.removeApplicationListener(listener);
-      ctx.publishEvent(5);
+      ctx
+        ..addApplicationListener(listener)
+        ..publishEvent(4)
+        ..removeApplicationListener(listener)
+        ..publishEvent(5);
       expect(seen, [1, 3, 4]);
       expect(listener.order, Ordered.lowestPrecedence);
     });
@@ -726,34 +730,37 @@ void main() {
       final parent = context([])..refresh();
       final seen = <Object>[];
       parent.addListener<String>(seen.add);
-      final child = context([], parent: parent)..refresh();
-      child.publishEvent('hi');
+      context([], parent: parent)
+        ..refresh()
+        ..publishEvent('hi');
       expect(seen, ['hi']);
     });
 
     test('custom multicaster bean with error handler', () {
       final errors = <Object>[];
-      final ctx = context([
-        BeanDefinition<SimpleApplicationEventMulticaster>(
-          name: AnnotationConfigApplicationContext
-              .applicationEventMulticasterBeanName,
-          types: const [
-            SimpleApplicationEventMulticaster,
-            ApplicationEventMulticaster,
-          ],
-          create: (_) => SimpleApplicationEventMulticaster(
-            errorHandler: (error, _) => errors.add(error),
+      context([
+          BeanDefinition<SimpleApplicationEventMulticaster>(
+            name: AnnotationConfigApplicationContext
+                .applicationEventMulticasterBeanName,
+            types: const [
+              SimpleApplicationEventMulticaster,
+              ApplicationEventMulticaster,
+            ],
+            create: (_) => SimpleApplicationEventMulticaster(
+              errorHandler: (error, _) => errors.add(error),
+            ),
           ),
-        ),
-      ])..refresh();
-      ctx.addListener<String>((_) => throw StateError('listener'));
-      ctx.publishEvent('x');
+        ])
+        ..refresh()
+        ..addListener<String>((_) => throw StateError('listener'))
+        ..publishEvent('x');
       expect(errors, [isA<StateError>()]);
     });
 
     test('listener errors propagate by default', () {
-      final ctx = context([])..refresh();
-      ctx.addListener<String>((_) => throw StateError('listener'));
+      final ctx = context([])
+        ..refresh()
+        ..addListener<String>((_) => throw StateError('listener'));
       expect(() => ctx.publishEvent('x'), throwsStateError);
     });
   });
@@ -798,14 +805,15 @@ void main() {
     });
 
     test('custom lifecycle processor bean', () {
-      final ctx = context([
-        BeanDefinition<_RecordingLifecycleProcessor>(
-          name: AnnotationConfigApplicationContext.lifecycleProcessorBeanName,
-          types: const [_RecordingLifecycleProcessor, LifecycleProcessor],
-          create: (_) => _RecordingLifecycleProcessor(),
-        ),
-      ])..refresh();
-      ctx.close();
+      context([
+          BeanDefinition<_RecordingLifecycleProcessor>(
+            name: AnnotationConfigApplicationContext.lifecycleProcessorBeanName,
+            types: const [_RecordingLifecycleProcessor, LifecycleProcessor],
+            create: (_) => _RecordingLifecycleProcessor(),
+          ),
+        ])
+        ..refresh()
+        ..close();
       expect(log, ['onRefresh', 'onClose']);
     });
   });
@@ -855,17 +863,21 @@ void main() {
     });
 
     test('@Value Resource conversion uses the context resource loader', () {
-      final ctx = context([
-        BeanDefinition<Resource>(
-          name: 'required',
-          create: (r) => r.value<Resource>('mem:a.txt'),
-        ),
-        BeanDefinition<Resource>(
-          name: 'optional',
-          create: (r) => r.optionalValue<Resource>(' mem:a.txt ')!,
-        ),
-      ])..addProtocolResolver(InMemoryProtocolResolver('mem:', {'a.txt': 'A'}));
-      ctx.refresh();
+      final ctx =
+          context([
+              BeanDefinition<Resource>(
+                name: 'required',
+                create: (r) => r.value<Resource>('mem:a.txt'),
+              ),
+              BeanDefinition<Resource>(
+                name: 'optional',
+                create: (r) => r.optionalValue<Resource>(' mem:a.txt ')!,
+              ),
+            ])
+            ..addProtocolResolver(
+              InMemoryProtocolResolver('mem:', {'a.txt': 'A'}),
+            )
+            ..refresh();
       expect(
         (ctx.getBeanByName('required') as Resource).readAsStringSync(),
         'A',
@@ -878,8 +890,8 @@ void main() {
 
     test('resources and protocol resolvers', () {
       final ctx = context([])
-        ..addProtocolResolver(InMemoryProtocolResolver('mem:', {'a.txt': 'A'}));
-      ctx.refresh();
+        ..addProtocolResolver(InMemoryProtocolResolver('mem:', {'a.txt': 'A'}))
+        ..refresh();
       expect(ctx.getResource('mem:a.txt').readAsStringSync(), 'A');
       expect(ctx.getResources('mem:a.txt'), hasLength(1));
       final custom = AnnotationConfigApplicationContext(

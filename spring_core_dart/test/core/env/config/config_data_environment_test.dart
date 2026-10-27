@@ -89,9 +89,9 @@ level=DEBUG
     });
 
     test('a guard may use a property defined in a later document', () {
-      write('application.properties', '''
+      write('application.properties', r'''
 #---
-spring.config.activate.on-profile=\${target}
+spring.config.activate.on-profile=${target}
 mode=targeted
 #---
 target=dev
@@ -407,7 +407,8 @@ a=2
     );
     write(
       'application.properties',
-      'a=1\n#---\nspring.config.activate.on-profile=x\nspring.profiles.group.y=z',
+      'a=1\n#---\n'
+          'spring.config.activate.on-profile=x\nspring.profiles.group.y=z',
     );
     expect(
       () => config(env({'spring.profiles.active': 'x'})).processAndApplySync(),
@@ -709,7 +710,7 @@ a=2
         [
           for (final source in e.propertySources)
             if (source.name.startsWith('Config resource'))
-              source.name.substring('Config resource \'file:$root/'.length),
+              source.name.substring("Config resource 'file:$root/".length),
         ],
         [
           "application-dev.properties'",
@@ -739,12 +740,15 @@ a=2
       write('application-prod.properties', 'mode=prod');
       StandardEnvironment withDefaults() => env()
         ..propertySources.addLast(
-          MapPropertySource(ConfigDataEnvironment.defaultPropertiesSourceName, {
-            'name': 'default',
-            'extra': 'default',
-            'only': 'default',
-            'spring.profiles.active': 'dev',
-          }),
+          const MapPropertySource(
+            ConfigDataEnvironment.defaultPropertiesSourceName,
+            {
+              'name': 'default',
+              'extra': 'default',
+              'only': 'default',
+              'spring.profiles.active': 'dev',
+            },
+          ),
         );
       final e = withDefaults();
       config(e).processAndApplySync();

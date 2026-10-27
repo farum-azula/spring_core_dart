@@ -10,8 +10,11 @@ import 'package:test/test.dart';
 
 import 'chat.dart';
 
+// The properties of the client sockets, for the lines that would not fit.
+const _clientConfig = 'spring.websocket.client.config';
+
 final class TokenInterceptor implements WebSocketHandshakeInterceptor {
-  var calls = 0;
+  int calls = 0;
 
   @override
   Future<void> apply(WebSocketHandshake handshake) async {
@@ -190,7 +193,7 @@ void main() {
     },
   );
 
-  group('reconnect policy, named like Spring 7\'s RetryPolicy', () {
+  group("reconnect policy, named like Spring 7's RetryPolicy", () {
     test('delay × multiplier per attempt, at most max-delay', () {
       const policy = WebSocketReconnectPolicy(
         delay: Duration(milliseconds: 100),
@@ -273,7 +276,7 @@ void main() {
       final config = WebSocketClientConfig.of(
         StandardEnvironment()
           ..propertySources.addFirst(
-            MapPropertySource('test', {
+            const MapPropertySource('test', {
               'spring.websocket.client.config.default.reconnect.delay': '200ms',
               'spring.websocket.client.config.feed.reconnect.multiplier': '1.5',
               'spring.websocket.client.config.feed.reconnect.max-delay': '5s',
@@ -442,7 +445,7 @@ void main() {
     await runner
         .withBean<WebSocketHandshakeInterceptor>(() => interceptor)
         .withPropertyValues([
-          'spring.websocket.client.config.default.default-request-headers.X-Shop=neon',
+          '$_clientConfig.default.default-request-headers.X-Shop=neon',
         ])
         .runAsync((context) async {
           final chat = context.getBean<ChatSocket>();
@@ -503,7 +506,7 @@ void main() {
     final config = WebSocketClientConfig.of(
       StandardEnvironment()
         ..propertySources.addFirst(
-          MapPropertySource('test', {
+          const MapPropertySource('test', {
             'spring.websocket.client.config.default.connect-timeout': '2s',
             'spring.websocket.client.config.feed.url': 'wss://feed.test',
             'spring.websocket.client.config.feed.reconnect.max-retries': '3',

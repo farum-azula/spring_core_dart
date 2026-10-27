@@ -414,9 +414,18 @@ bool _isRealElement(Object collection, Object? key, Object? value) {
 
 // Java's List.toString of [list] (SpEL-built): real elements that are
 // `int`s at run time (the web) print as doubles, `[2.0, 3]`.
-String _javaListString(List<Object?> list) =>
-    '[${[for (final (index, element) in list.indexed)
-      if (_isRealElement(list, index, element)) javaRealString(element! as int) else if (element is List<Object?> && _realElements[element] != null) _javaListString(element) else '$element'].join(', ')}]';
+String _javaListString(List<Object?> list) {
+  final elements = [
+    for (final (index, element) in list.indexed)
+      if (_isRealElement(list, index, element))
+        javaRealString(element! as int)
+      else if (element is List<Object?> && _realElements[element] != null)
+        _javaListString(element)
+      else
+        '$element',
+  ];
+  return '[${elements.join(', ')}]';
+}
 
 // Methods of `T(Math)` that return a double in Java whatever the
 // arguments; `abs`, `max` and `min` do when an argument is real.
@@ -717,7 +726,7 @@ final class PropertyOrFieldReference extends SpelNode {
     }
     throw state.error(SpelMessage.propertyOrFieldNotReadable, start, [
       name,
-      target is SpelType ? target : target.runtimeType,
+      if (target is SpelType) target else target.runtimeType,
     ]);
   }
 
@@ -944,9 +953,10 @@ final class MethodReference extends SpelNode {
         args[i] = name == 'join'
             ? [
                 for (final (index, element) in arg.indexed)
-                  _isRealElement(arg, index, element)
-                      ? javaRealString(element! as int)
-                      : element,
+                  if (_isRealElement(arg, index, element))
+                    javaRealString(element! as int)
+                  else
+                    element,
               ]
             : _javaListString(arg);
       }
@@ -1674,7 +1684,7 @@ final class Projection extends SpelNode {
         'null',
       ]);
     }
-    final Iterable<Object?> elements = switch (target) {
+    final elements = switch (target) {
       Map<Object?, Object?>() => target.entries,
       Iterable<Object?>() => target,
       _ => throw state.error(SpelMessage.projectionNotSupportedOnType, start, [
@@ -1961,9 +1971,10 @@ final class ConstructorReference extends SpelNode {
     if (initializer == null) {
       final sizes = [
         for (final dimension in dimensions)
-          dimension == null
-              ? throw state.error(SpelMessage.missingArrayDimension, start)
-              : _size(state, dimension),
+          if (dimension == null)
+            throw state.error(SpelMessage.missingArrayDimension, start)
+          else
+            _size(state, dimension),
       ];
       var total = 1;
       for (final size in sizes) {
@@ -2293,7 +2304,20 @@ final class BinaryOperator extends SpelNode {
           }
         }
         return value != null && type.isInstance(value);
-      default:
+      case BinaryKind.add ||
+          BinaryKind.subtract ||
+          BinaryKind.multiply ||
+          BinaryKind.divide ||
+          BinaryKind.modulus ||
+          BinaryKind.power ||
+          BinaryKind.eq ||
+          BinaryKind.ne ||
+          BinaryKind.lt ||
+          BinaryKind.le ||
+          BinaryKind.gt ||
+          BinaryKind.ge ||
+          BinaryKind.matches ||
+          BinaryKind.between:
         final l = left.getValue(state);
         final leftReal = _realValue(left, l);
         final r = right.getValue(state);
@@ -2371,7 +2395,15 @@ final class BinaryOperator extends SpelNode {
               comparator.compare(r[0], l) <= 0 &&
               comparator.compare(l, r[1]) <= 0,
         );
-      default:
+      case BinaryKind.add ||
+          BinaryKind.subtract ||
+          BinaryKind.multiply ||
+          BinaryKind.divide ||
+          BinaryKind.modulus ||
+          BinaryKind.power ||
+          BinaryKind.and ||
+          BinaryKind.or ||
+          BinaryKind.instanceOf:
         return arithmetic(
           state,
           l,
@@ -2422,14 +2454,14 @@ final class BinaryOperator extends SpelNode {
           // throw on zero, like Java's ArithmeticException); any double
           // gives a double (1 / 0.0 = Infinity).
           if (ints) {
-            return l.toInt() ~/ _nonZero(r.toInt());
+            return l ~/ _nonZero(r);
           }
           return l.toDouble() / r.toDouble();
         case Operation.modulus:
           // remainder (not Dart's %) keeps the sign of the dividend, like
           // Java: -7 % 3 == -1.
           return ints
-              ? l.toInt().remainder(_nonZero(r.toInt()))
+              ? l.remainder(_nonZero(r))
               : l.toDouble().remainder(r.toDouble());
         case Operation.power:
           // Spring 7's OpPower: a double when an operand is real;
@@ -2466,7 +2498,12 @@ final class BinaryOperator extends SpelNode {
         return String.fromCharCode((l.codeUnitAt(0) - r) & 0xFFFF);
       case Operation.multiply when l is String && r is int:
         return _repeat(state, l, r);
-      default:
+      case Operation.add ||
+          Operation.subtract ||
+          Operation.multiply ||
+          Operation.divide ||
+          Operation.modulus ||
+          Operation.power:
         return state.operate(operation, l, r, start);
     }
   }
@@ -2608,7 +2645,7 @@ final class BinaryOperator extends SpelNode {
       if (lReal != rReal) {
         return false;
       }
-      return lReal ? l.toDouble().compareTo(r.toDouble()) == 0 : l == r;
+      return lReal ? l.compareTo(r.toDouble()) == 0 : l == r;
     }
     return _deepEquals(l, r);
   }
@@ -2617,7 +2654,7 @@ final class BinaryOperator extends SpelNode {
   String toString() => '($left ${_symbols[kind]} $right)';
 
   // The operator names of Spring's toStringAST (`gt` is written `>`).
-  static const _symbols = {
+  static const Map<BinaryKind, String> _symbols = {
     BinaryKind.add: '+',
     BinaryKind.subtract: '-',
     BinaryKind.multiply: '*',

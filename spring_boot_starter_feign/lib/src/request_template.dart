@@ -21,7 +21,8 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// Spring (Java):
 /// ```java
 /// template.header("X-Request-Id", uuid()).query("lang", "en")
-///     .removeHeader("Authorization").header("Authorization", "Bearer " + token);
+///     .removeHeader("Authorization")
+///     .header("Authorization", "Bearer " + token);
 /// ```
 class RequestTemplate {
   /// A request of [method] to [url] by the method [methodKey] of client
@@ -98,7 +99,8 @@ Uri appendQuery(Uri url, Iterable<(String, String)> parameters) {
 /// Spring (Java):
 /// ```java
 /// @Bean RequestInterceptor tokens(TokenStore store) {
-///   return template -> template.header("Authorization", "Bearer " + store.token());
+///   return template ->
+///       template.header("Authorization", "Bearer " + store.token());
 /// }
 /// ```
 abstract interface class RequestInterceptor {

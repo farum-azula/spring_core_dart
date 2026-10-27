@@ -272,7 +272,12 @@ final class DatePattern {
   /// [defaultOffset]. Throws a [FormatException] when [text] does not match
   /// or a field is out of range.
   DateTime parse(String text, Duration defaultOffset) {
-    var year = 1970, month = 1, day = 1, hour = 0, minute = 0, second = 0;
+    var year = 1970;
+    var month = 1;
+    var day = 1;
+    var hour = 0;
+    var minute = 0;
+    var second = 0;
     var micros = 0;
     int? hour12;
     bool? pm;

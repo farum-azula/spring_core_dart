@@ -150,7 +150,7 @@ class SimpleApplicationEventMulticaster implements ApplicationEventMulticaster {
     }
     try {
       listener.onApplicationEvent(event);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       handler(error, stackTrace);
     }
   }

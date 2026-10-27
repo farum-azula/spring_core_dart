@@ -45,8 +45,9 @@ void main() {
       expect(system.isInstalled, isTrue);
       expect(SpringLog.level, SpringLogLevel.info); // Boot's default root
 
-      log.info('order placed', fields: {'order': 7});
-      log.debug('hidden');
+      log
+        ..info('order placed', fields: {'order': 7})
+        ..debug('hidden');
     });
     expect(console, ['INFO  [neon.shop] order placed {order=7}']);
     expect(system.buffer.records.single.fields, {'order': 7});
@@ -144,8 +145,8 @@ void main() {
 
   test('runtime level changes (like /actuator/loggers)', () {
     runner.run((context) {
-      final logging = context.getBean<LoggingSystem>();
-      logging.setLogLevel('neon', SpringLogLevel.debug);
+      final logging = context.getBean<LoggingSystem>()
+        ..setLogLevel('neon', SpringLogLevel.debug);
       expect(logging.levelOf('neon.shop'), SpringLogLevel.debug);
       expect(logging.loggerLevels, {'neon': SpringLogLevel.debug});
       log.debug('now visible');
@@ -158,7 +159,7 @@ void main() {
   test('without Boot: configure and install by hand', () {
     final environment = StandardEnvironment(systemEnvironment: const {})
       ..propertySources.addFirst(
-        MapPropertySource('p', {
+        const MapPropertySource('p', {
           'logging.level.root': 'debug',
           'logging.pattern.console': '%-5p [%logger] %m%X',
         }),
@@ -217,6 +218,8 @@ void main() {
       boot
           .withPropertyValues([
             'spring.application.name=shop',
+            // One element, split for the line width.
+            // ignore: no_adjacent_strings_in_list
             r'logging.pattern.console=${PID:-} ${spring.application.name} '
                 '%clr(%m){red}',
           ])
@@ -236,7 +239,7 @@ void main() {
   test('ROOT in any case is the root logger; setLogLevel', () {
     final environment = StandardEnvironment(systemEnvironment: const {})
       ..propertySources.addFirst(
-        MapPropertySource('p', {
+        const MapPropertySource('p', {
           'logging.level.ROOT': 'error',
           'logging.level.neon': 'debug',
         }),

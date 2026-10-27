@@ -111,7 +111,10 @@ class FileAppender extends LogAppender {
     if (limit == null) {
       return encoding.encode(text);
     }
-    return [for (final rune in text.runes) rune > limit ? 0x3f : rune];
+    return [
+      for (final rune in text.runes)
+        if (rune > limit) 0x3f else rune,
+    ];
   }
 
   /// Writes buffered lines now.

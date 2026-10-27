@@ -5,6 +5,9 @@
 //   dart run example/example.dart
 //   dart run example/example.dart --logging.level.shop=debug
 //   LOGGING_LEVEL_SHOP=debug dart run example/example.dart
+
+// An example: printing to the console is how it shows its result.
+// ignore_for_file: avoid_print
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 import 'example.spring.dart';

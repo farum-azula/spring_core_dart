@@ -33,7 +33,8 @@ class NotReadablePropertyException extends BeansException {
     this.propertyName, [
     String? reason,
   ]) : super(
-         "Invalid property '$propertyName' of $beanType: ${reason ?? 'not readable'}",
+         "Invalid property '$propertyName' of $beanType: "
+         "${reason ?? 'not readable'}",
        );
 
   /// Type of the wrapped (root) object.
@@ -73,7 +74,8 @@ class NotWritablePropertyException extends BeansException {
     this.propertyName, [
     String? reason,
   ]) : super(
-         "Invalid property '$propertyName' of $beanType: ${reason ?? 'not writable'}",
+         "Invalid property '$propertyName' of $beanType: "
+         "${reason ?? 'not writable'}",
        );
 
   /// Type of the wrapped (root) object.
@@ -242,7 +244,8 @@ class PropertyBatchUpdateException extends BeansException {
   /// Collects the individual failures.
   PropertyBatchUpdateException(this.exceptions)
     : super(
-        '${exceptions.length} property update(s) failed: ${exceptions.join('; ')}',
+        '${exceptions.length} property update(s) failed: '
+        '${exceptions.join('; ')}',
       );
 
   /// The failures, in the order of the values.
@@ -429,7 +432,7 @@ class BeanWrapper {
   /// [NullValueInNestedPathException].
   void setPropertyValue(String path, Object? value) {
     final segments = _parse(path);
-    Object current = wrappedInstance;
+    var current = wrappedInstance;
     TypeInfo<Object?>? currentType;
     for (var i = 0; i < segments.length; i++) {
       final segment = segments[i];

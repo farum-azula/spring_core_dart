@@ -136,6 +136,8 @@ FailureAnalysis? _analyze(Object error, List<Object> chain) => switch (error) {
   ) =>
     FailureAnalysis(
       '${requiredBy == null ? 'A component' : "Bean '$requiredBy'"} required '
+          // A string that cannot be split without changing it.
+          // ignore: lines_longer_than_80_chars
           '${type != null ? 'a bean of type $type' : "a bean named '$beanName'"} '
           'that could not be found${_creationPath(chain)}.',
       'Declare a bean of that type (a @Component class or a @Bean method), '

@@ -16,8 +16,9 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// locale-independent messages, comma-separated; a later file wins),
 /// `spring.messages.fallback-to-system-locale` (default `true`),
 /// `spring.messages.cache-duration` (seconds without a unit, e.g. `10`,
-/// or any duration such as `500ms`; cached forever by default) and `spring.messages.default-locale` (not in Spring
-/// Boot: the locale tried before the system locale).
+/// or any duration such as `500ms`; cached forever by default) and
+/// `spring.messages.default-locale` (not in Spring Boot: the locale tried
+/// before the system locale).
 ///
 /// ```properties
 /// # lib/resources/application.properties

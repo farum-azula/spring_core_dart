@@ -64,7 +64,7 @@ int parseDataSize(String value) {
 /// logging.pattern.level=%5p
 /// logging.include-application-name=true   # [spring.application.name] in lines
 /// logging.threshold.console=warn          # console: warnings only
-/// spring.output.ansi.enabled=detect       # %clr colours: detect, always, never
+/// spring.output.ansi.enabled=detect       # %clr colours: detect/always/never
 /// logging.console.enabled=true
 /// logging.buffer.enabled=true
 /// logging.buffer.capacity=2000
@@ -74,7 +74,7 @@ int parseDataSize(String value) {
 /// logging.threshold.file=info
 /// logging.logback.rollingpolicy.max-file-size=10MB   # shop.log.1, .2, ...
 /// logging.logback.rollingpolicy.max-history=7        # rolled-over files kept
-/// logging.logback.rollingpolicy.total-size-cap=0B    # their total (0B: no limit)
+/// logging.logback.rollingpolicy.total-size-cap=0B    # total (0B: no limit)
 /// logging.logback.rollingpolicy.clean-history-on-start=false
 /// logging.enabled=false                   # leave SpringLog alone
 /// ```
@@ -184,7 +184,7 @@ final class LoggingSystem {
     for (final appender in appenders) {
       try {
         appender.append(record);
-      } catch (_) {
+      } on Object catch (_) {
         // One broken appender must not hide the record from the others.
       }
     }
@@ -479,7 +479,7 @@ final class LoggingSystem {
         }
         try {
           appender.append(record);
-        } catch (_) {
+        } on Object catch (_) {
           // As in _dispatch.
         }
       }

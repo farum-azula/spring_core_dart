@@ -1,3 +1,7 @@
+## Unreleased
+
+- No more "Bean 'cacheInterceptor' ... is not eligible for getting processed by all BeanPostProcessors" at startup: the annotation validator asks for the interceptor at the first cached bean (`CacheOperationValidator.lazy`; the constructor taking the interceptor stays).
+
 ## 0.3.2
 
 - feat: hot reload on the Dart VM, flutter_notes example, fixes for example resources and workspace builds

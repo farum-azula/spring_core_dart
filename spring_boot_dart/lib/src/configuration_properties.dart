@@ -216,8 +216,12 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
     if (result.hasErrors) {
       throw ConfigurationPropertiesBindException(prefix, beanName, [
         for (final error in result.allErrors)
+          // One element, split for the line width.
+          // ignore: no_adjacent_strings_in_list, lines_longer_than_80_chars
           '${error is FieldError ? '$prefix.${_dashedPath(error.field)}' : prefix}: '
               '${messageSource.getMessageFromResolvable(error)}'
+              // A string that cannot be split without changing it.
+              // ignore: lines_longer_than_80_chars
               '${error is FieldError && error.rejectedValue != null ? ' (was "${error.rejectedValue}")' : ''}',
       ]);
     }

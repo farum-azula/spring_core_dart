@@ -187,7 +187,8 @@ final class DartDefineKeys {
     }
   }
 
-  void _addYamlNode(Object? node, String prefix) {
+  void _addYamlNode(Object? yamlNode, String prefix) {
+    var node = yamlNode;
     if (node is YamlNode) {
       node = node is YamlScalar ? node.value : node;
     }
@@ -213,44 +214,32 @@ final class DartDefineKeys {
   /// Adds what [library] can read: placeholders in its annotations,
   /// `@ConditionalOnProperty` names and `@ConfigurationProperties` fields.
   void addLibrary(LibraryElement library) {
-    for (final InterfaceElement element in [
+    for (final element in [
       ...library.classes,
       ...library.mixins,
       ...library.enums,
       ...library.extensionTypes,
     ]) {
       _addInstance(element);
-      for (final constructor in element.constructors) {
-        _addExecutable(constructor);
-      }
+      element.constructors.forEach(_addExecutable);
     }
-    for (final extension in library.extensions) {
-      _addInstance(extension);
-    }
-    for (final function in library.topLevelFunctions) {
-      _addExecutable(function);
-    }
-    for (final Element variable in [
+    library.extensions.forEach(_addInstance);
+    library.topLevelFunctions.forEach(_addExecutable);
+    [
       ...library.topLevelVariables,
       ...library.getters,
       ...library.setters,
-    ]) {
-      _addAnnotations(variable);
-    }
+    ].forEach(_addAnnotations);
   }
 
   void _addInstance(InstanceElement element) {
     _addAnnotations(element);
-    for (final Element member in [
+    [
       ...element.fields,
       ...element.getters,
       ...element.setters,
-    ]) {
-      _addAnnotations(member);
-    }
-    for (final method in element.methods) {
-      _addExecutable(method);
-    }
+    ].forEach(_addAnnotations);
+    element.methods.forEach(_addExecutable);
     if (element is ClassElement) {
       final annotation = _configurationProperties.firstAnnotationOf(element);
       if (annotation != null) {
@@ -262,9 +251,7 @@ final class DartDefineKeys {
 
   void _addExecutable(ExecutableElement element) {
     _addAnnotations(element);
-    for (final parameter in element.formalParameters) {
-      _addAnnotations(parameter);
-    }
+    element.formalParameters.forEach(_addAnnotations);
   }
 
   void _addAnnotations(Element element) {

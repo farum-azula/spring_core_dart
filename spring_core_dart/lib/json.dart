@@ -15,7 +15,9 @@
 ///   final String title;
 /// }
 ///
-/// final json = mapper.writeValueAsString(const Book(isbn: '1', title: 'Dune'));
+/// final json = mapper.writeValueAsString(
+///   const Book(isbn: '1', title: 'Dune'),
+/// );
 /// final book = mapper.readValue<Book>(json);
 /// ```
 ///

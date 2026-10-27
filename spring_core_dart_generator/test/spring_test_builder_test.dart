@@ -28,7 +28,7 @@ Future<TestBuilderResult> _build(
     rootPackage: 'pkg',
     flattenOutput: true,
   );
-  return testBuilder(
+  return await testBuilder(
     SpringTestBuilder(),
     {
       'pkg|test/shop_test.dart':
@@ -77,7 +77,7 @@ String _plainNames(String source) => source
     .replaceAll(r'$app', 'app')
     .replaceAll(r'$logs', 'logs');
 
-/// [source] (squashed) contains [expected] (squashed the same way).
+/// `source` (squashed) contains [expected] (squashed the same way).
 Matcher _has(String expected) => predicate<String>(
   (source) => _squash(_plainNames(source)).contains(_squash(expected)),
   'contains $expected',
@@ -92,7 +92,7 @@ void main() {
     final result = await testBuilder(
       SpringTestBuilder(),
       {
-        'pkg|test/plain_test.dart': "void main() {}\n",
+        'pkg|test/plain_test.dart': 'void main() {}\n',
         'pkg|bin/app.dart': _app,
       },
       rootPackage: 'pkg',
@@ -138,7 +138,7 @@ class ShopTest {}
 
   test('the class annotations become springBootTest arguments', () async {
     final source = _squash(
-      await _generated(r'''
+      await _generated('''
 @SpringBootTest(
   args: ['--a=1'],
   properties: {'b': 2},
@@ -182,7 +182,7 @@ class ShopTest {
 
   test('a web environment, MockMvc and @LocalServerPort', () async {
     final source = _squash(
-      await _generated(r'''
+      await _generated('''
 @SpringBootTest(webEnvironment: WebEnvironment.randomPort)
 @AutoConfigureMockMvc()
 class ApiTest {
@@ -274,7 +274,8 @@ class ShopTest {
     expect(
       source,
       _has(
-        "overrides: [ _sbt.BeanOverride.named(instance.gateway, name: 'sandbox'), "
+        'overrides: [ _sbt.BeanOverride.named(instance.gateway, name: '
+        "'sandbox'), "
         '_sbt.BeanOverride<Clock>(instance.clock), '
         '_sbt.BeanOverride<PaymentGateway>(instance.other), ]',
       ),
@@ -334,13 +335,15 @@ class ShopTest {
     expect(
       source,
       _has(
-        "_sbt.test('pays through the fake', () => instance.paysThroughTheFake());",
+        "_sbt.test('pays through the fake', () => "
+        'instance.paysThroughTheFake());',
       ),
     );
     expect(
       source,
       _has(
-        "_sbt.test('named', () { app.markDirty(); return instance.second(); });",
+        "_sbt.test('named', () { app.markDirty(); return instance.second(); "
+        '});',
       ),
     );
     expect(
@@ -407,7 +410,8 @@ class EmptyBasket {
         '_sbt.setUp(() => instance.withOneBook.add()); '
         "_sbt.test('costs', () => instance.withOneBook.costs()); "
         "_sbt.group('deeper', () { "
-        "_sbt.test('works', () => instance.withOneBook.deeper.works()); }); });",
+        "_sbt.test('works', () => instance.withOneBook.deeper.works()); }); "
+        '});',
       ),
     );
     expect(
@@ -556,7 +560,7 @@ class BTest {}
       '@Test()\n  void _pays() {}': "'_pays' is private",
       "@Test()\n  @ActiveProfiles(['x'])\n  void pays() {}":
           '@ActiveProfiles on a method: it belongs to the class',
-      "@Disabled()\n  void helper() {}":
+      '@Disabled()\n  void helper() {}':
           '@Disabled on helper, which is not a @Test method',
       '@Nested()\n  final inner = Missing();':
           "@Nested field 'inner' must be created with a class of this file",
@@ -621,7 +625,7 @@ class Inner {
   });
 
   group('review fixes', () {
-    test('generated names cannot clash with the user\'s', () async {
+    test("generated names cannot clash with the user's", () async {
       final source = await _generated('''
 @SpringBootTest()
 class ShopTest {

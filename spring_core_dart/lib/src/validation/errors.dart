@@ -709,7 +709,7 @@ abstract class AbstractBindingResult implements BindingResult {
 class BeanPropertyBindingResult extends AbstractBindingResult {
   /// Creates an empty result for [target] named [objectName].
   ///
-  /// [introspector] and [conversionService] configure the [wrapper]. The
+  /// `introspector` and `conversionService` configure the [wrapper]. The
   /// target is `null` while `DataBinder.construct` failed to create it;
   /// field values and types then come from [recordFieldValue].
   BeanPropertyBindingResult(

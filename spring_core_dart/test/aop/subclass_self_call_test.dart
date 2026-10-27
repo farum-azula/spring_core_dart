@@ -152,7 +152,7 @@ void main() {
     final calls = <String>[];
     bean._$invoker!.addAdvisor(
       DefaultPointcutAdvisor(
-        NameMatchMethodPointcut(const ['outer']),
+        const NameMatchMethodPointcut(['outer']),
         _CallInner(bean, calls),
       ),
     );

@@ -397,8 +397,8 @@ isolate is replaced.
 
 ## Ready for Spring Security
 
-[spring_boot_starter_security](spring_boot_starter_security.md) plugs in
-without changes to this starter. The slots, and which exist now:
+[spring_boot_starter_security](spring_boot_starter_security.md) (done)
+plugs into these slots:
 
 | Slot | Status |
 |---|---|
@@ -409,7 +409,7 @@ without changes to this starter. The slots, and which exist now:
 | **Argument resolvers** for `@AuthenticationPrincipal` and `@CurrentSecurityContext`. | exists: `HandlerMethodArgumentResolver`, asked before the built-in ones |
 | **Exception translation.** `AuthenticationException` → 401 with `WWW-Authenticate`, `AccessDeniedException` → 403, both as `ProblemDetail`, from filters, handlers and method security alike. | exists: an exception implementing `ErrorResponse` (status, headers, problem) is answered that way wherever it is thrown |
 | **Method security on controllers.** Handlers are invoked on the bean as the context holds it (its AOP proxy), so `@PreAuthorize` works. | exists |
-| **Sessions:** an `HttpSession` abstraction (in memory first, a store later) for form login, and response cookies (`Set-Cookie` with `HttpOnly`, `Secure`, `SameSite`). | cookies exist (`ResponseCookie`, `response.addCookie`); `HttpSession` not yet |
+| **Sessions:** an `HttpSession` abstraction (in memory first, a store later) for form login, and response cookies (`Set-Cookie` with `HttpOnly`, `Secure`, `SameSite`). | exists: `request.getSession()`, `HttpSessionRepository` (in memory, `server.servlet.session.*`), `HttpSessionFilter`; a shared store is left |
 | **CSRF** needs form bodies and cookies. | exist (a form body into a `Map`, `@CookieValue`) |
 | **CORS:** the `CorsConfigurationSource` bean is shared. | exists |
 | **Handshakes:** WebSocket and SSE requests pass the same filter chain, so a connection carries its user. | exists |

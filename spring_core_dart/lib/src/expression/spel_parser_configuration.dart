@@ -62,7 +62,7 @@ final class SpelParserConfiguration {
     springExpressionMaxOperationsPropertyName,
   );
 
-  static final _defaults = builder().build();
+  static final SpelParserConfiguration _defaults = builder().build();
 
   /// The default configuration (Spring's `withDefaults()`).
   static SpelParserConfiguration withDefaults() => _defaults;

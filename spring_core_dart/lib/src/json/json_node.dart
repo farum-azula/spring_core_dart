@@ -63,7 +63,7 @@ sealed class JsonNode {
     if (!pointer.startsWith('/')) {
       throw ArgumentError.value(pointer, 'pointer', 'must start with /');
     }
-    JsonNode node = this;
+    var node = this;
     for (final raw in pointer.substring(1).split('/')) {
       final segment = raw.replaceAll('~1', '/').replaceAll('~0', '~');
       node =
@@ -146,7 +146,9 @@ sealed class JsonNode {
 
   JsonNodeException _cannotCoerce(String method, String type) =>
       JsonNodeException(
-        '$method: ${runtimeType.toString()} value cannot be converted to '
+        // Subclasses show their own name.
+        // ignore: no_runtimetype_tostring
+        '$method: $runtimeType value cannot be converted to '
         '$type',
       );
 
@@ -167,9 +169,10 @@ sealed class JsonNode {
   /// The value of a [BooleanNode]; throws for others.
   bool booleanValue() => throw _wrong('a boolean');
 
-  JsonNodeException _wrong(String expected) => JsonNodeException(
-    'expected $expected node, got ${runtimeType.toString()}',
-  );
+  JsonNodeException _wrong(String expected) =>
+      // Subclasses show their own name.
+      // ignore: no_runtimetype_tostring
+      JsonNodeException('expected $expected node, got $runtimeType');
 
   /// The elements of an array or the property values of an object.
   Iterable<JsonNode> values() => const [];

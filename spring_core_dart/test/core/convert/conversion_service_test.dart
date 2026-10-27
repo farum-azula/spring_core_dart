@@ -196,8 +196,8 @@ void main() {
 
     test('removeConvertible', () {
       final custom = GenericConversionService()
-        ..addConverter<String, Money>((s) => Money(int.parse(s)));
-      custom.removeConvertible<Money>();
+        ..addConverter<String, Money>((s) => Money(int.parse(s)))
+        ..removeConvertible<Money>();
       expect(custom.canConvert('1', Money), isFalse);
     });
 

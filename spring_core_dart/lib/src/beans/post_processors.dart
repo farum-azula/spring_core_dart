@@ -304,6 +304,8 @@ class CommonAnnotationBeanPostProcessor extends BeanPostProcessor
 
   /// The bean name an application context registers it under.
   static const beanName =
+      // A string that cannot be split without changing it.
+      // ignore: lines_longer_than_80_chars
       'org.springframework.context.annotation.internalCommonAnnotationProcessor';
 
   @override

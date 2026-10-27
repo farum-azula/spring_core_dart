@@ -102,7 +102,7 @@ class FetchHttpTransport implements HttpTransport {
               body.add(value.toDart);
             }
           }
-        } catch (error) {
+        } on Object catch (error) {
           if (!cancelled) {
             body.addError(
               HttpTransportException(

@@ -355,7 +355,11 @@ void main() {
         [app],
         [
           '--spring.jackson.datatype.datetime.write-dates-as-timestamps=true',
+          // A string that cannot be split without changing it.
+          // ignore: lines_longer_than_80_chars
           '--spring.jackson.datatype.datetime.write-date-timestamps-as-nanoseconds=false',
+          // A string that cannot be split without changing it.
+          // ignore: lines_longer_than_80_chars
           '--spring.jackson.datatype.datetime.write-durations-as-timestamps=true',
           '--spring.jackson.default-property-inclusion=non_default',
         ],

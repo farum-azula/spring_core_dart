@@ -24,7 +24,8 @@ class BlogRunner implements ApplicationRunner {
 
       final posts = await api.postsOf(user.id);
       log.info(
-        '${posts.length} posts by ${user.username}, first: "${posts.first.title}"',
+        '${posts.length} posts by ${user.username}, first: '
+        '"${posts.first.title}"',
       );
 
       final comments = await api.comments(posts.first.id);

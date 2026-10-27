@@ -106,7 +106,8 @@ abstract final class ValidationUtils {
       throw ArgumentError.value(
         target,
         'target',
-        'Validator ${validator.runtimeType} does not support ${target.runtimeType}',
+        'Validator ${validator.runtimeType} does not support '
+            '${target.runtimeType}',
       );
     }
     if (groups.isNotEmpty && validator is SmartValidator) {

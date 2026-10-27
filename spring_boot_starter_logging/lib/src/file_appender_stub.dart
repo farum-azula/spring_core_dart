@@ -14,6 +14,8 @@ class FileAppender extends LogAppender {
     this.maxFileSize = 10 * 1024 * 1024,
     this.maxHistory = 7,
     this.totalSizeCap = 0,
+    // Same signature as the dart:io FileAppender; this one only throws.
+    // ignore: avoid_unused_constructor_parameters
     bool cleanHistoryOnStart = false,
     this.encoding = utf8,
     super.threshold,

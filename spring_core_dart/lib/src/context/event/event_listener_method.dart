@@ -70,6 +70,36 @@ final class EventListenerMethod<T extends Object> {
     this.resultType,
   });
 
+  /// A listener for several event types: [accepts] decides on the event or
+  /// its payload; [condition] (a `bool Function(E)`) is applied to the
+  /// accepted object.
+  ///
+  /// Used for `@EventListener(classes: [A, B])`:
+  ///
+  /// ```dart
+  /// EventListenerMethod<Shipping>.matching(
+  ///   id: 'Shipping.onContext',
+  ///   accepts: (e) => e is ContextRefreshedEvent || e is ContextClosedEvent,
+  ///   invoke: (bean, event) => bean.onContext(),
+  /// );
+  /// ```
+  EventListenerMethod.matching({
+    required this.id,
+    required bool Function(Object candidate) accepts,
+    required this._invoke,
+    this.order,
+    this.async,
+    this.resultType,
+    Function? condition,
+  }) : _supports = ((event) => _matched(event, accepts) != null),
+       // `condition` is untyped (it comes from the annotation), so it is
+       // called dynamically.
+       _shouldHandle = condition == null
+           ? null
+           : ((event) =>
+                 Function.apply(condition, [_matched(event, accepts)!.value]) ==
+                 true);
+
   /// A listener for events (or payloads) of type [E]; [condition] filters
   /// the matched event or payload.
   static EventListenerMethod<T> of<T extends Object, E>(
@@ -132,42 +162,12 @@ final class EventListenerMethod<T extends Object> {
     final PayloadApplicationEvent<P> typed => typed,
     PayloadApplicationEvent(
       :final source,
-      payload: final P payload,
+      :final P payload,
       :final timestamp,
     ) =>
       PayloadApplicationEvent<P>(source, payload, timestamp: timestamp),
     _ => null,
   };
-
-  /// A listener for several event types: [accepts] decides on the event or
-  /// its payload; [condition] (a `bool Function(E)`) is applied to the
-  /// accepted object.
-  ///
-  /// Used for `@EventListener(classes: [A, B])`:
-  ///
-  /// ```dart
-  /// EventListenerMethod<Shipping>.matching(
-  ///   id: 'Shipping.onContext',
-  ///   accepts: (e) => e is ContextRefreshedEvent || e is ContextClosedEvent,
-  ///   invoke: (bean, event) => bean.onContext(),
-  /// );
-  /// ```
-  EventListenerMethod.matching({
-    required this.id,
-    required bool Function(Object candidate) accepts,
-    required this._invoke,
-    this.order,
-    this.async,
-    this.resultType,
-    Function? condition,
-  }) : _supports = ((event) => _matched(event, accepts) != null),
-       // `condition` is untyped (it comes from the annotation), so it is
-       // called dynamically.
-       _shouldHandle = condition == null
-           ? null
-           : ((event) =>
-                 Function.apply(condition, [_matched(event, accepts)!.value]) ==
-                 true);
 
   /// The accepted object: [event] itself or its payload; throws an
   /// `ArgumentError` if neither is accepted.

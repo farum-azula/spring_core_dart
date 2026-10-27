@@ -188,7 +188,10 @@ abstract final class MessageFormat {
 
   // Java's default for a date without a format type:
   // DateFormat.getDateTimeInstance(SHORT, SHORT).
-  static final _plainDate = _DatePart.parse('M/d/yy, h:mm a', '');
+  static final List<_DatePart> _plainDate = _DatePart.parse(
+    'M/d/yy, h:mm a',
+    '',
+  );
 
   /// Splits `index,type,style` at the first two top-level commas (not in
   /// nested `{...}` or quotes).
@@ -324,9 +327,10 @@ abstract final class MessageFormat {
       units += BigInt.one;
     }
     final text = units.toString().padLeft(digits + 1, '0');
+    final point = text.length - digits;
     return digits == 0
         ? text
-        : '${text.substring(0, text.length - digits)}.${text.substring(text.length - digits)}';
+        : '${text.substring(0, point)}.${text.substring(point)}';
   }
 
   /// Integer and fraction digits of the exact binary value of [value]
@@ -435,9 +439,18 @@ abstract final class MessageFormat {
     return _languageSymbols[language] ?? _us;
   }
 
-  static const _us = (decimal: '.', grouping: ',');
-  static const _dotGrouping = (decimal: ',', grouping: '.');
-  static const _spaceGrouping = (decimal: ',', grouping: ' ');
+  static const ({String decimal, String grouping}) _us = (
+    decimal: '.',
+    grouping: ',',
+  );
+  static const ({String decimal, String grouping}) _dotGrouping = (
+    decimal: ',',
+    grouping: '.',
+  );
+  static const ({String decimal, String grouping}) _spaceGrouping = (
+    decimal: ',',
+    grouping: ' ',
+  );
 
   static const _languageSymbols = <String, _Symbols>{
     'de': _dotGrouping,

@@ -1,7 +1,6 @@
-import 'package:analyzer/dart/analysis/utilities.dart';
-
 import 'dart:io' as io;
 
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
@@ -340,9 +339,7 @@ final class TestEmitter {
 
   /// The formatted source of the generated library.
   String emit() {
-    for (final testClass in file.testClasses) {
-      _testClass(testClass);
-    }
+    file.testClasses.forEach(_testClass);
     final out = StringBuffer()
       ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND')
       ..writeln(
@@ -478,10 +475,13 @@ final class TestEmitter {
     if (given != null) {
       final path = _stringValue(given);
       if (path == null || !applications.contains(path)) {
+        final found = applications.isEmpty
+            ? 'none found'
+            : applications.join(', ');
         throw file.error(
           springBootTest,
           '$given is not an entry point with @SpringBootApplication of this '
-          'package (${applications.isEmpty ? 'none found' : applications.join(', ')}).',
+          'package ($found).',
         );
       }
       entry = path;
@@ -526,9 +526,8 @@ final class TestEmitter {
     if (_capturesOutput(testClass, members)) {
       _body.writeln('final $_logs = _sbt.captureLogs();');
     }
-    _body.writeln(
-      'final $_app = _sbt.springBootTest(${_application(testClass, springBootTest)},',
-    );
+    final application = _application(testClass, springBootTest);
+    _body.writeln('final $_app = _sbt.springBootTest($application,');
     _startOptions(testClass, springBootTest, members);
     _body.writeln(');');
     _classBody(testClass, members, _instance, testClass.metadata);
@@ -603,9 +602,10 @@ final class TestEmitter {
         );
     }
     if (members.initializers.isNotEmpty) {
-      _body.writeln(
-        'initializers: [${members.initializers.map((m) => '_sbt.ApplicationContextInitializer.of($m)').join(', ')}],',
-      );
+      final initializers = members.initializers
+          .map((m) => '_sbt.ApplicationContextInitializer.of($m)')
+          .join(', ');
+      _body.writeln('initializers: [$initializers],');
     }
     if (members.testBeans.isNotEmpty) {
       _body.writeln('overrides: [');
@@ -623,7 +623,8 @@ final class TestEmitter {
     final name = _code(namedNode(testBean, 'name'), scope: scope);
     final type = _code(namedNode(testBean, 'type'), scope: scope);
     if (type != null) {
-      return '_sbt.BeanOverride<$type>($value${name == null ? '' : ', name: $name'})';
+      final named = name == null ? '' : ', name: $name';
+      return '_sbt.BeanOverride<$type>($value$named)';
     }
     if (name != null) {
       return '_sbt.BeanOverride.named($value, name: $name)';
@@ -772,9 +773,12 @@ final class TestEmitter {
     final metadata = [...declaration.metadata, ...field.metadata];
     _body.writeln('_sbt.group($name, () {');
     _classBody(declaration, members, inner, metadata);
-    _body.writeln(
-      '}${_groupOptions(declaration.metadata, also: field.metadata, scope: scope)});',
+    final options = _groupOptions(
+      declaration.metadata,
+      also: field.metadata,
+      scope: scope,
     );
+    _body.writeln('}$options);');
   }
 
   // `, skip: ..., tags: [...], timeout: ...` from @Disabled, @Tag and
@@ -1089,10 +1093,12 @@ final class _Members {
     final owner = method.owner.namePart.typeName.lexeme;
     String staticMethod(String annotationName) {
       if (!node.isStatic) {
+        final runs = annotationName == 'AfterAll'
+            ? 'it runs after the tests'
+            : 'it runs before the class is created';
         throw file.error(
           node,
-          '@$annotationName method ${method.name} must be static: '
-          '${annotationName == 'AfterAll' ? 'it runs after the tests' : 'it runs before the class is created'}.',
+          '@$annotationName method ${method.name} must be static: $runs.',
         );
       }
       if (!outer) {

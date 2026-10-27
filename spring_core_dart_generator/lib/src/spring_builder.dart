@@ -7,18 +7,18 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
-import 'package:spring_core_dart_generator/src/asset_check.dart';
-import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:spring_core_dart_generator/src/asset_check.dart';
+import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
+import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
@@ -217,7 +217,7 @@ class SpringBuilder implements Builder {
   // asset path relative to the package directory the build runs in.
   static Future<String?> _readOutputFile(AssetId output) async {
     final file = io.File(output.path);
-    return await file.exists() ? file.readAsString() : null;
+    return file.existsSync() ? await file.readAsString() : null;
   }
 
   /// The source of [output] for [buildStep]'s input, or `null` when the
@@ -236,7 +236,7 @@ class SpringBuilder implements Builder {
         if (springBootApplicationChecker.hasAnnotationOf(function)) function,
     ];
     if (boots.isNotEmpty) {
-      return _buildApplication(buildStep, boots, output);
+      return await _buildApplication(buildStep, boots, output);
     }
     final scans = [
       for (final variable in library.topLevelVariables)
@@ -354,7 +354,7 @@ class SpringBuilder implements Builder {
     }
   }
 
-  static const _maxEmbeddedBytes = 1024 * 1024;
+  static const int _maxEmbeddedBytes = 1024 * 1024;
 
   /// The resource directories of an application whose `main` is in
   /// [entryDirectory] (package-relative, `/`-separated), lowest precedence
@@ -494,9 +494,7 @@ class SpringBuilder implements Builder {
                         Code(
                           [
                             '{',
-                            for (final key in defines)
-                              "if (const bool.hasEnvironment('$key')) "
-                                  "'$key': const String.fromEnvironment('$key'),",
+                            for (final key in defines) _dartDefineEntry(key),
                             '}',
                           ].join('\n'),
                         ),
@@ -621,6 +619,11 @@ class SpringBuilder implements Builder {
   }
 
   static const _fingerprintPlaceholder = '00000000';
+
+  // The `dartDefines` entry of [key]: set when the define is given.
+  static String _dartDefineEntry(String key) =>
+      "if (const bool.hasEnvironment('$key')) "
+      "'$key': const String.fromEnvironment('$key'),";
 
   // The keys a `--dart-define` may set (see DartDefineKeys): read from the
   // scanned libraries and the application's config files.
@@ -1017,9 +1020,9 @@ class SpringBuilder implements Builder {
     return reachable;
   }
 
-  // The `dependencies` of package [name] (at [root]): its pubspec.yaml read through the
-  // build, else from disk where the package config says it is; `null` when
-  // neither works (the caller then filters nothing).
+  // The `dependencies` of package [name] (at [root]): its pubspec.yaml read
+  // through the build, else from disk where the package config says it is;
+  // `null` when neither works (the caller then filters nothing).
   static Future<List<String>?> _pubspecDependencies(
     BuildStep buildStep,
     String name,
@@ -1122,7 +1125,7 @@ class SpringBuilder implements Builder {
           '${library.uri}: put it on a top-level variable holding the '
           'generated module, e.g.\n'
           '  @ComponentScan()\n'
-          '  final BeanModule appBeans = \$appBeans;',
+          r'  final BeanModule appBeans = $appBeans;',
           element: element,
         );
       }
@@ -1215,7 +1218,7 @@ const _annotationMatchingPointcutChecker = TypeChecker.fromUrl(
 // beans of). Registered without a creation the build sees counts as not
 // annotation-driven.
 class _AdvisorCreations extends RecursiveAstVisitor<void> {
-  var mentioned = false;
+  bool mentioned = false;
   var _found = false;
   var _annotationDriven = true;
 

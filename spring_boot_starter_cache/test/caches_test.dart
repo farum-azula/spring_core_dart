@@ -93,8 +93,7 @@ void main() {
     test('max size drops the least recently used entry', () {
       final cache = InMemoryCache('books', spec: const CacheSpec(maxSize: 2))
         ..put('a', 1)
-        ..put('b', 2);
-      cache
+        ..put('b', 2)
         ..get('a') // a is now the most recently used
         ..put('c', 3);
       expect(cache.get('b'), isNull);

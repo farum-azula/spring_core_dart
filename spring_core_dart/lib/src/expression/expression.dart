@@ -199,7 +199,7 @@ T _convert<T>(Object? value, EvaluationContext context, String expression) {
   }
   throw SpelEvaluationException(
     SpelMessage.typeConversionError,
-    inserts: [value == null ? 'null' : value.runtimeType, T],
+    inserts: [if (value == null) 'null' else value.runtimeType, T],
     expressionString: expression,
   );
 }

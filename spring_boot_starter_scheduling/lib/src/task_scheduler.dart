@@ -42,7 +42,8 @@ typedef TimerFactory = Timer Function(Duration delay, void Function() callback);
 ///   }
 ///
 ///   ScheduledFuture<?> poll() =>
-///       scheduler.scheduleWithFixedDelay(this::checkInbox, Duration.ofSeconds(30));
+///       scheduler.scheduleWithFixedDelay(
+///           this::checkInbox, Duration.ofSeconds(30));
 /// }
 /// ```
 abstract interface class TaskScheduler {
@@ -87,13 +88,15 @@ abstract interface class TaskScheduler {
 /// A trigger that fires once, at [at] (or right away if [at] is past).
 ///
 /// ```dart
-/// scheduler.schedule(sendReminder, OneShotTrigger(DateTime(2026, 12, 31, 18)));
+/// scheduler.schedule(
+///     sendReminder, OneShotTrigger(DateTime(2026, 12, 31, 18)));
 /// scheduler.scheduleAt(sendReminder, DateTime(2026, 12, 31, 18)); // the same
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// scheduler.schedule(this::sendReminder, Instant.parse("2026-12-31T18:00:00Z"));
+/// scheduler.schedule(
+///     this::sendReminder, Instant.parse("2026-12-31T18:00:00Z"));
 /// ```
 final class OneShotTrigger implements Trigger {
   /// Fires once at [at].
@@ -114,14 +117,16 @@ final class OneShotTrigger implements Trigger {
 /// cancel it or look at its next run.
 ///
 /// ```dart
-/// final task = scheduler.scheduleAtFixedRate(tick, const Duration(seconds: 1));
+/// final task =
+///     scheduler.scheduleAtFixedRate(tick, const Duration(seconds: 1));
 /// print(task.nextExecution);
 /// task.cancel();
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// ScheduledFuture<?> task = scheduler.scheduleAtFixedRate(this::tick, Duration.ofSeconds(1));
+/// ScheduledFuture<?> task =
+///     scheduler.scheduleAtFixedRate(this::tick, Duration.ofSeconds(1));
 /// task.cancel(false);
 /// ```
 abstract interface class ScheduledTask {
@@ -183,19 +188,22 @@ abstract interface class ErrorHandler {
 ///
 /// ```dart
 /// final scheduler = TimerTaskScheduler();
-/// scheduler.scheduleAtFixedRate(() => print('tick'), const Duration(seconds: 1));
+/// scheduler.scheduleAtFixedRate(
+///     () => print('tick'), const Duration(seconds: 1));
 /// ...
 /// scheduler.shutdown();
 ///
 /// // In tests: a controlled clock and timers.
-/// final scheduler = TimerTaskScheduler(now: clock.now, createTimer: clock.timer);
+/// final scheduler =
+///     TimerTaskScheduler(now: clock.now, createTimer: clock.timer);
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 /// scheduler.initialize();
-/// scheduler.scheduleAtFixedRate(() -> System.out.println("tick"), Duration.ofSeconds(1));
+/// scheduler.scheduleAtFixedRate(
+///     () -> System.out.println("tick"), Duration.ofSeconds(1));
 /// scheduler.shutdown();
 /// ```
 final class TimerTaskScheduler implements TaskScheduler, DisposableBean {
@@ -402,18 +410,20 @@ final class _TimerTask implements ScheduledTask {
     Object? result;
     try {
       result = _task();
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _failed(error, stackTrace);
       _completed();
       return;
     }
     if (result is Future) {
-      result.then(
-        (_) => _completed(),
-        onError: (Object error, StackTrace stackTrace) {
-          _failed(error, stackTrace);
-          _completed();
-        },
+      unawaited(
+        result.then(
+          (_) => _completed(),
+          onError: (Object error, StackTrace stackTrace) {
+            _failed(error, stackTrace);
+            _completed();
+          },
+        ),
       );
     } else {
       _completed();
@@ -433,7 +443,7 @@ final class _TimerTask implements ScheduledTask {
     }
     try {
       handler.handleError(error, stackTrace);
-    } catch (propagated, propagatedTrace) {
+    } on Object catch (propagated, propagatedTrace) {
       // Spring: an error escaping the handler suppresses later runs.
       _log.error(
         'Scheduled task $name failed and will not run again',

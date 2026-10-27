@@ -47,7 +47,7 @@ Future<List<Part>> partsOf(HttpRequest request) async {
 final class CountingFile extends InMemoryMultipartFile {
   CountingFile(super.name, super.content, {super.originalFilename});
 
-  var reads = 0;
+  int reads = 0;
 
   @override
   Future<Uint8List> get bytes {
@@ -197,6 +197,7 @@ void main() {
       await runner.runAsync((context) async {
         final client = context.getBean<UploadClient>() as dynamic;
         // Not reachable with the typed interface; the proxy accepts null.
+        // ignore: avoid_dynamic_calls
         await client.optional(
           InMemoryMultipartFile('f', [1], originalFilename: 'f.txt'),
           note: null,
@@ -225,6 +226,8 @@ void main() {
       await runner.runAsync((context) async {
         final client = context.getBean<UploadClient>() as dynamic;
         await expectLater(
+          // A null for a non-nullable parameter needs the untyped call.
+          // ignore: avoid_dynamic_calls
           client.optional(null, note: 'hi') as Future<Object?>,
           throwsA(
             isA<ArgumentError>()

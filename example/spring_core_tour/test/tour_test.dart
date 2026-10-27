@@ -234,6 +234,8 @@ void main() {
 
   test('json', () {
     expectLine(
+      // The pieces join without a space on purpose: they are one text.
+      // ignore: missing_whitespace_between_adjacent_strings
       'writeValueAsString: {"author":{"born":1920,"name":"Frank Herbert"},'
       '"availability":"sold_out","formats":["paperback","ebook"],'
       '"isbn":"978-0","title":"Dune"}',
@@ -277,12 +279,15 @@ void main() {
       'an unsatisfied dependency LegacyGreeter: No bean of type LegacyGreeter',
     );
     expectLine(
-      'cycle: BeanCurrentlyInCreationException: Circular dependency: a -> b -> a.',
+      'cycle: BeanCurrentlyInCreationException: Circular dependency: a -> b -> '
+      'a.',
     );
     // Conditional declarations of one name build; both matching is the
     // container's override error.
     expectLine(
-      "dev and prod dataSource: BeanDefinitionOverrideException: Bean name "
+      'dev and prod dataSource: BeanDefinitionOverrideException: Bean name '
+      // The pieces join without a space on purpose: they are one text.
+      // ignore: missing_whitespace_between_adjacent_strings
       "'dataSource' is already in use (registering package:"
       'spring_core_dart_example/src/config/data_config.dart#'
       'ProdDataConfig.dataSource).',

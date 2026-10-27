@@ -37,7 +37,7 @@ abstract final class ScopeType {
 /// current instance, so a singleton can hold a request- or screen-scoped
 /// bean. The generator writes the proxy class (the type must be
 /// implementable from generated code, like for `@Lazy` injection points);
-/// by hand it is [BeanDefinition.scopedProxy].
+/// by hand it is `BeanDefinition.scopedProxy`.
 ///
 /// ```dart
 /// @Component()

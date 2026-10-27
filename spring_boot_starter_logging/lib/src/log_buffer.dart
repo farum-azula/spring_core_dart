@@ -9,13 +9,15 @@ import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 /// screen: snapshots, filtering with [LogQuery], live streams, counters and
 /// text export.
 ///
-/// The logging system keeps one ([LoggingSystem.buffer]); it is also a
+/// The logging system keeps one (`LoggingSystem.buffer`); it is also a
 /// bean, so a screen can get it injected.
 ///
 /// ```dart
 /// // Flutter: a filtered, live list.
 /// StreamBuilder<List<SpringLogRecord>>(
-///   stream: buffer.watch(LogQuery(minLevel: SpringLogLevel.info, text: query)),
+///   stream: buffer.watch(
+///     LogQuery(minLevel: SpringLogLevel.info, text: query),
+///   ),
 ///   builder: (context, snapshot) => ListView(
 ///     children: [
 ///       for (final record in snapshot.data ?? const <SpringLogRecord>[])

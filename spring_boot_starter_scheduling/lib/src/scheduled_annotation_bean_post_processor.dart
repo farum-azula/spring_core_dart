@@ -62,7 +62,9 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
   Object postProcessAfterInitialization(Object bean, String beanName) {
     final factory = _beanFactory;
     if (factory is! BeanDefinitionRegistry ||
-        !(factory as BeanDefinitionRegistry).containsBeanDefinition(beanName)) {
+        !(factory! as BeanDefinitionRegistry).containsBeanDefinition(
+          beanName,
+        )) {
       return bean;
     }
     final definition = (factory as BeanDefinitionRegistry).getBeanDefinition(
@@ -169,9 +171,10 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
       if (value != null && resolved != null) {
         invalid('give $attribute or ${attribute}String, not both');
       }
+      var result = value;
       if (resolved != null) {
         try {
-          value = DurationStyle.parse(resolved);
+          result = DurationStyle.parse(resolved);
         } on FormatException catch (error) {
           invalid(
             '${attribute}String "$text" is not a duration '
@@ -179,10 +182,10 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
           );
         }
       }
-      if (value != null && value.isNegative) {
+      if (result != null && result.isNegative) {
         invalid('$attribute must not be negative');
       }
-      return value;
+      return result;
     }
 
     final rate = duration(

@@ -14,6 +14,9 @@ import 'package:test/test.dart';
 
 import 'chat.dart';
 
+// The properties of the client sockets, for the lines that would not fit.
+const _clientConfig = 'spring.websocket.client.config';
+
 // End to end through dart:io: a real WebSocket server echoes chat
 // messages and drops the first connection to show the reconnection.
 void main() {
@@ -22,19 +25,19 @@ void main() {
   final sockets = <io.WebSocket>[];
 
   setUpAll(() async {
-    server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
-    server.listen((request) async {
-      handshakes.add(request.headers);
-      final socket = await io.WebSocketTransformer.upgrade(
-        request,
-        protocolSelector: (protocols) => protocols.first,
-      );
-      sockets.add(socket);
-      socket.listen((message) {
-        final json = jsonDecode(message as String) as Map<String, Object?>;
-        socket.add(jsonEncode({'from': 'echo', 'text': json['text']}));
+    server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0)
+      ..listen((request) async {
+        handshakes.add(request.headers);
+        final socket = await io.WebSocketTransformer.upgrade(
+          request,
+          protocolSelector: (protocols) => protocols.first,
+        );
+        sockets.add(socket);
+        socket.listen((message) {
+          final json = jsonDecode(message as String) as Map<String, Object?>;
+          socket.add(jsonEncode({'from': 'echo', 'text': json['text']}));
+        });
       });
-    });
   });
 
   tearDownAll(() => server.close(force: true));
@@ -47,7 +50,7 @@ void main() {
         .withPropertyValues([
           'chat.url=ws://127.0.0.1:${server.port}/ws',
           'spring.websocket.client.config.chat.reconnect-delay=10ms',
-          'spring.websocket.client.config.chat.default-request-headers.X-Shop=neon',
+          '$_clientConfig.chat.default-request-headers.X-Shop=neon',
         ])
         .withBean<WebSocketTransport>(() => IoWebSocketTransport())
         .runAsync((context) async {

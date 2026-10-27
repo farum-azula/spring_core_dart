@@ -1,8 +1,8 @@
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 import 'package:test/test.dart';
 
-/// A call of `name(arg)` on a `Shelf` with [annotations] on the member and
-/// [classAnnotations] on the class, counting the real calls.
+/// A call of `name(arg)` on a `Shelf` with `annotations` on the member and
+/// `classAnnotations` on the class, counting the real calls.
 final class _Call implements MethodInvocation {
   _Call(
     String name, {
@@ -136,9 +136,8 @@ void main() {
     test('come from the class declaring the method, then its '
         'superclasses (the nearest per annotation type), like Spring', () {
       final manager = InMemoryCacheManager();
-      final interceptor = CacheInterceptor(cacheManager: manager);
       // Shelf extends Base extends Root; find is inherited from Base.
-      interceptor.invoke(
+      CacheInterceptor(cacheManager: manager).invoke(
         _Call(
           'find',
           classAnnotations: const [Cacheable('subclass')],
@@ -183,8 +182,7 @@ void main() {
 
   test('#root.method.name and other method properties in keys', () {
     final manager = InMemoryCacheManager();
-    final interceptor = CacheInterceptor(cacheManager: manager);
-    interceptor.invoke(
+    CacheInterceptor(cacheManager: manager).invoke(
       _Call(
         'find',
         annotations: const [

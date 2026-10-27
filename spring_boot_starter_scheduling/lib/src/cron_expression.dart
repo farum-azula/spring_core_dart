@@ -1,3 +1,5 @@
+// Rows of Markdown tables and sample log lines in documentation cannot wrap.
+// ignore_for_file: lines_longer_than_80_chars
 /// A cron expression in Spring's six-field format, like Spring's
 /// `CronExpression`:
 ///

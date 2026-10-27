@@ -294,7 +294,7 @@ void main() {
   }
 
   group('Binder', () {
-    test('env vars bind nested objects under dashed names (Boot\'s legacy '
+    test("env vars bind nested objects under dashed names (Boot's legacy "
         'ancestor check)', () {
       final env = environment({}, {
         'APP_MAIN_SERVER_HOST': 'example.org',
@@ -364,8 +364,8 @@ void main() {
       final seen = <int>[];
       port.ifBound(seen.add);
       expect(seen, [80]);
-      final missing = binder.bind('app.none', const ClassType<int>());
-      missing.ifBound(seen.add);
+      final missing = binder.bind('app.none', const ClassType<int>())
+        ..ifBound(seen.add);
       expect(seen, [80]);
       expect(missing.map((p) => p + 1).isBound, isFalse);
       expect(missing.orElseGet(() => 7), 7);

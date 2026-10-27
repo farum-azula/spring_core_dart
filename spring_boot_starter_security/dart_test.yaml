@@ -1,0 +1,11 @@
+tags:
+  # Tests that open real sockets/servers or start processes (@Tags at the
+  # top of the file). CI runs them in their own job:
+  #   dart run tool/test_all.dart --tags integration
+  # and the rest with --exclude-tags "integration || differential".
+  integration:
+    timeout: 2x
+  # The same requests to Spring Security (tool/security_reference): CI's
+  # `differential` job, with the Spring application built.
+  differential:
+    timeout: 4x

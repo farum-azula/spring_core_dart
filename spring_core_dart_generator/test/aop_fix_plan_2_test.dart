@@ -57,7 +57,7 @@ Future<TestBuilderResult> _build(
       ),
     ]);
   }
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode),
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
@@ -118,7 +118,7 @@ Future<List<String>> _diagnostics(
   expect(result.errors, isEmpty);
   final path = app ? 'bin/main.spring.dart' : 'lib/src/beans.spring.dart';
   final output = _output(result, path);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|$path': output,
@@ -130,10 +130,10 @@ Future<List<String>> _diagnostics(
       );
       return [
         if (errors case ErrorsResult(:final diagnostics))
-          for (final diagnostic in diagnostics)
-            if (diagnostic.severity == Severity.error ||
-                (warnings && diagnostic.severity != Severity.error))
-              '${diagnostic.diagnosticCode.lowerCaseName}: ${diagnostic.message}',
+          for (final d in diagnostics)
+            if (d.severity == Severity.error ||
+                (warnings && d.severity != Severity.error))
+              '${d.diagnosticCode.lowerCaseName}: ${d.message}',
       ];
     },
     rootPackage: 'pkg',
@@ -283,7 +283,7 @@ abstract class Uses {
   });
 
   group('an @Aspect declared through a @Bean method', () {
-    const source = r'''
+    const source = '''
 @Service()
 class Orders {
   void place() {}
@@ -365,7 +365,7 @@ class AopConfig {
   });
 
   test('@DeclareParents applies to subclass proxies', () async {
-    const source = r'''
+    const source = '''
 abstract interface class UsageTracked {
   int get useCount;
   void increment();
@@ -417,7 +417,7 @@ class Usage {
       output,
       _has(
         r'int get useCount => ((this._$invoker ?? '
-        "ProxyInvoker.notIntroduced(this, r'UsageTracked'))"
+        "ProxyInvoker.notIntroduced(this, r'UsageTracked')) "
         '.introduction(0) as UsageTracked).useCount;',
       ),
     );
@@ -506,7 +506,7 @@ class Audit {
 
     test('a constraint with a private value fails the build', () async {
       expect(
-        await _errors(r'''
+        await _errors('''
 bool _check(Object? value) => value != null;
 
 class CheckedBy extends Constraint {
@@ -555,7 +555,7 @@ class Person extends Base with Named {
   test(
     'FutureOr methods and Future getters are advised on the future',
     () async {
-      const source = r'''
+      const source = '''
 import 'dart:async';
 
 @Service()

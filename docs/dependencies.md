@@ -55,7 +55,10 @@ repository. Two things are allowed besides them:
 
 - the Dart team's `yaml`, which parses `application.yml` (Spring Boot uses
   SnakeYAML for this);
-- the Flutter SDK, for `spring_boot_starter_flutter`.
+- the Flutter SDK, for `spring_boot_starter_flutter`;
+- ⚠️ `pointycastle`, a **third-party** package, for the security
+  packages only, **until it can be removed**
+  ([section 2](#pointycastle-third-party-to-be-removed)).
 
 Not even other Dart team packages are allowed there.
 
@@ -86,9 +89,63 @@ exception depends on is allowed too, but only through it.
 
 | Package | Publisher | Why it is allowed | Who may pull it |
 |---|---|---|---|
+| `very_good_analysis` | `verygood.ventures` (Very Good Ventures) | The lint rules of `analysis_options.yaml`, which CI's `quality` job enforces. Only rules (a YAML file), no code; a dev dependency of the workspace root, never of a package. | `spring_core_dart_workspace` only |
 | `melos` | `invertase.io` | Workspace scripts (`dart run melos run check`). It is a dev tool of the workspace root and is never a dependency of a package. | `spring_core_dart_workspace` only |
 | `material_color_utilities` | `material.io` (Google's Material team) | `package:flutter` depends on it and the Flutter SDK pins its version, so it cannot be avoided. | the Flutter packages only |
+| `pointycastle` | ⚠️ `bouncycastle.org` (Legion of the Bouncy Castle) | **Third-party, temporary.** The JWT signatures and the password hashes of the security packages, until a Dart team package covers them: [below](#pointycastle-third-party-to-be-removed). | `spring_security_core`, `spring_boot_starter_security` |
 | `node_preamble` | none | `package:test` (Dart team) pulls it for browser tests. It has no publisher on pub.dev. | any package (through `test`) |
+
+### pointycastle: third-party, to be removed
+
+`pointycastle` is the only third-party package an application of the
+family can get, and only with the security packages. It stays until it can
+be replaced, and the code is arranged so that replacing it is easy.
+
+**What it is.** The Dart port of Bouncy Castle (the cryptography library
+Spring Security's Argon2 and scrypt encoders use in Java), published by
+the verified publisher `bouncycastle.org`, code at
+[github.com/bcgit/pc-dart](https://github.com/bcgit/pc-dart). It needs only
+the Dart team's `collection` and `convert` (→ `typed_data`).
+
+**Why it is here.** The security packages need RSA and ECDSA signature
+checks (JWTs of Google, Auth0, Keycloak, ... are RS256 or ES256), and
+Argon2, PBKDF2 and scrypt for passwords. No Dart team package has them:
+`package:crypto` (`dart.dev`) has only hashes and HMAC. Writing them by
+hand is not an option ([security.md](security.md), rule 5).
+
+**The risk.** It is not maintained by the Dart team, and the Dart port is
+maintained slowly: one maintainer merges contributions now and then; the
+last release (4.0.0) is from February 2025, the last commit from March
+2025, with about 70 open issues (checked October 2026). No known
+vulnerabilities (OSV, GitHub advisories). It is widely used (about 4
+million downloads a month).
+
+**How the risk is kept small:**
+
+- **One file per package uses it**, behind plain functions:
+  `spring_security_core/lib/src/crypto/kdf_primitives.dart` (Argon2,
+  PBKDF2, scrypt) and
+  `spring_boot_starter_security/lib/src/jwt/signature_primitives.dart`
+  (RSA PKCS#1 and PSS, ECDSA, HMAC, the NIST curves). Nothing else in
+  `lib/` imports it (only the tests' token signing in
+  `spring_boot_starter_security/test/app/jwt/keys.dart`).
+- **Its results are checked against other implementations**: password
+  hashes against Spring Security's Java encoders both ways, signatures
+  against the RFC 7515 vectors, plus fuzz and mutation tests
+  ([docs/security-mutation.md](security-mutation.md)). An update that
+  changes a result fails them.
+- **Known vulnerabilities are checked in CI** (`tool/check_vulnerabilities.dart`,
+  OSV database) for every package of the workspace.
+
+**Removing it.** Rewrite the two files on the replacement and keep their
+functions; the tests above show whether the replacement computes the same.
+Candidates: Google's [`webcrypto`](https://pub.dev/packages/webcrypto)
+(`google.dev`, BoringSSL: RSA, ECDSA, HMAC, PBKDF2; not yet: its current
+version pulls two third-party build packages and needs CMake, and it has
+no Argon2 or scrypt) or Dart team packages, when they cover these
+algorithms. Without Argon2 and scrypt, new hashes would be `{pbkdf2}`
+(which Spring checks too), and old `{argon2}` and `{scrypt}` hashes would
+be upgraded at login before the switch.
 
 What comes **only** through `melos`: `ansi_styles`, `conventional_commit`
 (`invertase.io`), `cli_launcher` (`gabriel.terwesten.net`), `xml`,
@@ -117,6 +174,8 @@ published.
 | `spring_boot_starter_feign` | `@FeignClient` HTTP clients | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_websocket` | `@WebSocketClient` clients; `@WebSocketEndpoint` server endpoints (served by the web starter) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_web` | Spring MVC: `@RestController`, the `dart:io` server, `ProblemDetail`, SSE, filters, CORS | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
+| `spring_security_core` | Spring Security's core: `SecurityContextHolder`, users and password encoders, `AuthenticationManager`, `@PreAuthorize` and the other method security annotations | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `pointycastle` (no web: it works in Flutter apps and Feign clients without a server) | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_cache`, `spring_boot_starter_test`, `test` |
+| `spring_boot_starter_security` | Spring Security for the web starter: the filter chain, `HttpSecurity`, HTTP Basic, form login, JWT resource servers, CSRF, CORS, security headers | yes | `spring_boot_dart`, `spring_boot_starter_web`, `spring_security_core`, `spring_web_dart`, `pointycastle` | same as logging |
 | `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets | yes | `flutter`, `flutter_localizations` (SDK), `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
@@ -149,6 +208,8 @@ graph TD
   feign[spring_boot_starter_feign]
   websocket[spring_boot_starter_websocket]
   webStarter[spring_boot_starter_web]
+  securityCore[spring_security_core]
+  securityStarter[spring_boot_starter_security]
   flutterStarter[spring_boot_starter_flutter]
   testStarter[spring_boot_starter_test]
   generator[spring_core_dart_generator]
@@ -159,6 +220,7 @@ graph TD
   testApi([matcher, test_api])
   codegen([analyzer, build, code_builder, dart_style, glob, path, pub_semver, source_gen, yaml])
   analyzer([analyzer, yaml])
+  pointycastle(["⚠️ pointycastle (third-party, to be removed)"])
 
   core --> yaml
   boot --> core
@@ -177,6 +239,14 @@ graph TD
   webStarter --> boot
   webStarter --> logging
   webStarter --> web
+  securityCore --> boot
+  securityCore --> logging
+  securityCore --> pointycastle
+  securityStarter --> boot
+  securityStarter --> webStarter
+  securityStarter --> securityCore
+  securityStarter --> web
+  securityStarter --> pointycastle
   flutterStarter --> boot
   flutterStarter --> logging
   flutterStarter --> flutterSdk
@@ -201,6 +271,8 @@ spring_core_dart ─────────────── yaml
 │   │   ├── spring_boot_starter_feign        (+ spring_boot_dart, spring_web_dart)
 │   │   ├── spring_boot_starter_websocket    (+ spring_boot_dart, spring_web_dart)
 │   │   ├── spring_boot_starter_web          (+ spring_boot_dart, spring_web_dart)
+│   │   │   └── spring_boot_starter_security (+ spring_security_core, ⚠️ pointycastle)
+│   │   ├── spring_security_core             (+ spring_boot_dart, ⚠️ pointycastle)
 │   │   └── spring_boot_starter_flutter      (+ spring_boot_dart, Flutter SDK)
 │   ├── spring_boot_starter_test             (+ spring_web_dart, matcher, test_api)
 │   └── dart_spring_language_server          (+ spring_core_dart, analyzer, yaml)
@@ -211,7 +283,9 @@ spring_core_dart ─────────────── yaml
 **Re-exports.** Each package re-exports what it builds on, so an
 application lists only the starter it chooses: `spring_boot_dart` exports
 `spring_core_dart`; every starter exports `spring_boot_starter_logging`;
-Feign, WebSocket and web export `spring_web_dart`. See
+Feign, WebSocket and web export `spring_web_dart`;
+`spring_boot_starter_security` exports the web starter and
+`spring_security_core`. See
 [roadmap/dependencies.md](../roadmap/dependencies.md).
 
 **The WebSocket starter's server side runs on the web starter without
@@ -239,10 +313,13 @@ the family. Packages of the repository are left out.
 | The application lists | External packages at run time |
 |---|---|
 | `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, scheduling, cache, Feign, WebSocket, web) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
+| `spring_security_core` or `spring_boot_starter_security` | the 6 above, plus ⚠️ `pointycastle` (third-party, [to be removed](#pointycastle-third-party-to-be-removed)) and its `convert` and `typed_data` (`dart.dev`): 9 |
 | `spring_boot_starter_flutter` | the 6 above, plus the Flutter SDK (`flutter`, `flutter_localizations`, `sky_engine`) and what the SDK pins: `characters`, `clock`, `intl`, `material_color_utilities`, `meta`, `vector_math` |
 
 All of them are Dart team packages, except `material_color_utilities`,
-which is part of the Flutter SDK.
+which is part of the Flutter SDK, and ⚠️ `pointycastle`, the security
+packages' cryptography: a third-party package, [to be
+removed](#pointycastle-third-party-to-be-removed).
 
 ```
 yaml                       tools.dart.dev
@@ -253,6 +330,12 @@ yaml                       tools.dart.dev
 │   └── term_glyph         tools.dart.dev
 └── string_scanner         tools.dart.dev
     └── source_span
+
+pointycastle               ⚠️ bouncycastle.org: third-party, to be removed
+├── collection
+└── convert                dart.dev
+    └── typed_data         dart.dev
+        └── collection
 
 flutter                    Flutter SDK
 ├── characters             dart.dev
@@ -329,9 +412,12 @@ on `package:test`. That way it works both under `package:test` and under
 
 ## 8. Lints, the language server and the workspace tools
 
-- **Lints.** `lints` (`dart.dev`) for the workspace and
-  `spring_boot_starter_flutter`; `flutter_lints` (`flutter.dev`, built on
-  `lints`) for the Flutter examples.
+- **Lints.** `very_good_analysis` (an [exception](#2-exceptions)) for the
+  workspace, with the rules switched off listed and explained in
+  `analysis_options.yaml`; `lints` (`dart.dev`) for
+  `spring_boot_starter_flutter`, which resolves outside the workspace;
+  `flutter_lints` (`flutter.dev`, built on `lints`) for the Flutter
+  examples.
 - **Language server** (`extensions/language_server`). Runtime: `analyzer`
   and `yaml`, plus `spring_core_dart` and `spring_boot_dart`. 18 external
   packages, all from the Dart team.
@@ -379,9 +465,9 @@ pub workspace and the three Flutter packages).
 | `cli_util` | `tools.dart.dev` | tests, melos | `ffi`, `meta`, `path` | `coverage`, `melos` |
 | `clock` | `tools.dart.dev` | app, tests | — | `fake_async`, `flutter_test`, `intl`, `leak_tracker` |
 | `code_builder` | `tools.dart.dev` | codegen | `built_collection`, `built_value`, `collection`, `matcher`, `meta` | `spring_core_dart_generator` |
-| `collection` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `async`, `build_runner`, `built_value`, `code_builder`, `dart_style`, `fake_async`, `flutter`, `flutter_test`, `glob`, `graphs`, `http_parser`, `leak_tracker`, `material_color_utilities`, `melos`, `petitparser`, `pub_semver`, `pubspec_parse`, `shelf`, `source_span`, `test`, `test_api`, `test_core`, `typed_data`, `xml`, `yaml`, `yaml_edit` |
+| `collection` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `async`, `build_runner`, `built_value`, `code_builder`, `dart_style`, `fake_async`, `flutter`, `flutter_test`, `glob`, `graphs`, `http_parser`, `leak_tracker`, `material_color_utilities`, `melos`, `petitparser`, `pointycastle`, `pub_semver`, `pubspec_parse`, `shelf`, `source_span`, `test`, `test_api`, `test_core`, `typed_data`, `xml`, `yaml`, `yaml_edit` |
 | `conventional_commit` | ⚠️ `invertase.io` — only through `melos` | melos only | — | `melos` |
-| `convert` | `dart.dev` | codegen, tests, language server | `typed_data` | `analyzer`, `build_runner`, `shelf_static` |
+| `convert` | `dart.dev` | app (security), codegen, tests, language server | `typed_data` | `analyzer`, `build_runner`, `pointycastle`, `shelf_static` |
 | `coverage` | `tools.dart.dev` | tests | `args`, `cli_config`, `cli_util`, `glob`, `logging`, `meta`, `package_config`, `path`, `source_maps`, `stack_trace`, `vm_service`, `yaml` | `spring_core_dart` (dev), `spring_core_dart_generator` (dev), `test`, `test_core` |
 | `crypto` | `dart.dev` | codegen, tests, language server, melos | `typed_data` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `melos`, `web_socket_channel` |
 | `csslib` | `tools.dart.dev` | tests | `source_span` | `html` |
@@ -420,6 +506,7 @@ pub workspace and the three Flutter packages).
 | `path` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `build`, `build_config`, `build_daemon`, `build_runner`, `build_test`, `cli_launcher`, `cli_util`, `coverage`, `dart_style`, `file`, `flutter_localizations`, `flutter_test`, `frontend_server_client`, `glob`, `intl`, `io`, `leak_tracker`, `melos`, `package_config`, `process`, `shelf`, `shelf_packages_handler`, `shelf_static`, `source_gen`, `source_map_stack_trace`, `source_span`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `stack_trace`, `test`, `test_core`, `watcher` |
 | `petitparser` | ⚠️ `lukas-renggli.ch` — only through `melos` | melos only | `collection`, `meta` | `xml` |
 | `platform` | `dart.dev` | melos only | — | `melos`, `process` |
+| `pointycastle` | ⚠️ `bouncycastle.org` — third-party, [to be removed](#pointycastle-third-party-to-be-removed) | app (security) | `collection`, `convert` | `spring_boot_starter_security`, `spring_security_core` |
 | `pool` | `tools.dart.dev` | codegen, tests, melos | `async`, `stack_trace` | `build_daemon`, `build_runner`, `melos`, `test`, `test_core` |
 | `process` | `tools.dart.dev` | melos only | `file`, `path`, `platform` | `pub_updater` |
 | `prompts` | ⚠️ none — only through `melos` | melos only | `charcode`, `io` | `melos` |
@@ -443,8 +530,9 @@ pub workspace and the three Flutter packages).
 | `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_dart` (dev), `spring_boot_feign_example` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `spring_core_dart_example` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
 | `test_api` | `tools.dart.dev` | codegen, tests | `async`, `boolean_selector`, `collection`, `meta`, `source_span`, `stack_trace`, `stream_channel`, `string_scanner`, `term_glyph` | `flutter_test`, `matcher`, `spring_boot_starter_test`, `test`, `test_core` |
 | `test_core` | `tools.dart.dev` | tests | `analyzer`, `args`, `async`, `boolean_selector`, `collection`, `coverage`, `frontend_server_client`, `glob`, `io`, `meta`, `package_config`, `path`, `pool`, `source_map_stack_trace`, `source_maps`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `vm_service`, `yaml` | `build_test`, `test` |
-| `typed_data` | `dart.dev` | codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `test` |
+| `typed_data` | `dart.dev` | app (security), codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `test` |
 | `vector_math` | `flutter.dev` | app, tests | — | `flutter`, `flutter_test` |
+| `very_good_analysis` | ⚠️ `verygood.ventures` — [exception](#2-exceptions) | lints | — | `spring_core_dart_workspace` (dev) |
 | `vm_service` | `tools.dart.dev` | tests | — | `coverage`, `leak_tracker`, `test_core` |
 | `watcher` | `tools.dart.dev` | codegen, tests, language server | `async`, `path` | `analyzer`, `build_daemon`, `build_runner`, `build_test` |
 | `web` | `dart.dev` | codegen, tests, melos | — | `http`, `web_socket`, `web_socket_channel` |
@@ -465,7 +553,12 @@ repository use their own ecosystems:
   extension needs. It talks to the Dart language server above.
 - **CI** (`.github/workflows`). Uses `actions/*` (GitHub),
   `dart-lang/setup-dart` (Dart team) and Node.js, which runs the SpEL and
-  JSON tests compiled to JavaScript.
+  JSON tests compiled to JavaScript. The `quality` job adds
+  `VeryGoodOpenSource/very_good_coverage` (Very Good Ventures: reads
+  `coverage/lcov.info` and fails below the minimum), the `vulnerabilities`
+  job Google's `osv-scanner` (Go, built from source in the job), the
+  `differential` job a JDK and Maven (Spring Boot). Dependabot updates the
+  pub dependencies and the actions weekly.
 
 ## 11. Adding a dependency
 

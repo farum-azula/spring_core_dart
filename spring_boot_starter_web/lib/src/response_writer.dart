@@ -57,11 +57,11 @@ final class ResponseWriter {
     List<MediaType> produces = const [],
   }) async {
     if (response.isCommitted && result == null) {
-      return response.close();
+      return await response.close();
     }
     final status = handler?.annotation<ResponseStatus>();
     if (status?.reason case final reason?) {
-      return writeProblem(
+      return await writeProblem(
         ProblemDetail.forStatusAndDetail(status!.value, reason),
         request,
         response,
@@ -70,7 +70,7 @@ final class ResponseWriter {
     switch (result) {
       case null:
         response.statusCode = status?.value ?? 200;
-        return response.close();
+        return await response.close();
       case final ResponseEntity<Object?> entity:
         response.statusCode = entity.statusCode;
         entity.headers.forEach((name, values) {
@@ -79,32 +79,36 @@ final class ResponseWriter {
             response.headers.add(name, value);
           }
         });
-        return _writeBody(entity.body, request, response, produces);
+        return await _writeBody(entity.body, request, response, produces);
       case final ProblemDetail problem:
         if (status != null) {
           problem.status = status.value;
         }
-        return writeProblem(problem, request, response);
+        return await writeProblem(problem, request, response);
       case final ErrorResponse error:
-        return writeErrorResponse(error, request, response);
+        return await writeErrorResponse(error, request, response);
       case final SseEmitter emitter:
-        return _writeEmitter(emitter, request, response);
+        return await _writeEmitter(emitter, request, response);
       case final EventStream<Object?> stream:
-        return _writeStream(stream.events, request, response, produces);
+        return await _writeStream(stream.events, request, response, produces);
       case final Stream<Object?> stream when _isByteStream(handler):
         response.statusCode = status?.value ?? 200;
-        return _writeByteStream(stream.cast<List<int>>(), response, produces);
+        return await _writeByteStream(
+          stream.cast<List<int>>(),
+          response,
+          produces,
+        );
       case final Stream<Object?> stream:
-        return _writeStream(stream, request, response, produces);
+        return await _writeStream(stream, request, response, produces);
       case final StreamingResponseBody body:
         response.statusCode = status?.value ?? 200;
-        return _writeStreaming(body, response, produces);
+        return await _writeStreaming(body, response, produces);
       case final Resource resource:
         response.statusCode = status?.value ?? 200;
-        return writeResource(resource, request, response);
+        return await writeResource(resource, request, response);
       default:
         response.statusCode = status?.value ?? 200;
-        return _writeBody(result, request, response, produces);
+        return await _writeBody(result, request, response, produces);
     }
   }
 
@@ -115,20 +119,20 @@ final class ResponseWriter {
     List<MediaType> produces,
   ) async {
     if (body == null) {
-      return response.close();
+      return await response.close();
     }
     if (body is Resource) {
-      return writeResource(body, request, response);
+      return await writeResource(body, request, response);
     }
     if (body is StreamingResponseBody) {
-      return _writeStreaming(body, response, produces);
+      return await _writeStreaming(body, response, produces);
     }
     if (body is Stream<List<int>>) {
-      return _writeByteStream(body, response, produces);
+      return await _writeByteStream(body, response, produces);
     }
     if (body is ProblemDetail) {
       body.instance ??= Uri.parse(request.path);
-      return _writeBytes(
+      return await _writeBytes(
         response,
         utf8.encode(jsonEncode(body.toJson())),
         response.headers.contentType ?? MediaType.applicationProblemJson,
@@ -141,14 +145,14 @@ final class ResponseWriter {
           declared ??
           _choose(produces, accept, const [MediaType.textPlain]) ??
           '${MediaType.textPlain};charset=UTF-8';
-      return _writeBytes(response, utf8.encode(body), _withCharset(type));
+      return await _writeBytes(response, utf8.encode(body), _withCharset(type));
     }
     if (body is Uint8List) {
       final type =
           declared ??
           _choose(produces, accept, const [MediaType.applicationOctetStream]) ??
           MediaType.applicationOctetStream;
-      return _writeBytes(response, body, type);
+      return await _writeBytes(response, body, type);
     }
     final type =
         declared ??
@@ -157,7 +161,7 @@ final class ResponseWriter {
           MediaType.applicationJson,
         ]));
     final json = jsonEncode(mapper.valueToTree(body));
-    return _writeBytes(response, utf8.encode(json), type);
+    return await _writeBytes(response, utf8.encode(json), type);
   }
 
   // The media type to write: one of [produces] (or [supported]) the
@@ -298,7 +302,7 @@ final class ResponseWriter {
         error: error,
         stackTrace: stackTrace,
       );
-      return response.close().catchError((_) {});
+      return await response.close().catchError((_) {});
     }
     switch (error) {
       case final ErrorResponse errorResponse:
@@ -311,9 +315,9 @@ final class ResponseWriter {
         } else {
           _log.debug('Resolved [$error]');
         }
-        return writeErrorResponse(errorResponse, request, response);
+        return await writeErrorResponse(errorResponse, request, response);
       case PayloadTooLargeException(:final maxLength):
-        return writeErrorResponse(
+        return await writeErrorResponse(
           PayloadTooLargeErrorException(maxLength),
           request,
           response,
@@ -324,7 +328,7 @@ final class ResponseWriter {
           error: error,
           stackTrace: stackTrace,
         );
-        return writeProblem(
+        return await writeProblem(
           ProblemDetail.forStatus(HttpStatus.internalServerError),
           request,
           response,
@@ -387,7 +391,7 @@ final class ResponseWriter {
     ServerHttpResponse response,
   ) async {
     if (!resource.exists() || !resource.isReadable) {
-      return writeProblem(
+      return await writeProblem(
         ProblemDetail.forStatusAndDetail(
           HttpStatus.notFound,
           'No resource ${resource.filename ?? ''}'.trim(),
@@ -405,11 +409,11 @@ final class ResponseWriter {
       bytes = await resource.readAsBytes();
       length = bytes.length;
     }
-    final headers = response.headers;
-    headers.contentType ??=
-        MediaTypeFactory.getMediaType(resource.filename) ??
-        MediaType.applicationOctetStream;
-    headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
+    final headers = response.headers
+      ..contentType ??=
+          MediaTypeFactory.getMediaType(resource.filename) ??
+          MediaType.applicationOctetStream
+      ..set(HttpHeaders.acceptRangesHeader, 'bytes');
     final modified = file?.lastModified().toUtc();
     if (modified != null) {
       headers.lastModified = modified;
@@ -427,7 +431,7 @@ final class ResponseWriter {
           seconds <= since.millisecondsSinceEpoch ~/ 1000) {
         response.statusCode = HttpStatus.notModified;
         headers.remove(HttpHeaders.contentTypeHeader);
-        return response.close();
+        return await response.close();
       }
     }
     var start = 0;
@@ -443,7 +447,7 @@ final class ResponseWriter {
           ..set(HttpHeaders.contentRangeHeader, 'bytes */$length')
           ..remove(HttpHeaders.contentTypeHeader)
           ..contentLength = 0;
-        return response.close();
+        return await response.close();
       }
       if (parsed case (final int from, final int to)) {
         start = from;
@@ -454,14 +458,14 @@ final class ResponseWriter {
     }
     headers.contentLength = end - start;
     if (request.method == HttpMethod.head) {
-      return response.close();
+      return await response.close();
     }
     if (file != null) {
       await response.addStream(file.openRead(start, end));
     } else if (end > start) {
       response.add(Uint8List.sublistView(bytes!, start, end));
     }
-    return response.close();
+    return await response.close();
   }
 
   // `If-Range` with a date: the range applies only to that version.

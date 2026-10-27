@@ -15,7 +15,8 @@ import 'dart:async';
 ///
 ///   @override
 ///   List<Book> findAll(List<String> isbns) => [
-///     for (final isbn in isbns) (AopContext.currentProxy() as Books).find(isbn),
+///     for (final isbn in isbns)
+///       (AopContext.currentProxy() as Books).find(isbn),
 ///   ];
 /// }
 /// ```

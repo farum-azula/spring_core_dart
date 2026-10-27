@@ -5,6 +5,10 @@
 // closes with the application.
 //
 //   dart run example/example.dart
+
+// The example shows its result on the console: printing is the point.
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io' as io;
 
@@ -39,7 +43,7 @@ class Chat {
   Future<ChatMessage> ask(String text) async {
     final reply = socket.messages().first;
     await socket.send(ChatMessage(from: 'me', text: text));
-    return reply;
+    return await reply;
   }
 }
 

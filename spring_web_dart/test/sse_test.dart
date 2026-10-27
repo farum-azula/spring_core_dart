@@ -70,7 +70,10 @@ void main() {
         ': c\nid: 7\nevent: note\nretry: 1000\ndata: a\ndata: b\n\n',
       );
       expect(SseDecoder.parse(event.encode()).single, event);
-      expect(ServerSentEvent({'n': 1}).encode(jsonEncode), 'data: {"n":1}\n\n');
+      expect(
+        const ServerSentEvent({'n': 1}).encode(jsonEncode),
+        'data: {"n":1}\n\n',
+      );
     });
   });
 
@@ -223,8 +226,8 @@ void main() {
     test('through EventStream with decoding', () async {
       server
         ..when(HttpMethod.get, url).respondEvents([
-          ServerSentEvent({'n': 1}, id: 'a'),
-          ServerSentEvent({'n': 2}, id: 'b'),
+          const ServerSentEvent({'n': 1}, id: 'a'),
+          const ServerSentEvent({'n': 2}, id: 'b'),
         ])
         ..when(HttpMethod.get, url).respond(204);
       final numbers = EventStream<int>(

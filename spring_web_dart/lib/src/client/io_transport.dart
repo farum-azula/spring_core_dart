@@ -19,7 +19,8 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// ```dart
 /// import 'package:spring_web_dart/io.dart';
 ///
-/// final transport = IoHttpTransport(connectTimeout: const Duration(seconds: 3));
+/// final transport =
+///     IoHttpTransport(connectTimeout: const Duration(seconds: 3));
 /// final response = await transport.send(
 ///   HttpRequest(method: HttpMethod.get, url: Uri.parse('https://api.neon.books/books')),
 /// );
@@ -113,11 +114,10 @@ class IoHttpTransport implements HttpTransport {
   ) async {
     io.HttpClientRequest? pending;
     Future<T> exchange() async {
-      final outgoing = pending = await _client.openUrl(
+      final outgoing = (pending = await _client.openUrl(
         request.method.value,
         request.url,
-      );
-      outgoing.followRedirects = request.followRedirects;
+      ))..followRedirects = request.followRedirects;
       // The request's headers replace HttpClient's defaults (User-Agent,
       // Accept-Encoding); further values of the same name are added.
       request.headers.forEach((name, values) {
@@ -142,7 +142,7 @@ class IoHttpTransport implements HttpTransport {
               readTimeout,
               onTimeout: () => throw _ReadTimeout(readTimeout),
             );
-      return read(incoming, outgoing);
+      return await read(incoming, outgoing);
     }
 
     final timeout = request.timeout;

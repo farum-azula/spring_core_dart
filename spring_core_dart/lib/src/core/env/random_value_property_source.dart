@@ -123,6 +123,9 @@ final class RandomValuePropertySource extends AbstractPropertySource<Object> {
     return (first, second);
   }
 
+  // Decided at run time, as it was written: on the web 0 and 0.0 are the
+  // same number.
+  // ignore: prefer_const_declarations
   static final bool _web = identical(0, 0.0);
 
   // A uniformly random int in [0, bound).

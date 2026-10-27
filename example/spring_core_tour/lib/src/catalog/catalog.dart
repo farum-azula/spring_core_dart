@@ -94,8 +94,8 @@ class CatalogService {
     this.books,
     this.discount,
     this.plugins, {
-    @Value(r'${catalog.page-size:20}') this.pageSize = 20,
     @Value(r'${app.currency}') required this.currency,
+    @Value(r'${catalog.page-size:20}') this.pageSize = 20,
     this.retries = 3,
   });
 

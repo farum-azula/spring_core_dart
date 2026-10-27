@@ -52,10 +52,10 @@ void main(List<String> args) {
     return;
   }
   final next = lastTag == null ? current : _bump(current, bump);
-  stdout.writeln(
-    'Release $next '
-    '(${lastTag == null ? 'first release' : '${commits.length} commits since $lastTag'})',
-  );
+  final since = lastTag == null
+      ? 'first release'
+      : '${commits.length} commits since $lastTag';
+  stdout.writeln('Release $next ($since)');
   if (dryRun) {
     for (final commit in commits) {
       stdout.writeln('  - ${commit.subject}');

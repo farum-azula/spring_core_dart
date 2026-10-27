@@ -15,6 +15,8 @@
 //   packages         workspace packages to test (comma-separated)
 //   core             spring_core_dart affected (its tests on node)
 //   tour             example/spring_core_tour affected (the example runs)
+//   security         spring_boot_starter_security affected (compared with
+//                    Spring Security itself)
 //   flutter_starter  spring_boot_starter_flutter affected
 //   flutter_counter  example/flutter_counter affected (incl. goldens)
 //   flutter_themes   example/flutter_themes affected (incl. goldens)
@@ -83,16 +85,17 @@ Future<void> main(List<String> args) async {
       if (affected.contains(package)) package,
   ];
 
-  stdout.writeln(
-    changed == null
-        ? 'Everything is affected (no base to compare with).'
-        : '${changed.length} changed files since $base.',
-  );
-  stdout.writeln(
-    ordered.isEmpty
-        ? 'No package affected.'
-        : 'Affected: ${ordered.join(', ')}',
-  );
+  stdout
+    ..writeln(
+      changed == null
+          ? 'Everything is affected (no base to compare with).'
+          : '${changed.length} changed files since $base.',
+    )
+    ..writeln(
+      ordered.isEmpty
+          ? 'No package affected.'
+          : 'Affected: ${ordered.join(', ')}',
+    );
 
   if (args.contains('--github-output')) {
     final output = Platform.environment['GITHUB_OUTPUT'];
@@ -105,11 +108,15 @@ Future<void> main(List<String> args) async {
     final counter = has('example/flutter_counter');
     final themes = has('example/flutter_themes');
     final notes = has('example/flutter_notes');
+    final dartPackages = ordered
+        .where((p) => !flutterPackages.contains(p))
+        .join(',');
     File(output).writeAsStringSync(
       [
-        'packages=${ordered.where((p) => !flutterPackages.contains(p)).join(',')}',
+        'packages=$dartPackages',
         'core=${has('spring_core_dart')}',
         'tour=${has('example/spring_core_tour')}',
+        'security=${has('spring_boot_starter_security')}',
         'flutter_starter=$starter',
         'flutter_counter=$counter',
         'flutter_themes=$themes',

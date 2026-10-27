@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
+import 'package:spring_boot_starter_web/src/form_parameters.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
@@ -463,6 +464,9 @@ final class RequestMappingHandlerMapping
     }
     // Without an annotation: the request itself, or a simple value as a
     // query parameter (like Spring's default @RequestParam).
+    // The exact type: a subtype of these is a value to convert, not the
+    // request.
+    // ignore: switch_on_type
     switch (type.type) {
       case const (ServerHttpRequest):
         return _Binder(parameter, (call) => call.request);
@@ -515,6 +519,7 @@ final class RequestMappingHandlerMapping
           {
             if (multipartResolver.isMultipart(request))
               ...(await multipartResolver.resolve(request)).fields,
+            ...?(await readFormParameters(request)).$2,
             ...request.queryParameters,
           },
           type,
@@ -529,7 +534,25 @@ final class RequestMappingHandlerMapping
       if (values != null && values.isNotEmpty) {
         return _convert(values, parameter, key);
       }
-      // Like a servlet's parameters: the fields of a multipart form too.
+      // Like a servlet's parameters: the fields of a form too.
+      final contentType = request.contentType;
+      if (contentType != null &&
+          contentType.type == 'application' &&
+          contentType.subtype == 'x-www-form-urlencoded') {
+        return readFormParameters(request).then((form) {
+          final fields = form.$2?[key];
+          if (fields == null || fields.isEmpty) {
+            return _absentOr(
+              parameter,
+              'parameter',
+              key,
+              defaultValue,
+              required,
+            );
+          }
+          return _convert(fields, parameter, key);
+        });
+      }
       if (multipartResolver.isMultipart(request)) {
         return multipartResolver.resolve(request).then((multipart) {
           final fields = multipart.fields[key];
@@ -589,7 +612,7 @@ final class RequestMappingHandlerMapping
     final raw = multipart.part(key);
     if (base == Uint8List || base == List<int>) {
       if (file != null) {
-        return file.bytes;
+        return await file.bytes;
       }
       return raw?.$2 ?? missing();
     }
@@ -1127,6 +1150,40 @@ final class RequestMappingHandlerMapping
     return _Execution(mapping, match.variables);
   }
 
+  /// The CORS configuration the router applies to [request]: the global
+  /// one combined with the `@CrossOrigin` of the handler the request (or,
+  /// for a pre-flight, the request it announces) is mapped to. Like
+  /// Spring's `HandlerMappingIntrospector` as a `CorsConfigurationSource`:
+  /// a security filter in front answers pre-flights the way the router
+  /// would.
+  CorsConfiguration? corsConfigurationFor(ServerHttpRequest request) {
+    if (!_initialized) {
+      initialize();
+    }
+    var method = request.method;
+    if (isPreFlightRequest(request)) {
+      final requested =
+          request.headers[HttpHeaders.accessControlRequestMethodHeader] ?? '';
+      method =
+          HttpMethod.values
+              .where((m) => m.value == requested.trim())
+              .firstOrNull ??
+          HttpMethod.options;
+    }
+    final path = request.path;
+    final candidates = [
+      for (final mapping in _mappings)
+        if ((mapping.method == method ||
+                (method == HttpMethod.head &&
+                    mapping.method == HttpMethod.get)) &&
+            mapping.pattern.match(path) != null)
+          mapping,
+    ]..sort((a, b) => a.compareTo(b)); // the router's choice first
+    return candidates.isEmpty
+        ? corsSource?.getCorsConfiguration(request)
+        : _corsConfig(candidates.first, request);
+  }
+
   CorsConfiguration? _corsConfig(_Mapping mapping, ServerHttpRequest request) {
     final global = corsSource?.getCorsConfiguration(request);
     final local = mapping.cors;
@@ -1358,6 +1415,8 @@ final class _Mapping implements Comparable<_Mapping> {
 
   // What must be unique: method, pattern and conditions.
   Iterable<String> get keys => [
+    // One entry, written on several lines to stay within 80 columns.
+    // ignore: no_adjacent_strings_in_list
     '${method.value} ${pattern.pattern}'
         '${consumes.isEmpty ? '' : ' consumes $consumes'}'
         '${produces.isEmpty ? '' : ' produces $produces'}'

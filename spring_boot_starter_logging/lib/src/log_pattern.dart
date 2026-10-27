@@ -1,3 +1,5 @@
+// Rows of Markdown tables and sample log lines in documentation cannot wrap.
+// ignore_for_file: lines_longer_than_80_chars
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 
@@ -32,7 +34,7 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 /// Format modifiers as in Logback: `%5p` pads left, `%-5p` pads right,
 /// `%.10logger` keeps the last 10 characters, `%.-10logger` the first 10;
 /// `%-40.40logger{39}` combines them. `${NAME}` and `${NAME:-default}`
-/// are replaced first, from [variables], `PID` and [lookup].
+/// are replaced first, from `variables`, `PID` and `lookup`.
 ///
 /// As in Logback, a pattern without an error conversion still prints the
 /// error, on the lines after the record (`%nopex` turns that off). The
@@ -71,7 +73,7 @@ final class LogPattern {
   static const defaultConsolePattern =
       r"%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd'T'HH:mm:ss.SSSXXX}}){faint} "
       r'%clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:-}){magenta} '
-      r'%clr(--- %esb(){APPLICATION_NAME}%esb{APPLICATION_GROUP}[%15.15t] '
+      '%clr(--- %esb(){APPLICATION_NAME}%esb{APPLICATION_GROUP}[%15.15t] '
       r'${LOG_CORRELATION_PATTERN:-}){faint}%clr(%-40.40logger{39}){cyan} '
       r'%clr(:){faint} %m%X%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}';
 
@@ -80,7 +82,7 @@ final class LogPattern {
   static const defaultFilePattern =
       r"%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd'T'HH:mm:ss.SSSXXX}} "
       r'${LOG_LEVEL_PATTERN:-%5p} ${PID:-} --- '
-      r'%esb(){APPLICATION_NAME}%esb{APPLICATION_GROUP}[%t] '
+      '%esb(){APPLICATION_NAME}%esb{APPLICATION_GROUP}[%t] '
       r'${LOG_CORRELATION_PATTERN:-}%-40.40logger{39} : '
       r'%m%X%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}';
 
@@ -194,9 +196,15 @@ int _relative(SpringLogRecord record) {
   return record.time.difference(_start).inMilliseconds;
 }
 
-String _fields(SpringLogRecord record) => record.fields.isEmpty
-    ? ''
-    : ' {${[for (final MapEntry(:key, :value) in record.fields.entries) '$key=$value'].join(', ')}}';
+String _fields(SpringLogRecord record) {
+  if (record.fields.isEmpty) {
+    return '';
+  }
+  final fields = [
+    for (final MapEntry(:key, :value) in record.fields.entries) '$key=$value',
+  ].join(', ');
+  return ' {$fields}';
+}
 
 // Logback's ThrowableProxyConverter: the error, then the stack trace
 // (at most [depth] lines), each line ending with a line break.
@@ -417,7 +425,7 @@ final class _Parser {
   final _Variables variables;
   final bool ansi;
   var _pos = 0;
-  var handlesErrors = false;
+  bool handlesErrors = false;
 
   Never _fail(String message) =>
       throw FormatException('$message in log pattern', variables.source);
@@ -513,6 +521,8 @@ final class _Parser {
     final render = word == null
         ? _concat(children!)
         : _converter(word, option, children);
+    // The type gives the closure's parameter its type (strict-inference).
+    // ignore: omit_local_variable_types
     final _Render result = info == null ? render : (r) => info.apply(render(r));
     if (word != null) {
       _names[result] = (word == 'X' || word == 'mdc') && option != null
@@ -598,7 +608,7 @@ final class _Parser {
       case 'c' || 'lo' || 'logger':
         final length = option == null ? null : int.tryParse(option.trim());
         if (option != null && option.trim().isNotEmpty && length == null) {
-          _fail("%$word{$option}: the option is a length");
+          _fail('%$word{$option}: the option is a length');
         }
         return simple(
           length == null
@@ -622,6 +632,8 @@ final class _Parser {
       case 'seq':
         return simple((r) => '${r.sequence}');
       case 'r' || 'relative':
+        // Reads the late field to initialize it.
+        // ignore: unnecessary_statements
         _start; // initialized no later than the pattern
         return simple((r) => '${_relative(r)}');
       case 'ex' ||
@@ -778,7 +790,7 @@ final class _Parser {
       'short' => 1,
       _ =>
         int.tryParse(value) ??
-            _fail("%$word{$option}: use short, full or a number of lines"),
+            _fail('%$word{$option}: use short, full or a number of lines'),
     };
   }
 
@@ -788,7 +800,8 @@ final class _Parser {
         ? null
         : (_ansiCodes[name] ??
               _fail(
-                "Unknown colour '$option' in %clr (use ${_ansiCodes.keys.join(', ')})",
+                "Unknown colour '$option' in %clr (use "
+                "${_ansiCodes.keys.join(', ')})",
               ));
     if (!ansi) {
       return inner;

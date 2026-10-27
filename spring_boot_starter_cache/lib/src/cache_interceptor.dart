@@ -284,10 +284,10 @@ final class CacheInterceptor implements MethodInterceptor {
         unawaited(
           future.then<void>(
             (_) {
-              _inFlight.remove(key);
+              unawaited(_inFlight.remove(key));
             },
             onError: (Object _) {
-              _inFlight.remove(key);
+              unawaited(_inFlight.remove(key));
             },
           ),
         );
@@ -339,15 +339,26 @@ final class CacheInterceptor implements MethodInterceptor {
 ///
 /// ```dart
 /// // In the auto-configuration:
-/// CacheOperationValidator(interceptor)
+/// CacheOperationValidator.lazy(() => factory.getBean<CacheInterceptor>())
 /// ```
 final class CacheOperationValidator extends BeanPostProcessor
     implements BeanFactoryAware {
   /// A validator using the rules of [interceptor].
-  CacheOperationValidator(this.interceptor);
+  CacheOperationValidator(CacheInterceptor interceptor)
+    : _interceptor = (() => interceptor);
+
+  /// A validator asking [interceptor] for the interceptor at the first bean
+  /// with cache annotations. A post-processor's own dependencies are
+  /// created before the other post-processors are registered and miss them
+  /// (the context logs that they are "not eligible for getting processed by
+  /// all BeanPostProcessors"); the auto-configuration uses this one.
+  CacheOperationValidator.lazy(CacheInterceptor Function() interceptor)
+    : _interceptor = interceptor;
+
+  final CacheInterceptor Function() _interceptor;
 
   /// Validates the operations ([CacheInterceptor.cacheOperations]).
-  final CacheInterceptor interceptor;
+  late final CacheInterceptor interceptor = _interceptor();
 
   BeanFactory? _beanFactory;
 
@@ -360,7 +371,9 @@ final class CacheOperationValidator extends BeanPostProcessor
   Object postProcessBeforeInitialization(Object bean, String beanName) {
     final factory = _beanFactory;
     if (factory is! BeanDefinitionRegistry ||
-        !(factory as BeanDefinitionRegistry).containsBeanDefinition(beanName)) {
+        !(factory! as BeanDefinitionRegistry).containsBeanDefinition(
+          beanName,
+        )) {
       return bean;
     }
     final definition = (factory as BeanDefinitionRegistry).getBeanDefinition(
@@ -468,7 +481,7 @@ final class _Call {
   ValueWrapper? get(Cache cache, Object? key) {
     try {
       return cache.get(key);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _interceptor.errorHandler.handleCacheGetError(
         error,
         stackTrace,
@@ -482,7 +495,7 @@ final class _Call {
   void _put(Cache cache, Object? key, Object? value) {
     try {
       cache.put(key, value);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _interceptor.errorHandler.handleCachePutError(
         error,
         stackTrace,
@@ -499,7 +512,7 @@ final class _Call {
       for (final cache in caches) {
         try {
           cache.clear();
-        } catch (error, stackTrace) {
+        } on Object catch (error, stackTrace) {
           _interceptor.errorHandler.handleCacheClearError(
             error,
             stackTrace,
@@ -513,7 +526,7 @@ final class _Call {
     for (final cache in caches) {
       try {
         cache.evict(key);
-      } catch (error, stackTrace) {
+      } on Object catch (error, stackTrace) {
         _interceptor.errorHandler.handleCacheEvictError(
           error,
           stackTrace,

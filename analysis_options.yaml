@@ -1,18 +1,49 @@
-include: package:lints/recommended.yaml
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   exclude:
     - "**/*.spring.dart"
   language:
     strict-casts: true
+    strict-inference: true
     strict-raw-types: true
 
 linter:
   rules:
-    - always_use_package_imports
-    - unawaited_futures
-    - curly_braces_in_flow_control_structures
-    - public_member_api_docs
+    # Rules of very_good_analysis switched off on purpose, each with its
+    # reason (the rest of its rules apply).
+
+    # Rewrites `BookController(this.books)` into Dart 3.13's `new(this.books)`:
+    # the code, the README and the generator's fixtures keep constructors
+    # named after their class, as Java and Spring read.
+    unnecessary_type_name_in_constructor: false
+    # The same: `class Empty {}` written as Dart 3.13's `class Empty;`.
+    empty_container_bodies: false
+    # And Dart 3.13's declaring parameters (`new(final String name)`).
+    use_declaring_parameters: false
+    # Spring's fluent APIs return `this` by design (HttpSecurity and its
+    # configurers, User.withUsername(...), MockRequestBuilder, ...).
+    avoid_returning_this: false
+    # Public API kept as Spring's (setAuthenticated(bool), ObjectMapper
+    # configure(feature, bool), ...); changing it breaks published packages.
+    avoid_positional_boolean_parameters: false
+    # Spring's static factories (Binder.get(environment), ...) are public
+    # API of published packages.
+    prefer_constructors_over_static_methods: false
+    # Needs `@immutable` from package:meta, which the runtime packages may
+    # not depend on (docs/dependencies.md: only this repository and yaml).
+    avoid_equals_and_hash_code_on_mutable_classes: false
+    # The framework catches errors at its boundaries on purpose: SpEL turns
+    # them into EvaluationExceptions, security checks deny instead of
+    # crashing (fail closed, docs/security.md).
+    avoid_catching_errors: false
+    # SpEL and the generated code call functions through Function.apply and
+    # rely on their exact signature: `(int a, int b) => math.max(a, b)` is
+    # not `math.max` (generic, another arity or optional parameters).
+    unnecessary_lambdas: false
+    # Contradicts strict-inference: removing a closure's parameter types
+    # leaves them `dynamic` where the context gives none.
+    avoid_types_on_closure_parameters: false
 
 # The width CI checks with `dart format --set-exit-if-changed .`. An editor set
 # to another line length (Zed: lsp.dart.settings.lineLength) formats differently.

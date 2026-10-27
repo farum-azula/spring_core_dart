@@ -57,6 +57,8 @@ void main() {
 
   test('REST: the blog runner went through JSONPlaceholder', () async {
     expect(linesOf('blog'), [
+      // One element, split for the line width.
+      // ignore: no_adjacent_strings_in_list
       'user 1: Leanne Graham <Sincere@april.biz>, Gwenborough, works at '
           'Romaguera-Crona',
       '2 posts by Bret, first: "first post"',

@@ -9,6 +9,7 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
 
+import 'app/web_config.dart';
 import 'support.dart';
 
 void main() {
@@ -27,6 +28,41 @@ void main() {
       client.close();
     }
   });
+
+  test(
+    'a request target starting with // is a path, not a host',
+    () => withServer((client, _) async {
+      // Dart reads `//books/api/books/1111` as the host `books` and the
+      // path `/api/books/1111`; the server puts the path back together, so
+      // it is not routed to /api/books/1111.
+      final socket = await io.Socket.connect('127.0.0.1', client.port);
+      socket.add(
+        latin1.encode(
+          'GET //books/api/books/1111 HTTP/1.1\r\nHost: localhost\r\n'
+          'Connection: close\r\n\r\n',
+        ),
+      );
+      final text = latin1.decode(
+        await socket.fold<List<int>>([], (all, chunk) => all..addAll(chunk)),
+      );
+      socket.destroy();
+      expect(text.split('\r\n').first, contains('404'));
+    }),
+  );
+
+  test(
+    '@RequestParam reads the fields of a form body, like servlet parameters',
+    () => withServer((client, _) async {
+      final reply = await client.send(
+        'POST',
+        '/api/books/form',
+        body: 'title=Dune&count=2',
+        headers: {'content-type': 'application/x-www-form-urlencoded'},
+      );
+      expect(reply.status, 200);
+      expect(reply.body, 'Dune x2');
+    }),
+  );
 
   test(
     'a controller answers with JSON',
@@ -244,7 +280,7 @@ void main() {
       final config = context.getBeanByName('webConfig');
       await client.get('/api/books/1111');
       await client.get('/misc/text');
-      expect((config as dynamic).interceptor.count, 1);
+      expect((config as WebConfig).interceptor.count, 1);
     }),
   );
 

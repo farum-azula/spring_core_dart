@@ -1,6 +1,6 @@
+import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
-import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/path_matcher.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
@@ -107,7 +107,7 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
     // Plain locations are classpath locations, as in DefaultResourceLoader.
     final isClasspath =
         locationPattern.startsWith(ClasspathResources.prefix) ||
-        !RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(locationPattern);
+        !RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(locationPattern);
     final path = isFile
         ? FileSystemResource.fromFileUrl(locationPattern).path
         : locationPattern.startsWith(ClasspathResources.prefix)
@@ -249,7 +249,7 @@ final class _DirectoryRoot extends _ClasspathRoot {
 }
 
 final class _EmbeddedRoot extends _ClasspathRoot {
-  static const _directory = ClasspathResources.directory;
+  static const String _directory = ClasspathResources.directory;
 
   @override
   bool hasDirectory(String base) =>

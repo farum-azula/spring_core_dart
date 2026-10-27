@@ -3,8 +3,8 @@ import 'package:spring_core_dart/src/beans/default_listable_bean_factory.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/bean_registrar.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
-import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
+import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 
 /// A `@PropertySource` declaration recorded in a [BeanModule].
 ///

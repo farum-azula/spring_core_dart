@@ -23,6 +23,6 @@ bool get stdoutSupportsAnsi {
   }
 }
 
-const _isFlutterDebug =
+const bool _isFlutterDebug =
     bool.fromEnvironment('dart.library.ui') &&
     !bool.fromEnvironment('dart.vm.product');

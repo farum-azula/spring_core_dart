@@ -71,7 +71,7 @@ class FileSystemResource extends AbstractResource {
   static String _clean(String path) {
     var normalized = path.replaceAll(r'\', '/');
     var root = '';
-    final drive = RegExp(r'^[a-zA-Z]:/').firstMatch(normalized);
+    final drive = RegExp('^[a-zA-Z]:/').firstMatch(normalized);
     if (drive != null) {
       root = drive[0]!;
     } else if (normalized.startsWith('/')) {

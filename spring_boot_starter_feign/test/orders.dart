@@ -115,11 +115,11 @@ class OrdersClientImpl implements OrdersClient {
 
   @override
   EventStream<OrderEvent> events(String shop) =>
-      _handler.invoke(_metadata.methods[0], [shop]) as EventStream<OrderEvent>;
+      _handler.invoke(_metadata.methods[0], [shop])! as EventStream<OrderEvent>;
 
   @override
   Stream<String> ticks() =>
-      _handler.invoke(_metadata.methods[1], const []) as Stream<String>;
+      _handler.invoke(_metadata.methods[1], const [])! as Stream<String>;
 }
 
 class NewsClientImpl implements NewsClient {
@@ -150,7 +150,7 @@ class NewsClientImpl implements NewsClient {
 
   @override
   EventStream<String> news() =>
-      _handler.invoke(_metadata.methods[0], const []) as EventStream<String>;
+      _handler.invoke(_metadata.methods[0], const [])! as EventStream<String>;
 }
 
 class BadStreamClientImpl implements BadStreamClient {
@@ -193,7 +193,7 @@ class BadStreamClientImpl implements BadStreamClient {
   );
 
   @override
-  String now() => _handler.invoke(_metadata.methods[1], const []) as String;
+  String now() => _handler.invoke(_metadata.methods[1], const [])! as String;
 }
 
 /// The event stream clients and the fallback bean.

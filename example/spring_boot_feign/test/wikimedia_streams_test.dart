@@ -25,6 +25,8 @@ void main() {
   ) => appContext()
       .withBean<HttpTransport>(() => server)
       .withPropertyValues([
+        // A string that cannot be split without changing it.
+        // ignore: lines_longer_than_80_chars
         'spring.cloud.openfeign.client.config.wikimedia.event-stream.reconnect-delay=1ms',
       ])
       .runAsync((context) => body(context.getBean<WikimediaStreams>()));

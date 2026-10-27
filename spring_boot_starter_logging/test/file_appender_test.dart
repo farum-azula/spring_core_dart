@@ -281,10 +281,16 @@ void main() {
             expect(file.totalSizeCap, 0);
           });
       expect(warnings, [
+        // One element, split for the line width.
+        // ignore: no_adjacent_strings_in_list
         'logging.file.max-size is not supported (ignored): use '
             'logging.logback.rollingpolicy.max-file-size',
+        // One element, split for the line width.
+        // ignore: no_adjacent_strings_in_list
         'logging.file.max-history is not supported (ignored): use '
             'logging.logback.rollingpolicy.max-history',
+        // One element, split for the line width.
+        // ignore: no_adjacent_strings_in_list
         'logging.file.clean-history-on-start is not supported (ignored): use '
             'logging.logback.rollingpolicy.clean-history-on-start',
       ]);

@@ -544,11 +544,10 @@ void main() {
 
     test('closing the context stops the remaining runners', () async {
       final release = Completer<void>();
-      final context = app([
+      app([
         async('first', 1, () => release.future),
         later('second', 2, () => calls.add('second')),
-      ]).run(['--db.url=x'], systemEnvironment: const {});
-      context.close();
+      ]).run(['--db.url=x'], systemEnvironment: const {}).close();
       release.complete();
       await pumpEventQueue();
       expect(calls, isNot(contains('second')));
@@ -558,7 +557,7 @@ void main() {
   test('ConditionalOnProperty', () {
     final env = StandardEnvironment(systemEnvironment: {})
       ..propertySources.addFirst(
-        MapPropertySource('t', {'a': 'on', 'b': 'false'}),
+        const MapPropertySource('t', {'a': 'on', 'b': 'false'}),
       );
     final ctx = AnnotationConfigApplicationContext([], environment: env);
     final context = _Ctx(ctx, env);
@@ -617,7 +616,7 @@ void main() {
     expect(SpringLog.levelOf('neon.card.visa'), SpringLogLevel.trace);
   });
 
-  test('an invalid logging.level value fails the start like Boot\'s '
+  test("an invalid logging.level value fails the start like Boot's "
       'binding', () {
     final saved = SpringLog.level;
     addTearDown(() {

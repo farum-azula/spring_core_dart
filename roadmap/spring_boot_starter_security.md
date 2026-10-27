@@ -1,63 +1,98 @@
-# spring_boot_starter_security (planned)
+# spring_boot_starter_security
 
 Spring Security for incoming requests, on the
 [web starter](spring_boot_starter_web.md): a filter chain in front of the
 controllers. The security context and `@PreAuthorize` come from
-[spring_security_core](spring_security_core.md).
+[spring_security_core](spring_security_core.md). Usage: the
+[README](../spring_boot_starter_security/README.md); how it is shown to
+be safe: [security_verification.md](security_verification.md) and
+[docs/security.md](../docs/security.md).
 
-The web starter prepares the slots this starter uses (filter order,
-request matchers, the request `Zone`, argument resolvers, exception
-translation, sessions, `MockMvc` post-processors): see
-[Ready for Spring Security](spring_boot_starter_web.md#ready-for-spring-security).
+## Done
 
-## Filter chain
+- **Secure by default**, like Spring Boot: every request needs a login,
+  form login for browsers and Basic for other clients, one user from
+  `spring.security.user.*` (or a generated password), CSRF, security
+  headers, logout. With a JWT decoder (`spring.security.oauth2.resourceserver.jwt.*`)
+  a resource server instead.
+- **`HttpSecurity`** with Spring's DSL: `authorizeHttpRequests` on the
+  router's `PathPattern`s (deny when no rule matches), `httpBasic`,
+  `formLogin`, `oauth2ResourceServer`, `csrf`, `cors`, `headers`,
+  `sessionManagement`, `exceptionHandling`, `anonymous`, `logout`,
+  `requestCache`, `securityContext`, `securityMatcher`; several chains by
+  `@Order`.
+- **`FilterChainProxy`** at Spring Boot's filter order, the context per
+  request in its `Zone`, `StrictHttpFirewall`.
+- **Sessions** on the web starter's `HttpSession`: the context stored in
+  the session, a new session id at login, invalidation at logout.
+- **JWT resource server**: RS/PS/ES/HS on Bouncy Castle's Dart port,
+  `NimbusJwtDecoder` (JWK set URI, public key, secret key), issuer
+  discovery, key rotation with a rate-limited refetch, RFC 6750 errors,
+  scopes as authorities.
+- **Errors** as `ProblemDetail`, with Spring's challenges and entry points
+  per kind of client (browser, `XMLHttpRequest`, API).
+- **Tests**: `user()`, `jwt()`, `csrf()`, `httpBasic()`, `anonymous()`
+  for `MockMvc`, like `spring-security-test`.
 
-A `SecurityFilterChain` bean with Spring's builder, so a Spring
-configuration reads the same:
+## SSO: oauth2Login with OpenID Connect
+
+The next step, before everything below. Today the starter is a resource
+server: it accepts the tokens an identity provider issued to a client
+(a single-page or Flutter app logs in, the server checks each request).
+What Spring Security also does, and this starter does not yet, is the
+login itself in the browser:
 
 ```dart
-@Configuration()
-class SecurityConfig {
-  @Bean()
-  SecurityFilterChain api(HttpSecurity http) => http
-      .authorizeHttpRequests((auth) => auth
-          .requestMatchers('/api/admin/**').hasRole('ADMIN')
-          .requestMatchers(HttpMethod.get, '/api/books/**').permitAll()
-          .anyRequest().authenticated())
-      .oauth2ResourceServer((server) => server.jwt())
-      .cors(Customizer.withDefaults())
-      .build();
-}
+@Bean()
+SecurityFilterChain web(HttpSecurity http) => http
+    .authorizeHttpRequests((auth) => auth.anyRequest().authenticated())
+    .oauth2Login()
+    .logout((logout) => logout.oidcLogout())
+    .build();
 ```
 
-Without such a bean, like Spring Boot: everything needs a login, with one
-user from `spring.security.user.name` / `password` (or a generated
-password printed at startup).
+```properties
+spring.security.oauth2.client.registration.keycloak.client-id=books
+spring.security.oauth2.client.registration.keycloak.client-secret=${KEYCLOAK_SECRET}
+spring.security.oauth2.client.registration.keycloak.scope=openid,profile,email
+spring.security.oauth2.client.provider.keycloak.issuer-uri=https://sso.example.com/realms/books
+```
 
-## Authentication
+- Client registrations and providers from `spring.security.oauth2.client.*`
+  (Spring Boot's properties), the provider's endpoints from OpenID
+  discovery (already there for the resource server).
+- The authorization code flow: `/oauth2/authorization/{id}` redirects with
+  `state`, `nonce` and PKCE; `/login/oauth2/code/{id}` checks them,
+  exchanges the code, verifies the ID token (the JWT decoder of the
+  resource server), loads user info; the user becomes an `OidcUser`
+  (claims, `SCOPE_` and mapped authorities) in the session, with a new
+  session id. A login page listing the providers.
+- RP-initiated logout at the provider (`OidcClientInitiatedLogoutSuccessHandler`).
+- Verified like the rest: the reference Spring application with
+  `oauth2Login()` and a fake provider in the tests, attacks on `state`,
+  `nonce`, `redirect_uri`, mixed-up providers and replayed codes, mutation
+  testing.
+- SAML 2.0 (`saml2Login()`) stays out for now: XML signatures need an XML
+  parser the Dart team does not publish, another third-party package in
+  the cryptography.
 
-- HTTP Basic, form login with sessions, API keys.
-- `UserDetailsService` + `PasswordEncoder` for own users.
-- JWT resource server: tokens checked against the issuer's keys
-  (`spring.security.oauth2.resourceserver.jwt.issuer-uri` /
-  `jwk-set-uri`), claims mapped to authorities. HS256 works on
-  `package:crypto` (Dart team); RS256 / ES256 need RSA and ECDSA
-  verification — in pure Dart, or a vetted package as an allowed exception
-  (open question).
+## Next
 
-## Around it
-
-- CORS, CSRF for session logins, security headers (HSTS, frame options,
-  content type options). Spring Security's defaults: `X-Content-Type-Options:
-  nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 0`, `Cache-Control:
-  no-cache, no-store, max-age=0, must-revalidate`, `Pragma: no-cache`,
-  `Expires: 0`, HSTS over HTTPS. Today the web starter sends dart:io's
-  defaults (`X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options:
-  nosniff`; `io_web_server.dart`): the security starter takes them over
-  (removes them from `defaultResponseHeaders` and writes its own set,
-  configurable like `http.headers(...)`).
-- 401 / 403 as `ProblemDetail`, with `WWW-Authenticate`.
-- Method security from the core on the controllers' and services' beans.
-- Tests: a user per test, like `@WithMockUser`
-  (`mockMvc.get('/api/admin', user: TestUser(roles: ['ADMIN']))`), and JWTs
-  signed with a test key.
+- **Remove `pointycastle`** (third-party, [docs/dependencies.md](../docs/dependencies.md#pointycastle-third-party-to-be-removed)):
+  rewrite `lib/src/jwt/signature_primitives.dart` on a Dart team (or
+  Google) package once one verifies RSA and ECDSA without third-party
+  packages (Google's `webcrypto` does it on BoringSSL, but its current
+  version pulls third-party build packages and needs CMake); the RFC 7515
+  vectors and `test/jose_test.dart` show whether it verifies the same.
+- **Remember-me** (`rememberMe()`, token-based and persistent).
+- **Session registry**: the sessions of a user, a maximum per user,
+  ending them all (ASVS 3.3.3 / 3.3.4).
+- **Opaque tokens** (`opaqueToken()`, RFC 7662 introspection) and API keys.
+- **Forwarded headers** (`X-Forwarded-Proto` / `Forwarded`) from the web
+  starter, so HSTS and secure cookies work behind a proxy without
+  `server.servlet.session.cookie.secure=true`.
+- **A shared session store** (the web starter's), for more than one
+  instance.
+- **Rules per WebSocket message** (Spring's
+  `AuthorizationManager<Message<?>>`); the handshake already passes the
+  chain, and the connection keeps its user (`test/websocket_test.dart`).

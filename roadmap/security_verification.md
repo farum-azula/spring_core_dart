@@ -8,9 +8,20 @@ work produces evidence that can be checked without reading it: a threat
 model, a catalog of attacks that each have a test, reports, and
 comparisons with Spring Security itself.
 
+## Status
+
+| Part | Status |
+|---|---|
+| 1. Threat model and rules | done: [docs/security.md](../docs/security.md) |
+| 2. Attack catalog as tests | done, except denial of service beyond the size limits (rate limits are documented as the application's or the proxy's) |
+| 3. Differential tests against Spring Security | done: `tool/security_reference` (Spring Boot 4.1, Spring Security 7.1), `spring_boot_starter_security/test/differential_test.dart`, CI job "Security compared with Spring Security"; password hashes both ways |
+| 4. Generated inputs | done: `spring_boot_starter_security/test/fuzz_test.dart` (seeded) |
+| 5. Mutation testing and coverage | done: `tool/mutation_test.dart`; the scores are in [docs/security.md](../docs/security.md#how-it-is-shown). Coverage is measured, not yet reported by CI |
+| 6. Scanners and reviews | ASVS checklist done ([docs/security-asvs.md](../docs/security-asvs.md)); the ZAP scan and an external review are open |
+
 ## 1. Threat model and rules (before any code)
 
-- `SECURITY.md`: what the packages protect (endpoints, sessions, tokens,
+- `docs/security.md`: what the packages protect (endpoints, sessions, tokens,
   method calls), against whom (anonymous clients, other users, a stolen
   token, a malicious browser page), and what is out of scope (the host, the
   TLS terminator, the app's own business logic).
@@ -82,7 +93,7 @@ This catches behaviour nobody thought of writing a test for.
 
 ## How the owner can judge it
 
-Without reading the code: `SECURITY.md` (what is promised), the ASVS
+Without reading the code: `docs/security.md` (what is promised), the ASVS
 checklist with links to tests, the differential report (where Dart and
 Spring differ), the mutation and coverage scores, the ZAP report. A red
 mark in any of them blocks a release of the security packages.

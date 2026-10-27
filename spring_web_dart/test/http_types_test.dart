@@ -179,7 +179,7 @@ void main() {
       final status = HttpStatusCode.valueOf(599);
       expect(status.is5xxServerError, isTrue);
       expect(status.isError, isTrue);
-      expect(status.isSameCodeAs(HttpStatusCode(599)), isTrue);
+      expect(status.isSameCodeAs(const HttpStatusCode(599)), isTrue);
       expect(() => HttpStatusCode.valueOf(42), throwsArgumentError);
       expect(HttpResponse(429).statusCode.is4xxClientError, isTrue);
       expect(ResponseEntity<void>(204).statusCode.is2xxSuccessful, isTrue);
@@ -231,7 +231,7 @@ void main() {
   });
 
   test('mapping annotations', () {
-    const List<Mapping> mappings = [
+    const mappings = <Mapping>[
       GetMapping('/a'),
       PostMapping.of(path: '/b', consumes: MediaType.applicationJson),
       PutMapping('/c'),
@@ -260,7 +260,7 @@ void main() {
   });
 
   test('the path of a mapping is optional', () {
-    const List<Mapping> mappings = [
+    const mappings = <Mapping>[
       GetMapping(),
       PostMapping(),
       PutMapping(),

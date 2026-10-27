@@ -181,7 +181,8 @@ class CachePut {
 /// @CacheEvict(cacheNames = "books", key = "#isbn")
 /// void delete(String isbn) { ... }
 ///
-/// @CacheEvict(cacheNames = "books", allEntries = true, beforeInvocation = true)
+/// @CacheEvict(
+///     cacheNames = "books", allEntries = true, beforeInvocation = true)
 /// void reload() { ... }
 /// ```
 class CacheEvict {

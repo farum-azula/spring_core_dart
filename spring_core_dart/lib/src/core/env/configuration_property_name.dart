@@ -26,30 +26,6 @@
 /// ConfigurationPropertyName.isValid("app.readTimeout"); // false
 /// ```
 final class ConfigurationPropertyName {
-  ConfigurationPropertyName._(List<_Element> elements)
-    : _elements = List.unmodifiable(elements);
-
-  /// Parses a canonical [name]; throws
-  /// [InvalidConfigurationPropertyNameException] if it is not one
-  /// (upper-case letters, `_`, a leading or trailing `.`, unbalanced
-  /// brackets, ...). The empty string is the [empty] name.
-  ///
-  /// ```dart
-  /// ConfigurationPropertyName.of('spring.profiles.include[0]');
-  /// ```
-  factory ConfigurationPropertyName.of(String name) =>
-      _parse(name) ??
-      (throw InvalidConfigurationPropertyNameException(
-        name,
-        _invalidCharacters(name),
-      ));
-
-  /// Like [ConfigurationPropertyName.of], but `null` for an invalid name.
-  static ConfigurationPropertyName? ofIfValid(String name) => _parse(name);
-
-  /// Whether [name] is a valid canonical name.
-  static bool isValid(String name) => _parse(name) != null;
-
   /// Splits [name] at [separator] (and `[...]`), accepting any case and
   /// characters; elements without letters or digits are dropped.
   ///
@@ -99,6 +75,29 @@ final class ConfigurationPropertyName {
     add(indexed: depth > 0);
     return ConfigurationPropertyName._(elements);
   }
+  ConfigurationPropertyName._(List<_Element> elements)
+    : _elements = List.unmodifiable(elements);
+
+  /// Parses a canonical [name]; throws
+  /// [InvalidConfigurationPropertyNameException] if it is not one
+  /// (upper-case letters, `_`, a leading or trailing `.`, unbalanced
+  /// brackets, ...). The empty string is the [empty] name.
+  ///
+  /// ```dart
+  /// ConfigurationPropertyName.of('spring.profiles.include[0]');
+  /// ```
+  factory ConfigurationPropertyName.of(String name) =>
+      _parse(name) ??
+      (throw InvalidConfigurationPropertyNameException(
+        name,
+        _invalidCharacters(name),
+      ));
+
+  /// Like [ConfigurationPropertyName.of], but `null` for an invalid name.
+  static ConfigurationPropertyName? ofIfValid(String name) => _parse(name);
+
+  /// Whether [name] is a valid canonical name.
+  static bool isValid(String name) => _parse(name) != null;
 
   /// The name without elements.
   static final empty = ConfigurationPropertyName._(const []);
@@ -350,11 +349,15 @@ final class InvalidConfigurationPropertyNameException implements Exception {
   final List<String> invalidCharacters;
 
   @override
-  String toString() =>
-      "InvalidConfigurationPropertyNameException: Configuration property "
-      "name '$name' is not valid. Canonical names should be kebab-case "
-      "('-' separated), lowercase alpha-numeric characters and must start "
-      'with a letter${invalidCharacters.isEmpty ? '' : ' (invalid characters: ${invalidCharacters.join(', ')})'}';
+  String toString() {
+    final invalid = invalidCharacters.isEmpty
+        ? ''
+        : ' (invalid characters: ${invalidCharacters.join(', ')})';
+    return 'InvalidConfigurationPropertyNameException: Configuration property '
+        "name '$name' is not valid. Canonical names should be kebab-case "
+        "('-' separated), lowercase alpha-numeric characters and must start "
+        'with a letter$invalid';
+  }
 }
 
 // One element: its text as written and its comparison key (the text for

@@ -13,8 +13,8 @@ const _source = 'package:spring_boot_starter_feign#FeignAutoConfiguration';
 ///   [HttpTransport]; connection timeout from
 ///   `spring.cloud.openfeign.client.config.default.connect-timeout`;
 /// - `feignClientFactory` — creates the client implementations with the
-///   `ObjectMapper`, the transport and the [RequestInterceptor],
-///   [ErrorDecoder] and [Retryer] beans (per client: see
+///   `ObjectMapper`, the transport and the `RequestInterceptor`,
+///   `ErrorDecoder` and `Retryer` beans (per client: see
 ///   `FeignClient.configuration`).
 final feignAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<HttpTransport>(

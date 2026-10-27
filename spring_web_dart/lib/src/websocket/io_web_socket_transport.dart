@@ -78,7 +78,7 @@ class IoWebSocketTransport implements WebSocketTransport {
 /// [IoWebSocketTransport] connects, and what the web starter's server
 /// accepts (`ServerHttpRequest.upgradeToWebSocket`).
 final class IoWebSocketSession implements WebSocketSession {
-  /// The session of the open [socket], connected to [uri].
+  /// The session of the open `socket`, connected to [uri].
   IoWebSocketSession(this._socket, this.uri);
 
   final io.WebSocket _socket;

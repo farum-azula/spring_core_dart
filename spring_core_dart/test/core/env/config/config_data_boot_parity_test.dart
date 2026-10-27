@@ -53,7 +53,7 @@ void main() {
     });
   });
 
-  test('a directory location without a trailing / gets Boot\'s message', () {
+  test("a directory location without a trailing / gets Boot's message", () {
     Directory('$root/conf').createSync();
     expect(
       () => process(env({'spring.config.location': 'file:$root/conf'})),
@@ -61,7 +61,7 @@ void main() {
         isA<ConfigDataLoadException>().having(
           (e) => e.message,
           'message',
-          "File extension is not known to any PropertySourceLoader. If the "
+          'File extension is not known to any PropertySourceLoader. If the '
               "location is meant to reference a directory, it must end in '/'",
         ),
       ),

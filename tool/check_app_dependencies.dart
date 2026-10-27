@@ -23,7 +23,12 @@ import 'version.dart' as family;
 /// A starter checked: the package an application lists, and the code
 /// using its own feature.
 final class _Starter {
-  const _Starter(this.package, {this.feature = '', this.featureTest = ''});
+  const _Starter(
+    this.package, {
+    this.feature = '',
+    this.featureTest = '',
+    this.testImports = const [],
+  });
 
   /// The package name (`spring_boot_starter_feign`).
   final String package;
@@ -35,6 +40,9 @@ final class _Starter {
   /// `app`).
   final String featureTest;
 
+  /// More libraries the test imports (the starter's test support).
+  final List<String> testImports;
+
   String get short => package.replaceFirst('spring_boot_starter_', '');
 
   String get library => 'package:$package/$package.dart';
@@ -44,7 +52,7 @@ const _starters = [
   _Starter('spring_boot_starter_logging'),
   _Starter(
     'spring_boot_starter_cache',
-    feature: r'''
+    feature: '''
 @Service()
 class Prices {
   var computed = 0;
@@ -56,7 +64,7 @@ class Prices {
   }
 }
 ''',
-    featureTest: r'''
+    featureTest: '''
   test('@Cacheable works', () async {
     final prices = app.getBean<Prices>();
     await prices.price('1');
@@ -76,7 +84,7 @@ class Ticks {
   void tick() => ticks++;
 }
 ''',
-    featureTest: r'''
+    featureTest: '''
   test('@Scheduled beans and the TaskScheduler come with the starter', () {
     expect(app.getBean<Ticks>().ticks, greaterThanOrEqualTo(0));
     expect(app, hasSingleBean<TaskScheduler>());
@@ -92,7 +100,7 @@ abstract interface class BooksClient {
   Future<Map<String, Object?>> find(@PathVariable() String isbn);
 }
 ''',
-    featureTest: r'''
+    featureTest: '''
   group('MockHttpTransport from the test starter', () {
     final server = MockHttpTransport()
       ..when(HttpMethod.get, '/books/1').respond(200, json: {'isbn': '1'});
@@ -119,7 +127,7 @@ abstract interface class ChatSocket {
   Future<void> send(String message);
 }
 ''',
-    featureTest: r'''
+    featureTest: '''
   test('MockWebSocketTransport from the test starter', () {
     expect(MockWebSocketTransport(), isA<WebSocketTransport>());
     expect(app, hasSingleBean<ChatSocket>());
@@ -141,12 +149,65 @@ class GreetingController {
   Greeting greet(@PathVariable() String name) => Greeting(text: 'Hello, $name');
 }
 ''',
-    featureTest: r'''
+    featureTest: '''
   test('@RestController through MockMvc from the test starter', () async {
     await app.mockMvc
         .get('/api/greetings/Ada')
         .andExpect(status: 200, json: {'text': 'Hello, Ada'});
     expect(app, hasSingleBean<GreetingController>());
+  });
+''',
+  ),
+  _Starter(
+    'spring_boot_starter_security',
+    testImports: ['package:spring_boot_starter_security/testing.dart'],
+    feature: '''
+@RestController()
+@RequestMapping('/api')
+class MeController {
+  @GetMapping('/me')
+  String me(Authentication authentication) => authentication.name;
+}
+
+@Service()
+class Reports {
+  @PreAuthorize("hasRole('ADMIN')")
+  Future<String> monthly() async => 'report';
+}
+
+@Configuration()
+class SecurityConfig {
+  @Bean()
+  SecurityFilterChain filterChain(HttpSecurity http) => http
+      .authorizeHttpRequests((auth) => auth.anyRequest().authenticated())
+      .httpBasic()
+      .build();
+
+  @Bean()
+  UserDetailsService users() => InMemoryUserDetailsManager([
+    User.withUsername('ada').password('{noop}secret').roles(['USER']).build(),
+  ]);
+}
+''',
+    featureTest: '''
+  test('the filter chain, users, method security and the test helpers',
+      () async {
+    await app.mockMvc.get('/api/me').andExpect(status: 401);
+    await app.mockMvc
+        .perform(MockRequestBuilder(HttpMethod.get, '/api/me')
+          ..with_(httpBasic('ada', 'secret')))
+        .andExpect(status: 200, body: 'ada');
+    await expectLater(
+      withMockUser(() => app.getBean<Reports>().monthly()),
+      throwsA(isA<AccessDeniedException>()),
+    );
+    expect(
+      await withMockUser(
+        () => app.getBean<Reports>().monthly(),
+        roles: ['ADMIN'],
+      ),
+      'report',
+    );
   });
 ''',
   ),
@@ -284,6 +345,7 @@ import 'package:${starter.package}/spring_auto_configuration.dart';
 import 'package:app/app.spring.dart';
 import 'package:app/src/greeter.dart';
 ${starter.feature.isEmpty ? '' : "import 'package:app/src/feature.dart';"}
+${starter.testImports.map((library) => "import '$library';").join('\n')}
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 void main() {

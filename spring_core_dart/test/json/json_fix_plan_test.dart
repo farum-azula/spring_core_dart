@@ -10,7 +10,7 @@ enum Stock {
   inStock('in_stock'),
   soldOut('sold_out');
 
-  const Stock(this.json);
+  Stock(this.json);
   final String json;
 }
 
@@ -295,7 +295,7 @@ void main() {
       expect(
         mapper.readValue(
           '{"in_stock":1}',
-          MapType<Stock, int>(const ClassType<Stock>(), const ClassType<int>()),
+          const MapType<Stock, int>(ClassType<Stock>(), ClassType<int>()),
         ),
         {Stock.inStock: 1},
       );

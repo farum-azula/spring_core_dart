@@ -197,9 +197,9 @@ final class ApplicationContextRunner {
       _copy(systemEnvironment: {...systemEnvironment, ...env});
 
   /// Registers an extra bean of [T] called [name] (default: the type name
-  /// in lower camel case, see [defaultBeanName]), created by [supplier] in each context the
-  /// runner starts, like Boot's `withBean(type, supplier)`: every run gets
-  /// a new instance, never one a previous run destroyed.
+  /// in lower camel case, see [defaultBeanName]), created by [supplier] in
+  /// each context the runner starts, like Boot's `withBean(type, supplier)`:
+  /// every run gets a new instance, never one a previous run destroyed.
   ///
   /// The bean is registered before the configurations are processed, so
   /// auto-configuration sees it: a `@ConditionalOnMissingBean` backs off,
@@ -296,7 +296,7 @@ final class ApplicationContextRunner {
     try {
       _prepare(context);
       context.refresh();
-    } catch (error) {
+    } on Object catch (error) {
       failure = error;
       if (context.isActive) {
         context.close();
@@ -313,7 +313,7 @@ final class ApplicationContextRunner {
     try {
       _prepare(context);
       await context.refreshAsync();
-    } catch (error) {
+    } on Object catch (error) {
       failure = error;
       if (context.isActive) {
         await context.closeAsync();

@@ -113,9 +113,14 @@ class FeignException implements Exception {
   }
 
   @override
-  String toString() =>
-      '$runtimeType: $message'
-      '${responseBody == null || responseBody!.isEmpty ? '' : ': $responseBody'}';
+  String toString() {
+    final body = responseBody;
+    // The text names the actual class, subclasses included, like Java's
+    // getClass().getName().
+    // ignore: no_runtimetype_tostring
+    return '$runtimeType: $message'
+        '${body == null || body.isEmpty ? '' : ': $body'}';
+  }
 }
 
 /// A 4xx response (`FeignException.FeignClientException`).
@@ -416,7 +421,7 @@ class FeignGatewayTimeout extends FeignServerException {
 
 /// A failure that may succeed when tried again: a connection error, a
 /// timeout, or a response with `Retry-After` (Feign's
-/// `RetryableException`). The [Retryer] bean decides whether to retry.
+/// `RetryableException`). The `Retryer` bean decides whether to retry.
 ///
 /// ```dart
 /// final class Retry503 implements ErrorDecoder {
@@ -430,7 +435,8 @@ class FeignGatewayTimeout extends FeignServerException {
 ///
 /// Spring (Java):
 /// ```java
-/// throw new RetryableException(503, "busy", Request.HttpMethod.GET, (Long) null, request);
+/// throw new RetryableException(503, "busy", Request.HttpMethod.GET,
+///     (Long) null, request);
 /// ```
 class RetryableException extends FeignException {
   /// A retryable failure; [retryAfter] is when to try again, if known.

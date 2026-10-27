@@ -26,7 +26,11 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// ```dart
 /// @Introspected()
 /// class Book {
-///   const Book({required this.isbn, required this.title, this.tags = const []});
+///   const Book({
+///     required this.isbn,
+///     required this.title,
+///     this.tags = const [],
+///   });
 ///   final String isbn;
 ///   final String title;
 ///   final List<String> tags;
@@ -69,7 +73,8 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// JsonMapper mapper = JsonMapper.builder().build();
 /// String json = mapper.writeValueAsString(book);
 /// Book again = mapper.readValue(json, Book.class);
-/// List<Book> books = mapper.readValue(json, new TypeReference<List<Book>>() {});
+/// List<Book> books =
+///     mapper.readValue(json, new TypeReference<List<Book>>() {});
 /// ```
 class ObjectMapper {
   /// A mapper reading class metadata from [introspector] (the context's one
@@ -219,7 +224,7 @@ class ObjectMapper {
   final _polymorphisms = <BeanIntrospection<Object>, _Polymorphism>{};
 
   // dart2js: every number is a double, `int` is exact up to 2^53.
-  static const _web = identical(0, 0.0);
+  static const bool _web = identical(0, 0.0);
   static const double _intLimit = _web
       ? 9007199254740992.0
       : 9223372036854775808.0;
@@ -513,7 +518,6 @@ class ObjectMapper {
   // convention `jsonEncode` relies on too).
   Object? _dynamicToJson(Object value, _Path path) {
     try {
-      // ignore: avoid_dynamic_calls
       return (value as dynamic).toJson();
     } on NoSuchMethodError {
       throw JsonMappingException(
@@ -696,6 +700,8 @@ class ObjectMapper {
     if (failOnNullForPrimitives || type.nullable || type is! ClassType) {
       return null;
     }
+    // Compares the exact runtime Type, like the checks around it.
+    // ignore: switch_on_type
     return switch (type.type) {
       const (int) || const (num) => 0,
       const (double) => 0.0,
@@ -811,6 +817,8 @@ class ObjectMapper {
     if (introspection != null) {
       return _info(introspection).read(json, path);
     }
+    // A type test on the type argument T, not a constant.
+    // ignore: literal_only_boolean_expressions
     if (<T>[] is List<Enum?>) {
       // An enum without its EnumType at hand: the registered one.
       final enumType =
@@ -824,6 +832,8 @@ class ObjectMapper {
           ));
       return _read(json, enumType, path, format)!;
     }
+    // A type test on the type argument T, not a constant.
+    // ignore: literal_only_boolean_expressions
     if (<T>[] is List<Iterable<Object?>?> ||
         <T>[] is List<Map<Object?, Object?>?>) {
       // Map<String, dynamic>, List<dynamic> (Jackson's raw Map / List):
@@ -1019,11 +1029,10 @@ class ObjectMapper {
         return type.values[index];
       }
     }
-    throw _expected(
-      'one of ${[for (final v in type.values) jsonEncode(type.toJsonValue(v))].join(', ')}',
-      json,
-      path,
-    );
+    final values = [
+      for (final v in type.values) jsonEncode(type.toJsonValue(v)),
+    ].join(', ');
+    throw _expected('one of $values', json, path);
   }
 
   Object? _readKey(String key, TypeInfo<Object?> keyType, _Path path) {
@@ -1042,7 +1051,7 @@ class ObjectMapper {
         }
       }
     }
-    final Object json = switch (type) {
+    final json = switch (type) {
       ClassType<int>() || ClassType<int?>() => int.tryParse(key) ?? key,
       ClassType<double>() || ClassType<num>() => num.tryParse(key) ?? key,
       _ => key,
@@ -1994,7 +2003,8 @@ final class _ClassInfo {
         throw _readOnlyParameter(parameter, path) ??
             JsonMappingException(
               'missing property "${jsonNames[parameter.name]}": a later '
-              'positional parameter is given, so this one cannot keep its default',
+              'positional parameter is given, so this one cannot keep its '
+              'default',
               path: '$path',
             );
       }
@@ -2076,6 +2086,8 @@ final class _Polymorphism {
 
   /// The type id written for [introspection].
   String idOf(BeanIntrospection<Object> introspection) {
+    // Reading the getter collects the @JsonSubTypes names.
+    // ignore: unnecessary_statements
     byId; // collects the @JsonSubTypes names
     return _idOf(introspection);
   }
@@ -2084,6 +2096,7 @@ final class _Polymorphism {
     String? id;
     Object? body = json;
     BeanIntrospection<Object>? target;
+    var valuePath = path;
     switch (info.include) {
       case _ when info.use == JsonTypeId.deduction:
         target = _deduce(json, path);
@@ -2112,7 +2125,7 @@ final class _Polymorphism {
         }
         id = '${json.keys.single}';
         body = json.values.single;
-        path = path.key(id);
+        valuePath = path.key(id);
       case JsonTypeInclusion.wrapperArray:
         if (json is! List<Object?> ||
             json.length != 2 ||
@@ -2125,7 +2138,7 @@ final class _Polymorphism {
         }
         id = json.first! as String;
         body = json[1];
-        path = path.index(1);
+        valuePath = path.index(1);
     }
     if (target == null && id == null) {
       target = _defaultImpl(
@@ -2134,7 +2147,7 @@ final class _Polymorphism {
             ? 'missing type id property "$property" (for '
                   '${requested.introspection.beanType})'
             : 'missing type id (for ${requested.introspection.beanType})',
-        path,
+        valuePath,
       );
     }
     // An unknown id falls back to `defaultImpl` like Jackson; without
@@ -2143,22 +2156,22 @@ final class _Polymorphism {
         'could not resolve type id "$id" as a subtype of '
         '${requested.introspection.beanType}: known type ids = '
         '[${(byId.keys.toList()..sort()).join(', ')}]';
-    target ??= byId[id] ?? _defaultImpl(unknown, path);
+    target ??= byId[id] ?? _defaultImpl(unknown, valuePath);
     if (target != requested.introspection &&
         !target.isSubtypeOf(requested.introspection)) {
       throw JsonMappingException(
         'type id "${id ?? _idOf(target)}" (${target.beanType}) is not a '
         'subtype of ${requested.introspection.beanType}',
-        path: '$path',
+        path: '$valuePath',
       );
     }
     if (body == null) {
       throw JsonMappingException(
         'null is not allowed here (expected ${target.beanType})',
-        path: '$path',
+        path: '$valuePath',
       );
     }
-    return mapper._info(target).readPlain(body, path);
+    return mapper._info(target).readPlain(body, valuePath);
   }
 
   BeanIntrospection<Object> _defaultImpl(String message, _Path path) {

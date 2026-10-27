@@ -36,7 +36,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(proxyMode: proxyMode),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
@@ -80,7 +80,7 @@ Future<String> _errors(String beans) async {
   return result.errors.join('\n');
 }
 
-/// The analyzer errors of the generated library [output] built from
+/// The analyzer errors of the generated library `output` built from
 /// [files] (plus the scan root unless [app]): the code must compile.
 Future<List<String>> _compileErrors(
   Map<String, String> files, {
@@ -94,7 +94,7 @@ Future<List<String>> _compileErrors(
   expect(result.errors, isEmpty);
   final path = app ? 'bin/main.spring.dart' : 'lib/src/beans.spring.dart';
   final output = _output(result, path);
-  return resolveSources<List<String>>(
+  return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       'pkg|$path': output,
@@ -177,7 +177,7 @@ void main() {
 
   test('a concrete @Lookup method is overridden (its body never runs); '
       'constructor parameters are forwarded', () async {
-    const beans = r'''
+    const beans = '''
 @Component()
 @Scope(ScopeType.prototype)
 class Command {}
@@ -210,7 +210,7 @@ class Dispatcher {
 
   test('lookup methods declared by a superclass, through a named '
       'constructor of a generic class', () async {
-    const beans = r'''
+    const beans = '''
 @Component()
 @Scope(ScopeType.prototype)
 class Command {}
@@ -252,7 +252,7 @@ abstract base class Runner extends Base<Command> {
     });
 
     test('a subclass proxy extends the lookup subclass', () async {
-      const beans = r'''
+      const beans = '''
 @Component()
 @Scope(ScopeType.prototype)
 class Command {}

@@ -101,6 +101,7 @@ void main() {
       await runner.runAsync((context) async {
         final client = context.getBean<ParamsClient>() as dynamic;
         // Not reachable with the typed interface; the proxy accepts null.
+        // ignore: avoid_dynamic_calls
         await client.lenient(null, null);
         expect(server.lastRequest.url.hasQuery, isFalse);
         expect(server.lastRequest.headers.contains('X-Q'), isFalse);

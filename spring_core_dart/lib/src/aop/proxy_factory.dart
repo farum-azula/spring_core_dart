@@ -105,7 +105,7 @@ class ProxyFactory {
   Object getProxy() {
     if (proxies.unavailableReason case final reason?) {
       throw AopConfigException(
-        "Cannot create a proxy of ${_describe()}: $reason",
+        'Cannot create a proxy of ${_describe()}: $reason',
       );
     }
     if (proxies.isSubclass) {

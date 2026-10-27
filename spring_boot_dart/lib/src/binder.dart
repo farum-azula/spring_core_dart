@@ -114,6 +114,8 @@ final class BindResult<T> {
   ///     .orElseThrow(() => StateError('app.port is required'));
   /// ```
   T orElseThrow(Object Function() error) =>
+      // Throws whatever the supplier returns, like Optional.orElseThrow.
+      // ignore: only_throw_errors
       isBound ? _value as T : throw error();
 
   /// Calls [action] with the bound value, if any.
@@ -313,7 +315,7 @@ final class BindContext {
       Object? current;
       try {
         current = property.getValue(bean);
-      } catch (_) {
+      } on Object catch (_) {
         current = null;
       }
       final typeInfo = property.typeInfo;
@@ -334,7 +336,7 @@ final class BindContext {
       if (property.isWritable) {
         try {
           property.setValue(bean, value);
-        } catch (error) {
+        } on Object catch (error) {
           _error(propertyName, 'could not be set: $error', value);
         }
       } else {
@@ -523,7 +525,7 @@ final class BindContext {
     }
     try {
       return constructor.newInstance(positional, named);
-    } catch (error) {
+    } on Object catch (error) {
       _error(name, 'could not create ${introspection.beanType}: $error');
       return unbound;
     }
@@ -588,7 +590,7 @@ final class BindContext {
       }
       final converted = binder.conversionService.convertTo(raw, type);
       return converted ?? unbound;
-    } catch (error) {
+    } on Object {
       _error(name, 'failed to convert to $type', raw);
       return unbound;
     }
@@ -634,7 +636,8 @@ final class BindContext {
     }
     _error(
       name,
-      'failed to convert to $E (one of ${values.map((v) => v.name).join(', ')})',
+      'failed to convert to $E (one of '
+      '${values.map((v) => v.name).join(', ')})',
       raw,
     );
     return unbound;
@@ -736,7 +739,7 @@ final class BindContext {
 
   // Sources whose names are never reported as unbound (Boot's
   // UnboundElementsSourceFilter).
-  static const _benignSources = {
+  static const Set<String> _benignSources = {
     SystemEnvironmentPropertySource.defaultName,
     'systemProperties',
   };

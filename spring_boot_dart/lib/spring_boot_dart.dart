@@ -1,10 +1,12 @@
 /// Spring Boot for Dart: `@SpringBootApplication`, `SpringApplication`,
 /// `@ConfigurationProperties`, auto-configuration conditions, runners,
-/// application events and startup failure reports, on top of `spring_core_dart` (re-exported, so
-/// one import is enough).
+/// application events and startup failure reports, on top of `spring_core_dart`
+/// (re-exported, so one import is enough).
 library;
 
 export 'package:spring_boot_dart/src/annotations.dart';
+export 'package:spring_boot_dart/src/auto_configuration_sorter.dart'
+    show selectAutoConfigurations;
 export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.dart'
     show
         JsonMapperBuilderCustomizer,
@@ -12,8 +14,6 @@ export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.da
         objectMapperFromProperties;
 export 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart'
     show MessagesBundleCondition;
-export 'package:spring_boot_dart/src/auto_configuration_sorter.dart'
-    show selectAutoConfigurations;
 export 'package:spring_boot_dart/src/banner.dart';
 export 'package:spring_boot_dart/src/binder.dart'
     show BindHandler, BindResult, Binder;

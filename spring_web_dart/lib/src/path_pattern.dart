@@ -273,7 +273,7 @@ final class _Segment {
           throw FormatException('Malformed variable {$body}', pattern);
         }
         // Within one (decoded) segment: anything, like Spring's capture.
-        final regex = colon < 0 ? r'.+' : body.substring(colon + 1);
+        final regex = colon < 0 ? '.+' : body.substring(colon + 1);
         try {
           RegExp(regex);
         } on FormatException {

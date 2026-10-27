@@ -6,7 +6,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' show springBootVersion;
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
-const _app = r'''
+const _app = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'main.spring.dart';
 
@@ -44,7 +44,7 @@ Future<TestBuilderResult> _build(
     flattenOutput: true,
   );
   await readerWriter.testing.loadIsolateSources();
-  return testBuilder(
+  return await testBuilder(
     SpringBuilder(),
     {
       'pkg|bin/main.dart': app,
@@ -103,7 +103,7 @@ void main() {
         _compact(result),
         matches(
           RegExp(
-            r"autoConfigurationMetadata:\{_i\d+\.neonCacheAutoConfiguration:"
+            r'autoConfigurationMetadata:\{_i\d+\.neonCacheAutoConfiguration:'
             r"const_i\d+\.AutoConfigurationModule\(order:5,before:\['a'\],"
             r"after:\['b','c'\],\),\}",
           ),
@@ -122,7 +122,7 @@ void main() {
     () async {
       final result = await _build(
         '^$springBootVersion',
-        app: r'''
+        app: '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'main.spring.dart';
 

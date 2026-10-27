@@ -43,6 +43,9 @@ final class SyncTaskExecutor implements TaskExecutor {
 
   @override
   void execute(FutureOr<void> Function() task) {
+    // The task's result is dropped, as Spring's synchronous executor does:
+    // a FutureOr cannot be passed to unawaited.
+    // ignore: discarded_futures
     task();
   }
 }
@@ -93,7 +96,7 @@ final class SimpleAsyncTaskExecutor implements TaskExecutor {
     Timer.run(() async {
       try {
         await task();
-      } catch (error, stackTrace) {
+      } on Object catch (error, stackTrace) {
         _failed(error, stackTrace);
       } finally {
         if (--_active == 0) {

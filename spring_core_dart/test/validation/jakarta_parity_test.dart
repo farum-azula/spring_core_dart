@@ -168,22 +168,30 @@ final _surveyIntrospection = BeanIntrospection<Survey>(
 void main() {
   group('DataBinder.allowedFields', () {
     test('an empty list allows every field (Spring: no patterns)', () {
-      final binder = DataBinder(
-        Address(),
-        introspector: BeanIntrospector(introspections: [addressIntrospection]),
-      )..allowedFields = [];
-      binder.bind({'city': 'Kyiv', 'zip': '01001'});
+      final binder =
+          DataBinder(
+              Address(),
+              introspector: BeanIntrospector(
+                introspections: [addressIntrospection],
+              ),
+            )
+            ..allowedFields = []
+            ..bind({'city': 'Kyiv', 'zip': '01001'});
       final address = binder.target! as Address;
       expect(address.city, 'Kyiv');
       expect(address.zip, '01001');
     });
 
     test('a non-empty list still restricts', () {
-      final binder = DataBinder(
-        Address(),
-        introspector: BeanIntrospector(introspections: [addressIntrospection]),
-      )..allowedFields = ['city'];
-      binder.bind({'city': 'Kyiv', 'zip': '01001'});
+      final binder =
+          DataBinder(
+              Address(),
+              introspector: BeanIntrospector(
+                introspections: [addressIntrospection],
+              ),
+            )
+            ..allowedFields = ['city']
+            ..bind({'city': 'Kyiv', 'zip': '01001'});
       expect((binder.target! as Address).zip, isNull);
     });
   });

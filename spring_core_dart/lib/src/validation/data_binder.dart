@@ -87,7 +87,8 @@ final class MapValueResolver implements ValueResolver {
 /// uses):
 ///
 /// ```dart
-/// final binder = DataBinder(null, objectName: 'book', introspector: introspector)
+/// final binder =
+///     DataBinder(null, objectName: 'book', introspector: introspector)
 ///   ..targetType = Book
 ///   ..construct(MapValueResolver({'isbn': '978-0', 'title': 'Dune'}));
 /// final book = binder.target as Book?; // null when a value was invalid
@@ -333,7 +334,8 @@ class DataBinder {
   /// the list is allocated, like Spring's `createList`.
   ///
   /// ```dart
-  /// final binder = DataBinder(null, objectName: 'book', introspector: introspector)
+  /// final binder =
+  ///     DataBinder(null, objectName: 'book', introspector: introspector)
   ///   ..targetType = Book
   ///   ..construct(MapValueResolver({'isbn': '978-0', 'title': 'Dune'}));
   /// binder.bindingResult.hasErrors; // false

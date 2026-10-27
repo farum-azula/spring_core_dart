@@ -159,7 +159,7 @@ void main() {
       );
       expect(eval('T(java.lang.System).nanoTime()'), isA<int>());
       expect(eval("T(System).getProperty('user.name', 'dflt')"), 'dflt');
-      expect(eval("T(System).getenv()"), isA<Map<String, String>>());
+      expect(eval('T(System).getenv()'), isA<Map<String, String>>());
       expect(
         eval("T(System).getenv('SPRING_DART_SURELY_UNSET_VARIABLE')"),
         isNull,

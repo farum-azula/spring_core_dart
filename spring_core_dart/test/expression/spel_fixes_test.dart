@@ -148,14 +148,16 @@ void main() {
     test('String.format and other String methods', () {
       expect(
         eval(
-          "T(String).format('%s-%05d|%.2f|%x|%-3s|%n', 'a', 42, 3.14159, 255, 'b')",
+          "T(String).format('%s-%05d|%.2f|%x|%-3s|%n', 'a', 42, 3.14159, 255, "
+          "'b')",
         ),
         'a-00042|3.14|ff|b  |\n',
       );
-      expect(eval("'%2\$s %1\$s'.formatted('a', 'b')"), 'b a');
+      expect(eval(r"'%2$s %1$s'.formatted('a', 'b')"), 'b a');
       expect(
         eval(
-          "T(String).format('%,d %+d %e %S %b %c %%', 1234567, 5, 12345.678, 'x', null, 65)",
+          "T(String).format('%,d %+d %e %S %b %c %%', 1234567, 5, 12345.678, "
+          "'x', null, 65)",
         ),
         '1,234,567 +5 1.234568e+04 X false A %',
       );

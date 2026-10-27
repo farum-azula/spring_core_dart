@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:test/test.dart';
@@ -91,8 +91,9 @@ void main() {
     });
 
     test('resolvables, nested resolvable arguments', () {
-      source.addMessage('field.name', '', 'Name');
-      source.addMessage('required', '', '{0} is required');
+      source
+        ..addMessage('field.name', '', 'Name')
+        ..addMessage('required', '', '{0} is required');
       final resolvable = DefaultMessageSourceResolvable(
         ['required.user.name', 'required'],
         arguments: [DefaultMessageSourceResolvable.code('field.name')],
@@ -270,10 +271,7 @@ void main() {
       expect(accessor.getMessage('missing', defaultMessage: 'none'), 'none');
       expect(
         accessor.getMessageFromResolvable(
-          DefaultMessageSourceResolvable(
-            const ['hello'],
-            arguments: const ['x'],
-          ),
+          const DefaultMessageSourceResolvable(['hello'], arguments: ['x']),
         ),
         'Привет x',
       );

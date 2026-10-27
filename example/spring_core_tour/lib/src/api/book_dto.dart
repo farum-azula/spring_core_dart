@@ -12,7 +12,7 @@ enum Availability {
   inStock('in_stock'),
   soldOut('sold_out');
 
-  const Availability(this.json);
+  Availability(this.json);
 
   /// The JSON form: "in_stock" instead of "inStock".
   @JsonValue()

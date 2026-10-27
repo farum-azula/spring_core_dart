@@ -15,7 +15,7 @@ class TraceFilter implements WebFilter {
 }
 
 final class CountingInterceptor with HandlerInterceptor {
-  var count = 0;
+  int count = 0;
 
   @override
   bool preHandle(

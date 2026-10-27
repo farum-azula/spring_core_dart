@@ -37,27 +37,29 @@ void main() {
         () => factory.registerBeanDefinition(english()),
         throwsA(isA<BeanDefinitionOverrideException>()),
       );
-      factory.registerBeanDefinition(
-        BeanDefinition<Counter>(
-          name: 'c',
-          source: 'src',
-          create: (_) => Counter(),
-        ),
-      );
-      factory.registerBeanDefinition(
-        BeanDefinition<Counter>(
-          name: 'c',
-          source: 'src',
-          create: (_) => Counter(),
-        ),
-      );
+      factory
+        ..registerBeanDefinition(
+          BeanDefinition<Counter>(
+            name: 'c',
+            source: 'src',
+            create: (_) => Counter(),
+          ),
+        )
+        ..registerBeanDefinition(
+          BeanDefinition<Counter>(
+            name: 'c',
+            source: 'src',
+            create: (_) => Counter(),
+          ),
+        );
       expect(factory.beanDefinitionCount, 2);
 
-      factory.getBean<English>();
-      factory.allowBeanDefinitionOverriding = true;
-      factory.registerBeanDefinition(
-        BeanDefinition<French>(name: 'english', create: (_) => French()),
-      );
+      factory
+        ..getBean<English>()
+        ..allowBeanDefinitionOverriding = true
+        ..registerBeanDefinition(
+          BeanDefinition<French>(name: 'english', create: (_) => French()),
+        );
       expect(factory.getBeanByName('english'), isA<French>());
     });
 
@@ -88,8 +90,9 @@ void main() {
         factory.getAliases('en'),
         unorderedEquals(['english', 'eng', 'e']),
       );
-      factory.registerAlias('english', 'english');
-      factory.registerAlias('english', 'en');
+      factory
+        ..registerAlias('english', 'english')
+        ..registerAlias('english', 'en');
       expect(
         () => factory.registerAlias('english', 'english2'),
         returnsNormally,
@@ -118,12 +121,13 @@ void main() {
     });
 
     test('removeBeanDefinition destroys the singleton and aliases', () {
-      final factory = factoryWith([
-        lifecycleDefinition('a'),
-        english(aliases: ['en']),
-      ]);
-      factory.getBeanByName('a');
-      factory.removeBeanDefinition('a');
+      final factory =
+          factoryWith([
+              lifecycleDefinition('a'),
+              english(aliases: ['en']),
+            ])
+            ..getBeanByName('a')
+            ..removeBeanDefinition('a');
       expect(log, contains('a:destroyMethod'));
       factory.removeBeanDefinition('en');
       expect(factory.isAlias('en'), isFalse);
@@ -380,12 +384,11 @@ void main() {
 
     test('destroyScopedBean', () {
       final scope = SimpleMapScope();
-      final factory = factoryWith([
-        lifecycleDefinition('s', scope: 'x'),
-        english(),
-      ])..registerScope('x', scope);
-      factory.getBeanByName('s');
-      factory.destroyScopedBean('s');
+      final factory =
+          factoryWith([lifecycleDefinition('s', scope: 'x'), english()])
+            ..registerScope('x', scope)
+            ..getBeanByName('s')
+            ..destroyScopedBean('s');
       expect(log, contains('s:destroyMethod'));
       factory.destroyScopedBean('s');
       expect(() => factory.destroyScopedBean('english'), throwsArgumentError);
@@ -478,15 +481,17 @@ void main() {
     });
 
     test('destroy errors are collected and do not stop shutdown', () {
-      final factory = factoryWith([
-        BeanDefinition<Counter>(
-          name: 'bad',
-          create: (_) => Counter(),
-          preDestroy: (_) => throw StateError('boom'),
-        ),
-        lifecycleDefinition('good'),
-      ])..preInstantiateSingletons();
-      factory.destroySingletons();
+      final factory =
+          factoryWith([
+              BeanDefinition<Counter>(
+                name: 'bad',
+                create: (_) => Counter(),
+                preDestroy: (_) => throw StateError('boom'),
+              ),
+              lifecycleDefinition('good'),
+            ])
+            ..preInstantiateSingletons()
+            ..destroySingletons();
       expect(factory.destructionErrors, [isA<StateError>()]);
       expect(log, contains('good:destroy'));
     });
@@ -688,8 +693,9 @@ void main() {
       final single = factory.getBeanProvider<Greeter>(qualifier: 'french');
       expect(single.getObject(), isA<French>());
       String? available;
-      single.ifAvailable((g) => available = g.greet());
-      single.ifUnique((g) => unique = g.greet());
+      single
+        ..ifAvailable((g) => available = g.greet())
+        ..ifUnique((g) => unique = g.greet());
       expect(available, 'bonjour');
       expect(unique, 'bonjour');
 

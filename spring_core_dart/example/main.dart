@@ -6,6 +6,9 @@
 //
 //   dart run example/main.dart
 //   dart run example/main.dart '--greeting.punctuation=?'
+
+// An example: printing to the console is how it shows its result.
+// ignore_for_file: avoid_print
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'main.spring.dart';

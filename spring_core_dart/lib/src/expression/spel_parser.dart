@@ -299,7 +299,7 @@ final class _Parser {
     return node;
   }
 
-  static const _relationalKinds = {
+  static const Map<TokenKind, BinaryKind> _relationalKinds = {
     TokenKind.eq: BinaryKind.eq,
     TokenKind.ne: BinaryKind.ne,
     TokenKind.lt: BinaryKind.lt,
@@ -418,6 +418,9 @@ final class _Parser {
           increment: token.kind == TokenKind.inc,
           prefix: true,
         );
+      // TokenKind has about fifty kinds: every kind not listed ends the
+      // expression or starts a primary, so the default says it best.
+      // ignore: no_default_cases
       default:
         return _primary();
     }
@@ -458,6 +461,9 @@ final class _Parser {
           TokenKind.selectLast ||
           TokenKind.project:
         return _selectionOrProjection(nullSafe: false);
+      // TokenKind has about fifty kinds: every kind not listed ends the
+      // expression or starts a primary, so the default says it best.
+      // ignore: no_default_cases
       default:
         return null;
     }
@@ -683,6 +689,9 @@ final class _Parser {
           return ConstructorReference(token.start, name, _arguments());
         }
         return _methodOrProperty(nullSafe: false);
+      // TokenKind has about fifty kinds: every kind not listed ends the
+      // expression or starts a primary, so the default says it best.
+      // ignore: no_default_cases
       default:
         return null;
     }

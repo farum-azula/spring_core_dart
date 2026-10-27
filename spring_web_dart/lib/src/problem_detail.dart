@@ -63,7 +63,7 @@ class ProblemDetail {
   }
 
   /// `about:blank`: no type of its own, the status says it all.
-  static final blankType = Uri.parse('about:blank');
+  static final Uri blankType = Uri.parse('about:blank');
 
   /// The HTTP status.
   int status;
@@ -145,6 +145,9 @@ class ErrorResponseException implements Exception, ErrorResponse {
 
   @override
   String toString() =>
+      // The text names the actual class, subclasses included, like Java's
+      // getClass().getName().
+      // ignore: no_runtimetype_tostring
       '$runtimeType: $statusCode'
       '${body.detail == null ? '' : ' ${body.detail}'}';
 }
