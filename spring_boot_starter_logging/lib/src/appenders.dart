@@ -45,12 +45,14 @@ abstract class LogAppender {
 /// ConsoleAppender(pattern: LogPattern('%-5p %logger: %m'), out: debugPrint)
 /// ```
 class ConsoleAppender extends LogAppender {
-  /// A console appender with [pattern] ([LogPattern.defaultConsolePattern]).
+  /// A console appender with [pattern] ([LogPattern.defaultConsolePattern],
+  /// coloured).
   ConsoleAppender({
     LogPattern? pattern,
     void Function(String line)? out,
     super.threshold,
-  }) : pattern = pattern ?? LogPattern(LogPattern.defaultConsolePattern),
+  }) : pattern =
+           pattern ?? LogPattern(LogPattern.defaultConsolePattern, ansi: true),
        out = out ?? print;
 
   /// The line format.

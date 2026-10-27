@@ -36,6 +36,10 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 /// `%-40.40logger{39}` combines them. `${NAME}` and `${NAME:-default}`
 /// are replaced first, from `variables`, `PID` and `lookup`.
 ///
+/// With [ansi] on, a pattern that colours nothing itself (no `%clr`, no
+/// Logback colour) is coloured as Spring Boot's: the time faint, the level
+/// by level, the logger cyan. So `%d %5p [%logger] %m` shows colours too.
+///
 /// As in Logback, a pattern without an error conversion still prints the
 /// error, on the lines after the record (`%nopex` turns that off). The
 /// text may end with a line break (`%n`); appenders add their own, so
@@ -52,7 +56,8 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 final class LogPattern {
   /// Parses [pattern]. `${NAME}` variables come from [variables], then
   /// `PID`, then [lookup] (for example `Environment.getProperty`). [ansi]
-  /// turns on the colours of `%clr`.
+  /// turns on the colours of `%clr`, and those of a pattern without colours
+  /// (see above).
   LogPattern(
     String pattern, {
     Map<String, String> variables = const {},
@@ -89,7 +94,8 @@ final class LogPattern {
   /// The source pattern.
   final String pattern;
 
-  /// Whether `%clr` writes ANSI colour codes.
+  /// Whether `%clr` (or, in a pattern without colours, the time, the level
+  /// and the logger) writes ANSI colour codes.
   final bool ansi;
 
   final List<_Render> _parts;
@@ -416,7 +422,9 @@ final class _Parser {
     bool ansi,
   ) {
     final variables = _Variables(pattern, values, lookup);
-    final parser = _Parser(variables.substitute(pattern), variables, ansi);
+    final text = variables.substitute(pattern);
+    final parser = _Parser(text, variables, ansi)
+      ..autoColor = ansi && !_colourWord.hasMatch(text);
     final parts = parser._sequence(nested: false);
     return (List.unmodifiable(parts), parser.handlesErrors);
   }
@@ -425,6 +433,15 @@ final class _Parser {
   final _Variables variables;
   final bool ansi;
   var _pos = 0;
+  // Colours the time, level and logger of a pattern without colours.
+  bool autoColor = false;
+  // How deep inside a composite (`%clr(...)`, `%replace(...)`) we are.
+  var _nesting = 0;
+
+  // A conversion that colours: `%clr(`, Logback's `%red(`, `%highlight(`.
+  static final _colourWord = RegExp(
+    '%[-.0-9]*(clr|highlight|${_logbackColors.keys.join('|')})\\(',
+  );
   bool handlesErrors = false;
 
   Never _fail(String message) =>
@@ -504,7 +521,9 @@ final class _Parser {
     List<_Render>? children;
     if (_pos < text.length && text[_pos] == '(') {
       _pos++;
+      _nesting++;
       children = _sequence(nested: true);
+      _nesting--;
       _pos++; // the closing ')'
     }
     String? option;
@@ -523,7 +542,10 @@ final class _Parser {
         : _converter(word, option, children);
     // The type gives the closure's parameter its type (strict-inference).
     // ignore: omit_local_variable_types
-    final _Render result = info == null ? render : (r) => info.apply(render(r));
+    final _Render padded = info == null ? render : (r) => info.apply(render(r));
+    final result = autoColor && _nesting == 0 && word != null
+        ? _autoColor(word, padded)
+        : padded;
     if (word != null) {
       _names[result] = (word == 'X' || word == 'mdc') && option != null
           ? option.split(':-').first
@@ -793,6 +815,14 @@ final class _Parser {
             _fail('%$word{$option}: use short, full or a number of lines'),
     };
   }
+
+  // The colour Spring Boot's pattern gives [word], or [render] as it is.
+  _Render _autoColor(String word, _Render render) => switch (word) {
+    'd' || 'date' => _color(render, 'faint'),
+    'p' || 'le' || 'level' => _color(render, null),
+    'c' || 'lo' || 'logger' => _color(render, 'cyan'),
+    _ => render,
+  };
 
   _Render _color(_Render inner, String? option) {
     final name = option?.trim().toLowerCase();

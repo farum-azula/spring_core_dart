@@ -102,6 +102,24 @@ void main() {
   );
 
   test(
+    "a missing parameter takes the parameter's Dart default, a nullable "
+    'one null',
+    () => withServer((client, _) async {
+      expect(
+        (await client.get('/api/books/sample/defaults')).body,
+        '3 by title, null, null, null',
+      );
+      expect(
+        (await client.get(
+          '/api/books/sample/defaults?size=5&sort=year&tag=sf&limit=2',
+          headers: {'X-Lang': 'en'},
+        )).body,
+        '5 by year, sf, 2, en',
+      );
+    }),
+  );
+
+  test(
     'a valid body creates, an invalid one is a 400 with the errors',
     () => withServer((client, _) async {
       var reply = await client.send(

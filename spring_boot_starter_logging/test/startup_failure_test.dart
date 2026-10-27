@@ -45,6 +45,7 @@ void main() {
     '--logging.file.name=${dir.path}/app.log',
     '--logging.pattern.file=%p %logger %m%n%ex',
     '--logging.pattern.console=%p %m',
+    '--spring.output.ansi.enabled=never',
   ];
 
   String file() => File('${dir.path}/app.log').readAsStringSync();

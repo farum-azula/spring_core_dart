@@ -13,7 +13,6 @@ class StockController {
   /// with an id; a reconnecting client sends the last one it saw.
   @GetMapping('/events')
   EventStream<StockChanged> events(
-    @RequestHeader.of(name: 'Last-Event-ID', defaultValue: '')
-    String lastEventId,
+    @RequestHeader('Last-Event-ID') String? lastEventId,
   ) => feed.subscribe(lastEventId: lastEventId);
 }

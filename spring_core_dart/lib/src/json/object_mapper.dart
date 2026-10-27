@@ -1281,9 +1281,6 @@ final class _ClassInfo {
         case JsonPropertyAccess.auto || JsonPropertyAccess.readWrite || null:
           break;
       }
-      if (property?.required ?? false) {
-        requiredNames.add(name);
-      }
       if (find<JsonValue>() != null) {
         valueProperty ??= introspection.getProperty(name);
       }
@@ -1363,9 +1360,6 @@ final class _ClassInfo {
   /// Dart names of `@JsonProperty(access: writeOnly)` properties: read,
   /// not written.
   final writeOnlyNames = <String>{};
-
-  /// Dart names of `@JsonProperty(required: true)` properties.
-  final requiredNames = <String>{};
 
   /// The `@JsonValue` property or method: the class is written as its
   /// value.
@@ -1800,14 +1794,6 @@ final class _ClassInfo {
       }
       final key = _presentKey(name, json);
       if (key == null) {
-        // Jackson checks `required` for creator properties only.
-        if (requiredNames.contains(name) && parameterNames.contains(name)) {
-          throw JsonMappingException(
-            'missing required creator property "${jsonNames[name]}" (of '
-            '${introspection.beanType})',
-            path: '$path',
-          );
-        }
         continue;
       }
       used.add(key);

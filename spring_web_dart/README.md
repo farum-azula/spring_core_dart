@@ -52,7 +52,7 @@ abstract interface class CatalogClient {
   );
 
   @GetMapping()                                       // no path: the base path of the client
-  Future<List<Book>> all(@RequestParam.of(name: 'sort', defaultValue: 'title') String? sort);
+  Future<List<Book>> all({@RequestParam('sort') String sort = 'title'});
 
   @DeleteMapping('/books/{isbn}')
   Future<void> delete(@PathVariable() String isbn);   // {isbn}: the parameter name
@@ -64,12 +64,12 @@ abstract interface class CatalogClient {
 | `@GetMapping([path])`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | HTTP method and path (`/books/{isbn}`); no path (`@GetMapping()`) maps the base path of the client (or the path of the class) |
 | `@GetMapping.of({path, headers, produces, consumes})` (also `@PostMapping.of`, ...) | method | the same with every attribute by name: `headers: ['Name=value']` (Spring's syntax), `produces` (Accept), `consumes` (Content-Type) |
 | `@RequestMapping([path])`, `@RequestMapping.of({path, method, headers, produces, consumes})` | method | any method (`method: HttpMethod.head`; `GET` by default) |
-| `@PathVariable(['name'])`, `@PathVariable.of({name, required})` | parameter | fills `{name}` of the path (URL-encoded) |
-| `@RequestParam(['name'])`, `@RequestParam.of({name, required, defaultValue})` | parameter | a query parameter; `null` is left out, a list repeats it, a `Map` gives one per entry |
-| `@RequestHeader(['name'])`, `@RequestHeader.of({name, required, defaultValue})` | parameter | a header; `null` is left out, a list gives several values, a `Map` one header per entry |
+| `@PathVariable(['name'])` | parameter | fills `{name}` of the path (URL-encoded) |
+| `@RequestParam(['name'])` | parameter | a query parameter; `null` is left out, a list repeats it, a `Map` gives one per entry |
+| `@RequestHeader(['name'])` | parameter | a header; `null` is left out, a list gives several values, a `Map` one header per entry |
 | `@CookieValue(['name'])` | parameter | a cookie (`Cookie: name=value; ...`); `null` is left out |
-| `@RequestBody({required})` | parameter | the body (JSON) |
-| `@RequestPart(['name'])`, `@RequestPart.of({name, required})` | parameter | a part of a `multipart/form-data` body: a file (`MultipartFile`, `List<MultipartFile>`), a text field, or an object as a JSON part |
+| `@RequestBody()` | parameter | the body (JSON) |
+| `@RequestPart(['name'])` | parameter | a part of a `multipart/form-data` body: a file (`MultipartFile`, `List<MultipartFile>`), a text field, or an object as a JSON part |
 
 Without a name, `@PathVariable()`, `@RequestParam()`, `@RequestHeader()` and
 `@CookieValue()` use the parameter name (the generator keeps parameter
@@ -77,14 +77,11 @@ names). All mapping annotations implement `Mapping` (`method`, `path`,
 `headers`, `produces`, `consumes`; `path` is `''` for none), so code that
 reads them can use `annotations.whereType<Mapping>()`.
 
-`required` is `true` by default, as in Spring. A required parameter that is
-`null` is an error naming it, a `defaultValue` (a `String`, sent as is)
-replaces `null` and implies `required: false`, and a `null` that is not
-required is left out. The parameter type counts too, as for Kotlin or
-`@Nullable` parameters in Spring: `String? q` is not required whatever
-`required` says, and a Dart default value (`{int page = 0}`) is simply the
-argument. A path variable is required unless `required: false` (whatever
-its type); then `null` gives an empty string.
+The Dart parameter says what `required` and `defaultValue` say in Spring:
+a nullable parameter (`String? q`) is optional and a `null` argument is
+left out (a path variable becomes an empty string), a default value
+(`{int page = 0}`) is the argument when the caller passes none, and a
+non-nullable parameter cannot be `null`.
 
 ## Controller annotations
 
@@ -407,16 +404,18 @@ sockets.failNextConnect();                       // the next connect fails
   entries that are only conditions for a server (`'Name'`, `'!Name'`,
   `'Name!=value'`) are ignored, as Spring Cloud OpenFeign does. Feign's
   `'Name: value'` is rejected at startup.
-- **Attributes next to a positional `path` or `name`** are written with the
-  `.of` constructor: Dart cannot combine an optional positional parameter
-  with named ones, so `@GetMapping('/books', produces: ...)` is
-  `@GetMapping.of(path: '/books', produces: ...)` and
-  `@RequestParam('page', required: false)` is
-  `@RequestParam.of(name: 'page', required: false)`. `@GetMapping()` and
+- **Attributes next to a positional `path`** are written with the `.of`
+  constructor: Dart cannot combine an optional positional parameter with
+  named ones, so `@GetMapping('/books', produces: ...)` is
+  `@GetMapping.of(path: '/books', produces: ...)`. `@GetMapping()` and
   `@GetMapping('/books')` stay as in Spring. `produces` and `consumes`
   take one media type, not a list.
-- **`@CookieValue` has no `required:` / `defaultValue:`**: a `null`
-  cookie is left out. `@RequestBody(required:)` exists.
+- **No `required` or `defaultValue`** on `@RequestParam`, `@RequestHeader`,
+  `@PathVariable`, `@RequestPart` and `@RequestBody`: the Dart parameter
+  says it. A nullable parameter is optional (`required = false`), a
+  default value is the value when there is none (`defaultValue`), any
+  other parameter is required: `@RequestParam(name = "page", defaultValue
+  = "0") int page` is `@RequestParam('page') int page = 0`.
 - **`HttpStatus` constants are `int`s** (an extension type), not enum
   values: they compare with status codes directly, `toString()` is the
   number (no `name()`), `100 Continue` is `HttpStatus.continue_` (as in

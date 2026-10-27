@@ -21,7 +21,7 @@ class SupplierStub {
   Offer offer(
     @PathVariable() String isbn,
     @RequestHeader('X-Api-Key') String key, {
-    @RequestParam.of(name: 'copies', defaultValue: '1') int copies = 1,
+    @RequestParam('copies') int copies = 1,
   }) {
     _checkKey(key);
     if (!RegExp(r'^978\d{10}$').hasMatch(isbn)) {

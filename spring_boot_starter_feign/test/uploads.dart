@@ -39,7 +39,7 @@ abstract interface class UploadClient {
   @PostMapping('/optional')
   Future<String> optional(
     @RequestPart('file') MultipartFile file, {
-    @RequestPart.of(name: 'note', required: false) required String note,
+    @RequestPart('note') String? note,
     @RequestPart('cover') MultipartFile? cover,
   });
 }
@@ -206,10 +206,9 @@ class UploadClientImpl implements UploadClient {
             ),
             BeanParameter(
               'note',
-              type: ClassType<String>(),
+              type: ClassType<String>(nullable: true),
               symbol: #note,
-              isRequired: true,
-              annotations: [RequestPart.of(name: 'note', required: false)],
+              annotations: [RequestPart('note')],
             ),
             BeanParameter(
               'cover',
@@ -223,7 +222,7 @@ class UploadClientImpl implements UploadClient {
           annotations: const [PostMapping('/optional')],
           call: (target, arguments) => (target as UploadClient).optional(
             arguments[0]! as MultipartFile,
-            note: arguments[1]! as String,
+            note: arguments[1] as String?,
             cover: arguments[2] as MultipartFile?,
           ),
         ),

@@ -351,12 +351,10 @@ class DeleteMapping implements Mapping {
 /// Binds a parameter to a `{variable}` of the path, like Spring's
 /// `@PathVariable`. Without a [name] the parameter name is used.
 ///
-/// A path variable is [required] by default: a `null` argument is an error
-/// naming the variable, whatever the type of the parameter. With
-/// `required: false` a `null` argument gives an empty string, as Spring's
-/// URI template expansion does. Dart cannot combine the optional positional
-/// [name] with named attributes, so those are written
-/// `@PathVariable.of(name: 'id', required: false)`.
+/// The parameter's type says whether a value is required: a nullable one
+/// (`String? isbn`) takes `null` (a client then expands the variable to an
+/// empty string, as Spring's URI template expansion does); otherwise a
+/// missing value is an error naming the variable.
 ///
 /// ```dart
 /// @GetMapping('/books/{isbn}')
@@ -364,29 +362,18 @@ class DeleteMapping implements Mapping {
 ///
 /// @GetMapping('/authors/{id}')
 /// Future<Author> author(@PathVariable() int id); // {id}
-///
-/// @GetMapping('/books/{isbn}/pages')
-/// Future<Pages> pages(@PathVariable.of(required: false) String? isbn);
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// Book find(@PathVariable("isbn") String isbn);
-/// Pages pages(@PathVariable(required = false) String isbn);
 /// ```
 class PathVariable {
-  /// Binds the variable [name] (default: the parameter name); required.
-  const PathVariable([this.name]) : required = true;
-
-  /// Binds the variable [name] (default: the parameter name); [required]
-  /// is `true` by default.
-  const PathVariable.of({this.name, this.required = true});
+  /// Binds the variable [name] (default: the parameter name).
+  const PathVariable([this.name]);
 
   /// The variable name, or `null` for the parameter name.
   final String? name;
-
-  /// Whether a value is required (see above).
-  final bool required;
 }
 
 /// Binds a parameter to a query parameter, like Spring's `@RequestParam`.
@@ -394,21 +381,20 @@ class PathVariable {
 /// parameter, and a `Map<String, ...>` adds one query parameter per entry
 /// (its name is not used).
 ///
-/// A parameter is [required] by default: a `null` argument is an error
-/// naming the parameter. A [defaultValue] is sent instead of `null` (and
-/// implies `required: false`); a `null` argument of a parameter that is not
-/// required is left out. As in Spring (Kotlin, `@Nullable`), a nullable
-/// Dart parameter (`int? page`) is not required either, and a default
-/// value of the Dart parameter (`{int page = 0}`) is simply the argument.
-/// Dart cannot combine the optional positional [name] with named
-/// attributes, so those are written
-/// `@RequestParam.of(name: 'page', defaultValue: '0')`.
+/// The Dart parameter says what Spring's `required` and `defaultValue`
+/// say in Java: a nullable parameter (`Genre? genre`) is optional (a
+/// server passes `null` when the request has none, a client leaves a
+/// `null` argument out), a default value (`{int page = 0}`) is the value
+/// when the request has none, and any other parameter is required (a
+/// missing one is a 400 on a server).
 ///
 /// ```dart
 /// @GetMapping('/books')
 /// Future<List<Book>> search(
-///   @RequestParam('q') String query,
-///   {@RequestParam.of(name: 'page', defaultValue: '0') int? page});
+///   @RequestParam('q') String query, {
+///   @RequestParam('page') int page = 0,
+///   @RequestParam('genre') Genre? genre,
+/// });
 /// // GET /books?q=dune&page=0
 ///
 /// @GetMapping('/books')
@@ -419,33 +405,23 @@ class PathVariable {
 /// Spring (Java):
 /// ```java
 /// List<Book> search(@RequestParam("q") String query,
-///     @RequestParam(name = "page", defaultValue = "0") int page);
+///     @RequestParam(name = "page", defaultValue = "0") int page,
+///     @RequestParam(name = "genre", required = false) Genre genre);
 /// List<Book> filter(@RequestParam Map<String, Object> filters);
 /// ```
 class RequestParam {
-  /// Binds the query parameter [name] (default: the parameter name);
-  /// required.
-  const RequestParam([this.name]) : required = true, defaultValue = null;
-
-  /// Binds the query parameter [name] (default: the parameter name);
-  /// [required] is `true` by default.
-  const RequestParam.of({this.name, this.required = true, this.defaultValue});
+  /// Binds the query parameter [name] (default: the parameter name).
+  const RequestParam([this.name]);
 
   /// The query parameter name, or `null` for the parameter name.
   final String? name;
-
-  /// Whether a value is required (see above).
-  final bool required;
-
-  /// The text sent when the argument is `null`, or `null` for none.
-  final String? defaultValue;
 }
 
 /// Binds a parameter to a header, like Spring's `@RequestHeader`. Without
 /// a [name] the parameter name is used; a list gives several values, and a
 /// `Map<String, ...>` adds one header per entry (its name is not used).
-/// [required] and [defaultValue] work as for [RequestParam]
-/// (`@RequestHeader.of(name: 'X-Tenant', defaultValue: 'public')`).
+/// Optional and default values as for [RequestParam]: `String? tenant`,
+/// `{String tenant = 'public'}`.
 ///
 /// ```dart
 /// @PostMapping('/orders')
@@ -458,12 +434,9 @@ class RequestParam {
 /// Future<List<Order>> list(@RequestHeader() Map<String, String> headers);
 ///
 /// @GetMapping('/orders')
-/// Future<List<Order>> mine(
-///   @RequestHeader.of(
-///     name: 'X-Tenant',
-///     defaultValue: 'public',
-///   ) String? tenant,
-/// );
+/// Future<List<Order>> mine({
+///   @RequestHeader('X-Tenant') String tenant = 'public',
+/// });
 /// ```
 ///
 /// Spring (Java):
@@ -476,21 +449,11 @@ class RequestParam {
 ///     String tenant);
 /// ```
 class RequestHeader {
-  /// Binds the header [name] (default: the parameter name); required.
-  const RequestHeader([this.name]) : required = true, defaultValue = null;
-
-  /// Binds the header [name] (default: the parameter name); [required] is
-  /// `true` by default.
-  const RequestHeader.of({this.name, this.required = true, this.defaultValue});
+  /// Binds the header [name] (default: the parameter name).
+  const RequestHeader([this.name]);
 
   /// The header name, or `null` for the parameter name.
   final String? name;
-
-  /// Whether a value is required (see [RequestParam]).
-  final bool required;
-
-  /// The text sent when the argument is `null`, or `null` for none.
-  final String? defaultValue;
 }
 
 /// Binds a parameter to a cookie, like Spring's `@CookieValue`. Without a
@@ -516,6 +479,9 @@ class CookieValue {
 }
 
 /// Binds a parameter to the request body, like Spring's `@RequestBody`.
+/// A nullable parameter makes the body optional (Spring's
+/// `required = false`): a server passes `null` for an empty body, a client
+/// sends none for a `null` argument.
 ///
 /// ```dart
 /// @PostMapping('/books')
@@ -524,7 +490,7 @@ class CookieValue {
 /// @PatchMapping('/books/{isbn}')
 /// Future<Book> touch(
 ///   @PathVariable() String isbn,
-///   @RequestBody(required: false) Book? book,
+///   @RequestBody() Book? book,
 /// );
 /// ```
 ///
@@ -535,13 +501,8 @@ class CookieValue {
 ///     @RequestBody(required = false) Book book);
 /// ```
 class RequestBody {
-  /// Marks the parameter; with [required] `false` the body may be absent
-  /// (a `null` argument sends no body).
-  const RequestBody({this.required = true});
-
-  /// Whether a body is required (for a server; a client sends none for a
-  /// `null` argument either way).
-  final bool required;
+  /// Marks the parameter.
+  const RequestBody();
 }
 
 /// Binds a part of a `multipart/form-data` request, like Spring's
@@ -561,15 +522,10 @@ class RequestBody {
 ///
 /// Spring (Java): `@RequestPart("cover") MultipartFile cover`.
 class RequestPart {
-  /// Binds the part [name] (default: the parameter name); required.
-  const RequestPart([this.name]) : required = true;
-
-  /// Binds the part [name]; [required] is `true` by default.
-  const RequestPart.of({this.name, this.required = true});
+  /// Binds the part [name] (default: the parameter name); a nullable
+  /// parameter makes it optional.
+  const RequestPart([this.name]);
 
   /// The part name, or `null` for the parameter name.
   final String? name;
-
-  /// Whether the part must be present.
-  final bool required;
 }

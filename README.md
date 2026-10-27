@@ -985,7 +985,7 @@ constructor is the unnamed one, or the one marked `@JsonCreator()`.
 
 | Annotation | Meaning |
 |---|---|
-| `@JsonProperty('published_at')` | the JSON name (also on enum constants); `access: JsonPropertyAccess.readOnly` / `writeOnly` for one direction only; `required: true` for a constructor parameter that must be present (like Jackson, setters are not checked) |
+| `@JsonProperty('published_at')` | the JSON name (also on enum constants); `access: JsonPropertyAccess.readOnly` / `writeOnly` for one direction only. Jackson's `required = true` is the Dart parameter: a constructor parameter that is neither nullable nor has a default must be present |
 | `@JsonIgnore()` | left out in both directions |
 | `@JsonInclude(JsonInclusion.nonNull)` | on a property or class: skip `null` values (`nonAbsent`, `nonEmpty`, `nonDefault`: also empty / default values) |
 | `@JsonIgnoreProperties(value: ['x'], ignoreUnknown: true)` | on a class: names to ignore; accept unknown properties |

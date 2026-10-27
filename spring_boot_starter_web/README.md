@@ -28,7 +28,7 @@ class BookController {
   @GetMapping()
   Future<List<Book>> search(
     @RequestParam('q') String query, {
-    @RequestParam.of(name: 'page', defaultValue: '0') int page = 0,
+    @RequestParam('page') int page = 0,   // missing: the Dart default
   }) => books.search(query, page: page);
 
   @PostMapping()
@@ -184,14 +184,14 @@ Simple values are `String`, `int`, `double`, `num`, `bool` (`true`, `on`,
 `Uri`, enums (by name, any case, or `@JsonValue`) and lists or sets of
 them. A text that does not convert is a 400 naming the parameter.
 
-`required` and `defaultValue` work as in Spring, written with the `.of`
-constructor: `@RequestParam.of(name: 'sort', required: false)`,
-`@RequestHeader.of(name: 'X-Lang', defaultValue: 'en')`. A nullable type
-or a Dart default value makes a parameter optional too:
+Spring's `required` and `defaultValue` are the Dart parameter:
+`@RequestParam(name = "sort", required = false) String sort` is
+`@RequestParam('sort') String? sort`, and `@RequestHeader(name = "X-Lang",
+defaultValue = "en") String lang` is `@RequestHeader('X-Lang') String lang
+= 'en'`.
 
 | Value missing | Result |
 |---|---|
-| with `defaultValue` | the default value, converted |
 | nullable parameter (`String? q`) | `null` |
 | optional named or positional parameter (`{int page = 0}`) | left out: its Dart default applies |
 | otherwise | 400 `Required parameter 'q' is not present.` (also header, cookie) |
@@ -303,7 +303,7 @@ EventStream<Book> changes() => EventStream(
 );
 
 @GetMapping('/resume')
-Stream<Book> resume(@RequestHeader.of(name: 'Last-Event-ID', required: false) String? lastId) =>
+Stream<Book> resume(@RequestHeader('Last-Event-ID') String? lastId) =>
     books.changesAfter(lastId);
 
 @GetMapping.of(path: '/export', produces: 'application/x-ndjson')
@@ -359,7 +359,7 @@ Future<Book> create(
   @RequestPart('book') @Valid() NewBook book,          // a JSON part, validated
   @RequestPart('cover') MultipartFile cover,           // a file
   @RequestParam('note') String note, {                 // a text field
-  @RequestPart.of(name: 'pages', required: false) List<MultipartFile>? pages,
+  @RequestPart('pages') List<MultipartFile>? pages,     // optional
 }) async {
   final created = await books.create(book, note: note);
   await cover.transferTo('/var/shop/covers/${created.isbn}.png');
@@ -374,7 +374,7 @@ Future<Book> create(
 | `@RequestPart('note') String note`, `int`, ... | a text field, converted like a request parameter (or the text of a file part) |
 | `@RequestPart('data') Uint8List data` | the raw bytes of the part (`List<int>` too) |
 | `@RequestPart('book') @Valid() NewBook book` | a part read as JSON through the `ObjectMapper` into the type, validated with `@Valid` |
-| `@RequestPart.of(name: 'cover', required: false) MultipartFile? cover` | optional, like `@RequestParam.of` (a nullable type or a Dart default does it too) |
+| `@RequestPart('cover') MultipartFile? cover` | optional: `null` when there is none |
 | `@RequestParam('file') MultipartFile file` | the same as `@RequestPart` for files |
 | `@RequestParam('note') String note` | a text field of the form, like a servlet's parameters (the query string is looked at first) |
 | `MultipartFile file` without annotation | the file named like the parameter |

@@ -15,10 +15,10 @@ class AdminController {
   /// `GET /api/admin/logs?level=warn&logger=neon&limit=50`.
   @GetMapping('/logs')
   List<LogLine> recentLogs({
-    @RequestParam.of(name: 'level', defaultValue: '') String level = '',
-    @RequestParam.of(name: 'logger', defaultValue: '') String logger = '',
-    @RequestParam.of(name: 'q', defaultValue: '') String text = '',
-    @RequestParam.of(name: 'limit', defaultValue: '100') int limit = 100,
+    @RequestParam('level') String level = '',
+    @RequestParam('logger') String logger = '',
+    @RequestParam('q') String text = '',
+    @RequestParam('limit') int limit = 100,
   }) => logs.recent(
     minLevel: level.isEmpty ? null : _level(level),
     logger: logger.isEmpty ? null : logger,

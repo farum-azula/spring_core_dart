@@ -20,7 +20,10 @@ const log = SpringLog('neon.shop');
 void main() {
   final runner = const ApplicationContextRunner()
       .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
-      .withPropertyValues(['logging.pattern.console=%-5p [%logger] %m%X']);
+      .withPropertyValues([
+        'logging.pattern.console=%-5p [%logger] %m%X',
+        'spring.output.ansi.enabled=never',
+      ]);
   final system = LoggingSystem.instance;
   final console = <String>[];
   late SpringLogLevel savedLevel;
@@ -162,6 +165,7 @@ void main() {
         const MapPropertySource('p', {
           'logging.level.root': 'debug',
           'logging.pattern.console': '%-5p [%logger] %m%X',
+          'spring.output.ansi.enabled': 'never',
         }),
       );
     SpringLog.level = SpringLogLevel.debug;
@@ -233,6 +237,58 @@ void main() {
           ])
           .run((context) => log.info('x'));
       expect(console.single, '\x1B[31mx\x1B[0;39m');
+    });
+  });
+
+  group('colours by default', () {
+    final coloured = const ApplicationContextRunner().withAutoConfiguration(
+      springBootStarterLoggingAutoConfiguration,
+    );
+
+    test("a pattern without colours gets Spring Boot's", () {
+      coloured
+          .withPropertyValues(['logging.pattern.console=%d{HH} %5p %logger %m'])
+          .run((context) => log.warning('x'));
+      expect(
+        console.single,
+        matches(
+          RegExp(
+            r'^\x1B\[2m\d\d\x1B\[0;39m \x1B\[33m WARN\x1B\[0;39m '
+            r'\x1B\[36mneon\.shop\x1B\[0;39m x$',
+          ),
+        ),
+      );
+    });
+
+    test('a pattern with its own colours keeps them only', () {
+      coloured
+          .withPropertyValues(['logging.pattern.console=%p %clr(%m){red}'])
+          .run((context) => log.info('x'));
+      expect(console.single, 'INFO \x1B[31mx\x1B[0;39m');
+    });
+
+    test("Spring Boot's pattern", () {
+      coloured.run((context) => log.info('x'));
+      expect(console.single, contains('\x1B[32m INFO\x1B[0;39m'));
+    });
+
+    test('never and detect', () {
+      coloured
+          .withPropertyValues([
+            'logging.pattern.console=%p %logger %m',
+            'spring.output.ansi.enabled=never',
+          ])
+          .run((context) => log.info('x'));
+      expect(console.single, 'INFO neon.shop x');
+      console.clear();
+      coloured
+          .withPropertyValues([
+            'logging.pattern.console=%p %m',
+            'spring.output.ansi.enabled=detect',
+          ])
+          .run((context) => log.info('x'));
+      // Tests write to a pipe, not a terminal.
+      expect(console.single, 'INFO x');
     });
   });
 

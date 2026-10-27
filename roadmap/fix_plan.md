@@ -122,6 +122,33 @@ doc comment (`ConfigurationCondition`), fixed right after it.
 
 ## After 0.2.0
 
+Found while writing the guides (`example/server_guide`,
+`example/flutter_guide`, October 2026); each is worked around there:
+
+- `@ConditionalOnMissingBean()` without arguments on a `@Bean` method
+  checks the type of the returned value (`SystemClock`), not the declared
+  return type (`Clock`) as Spring does: a user `Clock` does not make it back
+  off.
+- `@EventListener(condition:)` takes a function, not a SpEL string like
+  Spring's.
+- `FetchHttpTransport` (the web) sends no credentials
+  (`credentials: 'include'`), so a session cookie cannot be kept across
+  origins: a Flutter web app cannot log in with a session.
+- Flutter starter: no routes in `spring.flutter.app.*` (`routes`,
+  `onGenerateRoute`, `routerConfig`), no locale property, and
+  `SpringApplicationWidget` takes no `BeanOverride`s for tests.
+- `MockMvc` cannot send a target starting with `//` (parsed as a host).
+- The name of a `@Valid @RequestBody` object for message codes is the
+  parameter's name, not Spring's type-derived one (`newBook`).
+- `@ConfigurationProperties` validation messages ignore the
+  `MessageSource`.
+- The scheduling starter logs "Bean 'taskScheduler' ... not eligible for
+  getting processed by all BeanPostProcessors" at every start (its
+  post-processor depends on the scheduler eagerly; the cache starter had
+  the same and is fixed).
+- A model class named `Order` clashes with the `@Order` annotation, and
+  the generator reports only "cannot be forwarded by a proxy".
+
 Found by the reviews, not blocking:
 
 - Tenth review: unconditional `@Bean` methods are registered while parsing, not in the reader in class order (earlier bean conditions see them; registration order `[h2, h1]` vs Spring's `[h1, h2]` affects unordered `List<T>` injection) — document or defer; plain (non-`ConfigurationCondition`) conditions on `@Bean` methods evaluated while parsing; a component's `@ConditionalOnMissingBean` of its own type; `@ConditionalOnBean(B)` on a component when B is a later conditional component; `@ConditionalOnMissingBean()` without arguments on a class should fail like Boot; `UrlResource.existsAsync()` status rules (204, 500 with a body); `@Bean` products with private members get interface-only proxies (`BeanNotOfRequiredTypeException` when injected by class; README should say subclass proxies are for component classes); operators (`[]`) on subclass proxies aren't advised; a `*String` delay resolving to whitespace.

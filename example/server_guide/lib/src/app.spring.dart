@@ -3340,13 +3340,13 @@ class _$StockControllerProxy implements _i55.StockController, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i56.EventStream<_i7.StockChanged> events(String lastEventId) =>
+  _i56.EventStream<_i7.StockChanged> events(String? lastEventId) =>
       (this._invoker.invoke(
         this,
         this._target,
         0,
         [lastEventId],
-        (args) => this._target.events((args[0] as String)),
+        (args) => this._target.events((args[0] as String?)),
       ) as _i56.EventStream<_i7.StockChanged>);
 
   @override
@@ -5007,33 +5007,25 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'level',
               type: const _i2.ClassType<String>(),
               symbol: #level,
-              annotations: const [
-                _i76.RequestParam.of(name: r'level', defaultValue: r''),
-              ],
+              annotations: const [_i76.RequestParam(r'level')],
             ),
             _i2.BeanParameter(
               r'logger',
               type: const _i2.ClassType<String>(),
               symbol: #logger,
-              annotations: const [
-                _i76.RequestParam.of(name: r'logger', defaultValue: r''),
-              ],
+              annotations: const [_i76.RequestParam(r'logger')],
             ),
             _i2.BeanParameter(
               r'text',
               type: const _i2.ClassType<String>(),
               symbol: #text,
-              annotations: const [
-                _i76.RequestParam.of(name: r'q', defaultValue: r''),
-              ],
+              annotations: const [_i76.RequestParam(r'q')],
             ),
             _i2.BeanParameter(
               r'limit',
               type: const _i2.ClassType<int>(),
               symbol: #limit,
-              annotations: const [
-                _i76.RequestParam.of(name: r'limit', defaultValue: r'100'),
-              ],
+              annotations: const [_i76.RequestParam(r'limit')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<_i3.LogLine>(
@@ -5068,10 +5060,10 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'String', r'String', r'int'],
             parameterNames: [r'level', r'logger', r'text', r'limit'],
             parameterAnnotations: [
-              [_i76.RequestParam.of(name: r'level', defaultValue: r'')],
-              [_i76.RequestParam.of(name: r'logger', defaultValue: r'')],
-              [_i76.RequestParam.of(name: r'q', defaultValue: r'')],
-              [_i76.RequestParam.of(name: r'limit', defaultValue: r'100')],
+              [_i76.RequestParam(r'level')],
+              [_i76.RequestParam(r'logger')],
+              [_i76.RequestParam(r'q')],
+              [_i76.RequestParam(r'limit')],
             ],
             annotations: [_i76.GetMapping(r'/logs')],
             annotationTypes: [r'GetMapping'],
@@ -5878,17 +5870,13 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'query',
               type: const _i2.ClassType<String>(),
               symbol: #query,
-              annotations: const [
-                _i76.RequestParam.of(name: r'q', defaultValue: r''),
-              ],
+              annotations: const [_i76.RequestParam(r'q')],
             ),
             _i2.BeanParameter(
               r'page',
               type: const _i2.ClassType<int>(),
               symbol: #page,
-              annotations: const [
-                _i76.RequestParam.of(name: r'page', defaultValue: r'0'),
-              ],
+              annotations: const [_i76.RequestParam(r'page')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i9.BookPage>(),
@@ -6039,8 +6027,8 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'query', r'page'],
             parameterAnnotations: [
-              [_i76.RequestParam.of(name: r'q', defaultValue: r'')],
-              [_i76.RequestParam.of(name: r'page', defaultValue: r'0')],
+              [_i76.RequestParam(r'q')],
+              [_i76.RequestParam(r'page')],
             ],
             annotations: [_i76.GetMapping()],
             annotationTypes: [r'GetMapping'],
@@ -9268,14 +9256,9 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           parameters: [
             _i2.BeanParameter(
               r'lastEventId',
-              type: const _i2.ClassType<String>(),
+              type: const _i2.ClassType<String>(nullable: true),
               isRequired: true,
-              annotations: const [
-                _i76.RequestHeader.of(
-                  name: r'Last-Event-ID',
-                  defaultValue: r'',
-                ),
-              ],
+              annotations: const [_i76.RequestHeader(r'Last-Event-ID')],
             ),
           ],
           returnTypeInfo:
@@ -9301,12 +9284,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'lastEventId'],
             parameterAnnotations: [
-              [
-                _i76.RequestHeader.of(
-                  name: r'Last-Event-ID',
-                  defaultValue: r'',
-                ),
-              ],
+              [_i76.RequestHeader(r'Last-Event-ID')],
             ],
             annotations: [_i76.GetMapping(r'/events')],
             annotationTypes: [r'GetMapping'],
@@ -9919,9 +9897,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
               r'copies',
               type: const _i2.ClassType<int>(),
               symbol: #copies,
-              annotations: const [
-                _i76.RequestParam.of(name: r'copies', defaultValue: r'1'),
-              ],
+              annotations: const [_i76.RequestParam(r'copies')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i60.Offer>(),
@@ -9973,7 +9949,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             parameterAnnotations: [
               [_i76.PathVariable()],
               [_i76.RequestHeader(r'X-Api-Key')],
-              [_i76.RequestParam.of(name: r'copies', defaultValue: r'1')],
+              [_i76.RequestParam(r'copies')],
             ],
             annotations: [_i76.GetMapping(r'/offers/{isbn}')],
             annotationTypes: [r'GetMapping'],
@@ -10725,7 +10701,7 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
       "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  servlet:\n    session:\n      cookie:\n        secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n  logback:\n    rollingpolicy:\n      max-file-size: 10MB\n      max-history: 5\n",
     ),
     r'application.properties': _i2.EmbeddedResource.text(
-      '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.servlet.session.timeout=30m\nspring.servlet.multipart.max-file-size=2MB\nspring.servlet.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.jackson.default-property-inclusion=non_null\nspring.jackson.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.cloud.openfeign.client.config.default.connect-timeout=2s\nspring.cloud.openfeign.client.config.default.read-timeout=5s\nspring.cloud.openfeign.client.config.supplier-offers.logger-level=basic\nspring.cloud.openfeign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p [%logger{30}] %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nspring.config.activate.on-profile=!prod\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
+      '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.servlet.session.timeout=30m\nspring.servlet.multipart.max-file-size=2MB\nspring.servlet.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.jackson.default-property-inclusion=non_null\nspring.jackson.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.cloud.openfeign.client.config.default.connect-timeout=2s\nspring.cloud.openfeign.client.config.default.read-timeout=5s\nspring.cloud.openfeign.client.config.supplier-offers.logger-level=basic\nspring.cloud.openfeign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nspring.config.activate.on-profile=!prod\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
     ),
     r'banner.txt': _i2.EmbeddedResource.text(
       ' _  _ ___ ___  _  _   ___           _\n| \\| | __/ _ \\| \\| | | _ ) ___  ___| |__ ___\n| .` | _| (_) | .` | | _ \\/ _ \\/ _ \\ / /(_-<\n|_|\\_|___\\___/|_|\\_| |___/\\___/\\___/_\\_\\/__/\n',

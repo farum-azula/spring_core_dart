@@ -5,17 +5,17 @@ import 'package:spring_core_dart/src/json/naming.dart';
 ///
 /// [access] limits the property to one direction: [JsonPropertyAccess.readOnly]
 /// is written but ignored when read, [JsonPropertyAccess.writeOnly] is read
-/// but not written. [required] makes a missing constructor parameter an
-/// error even when it is nullable or has a default; like Jackson, it is
-/// only checked for constructor parameters (creator properties), not for
-/// setters.
+/// but not written.
+///
+/// Jackson's `required` is the Dart parameter: a constructor parameter
+/// that is neither nullable nor has a default value must be in the JSON; a
+/// nullable one may be missing (`null`).
 ///
 /// ```dart
 /// @Introspected()
 /// class Book {
 ///   const Book(this.isbn, this.publishedAt, {this.password});
-///   @JsonProperty('', required: true)
-///   final String isbn;
+///   final String isbn; // required: not nullable, no default
 ///   @JsonProperty('published_at')
 ///   final DateTime publishedAt;
 ///   @JsonProperty('', access: JsonPropertyAccess.writeOnly)
@@ -32,28 +32,21 @@ import 'package:spring_core_dart/src/json/naming.dart';
 ///
 /// Spring (Java):
 /// ```java
-/// @JsonProperty(required = true) String isbn;
+/// @JsonProperty(required = true) String isbn;  // Dart: String isbn
 /// @JsonProperty("published_at") Instant publishedAt;
 /// @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String password;
 /// enum Color { @JsonProperty("RED") RED, GREEN }
 /// ```
 class JsonProperty {
   /// The property is called [name] in JSON (`''`: its own name, after
-  /// the naming strategy, e.g. `@JsonProperty('', required: true)`).
-  const JsonProperty(
-    this.name, {
-    this.access = JsonPropertyAccess.auto,
-    this.required = false,
-  });
+  /// the naming strategy, e.g. `@JsonProperty('', access: ...)`).
+  const JsonProperty(this.name, {this.access = JsonPropertyAccess.auto});
 
   /// The JSON name; empty for the default one.
   final String name;
 
   /// In which directions the property is used.
   final JsonPropertyAccess access;
-
-  /// Whether a constructor parameter must be present in the JSON.
-  final bool required;
 }
 
 /// The directions a property is used in (Jackson's

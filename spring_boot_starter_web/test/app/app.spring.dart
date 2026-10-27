@@ -104,18 +104,39 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   ) as String);
 
   @override
+  String sample({
+    int size = 3,
+    String sort = 'title',
+    String? tag,
+    int? limit,
+    String? lang,
+  }) => (this._invoker.invoke(
+    this,
+    this._target,
+    3,
+    [size, sort, tag, limit, lang],
+    (args) => this._target.sample(
+      size: (args[0] as int),
+      sort: (args[1] as String),
+      tag: (args[2] as String?),
+      limit: (args[3] as int?),
+      lang: (args[4] as String?),
+    ),
+  ) as String);
+
+  @override
   _i3.Future<_i5.ResponseEntity<_i4.Book>> create(_i4.NewBook book) =>
       this._invoker.invokeAsync<_i5.ResponseEntity<_i4.Book>>(
         this,
         this._target,
-        3,
+        4,
         [book],
         (args) => this._target.create((args[0] as _i4.NewBook)),
       );
 
   @override
   void delete(String isbn) {
-    this._invoker.invoke(this, this._target, 4, [isbn], (args) {
+    this._invoker.invoke(this, this._target, 5, [isbn], (args) {
       this._target.delete((args[0] as String));
       return null;
     });
@@ -125,7 +146,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   _i6.EventStream<_i4.Book> changes() => (this._invoker.invoke(
     this,
     this._target,
-    5,
+    6,
     const [],
     (args) => this._target.changes(),
   ) as _i6.EventStream<_i4.Book>);
@@ -134,7 +155,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   _i7.SseEmitter notifications() => (this._invoker.invoke(
     this,
     this._target,
-    6,
+    7,
     const [],
     (args) => this._target.notifications(),
   ) as _i7.SseEmitter);
@@ -146,7 +167,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   ) => (this._invoker.invoke(
     this,
     this._target,
-    7,
+    8,
     [e, request],
     (args) => this._target.notFound(
       (args[0] as _i4.BookNotFoundException),
@@ -158,7 +179,7 @@ class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   _i10.BookService get books => (this._invoker.invoke(
     this,
     this._target,
-    8,
+    9,
     const [],
     (_) => this._target.books,
   ) as _i10.BookService);
@@ -760,9 +781,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'page',
               type: const _i2.ClassType<int>(),
               symbol: #page,
-              annotations: const [
-                _i20.RequestParam.of(name: r'page', defaultValue: r'0'),
-              ],
+              annotations: const [_i20.RequestParam(r'page')],
             ),
             _i2.BeanParameter(
               r'genre',
@@ -771,9 +790,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 nullable: true,
               ),
               symbol: #genre,
-              annotations: const [
-                _i20.RequestParam.of(name: r'genre', required: false),
-              ],
+              annotations: const [_i20.RequestParam(r'genre')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<_i4.Book>(
@@ -805,6 +822,46 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.form, arguments),
           annotations: const [_i20.PostMapping(r'/form')],
+        ),
+        _i2.BeanMethod<_i1.BookController>(
+          r'sample',
+          parameters: [
+            _i2.BeanParameter(
+              r'size',
+              type: const _i2.ClassType<int>(),
+              symbol: #size,
+              annotations: const [_i20.RequestParam(r'size')],
+            ),
+            _i2.BeanParameter(
+              r'sort',
+              type: const _i2.ClassType<String>(),
+              symbol: #sort,
+              annotations: const [_i20.RequestParam()],
+            ),
+            _i2.BeanParameter(
+              r'tag',
+              type: const _i2.ClassType<String>(nullable: true),
+              symbol: #tag,
+              annotations: const [_i20.RequestParam(r'tag')],
+            ),
+            _i2.BeanParameter(
+              r'limit',
+              type: const _i2.ClassType<int>(nullable: true),
+              symbol: #limit,
+              annotations: const [_i20.RequestParam(r'limit')],
+            ),
+            _i2.BeanParameter(
+              r'lang',
+              type: const _i2.ClassType<String>(nullable: true),
+              symbol: #lang,
+              annotations: const [_i20.RequestHeader(r'X-Lang')],
+            ),
+          ],
+          returnTypeInfo: const _i2.ClassType<String>(),
+          invoke: (bean, arguments) => Function.apply(bean.sample, arguments),
+          invokeNamed: (bean, positional, named) =>
+              Function.apply(bean.sample, positional, named),
+          annotations: const [_i20.GetMapping(r'/sample/defaults')],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'create',
@@ -919,8 +976,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterNames: [r'query', r'page', r'genre'],
             parameterAnnotations: [
               [_i20.RequestParam(r'q')],
-              [_i20.RequestParam.of(name: r'page', defaultValue: r'0')],
-              [_i20.RequestParam.of(name: r'genre', required: false)],
+              [_i20.RequestParam(r'page')],
+              [_i20.RequestParam(r'genre')],
             ],
             annotations: [_i20.GetMapping()],
             annotationTypes: [r'GetMapping'],
@@ -945,6 +1002,30 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             ],
             annotations: [_i20.PostMapping(r'/form')],
             annotationTypes: [r'PostMapping'],
+            targetTypes: [r'BookController'],
+            targetAnnotations: [
+              _i21.RestController(),
+              _i20.RequestMapping(r'/api/books'),
+            ],
+            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
+          ),
+          _i2.MethodSignature(
+            name: r'sample',
+            declaringType: r'BookController',
+            targetType: r'BookController',
+            declaringTypes: [r'BookController'],
+            returnType: r'String',
+            parameterTypes: [r'int', r'String', r'String', r'int', r'String'],
+            parameterNames: [r'size', r'sort', r'tag', r'limit', r'lang'],
+            parameterAnnotations: [
+              [_i20.RequestParam(r'size')],
+              [_i20.RequestParam()],
+              [_i20.RequestParam(r'tag')],
+              [_i20.RequestParam(r'limit')],
+              [_i20.RequestHeader(r'X-Lang')],
+            ],
+            annotations: [_i20.GetMapping(r'/sample/defaults')],
+            annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
               _i21.RestController(),
@@ -1700,9 +1781,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'cover',
               type: const _i2.ClassType<_i14.MultipartFile>(nullable: true),
               symbol: #cover,
-              annotations: const [
-                _i20.RequestPart.of(name: r'cover', required: false),
-              ],
+              annotations: const [_i20.RequestPart(r'cover')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i13.Stored>(),
@@ -1830,7 +1909,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterNames: [r'book', r'cover'],
             parameterAnnotations: [
               [_i20.RequestPart(r'book'), _i2.Valid()],
-              [_i20.RequestPart.of(name: r'cover', required: false)],
+              [_i20.RequestPart(r'cover')],
             ],
             annotations: [_i20.PostMapping(r'/book')],
             annotationTypes: [r'PostMapping'],

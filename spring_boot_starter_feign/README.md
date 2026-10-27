@@ -116,20 +116,15 @@ Parameters:
 | `@RequestPart('file') MultipartFile file` | a part of a `multipart/form-data` body (files, text fields, JSON parts; see Files and multipart) |
 | a parameter without annotation | the body (only one such parameter) |
 
-`@PathVariable`, `@RequestParam` and `@RequestHeader` follow Spring's
-`required` (default `true`) and `defaultValue` (a `String`), written with
-the `.of` constructor: `@RequestParam.of(name: 'sort', defaultValue: 'asc')
-String? sort`.
+The Dart parameter says what Spring's `required` and `defaultValue` say
+in Java: a nullable parameter is optional, a default value is the
+argument when the caller passes none, any other parameter is required.
 
-| Argument `null` | Result |
+| Parameter | Argument `null` |
 |---|---|
-| with `defaultValue` | the default value is sent |
-| required (the default, for a non-nullable parameter) | an `ArgumentError` naming the parameter and the annotation value, before anything is sent |
-| not required (`required: false`, or a nullable parameter) | the query parameter or header is left out; a path variable (required unless `required: false`, whatever its type) becomes an empty string |
-
-As Spring does for Kotlin and `@Nullable` parameters, a nullable Dart
-query parameter or header (`String? q`) is never required, whatever
-`required` says; use a non-nullable parameter to require a value.
+| nullable (`String? sort`) | the query parameter, header or part is left out; a path variable becomes an empty string |
+| with a default value (`{String sort = 'asc'}`) | the caller cannot pass `null`; without an argument the default is sent |
+| non-nullable | the caller cannot pass `null` |
 
 Results:
 
@@ -211,10 +206,9 @@ await books.upload(
 
 `MultipartFile` is the type controllers receive (from `spring_web_dart`);
 `InMemoryMultipartFile` builds one from bytes or text (and a received file
-can be passed on as it is). `@RequestPart.of(name: 'note', required:
-false)`, or a nullable parameter, leaves the part out for `null`; a
-required part that is `null` is an `ArgumentError`, before anything is
-sent. `@RequestParam`, `@RequestHeader` and `@PathVariable` work as on any
+can be passed on as it is). A nullable parameter
+(`@RequestPart('note') String? note`) leaves the part out for `null`.
+`@RequestParam`, `@RequestHeader` and `@PathVariable` work as on any
 method — `@RequestParam` stays in the query, like Spring Cloud OpenFeign.
 The `Content-Type` is `multipart/form-data; boundary=...` (it replaces
 `consumes`). At startup, `@RequestPart` together with `@RequestBody`, or a

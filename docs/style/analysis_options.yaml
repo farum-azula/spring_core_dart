@@ -1,0 +1,41 @@
+# The recommended style of an application on the spring_core_dart family
+# (docs/style.md). Copy this file next to your pubspec.yaml; `dart format .`
+# and `dart analyze` (and Zed, VS Code, IntelliJ) then use it everywhere.
+#
+# A Dart application: `dart pub add dev:lints`.
+# A Flutter application: replace the include with
+# `package:flutter_lints/flutter.yaml` (`flutter create` adds flutter_lints).
+include: package:lints/recommended.yaml
+
+analyzer:
+  # The generator's output: committed, never edited, not analyzed.
+  exclude:
+    - "**/*.spring.dart"
+  # Types the generator and the container read: no silent `dynamic`.
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # A started future is awaited or marked `unawaited(...)`: lifecycle,
+    # events and requests of the framework are asynchronous.
+    - unawaited_futures
+    - prefer_final_locals
+    - prefer_single_quotes
+    - directives_ordering
+
+formatter:
+  page_width: 80
+  # A trailing comma keeps a list one item per line, without one what fits
+  # goes on one line. Several beans of a widget are written one per line:
+  #   typedef BasketPageBeans = (
+  #     Basket,
+  #     Clock,
+  #   );
+  #   final (
+  #     basket,
+  #     clock,
+  #   ) = beans;
+  trailing_commas: preserve

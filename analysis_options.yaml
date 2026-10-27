@@ -49,3 +49,7 @@ linter:
 # to another line length (Zed: lsp.dart.settings.lineLength) formats differently.
 formatter:
   page_width: 80
+  # A trailing comma keeps a list one item per line (several beans:
+  # `final (\n  basket,\n  session,\n) = beans;`); without one, what fits
+  # goes on one line. docs/style.md
+  trailing_commas: preserve

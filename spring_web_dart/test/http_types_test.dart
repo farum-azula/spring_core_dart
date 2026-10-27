@@ -255,8 +255,8 @@ void main() {
     expect(const PathVariable().name, isNull);
     expect(const RequestParam('q').name, 'q');
     expect(const CookieValue('SESSION').name, 'SESSION');
-    expect(const RequestBody().required, isTrue);
-    expect(const RequestBody(required: false).required, isFalse);
+    expect(const RequestHeader('X-Id').name, 'X-Id');
+    expect(const RequestPart('cover').name, 'cover');
   });
 
   test('the path of a mapping is optional', () {
@@ -282,32 +282,5 @@ void main() {
     expect(const GetMapping('/a').path, const GetMapping.of(path: '/a').path);
     expect(const GetMapping('/a').headers, isEmpty);
     expect(const GetMapping('/a').produces, isNull);
-  });
-
-  test('required and defaultValue of parameter annotations', () {
-    // Spring: required unless said otherwise, no default value.
-    expect(const PathVariable().required, isTrue);
-    expect(const PathVariable('id').required, isTrue);
-    expect(const RequestParam('q').required, isTrue);
-    expect(const RequestParam('q').defaultValue, isNull);
-    expect(const RequestHeader().required, isTrue);
-    expect(const RequestHeader('X-Id').defaultValue, isNull);
-
-    const optional = PathVariable.of(name: 'id', required: false);
-    expect(optional.name, 'id');
-    expect(optional.required, isFalse);
-    expect(const PathVariable.of().required, isTrue);
-
-    const param = RequestParam.of(name: 'page', defaultValue: '0');
-    expect(param.name, 'page');
-    expect(param.defaultValue, '0');
-    expect(param.required, isTrue, reason: 'the annotation keeps what was set');
-    expect(const RequestParam.of(required: false).name, isNull);
-    expect(const RequestParam.of(required: false).required, isFalse);
-
-    const header = RequestHeader.of(name: 'X-Tenant', defaultValue: 'public');
-    expect(header.name, 'X-Tenant');
-    expect(header.defaultValue, 'public');
-    expect(const RequestHeader.of(required: false).required, isFalse);
   });
 }
