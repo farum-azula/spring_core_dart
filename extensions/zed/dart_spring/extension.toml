@@ -3,7 +3,7 @@ name = "Spring for Dart"
 description = "Spring for Dart and Flutter (spring_core_dart, spring_boot_dart): navigation from injection points to beans and from @Value to properties, SpEL highlighting and checks, snippets (Dart, and themes in YAML and .properties), the Properties language (.properties files)."
 # Always the version of the spring_core_dart family it supports
 # (set by tool/version.dart together with the packages).
-version = "0.4.1"
+version = "0.4.2"
 schema_version = 1
 authors = ["Farum-Azula"]
 repository = "https://github.com/farum-azula/spring_core_dart"

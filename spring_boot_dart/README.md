@@ -10,10 +10,10 @@ own repository later; it depends only on `spring_core_dart`.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.4.1
+  spring_boot_dart: ^0.4.2
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.1
+  spring_core_dart_generator: ^0.4.2
 ```
 
 *In the guides:* [server, 1. The application](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#1-the-application), [2. Configuration](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#2-configuration).

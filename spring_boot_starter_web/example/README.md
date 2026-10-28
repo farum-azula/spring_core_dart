@@ -7,11 +7,11 @@ answering a `ProblemDetail`, and server-sent events.
 
 ```yaml
 dependencies:
-  spring_boot_starter_web: ^0.4.1
+  spring_boot_starter_web: ^0.4.2
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.1
+  spring_core_dart_generator: ^0.4.2
 ```
 
 ```bash

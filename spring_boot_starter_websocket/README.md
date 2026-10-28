@@ -87,11 +87,11 @@ after Spring 7's `RetryPolicy`).
 
 ```yaml
 dependencies:
-  spring_boot_starter_websocket: ^0.4.1
+  spring_boot_starter_websocket: ^0.4.2
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.1   # required: writes the client implementations
+  spring_core_dart_generator: ^0.4.2   # required: writes the client implementations
 ```
 
 ```bash
@@ -225,8 +225,8 @@ it like any other) before the endpoint takes it.
 
 ```yaml
 dependencies:
-  spring_boot_starter_web: ^0.4.1
-  spring_boot_starter_websocket: ^0.4.1
+  spring_boot_starter_web: ^0.4.2
+  spring_boot_starter_websocket: ^0.4.2
 ```
 
 ### `@WebSocketEndpoint`

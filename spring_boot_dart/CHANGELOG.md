@@ -1,3 +1,7 @@
+## 0.4.2
+
+- Docs (#9)
+
 ## 0.4.1
 
 - feat: guides replace the examples; optional parameters from Dart nullability; coloured logs

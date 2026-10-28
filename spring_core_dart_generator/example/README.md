@@ -11,11 +11,11 @@ required: without it the annotations do nothing.
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.4.1
+  spring_core_dart: ^0.4.2
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.1
+  spring_core_dart_generator: ^0.4.2
 ```
 
 Mark the scan root — every class under `lib/src/` is scanned:
