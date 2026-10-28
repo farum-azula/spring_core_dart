@@ -218,7 +218,7 @@ SecurityFilterChain web(HttpSecurity http) => http
   fixation). Later: the differential test against Spring's `oauth2Login()`
   and mutation testing.
 
-## 3. Flutter (spring_boot_starter_flutter)
+## 3. Flutter (spring_boot_starter_flutter; moving to spring_boot_starter_flutter_security)
 
 The starter becomes a Flutter plugin (iOS, Android, macOS, Windows,
 Linux) with its own platform code, no community plugins:
@@ -274,6 +274,9 @@ needed.
 - Tokens on WebSocket handshakes (a header on the VM and mobile, a query
   parameter or protocol in browsers).
 - The differential test of `oauth2Login()` against Spring Security,
-  mutation testing of the new code.
+  mutation testing of the new code, and the rest of the hardening: see
+  [spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md),
+  sections 5 (providers: Google, Apple), 6 (DPoP) and 7.
 - Back-channel logout, `saml2Login()` (needs an XML signature stack),
-  DPoP, Pushed Authorization Requests.
+  Pushed Authorization Requests. DPoP comes with the Flutter security
+  package (section 6 of its plan).

@@ -545,4 +545,12 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   (`response_mode=form_post` is not supported). Not yet compared with
   Spring by the differential test.
 
+Not there yet (planned, see
+[roadmap/spring_boot_starter_flutter_security.md](../roadmap/spring_boot_starter_flutter_security.md)):
+
+- **DPoP-bound access tokens** (RFC 9449, Spring Security 6.5+): the
+  resource server accepts `Bearer` tokens only, so a request with
+  `Authorization: DPoP ...` gets a `401`. Comes together with the
+  Flutter apps' DPoP.
+
 How the packages are shown to be safe: [docs/security.md](../docs/security.md).
