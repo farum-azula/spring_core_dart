@@ -28,7 +28,12 @@ describes how the tests show it.
   `@Secured`, through the bean's proxy, whoever the caller is: a
   controller, another bean, a scheduled task.
 - **Credentials**: passwords, kept only as hashes; session ids; CSRF
-  tokens; bearer tokens (JWT).
+  tokens; bearer tokens (JWT); the authorization codes, PKCE verifiers
+  and tokens (access, refresh, ID) of single sign-on (`oauth2Login()`),
+  kept on the server, never sent to the browser.
+- **Logins through an identity provider** (`oauth2Login()`): only the
+  user the provider authenticated, for this client and this login, is
+  logged in, in the browser that started the login.
 
 ### Against whom
 
@@ -39,6 +44,7 @@ describes how the tests show it.
 | Holder of a stolen or forged token | replay a token, alter it, sign it with another key or algorithm | use an expired, not-yet-valid, wrongly signed, `alg: none` or wrong-audience token |
 | A malicious web page in the user's browser | make the browser send requests with its cookies | change state with the user's session (CSRF); read responses across origins unless CORS allows it; frame the application |
 | A crafted URL | percent-encoding, `..`, `;`, `//`, backslashes, Unicode | be matched by a security rule differently than by the router |
+| An attacker in an OAuth 2.0 login (`oauth2Login()`) | forge, replay or redirect the provider's callback; steal a code; send another provider's or another login's ID token; add parameters to the callback | log the victim into the attacker's account (login CSRF); use a callback or a code twice; mix up registrations or providers; get an ID token accepted that the provider did not sign for this client and this login, or that is expired; send the browser to another site after the login (open redirect); keep a session id from before the login |
 
 ### Out of scope
 
@@ -51,6 +57,9 @@ describes how the tests show it.
 - Rate limiting and lockout after failed logins. Put them in front (the
   proxy) or in a listener of the authentication failure events; the
   packages do not count attempts.
+- The identity provider itself, and the TLS of the calls to it (its
+  discovery, token, user-info and key endpoints): the server trusts what
+  they answer over HTTPS, after the checks of the ID token.
 - A Flutter app's local checks. `@PreAuthorize` in an app protects the UI
   flow, not the data: an app can be taken apart, so the server must check
   again.
@@ -100,13 +109,14 @@ Evidence that can be checked without reading the code
 
 | Evidence | Where | Result |
 |---|---|---|
-| The attack catalog as tests: ambiguous paths, malformed credentials, CSRF, CORS, cookies, headers, JWT attacks (`alg: none`, algorithm confusion, embedded keys, `kid` tricks, expiry), method security | `spring_boot_starter_security/test/`, `spring_security_core/test/` | 341 tests in the core and 544 in the starter, plus 12 integration tests on a real server, all passing (counted with `dart test`, October 2026) |
-| The same requests sent to Spring Security 7.1 (Spring Boot 4.1) and to the starter: statuses, challenges, redirects, headers, cookies | `tool/security_reference`, `test/differential_test.dart`, CI job "Security compared with Spring Security" | equal, except the differences listed in the starter's README |
+| The attack catalog as tests: ambiguous paths, malformed credentials, CSRF, CORS, cookies, headers, JWT attacks (`alg: none`, algorithm confusion, embedded keys, `kid` tricks, expiry), method security | `spring_boot_starter_security/test/`, `spring_security_core/test/` | 341 tests in the core and 627 in the starter, plus 12 integration tests on a real server, all passing (counted with `dart test`, October 2026) |
+| The attacks on `oauth2Login()` as tests, against a fake OpenID Connect provider (discovery, token, user-info and JWK endpoints, ID tokens signed with the test keys): a missing, wrong, duplicated or replayed `state`; a callback in another browser (login CSRF); a saved request used once; a replayed code; a callback for registration B with A's `state` (mix-up); an `error` from the provider; an RFC 9207 `iss` of another issuer, or missing when announced; a wrong or missing `nonce`; ID tokens of another issuer or audience, with another `azp`, expired, `alg: none`, HS256 (algorithm confusion), signed by another key with the same `kid`, with an unknown `kid` (no flooding of the key endpoint); a missing ID token; user info about another `sub`; extra parameters on the callback (no open redirect: the target is the saved page of this site or the configured URL); a new session id at login (fixation); logout still needs the CSRF token; the login page escapes the client names; the application's `TokenEndpointOidcIdTokenDecoder` bean never replaces the signature check | `spring_boot_starter_security/test/oauth2_login_test.dart`, `oauth2_login_auto_configuration_test.dart`, `oauth2_login_parts_test.dart` | all passing |
+| The same requests sent to Spring Security 7.1 (Spring Boot 4.1) and to the starter: statuses, challenges, redirects, headers, cookies | `tool/security_reference`, `test/differential_test.dart`, CI job "Security compared with Spring Security" | equal, except the differences listed in the starter's README; `oauth2Login()` not compared yet |
 | Password hashes written by Spring and checked here, and the other way | `tool/security_reference`, `spring_security_core/test/vectors/` | all match |
 | RFC 7515 test vectors (JWS) | `test/vectors/rfc7515.json` | all verify |
 | Generated inputs (seeded): random paths through the firewall, random rule sets, random `Authorization` headers, mutated tokens | `test/fuzz_test.dart` | no input lets an ambiguous path through, allows what the rules deny, or throws anything unexpected |
-| Mutation testing: small changes to the code must make a test fail | `tool/mutation_test.dart` | 98.1 % (core) and 98.6 % (starter) of the changes are noticed; the rest change nothing observable, each explained in [docs/security-mutation.md](security-mutation.md) |
-| Line coverage | `dart test --coverage` | 99.9 % of the core's lines (one unreachable defensive line), 100 % of the starter's |
+| Mutation testing: small changes to the code must make a test fail | `tool/mutation_test.dart` | 98.1 % (core) and 98.6 % (starter) of the changes are noticed; the rest change nothing observable, each explained in [docs/security-mutation.md](security-mutation.md); the `oauth2Login()` code (`lib/src/oauth2/`) not measured yet |
+| Line coverage | `dart test --coverage` | 99.9 % of the core's lines (one unreachable defensive line), 100 % of the starter's (`oauth2Login()` included; 4 lines only through the integration tests) |
 | OWASP ASVS 4.0.3 level 2 (V2, V3, V4, V13, V14) | [docs/security-asvs.md](security-asvs.md) | each requirement with its status and test |
 
 Not done yet: an OWASP ZAP scan in CI, and an external review.

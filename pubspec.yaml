@@ -18,6 +18,7 @@ workspace:
   - spring_boot_starter_websocket
   - spring_boot_starter_web
   - spring_security_core
+  - spring_boot_starter_oauth2_client
   - spring_boot_starter_security
   - example/server_guide
   - extensions/language_server

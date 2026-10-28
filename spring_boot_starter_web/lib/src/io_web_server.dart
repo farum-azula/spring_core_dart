@@ -28,7 +28,7 @@ const _log = SpringLog('spring.web.server');
 ///       (request, response) => response.send(200, 'pong'),
 ///     ));
 /// await server.start();
-/// print('listening on ${server.port}');
+/// log.info('listening on ${server.port}');
 /// ```
 ///
 /// Spring Boot's default is Tomcat (`TomcatServletWebServerFactory`) in

@@ -55,7 +55,7 @@ enum MemberKind {
 /// @Before('execution(* Calculator.*(..))')
 /// void before(JoinPoint joinPoint) {
 ///   final signature = joinPoint.signature;
-///   print('${signature.returnType} ${signature.name}'
+///   log.info('${signature.returnType} ${signature.name}'
 ///       '(${signature.parameterTypes.join(', ')})');
 /// }
 /// ```
@@ -65,7 +65,7 @@ enum MemberKind {
 /// @Before("execution(* Calculator.*(..))")
 /// void before(JoinPoint joinPoint) {
 ///   MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-///   System.out.println(signature.getReturnType() + " "
+///   log.info(signature.getReturnType() + " "
 ///       + signature.getName()
 ///       + Arrays.toString(signature.getParameterTypes()));
 /// }
@@ -240,14 +240,14 @@ final class MethodSignature {
 /// // Logs each call to the `calculator` bean with its arguments.
 /// @Before('bean(calculator)')
 /// void before(JoinPoint joinPoint) =>
-///     print('${joinPoint.toShortString()} with ${joinPoint.args}');
+///     log.info('${joinPoint.toShortString()} with ${joinPoint.args}');
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// @Before("bean(calculator)")
 /// void before(JoinPoint joinPoint) {
-///   System.out.println(joinPoint.toShortString() + " with "
+///   log.info(joinPoint.toShortString() + " with "
 ///       + Arrays.toString(joinPoint.getArgs()));
 /// }
 /// ```
@@ -323,7 +323,7 @@ abstract interface class ProceedingJoinPoint implements JoinPoint {
 /// class LoggingInterceptor implements MethodInterceptor {
 ///   @override
 ///   Object? invoke(MethodInvocation invocation) {
-///     print('-> ${invocation.signature.name}${invocation.args}');
+///     log.info('-> ${invocation.signature.name}${invocation.args}');
 ///     return invocation.proceed();
 ///   }
 /// }
@@ -333,7 +333,7 @@ abstract interface class ProceedingJoinPoint implements JoinPoint {
 /// ```java
 /// class LoggingInterceptor implements MethodInterceptor {
 ///   public Object invoke(MethodInvocation invocation) throws Throwable {
-///     System.out.println("-> " + invocation.getMethod().getName());
+///     log.info("-> " + invocation.getMethod().getName());
 ///     return invocation.proceed();
 ///   }
 /// }

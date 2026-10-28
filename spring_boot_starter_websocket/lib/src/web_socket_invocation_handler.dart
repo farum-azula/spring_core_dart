@@ -235,7 +235,7 @@ final class WebSocketInvocationHandler implements InvocationHandler {
 /// ```dart
 /// // Show the good messages, log the bad ones.
 /// socket.messages().listen(show, onError: (Object error) {
-///   if (error is MessageConversionException) print(error.message);
+///   if (error is MessageConversionException) log.warning(error.message);
 /// });
 /// ```
 ///

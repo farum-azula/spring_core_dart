@@ -20,14 +20,14 @@ import 'package:spring_core_dart/src/validation/validator.dart';
 /// ```dart
 /// // Report each problem of an imported row.
 /// for (final v in validator.validateObject(form)) {
-///   print('${v.propertyPath}: ${v.message}'); // name: must not be blank
+///   log.warning('${v.propertyPath}: ${v.message}'); // name: must not be blank
 /// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// for (ConstraintViolation<SignupForm> v : validator.validate(form)) {
-///   System.out.println(v.getPropertyPath() + ": " + v.getMessage());
+///   log.warn(v.getPropertyPath() + ": " + v.getMessage());
 /// }
 /// ```
 final class ConstraintViolation {
@@ -95,7 +95,7 @@ final class ConstraintViolation {
 /// try {
 ///   registration.register('');
 /// } on ConstraintViolationException catch (e) {
-///   print(e.message); // register.email: must not be blank
+///   log.warning(e.message); // register.email: must not be blank
 /// }
 /// ```
 ///

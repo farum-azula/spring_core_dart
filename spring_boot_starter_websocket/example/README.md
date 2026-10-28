@@ -9,7 +9,7 @@ implementation.
 
 [`example.dart`](example.dart) is a small Spring Boot application with a
 chat client and a service using it. It starts a local echo server that
-sends every message back, asks the service to send `hello`, and prints
+sends every message back, asks the service to send `hello`, and logs
 the first message that comes back.
 
 ## Run it
@@ -30,10 +30,10 @@ dart run build_runner build   # writes the ChatSocket implementation
 dart run example/example.dart
 ```
 
-After the startup log lines it prints:
+After the startup log lines it logs, through the `example` logger:
 
 ```text
-me: hello
+... example : me: hello
 ```
 
 ## What it shows

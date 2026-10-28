@@ -31,7 +31,7 @@ dart run build_runner build
 dart run example/example.dart
 ```
 
-After the startup lines it prints (each line starts with the date and
+After the startup lines it logs (each line starts with the date and
 time, shortened to `...` here):
 
 ```text
@@ -39,7 +39,7 @@ time, shortened to `...` here):
 ...  INFO 4711 --- [           main] shop.checkout                            : paid 250.0 {request=r-1, order=2}
 ...  WARN 4711 --- [           main] shop.checkout                            : large payment {request=r-1, order=2}
 ...  INFO 4711 --- [           main] shop.receipts                            : receipt printed {request=r-1, order=2}
-1 warning(s): large payment
+...  INFO 4711 --- [           main] shop.startup                             : 1 warning(s): large payment
 ```
 
 The debug lines are not there: the default level is `info`. Turn them on
@@ -152,6 +152,7 @@ injects it and asks for the warnings:
 
 ```dart
 @Component()
+@Log(topic: 'shop.startup')
 class PayOnStartup implements CommandLineRunner {
   PayOnStartup(this.checkout, this.logs);
   final Checkout checkout;
@@ -161,7 +162,7 @@ class PayOnStartup implements CommandLineRunner {
   void run(List<String> args) {
     // ... the payments above ...
     final warnings = logs.query(const LogQuery(minLevel: SpringLogLevel.warning));
-    print('${warnings.length} warning(s): ${warnings.single.message}');
+    log.info('${warnings.length} warning(s): ${warnings.single.message}');
   }
 }
 ```

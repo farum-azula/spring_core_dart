@@ -16,14 +16,14 @@ import 'package:spring_core_dart/src/core/log.dart';
 ///
 /// ```dart
 /// final TaskExecutor executor = SimpleAsyncTaskExecutor();
-/// executor.execute(() => print('later'));
-/// print('now'); // printed first
+/// executor.execute(() => log.info('later'));
+/// log.info('now'); // logged first
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// TaskExecutor executor = new SimpleAsyncTaskExecutor();
-/// executor.execute(() -> System.out.println("later"));
+/// executor.execute(() -> log.info("later"));
 /// ```
 abstract interface class TaskExecutor {
   /// Runs [task], now or later depending on the implementation; a
@@ -40,12 +40,12 @@ abstract interface class TaskExecutor {
 /// `Future` the task returns is not awaited, and its error is not caught.
 ///
 /// ```dart
-/// const SyncTaskExecutor().execute(() => print('now'));
+/// const SyncTaskExecutor().execute(() => log.info('now'));
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// new SyncTaskExecutor().execute(() -> System.out.println("now"));
+/// new SyncTaskExecutor().execute(() -> log.info("now"));
 /// ```
 final class SyncTaskExecutor implements TaskExecutor {
   /// Creates the executor; it has no state.

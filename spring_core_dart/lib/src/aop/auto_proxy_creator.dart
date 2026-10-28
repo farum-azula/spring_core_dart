@@ -34,9 +34,10 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// // Defining the aspect is enough: the context wraps the Calculator.
 /// @Aspect()
 /// @Component()
+/// @Log()
 /// class AuditAspect {
 ///   @Before('execution(* Calculator.*(..))')
-///   void before(JoinPoint joinPoint) => print(joinPoint.toShortString());
+///   void before(JoinPoint joinPoint) => log.info(joinPoint.toShortString());
 /// }
 ///
 /// final context = ApplicationContext.run([appBeans]);

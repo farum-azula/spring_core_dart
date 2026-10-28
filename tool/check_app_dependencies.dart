@@ -159,6 +159,40 @@ class GreetingController {
 ''',
   ),
   _Starter(
+    'spring_boot_starter_oauth2_client',
+    feature: '''
+@Service()
+class Account {
+  Account(this.login);
+  final OAuth2LoginService? login;
+
+  bool get loggedIn => login?.isLoggedIn ?? false;
+}
+''',
+    featureTest: '''
+  group('the OAuth2 client from the properties', () {
+    final sso = springBootTest(
+      springApplication,
+      properties: {
+        'greeting.name': 'Ada',
+        'spring.security.oauth2.client.registration.github.client-id': 'gh',
+      },
+      overrides: [BeanOverride<HttpTransport>(MockHttpTransport())],
+    );
+
+    test('registrations, the login service and the token store', () async {
+      final github = await sso
+          .getBean<ClientRegistrationRepository>()
+          .findByRegistrationId('github');
+      expect(github?.clientId, 'gh');
+      expect(sso.getBean<Account>().loggedIn, isFalse);
+      expect(sso, hasSingleBean<TokenStore>());
+      expect(sha256Base64Url('x'), hasLength(43));
+    });
+  });
+''',
+  ),
+  _Starter(
     'spring_boot_starter_security',
     testImports: ['package:spring_boot_starter_security/testing.dart'],
     feature: '''

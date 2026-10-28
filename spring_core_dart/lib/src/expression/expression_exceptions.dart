@@ -816,7 +816,7 @@ abstract final class SpelLimits {
 /// try {
 ///   SpelExpressionParser().parseExpression(input).getValue(context);
 /// } on ExpressionException catch (e) {
-///   print(e.message); // Expression [1 +] @3: EL1044E: Unexpectedly ...
+///   log.warning(e.message); // Expression [1 +] @3: EL1044E: Unexpectedly ...
 /// }
 /// ```
 ///
@@ -888,7 +888,7 @@ class ExpressionException implements Exception {
 /// try {
 ///   expression.getValue(context);
 /// } on EvaluationException catch (e) {
-///   print(e.message);
+///   log.warning(e.message);
 /// }
 /// ```
 ///
@@ -924,7 +924,7 @@ class EvaluationException extends ExpressionException {
 /// try {
 ///   parser.parseExpression('#{1 + 2', ParserContext.template);
 /// } on ParseException catch (e) {
-///   print(e.message); // No ending suffix '}' for expression starting ...
+///   log.error(e.message); // No ending suffix '}' for expression starting ...
 /// }
 /// ```
 ///

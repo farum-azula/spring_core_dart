@@ -19,6 +19,7 @@ cd example/server_guide
 dart run build_runner build          # after changing beans (the generated *.spring.dart are committed)
 dart run bin/main.dart               # dev: sample data, a local supplier, port 8080
 dart run bin/main.dart --spring.profiles.active=prod
+dart run bin/main.dart --spring.profiles.active=dev,sso  # single sign-on with Keycloak (chapter 4)
 dart run bin/advanced.dart           # chapter 13
 dart test                            # everything (unit and integration)
 dart test --exclude-tags integration # without real sockets
@@ -76,6 +77,14 @@ This is the contract between this server and the Flutter app.
   it back in the `X-XSRF-TOKEN` header on POST, PUT and DELETE, as in
   Spring's recipe for single-page apps.
 - **CORS** comes from properties, for the Flutter web build.
+- **Single sign-on** (the `sso` profile, [chapter 4](#single-sign-on-with-keycloak)):
+  no form login; the users are Keycloak's (the same `ada` and `root`).
+  A browser logs in at `GET /oauth2/authorization/keycloak` and comes
+  back to the web app (`neon.app.web-url`) with the session cookie; a
+  native app sends Keycloak's access token as `Authorization: Bearer`.
+  `POST /api/logout` answers `200 {"logoutUrl": "..."}` after a Keycloak
+  login of the browser (the page goes there to end the Keycloak session),
+  `204` otherwise.
 - Anonymous clients may read the catalog.
 
 | Method | Path | Who | What |
@@ -87,7 +96,7 @@ This is the contract between this server and the Flutter app.
 | PUT | `/api/books/{isbn}/cover` | ADMIN | uploads a cover (multipart, `@RequestPart MultipartFile`) |
 | DELETE | `/api/books/{isbn}` | ADMIN | removes a book (method security: `@PreAuthorize` on the service) |
 | GET | `/api/stock/events` | anyone | server-sent events `StockChanged {isbn, available}` (`EventStream` or `SseEmitter`), resumed with `Last-Event-ID` |
-| GET | `/api/me` | logged in | `{name, roles}` (`@AuthenticationPrincipal`) |
+| GET | `/api/me` | logged in | `{name, roles}` (an `Authentication` argument: any kind of login) |
 | GET | `/api/basket` | logged in | the user's basket, kept in the `HttpSession` |
 | PUT | `/api/basket/items/{isbn}` | logged in | sets a quantity, `{quantity}` |
 | POST | `/api/orders` | logged in | orders the basket: 201 with the `Order`; publishes `OrderPlaced` |
@@ -245,7 +254,8 @@ Tests: `test/web_test.dart` (MockMvc), `test/server_integration_test.dart`
 | `hasPermission` with a `PermissionEvaluator`; a `RoleHierarchy` (ADMIN > USER) | `OrderPermissionEvaluator`, `SecurityConfig.roleHierarchy` |
 | authentication events (failed logins logged and counted) | `lib/src/security/login_audit.dart` |
 | security headers (with a Content-Security-Policy), the firewall | `SecurityConfig.apiChain`; the starter |
-| `@AuthenticationPrincipal`, `Authentication` and `Principal` arguments | `MeController`, `OrderController`, `SupportEndpoint` |
+| `Authentication` and `Principal` arguments | `MeController`, `OrderController`, `SupportEndpoint` |
+| single sign-on with Keycloak: `oauth2Login()` for the web app, bearer tokens for the native apps (the `sso` profile, below) | `SecurityConfig.ssoChain`, `lib/src/security/sso_config.dart` |
 
 The request rules let any logged-in user send `DELETE
 /api/books/{isbn}`; the service's `@PreAuthorize` answers 403 unless the
@@ -261,6 +271,72 @@ Tests: `test/security_test.dart` (with `user()` / `csrf()` of
 `package:spring_boot_starter_security/testing.dart`, and `withMockUser`).
 More: [`spring_boot_starter_security`](../../spring_boot_starter_security/README.md),
 [`spring_security_core`](../../spring_security_core/README.md).
+
+### Single sign-on with Keycloak
+
+With the `sso` profile the users log in at Keycloak, the identity
+provider of [`../keycloak/`](../keycloak/README.md) (the realm `neon` on
+port 8180, with the same `ada` and `root` and their roles), instead of
+with this server's form. Nothing else changes: the same request rules,
+CSRF, `@PreAuthorize` and order ownership by user name.
+
+| Feature | Where |
+|---|---|
+| the client registration (`neon-server`, a confidential client with a secret from the environment) and the provider by its `issuer-uri` (OpenID discovery) | `lib/resources/application-sso.properties` |
+| a second API chain for the profile: the rules, CSRF and headers shared with the first (`_api`), `oauth2Login()` and `oauth2ResourceServer().jwt()` instead of the form login | `SecurityConfig.ssoChain` |
+| after the login, the browser goes to the Flutter web app: `defaultSuccessUrl(app.webUrl, alwaysUse: true)`, configuration only (no open redirect) | `AppProperties` (`neon.app.web-url`), `lib/src/security/sso_config.dart` |
+| Keycloak's realm roles (a `roles` claim) as `ROLE_USER`, `ROLE_ADMIN`: a `GrantedAuthoritiesMapper` for the browser's login, `authorities-claim-name=roles` and `authority-prefix=ROLE_` for the bearer tokens; the name is `preferred_username` in both | `KeycloakRolesMapper`, `application-sso.properties` |
+| bearer tokens of the native apps: signature, issuer, audience `neon-api` | `spring.security.oauth2.resourceserver.jwt.*` |
+| the logout ends the Keycloak session too | `SsoLogoutSuccessHandler` (`lib/src/security/api_login.dart`) |
+| `/api/me` for every kind of user (`Authentication`, not `UserDetails`) | `MeController` |
+| a bearer token is checked on every request (an event each time): logged at debug level, not as a login | `LoginAudit` |
+
+**Why two ways in.** A web page has no safe place for tokens: any
+script injected into it reads what the page holds. So the Flutter web
+app never gets them: this server is its backend (BFF), logs it in with
+its own secret, keeps the tokens in the session, and the browser holds
+only the `HttpOnly` session cookie, which no script can read. A native
+app has the platform's secure storage (Keychain, Keystore), so it logs
+in itself as a public client (no secret in an app; PKCE instead) in the
+system browser, and sends its access token. One chain accepts both. The
+reasons in full:
+[the roadmap](../../roadmap/spring_boot_starter_oauth2_client.md#which-flow-where-the-security-decision).
+
+**The logout** must end Keycloak's session too, or the next "Sign in
+with Keycloak" passes without a password. Spring's
+`OidcClientInitiatedLogoutSuccessHandler` redirects the browser to
+Keycloak's logout page, but the app logs out with `fetch`, which cannot
+follow a redirect to another origin. So `SsoLogoutSuccessHandler`
+answers `200 {"logoutUrl": "..."}` (Keycloak's `end_session_endpoint`
+with the ID token and the web app as `post_logout_redirect_uri`), and the
+app navigates there. Native apps end their Keycloak session themselves.
+
+Try it, with Keycloak running (`../keycloak/README.md`):
+
+```bash
+dart run bin/main.dart --spring.profiles.active=dev,sso
+# A browser: http://localhost:8080/oauth2/authorization/keycloak, log in
+# as root / root-secret, and Keycloak sends you to http://localhost:5050/
+# (the Flutter web app: example/flutter_guide, `flutter run -d chrome
+# --dart-define=SPRING_PROFILES_ACTIVE=sso`, port 5050 from its
+# spring.flutter.web.port).
+curl -i localhost:8080/api/me                    # 401: no form login, no token
+curl -i localhost:8080/api/me -H 'Authorization: Bearer x'  # 401: not Keycloak's
+```
+
+The native apps (`flutter run --dart-define=SPRING_PROFILES_ACTIVE=sso`)
+get their tokens from Keycloak themselves: the Flutter guide's chapter 7.
+
+The secret of `neon-server` in `application-sso.properties` is the
+development value of the realm file, public on purpose; any real
+Keycloak gets its own, through `NEON_KEYCLOAK_SECRET`. Without the
+profile the server runs as before, Keycloak or not.
+
+Tests: `test/sso_test.dart` plays Keycloak with a `MockHttpTransport`
+(its metadata, token and user-info endpoints): the login's redirect
+(state, nonce, PKCE), the callback and the redirect to the web app, the
+roles from Keycloak, CSRF after the login, the logout's URL, bearer
+tokens for root and ada.
 
 ## 5. WebSocket
 
@@ -402,7 +478,7 @@ Extension points that a bookstore does not need every day, in
 `lib/src/advanced/`. Their beans carry `@AdvancedTour()`, a subclass of
 `@Profile` for the `advanced` profile, which the server never activates.
 `bin/advanced.dart` starts the application's beans with that profile and
-without the web server, and prints what each one did.
+without the web server, and logs what each one did.
 
 | Feature | Where |
 |---|---|

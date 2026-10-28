@@ -25,7 +25,7 @@ const _log = SpringLog('spring.scheduling');
 /// // An admin command lists the scheduled tasks and their next runs.
 /// final processor = context.getBean<ScheduledAnnotationBeanPostProcessor>();
 /// for (final task in processor.scheduledTasks) {
-///   print('${task.name}: next at ${task.nextExecution}');
+///   log.info('${task.name}: next at ${task.nextExecution}');
 /// }
 /// ```
 ///
@@ -33,7 +33,7 @@ const _log = SpringLog('spring.scheduling');
 /// ```java
 /// ScheduledAnnotationBeanPostProcessor processor =
 ///     context.getBean(ScheduledAnnotationBeanPostProcessor.class);
-/// processor.getScheduledTasks().forEach(System.out::println);
+/// processor.getScheduledTasks().forEach(task -> log.info("{}", task));
 /// ```
 final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     with SmartLifecycle

@@ -1,11 +1,12 @@
-# spring_ai_starter_mcp_server (planned)
+# MCP in spring_boot_starter_ai (planned)
 
-> **Priority: later.** After Spring Security and the Spring AI starters
-> ([spring_ai.md](spring_ai.md)); the tool calling of Spring AI and the MCP
-> tools share the generated JSON schemas, so this comes after them.
+> **Priority: later.** Part of the AI starter ([spring_ai.md](spring_ai.md)),
+> after its chat client: the tool calling of Spring AI and the MCP tools
+> share the generated JSON schemas, so this comes after them.
 
 MCP (Model Context Protocol) servers in Dart, like Spring AI's MCP server
-starters. Beans' methods become tools, resources and prompts that AI
+starters, but inside `spring_boot_starter_ai` rather than a package of
+their own. Beans' methods become tools, resources and prompts that AI
 clients (Claude, IDEs, agents) call. Runs on a backend, as a command-line
 tool, or inside a Flutter desktop or mobile app, exposing the app's own
 beans.
@@ -63,6 +64,10 @@ spring:
   - **Stateless HTTP**, without sessions.
   - **stdio** for local tools started by the client: no web starter
     needed, a compiled Dart executable is enough.
+
+  The AI starter does not depend on the web starter: an application that
+  serves MCP over HTTP lists `spring_boot_starter_web` as well, like the
+  WebSocket starter's server endpoints.
 - **Server to client:** progress notifications, logging,
   `notifications/tools/list_changed` when beans change, and sampling or
   elicitation requests through the open stream.
@@ -80,5 +85,5 @@ spring:
   the schema are small enough to write here). The MCP protocol version is
   pinned and listed in the README.
 
-Later: an MCP client starter (tools of other MCP servers as beans, like a
-Feign client), next to a chat client starter.
+Later, in the same package: an MCP client (the tools of other MCP servers
+as beans, like a Feign client, and as tools of the `ChatClient`).

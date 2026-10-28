@@ -58,7 +58,7 @@ runnable walk-through is in the
 
 ## What it generates
 
-The package registers two builders in its `build.yaml`; both apply
+The package registers three builders in its `build.yaml`; all apply
 automatically to every package that depends on it.
 
 **`spring_core_dart`** (the main builder) writes `<file>.spring.dart` next
@@ -103,6 +103,12 @@ that declares `@SpringBootTest` classes. The file has a
 `runSpringTests()` function that registers the tests of those classes
 with `package:test`; the test's `main` calls it. See
 [`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test).
+
+**`spring_flutter_web`** writes `web_dev_config.yaml`, the file
+`flutter run` reads on the web (Flutter 3.38 and later), from the
+`spring.flutter.web.*` properties of `lib/resources/` (see
+[Flutter](#flutter-spring_boot_starter_flutter) below). Without those
+properties it writes nothing.
 
 A short example of the main builder's output (simplified; the real file
 uses import prefixes such as `_i1.`):
@@ -223,6 +229,37 @@ the proxy also mixes `ChangeNotifier` in. The build fails when a name in `exclud
 public method, setter or field of the class, or when a
 `@ChangeNotifierComponent` class that is not a `ChangeNotifier` declares
 one of `ChangeNotifier`'s members itself.
+
+**The web dev server.** The `spring_flutter_web` builder turns the
+`spring.flutter.web.*` properties (host, port, base-href, HTTPS
+certificate, headers, proxy rules) into `web_dev_config.yaml` in the
+package directory, so `flutter run -d chrome` serves the app on a fixed
+port without flags. The config files are read as the app reads them in a
+browser: `application.*`, then `application-web.*` and the profiles that
+`spring.profiles.active` names in them; environment variables and
+`--dart-define` values do not count. An invalid value fails the build
+with the property's name.
+
+```yaml
+# lib/resources/application-web.yaml
+spring:
+  flutter:
+    web:
+      port: 5050
+```
+
+The file is no declared build output, because build_runner would
+overwrite a hand-written `web_dev_config.yaml` of that name and delete it
+once the builder stopped writing it. The builder manages the file itself
+and only touches one that starts with its `# GENERATED FILE - DO NOT
+MODIFY BY HAND.` header: it rewrites it while the properties are set
+and deletes it when they are gone. With the properties set and a
+hand-written file present, the build fails and asks to remove one of
+them. build_runner re-runs the builder when a file of `lib/resources/`
+changes, not when `web_dev_config.yaml` does: after deleting the file,
+run `dart run build_runner clean` or change a config file.
+See [the starter](https://pub.dev/packages/spring_boot_starter_flutter#the-web-versions-port)
+for the properties.
 
 ## Options
 
@@ -352,13 +389,14 @@ turn red while you type.
 
 ## Public API
 
-`lib/builder.dart` has the two builder factories that `build.yaml`
+`lib/builder.dart` has the three builder factories that `build.yaml`
 names; applications do not import it.
 
 | Factory | Builder | `build.yaml` entry |
 |---|---|---|
 | `springCoreDartBuilder` | the main builder, with the `aop_proxies` and `aop_prune` options | `spring_core_dart`: `auto_apply: dependents`, `build_to: source`, `.dart` → `.spring.dart` |
 | `springTestBuilder` | the test builder, no options | `spring_test`: `auto_apply: dependents`, `build_to: source`, `test/<name>_test.dart` → `test/spring/<name>.test.spring.dart` |
+| `springFlutterWebBuilder` | the `web_dev_config.yaml` builder, no options | `spring_flutter_web`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web_dev_config.yaml` itself) |
 
 ## Dependencies
 
@@ -403,6 +441,7 @@ lib/
     asset_check.dart            @Value('asset:...') against pubspec.yaml
     dart_define_keys.dart       --dart-define keys
     test_builder.dart           @SpringBootTest → test/spring/*.test.spring.dart
+    web_dev_config_builder.dart spring.flutter.web.* → web_dev_config.yaml
 build.yaml
 test/                           generated output and every rejected declaration
 ```

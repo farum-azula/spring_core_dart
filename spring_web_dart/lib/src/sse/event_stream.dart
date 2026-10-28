@@ -34,11 +34,13 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 ///
 /// // Only the data: each event's JSON read as an OrderEvent.
 /// await for (final order in orders.events()) {
-///   print(order.status);
+///   log.info(order.status);
 /// }
 ///
 /// // The whole events, when the event name tells the kinds apart.
-/// orders.events().events.listen((e) => print('${e.id} ${e.event} ${e.data}'));
+/// orders.events().events.listen(
+///   (e) => log.info('${e.id} ${e.event} ${e.data}'),
+/// );
 /// ```
 ///
 /// Spring (Java): there is no such type. Spring returns

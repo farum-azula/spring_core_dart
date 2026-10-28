@@ -9,9 +9,18 @@ class LoginAudit {
   /// Failed logins per user name since the start.
   final failures = <String, int>{};
 
+  /// A login: the form, or Keycloak's (`sso`). A native app's bearer
+  /// token is checked on every request it sends, with an event each time:
+  /// not a login, so only at debug level.
   @EventListener()
-  void onSuccess(AuthenticationSuccessEvent event) =>
-      log.info('${event.authentication.name} logged in');
+  void onSuccess(AuthenticationSuccessEvent event) {
+    final authentication = event.authentication;
+    if (authentication is JwtAuthenticationToken) {
+      log.debug('bearer token of ${authentication.name}');
+    } else {
+      log.info('${authentication.name} logged in');
+    }
+  }
 
   @EventListener()
   void onBadCredentials(AuthenticationFailureBadCredentialsEvent event) {

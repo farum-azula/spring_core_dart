@@ -4,7 +4,7 @@ import 'package:spring_core_dart/src/beans/factory_bean.dart';
 /// ambiguous bean, a failed creation, a clashing name, a bad property path.
 ///
 /// Catch it to handle any container error in one place, for example to
-/// print a readable message when startup fails. Each subclass carries the
+/// log a readable message when startup fails. Each subclass carries the
 /// details of its case; [message] always describes the problem, and
 /// [cause] (with [rootCause]) leads to the error behind it.
 ///
@@ -13,7 +13,7 @@ import 'package:spring_core_dart/src/beans/factory_bean.dart';
 /// try {
 ///   context.getBean<Mailer>();
 /// } on BeansException catch (e) {
-///   print(e.message);
+///   log.error(e.message);
 /// }
 /// ```
 ///
@@ -22,7 +22,7 @@ import 'package:spring_core_dart/src/beans/factory_bean.dart';
 /// try {
 ///   context.getBean(Mailer.class);
 /// } catch (BeansException e) {
-///   System.out.println(e.getMessage());
+///   log.error(e.getMessage());
 /// }
 /// ```
 abstract class BeansException implements Exception {
@@ -42,7 +42,7 @@ abstract class BeansException implements Exception {
   ///
   /// ```dart
   /// } on BeanCreationException catch (e) {
-  ///   print(e.rootCause); // e.g. the StateError a constructor threw
+  ///   log.error(e.rootCause); // e.g. the StateError a constructor threw
   /// }
   /// ```
   Object? get rootCause {
@@ -77,7 +77,8 @@ abstract class BeansException implements Exception {
 /// try {
 ///   factory.getBean<Mailer>(qualifier: 'smtp');
 /// } on NoSuchBeanDefinitionException catch (e) {
-///   print('${e.type} / ${e.qualifier} missing'); // Mailer / smtp missing
+///   // Mailer / smtp missing
+///   log.warning('${e.type} / ${e.qualifier} missing');
 /// }
 /// ```
 ///
@@ -87,7 +88,7 @@ abstract class BeansException implements Exception {
 ///   BeanFactoryAnnotationUtils.qualifiedBeanOfType(
 ///       factory, Mailer.class, "smtp");
 /// } catch (NoSuchBeanDefinitionException e) {
-///   System.out.println(e.getBeanType() + " missing");
+///   log.warn(e.getBeanType() + " missing");
 /// }
 /// ```
 class NoSuchBeanDefinitionException extends BeansException {
@@ -140,7 +141,7 @@ class NoSuchBeanDefinitionException extends BeansException {
 /// try {
 ///   factory.getBean<Greeter>();
 /// } on NoUniqueBeanDefinitionException catch (e) {
-///   print(e.candidates); // [english, french]
+///   log.warning(e.candidates); // [english, french]
 /// }
 /// ```
 ///
@@ -149,7 +150,7 @@ class NoSuchBeanDefinitionException extends BeansException {
 /// try {
 ///   factory.getBean(Greeter.class);
 /// } catch (NoUniqueBeanDefinitionException e) {
-///   System.out.println(e.getBeanNamesFound());
+///   log.warn("{}", e.getBeanNamesFound());
 /// }
 /// ```
 class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
@@ -201,7 +202,7 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
 /// try {
 ///   context.refresh();
 /// } on UnsatisfiedDependencyException catch (e) {
-///   print('${e.beanName}: ${e.dependency}'); // mailer: @Value("${smtp}")
+///   log.error('${e.beanName}: ${e.dependency}'); // mailer: @Value("${smtp}")
 /// }
 /// ```
 ///
@@ -210,7 +211,7 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
 /// try {
 ///   context.refresh();
 /// } catch (UnsatisfiedDependencyException e) {
-///   System.out.println(e.getBeanName() + ": " + e.getInjectionPoint());
+///   log.error(e.getBeanName() + ": " + e.getInjectionPoint());
 /// }
 /// ```
 class UnsatisfiedDependencyException extends BeanCreationException {
@@ -313,7 +314,7 @@ class BeanDefinitionStoreException extends BeansException {
 /// try {
 ///   context.refresh();
 /// } on BeanCurrentlyInCreationException catch (e) {
-///   print(e.cycle); // [a, b, a]
+///   log.error(e.cycle); // [a, b, a]
 /// }
 /// ```
 ///
@@ -322,7 +323,7 @@ class BeanDefinitionStoreException extends BeansException {
 /// try {
 ///   context.refresh();
 /// } catch (BeanCurrentlyInCreationException e) {
-///   System.out.println(e.getBeanName());
+///   log.error(e.getBeanName());
 /// }
 /// ```
 class BeanCurrentlyInCreationException extends BeanCreationException {
@@ -357,11 +358,11 @@ class BeanCurrentlyInCreationException extends BeanCreationException {
 /// original error.
 ///
 /// ```dart
-/// // Print which bean failed and why.
+/// // Log which bean failed and why.
 /// try {
 ///   factory.getBean<Mailer>();
 /// } on BeanCreationException catch (e) {
-///   print('${e.beanName}: ${e.cause}\n${e.causeStackTrace}');
+///   log.error(e.beanName, error: e.cause, stackTrace: e.causeStackTrace);
 /// }
 /// ```
 ///
@@ -370,7 +371,7 @@ class BeanCurrentlyInCreationException extends BeanCreationException {
 /// try {
 ///   factory.getBean(Mailer.class);
 /// } catch (BeanCreationException e) {
-///   System.out.println(e.getBeanName() + ": " + e.getMostSpecificCause());
+///   log.error(e.getBeanName(), e.getMostSpecificCause());
 /// }
 /// ```
 class BeanCreationException extends BeansException {
@@ -454,7 +455,7 @@ class BeanIsNotAFactoryException extends BeanNotOfRequiredTypeException {
 /// try {
 ///   factory.getBean<English>();
 /// } on BeanNotOfRequiredTypeException catch (e) {
-///   print('${e.requiredType} vs ${e.actualType}');
+///   log.warning('${e.requiredType} vs ${e.actualType}');
 /// }
 /// ```
 ///
@@ -463,7 +464,7 @@ class BeanIsNotAFactoryException extends BeanNotOfRequiredTypeException {
 /// try {
 ///   factory.getBean("english", English.class);
 /// } catch (BeanNotOfRequiredTypeException e) {
-///   System.out.println(e.getRequiredType() + " vs " + e.getActualType());
+///   log.warn(e.getRequiredType() + " vs " + e.getActualType());
 /// }
 /// ```
 class BeanNotOfRequiredTypeException extends BeansException {

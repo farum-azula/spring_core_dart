@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
+    show DelegatingOAuth2TokenValidator, OAuth2Error, OAuth2TokenValidator;
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
@@ -197,10 +199,28 @@ typedef JwkFetcher = Future<String> Function(Uri uri);
 ///
 /// Throws a [JwtException] for an answer other than 200 or a body over
 /// 1 MiB.
-Future<String> defaultJwkFetcher(Uri uri) async {
-  final transport = platformHttpTransport(
-    connectTimeout: const Duration(seconds: 10),
-  );
+Future<String> defaultJwkFetcher(Uri uri) => transportJwkFetcher(
+  platformHttpTransport(connectTimeout: const Duration(seconds: 10)),
+)(uri);
+
+/// A [JwkFetcher] sending its `GET` through [transport], with 10-second
+/// timeouts.
+///
+/// The OpenID Connect login uses it with the application's
+/// `HttpTransport` bean, so the provider's keys come through the same
+/// client (proxy, TLS settings) as its tokens, and tests can answer with
+/// a `MockHttpTransport`.
+///
+/// ```dart
+/// final decoder = NimbusJwtDecoder.withJwkSetUri(
+///   Uri.parse('https://login.example.com/jwks'),
+///   fetcher: transportJwkFetcher(transport),
+/// );
+/// ```
+///
+/// The fetcher throws a [JwtException] for an answer other than 200 or a
+/// body over 1 MiB.
+JwkFetcher transportJwkFetcher(HttpTransport transport) => (uri) async {
   final response = await transport.send(
     HttpRequest(
       method: HttpMethod.get,
@@ -217,7 +237,7 @@ Future<String> defaultJwkFetcher(Uri uri) async {
     throw JwtException('$uri answered more than 1 MiB');
   }
   return response.bodyText;
-}
+};
 
 /// A [JwkSource] that fetches the keys from the identity provider's JWK
 /// Set URL and caches them.

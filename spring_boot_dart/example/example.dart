@@ -6,8 +6,6 @@
 //   dart run example/example.dart --greeting.name=Ada
 //   GREETING_NAME=Grace dart run example/example.dart
 
-// An example: printing to the console is how it shows its result.
-// ignore_for_file: avoid_print
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'example.spring.dart';
@@ -34,8 +32,10 @@ class Greeter {
 }
 
 /// Runs once the application has started, like Spring's
-/// `CommandLineRunner`.
+/// `CommandLineRunner`. `@Log` gives it a `log` (a logger named
+/// `greeting`); it shows at info because `main` sets that level.
 @Component()
+@Log(topic: 'greeting')
 class GreetOnStartup implements CommandLineRunner {
   GreetOnStartup(this.greeter, this.properties);
 
@@ -45,10 +45,15 @@ class GreetOnStartup implements CommandLineRunner {
   @override
   void run(List<String> args) {
     for (var i = 0; i < properties.times; i++) {
-      print(greeter.greeting());
+      log.info(greeter.greeting());
     }
   }
 }
 
+/// Without the logging starter only warnings show, so this example turns
+/// its own logger up to info; `--logging.level.greeting=warn` silences it.
 @SpringBootApplication()
-void main(List<String> args) => runApplication(args);
+void main(List<String> args) =>
+    (springApplication
+          ..setDefaultProperties({'logging.level.greeting': 'info'}))
+        .run(args);

@@ -365,7 +365,7 @@ enum ConfigurationPropertyNameForm {
 /// try {
 ///   ConfigurationPropertyName.of('app.readTimeout');
 /// } on InvalidConfigurationPropertyNameException catch (error) {
-///   print(error.invalidCharacters); // [T]
+///   log.error(error.invalidCharacters); // [T]
 /// }
 /// ```
 ///

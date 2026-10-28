@@ -29,14 +29,14 @@ dart run build_runner build
 dart run example/example.dart
 ```
 
-Among the startup log lines it prints:
+After the startup log lines it logs, through the `example` logger:
 
 ```text
-Dune
-null
-[978-0]
-978-0: 4 left
-978-1: 0 left
+... example : title: Dune
+... example : title: null
+... example : search: [978-0]
+... example : 978-0: 4 left
+... example : 978-1: 0 left
 ```
 
 The sections below walk through the pieces.
@@ -134,11 +134,13 @@ answers the reconnect with `204`.
 
 ```dart
 await for (final change in catalog.stock()) {
-  print('${change.isbn}: ${change.copies} left');
+  log.info('${change.isbn}: ${change.copies} left');
 }
 
 // With the event ids:
-catalog.stock().events.listen((e) => print('${e.id} ${e.event} ${e.data.copies}'));
+catalog.stock().events.listen(
+  (e) => log.info('${e.id} ${e.event} ${e.data.copies}'),
+);
 ```
 
 ```properties

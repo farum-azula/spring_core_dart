@@ -27,17 +27,23 @@
 /// }
 /// ```
 ///
-/// Also here: JWT resource servers (`oauth2ResourceServer`, or the
+/// Also here: single sign-on with an OAuth 2.0 or OpenID Connect provider
+/// (`oauth2Login`, or just the `spring.security.oauth2.client.*`
+/// properties), JWT resource servers (`oauth2ResourceServer`, or the
 /// `spring.security.oauth2.resourceserver.jwt.*` properties), CORS, a
 /// firewall that refuses ambiguous paths before any rule, and
 /// `@AuthenticationPrincipal` for controller parameters. Test helpers are
 /// in `package:spring_boot_starter_security/testing.dart`.
 ///
 /// This import re-exports `spring_security_core` (users, passwords,
-/// `@PreAuthorize`) and `spring_boot_starter_web`. It is the Dart version
-/// of Spring Boot's `spring-boot-starter-security`.
+/// `@PreAuthorize`), `spring_boot_starter_web` and
+/// `spring_boot_starter_oauth2_client` (registrations, tokens, users,
+/// authorized clients, and the Feign starter it brings). It is the Dart
+/// version of Spring Boot's `spring-boot-starter-security` (with
+/// `spring-boot-starter-oauth2-client`'s web part).
 library;
 
+export 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 export 'package:spring_boot_starter_security/src/config/http_security.dart';
 export 'package:spring_boot_starter_security/src/config/security_auto_configuration.dart';
 export 'package:spring_boot_starter_security/src/jwt/bearer.dart';
@@ -51,6 +57,11 @@ export 'package:spring_boot_starter_security/src/jwt/jose.dart'
         VerificationKey;
 export 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 export 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
+export 'package:spring_boot_starter_security/src/oauth2/authorization_request_redirect.dart';
+export 'package:spring_boot_starter_security/src/oauth2/authorized_client_repository.dart';
+export 'package:spring_boot_starter_security/src/oauth2/login.dart';
+export 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
+export 'package:spring_boot_starter_security/src/oauth2/oidc_logout.dart';
 export 'package:spring_boot_starter_security/src/web/access.dart';
 export 'package:spring_boot_starter_security/src/web/arguments.dart';
 export 'package:spring_boot_starter_security/src/web/authentication.dart';

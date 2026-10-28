@@ -19,7 +19,7 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// } on FeignNotFound {
 ///   return null;
 /// } on FeignException catch (error) {
-///   print('${error.status}: ${error.responseBody}');
+///   log.warning('${error.status}: ${error.responseBody}');
 /// }
 /// ```
 ///

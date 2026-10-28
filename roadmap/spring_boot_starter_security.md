@@ -14,7 +14,8 @@ be safe: [security_verification.md](security_verification.md) and
   form login for browsers and Basic for other clients, one user from
   `spring.security.user.*` (or a generated password), CSRF, security
   headers, logout. With a JWT decoder (`spring.security.oauth2.resourceserver.jwt.*`)
-  a resource server instead.
+  a resource server instead; with OAuth2 client registrations,
+  `oauth2Login()`.
 - **`HttpSecurity`** with Spring's DSL: `authorizeHttpRequests` on the
   router's `PathPattern`s (deny when no rule matches), `httpBasic`,
   `formLogin`, `oauth2ResourceServer`, `csrf`, `cors`, `headers`,
@@ -36,45 +37,56 @@ be safe: [security_verification.md](security_verification.md) and
 
 ## SSO: oauth2Login with OpenID Connect
 
-Not decided: only together with MVC views (server-rendered pages,
-[spring_boot_starter_web.md](spring_boot_starter_web.md)) or a
-backend-for-frontend, the cases where the server, not the client, logs the
-user in. Today the starter is a resource server: it accepts the tokens an
-identity provider issued to a client (a single-page or Flutter app logs
-in, the server checks each request), which covers apps. What Spring
-Security also does, and this starter does not, is the login itself in the
-browser:
+Done (October 2026), on [spring_boot_starter_oauth2_client](spring_boot_starter_oauth2_client.md)
+(part 2 there; usage in the
+[README](../spring_boot_starter_security/README.md#single-sign-on-oauth2login)):
 
-```dart
-@Bean()
-SecurityFilterChain web(HttpSecurity http) => http
-    .authorizeHttpRequests((auth) => auth.anyRequest().authenticated())
-    .oauth2Login()
-    .logout((logout) => logout.oidcLogout())
-    .build();
-```
+- `HttpSecurity.oauth2Login()` with Spring's configurer: `loginPage`,
+  `defaultSuccessUrl` (a path or an absolute URL, such as a Flutter web
+  app's origin), `successHandler`, `failureHandler`, `failureUrl`,
+  `authorizationEndpoint`, `redirectionEndpoint`, `tokenEndpoint`,
+  `userInfoEndpoint` (user services, authorities mapper), the
+  registration and authorized client repositories, and `idTokenDecoder`.
+- `OAuth2AuthorizationRequestRedirectFilter` and
+  `DefaultOAuth2AuthorizationRequestResolver` (`state`, `nonce`, PKCE
+  `S256` always, `{baseUrl}` from the request and the context path),
+  `HttpSessionOAuth2AuthorizationRequestRepository` (one request per
+  session, by its `state`, removed when used).
+- `OAuth2LoginAuthenticationFilter` with
+  `OAuth2LoginAuthenticationProvider` and
+  `OidcAuthorizationCodeAuthenticationProvider`: the callback must come to
+  its login's redirect URI, the RFC 9207 `iss`, the code exchanged with
+  the verifier, the ID token's signature checked with the provider's JWK
+  Set (`OidcIdTokenDecoderFactory` on the resource server's
+  `NimbusJwtDecoder`), the claims and the `nonce`, the user info's `sub`,
+  the authorities mapped, a new session id, the authorized client saved
+  (`AuthenticatedPrincipalOAuth2AuthorizedClientRepository`,
+  `HttpSessionOAuth2AuthorizedClientRepository`).
+- The generated login page lists the registrations (escaped); with one
+  registration and no form login the entry point goes straight to it.
+- `OidcClientInitiatedLogoutSuccessHandler` (`end_session_endpoint`,
+  `id_token_hint`, `post_logout_redirect_uri` templates).
+- Auto-configuration: with registrations and no `SecurityFilterChain`
+  bean, the default chain has `oauth2Login()` (and bearer tokens with a
+  `JwtDecoder`), no default user, an `OAuth2AuthorizedClientRepository`
+  bean; the `oidcIdTokenDecoder` bean (signatures checked) is registered
+  before the OAuth2 client starter's, so refreshed ID tokens are checked
+  the same way.
+- The security starter depends on the OAuth2 client and re-exports it;
+  `OAuth2Error`, `OAuth2AuthenticationException` and the token validators
+  are the client's (one type for the resource server and the login).
+- Attacks as tests: [docs/security.md](../docs/security.md#how-it-is-shown).
 
-```properties
-spring.security.oauth2.client.registration.keycloak.client-id=books
-spring.security.oauth2.client.registration.keycloak.client-secret=${KEYCLOAK_SECRET}
-spring.security.oauth2.client.registration.keycloak.scope=openid,profile,email
-spring.security.oauth2.client.provider.keycloak.issuer-uri=https://sso.example.com/realms/books
-```
+Left:
 
-- Client registrations and providers from `spring.security.oauth2.client.*`
-  (Spring Boot's properties), the provider's endpoints from OpenID
-  discovery (already there for the resource server).
-- The authorization code flow: `/oauth2/authorization/{id}` redirects with
-  `state`, `nonce` and PKCE; `/login/oauth2/code/{id}` checks them,
-  exchanges the code, verifies the ID token (the JWT decoder of the
-  resource server), loads user info; the user becomes an `OidcUser`
-  (claims, `SCOPE_` and mapped authorities) in the session, with a new
-  session id. A login page listing the providers.
-- RP-initiated logout at the provider (`OidcClientInitiatedLogoutSuccessHandler`).
-- Verified like the rest: the reference Spring application with
-  `oauth2Login()` and a fake provider in the tests, attacks on `state`,
-  `nonce`, `redirect_uri`, mixed-up providers and replayed codes, mutation
-  testing.
+- The differential test of `oauth2Login()` against Spring Security
+  (`tool/security_reference`) and mutation testing of the new code
+  ([security_verification.md](security_verification.md)).
+- The example: `example/server_guide` logging in with Keycloak (part
+  "Example" of the OAuth2 client's roadmap).
+- `oauth2Client()` (the authorization code grant without a login,
+  `OAuth2AuthorizationCodeGrantFilter`), `response_mode=form_post`, OIDC
+  back-channel logout, `logout((l) => l.oidcLogout())`.
 - SAML 2.0 (`saml2Login()`) stays out for now: XML signatures need an XML
   parser the Dart team does not publish, another third-party package in
   the cryptography.

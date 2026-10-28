@@ -81,7 +81,7 @@ jobs:
       # The workspace packages (the Flutter ones resolve outside it and are
       # analyzed by the `flutter` job).
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security spring_boot_starter_test example/server_guide extensions/language_server tool
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test example/server_guide extensions/language_server tool
 
       # coverage:test_with_coverage in each published Dart package, the
       # lcov files merged into coverage/lcov.info.
@@ -178,7 +178,7 @@ jobs:
           - part: server guide and core
             directories: example/server_guide spring_core_dart spring_boot_dart
           - part: starters
-            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security
+            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security
     steps:
       - uses: actions/checkout@v7
 
@@ -486,4 +486,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_security spring_boot_starter_test
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_web spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test

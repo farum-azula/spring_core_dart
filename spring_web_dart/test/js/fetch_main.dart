@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 
 import 'package:spring_web_dart/browser.dart';
@@ -9,6 +10,9 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 @JS('testServer')
 external JSString get _testServer;
+
+@JS('globalThis')
+external JSObject get _global;
 
 Future<void> main() async {
   final host = _testServer.toDart;
@@ -25,6 +29,27 @@ Future<void> main() async {
   result['status'] = response.statusCode;
   result['body'] = jsonDecode(response.bodyText);
   result['contentType'] = response.headers['content-type'];
+  // The credentials option reaches fetch: a wrapper records it.
+  final fetch = _global.getProperty<JSFunction>('fetch'.toJS);
+  final credentials = <String?>[];
+  _global.setProperty(
+    'fetch'.toJS,
+    ((JSAny resource, JSObject init) {
+      credentials.add(
+        init.getProperty<JSString?>('credentials'.toJS)?.toDart,
+      );
+      return fetch.callAsFunction(null, resource, init);
+    }).toJS,
+  );
+  final data = HttpRequest(
+    method: HttpMethod.get,
+    url: Uri.parse('data:text/plain,x'),
+  );
+  await transport.send(data);
+  await FetchHttpTransport(credentials: FetchCredentials.include).send(data);
+  await platformHttpTransport(credentials: FetchCredentials.omit).send(data);
+  _global.setProperty('fetch'.toJS, fetch);
+  result['credentials'] = credentials;
   // Redirects not followed: a browser gives an opaque redirect (status 0,
   // accepted by HttpResponse); node's fetch gives the 302 itself.
   final manual = await transport.send(

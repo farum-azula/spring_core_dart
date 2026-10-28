@@ -33,20 +33,37 @@
 /// with Flutter's and are left out: Boot's startup `Banner` (Flutter has a
 /// `Banner` widget) and the validation constraint `Size` (`dart:ui` has
 /// `Size`), exported here as [SizeConstraint].
+///
+/// The user's tokens and secrets go to the platform's secure storage
+/// ([SecureTokenStore]: the Keychain, the Android Keystore, DPAPI,
+/// libsecret), and an app's login opens the system browser
+/// ([PlatformAuthorizationBrowser]); both are beans by default and serve
+/// the OAuth2 client (`spring_boot_starter_oauth2_client`).
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' as boot;
 
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart'
     hide Banner, Size;
+// The OAuth2 client's types the platform code implements; the app needs
+// them to declare its own store or browser.
+export 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
+    show
+        AuthorizationBrowser,
+        AuthorizationCancelledException,
+        InMemoryTokenStore,
+        TokenStore;
 
 export 'src/annotations.dart';
 export 'src/asset_resource.dart';
+export 'src/browser/platform_authorization_browser.dart'
+    show PlatformAuthorizationBrowser, AuthorizationBrowserException;
 export 'src/bean_reads.dart' show BeanReadsPointcut, BeanReadsInterceptor;
 export 'src/app_lifecycle.dart';
 export 'src/context_extensions.dart';
 export 'src/notify_listeners.dart';
 export 'src/platform_profiles.dart';
+export 'src/secure_storage/secure_token_store.dart';
 export 'src/spring_app.dart';
 export 'src/spring_application_widget.dart';
 export 'src/spring_scope.dart';

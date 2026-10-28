@@ -1,3 +1,5 @@
+import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
+    show OAuth2AuthenticationToken;
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
@@ -85,6 +87,7 @@ final class SecurityArgumentResolver implements HandlerMethodArgumentResolver {
     AbstractAuthenticationToken,
     UsernamePasswordAuthenticationToken,
     JwtAuthenticationToken,
+    OAuth2AuthenticationToken,
     TestingAuthenticationToken,
     AnonymousAuthenticationToken,
   };

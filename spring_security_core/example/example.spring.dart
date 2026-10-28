@@ -9,15 +9,18 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i9;
+import 'package:spring_boot_dart/src/runners.dart' as _i6;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i9;
+    as _i11;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i10;
+    as _i12;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i11;
-import 'package:spring_security_core/src/method/annotations.dart' as _i6;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+import 'package:spring_security_core/src/authentication/authentication_manager.dart'
+    as _i7;
+import 'package:spring_security_core/src/method/annotations.dart' as _i8;
 import 'package:spring_security_core/src/userdetails/user_details.dart' as _i5;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
     as _i4;
@@ -188,6 +191,67 @@ class _$UserSetup$UsersProxy
       ) as _i5.UserDetails);
 }
 
+class _$SecurityTourProxy
+    implements _i1.SecurityTour, _i6.CommandLineRunner, _i2.Advised {
+  _$SecurityTourProxy(this._target, this._invoker);
+
+  final _i1.SecurityTour _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
+    this,
+    this._target,
+    0,
+    [args],
+    (args) => this._target.run((args[0] as List<String>)),
+  );
+
+  @override
+  _i7.AuthenticationManager get manager => (this._invoker.invoke(
+    this,
+    this._target,
+    1,
+    const [],
+    (_) => this._target.manager,
+  ) as _i7.AuthenticationManager);
+
+  @override
+  _i1.OrderService get orders => (this._invoker.invoke(
+    this,
+    this._target,
+    2,
+    const [],
+    (_) => this._target.orders,
+  ) as _i1.OrderService);
+}
+
 /// `UserSetup` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
 class _$UserSetupConfiguration extends _i1.UserSetup {
@@ -226,7 +290,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.cancel, arguments),
           annotations: const [
-            _i6.PreAuthorize(
+            _i8.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == authentication.name",
             ),
           ],
@@ -245,7 +309,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.find, arguments),
           annotations: const [
-            _i6.PostAuthorize(r'returnObject.owner == authentication.name'),
+            _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
         _i2.BeanMethod<_i1.OrderService>(
@@ -256,7 +320,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.all, arguments),
           annotations: const [
-            _i6.PostFilter(
+            _i8.PostFilter(
               "hasRole('ADMIN') or filterObject.owner == authentication.name",
             ),
           ],
@@ -274,7 +338,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'Order'],
             parameterNames: [r'order'],
             annotations: [
-              _i6.PreAuthorize(
+              _i8.PreAuthorize(
                 "hasRole('ADMIN') or #order.owner == authentication.name",
               ),
             ],
@@ -292,7 +356,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i6.PostAuthorize(r'returnObject.owner == authentication.name'),
+              _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
             targetTypes: [r'OrderService'],
@@ -306,7 +370,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'OrderService'],
             returnType: r'Future',
             annotations: [
-              _i6.PostFilter(
+              _i8.PostFilter(
                 "hasRole('ADMIN') or filterObject.owner == authentication.name",
               ),
             ],
@@ -447,6 +511,72 @@ _i2.BeanModule get $application => _i2.BeanModule(
         ),
       ),
     ),
+    _i2.BeanDefinition<_i1.SecurityTour>(
+      name: r'securityTour',
+      source: r'asset:spring_security_core/example/example.dart#SecurityTour',
+      types: const [_i1.SecurityTour, _i6.CommandLineRunner],
+      dependencies: const [
+        _i2.Dependency(_i7.AuthenticationManager, name: r'manager'),
+        _i2.Dependency(_i1.OrderService, name: r'orders'),
+      ],
+      create: (r) => _i1.SecurityTour(
+        r.dependency<_i7.AuthenticationManager>(name: r'manager'),
+        r.dependency<_i1.OrderService>(name: r'orders'),
+      ),
+      annotations: const [
+        _i2.Component(),
+        _i2.Log(topic: r'example'),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'run',
+            declaringType: r'CommandLineRunner',
+            targetType: r'SecurityTour',
+            declaringTypes: [r'SecurityTour', r'CommandLineRunner'],
+            returnType: r'Future',
+            parameterTypes: [r'List'],
+            parameterNames: [r'args'],
+            targetTypes: [r'SecurityTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+          _i2.MethodSignature(
+            name: r'manager',
+            declaringType: r'SecurityTour',
+            targetType: r'SecurityTour',
+            declaringTypes: [r'SecurityTour'],
+            kind: _i2.MemberKind.getter,
+            returnType: r'AuthenticationManager',
+            targetTypes: [r'SecurityTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+          _i2.MethodSignature(
+            name: r'orders',
+            declaringType: r'SecurityTour',
+            targetType: r'SecurityTour',
+            declaringTypes: [r'SecurityTour'],
+            kind: _i2.MemberKind.getter,
+            returnType: r'OrderService',
+            targetTypes: [r'SecurityTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$SecurityTourProxy((target as _i1.SecurityTour), invoker),
+      ),
+    ),
   ],
   introspections: [
     _i2.BeanIntrospection<_i1.Order>(
@@ -494,13 +624,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i7.SpringApplication get springApplication => _i7.SpringApplication(
+_i9.SpringApplication get springApplication => _i9.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i8.springBootAutoConfiguration,
-    _i9.springBootStarterCacheAutoConfiguration,
-    _i10.springBootStarterLoggingAutoConfiguration,
-    _i11.springSecurityCoreAutoConfiguration,
+    _i10.springBootAutoConfiguration,
+    _i11.springBootStarterCacheAutoConfiguration,
+    _i12.springBootStarterLoggingAutoConfiguration,
+    _i13.springSecurityCoreAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -548,31 +678,36 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f97ee037',
+  fingerprint: '4ac35935',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i7.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i9.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i7.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i9.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i7.ConfigurableApplicationContext reloadApplication(
-  _i7.ConfigurableApplicationContext running, {
+_i9.ConfigurableApplicationContext reloadApplication(
+  _i9.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i7.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i7.ConfigurableApplicationContext running, {
+Future<_i9.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i9.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// `@Log` of [SecurityTour]: the logger 'example'.
+extension $SecurityTourLog on _i1.SecurityTour {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
+}

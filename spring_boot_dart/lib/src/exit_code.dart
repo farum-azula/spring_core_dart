@@ -96,10 +96,11 @@ abstract interface class ExitCodeExceptionMapper {
 ///
 /// ```dart
 /// @Component()
+/// @Log()
 /// class ExitAudit {
 ///   @EventListener()
 ///   void onExit(ExitCodeEvent event) =>
-///       print('ending with exit code ${event.exitCode}');
+///       log.info('ending with exit code ${event.exitCode}');
 /// }
 /// ```
 ///

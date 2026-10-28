@@ -52,7 +52,7 @@ final class EmbeddedResource {
 /// // Reads lib/resources/banner.txt, embedded or from disk.
 /// final resource =
 ///     DefaultResourceLoader().getResource('classpath:banner.txt');
-/// print(resource.readAsStringSync());
+/// log.info(resource.readAsStringSync());
 /// ```
 ///
 /// Spring (Java):

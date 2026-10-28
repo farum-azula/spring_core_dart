@@ -473,8 +473,8 @@ final class ResultActions implements Future<MvcResult> {
     }
   }
 
-  /// Runs [action] with the result, for example to print the response while
-  /// writing a test: `.andDo((result) => print(result.response.bodyText))`.
+  /// Runs [action] with the result, for example to log the response while
+  /// writing a test: `.andDo((result) => log.info(result.response.bodyText))`.
   /// Spring's `andDo(print())`.
   ResultActions andDo(void Function(MvcResult result) action) =>
       ResultActions._(

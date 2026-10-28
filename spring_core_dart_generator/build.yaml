@@ -11,3 +11,13 @@ builders:
     build_extensions: {"^test/{{}}_test.dart": ["test/spring/{{}}.test.spring.dart"]}
     auto_apply: dependents
     build_to: source
+  # Writes web_dev_config.yaml (read by `flutter run` on the web) from the
+  # spring.flutter.web.* properties. It declares no outputs on purpose: the
+  # builder only touches a file it generated itself, so a hand-written
+  # web_dev_config.yaml is never overwritten or deleted by build_runner.
+  spring_flutter_web:
+    import: "package:spring_core_dart_generator/builder.dart"
+    builder_factories: ["springFlutterWebBuilder"]
+    build_extensions: {"$package$": []}
+    auto_apply: dependents
+    build_to: source

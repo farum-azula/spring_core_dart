@@ -109,3 +109,53 @@ abstract final class AuthorityUtils {
     Iterable<GrantedAuthority> authorities,
   ) => {for (final authority in authorities) ?authority.authority};
 }
+
+/// Turns the authorities a login produced into the ones the application
+/// checks.
+///
+/// A login through another system brings that system's names: an OAuth 2.0
+/// login gives `OIDC_USER` and `SCOPE_profile`, a Keycloak token may carry
+/// the realm roles `admin` and `user`. A mapper renames, adds or drops
+/// them, so `@PreAuthorize("hasRole('ADMIN')")` works whatever the
+/// provider called it. Declare one as a bean; the OAuth2 login applies it
+/// to every user it logs in. Most applications need none: the default,
+/// [NullAuthoritiesMapper], keeps the authorities as they are.
+///
+/// ```dart
+/// // Users of the provider's group "admins" are ROLE_ADMIN here.
+/// final class AdminMapper implements GrantedAuthoritiesMapper {
+///   @override
+///   List<GrantedAuthority> mapAuthorities(
+///     Iterable<GrantedAuthority> authorities,
+///   ) => [
+///     ...authorities,
+///     if (authorities.any((a) => a.authority == 'GROUP_admins'))
+///       SimpleGrantedAuthority('ROLE_ADMIN'),
+///   ];
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Bean
+/// GrantedAuthoritiesMapper adminMapper() {
+///   return authorities -> { ... };
+/// }
+/// ```
+abstract interface class GrantedAuthoritiesMapper {
+  /// The authorities to keep for [authorities]; may be empty.
+  List<GrantedAuthority> mapAuthorities(Iterable<GrantedAuthority> authorities);
+}
+
+/// The [GrantedAuthoritiesMapper] that changes nothing: the default.
+///
+/// Spring (Java): `NullAuthoritiesMapper`.
+final class NullAuthoritiesMapper implements GrantedAuthoritiesMapper {
+  /// The mapper; it has no state.
+  const NullAuthoritiesMapper();
+
+  @override
+  List<GrantedAuthority> mapAuthorities(
+    Iterable<GrantedAuthority> authorities,
+  ) => List.of(authorities);
+}

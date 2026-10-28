@@ -9,15 +9,16 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
+import 'package:spring_boot_dart/src/runners.dart' as _i5;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i9;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i5;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i10;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i6;
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+    as _i11;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_web_dart/src/annotations.dart' as _i6;
+import 'package:spring_web_dart/src/annotations.dart' as _i7;
 import 'package:spring_web_dart/src/sse/event_stream.dart' as _i4;
 
 import 'example.dart' as _i1;
@@ -130,6 +131,67 @@ class _$ShopProxy implements _i1.Shop, _i2.Advised {
   ) as _i1.CatalogClient);
 }
 
+class _$ShopTourProxy
+    implements _i1.ShopTour, _i5.CommandLineRunner, _i2.Advised {
+  _$ShopTourProxy(this._target, this._invoker);
+
+  final _i1.ShopTour _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
+    this,
+    this._target,
+    0,
+    [args],
+    (args) => this._target.run((args[0] as List<String>)),
+  );
+
+  @override
+  _i1.Shop get shop => (this._invoker.invoke(
+    this,
+    this._target,
+    1,
+    const [],
+    (_) => this._target.shop,
+  ) as _i1.Shop);
+
+  @override
+  _i1.CatalogClient get catalog => (this._invoker.invoke(
+    this,
+    this._target,
+    2,
+    const [],
+    (_) => this._target.catalog,
+  ) as _i1.CatalogClient);
+}
+
 /// Implements `CatalogClient` through an `InvocationHandler`.
 class _$CatalogClientImpl implements _i1.CatalogClient {
   _$CatalogClientImpl(this._handler, this._metadata);
@@ -141,7 +203,7 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
   static _$CatalogClientImpl $create(_i2.DependencyResolver r) {
     final metadata = _i2.InterfaceMetadata<_i1.CatalogClient>(
       typeName: r'CatalogClient',
-      annotations: const [_i5.FeignClient(r'catalog', url: r'${catalog.url}')],
+      annotations: const [_i6.FeignClient(r'catalog', url: r'${catalog.url}')],
       methods: [
         _i2.ProxyMethod(
           r'find',
@@ -150,12 +212,12 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i6.PathVariable()],
+              annotations: const [_i7.PathVariable()],
             ),
           ],
           returnType: const _i2.ClassType<_i1.Book>(),
           isFuture: true,
-          annotations: const [_i6.GetMapping(r'/books/{isbn}')],
+          annotations: const [_i7.GetMapping(r'/books/{isbn}')],
           call: (target, arguments) =>
               (target as _i1.CatalogClient).find((arguments[0] as String)),
         ),
@@ -166,12 +228,12 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
               r'query',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i6.RequestParam(r'q')],
+              annotations: const [_i7.RequestParam(r'q')],
             ),
           ],
           returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
           isFuture: true,
-          annotations: const [_i6.GetMapping(r'/books')],
+          annotations: const [_i7.GetMapping(r'/books')],
           call: (target, arguments) =>
               (target as _i1.CatalogClient).search((arguments[0] as String)),
         ),
@@ -180,7 +242,7 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
           returnType: const _i2.GenericType<_i4.EventStream<_i1.StockChange>>([
             _i2.ClassType<_i1.StockChange>(),
           ]),
-          annotations: const [_i6.GetMapping(r'/stock/events')],
+          annotations: const [_i7.GetMapping(r'/stock/events')],
           call: (target, arguments) => (target as _i1.CatalogClient).stock(),
         ),
       ],
@@ -219,7 +281,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       types: const [_i1.CatalogClient],
       primary: true,
       create: (r) => _$CatalogClientImpl.$create(r),
-      annotations: const [_i5.FeignClient(r'catalog', url: r'${catalog.url}')],
+      annotations: const [_i6.FeignClient(r'catalog', url: r'${catalog.url}')],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -231,13 +293,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i6.PathVariable()],
+              [_i7.PathVariable()],
             ],
-            annotations: [_i6.GetMapping(r'/books/{isbn}')],
+            annotations: [_i7.GetMapping(r'/books/{isbn}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'CatalogClient'],
             targetAnnotations: [
-              _i5.FeignClient(r'catalog', url: r'${catalog.url}'),
+              _i6.FeignClient(r'catalog', url: r'${catalog.url}'),
             ],
             targetAnnotationTypes: [r'FeignClient'],
           ),
@@ -250,13 +312,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'query'],
             parameterAnnotations: [
-              [_i6.RequestParam(r'q')],
+              [_i7.RequestParam(r'q')],
             ],
-            annotations: [_i6.GetMapping(r'/books')],
+            annotations: [_i7.GetMapping(r'/books')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'CatalogClient'],
             targetAnnotations: [
-              _i5.FeignClient(r'catalog', url: r'${catalog.url}'),
+              _i6.FeignClient(r'catalog', url: r'${catalog.url}'),
             ],
             targetAnnotationTypes: [r'FeignClient'],
           ),
@@ -266,11 +328,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'CatalogClient',
             declaringTypes: [r'CatalogClient'],
             returnType: r'EventStream',
-            annotations: [_i6.GetMapping(r'/stock/events')],
+            annotations: [_i7.GetMapping(r'/stock/events')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'CatalogClient'],
             targetAnnotations: [
-              _i5.FeignClient(r'catalog', url: r'${catalog.url}'),
+              _i6.FeignClient(r'catalog', url: r'${catalog.url}'),
             ],
             targetAnnotationTypes: [r'FeignClient'],
           ),
@@ -314,6 +376,72 @@ _i2.BeanModule get $application => _i2.BeanModule(
           ),
         ],
         create: (target, invoker) => _$ShopProxy((target as _i1.Shop), invoker),
+      ),
+    ),
+    _i2.BeanDefinition<_i1.ShopTour>(
+      name: r'shopTour',
+      source: r'asset:spring_boot_starter_feign/example/example.dart#ShopTour',
+      types: const [_i1.ShopTour, _i5.CommandLineRunner],
+      dependencies: const [
+        _i2.Dependency(_i1.Shop, name: r'shop'),
+        _i2.Dependency(_i1.CatalogClient, name: r'catalog'),
+      ],
+      create: (r) => _i1.ShopTour(
+        r.dependency<_i1.Shop>(name: r'shop'),
+        r.dependency<_i1.CatalogClient>(name: r'catalog'),
+      ),
+      annotations: const [
+        _i2.Component(),
+        _i2.Log(topic: r'example'),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'run',
+            declaringType: r'CommandLineRunner',
+            targetType: r'ShopTour',
+            declaringTypes: [r'ShopTour', r'CommandLineRunner'],
+            returnType: r'Future',
+            parameterTypes: [r'List'],
+            parameterNames: [r'args'],
+            targetTypes: [r'ShopTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+          _i2.MethodSignature(
+            name: r'shop',
+            declaringType: r'ShopTour',
+            targetType: r'ShopTour',
+            declaringTypes: [r'ShopTour'],
+            kind: _i2.MemberKind.getter,
+            returnType: r'Shop',
+            targetTypes: [r'ShopTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+          _i2.MethodSignature(
+            name: r'catalog',
+            declaringType: r'ShopTour',
+            targetType: r'ShopTour',
+            declaringTypes: [r'ShopTour'],
+            kind: _i2.MemberKind.getter,
+            returnType: r'CatalogClient',
+            targetTypes: [r'ShopTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$ShopTourProxy((target as _i1.ShopTour), invoker),
       ),
     ),
   ],
@@ -399,12 +527,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i7.SpringApplication get springApplication => _i7.SpringApplication(
+_i8.SpringApplication get springApplication => _i8.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i8.springBootAutoConfiguration,
-    _i9.springBootStarterFeignAutoConfiguration,
-    _i10.springBootStarterLoggingAutoConfiguration,
+    _i9.springBootAutoConfiguration,
+    _i10.springBootStarterFeignAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('CATALOG_URL'))
@@ -456,31 +584,36 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2cbced21',
+  fingerprint: '704672da',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i7.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i8.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i7.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i8.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i7.ConfigurableApplicationContext reloadApplication(
-  _i7.ConfigurableApplicationContext running, {
+_i8.ConfigurableApplicationContext reloadApplication(
+  _i8.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i7.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i7.ConfigurableApplicationContext running, {
+Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i8.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// `@Log` of [ShopTour]: the logger 'example'.
+extension $ShopTourLog on _i1.ShopTour {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
+}

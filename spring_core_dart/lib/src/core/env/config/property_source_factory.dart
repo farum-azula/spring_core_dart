@@ -121,7 +121,7 @@ final class DefaultPropertySourceFactory implements PropertySourceFactory {
 /// try {
 ///   processor.processPropertySource(['file:missing.properties']);
 /// } on PropertySourceNotFoundException catch (error) {
-///   print(error.location); // file:missing.properties
+///   log.error(error.location); // file:missing.properties
 /// }
 /// ```
 ///

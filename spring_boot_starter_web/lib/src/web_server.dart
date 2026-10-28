@@ -452,21 +452,21 @@ final class PortInUseFailureAnalyzer implements FailureAnalyzer {
 ///
 /// Listen to it when code needs the real port, which is only known then
 /// when `server.port=0` picks a free one: to register the service with a
-/// discovery server, or to print a URL. The same port is also in the
+/// discovery server, or to log a URL. The same port is also in the
 /// `local.server.port` property from then on.
 ///
 /// ```dart
 /// // Tell the developer where the application answers.
 /// @EventListener()
 /// void onServer(WebServerInitializedEvent event) =>
-///     print('Open http://localhost:${event.port}/');
+///     log.info('Open http://localhost:${event.port}/');
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// @EventListener
 /// void onServer(WebServerInitializedEvent event) {
-///   System.out.println("Open http://localhost:"
+///   log.info("Open http://localhost:"
 ///       + event.getWebServer().getPort() + "/");
 /// }
 /// ```

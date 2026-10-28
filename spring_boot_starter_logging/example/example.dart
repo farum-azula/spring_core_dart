@@ -6,8 +6,6 @@
 //   dart run example/example.dart --logging.level.shop=debug
 //   LOGGING_LEVEL_SHOP=debug dart run example/example.dart
 
-// An example: printing to the console is how it shows its result.
-// ignore_for_file: avoid_print
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 import 'example.spring.dart';
@@ -39,6 +37,7 @@ void printReceipt(int order) =>
 /// Pays two orders, then reads the warnings back from the log buffer, the
 /// list an in-app log screen shows.
 @Component()
+@Log(topic: 'shop.startup')
 class PayOnStartup implements CommandLineRunner {
   PayOnStartup(this.checkout, this.logs);
 
@@ -57,7 +56,7 @@ class PayOnStartup implements CommandLineRunner {
     final warnings = logs.query(
       const LogQuery(minLevel: SpringLogLevel.warning),
     );
-    print('${warnings.length} warning(s): ${warnings.single.message}');
+    log.info('${warnings.length} warning(s): ${warnings.single.message}');
   }
 }
 

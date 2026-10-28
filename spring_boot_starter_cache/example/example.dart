@@ -4,9 +4,6 @@
 //
 //   dart run example/example.dart
 
-// The example shows its result on the console: printing is the point.
-// ignore_for_file: avoid_print
-
 import 'dart:convert';
 
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
@@ -128,25 +125,38 @@ class CacheSetup {
   ]);
 }
 
+/// Uses the cache and logs what it saw; `@Log` gives it the `log`
+/// getter.
+@Component()
+@Log(topic: 'example')
+class CacheTour implements CommandLineRunner {
+  CacheTour(this.books, this.api, this.store);
+
+  final Books books;
+  final CatalogApi api;
+  final KeyValueStore store;
+
+  @override
+  Future<void> run(List<String> args) async {
+    await books.find('978-0');
+    await books.find('978-0');
+    log.info('loads: ${api.loads}'); // loads: 1 (the second call was cached)
+
+    await books.remove('978-0');
+    await books.find('978-0');
+    log.info('loads after evict: ${api.loads}'); // loads after evict: 2
+
+    // The prices cache is the StoreCache of CacheSetup: entries are JSON in
+    // the store, so they would survive a restart with a persistent store.
+    final price = await books.price('978-0');
+    log
+      ..info('price: $price') // price: 12.5
+      ..info('stored: ${(store as MapStore).keys}'); // stored: (prices:978-0)
+  }
+}
+
 @SpringBootApplication()
 Future<void> main(List<String> args) async {
-  final context = springApplication.run(args);
-  final books = context.getBean<Books>();
-  final api = context.getBean<CatalogApi>();
-
-  await books.find('978-0');
-  await books.find('978-0');
-  print('loads: ${api.loads}'); // loads: 1 (the second call was cached)
-
-  await books.remove('978-0');
-  await books.find('978-0');
-  print('loads after evict: ${api.loads}'); // loads after evict: 2
-
-  // The prices cache is the StoreCache of CacheSetup: entries are JSON in
-  // the store, so they would survive a restart with a persistent store.
-  print(await books.price('978-0')); // 12.5
-  final store = context.getBean<KeyValueStore>() as MapStore;
-  print(store.keys); // (prices:978-0)
-
+  final context = await springApplication.runAsync(args);
   context.close();
 }

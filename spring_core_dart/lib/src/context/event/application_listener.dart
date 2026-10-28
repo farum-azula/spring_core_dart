@@ -59,9 +59,11 @@ abstract interface class ApplicationEventPublisher {
 /// ```dart
 /// // Every shipment is written to the audit log.
 /// @Component()
+/// @Log()
 /// class ShipmentAudit implements ApplicationListener<OrderShipped> {
 ///   @override
-///   void onApplicationEvent(OrderShipped event) => print(event.id);
+///   void onApplicationEvent(OrderShipped event) =>
+///       log.info('shipped ${event.id}');
 /// }
 /// ```
 ///
@@ -96,7 +98,7 @@ abstract interface class ApplicationListener<E extends Object> {
 ///   bool supportsEvent(Object event) => event is! ContextRefreshedEvent;
 ///
 ///   @override
-///   void onApplicationEvent(Object event) => print('audit: $event');
+///   void onApplicationEvent(Object event) => log.info('audit: $event');
 /// }
 ///
 /// context.addApplicationListener(AuditAll());
@@ -137,13 +139,14 @@ abstract interface class GenericApplicationListener {
 /// ```dart
 /// // Logs the refresh and the close of the context.
 /// @Component()
+/// @Log()
 /// class ContextAudit with SmartApplicationListener {
 ///   @override
 ///   bool supportsEventType(Type eventType) =>
 ///       eventType == ContextRefreshedEvent || eventType == ContextClosedEvent;
 ///
 ///   @override
-///   void onApplicationEvent(Object event) => print(event);
+///   void onApplicationEvent(Object event) => log.info(event);
 /// }
 /// ```
 ///
@@ -196,7 +199,10 @@ abstract mixin class SmartApplicationListener
 ///
 /// ```dart
 /// context.addApplicationListener(
-///   ApplicationListenerAdapter.of<OrderPlaced>((o) => print(o.id), order: 1),
+///   ApplicationListenerAdapter.of<OrderPlaced>(
+///     (o) => log.info(o.id),
+///     order: 1,
+///   ),
 /// );
 /// context.addApplicationListener(
 ///   ApplicationListenerAdapter.forListener(ShipmentAudit()),
@@ -255,7 +261,7 @@ final class ApplicationListenerAdapter<E>
 /// `dispose`.
 ///
 /// ```dart
-/// final registration = context.addListener<String>(print);
+/// final registration = context.addListener<String>(log.info);
 /// registration.remove();
 /// assert(registration.isRemoved);
 /// ```

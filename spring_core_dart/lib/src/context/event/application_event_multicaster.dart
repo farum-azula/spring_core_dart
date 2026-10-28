@@ -17,7 +17,7 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// // A multicaster on its own, outside a context.
 /// final multicaster = SimpleApplicationEventMulticaster()
 ///   ..addApplicationListener(
-///     ApplicationListenerAdapter.of<String>(print),
+///     ApplicationListenerAdapter.of<String>(log.info),
 ///   );
 /// multicaster.multicastEvent('hello'); // prints "hello"
 /// ```
@@ -26,7 +26,7 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// ```java
 /// var multicaster = new SimpleApplicationEventMulticaster();
 /// multicaster.addApplicationListener(
-///     ApplicationListener.forPayload(System.out::println));
+///     ApplicationListener.forPayload((String text) -> log.info(text)));
 /// multicaster.multicastEvent(new PayloadApplicationEvent<>(this, "hello"));
 /// ```
 abstract interface class ApplicationEventMulticaster {

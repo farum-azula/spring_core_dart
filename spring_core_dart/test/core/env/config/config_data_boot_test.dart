@@ -256,6 +256,20 @@ spring:
       expect(e.getProperty('hidden'), isNull);
     });
 
+    test(
+      'config/*/ that may not be read is skipped (an Android app runs in /)',
+      () {
+        write('application.properties', 'v=root');
+        Directory('$root/config').createSync();
+        Process.runSync('chmod', ['000', '$root/config']);
+        addTearDown(() => Process.runSync('chmod', ['755', '$root/config']));
+        final e = env();
+        process(e);
+        expect(e.getProperty('v'), 'root');
+      },
+      testOn: '!windows',
+    );
+
     test('wildcard file locations and invalid wildcards', () {
       write('etc/b/app.properties', 'v=b');
       write('etc/a/app.properties', 'v=a');

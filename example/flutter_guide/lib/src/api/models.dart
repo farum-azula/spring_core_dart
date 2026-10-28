@@ -101,6 +101,17 @@ class Me {
   final List<String> roles;
 }
 
+/// The answer of `POST /api/logout` after a Keycloak login of the web
+/// app (the server's `sso` profile): `{"logoutUrl": "http://..."}`, where
+/// the page goes to end the Keycloak session too. Other logouts answer
+/// 204, without a body.
+@Introspected()
+class LoggedOutAnswer {
+  const LoggedOutAnswer({this.logoutUrl});
+
+  final String? logoutUrl;
+}
+
 /// One line of the server's basket.
 @Introspected()
 class BasketLine {

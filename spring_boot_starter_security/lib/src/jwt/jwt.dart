@@ -1,3 +1,13 @@
+// OAuth2Error, OAuth2TokenValidator, OAuth2TokenValidatorResult and
+// DelegatingOAuth2TokenValidator are the OAuth2 client's (one type for the
+// resource server and the login, as in Spring's spring-security-oauth2-core).
+import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
+    show
+        DelegatingOAuth2TokenValidator,
+        OAuth2Error,
+        OAuth2TokenValidator,
+        OAuth2TokenValidatorResult;
+
 /// A decoded JSON Web Token: the raw token, its header and its claims.
 ///
 /// A `JwtDecoder` returns one only after checking the signature and the
@@ -109,81 +119,6 @@ final class Jwt {
   String toString() =>
       'Jwt [subject=$subject, issuer=$issuer, '
       'expiresAt=$expiresAt, tokenValue=[PROTECTED]]';
-}
-
-/// An OAuth 2.0 error as the client sees it: a standard code, a
-/// description and a link to the specification.
-///
-/// Validators return it, and the bearer-token entry point sends it in the
-/// `WWW-Authenticate` header, so do not put secrets in the description.
-///
-/// Spring (Java): `OAuth2Error`.
-final class OAuth2Error {
-  /// An error with the code [errorCode] (such as `invalid_token`), an
-  /// optional [description] and [uri].
-  const OAuth2Error(this.errorCode, [this.description, this.uri]);
-
-  /// The standard error code, such as `invalid_token` or
-  /// `insufficient_scope`.
-  final String errorCode;
-
-  /// A sentence for developers explaining the error; sent to the
-  /// client.
-  final String? description;
-
-  /// A link to a page about the error, or `null`.
-  final String? uri;
-
-  @override
-  String toString() => '[$errorCode] ${description ?? ''}';
-}
-
-/// What an [OAuth2TokenValidator] found: no errors means the token is
-/// accepted.
-///
-/// Spring (Java): `OAuth2TokenValidatorResult`.
-final class OAuth2TokenValidatorResult {
-  /// A result with [errors]; with none, the token is valid.
-  const OAuth2TokenValidatorResult([this.errors = const []]);
-
-  /// A result rejecting the token for [error].
-  factory OAuth2TokenValidatorResult.failure(OAuth2Error error) =>
-      OAuth2TokenValidatorResult([error]);
-
-  /// The shared result of a valid token.
-  static const success = OAuth2TokenValidatorResult();
-
-  /// Everything wrong with the token; empty when it is valid.
-  final List<OAuth2Error> errors;
-
-  /// Whether the token is rejected.
-  bool get hasErrors => errors.isNotEmpty;
-}
-
-/// A check of a decoded token's claims, run by the decoder after the
-/// signature check; any error rejects the token with a 401.
-///
-/// The decoder already checks the expiry, and the issuer and audience
-/// when configured. Write one for a rule of your own, such as a required
-/// tenant, and pass it to the decoder (combine it with the default ones
-/// in a [DelegatingOAuth2TokenValidator]).
-///
-/// ```dart
-/// // Only tokens of the "shop" tenant are accepted.
-/// @Bean()
-/// JwtDecoder jwtDecoder() => NimbusJwtDecoder.withJwkSetUri(
-///   Uri.parse('https://login.example.com/jwks'),
-///   validator: DelegatingOAuth2TokenValidator([
-///     JwtValidators.createDefaultWithIssuer('https://login.example.com'),
-///     JwtClaimValidator('tenant', (value) => value == 'shop'),
-///   ]),
-/// );
-/// ```
-///
-/// Spring (Java): `OAuth2TokenValidator`.
-abstract interface class OAuth2TokenValidator<T> {
-  /// What is wrong with [token]; a result without errors accepts it.
-  OAuth2TokenValidatorResult validate(T token);
 }
 
 const _invalidToken = 'invalid_token';
@@ -323,25 +258,6 @@ final class JwtAudienceValidator implements OAuth2TokenValidator<Jwt> {
       : const OAuth2TokenValidatorResult([
           OAuth2Error(_invalidToken, 'The aud claim is not valid', _rfc6750),
         ]);
-}
-
-/// An [OAuth2TokenValidator] made of several: it runs all of them and
-/// collects every error, so a token must pass all.
-///
-/// Spring (Java): `DelegatingOAuth2TokenValidator`.
-final class DelegatingOAuth2TokenValidator<T>
-    implements OAuth2TokenValidator<T> {
-  /// A validator running [validators] in order.
-  DelegatingOAuth2TokenValidator(List<OAuth2TokenValidator<T>> validators)
-    : validators = List.unmodifiable(validators);
-
-  /// The validators, in order; cannot be modified.
-  final List<OAuth2TokenValidator<T>> validators;
-
-  @override
-  OAuth2TokenValidatorResult validate(T token) => OAuth2TokenValidatorResult([
-    for (final validator in validators) ...validator.validate(token).errors,
-  ]);
 }
 
 /// Ready-made sets of validators, to start from when adding your own.

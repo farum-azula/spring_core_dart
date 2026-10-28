@@ -146,6 +146,10 @@ targets:
         'spring_boot_starter_web',
         'spring_boot_starter_security',
         'example/server_guide',
+        // Through spring_security_core: the OAuth2 client depends on it,
+        // the Flutter starter on the OAuth2 client.
+        'spring_boot_starter_oauth2_client',
+        'spring_boot_starter_flutter',
       });
     });
 

@@ -21,6 +21,9 @@ dependencies:
   # by lib/src/jwt/signature_primitives.dart.
   pointycastle: ^4.0.0
   spring_boot_dart: ^0.4.2
+  # oauth2Login(): the registrations, the token endpoint, the users and
+  # the authorized clients (re-exported, with the Feign starter it brings).
+  spring_boot_starter_oauth2_client: ^0.4.2
   spring_boot_starter_web: ^0.4.2
   spring_security_core: ^0.4.2
   # MockServerHttpRequest and RequestPostProcessor of testing.dart.

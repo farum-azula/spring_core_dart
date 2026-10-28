@@ -24,9 +24,12 @@
 /// @ComponentScan()
 /// final BeanModule appBeans = $appBeans;
 ///
+/// const log = SpringLog('app');
+///
 /// void main() {
+///   SpringLog.level = SpringLogLevel.info; // only warnings by default
 ///   final context = ApplicationContext.run([appBeans]);
-///   print(context.getBean<Greeter>().greeting);
+///   log.info(context.getBean<Greeter>().greeting);
 ///   context.close();
 /// }
 /// ```
@@ -39,7 +42,7 @@
 /// }
 ///
 /// var context = new AnnotationConfigApplicationContext("com.example");
-/// System.out.println(context.getBean(Greeter.class).greeting);
+/// log.info(context.getBean(Greeter.class).greeting);
 /// context.close();
 /// ```
 library;

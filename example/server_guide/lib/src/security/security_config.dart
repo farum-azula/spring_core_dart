@@ -2,6 +2,7 @@
 // CORS from properties, the permission evaluator of `hasPermission`.
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:neon_books_server/src/security/api_login.dart';
+import 'package:neon_books_server/src/security/sso_config.dart';
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 
 /// `neon.cors.*`: who may call the API from a browser page of another
@@ -33,10 +34,79 @@ class SecurityConfig {
   /// The API: sessions (the `JSESSIONID` cookie), a login form posted by
   /// the app, CSRF tokens in a cookie the app reads (`XSRF-TOKEN`) and
   /// sends back (`X-XSRF-TOKEN`), as Spring's single-page-app recipe.
-  /// The first matching rule decides; no rule matching is a denial.
+  /// The rules, CSRF and headers are in [_api], shared with [ssoChain];
+  /// this chain adds the form login. Not with the `sso` profile.
   @Bean()
   @Order(2)
-  SecurityFilterChain apiChain(HttpSecurity http) => http
+  @Profile(['!sso'])
+  SecurityFilterChain apiChain(HttpSecurity http) => _api(http)
+      .formLogin(
+        (form) => form
+            .loginProcessingUrl('/api/login')
+            .successHandler(const ApiLoginSuccessHandler())
+            .failureHandler(const ApiLoginFailureHandler()),
+      )
+      .logout(
+        (logout) => logout
+            .logoutUrl('/api/logout')
+            .logoutSuccessHandler(
+              const HttpStatusReturningLogoutSuccessHandler(
+                HttpStatus.noContent,
+              ),
+            ),
+      )
+      .build();
+
+  /// The API with single sign-on (the `sso` profile, Keycloak of
+  /// example/keycloak): the same rules, CSRF and headers, but the users
+  /// log in at Keycloak instead of with a form. Two kinds of clients:
+  ///
+  /// - **Flutter web** (and any browser): `oauth2Login()`. The page goes
+  ///   to `/oauth2/authorization/keycloak`, Keycloak logs the user in and
+  ///   sends the browser back to `/login/oauth2/code/keycloak`; this
+  ///   server exchanges the code with its client secret, keeps the tokens
+  ///   in the session and sends the browser on to the app
+  ///   (`neon.app.web-url`: configuration, never a request parameter, so
+  ///   no open redirect). The browser holds only the `HttpOnly` session
+  ///   cookie; a web page has no safe place for tokens.
+  /// - **Native apps** log in themselves (PKCE, the system browser) and
+  ///   send Keycloak's access token: `oauth2ResourceServer().jwt()`
+  ///   checks its signature, issuer and audience (`neon-api`); the name
+  ///   and roles come from its claims (`spring.security.oauth2.
+  ///   resourceserver.jwt.*` in application-sso.properties).
+  ///
+  /// Logging out ends the Keycloak session too: see
+  /// [SsoLogoutSuccessHandler] (the app logs out with a script request,
+  /// which cannot follow a redirect to Keycloak).
+  @Bean()
+  @Order(2)
+  @Profile(['sso'])
+  SecurityFilterChain ssoChain(
+    HttpSecurity http,
+    ClientRegistrationRepository registrations,
+    AppProperties app,
+  ) => _api(http)
+      .oauth2Login(
+        (login) => login
+            .defaultSuccessUrl(app.webUrl, alwaysUse: true)
+            .failureUrl('${app.webUrl}?login=failed'),
+      )
+      .oauth2ResourceServer((server) => server.jwt())
+      .logout(
+        (logout) => logout
+            .logoutUrl('/api/logout')
+            .logoutSuccessHandler(
+              SsoLogoutSuccessHandler(
+                registrations,
+                postLogoutRedirectUri: app.webUrl,
+              ),
+            ),
+      )
+      .build();
+
+  /// What both API chains share. The first matching rule decides; no
+  /// rule matching is a denial.
+  static HttpSecurity _api(HttpSecurity http) => http
       .authorizeHttpRequests(
         (auth) => auth
             .requestMatchersFor(HttpMethod.get, [
@@ -60,21 +130,6 @@ class SecurityConfig {
             .anyRequest()
             .denyAll(),
       )
-      .formLogin(
-        (form) => form
-            .loginProcessingUrl('/api/login')
-            .successHandler(const ApiLoginSuccessHandler())
-            .failureHandler(const ApiLoginFailureHandler()),
-      )
-      .logout(
-        (logout) => logout
-            .logoutUrl('/api/logout')
-            .logoutSuccessHandler(
-              const HttpStatusReturningLogoutSuccessHandler(
-                HttpStatus.noContent,
-              ),
-            ),
-      )
       .csrf(
         (csrf) => csrf
             .csrfTokenRepository(
@@ -96,8 +151,7 @@ class SecurityConfig {
         (headers) => headers.contentSecurityPolicy(
           "default-src 'none'; img-src 'self'; frame-ancestors 'none'",
         ),
-      )
-      .build();
+      );
 
   /// Admins can do whatever users can: `hasRole('USER')` lets them in.
   /// Static, as Spring advises for infrastructure beans: created without

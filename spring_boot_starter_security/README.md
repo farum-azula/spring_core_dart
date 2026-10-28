@@ -23,10 +23,11 @@ dev_dependencies:
   spring_boot_starter_test: ^0.4.2     # MockMvc, springBootTest
 ```
 
-It brings the web starter and
+It brings the web starter,
 [`spring_security_core`](../spring_security_core/README.md) (users,
-password hashes, `@PreAuthorize` on bean methods), so this one dependency
-is enough.
+password hashes, `@PreAuthorize` on bean methods) and
+[`spring_boot_starter_oauth2_client`](../spring_boot_starter_oauth2_client/README.md)
+(the registrations of single sign-on), so this one dependency is enough.
 
 *In the guides:* [server, 4. Security](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#4-security).
 
@@ -53,8 +54,9 @@ spring.security.user.roles=ADMIN
 
 The default user disappears as soon as the application has its own users:
 a `UserDetailsService`, an `AuthenticationProvider`, an
-`AuthenticationManager` or a `JwtDecoder` bean, or the JWT properties
-below. Its password is stored as `{noop}` unless it already starts with an
+`AuthenticationManager` or a `JwtDecoder` bean, the JWT properties below,
+or an OAuth2 client registration (unless `spring.security.user.name` or
+`.password` is set). Its password is stored as `{noop}` unless it already starts with an
 `{id}`. With a `PasswordEncoder` bean it is stored as given, so it must
 already be encoded, and a generated password cannot log in.
 
@@ -300,13 +302,114 @@ The signatures are verified with Bouncy Castle's Dart port
 (`pointycastle`), a third-party package
 [to be replaced](../docs/dependencies.md#pointycastle-third-party-to-be-removed).
 
-**Not yet: logging in through the provider in the browser**
-(`oauth2Login()`, SSO with OpenID Connect), for pages rendered by the
-server; maybe later
-([roadmap](../roadmap/spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)).
-Today an application that logs its users in through Keycloak, Auth0, ...
-gets the token on the client side (a single-page or Flutter app), and the
-starter checks it on every request.
+## Single sign-on: oauth2Login
+
+Users log in at an identity provider (Keycloak, Google, GitHub, Auth0,
+Okta, ...) instead of with a password of the application: the browser is
+sent to the provider's login page and comes back logged in. This is
+OAuth 2.0's authorization code flow, with OpenID Connect when the
+provider has it; the server is the client, with its own secret.
+
+Use it for pages rendered by the server, and for a **Flutter web app**:
+the server is the app's backend (BFF), keeps the tokens, and the browser
+holds only the session cookie (`HttpOnly`), which no injected script can
+read. A web page has no safe place for tokens, so it never gets them.
+Native apps log in themselves (`OAuth2LoginService` of
+[the OAuth2 client](../spring_boot_starter_oauth2_client/README.md)) and
+send their access token; a chain can accept both (below). The reasons:
+[roadmap](../roadmap/spring_boot_starter_oauth2_client.md#which-flow-where-the-security-decision).
+
+Configure a registration, as in Spring Boot, and the default chain logs
+browsers in through it:
+
+```properties
+spring.security.oauth2.client.registration.keycloak.client-id=neon-web
+spring.security.oauth2.client.registration.keycloak.client-secret=${KEYCLOAK_SECRET}
+spring.security.oauth2.client.registration.keycloak.scope=openid,profile,email
+spring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon
+```
+
+The provider must accept the redirect URI
+`{baseUrl}/login/oauth2/code/{registrationId}`
+(`http://localhost:8080/login/oauth2/code/keycloak`). Or in a chain of
+your own:
+
+```dart
+@Bean()
+SecurityFilterChain web(
+  HttpSecurity http,
+  ClientRegistrationRepository registrations,
+) => http
+    .authorizeHttpRequests((auth) => auth
+        .requestMatchers('/', '/public/**').permitAll()
+        .anyRequest().authenticated())
+    .oauth2Login((login) => login
+        // The Flutter web app, served from another port of the same site.
+        .defaultSuccessUrl('http://localhost:5050/', alwaysUse: true))
+    // Native apps send the provider's access tokens.
+    .oauth2ResourceServer((server) => server.jwt())
+    // Logging out ends the session at the provider too.
+    .logout((logout) => logout.logoutSuccessHandler(
+        OidcClientInitiatedLogoutSuccessHandler(
+          registrations,
+          postLogoutRedirectUri: '{baseUrl}/',
+        )))
+    .build();
+```
+
+What happens:
+
+1. A browser that must log in goes to the generated login page, which
+   lists the registrations; with exactly one (and no form login) it goes
+   straight to `/oauth2/authorization/{registrationId}`. Scripts
+   (`X-Requested-With: XMLHttpRequest`) go to the login page. With
+   `oauth2ResourceServer` too, programs asking for JSON get a `401`
+   instead, which a Flutter web app turns into a navigation to
+   `/oauth2/authorization/keycloak`.
+2. `/oauth2/authorization/{registrationId}` keeps a new authorization
+   request in the session (a random `state`, a PKCE verifier, an OpenID
+   Connect `nonce`) and redirects to the provider. An unknown
+   registration is a `400`.
+3. The provider redirects back to `/login/oauth2/code/{registrationId}`.
+   The saved request is taken by its `state` and removed (a callback works
+   once); a callback without one, with another `state`, or for another
+   registration fails. An `error` from the provider fails, so does an
+   `iss` parameter (RFC 9207) of another issuer.
+4. The code is exchanged at the token endpoint with the PKCE verifier and
+   the exact redirect URI of the request. The ID token's signature is
+   checked with the provider's keys (its JWK Set: `alg: none`, another
+   key or an unknown `kid` fail), then its issuer, audience, `azp`,
+   expiry and `nonce`. The user info is loaded; its `sub` must be the ID
+   token's. The authorities (`OIDC_USER`, `SCOPE_*`) go through the
+   `GrantedAuthoritiesMapper` bean, if any.
+5. The session gets a new id, keeps the user and the tokens (the
+   `OAuth2AuthorizedClientRepository`), and the browser goes back to the
+   page it wanted, else to `defaultSuccessUrl` (`/`). That URL is
+   configuration, a path or an absolute `http(s)` URL: nothing in the
+   request can send the browser elsewhere. A failure goes to
+   `/login?error`, without its reason.
+
+| `oauth2Login` option | Default |
+|---|---|
+| `loginPage` | the generated page at `/login` |
+| `defaultSuccessUrl(url, alwaysUse:)` | `/`; the saved page first |
+| `failureUrl`, `successHandler`, `failureHandler` | `/login?error`; the redirects |
+| `authorizationEndpoint`: `baseUri`, `authorizationRequestRepository`, `authorizationRequestResolver` | `/oauth2/authorization`, the session, `DefaultOAuth2AuthorizationRequestResolver` |
+| `redirectionEndpoint`: `baseUri` (or `loginProcessingUrl`) | `/login/oauth2/code/*` |
+| `tokenEndpoint`: `accessTokenResponseClient` | the bean, else on the `HttpTransport` |
+| `userInfoEndpoint`: `userService`, `oidcUserService`, `userAuthoritiesMapper` | the beans, else `DefaultOAuth2UserService`, `OidcUserService`, none |
+| `clientRegistrationRepository`, `authorizedClientRepository`, `authorizedClientService` | the beans |
+| `idTokenDecoder` | the `OidcIdTokenDecoder` bean, an `OidcIdTokenDecoderFactory` (signatures checked) |
+
+A controller gets the user as `@AuthenticationPrincipal() OAuth2User user`
+(an `OidcUser` with OpenID Connect), and the tokens from the
+`OAuth2AuthorizedClientRepository` bean. The session cookie must reach
+the callback, a top-level redirect from the provider: keep it
+`SameSite=Lax` (the default), not `Strict`. A Flutter web app and the
+server must be on the same site (`localhost` with two ports,
+`app.example.com` and `api.example.com`), and the app's requests must
+send cookies (`credentials: 'include'`) and the CSRF token on `POST`,
+`PUT` and `DELETE`.
 
 ## In controllers
 
@@ -431,5 +534,15 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   through `/error`).
 - **`SessionCreationPolicy`** has `ifRequired` (the default) and
   `stateless` only, not `always` and `never`.
+- **`oauth2Login()`** also checks that the callback came to the redirect
+  URI of its own login (no mixed-up registrations), and the RFC 9207 `iss`
+  parameter; PKCE is used for confidential clients too. The OAuth2
+  client's `TokenEndpointOidcIdTokenDecoder` (for apps, it trusts TLS) is
+  never taken for it: ID token signatures are always checked. The login
+  page never shows why a login failed. With both OAuth2 clients and a
+  `JwtDecoder`, the default chain accepts bearer tokens too (Spring Boot's
+  has `oauth2Login()` only). The callback reads the query only
+  (`response_mode=form_post` is not supported). Not yet compared with
+  Spring by the differential test.
 
 How the packages are shown to be safe: [docs/security.md](../docs/security.md).

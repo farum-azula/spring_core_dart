@@ -82,13 +82,21 @@ HttpSessionManager newSessions() => HttpSessionManager(
 
 /// A browser over `chain`: keeps cookies, sends them back.
 final class ChainClient {
-  /// A client of [chain]; [sessions] to share them between clients.
-  ChainClient(SecurityFilterChain chain, {HttpSessionManager? sessions})
-    : sessions = sessions ?? newSessions(),
-      _proxy = FilterChainProxy([chain]);
+  /// A client of [chain]; [sessions] to share them between clients. With
+  /// [contextPath], requests are sent to paths under it and the chain sees
+  /// them without it, as behind the web starter's dispatcher.
+  ChainClient(
+    SecurityFilterChain chain, {
+    HttpSessionManager? sessions,
+    this.contextPath = '',
+  }) : sessions = sessions ?? newSessions(),
+       _proxy = FilterChainProxy([chain]);
 
   /// The session store behind the chain.
   final HttpSessionManager sessions;
+
+  /// The context path the chain does not see; `''` for none.
+  final String contextPath;
 
   final FilterChainProxy _proxy;
 
@@ -114,7 +122,11 @@ final class ChainClient {
       setForm(request, form);
     }
     final application = Application();
-    await _proxy.doFilter(request, response, application);
+    await _proxy.doFilter(
+      contextPath.isEmpty ? request : ContextPathRequest(request, contextPath),
+      response,
+      application,
+    );
     for (final cookie in response.cookies) {
       if (cookie.maxAge == Duration.zero) {
         cookies.remove(cookie.name);
@@ -154,6 +166,26 @@ final class ChainClient {
       passwordField: password,
       '_csrf': token,
     });
+  }
+}
+
+/// [delegate] as the dispatcher passes it on behind [contextPath]: its
+/// [path] without the context path, its `uri` whole.
+final class ContextPathRequest extends ServerHttpRequestDecorator {
+  /// The request [delegate] under [contextPath].
+  ContextPathRequest(super.delegate, this.contextPath);
+
+  /// The context path, such as `/shop`.
+  final String contextPath;
+
+  @override
+  String get path {
+    final full = delegate.path;
+    if (!full.startsWith(contextPath)) {
+      return full;
+    }
+    final rest = full.substring(contextPath.length);
+    return rest.isEmpty ? '/' : rest;
   }
 }
 

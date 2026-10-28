@@ -143,13 +143,16 @@ Run it from the package folder of the
 dart run example/main.dart
 ```
 
-After the banner it prints:
+After the banner it logs (the logger is named `tour`):
 
 ```text
-event: Ada registered
-Hello, Ada!
-answer: 42
+[tour] INFO: event: Ada registered
+[tour] INFO: Hello, Ada!
+[tour] INFO: answer: 42
 ```
+
+Without a logging starter only warnings show, so `main` sets
+`logging.level.tour=info` as a default property.
 
 A command-line argument overrides the setting:
 
@@ -169,8 +172,9 @@ its constructor is created first and passed in.
 
 ```dart
 @Service()
+@Log()
 class Mailer {
-  void send(String text) => print('mail: $text');
+  void send(String text) => log.info('mail: $text');
 }
 
 @Service()
@@ -183,7 +187,8 @@ class Orders {
 ```
 
 Every object is created once and shared (a *singleton*), so all classes
-get the same `Mailer`.
+get the same `Mailer`. `@Log()` gives a class a `log` getter, like
+Lombok's `@Slf4j`; the snippets below log through it instead of printing.
 
 ### 2. Depend on an interface, pick the implementation
 
@@ -313,12 +318,13 @@ closes.
 
 ```dart
 @Service()
+@Log()
 class Cache {
   @PostConstruct()
-  void warmUp() => print('loading cache');   // after the dependencies are set
+  void warmUp() => log.info('loading cache');   // after the dependencies are set
 
   @PreDestroy()
-  void flush() => print('saving cache');     // on context.close()
+  void flush() => log.info('saving cache');     // on context.close()
 }
 ```
 
@@ -339,9 +345,10 @@ class Orders {
 }
 
 @Service()
+@Log()
 class Emails {
   @EventListener()
-  void onOrder(OrderPlaced order) => print('email for order ${order.id}');
+  void onOrder(OrderPlaced order) => log.info('email for order ${order.id}');
 }
 ```
 
@@ -371,7 +378,7 @@ class Timed {
   const Timed();
 }
 
-@Aspect() @Component()
+@Aspect() @Component() @Log()
 class TimingAspect {
   @Around('@annotation(Timed)')
   Object? time(ProceedingJoinPoint call) {
@@ -379,7 +386,7 @@ class TimingAspect {
     try {
       return call.proceed();                    // the real method
     } finally {
-      print('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
+      log.info('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
     }
   }
 }
@@ -421,7 +428,7 @@ final binder = DataBinder(SignUp(), introspector: introspector)
   ..validate();
 
 for (final error in binder.bindingResult.allErrors) {
-  print(context.getMessageFromResolvable(error)); // e.g. "must not be blank"
+  log.info(context.getMessageFromResolvable(error)); // e.g. "must not be blank"
 }
 ```
 
@@ -482,10 +489,11 @@ for logging, wrapping or registering objects:
 
 ```dart
 @Component()
+@Log()
 class Audit extends BeanPostProcessor {
   @override
   Object postProcessAfterInitialization(Object bean, String name) {
-    print('created $name');
+    log.info('created $name');
     return bean; // or a wrapper around it
   }
 }

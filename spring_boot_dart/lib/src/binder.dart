@@ -208,7 +208,7 @@ final class BindResult<T> {
 ///     TypeInfo<Object?> target,
 ///     Object? result,
 ///   ) {
-///     print('bound $name');
+///     log.info('bound $name');
 ///     return result;
 ///   }
 /// }

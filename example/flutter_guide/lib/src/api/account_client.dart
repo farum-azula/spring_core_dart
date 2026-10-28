@@ -10,9 +10,10 @@ abstract interface class AccountClient {
   @PostMapping.of(path: '/login', consumes: MediaType.applicationFormUrlencoded)
   Future<ResponseEntity<void>> login(@RequestBody() Map<String, String> form);
 
-  /// `POST /api/logout`: 204.
+  /// `POST /api/logout`: 204, or 200 with the URL of Keycloak's logout
+  /// (the web app's Keycloak login).
   @PostMapping('/logout')
-  Future<void> logout();
+  Future<ResponseEntity<LoggedOutAnswer>> logout();
 
   /// `GET /api/me`: who the session belongs to.
   @GetMapping('/me')

@@ -25,7 +25,7 @@
 ///
 /// // Client: a Feign method returning EventStream<Order>.
 /// client.events().events.listen((ServerSentEvent<Order> e) {
-///   print('${e.id} ${e.event}: ${e.data.status}');
+///   log.info('${e.id} ${e.event}: ${e.data.status}');
 /// });
 /// ```
 ///

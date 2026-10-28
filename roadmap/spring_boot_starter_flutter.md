@@ -23,7 +23,7 @@ signals (reactive state) and a Rust bridge.
 | `hive`, `shared_preferences` wrappers (settings, storage) | `@ConfigurationProperties` saved in `shared_preferences`; SQLite through the Data starter |
 | `easy_localization` (texts) | `MessageSource` with `messages_{locale}.properties`, following the app's `Locale` |
 | `workmanager`, hand-made timers (background work) | `@Scheduled` and the `TaskExecutor` (worker isolates), following the app lifecycle |
-| `flutter_secure_storage` (tokens) | a `TokenStore` bean on the Keychain / Keystore through own platform channels |
+| `flutter_secure_storage`, `flutter_web_auth` (tokens, login) | a `TokenStore` bean on the Keychain / Keystore / DPAPI / libsecret and the system login browser, own platform code (done) |
 | `logger` | `SpringLog` (on by default), log files in the app's directory, the logs in the Actuator (planned) |
 | `mocktail` setups (tests) | `springBootTest` and `BeanOverride` under `flutter_test` (done) |
 
@@ -52,7 +52,7 @@ exclude: [AppPlatform.web])` on top of the platform profiles (an
 annotation with enums that the generator turns into a profile expression;
 not `@Platform`, which `dart:io` already has), navigation (`@Route`, the
 `route` scope, `AppNavigator`), settings
-in `shared_preferences`, the `TokenStore`, beans kept in fields that
+in `shared_preferences`, beans kept in fields that
 survive a hot reload; later an Actuator screen (logs, beans, environment,
 conditions) on the endpoints of [spring_boot_actuator](spring_boot_actuator.md).
 
@@ -337,11 +337,29 @@ command line and OS environment:
 
 ## Tokens and secrets of the user
 
-A `TokenStore` bean on the iOS / macOS Keychain and the Android Keystore
-through own platform channels (no community plugin), used by Feign and
-WebSocket interceptors and by
-[the OAuth2 client](spring_boot_starter_oauth2_client.md) to keep the login
-across restarts.
+Done (October 2026): the starter is a Flutter plugin with its own platform
+code (no community plugin). `SecureTokenStore` is the `TokenStore` bean of
+[the OAuth2 client](spring_boot_starter_oauth2_client.md), which keeps the
+login across restarts: the Keychain on iOS and macOS (generic passwords,
+`AfterFirstUnlockThisDeviceOnly`, not synced; on macOS the data protection
+keychain for builds signed with a team, the login keychain for builds
+signed to run locally, which get `errSecMissingEntitlement`), an
+AES-256-GCM key of the Android Keystore with the values in a private
+preferences file (undecryptable values deleted), DPAPI files on Windows
+and the Secret Service through libsecret on Linux (both `dart:ffi`, no
+native build; never a plain-file fallback). None on the web: the server
+logs in. `PlatformAuthorizationBrowser` is the `AuthorizationBrowser`
+bean on Android (Custom Tabs; the redirect caught by the starter's
+`RedirectReceiverActivity`, which an app that logs in declares with its
+scheme in its manifest, so apps without a login configure nothing), iOS
+and macOS (`ASWebAuthenticationSession`). Both are registered unless the
+app has its own, before the OAuth2 client's module. Run on the macOS
+desktop, the iOS simulator and an Android emulator
+(`example/flutter_guide/integration_test`); the Windows and Linux stores
+are untested on a device.
+
+Next: the token on Feign and WebSocket interceptors (the OAuth2 client's
+`OAuth2AccessTokenInterceptor`), the Windows and Linux stores run on CI.
 
 ## Hot reload without code
 

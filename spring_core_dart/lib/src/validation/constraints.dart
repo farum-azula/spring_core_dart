@@ -374,7 +374,7 @@ final class ConstraintViolationBuilder {
 /// try {
 ///   validator.validateObject(form);
 /// } on ValidationException catch (e) {
-///   print(e.message); // a wrong declaration, not an invalid form
+///   log.error(e.message); // a wrong declaration, not an invalid form
 /// }
 /// ```
 ///

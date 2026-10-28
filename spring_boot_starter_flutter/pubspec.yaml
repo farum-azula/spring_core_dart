@@ -1,6 +1,6 @@
 name: spring_boot_starter_flutter
 description: >-
-  Spring Boot for Flutter apps: SpringApplicationWidget starts the app, beans in widgets (context.bean, generated getters, SpringStatelessWidget), lifecycle, platform profiles.
+  Spring Boot for Flutter apps: SpringApplicationWidget, beans in widgets, lifecycle, platform profiles, themes, login tokens in the Keychain / Keystore.
 version: 0.4.2
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
@@ -18,7 +18,13 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  # The plugin's web entry (it registers nothing: the web has no secure
+  # storage and logs in on the server).
+  flutter_web_plugins:
+    sdk: flutter
   spring_boot_dart: ^0.4.2
+  # TokenStore and AuthorizationBrowser, implemented here on the platform.
+  spring_boot_starter_oauth2_client: ^0.4.2
   spring_boot_starter_logging: ^0.4.2
 
 dev_dependencies:
@@ -27,5 +33,33 @@ dev_dependencies:
   spring_core_dart_generator: ^0.4.2
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   spring_boot_starter_test: ^0.4.2
   lints: ^6.0.0
+
+# A Flutter plugin: its own platform code keeps tokens in the platform's
+# secure storage and opens the login page in the system browser (no
+# community plugins). Windows and Linux call the OS from Dart (dart:ffi),
+# so they build nothing native; the web registers nothing.
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.farumazula.spring_boot_starter_flutter
+        pluginClass: SpringBootStarterFlutterPlugin
+      ios:
+        pluginClass: SpringBootStarterFlutterPlugin
+        sharedDarwinSource: true
+      macos:
+        pluginClass: SpringBootStarterFlutterPlugin
+        sharedDarwinSource: true
+      windows:
+        dartPluginClass: SpringBootStarterFlutterDesktop
+        fileName: src/plugin/desktop_plugin.dart
+      linux:
+        dartPluginClass: SpringBootStarterFlutterDesktop
+        fileName: src/plugin/desktop_plugin.dart
+      web:
+        pluginClass: SpringBootStarterFlutterWeb
+        fileName: src/plugin/web_plugin.dart

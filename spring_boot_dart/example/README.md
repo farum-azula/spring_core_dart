@@ -9,7 +9,7 @@ explains clearly what is wrong when something cannot start.
 
 [`example.dart`](example.dart) is a small but complete application: a
 `@ConfigurationProperties` class for its settings, a `@Service` that
-uses them, a `CommandLineRunner` that prints a greeting at start-up, and
+uses them, a `CommandLineRunner` that logs a greeting at start-up, and
 `@SpringBootApplication` on `main`.
 
 ## Run it
@@ -30,13 +30,16 @@ From the `spring_boot_dart` directory:
 
 ```bash
 dart run build_runner build                         # writes example/example.spring.dart
-dart run example/example.dart                       # Hello, World!
-dart run example/example.dart --greeting.name=Ada   # Hello, Ada!
-GREETING_NAME=Grace dart run example/example.dart   # Hello, Grace!
+dart run example/example.dart                       # [greeting] INFO: Hello, World!
+dart run example/example.dart --greeting.name=Ada   # [greeting] INFO: Hello, Ada!
+GREETING_NAME=Grace dart run example/example.dart   # [greeting] INFO: Hello, Grace!
 dart run example/example.dart --greeting.times=3    # three times
 ```
 
-The greeting comes after the start-up banner. The sections below walk
+The greeting is logged after the start-up banner, by the `greeting`
+logger (`@Log(topic: 'greeting')`). Without the logging starter only
+warnings show, so the example sets `logging.level.greeting=info` as a
+default property in `main`. The sections below walk
 through what the example uses, and the next steps of a real
 application.
 
@@ -138,12 +141,13 @@ command line or environment).
 ```dart
 // Says hello once everything is ready.
 @Component()
+@Log()
 class Greeting implements CommandLineRunner {
   Greeting(this.properties);
   final ShopProperties properties;
 
   @override
-  void run(List<String> args) => print('${properties.name} is open!');
+  void run(List<String> args) => log.info('${properties.name} is open!');
 }
 ```
 

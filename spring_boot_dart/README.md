@@ -728,7 +728,7 @@ registered on the application itself:
 // The active profiles, before any bean is created.
 void main(List<String> args) => (springApplication
       ..addListener<ApplicationEnvironmentPreparedEvent>(
-        (event) => print(event.environment.activeProfiles),
+        (event) => log.info(event.environment.activeProfiles),
       ))
     .run(args);
 
@@ -871,6 +871,7 @@ Runners are the place for "on start-up" work:
 
 ```dart
 @Component()
+@Log()
 class StartupTasks implements CommandLineRunner {
   StartupTasks(this.db, this.analytics);
   final Database db;
@@ -880,7 +881,7 @@ class StartupTasks implements CommandLineRunner {
   void run(List<String> args) {
     db.migrate();                    // update the database schema
     analytics.track('app_started');  // "the app was opened"
-    print('Shop is open!');
+    log.info('Shop is open!');
   }
 }
 ```

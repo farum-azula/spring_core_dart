@@ -25,8 +25,8 @@ import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 /// final result = BeanPropertyBindingResult(form, 'signup')
 ///   ..reject('passwordsMismatch', defaultMessage: 'passwords differ');
 /// final error = result.globalError!;
-/// print(error.codes); // [passwordsMismatch.signup, passwordsMismatch]
-/// print(messageSource.getMessageFromResolvable(error));
+/// log.info(error.codes); // [passwordsMismatch.signup, passwordsMismatch]
+/// log.info(messageSource.getMessageFromResolvable(error));
 /// ```
 ///
 /// Spring (Java):
@@ -466,11 +466,11 @@ abstract interface class Errors {
 /// field values, and lets framework code add prepared errors.
 ///
 /// ```dart
-/// // Print each field error after binding a form.
+/// // Log each field error after binding a form.
 /// final result = binder.bindingResult;
 /// if (result.hasErrors) {
 ///   for (final error in result.fieldErrors()) {
-///     print('${error.field}: ${error.defaultMessage}');
+///     log.warning('${error.field}: ${error.defaultMessage}');
 ///   }
 /// }
 /// ```
@@ -480,7 +480,7 @@ abstract interface class Errors {
 /// BindingResult result = binder.getBindingResult();
 /// if (result.hasErrors()) {
 ///   for (FieldError error : result.getFieldErrors()) {
-///     System.out.println(error.getField() + ": "
+///     log.warn(error.getField() + ": "
 ///         + error.getDefaultMessage());
 ///   }
 /// }
@@ -940,7 +940,7 @@ class MapBindingResult extends AbstractBindingResult {
 /// try {
 ///   final model = binder.close();
 /// } on BindException catch (e) {
-///   print(e.bindingResult.errorCount);
+///   log.warning(e.bindingResult.errorCount);
 /// }
 /// ```
 ///
@@ -949,7 +949,7 @@ class MapBindingResult extends AbstractBindingResult {
 /// try {
 ///   Map<?, ?> model = binder.close();
 /// } catch (BindException e) {
-///   System.out.println(e.getBindingResult().getErrorCount());
+///   log.warn("{} errors", e.getBindingResult().getErrorCount());
 /// }
 /// ```
 class BindException implements Exception {

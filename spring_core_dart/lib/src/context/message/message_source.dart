@@ -247,7 +247,7 @@ abstract interface class HierarchicalMessageSource implements MessageSource {
 /// try {
 ///   source.getMessage('unknown');
 /// } on NoSuchMessageException catch (e) {
-///   print(e.code); // unknown
+///   log.warning(e.code); // unknown
 /// }
 /// ```
 ///

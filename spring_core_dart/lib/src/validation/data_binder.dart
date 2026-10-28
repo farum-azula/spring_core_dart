@@ -100,7 +100,7 @@ final class MapValueResolver implements ValueResolver {
 ///   ..bind({'name': 'Ada', 'age': '36', 'address.city': 'Oslo'})
 ///   ..validate();
 /// if (binder.bindingResult.hasErrors) {
-///   print(binder.bindingResult.fieldErrors());
+///   log.warning(binder.bindingResult.fieldErrors());
 /// }
 /// // {signup: form, BindingResult.signup: ...}; throws on errors.
 /// final model = binder.close();

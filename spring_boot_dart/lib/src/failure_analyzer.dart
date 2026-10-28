@@ -113,7 +113,7 @@ abstract interface class FailureAnalyzer {
 ///   error,
 ///   analyzers: [PortInUseFailureAnalyzer()],
 /// );
-/// print(analysis?.report ?? 'Application run failed: $error');
+/// log.error(analysis?.report ?? 'Application run failed: $error');
 /// ```
 ///
 /// Spring (Java): what Spring Boot's `FailureAnalyzers` does.

@@ -19,10 +19,11 @@
 /// @Aspect()
 /// @Component()
 /// @Order(1)
+/// @Log()
 /// class AuditAspect {
 ///   @Before('execution(* Calculator.*(..))')
 ///   void before(JoinPoint joinPoint) =>
-///       print('calling ${joinPoint.signature.name}${joinPoint.args}');
+///       log.info('calling ${joinPoint.signature.name}${joinPoint.args}');
 /// }
 /// ```
 ///
@@ -31,10 +32,11 @@
 /// @Aspect
 /// @Component
 /// @Order(1)
+/// @Slf4j
 /// class AuditAspect {
 ///   @Before("execution(* Calculator.*(..))")
 ///   void before(JoinPoint joinPoint) {
-///     System.out.println("calling " + joinPoint.getSignature().getName());
+///     log.info("calling " + joinPoint.getSignature().getName());
 ///   }
 /// }
 /// ```
@@ -139,13 +141,14 @@ class DeclareParents {
 /// ```dart
 /// @Aspect()
 /// @Component()
+/// @Log()
 /// class AuditAspect {
 ///   // Every Calculator method, named once.
 ///   @Pointcut('execution(* Calculator.*(..))')
 ///   void calculator() {}
 ///
 ///   @After('calculator() && !execution(* *.slowAdd(..))')
-///   void after() => print('done');
+///   void after() => log.info('done');
 /// }
 /// ```
 ///
@@ -153,12 +156,13 @@ class DeclareParents {
 /// ```java
 /// @Aspect
 /// @Component
+/// @Slf4j
 /// class AuditAspect {
 ///   @Pointcut("execution(* Calculator.*(..))")
 ///   void calculator() {}
 ///
 ///   @After("calculator() && !execution(* *.slowAdd(..))")
-///   void after() { System.out.println("done"); }
+///   void after() { log.info("done"); }
 /// }
 /// ```
 class Pointcut {
@@ -317,14 +321,14 @@ class AfterThrowing {
 /// asynchronous.
 ///
 /// ```dart
-/// // Prints how long each method marked @Timed() takes.
+/// // Logs how long each method marked @Timed() takes.
 /// @Around('@annotation(Timed)')
 /// Object? time(ProceedingJoinPoint joinPoint) {
 ///   final watch = Stopwatch()..start();
 ///   try {
 ///     return joinPoint.proceed();
 ///   } finally {
-///     print('${joinPoint.toShortString()} took ${watch.elapsed}');
+///     log.info('${joinPoint.toShortString()} took ${watch.elapsed}');
 ///   }
 /// }
 /// ```
@@ -337,7 +341,7 @@ class AfterThrowing {
 ///   try {
 ///     return joinPoint.proceed();
 ///   } finally {
-///     System.out.println(joinPoint.toShortString() + " took "
+///     log.info(joinPoint.toShortString() + " took "
 ///         + (System.nanoTime() - start));
 ///   }
 /// }

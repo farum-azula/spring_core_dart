@@ -30,13 +30,13 @@ dart run build_runner build
 dart run example/example.dart
 ```
 
-After the startup lines it prints:
+After the startup lines it logs, through the `example` logger:
 
 ```text
-loads: 1
-loads after evict: 2
-12.5
-(prices:978-0)
+... example : loads: 1
+... example : loads after evict: 2
+... example : price: 12.5
+... example : stored: (prices:978-0)
 ```
 
 The book is loaded once for two calls; after the eviction it is loaded
@@ -57,7 +57,7 @@ class Books {
 }
 ```
 
-Another bean (here `main`) calls `books.find('978-0')` twice: the API is
+Another bean (here the `CacheTour` runner) calls `books.find('978-0')` twice: the API is
 asked once. A `Future` method caches the book, not the future. Calls
 through `this` inside `Books` skip the cache, as in Spring, because
 caching works through the bean's generated proxy.

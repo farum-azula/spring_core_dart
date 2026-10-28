@@ -28,14 +28,15 @@ dart run build_runner build
 dart run example/example.dart
 ```
 
-After the banner and the startup log lines, it prints:
+After the banner and the startup log lines, it logs, through the
+`example` logger (the two refusals as warnings):
 
-```
-cancelled 1
-[Order(1 of ada)]
-find 2: Access Denied
-login: Bad credentials
-[Order(1 of ada), Order(2 of bob)]
+```text
+... INFO  ... example : cancelled 1
+... INFO  ... example : [Order(1 of ada)]
+... WARN  ... example : find 2: Access Denied
+... WARN  ... example : login: Bad credentials
+... INFO  ... example : [Order(1 of ada), Order(2 of bob)]
 ```
 
 Line by line:

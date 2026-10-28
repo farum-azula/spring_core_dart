@@ -13,9 +13,10 @@
 /// // Logs every call to OrderService.
 /// @Aspect()
 /// @Component()
+/// @Log()
 /// class Auditing {
 ///   @Before('execution(* OrderService.*(..))')
-///   void audit(JoinPoint joinPoint) => print(joinPoint.toShortString());
+///   void audit(JoinPoint joinPoint) => log.info(joinPoint.toShortString());
 /// }
 /// ```
 ///

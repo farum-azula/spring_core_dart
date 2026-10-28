@@ -41,6 +41,7 @@ const repositoryOnly = {
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',
   'spring_security_core',
+  'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
   'spring_boot_starter_flutter',
 };
@@ -61,9 +62,10 @@ const repositoryOnlyExceptions = {
       "SnakeYAML; the Dart team's YAML parser (spring_core_dart).",
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
-      '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2 and scrypt for the '
-      'security packages until a Dart team package has them; one file per '
-      'package uses it (docs/dependencies.md).',
+      '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
+      'for the security packages and the OAuth2 client until a Dart team '
+      'package has them; one file per package uses it '
+      '(docs/dependencies.md).',
 };
 
 /// A package allowed although it is not published by the Dart team.
@@ -109,9 +111,14 @@ const allowedPackages = {
   'pointycastle': AllowedPackage(
     "THIRD-PARTY, to be removed: Bouncy Castle's Dart port (verified "
     'publisher bouncycastle.org), the signatures of JWTs and the password '
-    'hashes of the security packages; cryptography must not be written by '
-    'hand (docs/security.md). See docs/dependencies.md.',
-    onlyIn: {'spring_security_core', 'spring_boot_starter_security'},
+    'hashes of the security packages, the SHA-256 of PKCE in the OAuth2 '
+    'client; cryptography must not be written by hand (docs/security.md). '
+    'See docs/dependencies.md.',
+    onlyIn: {
+      'spring_security_core',
+      'spring_boot_starter_oauth2_client',
+      'spring_boot_starter_security',
+    },
   ),
   'node_preamble': AllowedPackage(
     'Pulled by package:test (Dart team) for browser tests; it has no '

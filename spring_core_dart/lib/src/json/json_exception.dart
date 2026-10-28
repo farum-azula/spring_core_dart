@@ -12,7 +12,7 @@
 /// try {
 ///   mapper.readValue<Order>(json);
 /// } on JsonMappingException catch (error) {
-///   print(error); // items[2].price: expected a number, got "abc"
+///   log.warning(error); // items[2].price: expected a number, got "abc"
 /// }
 /// ```
 ///

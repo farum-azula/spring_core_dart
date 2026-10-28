@@ -3,11 +3,20 @@
 
 import 'dart:math';
 
+import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
+    show
+        ClientRegistrationRepository,
+        DelegatingOAuth2TokenValidator,
+        OAuth2AuthorizedClientService,
+        OAuth2ClientProperties,
+        OidcIdTokenDecoder;
 import 'package:spring_boot_starter_security/src/config/http_security.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
+import 'package:spring_boot_starter_security/src/oauth2/authorized_client_repository.dart';
+import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
 import 'package:spring_boot_starter_security/src/web/arguments.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 import 'package:spring_boot_starter_security/src/web/firewall.dart';
@@ -175,6 +184,39 @@ final class _OnNoResourceServerProperties implements Condition {
       !SecurityProperties.of(context.environment).hasResourceServer;
 }
 
+// OAuth2 clients: a ClientRegistrationRepository bean registered before
+// (the application's, or the OAuth2 client starter's from the properties)
+// or, for the modules registered before that starter, the properties.
+final class _OnClientRegistrations implements Condition {
+  const _OnClientRegistrations();
+
+  @override
+  bool matches(ConditionContext context) =>
+      OAuth2ClientProperties.hasRegistrations(context.environment) ||
+      context.beanFactory
+          .getBeanNamesForType(ClientRegistrationRepository)
+          .isNotEmpty;
+}
+
+// No OAuth2 clients, or a default user asked for with
+// spring.security.user.name or .password: Spring Boot's
+// MissingAlternativeOrUserPropertiesConfigured.
+final class _OnNoClientRegistrationsOrUserProperties implements Condition {
+  const _OnNoClientRegistrationsOrUserProperties();
+
+  @override
+  bool matches(ConditionContext context) {
+    final environment = context.environment;
+    bool set(String key) =>
+        (environment.getProperty(key)?.trim() ?? '').isNotEmpty;
+    return context.beanFactory
+            .getBeanNamesForType(ClientRegistrationRepository)
+            .isEmpty ||
+        set('spring.security.user.name') ||
+        set('spring.security.user.password');
+  }
+}
+
 /// Makes a JWT readable in method security expressions:
 /// `principal.subject`, `principal.claims['tenant']`, and
 /// `authentication.token` or `authentication.tokenAttributes`.
@@ -237,8 +279,15 @@ String _generatedPassword() {
 /// - `httpSecurity`: a new [HttpSecurity] for every `SecurityFilterChain`
 ///   bean method (a prototype).
 /// - `defaultSecurityFilterChain`, unless the application declares a
-///   `SecurityFilterChain`: every request needs a login, with form login
-///   and HTTP Basic, or with bearer tokens when there is a `JwtDecoder`.
+///   `SecurityFilterChain`: every request needs a login, with
+///   `oauth2Login()` when OAuth2 clients are configured (a
+///   `ClientRegistrationRepository`; with a `JwtDecoder` too, bearer
+///   tokens are accepted beside it), else with bearer tokens when there
+///   is a `JwtDecoder`, else with form login and HTTP Basic.
+/// - `authorizedClientRepository`, when OAuth2 clients are configured: an
+///   [AuthenticatedPrincipalOAuth2AuthorizedClientRepository] on the
+///   `OAuth2AuthorizedClientService`, unless the application declares an
+///   `OAuth2AuthorizedClientRepository`.
 /// - `securityFilterChain`: the [FilterChainProxy] web filter over all
 ///   chains, at `spring.security.filter.order`, behind the `HttpFirewall`
 ///   bean or a [StrictHttpFirewall]. Startup fails when a chain that
@@ -247,7 +296,8 @@ String _generatedPassword() {
 ///   `spring.security.user.*`, unless the application has a
 ///   `UserDetailsService`, an `AuthenticationProvider`, an
 ///   `AuthenticationManager` or a `JwtDecoder`, or sets the resource server
-///   properties. Without a password property, a random one is generated
+///   properties, or has OAuth2 clients (unless `spring.security.user.name`
+///   or `.password` is set). Without a password property, a random one is generated
 ///   and logged at startup, for development only. Without a
 ///   `PasswordEncoder` bean the password is stored as `{noop}` unless it
 ///   already starts with an `{id}`; with one, it is stored as given, so it
@@ -262,8 +312,12 @@ String _generatedPassword() {
 ///
 /// Spring (Java): Spring Boot's `SecurityAutoConfiguration`,
 /// `SpringBootWebSecurityConfiguration`,
-/// `UserDetailsServiceAutoConfiguration` and
-/// `OAuth2ResourceServerAutoConfiguration`.
+/// `UserDetailsServiceAutoConfiguration`,
+/// `OAuth2ResourceServerAutoConfiguration` and
+/// `OAuth2ClientWebSecurityAutoConfiguration`. With both OAuth2 clients
+/// and a `JwtDecoder`, Spring Boot's default chain has `oauth2Login()`
+/// only; here it accepts bearer tokens too (browsers log in, native apps
+/// send their tokens).
 final securityAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<HttpSecurity>(
     name: 'httpSecurity',
@@ -337,6 +391,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
           ],
         ),
         _OnNoResourceServerProperties(),
+        _OnNoClientRegistrationsOrUserProperties(),
       ]),
     ],
     create: (r) {
@@ -377,11 +432,37 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
       final http = r.dependency<HttpSecurity>().authorizeHttpRequests(
         (auth) => auth.anyRequest().authenticated(),
       );
-      if (r.optionalDependency<JwtDecoder>() != null) {
+      final jwt = r.optionalDependency<JwtDecoder>() != null;
+      if (r.optionalDependency<ClientRegistrationRepository>() != null) {
+        http.oauth2Login();
+        if (jwt) {
+          http.oauth2ResourceServer((server) => server.jwt());
+        }
+        return http.build();
+      }
+      if (jwt) {
         return http.oauth2ResourceServer((server) => server.jwt()).build();
       }
       return http.formLogin().httpBasic().build();
     },
+  ),
+  BeanDefinition<OAuth2AuthorizedClientRepository>(
+    name: 'authorizedClientRepository',
+    factoryMethodName: 'authorizedClientRepository',
+    types: const [
+      OAuth2AuthorizedClientRepository,
+      AuthenticatedPrincipalOAuth2AuthorizedClientRepository,
+    ],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.authorizedClientRepository', [
+        ConditionalOnBean(OAuth2AuthorizedClientService),
+        ConditionalOnMissingBean(OAuth2AuthorizedClientRepository),
+      ]),
+    ],
+    create: (r) => AuthenticatedPrincipalOAuth2AuthorizedClientRepository(
+      r.dependency<OAuth2AuthorizedClientService>(),
+    ),
   ),
   BeanDefinition<FilterChainProxy>(
     name: 'securityFilterChain',
@@ -439,3 +520,43 @@ final class _SecurityWebMvcConfigurer with WebMvcConfigurer {
   void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) =>
       resolvers.add(const SecurityArgumentResolver());
 }
+
+const _oauth2Source =
+    'package:spring_boot_starter_security#SecurityOAuth2ClientAutoConfiguration';
+
+/// The bean definitions the security starter adds before the OAuth2
+/// client starter's, so the latter's defaults step aside:
+///
+/// - `oidcIdTokenDecoder`, when OAuth2 clients are configured (a
+///   `spring.security.oauth2.client.registration.*` property or a
+///   `ClientRegistrationRepository` bean of the application): an
+///   [OidcIdTokenDecoderFactory] on the `HttpTransport` bean, which checks
+///   the signature of every ID token with the provider's JWK Set. The
+///   OAuth2 client starter's default trusts TLS instead (right for apps);
+///   on a server, the logins of `oauth2Login()`, the refreshed ID tokens
+///   of the authorized client manager and the `OAuth2LoginService` all
+///   use this one. An `OidcIdTokenDecoder` bean of the application
+///   replaces it.
+///
+/// Spring (Java): the `OidcIdTokenDecoderFactory` Spring Security's
+/// `OAuth2LoginConfigurer` creates when there is no
+/// `JwtDecoderFactory<ClientRegistration>` bean.
+final securityOAuth2ClientAutoConfiguration = <BeanDefinition<Object>>[
+  BeanDefinition<OidcIdTokenDecoder>(
+    name: 'oidcIdTokenDecoder',
+    factoryMethodName: 'oidcIdTokenDecoder',
+    types: const [OidcIdTokenDecoder, OidcIdTokenDecoderFactory],
+    source: _oauth2Source,
+    conditions: const [
+      ConditionGroup('$_oauth2Source.oidcIdTokenDecoder', [
+        _OnClientRegistrations(),
+        ConditionalOnMissingBean(OidcIdTokenDecoder),
+      ]),
+    ],
+    create: (r) => OidcIdTokenDecoderFactory(
+      fetcher: transportJwkFetcher(
+        r.optionalDependency<HttpTransport>() ?? platformHttpTransport(),
+      ),
+    ),
+  ),
+];

@@ -110,6 +110,7 @@ void main() {
       'status': 200,
       'body': {'isbn': '1'},
       'contentType': 'application/json',
+      'credentials': ['same-origin', 'include', 'omit'],
       // Node's fetch gives the redirect itself; a browser, status 0.
       'manual': 302,
       'manualStream': 302,

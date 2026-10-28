@@ -18,7 +18,7 @@ import 'package:spring_core_dart/src/core/log.dart';
 /// try {
 ///   context.refresh();
 /// } on ApplicationContextException catch (e) {
-///   print('${e.message}: ${e.cause}');
+///   log.error(e.message, error: e.cause);
 /// }
 /// ```
 ///

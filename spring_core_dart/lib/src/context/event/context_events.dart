@@ -13,10 +13,11 @@ import 'package:spring_core_dart/src/context/event/application_event.dart';
 /// ```dart
 /// // Logs every state change of every context.
 /// @Component()
+/// @Log()
 /// class ContextLog {
 ///   @EventListener()
 ///   void on(ApplicationContextEvent event) =>
-///       print('${event.runtimeType} of ${event.applicationContext.id}');
+///       log.info('${event.runtimeType} of ${event.applicationContext.id}');
 /// }
 /// ```
 ///
@@ -46,9 +47,10 @@ abstract class ApplicationContextEvent extends ApplicationEvent {
 ///
 /// ```dart
 /// @Component()
+/// @Log()
 /// class Warmup {
 ///   @EventListener()
-///   void onReady(ContextRefreshedEvent event) => print('ready');
+///   void onReady(ContextRefreshedEvent event) => log.info('ready');
 /// }
 /// ```
 ///
@@ -70,7 +72,7 @@ class ContextRefreshedEvent extends ApplicationContextEvent {
 /// after a `stop()`.
 ///
 /// ```dart
-/// context.addListener<ContextStartedEvent>((_) => print('started'));
+/// context.addListener<ContextStartedEvent>((_) => log.info('started'));
 /// context.start();
 /// ```
 ///
@@ -91,7 +93,7 @@ class ContextStartedEvent extends ApplicationContextEvent {
 /// context does not publish it (that is [ContextClosedEvent]).
 ///
 /// ```dart
-/// context.addListener<ContextStoppedEvent>((_) => print('stopped'));
+/// context.addListener<ContextStoppedEvent>((_) => log.info('stopped'));
 /// context.stop();
 /// ```
 ///
@@ -112,7 +114,7 @@ class ContextStoppedEvent extends ApplicationContextEvent {
 /// Spring 7.
 ///
 /// ```dart
-/// context.addListener<ContextRestartedEvent>((_) => print('resumed'));
+/// context.addListener<ContextRestartedEvent>((_) => log.info('resumed'));
 /// context.restart();
 /// ```
 ///
@@ -134,7 +136,7 @@ class ContextRestartedEvent extends ContextStartedEvent {
 /// Spring 7.
 ///
 /// ```dart
-/// context.addListener<ContextPausedEvent>((_) => print('paused'));
+/// context.addListener<ContextPausedEvent>((_) => log.info('paused'));
 /// context.pause();
 /// ```
 ///

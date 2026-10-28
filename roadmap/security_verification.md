@@ -13,10 +13,10 @@ comparisons with Spring Security itself.
 | Part | Status |
 |---|---|
 | 1. Threat model and rules | done: [docs/security.md](../docs/security.md) |
-| 2. Attack catalog as tests | done, except denial of service beyond the size limits (rate limits are documented as the application's or the proxy's) |
-| 3. Differential tests against Spring Security | done: `tool/security_reference` (Spring Boot 4.1, Spring Security 7.1), `spring_boot_starter_security/test/differential_test.dart`, CI job "Security compared with Spring Security"; password hashes both ways |
+| 2. Attack catalog as tests | done, except denial of service beyond the size limits (rate limits are documented as the application's or the proxy's); `oauth2Login()` too (October 2026: `test/oauth2_login_test.dart`, against a fake OpenID Connect provider) |
+| 3. Differential tests against Spring Security | done: `tool/security_reference` (Spring Boot 4.1, Spring Security 7.1), `spring_boot_starter_security/test/differential_test.dart`, CI job "Security compared with Spring Security"; password hashes both ways. **Later: `oauth2Login()`** (the reference application with a registration and the same fake provider, the same callbacks to both) |
 | 4. Generated inputs | done: `spring_boot_starter_security/test/fuzz_test.dart` (seeded) |
-| 5. Mutation testing and coverage | done: `tool/mutation_test.dart`; the scores are in [docs/security.md](../docs/security.md#how-it-is-shown). Coverage is measured, not yet reported by CI |
+| 5. Mutation testing and coverage | done: `tool/mutation_test.dart`; the scores are in [docs/security.md](../docs/security.md#how-it-is-shown). Coverage is measured, not yet reported by CI. **Later: the `oauth2Login()` code** (`lib/src/oauth2/`, the new parts of `http_security.dart`) |
 | 6. Scanners and reviews | ASVS checklist done ([docs/security-asvs.md](../docs/security-asvs.md)); the ZAP scan and an external review are open |
 
 ## 1. Threat model and rules (before any code)
@@ -48,6 +48,7 @@ gets a regression test, so its mistake cannot be made here.
 | Passwords | BCrypt / Argon2 known-answer vectors, upgrade of old hashes, constant-time comparison |
 | JWT | the RFC 7515 / 7519 / 8037 vectors; `alg: none`; HS/RS algorithm confusion; `kid` injection; `exp` / `nbf` / `iat` with clock skew; `aud` / `iss`; oversized tokens; JWK set rotation |
 | Sessions | fixation (new id after login), logout invalidation, cookie flags (`HttpOnly`, `Secure`, `SameSite`), concurrent sessions |
+| OAuth 2.0 / OpenID Connect login | missing, wrong, duplicated and replayed `state`; the callback in another browser (login CSRF); the saved request used once; replayed codes; mixed-up registrations; provider errors; RFC 9207 `iss`; `nonce`; ID tokens of another issuer or audience, expired, `alg: none`, HS/RS confusion, another key, unknown `kid`; user info of another subject; no open redirect after login; fixation; CSRF on logout; the login page escaped |
 | CSRF | missing / wrong / reused tokens, safe methods, the cookie-to-header pattern |
 | CORS | `*` with credentials refused, reflected origins, pre-flights reaching handlers |
 | Headers | HSTS only over HTTPS, frame options, content type options, cache control on authenticated responses |

@@ -57,12 +57,12 @@ abstract class ApplicationEvent {
 /// with `addListener` matches on the envelope's type argument.
 ///
 /// ```dart
-/// context.addListener<OrderPlaced>((order) => print(order.id));
+/// context.addListener<OrderPlaced>((order) => log.info(order.id));
 /// context.publishEvent(OrderPlaced(1, 20)); // wrapped automatically
 ///
 /// // Listeners of the wrapper see the source too:
 /// context.addListener<PayloadApplicationEvent<OrderPlaced>>(
-///   (event) => print('${event.payload} from ${event.source}'),
+///   (event) => log.info('${event.payload} from ${event.source}'),
 /// );
 ///
 /// @EventListener()

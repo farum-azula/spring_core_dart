@@ -19,12 +19,12 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// the server finds the methods at startup.
 ///
 /// ```dart
-/// // A library printing the routes of a controller bean at startup.
+/// // A library logging the routes of a controller bean at startup.
 /// final definition = registry.getBeanDefinition('bookController');
 /// for (final method in definition.annotatedMethods) {
 ///   final mapping = method.annotations.whereType<Mapping>().firstOrNull;
 ///   if (mapping != null) {
-///     print('${mapping.method} ${mapping.path}'); // GET /{isbn}
+///     log.info('${mapping.method} ${mapping.path}'); // GET /{isbn}
 ///   }
 /// }
 /// ```

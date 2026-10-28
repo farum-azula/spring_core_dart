@@ -11,6 +11,8 @@ dependency_overrides:
     path: ../../spring_boot_starter_flutter
   spring_boot_starter_logging:
     path: ../../spring_boot_starter_logging
+  spring_boot_starter_oauth2_client:
+    path: ../../spring_boot_starter_oauth2_client
   spring_boot_starter_scheduling:
     path: ../../spring_boot_starter_scheduling
   spring_boot_starter_test:

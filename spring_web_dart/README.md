@@ -224,7 +224,7 @@ the clients and tests.
 final headers = HttpHeaders()
   ..contentType = MediaType.applicationJson
   ..setBearerAuth(token);
-headers.forEach((name, values) => print('$name: ${values.join(', ')}'));
+headers.forEach((name, values) => log.debug('$name: ${values.join(', ')}'));
 
 // Status codes are ints, so they compare directly.
 if (response.statusCode.is2xxSuccessful) { ... }
@@ -314,7 +314,7 @@ final response = await transport.send(
     readTimeout: const Duration(seconds: 60), // a slow report: wait longer for data
   ),
 );
-if (response.statusCode.is2xxSuccessful) print(response.bodyText);
+if (response.statusCode.is2xxSuccessful) log.info(response.bodyText);
 transport.close();
 ```
 
@@ -376,10 +376,10 @@ abstract interface class OrdersClient {
 
 // Only the data: each event's JSON read as an OrderEvent.
 await for (final order in orders.events()) {
-  print(order.status);
+  log.info(order.status);
 }
 // The whole events, when the event name tells the kinds apart.
-orders.events().events.listen((e) => print('${e.id} ${e.event} ${e.data}'));
+orders.events().events.listen((e) => log.info('${e.id} ${e.event} ${e.data}'));
 ```
 
 `EventStream` is cold: nothing happens until someone listens, each
@@ -429,7 +429,7 @@ final session = await sockets.connect(
   headers: HttpHeaders({'Authorization': 'Bearer $token'}), // not on the web, see below
   timeout: const Duration(seconds: 5),
 );
-session.messages.listen(print);
+session.messages.listen(log.info);
 session.sendMessage('{"text":"hi"}');
 await session.close(); // CloseStatus.normal; to say why:
 // await session.close(CloseStatus.policyViolation.withReason('no token'));

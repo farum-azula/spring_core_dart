@@ -326,7 +326,10 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         },
       ),
     ],
-    annotations: const [_i2.Component()],
+    annotations: const [
+      _i2.Component(),
+      _i2.Log(topic: r'tour'),
+    ],
     aopProxy: _i2.AopProxyFactory(
       signatures: const [
         _i2.MethodSignature(
@@ -338,8 +341,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           parameterTypes: [r'UserRegistered'],
           parameterNames: [r'event'],
           targetTypes: [r'WelcomeMail'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'tour'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
       ],
       create: (target, invoker) =>
@@ -358,7 +364,10 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       r.dependency<_i1.Registration>(name: r'registration'),
       r.value<int>(r'#{2 * 21}'),
     ),
-    annotations: const [_i2.Component()],
+    annotations: const [
+      _i2.Component(),
+      _i2.Log(topic: r'tour'),
+    ],
     aopProxy: _i2.AopProxyFactory(
       signatures: const [
         _i2.MethodSignature(
@@ -370,8 +379,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           parameterTypes: [r'List'],
           parameterNames: [r'args'],
           targetTypes: [r'Tour', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'tour'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'registration',
@@ -381,8 +393,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'Registration',
           targetTypes: [r'Tour', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'tour'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'answer',
@@ -392,8 +407,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'int',
           targetTypes: [r'Tour', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'tour'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
       ],
       create: (target, invoker) => _$TourProxy((target as _i1.Tour), invoker),
@@ -460,7 +478,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c90a020a',
+  fingerprint: '4d3d3e41',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -488,3 +506,13 @@ Future<_i4.ConfigurableApplicationContext> reloadApplicationAsync(
   _i4.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// `@Log` of [WelcomeMail]: the logger 'tour'.
+extension $WelcomeMailLog on _i1.WelcomeMail {
+  _i2.SpringLog get log => const _i2.SpringLog(r'tour');
+}
+
+/// `@Log` of [Tour]: the logger 'tour'.
+extension $TourLog on _i1.Tour {
+  _i2.SpringLog get log => const _i2.SpringLog(r'tour');
+}

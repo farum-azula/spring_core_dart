@@ -93,29 +93,42 @@ abstract final class FileAccess {
   ]..sort();
 
   /// The paths of the directories directly in [directory], with `/`
-  /// separators and sorted; empty if [directory] does not exist.
+  /// separators and sorted; empty if [directory] does not exist or may not
+  /// be read.
   static List<String> listDirectories(String directory) {
     final dir = Directory(directory);
     if (!dir.existsSync()) {
       return const [];
     }
-    return [
-      for (final entity in dir.listSync())
-        if (entity is Directory) entity.path.replaceAll(r'\', '/'),
-    ]..sort();
+    try {
+      return [
+        for (final entity in dir.listSync())
+          if (entity is Directory) entity.path.replaceAll(r'\', '/'),
+      ]..sort();
+    } on FileSystemException {
+      // Not readable (an Android app's working directory is `/`): skipped,
+      // as Spring skips a directory it may not read.
+      return const [];
+    }
   }
 
   /// The paths of the files directly in [directory], with `/` separators
-  /// and sorted; empty if [directory] does not exist.
+  /// and sorted; empty if [directory] does not exist or may not be read.
   static List<String> listFiles(String directory) {
     final dir = Directory(directory);
     if (!dir.existsSync()) {
       return const [];
     }
-    return [
-      for (final entity in dir.listSync())
-        if (entity is File) entity.path.replaceAll(r'\', '/'),
-    ]..sort();
+    try {
+      return [
+        for (final entity in dir.listSync())
+          if (entity is File) entity.path.replaceAll(r'\', '/'),
+      ]..sort();
+    } on FileSystemException {
+      // Not readable (an Android app's working directory is `/`): skipped,
+      // as Spring skips a directory it may not read.
+      return const [];
+    }
   }
 
   /// The file path behind a `package:` [uri], looked up in the package

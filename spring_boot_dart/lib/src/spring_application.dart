@@ -82,7 +82,7 @@ const _log = SpringLog('spring_boot_dart.SpringApplication');
 /// @SpringBootApplication()
 /// void main(List<String> args) => (springApplication
 ///       ..addListener<ApplicationEnvironmentPreparedEvent>(
-///         (event) => print(event.environment.activeProfiles),
+///         (event) => log.info(event.environment.activeProfiles),
 ///       ))
 ///     .run(args);
 ///
@@ -215,7 +215,7 @@ class SpringApplication {
   /// SpringApplication([appBeans])
   ///   ..addListeners([
   ///     ApplicationListenerAdapter.of<ApplicationStartingEvent>(
-  ///       (event) => print('starting'),
+  ///       (event) => log.info('starting'),
   ///     ),
   ///   ])
   ///   ..run(args);
@@ -1588,7 +1588,7 @@ final class _TypesExcludeFilter implements LazyInitializationExcludeFilter {
 ///
 /// SpringApplication([appBeans], initializers: [
 ///   TestServers(),
-///   ApplicationContextInitializer.of((context) => print(context.id)),
+///   ApplicationContextInitializer.of((context) => log.info(context.id)),
 /// ]);
 /// ```
 ///
