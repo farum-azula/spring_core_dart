@@ -5,15 +5,19 @@ import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
 
-/// Parses SpEL, like Spring's `SpelExpressionParser`.
+/// The parser of the Spring Expression Language: it turns expression text
+/// into an [Expression] you can evaluate.
 ///
-/// Parsing is pure and the parser is stateless: keep one instance and
-/// cache parsed [Expression]s, which can be evaluated many times against
-/// different contexts and roots. A [SpelParserConfiguration] sets the
-/// limits (expression length, nesting depth, operations per evaluation)
-/// and auto-grow.
+/// This is the starting point for evaluating expressions yourself, such
+/// as rules or message templates kept in configuration. The parser keeps
+/// no state between calls: keep one instance, parse each text once and
+/// keep the resulting [Expression], which can be evaluated many times
+/// against different contexts and roots. A [SpelParserConfiguration] sets
+/// the limits that protect against hostile text (expression length,
+/// nesting depth, operations per evaluation) and auto-grow.
 ///
 /// ```dart
+/// // A greeting and a template, evaluated against the same values.
 /// final parser = SpelExpressionParser();
 /// final context = StandardEvaluationContext({'name': 'Ada', 'price': 5});
 /// parser.parseExpression("'Hello ' + name").getValue(context);
@@ -31,15 +35,20 @@ import 'package:spring_core_dart/src/expression/tokenizer.dart';
 ///     ParserContext.TEMPLATE_EXPRESSION).getValue(context);
 /// ```
 ///
-/// Differences from Spring: no compiler mode (`SpelCompilerMode`), and
-/// types in `T(...)` / `new` must be registered in a `StandardTypeLocator`.
+/// Differences from Spring: no compiler mode (`SpelCompilerMode`); types
+/// in `T(...)` / `new` must be registered in a `StandardTypeLocator`;
+/// properties and methods of your classes need `@Introspected` or an
+/// accessor; `matches` and the String methods are Dart's. Integer and
+/// long literals are both Dart `int`s, and `f` / `d` real literals both
+/// `double`s.
 class SpelExpressionParser implements ExpressionParser {
   /// Creates a parser with [configuration]
   /// (`SpelParserConfiguration.withDefaults()` when omitted).
   SpelExpressionParser([SpelParserConfiguration? configuration])
     : configuration = configuration ?? SpelParserConfiguration.withDefaults();
 
-  /// Limits and auto-grow options of the parsed expressions.
+  /// The limits and auto-grow options; the expressions this parser
+  /// returns keep them for their evaluations.
   final SpelParserConfiguration configuration;
 
   @override
@@ -54,7 +63,8 @@ class SpelExpressionParser implements ExpressionParser {
   }
 
   /// Parses [expressionString] as a single SpEL expression, never as a
-  /// template (Spring's `parseRaw`).
+  /// template (Spring's `parseRaw`), and returns it with its concrete
+  /// type, so the tree in `SpelExpression.ast` can be inspected.
   ///
   /// Throws a [SpelParseException] when the text is invalid, longer than
   /// `maximumExpressionLength` or nested deeper than
@@ -122,7 +132,9 @@ class SpelExpressionParser implements ExpressionParser {
   }
 
   /// Index of the suffix closing an expression that starts at [from],
-  /// skipping brackets and quoted strings, like Spring's template parser.
+  /// skipping brackets and quoted strings, like Spring's template parser;
+  /// throws a [ParseException] for unbalanced brackets, an unterminated
+  /// string or a missing suffix.
   static int _findSuffix(String text, int from, String prefix, String suffix) {
     final stack = <(String, int)>[];
     const pairs = {'(': ')', '[': ']', '{': '}'};
@@ -176,7 +188,8 @@ class SpelExpressionParser implements ExpressionParser {
   }
 }
 
-/// Recursive-descent parser over the token list (Spring's grammar).
+/// The parser of one expression: recursive descent over the token list,
+/// with Spring's grammar. Internal to [SpelExpressionParser].
 ///
 /// Precedence, lowest to highest (one method per level):
 /// assignment / Elvis / ternary (`_expression`), `or`, `and`, relational
@@ -444,7 +457,8 @@ final class _Parser {
     return nodes.length == 1 ? start : CompoundExpression(start.start, nodes);
   }
 
-  /// A node following another one: `.x`, `?.x`, `[i]`, `.?[...]`, ...
+  /// A node following another one (`.x`, `?.x`, `[i]`, `.?[...]`, ...),
+  /// or `null` when the chain ends here.
   SpelNode? _node() {
     final token = _current;
     switch (token?.kind) {
@@ -740,7 +754,7 @@ final class _Parser {
     return parts.join('.');
   }
 
-  /// `{}`, `{:}`, `{1, 2}`, `{a: 1, 'b': 2}`.
+  /// An inline list or map: `{}`, `{:}`, `{1, 2}`, `{a: 1, 'b': 2}`.
   ///
   /// The first item decides: a `:` after it makes an inline map,
   /// otherwise an inline list.

@@ -1,7 +1,16 @@
-/// Aspect-oriented programming with generated proxies: `@Aspect` advice,
-/// pointcut expressions and advisors (Spring AOP).
+/// Aspect-oriented programming: code that runs before, after or around the
+/// methods of other beans without editing them.
+///
+/// Import it to write aspects (`@Aspect`, `@Before`, `@Around`, ...),
+/// pointcut expressions that pick the advised methods, and advisor beans
+/// with your own `MethodInterceptor`. It is also exported by
+/// `package:spring_core_dart/spring_core_dart.dart`. Use AOP for concerns
+/// that cut across many classes: logging, timing, auditing, permission
+/// checks, retries. The proxies that run the advice are written at build
+/// time by `spring_core_dart_generator`, so the package must run it.
 ///
 /// ```dart
+/// // Logs every call to OrderService.
 /// @Aspect()
 /// @Component()
 /// class Auditing {

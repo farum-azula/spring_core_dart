@@ -7,16 +7,22 @@ import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 const _log = SpringLog('spring.security.oauth2.jwt');
 
-/// A token could not be decoded or verified, like Spring's
-/// `JwtException`.
+/// A token could not be decoded or verified.
+///
+/// This base class, thrown as is, means the decoder itself could not work,
+/// for example because the key server cannot be reached: the request gets
+/// a 401 without details. A token at fault throws [BadJwtException].
+///
+/// Spring (Java): `JwtException`.
 class JwtException implements Exception {
-  /// Described by [message].
+  /// A failure described by [message], caused by [cause].
   JwtException(this.message, [this.cause]);
 
-  /// What went wrong.
+  /// What went wrong; for a [BadJwtException] it is sent to the client as
+  /// the error description.
   final String message;
 
-  /// The cause.
+  /// The lower-level error, or `null`.
   final Object? cause;
 
   @override
@@ -26,38 +32,77 @@ class JwtException implements Exception {
   String toString() => '$runtimeType: $message';
 }
 
-/// The token itself is bad (malformed, wrong signature, expired), like
-/// Spring's `BadJwtException`: the client's fault, a 401 `invalid_token`.
+/// The token itself is bad: malformed, wrongly signed, of a refused
+/// algorithm, or expired.
+///
+/// The client is at fault, so it gets a 401 with
+/// `WWW-Authenticate: Bearer error="invalid_token"` and the [message] as
+/// the description.
+///
+/// Spring (Java): `BadJwtException`.
 class BadJwtException extends JwtException {
-  /// Described by [message].
+  /// A bad token described by [message], caused by [cause].
   BadJwtException(super.message, [super.cause]);
 }
 
-/// The token failed a validator, like Spring's `JwtValidationException`.
+/// The token is well signed but failed a validator: expired, wrong issuer,
+/// wrong audience, or a rule of your own.
+///
+/// Spring (Java): `JwtValidationException`.
 class JwtValidationException extends BadJwtException {
-  /// Failed with [errors].
+  /// A failure described by [message], with the validators' [errors].
   JwtValidationException(super.message, this.errors);
 
-  /// What failed.
+  /// The errors the validators reported.
   final List<OAuth2Error> errors;
 }
 
-/// Turns a bearer token into a verified [Jwt], like Spring's `JwtDecoder`.
+/// Verifies a bearer token and decodes it into a [Jwt]: the signature,
+/// the algorithm and the claims are checked before anything is trusted.
+///
+/// A resource server needs exactly one. The auto-configuration builds a
+/// [NimbusJwtDecoder] from
+/// `spring.security.oauth2.resourceserver.jwt.issuer-uri` or `jwk-set-uri`;
+/// declare a bean to choose the keys or validators yourself.
+///
+/// ```dart
+/// // Tokens signed by the identity provider's keys, for this API only.
+/// @Bean()
+/// JwtDecoder jwtDecoder() => JwtDecoders.fromIssuerLocation(
+///   'https://login.example.com/realms/shop',
+///   audiences: ['orders-api'],
+/// );
+/// ```
+///
+/// Spring (Java): `JwtDecoder`.
 abstract interface class JwtDecoder {
-  /// The verified token; throws [JwtException].
+  /// The verified token.
+  ///
+  /// Throws a [BadJwtException] when the token is at fault, and a
+  /// [JwtException] when it could not be checked.
   Future<Jwt> decode(String token);
 }
 
-/// Where verification keys come from.
+/// Where a [NimbusJwtDecoder] gets the public keys that verify
+/// signatures.
+///
+/// [RemoteJwkSource] fetches them from the identity provider's JWK Set
+/// URL; [StaticJwkSource] holds fixed keys. Implement it to load keys from
+/// somewhere else, such as a secrets store.
 abstract interface class JwkSource {
-  /// The keys that may have signed a token with [keyId] (`null`: no
-  /// `kid` in the token); [refresh] asks for fresh keys (an unknown `kid`).
+  /// The keys that may have signed a token whose header names [keyId]
+  /// (`null` when it names none).
+  ///
+  /// [refresh] is `true` when no cached key had that id, asking for fresh
+  /// keys in case the provider rotated them. The decoder filters the
+  /// result by id and algorithm.
   Future<List<VerificationKey>> keys({String? keyId, bool refresh = false});
 }
 
-/// Fixed keys.
+/// A [JwkSource] with a fixed list of keys, for keys known in advance and
+/// tests.
 final class StaticJwkSource implements JwkSource {
-  /// [keys].
+  /// A source always giving [keys] (copied).
   StaticJwkSource(List<VerificationKey> keys) : _keys = List.unmodifiable(keys);
 
   final List<VerificationKey> _keys;
@@ -69,8 +114,13 @@ final class StaticJwkSource implements JwkSource {
   }) async => _keys;
 }
 
-/// Parses a JWK Set (`{"keys": [...]}`): RSA and EC public keys; other
-/// keys (encryption keys, private parts, symmetric keys) are skipped.
+/// The signature keys of a JWK Set document (`{"keys": [...]}`), the
+/// format identity providers publish their public keys in.
+///
+/// RSA and EC public keys meant for signatures are read. Keys for
+/// encryption (`use: enc`), symmetric keys, EC keys not on their curve,
+/// and keys that cannot be read are skipped. Throws a [JwtException] when
+/// the text is not JSON or has no `keys` list.
 List<VerificationKey> parseJwkSet(String json) {
   final Object? decoded;
   try {
@@ -99,8 +149,12 @@ List<VerificationKey> parseJwkSet(String json) {
   return result;
 }
 
-/// One JWK as a verification key, `null` for keys that do not verify
-/// signatures (`use: enc`, symmetric keys from a remote set).
+/// One JWK as a verification key; `null` for keys that do not verify
+/// signatures here (`use: enc`, symmetric keys, EC points off their
+/// curve).
+///
+/// Throws when a required member (`n`, `e`, `crv`, `x`, `y`) is missing or
+/// malformed.
 VerificationKey? parseJwk(Map<String, Object?> jwk) {
   final use = jwk['use'] as String?;
   if (use != null && use != 'sig') {
@@ -132,11 +186,17 @@ VerificationKey? parseJwk(Map<String, Object?> jwk) {
   }
 }
 
-/// Fetches text from a URL (the JWK Set, discovery documents).
+/// Fetches the text at a URL: the JWK Set and the issuer's metadata.
+///
+/// Pass your own to go through a proxy, or to serve fixed documents in
+/// tests.
 typedef JwkFetcher = Future<String> Function(Uri uri);
 
-/// Fetches [uri] with the platform's HTTP client (10 s timeouts); a non-200
-/// answer is an error.
+/// The default [JwkFetcher]: a `GET` of [uri] with the platform's HTTP
+/// client, with 10-second timeouts.
+///
+/// Throws a [JwtException] for an answer other than 200 or a body over
+/// 1 MiB.
 Future<String> defaultJwkFetcher(Uri uri) async {
   final transport = platformHttpTransport(
     connectTimeout: const Duration(seconds: 10),
@@ -159,13 +219,23 @@ Future<String> defaultJwkFetcher(Uri uri) async {
   return response.bodyText;
 }
 
-/// The keys of a JWK Set URL, cached for [cacheLifespan] (5 minutes), like
-/// Nimbus' `RemoteJWKSet` behind Spring's `NimbusJwtDecoder`: an unknown
-/// `kid` fetches the set again (at most every [refreshInterval], 30 s, so
-/// tokens with made-up ids cannot hammer the issuer); when the issuer is
-/// down, the keys fetched last keep working.
+/// A [JwkSource] that fetches the keys from the identity provider's JWK
+/// Set URL and caches them.
+///
+/// - Keys are kept for [cacheLifespan] (5 minutes), then fetched again.
+/// - A token with an unknown `kid` fetches the set again, at most once
+///   per [refreshInterval] (30 seconds), so tokens with made-up ids cannot
+///   flood the provider with requests.
+/// - When the provider cannot be reached, the keys fetched last keep
+///   working (with a warning in the log). Before the first successful
+///   fetch, every token fails with a [JwtException] (a 401).
+/// - Concurrent requests share one fetch.
+///
+/// Spring (Java): Nimbus' `RemoteJWKSet`, behind Spring's
+/// `NimbusJwtDecoder`.
 final class RemoteJwkSource implements JwkSource {
-  /// The keys at [uri].
+  /// A source for the JWK Set at [uri], fetched with [fetcher]
+  /// ([defaultJwkFetcher] when omitted); [clock] lets tests move time.
   RemoteJwkSource(
     this.uri, {
     JwkFetcher? fetcher,
@@ -175,13 +245,14 @@ final class RemoteJwkSource implements JwkSource {
   }) : _fetch = fetcher ?? defaultJwkFetcher,
        _clock = clock ?? DateTime.now;
 
-  /// The JWK Set URL.
+  /// The URL of the JWK Set.
   final Uri uri;
 
-  /// How long keys are kept.
+  /// How long fetched keys are used before fetching again; 5 minutes by
+  /// default.
   final Duration cacheLifespan;
 
-  /// The shortest time between two fetches.
+  /// The shortest time between two fetches; 30 seconds by default.
   final Duration refreshInterval;
 
   final JwkFetcher _fetch;
@@ -229,18 +300,45 @@ final class RemoteJwkSource implements JwkSource {
   }
 }
 
-/// Decodes and verifies JWS tokens, like Spring's `NimbusJwtDecoder`:
+/// The standard [JwtDecoder]: it checks a signed JWT (a JWS) step by step
+/// and returns it only when every step passes.
 ///
-/// 1. the token is parsed strictly (see `parseJws`): never `alg: none`,
-///    no `crit`, no nested or encrypted tokens, at most 64 KiB;
-/// 2. its `alg` must be one of [jwsAlgorithms] (by default those the
-///    keys allow: RSA keys RS*/PS*, EC keys the ES* of their curve) and
-///    fit the key: an RSA public key is never used as an HMAC secret;
-/// 3. the signature is checked with the key of its `kid` (or every key
-///    fitting the algorithm when there is none); keys named in the token
-///    (`jku`, `jwk`, `x5u`) are ignored;
-/// 4. the claims pass the [validator] (`exp` / `nbf` with 60 s of skew by
-///    default; the issuer when built from one).
+/// 1. The token is parsed strictly: never `alg: none`, no `crit`, no
+///    nested or encrypted tokens, at most 64 KiB.
+/// 2. Its `alg` must be one of [jwsAlgorithms] (by default those the keys
+///    allow: RS* and PS* for RSA keys, the ES* of their curve for EC keys,
+///    never HMAC) and must fit the key, so an RSA public key is never used
+///    as an HMAC secret.
+/// 3. The signature is checked with the key of its `kid`, or with every
+///    fitting key when there is none. Keys named in the token (`jku`,
+///    `jwk`, `x5u`) are ignored: a token cannot bring its own key.
+/// 4. The claims pass the [validator]: by default `exp` and `nbf` with 60
+///    seconds of skew.
+///
+/// A failure of steps 1 to 4 throws a [BadJwtException] (401
+/// `invalid_token`). Build one with a factory: from the provider's JWK Set
+/// URL, one public key, or a shared secret.
+///
+/// ```dart
+/// @Bean()
+/// JwtDecoder jwtDecoder() => NimbusJwtDecoder.withJwkSetUri(
+///   Uri.parse('https://login.example.com/jwks'),
+///   jwsAlgorithms: {JwsAlgorithm.rs256, JwsAlgorithm.es256},
+///   validator: JwtValidators.createDefaultWithIssuer(
+///     'https://login.example.com',
+///   ),
+/// );
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// NimbusJwtDecoder decoder = NimbusJwtDecoder
+///     .withJwkSetUri("https://login.example.com/jwks")
+///     .jwsAlgorithm(SignatureAlgorithm.RS256)
+///     .build();
+/// decoder.setJwtValidator(
+///     JwtValidators.createDefaultWithIssuer("https://login.example.com"));
+/// ```
 final class NimbusJwtDecoder implements JwtDecoder {
   NimbusJwtDecoder._(
     this._source, {
@@ -251,8 +349,13 @@ final class NimbusJwtDecoder implements JwtDecoder {
            : Set.unmodifiable(jwsAlgorithms),
        validator = validator ?? JwtValidators.createDefault();
 
-  /// Keys from the JWK Set at [jwkSetUri]; [jwsAlgorithms] default to
-  /// RS256 (Spring Boot's `jws-algorithms` default).
+  /// A decoder with the keys of the JWK Set at [jwkSetUri], fetched with
+  /// [fetcher] and cached.
+  ///
+  /// [jwsAlgorithms] defaults to RS256 alone, Spring Boot's
+  /// `jws-algorithms` default. Without a [validator] only the lifetime is
+  /// checked: add the issuer and audience checks yourself. Throws an
+  /// [ArgumentError] for an empty set or an HMAC algorithm.
   factory NimbusJwtDecoder.withJwkSetUri(
     Uri jwkSetUri, {
     Set<JwsAlgorithm> jwsAlgorithms = const {JwsAlgorithm.rs256},
@@ -264,7 +367,10 @@ final class NimbusJwtDecoder implements JwtDecoder {
     validator: validator,
   );
 
-  /// One RSA public key (RS256 by default).
+  /// A decoder for tokens signed with the private half of [key].
+  ///
+  /// [jwsAlgorithms] defaults to RS256. Throws an [ArgumentError] for an
+  /// empty set or an HMAC algorithm.
   factory NimbusJwtDecoder.withPublicKey(
     RsaVerificationKey key, {
     Set<JwsAlgorithm> jwsAlgorithms = const {JwsAlgorithm.rs256},
@@ -275,7 +381,12 @@ final class NimbusJwtDecoder implements JwtDecoder {
     validator: validator,
   );
 
-  /// One HMAC secret (HS256 by default, at least 256 bits).
+  /// A decoder for tokens signed with the shared [secret], for systems
+  /// where the issuer and this server share one key.
+  ///
+  /// [macAlgorithm] defaults to HS256. Throws an [ArgumentError] when it is
+  /// not an HMAC algorithm, or when [secret] has fewer bits than its hash
+  /// (256 for HS256).
   factory NimbusJwtDecoder.withSecretKey(
     List<int> secret, {
     JwsAlgorithm macAlgorithm = JwsAlgorithm.hs256,
@@ -298,8 +409,8 @@ final class NimbusJwtDecoder implements JwtDecoder {
     );
   }
 
-  /// Keys from any [source], algorithms derived from the keys unless
-  /// given.
+  /// A decoder with the keys of [source]; without [jwsAlgorithms], the
+  /// algorithms the keys allow (never HMAC).
   factory NimbusJwtDecoder.withJwkSource(
     JwkSource source, {
     Set<JwsAlgorithm>? jwsAlgorithms,
@@ -321,10 +432,11 @@ final class NimbusJwtDecoder implements JwtDecoder {
 
   final JwkSource _source;
 
-  /// The accepted algorithms (`null`: those the keys allow).
+  /// The algorithms accepted in a token's `alg`; `null` accepts those the
+  /// keys allow, never HMAC.
   final Set<JwsAlgorithm>? jwsAlgorithms;
 
-  /// Checks the claims.
+  /// Checks the claims of a correctly signed token.
   final OAuth2TokenValidator<Jwt> validator;
 
   static const _prefix =
@@ -391,12 +503,22 @@ final class NimbusJwtDecoder implements JwtDecoder {
   ];
 }
 
-/// Decoders from an issuer, like Spring's `JwtDecoders`.
+/// Builds a [JwtDecoder] from the address of an identity provider alone.
+///
+/// Spring (Java): `JwtDecoders`.
 abstract final class JwtDecoders {
-  /// A decoder for the tokens of [issuer]: its OpenID Connect (or OAuth 2.0
-  /// authorization server) metadata gives the JWK Set; the `issuer` there
-  /// must be [issuer]; tokens must carry `iss` == [issuer]. Fetched on the
-  /// first token, not at startup (the issuer may start later).
+  /// A decoder for the tokens of [issuer], such as
+  /// `https://login.example.com/realms/shop`.
+  ///
+  /// The issuer's OpenID Connect (or OAuth 2.0 authorization server)
+  /// metadata gives the JWK Set URL; the `issuer` named there must equal
+  /// [issuer]. Tokens must carry `iss` equal to [issuer], pass the
+  /// lifetime check, and, when [audiences] is not empty, name one of them
+  /// in `aud`. The algorithms are those the keys allow.
+  ///
+  /// The metadata is fetched at the first token, not at startup, so the
+  /// provider may start later. While it cannot be fetched, tokens fail
+  /// with a [JwtException] (a 401) and the next token tries again.
   static JwtDecoder fromIssuerLocation(
     String issuer, {
     JwkFetcher? fetcher,

@@ -9,20 +9,26 @@ import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:yaml/yaml.dart';
 
-/// Checks every literal `@Value('asset:<key>')` of the module's beans and
-/// `@Configurable` classes, reporting each problem through [collectErrors]:
+/// Checks that every Flutter asset injected with a literal
+/// `@Value('asset:<key>')` exists in the package and is declared in its
+/// `pubspec.yaml`.
+///
+/// Without this check a missing or undeclared asset is only noticed when
+/// the app reads it on a device. The values are those of [module]'s beans
+/// and `@Configurable` classes. Each problem is reported through
+/// [collectErrors], so the build lists them all together.
 ///
 /// ```dart
 /// AppAssets(@Value('asset:assets/sounds/tap.mp3') this.tap);
-/// // error: assets/sounds/tap.mp3 is not declared in pubspec.yaml; add it
-/// // under `flutter: assets:`:
+/// // error: assets/sounds/tap.mp3 is not declared in pubspec.yaml, so the
+/// // app would not contain it. Add it under `flutter: assets:`:
 /// //     - assets/sounds/
 /// ```
 ///
 /// Not checked: keys with placeholders or SpEL (`asset:${sound.file}`),
-/// known only at run time, and other packages' assets (`packages/...`).
-/// A directory entry (`- assets/sounds/`) declares the files directly in
-/// it, not those of its subdirectories, as in Flutter.
+/// which are known only at run time, and other packages' assets
+/// (`packages/...`). A directory entry (`- assets/sounds/`) declares the
+/// files directly in it, not those of its subdirectories, as in Flutter.
 Future<void> checkAssetValues(
   BuildStep buildStep,
   ModuleModel module,
@@ -74,7 +80,9 @@ Future<void> checkAssetValues(
   }
 }
 
-/// The asset key of a literal `@Value('asset:<key>')` point, or `null`.
+/// The asset key of a literal `@Value('asset:<key>')` point, without a
+/// leading `/`; `null` for any other point, for a key with a placeholder
+/// or SpEL, and for another package's asset.
 String? _assetKey(InjectionPoint point) {
   if (point.kind != PointKind.value) {
     return null;
@@ -95,7 +103,7 @@ String? _assetKey(InjectionPoint point) {
 
 /// The entries of `flutter: assets:` in [package]'s pubspec.yaml: plain
 /// strings and the `path:` of map entries (`- path: assets/x/`, with
-/// `flavors:`).
+/// `flavors:`). Empty when the pubspec is missing or does not parse.
 Future<List<String>> _declaredAssets(
   BuildStep buildStep,
   String package,
@@ -125,8 +133,9 @@ Future<List<String>> _declaredAssets(
   ];
 }
 
-/// Whether [key] is one of [declared]: the file itself, or a directory
-/// entry (`assets/images/`) holding it directly.
+/// Whether [declared] declares [key]: the file itself, or a directory
+/// entry (`assets/images/`) holding it directly. A leading `./` in an entry
+/// is ignored.
 bool _isDeclared(String key, List<String> declared) {
   for (var entry in declared) {
     if (entry.startsWith('./')) {
@@ -141,9 +150,12 @@ bool _isDeclared(String key, List<String> declared) {
   return false;
 }
 
-/// Whether the file [key] exists in [package]: through the build (files
-/// under `assets/`, `lib/`, ... are build inputs, so adding one reruns the
-/// check), else on disk (a directory the build does not see).
+/// Whether the file [key] exists in [package].
+///
+/// It asks the build first: files under `assets/`, `lib/` and the other
+/// input directories are build inputs, so adding one reruns the check.
+/// Otherwise it looks on disk, for a directory the build does not see;
+/// that only works for the package the build runs in.
 Future<bool> _exists(BuildStep buildStep, String package, String key) async {
   try {
     if (await buildStep.canRead(AssetId(package, key))) {

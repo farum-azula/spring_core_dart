@@ -3,19 +3,33 @@ import 'dart:async';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_test/src/bean_override.dart';
 
-/// Starts small contexts to test auto-configuration, like Spring Boot's
-/// `ApplicationContextRunner`: the tool for starter authors.
+/// Starts a small, throwaway application context per test, to check what
+/// an auto-configuration creates under which properties and beans.
 ///
-/// The runner is immutable: every `with*` returns a new runner, so a base
-/// runner can be shared by many tests. No config files are read and the
-/// OS environment is empty unless set.
+/// It is the tool for starter authors. A starter's auto-configuration
+/// must react to its surroundings: create a bean by default, back off when
+/// the application declares its own, change with a property, fail on a
+/// bad value. Starting the whole application for each case would be slow
+/// and would read its config files; the runner starts only the modules
+/// you give it, with the properties you give it. Application tests use
+/// `springBootTest` instead.
+///
+/// The runner is immutable: every `with...` method returns a new runner,
+/// so a base runner can be shared by many tests and extended in each. No
+/// config files are read, and the OS environment is empty unless set with
+/// [withSystemEnvironment]. `@ConfigurationProperties` beans are bound and
+/// relaxed property names work, as in an application. No web server
+/// starts: the runner sets `spring.test.web-environment=mock` (add
+/// `withPropertyValues(['spring.test.web-environment=random-port'])` for
+/// one).
 ///
 /// ```dart
-/// final runner = ApplicationContextRunner()
+/// final runner = const ApplicationContextRunner()
 ///     .withAutoConfiguration(myStarterAutoConfiguration);
 ///
 /// test('backs off when the app has its own client', () {
-///   runner.withUserConfiguration(appWithClient).run((context) {
+///   // The application's own HttpClient, registered before the starter.
+///   runner.withBean<HttpClient>(AppClient.new).run((context) {
 ///     expect(context, hasSingleBean<HttpClient>());
 ///     expect(context.getBean<HttpClient>(), isA<AppClient>());
 ///   });
@@ -36,7 +50,8 @@ import 'package:spring_boot_starter_test/src/bean_override.dart';
 ///     .run(context -> assertThat(context).hasFailed());
 /// ```
 final class ApplicationContextRunner {
-  /// A runner without configuration.
+  /// A runner with no modules, properties or beans; add them with the
+  /// `with...` methods.
   const ApplicationContextRunner() : this._();
 
   const ApplicationContextRunner._({
@@ -53,41 +68,51 @@ final class ApplicationContextRunner {
     this.allowCircularReferences = false,
   });
 
-  /// Application modules, registered before [autoConfigurations].
+  /// The application modules added with [withUserConfiguration],
+  /// registered before [autoConfigurations] so their beans are seen by the
+  /// conditions.
   final List<BeanModule> userConfigurations;
 
-  /// Auto-configuration modules under test, registered in Spring Boot's
-  /// order (by name, `order`, then `before` / `after` of
-  /// [autoConfigurationMetadata]), like `AutoConfigurations.of(...)`.
+  /// The auto-configuration modules under test, added with
+  /// [withAutoConfiguration]. They are registered in Spring Boot's order,
+  /// whatever order they were added in: by `order`, then by name, then
+  /// moved by `before` / `after` of [autoConfigurationMetadata].
   final List<BeanModule> autoConfigurations;
 
-  /// The `@AutoConfigurationModule` of each module of
-  /// [autoConfigurations] given to [withAutoConfiguration].
+  /// The `@AutoConfigurationModule` annotation of each module of
+  /// [autoConfigurations], as given to [withAutoConfiguration]; a module
+  /// without one has order `0` and no `before` / `after`.
   final Map<BeanModule, AutoConfigurationModule> autoConfigurationMetadata;
 
-  /// The parent of the contexts ([withParent]).
+  /// The parent of every context the runner starts, set with [withParent];
+  /// `null` for none.
   final ApplicationContext? parent;
 
-  /// Whether a bean definition may replace another of the same name
-  /// ([withAllowBeanDefinitionOverriding]; `false` like Boot's runner).
+  /// Whether a bean definition may replace another of the same name, set
+  /// with [withAllowBeanDefinitionOverriding]; `false` by default, as in
+  /// Boot's runner.
   final bool allowBeanDefinitionOverriding;
 
-  /// [withAllowCircularReferences]: always `false` in a working run.
+  /// The value set with [withAllowCircularReferences]. Only `false` gives a
+  /// working run.
   final bool allowCircularReferences;
 
-  /// Properties (highest precedence).
+  /// The properties added with [withPropertyValues]. They win over every
+  /// other property source, the environment included.
   final Map<String, Object?> properties;
 
-  /// The OS environment seen by the context.
+  /// The environment variables the contexts see, set with
+  /// [withSystemEnvironment]; empty by default.
   final Map<String, String> systemEnvironment;
 
-  /// Called before each refresh.
+  /// The initializers added with [withInitializer], called in order on each
+  /// context before it is refreshed.
   final List<ApplicationContextInitializer> initializers;
 
-  /// Beans registered with [withBean], before the configurations.
+  /// The beans added with [withBean], registered before the configurations.
   final List<BeanDefinition<Object>> beans;
 
-  /// Bean replacements added with [withBeanOverride].
+  /// The bean replacements added with [withBeanOverride].
   final List<BeanOverride<Object>> overrides;
 
   ApplicationContextRunner _copy({
@@ -119,18 +144,26 @@ final class ApplicationContextRunner {
         allowCircularReferences ?? this.allowCircularReferences,
   );
 
-  /// Adds an application module (`withUserConfiguration`).
+  /// Adds an application module, registered before the auto-configuration:
+  /// the way to give the context beans that a real application would
+  /// declare, so that a `@ConditionalOnMissingBean` sees them. Spring Boot's
+  /// `withUserConfiguration`.
   ApplicationContextRunner withUserConfiguration(BeanModule module) =>
       _copy(userConfigurations: [...userConfigurations, module]);
 
-  /// Adds an auto-configuration module
-  /// (`withConfiguration(AutoConfigurations.of(...))`) with the [metadata]
-  /// of its `@AutoConfigurationModule` annotation (the generator passes it
-  /// to `SpringApplication`; a runner needs it by hand). The modules are
-  /// registered in Boot's order: by name, then `order`, then `before` /
-  /// `after`, whatever order they were added in.
+  /// Adds an auto-configuration module under test, with the [metadata] of
+  /// its `@AutoConfigurationModule` annotation.
+  ///
+  /// In an application the generator passes that annotation to
+  /// `SpringApplication`; Dart cannot read the annotation of a variable at
+  /// run time, so a runner needs it by hand when the module has an `order`,
+  /// `before` or `after`. The modules are registered in Spring Boot's order
+  /// (by `order`, then by name, then moved by `before` / `after`), whatever
+  /// order they were added in. Spring Boot's
+  /// `withConfiguration(AutoConfigurations.of(...))`.
   ///
   /// ```dart
+  /// // The web module's conditions must see the JSON module's beans.
   /// runner
   ///     .withAutoConfiguration(webModule, const AutoConfigurationModule(
   ///       after: ['jacksonModule'],
@@ -148,28 +181,39 @@ final class ApplicationContextRunner {
     },
   );
 
-  /// Uses [parent] as the parent of every context the runner starts
-  /// (`withParent`): its beans can be injected, its environment is merged.
+  /// Makes [parent] the parent of every context the runner starts: its
+  /// beans can be injected and count for the matchers, and its environment
+  /// is merged. Use it to test a starter that runs in a child context.
   ApplicationContextRunner withParent(ApplicationContext parent) =>
       _copy(parent: (parent,));
 
-  /// Whether a bean definition may replace another of the same name
-  /// (`withAllowBeanDefinitionOverriding`; off by default, like Boot).
+  /// Sets whether a bean definition may replace another of the same name.
+  /// Off by default, as in Boot, so a duplicate name fails the start.
   ApplicationContextRunner withAllowBeanDefinitionOverriding(bool allow) =>
       _copy(allowBeanDefinitionOverriding: allow);
 
-  /// Boot's `withAllowCircularReferences`: `false` is the default and the
-  /// only behaviour of `spring_core_dart`, which has no early references;
-  /// with `true` every run fails with an `UnsupportedError` saying so.
+  /// Exists for Spring Boot's `withAllowCircularReferences`. `false` is the
+  /// default and the only behaviour of `spring_core_dart`, which has no
+  /// early references; with `true` every run fails with an
+  /// `UnsupportedError` that says so.
   ApplicationContextRunner withAllowCircularReferences(bool allow) =>
       _copy(allowCircularReferences: allow);
 
-  /// Adds `key=value` or `key:value` properties (`withPropertyValues`),
-  /// split at the first `=` or `:` like Boot's `TestPropertyValues`; name
-  /// and value are trimmed, a pair without a separator has an empty value.
+  /// Adds properties written as `key=value` or `key:value`, the form of
+  /// Boot's `TestPropertyValues`.
+  ///
+  /// Each pair is split at its first `=` or `:`; name and value are
+  /// trimmed, and a pair without a separator gets an empty value. They win
+  /// over every other property source; a key added again replaces the
+  /// earlier value.
   ///
   /// ```dart
-  /// runner.withPropertyValues(['shop.name=Books', 'shop.url: http://x', 'flag'])
+  /// // shop.name = Books, shop.url = http://x, flag = '' (empty)
+  /// runner.withPropertyValues([
+  ///   'shop.name=Books',
+  ///   'shop.url: http://x',
+  ///   'flag',
+  /// ]);
   /// ```
   ApplicationContextRunner withPropertyValues(List<String> pairs) => _copy(
     properties: {
@@ -192,24 +236,28 @@ final class ApplicationContextRunner {
     return equals < 0 || colon < equals ? colon : equals;
   }
 
-  /// Replaces the OS environment (`withSystemProperties`, for variables).
+  /// Sets environment variables for the contexts, in place of the OS
+  /// environment; added to those of earlier calls. Use it to test settings
+  /// that come from variables (`NEON_CACHE_SIZE` for `neon.cache.size`).
+  /// Spring Boot's `withSystemProperties` is the closest.
   ApplicationContextRunner withSystemEnvironment(Map<String, String> env) =>
       _copy(systemEnvironment: {...systemEnvironment, ...env});
 
-  /// Registers an extra bean of [T] called [name] (default: the type name
-  /// in lower camel case, see [defaultBeanName]), created by [supplier] in
-  /// each context the runner starts, like Boot's `withBean(type, supplier)`:
-  /// every run gets a new instance, never one a previous run destroyed.
+  /// Registers an extra bean of [T] called [name] (default: the type name in
+  /// lower camel case, see [defaultBeanName]), created by [supplier] in each
+  /// context the runner starts. Every run gets a new instance, never one
+  /// that a previous run destroyed.
   ///
-  /// The bean is registered before the configurations are processed, so
+  /// The bean is registered before the configurations, so the
   /// auto-configuration sees it: a `@ConditionalOnMissingBean` backs off,
   /// and a missing back-off shows up as a second bean (`hasSingleBean`
   /// fails) or, with the same name, as a failed start. It never replaces a
   /// bean; use [withBeanOverride] for that.
   ///
   /// ```dart
+  /// // The application has its own client: the starter must not add one.
   /// runner.withBean<HttpClient>(FakeClient.new).run((context) {
-  ///   expect(context, hasSingleBean<HttpClient>()); // the starter backed off
+  ///   expect(context, hasSingleBean<HttpClient>());
   /// });
   /// ```
   ///
@@ -235,9 +283,12 @@ final class ApplicationContextRunner {
   );
 
   /// Replaces the bean of type [T] (or the bean called [name]) with
-  /// [instance] after the configurations were processed, like Spring's
-  /// `@TestBean` / `@MockitoBean`; see [BeanOverride]. Not in Boot's
-  /// runner: to check auto-configuration, prefer [withBean].
+  /// [instance] after the configurations were registered, as
+  /// `springBootTest(overrides:)` does; see [BeanOverride].
+  ///
+  /// Use it when a configuration's bean needs a fake collaborator, such as a
+  /// fixed clock. It is not in Boot's runner, and it hides back-off
+  /// mistakes: to check that a configuration backs off, use [withBean].
   ///
   /// ```dart
   /// runner.withBeanOverride<Clock>(FixedClock(at)).run((context) { ... });
@@ -252,15 +303,22 @@ final class ApplicationContextRunner {
     ],
   );
 
-  /// Adds an initializer (`withInitializer`).
+  /// Adds an initializer, called on each context before it is refreshed:
+  /// for setup the other methods do not cover, such as adding a property
+  /// source or a bean factory post-processor. Spring Boot's
+  /// `withInitializer`.
   ApplicationContextRunner withInitializer(
     ApplicationContextInitializer initializer,
   ) => _copy(initializers: [...initializers, initializer]);
 
-  /// Starts a context, passes it to [body] and closes it. A context that
-  /// failed to start is passed too: check it with `hasFailed()` or
-  /// [AssertableApplicationContext.startupFailure]. For asynchronous
-  /// checks use [runAsync] (this closes the context when [body] returns).
+  /// Starts a context, passes it to [body], closes it with `close()` when
+  /// [body] returns, and returns what [body] returned.
+  ///
+  /// A context that failed to start is passed too, instead of throwing:
+  /// check it with `hasFailed()` or
+  /// [AssertableApplicationContext.startupFailure]. For a [body] that
+  /// awaits, use [runAsync]; here the context would be closed at the first
+  /// `await`.
   R run<R>(R Function(AssertableApplicationContext context) body) {
     final assertable = _start();
     try {
@@ -270,13 +328,16 @@ final class ApplicationContextRunner {
     }
   }
 
-  /// Like [run], for an asynchronous [body]: the context is closed with
-  /// `closeAsync()` (asynchronous `@PreDestroy` and lifecycle stops are
-  /// awaited) once the returned future completes.
+  /// Like [run], for an asynchronous [body]: the context is refreshed with
+  /// `refreshAsync()` (asynchronous init methods are awaited) and closed
+  /// with `closeAsync()` (asynchronous `@PreDestroy` methods and lifecycle
+  /// stops are awaited) once the returned future completes.
   ///
   /// ```dart
-  /// await runner.runAsync((context) async {
-  ///   expect(await context.getBean<CatalogClient>().find('1'), isNotNull);
+  /// test('calls the client', () async {
+  ///   await runner.runAsync((context) async {
+  ///     expect(await context.getBean<CatalogClient>().find('1'), isNotNull);
+  ///   });
   /// });
   /// ```
   Future<R> runAsync<R>(
@@ -385,8 +446,24 @@ final class ApplicationContextRunner {
   }
 }
 
-/// A context started by [ApplicationContextRunner.run], or the reason it
-/// could not start (Spring's `AssertableApplicationContext`).
+/// What [ApplicationContextRunner.run] hands to the test: the started
+/// context, or the reason it could not start.
+///
+/// A failed start does not throw, so a test can check that a
+/// configuration rejects bad input: `expect(context, hasFailed())`. On a
+/// started context, the matchers and [getBean] read the beans; reading a
+/// bean of a failed one throws a [StateError] with the failure.
+///
+/// ```dart
+/// runner.run((context) {
+///   // The starter's default, created because the app has none.
+///   expect(context, hasSingleBean<CacheManager>());
+///   expect(context.getBean<CacheManager>(), isA<InMemoryCacheManager>());
+/// });
+/// ```
+///
+/// Spring (Java): Spring Boot's `AssertableApplicationContext`, used with
+/// AssertJ's `assertThat(context)`.
 final class AssertableApplicationContext {
   AssertableApplicationContext._(this._context, this.startupFailure);
 
@@ -404,13 +481,14 @@ final class AssertableApplicationContext {
     }
   }
 
-  /// Why the context failed to start; `null` when it started.
+  /// The error that stopped the start; `null` when the context started.
   final Object? startupFailure;
 
   /// Whether the context failed to start.
   bool get hasFailed => startupFailure != null;
 
-  /// The started context; throws if it failed to start.
+  /// The started context, for checks the shortcuts below do not cover.
+  /// Throws a [StateError] with the failure when the context did not start.
   ConfigurableApplicationContext get context {
     if (startupFailure case final failure?) {
       throw StateError('The context failed to start: $failure');
@@ -418,20 +496,24 @@ final class AssertableApplicationContext {
     return _context;
   }
 
-  /// The environment.
+  /// The context's environment, also after a failed start: to check the
+  /// properties the configuration saw.
   ConfigurableEnvironment get environment => _context.environment;
 
-  /// The bean of type [T] (optionally with [qualifier]).
+  /// The bean of type [T]; with [qualifier], the one it names among
+  /// several. Throws when no bean matches or the context did not start.
   T getBean<T extends Object>({String? qualifier}) =>
       context.getBean<T>(qualifier: qualifier);
 
-  /// The bean named [name].
+  /// The bean called [name], whatever its type. Throws when there is none
+  /// or the context did not start.
   Object getBeanByName(String name) => context.getBeanByName(name);
 
-  /// Names of the beans of type [T].
+  /// The names of the beans of type [T] in this context (not its parent),
+  /// to check which configuration created them.
   List<String> getBeanNamesForType<T extends Object>() =>
       context.getBeanNamesForType(T);
 
-  /// Whether a bean called [name] exists.
+  /// Whether a bean called [name] exists, here or in a parent context.
   bool containsBean(String name) => context.containsBean(name);
 }

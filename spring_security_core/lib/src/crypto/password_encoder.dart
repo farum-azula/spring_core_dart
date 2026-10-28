@@ -4,33 +4,72 @@ import 'dart:typed_data';
 
 import 'package:spring_security_core/src/crypto/kdf_primitives.dart';
 
-/// Encodes passwords for storage and checks a typed password against a
-/// stored one, like Spring's `PasswordEncoder`.
+/// Turns a password into a hash you can store, and later checks a typed
+/// password against that hash.
+///
+/// Passwords must never be stored as typed: if the database leaks, the
+/// attacker would have them. An encoder applies a slow, salted one-way
+/// function, so the stored text cannot be turned back into the password,
+/// and the same password gives a different hash each time. Use it when a
+/// user registers or changes their password ([encode]); logins call
+/// [matches] for you through `DaoAuthenticationProvider`.
+///
+/// Inject the `PasswordEncoder` bean if the application declares one;
+/// otherwise use
+/// [PasswordEncoderFactories.createDelegatingPasswordEncoder], which is
+/// also what logins use when there is no bean.
 ///
 /// ```dart
+/// // Registration: store the hash, never the password.
 /// final encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
-/// final stored = encoder.encode('secret'); // {argon2}$argon2id$v=19$...
-/// encoder.matches('secret', stored); // true
+/// final stored = encoder.encode(form.password); // {argon2}$argon2id$v=19$...
+/// await accounts.create(form.email, passwordHash: stored);
+///
+/// encoder.matches(form.password, stored); // true
 /// ```
+///
+/// Spring (Java): `PasswordEncoder`, the same three methods.
 abstract interface class PasswordEncoder {
-  /// The encoded form of [rawPassword] (a new random salt each time).
+  /// A hash of [rawPassword] to store, with a new random salt each time,
+  /// so two calls give different texts that both match.
+  ///
+  /// The hashing encoders are slow on purpose (up to hundreds of
+  /// milliseconds): do not call [encode] in a loop on a request path.
   String encode(String rawPassword);
 
   /// Whether [rawPassword] is the password [encodedPassword] was made
-  /// from; `false` for an empty [rawPassword] and for a missing, empty or
-  /// malformed [encodedPassword] (like Spring Security 7's
-  /// `AbstractValidatingPasswordEncoder`: an empty password never logs in).
+  /// from.
+  ///
+  /// `false` for an empty [rawPassword] (an empty password never logs in)
+  /// and for a missing, empty or malformed [encodedPassword], as in Spring
+  /// Security 7. The comparison takes the same time wherever the hashes
+  /// differ.
   bool matches(String rawPassword, String? encodedPassword);
 
-  /// Whether [encodedPassword] should be encoded again (made with weaker
-  /// settings than this encoder's); `DaoAuthenticationProvider` then stores
-  /// the new hash after a successful login.
+  /// Whether [encodedPassword] was made with weaker settings than this
+  /// encoder's and should be replaced.
+  ///
+  /// After a successful login `DaoAuthenticationProvider` then hashes the
+  /// typed password again and stores it through a
+  /// `UserDetailsPasswordService`. `false` for `null` and for text the
+  /// encoder cannot read.
   bool upgradeEncoding(String? encodedPassword);
 }
 
-/// Compares two byte lists in time independent of where they differ, like
-/// Java's `MessageDigest.isEqual`: a check of a secret must not tell how
-/// many leading bytes were right.
+/// Whether [a] and [b] hold the same bytes, compared in a time that does
+/// not depend on where they differ.
+///
+/// An ordinary comparison stops at the first different byte, so an
+/// attacker who can measure the time learns how many leading bytes of a
+/// guess were right. Use it to compare any secret: a hash, a token, an API
+/// key. Lists of different lengths are never equal.
+///
+/// ```dart
+/// // Check the key a webhook caller sent against the configured one.
+/// final ok = constantTimeEquals(utf8.encode(sent), utf8.encode(expected));
+/// ```
+///
+/// Java: `MessageDigest.isEqual`.
 bool constantTimeEquals(List<int> a, List<int> b) {
   var difference = a.length ^ b.length;
   for (var i = 0; i < a.length; i++) {
@@ -47,7 +86,8 @@ bool _checkable(String rawPassword, String? encodedPassword) =>
     encodedPassword != null &&
     encodedPassword.isNotEmpty;
 
-/// [length] cryptographically random bytes (`Random.secure`).
+/// [length] random bytes from `Random.secure()`, suitable for salts, keys
+/// and tokens that an attacker must not guess.
 Uint8List secureRandomBytes(int length) {
   final bytes = Uint8List(length);
   for (var i = 0; i < length; i++) {
@@ -56,16 +96,44 @@ Uint8List secureRandomBytes(int length) {
   return bytes;
 }
 
-/// Argon2 (the winner of the Password Hashing Competition), like Spring's
-/// `Argon2PasswordEncoder` — which also uses Bouncy Castle. Hashes are in
-/// the PHC format Spring writes, so hashes move between Java and Dart:
-/// `$argon2id$v=19$m=16384,t=2,p=1$<salt>$<hash>`.
+/// A [PasswordEncoder] using Argon2id, the winner of the Password Hashing
+/// Competition and the default for new hashes here.
 ///
-/// [Argon2PasswordEncoder.defaultsForSpringSecurity] are Spring Security's
-/// current defaults (Argon2id, 16 MiB, 2 iterations, 1 lane, 16-byte salt,
-/// 32-byte hash).
+/// Argon2 needs a lot of memory per hash, which makes guessing many
+/// passwords on special hardware expensive. The hash text carries all
+/// its parameters, in the PHC format Spring writes, so hashes move
+/// between Java and Dart applications in both directions:
+/// `$argon2id$v=19$m=16384,t=2,p=1$<salt>$<hash>`. [matches] reads
+/// Argon2d, Argon2i and Argon2id hashes of versions 1.0 and 1.3, and
+/// refuses parameters beyond 4 GiB of memory, 1 024 passes or 256 lanes,
+/// so a corrupted stored hash cannot make one login run for hours.
+///
+/// Most applications get it through
+/// [PasswordEncoderFactories.createDelegatingPasswordEncoder] as
+/// `{argon2}`. Create one directly to choose stronger parameters.
+///
+/// ```dart
+/// // 64 MiB and 3 passes; old hashes are upgraded at the next login.
+/// final encoder = Argon2PasswordEncoder(
+///   saltLength: 16,
+///   hashLength: 32,
+///   parallelism: 1,
+///   memory: 65536,
+///   iterations: 3,
+/// );
+/// ```
+///
+/// Spring (Java): `Argon2PasswordEncoder`, which also uses Bouncy
+/// Castle:
+/// ```java
+/// new Argon2PasswordEncoder(16, 32, 1, 65536, 3);
+/// ```
 final class Argon2PasswordEncoder implements PasswordEncoder {
-  /// An encoder with these parameters; [memory] in KiB.
+  /// An encoder with these parameters; [memory] is in KiB.
+  ///
+  /// Throws an [ArgumentError] when [saltLength] is below 8, [hashLength]
+  /// below 16, [parallelism] or [iterations] below 1, or [memory] below
+  /// 8 KiB per lane.
   Argon2PasswordEncoder({
     required this.saltLength,
     required this.hashLength,
@@ -81,7 +149,9 @@ final class Argon2PasswordEncoder implements PasswordEncoder {
     }
   }
 
-  /// Spring Security's defaults (`defaultsForSpringSecurity_v5_8`).
+  /// Spring Security's current defaults, from
+  /// `defaultsForSpringSecurity_v5_8`: Argon2id with 16 MiB of memory, 2
+  /// passes, 1 lane, a 16-byte salt and a 32-byte hash.
   factory Argon2PasswordEncoder.defaultsForSpringSecurity() =>
       Argon2PasswordEncoder(
         saltLength: 16,
@@ -91,19 +161,19 @@ final class Argon2PasswordEncoder implements PasswordEncoder {
         iterations: 2,
       );
 
-  /// Salt length in bytes.
+  /// The length of the random salt of new hashes, in bytes.
   final int saltLength;
 
-  /// Hash length in bytes.
+  /// The length of new hashes, in bytes.
   final int hashLength;
 
-  /// Lanes.
+  /// The number of lanes (parallel memory blocks) of new hashes.
   final int parallelism;
 
-  /// Memory in KiB.
+  /// The memory of new hashes, in KiB; the main cost knob.
   final int memory;
 
-  /// Passes over the memory.
+  /// The number of passes over the memory of new hashes.
   final int iterations;
 
   @override
@@ -144,8 +214,9 @@ final class Argon2PasswordEncoder implements PasswordEncoder {
     return constantTimeEquals(hash, decoded.hash);
   }
 
-  /// `true` when [encodedPassword] used less memory or fewer iterations
-  /// than this encoder, like Spring.
+  /// `true` when [encodedPassword] used less memory or fewer passes than
+  /// this encoder, as in Spring; `false` for text that is not an Argon2
+  /// hash.
   @override
   bool upgradeEncoding(String? encodedPassword) {
     final decoded = _Argon2Hash.parse(encodedPassword);
@@ -261,14 +332,33 @@ final class _Argon2Hash {
   }
 }
 
-/// PBKDF2, like Spring's `Pbkdf2PasswordEncoder`: hex of the salt followed
-/// by the derived key (Spring's format, so hashes move between Java and
-/// Dart). [Pbkdf2PasswordEncoder.defaultsForSpringSecurity] are Spring
-/// Security's current defaults: HMAC-SHA256, 310 000 iterations, a 16-byte
-/// salt, a 256-bit hash.
+/// A [PasswordEncoder] using PBKDF2, the key derivation function required
+/// by some standards (such as FIPS 140).
+///
+/// Choose it when a policy requires PBKDF2; otherwise prefer Argon2. The
+/// hash is the hex text of the salt followed by the derived key, Spring's
+/// format. Unlike Argon2 and scrypt, the text does not say which
+/// iterations, HMAC or salt length made it: an encoder can only check
+/// hashes made with its own settings, and [upgradeEncoding] cannot detect
+/// weak ones.
+///
+/// ```dart
+/// final encoder = Pbkdf2PasswordEncoder.defaultsForSpringSecurity();
+/// // 96 hex digits: the 16-byte salt, then the 32-byte hash.
+/// final stored = encoder.encode('secret');
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+/// ```
 final class Pbkdf2PasswordEncoder implements PasswordEncoder {
-  /// An encoder with these parameters; [secret] (a pepper kept outside
-  /// the store) is mixed into the salt, like Spring's.
+  /// An encoder with these parameters.
+  ///
+  /// [secret] is a pepper: a value kept outside the password store (in the
+  /// configuration) and appended to the salt, as Spring does, so a leaked
+  /// store alone is not enough to test guesses. Throws an [ArgumentError]
+  /// when [saltLength] is below 8 or [iterations] below 1.
   Pbkdf2PasswordEncoder({
     required this.saltLength,
     required this.iterations,
@@ -281,23 +371,28 @@ final class Pbkdf2PasswordEncoder implements PasswordEncoder {
     }
   }
 
-  /// Spring Security's defaults (`defaultsForSpringSecurity_v5_8`).
+  /// Spring Security's current defaults, from
+  /// `defaultsForSpringSecurity_v5_8`: HMAC-SHA256, 310 000 iterations, a
+  /// 16-byte salt, a 256-bit hash and no secret.
   factory Pbkdf2PasswordEncoder.defaultsForSpringSecurity() =>
       Pbkdf2PasswordEncoder(saltLength: 16, iterations: 310000);
 
-  /// The pepper.
+  /// The pepper appended to the salt; `''` for none.
   final String secret;
 
-  /// Salt length in bytes.
+  /// The length of the salt, in bytes; also used to split stored hashes,
+  /// so it must match the encoder that made them.
   final int saltLength;
 
-  /// Iterations.
+  /// How many times the HMAC is applied; more is slower to compute and to
+  /// attack.
   final int iterations;
 
-  /// The HMAC of the derivation.
+  /// The HMAC used by the derivation; HMAC-SHA256 by default.
   final Pbkdf2Algorithm algorithm;
 
-  /// Base64 instead of hex (Spring's `setEncodeHashAsBase64`).
+  /// Whether hashes are written and read as Base64 instead of hex;
+  /// Spring's `setEncodeHashAsBase64`.
   final bool encodeHashAsBase64;
 
   @override
@@ -339,21 +434,23 @@ final class Pbkdf2PasswordEncoder implements PasswordEncoder {
   );
 }
 
-/// The HMACs of [Pbkdf2PasswordEncoder], like Spring's
-/// `Pbkdf2PasswordEncoder.SecretKeyFactoryAlgorithm`.
+/// The HMAC that [Pbkdf2PasswordEncoder] derives keys with; it fixes the
+/// hash length too.
+///
+/// Spring (Java): `Pbkdf2PasswordEncoder.SecretKeyFactoryAlgorithm`.
 enum Pbkdf2Algorithm {
-  /// HMAC-SHA1 (20-byte hash; only for old hashes).
+  /// HMAC-SHA1, giving a 20-byte hash; only to check old hashes.
   pbkdf2WithHmacSha1(20),
 
-  /// HMAC-SHA256 (32-byte hash; the default).
+  /// HMAC-SHA256, giving a 32-byte hash; the default.
   pbkdf2WithHmacSha256(32),
 
-  /// HMAC-SHA512 (64-byte hash).
+  /// HMAC-SHA512, giving a 64-byte hash.
   pbkdf2WithHmacSha512(64);
 
   Pbkdf2Algorithm(this.hashBytes);
 
-  /// The derived key's length.
+  /// The length of the derived key, in bytes.
   final int hashBytes;
 
   Pbkdf2Hash get _hash => switch (this) {
@@ -363,13 +460,31 @@ enum Pbkdf2Algorithm {
   };
 }
 
-/// scrypt, like Spring's `SCryptPasswordEncoder`, in Spring's format
-/// (`$<params in hex>$<salt>$<hash>`, base64), so `{scrypt}` hashes of a
-/// Java application keep working.
-/// [SCryptPasswordEncoder.defaultsForSpringSecurity] are Spring Security's
-/// current defaults (N = 65 536, r = 8, p = 1, 32-byte hash, 16-byte salt).
+/// A [PasswordEncoder] using scrypt, a memory-hard function older than
+/// Argon2.
+///
+/// Use it to keep checking `{scrypt}` hashes, for example of users moved
+/// from a Java application; new hashes are better made with Argon2. The
+/// hash is in Spring's format, `$<parameters in hex>$<salt>$<hash>` in
+/// Base64, and carries its parameters. [matches] refuses a cost N above
+/// 65 536 or a hash longer than 256 bytes, so a corrupted stored hash
+/// cannot make one login run for long.
+///
+/// ```dart
+/// final encoder = SCryptPasswordEncoder.defaultsForSpringSecurity();
+/// encoder.matches('secret', storedScryptHash);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// SCryptPasswordEncoder.defaultsForSpringSecurity_v5_8();
+/// ```
 final class SCryptPasswordEncoder implements PasswordEncoder {
-  /// An encoder with these parameters; [cpuCost] is a power of two.
+  /// An encoder with these parameters.
+  ///
+  /// Throws an [ArgumentError] unless [cpuCost] is a power of two from 2
+  /// to 65 536, [memoryCost] and [parallelization] are from 1 to 255,
+  /// [keyLength] is at least 1 and [saltLength] at least 8.
   SCryptPasswordEncoder({
     required this.cpuCost,
     required this.memoryCost,
@@ -390,7 +505,9 @@ final class SCryptPasswordEncoder implements PasswordEncoder {
     }
   }
 
-  /// Spring Security's defaults (`defaultsForSpringSecurity_v5_8`).
+  /// Spring Security's current defaults, from
+  /// `defaultsForSpringSecurity_v5_8`: N = 65 536, r = 8, p = 1, a
+  /// 32-byte hash and a 16-byte salt.
   factory SCryptPasswordEncoder.defaultsForSpringSecurity() =>
       SCryptPasswordEncoder(
         cpuCost: 65536,
@@ -400,19 +517,19 @@ final class SCryptPasswordEncoder implements PasswordEncoder {
         saltLength: 16,
       );
 
-  /// N.
+  /// The CPU and memory cost N of new hashes.
   final int cpuCost;
 
-  /// r.
+  /// The block size r of new hashes.
   final int memoryCost;
 
-  /// p.
+  /// The parallelization p of new hashes.
   final int parallelization;
 
-  /// Hash length in bytes.
+  /// The length of new hashes, in bytes.
   final int keyLength;
 
-  /// Salt length in bytes.
+  /// The length of the random salt of new hashes, in bytes.
   final int saltLength;
 
   @override
@@ -501,10 +618,17 @@ final class SCryptPasswordEncoder implements PasswordEncoder {
   static int _log2(int value) => value.bitLength - 1;
 }
 
-/// The password as given, like Spring's `NoOpPasswordEncoder`: only for
-/// tests and `{noop}` passwords of demos; never for real users.
+/// A [PasswordEncoder] that stores the password as typed, without
+/// hashing.
+///
+/// Only for tests and the `{noop}secret` passwords of demos: anyone who
+/// reads the store reads the passwords. Never use it for real users. The
+/// comparison still takes constant time.
+///
+/// Spring (Java): `NoOpPasswordEncoder.getInstance()` (deprecated there
+/// as a warning).
 final class NoOpPasswordEncoder implements PasswordEncoder {
-  /// The encoder.
+  /// The stateless encoder.
   const NoOpPasswordEncoder();
 
   @override
@@ -522,10 +646,23 @@ final class NoOpPasswordEncoder implements PasswordEncoder {
   bool upgradeEncoding(String? encodedPassword) => false;
 }
 
-/// Picks the encoder by the `{id}` prefix of a stored password, like
-/// Spring's `DelegatingPasswordEncoder`: new passwords get the default
-/// encoder's id, old ones keep working with theirs and are upgraded at
-/// the next login.
+/// A [PasswordEncoder] that stores the algorithm's name in front of each
+/// hash, as `{id}`, and checks every hash with the encoder of its id.
+///
+/// It lets an application change its hashing algorithm without breaking
+/// existing passwords: new hashes get the [idForEncode] encoder, old ones
+/// keep working with theirs, and [upgradeEncoding] reports every hash of
+/// another id so the login can re-hash it. A stored hash with no `{id}`,
+/// or an id with no encoder, throws an [ArgumentError] from [matches],
+/// unless [defaultPasswordEncoderForMatches] is set. That is a
+/// configuration error, not a wrong password; a
+/// `DaoAuthenticationProvider` refuses the login.
+/// `{bcrypt}` hashes get an error message of their own: BCrypt is not
+/// available here.
+///
+/// Most applications use the one from
+/// [PasswordEncoderFactories.createDelegatingPasswordEncoder]. Build one
+/// to choose the ids yourself.
 ///
 /// ```dart
 /// final encoder = DelegatingPasswordEncoder('argon2', {
@@ -535,8 +672,19 @@ final class NoOpPasswordEncoder implements PasswordEncoder {
 /// encoder.encode('secret'); // {argon2}$argon2id$...
 /// encoder.matches('secret', '{noop}secret'); // true
 /// ```
+///
+/// Spring (Java):
+/// ```java
+/// new DelegatingPasswordEncoder("argon2", Map.of(
+///     "argon2", Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8(),
+///     "noop", NoOpPasswordEncoder.getInstance()));
+/// ```
 final class DelegatingPasswordEncoder implements PasswordEncoder {
-  /// Encodes with the encoder named [idForEncode] among [encoders].
+  /// An encoder writing new hashes with `encoders[idForEncode]` and
+  /// checking stored ones with the encoder of their `{id}`.
+  ///
+  /// Throws an [ArgumentError] when [idForEncode] is not a key of
+  /// [encoders] or an id contains `{` or `}`.
   DelegatingPasswordEncoder(
     this.idForEncode,
     Map<String, PasswordEncoder> encoders, {
@@ -552,15 +700,16 @@ final class DelegatingPasswordEncoder implements PasswordEncoder {
     }
   }
 
-  /// The id of new hashes.
+  /// The id written in front of new hashes, such as `argon2`.
   final String idForEncode;
 
-  /// The encoders by id.
+  /// The encoders by id, without the braces; cannot be modified.
   final Map<String, PasswordEncoder> encoders;
 
-  /// Checks stored passwords without a known `{id}`; by default they are
-  /// refused with an error naming the id (a misconfiguration, not a
-  /// wrong password).
+  /// Checks stored hashes with no `{id}` or an unknown one, given the whole
+  /// stored text; `null` by default, and then [matches] throws an
+  /// [ArgumentError] naming the id (a misconfiguration, not a wrong
+  /// password).
   final PasswordEncoder? defaultPasswordEncoderForMatches;
 
   @override
@@ -614,17 +763,33 @@ final class DelegatingPasswordEncoder implements PasswordEncoder {
   }
 }
 
-/// The application's default [PasswordEncoder], like Spring's
-/// `PasswordEncoderFactories`.
+/// Creates the recommended [PasswordEncoder] for an application.
+///
+/// This is the encoder logins use when the application declares no
+/// `PasswordEncoder` bean, so hashes it writes are the ones the login
+/// code expects.
+///
+/// ```dart
+/// @Bean()
+/// PasswordEncoder passwordEncoder() =>
+///     PasswordEncoderFactories.createDelegatingPasswordEncoder();
+/// ```
+///
+/// Spring (Java): `PasswordEncoderFactories`, with BCrypt as default
+/// there.
 abstract final class PasswordEncoderFactories {
-  /// A [DelegatingPasswordEncoder] encoding with Argon2 (`{argon2}`) and
-  /// checking `{argon2}`, `{pbkdf2}`, `{pbkdf2@SpringSecurity_v5_8}`,
-  /// `{scrypt}`, `{scrypt@SpringSecurity_v5_8}`,
-  /// `{argon2@SpringSecurity_v5_8}` and `{noop}` hashes.
+  /// A [DelegatingPasswordEncoder] that writes Argon2 hashes (`{argon2}`)
+  /// with Spring Security's defaults and checks `{argon2}`, `{pbkdf2}`,
+  /// `{scrypt}`, their `@SpringSecurity_v5_8` variants and `{noop}`.
   ///
-  /// Spring's default id is `bcrypt`; BCrypt is not here (no vetted Dart
-  /// implementation), so new hashes are `{argon2}` — which Spring checks
-  /// too. A `{bcrypt}` hash fails with an error saying so.
+  /// Each id and its `@SpringSecurity_v5_8` variant use the same encoder,
+  /// with the v5_8 defaults. For Argon2 and scrypt that makes no
+  /// difference (the hash carries its parameters); `{pbkdf2}` hashes must
+  /// have been made with the v5_8 PBKDF2 settings.
+  ///
+  /// Spring's default id is `bcrypt`. BCrypt is not here (there is no
+  /// vetted Dart implementation), so new hashes are `{argon2}`, which
+  /// Spring checks too. A `{bcrypt}` hash fails with an error saying so.
   static PasswordEncoder createDelegatingPasswordEncoder() {
     final argon2 = Argon2PasswordEncoder.defaultsForSpringSecurity();
     final pbkdf2 = Pbkdf2PasswordEncoder.defaultsForSpringSecurity();

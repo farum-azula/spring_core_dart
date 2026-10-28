@@ -1,15 +1,23 @@
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// The conditions a context evaluated and their outcomes, grouped by what
-/// they guard, like Spring Boot's `ConditionEvaluationReport`.
-/// `SpringApplication` logs it (at INFO, logger
-/// `spring_boot_dart.ConditionEvaluationReport`) after the refresh, or when
-/// the start fails, if `debug` is set (`--debug`, `debug=true`).
+/// The list of `@Conditional...` checks made while the beans were
+/// registered, with which ones matched and which did not.
+///
+/// Auto-configuration adds or skips beans depending on conditions (is
+/// there already such a bean, is a property set). When a bean you
+/// expected is missing, or one appears that you did not expect, this
+/// report says why. The usual way to see it is to start the application
+/// with `--debug` (or `debug=true` in a config file): `SpringApplication`
+/// then logs it at INFO under the logger
+/// `spring_boot_dart.ConditionEvaluationReport` after the start, or after
+/// a failed start. Without `debug`, a failed start logs how to get it.
+///
+/// Read it in code in a test, to check that a starter backs off:
 ///
 /// ```dart
 /// final report = ConditionEvaluationReport.of(context);
-/// print(report.negativeMatches.keys); // what was left out, and why
-/// print(report);
+/// // The sources that were left out, with the conditions that failed.
+/// expect(report.negativeMatches.keys, contains('cache'));
 /// ```
 ///
 /// Spring (Java):
@@ -18,12 +26,16 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///     ConditionEvaluationReport.get(context.getBeanFactory());
 /// ```
 final class ConditionEvaluationReport {
-  /// The report of [evaluations] (in evaluation order).
+  /// A report of [evaluations], given in the order they were made. Use
+  /// [ConditionEvaluationReport.of] to get the report of a context.
   ConditionEvaluationReport(Iterable<ConditionEvaluation> evaluations)
     : evaluations = List.unmodifiable(evaluations);
 
-  /// The report of [context]'s last refresh (empty for a context that is
-  /// not an `AnnotationConfigApplicationContext`).
+  /// The report of the conditions evaluated by [context]'s last refresh.
+  ///
+  /// It is empty for a context that is not an
+  /// `AnnotationConfigApplicationContext`, the kind `SpringApplication`
+  /// creates.
   factory ConditionEvaluationReport.of(ApplicationContext context) =>
       ConditionEvaluationReport(
         context is AnnotationConfigApplicationContext
@@ -31,11 +43,13 @@ final class ConditionEvaluationReport {
             : const [],
       );
 
-  /// Every outcome, in evaluation order.
+  /// Every outcome, in the order the conditions were evaluated.
   final List<ConditionEvaluation> evaluations;
 
-  /// The outcomes per source (bean name or configuration class), in the
-  /// order the sources were first evaluated.
+  /// The outcomes grouped by what the conditions guard: a bean name, a
+  /// configuration class (`package:app#CacheConfig`) or a
+  /// `@PropertySource`. Sources come in the order they were first
+  /// evaluated; the map is computed on each call.
   Map<String, List<ConditionEvaluation>> get bySource {
     final result = <String, List<ConditionEvaluation>>{};
     for (final evaluation in evaluations) {
@@ -44,19 +58,24 @@ final class ConditionEvaluationReport {
     return result;
   }
 
-  /// The sources whose conditions all matched.
+  /// The sources whose conditions all matched: what was registered
+  /// because of them.
   Map<String, List<ConditionEvaluation>> get positiveMatches => {
     for (final MapEntry(:key, :value) in bySource.entries)
       if (value.every((e) => e.matched)) key: value,
   };
 
-  /// The sources with a condition that did not match.
+  /// The sources with at least one condition that did not match: what
+  /// was left out. Each list holds all the source's outcomes, the matched
+  /// ones too.
   Map<String, List<ConditionEvaluation>> get negativeMatches => {
     for (final MapEntry(:key, :value) in bySource.entries)
       if (value.any((e) => !e.matched)) key: value,
   };
 
-  /// The report as Spring Boot prints it.
+  /// The report in Spring Boot's text layout (`CONDITIONS EVALUATION
+  /// REPORT`, positive matches, then negative matches), as it is logged
+  /// with `--debug`.
   @override
   String toString() {
     final out = StringBuffer()

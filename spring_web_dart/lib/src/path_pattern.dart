@@ -1,4 +1,11 @@
-/// A parsed URL path pattern, like Spring's `PathPattern`:
+/// A URL path pattern, such as `/books/{isbn}` or `/static/**`, parsed
+/// once and then tested against request paths.
+///
+/// Every path an application writes for the web server is one of these:
+/// the paths of `@GetMapping` and the other mappings, of CORS mappings,
+/// of interceptors, of security rules, of WebSocket handlers. The
+/// framework parses them; applications rarely use the class directly,
+/// except in their own filters or when testing what a pattern matches.
 ///
 /// | Syntax | Matches |
 /// |---|---|
@@ -10,23 +17,35 @@
 /// | `{isbn:\d+}` | one segment matching the regex, captured |
 /// | `{*rest}` | the rest of the path, captured with its leading `/` (end only) |
 ///
-/// Paths are compared segment by segment, each percent-decoded; captured
-/// values are decoded. A trailing slash matters (`/books/` is not
-/// `/books`), like Spring 6.
+/// Paths are compared segment by segment, each percent-decoded, and
+/// captured values are decoded. A trailing slash matters: `/books/` does
+/// not match `/books`, as in Spring 6. When several patterns match, the
+/// more specific one should win; sorting patterns ([compareTo]) puts it
+/// first.
 ///
 /// ```dart
-/// final pattern = PathPattern.parse('/books/{isbn}');
-/// pattern.match('/books/978-0')?.variables; // {isbn: 978-0}
-/// pattern.matches('/books');                // false
+/// // A filter that only guards the admin API.
+/// final admin = PathPattern.parse('/api/admin/**');
+/// if (admin.matches(request.path)) { ... }
+///
+/// final book = PathPattern.parse('/books/{isbn}');
+/// book.match('/books/978-0')?.variables; // {isbn: 978-0}
+/// book.matches('/books');                // false
 /// ```
 ///
-/// Spring (Java): `PathPatternParser.defaultInstance.parse("/books/{isbn}")`.
+/// Spring (Java): `PathPattern`.
+/// ```java
+/// PathPattern book = PathPatternParser.defaultInstance.parse("/books/{isbn}");
+/// book.matchAndExtract(PathContainer.parsePath("/books/978-0"))
+///     .getUriVariables(); // {isbn=978-0}
+/// ```
 final class PathPattern implements Comparable<PathPattern> {
   PathPattern._(this.pattern, this._segments, this._trailingSlash);
 
-  /// Parses [pattern]; throws a [FormatException] for a malformed one
-  /// (`**` or `{*name}` before the end, unbalanced braces, a duplicate
-  /// variable).
+  /// Parses [pattern]. A missing leading `/` is added, and an empty
+  /// pattern is `/`. Throws a [FormatException] for a malformed pattern:
+  /// `**` or `{*name}` before the end, unbalanced braces, an invalid
+  /// regex, or a variable used twice.
   factory PathPattern.parse(String pattern) {
     var text = pattern.trim();
     if (text.isEmpty) {
@@ -64,24 +83,29 @@ final class PathPattern implements Comparable<PathPattern> {
     return PathPattern._(text, segments, trailingSlash);
   }
 
-  /// The pattern as written (with a leading `/`).
+  /// The pattern as written, with a leading `/` added if it had none.
   final String pattern;
 
   final List<_Segment> _segments;
   final bool _trailingSlash;
 
-  /// The names of the captured variables, in order.
+  /// The names of the variables the pattern captures, in order:
+  /// `[id, isbn]` for `/authors/{id}/books/{isbn}`.
   List<String> get variableNames => [
     for (final segment in _segments) ...segment.variables,
   ];
 
-  /// Whether the pattern has no wildcards and no variables.
+  /// Whether the pattern is a fixed path, with no wildcards and no
+  /// variables.
   bool get isLiteral => _segments.every((s) => s.isLiteral);
 
-  /// Whether [path] matches.
+  /// Whether [path] matches the pattern; see [match] for the format of
+  /// [path].
   bool matches(String path) => match(path) != null;
 
-  /// The match of [path] (percent-encoded, without the query), or `null`.
+  /// Matches [path], the raw path of a request (percent-encoded, without
+  /// the query string). Returns the captured variables, or `null` when
+  /// the path does not match.
   PathMatch? match(String path) {
     var text = path.isEmpty ? '/' : path;
     if (!text.startsWith('/')) {
@@ -124,7 +148,9 @@ final class PathPattern implements Comparable<PathPattern> {
     return PathMatch(variables);
   }
 
-  /// This pattern followed by [other] (`/api` + `/books/{isbn}`).
+  /// This pattern followed by [other]: `/api` and `/books/{isbn}` give
+  /// `/api/books/{isbn}`. An empty side gives the other one. The server
+  /// uses it to join a controller's base path and a method's path.
   PathPattern combine(PathPattern other) {
     if (_segments.isEmpty && !_trailingSlash) {
       return other;
@@ -179,12 +205,14 @@ final class PathPattern implements Comparable<PathPattern> {
   }
 }
 
-/// The result of [PathPattern.match]: the captured variables.
+/// A successful [PathPattern.match]: the values the pattern captured from
+/// the path.
 final class PathMatch {
-  /// A match capturing [variables].
+  /// A match that captured [variables].
   const PathMatch(this.variables);
 
-  /// The captured values, decoded, by variable name.
+  /// The captured values by variable name, percent-decoded:
+  /// `{isbn: 978-0}`. Empty for a pattern without variables.
   final Map<String, String> variables;
 }
 

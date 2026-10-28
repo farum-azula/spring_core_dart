@@ -13,16 +13,34 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.mvc');
 
-/// Maps requests to the `@GetMapping`, `@PostMapping`, ... methods of
-/// `@RestController` (and `@Controller`) beans, like Spring's
-/// `RequestMappingHandlerMapping` with its `RequestMappingHandlerAdapter`.
+/// The router of the controllers: it finds the controller method for a
+/// request, fills its parameters, calls it and writes the result.
 ///
-/// Every mapping is checked at startup: a `{variable}` without a
-/// `@PathVariable` parameter, a parameter without a role, two methods
-/// mapping the same request — the application stops with the reasons.
+/// At startup it reads the `@GetMapping`, `@PostMapping`, ... methods of
+/// every `@RestController` (and `@Controller`) bean, as the generator
+/// described them, and checks them all. A `{variable}` without a
+/// `@PathVariable` parameter, a parameter nothing can fill, two
+/// `@RequestBody` parameters, two methods mapping the same request, or an
+/// `@ExceptionHandler` without an exception type stops the application
+/// with the whole list of problems.
+///
+/// For a request it picks the most specific matching pattern, then checks
+/// the method (405), `consumes` (415), `produces` (406) and `headers`
+/// (400); it answers `HEAD` with the `GET` mapping, `OPTIONS` with an
+/// `Allow` header, and CORS pre-flights from the CORS rules. It also
+/// holds the `@ExceptionHandler` methods of the controllers and of the
+/// `@ControllerAdvice` beans, which the dispatcher uses for errors.
+///
+/// The starter declares it as the `requestMappingHandlerMapping` bean at
+/// order 0, so it is the first handler mapping asked. Applications do not
+/// create it; they write controllers and configure it through
+/// `WebMvcConfigurer` beans. The security starter reads its CORS rules
+/// ([corsConfigurationFor]). Spring splits this work between
+/// `RequestMappingHandlerMapping` and `RequestMappingHandlerAdapter`.
 final class RequestMappingHandlerMapping
     implements HandlerMapping, Ordered, SmartInitializingSingleton {
-  /// The mapping of the controllers of [beanFactory].
+  /// The router of the controller beans of [beanFactory]. Without a
+  /// [multipartResolver], one with the default limits is used.
   RequestMappingHandlerMapping({
     required this.beanFactory,
     required this.writer,
@@ -34,29 +52,36 @@ final class RequestMappingHandlerMapping
     MultipartResolver? multipartResolver,
   }) : multipartResolver = multipartResolver ?? MultipartResolver();
 
-  /// Where the controllers are found.
+  /// The container whose controller and controller-advice beans are
+  /// mapped; the handlers are called on its beans.
   final ListableBeanFactory beanFactory;
 
-  /// Writes results and errors.
+  /// Writes the results of handlers and exception handlers.
   final ResponseWriter writer;
 
-  /// Resolves `${...}` in mapping paths.
+  /// Resolves `${...}` placeholders in mapping paths and media types
+  /// from the configuration.
   final PropertyResolver environment;
 
-  /// Resolvers of `WebMvcConfigurer.addArgumentResolvers`, asked first.
+  /// The resolvers added by `WebMvcConfigurer.addArgumentResolvers`;
+  /// they are asked before the built-in binding.
   final List<HandlerMethodArgumentResolver> argumentResolvers;
 
-  /// Interceptors of `WebMvcConfigurer.addInterceptors`.
+  /// The interceptors added by `WebMvcConfigurer.addInterceptors`, in
+  /// order.
   final List<InterceptorRegistration> interceptors;
 
-  /// The global CORS configuration (a `CorsConfigurationSource` bean and
-  /// `WebMvcConfigurer.addCorsMappings`).
+  /// The global CORS rules: a `CorsConfigurationSource` bean and the
+  /// mappings of `WebMvcConfigurer.addCorsMappings`, combined. `null`
+  /// when there are none.
   final CorsConfigurationSource? corsSource;
 
-  /// Validates `@Valid` arguments.
+  /// Checks `@Valid()` arguments; `null` when the application has no
+  /// unique `Validator`, and then `@Valid()` checks nothing.
   final Validator? validator;
 
-  /// Reads `multipart/form-data` requests (`@RequestPart`, files).
+  /// Reads `multipart/form-data` requests for `@RequestPart` parameters,
+  /// uploaded files and multipart form fields.
   final MultipartResolver multipartResolver;
 
   final _mappings = <_Mapping>[];
@@ -66,18 +91,22 @@ final class RequestMappingHandlerMapping
   @override
   int get order => 0;
 
-  /// The mappings, as `GET /api/books/{isbn} -> BookController.find`.
+  /// Every mapping as text, such as
+  /// `GET /api/books/{isbn} -> BookController.find`, in matching order;
+  /// for diagnostics. Empty before [initialize].
   List<String> get mappings => [
     for (final mapping in _mappings) mapping.toString(),
   ];
 
-  /// Checks the controllers once every singleton exists, so an invalid
-  /// controller fails the startup.
+  /// Calls [initialize] once every singleton exists, so an invalid
+  /// controller stops the startup instead of the first request.
   @override
   void afterSingletonsInstantiated() => initialize();
 
-  /// Finds the controllers and checks their mappings; throws a
-  /// [StateError] listing every problem. Called once at startup.
+  /// Finds the controllers and the controller advice, builds the
+  /// mappings and checks them. Throws a [StateError] that lists every
+  /// problem found. Later calls do nothing; the lookup methods call it
+  /// when it has not run yet.
   void initialize() {
     if (_initialized) {
       return;
@@ -913,9 +942,14 @@ final class RequestMappingHandlerMapping
     );
   }
 
-  /// The exception handler for [error] among the handlers of the
-  /// controller of [handler] (if any), then of the `@ControllerAdvice`
-  /// beans; `null` when none handles it.
+  /// The `@ExceptionHandler` method that answers [error], or `null` when
+  /// none handles it.
+  ///
+  /// The methods of the controller of [handler] (the handler that threw)
+  /// come first, then those of the `@ControllerAdvice` beans in `@Order`.
+  /// Among the methods that handle the error, one that lists its exact
+  /// runtime type in `@ExceptionHandler([...])` wins, else the one whose
+  /// exception parameter has the most specific type.
   ExceptionHandlerMethod? exceptionHandlerFor(
     Object error, {
     HandlerMethod? handler,
@@ -940,8 +974,12 @@ final class RequestMappingHandlerMapping
     return ExceptionHandlerMethod._best(_adviceHandlers, error);
   }
 
-  /// Answers [error] with an `@ExceptionHandler` method; `false` when none
-  /// handles it.
+  /// Answers [error] with its `@ExceptionHandler` method (see
+  /// [exceptionHandlerFor]) and writes the method's result; returns
+  /// `true` when it did. Returns `false` when no method handles the
+  /// error, when the response is already committed, or when the
+  /// exception handler itself throws (that is logged); the caller then
+  /// writes the default error answer.
   Future<bool> handleException(
     Object error,
     ServerHttpRequest request,
@@ -1086,12 +1124,15 @@ final class RequestMappingHandlerMapping
     return _Execution(mapping, match.variables);
   }
 
-  /// The CORS configuration the router applies to [request]: the global
-  /// one combined with the `@CrossOrigin` of the handler the request (or,
-  /// for a pre-flight, the request it announces) is mapped to. Like
-  /// Spring's `HandlerMappingIntrospector` as a `CorsConfigurationSource`:
-  /// a security filter in front answers pre-flights the way the router
-  /// would.
+  /// The CORS rules the router applies to [request]: the global rules
+  /// combined with the `@CrossOrigin` of the handler the request is
+  /// mapped to (for a pre-flight, the handler of the request it
+  /// announces). For a path no handler maps, the global rules alone;
+  /// `null` when there are none.
+  ///
+  /// It lets a filter that runs before the router, such as the security
+  /// starter's CORS filter, answer pre-flights the way the router would.
+  /// Spring uses its `HandlerMappingIntrospector` for the same purpose.
   CorsConfiguration? corsConfigurationFor(ServerHttpRequest request) {
     if (!_initialized) {
       initialize();
@@ -1141,8 +1182,9 @@ final class RequestMappingHandlerMapping
   }
 }
 
-/// Marks a missing optional argument: a named one is left out (its Dart
-/// default applies).
+/// The value a parameter binder returns for an optional parameter that
+/// the request does not fill: a named parameter is then left out of the
+/// call, so its Dart default applies. Internal: the library hides it.
 const absent = _Absent();
 
 final class _Absent {
@@ -1262,7 +1304,12 @@ Future<Object?> _invokeWith(
   return result;
 }
 
-/// An `@ExceptionHandler` method of a controller or a controller advice.
+/// An `@ExceptionHandler` method of a controller or of a
+/// `@ControllerAdvice` bean, ready to be called for an error.
+///
+/// The router builds one per such method at startup and picks among them
+/// with [RequestMappingHandlerMapping.exceptionHandlerFor]. Applications
+/// write the annotated methods and never create this.
 final class ExceptionHandlerMethod {
   ExceptionHandlerMethod._(
     this.handler,
@@ -1271,13 +1318,16 @@ final class ExceptionHandlerMethod {
     this._binders,
   );
 
-  /// The method.
+  /// The annotated method and the bean it belongs to.
   final HandlerMethod handler;
 
-  /// The types of `@ExceptionHandler(value)`.
+  /// The types listed in `@ExceptionHandler([...])`, matched by exact
+  /// runtime type; empty when the exception parameter's type decides.
   final List<Type> declaredTypes;
 
-  /// The parameter receiving the exception, if any.
+  /// The parameter that receives the exception, or `null` when the method
+  /// does not take it: the first parameter that is not a
+  /// `ServerHttpRequest`, `ServerHttpResponse` or `HttpHeaders`.
   final MethodParameter? exceptionParameter;
 
   final List<_Binder> _binders;
@@ -1460,9 +1510,11 @@ final class _Execution implements HttpHandler {
   }
 }
 
-/// The request attribute holding the [HandlerMethod] of the request.
+/// The name of the request attribute that holds the [HandlerMethod]
+/// chosen for the request, once the router has found it. A filter that
+/// runs after the handler can read it.
 const bestMatchingHandlerAttribute = 'spring.web.bestMatchingHandler';
 
-/// The request attribute holding the path variables (`Map<String,
-/// String>`).
+/// The name of the request attribute that holds the path variables of
+/// the matched pattern, as a `Map<String, String>` (`{'isbn': '978-0'}`).
 const uriTemplateVariablesAttribute = 'spring.web.uriTemplateVariables';

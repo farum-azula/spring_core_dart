@@ -3,7 +3,8 @@
 // ignore: implementation_imports
 import 'package:spring_boot_dart/src/version.dart';
 
-/// Dart's reserved words, which cannot be package names.
+/// Dart's reserved words and built-in identifiers, which pub does not
+/// accept as package names.
 const _reserved = {
   'abstract', 'as', 'assert', 'async', 'await', 'base', 'break', 'case', //
   'catch', 'class', 'const', 'continue', 'covariant', 'default', 'deferred',
@@ -16,7 +17,9 @@ const _reserved = {
   'typedef', 'var', 'void', 'when', 'while', 'with', 'yield',
 };
 
-/// Why [name] is not a valid package name, or `null` when it is.
+/// Why [name] cannot be a package name, as a message for the user, or
+/// `null` when it can: lowercase letters, digits and underscores,
+/// starting with a letter, and not a Dart keyword.
 String? packageNameProblem(String name) {
   if (!RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(name)) {
     return "'$name' is not a valid package name: use lowercase letters, "
@@ -28,7 +31,10 @@ String? packageNameProblem(String name) {
   return null;
 }
 
-/// A package name made from a directory name (`My-App` → `my_app`).
+/// A valid package name made from a directory name: lower case, with runs
+/// of other characters turned into `_` (`My-App` → `my_app`). `app_` goes
+/// in front when it would not start with a letter, `_app` after a Dart
+/// keyword.
 String packageNameFrom(String directoryName) {
   var name = directoryName
       .toLowerCase()
@@ -41,10 +47,15 @@ String packageNameFrom(String directoryName) {
   return _reserved.contains(name) ? '${name}_app' : name;
 }
 
-/// The files of a new Spring Boot application named [name] (relative path
-/// → content), like a project from Spring Initializr:
+/// The files of a new Spring Boot application named [name], by relative
+/// path, like a project from Spring Initializr; `dart_spring_lsp create`
+/// writes them.
+///
+/// The package name replaces `__NAME__` in the templates, and the
+/// starters are required at the version this server was built with:
 ///
 /// ```text
+/// pubspec.yaml, analysis_options.yaml, .gitignore, README.md
 /// bin/main.dart                              @SpringBootApplication
 /// lib/src/greeting/app_properties.dart       @ConfigurationProperties
 /// lib/src/greeting/greeting_service.dart     @Service

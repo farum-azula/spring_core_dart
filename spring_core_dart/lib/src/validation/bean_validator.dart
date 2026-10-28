@@ -6,15 +6,20 @@ import 'package:spring_core_dart/src/validation/errors.dart';
 import 'package:spring_core_dart/src/validation/message_escapes.dart';
 import 'package:spring_core_dart/src/validation/validator.dart';
 
-/// One failed constraint, like Jakarta's `ConstraintViolation`.
+/// One broken rule: which constraint failed, where (the property path),
+/// on which value, and the finished message.
 ///
-/// Returned by the Jakarta-style methods of [BeanValidator]
-/// ([BeanValidator.validateObject], [BeanValidator.validateProperty],
-/// [BeanValidator.validateValue], [BeanValidator.validateParameters],
-/// [BeanValidator.validateReturnValue]).
+/// Applications receive violations in two places: in a list from
+/// [BeanValidator.validateObject] and the other `validate...` methods
+/// when they check an object themselves, and in
+/// [ConstraintViolationException.constraintViolations] when a
+/// `@Validated()` bean rejects a call. Unlike a `FieldError`, the message
+/// is already text (interpolated, not a list of message codes); use it for
+/// logs, or map [propertyPath] to your own response.
 ///
 /// ```dart
-/// for (final v in BeanValidator().validateObject(form)) {
+/// // Report each problem of an imported row.
+/// for (final v in validator.validateObject(form)) {
 ///   print('${v.propertyPath}: ${v.message}'); // name: must not be blank
 /// }
 /// ```
@@ -26,7 +31,8 @@ import 'package:spring_core_dart/src/validation/validator.dart';
 /// }
 /// ```
 final class ConstraintViolation {
-  /// Creates a violation of [constraint] at [propertyPath].
+  /// A violation of [constraint] at [propertyPath]; the validator creates
+  /// them, applications rarely do (in tests, say).
   const ConstraintViolation({
     required this.propertyPath,
     required this.constraint,
@@ -37,42 +43,55 @@ final class ConstraintViolation {
     this.messageTemplate,
   });
 
-  /// `name`, `address.city`, `items[0].sku`; empty for class-level ones.
-  /// Method validation paths start with the method name:
-  /// `register.email`, `register.<return value>`.
+  /// Where the invalid value is, from the validated object: `name`,
+  /// `address.city`, `items[0].sku`, `names[1].<list element>`; empty for
+  /// a class-level constraint. In method validation it starts with the
+  /// method name: `register.email`, `register.<return value>`.
   final String propertyPath;
 
-  /// The constraint that failed.
+  /// The constraint that failed; its `name` (`NotBlank`) tells the kind of
+  /// problem and its attributes the limits.
   final Constraint constraint;
 
-  /// The value that failed (the object itself for class-level ones).
+  /// The value that broke the constraint; the object itself for a
+  /// class-level constraint.
   final Object? invalidValue;
 
-  /// The interpolated message, e.g. `size must be between 0 and 20`.
+  /// The finished message, placeholders filled in, such as `size must be
+  /// between 0 and 20`.
   final String message;
 
-  /// The message before interpolation, e.g. `size must be between {min}
-  /// and {max}`.
+  /// The message before interpolation, such as `size must be between
+  /// {min} and {max}`.
   final String? messageTemplate;
 
-  /// The object validation started from; `null` for
-  /// [BeanValidator.validateValue], where no instance exists (Spring's
-  /// `getRootBean()` is `null` there too).
+  /// The object validation started from (the bean, for method
+  /// validation); `null` for [BeanValidator.validateValue], where no
+  /// instance exists, as in Jakarta.
   final Object? rootBean;
 
-  /// The object holding the failed property (the validated object itself
-  /// for class-level constraints), like Jakarta's `getLeafBean()`.
+  /// The object that holds the invalid property, such as the `Address`
+  /// for `address.city`; the validated object itself for a class-level
+  /// constraint. Jakarta's `getLeafBean()`.
   final Object? leafBean;
 
   @override
   String toString() => '$propertyPath: $message';
 }
 
-/// Reports constraint violations, like Jakarta's
-/// `ConstraintViolationException` — thrown by method validation (see
-/// `MethodValidationInterceptor`).
+/// The exception a `@Validated()` bean throws when a call's arguments or
+/// its return value break their constraints.
+///
+/// It means the caller passed invalid data (or the method returned it),
+/// and lists every violation. The method does not run when the arguments
+/// are invalid. Catch it where you can tell the user; the web starter does
+/// not turn it into a 400 by itself, so an uncaught one reaching a
+/// controller is a 500. Add an `@ExceptionHandler` for it when clients can
+/// cause it. A `@Valid()` request body is reported differently, with a
+/// `MethodArgumentNotValidException`.
 ///
 /// ```dart
+/// // The service rejects the empty address before running.
 /// try {
 ///   registration.register('');
 /// } on ConstraintViolationException catch (e) {
@@ -87,36 +106,44 @@ final class ConstraintViolation {
 /// }
 /// ```
 class ConstraintViolationException implements Exception {
-  /// Reports [constraintViolations]; [message] defaults to
-  /// `path: message` pairs joined with `, ` (Hibernate Validator's form).
+  /// An exception for [constraintViolations]; [message] defaults to their
+  /// `path: message` pairs joined with `, `, as Hibernate Validator writes
+  /// it.
   ConstraintViolationException(
     List<ConstraintViolation> constraintViolations, [
     String? message,
   ]) : constraintViolations = List.unmodifiable(constraintViolations),
        message = message ?? constraintViolations.join(', ');
 
-  /// The violations.
+  /// Every violation found, in the order they were checked.
   final List<ConstraintViolation> constraintViolations;
 
-  /// What failed.
+  /// A one-line summary, such as `register.email: must not be blank`;
+  /// fine for logs, not meant for end users.
   final String message;
 
   @override
   String toString() => 'ConstraintViolationException: $message';
 }
 
-/// A string attribute of a constraint passed as an error argument, so a
-/// `MessageSource` may translate it (codes: the value itself), like
-/// Spring's `SpringValidatorAdapter.ResolvableAttribute`.
+/// A string attribute of a constraint, such as the regular expression of
+/// `@Matches`, passed as an argument of a field error.
+///
+/// It is a message code of its own (the string itself), so a
+/// `MessageSource` may translate it: the key `\d{5}=five digits` turns
+/// `must match {2}` into `must match five digits`. When no key matches,
+/// the plain string is used. The validator creates it; applications never
+/// do. Spring's `SpringValidatorAdapter.ResolvableAttribute`.
 ///
 /// ```dart
-/// // For @Matches(r'\d{5}'): arguments [field, flags, ResolvableAttribute(r'\d{5}')]
+/// // The arguments of an @Matches(r'\d{5}') error:
+/// // [field, flags, ResolvableAttribute(r'\d{5}')]
 /// ```
 final class ResolvableAttribute implements MessageSourceResolvable {
-  /// Wraps the attribute [value].
+  /// An argument for the attribute [value].
   const ResolvableAttribute(this.value);
 
-  /// The attribute value.
+  /// The attribute string, both message code and default message.
   final String value;
 
   @override
@@ -139,23 +166,43 @@ final class ResolvableAttribute implements MessageSourceResolvable {
   String toString() => value;
 }
 
-/// Validates `@Introspected` objects against their [Constraint]
-/// annotations, like Spring's `LocalValidatorFactoryBean` over Jakarta
-/// Bean Validation.
+/// The validator: it checks an object against the constraint annotations
+/// on its class (`@NotBlank()`, `@Min(18)`, custom [Constraint]s) and
+/// reports what is broken.
 ///
-/// Field errors use the constraint name as code (`NotBlank`) and, like
-/// Spring, arguments `[field resolvable, ...attribute values sorted by
-/// attribute name]` (string attributes as [ResolvableAttribute]s), so
-/// messages can be customized in a `MessageSource`. A field that already
-/// has a binding failure (`typeMismatch`) gets no constraint error on top.
+/// Spring Boot registers one as the `defaultValidator` bean, with the
+/// context's introspector, and uses it for `@Valid()` request bodies and
+/// `@Validated()` beans (`@ConfigurationProperties` classes get a plain
+/// validator of their own). Inject it
+/// (`BeanValidator` or `Validator`) when you check an object yourself:
+/// a batch import, a message from a queue, data that does not come
+/// through a controller. Declare your own `BeanValidator` bean to set a
+/// [validationMessageSource], a [clockProvider] or [groupSequences]; Boot
+/// then backs off. The class must be `@Introspected` (the generator
+/// describes its properties); other objects are not checked.
 ///
-/// Messages are interpolated like Jakarta: `{key}` placeholders are looked
-/// up in [validationMessageSource] (recursively; the built-in messages also
-/// under `jakarta.validation.constraints.<Name>.message`, which resolve to
-/// Hibernate's default messages without a message source), then
-/// `{attribute}` placeholders are replaced by the constraint's attributes;
-/// `\{`, `\}`, `\$` and `\\` stay literal characters.
-/// Date constraints read the time from [clockProvider].
+/// It answers in two forms:
+///
+/// - As a [Validator], it records errors in an [Errors]: each violation
+///   becomes a `FieldError` with the constraint's name as code
+///   (`NotBlank.signup.name`, ..., `NotBlank`), so `messages.properties`
+///   can word it. The arguments follow Spring: `{0}` is the field, then
+///   the constraint's attributes sorted by name (`{1}` is the limit of
+///   `@Min`); string attributes come as [ResolvableAttribute]s. A field
+///   that already has a binding failure (`typeMismatch`) gets no
+///   constraint error on top.
+/// - [validateObject] and its siblings return [ConstraintViolation]s with
+///   finished messages.
+///
+/// Messages are interpolated as in Jakarta Bean Validation: `{key}`
+/// placeholders are looked up in [validationMessageSource], repeatedly
+/// while the result has placeholders; the built-in messages are also
+/// available under `jakarta.validation.constraints.<Name>.message`, with
+/// Hibernate's English defaults when no message source defines them. Then
+/// `{attribute}` placeholders take the constraint's attributes, and
+/// `${validatedValue}` the invalid value; `\{`, `\}`, `\$` and `\\`
+/// stay literal characters. Date constraints read "now" from
+/// [clockProvider].
 ///
 /// ```dart
 /// @Introspected()
@@ -168,17 +215,18 @@ final class ResolvableAttribute implements MessageSourceResolvable {
 ///   int age = 0;
 /// }
 ///
+/// // A 17-year-old signs up: the form binds, but @Min(18) fails.
 /// final form = SignupForm();
 /// final binder = DataBinder(form, objectName: 'signup')
-///   ..validators.add(BeanValidator())
+///   ..validators.add(validator) // the injected BeanValidator
 ///   ..bind({'name': 'Ada', 'age': '17'})
 ///   ..validate();
-/// binder.bindingResult.fieldError('age')!.defaultMessage;
-/// // 'must be greater than or equal to 18'
+/// final error = binder.bindingResult.fieldError('age')!;
+/// error.defaultMessage; // 'must be greater than or equal to 18'
 ///
-/// // {0} is the field, {1} the `value` attribute.
-/// final messages = StaticMessageSource()
-///   ..addMessage('Min', '', '{0} must be at least {1}');
+/// // With `Min={0} must be at least {1}` in messages.properties, the
+/// // application's message source words it: 'age must be at least 18'.
+/// messageSource.getMessageFromResolvable(error);
 /// ```
 ///
 /// Spring (Java):
@@ -196,18 +244,22 @@ final class ResolvableAttribute implements MessageSourceResolvable {
 /// binder.validate();
 /// ```
 class BeanValidator implements SmartValidator {
-  /// Creates a validator reading constraints through [introspector]
-  /// (the shared one by default).
+  /// A validator that reads the constraints through [introspector], by
+  /// default `BeanIntrospector.shared`; inside an application pass the
+  /// context's `BeanIntrospector`, which knows the application's classes.
   ///
-  /// [validationMessageSource] resolves `{key}` placeholders of messages
+  /// [validationMessageSource] resolves `{key}` placeholders in messages
   /// (Spring's `setValidationMessageSource`); [clockProvider] gives "now"
-  /// to the date constraints (Spring's `setClockProvider`).
+  /// to the date constraints, the system clock by default (Spring's
+  /// `setClockProvider`).
   ///
   /// [groupSequences] defines group sequences (Jakarta's `@GroupSequence`
-  /// on a group interface): requesting the key validates the listed groups
-  /// in order and stops at the first group with a violation.
+  /// on a group interface): validating with a key group checks the listed
+  /// groups in order and stops at the first group with a violation, so the
+  /// expensive checks only run on otherwise valid data.
   ///
   /// ```dart
+  /// // `Complete` checks the plain rules, then the strict ones.
   /// abstract final class Complete {}
   ///
   /// BeanValidator(groupSequences: {Complete: [Default, Strict]})
@@ -221,17 +273,27 @@ class BeanValidator implements SmartValidator {
   }) : introspector = introspector ?? BeanIntrospector.shared,
        groupSequences = Map.unmodifiable(groupSequences);
 
-  /// Source of the constraint annotations and property values.
+  /// Describes the classes: where the constraints are and how to read the
+  /// property values.
   final BeanIntrospector introspector;
 
-  /// Resolves `{key}` placeholders in constraint messages; `null` leaves
-  /// them as they are.
+  /// Resolves `{key}` placeholders in constraint messages, such as
+  /// `@NotBlank(message: '{signup.name.missing}')`, and may replace a
+  /// built-in message under `jakarta.validation.constraints.<Name>.message`.
+  /// `null` (the default, also for Boot's `defaultValidator`) leaves
+  /// unknown keys as they are.
+  ///
+  /// It is not needed for `messages.properties` keys such as
+  /// `NotBlank.signup.name`: those word the field errors when they are
+  /// shown, through the application's message source.
   final MessageSource? validationMessageSource;
 
-  /// The clock of the date constraints.
+  /// Gives "now" to `@Past`, `@FutureDate` and the other date constraints;
+  /// replace it in tests to fix the date.
   final ClockProvider clockProvider;
 
-  /// Group sequences: a group → the groups it validates in order.
+  /// The group sequences: each key group stands for the listed groups,
+  /// checked in order until one has a violation. Empty by default.
   final Map<Type, List<Type>> groupSequences;
 
   @override
@@ -319,14 +381,19 @@ class BeanValidator implements SmartValidator {
     }
   }
 
-  /// All violations of [target] (and nested `@Valid` values).
+  /// Every violation of [target], including those inside `@Valid()`
+  /// properties; an empty list when it is valid or not `@Introspected`.
   ///
-  /// Jakarta's `Validator.validate(object, groups...)`. Groups that are
-  /// [groupSequences] are validated group by group, stopping at the first
-  /// group with a violation; a class's `@GroupSequence` replaces its
-  /// [Default] group.
+  /// Use it to check an object in code and decide what to do with the
+  /// problems. [groups] selects the constraints, by default those of the
+  /// [Default] group. A group of [groupSequences] is checked group by
+  /// group, stopping at the first group with a violation, and a class's
+  /// `@GroupSequence` replaces its [Default] group. Throws a
+  /// [ValidationException] when a constraint or group is declared wrongly.
+  /// Jakarta's `Validator.validate(object, groups...)`.
   ///
   /// ```dart
+  /// // An edit: only the constraints of the OnUpdate group.
   /// final violations = BeanValidator().validateObject(
   ///   form,
   ///   groups: [OnUpdate],
@@ -346,9 +413,12 @@ class BeanValidator implements SmartValidator {
     return violations;
   }
 
-  /// Violations of one property of [target] (no cascading), like
-  /// Jakarta's `validateProperty`; throws [ArgumentError] for unknown
-  /// properties.
+  /// The violations of the single [property] of [target], without going
+  /// into `@Valid()` values; useful to check one form field as the user
+  /// leaves it. Jakarta's `validateProperty`.
+  ///
+  /// Throws an [ArgumentError] when [target] has no such property, or is
+  /// not `@Introspected`.
   ///
   /// ```dart
   /// validator.validateProperty(form, 'name');
@@ -390,9 +460,12 @@ class BeanValidator implements SmartValidator {
     return violations;
   }
 
-  /// Violations [value] would cause as [property] of [type], like
-  /// Jakarta's `validateValue`; throws [ArgumentError] for unknown
-  /// properties or types that are not introspected.
+  /// The violations [value] would cause as [property] of the class [type],
+  /// without an instance; useful to check input before creating the
+  /// object. Jakarta's `validateValue`.
+  ///
+  /// Throws an [ArgumentError] when [type] is not `@Introspected` or has no
+  /// such property.
   ///
   /// ```dart
   /// validator.validateValue(SignupForm, 'age', 12); // one Min violation
@@ -434,13 +507,16 @@ class BeanValidator implements SmartValidator {
     return violations;
   }
 
-  /// Violations of the [arguments] of a call to [method] of [target]:
-  /// constraints on the parameters and `@Valid` parameters cascaded, like
-  /// Jakarta's `ExecutableValidator.validateParameters`. Paths are
-  /// `method.parameter` (`register.email`, `save.order.items[0].sku`).
+  /// The violations of the [arguments] of a call to [method] of [target]:
+  /// the constraints on each parameter, and those inside `@Valid()`
+  /// arguments. Paths are `method.parameter` (`register.email`,
+  /// `save.order.items[0].sku`). Jakarta's
+  /// `ExecutableValidator.validateParameters`.
   ///
-  /// [arguments] are in the order of `method.parameterNames` (positional,
-  /// then named), as an AOP invocation passes them.
+  /// `MethodValidationInterceptor` calls it before each call of a
+  /// `@Validated()` bean; applications rarely do. [arguments] are in the
+  /// order of `method.parameterNames` (positional, then named), as an AOP
+  /// invocation passes them.
   ///
   /// ```dart
   /// validator.validateParameters(service, signature, ['']);
@@ -483,10 +559,13 @@ class BeanValidator implements SmartValidator {
     return violations;
   }
 
-  /// Violations of [returnValue] of [method]: the constraints on the
-  /// method and, with `@Valid` on it, the returned object, like Jakarta's
-  /// `ExecutableValidator.validateReturnValue`. Paths start with
-  /// `method.<return value>`.
+  /// The violations of the [returnValue] of [method]: the constraints on
+  /// the method and, with `@Valid()` on it, those inside the returned
+  /// object. Paths start with `method.<return value>`. Jakarta's
+  /// `ExecutableValidator.validateReturnValue`.
+  ///
+  /// `MethodValidationInterceptor` calls it after each call of a
+  /// `@Validated()` bean; applications rarely do.
   ///
   /// ```dart
   /// validator.validateReturnValue(service, signature, result);

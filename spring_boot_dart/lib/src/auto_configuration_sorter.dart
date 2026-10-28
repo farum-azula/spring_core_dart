@@ -1,23 +1,40 @@
 import 'package:spring_boot_dart/src/annotations.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// Removes the excluded auto-configurations and puts the rest in Spring
-/// Boot's `AutoConfigurationSorter` order: alphabetically by module name,
-/// then by `AutoConfigurationModule.order`, then by the `before` / `after`
-/// constraints (a cycle is an error).
+/// Takes the auto-configuration modules of the libraries an application
+/// uses, drops the excluded ones and returns the rest in the order they
+/// must be registered.
 ///
-/// A name in [excludeTypes] / [excludeNames] / `before` / `after` matches a
-/// module by its `BeanModule.name` or an `@AutoConfiguration` class by its
-/// name (matched through the `source` of the bean definitions the class
-/// produced, `package:x/src/y.dart#CacheAutoConfiguration`, or just
-/// `CacheAutoConfiguration`). Excluding a class removes its definitions,
-/// its `@Import`s (registrars and selectors) and its conditional
-/// `@PropertySource`s only; excluding a module removes all of it.
+/// `SpringApplication` calls it on every start with the modules the
+/// generator found, the application's `exclude` / `excludeName` and the
+/// `spring.autoconfigure.exclude` property. Applications never call it;
+/// a test tool that builds a context from auto-configuration, such as
+/// `ApplicationContextRunner`, does.
 ///
-/// An excluded [Type] that no auto-configuration matches is an error (like
-/// Boot's "could not be excluded because it is not an auto-configuration
-/// class"); an unknown name is ignored, like a class missing on the
-/// classpath.
+/// Order matters because a library's `@ConditionalOnMissingBean` only sees
+/// the beans registered before it. The modules are sorted by
+/// `AutoConfigurationModule.order` (from [metadata]; `0` when absent),
+/// then by name, then by their position in [modules]. Then the `before` and
+/// `after` lists move modules around; a cycle among them throws a
+/// [StateError] (`AutoConfigure cycle detected between ...`).
+///
+/// [excludeTypes] and [excludeNames] name what to leave out. A name
+/// matches a module by its `BeanModule.name`, or an `@AutoConfiguration`
+/// class by its name (`CacheAutoConfiguration`) or full name
+/// (`package:x/src/y.dart#CacheAutoConfiguration`), found through the
+/// `source` of the bean definitions the class produced. Excluding a class
+/// removes its bean definitions, its `@Import`s (registrars and
+/// selectors) and its conditional `@PropertySource`s; excluding a module
+/// removes all of it. A [Type] in [excludeTypes] that matches nothing
+/// throws a [StateError] (`... could not be excluded because they are not
+/// auto-configuration classes`); an unknown name is ignored, as Spring
+/// Boot ignores a class that is not on the classpath.
+///
+/// In `before` and `after`, a class is matched by its short name only.
+///
+/// Spring (Java): the exclusion of `@SpringBootApplication(exclude = ...)`
+/// and the order of `AutoConfigurationSorter` (by name, then
+/// `@AutoConfigureOrder`, then `@AutoConfigureBefore` / `After`).
 List<BeanModule> selectAutoConfigurations(
   List<BeanModule> modules, {
   Map<BeanModule, AutoConfigurationModule> metadata = const {},

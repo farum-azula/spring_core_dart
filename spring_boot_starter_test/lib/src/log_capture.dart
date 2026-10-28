@@ -1,11 +1,17 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:test_api/scaffolding.dart';
 
-/// Records logged through `SpringLog` during each test, like Spring Boot's
-/// `OutputCaptureExtension` (for logs).
+/// Records what is logged through `SpringLog` during each test of the
+/// enclosing `main` or `group`, so a test can check its logs.
 ///
-/// Call it in `main` (or a `group`): every test starts with an empty
-/// capture.
+/// Use it to check that code warns about a slow payment, or that an error
+/// is logged instead of thrown. Call it once in `main` (or a `group`),
+/// outside the tests: it registers a `setUp` that empties the capture and
+/// starts listening, and a `tearDown` that stops. Records are captured
+/// after the logger's own level filtered them; [level] lowers (or raises)
+/// the global `SpringLog.level` during each test, and the previous level
+/// comes back afterwards. In a test class, a `@CapturedOutput()` field does
+/// the same.
 ///
 /// ```dart
 /// void main() {
@@ -18,6 +24,9 @@ import 'package:test_api/scaffolding.dart';
 ///   });
 /// }
 /// ```
+///
+/// Spring (Java): Spring Boot's `OutputCaptureExtension`, which captures
+/// everything printed; this captures `SpringLog` records only.
 CapturedLogs captureLogs({SpringLogLevel? level}) {
   final logs = CapturedLogs._();
   void Function()? cancel;
@@ -41,39 +50,52 @@ CapturedLogs captureLogs({SpringLogLevel? level}) {
   return logs;
 }
 
-/// The records captured by [captureLogs] in the current test.
+/// The log records of the current test, collected by [captureLogs], with
+/// helpers to filter them by level or logger.
+///
+/// It is emptied before every test.
+///
+/// ```dart
+/// // Only the checkout's own warnings, not the gateway's.
+/// expect(logs.ofLogger('shop.checkout'), hasLength(1));
+/// ```
 final class CapturedLogs {
   CapturedLogs._();
 
   final _records = <SpringLogRecord>[];
 
-  /// Captured records, oldest first.
+  /// The captured records, oldest first, with level, logger and message.
   List<SpringLogRecord> get records => List.unmodifiable(_records);
 
-  /// Messages of [records].
+  /// The messages of [records], oldest first: the simplest thing to match
+  /// with `contains`.
   List<String> get messages => [for (final record in _records) record.message];
 
-  /// Every record as `LEVEL [logger] message`, one per line.
+  /// Every record as `LEVEL [logger] message`, one per line; also what
+  /// [toString] returns, so a failed expectation shows the whole log.
   String get text => [for (final record in _records) _line(record)].join('\n');
 
   static String _line(SpringLogRecord record) =>
       '${record.level.name.toUpperCase()} [${record.loggerName}] '
       '${record.message}';
 
-  /// Records of exactly [level].
+  /// The records of exactly [level]: `atLevel(SpringLogLevel.warning)` does
+  /// not include errors.
   List<SpringLogRecord> atLevel(SpringLogLevel level) => [
     for (final record in _records)
       if (record.level == level) record,
   ];
 
-  /// Records of the logger [name] or its descendants.
+  /// The records of the logger [name] and of the loggers below it:
+  /// `ofLogger('shop')` includes `shop.checkout`, not `shopping`.
   List<SpringLogRecord> ofLogger(String name) => [
     for (final record in _records)
       if (record.loggerName == name || record.loggerName.startsWith('$name.'))
         record,
   ];
 
-  /// Forgets the captured records.
+  /// Forgets the records captured so far in this test, for example to
+  /// check only what a second call logs.
   void clear() => _records.clear();
 
   @override

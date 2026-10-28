@@ -11,7 +11,8 @@ part of 'bean_scanner.dart';
 // the methods are called as written ("lite" mode).
 
 extension _ConfigurationScanning on BeanScanner {
-  /// Whether [element] is a full-mode `@Configuration` class.
+  /// Whether [element] is a full-mode `@Configuration` class: annotated
+  /// `@Configuration` without `proxyBeanMethods: false`.
   bool isFullConfiguration(ClassElement element) {
     final annotation = _configuration.firstAnnotationOf(element);
     if (annotation == null) {
@@ -21,9 +22,14 @@ extension _ConfigurationScanning on BeanScanner {
         true;
   }
 
-  /// The generated subclass of the full-mode configuration class
-  /// [element], created through [constructor]. Fails the build when the
-  /// generated library cannot extend the class.
+  /// The model of the generated subclass of the full-mode configuration
+  /// class [element], created through [constructor]. Its `@Bean` methods
+  /// are added later by [enhancedBeanMethod].
+  ///
+  /// Fails the build when the generated library cannot extend the class
+  /// (sealed, final, interface, or not extendable outside its library) or
+  /// cannot call the constructor (factory or private). The message offers
+  /// `@Configuration(proxyBeanMethods: false)` as the alternative.
   ConfigurationClassModel configurationClassModel(
     ClassElement element,
     InterfaceType type,
@@ -81,8 +87,12 @@ extension _ConfigurationScanning on BeanScanner {
     );
   }
 
-  /// The override of the instance `@Bean` method [method] (bean
-  /// [beanName]) in [model].
+  /// Adds to [model] the override of the instance `@Bean` method [method],
+  /// which declares the bean [beanName], and returns it.
+  ///
+  /// The override returns the container's bean instead of running the
+  /// body. A parameter whose default value is not a constant fails the
+  /// build, because the override must repeat the default.
   EnhancedBeanMethod enhancedBeanMethod(
     ConfigurationClassModel model,
     MethodElement method, {

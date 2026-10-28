@@ -1,9 +1,15 @@
-/// Base class of application events, like Spring's `ApplicationEvent`.
+/// An optional base class for application events: it records which object
+/// raised the event and when.
 ///
-/// Extending it is optional: any object can be published and is then
-/// wrapped in a [PayloadApplicationEvent].
+/// An event is a message that one part of an application publishes and
+/// any number of listeners receive. Extending this class is optional: any
+/// object can be published, and the context then wraps it in a
+/// [PayloadApplicationEvent]. Extend it when listeners need the [source]
+/// and [timestamp]; a plain class (or a record) is enough otherwise. The
+/// context's own events (`ContextRefreshedEvent`, ...) extend it.
 ///
 /// ```dart
+/// // Raised by the shipping service, with the order id.
 /// class OrderShipped extends ApplicationEvent {
 ///   OrderShipped(super.source, this.id);
 ///   final int id;
@@ -22,31 +28,33 @@
 /// context.publishEvent(new OrderShipped(this, 42));
 /// ```
 abstract class ApplicationEvent {
-  /// Creates an event raised by [source]; [timestamp] defaults to now.
+  /// Creates an event raised by [source]; [timestamp] defaults to the
+  /// current time.
   ApplicationEvent(this.source, {DateTime? timestamp})
     : timestamp = timestamp ?? DateTime.now();
 
-  /// The object the event originated from.
+  /// The object that raised the event, usually the publishing bean (or
+  /// the context, for the context's own events).
   final Object source;
 
-  /// When the event was created.
+  /// When the event was created (not when a listener receives it).
   final DateTime timestamp;
 
   @override
   String toString() => '$runtimeType[source=$source]';
 }
 
-/// Wraps an arbitrary published object, like Spring's
-/// `PayloadApplicationEvent`. Listeners for the payload type receive the
-/// payload itself.
+/// The envelope the context puts around a published object that is not an
+/// [ApplicationEvent], adding a source and a timestamp.
 ///
-/// The context creates it for you, typed with the static type of the
-/// published object; listen to the payload type directly, or to
-/// `PayloadApplicationEvent<T>` for the source and timestamp too. An
-/// `@EventListener` method (or `ApplicationListener`) of
-/// `PayloadApplicationEvent<T>` matches on the payload's runtime type,
-/// like Spring; a listener added with `addListener` matches on the event's
-/// type argument.
+/// You rarely see it: when you publish `OrderPlaced(...)`, listeners of
+/// `OrderPlaced` receive the object itself. The context creates the
+/// envelope, typed with the static type of the published object. Listen to
+/// `PayloadApplicationEvent<T>` only when you also want the [source] (the
+/// context that published it) and the timestamp. An `@EventListener`
+/// method (or `ApplicationListener`) of `PayloadApplicationEvent<T>`
+/// matches on the payload's runtime type, as in Spring; a listener added
+/// with `addListener` matches on the envelope's type argument.
 ///
 /// ```dart
 /// context.addListener<OrderPlaced>((order) => print(order.id));
@@ -69,11 +77,11 @@ abstract class ApplicationEvent {
 /// void on(PayloadApplicationEvent<OrderPlaced> event) { ... }
 /// ```
 class PayloadApplicationEvent<T extends Object> extends ApplicationEvent {
-  /// Creates an event carrying [payload], published by [source];
-  /// [timestamp] defaults to now.
+  /// Wraps [payload], published by [source]; [timestamp] defaults to the
+  /// current time. The context does this for you.
   PayloadApplicationEvent(super.source, this.payload, {super.timestamp});
 
-  /// The published object.
+  /// The object that was published.
   final T payload;
 
   @override

@@ -11,10 +11,27 @@ import 'package:spring_security_core/spring_security_core.dart';
 
 const _log = SpringLog('spring.security.web.authentication');
 
-/// Where a request came from, kept as `Authentication.details`, like
-/// Spring's `WebAuthenticationDetails`.
+/// Facts about the request a login came from: the client's address and
+/// the session id.
+///
+/// The form, basic and bearer-token logins store it as
+/// `Authentication.details`, where an event listener can read it, for
+/// example to audit logins by address. [toString] hides the session id.
+///
+/// ```dart
+/// @EventListener()
+/// void onLogin(AuthenticationSuccessEvent event) {
+///   final details = event.authentication.details;
+///   if (details is WebAuthenticationDetails) {
+///     audit.loggedIn(event.authentication.name, from: details.remoteAddress);
+///   }
+/// }
+/// ```
+///
+/// Spring (Java): `WebAuthenticationDetails`.
 final class WebAuthenticationDetails {
-  /// The details of [request].
+  /// The details of [request], read now: the remote address and the
+  /// current session id, if there is a session.
   WebAuthenticationDetails.of(ServerHttpRequest request)
     : remoteAddress = request.remoteAddress,
       sessionId = _sessionId(request);
@@ -27,10 +44,12 @@ final class WebAuthenticationDetails {
     }
   }
 
-  /// The client's address.
+  /// The client's IP address as the server sees it (a proxy's address
+  /// behind a reverse proxy); `null` when unknown.
   final String? remoteAddress;
 
-  /// The session at the time of the login (never shown in `toString`).
+  /// The session id at the time of the login, before the login changed
+  /// it; `null` without a session. Never shown by `toString`.
   final String? sessionId;
 
   @override
@@ -48,10 +67,19 @@ final class WebAuthenticationDetails {
       'SessionId=${sessionId == null ? null : '[PROTECTED]'}]';
 }
 
-/// What happens to the session at login, like Spring's
-/// `SessionAuthenticationStrategy`.
+/// What is done to the session when a user logs in, to close attacks that
+/// prepare a session before the login.
+///
+/// Form login runs the chain's strategies: by default a new session id
+/// ([ChangeSessionIdAuthenticationStrategy]) and a new CSRF token
+/// ([CsrfAuthenticationStrategy]). Implement it to do more at login, such
+/// as limiting the sessions per user.
+///
+/// Spring (Java): `SessionAuthenticationStrategy`.
 abstract interface class SessionAuthenticationStrategy {
-  /// Called after [authentication] succeeded for [request].
+  /// Runs after [authentication] succeeded for [request], before the
+  /// context is saved; an [AuthenticationException] thrown here fails the
+  /// login.
   FutureOr<void> onAuthentication(
     Authentication authentication,
     ServerHttpRequest request,
@@ -59,12 +87,19 @@ abstract interface class SessionAuthenticationStrategy {
   );
 }
 
-/// Gives an existing session a new id at login, like Spring's
-/// `ChangeSessionIdAuthenticationStrategy` (the default): an id someone
-/// planted before the login (session fixation) is worthless after it.
+/// The default [SessionAuthenticationStrategy] for sessions: an existing
+/// session gets a new id at login, keeping its contents.
+///
+/// Without it, an attacker could plant a session id in the victim's
+/// browser before the login and use the same id afterwards (session
+/// fixation). Switch it off only with
+/// `sessionManagement((s) => s.sessionFixation(changeSessionId: false))`.
+///
+/// Spring (Java): `ChangeSessionIdAuthenticationStrategy`, also the
+/// default there.
 final class ChangeSessionIdAuthenticationStrategy
     implements SessionAuthenticationStrategy {
-  /// The strategy.
+  /// The stateless strategy.
   const ChangeSessionIdAuthenticationStrategy();
 
   @override
@@ -79,11 +114,15 @@ final class ChangeSessionIdAuthenticationStrategy
   }
 }
 
-/// Leaves the session alone (no sessions, or the fixation protection
-/// switched off), like Spring's `NullAuthenticatedSessionStrategy`.
+/// A [SessionAuthenticationStrategy] that does nothing to the session.
+///
+/// For chains without sessions, or where session fixation protection is
+/// handled elsewhere.
+///
+/// Spring (Java): `NullAuthenticatedSessionStrategy`.
 final class NullAuthenticatedSessionStrategy
     implements SessionAuthenticationStrategy {
-  /// The strategy.
+  /// The stateless strategy.
   const NullAuthenticatedSessionStrategy();
 
   @override
@@ -94,15 +133,20 @@ final class NullAuthenticatedSessionStrategy
   ) {}
 }
 
-/// Replaces the CSRF token at login, like Spring's
-/// `CsrfAuthenticationStrategy`: a token seen before the login is not
-/// valid after it.
+/// A [SessionAuthenticationStrategy] that removes the CSRF token at login,
+/// so the next page gets a new one.
+///
+/// A token seen before the login, perhaps by someone else on a shared
+/// machine, is not valid after it. The chain adds it while CSRF
+/// protection is on.
+///
+/// Spring (Java): `CsrfAuthenticationStrategy`.
 final class CsrfAuthenticationStrategy
     implements SessionAuthenticationStrategy {
-  /// Over [repository].
+  /// A strategy removing the token stored in [repository].
   const CsrfAuthenticationStrategy(this.repository);
 
-  /// The tokens.
+  /// Where the CSRF tokens are kept.
   final CsrfTokenRepository repository;
 
   @override
@@ -117,16 +161,17 @@ final class CsrfAuthenticationStrategy
   }
 }
 
-/// Several strategies in order, like Spring's
-/// `CompositeSessionAuthenticationStrategy`.
+/// A [SessionAuthenticationStrategy] that runs several others in order.
+///
+/// Spring (Java): `CompositeSessionAuthenticationStrategy`.
 final class CompositeSessionAuthenticationStrategy
     implements SessionAuthenticationStrategy {
-  /// [strategies] in order.
+  /// A strategy running [strategies] in order.
   CompositeSessionAuthenticationStrategy(
     List<SessionAuthenticationStrategy> strategies,
   ) : strategies = List.unmodifiable(strategies);
 
-  /// The strategies.
+  /// The strategies, in order; cannot be modified.
   final List<SessionAuthenticationStrategy> strategies;
 
   @override
@@ -141,10 +186,17 @@ final class CompositeSessionAuthenticationStrategy
   }
 }
 
-/// Answers a successful form login, like Spring's
-/// `AuthenticationSuccessHandler`.
+/// What the browser gets after a successful form login.
+///
+/// The default, [SavedRequestAwareAuthenticationSuccessHandler],
+/// redirects to the page the user wanted, else to `/`. Implement it to
+/// answer differently, for example with JSON for a login posted by a
+/// script, and set it with `formLogin((f) => f.successHandler(...))`.
+///
+/// Spring (Java): `AuthenticationSuccessHandler`.
 abstract interface class AuthenticationSuccessHandler {
-  /// [authentication] logged in through [request].
+  /// Answers [request], whose login succeeded as [authentication]; the
+  /// user is already stored in the session.
   FutureOr<void> onAuthenticationSuccess(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -152,10 +204,16 @@ abstract interface class AuthenticationSuccessHandler {
   );
 }
 
-/// Answers a failed form login, like Spring's
-/// `AuthenticationFailureHandler`.
+/// What the browser gets after a failed form login.
+///
+/// The default, [SimpleUrlAuthenticationFailureHandler], redirects to
+/// `/login?error`. Do not tell the client why the login failed: a wrong
+/// password and an unknown user must look the same.
+///
+/// Spring (Java): `AuthenticationFailureHandler`.
 abstract interface class AuthenticationFailureHandler {
-  /// The login of [request] failed with [exception].
+  /// Answers [request], whose login failed with [exception]; the
+  /// exception is for logs, not for the client.
   FutureOr<void> onAuthenticationFailure(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -163,12 +221,19 @@ abstract interface class AuthenticationFailureHandler {
   );
 }
 
-/// Redirects to the page the user wanted (saved by the [requestCache]),
-/// else to [defaultTargetUrl], like Spring's
-/// `SavedRequestAwareAuthenticationSuccessHandler`.
+/// The default [AuthenticationSuccessHandler] of form login: a redirect to
+/// the page the user wanted before logging in, else to
+/// [defaultTargetUrl].
+///
+/// The wanted page comes from the [requestCache], which forgets it once
+/// used. Configure it with `formLogin((f) => f.defaultSuccessUrl(...))`.
+///
+/// Spring (Java): `SavedRequestAwareAuthenticationSuccessHandler`.
 final class SavedRequestAwareAuthenticationSuccessHandler
     implements AuthenticationSuccessHandler {
-  /// A handler; [alwaysUseDefaultTargetUrl] ignores the saved request.
+  /// A handler redirecting to the saved request, else to
+  /// [defaultTargetUrl]; with [alwaysUseDefaultTargetUrl] it always goes
+  /// to [defaultTargetUrl].
   const SavedRequestAwareAuthenticationSuccessHandler({
     this.requestCache = const NullRequestCache(),
     this.defaultTargetUrl = '/',
@@ -176,16 +241,19 @@ final class SavedRequestAwareAuthenticationSuccessHandler
     this.contextPath = '',
   });
 
-  /// Where the wanted page is.
+  /// Where the page the user wanted was saved.
   final RequestCache requestCache;
 
-  /// Where to go without one.
+  /// The path to go to when no page was saved, `/` by default; the
+  /// [contextPath] is put in front.
   final String defaultTargetUrl;
 
-  /// Whether to always go to [defaultTargetUrl].
+  /// Whether to go to [defaultTargetUrl] even when a page was saved;
+  /// `false` by default.
   final bool alwaysUseDefaultTargetUrl;
 
-  /// The application's context path.
+  /// The application's context path (`server.servlet.context-path`); `''`
+  /// for none.
   final String contextPath;
 
   @override
@@ -202,20 +270,23 @@ final class SavedRequestAwareAuthenticationSuccessHandler
   }
 }
 
-/// Redirects to [failureUrl] (`/login?error`), like Spring's
-/// `SimpleUrlAuthenticationFailureHandler`.
+/// The default [AuthenticationFailureHandler] of form login: a redirect to
+/// [failureUrl], `/login?error` by default, where the page says "Bad
+/// credentials".
+///
+/// Spring (Java): `SimpleUrlAuthenticationFailureHandler`.
 final class SimpleUrlAuthenticationFailureHandler
     implements AuthenticationFailureHandler {
-  /// Redirects to [failureUrl].
+  /// A handler redirecting to [failureUrl], prefixed with [contextPath].
   const SimpleUrlAuthenticationFailureHandler(
     this.failureUrl, {
     this.contextPath = '',
   });
 
-  /// Where to go.
+  /// The path to redirect to.
   final String failureUrl;
 
-  /// The application's context path.
+  /// The application's context path; `''` for none.
   final String contextPath;
 
   @override
@@ -226,14 +297,20 @@ final class SimpleUrlAuthenticationFailureHandler
   ) => sendRedirect(response, '$contextPath$failureUrl');
 }
 
-/// A 401 (with the entry point's challenge) on failure, like Spring's
-/// `AuthenticationEntryPointFailureHandler`.
+/// An [AuthenticationFailureHandler] that answers a failed login like a
+/// request that must log in: through an [AuthenticationEntryPoint],
+/// usually a 401 with a challenge.
+///
+/// For logins posted by scripts, which want a status rather than a
+/// redirect.
+///
+/// Spring (Java): `AuthenticationEntryPointFailureHandler`.
 final class AuthenticationEntryPointFailureHandler
     implements AuthenticationFailureHandler {
-  /// Answers failures with [entryPoint].
+  /// A handler answering failures with [entryPoint].
   const AuthenticationEntryPointFailureHandler(this.entryPoint);
 
-  /// The entry point.
+  /// The entry point that writes the answer.
   final AuthenticationEntryPoint entryPoint;
 
   @override
@@ -244,17 +321,29 @@ final class AuthenticationEntryPointFailureHandler
   ) => entryPoint.commence(request, response, exception);
 }
 
-/// Logs in with `Authorization: Basic`, like Spring's
-/// `BasicAuthenticationFilter`: a request with valid credentials goes on
-/// as the user (for this request only: Basic is stateless); invalid ones
-/// get the [authenticationEntryPoint]'s 401; a request without the header
-/// goes on unauthenticated.
+/// The filter of HTTP Basic logins: a client sends its username and
+/// password with every request, in an `Authorization: Basic` header.
+///
+/// `httpBasic()` adds it. For each request:
+///
+/// - no `Authorization` header, or one of another scheme: the request
+///   goes on without a login (the rules may then ask for one);
+/// - valid credentials: the request goes on as that user, for this
+///   request only, since Basic creates no session;
+/// - wrong credentials, a malformed header, or more than one
+///   `Authorization` header: the [authenticationEntryPoint] answers, a
+///   401 by default, and the request stops.
 ///
 /// The header must be one `Basic <base64>` of `user:password` (the first
-/// `:` separates them), at most [maxHeaderLength] long; anything else is
-/// bad credentials.
+/// `:` separates them, so a password may contain `:`), at most
+/// [maxHeaderLength] characters long. A request whose current user
+/// already has that name is not checked again. Basic sends the password
+/// with every request: use it over HTTPS only.
+///
+/// Spring (Java): `BasicAuthenticationFilter`.
 final class BasicAuthenticationFilter implements WebFilter {
-  /// A filter authenticating with [authenticationManager].
+  /// A filter checking credentials with [authenticationManager]; the
+  /// context is kept for the current request only by default.
   const BasicAuthenticationFilter(
     this.authenticationManager, {
     this.authenticationEntryPoint = const BasicAuthenticationEntryPoint(),
@@ -264,19 +353,23 @@ final class BasicAuthenticationFilter implements WebFilter {
     this.eventPublisher,
   });
 
-  /// Checks the credentials.
+  /// Checks the username and password.
   final AuthenticationManager authenticationManager;
 
-  /// Answers bad credentials.
+  /// Answers wrong or malformed credentials.
   final AuthenticationEntryPoint authenticationEntryPoint;
 
-  /// Where the context is saved (the request only, by default).
+  /// Where the context of a successful login is saved; the request only,
+  /// by default.
   final SecurityContextRepository securityContextRepository;
 
-  /// The longest header accepted.
+  /// The longest `Authorization` header accepted, in characters; 8 192 by
+  /// default. A longer one is refused as bad credentials, so a huge header
+  /// cannot cost decoding work.
   final int maxHeaderLength;
 
-  /// Not used by Basic (no interactive event), kept for symmetry.
+  /// Not used: a Basic login publishes no interactive event. Kept for
+  /// symmetry with the form login filter.
   final ApplicationEventPublisher? eventPublisher;
 
   @override
@@ -326,8 +419,12 @@ final class BasicAuthenticationFilter implements WebFilter {
       ? text
       : text.padRight((text.length + 3) & ~3, '=');
 
-  /// The credentials of [request]'s `Authorization: Basic` header, `null`
-  /// without one; throws [BadCredentialsException] for a malformed one.
+  /// The login request in [request]'s `Authorization: Basic` header, or
+  /// `null` when there is no such header.
+  ///
+  /// Throws a [BadCredentialsException] for more than one `Authorization`
+  /// header, and for a header that is too long, empty, not Base64 or UTF-8,
+  /// or without a `:`.
   UsernamePasswordAuthenticationToken? convert(ServerHttpRequest request) {
     final headers = request.headers.getAll(HttpHeaders.authorizationHeader);
     if (headers.isEmpty) {
@@ -367,13 +464,27 @@ final class BasicAuthenticationFilter implements WebFilter {
   }
 }
 
-/// Logs in with a form `POST` (`username`, `password` fields), like
-/// Spring's `UsernamePasswordAuthenticationFilter`: on success the session
-/// gets a new id, the context is stored in it, an
-/// `InteractiveAuthenticationSuccessEvent` is published and the
-/// [successHandler] redirects; on failure the [failureHandler] does.
+/// The filter of form logins: it handles the `POST` of the login form,
+/// with the `username` and `password` fields.
+///
+/// `formLogin()` adds it. Other requests pass through. For a login:
+///
+/// - the fields are read from a form body of at most 64 KB; the username
+///   is trimmed, and missing fields count as empty;
+/// - on success, the [sessionStrategy] runs (a new session id, a new CSRF
+///   token), the user is stored in the session, an
+///   `InteractiveAuthenticationSuccessEvent` is published and the
+///   [successHandler] answers, by default with a redirect to the page the
+///   user wanted;
+/// - on failure, the context is emptied and the [failureHandler] answers,
+///   by default with a redirect to `/login?error`.
+///
+/// The form must carry the CSRF token while CSRF protection is on.
+///
+/// Spring (Java): `UsernamePasswordAuthenticationFilter`.
 final class UsernamePasswordAuthenticationFilter implements WebFilter {
-  /// A filter for `POST` [loginProcessingUrl].
+  /// A filter handling `POST` requests to `loginProcessingUrl` (`/login`
+  /// by default).
   UsernamePasswordAuthenticationFilter(
     this.authenticationManager, {
     String loginProcessingUrl = '/login',
@@ -392,31 +503,34 @@ final class UsernamePasswordAuthenticationFilter implements WebFilter {
          method: HttpMethod.post,
        );
 
-  /// Checks the credentials.
+  /// Checks the username and password.
   final AuthenticationManager authenticationManager;
 
-  /// Which requests are logins.
+  /// Decides which requests are login attempts: `POST` to the login
+  /// processing URL.
   final RequestMatcher requiresAuthenticationMatcher;
 
-  /// The username field.
+  /// The form field holding the username, `username` by default.
   final String usernameParameter;
 
-  /// The password field.
+  /// The form field holding the password, `password` by default.
   final String passwordParameter;
 
-  /// After success.
+  /// Answers a successful login.
   final AuthenticationSuccessHandler successHandler;
 
-  /// After failure.
+  /// Answers a failed login.
   final AuthenticationFailureHandler failureHandler;
 
-  /// The session at login.
+  /// What is done to the session at login.
   final SessionAuthenticationStrategy sessionStrategy;
 
-  /// Where the logged-in context goes.
+  /// Where the context of a successful login is saved; the session by
+  /// default.
   final SecurityContextRepository securityContextRepository;
 
-  /// Publishes `InteractiveAuthenticationSuccessEvent`.
+  /// Publishes the `InteractiveAuthenticationSuccessEvent` of a login;
+  /// `null` publishes nothing.
   final ApplicationEventPublisher? eventPublisher;
 
   @override
@@ -456,9 +570,17 @@ final class UsernamePasswordAuthenticationFilter implements WebFilter {
   }
 }
 
-/// Clears something at logout, like Spring's `LogoutHandler`.
+/// One cleanup step of a logout, such as ending the session or expiring a
+/// cookie.
+///
+/// The logout runs the chain's handlers in order. Implement it to clean
+/// up something of your own, such as a server-side token, and add it with
+/// `logout((l) => l.addLogoutHandler(...))`.
+///
+/// Spring (Java): `LogoutHandler`.
 abstract interface class LogoutHandler {
-  /// Logs [authentication] out of [request].
+  /// Cleans up after [authentication], the user logging out; `null` when
+  /// nobody was logged in.
   FutureOr<void> logout(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -466,20 +588,26 @@ abstract interface class LogoutHandler {
   );
 }
 
-/// Ends the session and empties the context, like Spring's
-/// `SecurityContextLogoutHandler`.
+/// The [LogoutHandler] that does the logout itself: it ends the session
+/// and stores an empty security context.
+///
+/// The chain always runs it last among the handlers.
+///
+/// Spring (Java): `SecurityContextLogoutHandler`.
 final class SecurityContextLogoutHandler implements LogoutHandler {
-  /// The handler.
+  /// A handler ending the session unless [invalidateHttpSession] is
+  /// `false`, and emptying the context in [securityContextRepository].
   const SecurityContextLogoutHandler({
     this.invalidateHttpSession = true,
     this.securityContextRepository =
         const HttpSessionSecurityContextRepository(),
   });
 
-  /// Whether the session ends.
+  /// Whether the session ends at logout, with everything stored in it;
+  /// `true` by default.
   final bool invalidateHttpSession;
 
-  /// Where the context was stored.
+  /// Where the context was stored; an empty one is saved there.
   final SecurityContextRepository securityContextRepository;
 
   @override
@@ -497,16 +625,21 @@ final class SecurityContextLogoutHandler implements LogoutHandler {
   }
 }
 
-/// Expires cookies at logout, like Spring's `CookieClearingLogoutHandler`.
+/// A [LogoutHandler] that expires cookies, such as the session cookie.
+///
+/// `logout((l) => l.deleteCookies('JSESSIONID'))` adds one.
+///
+/// Spring (Java): `CookieClearingLogoutHandler`.
 final class CookieClearingLogoutHandler implements LogoutHandler {
-  /// Clears [cookieNames].
+  /// A handler expiring the cookies [cookieNames] at [path].
   CookieClearingLogoutHandler(List<String> cookieNames, {this.path = '/'})
     : cookieNames = List.unmodifiable(cookieNames);
 
-  /// The cookies.
+  /// The names of the cookies to expire.
   final List<String> cookieNames;
 
-  /// Their path.
+  /// The cookies' `Path`; it must match the path they were set with, or
+  /// the browser keeps them.
   final String path;
 
   @override
@@ -530,12 +663,15 @@ final class CookieClearingLogoutHandler implements LogoutHandler {
   }
 }
 
-/// Removes the CSRF token at logout, like Spring's `CsrfLogoutHandler`.
+/// A [LogoutHandler] that removes the CSRF token, so the next page gets a
+/// new one; the chain adds it while CSRF protection is on.
+///
+/// Spring (Java): `CsrfLogoutHandler`.
 final class CsrfLogoutHandler implements LogoutHandler {
-  /// Over [repository].
+  /// A handler removing the token stored in [repository].
   const CsrfLogoutHandler(this.repository);
 
-  /// The tokens.
+  /// Where the CSRF tokens are kept.
   final CsrfTokenRepository repository;
 
   @override
@@ -546,9 +682,17 @@ final class CsrfLogoutHandler implements LogoutHandler {
   ) => repository.saveToken(null, request, response);
 }
 
-/// Answers a logout, like Spring's `LogoutSuccessHandler`.
+/// What the client gets after a logout.
+///
+/// By default a redirect to `/login?logout`
+/// ([SimpleUrlLogoutSuccessHandler]); an API usually wants a plain status
+/// ([HttpStatusReturningLogoutSuccessHandler]). Set it with
+/// `logout((l) => l.logoutSuccessHandler(...))`.
+///
+/// Spring (Java): `LogoutSuccessHandler`.
 abstract interface class LogoutSuccessHandler {
-  /// [authentication] logged out.
+  /// Answers [request] after [authentication] logged out; `null` when
+  /// nobody was logged in.
   FutureOr<void> onLogoutSuccess(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -556,15 +700,18 @@ abstract interface class LogoutSuccessHandler {
   );
 }
 
-/// Redirects to [targetUrl] (`/login?logout`).
+/// The default [LogoutSuccessHandler]: a redirect to [targetUrl], usually
+/// `/login?logout`, where the login page says "You have been signed out".
+///
+/// Spring (Java): `SimpleUrlLogoutSuccessHandler`.
 final class SimpleUrlLogoutSuccessHandler implements LogoutSuccessHandler {
-  /// Redirects to [targetUrl].
+  /// A handler redirecting to [targetUrl], prefixed with [contextPath].
   const SimpleUrlLogoutSuccessHandler(this.targetUrl, {this.contextPath = ''});
 
-  /// Where to go.
+  /// The path to redirect to.
   final String targetUrl;
 
-  /// The application's context path.
+  /// The application's context path; `''` for none.
   final String contextPath;
 
   @override
@@ -575,14 +722,21 @@ final class SimpleUrlLogoutSuccessHandler implements LogoutSuccessHandler {
   ) => sendRedirect(response, '$contextPath$targetUrl');
 }
 
-/// A plain status (`200` by default; `204` suits APIs), like Spring's
-/// `HttpStatusReturningLogoutSuccessHandler`.
+/// A [LogoutSuccessHandler] that answers a plain status without a body:
+/// `200` by default, `204` suits APIs.
+///
+/// ```dart
+/// http.logout((l) => l.logoutSuccessHandler(
+///     const HttpStatusReturningLogoutSuccessHandler(HttpStatus.noContent)));
+/// ```
+///
+/// Spring (Java): `HttpStatusReturningLogoutSuccessHandler`.
 final class HttpStatusReturningLogoutSuccessHandler
     implements LogoutSuccessHandler {
-  /// Answers with [status] (`200` like Spring by default).
+  /// A handler answering [status]; `200` by default, as in Spring.
   const HttpStatusReturningLogoutSuccessHandler([this.status = HttpStatus.ok]);
 
-  /// The status.
+  /// The status of the answer.
   final int status;
 
   @override
@@ -596,14 +750,23 @@ final class HttpStatusReturningLogoutSuccessHandler
   }
 }
 
-/// Logs out on `POST /logout`, like Spring's `LogoutFilter`: the
-/// [handlers] run (session ended, context emptied, CSRF token removed),
-/// a `LogoutSuccessEvent` is published, then the [successHandler]
-/// answers. `GET /logout` is not a logout (a link or an image could
-/// trigger it): with form login it shows a confirmation page.
+/// The filter that logs the user out on `POST /logout`.
+///
+/// The [handlers] run in order (cookies expired, CSRF token removed,
+/// session ended and context emptied), a `LogoutSuccessEvent` is
+/// published for a user who was logged in, then the [successHandler]
+/// answers. Other requests pass through.
+///
+/// While CSRF protection is on, only `POST` logs out: a `GET` could be
+/// triggered by a link or an image on another site. `GET /logout` then
+/// shows a confirmation page when form login uses the generated login
+/// page. With CSRF protection off,
+/// `GET`, `POST`, `PUT` and `DELETE` all log out.
+///
+/// Spring (Java): `LogoutFilter`.
 final class LogoutFilter implements WebFilter {
-  /// A filter for [logoutUrl] with one of [methods] (only `POST` while CSRF
-  /// protection is on, like Spring).
+  /// A filter logging out requests to `logoutUrl` (`/logout` by default)
+  /// whose method is one of `methods` (only `POST` by default).
   LogoutFilter(
     List<LogoutHandler> handlers, {
     String logoutUrl = '/logout',
@@ -616,16 +779,16 @@ final class LogoutFilter implements WebFilter {
            PathPatternRequestMatcher(logoutUrl, method: method),
        ]);
 
-  /// The handlers.
+  /// The cleanup steps, run in order; cannot be modified.
   final List<LogoutHandler> handlers;
 
-  /// Which requests log out.
+  /// Decides which requests are logouts.
   final RequestMatcher logoutRequestMatcher;
 
-  /// Answers.
+  /// Answers the client after the logout.
   final LogoutSuccessHandler successHandler;
 
-  /// Publishes `LogoutSuccessEvent`.
+  /// Publishes the `LogoutSuccessEvent`; `null` publishes nothing.
   final ApplicationEventPublisher? eventPublisher;
 
   @override
@@ -649,11 +812,19 @@ final class LogoutFilter implements WebFilter {
   }
 }
 
-/// Serves the default login page (`GET /login`) when form login has no
-/// page of its own, like Spring's `DefaultLoginPageGeneratingFilter`;
-/// `?error` and `?logout` show a message. The page carries the CSRF token.
+/// The filter that serves the generated login page at `GET /login` when
+/// form login has no page of its own.
+///
+/// The page is plain HTML with a username field, a password field and the
+/// CSRF token. With `?error` it says "Bad credentials", with `?logout`
+/// "You have been signed out". Name your own page with
+/// `formLogin((f) => f.loginPage('/sign-in'))` and the generated one is
+/// gone.
+///
+/// Spring (Java): `DefaultLoginPageGeneratingFilter`.
 final class DefaultLoginPageGeneratingFilter implements WebFilter {
-  /// A page at [loginPageUrl] posting to [loginProcessingUrl].
+  /// A page served at `loginPageUrl` (`/login` by default) whose form
+  /// posts to [loginProcessingUrl].
   DefaultLoginPageGeneratingFilter({
     String loginPageUrl = '/login',
     this.loginProcessingUrl = '/login',
@@ -662,16 +833,17 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
     this.contextPath = '',
   }) : _page = PathPatternRequestMatcher(loginPageUrl, method: HttpMethod.get);
 
-  /// Where the form posts.
+  /// The path the form posts to, `/login` by default.
   final String loginProcessingUrl;
 
-  /// The username field.
+  /// The name of the username field, `username` by default.
   final String usernameParameter;
 
-  /// The password field.
+  /// The name of the password field, `password` by default.
   final String passwordParameter;
 
-  /// The application's context path.
+  /// The application's context path, put in front of the form's
+  /// address; `''` for none.
   final String contextPath;
 
   final RequestMatcher _page;
@@ -731,18 +903,23 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
   }
 }
 
-/// Serves the logout confirmation page (`GET /logout`), like Spring's
-/// `DefaultLogoutPageGeneratingFilter`: a button posting the logout with
-/// the CSRF token.
+/// The filter that serves a logout confirmation page at `GET /logout`: a
+/// button that posts the logout with the CSRF token.
+///
+/// A logout must be a `POST`, so a link to `/logout` lands here first.
+/// The chain adds it with the generated login page.
+///
+/// Spring (Java): `DefaultLogoutPageGeneratingFilter`.
 final class DefaultLogoutPageGeneratingFilter implements WebFilter {
-  /// A page at [logoutUrl].
+  /// A page served at `logoutUrl` (`/logout` by default).
   DefaultLogoutPageGeneratingFilter({
     String logoutUrl = '/logout',
     this.contextPath = '',
   }) : _logoutUrl = logoutUrl,
        _page = PathPatternRequestMatcher(logoutUrl, method: HttpMethod.get);
 
-  /// The application's context path.
+  /// The application's context path, put in front of the form's
+  /// address; `''` for none.
   final String contextPath;
 
   final String _logoutUrl;

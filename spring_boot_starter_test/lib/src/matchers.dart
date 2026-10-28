@@ -3,36 +3,58 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' hide Description;
 import 'package:spring_boot_starter_test/src/application_context_runner.dart';
 import 'package:spring_boot_starter_test/src/spring_boot_test.dart';
 
-/// Matches a context with exactly one bean of [T] (AssertJ's
-/// `assertThat(context).hasSingleBean(T.class)`).
+/// Matches a context that has exactly one bean of type [T].
 ///
-/// Works on an [AssertableApplicationContext], a [SpringBootTestContext] or
-/// any [ListableBeanFactory]. Like AssertJ, the beans of the parent
-/// contexts count too (`withParent`).
+/// The usual check of an auto-configuration test: zero beans means the
+/// configuration did not apply, two mean it did not back off for the
+/// application's own bean. It takes an [AssertableApplicationContext]
+/// (from [ApplicationContextRunner]), a [SpringBootTestContext] or any
+/// [ListableBeanFactory], such as an application context. Beans of parent
+/// contexts count too ([ApplicationContextRunner.withParent]), as in
+/// AssertJ. On failure it lists the beans found, or the reason the context
+/// did not start.
 ///
 /// ```dart
-/// expect(context, hasSingleBean<MessageSource>());
+/// runner.run((context) {
+///   // The starter created its MessageSource, and only one.
+///   expect(context, hasSingleBean<MessageSource>());
+/// });
 /// ```
+///
+/// Spring (Java): `assertThat(context).hasSingleBean(MessageSource.class)`.
 Matcher hasSingleBean<T extends Object>() =>
     _BeanCount<T>((count) => count == 1, 'exactly one bean of $T');
 
-/// Matches a context with at least one bean of [T].
+/// Matches a context with at least one bean of type [T], parent contexts
+/// included; takes the same contexts as [hasSingleBean].
 Matcher hasBean<T extends Object>() =>
     _BeanCount<T>((count) => count > 0, 'a bean of $T');
 
-/// Matches a context without beans of [T] (`doesNotHaveBean`).
+/// Matches a context with no bean of type [T], parent contexts included:
+/// checks that a configuration backed off or a condition did not match.
+/// Takes the same contexts as [hasSingleBean]. AssertJ's
+/// `doesNotHaveBean`.
 Matcher doesNotHaveBean<T extends Object>() =>
     _BeanCount<T>((count) => count == 0, 'no bean of $T');
 
-/// Matches a context with a bean called [name].
+/// Matches a context that contains a bean called [name] (or an alias of
+/// that name), in itself or a parent context. Takes the same contexts as
+/// [hasSingleBean].
 Matcher hasBeanNamed(String name) => _HasBeanNamed(name);
 
-/// Matches an [AssertableApplicationContext] that failed to start, with a
-/// failure matching [failure] if given.
+/// Matches an [AssertableApplicationContext] whose start failed; with
+/// [failure] (a value or a matcher), the error must match it too.
+///
+/// Use it to check that a configuration rejects bad properties or a
+/// missing dependency, instead of starting with a broken bean.
 ///
 /// ```dart
-/// expect(context, hasFailed(isA<BeanCreationException>()));
+/// runner.withPropertyValues(['neon.cache.size=-1']).run((context) {
+///   expect(context, hasFailed(isA<BeanCreationException>()));
+/// });
 /// ```
+///
+/// Spring (Java): `assertThat(context).hasFailed()`.
 Matcher hasFailed([Object? failure]) =>
     _HasFailed(failure == null ? null : wrapMatcher(failure));
 

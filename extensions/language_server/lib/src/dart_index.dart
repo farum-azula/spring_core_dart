@@ -3,8 +3,12 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/source/line_info.dart';
 
-/// Annotations that make a class a bean; classes extending one of them are
-/// stereotypes too (custom `@Component` subclasses).
+/// The annotations that make a class a bean, by name.
+///
+/// Annotation classes of the workspace that extend one of them count too
+/// (`SpringWorkspace.stereotypes`). The web and WebSocket ones are listed
+/// by name because the classes they extend live in a dependency, which is
+/// not indexed.
 const baseStereotypes = {
   'Component',
   'Service',
@@ -25,8 +29,9 @@ const baseStereotypes = {
   'WebSocketEndpoint',
 };
 
-/// Stereotypes whose first argument is not the bean name (a `name:`
-/// argument is, when they have one).
+/// Stereotypes whose first positional argument is not the bean name but a
+/// prefix or a path. Their bean name comes from a `name:` argument when
+/// they have one, else from the class name.
 const unnamedStereotypes = {
   'ConfigurationProperties',
   'AutoConfiguration',
@@ -34,12 +39,19 @@ const unnamedStereotypes = {
   'WebSocketEndpoint',
 };
 
-/// A parsed Dart file.
+/// A Dart source file parsed for syntax only, with the index the
+/// workspace needs: its top-level classes and a way to find the node at
+/// an offset.
+///
+/// There is no type resolution, so parsing is fast and works without
+/// `pub get` and on code that does not compile. The workspace keeps one
+/// per file and parses it again when the file or the open document
+/// changes.
 final class DartFile {
   DartFile._(this.path, this.text, this.unit, this.lineInfo, this.classes);
 
-  /// Parses [text] (syntax only: no type resolution, so it is fast and works
-  /// without `pub get`).
+  /// Parses [text] as the content of [path]. Syntax errors do not throw: the
+  /// tree holds what could be read.
   factory DartFile.parse(String path, String text) {
     final result = parseString(
       content: text,
@@ -56,22 +68,24 @@ final class DartFile {
     return DartFile._(path, text, unit, result.lineInfo, classes);
   }
 
-  /// File path.
+  /// The absolute path of the file.
   final String path;
 
-  /// Source text.
+  /// The text that was parsed: the open document's, when there is one.
   final String text;
 
-  /// Syntax tree.
+  /// The syntax tree.
   final CompilationUnit unit;
 
-  /// Offsets ↔ lines and columns.
+  /// Converts offsets to lines and columns and back.
   final LineInfo lineInfo;
 
-  /// Top-level classes.
+  /// The top-level class declarations (not mixins, enums or extension
+  /// types), where beans and supertypes are found.
   final List<ClassInfo> classes;
 
-  /// The innermost node that contains [offset].
+  /// The innermost syntax node at [offset] (an offset at a node's end counts
+  /// as inside it): where every editor query starts.
   AstNode? nodeAt(int offset) {
     final finder = _NodeAt(offset);
     unit.accept(finder);
@@ -79,7 +93,8 @@ final class DartFile {
   }
 }
 
-/// A class declaration: name, supertypes and annotations.
+/// A top-level class of a [DartFile], with what the bean index needs: its
+/// name, its direct supertypes and its annotations.
 final class ClassInfo {
   ClassInfo._(
     this.path,
@@ -109,42 +124,48 @@ final class ClassInfo {
     );
   }
 
-  /// File path.
+  /// The file that declares the class.
   final String path;
 
-  /// Class name.
+  /// The class name.
   final String name;
 
-  /// Offset of the name.
+  /// The offset of the name, where navigation to the class goes.
   final int nameOffset;
 
-  /// Direct supertype names (`extends`, `implements`, `with`).
+  /// The simple names of the direct supertypes: `extends`, `implements` and
+  /// `with`.
   final Set<String> supertypes;
 
-  /// Annotations on the class.
+  /// The annotations on the class.
   final List<Annotation> annotations;
 
-  /// The declaration.
+  /// The class's syntax tree, for its members.
   final ClassDeclaration declaration;
 
-  /// Names of the annotations.
+  /// The names of [annotations], as [annotationName] reads them.
   Set<String> get annotationNames => {
     for (final annotation in annotations) annotationName(annotation),
   };
 }
 
-/// Where a bean comes from.
+/// How a bean is declared.
 enum BeanKind {
-  /// A class with a stereotype annotation.
+  /// A class with a stereotype annotation (`@Service()`, `@Component()`,
+  /// ...).
   component,
 
-  /// A `@Bean` method.
+  /// A `@Bean` method of such a class.
   beanMethod,
 }
 
-/// A bean found in the sources.
+/// A bean declared in the workspace's sources, as far as the syntax shows
+/// it: its name, type, qualifiers and where it is declared.
+///
+/// Go to definition leads to [offset] of [path]; a hover lists the
+/// [summary] of each candidate.
 final class BeanInfo {
-  /// Creates a bean.
+  /// A bean; the index fills [providedTypes] afterwards.
   BeanInfo({
     required this.name,
     required this.typeName,
@@ -160,53 +181,60 @@ final class BeanInfo {
     this.contextGetter,
   });
 
-  /// Bean name.
+  /// The bean name: the one given in the annotation, else the class name in
+  /// lower camel case ([defaultBeanName]) or the `@Bean` method's name.
   final String name;
 
-  /// The class of a component, the return type of a `@Bean` method.
+  /// The class of a component, the declared return type of a `@Bean` method.
   final String typeName;
 
-  /// Component or `@Bean` method.
+  /// Whether a class or a `@Bean` method declares the bean.
   final BeanKind kind;
 
-  /// File path.
+  /// The file that declares the bean.
   final String path;
 
-  /// Offset of the class or method name.
+  /// The offset of the class or method name.
   final int offset;
 
-  /// Length of the name.
+  /// The length of that name.
   final int length;
 
-  /// `@Bean(aliases: [...])`.
+  /// The other names given by `@Bean(aliases: [...])`.
   final Set<String> aliases;
 
-  /// `@Qualifier('x')` on the declaration.
+  /// The values of the `@Qualifier('...')` annotations on the declaration.
   final Set<String> qualifiers;
 
-  /// `@Primary`.
+  /// Whether it is marked `@Primary`; such beans are listed first.
   final bool primary;
 
-  /// `@Profile([...])`.
+  /// The profiles of its `@Profile([...])`, shown in hovers; beans are not
+  /// filtered by them.
   final List<String> profiles;
 
-  /// The configuration class of a `@Bean` method.
+  /// The class that declares a `@Bean` method; `null` for a component.
   final String? owner;
 
   /// With `@BuildContextAccess` (spring_boot_starter_flutter): the name of
   /// the generated `BuildContext` getter (`context.basket`).
   final String? contextGetter;
 
-  /// Every type the bean can be injected as (filled by the index).
+  /// Every type name the bean can be injected as: its type and that type's
+  /// supertypes known to the workspace. Set by the index once all beans are
+  /// found.
   Set<String> providedTypes = const {};
 
-  /// Whether the bean answers to [qualifier] (name, alias or qualifier).
+  /// Whether [qualifier] selects this bean: its name, one of its aliases or
+  /// one of its qualifiers.
   bool matches(String qualifier) =>
       name == qualifier ||
       aliases.contains(qualifier) ||
       qualifiers.contains(qualifier);
 
-  /// One line for hovers.
+  /// One line describing the bean for hovers, such as
+  /// `bean 'checkout': Checkout` or `@Bean 'clock': Clock (in TimeConfig)`,
+  /// with `@Primary` and `@Profile` when set.
   String get summary =>
       "${kind == BeanKind.component ? 'bean' : '@Bean'} '$name': $typeName"
       '${owner == null ? '' : ' (in $owner)'}'
@@ -214,9 +242,10 @@ final class BeanInfo {
       '${profiles.isEmpty ? '' : ' @Profile($profiles)'}';
 }
 
-/// The name of an annotation (`Service` for `@Service()` or `@s.Service()`,
-/// `Cacheable` for `@Cacheable.of()`). Without resolution `A.b` is
-/// ambiguous; a lower-case last part is a named constructor, not a type.
+/// The name of an annotation's type: `Service` for `@Service()` and for
+/// `@s.Service()`, `Cacheable` for `@Cacheable.of()`. Without resolution
+/// `A.b` is ambiguous; a lower-case last part is read as a named
+/// constructor, not a type.
 String annotationName(Annotation annotation) => switch (annotation.name) {
   PrefixedIdentifier(:final prefix, :final identifier) =>
     _isTypeName(identifier.name) ? identifier.name : prefix.name,
@@ -226,7 +255,9 @@ String annotationName(Annotation annotation) => switch (annotation.name) {
 bool _isTypeName(String name) =>
     name.isNotEmpty && name[0].toUpperCase() == name[0] && name[0] != '_';
 
-/// The string value of an expression, if it is a plain string literal.
+/// The value of [expression] when it is a plain string literal, or
+/// adjacent plain literals (`'a' 'b'`); `null` for anything else,
+/// interpolation included.
 String? stringValue(Expression? expression) => switch (expression) {
   SimpleStringLiteral(:final value) => value,
   AdjacentStrings(:final strings) =>
@@ -236,14 +267,16 @@ String? stringValue(Expression? expression) => switch (expression) {
   _ => null,
 };
 
-/// Strings of a list literal expression (`['a', 'b']`).
+/// The plain strings of a list literal (`['a', 'b']`); other elements are
+/// skipped, and anything but a list literal gives an empty list.
 List<String> stringList(Expression? expression) => [
   if (expression is ListLiteral)
     for (final element in expression.elements)
       if (element is Expression) ?stringValue(element),
 ];
 
-/// The positional argument [index] of [annotation].
+/// The positional argument at [index] of [annotation]; `null` when there
+/// are fewer.
 Expression? positionalArgument(Annotation annotation, [int index = 0]) {
   final positional = [
     for (final argument in annotation.arguments?.arguments ?? <Argument>[])
@@ -252,7 +285,7 @@ Expression? positionalArgument(Annotation annotation, [int index = 0]) {
   return index < positional.length ? positional[index] : null;
 }
 
-/// The named argument [name] of [annotation].
+/// The named argument [name] of [annotation]; `null` when it is absent.
 Expression? namedArgument(Annotation annotation, String name) {
   for (final argument in annotation.arguments?.arguments ?? <Argument>[]) {
     if (argument is NamedArgument && argument.name.lexeme == name) {
@@ -262,8 +295,9 @@ Expression? namedArgument(Annotation annotation, String name) {
   return null;
 }
 
-/// Spring's default bean name: `orderService` for `OrderService`, but
-/// `URLService` stays (two leading capitals).
+/// The bean name the framework gives a class called [name]:
+/// `orderService` for `OrderService`, but `URLService` stays as it is (two
+/// leading capitals, the rule of Java's `Introspector.decapitalize`).
 String defaultBeanName(String name) {
   if (name.isEmpty) {
     return name;
@@ -277,7 +311,8 @@ String defaultBeanName(String name) {
   return name[0].toLowerCase() + name.substring(1);
 }
 
-/// The type name of a type annotation without `?` and type arguments.
+/// The simple name of [type], without `?` and type arguments (`List` for
+/// `List<Mailer>?`); `null` for a function or record type.
 String? typeName(TypeAnnotation? type) =>
     type is NamedType ? type.name.lexeme : null;
 

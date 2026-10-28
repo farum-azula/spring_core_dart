@@ -2,8 +2,13 @@ import 'package:spring_core_dart/src/core/env/config/property_source_loader.dart
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:yaml/yaml.dart';
 
-/// `.yml` / `.yaml` files, like Spring Boot's `YamlPropertySourceLoader`;
-/// `ConfigDataEnvironment` uses it by default.
+/// The reader for YAML config files (`.yml`, `.yaml`), used for
+/// `application.yml` and its profile variants.
+///
+/// The environment knows only flat keys (`server.port`), so the nested
+/// YAML tree is flattened. The config data loader uses it by default, so
+/// applications only write the files; [flatten] is useful on its own to
+/// turn a decoded JSON or YAML tree into properties.
 ///
 /// Every YAML document (documents are separated by `---`) becomes one
 /// property source, flattened like Spring's `YamlProcessor`:
@@ -22,7 +27,8 @@ import 'package:yaml/yaml.dart';
 /// - a document that is just a scalar is the property `document`;
 ///   empty documents are skipped.
 ///
-/// Duplicate keys are an error, as in Spring Boot.
+/// Duplicate keys are an error, as in Spring Boot, and so is invalid
+/// YAML; both fail the start with the line and column.
 ///
 /// ```yaml
 /// # application.yml
@@ -55,14 +61,16 @@ import 'package:yaml/yaml.dart';
 /// (converting them to `bool` or an enum still works) and `0777` is the
 /// number 777.
 final class YamlPropertySourceLoader extends PropertySourceLoader {
-  /// Creates the loader (stateless; use `const`).
+  /// Creates the loader. It holds no state, so a `const` one can be
+  /// shared.
   const YamlPropertySourceLoader();
 
   @override
   List<String> get fileExtensions => const ['yml', 'yaml'];
 
-  /// Parses [content]; throws a [FormatException] (a `YamlException` with
-  /// the line and column) for invalid YAML.
+  /// Parses [content] into one source per non-empty document. Throws a
+  /// [FormatException] (a `YamlException` with the line and column) for
+  /// invalid YAML or a duplicate key.
   @override
   List<AbstractPropertySource<Object>> load(String name, String content) {
     final documents = <Map<String, Object>>[
@@ -79,8 +87,9 @@ final class YamlPropertySourceLoader extends PropertySourceLoader {
     ];
   }
 
-  /// Flattens one parsed YAML document (maps, lists, scalars) into
-  /// property keys and values, as described on the class.
+  /// Turns one parsed tree of maps, lists and scalars into flat property
+  /// keys and values, by the rules listed on the class. It accepts the
+  /// result of `jsonDecode` as well as a YAML document.
   ///
   /// ```dart
   /// YamlPropertySourceLoader.flatten({

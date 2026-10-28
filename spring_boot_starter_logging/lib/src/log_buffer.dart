@@ -5,19 +5,24 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 
-/// The last [capacity] log records in memory, ready for a log viewer
-/// screen: snapshots, filtering with [LogQuery], live streams, counters and
-/// text export.
+/// The most recent log records, kept in memory so the application can
+/// show them: [records], filtering with [LogQuery], live streams,
+/// counters and text export.
 ///
-/// The logging system keeps one (`LoggingSystem.buffer`); it is also a
-/// bean, so a screen can get it injected.
+/// A mobile or desktop app has no terminal its users can read. With this
+/// buffer an app can offer a log screen, a "send logs" button for bug
+/// reports, or an error badge in a debug menu. The logging system keeps
+/// one, `LoggingSystem.buffer`, which receives every record; it is also
+/// the `logBuffer` bean, so a screen can get it injected. Its size and
+/// threshold come from `logging.buffer.capacity` and
+/// `logging.threshold.buffer`, and `logging.buffer.enabled=false` turns it
+/// off. There is no Spring counterpart.
 ///
 /// ```dart
-/// // Flutter: a filtered, live list.
+/// // Flutter: a live list, filtered by what the user typed in `search`.
+/// final query = LogQuery(minLevel: SpringLogLevel.info, text: search);
 /// StreamBuilder<List<SpringLogRecord>>(
-///   stream: buffer.watch(
-///     LogQuery(minLevel: SpringLogLevel.info, text: query),
-///   ),
+///   stream: buffer.watch(query),
 ///   builder: (context, snapshot) => ListView(
 ///     children: [
 ///       for (final record in snapshot.data ?? const <SpringLogRecord>[])
@@ -30,12 +35,14 @@ import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 ///   ),
 /// );
 ///
-/// buffer.counts[SpringLogLevel.error]; // badge
-/// buffer.export(query);                // share / copy to clipboard
-/// buffer.clear();
+/// buffer.counts[SpringLogLevel.error]; // the number on an error badge
+/// buffer.export(query);                // text to share or copy
+/// buffer.clear();                      // the "clear" button
 /// ```
 class LogBuffer extends LogAppender {
-  /// A buffer keeping the last [capacity] records.
+  /// A buffer keeping the last [capacity] records (at least 1, else an
+  /// [ArgumentError]) of level [threshold] and above. Applications use
+  /// the logging system's buffer rather than create one.
   LogBuffer({int capacity = 1000, super.threshold}) : _capacity = capacity {
     _checkCapacity(capacity);
   }
@@ -47,7 +54,10 @@ class LogBuffer extends LogAppender {
   int _capacity;
   int _dropped = 0;
 
-  /// How many records are kept; the oldest are dropped first.
+  /// How many records are kept: when a new record would exceed it, the
+  /// oldest is dropped and counted in [dropped]. Lowering it drops the
+  /// oldest records at once. It must be at least 1, else an
+  /// [ArgumentError] is thrown.
   int get capacity => _capacity;
 
   set capacity(int value) {
@@ -64,19 +74,23 @@ class LogBuffer extends LogAppender {
     }
   }
 
-  /// The kept records, oldest first (a snapshot).
+  /// The kept records, oldest first, as an unmodifiable copy that does not
+  /// change when new records arrive.
   List<SpringLogRecord> get records => List.unmodifiable(_records);
 
-  /// Number of kept records.
+  /// How many records are kept now; at most [capacity].
   int get length => _records.length;
 
   /// Whether no record is kept.
   bool get isEmpty => _records.isEmpty;
 
-  /// Records dropped because the buffer was full (since the last [clear]).
+  /// How many records were dropped because the buffer was full, since the
+  /// buffer was created or last cleared; useful for a "1 200 older lines
+  /// not shown" note.
   int get dropped => _dropped;
 
-  /// Kept records per level (every level is present).
+  /// How many kept records each level has, for badges. Every level but
+  /// [SpringLogLevel.off] is a key, with `0` when it has no record.
   Map<SpringLogLevel, int> get counts {
     final counts = {
       for (final level in SpringLogLevel.values)
@@ -88,23 +102,32 @@ class LogBuffer extends LogAppender {
     return Map.unmodifiable(counts);
   }
 
-  /// Names of the loggers in the buffer, sorted (for a filter menu).
+  /// The names of the loggers that have a kept record, sorted and without
+  /// repeats, to fill a filter menu.
   List<String> get loggerNames => List.unmodifiable(
     {for (final record in _records) record.loggerName}.toList()..sort(),
   );
 
-  /// The kept records matching [query], oldest first.
+  /// The kept records that match [query] (all of them by default), oldest
+  /// first, as an unmodifiable list.
   List<SpringLogRecord> query([LogQuery query = const LogQuery()]) =>
       List.unmodifiable(_records.where(query.matches));
 
-  /// Every record as it is added (synchronously).
+  /// Each record as it enters the buffer, delivered synchronously during
+  /// the logging call. Use it to react to single records, such as showing
+  /// a snack bar on an error; to redraw a list, [watch] is cheaper.
   Stream<SpringLogRecord> get onRecord => _onRecord.stream;
 
-  /// Fires once per burst of changes (records added, dropped, cleared).
+  /// An event after each burst of changes (records added or dropped, the
+  /// buffer cleared or made smaller): many records logged in one
+  /// synchronous run give one event, at the end of the microtask.
   Stream<void> get onChange => _onChange.stream;
 
-  /// The records matching [query]: the current list first, then a new list
-  /// after every burst of changes. Made for `StreamBuilder`.
+  /// The records matching [query] as a stream of lists, made for
+  /// Flutter's `StreamBuilder`: the current list when listened to, then a
+  /// new list after each burst of changes that alters the matching
+  /// records. A burst that adds only records the query rejects emits
+  /// nothing.
   Stream<List<SpringLogRecord>> watch([LogQuery query = const LogQuery()]) {
     late final StreamController<List<SpringLogRecord>> controller;
     StreamSubscription<void>? subscription;
@@ -139,16 +162,21 @@ class LogBuffer extends LogAppender {
     _changed();
   }
 
-  /// Removes every record.
+  /// Removes every record and resets [dropped] to 0, for a "clear"
+  /// button; [watch] streams then emit an empty list.
   void clear() {
     _records.clear();
     _dropped = 0;
     _changed();
   }
 
-  /// The records matching [query] as text, one record per [pattern]
-  /// (without the date by default; [LogPattern.formatLine], joined by line
-  /// breaks), for sharing or copying.
+  /// The records matching [query] as text, for sharing or copying to the
+  /// clipboard: each record formatted with [pattern], joined by line
+  /// breaks.
+  ///
+  /// The default pattern is `%d{HH:mm:ss.SSS} %5p [%logger] %m%X%n%ex`:
+  /// the time without the date, the level, the logger, the message with
+  /// its fields, and the error with its stack trace, without colours.
   String export([LogQuery query = const LogQuery(), LogPattern? pattern]) {
     final format =
         pattern ?? LogPattern('%d{HH:mm:ss.SSS} %5p [%logger] %m%X%n%ex');
@@ -182,19 +210,24 @@ class LogBuffer extends LogAppender {
   String toString() => 'LogBuffer($length/$capacity)';
 }
 
-/// A filter for [LogBuffer] records: immutable, so it can live in a
-/// screen's state and be changed with [copyWith].
+/// A filter for the records of a [LogBuffer], such as "warnings and
+/// errors of `neon.shop` that mention payment".
 ///
-/// All criteria must match; `null` / empty criteria match everything.
+/// A log screen keeps one in its state and passes it to
+/// [LogBuffer.watch], [LogBuffer.query] or [LogBuffer.export]. It is
+/// immutable: each change of a filter control makes a new query with
+/// [copyWith]. A record must match every criterion that is set; a `null`
+/// or empty criterion matches everything, so `const LogQuery()` matches
+/// every record.
 ///
 /// ```dart
 /// var query = const LogQuery(minLevel: SpringLogLevel.info);
-/// query = query.copyWith(text: 'payment');     // search box
-/// query = query.copyWith(logger: 'neon.shop'); // and descendants
+/// query = query.copyWith(text: 'payment');     // the search box
+/// query = query.copyWith(logger: 'neon.shop'); // and its descendants
 /// query = query.copyWith(minLevel: null);      // all levels again
 /// ```
 final class LogQuery {
-  /// A query; the default matches every record.
+  /// A query with the given criteria; with none it matches every record.
   const LogQuery({
     this.minLevel,
     this.levels,
@@ -204,30 +237,34 @@ final class LogQuery {
     this.since,
   });
 
-  /// Records of this level or above.
+  /// Keeps records of this level or above; `null` keeps every level.
   final SpringLogLevel? minLevel;
 
-  /// Only these levels (level toggle chips).
+  /// Keeps only records of these levels, for level toggle chips; `null`
+  /// keeps every level. Combined with [minLevel], both must match.
   final Set<SpringLogLevel>? levels;
 
-  /// Records of this logger or its descendants (`neon` matches
-  /// `neon.shop`).
+  /// Keeps records of this logger or its descendants: `neon` matches
+  /// `neon` and `neon.shop`, not `neonx`. The case must match.
   final String? logger;
 
-  /// Case-insensitive search in the message, logger name, error and field
-  /// values.
+  /// Text to search for, ignoring case and surrounding spaces, in the
+  /// message, the logger name, the error and the field values.
   final String? text;
 
-  /// Records whose fields have these values (`{'request': '42'}`), compared
-  /// as text.
+  /// Keeps records whose fields have these values, compared as text, so
+  /// `{'request': '42'}` matches the field `request` with the number 42.
   final Map<String, Object?> fields;
 
-  /// Records created at or after this time.
+  /// Keeps records logged at or after this time, for "since the last
+  /// action"; `null` keeps all.
   final DateTime? since;
 
   static const Object _unset = Object();
 
-  /// A copy with the given criteria replaced; pass `null` to remove one.
+  /// A copy with the given criteria replaced; the others stay. Pass `null`
+  /// to remove a criterion, except [fields]: `null` keeps it, and
+  /// `const {}` removes it.
   LogQuery copyWith({
     Object? minLevel = _unset,
     Object? levels = _unset,
@@ -248,7 +285,7 @@ final class LogQuery {
     since: identical(since, _unset) ? this.since : since as DateTime?,
   );
 
-  /// Whether [record] matches every criterion.
+  /// Whether [record] matches every criterion of this query.
   bool matches(SpringLogRecord record) {
     final minLevel = this.minLevel;
     if (minLevel != null && record.level.index < minLevel.index) {

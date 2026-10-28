@@ -1,9 +1,19 @@
-/// Ordering contract, like Spring's `Ordered`.
+/// An object that says where it goes when several objects of its kind
+/// are run or listed in turn; lower numbers come first.
 ///
-/// Lower values have higher priority. Used to sort injected collections,
-/// post-processors, event listeners and lifecycle beans.
+/// When the framework holds many beans of one type, the order can matter:
+/// which listener sees an event first, which runner starts first, the
+/// order of an injected `List<Handler>`. Post-processors, event listeners,
+/// runners, lifecycle beans and injected lists (not sets or maps) are
+/// sorted this way.
+/// Usually the `@Order(n)` annotation says it; implement this interface
+/// instead when the order is computed at run time or the object is not a
+/// bean declared with annotations. An object with no order goes last
+/// ([lowestPrecedence]).
 ///
 /// ```dart
+/// // Audits before the other listeners, but leaves room for ones that
+/// // must be even earlier.
 /// class AuditListener implements Ordered {
 ///   @override
 ///   int get order => Ordered.highestPrecedence + 10;
@@ -20,26 +30,33 @@
 /// }
 /// ```
 abstract interface class Ordered {
-  /// Highest precedence (runs first).
+  /// The smallest order value, for objects that must come first.
   ///
   /// Same value as Spring's `Ordered.HIGHEST_PRECEDENCE`
   /// (`Integer.MIN_VALUE`); 32-bit so it also compiles to JavaScript.
   static const int highestPrecedence = -0x80000000;
 
-  /// Lowest precedence (runs last). The default for unordered objects.
+  /// The largest order value, for objects that must come last; also the
+  /// order of objects that declare none.
   ///
   /// Same value as Spring's `Ordered.LOWEST_PRECEDENCE`
   /// (`Integer.MAX_VALUE`); 32-bit so it also compiles to JavaScript.
   static const int lowestPrecedence = 0x7FFFFFFF;
 
-  /// The order value of this object; lower values sort first.
+  /// Where this object goes: lower values come first. Values are usually
+  /// small numbers, or offsets from [highestPrecedence] and
+  /// [lowestPrecedence].
   int get order;
 }
 
-/// Ordered objects that run before all plain [Ordered] ones, like Spring's
-/// `PriorityOrdered`.
+/// An [Ordered] object that goes before every plain [Ordered] one,
+/// whatever the numbers.
 ///
-/// Among themselves, priority-ordered objects are sorted by [order].
+/// Infrastructure that other processors depend on uses it, for example a
+/// post-processor that must have run before the application's own
+/// post-processors are even created. Among themselves, priority-ordered
+/// objects are sorted by [order]. Applications almost never need it;
+/// [Ordered] or `@Order` is enough.
 ///
 /// ```dart
 /// class EarlyPostProcessor extends BeanPostProcessor
@@ -58,9 +75,16 @@ abstract interface class Ordered {
 /// ```
 abstract interface class PriorityOrdered implements Ordered {}
 
-/// Declares the order of a bean, like Spring's `@Order`.
+/// An annotation that gives a bean (or a `@Bean` method, an event listener
+/// method) its place when several are run or injected in turn; lower
+/// values come first.
 ///
-/// When the bean also implements [Ordered], the interface value wins.
+/// It is the usual way to order: listeners, runners and the elements of
+/// an injected `List<T>` follow it, and beans without any order (no
+/// `@Order`, [Ordered] or jakarta `@Priority`) go last. When
+/// the bean's class also implements [Ordered], the interface value wins
+/// over an `@Order` on the class; an `@Order` on a `@Bean` method wins
+/// over both.
 ///
 /// ```dart
 /// @Component()
@@ -77,20 +101,23 @@ abstract interface class PriorityOrdered implements Ordered {}
 /// class FirstHandler implements Handler {}
 /// ```
 class Order {
-  /// Creates the annotation with the given order [value]; defaults to
-  /// [Ordered.lowestPrecedence] like Spring's `@Order`.
+  /// Gives the order [value]; [Ordered.lowestPrecedence] when left out,
+  /// like Spring's `@Order`.
   const Order([this.value = Ordered.lowestPrecedence]);
 
-  /// The order value; lower values sort first.
+  /// The order value; lower values come first.
   final int value;
 }
 
-/// Sorts objects: [PriorityOrdered] first, then by order value; equal
-/// values keep their original order (stable).
+/// Sorts objects the way the framework does: [PriorityOrdered] first,
+/// then by order value, objects with equal values keeping their original
+/// order.
 ///
-/// The `fallback` callback supplies the order of objects that do not
-/// implement [Ordered] (for example from an `@Order` annotation recorded in
-/// a bean definition).
+/// Use it when your own code holds a list of objects that should run in
+/// the same order the framework would use, such as plug-ins collected
+/// from beans. Dart reads no annotations at run time, so `@Order` values
+/// must be passed through the `fallback` callback (the container keeps
+/// them in the bean definitions).
 ///
 /// ```dart
 /// final sorted = OrderComparator.sort(
@@ -106,10 +133,12 @@ class Order {
 /// AnnotationAwareOrderComparator.sort(sorted);
 /// ```
 ///
-/// Unlike Spring's `OrderComparator`, annotations are not read at runtime
-/// (no reflection); pass their values through `fallback`.
+/// Unlike Spring's `OrderComparator`, annotations are not read at run time
+/// (there is no reflection); pass their values through `fallback`.
 abstract final class OrderComparator {
-  /// Order value of [object]: [Ordered.order] or [fallback] or lowest.
+  /// The order of [object]: its [Ordered.order] when it implements
+  /// [Ordered], otherwise [fallback], otherwise
+  /// [Ordered.lowestPrecedence].
   ///
   /// ```dart
   /// OrderComparator.orderOf(plainObject, 5); // 5
@@ -119,10 +148,11 @@ abstract final class OrderComparator {
     _ => fallback ?? Ordered.lowestPrecedence,
   };
 
-  /// Returns a new list sorted by order; stable for equal orders.
+  /// Returns [items] as a new sorted list; [items] itself is not changed.
+  /// Items with equal orders keep their original order.
   ///
-  /// [items] is not modified. [fallback] returns the order of an item that
-  /// does not implement [Ordered] (or `null` for lowest precedence).
+  /// [fallback] gives the order of an item that does not implement
+  /// [Ordered], or `null` for [Ordered.lowestPrecedence].
   static List<T> sort<T extends Object>(
     Iterable<T> items, [
     int? Function(T item)? fallback,

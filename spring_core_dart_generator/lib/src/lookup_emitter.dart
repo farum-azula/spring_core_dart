@@ -6,7 +6,11 @@ part of 'module_emitter.dart';
 // proxy of such a bean extends this class (see `_subclassProxyClass`).
 
 extension _LookupEmitter on ModuleEmitter {
-  /// The subclass of [model].
+  /// The generated subclass of a bean class with `@Lookup` methods.
+  ///
+  /// It takes the `BeanFactory` as an extra constructor parameter and
+  /// overrides each lookup method to fetch a bean from it on every call.
+  /// The container creates the bean through this subclass.
   Class lookupClass(LookupClassModel model) {
     final element = model.type.element;
     return Class(
@@ -43,8 +47,10 @@ extension _LookupEmitter on ModuleEmitter {
     );
   }
 
-  /// A constructor taking [first] (if any), then forwarding [parameters]
-  /// to the super constructor [constructorName] as super parameters.
+  /// A constructor of a generated subclass: it takes [first] (if any),
+  /// then forwards [parameters] to the super constructor
+  /// [constructorName] as super parameters (positional ones named `p0`,
+  /// `p1`...).
   Constructor _forwardingConstructor(
     String? constructorName,
     List<ProxyParameter> parameters, [

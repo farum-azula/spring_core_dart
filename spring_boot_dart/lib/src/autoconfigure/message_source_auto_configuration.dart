@@ -4,26 +4,43 @@ import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_boot_dart/src/conditions.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// Registers a `messageSource` reading `classpath:<basename>*.properties`
-/// when this context (not a parent) has no bean named `messageSource`, like
-/// Spring Boot's `MessageSourceAutoConfiguration`.
+/// The `messageSource` bean that serves translated texts from
+/// `lib/resources/messages*.properties`, set up from `spring.messages.*`.
 ///
-/// Properties: `spring.messages.basename` (comma-separated, default
-/// `messages`), `spring.messages.encoding` (default `UTF-8`),
-/// `spring.messages.use-code-as-default-message`,
-/// `spring.messages.always-use-message-format`,
-/// `spring.messages.common-messages` (property files with
-/// locale-independent messages, comma-separated; a later file wins),
-/// `spring.messages.fallback-to-system-locale` (default `true`),
-/// `spring.messages.cache-duration` (seconds without a unit, e.g. `10`,
-/// or any duration such as `500ms`; cached forever by default) and
-/// `spring.messages.default-locale` (not in Spring Boot: the locale tried
-/// before the system locale).
+/// An application that puts `messages.properties`,
+/// `messages_de.properties`, ... into `lib/resources/` can resolve texts by
+/// code and locale (`messageSource.getMessage('cart.empty', locale: 'de')`)
+/// and gets translated validation messages, with no bean to declare. The
+/// bean is registered only when the bundle exists
+/// ([MessagesBundleCondition]) and this context (not a parent) has no
+/// bean named `messageSource`, so declaring your own replaces it.
+///
+/// Properties:
+///
+/// - `spring.messages.basename`: the bundles, comma-separated or a YAML
+///   list, dots read as slashes; default `messages`.
+/// - `spring.messages.encoding`: default `UTF-8`; an unknown encoding
+///   fails the start.
+/// - `spring.messages.use-code-as-default-message`: return the code
+///   instead of failing for an unknown message; default `false`.
+/// - `spring.messages.always-use-message-format`: format messages without
+///   arguments too (so `''` becomes `'`); default `false`.
+/// - `spring.messages.common-messages`: property files with messages for
+///   every locale, comma-separated; a later file wins.
+/// - `spring.messages.fallback-to-system-locale`: default `true`.
+/// - `spring.messages.cache-duration`: how long loaded files are kept, in
+///   seconds without a unit (`10`) or any duration (`500ms`); kept forever
+///   by default.
+/// - `spring.messages.default-locale`: the locale tried before the system
+///   locale. Not in Spring Boot.
 ///
 /// ```properties
 /// # lib/resources/application.properties
 /// spring.messages.basename=i18n/messages,i18n/errors
 /// ```
+///
+/// Spring (Java): `MessageSourceAutoConfiguration`, with the same
+/// properties.
 final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ReloadableResourceBundleMessageSource>(
     name: 'messageSource',
@@ -120,16 +137,32 @@ final messageSourceAutoConfiguration = <BeanDefinition<Object>>[
   ),
 ];
 
-/// Matches when a `classpath:<basename>.properties` bundle exists (Spring
-/// Boot's `ResourceBundleCondition`).
+/// A condition that matches when the message bundle exists, that is when
+/// `classpath:<basename>.properties` exists for one of the configured
+/// basenames.
+///
+/// It keeps the auto-configured `messageSource` out of applications that
+/// have no messages file. A starter that ships its own message-based bean
+/// can reuse it:
+///
+/// ```dart
+/// @Bean()
+/// @MessagesBundleCondition()
+/// ErrorTexts errorTexts(MessageSource messages) => ErrorTexts(messages);
+/// ```
+///
+/// Spring (Java): Spring Boot's `ResourceBundleCondition`, internal to
+/// `MessageSourceAutoConfiguration`.
 class MessagesBundleCondition implements Condition {
-  /// Creates the condition.
+  /// The condition; it reads `spring.messages.basename` when evaluated.
   const MessagesBundleCondition();
 
-  /// The configured bundle basenames (`spring.messages.basename`), dots
-  /// read as slashes (`config.i18n.messages` → `config/i18n/messages`).
+  /// The bundle basenames of [environment]'s `spring.messages.basename`,
+  /// as paths below `lib/resources/`; `['messages']` when it is not set.
   ///
-  /// A comma list (`a,b`) or a YAML list (`spring.messages.basename[0]`).
+  /// The property is a comma list (`a,b`) or a YAML list
+  /// (`spring.messages.basename[0]`). Dots are read as slashes, so
+  /// `config.i18n.messages` is `config/i18n/messages`.
   static List<String> basenames(Environment environment) => [
     for (final name
         in environment is ConfigurableEnvironment

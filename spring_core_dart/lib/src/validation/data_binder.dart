@@ -9,10 +9,17 @@ import 'package:spring_core_dart/src/core/convert/lenient_enum.dart';
 import 'package:spring_core_dart/src/validation/errors.dart';
 import 'package:spring_core_dart/src/validation/validator.dart';
 
-/// Values for constructor binding ([DataBinder.construct]), like Spring's
-/// `DataBinder.ValueResolver`.
+/// The source of the input values when [DataBinder.construct] creates an
+/// object through its constructor.
+///
+/// The binder asks it for one value per constructor parameter, by name
+/// (`isbn`, `author.name`, `tags[0]`), and for the names it has, to build
+/// nested objects, lists and maps. [MapValueResolver] covers input that is
+/// already a map, which is the usual case. Implement it only to read values
+/// from somewhere else without copying them into a map first.
 ///
 /// ```dart
+/// // Constructor values straight from a query string.
 /// final class RequestValues implements ValueResolver {
 ///   RequestValues(this.query);
 ///   final Map<String, String> query;
@@ -33,25 +40,31 @@ import 'package:spring_core_dart/src/validation/validator.dart';
 /// }
 /// ```
 abstract interface class ValueResolver {
-  /// The value for the parameter path [name] (`isbn`, `author.name`,
-  /// `tags[0]`) of [type], or `null` when there is none.
+  /// The input for the parameter path [name] (`isbn`, `author.name`,
+  /// `tags[0]`), whose declared type is [type]; `null` when there is none.
+  ///
+  /// The value may be a string or any other object; the binder converts it
+  /// to [type].
   Object? resolveValue(String name, Type type);
 
-  /// Every name a value exists for (used for nested objects, lists and
-  /// maps).
+  /// Every name a value exists for. The binder searches it for prefixes
+  /// (`author.`, `tags[`) to decide whether to build a nested object, list
+  /// or map.
   Set<String> get names;
 }
 
-/// A [ValueResolver] over a map of values keyed by parameter path.
+/// A [ValueResolver] that reads the values from a map keyed by parameter
+/// path, the one to use with [DataBinder.construct] in most cases.
 ///
 /// ```dart
+/// // A book with two tags, created from form input.
 /// binder.construct(MapValueResolver({'isbn': '978-0', 'tags[0]': 'sf'}));
 /// ```
 final class MapValueResolver implements ValueResolver {
-  /// Resolves names from [values].
+  /// A resolver over [values].
   const MapValueResolver(this.values);
 
-  /// The values, keyed by parameter path.
+  /// The input values, keyed by parameter path (`isbn`, `tags[0]`).
   final Map<String, Object?> values;
 
   @override
@@ -61,10 +74,24 @@ final class MapValueResolver implements ValueResolver {
   Set<String> get names => values.keys.toSet();
 }
 
-/// Binds values (e.g. form input) onto an `@Introspected` object and
-/// validates it, like Spring's `DataBinder`.
+/// Copies input values, usually strings from a form or a query, onto the
+/// properties of an `@Introspected` object, then validates it, collecting
+/// every problem in one [bindingResult].
+///
+/// Use it when the input is a flat map of strings rather than JSON: form
+/// fields, query parameters, a CSV row. Each value is converted to the
+/// property's type; text that cannot be converted becomes a `typeMismatch`
+/// field error that keeps what was typed, instead of an exception. Rules
+/// such as [requiredFields] and [disallowedFields] protect the object from
+/// missing or unexpected input (a client must not set `id` or `admin`).
+///
+/// The web starter does not use it: JSON bodies are read by the
+/// `ObjectMapper` and checked with `@Valid()`. Spring Boot uses it to
+/// validate `@ConfigurationProperties` classes.
 ///
 /// ```dart
+/// // A signup form: only known fields, `email` required, `id` never set
+/// // by the client.
 /// final form = SignupForm();
 /// final binder = DataBinder(form, objectName: 'signup')
 ///   ..requiredFields = ['email']
@@ -75,18 +102,17 @@ final class MapValueResolver implements ValueResolver {
 /// if (binder.bindingResult.hasErrors) {
 ///   print(binder.bindingResult.fieldErrors());
 /// }
-/// final model = binder.close(); // {signup: form, BindingResult.signup: ...}
+/// // {signup: form, BindingResult.signup: ...}; throws on errors.
+/// final model = binder.close();
 /// ```
 ///
-/// Values are converted to the property types; conversion failures become
-/// `typeMismatch` field errors that keep the rejected input.
-///
-/// Immutable classes are created from the values with [construct]
-/// (constructor binding, Spring 6.1), through the constructor the
-/// generator describes for `@Introspected` classes (the one `ObjectMapper`
-/// uses):
+/// An immutable class (final fields, no setters) cannot be bound onto.
+/// Create it from the values with [construct] instead: constructor
+/// binding, Spring 6.1. It goes through the constructor the generator
+/// describes for `@Introspected` classes, the one `ObjectMapper` uses:
 ///
 /// ```dart
+/// // Start without a target; construct creates it.
 /// final binder =
 ///     DataBinder(null, objectName: 'book', introspector: introspector)
 ///   ..targetType = Book
@@ -114,11 +140,14 @@ final class MapValueResolver implements ValueResolver {
 /// books.construct(valueResolver);
 /// ```
 class DataBinder {
-  /// Creates a binder for [target] (`null` to create it with [construct]),
-  /// exposed as [objectName] in messages and the model.
+  /// A binder for [target], or for an object [construct] creates when
+  /// [target] is `null`; [objectName] names it in error codes and the
+  /// model.
   ///
-  /// [introspector], [conversionService] and [messageCodesResolver]
-  /// customize property access, value conversion and error codes.
+  /// [introspector] (default `BeanIntrospector.shared`; inside an
+  /// application pass the context's), [conversionService] (default: the
+  /// shared `DefaultConversionService`) and [messageCodesResolver] change
+  /// property access, value conversion and error codes.
   DataBinder(
     Object? target, {
     this.objectName = defaultObjectName,
@@ -130,33 +159,36 @@ class DataBinder {
        conversionService =
            conversionService ?? DefaultConversionService.sharedInstance;
 
-  /// Object name used when none is given, like Spring's
-  /// `DataBinder.DEFAULT_OBJECT_NAME`.
+  /// The object name when none is given, `target` (Spring's
+  /// `DataBinder.DEFAULT_OBJECT_NAME`).
   static const defaultObjectName = 'target';
 
-  /// The object values are bound onto; `null` until [construct] created
-  /// it (and when it failed).
+  /// The object values are bound onto; `null` until [construct] creates
+  /// it, and still `null` when that failed.
   Object? get target => _target;
   Object? _target;
 
-  /// The class [construct] creates (must be `@Introspected`), like
-  /// Spring's `setTargetType`.
+  /// The class [construct] creates; it must be `@Introspected`. Set it
+  /// before calling [construct]. Spring's `setTargetType`.
   Type? targetType;
 
-  /// Name of the target in error codes and the model.
+  /// The name of the target in error codes (`NotBlank.signup.name`) and in
+  /// the model.
   final String objectName;
 
-  /// Metadata of the target's class (and nested classes).
+  /// Describes the properties and constructors of the target's class and
+  /// of nested classes.
   final BeanIntrospector introspector;
 
-  /// Converts input values (usually strings) to property types.
+  /// Converts input values, usually strings, to the property types.
   final ConversionService conversionService;
 
-  /// Builds the codes of binding and validation errors.
+  /// Builds the message codes of binding and validation errors.
   final MessageCodesResolver messageCodesResolver;
 
-  /// Errors from binding and validation (created on first use, for the
-  /// current [target]).
+  /// The errors of binding and validation, with the target; created on
+  /// first use for the current [target]. Read it after [bind] and
+  /// [validate], or let [close] throw when it has errors.
   BeanPropertyBindingResult get bindingResult =>
       _bindingResult ??= BeanPropertyBindingResult(
         _target,
@@ -167,37 +199,52 @@ class DataBinder {
       );
   BeanPropertyBindingResult? _bindingResult;
 
-  /// Only these fields may be bound (`*` wildcards); `null` or empty
-  /// allows all (Spring's `setAllowedFields()` with no patterns).
+  /// The fields that may be bound, as patterns with `*` wildcards
+  /// (`address.*`); input for other fields is skipped. `null` or empty
+  /// allows every field, like Spring's `setAllowedFields()` with no
+  /// patterns.
   List<String>? allowedFields;
 
-  /// These fields are never bound (`*` wildcards).
+  /// Fields that are never bound, as patterns with `*` wildcards, such as
+  /// `id` or `*.admin`; they win over [allowedFields]. Matching ignores case
+  /// and also catches the bracket form of a dotted path (`roles[admin]`
+  /// for `roles.admin`), as Spring does since CVE-2022-22968. Empty by
+  /// default.
   List<String> disallowedFields = const [];
 
-  /// Fields that must be present and non-empty.
+  /// Fields the input must contain with a non-blank value; a missing one
+  /// gets a `required` field error. Empty by default. A field that is also
+  /// disallowed counts as missing.
   List<String> requiredFields = const [];
 
-  /// Silently skip fields the target does not have.
+  /// Whether input for a field the target does not have (or a malformed
+  /// path such as `items[`) is skipped; `true` by default. When `false`,
+  /// [bind] throws for it.
   bool ignoreUnknownFields = true;
 
-  /// Silently skip fields with a `null` nested path.
+  /// Whether input for a path that cannot be reached, such as
+  /// `address.city` while `address` is `null` and cannot be created, is
+  /// skipped; `false` by default, and [bind] throws for it.
   bool ignoreInvalidFields = false;
 
-  /// Create `null` nested objects, lists, maps and missing list elements
-  /// while binding nested paths.
+  /// Whether binding `address.city` or `items[2].sku` creates a `null`
+  /// nested object, list or map, and missing list elements, on the way;
+  /// `true` by default.
   bool autoGrowNestedPaths = true;
 
-  /// Lists grow up to (not including) this index, like Spring's
-  /// `DataBinder.DEFAULT_AUTO_GROW_COLLECTION_LIMIT` (256).
+  /// The highest list index plus one that binding may create, 256 by
+  /// default (Spring's `DEFAULT_AUTO_GROW_COLLECTION_LIMIT`), so input such
+  /// as `items[999999]` cannot make the binder allocate a huge list.
   int autoGrowCollectionLimit = 256;
 
-  /// Validators run by [validate].
+  /// The validators [validate] runs, in order; usually the application's
+  /// `BeanValidator` and, for rules in code, your own [Validator]s. Empty
+  /// by default, so nothing is checked until you add one.
   final validators = <Validator>[];
 
-  /// Fields skipped because they were not allowed.
-  ///
-  /// Accumulates over all [bind] calls, like Spring's
-  /// `BindingResult.getSuppressedFields()`.
+  /// The input fields [bind] skipped because [allowedFields] or
+  /// [disallowedFields] rejected them, over all [bind] calls; useful to log
+  /// tampering attempts. Spring's `BindingResult.getSuppressedFields()`.
   List<String> get suppressedFields => List.unmodifiable(_suppressed);
 
   final _suppressed = <String>[];
@@ -220,21 +267,30 @@ class DataBinder {
     ], defaultMessage: field),
   ];
 
-  /// Binds [values] onto the target.
+  /// Sets the target's properties from [values], whose keys are property
+  /// paths (`name`, `address.city`, `items[0].sku`); problems become field
+  /// errors in [bindingResult] instead of exceptions.
   ///
-  /// Keys are property paths (`name`, `address.city`, `items[0].sku`).
-  /// Disallowed keys are skipped (see [suppressedFields]); missing
-  /// [requiredFields] get `required` errors; conversion failures get
-  /// `typeMismatch` errors; setters that throw get `methodInvocation`
-  /// errors; unknown fields and malformed keys (`items[`) are skipped
-  /// while [ignoreUnknownFields] is on (the default), unreachable nested
-  /// paths throw unless [ignoreInvalidFields] is on. Binding errors carry
-  /// Spring's arguments (a resolvable of the field name) and `required`
-  /// errors reject `""`.
+  /// - Keys not allowed by [allowedFields] and [disallowedFields] are
+  ///   skipped and listed in [suppressedFields]. Keys are compared in a
+  ///   canonical form (see [canonicalPropertyName]).
+  /// - A missing or blank entry of [requiredFields] gets a `required` error
+  ///   with the rejected value `""`.
+  /// - A value that cannot be converted gets a `typeMismatch` error, and a
+  ///   setter that throws a `methodInvocation` error.
+  /// - Unknown fields and malformed keys are skipped while
+  ///   [ignoreUnknownFields] is on; unreachable nested paths throw unless
+  ///   [ignoreInvalidFields] is on.
+  ///
+  /// Binding errors get Spring's arguments: `{0}` is the field name, which
+  /// a message source may translate too. Throws a [StateError] when there
+  /// is no target yet.
   ///
   /// ```dart
+  /// // `age` is an int: the text is kept as a typeMismatch error.
   /// binder.bind({'age': 'old'});
-  /// binder.bindingResult.fieldError('age')!.codes.first; // typeMismatch.signup.age
+  /// binder.bindingResult.fieldError('age')!.codes.first;
+  /// // typeMismatch.signup.age
   /// ```
   void bind(Map<String, Object?> values) {
     final target =
@@ -317,23 +373,30 @@ class DataBinder {
     fieldType: error.requiredType,
   );
 
-  /// Creates the target of [targetType] from [valueResolver] through its
-  /// constructor, like Spring's `DataBinder.construct` (constructor
-  /// binding).
+  /// Creates the target, an instance of [targetType], by calling its
+  /// constructor with values from [valueResolver]: constructor binding,
+  /// for classes with final fields. Spring's `DataBinder.construct`.
   ///
-  /// Each constructor parameter is looked up by name (`isbn`); nested
-  /// introspected objects by prefix (`author.name`), lists and sets by
+  /// Each constructor parameter is looked up by name (`isbn`), a nested
+  /// `@Introspected` object by prefix (`author.name`), lists and sets by
   /// index (`tags[0]`, `authors[1].name`) and maps by key (`prices[eur]`).
-  /// Values are converted to the parameter types. Optional parameters
-  /// without a value keep their defaults; a conversion failure, or no value
-  /// for a required non-nullable parameter (Java's primitive), records a
-  /// `typeMismatch` error, and then the target stays `null` when it cannot
-  /// be created. Without errors the binding result is reset for the new
-  /// target, so [bind] and [validate] can follow. A list index at or above
-  /// [autoGrowCollectionLimit] throws an [InvalidPropertyException] before
-  /// the list is allocated, like Spring's `createList`.
+  /// Values are converted to the parameter types, and optional parameters
+  /// without a value keep their defaults.
+  ///
+  /// A value that cannot be converted, or no value for a required
+  /// non-nullable parameter (Java's missing primitive), records a
+  /// `typeMismatch` error; [target] then stays `null` when the object
+  /// cannot be created. Without errors the binding result starts afresh for
+  /// the new target, so [bind] and [validate] can follow.
+  ///
+  /// Throws a [StateError] when there is already a target or [targetType]
+  /// is not set, an [ArgumentError] when [targetType] is not
+  /// `@Introspected`, and an [InvalidPropertyException] for a list index at
+  /// or above [autoGrowCollectionLimit], before the list is allocated
+  /// (Spring's `createList`).
   ///
   /// ```dart
+  /// // A Book with final fields, created from form input.
   /// final binder =
   ///     DataBinder(null, objectName: 'book', introspector: introspector)
   ///   ..targetType = Book
@@ -497,11 +560,15 @@ class DataBinder {
     }
   }
 
-  /// Runs every validator that supports the target.
+  /// Runs each of [validators] that supports the target, adding the errors
+  /// to [bindingResult]; does nothing when there is no target.
   ///
-  /// Non-empty [groups] restrict [SmartValidator]s to those groups.
+  /// Non-empty [groups] restrict [SmartValidator]s such as `BeanValidator`
+  /// to the constraints of those groups. A field that already has a
+  /// `typeMismatch` error gets no constraint error on top.
   ///
   /// ```dart
+  /// // An edit form: check the update rules.
   /// binder.validate(groups: [OnUpdate]);
   /// ```
   void validate({List<Type> groups = const []}) {
@@ -521,7 +588,8 @@ class DataBinder {
     }
   }
 
-  /// The model map; throws [BindException] when there are errors.
+  /// Ends binding: throws a [BindException] when [bindingResult] has
+  /// errors, else returns the model map.
   ///
   /// The map holds the target under [objectName] and the
   /// [bindingResult] under `BindingResult.<objectName>`.
@@ -566,7 +634,11 @@ class DataBinder {
 
   /// [name] with quotes and surrounding blanks removed from map keys and
   /// indexes: `map['key']`, `map["key"]` and `map[ key ]` all become
-  /// `map[key]`, like Spring's `PropertyAccessorUtils.canonicalPropertyName`.
+  /// `map[key]`.
+  ///
+  /// [bind] compares keys with the field rules in this form, so quoting a
+  /// key cannot slip past a `roles[admin]` rule. Spring's
+  /// `PropertyAccessorUtils.canonicalPropertyName`.
   ///
   /// ```dart
   /// DataBinder.canonicalPropertyName("roles['admin']"); // roles[admin]
@@ -582,7 +654,10 @@ class DataBinder {
         return '[$key]';
       });
 
-  /// `*` wildcard matching, like Spring's `PatternMatchUtils.simpleMatch`.
+  /// Whether [text] matches [pattern], where `*` stands for any text
+  /// (dots included) and everything else matches itself; the matching of
+  /// [allowedFields] and [disallowedFields]. Case-sensitive. Spring's
+  /// `PatternMatchUtils.simpleMatch`.
   ///
   /// ```dart
   /// DataBinder.simpleMatch('address.*', 'address.city'); // true

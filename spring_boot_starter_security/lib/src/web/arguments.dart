@@ -2,48 +2,82 @@ import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 
-/// Injects the principal of the current user into a controller parameter,
-/// like Spring's `@AuthenticationPrincipal`: a `UserDetails`, a `Jwt`, ...
-/// `null` when there is no user, the user is anonymous, or the principal
-/// is not of the parameter's type (an error instead with
-/// [errorOnInvalidType]).
+/// Marks a controller parameter that receives the principal of the
+/// current user: the `UserDetails` of a password login, the `Jwt` of a
+/// bearer token, or your own principal class.
+///
+/// It saves reading `SecurityContextHolder` in every handler. The
+/// parameter is `null` when there is no user, when the user is anonymous,
+/// or when the principal is not of the parameter's type; with
+/// [errorOnInvalidType] a wrong type is an error instead. Make the
+/// parameter nullable unless the access rules require a login for the
+/// path.
 ///
 /// ```dart
+/// // `/me` requires a login, so the user is never null here.
 /// @GetMapping('/me')
 /// String me(@AuthenticationPrincipal() UserDetails user) => user.username;
+///
+/// // A resource server: the decoded token.
+/// @GetMapping('/tenant')
+/// String tenant(@AuthenticationPrincipal() Jwt jwt) =>
+///     jwt.getClaimAsString('tenant') ?? '';
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @GetMapping("/me")
+/// String me(@AuthenticationPrincipal UserDetails user) {
+///   return user.getUsername();
+/// }
 /// ```
 class AuthenticationPrincipal {
-  /// Injects the principal.
+  /// Marks the parameter; [errorOnInvalidType] makes a principal of
+  /// another type fail the request instead of giving `null`.
   const AuthenticationPrincipal({this.errorOnInvalidType = false});
 
-  /// Whether a principal of another type is an error.
+  /// Whether a principal that is not of the parameter's type throws a
+  /// [StateError] (failing the request) rather than giving `null`;
+  /// `false` by default.
   final bool errorOnInvalidType;
 }
 
-/// Injects the current `SecurityContext`, like Spring's
-/// `@CurrentSecurityContext`.
+/// Marks a controller parameter that receives the current
+/// `SecurityContext`, even when its authentication is anonymous or
+/// missing.
+///
+/// Use it when the handler needs the context itself; for the user,
+/// prefer an `Authentication` parameter or [AuthenticationPrincipal].
 ///
 /// ```dart
 /// @GetMapping('/whoami')
 /// String whoami(@CurrentSecurityContext() SecurityContext context) =>
 ///     context.authentication?.name ?? '';
 /// ```
+///
+/// Spring (Java): `@CurrentSecurityContext SecurityContext context`.
 class CurrentSecurityContext {
-  /// Injects the context.
+  /// Marks the parameter.
   const CurrentSecurityContext();
 }
 
-/// Resolves `@AuthenticationPrincipal`, `@CurrentSecurityContext` and
-/// parameters typed as an `Authentication`, like Spring's
-/// `AuthenticationPrincipalArgumentResolver` and
+/// Fills the security parameters of controller methods: those marked
+/// [AuthenticationPrincipal] or [CurrentSecurityContext], and those whose
+/// type is `Authentication` or one of the built-in token classes.
+///
+/// The auto-configuration registers it with the web starter. An
+/// `Authentication` parameter gets the current one, or `null` for an
+/// anonymous user, no user, or a token of another class.
+///
+/// Spring (Java): `AuthenticationPrincipalArgumentResolver` and
 /// `CurrentSecurityContextArgumentResolver`.
 final class SecurityArgumentResolver implements HandlerMethodArgumentResolver {
-  /// The resolver.
+  /// A resolver using [trustResolver] to recognise anonymous users.
   const SecurityArgumentResolver({
     this.trustResolver = const AuthenticationTrustResolverImpl(),
   });
 
-  /// Tells anonymous users apart.
+  /// Tells anonymous users, who get `null`, from real logins.
   final AuthenticationTrustResolver trustResolver;
 
   static const _authenticationTypes = {

@@ -1,15 +1,19 @@
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 
-/// Compiles the regular expressions of `matches` (operator and method),
-/// with Spring's length limit and a guard against catastrophic
-/// backtracking.
+/// The compiler of the regular expressions used by `matches` (the
+/// operator and the String method), with Spring's length limit and a
+/// guard against patterns that could hang the program.
 ///
-/// Spring counts the characters `OperatorMatches` reads and aborts flawed
-/// patterns at run time; Dart's `RegExp` cannot be interrupted, so
-/// patterns of that shape are rejected before they run: an unbounded
-/// repetition (`*`, `+`, `{n,}`) of a group that itself contains one
-/// (`(a+)+`, `(a*)*`, `(\w+\s?)*`), or of an alternation whose
-/// alternatives can start with the same character (`(a|aa)+`, `(\d|\w)+`).
+/// A pattern from an expression may come from a user, and some patterns
+/// take exponential time on some inputs (catastrophic backtracking).
+/// Spring counts the characters `OperatorMatches` reads and aborts such a
+/// match at run time; Dart's `RegExp` cannot be interrupted, so patterns
+/// of that shape are refused before they run: an unbounded repetition
+/// (`*`, `+`, `{n,}`) of a group that itself contains one (`(a+)+`,
+/// `(a*)*`, `(\w+\s?)*`), or of an alternation whose alternatives can
+/// start with the same character (`(a|aa)+`, `(\d|\w)+`). The syntax is
+/// Dart's `RegExp`, not Java's. Applications do not call it; it explains
+/// why a `matches` fails with EL1073E.
 ///
 /// ```dart
 /// SpelPatterns.compile(r'\d+(\.\d{2})?'); // anchored RegExp
@@ -25,8 +29,8 @@ abstract final class SpelPatterns {
   static final _cache = <String, RegExp>{};
   static const _cacheLimit = 256;
 
-  /// [pattern] as a `RegExp` matching whole strings (Java's
-  /// `String.matches`), cached.
+  /// [pattern] as a `RegExp` that must match the whole string (Java's
+  /// `String.matches`); up to 256 compiled patterns are cached.
   ///
   /// Throws a [SpelEvaluationException] (without position) with
   /// `maxRegexLengthExceeded`, `flawedPattern` or `invalidPattern`.

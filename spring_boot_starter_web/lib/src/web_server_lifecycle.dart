@@ -6,34 +6,55 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.server');
 
-/// Which web server a test (or a run) starts: `spring.test.web-environment`,
-/// set by `springBootTest(webEnvironment:)`.
+/// The name of the property, `spring.test.web-environment`, that tells
+/// whether a test starts a real server.
 ///
-/// - `mock`: no server; `MockMvc` calls the dispatcher in memory (the test
-///   default);
+/// `springBootTest(webEnvironment:)` of the test starter sets it; a test
+/// with `ApplicationContextRunner` may set it by hand. Its values:
+///
+/// - `mock`: no server; `MockMvc` calls the dispatcher in memory (the
+///   default of `springBootTest`);
 /// - `random-port`: a real server on a free port;
 /// - `defined-port`: a real server on `server.port`;
 /// - `none`: no server.
 ///
-/// Outside tests the server starts unless
+/// Any other value starts no server either. When the property is not
+/// set, as in a normal run, the server starts unless
 /// `spring.main.web-application-type=none`.
 const webEnvironmentProperty = 'spring.test.web-environment';
 
-/// Starts the [WebServer] when the context is ready and stops it first when
-/// it closes, like Spring Boot's `WebServerStartStopLifecycle` (with the
-/// graceful shutdown of `WebServerGracefulShutdownLifecycle`).
+/// Starts the HTTP server when the application context is ready and
+/// stops it when the context closes.
 ///
-/// `dart:io` binds sockets asynchronously: [started] completes once the
-/// server listens (tests await it). A failure (a port in use) is reported
-/// like a startup failure and closes the context.
+/// The starter declares it as the `webServerStartStopLifecycle` bean, so
+/// the server follows the context and nobody calls `start` by hand. Its
+/// phase, Spring Boot's, makes the server start before the lifecycle
+/// beans of the default phase and stop after them. When it stops, the
+/// server shuts down as `server.shutdown` says, gracefully by default.
+///
+/// The socket is bound asynchronously, so `start` returns before the
+/// server listens; [started] completes when it does. The port is then
+/// published as the `local.server.port` property and in a
+/// [WebServerInitializedEvent]. A failure to start, such as a port in
+/// use, is logged as a startup report and closes the context.
 ///
 /// In a Flutter app the context pauses in the background: the server
 /// stops (freeing the port) and starts again when the app comes back.
+///
+/// ```dart
+/// // A test that needs the real server before it calls it.
+/// final lifecycle = context.getBean<WebServerStartStopLifecycle>();
+/// final server = await lifecycle.started;
+/// final uri = Uri.parse('http://localhost:${server!.port}/api/books');
+/// ```
+///
+/// Spring Boot's counterparts are `WebServerStartStopLifecycle` and, for
+/// the graceful shutdown, `WebServerGracefulShutdownLifecycle`.
 final class WebServerStartStopLifecycle
     with SmartLifecycle
     implements ApplicationContextAware {
-  /// Starts a server of [factory] for [handler], configured by
-  /// [environment].
+  /// A lifecycle that starts a server of [factory] for [handler], when
+  /// [environment] says a server should run.
   WebServerStartStopLifecycle(
     this.factory,
     this.handler,
@@ -41,18 +62,20 @@ final class WebServerStartStopLifecycle
     this.shutdownTimeout,
   });
 
-  /// Creates the server.
+  /// Creates a server at each start.
   final WebServerFactory factory;
 
-  /// Answers the requests.
+  /// Answers every request; in the application, the `dispatcherHandler`.
   final HttpHandler handler;
 
-  /// Decides whether the server runs (`spring.main.web-application-type`,
-  /// `spring.test.web-environment`) and gets `local.server.port`.
+  /// The configuration that decides whether the server runs
+  /// (`spring.main.web-application-type`, `spring.test.web-environment`),
+  /// and that receives the `local.server.port` property.
   final Environment environment;
 
   /// How long a graceful shutdown waits for running requests
-  /// (`spring.lifecycle.timeout-per-shutdown-phase`, 30 s by default).
+  /// (`spring.lifecycle.timeout-per-shutdown-phase`); `null` lets the
+  /// server use its own default, 30 seconds for the `dart:io` server.
   final Duration? shutdownTimeout;
 
   ApplicationContext? _context;
@@ -63,23 +86,30 @@ final class WebServerStartStopLifecycle
   @override
   void setApplicationContext(ApplicationContext context) => _context = context;
 
-  /// Spring Boot's phase (`DEFAULT_PHASE - 2048`): the server starts before
-  /// the lifecycle beans of the default phase and stops after them.
+  /// `SmartLifecycle.defaultPhase - 2048`, Spring Boot's phase for the
+  /// server: it starts before the lifecycle beans of the default phase
+  /// and stops after them.
   @override
   int get phase => SmartLifecycle.defaultPhase - 2048;
 
   @override
   bool get isRunning => _running;
 
-  /// The running server, or `null`.
+  /// The server while it runs or starts; `null` when stopped, when no
+  /// server should run, or after it failed to start.
   WebServer? get webServer => _server;
 
-  /// Completes with the server once it listens (`null` when no server
-  /// runs: `spring.main.web-application-type=none`, a mock web
-  /// environment); fails when it could not start.
+  /// Completes with the server once it listens, with `null` when no
+  /// server runs (`spring.main.web-application-type=none`, a mock web
+  /// environment) or when it was stopped while starting. Fails with the
+  /// error when the server could not start. Each start gives a new
+  /// future.
   Future<WebServer?> get started => _started.future;
 
-  /// Whether a server should run.
+  /// Whether a server should run: not when
+  /// `spring.main.web-application-type=none`, and in a test only for
+  /// the `random-port` and `defined-port` web environments (see
+  /// [webEnvironmentProperty]).
   bool get isEnabled {
     final type = environment
         .getProperty('spring.main.web-application-type')

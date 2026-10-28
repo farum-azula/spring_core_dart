@@ -2,7 +2,7 @@ import 'package:spring_core_dart/src/core/convert/conversion_exceptions.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/lenient_enum.dart';
 
-/// One registered conversion to a fixed target type.
+/// One registered converter: its source test and the function.
 final class _Converter {
   _Converter(this.accepts, this.acceptsType, this.convert);
 
@@ -12,8 +12,9 @@ final class _Converter {
   final Object? Function(Object source) convert;
 }
 
-/// Knows how to recognize instances of a target type, captured from a type
-/// argument at registration time.
+/// A target type with its converters, newest first. Captures the `is`
+/// tests while the type is still a type argument, since a [Type] value
+/// alone cannot test instances.
 final class _Target {
   _Target(this.isInstance, this.isSupertypeOf);
 
@@ -27,15 +28,22 @@ final class _Target {
 // `T?` that cannot be written as a type literal.
 Type _typeOf<T>() => T;
 
-/// Registry-based [ConversionService], like Spring's
-/// `GenericConversionService`. Starts empty; see `DefaultConversionService`
-/// for the built-in converters.
+/// A conversion service that starts empty and converts only what is
+/// registered on it.
 ///
-/// Converters are looked up by exact target [Type]; among converters for
-/// the same target the newest registration whose source type matches (via
-/// `is`) wins.
+/// It is the working implementation of [ConversionService] and
+/// [ConverterRegistry]; `DefaultConversionService` is this class with the
+/// standard converters already added. Use it directly when you want full
+/// control, for example a service that knows only your own types, or in a
+/// test. Most code uses `DefaultConversionService` instead.
+///
+/// Converters are looked up by the exact target [Type]. Among converters
+/// for the same target, the newest registration whose source type
+/// matches (with `is`) wins. A value that already is of the target type
+/// is returned unchanged.
 ///
 /// ```dart
+/// // Prices travel as text in messages; this service only knows money.
 /// final service = GenericConversionService()
 ///   ..addConverter<String, Money>(Money.parse)
 ///   ..addConverter<Money, String>((money) => money.format());
@@ -50,9 +58,9 @@ Type _typeOf<T>() => T;
 /// Money price = service.convert("9.99 EUR", Money.class);
 /// ```
 ///
-/// Differences: no `ConverterFactory` / `GenericConverter` and no class
-/// hierarchy search for targets (Dart has no runtime type introspection);
-/// register each concrete target instead.
+/// Differences: there is no `ConverterFactory` or `GenericConverter`, and
+/// no search through the class hierarchy of the target, because Dart has
+/// no run-time type introspection. Register each concrete target instead.
 class GenericConversionService implements ConversionService, ConverterRegistry {
   // Target type (exact, including nullability) → its converters.
   final _targets = <Type, _Target>{};

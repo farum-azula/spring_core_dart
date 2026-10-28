@@ -3,12 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
-/// One text style of the theme's typography: what the properties set,
-/// the rest is Material's (`size`, `weight`, `height`, `letter-spacing`,
-/// `font-family`).
+/// What the properties set for one text style of a theme (font family,
+/// size, weight, line height, letter spacing); whatever is left `null`
+/// keeps Material's value.
+///
+/// A theme keeps one per text style the properties touch
+/// ([SpringThemeData.textStyles]) and one for `code`. Apps read the
+/// finished styles through [SpringThemeData.textStyle] rather than these
+/// specs.
+///
+/// ```yaml
+/// spring.flutter.theme.typography:
+///   title-large: { weight: 600, size: 22, height: 1.3 }
+/// ```
 @immutable
 final class SpringTextSpec {
-  /// A spec; `null` fields keep Material's value.
+  /// A spec of the given values; each `null` one keeps Material's value.
   const SpringTextSpec({
     this.fontFamily,
     this.size,
@@ -17,13 +27,14 @@ final class SpringTextSpec {
     this.letterSpacing,
   });
 
-  /// The font family, else the typography's.
+  /// The font family; `null` for the typography's `font-family`.
   final String? fontFamily;
 
   /// The size in logical pixels.
   final double? size;
 
-  /// The weight; also set on the `wght` axis of variable fonts.
+  /// The weight; it is also set on the `wght` axis that variable fonts
+  /// use.
   final FontWeight? weight;
 
   /// The line height as a multiple of the size.
@@ -32,7 +43,7 @@ final class SpringTextSpec {
   /// The letter spacing in logical pixels.
   final double? letterSpacing;
 
-  /// Whether nothing is set.
+  /// Whether every value is `null`.
   bool get isEmpty =>
       fontFamily == null &&
       size == null &&
@@ -40,7 +51,7 @@ final class SpringTextSpec {
       height == null &&
       letterSpacing == null;
 
-  /// [other]'s values over these.
+  /// A spec with [other]'s values where it has some, these elsewhere.
   SpringTextSpec merge(SpringTextSpec other) => SpringTextSpec(
     fontFamily: other.fontFamily ?? fontFamily,
     size: other.size ?? size,
@@ -49,7 +60,7 @@ final class SpringTextSpec {
     letterSpacing: other.letterSpacing ?? letterSpacing,
   );
 
-  /// The spec as a [TextStyle] (only the set values); a weight is also
+  /// The spec as a [TextStyle] with only the set values; a weight is also
   /// put on the `wght` axis, which variable fonts need.
   TextStyle toStyle() => TextStyle(
     fontFamily: fontFamily,
@@ -62,12 +73,13 @@ final class SpringTextSpec {
         : [FontVariation('wght', weight!.value.toDouble())],
   );
 
-  /// The spec over [base].
+  /// [base] (or an empty style) with the set values of this spec over it.
   TextStyle applyTo(TextStyle? base) =>
       (base ?? const TextStyle()).merge(toStyle());
 }
 
-/// The Material 3 shape scale (corner radii), `full` a stadium.
+/// The corner radii of the Material 3 shape scale, by canonical token
+/// name; `full` (infinite) makes a stadium.
 const m3ShapeScale = <String, double>{
   'none': 0,
   'extrasmall': 4,
@@ -81,7 +93,7 @@ const m3ShapeScale = <String, double>{
   'full': double.infinity,
 };
 
-/// The Material 3 elevation levels.
+/// The Material 3 elevation levels, `level0` to `level5`.
 const m3Elevations = <String, double>{
   'level0': 0,
   'level1': 1,
@@ -91,7 +103,8 @@ const m3Elevations = <String, double>{
   'level5': 12,
 };
 
-/// The spacing scale for the app's own widgets (`spring.flutter.theme.spacing`).
+/// The default spacing scale for the app's own widgets, which
+/// `spring.flutter.theme.spacing` can change or extend.
 const defaultSpacing = <String, double>{
   'xs': 4,
   's': 8,
@@ -100,7 +113,8 @@ const defaultSpacing = <String, double>{
   'xl': 32,
 };
 
-/// The 15 text styles of Material's `TextTheme`, by canonical name.
+/// The 15 text styles of Material's `TextTheme`, by canonical name
+/// (`displaylarge` ... `labelsmall`).
 const textStyleNames = [
   'displaylarge', 'displaymedium', 'displaysmall', //
   'headlinelarge', 'headlinemedium', 'headlinesmall', //
@@ -109,7 +123,8 @@ const textStyleNames = [
   'labellarge', 'labelmedium', 'labelsmall',
 ];
 
-/// The color roles of `ColorScheme`, by canonical name.
+/// The color roles of `ColorScheme` that `colors.<role>` may set, by
+/// canonical name.
 const colorRoles = [
   'primary', 'onprimary', 'primarycontainer', 'onprimarycontainer', //
   'primaryfixed',
@@ -134,7 +149,8 @@ const colorRoles = [
   'outline', 'outlinevariant', 'shadow', 'scrim',
 ];
 
-/// The components a theme can adjust, with their properties.
+/// The components a theme can adjust under `components.*`, each with the
+/// properties it accepts; anything else fails the start.
 const componentProperties = <String, Set<String>>{
   'appbar': {
     'centertitle',
@@ -214,15 +230,32 @@ const _componentShapeTokens = <String, String>{
   'button': 'full',
 };
 
-/// A theme of the app, read once from `spring.flutter.theme.*` (the shared
-/// part, the theme it extends, its own properties): colors, typography,
-/// shapes, elevations, density, motion, spacing, component adjustments
-/// and the app's own tokens. Made into Material's `ThemeData`
-/// ([toMaterial]), a `CupertinoThemeData` ([toCupertino]) or read
-/// directly (`SpringTheme.of(context)`).
+/// One theme of the app as the `spring.flutter.theme.*` properties
+/// describe it: colors, typography, shapes, elevations, density, motion,
+/// spacing, component adjustments and the app's own tokens.
 ///
-/// Only what the properties set differs from Flutter's defaults: a theme
-/// without properties is Flutter's own Material 3 theme.
+/// A theme's values come from the shared part of the properties, then the
+/// theme it `extends`, then its own. They are read and checked once, when
+/// the theme is made. From them come Material's `ThemeData`
+/// ([toMaterial]) and a `CupertinoThemeData` ([toCupertino]). The app's
+/// own widgets read the theme shown with `SpringTheme.of(context)`, for
+/// what Material's theme has no place for: [space], [textStyle] of `code`,
+/// [tokenColor] and the like. Only what the properties set differs from
+/// Flutter's defaults: a theme without properties is Flutter's own
+/// Material 3 theme.
+///
+/// Apps do not create it: `SpringThemes` makes one per theme.
+///
+/// ```dart
+/// // A banner sized and colored by the brand's tokens.
+/// final theme = SpringTheme.of(context);
+/// Container(
+///   height: theme.tokenNumber('brand.hero-height'),
+///   color: theme.tokenColor('brand.accent'),
+///   padding: EdgeInsets.all(theme.space('m')),
+///   child: Text('NEON Books', style: theme.textStyle('headlineMedium')),
+/// );
+/// ```
 final class SpringThemeData {
   SpringThemeData._(this.name, ThemeProperties p)
     : brightness = p.read(
@@ -406,8 +439,8 @@ final class SpringThemeData {
     toMaterial();
   }
 
-  /// The properties a theme has; a misspelled key fails like a wrong
-  /// value instead of being ignored.
+  /// The top-level properties a theme may have. Any other key fails the
+  /// start like a wrong value, so a misspelling is not silently ignored.
   static const themeProperties = [
     'brightness', 'seed-color', 'scheme-variant', 'contrast', 'colors', //
     'typography', 'shape', 'elevation', 'spacing', 'visual-density', //
@@ -475,8 +508,10 @@ final class SpringThemeData {
     }
   }
 
-  /// Theme [name] of [config]; throws a [ThemePropertyException] (or a
-  /// `StateError` for `extends`) when a property is invalid.
+  /// Reads theme [name] of [config] and checks every value, components
+  /// included. Throws a [ThemePropertyException] naming the property when
+  /// a value or key is invalid, or a `StateError` for an `extends` cycle
+  /// or an unknown parent.
   factory SpringThemeData.of(ThemeConfig config, String name) {
     final resolved = config.nameOf(name) ?? name;
     return SpringThemeData._(
@@ -490,75 +525,92 @@ final class SpringThemeData {
 
   final ThemeProperties _properties;
 
-  /// The theme's name (`light`, `dark`, `ocean`).
+  /// The theme's name as declared (`light`, `dark`, `ocean`).
   final String name;
 
-  /// Light or dark.
+  /// Whether the theme is light or dark: `dark` for the `dark` theme and
+  /// for themes that say so or extend a dark one, else `light`.
   final Brightness brightness;
 
-  /// The color the palette is made from (Flutter's default seed when not
-  /// set).
+  /// The color the palette is made from; `null` when not set, which means
+  /// Flutter's baseline palette (or its default seed when [schemeVariant]
+  /// or [contrast] is set).
   final Color? seedColor;
 
-  /// How the palette is made from the seed (Material 3's `tonalSpot` when
-  /// not set).
+  /// How the palette is made from the seed; `null` for Material 3's
+  /// `tonalSpot`.
   final DynamicSchemeVariant? schemeVariant;
 
-  /// The palette's contrast, -1 … 1.
+  /// The palette's contrast, from -1 to 1; `null` for 0.
   final double? contrast;
 
-  /// The color roles set explicitly (over the seed's palette).
+  /// The color roles set explicitly under `colors.*`, by canonical role
+  /// name; they replace those of the seed's palette.
   final Map<String, Color> colors = {};
 
-  /// The font family of all text, `null` for the platform's.
+  /// The font family of all text; `null` for the platform's.
   late final String? fontFamily;
 
-  /// Fonts for the glyphs the font family lacks.
+  /// The font families used for glyphs the main family lacks (for example
+  /// Japanese text); `null` when not set.
   late final List<String>? fontFamilyFallback;
 
-  /// The text styles set (canonical `TextTheme` names).
+  /// The text styles the properties set, by canonical `TextTheme` name,
+  /// with the `defaults` and group (`display`, `title`, ...) values merged
+  /// in.
   final Map<String, SpringTextSpec> textStyles = {};
 
-  /// Monospaced text (no Material role): `SpringTheme.of(context).codeStyle`.
+  /// The style of monospaced text, which has no Material role: `monospace`
+  /// at size 14 unless `typography.code` says otherwise. Widgets get it
+  /// with `SpringTheme.of(context).textStyle('code')`.
   late final SpringTextSpec code;
 
-  /// Shape scale values set (canonical names), over [m3ShapeScale].
+  /// The corner radii the properties set, by canonical token name; they
+  /// replace those of [m3ShapeScale].
   final Map<String, double> shapes = {};
 
-  /// Elevation levels set, over [m3Elevations].
+  /// The elevation levels the properties set; they replace those of
+  /// [m3Elevations].
   final Map<String, double> elevations = {};
 
-  /// Spacing values set, over [defaultSpacing].
+  /// The spacing values the properties set; they replace or extend
+  /// [defaultSpacing].
   final Map<String, double> spacing = {};
 
-  /// The visual density, if set.
+  /// The visual density; `null` when not set.
   late final VisualDensity? visualDensity;
 
-  /// The tap target size, if set.
+  /// The minimum tap target size; `null` when not set.
   late final MaterialTapTargetSize? tapTargetSize;
 
-  /// The ink splash, if set.
+  /// The ink splash of taps (ripple, sparkle or none); `null` when not
+  /// set.
   late final InteractiveInkFeatureFactory? splashFactory;
 
-  /// The page transition on every platform, if set.
+  /// The page transition used on every platform; `null` when not set.
   late final PageTransitionsBuilder? pageTransition;
 
-  /// Motion durations set (`short`, `medium`, `long`, ...).
+  /// The motion durations the properties set (`motion.duration-medium`),
+  /// by canonical name.
   final Map<String, Duration> durations = {};
 
-  /// Motion curves set (`standard`, `emphasized`, ...).
+  /// The motion curves the properties set (`motion.easing-standard`), by
+  /// canonical name.
   final Map<String, Curve> curves = {};
 
-  /// The app's own tokens: `group.key` → value (`brand.accent`).
+  /// The app's own values under `tokens.*`, as text by `group.key` in
+  /// canonical form (`brand.accent`). Read them with [token],
+  /// [tokenColor] and [tokenNumber].
   final Map<String, String> tokens = {};
 
-  /// The primary color of the Cupertino theme, if set.
+  /// The primary color of the Cupertino theme; `null` when not set.
   late final Color? cupertinoPrimaryColor;
 
   ColorScheme? _scheme;
 
-  /// The full palette: the seed's (Material 3's algorithm), then the
-  /// roles set explicitly.
+  /// The full palette: the one made from the seed by Material 3's
+  /// algorithm (or Flutter's baseline when nothing is set), with the roles
+  /// of [colors] over it.
   ColorScheme get colorScheme => _scheme ??= _withColors(
     seedColor == null && schemeVariant == null && contrast == null
         // Flutter's own Material 3 baseline (not quite the seed's).
@@ -572,7 +624,10 @@ final class SpringThemeData {
           ),
   );
 
-  /// The radius of shape token [token] (`medium`), `null` for `full`.
+  /// The corner radius of shape token [token] (`medium`,
+  /// `extra-large`), as the properties set it or Material 3's;
+  /// `double.infinity` for `full`. Throws an `ArgumentError` for an
+  /// unknown token.
   double shape(String token) {
     final key = ThemeValues.canonical(token);
     return shapes[key] ??
@@ -584,7 +639,8 @@ final class SpringThemeData {
         ));
   }
 
-  /// Elevation level [level] (`level2`).
+  /// The elevation of level [level] (`level2`). Throws an `ArgumentError`
+  /// for an unknown level.
   double elevation(String level) {
     final key = ThemeValues.canonical(level);
     return elevations[key] ??
@@ -592,7 +648,9 @@ final class SpringThemeData {
         (throw ArgumentError.value(level, 'level'));
   }
 
-  /// Spacing [size] (`xs`, `s`, `m`, `l`, `xl`, or one of the properties).
+  /// The spacing [size] in logical pixels: `xs`, `s`, `m`, `l`, `xl`, or
+  /// a name the properties added. Throws an `ArgumentError` for an unknown
+  /// name.
   double space(String size) {
     final key = ThemeValues.canonical(size);
     return spacing[key] ??
@@ -600,7 +658,8 @@ final class SpringThemeData {
         (throw ArgumentError.value(size, 'size'));
   }
 
-  /// The motion duration [name] (`short`, `medium`, `long`).
+  /// The motion duration [name], as the properties set it; otherwise
+  /// 100 ms for `short`, 250 ms for `medium` and 450 ms for any other name.
   Duration duration(String name) =>
       durations[ThemeValues.canonical(name)] ??
       switch (ThemeValues.canonical(name)) {
@@ -609,12 +668,14 @@ final class SpringThemeData {
         _ => const Duration(milliseconds: 450),
       };
 
-  /// The motion curve [name] (`standard`, `emphasized`).
+  /// The motion curve [name] (`standard`, `emphasized`), as the
+  /// properties set it; otherwise Material's standard easing.
   Curve curve(String name) =>
       curves[ThemeValues.canonical(name)] ?? Easing.standard;
 
-  /// A text style of the theme by Material name (`titleLarge`) or `code`:
-  /// the Material theme's, with what the properties set.
+  /// A finished text style of the theme: a `TextTheme` style by name
+  /// (`titleLarge`, `title-large`) or `code`, with what the properties set.
+  /// Throws an `ArgumentError` for another name.
   TextStyle textStyle(String style) => _styleIn(toMaterial().textTheme, style);
 
   TextStyle _styleIn(TextTheme textTheme, String style) {
@@ -637,8 +698,10 @@ final class SpringThemeData {
         ));
   }
 
-  /// Every font family the theme names (typography, fallbacks, styles,
-  /// code).
+  /// Every font family the theme names: the main one, the fallbacks, and
+  /// those of the text styles and `code`. At startup the starter logs a
+  /// warning for each one it finds neither among the font assets nor under
+  /// `flutter: fonts:`.
   Set<String> get fontFamilies => {
     ?fontFamily,
     ...?fontFamilyFallback,
@@ -646,19 +709,22 @@ final class SpringThemeData {
     ?code.fontFamily,
   };
 
-  /// A token of the app as a color (`brand.accent`).
+  /// The app's token [key] (`brand.accent`) read as a color; `null` when
+  /// it is not set or is no color.
   Color? tokenColor(String key) => switch (tokens[_tokenKey(key)]) {
     final value? => ThemeValues.color(value),
     null => null,
   };
 
-  /// A token of the app as a number (`brand.hero-height`).
+  /// The app's token [key] (`brand.hero-height`) read as a number; `null`
+  /// when it is not set or is no number.
   double? tokenNumber(String key) => switch (tokens[_tokenKey(key)]) {
     final value? => ThemeValues.number(value),
     null => null,
   };
 
-  /// A token of the app as text.
+  /// The app's token [key] as written in the properties; `null` when it is
+  /// not set.
   String? token(String key) => tokens[_tokenKey(key)];
 
   static String _tokenKey(String key) =>
@@ -670,7 +736,9 @@ final class SpringThemeData {
 
   ThemeData? _material;
 
-  /// The theme as Material's `ThemeData` (made once).
+  /// The theme as Material's `ThemeData`, made once; it carries this
+  /// theme as a [SpringThemeExtension]. Customizers are not applied here
+  /// but in `SpringThemes.material`.
   ThemeData toMaterial() => _material ??= _buildMaterial();
 
   ThemeData _buildMaterial() {
@@ -878,7 +946,7 @@ final class SpringThemeData {
 
   CupertinoThemeData? _cupertino;
 
-  /// The theme as a `CupertinoThemeData` (made once): primary color, text
+  /// The theme as a `CupertinoThemeData`, made once: primary color, text
   /// styles and backgrounds where the properties set them, iOS's
   /// defaults otherwise.
   CupertinoThemeData toCupertino() => _cupertino ??= _buildCupertino();
@@ -934,7 +1002,8 @@ final class SpringThemeData {
     );
   }
 
-  /// The app color for `WidgetsApp` (the OS's task switcher).
+  /// The color the OS uses for the app (in the task switcher): the
+  /// palette's primary color.
   Color get appColor => colorScheme.primary;
 
   /// The default text style of a `WidgetsApp`: Material's body medium in
@@ -994,7 +1063,8 @@ final class SpringThemeData {
     );
   }
 
-  /// A color role of the palette by name (`surface-container`).
+  /// The color of palette role [name] (`surface-container`,
+  /// `onPrimary`); `null` for an unknown role.
   Color? role(String name) => _role(colorScheme, ThemeValues.canonical(name));
 
   static Color? _role(ColorScheme s, String role) => switch (role) {
@@ -1087,14 +1157,25 @@ final class SpringThemeData {
   );
 }
 
-/// The [SpringThemeData] inside Material's `ThemeData` (its
-/// `extensions`), so `Theme.of(context).extension<SpringThemeExtension>()`
-/// reaches the tokens Material has no place for.
+/// Carries a [SpringThemeData] inside Material's `ThemeData`, among its
+/// `extensions`.
+///
+/// Every `ThemeData` made from the properties has one, so code that has
+/// only Material's theme at hand still reaches the values Material has no
+/// place for (spacing, tokens, the `code` style). Inside the app,
+/// `SpringTheme.of(context)` is shorter.
+///
+/// ```dart
+/// // In a widget that only knows Material's theme.
+/// final spring =
+///     Theme.of(context).extension<SpringThemeExtension>()!.data;
+/// final gap = spring.space('s');
+/// ```
 final class SpringThemeExtension extends ThemeExtension<SpringThemeExtension> {
-  /// The extension of [data].
+  /// The extension carrying [data].
   SpringThemeExtension(this.data);
 
-  /// The theme.
+  /// The theme the `ThemeData` was made from.
   final SpringThemeData data;
 
   @override

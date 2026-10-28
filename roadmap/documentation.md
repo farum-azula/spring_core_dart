@@ -100,18 +100,18 @@ The same comment, rewritten:
 
 | Package | Done |
 |---|---|
-| `spring_web_dart` | |
-| `spring_boot_starter_web` | |
-| `spring_boot_starter_feign` | |
-| `spring_boot_starter_websocket` | |
-| `spring_boot_starter_logging` | |
-| `spring_boot_starter_scheduling` | |
-| `spring_boot_starter_cache` | |
-| `spring_boot_starter_flutter` | |
-| `spring_boot_starter_test` | |
-| `spring_boot_dart` | |
-| `spring_core_dart` | |
-| `spring_security_core` | |
-| `spring_boot_starter_security` | |
-| `spring_core_dart_generator` | |
-| `extensions/language_server` | |
+| `spring_web_dart` | October 2026 |
+| `spring_boot_starter_web` | October 2026 |
+| `spring_boot_starter_feign` | October 2026 |
+| `spring_boot_starter_websocket` | October 2026 |
+| `spring_boot_starter_logging` | October 2026 |
+| `spring_boot_starter_scheduling` | October 2026 |
+| `spring_boot_starter_cache` | October 2026 |
+| `spring_boot_starter_flutter` | October 2026 |
+| `spring_boot_starter_test` | October 2026 |
+| `spring_boot_dart` | October 2026 |
+| `spring_core_dart` | October 2026 |
+| `spring_security_core` | October 2026 |
+| `spring_boot_starter_security` | October 2026 |
+| `spring_core_dart_generator` | October 2026 |
+| `extensions/language_server` | October 2026 |

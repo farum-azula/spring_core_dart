@@ -1,10 +1,14 @@
 import 'dart:typed_data';
 
-/// File system access is not available on this platform (web).
+/// The file and network access of the resource classes on a platform
+/// without `dart:io` (the web): no file exists, and reading throws
+/// [UnsupportedError].
 ///
-/// Internal: the fallback of a conditional import; files never exist and
-/// reading throws [UnsupportedError]. Spring has no equivalent (the JVM
-/// always has a file system).
+/// Internal: a conditional import picks this file, or the `dart:io`
+/// variant, so resources and config data compile everywhere. On the web,
+/// `file:` locations are simply never found and `classpath:` resources
+/// come from the generated code instead. Spring has no equivalent: the
+/// JVM always has a file system.
 abstract final class FileAccess {
   /// Always `false`: there is no file system.
   static bool get isSupported => false;
@@ -21,7 +25,7 @@ abstract final class FileAccess {
   /// Completes with an [UnsupportedError].
   static Future<Uint8List> readBytes(String path) async => _unsupported();
 
-  /// Not supported without `dart:io`.
+  /// Throws [UnsupportedError].
   static Stream<List<int>> openRead(String path, [int? start, int? end]) =>
       _unsupported();
 
@@ -29,7 +33,8 @@ abstract final class FileAccess {
   static Future<Uint8List> readUrl(Uri url) async =>
       throw UnsupportedError('Reading URLs is not supported');
 
-  /// Always `true`: reading reports that URLs are not supported.
+  /// Always `true`, so that the following read fails with a clear "URLs
+  /// are not supported" error instead of a misleading "not found".
   static Future<bool> urlExists(Uri url) async => true;
 
   /// Returns [path] unchanged.
@@ -44,7 +49,7 @@ abstract final class FileAccess {
   /// Always empty.
   static List<String> listFiles(String directory) => const [];
 
-  /// Always `null`: there are no package files.
+  /// Always `null`: there are no package files to point to.
   static String? resolvePackageUri(String uri) => null;
 
   /// Throws [UnsupportedError].

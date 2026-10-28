@@ -2,11 +2,20 @@ import 'dart:math' as math;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// The settings of one WebSocket client from
-/// `spring.websocket.client.config.<name>.*`, falling back to
-/// `spring.websocket.client.config.default.*`.
+/// The settings of one `@WebSocketClient`: its address, handshake timeout,
+/// reconnection and default headers.
+///
+/// They come from `spring.websocket.client.config.<name>.*`, where
+/// `<name>` is the client's name, and fall back to
+/// `spring.websocket.client.config.default.*` for every client. So an
+/// application tunes its clients in `application.properties` and per
+/// profile, without code; this class is what the starter reads them
+/// into. Code reads it through `WebSocketInvocationHandler.config`, or
+/// creates one for a test.
 ///
 /// ```properties
+/// # Every client: a shorter timeout. The chat: its own address, its own
+/// # reconnection and an extra header.
 /// spring.websocket.client.config.default.connect-timeout=5s
 /// spring.websocket.client.config.chat.url=wss://chat.neon.books/ws
 /// spring.websocket.client.config.chat.reconnect.delay=500ms
@@ -21,7 +30,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// `spring.cloud.openfeign.client.config.*`); Spring Boot has no
 /// properties for WebSocket clients.
 final class WebSocketClientConfig {
-  /// Settings with these values.
+  /// Settings with these values; the defaults are those of a client
+  /// without any property.
   const WebSocketClientConfig({
     this.url,
     this.connectTimeout = const Duration(seconds: 10),
@@ -29,24 +39,33 @@ final class WebSocketClientConfig {
     this.defaultRequestHeaders = const {},
   });
 
-  /// The address (when `@WebSocketClient` has none).
+  /// The server's address (`url`), used when `@WebSocketClient` gives
+  /// none; `${...}` placeholders are allowed.
   final String? url;
 
-  /// The longest the handshake may take (`null`: no limit).
+  /// The longest a handshake may take (`connect-timeout`, 10 s by
+  /// default); `null`, possible only in code, sets no limit.
   final Duration? connectTimeout;
 
-  /// How a lost (or failed) connection is opened again while someone
-  /// listens (`reconnect.*`).
+  /// How a lost connection, or a failed attempt, is opened again while
+  /// someone listens (`reconnect.*`).
   final WebSocketReconnectPolicy reconnect;
 
-  /// Headers sent with every handshake (not possible in browsers); a
-  /// comma-separated value or a list (`X-Tag[0]`, YAML) gives several
-  /// values.
+  /// Headers sent with every handshake (`default-request-headers.<Name>`),
+  /// such as an API key; not possible in browsers. A comma-separated value
+  /// or a list (`X-Tag[0]`, YAML) gives several values. A client's header
+  /// replaces the `default` one of the same name, in any case.
   final Map<String, List<String>> defaultRequestHeaders;
 
   static const _prefix = 'spring.websocket.client.config.';
 
-  /// The settings of client [name] from [environment].
+  /// Reads the settings of the client [name] from [environment], with
+  /// `default` as fallback for each property.
+  ///
+  /// Throws when a value is wrong: a [FormatException] for a duration,
+  /// number or on/off value that cannot be read, an [ArgumentError] for
+  /// a reconnect value out of range (see
+  /// [WebSocketReconnectPolicy.validate]). The start then fails.
   static WebSocketClientConfig of(Environment environment, String name) {
     String? get(String key) =>
         environment.getProperty('$_prefix$name.$key') ??
@@ -134,13 +153,21 @@ final class WebSocketClientConfig {
   }
 }
 
-/// How a `@WebSocketClient` opens its connection again after a loss or a
-/// failed attempt, while someone listens: from
+/// The rule for opening a `@WebSocketClient`'s connection again after a
+/// loss or a failed attempt: how long to wait before each attempt, and
+/// when to give up.
+///
+/// Reconnection happens only while someone listens to the client's
+/// messages, and only after a close that may be temporary (no code, 1001,
+/// 1005, 1006, 1011 to 1014). Each wait is [delay] times [multiplier] for
+/// every earlier failure, at most [maxDelay], give or take [jitter]; a
+/// connection that proves stable starts the count again. It is set by
 /// `spring.websocket.client.config.<name>.reconnect.*`, with the names of
-/// Spring Framework 7's `RetryPolicy` (`delay`, `multiplier`,
-/// `max-delay`, `jitter`, `max-retries`).
+/// Spring Framework 7's `RetryPolicy`.
 ///
 /// ```properties
+/// # Every reconnect property of the chat client; the last line would
+/// # turn reconnection off.
 /// spring.websocket.client.config.chat.reconnect.delay=500ms
 /// spring.websocket.client.config.chat.reconnect.multiplier=2
 /// spring.websocket.client.config.chat.reconnect.max-delay=30s
@@ -160,7 +187,8 @@ final class WebSocketClientConfig {
 /// up to 30 s, no limit on retries) rather than `RetryPolicy`'s (a fixed
 /// 1 s delay, 3 retries).
 final class WebSocketReconnectPolicy {
-  /// A policy with these values.
+  /// A policy with these values; the defaults double a 1 s wait up to
+  /// 30 s and never give up. It is not checked until [validate].
   const WebSocketReconnectPolicy({
     this.enabled = true,
     this.delay = const Duration(seconds: 1),
@@ -171,6 +199,7 @@ final class WebSocketReconnectPolicy {
   });
 
   /// Whether to reconnect at all (`reconnect.enabled`, default `true`).
+  /// With `false`, a lost connection ends the message streams.
   final bool enabled;
 
   /// The wait before the first attempt (`reconnect.delay`, default 1 s).
@@ -188,14 +217,18 @@ final class WebSocketReconnectPolicy {
   final Duration jitter;
 
   /// The attempts in a row before giving up (`reconnect.max-retries`;
-  /// default: no limit).
+  /// default: no limit). The count starts again once a connection
+  /// delivers a message or stays open for [maxDelay]. After giving up,
+  /// the streams end with the last error, and the next listener starts
+  /// with every retry again.
   final int? maxRetries;
 
-  /// Checks the values like Spring 7's `RetryPolicy.Builder`: `delay` and
-  /// `jitter` not negative, `multiplier` at least 1, `max-delay` positive,
-  /// `max-retries` not negative (a `delay` above `max-delay` is accepted:
-  /// the waits are then [maxDelay]); throws an [ArgumentError] naming the
-  /// property under [prefix] otherwise.
+  /// Checks the values as Spring 7's `RetryPolicy.Builder` does: `delay`
+  /// and `jitter` not negative, `multiplier` at least 1, `max-delay`
+  /// positive, `max-retries` not negative. A `delay` above `max-delay` is
+  /// accepted; the waits are then [maxDelay]. Otherwise throws an
+  /// [ArgumentError] naming the property under [prefix]. Called when the
+  /// settings are read from properties.
   void validate([String prefix = 'reconnect']) {
     void check(bool valid, Object value, String key, String message) {
       if (!valid) {
@@ -239,11 +272,15 @@ final class WebSocketReconnectPolicy {
     return '${micros}us';
   }
 
-  /// The wait before attempt [retry] (1 for the first), like Spring's
-  /// `ExponentialBackOff`: [delay] × [multiplier]^(retry − 1), at most
-  /// [maxDelay], then ± [jitter] × (that wait / [delay]), but never below
-  /// [delay] nor above [maxDelay] (which wins when [delay] is above it).
-  /// A zero [delay] gives zero waits (± [jitter]) on every attempt.
+  /// The wait before reconnection attempt [retry], 1 for the first,
+  /// computed as Spring's `ExponentialBackOff` does.
+  ///
+  /// The wait is [delay] × [multiplier]^(retry − 1), at most [maxDelay].
+  /// With a [jitter], a random part of up to ± [jitter] × (that wait /
+  /// [delay]) is added, but the result stays between [delay] and
+  /// [maxDelay] ([maxDelay] wins when [delay] is above it). A zero
+  /// [delay] gives zero waits, ± [jitter], on every attempt. Pass [random]
+  /// for a repeatable result in a test.
   Duration delayFor(int retry, [math.Random? random]) {
     final base = delay.inMicroseconds;
     final max = maxDelay.inMicroseconds;

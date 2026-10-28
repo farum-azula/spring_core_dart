@@ -1,8 +1,14 @@
 import 'package:flutter/services.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// A Flutter asset as a `Resource`: what `asset:` locations resolve to, so
-/// assets are injected like Spring's `classpath:` resources.
+/// A Flutter asset (an image, a video, a data file of the app bundle)
+/// seen as a `Resource`.
+///
+/// It lets beans receive assets the way they receive any other file:
+/// `@Value('asset:assets/terms.md') Resource terms` injects an
+/// `AssetResource`, and `context.getResource('asset:...')` returns one.
+/// So a bean that reads a file does not care whether it comes from the
+/// asset bundle or from `lib/resources/`. You rarely create one yourself.
 ///
 /// ```yaml
 /// # pubspec.yaml
@@ -13,6 +19,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```
 ///
 /// ```dart
+/// // The onboarding screen shows the terms and plays the intro video.
 /// @Component()
 /// class Onboarding {
 ///   Onboarding(
@@ -23,7 +30,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///   final Resource terms;
 ///
 ///   Future<String> termsText() => terms.readAsString();
-///   String get videoKey => (video as AssetResource).key; // for VideoPlayerController.asset
+///
+///   // Flutter's players take the asset key.
+///   String get videoKey => (video as AssetResource).key;
 /// }
 /// ```
 ///
@@ -33,12 +42,15 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// when read: images, video, sound, large data. Reading is asynchronous
 /// only ([readAsBytes], [readAsString]). [key] is the asset key Flutter's
 /// own APIs take (`Image.asset`, `AssetImage`, video and audio players).
+/// The generator checks every `@Value('asset:...')` against
+/// `flutter: assets:` in `pubspec.yaml` and fails the build when the asset
+/// is not declared.
 ///
 /// Spring (Java): a `ClassPathResource` from `@Value("classpath:...")`.
 final class AssetResource extends AbstractResource {
   /// The asset [key] (`assets/intro.mp4`; a leading `/` is dropped) of
-  /// [bundle] (`rootBundle` by default); [manifest], when known, decides
-  /// [exists].
+  /// [bundle] (`rootBundle` by default). [manifest], when given, makes
+  /// [exists] exact.
   AssetResource(String key, {AssetBundle? bundle, this.manifest})
     : key = key.startsWith('/') ? key.substring(1) : key,
       bundle = bundle ?? rootBundle;
@@ -47,15 +59,18 @@ final class AssetResource extends AbstractResource {
   /// (`packages/<package>/...` for a package's assets).
   final String key;
 
-  /// The bundle the asset is read from.
+  /// The bundle the asset is read from: `rootBundle`, or another one in
+  /// tests.
   final AssetBundle bundle;
 
-  /// The app's asset manifest, when known: makes [exists] exact.
+  /// The app's list of assets, when known; [exists] looks the key up in
+  /// it.
   final AssetManifest? manifest;
 
-  /// Whether the asset is in the app's asset manifest. Exact under
-  /// `SpringApplicationWidget`, which loads the manifest before the start;
-  /// without a manifest, `true` (reading a missing asset then fails).
+  /// Whether the asset is in the app's asset manifest. It is exact under
+  /// `SpringApplicationWidget`, which loads the manifest before the start.
+  /// Without a manifest it returns `true`, and reading a missing asset then
+  /// fails.
   @override
   bool exists() => manifest?.listAssets().contains(key) ?? true;
 
@@ -86,29 +101,35 @@ final class AssetResource extends AbstractResource {
   }
 }
 
-/// Resolves `asset:<key>` (also `asset:/<key>`) to an [AssetResource], so
-/// `@Value('asset:assets/logo.png') Resource logo` and
-/// `context.getResource('asset:...')` reach the app's assets. The starter
-/// registers it on every application context.
+/// Turns `asset:<key>` locations (also `asset:/<key>`) into
+/// [AssetResource]s, so `@Value('asset:assets/logo.png') Resource logo`
+/// and `context.getResource('asset:...')` reach the app's assets.
+///
+/// The starter registers one on every application context; applications
+/// do not create it.
 final class AssetProtocolResolver implements ProtocolResolver {
-  /// Resolves assets of [bundle] (`rootBundle` by default).
+  /// A resolver for the assets of [bundle] (`rootBundle` by default), with
+  /// [manifest] to make `exists()` exact.
   AssetProtocolResolver({AssetBundle? bundle, this.manifest})
     : bundle = bundle ?? rootBundle;
 
-  /// The location prefix.
+  /// The prefix of the locations this resolver handles, `asset:`.
   static const prefix = 'asset:';
 
-  /// The bundle assets are read from.
+  /// The bundle the assets are read from.
   final AssetBundle bundle;
 
-  /// The asset manifest, when loaded: makes `exists()` exact.
+  /// The asset manifest given to the resources, when known; it makes
+  /// `exists()` exact.
   final AssetManifest? manifest;
 
-  /// The manifest of `rootBundle`, loaded by `SpringApplicationWidget`
-  /// before the application starts (see [loadRootManifest]).
+  /// The manifest of `rootBundle`, once [loadRootManifest] loaded it;
+  /// `SpringApplicationWidget` does so before the application starts.
   static AssetManifest? rootManifest;
 
-  /// Loads [rootManifest] (no-op when the app has no asset manifest).
+  /// Loads [rootManifest] once. Does nothing when it is already loaded,
+  /// and leaves it `null` when the app has no asset manifest (a test
+  /// without assets).
   static Future<void> loadRootManifest() async {
     try {
       rootManifest ??= await AssetManifest.loadFromAssetBundle(rootBundle);
@@ -129,11 +150,14 @@ final class AssetProtocolResolver implements ProtocolResolver {
 }
 
 /// Adds an [AssetProtocolResolver] to the application context before any
-/// bean is created (an `AssetBundle` bean, when there is one, replaces
-/// `rootBundle`, e.g. in tests).
+/// bean is created, so beans can already receive `asset:` resources.
+///
+/// An `AssetBundle` bean, when there is one (in tests, for example),
+/// replaces `rootBundle`. The starter registers it; applications do not
+/// use it.
 final class AssetProtocolResolverRegistrar
     implements BeanFactoryPostProcessor, ApplicationContextAware {
-  /// Creates the registrar.
+  /// The registrar; it has no settings.
   AssetProtocolResolverRegistrar();
 
   ApplicationContext? _context;

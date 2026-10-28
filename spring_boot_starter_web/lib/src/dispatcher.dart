@@ -5,11 +5,23 @@ import 'package:spring_boot_starter_web/src/response_writer.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// A filter around every request, like a servlet `Filter` (or WebFlux's
-/// `WebFilter`). Declare beans of this type; they run in `@Order`, before
-/// the handler is looked up. Spring Security's filter chain is one.
+/// Code that runs around every request, before the request reaches a
+/// controller.
+///
+/// Use a filter for work that concerns all requests rather than one
+/// endpoint: adding a header, logging, checking a token, rejecting
+/// requests early, or wrapping the request or response. Declare it as a
+/// bean; the starter runs every `WebFilter` bean in `@Order`, before the
+/// handler is looked up, so a filter also sees requests that end in a 404.
+/// The security starter's filter chain is one such filter. For work tied
+/// to the controllers (with the handler at hand, or after its result),
+/// a `HandlerInterceptor` fits better.
+///
+/// An exception thrown by a filter skips the `@ExceptionHandler` methods
+/// and gets the default error answer.
 ///
 /// ```dart
+/// // Every answer carries an id the logs can be searched by.
 /// @Component()
 /// @Order(Ordered.highestPrecedence)
 /// class RequestIdFilter implements WebFilter {
@@ -20,9 +32,23 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 ///   }
 /// }
 /// ```
+///
+/// Spring (Java), with a servlet filter:
+/// ```java
+/// @Component
+/// @Order(Ordered.HIGHEST_PRECEDENCE)
+/// class RequestIdFilter implements Filter {
+///   public void doFilter(ServletRequest request, ServletResponse response,
+///       FilterChain chain) throws IOException, ServletException {
+///     ((HttpServletResponse) response).setHeader("X-Request-Id", newId());
+///     chain.doFilter(request, response);
+///   }
+/// }
+/// ```
 abstract interface class WebFilter {
-  /// Handles [request]: calls `chain.doFilter` to go on (possibly with a
-  /// wrapped request or response), or answers through [response].
+  /// Handles [request]: call `chain.doFilter` to pass it on (the same
+  /// request, or a wrapped one such as a `ServerHttpRequestDecorator`),
+  /// or answer through [response] and return without calling the chain.
   Future<void> doFilter(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -30,19 +56,61 @@ abstract interface class WebFilter {
   );
 }
 
-/// The rest of the filters, then the handler.
+/// What comes after a filter: the remaining filters, then the handler.
+///
+/// A [WebFilter] receives it in `doFilter` and calls it to let the request
+/// go on; not calling it stops the request at that filter.
 abstract interface class WebFilterChain {
-  /// Passes [request] on.
+  /// Runs the next filter (or, after the last, the handler) with
+  /// [request] and [response], and completes when they are done.
   Future<void> doFilter(ServerHttpRequest request, ServerHttpResponse response);
 }
 
-/// A [WebFilter] that runs once per request and can skip requests, like
-/// Spring's `OncePerRequestFilter`.
+/// A base class for a [WebFilter] that does its work at most once per
+/// request and can leave some requests alone.
+///
+/// Extend it rather than implementing [WebFilter] when a filter should
+/// skip some paths ([shouldNotFilter]), or must not run twice when the
+/// same request passes the filters again. It marks the request with an
+/// attribute named after the filter's class, so a second pass goes
+/// straight on down the chain.
+///
+/// ```dart
+/// // Requests are timed, except the health checks of the load balancer.
+/// @Component()
+/// class TimingFilter extends OncePerRequestFilter {
+///   @override
+///   bool shouldNotFilter(ServerHttpRequest request) =>
+///       request.path == '/health';
+///
+///   @override
+///   Future<void> doFilterInternal(request, response, chain) async {
+///     final watch = Stopwatch()..start();
+///     await chain.doFilter(request, response);
+///     print('${request.path} took ${watch.elapsed}');
+///   }
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Component
+/// class TimingFilter extends OncePerRequestFilter {
+///   protected boolean shouldNotFilter(HttpServletRequest request) {
+///     return request.getRequestURI().equals("/health");
+///   }
+///
+///   protected void doFilterInternal(HttpServletRequest request,
+///       HttpServletResponse response, FilterChain chain) { ... }
+/// }
+/// ```
 abstract class OncePerRequestFilter implements WebFilter {
-  /// Whether [request] skips this filter.
+  /// Whether [request] passes this filter untouched; `false` by default.
+  /// Override it to exclude paths or methods.
   bool shouldNotFilter(ServerHttpRequest request) => false;
 
-  /// The filter's work.
+  /// The filter's work, called instead of [doFilter] for the requests it
+  /// handles: call `chain.doFilter` to go on, as in [WebFilter.doFilter].
   Future<void> doFilterInternal(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -66,12 +134,30 @@ abstract class OncePerRequestFilter implements WebFilter {
   }
 }
 
-/// The application's [HttpHandler], like Spring's `DispatcherServlet`:
-/// runs every request in its own `Zone` (`RequestContextHolder`), through
-/// the [WebFilter]s, to the first [HandlerMapping] that has a handler, and
-/// answers errors (`@ExceptionHandler` methods, else a `ProblemDetail`).
+/// The entry point of every HTTP request: the [HttpHandler] the server
+/// calls, which runs the filters, finds a handler and answers errors.
+///
+/// For each request it:
+///
+/// 1. runs the request in its own `Zone`, so that
+///    `RequestContextHolder.currentRequest` is the request anywhere in its
+///    handling, across `await`s;
+/// 2. strips [contextPath] (a request outside it gets a 404);
+/// 3. runs the [filters], in order;
+/// 4. asks each of the [handlerMappings] in turn for a handler and calls
+///    the first one found (none: a 404);
+/// 5. turns an exception into an answer: first through the
+///    `@ExceptionHandler` methods of [requestMapping], else as a
+///    `ProblemDetail` written by [writer]. Exceptions from the filters go
+///    straight to [writer].
+///
+/// The starter declares it as the `dispatcherHandler` bean, and both the
+/// server and `MockMvc` call it. Applications do not create one; they add
+/// filters (`WebFilter` beans) and handler mappings (`HandlerMapping`
+/// beans) instead. Spring's counterpart is the `DispatcherServlet`.
 final class DispatcherHandler implements HttpHandler {
-  /// A dispatcher over [handlerMappings] (in order) behind [filters].
+  /// A dispatcher over [handlerMappings] (tried in order) behind
+  /// [filters], with no context path by default.
   DispatcherHandler({
     required this.handlerMappings,
     required this.requestMapping,
@@ -80,20 +166,26 @@ final class DispatcherHandler implements HttpHandler {
     this.contextPath = '',
   });
 
-  /// The filters, in order.
+  /// The filters every request passes, in the order they run (the
+  /// `@Order` of the beans).
   final List<WebFilter> filters;
 
-  /// The handler mappings, in order.
+  /// The handler mappings asked for a handler, in order: the controllers
+  /// first, then for example the WebSocket endpoints.
   final List<HandlerMapping> handlerMappings;
 
-  /// The controllers' mapping (its exception handlers answer errors of
-  /// the other mappings too).
+  /// The controllers' mapping. Its `@ExceptionHandler` methods also
+  /// answer the errors of the other mappings and the 404 of a request no
+  /// mapping takes.
   final RequestMappingHandlerMapping requestMapping;
 
-  /// Writes errors.
+  /// Writes the default error answer (a `ProblemDetail`) when no
+  /// `@ExceptionHandler` method handles an exception.
   final ResponseWriter writer;
 
-  /// `server.servlet.context-path`: a prefix every request must have.
+  /// The prefix every request path must start with
+  /// (`server.servlet.context-path`, such as `/shop`); it is removed
+  /// before routing, so the mappings do not repeat it. Empty: no prefix.
   final String contextPath;
 
   @override

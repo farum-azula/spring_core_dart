@@ -5,35 +5,73 @@ import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
-/// Loads resources by location, like Spring's `ResourceLoader`.
+/// Turns a location string such as `classpath:mail.txt`,
+/// `file:./data.csv` or `https://...` into a [Resource] to read.
+///
+/// It is the one place that knows what the prefixes mean, so code can take
+/// a location from configuration and read it without caring where it
+/// points. The application context is the resource loader beans get: a
+/// constructor parameter of type `ResourceLoader` receives it
+/// (`ResourceLoaderAware` works too). For a fixed location,
+/// `@Value('classpath:...') Resource` is simpler. `classpath:` reads
+/// `lib/resources/` (see [ClasspathResources]); a [ProtocolResolver] adds
+/// other prefixes, such as Flutter assets.
 ///
 /// ```dart
-/// final ResourceLoader loader = DefaultResourceLoader();
-/// final resource = loader.getResource('file:config/app.properties');
+/// @Service()
+/// class Imports {
+///   Imports(this.resources, @Value(r'${shop.import.file}') this.location);
+///
+///   final ResourceLoader resources; // the application context
+///   final String location; // `file:./import.csv` or `classpath:demo.csv`
+///
+///   Future<String> read() => resources.getResource(location).readAsString();
+/// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// ResourceLoader loader = new DefaultResourceLoader();
-/// Resource resource = loader.getResource("file:config/app.properties");
-/// ```
+/// @Service
+/// class Imports {
+///   private final ResourceLoader resources;
+///   private final String location;
 ///
-/// `classpath:` reads `lib/resources/` (see [ClasspathResources]); register a
-/// [ProtocolResolver] for other
-/// sources (e.g. Flutter assets).
+///   Imports(ResourceLoader resources,
+///       @Value("${shop.import.file}") String location) {
+///     this.resources = resources;
+///     this.location = location;
+///   }
+///
+///   String read() throws IOException {
+///     return resources.getResource(location)
+///         .getContentAsString(StandardCharsets.UTF_8);
+///   }
+/// }
+/// ```
 abstract interface class ResourceLoader {
-  /// Prefix for file system locations.
+  /// The prefix of file system locations: `file:`.
   static const filePrefix = 'file:';
 
-  /// Returns a handle for [location]; it may not exist.
-  ///
-  /// Never returns `null`; check [Resource.exists].
+  /// The resource at [location]. Nothing is read yet, and the resource may
+  /// not exist: check [Resource.exists] before reading when it may be
+  /// missing. Never returns `null`; an unknown prefix gives a resource
+  /// that does not exist.
   Resource getResource(String location);
 }
 
-/// Resolves custom location protocols, like Spring's `ProtocolResolver`.
+/// A plug-in that teaches a resource loader a location prefix of its own,
+/// such as `asset:` or `db:`.
+///
+/// Resolvers are asked before the built-in prefixes, in the order they
+/// were added; each returns a resource for the locations it handles and
+/// `null` for the others. Register one on the application context
+/// (`addProtocolResolver`) before it starts, and every `@Value` resource,
+/// `@PropertySource` file and config import can use the prefix. The
+/// Flutter starter registers one for assets; applications write one only
+/// for their own storage.
 ///
 /// ```dart
+/// // `asset:config/app.yml` read from the app's asset bundle.
 /// class AssetProtocolResolver implements ProtocolResolver {
 ///   @override
 ///   Resource? resolve(String location, ResourceLoader resourceLoader) =>
@@ -57,14 +95,17 @@ abstract interface class ResourceLoader {
 /// loader.addProtocolResolver(assets);
 /// ```
 abstract interface class ProtocolResolver {
-  /// A resource for [location], or `null` if this resolver does not handle
-  /// it.
+  /// The resource for [location], or `null` when this resolver does not
+  /// handle it, so the next resolver (or the built-in rules) is tried.
+  /// [resourceLoader] is the loader asking, for resolvers that delegate.
   Resource? resolve(String location, ResourceLoader resourceLoader);
 }
 
-/// A [ProtocolResolver] from a function.
+/// A [ProtocolResolver] made from a function, for a resolver too small to
+/// deserve a class.
 ///
 /// ```dart
+/// // One fixed location served from memory.
 /// final loader = DefaultResourceLoader(
 ///   protocolResolvers: [
 ///     FunctionProtocolResolver(
@@ -85,8 +126,8 @@ abstract interface class ProtocolResolver {
 ///         : null);
 /// ```
 final class FunctionProtocolResolver implements ProtocolResolver {
-  /// Wraps a resolve function; it returns `null` for locations it does
-  /// not handle.
+  /// Creates a resolver that calls the given function, which returns
+  /// `null` for locations it does not handle.
   const FunctionProtocolResolver(this._resolve);
 
   final Resource? Function(String location, ResourceLoader loader) _resolve;
@@ -96,14 +137,17 @@ final class FunctionProtocolResolver implements ProtocolResolver {
       _resolve(location, resourceLoader);
 }
 
-/// Serves `prefix:path` locations from an in-memory map; handy for tests
-/// and for content embedded in the app.
+/// A [ProtocolResolver] that serves `prefix:path` locations from a map of
+/// paths to text held in memory.
 ///
-/// Paths are normalized (`./`, `..`, leading `/`), so `memory:config/a`
-/// and `memory:/config/./a` are the same file. Unknown paths resolve to a
+/// It is for tests that need config files or templates without touching
+/// the disk, and for content an app builds in code. Paths are normalized
+/// (`./`, `..`, a leading `/`), so `memory:config/a` and
+/// `memory:/config/./a` are the same file. An unknown path gives a
 /// resource that does not exist.
 ///
 /// ```dart
+/// // Config files for a test, without files on disk.
 /// final loader = DefaultResourceLoader(
 ///   protocolResolvers: [
 ///     InMemoryProtocolResolver('memory:', {
@@ -122,15 +166,16 @@ final class FunctionProtocolResolver implements ProtocolResolver {
 /// Spring has no direct equivalent; tests usually use `ByteArrayResource`,
 /// `MockPropertySource` or `@TestPropertySource` instead.
 final class InMemoryProtocolResolver implements ProtocolResolver {
-  /// Serves [files] (path → content, copied) under [prefix].
+  /// Creates a resolver serving [files] (path to content, copied) under
+  /// [prefix].
   InMemoryProtocolResolver(this.prefix, Map<String, String> files)
     : _files = Map.of(files);
 
-  /// Protocol prefix including the colon, e.g. `memory:`.
+  /// The prefix it handles, colon included, such as `memory:`.
   final String prefix;
   final Map<String, String> _files;
 
-  /// Adds or replaces [path].
+  /// Adds the file [path] with [content], or replaces its content.
   void put(String path, String content) => _files[path] = content;
 
   @override
@@ -152,23 +197,32 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
       FileSystemResource(path).path.replaceFirst(RegExp('^/'), '');
 }
 
-/// Default [ResourceLoader], like Spring's `DefaultResourceLoader`.
+/// The [ResourceLoader] used everywhere: it knows `classpath:`, `file:`,
+/// `http:`, `https:` and `package:` locations, plus any prefix taught by a
+/// [ProtocolResolver].
 ///
-/// Order: registered [ProtocolResolver]s, then `classpath:` (the files of
-/// `lib/resources/`, see [ClasspathResources]), then `file:` as file system
-/// resources (percent-decoded, see [FileSystemResource.fromFileUrl]), then
-/// `package:` URIs as the package's files (through the package config of
-/// the running program; not on the web or in AOT executables). Plain paths
-/// (`app.properties`, `/config/x.txt`) are classpath resources too, like
-/// Spring's `getResourceByPath`. `http:` / `https:` locations are
-/// [UrlResource]s. Other `scheme:` locations resolve to a resource that
-/// does not exist.
+/// The application context uses one unless given another loader, so
+/// applications mostly use it through the context. Create one directly to
+/// read resources without a context, in a tool or a test. Locations are
+/// handled in this order:
+///
+/// 1. Registered [ProtocolResolver]s, in order.
+/// 2. `classpath:`: the files of `lib/resources/` (see
+///    [ClasspathResources]).
+/// 3. `file:`: a [FileSystemResource], percent-decoded (see
+///    [FileSystemResource.fromFileUrl]).
+/// 4. `http:` and `https:`: a [UrlResource].
+/// 5. `package:`: the package's file, through the package config of the
+///    running program; not on the web or in AOT executables.
+/// 6. Any other `scheme:`: a resource that does not exist.
+/// 7. A plain path (`app.properties`, `/config/x.txt`): a classpath
+///    resource, like Spring's `getResourceByPath`.
 ///
 /// Platforms with their own asset system plug in with a
 /// [ProtocolResolver], which comes first: a Flutter app can resolve
-/// `package:my_app/config/app.properties` (or an `asset:` scheme) to an
-/// async-only resource over its asset bundle, which `ConfigDataEnvironment`
-/// and `@PropertySource` then read asynchronously.
+/// `package:my_app/config/app.properties` (or an `asset:` scheme) to a
+/// resource over its asset bundle that is read asynchronously, which
+/// `ConfigDataEnvironment` and `@PropertySource` support.
 ///
 /// ```dart
 /// final loader = DefaultResourceLoader()
@@ -187,17 +241,19 @@ final class InMemoryProtocolResolver implements ProtocolResolver {
 /// Resource file = loader.getResource("file:config/app.properties");
 /// ```
 class DefaultResourceLoader implements ResourceLoader {
-  /// Creates a loader that tries [protocolResolvers] first, in order.
+  /// Creates a loader that asks [protocolResolvers] first, in order, before
+  /// its built-in rules.
   DefaultResourceLoader({
     Iterable<ProtocolResolver> protocolResolvers = const [],
   }) : _resolvers = [...protocolResolvers];
 
   final List<ProtocolResolver> _resolvers;
 
-  /// Resolvers tried before the built-in rules.
+  /// The resolvers asked before the built-in rules, in order, as a
+  /// read-only copy.
   List<ProtocolResolver> get protocolResolvers => List.unmodifiable(_resolvers);
 
-  /// Registers [resolver]; later ones are tried after earlier ones.
+  /// Adds [resolver] after the resolvers already registered.
   void addProtocolResolver(ProtocolResolver resolver) =>
       _resolvers.add(resolver);
 
@@ -234,6 +290,7 @@ class DefaultResourceLoader implements ResourceLoader {
     return ClasspathResources.resolve(location);
   }
 
-  /// Prefix of a Dart package URI (`package:my_app/config/app.yml`).
+  /// The prefix of a Dart package URI, `package:`, as in
+  /// `package:my_app/config/app.yml`.
   static const packagePrefix = 'package:';
 }

@@ -8,7 +8,9 @@ import 'package:spring_security_core/src/core/exceptions.dart';
 import 'package:spring_security_core/src/method/annotations.dart';
 import 'package:spring_security_core/src/method/expression_handler.dart';
 
-/// Whether [annotation] is one of the method security annotations.
+/// Whether [annotation] is one of the five method security annotations:
+/// [PreAuthorize], [PostAuthorize], [Secured], [PreFilter] or
+/// [PostFilter].
 bool isMethodSecurityAnnotation(Object annotation) =>
     annotation is PreAuthorize ||
     annotation is PostAuthorize ||
@@ -16,12 +18,19 @@ bool isMethodSecurityAnnotation(Object annotation) =>
     annotation is PreFilter ||
     annotation is PostFilter;
 
-/// The security annotations that apply to a member: its own, else those of
-/// its class (and superclasses), like Spring's lookup (method first).
+/// The security annotations that apply to one bean member, found the way
+/// Spring finds them.
+///
+/// A member's own annotations win. A method without any takes those of
+/// its class and the classes and interfaces above it; getters and setters
+/// never inherit them. Used internally by [MethodSecurityInterceptor].
 final class MethodSecurityAttributes {
   MethodSecurityAttributes._(this.annotations);
 
-  /// The attributes of [signature].
+  /// The annotations that apply to [signature].
+  ///
+  /// Throws a [StateError] when the same annotation applies twice, which
+  /// would make the rule ambiguous.
   factory MethodSecurityAttributes.of(MethodSignature signature) {
     var found = signature.mergedAnnotations
         .where(isMethodSecurityAnnotation)
@@ -48,33 +57,38 @@ final class MethodSecurityAttributes {
     return attributes;
   }
 
-  /// The annotations.
+  /// The security annotations found, in declaration order.
   final List<Object> annotations;
 
-  /// Whether nothing applies.
+  /// Whether no security annotation applies, so the member is not
+  /// checked.
   bool get isEmpty => annotations.isEmpty;
 
-  /// `@PreAuthorize`.
+  /// The `@PreAuthorize` that applies, or `null`.
   PreAuthorize? get preAuthorize =>
       annotations.whereType<PreAuthorize>().firstOrNull;
 
-  /// `@PostAuthorize`.
+  /// The `@PostAuthorize` that applies, or `null`.
   PostAuthorize? get postAuthorize =>
       annotations.whereType<PostAuthorize>().firstOrNull;
 
-  /// `@Secured`.
+  /// The `@Secured` that applies, or `null`.
   Secured? get secured => annotations.whereType<Secured>().firstOrNull;
 
-  /// `@PreFilter`.
+  /// The `@PreFilter` that applies, or `null`.
   PreFilter? get preFilter => annotations.whereType<PreFilter>().firstOrNull;
 
-  /// `@PostFilter`.
+  /// The `@PostFilter` that applies, or `null`.
   PostFilter? get postFilter => annotations.whereType<PostFilter>().firstOrNull;
 }
 
-/// Matches members with method security annotations (for the advisor).
+/// Selects the bean members that method security must wrap: those with a
+/// security annotation of their own or from their class.
+///
+/// The auto-configured advisor pairs it with the
+/// [MethodSecurityInterceptor]; applications do not use it directly.
 final class MethodSecurityPointcut implements AnnotationPointcut {
-  /// The pointcut.
+  /// The stateless pointcut.
   const MethodSecurityPointcut();
 
   @override
@@ -85,24 +99,39 @@ final class MethodSecurityPointcut implements AnnotationPointcut {
   String toString() => 'MethodSecurityPointcut';
 }
 
-/// Applies `@PreFilter`, `@PreAuthorize`, `@Secured`, `@PostAuthorize`
-/// and `@PostFilter` around a call, like Spring's
-/// `AuthorizationManagerBeforeMethodInterceptor` and
-/// `AuthorizationManagerAfterMethodInterceptor` together.
+/// The code that runs around every call of a secured bean method and
+/// enforces its security annotations.
 ///
-/// The current user is the `SecurityContextHolder`'s; with none, a
-/// secured call fails with `AuthenticationCredentialsNotFoundException`
-/// (401), a denied one with `AuthorizationDeniedException` (403). An
-/// `async` method fails through its `Future`.
+/// The auto-configuration installs it in the proxies of beans with
+/// security annotations; applications only write the annotations. For each
+/// call, in this order:
+///
+/// 1. It reads the current user from the security context. With none at
+///    all, the call fails with an
+///    `AuthenticationCredentialsNotFoundException` (401 on the web).
+/// 2. `@PreFilter` filters the collection argument.
+/// 3. `@PreAuthorize`, then `@Secured`: when one says no, the call fails
+///    with an [AuthorizationDeniedException] (403 on the web) and the
+///    method does not run.
+/// 4. The method runs.
+/// 5. `@PostFilter` filters the result, then `@PostAuthorize` checks it;
+///    a denial replaces the result by an [AuthorizationDeniedException].
+///
+/// A synchronous method throws; an `async` method returns a failed
+/// `Future`. Members without security annotations run unchanged.
+///
+/// Spring (Java): `AuthorizationManagerBeforeMethodInterceptor` and
+/// `AuthorizationManagerAfterMethodInterceptor` together.
 final class MethodSecurityInterceptor implements MethodInterceptor {
-  /// An interceptor evaluating with [expressionHandler].
+  /// An interceptor evaluating expressions with [expressionHandler] and
+  /// reading the user from [holderStrategy].
   MethodSecurityInterceptor(this.expressionHandler, {this.holderStrategy});
 
-  /// Evaluates the expressions.
+  /// Parses and evaluates the expressions of the annotations.
   final MethodSecurityExpressionHandler expressionHandler;
 
-  /// Where the current user is read; `SecurityContextHolder`'s when
-  /// `null`.
+  /// Where the current user is read; `null` uses the strategy of
+  /// [SecurityContextHolder] at the time of each call.
   final SecurityContextHolderStrategy? holderStrategy;
 
   SecurityContextHolderStrategy get _holder =>
@@ -110,12 +139,15 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
 
   final _attributes = Expando<MethodSecurityAttributes>();
 
-  /// The attributes of [signature] (cached).
+  /// The security annotations of [signature], looked up once and then
+  /// cached.
   MethodSecurityAttributes attributesOf(MethodSignature signature) =>
       _attributes[signature] ??= MethodSecurityAttributes.of(signature);
 
-  /// Parses every expression of [signature], so a broken one fails at
-  /// startup.
+  /// Parses every expression of [signature]'s annotations, so a broken one
+  /// fails at startup rather than at the first call.
+  ///
+  /// Throws what the parser throws for an invalid expression.
   void validate(MethodSignature signature) {
     final attributes = attributesOf(signature);
     for (final text in [
@@ -326,22 +358,32 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
   }
 }
 
-/// Checks the method security annotations of beans at startup, like
-/// Spring when it builds the proxies: every expression parses, and every
-/// bean with such annotations is proxied — otherwise the annotations
-/// would be silently ignored, so the application fails to start
-/// (docs/security.md: fail closed).
+/// The startup check that makes sure no security annotation is silently
+/// ignored.
+///
+/// For every bean whose class or methods carry security annotations, it
+/// parses each expression and checks that the bean was proxied. A bean
+/// that could not be proxied (a `final` class, for example) would run its
+/// methods unchecked, so the application fails to start with a
+/// [StateError] that says so. The auto-configuration registers it;
+/// applications never use it directly.
+///
+/// Spring checks the expressions when it builds the proxies; this check
+/// also stops the startup for a secured bean left without a proxy.
 final class MethodSecurityValidator extends BeanPostProcessor
     implements BeanFactoryAware, Ordered {
-  /// A validator for the rules of the interceptor [interceptor] returns,
-  /// asked for it at the first secured bean: a post-processor's own
-  /// dependencies are created before the other post-processors and would
-  /// miss them.
+  /// A validator that gets the interceptor from the given function at the
+  /// first secured bean.
+  ///
+  /// The interceptor is not a constructor argument: a post-processor's own
+  /// dependencies are created before the other post-processors exist and
+  /// would miss them.
   MethodSecurityValidator(this._interceptor);
 
   final MethodSecurityInterceptor Function() _interceptor;
 
-  /// Parses the expressions.
+  /// The interceptor whose expression handler parses the expressions,
+  /// obtained on first use.
   late final MethodSecurityInterceptor interceptor = _interceptor();
 
   BeanFactory? _beanFactory;

@@ -1,49 +1,119 @@
 import 'package:spring_security_core/src/core/authentication.dart';
 import 'package:spring_security_core/src/core/authority.dart';
 
-/// A user as the application stores it, like Spring's `UserDetails`: the
-/// name, the encoded password, the authorities and the account's state.
+/// What the security code needs to know about one of your users to log
+/// them in: the username, the stored password hash, the authorities and
+/// whether the account may log in at all.
+///
+/// Your user store returns it from `UserDetailsService.loadUserByUsername`,
+/// and after a successful login it becomes the `principal` of the
+/// `Authentication`. Most applications build a [User] instead of
+/// implementing this interface. Implement it on your own account class
+/// when you want the principal to carry more, such as the account id or
+/// the tenant.
+///
+/// ```dart
+/// // The account entity itself serves as the logged-in principal.
+/// class Account implements UserDetails {
+///   Account(this.id, this.email, this.passwordHash, this.authorities);
+///
+///   final int id;
+///   final String email;
+///   final String passwordHash;
+///
+///   @override
+///   String get username => email;
+///
+///   @override
+///   String? get password => passwordHash;
+///
+///   @override
+///   final List<GrantedAuthority> authorities;
+///
+///   @override
+///   bool get isAccountNonExpired => true;
+///
+///   @override
+///   bool get isAccountNonLocked => true;
+///
+///   @override
+///   bool get isCredentialsNonExpired => true;
+///
+///   @override
+///   bool get isEnabled => true;
+/// }
+/// ```
+///
+/// Spring (Java): `UserDetails`; Java's `getUsername()` and
+/// `isEnabled()` are getters here.
 abstract interface class UserDetails {
-  /// The login name.
+  /// The name the user logs in with; `Authentication.name` returns it.
   String get username;
 
-  /// The encoded password (`{argon2}...`), or `null` when erased.
+  /// The stored password hash, such as `{argon2}$argon2id$...`; `null`
+  /// after the login erased it, and a `null` password never matches.
   String? get password;
 
-  /// What the user may do.
+  /// The user's permissions, such as `ROLE_ADMIN`; they become the
+  /// authorities of the `Authentication`.
   List<GrantedAuthority> get authorities;
 
-  /// Whether the account has not expired.
+  /// `false` refuses every login with an `AccountExpiredException`,
+  /// before the password is checked.
   bool get isAccountNonExpired;
 
-  /// Whether the account is not locked.
+  /// `false` refuses every login with a `LockedException`, before the
+  /// password is checked.
   bool get isAccountNonLocked;
 
-  /// Whether the password has not expired.
+  /// `false` refuses the login with a `CredentialsExpiredException`, after
+  /// the password matched.
   bool get isCredentialsNonExpired;
 
-  /// Whether the account is enabled.
+  /// `false` refuses every login with a `DisabledException`, before the
+  /// password is checked.
   bool get isEnabled;
 }
 
-/// The plain [UserDetails], like Spring's `User`; build one with
-/// [User.withUsername].
+/// A ready-made [UserDetails]: a username, a password hash, authorities
+/// and the four account flags, all fixed at creation.
+///
+/// Build one with [User.withUsername], usually inside your
+/// `UserDetailsService` from a database row, or for the users of an
+/// `InMemoryUserDetailsManager`. Two users are equal when their usernames
+/// are equal. Duplicate authorities are dropped and the rest are sorted by
+/// name. [toString] never shows the password.
 ///
 /// ```dart
-/// final ada = User.withUsername('ada')
-///     .password('{argon2}...')
+/// // A user loaded from the accounts table.
+/// final user = User.withUsername(row.email)
+///     .password(row.passwordHash) // {argon2}$argon2id$...
 ///     .roles(['ADMIN'])
 ///     .build();
 /// ```
+///
+/// Spring (Java):
+/// ```java
+/// UserDetails user = User.withUsername(row.email())
+///     .password(row.passwordHash())
+///     .roles("ADMIN")
+///     .build();
+/// ```
 final class User implements UserDetails, CredentialsContainer {
-  /// A user with all flags set (enabled, nothing expired or locked).
+  /// An enabled user with nothing expired or locked.
+  ///
+  /// [password] is the stored hash. Throws an [ArgumentError] when
+  /// [username] is empty.
   User(
     String username,
     String? password,
     Iterable<GrantedAuthority> authorities,
   ) : this.full(username, password, authorities);
 
-  /// A user with every flag given.
+  /// A user with every account flag given; all default to `true`, the
+  /// state that allows a login.
+  ///
+  /// Throws an [ArgumentError] when [username] is empty.
   User.full(
     this.username,
     this._password,
@@ -58,11 +128,13 @@ final class User implements UserDetails, CredentialsContainer {
     }
   }
 
-  /// A builder for a user named [username].
+  /// Starts building a user named [username]; finish with
+  /// [UserBuilder.build].
   static UserBuilder withUsername(String username) =>
       UserBuilder._().username(username);
 
-  /// A builder starting from [user].
+  /// Starts building a copy of [user], with its password, authorities and
+  /// flags, so you can change one thing, such as the password.
   static UserBuilder withUserDetails(UserDetails user) => UserBuilder._()
       .username(user.username)
       .password(user.password)
@@ -110,14 +182,16 @@ final class User implements UserDetails, CredentialsContainer {
       ..sort((a, b) => (a.authority ?? '').compareTo(b.authority ?? ''));
   }
 
-  /// Users are equal by username, like Spring's `User`.
+  /// Users are equal when their usernames are equal; the password,
+  /// authorities and flags are not compared.
   @override
   bool operator ==(Object other) => other is User && other.username == username;
 
   @override
   int get hashCode => username.hashCode;
 
-  /// Never the password.
+  /// A description for logs: everything but the password, which shows as
+  /// `[PROTECTED]`.
   @override
   String toString() =>
       'User [Username=$username, Password=[PROTECTED], Enabled=$isEnabled, '
@@ -126,7 +200,14 @@ final class User implements UserDetails, CredentialsContainer {
       'AccountNonLocked=$isAccountNonLocked, Granted Authorities=$authorities]';
 }
 
-/// Builds a [User], like Spring's `User.UserBuilder`.
+/// Collects the parts of a [User] step by step; get one from
+/// [User.withUsername] or [User.withUserDetails].
+///
+/// Without calls to the flag methods the user is enabled, with nothing
+/// expired or locked. Each authority method replaces what an earlier one
+/// set.
+///
+/// Spring (Java): `User.UserBuilder`.
 final class UserBuilder {
   UserBuilder._();
 
@@ -139,26 +220,38 @@ final class UserBuilder {
   bool _disabled = false;
   String Function(String)? _passwordEncoder;
 
-  /// The username.
+  /// Sets the username; [build] throws an [ArgumentError] when it is
+  /// empty.
   UserBuilder username(String username) {
     _username = username;
     return this;
   }
 
-  /// The (already encoded) password, e.g. `{argon2}...` or `{noop}secret`.
+  /// Sets the stored password, already encoded, such as `{argon2}...` (or
+  /// `{noop}secret` in a demo).
+  ///
+  /// When [passwordEncoder] is also set, this is the raw password and is
+  /// encoded at [build].
   UserBuilder password(String? password) {
     _password = password;
     return this;
   }
 
-  /// Encodes the raw password given to [password] when building.
+  /// Makes [build] encode the value given to [password] with [encoder],
+  /// so you can write the raw password.
+  ///
+  /// Meant for demos and tests: in production the password comes already
+  /// encoded from the store.
   UserBuilder passwordEncoder(String Function(String raw) encoder) {
     _passwordEncoder = encoder;
     return this;
   }
 
-  /// Roles: `roles(['ADMIN'])` gives `ROLE_ADMIN`; a name already
-  /// starting with `ROLE_` is refused, like Spring.
+  /// Sets the authorities from role names: `roles(['ADMIN'])` gives the
+  /// authority `ROLE_ADMIN`.
+  ///
+  /// Replaces any authorities set before. Throws an [ArgumentError] for a
+  /// name that already starts with `ROLE_`, as Spring does.
   UserBuilder roles(List<String> roles) {
     _authorities = [
       for (final role in roles)
@@ -172,43 +265,49 @@ final class UserBuilder {
     return this;
   }
 
-  /// Authorities, replacing [roles].
+  /// Sets the authorities, replacing any set before by [roles] or
+  /// [authorityNames].
   UserBuilder authorities(Iterable<GrantedAuthority> authorities) {
     _authorities = List.of(authorities);
     return this;
   }
 
-  /// Authorities by name.
+  /// Sets the authorities by their full names, such as `ROLE_ADMIN` or
+  /// `SCOPE_read` (no prefix is added); replaces any set before.
   UserBuilder authorityNames(List<String> authorities) {
     _authorities = AuthorityUtils.createAuthorityList(authorities);
     return this;
   }
 
-  /// Whether the account has expired.
+  /// `true` makes every login fail with an `AccountExpiredException`.
   UserBuilder accountExpired(bool value) {
     _accountExpired = value;
     return this;
   }
 
-  /// Whether the account is locked.
+  /// `true` makes every login fail with a `LockedException`.
   UserBuilder accountLocked(bool value) {
     _accountLocked = value;
     return this;
   }
 
-  /// Whether the password has expired.
+  /// `true` makes the login fail with a `CredentialsExpiredException`
+  /// once the password matched.
   UserBuilder credentialsExpired(bool value) {
     _credentialsExpired = value;
     return this;
   }
 
-  /// Whether the account is disabled.
+  /// `true` makes every login fail with a `DisabledException`.
   UserBuilder disabled(bool value) {
     _disabled = value;
     return this;
   }
 
-  /// The user.
+  /// Creates the [User].
+  ///
+  /// Throws a [StateError] when no username was set, and an [ArgumentError]
+  /// when it is empty.
   User build() {
     final username = _username;
     if (username == null) {

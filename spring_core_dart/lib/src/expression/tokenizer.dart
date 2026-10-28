@@ -1,10 +1,12 @@
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 
-/// Token kinds of SpEL, like Spring's `TokenKind`.
+/// The kinds of token the SpEL [Tokenizer] produces. Internal to the
+/// parser; applications never see tokens.
 ///
 /// Textual operators (`div`, `mod`, `and`, `or`, `not`, `eq`, `ne`, `lt`,
 /// `le`, `gt`, `ge`, `instanceof`, `matches`, `between`) are matched
-/// case-insensitively and map to the same kinds as their symbols.
+/// case-insensitively and map to the same kinds as their symbols, except
+/// right after a `.` or `?.`, where they are property names (`map.div`).
 ///
 /// ```dart
 /// final kinds = Tokenizer('a.?[x gt 1]').process().map((t) => t.kind);
@@ -162,7 +164,8 @@ enum TokenKind {
   between,
 }
 
-/// One token with its source span, like Spring's `Token`.
+/// One token of an expression: its kind, its text and where it is in
+/// the expression. Internal to the parser.
 ///
 /// ```dart
 /// final token = Tokenizer("'hi'").process().single;
@@ -189,24 +192,27 @@ final class Token {
   /// Offset just past the last character in the expression text.
   final int end;
 
-  /// Literal text or identifier name.
+  /// The literal text (a string without its quotes, a number without
+  /// its suffix) or identifier name; `null` for operators and
+  /// punctuation.
   final String? data;
 
   @override
   String toString() => '$kind${data == null ? '' : '($data)'}@$start';
 }
 
-/// Splits an expression into tokens, like Spring's `Tokenizer`.
+/// Splits the text of an expression into [Token]s, the first step of
+/// parsing.
 ///
-/// Used by `SpelExpressionParser`; you rarely need it directly. Whitespace
-/// is skipped, strings use `'` or `"` with the quote doubled as escape
-/// (`'It''s'`), and numbers support hex (`0x1F`), exponents (`1e3`) and
-/// the suffixes `L`, `f` and `d`.
+/// Internal to `SpelExpressionParser` (the library does not export it).
+/// Whitespace is skipped, strings use `'` or `"` with the quote doubled as
+/// escape (`'It''s'`) and no backslash escapes, and numbers support hex
+/// (`0x1F`), exponents (`1e3`) and the suffixes `L`, `f` and `d`.
 ///
 /// ```dart
 /// final tokens = Tokenizer('price * 2').process();
 /// // [TokenKind.identifier(price)@0, TokenKind.star@6,
-///   TokenKind.literalInt(2)@8]
+/// //  TokenKind.literalInt(2)@8]
 /// ```
 ///
 /// Spring (Java):
@@ -244,8 +250,9 @@ final class Tokenizer {
 
   /// Tokenizes the whole [expression] and returns the tokens in order.
   ///
-  /// Throws a [SpelParseException] for unknown characters, a single `|`,
-  /// unterminated strings and malformed hex numbers.
+  /// Throws a [SpelParseException] for unknown characters, a backslash, a
+  /// single `|`, unterminated strings, malformed hex numbers and a real
+  /// number with an `L` suffix.
   List<Token> process() {
     while (_pos < expression.length) {
       final c = expression[_pos];

@@ -1,4 +1,6 @@
-/// Annotations whose string argument is a pointcut expression.
+/// Annotations whose string argument is a pointcut expression: `@Pointcut`
+/// and the advice annotations. Their strings are highlighted, checked with
+/// the runtime's parser, and navigable.
 const pointcutAnnotations = {
   'Pointcut',
   'Before',
@@ -8,9 +10,9 @@ const pointcutAnnotations = {
   'Around',
 };
 
-/// Designators of pointcut expressions (the runtime supports `execution`,
-/// `within`, `target`, `this`, `bean`, `@annotation` and `@within`; the
-/// others are highlighted and reported by the check).
+/// The designators a pointcut may use, all of them supported by the
+/// runtime's parser. Any other `name(...)` is read as a reference to a
+/// named pointcut.
 const _designators = {
   'execution',
   'within',
@@ -24,21 +26,26 @@ const _designators = {
   '@args',
 };
 
-/// What a piece of a pointcut expression is.
+/// What a piece of a pointcut expression is: decides its colour and where
+/// go to definition leads.
 enum PointcutPartKind {
-  /// `execution`, `within`, `@annotation`, ... and `public` in `execution`.
+  /// `execution`, `within`, `@annotation`, ..., and the modifiers `public`,
+  /// `static` and `final` in `execution`.
   designator,
 
-  /// `&&`, `||`, `!`, `and`, `or`, `not`.
+  /// `&&`, `||`, `!`, and the words `and`, `or`, `not`.
   operator,
 
-  /// `*` and `..` in patterns.
+  /// `*` and `..` in patterns, and a name made only of `*`.
   wildcard,
 
-  /// A type (pattern): `within(OrderService)`, types in `execution`.
+  /// A type or type pattern: in `within(OrderService)`, `target`, `this`,
+  /// `args`, and the return and parameter types of `execution`. Of a dotted
+  /// name, only the last segment.
   type,
 
-  /// An annotation type: `@annotation(Timed)`.
+  /// An annotation type: `@annotation(Timed)`, and in `@within`, `@target`
+  /// and `@args`.
   annotation,
 
   /// A bean name pattern: `bean(order*)`.
@@ -58,21 +65,22 @@ enum PointcutPartKind {
   aspect,
 }
 
-/// A piece of a pointcut expression (offsets relative to the expression).
+/// A piece of a pointcut expression found by [scanPointcut], with offsets
+/// relative to the expression.
 final class PointcutPart {
-  /// Creates a part.
+  /// A part of [kind] from [start] to [end], whose source is [text].
   const PointcutPart(this.kind, this.start, this.end, this.text);
 
-  /// Kind.
+  /// What the piece is.
   final PointcutPartKind kind;
 
-  /// Start offset.
+  /// The offset of its first character.
   final int start;
 
-  /// End offset.
+  /// The offset after its last character.
   final int end;
 
-  /// Source text.
+  /// The piece's source text.
   final String text;
 
   @override
@@ -83,8 +91,11 @@ final class PointcutPart {
 // `@`-prefixed and dotted) and other runs of non-space characters.
 final _tokens = RegExp(r'&&|\|\||!|\(|\)|@?[A-Za-z_$][\w$.]*|[^\s()]+');
 
-/// Splits a pointcut expression into highlighted, navigable parts. Never
-/// throws: broken expressions give the parts that can be recognised.
+/// Splits a pointcut expression into the parts that are highlighted and
+/// navigable.
+///
+/// It never throws: a broken expression gives the parts that can be
+/// recognised. It is not a check; the runtime's own parser does that.
 List<PointcutPart> scanPointcut(String source) {
   final parts = <PointcutPart>[];
   final tokens = _tokens.allMatches(source).toList();
@@ -292,7 +303,11 @@ void _execution(String body, int offset, List<PointcutPart> parts) {
   }
 }
 
-/// `*` wildcard matching, like the runtime's `wildcardMatch`.
+/// Whether [text] matches [pattern], where `*` stands for any run of
+/// characters (`order*` matches `orderService`): the rule of the runtime's
+/// `wildcardMatch`. Navigation uses it to find the beans of `bean(...)`,
+/// the classes of a type pattern and the methods of an `execution`
+/// pattern.
 bool wildcardMatches(String pattern, String text) =>
     RegExp('^${pattern.split('*').map(RegExp.escape).join('.*')}\$')
         .hasMatch(text);

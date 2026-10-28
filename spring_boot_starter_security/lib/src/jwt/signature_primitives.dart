@@ -31,11 +31,13 @@ import 'package:pointycastle/export.dart'
         SHA384Digest,
         SHA512Digest;
 
-/// A NIST prime curve `y² = x³ + ax + b (mod p)` whose coordinates take
-/// `fieldBytes` bytes.
+/// The numbers that define a NIST prime curve `y² = x³ + ax + b (mod p)`,
+/// and how many bytes one coordinate takes (`fieldBytes`); used to check
+/// that a public key lies on its curve and to split ECDSA signatures.
 typedef CurveParameters = ({BigInt p, BigInt a, BigInt b, int fieldBytes});
 
-/// The parameters of `P-256`, `P-384` or `P-521`; null for another curve.
+/// The parameters of `P-256`, `P-384` or `P-521`; `null` for any other
+/// curve name.
 CurveParameters? curveParameters(String curve) {
   final domain = _domain(curve);
   if (domain == null) {
@@ -49,14 +51,19 @@ CurveParameters? curveParameters(String curve) {
   );
 }
 
-/// HMAC-SHA-[bits] (256, 384 or 512) of [data] with [key].
+/// The HMAC-SHA-[bits] of [data] with [key], for [bits] 256, 384 or 512.
+///
+/// The caller compares it with the token's signature in constant time.
 Uint8List hmacSha(int bits, List<int> key, Uint8List data) => (HMac(
   _sha(bits),
   bits == 256 ? 64 : 128,
 )..init(KeyParameter(Uint8List.fromList(key)))).process(data);
 
 /// Whether [signature] is the RSASSA-PKCS1-v1_5 SHA-[bits] signature of
-/// [input] by the public key ([modulus], [exponent]).
+/// [input] by the public key ([modulus], [exponent]): the RS* algorithms.
+///
+/// May throw on malformed input; `verifySignature` treats that as "not
+/// verified".
 bool verifyRsaPkcs1(
   int bits,
   BigInt modulus,
@@ -72,9 +79,12 @@ bool verifyRsaPkcs1(
   return signer.verifySignature(input, RSASignature(signature));
 }
 
-/// Whether [signature] is the RSASSA-PSS SHA-[bits] signature (MGF1 with
-/// the same hash, a salt of the hash's length) of [input] by the public
-/// key ([modulus], [exponent]).
+/// Whether [signature] is the RSASSA-PSS SHA-[bits] signature of [input]
+/// by the public key ([modulus], [exponent]): the PS* algorithms, with
+/// MGF1 on the same hash and a salt as long as the hash.
+///
+/// May throw on malformed input; `verifySignature` treats that as "not
+/// verified".
 bool verifyRsaPss(
   int bits,
   BigInt modulus,
@@ -96,7 +106,10 @@ bool verifyRsaPss(
 }
 
 /// Whether ([r], [s]) is the ECDSA SHA-[bits] signature of [input] by the
-/// public key ([x], [y]) on [curve].
+/// public key ([x], [y]) on [curve]: the ES* algorithms.
+///
+/// The caller has checked that the point is on the curve. May throw on
+/// malformed input; `verifySignature` treats that as "not verified".
 bool verifyEcdsa(
   int bits,
   String curve,

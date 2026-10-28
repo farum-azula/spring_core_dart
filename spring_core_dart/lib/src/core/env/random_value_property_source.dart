@@ -4,21 +4,27 @@ import 'package:spring_core_dart/src/core/env/environment.dart';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/env/system_environment_property_source.dart';
 
-/// Random values for `random.*` properties, like Spring Boot's
-/// `RandomValuePropertySource`.
+/// A property source that makes up a new random value for every key that
+/// starts with `random.`.
+///
+/// It lets configuration ask for a value that differs per run, such as an
+/// instance id or a port for a test server: `id=${random.uuid}`.
+/// `SpringApplication` adds it, so config files can use `${random.*}`
+/// without any code; an application calls [addToEnvironment] only for an
+/// environment it builds itself. The keys are:
 ///
 /// - `random.int`, `random.long`: any int (a long is 64 bits on the VM and
 ///   at most 53 bits on the web);
-/// - `random.int(10)`, `random.int[5,10]`, `random.long(100)`: in a range
-///   (the lower bound is inclusive, the upper one exclusive);
+/// - `random.int(10)`, `random.int[5,10]`, `random.long(100)`: in a range,
+///   the lower bound included and the upper one excluded;
 /// - `random.uuid`: a random version 4 UUID;
 /// - any other `random.*` (`random.value`): 32 random hex digits.
 ///
-/// Every lookup gives a new value. Spring Boot's `SpringApplication` (and
-/// `spring_boot_dart`) adds it to the environment, so config files can use
-/// `${random.uuid}`.
+/// Every read gives a new value, so read a key once and keep the result
+/// when it must stay the same. A malformed range throws when it is read.
 ///
 /// ```dart
+/// // An environment built by hand, for a tool that names its run.
 /// RandomValuePropertySource.addToEnvironment(environment);
 /// environment.getProperty('random.int[1,7]'); // e.g. '4'
 /// environment.resolvePlaceholders(r'app-${random.uuid}');
@@ -30,15 +36,16 @@ import 'package:spring_core_dart/src/core/env/system_environment_property_source
 /// environment.getProperty("random.int[1,7]");
 /// ```
 final class RandomValuePropertySource extends AbstractPropertySource<Object> {
-  /// Creates the source called [name], using [random] (a secure random
-  /// generator when `null`).
+  /// Creates the source called [name] (`random` unless given). [random]
+  /// draws the values; without it a secure generator is created on first
+  /// use. Pass a seeded `Random` in tests for repeatable values.
   RandomValuePropertySource({
     String name = randomPropertySourceName,
     math.Random? random,
   }) : _given = random,
        super(name, const Object());
 
-  /// The name Spring Boot gives this source.
+  /// The name of the source, as in Spring Boot: `random`.
   static const randomPropertySourceName = 'random';
 
   static const _prefix = 'random.';
@@ -51,8 +58,9 @@ final class RandomValuePropertySource extends AbstractPropertySource<Object> {
   static const _two32 = 4294967296;
   static const _two31 = 2147483648;
 
-  /// Adds a [RandomValuePropertySource] right after the system environment
-  /// (or last), unless [environment] has one already.
+  /// Adds a random value source to [environment], right after the
+  /// environment variables (or last when there are none), unless it has a
+  /// source called `random` already.
   static void addToEnvironment(ConfigurableEnvironment environment) {
     final sources = environment.propertySources;
     if (sources.containsSource(randomPropertySourceName)) {

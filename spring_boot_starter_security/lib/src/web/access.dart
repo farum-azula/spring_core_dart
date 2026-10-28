@@ -8,33 +8,46 @@ import 'package:spring_security_core/spring_security_core.dart';
 
 const _log = SpringLog('spring.security.web.access');
 
-/// What an [AuthorizationManager] of requests decides about: the request
-/// and the path variables of the rule's pattern, like Spring's
-/// `RequestAuthorizationContext`.
+/// What a web access rule decides about: the request, and the path
+/// variables of the rule's pattern.
+///
+/// A custom `AuthorizationManager` passed to `access(...)` receives it.
+/// With the rule `/users/{name}/**`, a request to `/users/ada/orders` has
+/// `variables['name'] == 'ada'`.
+///
+/// Spring (Java): `RequestAuthorizationContext`.
 final class RequestAuthorizationContext {
-  /// [request] with [variables].
+  /// The context of [request], with the path [variables] of the matched
+  /// rule.
   const RequestAuthorizationContext(this.request, [this.variables = const {}]);
 
-  /// The request.
+  /// The request being checked.
   final ServerHttpRequest request;
 
-  /// `{id}` of `/users/{id}`, decoded.
+  /// The path variables of the matched pattern by name, percent-decoded:
+  /// `{id}` of `/users/{id}`.
   final Map<String, String> variables;
 }
 
-/// The rules of `authorizeHttpRequests`, like Spring's
-/// `RequestMatcherDelegatingAuthorizationManager`: the first rule whose
-/// matcher matches decides; when no rule matches, access is denied
-/// (Spring 6's default, docs/security.md rule 1).
+/// The access rules of `authorizeHttpRequests`, as one
+/// [AuthorizationManager]: the first rule whose matcher matches decides.
+///
+/// Order matters: put specific rules before general ones. A request no
+/// rule matches is denied, so a forgotten path is closed rather than open
+/// (the default since Spring Security 6). `HttpSecurity` builds it;
+/// applications do not.
+///
+/// Spring (Java): `RequestMatcherDelegatingAuthorizationManager`.
 final class RequestMatcherDelegatingAuthorizationManager
     implements AuthorizationManager<ServerHttpRequest> {
-  /// The [rules] in order.
+  /// A manager over [rules], tried in order; each pairs a matcher with
+  /// the manager that decides for it.
   RequestMatcherDelegatingAuthorizationManager(
     List<(RequestMatcher, AuthorizationManager<RequestAuthorizationContext>)>
     rules,
   ) : rules = List.unmodifiable(rules);
 
-  /// The rules.
+  /// The rules in order; cannot be modified.
   final List<
     (RequestMatcher, AuthorizationManager<RequestAuthorizationContext>)
   >
@@ -60,15 +73,25 @@ final class RequestMatcherDelegatingAuthorizationManager
   }
 }
 
-/// Checks every request against the rules, like Spring's
-/// `AuthorizationFilter`: a denial throws `AccessDeniedException`, which
-/// the [ExceptionTranslationFilter] turns into a login challenge or a 403.
-/// An abstention denies too (fail closed).
+/// The last filter of a chain: it checks the request against the access
+/// rules and lets it on to the controller only when they grant it.
+///
+/// A denial, and an abstention too (fail closed), throws an
+/// `AuthorizationDeniedException`, which the [ExceptionTranslationFilter]
+/// turns into a login request or a 403. With no authentication at all
+/// (anonymous users switched off), reading the user throws an
+/// `AuthenticationCredentialsNotFoundException`, which asks to log in.
+/// `authorizeHttpRequests` adds it; a chain without
+/// `authorizeHttpRequests` has none, and lets every request through (a
+/// warning is logged).
+///
+/// Spring (Java): `AuthorizationFilter`.
 final class AuthorizationFilter implements WebFilter {
-  /// Checks with [authorizationManager].
+  /// A filter that asks [authorizationManager] about each request.
   const AuthorizationFilter(this.authorizationManager);
 
-  /// Decides.
+  /// Decides about each request, usually a
+  /// [RequestMatcherDelegatingAuthorizationManager].
   final AuthorizationManager<ServerHttpRequest> authorizationManager;
 
   @override
@@ -96,18 +119,29 @@ final class AuthorizationFilter implements WebFilter {
   }
 }
 
-/// Turns security exceptions of the rest of the chain (the rules, the
-/// controllers' method security) into answers, like Spring's
-/// `ExceptionTranslationFilter`:
+/// The filter that turns security errors into HTTP answers: "log in
+/// first" or "forbidden".
 ///
-/// - an `AuthenticationException`, or an `AccessDeniedException` for an
-///   anonymous user: the request is saved (to come back after the login),
-///   the context cleared and the [authenticationEntryPoint] asks to log
-///   in (401 with a challenge, or a redirect to the login page);
-/// - an `AccessDeniedException` for a logged-in user: the
-///   [accessDeniedHandler] (403).
+/// It catches what the rest of the chain throws: the access rules, and
+/// method security in controllers and services.
+///
+/// - An `AuthenticationException`, or an `AccessDeniedException` for an
+///   anonymous user (or no user): the request is saved in the
+///   [requestCache] (to come back to after the login), the context is
+///   emptied, and the [authenticationEntryPoint] asks to log in, with a
+///   401 and a challenge or a redirect to the login page. When the
+///   response has already been sent, it only logs a warning.
+/// - An `AccessDeniedException` for a logged-in user: the
+///   [accessDeniedHandler] answers, 403 by default.
+///
+/// Other errors pass through. `HttpSecurity` adds it to every chain and
+/// picks the entry point from the login methods; change them with
+/// `exceptionHandling`.
+///
+/// Spring (Java): `ExceptionTranslationFilter`.
 final class ExceptionTranslationFilter implements WebFilter {
-  /// A filter starting authentication with [authenticationEntryPoint].
+  /// A filter that asks to log in with [authenticationEntryPoint]; by
+  /// default denials get a plain 403 and no request is saved.
   const ExceptionTranslationFilter(
     this.authenticationEntryPoint, {
     this.accessDeniedHandler = const AccessDeniedHandlerImpl(),
@@ -115,16 +149,17 @@ final class ExceptionTranslationFilter implements WebFilter {
     this.trustResolver = const AuthenticationTrustResolverImpl(),
   });
 
-  /// Asks to log in.
+  /// Answers a request that must log in first.
   final AuthenticationEntryPoint authenticationEntryPoint;
 
-  /// Answers denials of logged-in users.
+  /// Answers a logged-in user who may not do what was asked.
   final AccessDeniedHandler accessDeniedHandler;
 
-  /// Saves the request before asking to log in.
+  /// Saves the request before asking to log in, so the login can go back
+  /// to it.
   final RequestCache requestCache;
 
-  /// Tells anonymous users apart.
+  /// Tells anonymous users from real logins.
   final AuthenticationTrustResolver trustResolver;
 
   @override
@@ -173,24 +208,32 @@ final class ExceptionTranslationFilter implements WebFilter {
   }
 }
 
-/// Gives requests without a user the anonymous one, like Spring's
-/// `AnonymousAuthenticationFilter`: rules can then tell "not logged in"
-/// (`anonymous()`, `isAnonymous()`) from "no security context".
+/// The filter that gives a request with no login an anonymous user
+/// (`anonymousUser`, with `ROLE_ANONYMOUS`).
+///
+/// Rules can then tell "not logged in" (`anonymous()`, `isAnonymous()`)
+/// from "no security context", and `permitAll` methods with
+/// `@PreAuthorize` work for visitors. A request that already has a user
+/// keeps it. Switch it off with `anonymous((a) => a.disable())`.
+///
+/// Spring (Java): `AnonymousAuthenticationFilter`.
 final class AnonymousAuthenticationFilter implements WebFilter {
-  /// Anonymous users named [principal] with [authorities].
+  /// A filter giving anonymous users the principal [principal] and the
+  /// authorities named in [authorities]; [key] marks the tokens it
+  /// creates.
   AnonymousAuthenticationFilter({
     this.key = 'anonymousAuthenticationKey',
     this.principal = 'anonymousUser',
     List<String> authorities = const ['ROLE_ANONYMOUS'],
   }) : authorities = AuthorityUtils.createAuthorityList(authorities);
 
-  /// Identifies tokens made here.
+  /// The key the anonymous tokens are created with.
   final String key;
 
-  /// The principal.
+  /// The principal of anonymous users, `'anonymousUser'` by default.
   final Object principal;
 
-  /// The authorities.
+  /// The authorities of anonymous users, `ROLE_ANONYMOUS` by default.
   final List<GrantedAuthority> authorities;
 
   @override
@@ -205,16 +248,21 @@ final class AnonymousAuthenticationFilter implements WebFilter {
   }
 }
 
-/// Makes `request.principal` the current user (`null` for anonymous ones),
-/// like Spring's `SecurityContextHolderAwareRequestFilter`, so a controller
-/// taking `Principal` gets the `Authentication`.
+/// The filter that makes `request.principal` return the current user, so
+/// a controller parameter of type `Principal` receives the
+/// `Authentication`.
+///
+/// It is `null` for anonymous users and when there is no user. A value
+/// assigned to `request.principal` later wins.
+///
+/// Spring (Java): `SecurityContextHolderAwareRequestFilter`.
 final class SecurityContextHolderAwareRequestFilter implements WebFilter {
-  /// The filter.
+  /// A filter using [trustResolver] to recognise anonymous users.
   const SecurityContextHolderAwareRequestFilter({
     this.trustResolver = const AuthenticationTrustResolverImpl(),
   });
 
-  /// Tells anonymous users apart.
+  /// Tells anonymous users, who get no principal, from real logins.
   final AuthenticationTrustResolver trustResolver;
 
   @override

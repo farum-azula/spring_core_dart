@@ -1,37 +1,46 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-/// The content of an uploaded file: in memory, or a temporary file.
+/// Where the content of one uploaded file waits while the request is
+/// handled: in memory for a small file, else in a temporary file.
+///
+/// Internal to the `MultipartResolver`; a controller sees the file as a
+/// `MultipartFile`. This is the `dart:io` version.
 abstract interface class StoredFile {
-  /// The size in bytes.
+  /// The size of the content in bytes.
   int get size;
 
-  /// Whether it is a temporary file to delete after the request.
+  /// Whether the content is in a temporary file that must be deleted
+  /// when the request ends.
   bool get isTemporary;
 
-  /// The content.
+  /// The whole content, read into memory.
   Future<Uint8List> readBytes();
 
-  /// The content, streamed.
+  /// The content as a stream, without loading it whole.
   Stream<List<int>> openRead();
 
-  /// Copies (or moves) the content to [path].
+  /// Puts the content at [path]. A temporary file is moved there when
+  /// possible (then it is no longer deleted, and no longer readable at
+  /// its old place), else copied; content in memory is written.
   Future<void> copyTo(String path);
 
-  /// Deletes the temporary file.
+  /// Deletes the temporary file, unless it was moved away; nothing for
+  /// content in memory.
   Future<void> delete();
 }
 
-/// Writes one uploaded file: in memory up to [threshold] bytes, then to a
-/// temporary file in [location].
+/// Stores one uploaded file as its bytes arrive: in memory up to
+/// [threshold] bytes, then in a temporary file in [location].
 final class FileWriter {
-  /// A writer keeping up to [threshold] bytes in memory.
+  /// A writer that keeps up to [threshold] bytes in memory.
   FileWriter({required this.threshold, this.location});
 
-  /// Bytes kept in memory before switching to a file.
+  /// The most bytes kept in memory; past it, everything goes to a file.
   final int threshold;
 
-  /// The directory of the temporary files (`null`: the system's).
+  /// The directory of the temporary files, created when missing; `null`
+  /// for the system's temporary directory.
   final String? location;
 
   final _memory = BytesBuilder(copy: false);
@@ -39,7 +48,8 @@ final class FileWriter {
   IOSink? _sink;
   var _size = 0;
 
-  /// Adds [chunk].
+  /// Stores the next [chunk] of the file, switching to a temporary file
+  /// when the content outgrows [threshold].
   Future<void> add(List<int> chunk) async {
     _size += chunk.length;
     if (_sink == null && _memory.length + chunk.length <= threshold) {
@@ -68,7 +78,8 @@ final class FileWriter {
     _sink!.add(chunk);
   }
 
-  /// Deletes what was written.
+  /// Gives up the file, deleting the temporary file if one was started;
+  /// used when the file passes a size limit.
   Future<void> abort() async {
     await _sink?.close();
     if (_file case final file? when file.existsSync()) {
@@ -76,7 +87,7 @@ final class FileWriter {
     }
   }
 
-  /// The stored content.
+  /// Finishes the file and returns its stored content.
   Future<StoredFile> close() async {
     final sink = _sink;
     if (sink == null) {

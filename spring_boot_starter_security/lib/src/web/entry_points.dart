@@ -5,9 +5,18 @@ import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 
-/// Writes a security error as `application/problem+json` (status, title,
-/// a fixed detail and the path, never the exception's message), with
-/// [headers] (`WWW-Authenticate`).
+/// Writes a security error as an `application/problem+json` body with
+/// [status], the standard title, the fixed [detail] text and the request's
+/// path, adding [headers] (such as `WWW-Authenticate`), then closes the
+/// response.
+///
+/// It never includes an exception's message, which could tell a client
+/// too much. Does nothing when the response has already been sent. Use it
+/// in your own entry points and handlers to answer like the built-in ones.
+///
+/// ```dart
+/// await writeSecurityProblem(request, response, 403, 'Access Denied');
+/// ```
 Future<void> writeSecurityProblem(
   ServerHttpRequest request,
   ServerHttpResponse response,
@@ -27,12 +36,27 @@ Future<void> writeSecurityProblem(
   await response.close();
 }
 
-/// Starts authentication when a request needs it, like Spring's
-/// `AuthenticationEntryPoint`: a 401 with a challenge, a redirect to the
-/// login page, ...
+/// What a request that must log in first is answered: a 401 with a
+/// challenge, a redirect to the login page, and so on.
+///
+/// Each login method brings its own (basic: a 401 with
+/// `WWW-Authenticate: Basic`; form login: a redirect to `/login`; bearer
+/// tokens: a 401 with `WWW-Authenticate: Bearer`), and the chain picks
+/// one by the kind of client. Implement it to answer differently, for
+/// example with a JSON body your front end understands, and set it with
+/// `exceptionHandling` or on the login method.
+///
+/// ```dart
+/// // A single-page app wants a plain 401 it can react to.
+/// http.exceptionHandling(
+///   (e) => e.authenticationEntryPoint(const HttpStatusEntryPoint()),
+/// );
+/// ```
+///
+/// Spring (Java): `AuthenticationEntryPoint`.
 abstract interface class AuthenticationEntryPoint {
-  /// Answers [request], which needs to authenticate ([authException] says
-  /// why).
+  /// Answers [request], which must log in first; [authException] says
+  /// why, for logs, and should not be sent to the client.
   FutureOr<void> commence(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -40,10 +64,16 @@ abstract interface class AuthenticationEntryPoint {
   );
 }
 
-/// Answers an authenticated request that may not do something, like
-/// Spring's `AccessDeniedHandler`.
+/// What a logged-in user is answered when the access rules or method
+/// security deny a request; a 403 by default.
+///
+/// Anonymous users are not answered here: they are asked to log in
+/// through the [AuthenticationEntryPoint]. Implement it to show your own
+/// "forbidden" page or body, and set it with `exceptionHandling`.
+///
+/// Spring (Java): `AccessDeniedHandler`.
 abstract interface class AccessDeniedHandler {
-  /// Answers [request], denied by [accessDeniedException].
+  /// Answers [request], which [accessDeniedException] denied.
   FutureOr<void> handle(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -51,10 +81,13 @@ abstract interface class AccessDeniedHandler {
   );
 }
 
-/// `403 Forbidden`, like Spring's `AccessDeniedHandlerImpl` (as a
-/// `ProblemDetail`, "Access Denied").
+/// The default [AccessDeniedHandler]: `403 Forbidden` with a
+/// `ProblemDetail` body whose detail is "Access Denied".
+///
+/// Spring (Java): `AccessDeniedHandlerImpl`, which sends the 403 to the
+/// error page instead.
 final class AccessDeniedHandlerImpl implements AccessDeniedHandler {
-  /// The handler.
+  /// The stateless handler.
   const AccessDeniedHandlerImpl();
 
   @override
@@ -70,14 +103,23 @@ final class AccessDeniedHandlerImpl implements AccessDeniedHandler {
   );
 }
 
-/// `401` with `WWW-Authenticate: Basic realm="...", charset="UTF-8"`, like
-/// Spring Security 7's `BasicAuthenticationEntryPoint` (RFC 7617; realm
-/// `Realm` by default, as Spring Security's HTTP Basic configuration).
+/// The [AuthenticationEntryPoint] of HTTP Basic: a `401` with
+/// `WWW-Authenticate: Basic realm="...", charset="UTF-8"` (RFC 7617).
+///
+/// The header makes a browser show its username and password dialog, and
+/// tells a program to send an `Authorization: Basic` header. `httpBasic()`
+/// uses it, except for scripts (`X-Requested-With: XMLHttpRequest`), which
+/// get a plain 401 so no dialog appears.
+///
+/// Spring (Java): Spring Security 7's `BasicAuthenticationEntryPoint`,
+/// with the realm `Realm` by default as in its HTTP Basic configuration.
 final class BasicAuthenticationEntryPoint implements AuthenticationEntryPoint {
-  /// A challenge for [realmName].
+  /// An entry point naming [realmName] in the challenge (`Realm` by
+  /// default).
   const BasicAuthenticationEntryPoint([this.realmName = 'Realm']);
 
-  /// The realm.
+  /// The realm named in the challenge; browsers may show it in the
+  /// dialog.
   final String realmName;
 
   @override
@@ -97,12 +139,18 @@ final class BasicAuthenticationEntryPoint implements AuthenticationEntryPoint {
   );
 }
 
-/// A plain status (`401` by default), like Spring's `HttpStatusEntryPoint`.
+/// An [AuthenticationEntryPoint] that answers a fixed status, `401` by
+/// default, with a `ProblemDetail` body and no challenge.
+///
+/// For APIs and single-page apps that handle the login themselves and
+/// want no browser dialog and no redirect.
+///
+/// Spring (Java): `HttpStatusEntryPoint`.
 final class HttpStatusEntryPoint implements AuthenticationEntryPoint {
-  /// Answers with [status].
+  /// An entry point answering [status] (`401` when omitted).
   const HttpStatusEntryPoint([this.status = HttpStatus.unauthorized]);
 
-  /// The status.
+  /// The status of the answer.
   final int status;
 
   @override
@@ -118,11 +166,14 @@ final class HttpStatusEntryPoint implements AuthenticationEntryPoint {
   );
 }
 
-/// `403` for every unauthenticated request, like Spring's
-/// `Http403ForbiddenEntryPoint` (the entry point when no login method is
-/// configured).
+/// An [AuthenticationEntryPoint] that answers `403` with "Access Denied":
+/// there is no way to log in, so there is nothing to ask for.
+///
+/// The chain uses it when no login method is configured.
+///
+/// Spring (Java): `Http403ForbiddenEntryPoint`.
 final class Http403ForbiddenEntryPoint implements AuthenticationEntryPoint {
-  /// The entry point.
+  /// The stateless entry point.
   const Http403ForbiddenEntryPoint();
 
   @override
@@ -138,20 +189,27 @@ final class Http403ForbiddenEntryPoint implements AuthenticationEntryPoint {
   );
 }
 
-/// A redirect to the login page, like Spring's
-/// `LoginUrlAuthenticationEntryPoint`.
+/// The [AuthenticationEntryPoint] of form login: a `302` redirect to the
+/// login page.
+///
+/// `formLogin()` uses it for browsers asking for pages; other clients get
+/// the entry point of another login method, if any.
+///
+/// Spring (Java): `LoginUrlAuthenticationEntryPoint`.
 final class LoginUrlAuthenticationEntryPoint
     implements AuthenticationEntryPoint {
-  /// Redirects to [loginFormUrl] (under the context path).
+  /// An entry point redirecting to [loginFormUrl], prefixed with
+  /// [contextPath].
   const LoginUrlAuthenticationEntryPoint(
     this.loginFormUrl, {
     this.contextPath = '',
   });
 
-  /// The login page (`/login`).
+  /// The path of the login page, such as `/login`.
   final String loginFormUrl;
 
-  /// The application's context path.
+  /// The application's context path (`server.servlet.context-path`),
+  /// put in front of [loginFormUrl]; `''` for none.
   final String contextPath;
 
   @override
@@ -162,7 +220,9 @@ final class LoginUrlAuthenticationEntryPoint
   ) => sendRedirect(response, '$contextPath$loginFormUrl');
 }
 
-/// A `302` to [location].
+/// Answers `302 Found` with the `Location` header set to [location] and
+/// closes the response; does nothing when the response has already been
+/// sent.
 Future<void> sendRedirect(ServerHttpResponse response, String location) async {
   if (response.isCommitted) {
     return;
@@ -173,21 +233,28 @@ Future<void> sendRedirect(ServerHttpResponse response, String location) async {
   await response.close();
 }
 
-/// Picks the entry point by request, like Spring's
-/// `DelegatingAuthenticationEntryPoint`: the first matching [entryPoints]
-/// entry, else [defaultEntryPoint].
+/// An [AuthenticationEntryPoint] that picks another one by request: the
+/// first of [entryPoints] whose matcher matches, else
+/// [defaultEntryPoint].
+///
+/// The chain uses one when it has several login methods: browsers asking
+/// for pages are redirected to the form, programs get the basic or bearer
+/// challenge.
+///
+/// Spring (Java): `DelegatingAuthenticationEntryPoint`.
 final class DelegatingAuthenticationEntryPoint
     implements AuthenticationEntryPoint {
-  /// The [entryPoints] in order, [defaultEntryPoint] for the rest.
+  /// An entry point trying [entryPoints] in order, with
+  /// [defaultEntryPoint] for requests none of them matches.
   DelegatingAuthenticationEntryPoint(
     List<(RequestMatcher, AuthenticationEntryPoint)> entryPoints, {
     required this.defaultEntryPoint,
   }) : entryPoints = List.unmodifiable(entryPoints);
 
-  /// By matcher, in order.
+  /// The matchers and their entry points, in order; cannot be modified.
   final List<(RequestMatcher, AuthenticationEntryPoint)> entryPoints;
 
-  /// For requests no matcher matches.
+  /// Used for requests no matcher matches.
   final AuthenticationEntryPoint defaultEntryPoint;
 
   @override
@@ -205,19 +272,25 @@ final class DelegatingAuthenticationEntryPoint
   }
 }
 
-/// Picks the access denied handler by request, like Spring's
-/// `RequestMatcherDelegatingAccessDeniedHandler`.
+/// An [AccessDeniedHandler] that picks another one by request: the first
+/// of [handlers] whose matcher matches, else [defaultHandler].
+///
+/// The chain uses one for bearer-token requests, which get a
+/// `WWW-Authenticate: Bearer error="insufficient_scope"` answer.
+///
+/// Spring (Java): `RequestMatcherDelegatingAccessDeniedHandler`.
 final class DelegatingAccessDeniedHandler implements AccessDeniedHandler {
-  /// The [handlers] in order, [defaultHandler] for the rest.
+  /// A handler trying [handlers] in order, with [defaultHandler] (a plain
+  /// 403 by default) for the rest.
   DelegatingAccessDeniedHandler(
     List<(RequestMatcher, AccessDeniedHandler)> handlers, {
     this.defaultHandler = const AccessDeniedHandlerImpl(),
   }) : handlers = List.unmodifiable(handlers);
 
-  /// By matcher, in order.
+  /// The matchers and their handlers, in order; cannot be modified.
   final List<(RequestMatcher, AccessDeniedHandler)> handlers;
 
-  /// For the rest.
+  /// Used for requests no matcher matches.
   final AccessDeniedHandler defaultHandler;
 
   @override

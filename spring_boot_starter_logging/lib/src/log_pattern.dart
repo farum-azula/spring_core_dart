@@ -3,9 +3,15 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 
-/// Turns a [SpringLogRecord] into text with a Logback pattern, like
-/// Logback's `PatternLayout` with Spring Boot's converters
-/// (`logging.pattern.console`, `logging.pattern.file`).
+/// A log line format: a pattern such as `%d %5p [%logger] %m`, read once,
+/// that turns each [SpringLogRecord] into text.
+///
+/// The syntax is Logback's, with Spring Boot's additions, so the
+/// `logging.pattern.console` and `logging.pattern.file` values of a Spring
+/// Boot application work here as they are. Most applications only write
+/// such a property; the starter builds the pattern. Create one in code for
+/// an output of your own: a `ConsoleAppender`, a `FileAppender` or
+/// `LogBuffer.export`.
 ///
 /// | Conversion | Output |
 /// |---|---|
@@ -29,12 +35,13 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 /// | `%r`, `%relative` | milliseconds since the logging started |
 /// | `%seq` | record sequence number |
 /// | `%n` | line break |
-/// | `%%`, `\%` | `%` |
+/// | `%%`, `\%`, `\(`, `\)` | `%`, `(`, `)` |
 ///
-/// Format modifiers as in Logback: `%5p` pads left, `%-5p` pads right,
-/// `%.10logger` keeps the last 10 characters, `%.-10logger` the first 10;
-/// `%-40.40logger{39}` combines them. `${NAME}` and `${NAME:-default}`
-/// are replaced first, from `variables`, `PID` and `lookup`.
+/// Format modifiers work as in Logback: `%5p` pads on the left, `%-5p` on
+/// the right, `%.10logger` keeps the last 10 characters, `%.-10logger` the
+/// first 10, and `%-40.40logger{39}` combines them. `${NAME}` and
+/// `${NAME:-default}` are replaced before the pattern is read: from the
+/// `variables` given to the constructor, then `PID`, then `lookup`.
 ///
 /// With [ansi] on, a pattern that colours nothing itself (no `%clr`, no
 /// Logback colour) is coloured as Spring Boot's: the time faint, the level
@@ -46,18 +53,30 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 /// [formatLine] drops it.
 ///
 /// ```dart
-/// final pattern = LogPattern('%d{HH:mm:ss} %-5p [%logger{20}] %m');
-/// pattern.format(record); // 12:00:01 INFO  [n.checkout.Payments] order placed
+/// // A short console line for development, sent to Flutter's debugPrint.
+/// LoggingSystem.instance.console
+///   ..pattern = LogPattern('%d{HH:mm:ss} %-5p [%logger{20}] %m', ansi: true)
+///   ..out = debugPrint;
+/// // 12:00:01 INFO  [n.checkout.Payments] order placed
 /// ```
 ///
-/// Throws a [FormatException] for anything it cannot parse: an unknown
-/// conversion word, an unclosed `(`, an unknown colour, date letter or
-/// variable.
+/// The constructor throws a [FormatException] for anything it cannot
+/// read: an unknown conversion word, an unclosed `(`, an unknown colour,
+/// date letter or variable. A wrong `logging.pattern.*` therefore fails
+/// the start instead of logging badly.
+///
+/// Spring (Java): Logback's `PatternLayout`, configured by the same
+/// `logging.pattern.console` property. Caller data (`%C`, `%M`, `%L`,
+/// `%F`, `%caller`), `%marker` and `%contextName` do not exist here, and
+/// `%d` knows no time zone but UTC.
 final class LogPattern {
-  /// Parses [pattern]. `${NAME}` variables come from [variables], then
-  /// `PID`, then [lookup] (for example `Environment.getProperty`). [ansi]
-  /// turns on the colours of `%clr`, and those of a pattern without colours
-  /// (see above).
+  /// Reads [pattern], or throws a [FormatException] when it is not valid.
+  ///
+  /// A `${NAME}` variable takes its value from [variables], then `PID`
+  /// (the process id), then [lookup], for example
+  /// `Environment.getProperty`. [ansi] turns on the colours of `%clr`, and
+  /// the automatic colours of a pattern that sets none; it is off by
+  /// default, so a pattern for a file or an export writes plain text.
   LogPattern(
     String pattern, {
     Map<String, String> variables = const {},
@@ -69,8 +88,9 @@ final class LogPattern {
     : _parts = compiled.$1,
       _handlesErrors = compiled.$2;
 
-  /// Spring Boot's console pattern (`CONSOLE_LOG_PATTERN`), with the
-  /// record's fields (`%X`) after the message.
+  /// Spring Boot's console pattern (`CONSOLE_LOG_PATTERN`), used when
+  /// `logging.pattern.console` is not set, with the record's fields (`%X`)
+  /// after the message.
   ///
   /// ```text
   /// 2026-03-07T09:05:02.042+01:00  INFO 4711 --- [shop] [           main] n.checkout.Payments                      : paid {order=42}
@@ -82,8 +102,10 @@ final class LogPattern {
       r'${LOG_CORRELATION_PATTERN:-}){faint}%clr(%-40.40logger{39}){cyan} '
       r'%clr(:){faint} %m%X%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}';
 
-  /// Spring Boot's file pattern (`FILE_LOG_PATTERN`), with the record's
-  /// fields (`%X`) after the message.
+  /// Spring Boot's file pattern (`FILE_LOG_PATTERN`), used when
+  /// `logging.pattern.file` is not set: the console pattern without
+  /// colours or padding of the thread name, with the record's fields
+  /// (`%X`) after the message.
   static const defaultFilePattern =
       r"%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd'T'HH:mm:ss.SSSXXX}} "
       r'${LOG_LEVEL_PATTERN:-%5p} ${PID:-} --- '
@@ -91,11 +113,12 @@ final class LogPattern {
       r'${LOG_CORRELATION_PATTERN:-}%-40.40logger{39} : '
       r'%m%X%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}';
 
-  /// The source pattern.
+  /// The pattern text as it was given, before variables were replaced.
   final String pattern;
 
-  /// Whether `%clr` (or, in a pattern without colours, the time, the level
-  /// and the logger) writes ANSI colour codes.
+  /// Whether `%clr` writes ANSI colour codes, and, in a pattern without
+  /// colours, the time, the level and the logger are coloured. Logback's
+  /// colour words (`%red(...)`, `%highlight(...)`) write them either way.
   final bool ansi;
 
   final List<_Render> _parts;
@@ -104,8 +127,10 @@ final class LogPattern {
   // otherwise errors are appended, like Logback's EnsureExceptionHandling.
   final bool _handlesErrors;
 
-  /// The formatted record, as Logback writes it (it may end with a line
-  /// break).
+  /// [record] as text, as Logback writes it: it may end with a line break,
+  /// and an error without an error conversion in the pattern follows on
+  /// the next lines. Appenders that add their own line break use
+  /// [formatLine].
   String format(SpringLogRecord record) {
     final buffer = StringBuffer();
     for (final part in _parts) {
@@ -120,23 +145,24 @@ final class LogPattern {
     return buffer.toString();
   }
 
-  /// [format] without one final line break: what an appender writing one
-  /// line per record (`print`, a file) writes before its own line break.
+  /// [record] as [format] gives it, without one final line break: what an
+  /// output that adds its own line break (`print`, a file) writes.
   String formatLine(SpringLogRecord record) {
     final text = format(record);
     return text.endsWith('\n') ? text.substring(0, text.length - 1) : text;
   }
 
-  /// The display name of [level] (`WARN`, not `WARNING`).
+  /// The name `%p` prints for [level], as Logback names levels: `WARN`
+  /// for [SpringLogLevel.warning], the upper-case name for the others.
   static String levelName(SpringLogLevel level) => switch (level) {
     SpringLogLevel.warning => 'WARN',
     _ => level.name.toUpperCase(),
   };
 
-  /// Shortens a logger name to about [targetLength] characters like
-  /// Logback's `%logger{n}`: leading segments become their first letter,
-  /// from the left, until the name fits; the last segment is kept.
-  /// `0` keeps only the last segment.
+  /// Shortens the logger [name] to about [targetLength] characters, as
+  /// `%logger{n}` does: segments become their first letter, from the
+  /// left, until the name fits, and the last segment is always kept
+  /// whole. `0` keeps only the last segment.
   ///
   /// ```dart
   /// LogPattern.abbreviate('mainPackage.sub.sample.Bar', 15); // m.s.sample.Bar

@@ -6,42 +6,88 @@ import 'package:spring_core_dart/src/core/env/profiles.dart';
 import 'package:spring_core_dart/src/core/env/property_resolver.dart';
 import 'package:spring_core_dart/src/core/env/system_environment_property_source.dart';
 
-/// Properties plus profiles, like Spring's `Environment`.
+/// The application's configuration as code sees it: every property from
+/// every source (config files, command line, environment variables), and
+/// the active profiles.
 ///
-/// Beans usually get it injected (or implement `EnvironmentAware`).
+/// Most beans never need it: `@Value` and `@ConfigurationProperties` read
+/// properties for them, and `@Profile` switches beans on profiles. Take
+/// the environment when the key is only known at run time, when a
+/// decision depends on the active profiles in code, or to resolve
+/// `${...}` placeholders in text. It is a bean, so a constructor
+/// parameter of type `Environment` receives it (`EnvironmentAware` works
+/// too). It is read-only; [ConfigurableEnvironment] is the side that
+/// changes it.
 ///
 /// ```dart
-/// if (environment.matchesProfiles(['dev & !test'])) {
-///   print(environment.getProperty('app.banner'));
+/// @Service()
+/// class Banner {
+///   Banner(this.environment);
+///   final Environment environment;
+///
+///   // The key depends on the language, so `@Value` cannot name it.
+///   String text(String language) =>
+///       environment.getProperty('shop.banner.$language') ??
+///       environment.resolvePlaceholders(r'Welcome to ${shop.title}');
+///
+///   bool get showDebugInfo => environment.matchesProfiles(['dev & !test']);
 /// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// if (environment.matchesProfiles("dev & !test")) {
-///   System.out.println(environment.getProperty("app.banner"));
+/// @Service
+/// class Banner {
+///   private final Environment environment;
+///   Banner(Environment environment) { this.environment = environment; }
+///
+///   String text(String language) {
+///     String text = environment.getProperty("shop.banner." + language);
+///     return text != null ? text
+///         : environment.resolvePlaceholders("Welcome to ${shop.title}");
+///   }
+///
+///   boolean showDebugInfo() {
+///     return environment.matchesProfiles("dev & !test");
+///   }
 /// }
 /// ```
 abstract interface class Environment implements PropertyResolver {
-  /// Explicitly activated profiles (also from `spring.profiles.active`).
+  /// The profiles switched on for this run, such as `['prod', 'eu']`;
+  /// empty when none is.
+  ///
+  /// They come from `setActiveProfiles`, or else from the property
+  /// `spring.profiles.active` (read on first use, so a source added later
+  /// still counts). The default profiles are not included.
   ///
   /// ```dart
   /// environment.activeProfiles; // ['dev']
   /// ```
   List<String> get activeProfiles;
 
-  /// Profiles active when no profile is active explicitly; `['default']`
-  /// unless changed (also from `spring.profiles.default`).
+  /// The profiles that count as active while [activeProfiles] is empty:
+  /// `['default']` unless changed with `setDefaultProfiles` or the property
+  /// `spring.profiles.default`. This is why `application-default.yml` and
+  /// `@Profile('default')` apply to a run without profiles.
   List<String> get defaultProfiles;
 
-  /// Whether [profiles] matches the active (or default) profiles.
+  /// Whether the profile condition [profiles] holds for the active
+  /// profiles, or for the default profiles while none is active.
+  ///
+  /// Use it with a [Profiles] built once; [matchesProfiles] takes the
+  /// expressions directly.
   ///
   /// ```dart
   /// environment.acceptsProfiles(Profiles.of(['prod', 'staging']));
   /// ```
   bool acceptsProfiles(Profiles profiles);
 
-  /// Shortcut for `acceptsProfiles(Profiles.of(profileExpressions))`.
+  /// Whether any of [profileExpressions] holds for the active profiles
+  /// (or the default ones while none is active).
+  ///
+  /// An expression is a profile name or a combination with `!`, `&`, `|`
+  /// and parentheses. Same as
+  /// `acceptsProfiles(Profiles.of(profileExpressions))`.
   ///
   /// ```dart
   /// environment.matchesProfiles(['dev & (eu | us)']);
@@ -49,59 +95,98 @@ abstract interface class Environment implements PropertyResolver {
   bool matchesProfiles(List<String> profileExpressions);
 }
 
-/// A mutable [Environment], like Spring's `ConfigurableEnvironment`.
+/// An [Environment] that can be changed: its list of property sources,
+/// its profiles and how it converts and resolves values.
+///
+/// Changes must happen before beans read the configuration, so this side
+/// is for startup code. The framework fills it (config files, command
+/// line) while the application starts; an application receives it in an
+/// `EnvironmentPostProcessor` to add a property source or switch on a
+/// profile, and in tests. Beans should take [Environment] instead.
 ///
 /// ```dart
-/// final ConfigurableEnvironment environment = StandardEnvironment()
-///   ..setActiveProfiles(['dev'])
-///   ..propertySources.addFirst(MapPropertySource('test', {'a': '1'}));
+/// // Passed to SpringApplication(environmentPostProcessors: [...]).
+/// class RegionProfile implements EnvironmentPostProcessor {
+///   @override
+///   void postProcessEnvironment(
+///     ConfigurableEnvironment environment,
+///     SpringApplication application,
+///   ) {
+///     // Machines in the EU data centre run with the `eu` profile.
+///     if (environment.getProperty('REGION') == 'eu') {
+///       environment.addActiveProfile('eu');
+///     }
+///   }
+/// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// ConfigurableEnvironment environment = new StandardEnvironment();
-/// environment.setActiveProfiles("dev");
-/// environment.getPropertySources()
-///     .addFirst(new MapPropertySource("test", Map.of("a", "1")));
+/// class RegionProfile implements EnvironmentPostProcessor {
+///   @Override
+///   public void postProcessEnvironment(
+///       ConfigurableEnvironment environment, SpringApplication application) {
+///     if ("eu".equals(environment.getProperty("REGION"))) {
+///       environment.addActiveProfile("eu");
+///     }
+///   }
+/// }
 /// ```
 abstract interface class ConfigurableEnvironment
     implements Environment, ConfigurablePropertyResolver {
-  /// Replaces the active profiles with [profiles].
+  /// Makes [profiles] the active profiles, dropping any set before; the
+  /// property `spring.profiles.active` is then no longer read.
   ///
   /// Throws [ArgumentError] for a blank profile or one starting with `!`.
   void setActiveProfiles(List<String> profiles);
 
-  /// Adds [profile] to the active profiles (after reading
-  /// `spring.profiles.active` if no profile was set yet).
+  /// Adds [profile] to the active profiles, keeping the others. When none
+  /// was set yet, `spring.profiles.active` is read first, so the profiles
+  /// from the configuration are kept too.
+  ///
+  /// Throws [ArgumentError] for a blank profile or one starting with `!`.
   void addActiveProfile(String profile);
 
-  /// Replaces the default profiles (initially `['default']`).
+  /// Makes [profiles] the profiles used while none is active, replacing
+  /// `['default']`.
+  ///
+  /// Throws [ArgumentError] for a blank profile or one starting with `!`.
   void setDefaultProfiles(List<String> profiles);
 
-  /// Sources searched by this environment; first wins.
+  /// The ordered list of sources the environment reads properties from;
+  /// for each key the first source that has it wins. Add, remove or
+  /// reorder sources here.
   MutablePropertySources get propertySources;
 
-  /// The operating-system environment variables.
+  /// The environment variables of the process, as a read-only map; empty
+  /// on the web.
   Map<String, String> get systemEnvironment;
 
-  /// Adds [parent]'s property sources (lowest precedence, only those not
-  /// present here) and its active and default profiles.
+  /// Takes over what [parent] has: its property sources go at the end,
+  /// below this environment's own (except those whose name is already
+  /// here), its active profiles are added, and its default profiles
+  /// replace `default`.
   ///
-  /// Used when a child application context inherits its parent's
-  /// environment.
+  /// The framework calls it when a child application context is created
+  /// under a parent, so the child sees the parent's configuration.
   void merge(ConfigurableEnvironment parent);
 }
 
-/// The default environment, like Spring's `StandardEnvironment`.
+/// The environment implementation used everywhere: an empty list of
+/// property sources except the environment variables, plus profiles.
 ///
-/// Starts with one property source: [SystemEnvironmentPropertySource]
-/// (OS environment variables, empty on the web). Add command-line arguments
-/// or config files with `propertySources`.
+/// `SpringApplication` and `ApplicationContext.run` create one and fill it
+/// (command line, config files, defaults), so an application usually only
+/// receives it. Create one yourself to read configuration without
+/// starting a context, in a command-line tool or a test, or to give a
+/// context an environment prepared in advance.
 ///
-/// Unlike Spring there are no JVM system properties, so command-line
-/// arguments are the usual highest-precedence source.
+/// It starts with one property source, a [SystemEnvironmentPropertySource]
+/// (empty on the web). Unlike Spring there are no JVM system properties,
+/// so command-line arguments are usually the highest source.
 ///
 /// ```dart
+/// // A tool that reads the application's configuration by itself.
 /// Future<void> main(List<String> args) async {
 ///   final environment = StandardEnvironment()
 ///     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
@@ -119,8 +204,9 @@ abstract interface class ConfigurableEnvironment
 /// // Spring Boot's SpringApplication does all of this, plus config data.
 /// ```
 class StandardEnvironment implements ConfigurableEnvironment {
-  /// [systemEnvironment] overrides the process environment (useful in
-  /// tests).
+  /// Creates an environment whose only property source is the environment
+  /// variables. [systemEnvironment] replaces the variables of the process,
+  /// so a test can set them.
   ///
   /// ```dart
   /// final environment = StandardEnvironment(
@@ -136,15 +222,15 @@ class StandardEnvironment implements ConfigurableEnvironment {
     customizePropertySources(propertySources);
   }
 
-  /// Property listing the active profiles, comma-separated
-  /// (`spring.profiles.active`).
+  /// The property that lists the active profiles, comma-separated:
+  /// `spring.profiles.active`.
   static const activeProfilesPropertyName = 'spring.profiles.active';
 
-  /// Property listing the default profiles, comma-separated
-  /// (`spring.profiles.default`).
+  /// The property that lists the default profiles, comma-separated:
+  /// `spring.profiles.default`.
   static const defaultProfilesPropertyName = 'spring.profiles.default';
 
-  /// Name of the profile that is the default unless changed (`default`).
+  /// The name of the default profile unless changed: `default`.
   static const reservedDefaultProfileName = 'default';
 
   @override
@@ -157,10 +243,12 @@ class StandardEnvironment implements ConfigurableEnvironment {
   final _active = <String>{};
   final _defaults = <String>{reservedDefaultProfileName};
 
-  /// Adds the default sources; override to add more.
+  /// Adds the sources a new environment starts with: the environment
+  /// variables. Override it in a subclass that should always start with
+  /// more sources.
   ///
-  /// Called from the constructor, so subclass fields are not yet
-  /// initialized.
+  /// It runs inside the constructor, before the subclass's own fields are
+  /// initialized, so it must not use them.
   ///
   /// ```dart
   /// class AppEnvironment extends StandardEnvironment {
@@ -246,8 +334,9 @@ class StandardEnvironment implements ConfigurableEnvironment {
   bool matchesProfiles(List<String> profileExpressions) =>
       acceptsProfiles(Profiles.of(profileExpressions));
 
-  /// Whether [profile] is active, or is a default profile while no profile
-  /// is active.
+  /// Whether the single profile [profile] is active, or is a default
+  /// profile while none is active. For expressions use
+  /// [matchesProfiles].
   ///
   /// Throws [ArgumentError] for a blank profile or one starting with `!`.
   bool isProfileActive(String profile) {

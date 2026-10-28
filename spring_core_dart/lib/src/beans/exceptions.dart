@@ -1,8 +1,15 @@
 import 'package:spring_core_dart/src/beans/factory_bean.dart';
 
-/// Base class of container errors, like Spring's `BeansException`.
+/// The common supertype of the errors the container throws: a missing or
+/// ambiguous bean, a failed creation, a clashing name, a bad property path.
+///
+/// Catch it to handle any container error in one place, for example to
+/// print a readable message when startup fails. Each subclass carries the
+/// details of its case; [message] always describes the problem, and
+/// [cause] (with [rootCause]) leads to the error behind it.
 ///
 /// ```dart
+/// // main: report what went wrong with the beans, then stop.
 /// try {
 ///   context.getBean<Mailer>();
 /// } on BeansException catch (e) {
@@ -22,14 +29,16 @@ abstract class BeansException implements Exception {
   /// Creates an exception with [message] and an optional [cause].
   const BeansException(this.message, {this.cause});
 
-  /// Human-readable description of the problem.
+  /// A human-readable description of the problem.
   final String message;
 
-  /// The underlying error, if any.
+  /// The error that caused this one, if any: what a constructor threw, or
+  /// the container error of a nested bean.
   final Object? cause;
 
   /// The innermost cause: [cause] followed through nested container
-  /// errors, or `null` without a cause. Spring: `getRootCause()`.
+  /// errors, or `null` without a cause. Usually the error that really went
+  /// wrong. Spring: `getRootCause()`.
   ///
   /// ```dart
   /// } on BeanCreationException catch (e) {
@@ -55,10 +64,16 @@ abstract class BeansException implements Exception {
       '${cause == null ? '' : '; nested exception is $cause'}';
 }
 
-/// No bean matches a requested type, qualifier or name, like Spring's
-/// `NoSuchBeanDefinitionException`.
+/// The error thrown when no bean matches a requested type, qualifier or
+/// name.
+///
+/// You usually see it because a bean was never registered: its class is
+/// outside the scanned folders, a condition or profile excluded it, or a
+/// qualifier is misspelled. Catch it around a lookup that may fail, or use
+/// `findBean` (which returns `null`) instead.
 ///
 /// ```dart
+/// // The 'smtp' mailer may not be configured.
 /// try {
 ///   factory.getBean<Mailer>(qualifier: 'smtp');
 /// } on NoSuchBeanDefinitionException catch (e) {
@@ -77,7 +92,7 @@ abstract class BeansException implements Exception {
 /// ```
 class NoSuchBeanDefinitionException extends BeansException {
   /// No bean of [type] (with [qualifier], if given); [requiredBy] names the
-  /// bean whose dependency failed.
+  /// bean being created when the lookup failed, if any.
   NoSuchBeanDefinitionException(this.type, {this.qualifier, this.requiredBy})
     : beanName = null,
       super(
@@ -86,7 +101,8 @@ class NoSuchBeanDefinitionException extends BeansException {
         '${requiredBy == null ? '' : ", required by bean '$requiredBy'"}.',
       );
 
-  /// No bean named [beanName]; [requiredBy] names the bean that asked.
+  /// No bean named [beanName]; [requiredBy] names the bean being created
+  /// when the lookup failed, if any.
   NoSuchBeanDefinitionException.named(String this.beanName, {this.requiredBy})
     : type = null,
       qualifier = null,
@@ -98,7 +114,7 @@ class NoSuchBeanDefinitionException extends BeansException {
   /// The requested type, or `null` for a lookup by name.
   final Type? type;
 
-  /// The requested qualifier, if any.
+  /// The requested qualifier, if any (lookups by type only).
   final String? qualifier;
 
   /// The requested bean name, or `null` for a lookup by type.
@@ -108,11 +124,19 @@ class NoSuchBeanDefinitionException extends BeansException {
   final String? requiredBy;
 }
 
-/// Several beans match a requested type and none wins (no single
-/// `@Primary`, not resolvable by fallback or parameter name), like Spring's
-/// `NoUniqueBeanDefinitionException`.
+/// The error thrown when several beans match a requested type and none of
+/// them wins.
+///
+/// A winner is the single `@Primary` bean, the only one not marked
+/// `@Fallback`, the one named like the parameter or the qualifier, or the
+/// one with the lowest jakarta `@Priority`. Fix it by marking one bean
+/// `@Primary()`, by selecting one with `@Qualifier`, or by injecting a
+/// `List<T>` when you want them all. It is a
+/// [NoSuchBeanDefinitionException], so code that catches "no bean" also
+/// catches "no single bean".
 ///
 /// ```dart
+/// // Two Greeter beans and no @Primary.
 /// try {
 ///   factory.getBean<Greeter>();
 /// } on NoUniqueBeanDefinitionException catch (e) {
@@ -129,7 +153,8 @@ class NoSuchBeanDefinitionException extends BeansException {
 /// }
 /// ```
 class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
-  /// Several [candidates] match [type].
+  /// The beans named in [candidates] all match [type]; [samePriority] is
+  /// set when they tie on `@Priority`.
   NoUniqueBeanDefinitionException(
     Type super.type,
     this.candidates, {
@@ -138,8 +163,8 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
     this.samePriority,
   });
 
-  /// Names of the matching beans (only the primary ones when several are
-  /// primary).
+  /// The names of the matching beans (only the primary ones when several
+  /// are primary).
   final List<String> candidates;
 
   /// The `@Priority` value several candidates share as the highest, when
@@ -159,17 +184,20 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
             'Mark one with @Primary or select one with @Qualifier.';
 }
 
-/// A dependency of a bean cannot be satisfied, like Spring's
-/// `UnsatisfiedDependencyException` (a [BeanCreationException]).
+/// The error thrown when an injection point of a bean cannot be filled:
+/// the bean, its injection point and the reason are in the message.
 ///
-/// Thrown by `validateBeanGraph` (a declared dependency has no bean or
-/// several candidates, a required `@Value` placeholder has no value) and
-/// when resolving an injection point fails while the bean is created:
+/// This is the usual startup error of a misconfigured application; it is a
+/// [BeanCreationException]. It is thrown by `validateBeanGraph` (a declared
+/// dependency has no bean or several candidates, a required `@Value`
+/// placeholder has no value) and when resolving an injection point fails
+/// while the bean is created:
 /// [cause] is the lookup error (a missing or ambiguous bean, or the
 /// failure of the dependency's own creation), so nested exceptions show
 /// the chain of beans and injection points.
 ///
 /// ```dart
+/// // The `${smtp}` property is missing from the configuration.
 /// try {
 ///   context.refresh();
 /// } on UnsatisfiedDependencyException catch (e) {
@@ -186,7 +214,7 @@ class NoUniqueBeanDefinitionException extends NoSuchBeanDefinitionException {
 /// }
 /// ```
 class UnsatisfiedDependencyException extends BeanCreationException {
-  /// [beanName]'s [dependency] failed for [reason].
+  /// The injection point [dependency] of [beanName] failed for [reason].
   UnsatisfiedDependencyException(
     String beanName,
     this.dependency,
@@ -198,18 +226,22 @@ class UnsatisfiedDependencyException extends BeanCreationException {
          "Bean '$beanName' has an unsatisfied dependency $dependency: $reason",
        );
 
-  /// Description of the failed injection point (e.g. `@Value("${port}")`
-  /// or `Greeter 'delegate'`).
+  /// A description of the failed injection point (e.g.
+  /// `@Value("${port}")` or `Greeter 'delegate'`).
   final String dependency;
 }
 
-/// Two definitions use the same name (or an alias clashes), like Spring's
-/// `BeanDefinitionOverrideException` (a [BeanDefinitionStoreException]).
+/// The error thrown when a bean name or alias is registered while the name
+/// is already taken.
 ///
-/// Set `DefaultListableBeanFactory.allowBeanDefinitionOverriding` to
-/// replace definitions instead.
+/// Two beans got the same name, usually two classes with the same name in
+/// different folders, or a `@Bean` method named like a class. Rename one
+/// (`@Component('otherName')`), or set
+/// `DefaultListableBeanFactory.allowBeanDefinitionOverriding` when
+/// replacing a bean on purpose. It is a [BeanDefinitionStoreException].
 ///
 /// ```dart
+/// // Registering the same name twice.
 /// BeanDefinition<English> english() =>
 ///     BeanDefinition<English>(name: 'english', create: (_) => English());
 ///
@@ -224,7 +256,8 @@ class UnsatisfiedDependencyException extends BeanCreationException {
 /// factory.registerBeanDefinition("english", def); // throws
 /// ```
 class BeanDefinitionOverrideException extends BeanDefinitionStoreException {
-  /// [name] is taken; [source] describes what tried to register it.
+  /// [name] is taken; [source] describes the registration that was
+  /// rejected.
   BeanDefinitionOverrideException(this.name, this.source)
     : super(
         "Bean name '$name' is already in use"
@@ -238,10 +271,16 @@ class BeanDefinitionOverrideException extends BeanDefinitionStoreException {
   final String? source;
 }
 
-/// A definition cannot be registered (invalid name, name or alias taken),
-/// like Spring's `BeanDefinitionStoreException`.
+/// The error thrown when a bean definition cannot be registered: an
+/// invalid name, or a name that is taken.
+///
+/// An empty name or one starting with `&` is invalid, and so is a name
+/// already used as an alias of a bean that no longer exists. A taken name
+/// is
+/// reported by the subclass [BeanDefinitionOverrideException].
 ///
 /// ```dart
+/// // `&` is reserved for asking for a factory bean itself.
 /// factory.registerBeanDefinition(
 ///   BeanDefinition<Clock>(name: '&clock', create: (_) => Clock()),
 /// ); // throws: invalid bean name
@@ -253,12 +292,14 @@ class BeanDefinitionOverrideException extends BeanDefinitionStoreException {
 /// new XmlBeanDefinitionReader(factory).loadBeanDefinitions("bad.xml");
 /// ```
 class BeanDefinitionStoreException extends BeansException {
-  /// Creates the exception with [message].
+  /// The registration failed as [message] describes.
   const BeanDefinitionStoreException(super.message);
 }
 
-/// Beans depend on each other in a cycle, like Spring's
-/// `BeanCurrentlyInCreationException` (a [BeanCreationException]).
+/// The error thrown when beans depend on each other in a cycle, so none of
+/// them can be created first.
+///
+/// [cycle] lists the beans in order. It is a [BeanCreationException].
 ///
 /// Unlike Spring, cycles are always rejected (there are no early
 /// references); `validateBeanGraph` reports them at refresh before any bean
@@ -268,6 +309,7 @@ class BeanDefinitionStoreException extends BeansException {
 /// `ObjectProvider<T>`.
 ///
 /// ```dart
+/// // Bean a injects b and b injects a.
 /// try {
 ///   context.refresh();
 /// } on BeanCurrentlyInCreationException catch (e) {
@@ -284,7 +326,7 @@ class BeanDefinitionStoreException extends BeansException {
 /// }
 /// ```
 class BeanCurrentlyInCreationException extends BeanCreationException {
-  /// Reports the bean names forming [cycle].
+  /// The beans named in [cycle] depend on each other in a cycle.
   BeanCurrentlyInCreationException(this.cycle)
     : super.withMessage(
         cycle.last,
@@ -306,13 +348,16 @@ class BeanCurrentlyInCreationException extends BeanCreationException {
   final List<String> cycle;
 }
 
-/// A constructor, factory method, injection or init callback threw, like
-/// Spring's `BeanCreationException`.
+/// The error thrown when creating a bean failed: its constructor or
+/// `@Bean` method, its injection or an init callback threw.
 ///
-/// Errors from nested beans are wrapped once per level, so [cause] chains
-/// lead to the bean that actually failed.
+/// [beanName] is the bean being created and [cause] what went wrong.
+/// Errors of nested beans are wrapped once per level, so the chain of
+/// causes leads to the bean that actually failed; [rootCause] is the
+/// original error.
 ///
 /// ```dart
+/// // Print which bean failed and why.
 /// try {
 ///   factory.getBean<Mailer>();
 /// } on BeanCreationException catch (e) {
@@ -329,11 +374,12 @@ class BeanCurrentlyInCreationException extends BeanCreationException {
 /// }
 /// ```
 class BeanCreationException extends BeansException {
-  /// Creating [beanName] failed with [cause].
+  /// Creating [beanName] failed with [cause], thrown at [causeStackTrace].
   BeanCreationException(this.beanName, Object cause, this.causeStackTrace)
     : super("Error creating bean '$beanName'", cause: cause);
 
-  /// Creating [beanName] failed as described by [message]; for subclasses.
+  /// Creating [beanName] failed as [message] describes; used by the
+  /// subclasses.
   BeanCreationException.withMessage(
     this.beanName,
     super.message, {
@@ -344,12 +390,17 @@ class BeanCreationException extends BeansException {
   /// The bean whose creation failed.
   final String beanName;
 
-  /// Stack trace of [cause] (empty without a cause).
+  /// The stack trace of [cause] (empty without a cause).
   final StackTrace causeStackTrace;
 }
 
-/// A singleton was requested while the factory destroys its singletons,
-/// like Spring's `BeanCreationNotAllowedException`.
+/// The error thrown when a singleton that does not exist yet is requested
+/// while the factory destroys its singletons.
+///
+/// The container is shutting down, so it refuses to create new beans. It
+/// usually comes from a destroy callback that looks up a bean: look the
+/// bean up earlier, or inject it so it is destroyed after the bean that
+/// uses it.
 ///
 /// ```dart
 /// // A destroy callback that looks up a bean not created yet:
@@ -361,7 +412,7 @@ class BeanCreationException extends BeansException {
 /// @PreDestroy void close() { beanFactory.getBean(Audit.class); } // throws
 /// ```
 class BeanCreationNotAllowedException extends BeanCreationException {
-  /// Creating the singleton [beanName] is not allowed now.
+  /// Creating the singleton [beanName] was refused during shutdown.
   BeanCreationNotAllowedException(String beanName)
     : super.withMessage(
         beanName,
@@ -371,9 +422,12 @@ class BeanCreationNotAllowedException extends BeanCreationException {
       );
 }
 
-/// `&name` was used for a bean that is not a `FactoryBean`, like Spring's
-/// `BeanIsNotAFactoryException` (a [BeanNotOfRequiredTypeException] whose
-/// required type is `FactoryBean`).
+/// The error thrown when `&name` asks for the factory of a bean that is
+/// not a `FactoryBean`.
+///
+/// `&` before a bean name means "the factory itself, not its product", so
+/// it only works for factory beans. It is a
+/// [BeanNotOfRequiredTypeException] whose required type is `FactoryBean`.
 ///
 /// ```dart
 /// factory.getBeanByName('&english'); // throws: English is no FactoryBean
@@ -390,11 +444,11 @@ class BeanIsNotAFactoryException extends BeanNotOfRequiredTypeException {
     : super(beanName, FactoryBean, actualType);
 }
 
-/// The bean exists but is not of the requested type, like Spring's
-/// `BeanNotOfRequiredTypeException`.
+/// The error thrown when a bean exists but is not of the requested type.
 ///
 /// Typically a post-processor replaced the bean with a wrapper that does
-/// not implement the requested class.
+/// not implement the requested class, or a lookup by name asked for the
+/// wrong type.
 ///
 /// ```dart
 /// try {
@@ -429,12 +483,16 @@ class BeanNotOfRequiredTypeException extends BeansException {
   /// The type that was requested.
   final Type requiredType;
 
-  /// The runtime type of the bean.
+  /// The runtime type of the object found.
   final Type actualType;
 }
 
-/// A bean uses a scope that is not registered, like Spring's
-/// "No Scope registered for scope name" `IllegalStateException`.
+/// The error thrown when a bean of a custom scope is looked up and no
+/// scope of that name is registered.
+///
+/// Register the scope (`registerScope`) before the first lookup of such a
+/// bean. Spring throws an `IllegalStateException` ("No Scope registered
+/// for scope name") here.
 ///
 /// ```dart
 /// // @Scope('screen') bean, but no registerScope('screen', ...) call:
@@ -460,13 +518,17 @@ class ScopeNotRegisteredException extends BeansException {
   final String beanName;
 }
 
-/// The scope of a bean is not active right now, like Spring's
-/// `ScopeNotActiveException`: the `CustomScope` threw a `StateError` from
-/// `get` (e.g. a request scope outside a request). An `ObjectProvider`'s
-/// `getIfAvailable` / `getIfUnique` / `ifAvailable` treat it like a
-/// missing bean.
+/// The error thrown when a bean is looked up while its scope is not
+/// active, for example a screen-scoped bean while no screen is open.
+///
+/// The `CustomScope` signals this by throwing a `StateError` from `get`.
+/// A singleton that needs such a bean should get it through a scoped proxy
+/// or an `ObjectProvider`, whose `getIfAvailable`, `getIfUnique` and
+/// `ifAvailable` treat an inactive scope like a missing bean. It is a
+/// [BeanCreationException].
 ///
 /// ```dart
+/// // A scope that is only active while a screen is open.
 /// class ScreenScope implements CustomScope {
 ///   @override
 ///   Object get(String name, Object Function() objectFactory) =>
@@ -482,7 +544,8 @@ class ScopeNotRegisteredException extends BeansException {
 /// cartProvider.getIfAvailable(); // null outside the scope
 /// ```
 class ScopeNotActiveException extends BeanCreationException {
-  /// [beanName] of scope [scopeName] cannot be reached: [cause].
+  /// The bean [beanName] of scope [scopeName] cannot be reached now;
+  /// [cause] is the scope's `StateError`.
   ScopeNotActiveException(
     String beanName,
     this.scopeName,

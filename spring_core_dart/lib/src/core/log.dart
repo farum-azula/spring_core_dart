@@ -1,48 +1,65 @@
 import 'dart:async';
 
-/// Severity of a [SpringLogRecord], like the levels of Spring's
-/// (commons-)logging.
+/// How important a log message is, from [trace] (most detail) to [error];
+/// [off] silences a logger.
+///
+/// Every message is logged at a level, and every logger shows messages
+/// from a minimum level up, so the same code can be quiet in production
+/// and chatty while debugging. Applications usually set levels in
+/// configuration (`logging.level.neon.checkout=debug`) and use the level
+/// methods of [SpringLog] (`log.debug(...)`); they name a level directly
+/// to set one in code or in a log handler.
 ///
 /// ```dart
-/// SpringLog.level = SpringLogLevel.debug; // also show debug output
+/// // While chasing a bug: show debug output of the checkout code.
+/// SpringLog.setLevel('neon.checkout', SpringLogLevel.debug);
 /// ```
 ///
 /// Spring (Java): `org.apache.commons.logging.Log` levels
 /// (`trace`, `debug`, `info`, `warn`, `error`).
 enum SpringLogLevel {
-  /// Very detailed diagnostics.
+  /// Very detailed diagnostics, such as every step of a loop.
   trace,
 
-  /// Diagnostics useful while developing (e.g. condition evaluation).
+  /// Diagnostics useful while developing, such as which auto-configuration
+  /// conditions matched.
   debug,
 
-  /// Normal operation.
+  /// Normal operation worth seeing: started, listening on a port.
   info,
 
-  /// Something went wrong but the framework carried on (e.g. a destroy
-  /// callback threw during shutdown).
+  /// Something went wrong but the program carried on, such as a destroy
+  /// callback that threw during shutdown. Shown by default.
   warning,
 
-  /// An error the framework could not handle.
+  /// A failure that could not be handled, such as a failed start or a
+  /// request that ended in an error. Shown by default.
   error,
 
-  /// Disables all output when used as [SpringLog.level].
+  /// Not a message level: as a logger's level it turns that logger's
+  /// output off.
   off,
 }
 
-/// One message emitted through [SpringLog].
+/// One logged message with everything known about it, as a log handler
+/// receives it.
 ///
-/// Records are immutable and carry everything a console line or a log
-/// viewer screen needs: [time], a unique increasing [sequence] (a stable
-/// list key), [level], [loggerName], [message], structured [fields] and the
-/// [error] with its [stackTrace].
+/// Applications receive records when they write a [SpringLogHandler] (to
+/// send logs elsewhere) or [SpringLog.listen] (to capture logs in a test
+/// or show them on a screen). A record cannot change and carries what a
+/// console line or a log viewer needs: [time], a unique increasing
+/// [sequence] (a stable list key), [level], [loggerName], [message],
+/// structured [fields] and the [error] with its [stackTrace].
 ///
 /// ```dart
+/// // Hand every record to a logging package the application already uses.
 /// SpringLog.handler = (record) =>
 ///     myLogger.log(record.level.name, record.message, record.error);
 /// ```
 final class SpringLogRecord {
-  /// Creates a record of [level] from the logger [loggerName].
+  /// Creates a record of [level] from the logger [loggerName]. [time]
+  /// defaults to now and [sequence] to the next number; loggers create
+  /// records, tests sometimes do.
   SpringLogRecord(
     this.level,
     this.loggerName,
@@ -57,30 +74,32 @@ final class SpringLogRecord {
 
   static int _nextSequence = 0;
 
-  /// Severity.
+  /// How important the message is.
   final SpringLogLevel level;
 
-  /// Name of the emitting logger, e.g. `spring_core_dart.beans`.
+  /// The name of the logger that logged it, such as
+  /// `spring_core_dart.beans`.
   final String loggerName;
 
-  /// The message.
+  /// The text of the message, already built.
   final String message;
 
-  /// The error that caused the message, if any.
+  /// The error that caused the message, or `null`.
   final Object? error;
 
-  /// Stack trace of [error], if any.
+  /// The stack trace of [error], or `null`.
   final StackTrace? stackTrace;
 
-  /// Structured data: the [SpringLog.withFields] context of the caller
-  /// merged with the fields passed to the log call (like SLF4J's MDC and
-  /// key-value pairs). Never `null`.
+  /// Structured data for search and filtering, such as an order id: the
+  /// [SpringLog.withFields] context of the caller merged with the fields
+  /// passed to the log call (like SLF4J's MDC and key-value pairs). Empty
+  /// when there are none, never `null`.
   final Map<String, Object?> fields;
 
-  /// When the record was created.
+  /// When the message was logged.
   final DateTime time;
 
-  /// Increasing number, unique within the process.
+  /// A number that grows with every record, unique within the process.
   final int sequence;
 
   @override
@@ -89,13 +108,18 @@ final class SpringLogRecord {
       '${error == null ? '' : ': $error'}';
 }
 
-/// Receives the records that pass the logger's level.
+/// A function that receives log records: the type of [SpringLog.handler]
+/// (where records go) and of [SpringLog.listen] listeners.
 typedef SpringLogHandler = void Function(SpringLogRecord record);
 
-/// Generates a `log` getter for the class, like Lombok's `@Slf4j`: the
-/// generator writes an extension with a constant [SpringLog] named after
-/// the class (`<package>.<Class>`, like `spring_boot_dart.SpringApplication`),
-/// so methods log without declaring a logger.
+/// An annotation that gives a class a ready-made `log` getter, so its
+/// methods can log without declaring a logger.
+///
+/// The generator writes an extension with a constant [SpringLog] named
+/// after the class (`<package>.<Class>`, like
+/// `spring_boot_dart.SpringApplication`), so levels can be set per class
+/// or per package in configuration. It is the usual way an application
+/// logs.
 ///
 /// ```dart
 /// import 'package:my_app/main.spring.dart'; // the generated file
@@ -112,12 +136,12 @@ typedef SpringLogHandler = void Function(SpringLogRecord record);
 /// }
 /// ```
 ///
-/// The getter lives in the `.spring.dart` file of the `@ComponentScan` /
-/// `@SpringBootApplication` that scans the class: import it in the class's
-/// library. A `log` declared in that library's scope wins over the getter
-/// — `dart:math` and `dart:developer` declare a function `log` — so with
-/// one of them imported, pick another [fieldName]. Any class of the scan
-/// may carry it, bean or not.
+/// The getter lives in the `.spring.dart` file of the `@ComponentScan` or
+/// `@SpringBootApplication` that scans the class: import that file in the
+/// class's library. A `log` declared in the library's scope wins over the
+/// getter, and `dart:math` and `dart:developer` both declare a function
+/// `log`, so with one of them imported pick another [fieldName]. Any
+/// class of the scan may carry it, bean or not.
 ///
 /// Spring (Java), with Lombok:
 /// ```java
@@ -125,27 +149,31 @@ typedef SpringLogHandler = void Function(SpringLogRecord record);
 /// class Payments { void refund() { log.warn("refund"); } }
 /// ```
 class Log {
-  /// A getter named [fieldName] (`log`) returning the logger [topic]
-  /// (`<package>.<Class>` by default).
+  /// Asks for a getter named [fieldName] (`log` unless given) that returns
+  /// the logger [topic] (`<package>.<Class>` unless given).
   const Log({this.topic, this.fieldName = 'log'});
 
-  /// The logger name; `<package>.<Class>` by default.
+  /// The logger name, to group classes under one name such as
+  /// `neon.payments`; `<package>.<Class>` when `null`.
   final String? topic;
 
-  /// The getter's name.
+  /// The name of the generated getter; `log` unless given.
   final String fieldName;
 }
 
-/// A named logger, like the `Log` instances Spring obtains from
-/// `LogFactory` (or SLF4J's `Logger`).
+/// A named logger: the object code logs through, and the static switches
+/// (levels, handler, holds) of logging as a whole.
 ///
-/// This is the logging facade of the whole family: the framework, starters
-/// and applications log through it, and a logging backend (for example
-/// `spring_boot_starter_logging`) decides where records go via [handler].
-/// Without a backend, records of [SpringLogLevel.warning] and above are
-/// printed.
+/// It is the one logging API of the whole family: the framework, the
+/// starters and applications log through it, and a logging backend (such
+/// as `spring_boot_starter_logging`) decides where records go by setting
+/// [handler]. Without a backend, records of [SpringLogLevel.warning] and
+/// above are printed. An application gets a logger from `@Log()` or
+/// declares one as a constant; it sets levels in configuration
+/// (`logging.level.<name>`) or with [setLevel].
 ///
 /// ```dart
+/// // A logger shared by the checkout code.
 /// const log = SpringLog('neon.checkout');
 ///
 /// log.info('order placed');
@@ -156,9 +184,9 @@ class Log {
 /// SpringLog.setLevel('neon.checkout', SpringLogLevel.debug); // and below
 /// ```
 ///
-/// Levels are hierarchical by dots: `neon.checkout.payment` uses the level
-/// of `neon.checkout.payment`, else `neon.checkout`, else `neon`, else the
-/// root [level].
+/// Levels follow the dots in names: `neon.checkout.payment` uses the
+/// level set for `neon.checkout.payment`, else `neon.checkout`, else
+/// `neon`, else the root [level].
 ///
 /// Spring (Java):
 /// ```java
@@ -166,10 +194,12 @@ class Log {
 /// log.info("order placed");
 /// ```
 final class SpringLog {
-  /// Creates a logger named [name].
+  /// Creates a logger named [name]; a `const` logger costs nothing until
+  /// it logs.
   const SpringLog(this.name);
 
-  /// Logger name, e.g. `spring_core_dart.context`.
+  /// The logger name, such as `spring_core_dart.context`, used to look up
+  /// its level.
   final String name;
 
   static SpringLogLevel _level = SpringLogLevel.warning;
@@ -181,9 +211,12 @@ final class SpringLog {
 
   /// Holds back every record from now on, of any level, until
   /// [SpringLogHold.release] emits those that pass the levels of that
-  /// time, like Spring Boot's `DeferredLog` before the logging system is
-  /// initialized. `SpringApplication` holds the records logged before the
-  /// `logging.level.*` properties are applied.
+  /// time.
+  ///
+  /// It is for startup code that logs before the levels are known:
+  /// `SpringApplication` holds the records logged before the
+  /// `logging.level.*` properties are applied, like Spring Boot's
+  /// `DeferredLog`. Applications rarely call it.
   ///
   /// While a hold is active every level is enabled ([isEnabled] is `true`)
   /// and records reach neither [handler] nor the [listen]ers. Holds nest:
@@ -218,7 +251,8 @@ final class SpringLog {
   }
 
   /// The root level: the minimum level of loggers without a level of
-  /// their own ([setLevel]); [SpringLogLevel.warning] by default.
+  /// their own ([setLevel]); [SpringLogLevel.warning] unless set. The
+  /// property `logging.level.root` sets it in an application.
   static SpringLogLevel get level => _level;
 
   static set level(SpringLogLevel value) {
@@ -226,8 +260,9 @@ final class SpringLog {
     _effective.clear();
   }
 
-  /// Sets the level of the logger [name] and its descendants
-  /// (`a.b` also applies to `a.b.c`); `null` inherits again.
+  /// Sets the minimum level of the logger [name] and of the loggers below
+  /// it (`a.b` also applies to `a.b.c`); `null` makes it inherit again.
+  /// Configuration does the same with `logging.level.<name>`.
   static void setLevel(String name, SpringLogLevel? level) {
     if (level == null) {
       _levels.remove(name);
@@ -237,17 +272,19 @@ final class SpringLog {
     _effective.clear();
   }
 
-  /// Levels set with [setLevel], by logger name.
+  /// The levels set with [setLevel], by logger name, as a read-only copy.
   static Map<String, SpringLogLevel> get configuredLevels =>
       Map.unmodifiable(_levels);
 
-  /// Removes every [setLevel] level (the root [level] stays).
+  /// Removes every level set with [setLevel]; the root [level] stays.
+  /// Useful between tests.
   static void resetLevels() {
     _levels.clear();
     _effective.clear();
   }
 
-  /// The level that applies to the logger [name].
+  /// The level that applies to the logger [name]: its own, or the nearest
+  /// one set above it, or the root [level].
   static SpringLogLevel levelOf(String name) =>
       _effective[name] ??= _resolveLevel(name);
 
@@ -265,13 +302,14 @@ final class SpringLog {
     }
   }
 
-  /// The backend: receives every record that passes its logger's level;
-  /// [printLogHandler] by default.
+  /// Where records go: the function that receives every record that
+  /// passes its logger's level. [printLogHandler] unless replaced; a
+  /// logging backend replaces it.
   static SpringLogHandler handler = printLogHandler;
 
-  /// Also sends every emitted record to [listener] (after [handler]), for
-  /// example to capture logs in a test. Call the returned function to
-  /// stop. Errors thrown by listeners are ignored.
+  /// Also sends every emitted record to [listener], after [handler], for
+  /// example to capture logs in a test or show them in an app. Call the
+  /// returned function to stop. Errors thrown by listeners are ignored.
   static void Function() listen(SpringLogHandler listener) {
     // A wrapper, so the same function can be registered twice.
     void wrapper(SpringLogRecord record) => listener(record);
@@ -280,7 +318,11 @@ final class SpringLog {
   }
 
   /// Runs [body] with [fields] added to every record logged inside it,
-  /// also asynchronously (like SLF4J's MDC, but scoped by zones).
+  /// including asynchronous work it starts, and returns its result.
+  ///
+  /// Use it to tag all logs of one request or job, such as with a request
+  /// id. Nested calls add to the outer fields. Like SLF4J's MDC, but
+  /// scoped by zones instead of threads.
   ///
   /// ```dart
   /// SpringLog.withFields({'request': id}, () => handle(request));
@@ -293,19 +335,25 @@ final class SpringLog {
         },
       );
 
-  /// The [withFields] context of the current zone.
+  /// The fields [withFields] has set for the code running now; empty
+  /// outside any [withFields].
   static Map<String, Object?> get currentFields =>
       (Zone.current[_fieldsKey] as Map<String, Object?>?) ?? const {};
 
-  /// Whether records of [level] are currently emitted by this logger.
-  /// Check it before building expensive messages (or pass a closure as
-  /// the message).
+  /// Whether this logger currently emits records of [level]. Check it
+  /// before building an expensive message, or pass a closure as the
+  /// message instead. Always `true` while a [hold] is active (except for
+  /// [SpringLogLevel.off]).
   bool isEnabled(SpringLogLevel level) =>
       level != SpringLogLevel.off &&
       (_holds.isNotEmpty || level.index >= levelOf(name).index);
 
-  /// Emits [message] at [level] if enabled. [message] may be a
-  /// `String Function()`, called only when the record is emitted.
+  /// Logs [message] at [level] when the level is enabled, with an optional
+  /// [error], its [stackTrace] and structured [fields].
+  ///
+  /// [message] may be a function returning the text, called only when the
+  /// record is emitted, so a disabled debug message costs nothing. Any
+  /// other object is turned into text with `toString`.
   void log(
     SpringLogLevel level,
     Object? message, {
@@ -330,19 +378,20 @@ final class SpringLog {
     _dispatch(record);
   }
 
-  /// Emits a [SpringLogLevel.trace] message.
+  /// Logs [message] at [SpringLogLevel.trace]; see [log].
   void trace(Object? message, {Map<String, Object?> fields = const {}}) =>
       log(SpringLogLevel.trace, message, fields: fields);
 
-  /// Emits a [SpringLogLevel.debug] message.
+  /// Logs [message] at [SpringLogLevel.debug]; see [log].
   void debug(Object? message, {Map<String, Object?> fields = const {}}) =>
       log(SpringLogLevel.debug, message, fields: fields);
 
-  /// Emits a [SpringLogLevel.info] message.
+  /// Logs [message] at [SpringLogLevel.info]; see [log].
   void info(Object? message, {Map<String, Object?> fields = const {}}) =>
       log(SpringLogLevel.info, message, fields: fields);
 
-  /// Emits a [SpringLogLevel.warning] message.
+  /// Logs [message] at [SpringLogLevel.warning], with the [error] that
+  /// caused it when there is one; see [log].
   void warning(
     Object? message, {
     Object? error,
@@ -356,7 +405,8 @@ final class SpringLog {
     fields: fields,
   );
 
-  /// Emits a [SpringLogLevel.error] message.
+  /// Logs [message] at [SpringLogLevel.error], with the [error] that
+  /// caused it when there is one; see [log].
   void error(
     Object? message, {
     Object? error,
@@ -374,9 +424,13 @@ final class SpringLog {
   String toString() => 'SpringLog($name)';
 }
 
-/// Records held back by [SpringLog.hold] until [release].
+/// The records held back by one [SpringLog.hold], until [release].
+///
+/// Startup code receives it from [SpringLog.hold] and must release it,
+/// even when startup fails, or the held records never appear.
 ///
 /// ```dart
+/// // Levels are configured first, then the early records are judged.
 /// final hold = SpringLog.hold();
 /// try {
 ///   configureLevels();
@@ -391,12 +445,13 @@ final class SpringLogHold {
 
   final _records = <SpringLogRecord>[];
 
-  /// Whether records are still held (until [release]).
+  /// Whether this hold is still holding records, until [release].
   bool get isHolding => SpringLog._holds.contains(this);
 
   /// Stops holding and emits, in order, the held records that pass the
-  /// current level of their logger (to an outer hold, if one is still
-  /// active); returns those. A second call does nothing.
+  /// current level of their logger, or hands them to an outer hold if one
+  /// is still active. Returns the records it passed on. A second call does
+  /// nothing and returns an empty list.
   List<SpringLogRecord> release() {
     if (!SpringLog._holds.remove(this)) {
       return const [];
@@ -415,9 +470,12 @@ final class SpringLogHold {
   }
 }
 
-/// The default [SpringLog.handler]: prints the record (one line), in
-/// colour like Spring Boot's console: the logger cyan, the level by level
-/// (error red, warning yellow, the others green). For plain text:
+/// The [SpringLog.handler] used until a logging backend replaces it:
+/// prints each record as one line, in colour like Spring Boot's console.
+///
+/// The logger name is cyan and the level coloured by level (error red,
+/// warning yellow, the others green); the error follows the message, the
+/// stack trace is not printed. For plain text, set
 /// `SpringLog.handler = print;` (a record prints as its `toString`).
 void printLogHandler(SpringLogRecord record) {
   final level = switch (record.level) {
@@ -435,9 +493,10 @@ void printLogHandler(SpringLogRecord record) {
   );
 }
 
-/// Parses a level name as used in properties (`logging.level.*`):
-/// `trace`, `debug`, `info`, `warn`/`warning`, `error`, `off`
-/// (case-insensitive); `null` for anything else.
+/// Reads a level name as written in configuration (`logging.level.*`):
+/// `trace`, `debug`, `info`, `warn` or `warning`, `error` (also `fatal`)
+/// and `off`, in any case and with spaces around. `null` for anything
+/// else, so the caller can report the bad value.
 SpringLogLevel? parseSpringLogLevel(String? value) =>
     switch (value?.trim().toLowerCase()) {
       'trace' => SpringLogLevel.trace,

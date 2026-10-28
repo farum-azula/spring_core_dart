@@ -20,7 +20,10 @@ const _source = 'package:spring_boot_starter_web#WebMvcAutoConfiguration';
 // by accident.
 const _isFlutter = bool.fromEnvironment('dart.library.ui');
 
-/// The server's settings: `server.*`.
+/// Reads the server's settings from `server.*` in [environment], as the
+/// starter applies them: in a Flutter app the address defaults to
+/// `127.0.0.1`, and a test with the `random-port` web environment gets
+/// port 0 (a free port).
 ServerProperties serverProperties(Environment environment) =>
     ServerProperties.of(
       environment,
@@ -35,8 +38,12 @@ ServerProperties serverProperties(Environment environment) =>
           : null,
     );
 
-/// The beans of the web starter, like Spring Boot's
-/// `ServletWebServerFactoryAutoConfiguration` and `WebMvcAutoConfiguration`:
+/// The bean definitions the web starter adds to every application that
+/// lists it: the server, the request pipeline and their helpers.
+///
+/// The generator registers them through the starter's auto-configuration
+/// module. A bean marked "unless the application declares one" backs off
+/// when the application has its own bean of that type. The beans are:
 ///
 /// - `webServerFactory` — `IoWebServerFactory` (`dart:io`) with
 ///   `server.*` and the `WebServerFactoryCustomizer` beans, unless the
@@ -55,7 +62,11 @@ ServerProperties serverProperties(Environment environment) =>
 ///   the [HandlerMapping] beans;
 /// - `webServerStartStopLifecycle` — starts and stops the server with the
 ///   context;
-/// - `portInUseFailureAnalyzer`.
+/// - `portInUseFailureAnalyzer` — the startup report for a port in use.
+///
+/// Spring Boot spreads the same beans over
+/// `ServletWebServerFactoryAutoConfiguration` and
+/// `WebMvcAutoConfiguration`.
 final webMvcAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<WebServerFactory>(
     name: 'webServerFactory',

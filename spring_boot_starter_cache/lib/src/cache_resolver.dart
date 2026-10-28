@@ -2,27 +2,38 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_cache/src/cache.dart';
 import 'package:spring_boot_starter_cache/src/cache_operation.dart';
 
-/// One cache operation of an intercepted call, like Spring's
-/// `CacheOperationInvocationContext`: what a [CacheResolver] decides on.
+/// What a [CacheResolver] knows about the call it picks caches for: the
+/// cache operation, the bean, the method and the arguments.
+///
+/// The framework creates it for each cache operation of each call; you
+/// only read it, inside [CacheResolver.resolveCaches]. One method with
+/// both `@Cacheable` and `@CacheEvict` gives two contexts per call.
+///
+/// Spring (Java): `CacheOperationInvocationContext`.
 abstract interface class CacheOperationInvocationContext {
-  /// The operation (its cache names, key, ...).
+  /// The cache annotation being applied, with the class's `@CacheConfig`
+  /// defaults filled in: its cache names, key, condition and so on.
   CacheOperation get operation;
 
-  /// The bean the method is called on.
+  /// The bean the method is called on (the real bean, not its proxy).
   Object get target;
 
-  /// The called member.
+  /// The called method: its name, parameter names and types, annotations.
   MethodSignature get method;
 
-  /// The arguments of the call.
+  /// The arguments of the call, in parameter order.
   List<Object?> get args;
 }
 
-/// Picks the caches of a cache operation at each call, like Spring's
-/// `CacheResolver`: name a `CacheResolver` bean with `cacheResolver:` (in
-/// the annotation or in `@CacheConfig`), or make it the default with a
-/// `CachingConfigurer`. Without one, a [SimpleCacheResolver] looks the
-/// operation's cache names up in the `CacheManager`.
+/// Decides, at each call, which caches a cache annotation uses.
+///
+/// Normally the caches are fixed: the names in the annotation, looked up in
+/// the `CacheManager` by a [SimpleCacheResolver]. A resolver of your own
+/// can choose them from the call instead, for example one cache per
+/// customer of a multi-tenant app, or always the same audit cache whatever
+/// the annotation names ([NamedCacheResolver]). Declare it as a bean and
+/// name it with `cacheResolver:` in the annotation or in `@CacheConfig`,
+/// or make it the default with a `CachingConfigurer`.
 ///
 /// ```dart
 /// // Caches per tenant: `books` becomes `acme.books`.
@@ -55,16 +66,23 @@ abstract interface class CacheOperationInvocationContext {
 /// Book find(String isbn) { ... }
 /// ```
 abstract interface class CacheResolver {
-  /// The caches of [context]'s operation; at least one, or the call fails.
+  /// The caches the operation of [context] reads or writes on this call.
+  /// At least one is needed: an empty result fails the call with a
+  /// `StateError`.
   Iterable<Cache> resolveCaches(CacheOperationInvocationContext context);
 }
 
-/// The default [CacheResolver], like Spring's `SimpleCacheResolver`: the
-/// operation's cache names looked up in [cacheManager]; an unknown name
-/// fails the call ("Cannot find cache named ...").
+/// The [CacheResolver] used by default: it looks the cache names of the
+/// annotation up in a [CacheManager].
+///
+/// An unknown name fails the call with a `StateError` ("Cannot find cache
+/// named ..."). Every operation uses one, unless it names a
+/// `cacheResolver`; you build one yourself mainly to wrap it, or to return
+/// it from a `CachingConfigurer` with another manager.
 ///
 /// ```dart
-/// final resolver = SimpleCacheResolver(InMemoryCacheManager());
+/// // A resolver of your own that falls back to the names of the annotation.
+/// final fallback = SimpleCacheResolver(cacheManager);
 /// ```
 ///
 /// Spring (Java):
@@ -72,10 +90,10 @@ abstract interface class CacheResolver {
 /// CacheResolver resolver = new SimpleCacheResolver(cacheManager);
 /// ```
 final class SimpleCacheResolver implements CacheResolver {
-  /// A resolver looking caches up in [cacheManager].
+  /// A resolver looking the caches up in [cacheManager].
   SimpleCacheResolver(this.cacheManager);
 
-  /// Where the caches come from.
+  /// The manager the cache names are looked up in.
   final CacheManager cacheManager;
 
   @override
@@ -92,10 +110,15 @@ final class SimpleCacheResolver implements CacheResolver {
   String toString() => 'SimpleCacheResolver($cacheManager)';
 }
 
-/// A [CacheResolver] that always resolves [cacheNames] in [cacheManager],
-/// whatever the operation names, like Spring's `NamedCacheResolver`.
+/// A [CacheResolver] that always gives the same caches, whatever the
+/// annotation names.
+///
+/// Use it to send several methods to one set of caches chosen in one
+/// place. The annotations that use it need no cache names. An unknown name
+/// fails the call with a `StateError`.
 ///
 /// ```dart
+/// // Every operation naming `cacheResolver: 'auditResolver'` uses `audit`.
 /// @Bean()
 /// CacheResolver auditResolver(CacheManager manager) =>
 ///     NamedCacheResolver(manager, ['audit']);
@@ -109,14 +132,14 @@ final class SimpleCacheResolver implements CacheResolver {
 /// }
 /// ```
 final class NamedCacheResolver implements CacheResolver {
-  /// A resolver of [cacheNames] in [cacheManager].
+  /// A resolver that always looks [cacheNames] up in [cacheManager].
   NamedCacheResolver(this.cacheManager, List<String> cacheNames)
     : cacheNames = List.unmodifiable(cacheNames);
 
-  /// Where the caches come from.
+  /// The manager the names are looked up in.
   final CacheManager cacheManager;
 
-  /// The caches every operation uses.
+  /// The caches every operation uses, unmodifiable.
   final List<String> cacheNames;
 
   @override

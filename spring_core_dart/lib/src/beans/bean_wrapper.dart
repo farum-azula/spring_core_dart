@@ -4,13 +4,13 @@ import 'package:spring_core_dart/src/beans/type_info.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 import 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 
-/// A property path that cannot be read, like Spring's
-/// `NotReadablePropertyException`.
+/// The error a [BeanWrapper] throws when a property path cannot be read.
 ///
-/// Thrown for unknown properties, classes that are not `@Introspected`
-/// and out-of-range indexes.
+/// The path names a property the class does not have, goes through a class
+/// that is not `@Introspected`, or uses an index outside a list.
 ///
 /// ```dart
+/// // Person has no 'nickname' property.
 /// try {
 ///   BeanWrapper(person).getPropertyValue('nickname');
 /// } on NotReadablePropertyException catch (e) {
@@ -27,7 +27,8 @@ import 'package:spring_core_dart/src/core/convert/default_conversion_service.dar
 /// }
 /// ```
 class NotReadablePropertyException extends BeansException {
-  /// [propertyName] of [beanType] cannot be read, for an optional reason.
+  /// The path [propertyName] of a [beanType] cannot be read; the optional
+  /// reason says why (default: "not readable").
   NotReadablePropertyException(
     this.beanType,
     this.propertyName, [
@@ -37,18 +38,19 @@ class NotReadablePropertyException extends BeansException {
          "${reason ?? 'not readable'}",
        );
 
-  /// Type of the wrapped (root) object.
+  /// The type of the wrapped (root) object.
   final Type beanType;
 
   /// The full property path that failed.
   final String propertyName;
 }
 
-/// A property path that cannot be written, like Spring's
-/// `NotWritablePropertyException`.
+/// The error a [BeanWrapper] throws when a property path cannot be written.
 ///
-/// Thrown for unknown or read-only properties and invalid indexes.
-/// `BeanWrapper.setPropertyValues` can skip these with `ignoreUnknown`.
+/// The property does not exist or is read-only (a final field), the class
+/// is not `@Introspected`, or the index is invalid.
+/// `BeanWrapper.setPropertyValues` skips these with `ignoreUnknown`, which
+/// is how data binding ignores request fields the target does not have.
 ///
 /// ```dart
 /// try {
@@ -67,8 +69,8 @@ class NotReadablePropertyException extends BeansException {
 /// }
 /// ```
 class NotWritablePropertyException extends BeansException {
-  /// [propertyName] of [beanType] cannot be written, for an optional
-  /// reason.
+  /// The path [propertyName] of a [beanType] cannot be written; the
+  /// optional reason says why (default: "not writable").
   NotWritablePropertyException(
     this.beanType,
     this.propertyName, [
@@ -78,16 +80,17 @@ class NotWritablePropertyException extends BeansException {
          "${reason ?? 'not writable'}",
        );
 
-  /// Type of the wrapped (root) object.
+  /// The type of the wrapped (root) object.
   final Type beanType;
 
   /// The full property path that failed.
   final String propertyName;
 }
 
-/// A property path is malformed (`items[`, `address..city`), like Spring's
-/// `InvalidPropertyException`.
+/// The error a [BeanWrapper] throws when a property path is malformed
+/// (`items[`, `address..city`).
 ///
+/// Such paths usually come from outside, as request parameter names.
 /// `DataBinder` treats it like an unknown field: skipped while
 /// `ignoreUnknownFields` is on, so hostile request keys cannot break
 /// binding.
@@ -113,11 +116,14 @@ class InvalidPropertyException extends BeansException {
   final String propertyName;
 }
 
-/// A property setter threw, like Spring's `MethodInvocationException`.
+/// The error a [BeanWrapper] throws when a property's setter itself threw,
+/// for example because it validates the value.
 ///
-/// `DataBinder` records it as a `methodInvocation` field error.
+/// [cause] is what the setter threw. `DataBinder` records it as a
+/// `methodInvocation` field error.
 ///
 /// ```dart
+/// // The iban setter rejects malformed values.
 /// try {
 ///   BeanWrapper(account).setPropertyValue('iban', 'nope');
 /// } on MethodInvocationException catch (e) {
@@ -138,13 +144,14 @@ class MethodInvocationException extends BeansException {
   final String propertyName;
 }
 
-/// A nested path is `null` (e.g. `address` in `address.city`), like
-/// Spring's `NullValueInNestedPathException`.
+/// The error a [BeanWrapper] throws when a path goes through a `null`
+/// value, such as `address` in `address.city`.
 ///
 /// Enable `BeanWrapper.autoGrowNestedPaths` to create the missing objects
-/// instead.
+/// instead; `setPropertyValues` skips these with `ignoreInvalid`.
 ///
 /// ```dart
+/// // A new Person has no address yet.
 /// try {
 ///   BeanWrapper(Person()).setPropertyValue('address.city', 'Lyon');
 /// } on NullValueInNestedPathException catch (e) {
@@ -165,17 +172,18 @@ class NullValueInNestedPathException extends BeansException {
   NullValueInNestedPathException(this.beanType, this.propertyName)
     : super("Value of nested property '$propertyName' of $beanType is null");
 
-  /// Type of the wrapped (root) object.
+  /// The type of the wrapped (root) object.
   final Type beanType;
 
-  /// The path prefix that is `null`.
+  /// The part of the path whose value is `null`.
   final String propertyName;
 }
 
-/// A value cannot be converted to the property type, like Spring's
-/// `TypeMismatchException`.
+/// The error a [BeanWrapper] throws when a value cannot be converted to the
+/// type of the property it is written to, such as `'old'` for an `int`.
 ///
-/// Data binding turns it into a field error with code [errorCode].
+/// Data binding turns it into a field error with the code [errorCode], so
+/// a form can show "must be a number" next to the field.
 ///
 /// ```dart
 /// try {
@@ -194,7 +202,8 @@ class NullValueInNestedPathException extends BeansException {
 /// }
 /// ```
 class TypeMismatchException extends BeansException {
-  /// [value] for [propertyName] is not convertible to [requiredType].
+  /// [value], written to [propertyName], could not be converted to
+  /// [requiredType]; the optional cause is the conversion error.
   TypeMismatchException(
     this.propertyName,
     this.value,
@@ -206,7 +215,7 @@ class TypeMismatchException extends BeansException {
          cause: cause,
        );
 
-  /// Error code used by data binding.
+  /// The field error code data binding uses for it, `typeMismatch`.
   static const errorCode = 'typeMismatch';
 
   /// The property path being written.
@@ -219,8 +228,11 @@ class TypeMismatchException extends BeansException {
   final Type requiredType;
 }
 
-/// Several property updates failed, like Spring's
-/// `PropertyBatchUpdateException`.
+/// The error [BeanWrapper.setPropertyValues] throws when one or more of the
+/// values could not be written, after trying all of them.
+///
+/// [exceptions] holds one error per failed property, so all problems can be
+/// reported at once.
 ///
 /// ```dart
 /// try {
@@ -241,7 +253,7 @@ class TypeMismatchException extends BeansException {
 /// }
 /// ```
 class PropertyBatchUpdateException extends BeansException {
-  /// Collects the individual failures.
+  /// Reports the individual failures in [exceptions].
   PropertyBatchUpdateException(this.exceptions)
     : super(
         '${exceptions.length} property update(s) failed: '
@@ -252,8 +264,13 @@ class PropertyBatchUpdateException extends BeansException {
   final List<BeansException> exceptions;
 }
 
-/// Reads and writes nested properties of an introspected object, like
-/// Spring's `BeanWrapperImpl`.
+/// Reads and writes the properties of an object by path (`address.city`,
+/// `tags[0]`), converting written values to the property types.
+///
+/// It is the engine behind data binding: request parameters arrive as
+/// strings with dotted names and must land in typed fields of nested
+/// objects. Use it directly when your own code has such name-value pairs;
+/// otherwise `DataBinder` uses it for you.
 ///
 /// Paths: `name`, `address.city`, `tags[0]`, `scores['math']`,
 /// `orders[1].items[0].sku`. Written values are converted to the property
@@ -268,6 +285,7 @@ class PropertyBatchUpdateException extends BeansException {
 /// [autoGrowCollectionLimit]).
 ///
 /// ```dart
+/// // Fill a Person from string values, creating nested objects as needed.
 /// final wrapper = BeanWrapper(person, autoGrowNestedPaths: true)
 ///   ..setPropertyValue('age', '42') // converted to int
 ///   ..setPropertyValue('address.city', 'Lyon') // creates the Address
@@ -309,23 +327,24 @@ class BeanWrapper {
   /// The object whose properties are accessed.
   final Object wrappedInstance;
 
-  /// Source of the property metadata.
+  /// Where the descriptions of the classes on the path come from.
   final BeanIntrospector introspector;
 
   /// Converts written values to the property types.
   final ConversionService conversionService;
 
-  /// Instantiate `null` nested introspected objects (with a no-argument
-  /// constructor), lists and maps, and missing list elements, instead of
-  /// failing.
+  /// Whether writes create what the path needs instead of failing: `null`
+  /// nested introspected objects (with a no-argument constructor), lists
+  /// and maps, and missing list elements. `false` by default.
   final bool autoGrowNestedPaths;
 
   /// Lists are grown up to (not including) this index, like Spring's
-  /// `autoGrowCollectionLimit`.
+  /// `autoGrowCollectionLimit`; a guard against a request asking for
+  /// `items[1000000]`. Practically unlimited by default.
   final int autoGrowCollectionLimit;
 
-  /// Whether [path] can be read (all its segments exist and are not
-  /// `null`).
+  /// Whether [path] can be read: every segment exists and none before the
+  /// last is `null`. Never throws.
   bool isReadableProperty(String path) {
     try {
       getPropertyValue(path);
@@ -335,8 +354,9 @@ class BeanWrapper {
     }
   }
 
-  /// Whether [path] can be written: a writable property, a map key, or an
-  /// index into an existing collection.
+  /// Whether [path] can be written: it ends at a writable property, at a
+  /// map key, or at an index (indexes are only checked by the write
+  /// itself). `false` when a value on the way is `null`. Never throws.
   bool isWritableProperty(String path) {
     try {
       final segments = _parse(path);
@@ -384,7 +404,7 @@ class BeanWrapper {
     }
   }
 
-  /// The value at [path].
+  /// The value at [path]; reads never grow anything.
   ///
   /// ```dart
   /// wrapper.getPropertyValue('previous[0].city');

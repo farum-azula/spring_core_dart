@@ -1,7 +1,18 @@
-/// Application context, annotations, conditions, events, lifecycle and
-/// messages (Spring's `spring-context`).
+/// The application context: the container that creates an application's
+/// beans, runs their lifecycle and connects them through events and
+/// messages.
+///
+/// Import it for the annotations that declare beans (`@Component`,
+/// `@Configuration`, `@Bean`, `@Profile`, `@EventListener`, ...), for
+/// `ApplicationContext` and its standard implementation, for application
+/// events, lifecycle beans, conditions and message sources (`MessageSource`
+/// and `messages.properties` files). Most programs import
+/// `spring_core_dart.dart`, which includes this library; a Spring Boot
+/// application gets its context from `SpringApplication.run` instead of
+/// creating one.
 ///
 /// ```dart
+/// // A small program without Spring Boot: start the beans, use them, stop.
 /// final context = ApplicationContext.run([appBeans]);
 /// context.addListener<UserCreated>((event) => print(event.name));
 /// context.publishEvent(UserCreated('Ada'));
@@ -9,7 +20,7 @@
 /// context.close();
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java), the `spring-context` module:
 /// ```java
 /// var context = new AnnotationConfigApplicationContext(AppConfig.class);
 /// context.addApplicationListener(

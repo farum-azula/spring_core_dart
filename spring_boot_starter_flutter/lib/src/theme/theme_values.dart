@@ -3,19 +3,28 @@ import 'dart:ui' show Color, FontWeight;
 import 'package:flutter/animation.dart' show Cubic;
 import 'package:spring_boot_starter_flutter/src/theme/material_colors.dart';
 
-/// A theme property whose value cannot be read; the message names the
-/// property, the value and what is expected.
+/// The error thrown when a theme property has a value (or a key) that
+/// cannot be read, such as `seed-color: purpel` or `seed-colour`.
+///
+/// The themes are read when the application starts, so this error fails
+/// the start, and `SpringApplicationWidget` shows it on the failure
+/// screen. Its message names the property, the value and what the value
+/// may be, for example: `Invalid theme property
+/// spring.flutter.theme.seed-color: 'purpel'; expected a Colors name ...`.
+/// `SpringThemes.load` throws it too, for themes loaded at run time; catch
+/// it there to keep the app's current themes.
 final class ThemePropertyException implements Exception {
-  /// The error for [key] (`spring.flutter.theme....`) with [value].
+  /// The error for property [key] with [value], which is not [expected].
   ThemePropertyException(this.key, this.value, this.expected);
 
-  /// The full property name.
+  /// The full property name, such as
+  /// `spring.flutter.theme.themes.ocean.seed-color`.
   final String key;
 
-  /// The value found.
+  /// The value found in the properties.
   final String value;
 
-  /// What the value may be.
+  /// What the value may be, in words.
   final String expected;
 
   @override
@@ -23,10 +32,14 @@ final class ThemePropertyException implements Exception {
       "Invalid theme property $key: '$value'; expected $expected.";
 }
 
-/// Reads the values of theme properties.
+/// Parses the text values of theme properties: colors, weights, numbers,
+/// durations, curves, booleans and enum names. Each parser returns `null`
+/// for a value it cannot read, and the caller reports it as a
+/// `ThemePropertyException`. Internal to the starter.
 abstract final class ThemeValues {
-  /// A `Colors` name (`deepPurple`, `deepPurple.shade200`, `black54`) or
-  /// `#RGB`, `#RRGGBB`, `#AARRGGBB` (also `0xAARRGGBB`).
+  /// A color from a `Colors` name (`deepPurple`, `deepPurple.shade200`,
+  /// `black54`) or from `#RGB`, `#RRGGBB`, `#AARRGGBB` (also
+  /// `0xAARRGGBB`); `null` otherwise.
   static Color? color(String value) {
     final text = value.trim();
     final hex = text.startsWith('#')
@@ -47,8 +60,9 @@ abstract final class ThemeValues {
     return materialColors[text] ?? materialColors[_camel(text)];
   }
 
-  /// `100`…`900`, or `thin`, `extra-light`, `light`, `normal` / `regular`,
-  /// `medium`, `semibold`, `bold`, `extra-bold`, `black`.
+  /// A font weight from `100` … `900`, or `thin`, `extra-light`, `light`,
+  /// `normal` / `regular`, `medium`, `semibold`, `bold`, `extra-bold`,
+  /// `black`; `null` otherwise.
   static FontWeight? weight(String value) {
     final text = value.trim().toLowerCase().replaceAll(RegExp('[-_ ]'), '');
     final number = int.tryParse(text);
@@ -71,10 +85,11 @@ abstract final class ThemeValues {
     };
   }
 
-  /// A number (`12`, `1.5`).
+  /// A number (`12`, `1.5`); `null` otherwise.
   static double? number(String value) => double.tryParse(value.trim());
 
-  /// `250ms`, `1s`, `1.5s`, or plain milliseconds.
+  /// A duration from `250ms`, `1s`, `1.5s`, or plain milliseconds; `null`
+  /// otherwise.
   static Duration? duration(String value) {
     final text = value.trim().toLowerCase();
     final match = RegExp(r'^(\d+(?:\.\d+)?)\s*(ms|s)?$').firstMatch(text);
@@ -86,7 +101,8 @@ abstract final class ThemeValues {
     return Duration(microseconds: (ms * 1000).round());
   }
 
-  /// `0.2, 0, 0, 1` (a cubic Bézier curve, like CSS `cubic-bezier`).
+  /// A curve from four numbers, `0.2, 0, 0, 1`: a cubic Bézier curve, like
+  /// CSS `cubic-bezier`; `null` otherwise.
   static Cubic? curve(String value) {
     final parts = [
       for (final part in value.split(',')) double.tryParse(part.trim()),
@@ -97,15 +113,15 @@ abstract final class ThemeValues {
     return Cubic(parts[0]!, parts[1]!, parts[2]!, parts[3]!);
   }
 
-  /// `true` / `false`.
+  /// `true` or `false`, in any case; `null` otherwise.
   static bool? boolean(String value) => switch (value.trim().toLowerCase()) {
     'true' => true,
     'false' => false,
     _ => null,
   };
 
-  /// One of [values] by name, ignoring case, `-` and `_`
-  /// (`tonal-spot` → `tonalSpot`).
+  /// The one of [values] whose name matches [value], ignoring case, `-`
+  /// and `_` (`tonal-spot` gives `tonalSpot`); `null` when none does.
   static T? enumValue<T extends Enum>(List<T> values, String value) {
     final wanted = canonical(value);
     for (final candidate in values) {
@@ -116,8 +132,8 @@ abstract final class ThemeValues {
     return null;
   }
 
-  /// A key or name in its canonical form: lower case, without `-` and `_`
-  /// (`seed-color`, `seedColor` and `SEED_COLOR` are the same).
+  /// A key or name in its canonical form: lower case, without `-` and `_`,
+  /// so `seed-color`, `seedColor` and `SEED_COLOR` are the same key.
   static String canonical(String name) =>
       name.toLowerCase().replaceAll('-', '').replaceAll('_', '');
 

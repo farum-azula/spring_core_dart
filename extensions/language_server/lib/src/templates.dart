@@ -1,19 +1,28 @@
-/// Placeholders (`${key:default}`) and SpEL expressions (`#{...}`) inside
-/// the source text of an annotation string.
+/// Finds the `${key:default}` placeholders and `#{...}` SpEL expressions
+/// in the text of an annotation string or a config value, with their
+/// offsets, for highlighting, navigation and checks.
+///
+/// It reads source text, so `\${` written in a non-raw Dart string (a
+/// literal `${` at run time) counts as a placeholder too.
 library;
 
-/// What a [TemplatePart] is.
+/// Whether a [TemplatePart] is a placeholder or a SpEL expression.
 enum TemplatePartKind {
-  /// `${key}` or `${key:default}`.
+  /// `${key}` or `${key:default}`: a property, looked up by key.
   placeholder,
 
-  /// `#{expression}`.
+  /// `#{expression}`: SpEL, evaluated at run time.
   expression,
 }
 
-/// One placeholder or expression; offsets are relative to the scanned text.
+/// One placeholder or expression found by [scanTemplate], with offsets
+/// relative to the scanned text.
+///
+/// An unclosed one (no `}`) runs to the end of the text, so the editor
+/// can still colour it and report the missing brace.
 final class TemplatePart {
-  /// Creates a part.
+  /// A part of [kind] from [start] to [end], whose content lies between
+  /// [innerStart] and [innerEnd].
   const TemplatePart(
     this.kind,
     this.start,
@@ -26,25 +35,27 @@ final class TemplatePart {
   /// Placeholder or expression.
   final TemplatePartKind kind;
 
-  /// Offset of `$` / `#`.
+  /// The offset of the opening `$` or `#` (of the backslash, for `\${`).
   final int start;
 
-  /// Offset after the closing `}` (or the end of the text if unclosed).
+  /// The offset after the closing `}`, or the end of the text when unclosed.
   final int end;
 
-  /// Offset after `${` / `#{`.
+  /// The offset after `${` or `#{`.
   final int innerStart;
 
-  /// Offset of the closing `}`.
+  /// The offset of the closing `}`, or the end of the text when unclosed.
   final int innerEnd;
 
-  /// For placeholders: the end of the key (before `:default`).
+  /// For a placeholder, where the key ends: the offset of the `:` before a
+  /// default, or [innerEnd] without one. `null` for an expression.
   final int? keyEnd;
 
   /// Whether the closing `}` is missing.
   bool get unclosed => end == innerEnd;
 
-  /// The placeholder key or the expression text.
+  /// The placeholder's key or the expression's source, trimmed, taken from
+  /// [text], the text that was scanned.
   String inner(String text) =>
       text.substring(innerStart, keyEnd ?? innerEnd).trim();
 
@@ -52,8 +63,11 @@ final class TemplatePart {
   String toString() => '$kind($start..$end)';
 }
 
-/// The placeholders and expressions of [text], outermost first; nested
-/// placeholders in defaults (`${a:${b}}`) are returned too.
+/// The placeholders and expressions of [text], outermost first.
+///
+/// Placeholders in a default (`${a:${b}}`) are returned too, after the
+/// outer one. Inside an expression, braces in SpEL string literals do not
+/// count, and `''` is an escaped quote.
 List<TemplatePart> scanTemplate(String text) {
   final parts = <TemplatePart>[];
   _scan(text, 0, text.length, parts);

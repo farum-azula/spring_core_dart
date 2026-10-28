@@ -8,81 +8,158 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.session');
 
-/// A conversation with one client across requests, like the servlet
-/// `HttpSession`: attributes kept on the server, the client holding only
-/// a random id in a cookie (`JSESSIONID`).
+/// Data the server keeps for one client across several requests, such as
+/// a shopping cart or the logged-in user.
+///
+/// HTTP forgets everything between requests. A session remembers: its
+/// attributes stay on the server, and the client holds only a random id
+/// in a cookie (`JSESSIONID` by default) that it sends back with each
+/// request. Get it with `request.getSession()`, which creates the session
+/// (and sends the cookie) on first use; `getSession(create: false)` only
+/// looks. A session ends when it is [invalidate]d or after
+/// [maxInactiveInterval] without requests.
+///
+/// APIs called by programs usually carry a token instead and need no
+/// session; sessions suit browsers, and the security starter keeps the
+/// logged-in user in one.
 ///
 /// ```dart
-/// @GetMapping('/cart')
-/// List<String> cart(ServerHttpRequest request) =>
-///     (request.getSession()!.getAttribute('cart') as List<String>?) ?? [];
+/// // Each visitor has a cart that lives as long as the session.
+/// @PostMapping('/cart')
+/// void add(ServerHttpRequest request, @RequestParam() String item) {
+///   final session = request.getSession()!;
+///   final cart = session.getAttribute('cart') as List<String>? ?? [];
+///   session.setAttribute('cart', [...cart, item]);
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @PostMapping("/cart")
+/// void add(HttpSession session, @RequestParam String item) {
+///   List<String> cart = (List<String>) session.getAttribute("cart");
+///   ...
+///   session.setAttribute("cart", cart);
+/// }
 /// ```
 abstract interface class HttpSession {
-  /// The id (random, 256 bits).
+  /// The session id the cookie carries: 256 random bits, base64url
+  /// encoded. It changes with `request.changeSessionId()`.
   String get id;
 
-  /// When it was created.
+  /// When the session was created.
   DateTime get creationTime;
 
-  /// When a request last used it.
+  /// When a request last came with this session; the inactivity timeout
+  /// counts from here.
   DateTime get lastAccessedTime;
 
-  /// How long it lives without requests.
+  /// How long the session lives without a request
+  /// (`server.servlet.session.timeout`, 30 minutes by default). Set it
+  /// to change the timeout of this session only; zero or negative means
+  /// it never expires.
   Duration get maxInactiveInterval;
   set maxInactiveInterval(Duration value);
 
-  /// Whether the client does not know it yet (created by this request).
+  /// Whether this request created the session, so the client does not
+  /// know it yet.
   bool get isNew;
 
-  /// The attribute [name], or `null`.
+  /// The value stored under [name], or `null` when there is none. Throws
+  /// a [StateError] once the session is invalidated.
   Object? getAttribute(String name);
 
-  /// Sets the attribute [name] (`null` removes it).
+  /// Stores [value] under [name]; `null` removes it. Values stay in the
+  /// repository as they are (in memory by default, not copied). Throws a
+  /// [StateError] once the session is invalidated.
   void setAttribute(String name, Object? value);
 
-  /// Removes the attribute [name].
+  /// Removes the value stored under [name], if any.
   void removeAttribute(String name);
 
-  /// The names of the attributes.
+  /// The names of the stored values (a copy).
   Iterable<String> get attributeNames;
 
-  /// Ends the session: its attributes are dropped and its id is never
-  /// accepted again.
+  /// Ends the session, as a logout does: its values are dropped and its
+  /// id is never accepted again. Using the session afterwards throws a
+  /// [StateError]. The cookie stays in the browser; its next request just
+  /// has no session.
   void invalidate();
 
-  /// Whether [invalidate] was called (or it expired).
+  /// Whether the session has ended: invalidated, expired, or dropped
+  /// because the session limit was reached.
   bool get isInvalidated;
 }
 
-/// Keeps sessions, like Spring Session's `SessionRepository`.
+/// Where the sessions live.
+///
+/// The starter keeps sessions in memory ([InMemoryHttpSessionRepository]):
+/// they are lost when the process stops and not shared between several
+/// instances of the application. Declare a bean of this type to keep them
+/// elsewhere, for example in a database or Redis, so they survive a
+/// restart or are shared behind a load balancer; the in-memory one then
+/// backs off. Methods may return a `Future`, but with an asynchronous
+/// repository, code must use `request.getSessionAsync()`.
+///
+/// ```dart
+/// // Sessions in the application's database, shared by every instance;
+/// // DatabaseSessions is the application's own implementation.
+/// @Bean()
+/// HttpSessionRepository httpSessionRepository(Database database) =>
+///     DatabaseSessions(database);
+/// ```
+///
+/// Spring (Java), with Spring Session:
+/// ```java
+/// @Bean
+/// SessionRepository<?> sessionRepository(JdbcOperations jdbc,
+///     TransactionOperations transactions) {
+///   return new JdbcIndexedSessionRepository(jdbc, transactions);
+/// }
+/// ```
 abstract interface class HttpSessionRepository {
-  /// A new session with a fresh id.
+  /// A new, empty session with a fresh random id. The starter then sets
+  /// its timeout from `server.servlet.session.timeout`.
   FutureOr<StoredHttpSession> createSession();
 
-  /// The live session [id], or `null` (unknown, invalidated or expired).
+  /// The live session with [id], or `null` when it is unknown,
+  /// invalidated or expired. Called once per request that carries the
+  /// session cookie.
   FutureOr<StoredHttpSession?> findById(String id);
 
-  /// Gives [session] a new id (the old one stops working).
+  /// Gives [session] a new id and forgets the old one, keeping the
+  /// session's values.
   FutureOr<void> changeSessionId(StoredHttpSession session);
 
-  /// Forgets [id].
+  /// Removes the session with [id], so that id is no longer found.
   FutureOr<void> deleteById(String id);
 }
 
-/// An [HttpSession] as a repository keeps it.
+/// An [HttpSession] with the extra state a repository needs to keep it.
+///
+/// Extend it when you write an [HttpSessionRepository]: the starter
+/// marks the session's use with [touch] and the repository decides with
+/// [isExpired] when it is gone.
 abstract class StoredHttpSession implements HttpSession {
-  /// Marks a request's use.
+  /// Records that a request used the session at [now]; it updates
+  /// [lastAccessedTime].
   void touch(DateTime now);
 
-  /// Whether the client does not know it yet.
+  /// Whether this request created the session; `true` until a later
+  /// request finds it again by its id.
   @override
   bool isNew = true;
 
-  /// Whether it has not been used for longer than [maxInactiveInterval].
+  /// Whether the session, at [now], has gone unused for longer than
+  /// [maxInactiveInterval].
   bool isExpired(DateTime now);
 }
 
-/// `server.servlet.session.*`, like Spring Boot's `Session` properties.
+/// The session settings: how long a session lives, how many are kept, and
+/// how the session cookie is written.
+///
+/// Applications set the `server.servlet.session.*` properties; the
+/// starter reads them with [HttpSessionProperties.of].
 ///
 /// | Property | Default |
 /// |---|---|
@@ -95,12 +172,23 @@ abstract class StoredHttpSession implements HttpSession {
 /// | `server.servlet.session.cookie.same-site` | `lax` |
 /// | `server.servlet.session.max-sessions` | `10000` (`-1`: no limit) |
 ///
+/// A timeout without a unit is in seconds (`1800`), as in Spring Boot;
+/// `same-site` takes `lax`, `strict`, `none` or `unset` (no `SameSite`
+/// attribute).
+///
+/// ```properties
+/// # Sessions end after 15 minutes without a request.
+/// server.servlet.session.timeout=15m
+/// server.servlet.session.cookie.name=SHOPSESSION
+/// ```
+///
 /// Spring Boot leaves `same-site` unset and has no session limit (the
-/// container's): here the cookie is `SameSite=Lax` and, when the limit is
-/// reached, the sessions unused for the longest time are dropped, so
-/// clients cannot fill the memory by opening sessions.
+/// container has its own): here the cookie is `SameSite=Lax` and, when
+/// the limit is reached, the sessions unused for the longest time are
+/// dropped, so clients cannot fill the memory by opening sessions.
 final class HttpSessionProperties {
-  /// The settings.
+  /// Settings with the defaults of the table above; a `null` [cookiePath]
+  /// means `/`.
   const HttpSessionProperties({
     this.timeout = const Duration(minutes: 30),
     this.cookieName = 'JSESSIONID',
@@ -112,8 +200,10 @@ final class HttpSessionProperties {
     this.maxSessions = 10000,
   });
 
-  /// Reads `server.servlet.session.*` from [environment]; the cookie path
-  /// defaults to [contextPath].
+  /// Reads `server.servlet.session.*` from [environment]. The cookie path
+  /// defaults to [contextPath] (`server.servlet.context-path`), else `/`.
+  /// Throws an [ArgumentError] for an unknown `same-site` value; an
+  /// unreadable `max-sessions` keeps the default.
   factory HttpSessionProperties.of(
     PropertyResolver environment, {
     String contextPath = '',
@@ -155,55 +245,85 @@ final class HttpSessionProperties {
     );
   }
 
-  /// How long a session lives without requests.
+  /// How long a session lives without a request; 30 minutes by default.
   final Duration timeout;
 
-  /// The cookie's name.
+  /// The name of the cookie that carries the session id; `JSESSIONID` by
+  /// default.
   final String cookieName;
 
-  /// The cookie's path (`/` when `null`).
+  /// The `Path` of the cookie, the paths the browser sends it to; `/`
+  /// when `null`.
   final String? cookiePath;
 
-  /// The cookie's domain.
+  /// The `Domain` of the cookie; `null` sends none, so the cookie goes
+  /// back only to the host that set it.
   final String? cookieDomain;
 
-  /// Whether scripts cannot read the cookie.
+  /// Whether the cookie is `HttpOnly`, hidden from the page's scripts;
+  /// `true` by default.
   final bool httpOnly;
 
-  /// Whether the cookie is sent over HTTPS only (`null`: when the request
-  /// was secure).
+  /// Whether the cookie is `Secure`, sent back over HTTPS only. `null`
+  /// (the default) decides per request: secure when the request came
+  /// over HTTPS.
   final bool? secure;
 
-  /// The cookie's `SameSite` (`null`: not sent).
+  /// The `SameSite` attribute of the cookie (`Lax`, `Strict` or `None`);
+  /// `Lax` by default, `null` sends none.
   final String? sameSite;
 
-  /// Sessions kept at most (`-1`: no limit).
+  /// How many sessions are kept at most; 10000 by default, `-1` for no
+  /// limit. Above it, the least recently used session is dropped.
   final int maxSessions;
 }
 
 final Random _random = Random.secure();
 
-/// A new session id: 256 random bits, base64url.
+/// A new session id: 256 bits from a secure random generator, base64url
+/// encoded without padding (43 characters), too many to guess. For
+/// writers of an [HttpSessionRepository].
 String newSessionId() {
   final bytes = List<int>.generate(32, (_) => _random.nextInt(256));
   return base64Url.encode(bytes).replaceAll('=', '');
 }
 
-/// Sessions in memory, like the servlet container's default: lost with the
-/// process, not shared between instances.
+/// The default [HttpSessionRepository]: sessions in the memory of the
+/// process.
+///
+/// It needs no setup, which fits one instance of an application. Its
+/// sessions are lost when the process stops and are not shared between
+/// instances; declare another repository bean when that matters. Expired
+/// sessions are removed when found, and all of them at most once a
+/// minute when a session is created. When [maxSessions] is reached, a new
+/// session pushes out the one unused for the longest time, with a
+/// warning in the log.
+///
+/// ```dart
+/// // A test that controls time, to check that sessions expire.
+/// var now = DateTime(2026);
+/// final repository = InMemoryHttpSessionRepository(
+///   timeout: const Duration(minutes: 5),
+///   clock: () => now,
+/// );
+/// final session = repository.createSession();
+/// now = now.add(const Duration(minutes: 6));
+/// assert(repository.findById(session.id) == null);
+/// ```
 final class InMemoryHttpSessionRepository implements HttpSessionRepository {
-  /// A repository giving sessions [timeout], keeping at most [maxSessions]
-  /// (`-1`: no limit; when full, the least recently used is dropped).
+  /// A repository whose new sessions time out after [timeout], keeping at
+  /// most [maxSessions] (`-1`: no limit). [clock] gives the current time;
+  /// tests replace it.
   InMemoryHttpSessionRepository({
     this.timeout = const Duration(minutes: 30),
     this.maxSessions = 10000,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
-  /// The default timeout of new sessions.
+  /// The inactivity timeout of new sessions; 30 minutes by default.
   final Duration timeout;
 
-  /// The limit.
+  /// How many sessions are kept at most; `-1` for no limit.
   final int maxSessions;
 
   final DateTime Function() _clock;
@@ -211,7 +331,7 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
   // Insertion order is kept least-recently-used first (see _touch).
   final _sessions = <String, _MemorySession>{};
 
-  /// How many sessions are kept.
+  /// How many sessions are kept, including expired ones not yet removed.
   int get size => _sessions.length;
 
   @override
@@ -360,15 +480,24 @@ final class _MemorySession extends StoredHttpSession {
       now.difference(lastAccessedTime) > maxInactiveInterval;
 }
 
-/// Finds and creates the session of a request, like the servlet
-/// container's session handling: the id comes from the session cookie, a
-/// new or changed id goes out in `Set-Cookie`. The client never chooses an
-/// id: an unknown id gets a new session with a new one.
+/// Connects requests to their sessions through the session cookie.
+///
+/// For each request it reads the id from the cookie and looks the session
+/// up in the repository; when the request creates a session or changes
+/// its id, it sends the new id in a `Set-Cookie` header. The client never
+/// chooses an id: an unknown id is ignored, and a session created later
+/// gets a new random one, so an attacker cannot plant an id in a victim's
+/// browser (session fixation). Ids longer than 128 characters are
+/// ignored without a lookup.
+///
+/// The starter declares it as the `httpSessionManager` bean and the
+/// [HttpSessionFilter] calls it; applications use `request.getSession()`.
 final class HttpSessionManager {
-  /// Sessions of [repository] with [properties].
+  /// A manager of the sessions in [repository], with the cookie and
+  /// timeout of [properties].
   HttpSessionManager(this.repository, this.properties);
 
-  /// Keeps the sessions.
+  /// Where the sessions are kept.
   final HttpSessionRepository repository;
 
   /// The cookie and timeout settings.
@@ -376,8 +505,10 @@ final class HttpSessionManager {
 
   static const _attribute = 'spring.web.session';
 
-  /// Makes sessions available to [request] (the [HttpSessionFilter] does
-  /// it for every request).
+  /// Finds the session named by the cookie of [request], marks it used,
+  /// and makes `request.getSession()` work for this request; [response]
+  /// receives the cookie of a session created later. The
+  /// [HttpSessionFilter] calls it for every request.
   Future<void> attach(
     ServerHttpRequest request,
     ServerHttpResponse response,
@@ -470,12 +601,28 @@ final class _RequestSessions {
   }
 }
 
-/// Sessions of a request (with the session filter of the web starter).
+/// The session methods of a request: `request.getSession()` and friends.
+///
+/// They work in any code that has the request, once the starter's
+/// [HttpSessionFilter] has run (it runs before every other filter).
+/// Called on a request that did not pass the filter, they throw a
+/// [StateError].
+///
+/// ```dart
+/// // After a successful login: a new id, so an id seen before the login
+/// // is worthless, then the user goes into the session.
+/// await request.changeSessionId();
+/// request.getSession()!.setAttribute('user', user.name);
+/// ```
 extension ServerHttpRequestSession on ServerHttpRequest {
-  /// The request's session: the existing one, else (when [create]) a new
-  /// one, sending its cookie; `null` without one when [create] is false.
+  /// The request's session. Without one, [create] (the default) makes a
+  /// new session and sends its cookie with the response; with `create:
+  /// false` the result is `null` instead, which is how code checks for a
+  /// session without starting one.
   ///
-  /// Use [getSessionAsync] with a repository that is not in memory.
+  /// Works only with a repository that answers at once, as the in-memory
+  /// one does; otherwise creating a session throws a [StateError]: use
+  /// [getSessionAsync] then.
   HttpSession? getSession({bool create = true}) {
     final sessions = HttpSessionManager._of(this);
     if (sessions == null) {
@@ -498,7 +645,8 @@ extension ServerHttpRequestSession on ServerHttpRequest {
     );
   }
 
-  /// Like [getSession], for any repository.
+  /// The request's session, as [getSession] gives it, for any repository,
+  /// including those that answer with a `Future`.
   Future<HttpSession?> getSessionAsync({bool create = true}) async {
     final sessions = HttpSessionManager._of(this);
     if (sessions == null) {
@@ -507,8 +655,10 @@ extension ServerHttpRequestSession on ServerHttpRequest {
     return sessions.current() ?? (create ? await sessions.create() : null);
   }
 
-  /// Gives the current session a new id (after a login: the old id, which
-  /// someone else may have planted, stops working) and sends it; the new id.
+  /// Gives the current session a new id, keeping its values, and sends the
+  /// new id in the cookie; returns the new id. Call it after a login: the
+  /// old id, which someone else may know, stops working. Throws a
+  /// [StateError] when the request has no session.
   Future<String> changeSessionId() async {
     final sessions = HttpSessionManager._of(this);
     final current = sessions?.current();
@@ -518,10 +668,13 @@ extension ServerHttpRequestSession on ServerHttpRequest {
     return await sessions.changeId(current);
   }
 
-  /// The session id the client sent (valid or not).
+  /// The session id the client sent in its cookie, whether or not it
+  /// names a live session; `null` without a cookie.
   String? get requestedSessionId => HttpSessionManager._of(this)?.requestedId;
 
-  /// Whether the client's session id names a live session.
+  /// Whether the id the client sent names the session this request uses:
+  /// `false` when the session is unknown, expired, invalidated, or got a
+  /// new id during this request.
   bool get isRequestedSessionIdValid {
     final sessions = HttpSessionManager._of(this);
     final current = sessions?.current();
@@ -529,19 +682,25 @@ extension ServerHttpRequestSession on ServerHttpRequest {
   }
 }
 
-/// Makes the session of the request available (`request.getSession()`),
-/// before every other filter (Spring Security's included).
+/// The filter that makes `request.getSession()` work: it looks up the
+/// session of each request before the other filters run.
+///
+/// The starter declares it as the `httpSessionFilter` bean, at order
+/// [filterOrder], so the session is known to every later filter,
+/// the security filter chain included. Applications do not use it
+/// directly.
 final class HttpSessionFilter implements WebFilter, Ordered {
-  /// A filter attaching sessions of [manager].
+  /// A filter that looks up sessions through [manager].
   HttpSessionFilter(this.manager);
 
-  /// Before the security filter chain (`-100`).
+  /// The filter's order, `-1000`: before the security filter chain
+  /// (`-100`).
   static const filterOrder = -1000;
 
   @override
   int get order => filterOrder;
 
-  /// The sessions.
+  /// Finds the session of each request.
   final HttpSessionManager manager;
 
   @override

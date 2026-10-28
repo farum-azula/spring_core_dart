@@ -1,16 +1,19 @@
-/// Logging for `spring_boot_dart` applications, like
-/// `spring-boot-starter-logging`: add the dependency and the
-/// auto-configuration installs a `LoggingSystem` behind `SpringLog`.
+/// Console and file logging for `spring_boot_dart` applications: add the
+/// dependency and the lines written through `SpringLog` (and the `log`
+/// getter of `@Log()`) come out in Spring Boot's format, configured from
+/// the `logging.*` properties. No code is needed.
 ///
-/// - console output in Spring Boot's format, or your own Logback pattern
-///   (`LogPattern`);
-/// - `logging.*` properties (levels per logger, patterns, thresholds,
-///   capacity);
-/// - `LogBuffer`: the last records in memory with `LogQuery` filtering,
-///   live streams, counters and export, made for an in-app log screen;
-/// - log files with size-based rollover (`FileAppender`, `logging.file.*`,
+/// Import it for the types an application may touch on top of that:
+///
+/// - `LoggingSystem`, to change logger levels at runtime or add an
+///   output;
+/// - `LogPattern`, the Logback pattern syntax of
+///   `logging.pattern.console` and `logging.pattern.file`;
+/// - `LogBuffer` and `LogQuery`, the last records in memory, made for an
+///   in-app log screen;
+/// - `FileAppender`, log files that roll over by size (`logging.file.*`,
 ///   `logging.logback.rollingpolicy.*`; not on the web);
-/// - custom `LogAppender`s (crash reporting, network).
+/// - `LogAppender`, your own output, such as crash reporting.
 ///
 /// Re-exports `spring_boot_dart`.
 library;

@@ -7,20 +7,27 @@ import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 
-/// Messages from `.properties` bundles, like Spring's
-/// `ReloadableResourceBundleMessageSource`.
+/// A message source that reads its texts from `.properties` files, one
+/// file per language, and can re-read them when they change.
 ///
-/// For basename `i18n/messages` and locale `ru_RU` the files
+/// This is the usual message source. Spring Boot creates one from
+/// `lib/resources/messages*.properties` and the `spring.messages.*`
+/// properties; without Spring Boot, declare it as the `messageSource`
+/// bean.
+///
+/// For the basename `i18n/messages` and the locale `ru_RU`, the files
 /// `i18n/messages_ru_RU.properties`, `i18n/messages_ru.properties` and
 /// `i18n/messages.properties` are consulted. Basenames are locations for
 /// the [resourceLoader] (`file:`, `classpath:`, plain paths, custom
-/// protocols). Lookup goes basename by basename, like Spring: every locale
-/// file of the first basename (requested locale, [fallbackLocale], base
-/// file) before the second basename, so `messages.properties` wins over
-/// `errors_de`. Resources that cannot be read synchronously (such as
-/// Flutter assets) must be loaded with [preload] first.
+/// protocols). The lookup goes basename by basename, as in Spring: every
+/// locale file of the first basename (requested locale, [fallbackLocale],
+/// base file) before the second basename, so `messages.properties` wins
+/// over `errors_de.properties`. Resources that cannot be read
+/// synchronously (such as Flutter assets) must be loaded with [preload]
+/// first.
 ///
 /// ```dart
+/// // Two bundles, re-read at most every 10 seconds, English by default.
 /// @Configuration()
 /// class I18nConfig {
 ///   @Bean()
@@ -46,14 +53,19 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 /// }
 /// ```
 ///
-/// Files are parsed as UTF-8 `.properties`. Reloading ([cacheSeconds])
-/// re-reads files that can be read synchronously; a file's last
-/// modification time is compared for file system resources, other
+/// Files are read in [defaultEncoding], UTF-8 by default. Reloading
+/// ([cacheSeconds]) re-reads files that can be read synchronously: for
+/// file system resources the last modification time is compared, other
 /// resources are re-read on every check, and preloaded (async-only)
-/// resources are only replaced by another [preload].
+/// resources are only replaced by another [preload]. Unlike Spring's, it
+/// does not receive the context's resource loader by itself: pass
+/// [resourceLoader] when the basenames use a custom protocol.
 class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
-  /// Creates a source for [basenames]; [resourceLoader] defaults to a
-  /// `DefaultResourceLoader`.
+  /// Creates a source for [basenames], consulted in that order.
+  ///
+  /// [resourceLoader] defaults to a new `DefaultResourceLoader`;
+  /// [cacheSeconds] defaults to `-1` (files are read once);
+  /// [fallbackToSystemLocale] defaults to `true`.
   ReloadableResourceBundleMessageSource({
     List<String> basenames = const [],
     ResourceLoader? resourceLoader,
@@ -65,40 +77,48 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
 
   final List<String> _basenames;
 
-  /// Loads the bundle files.
+  /// Finds the files of the basenames; give the context (or a loader with
+  /// a `ProtocolResolver`) to read from custom locations such as Flutter
+  /// assets.
   final ResourceLoader resourceLoader;
 
-  /// The charset the files are read in (Spring's `setDefaultEncoding`;
-  /// Boot's `spring.messages.encoding`); UTF-8 by default.
+  /// The charset the files are read in; UTF-8 by default. Spring's
+  /// `setDefaultEncoding`, Boot's `spring.messages.encoding`.
   Encoding defaultEncoding = utf8;
 
-  /// How long loaded files are cached, like Spring's `setCacheSeconds`:
-  /// `-1` (the default) caches forever; `0` checks the files on every
-  /// lookup; a positive value checks them at most every [cacheSeconds]
-  /// seconds. A checked file is re-read when it changed (see the class
-  /// documentation). Stored as [cacheMillis].
+  /// How long loaded files are kept before they are checked again, so
+  /// that edited translations show without a restart: `-1` (the default)
+  /// keeps them forever; `0` checks the files on every lookup; a positive
+  /// value checks them at most every [cacheSeconds] seconds. A file system
+  /// file is re-read when its modification time changed; other resources
+  /// are re-read on every check. Stored as [cacheMillis]; Spring's
+  /// `setCacheSeconds`.
   int get cacheSeconds => cacheMillis < 0 ? -1 : cacheMillis ~/ 1000;
 
   set cacheSeconds(int seconds) =>
       cacheMillis = seconds < 0 ? -1 : seconds * 1000;
 
-  /// [cacheSeconds] in milliseconds, like Spring's `setCacheMillis`
-  /// (Spring Boot's `spring.messages.cache-duration=500ms` sets it).
+  /// [cacheSeconds] in milliseconds, for intervals below a second
+  /// (Spring's `setCacheMillis`; Spring Boot's
+  /// `spring.messages.cache-duration=500ms` sets it).
   int cacheMillis;
 
-  /// Whether a lookup falls back to the system locale
-  /// ([Locales.systemLocale]) when the requested locale misses and no
-  /// [defaultLocale] is set; `true` by default. Like Spring's
-  /// `setFallbackToSystemLocale`: a [defaultLocale] is used either way.
+  /// Whether a lookup falls back to the machine's locale
+  /// ([Locales.systemLocale]) when the requested locale has no message and
+  /// no [defaultLocale] is set; `true` by default. Set it to `false` so
+  /// that a server answers the same whatever machine it runs on. A
+  /// [defaultLocale] is used either way (Spring's
+  /// `setFallbackToSystemLocale`).
   bool fallbackToSystemLocale;
 
   // Loaded files by path; also holds preloaded async-only resources.
   final _cache = <String, _Bundle>{};
 
-  /// Bundle basenames in lookup order (earlier wins).
+  /// The basenames in lookup order; an earlier one wins.
   List<String> get basenames => List.unmodifiable(_basenames);
 
-  /// Appends [basenames] (consulted after the existing ones).
+  /// Adds [basenames] after the existing ones, for example a library's
+  /// own messages.
   void addBasenames(List<String> basenames) => _basenames.addAll(basenames);
 
   @override
@@ -108,10 +128,16 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
       ? Locales.systemLocale
       : '';
 
-  /// Reads all bundle files for [locales] (plus their fallbacks and the
-  /// base file) asynchronously into the cache.
+  /// Reads every file for [locales] (with their fallbacks and the base
+  /// file) asynchronously and keeps them.
+  ///
+  /// Call it before the first lookup when the files can only be read
+  /// asynchronously, such as Flutter assets; a lookup of such a file that
+  /// was not preloaded throws a `StateError`. Missing files count as
+  /// empty.
   ///
   /// ```dart
+  /// // Flutter: the bundles are assets, read before the app shows text.
   /// final source = ReloadableResourceBundleMessageSource(
   ///   basenames: ['asset:assets/i18n/messages'],
   ///   resourceLoader: assetLoader,
@@ -138,7 +164,8 @@ class ReloadableResourceBundleMessageSource extends AbstractMessageSource {
     }
   }
 
-  /// Forgets all loaded files (including preloaded ones).
+  /// Forgets all loaded files, including preloaded ones, so that the next
+  /// lookups read them again.
   void clearCache() => _cache.clear();
 
   @override

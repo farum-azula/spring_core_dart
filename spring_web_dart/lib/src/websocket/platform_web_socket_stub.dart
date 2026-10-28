@@ -1,6 +1,9 @@
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 
-/// No transport on platforms without `dart:io` or `dart:js_interop`.
+/// Stands in for `platformWebSocketTransport` on a platform with neither
+/// `dart:io` nor `dart:js_interop`: always throws an [UnsupportedError],
+/// since there is no WebSocket client to build on. Pass your own
+/// transport there.
 WebSocketTransport createWebSocketTransport() => throw UnsupportedError(
   'No WebSocket transport for this platform; pass your own WebSocketTransport',
 );

@@ -1,16 +1,25 @@
-/// Jakarta / JSR-330 / JSR-250 names whose Dart counterparts would clash
-/// with other libraries (`Provider` with `package:provider`, `Resource`
-/// with `spring_core_dart`'s own `Resource`), so they live in
-/// `package:spring_core_dart/jakarta.dart`, imported on its own (with a
-/// prefix where a name clashes).
+/// The standard Java injection names (JSR-330 `Provider`, JSR-250
+/// `@Resource` and `@Priority`) for code that prefers them to the Spring
+/// ones.
+///
+/// They live in `package:spring_core_dart/jakarta.dart`, imported on its
+/// own, because their names clash with other libraries: `Provider` with
+/// `package:provider`, `Resource` with this package's own `Resource`.
+/// Import it with a prefix where a name clashes. Applications that use
+/// `ObjectProvider`, `@Autowired` and `@Order` do not need it.
 library;
 
-/// JSR-330's `Provider<T>` (`jakarta.inject.Provider`): an injection point
-/// of this type gets a lazy provider resolving the bean on every [get],
-/// on behalf of the injecting bean, like an `ObjectProvider<T>` (which
-/// implements it).
+/// A handle that looks up a bean of [T] each time [get] is called: the
+/// JSR-330 form of a lazy dependency (`jakarta.inject.Provider`).
+///
+/// An injection point of this type gets the same provider as an
+/// `ObjectProvider<T>` (which implements it): each [get] resolves the bean
+/// as if it were injected into the bean that holds the provider. Use it
+/// for a bean needed fresh on every use, or to break a cycle;
+/// `ObjectProvider<T>` offers more methods.
 ///
 /// ```dart
+/// // The clock is looked up on every call.
 /// import 'package:spring_core_dart/jakarta.dart' as jakarta;
 ///
 /// @Named()
@@ -31,13 +40,17 @@ library;
 /// }
 /// ```
 abstract interface class Provider<T extends Object> {
-  /// The bean; throws when none or several match.
+  /// The bean, looked up now. Throws `NoSuchBeanDefinitionException` when
+  /// none matches and `NoUniqueBeanDefinitionException` when several match
+  /// and none wins.
   T get();
 }
 
-/// JSR-250's `@Resource` (`jakarta.annotation.Resource`) on a field or
-/// setter: injection by bean name.
+/// Injects a field or setter with the bean of a given name: the JSR-250
+/// annotation `jakarta.annotation.Resource`.
 ///
+/// Where `@Autowired()` chooses by type, `@Resource` chooses by name, which
+/// helps when many beans share a type (several `DataSource`s, say).
 /// Without [name] the field or setter name is the bean name; when no bean
 /// has that name the point is injected by type like `@Autowired` (Spring's
 /// `fallbackToDefaultTypeMatch`). An explicit [name] must name a bean (an
@@ -47,6 +60,7 @@ abstract interface class Provider<T extends Object> {
 /// ```dart
 /// import 'package:spring_core_dart/jakarta.dart' as jakarta;
 ///
+/// // Two stores exist; the archive one is wanted here.
 /// @Service()
 /// class Reports {
 ///   @jakarta.Resource()
@@ -69,19 +83,24 @@ abstract interface class Provider<T extends Object> {
 /// Differences from Spring: fields and setters only (no `@Resource`
 /// methods with other names, no `type`, `lookup` or JNDI attributes).
 class Resource {
-  /// Injects the bean named [name] (default: the field or setter name).
+  /// Injects the bean named [name]; without it, the bean named like the
+  /// field or setter, else a bean of its type.
   const Resource({this.name});
 
-  /// The bean name; `null` uses the field or setter name.
+  /// The bean name; `null` uses the field or setter name, with a fallback
+  /// to injection by type.
   final String? name;
 }
 
-/// JSR-250's `@Priority` (`jakarta.annotation.Priority`) on a bean class
-/// (or `@Bean` method): among several candidates for an injection point or
-/// a `getBean<T>()` without a primary or name match, the one with the
-/// lowest [value] wins (two with that value are ambiguous); and it orders
-/// beans in collections and listeners after `Ordered` and `@Order`, like
-/// Spring's `AnnotationAwareOrderComparator`.
+/// Ranks a bean among others of the same type: the JSR-250 annotation
+/// `jakarta.annotation.Priority`, on a bean class (or `@Bean` method).
+///
+/// It does two jobs. Among several candidates for an injection point or a
+/// `getBean<T>()` without a primary or name match, the one with the lowest
+/// [value] wins (two with that value are ambiguous). And it orders beans in
+/// collections and listeners when they have neither `Ordered` nor
+/// `@Order`, like Spring's `AnnotationAwareOrderComparator`. `@Primary()`
+/// and `@Order` cover the same needs in Spring style.
 ///
 /// ```dart
 /// import 'package:spring_core_dart/jakarta.dart' as jakarta;
@@ -101,9 +120,9 @@ class Resource {
 /// @Component @Priority(1) class FastStore implements Store { ... }
 /// ```
 class Priority {
-  /// A bean with priority [value] (lower is higher priority).
+  /// Gives the bean the priority [value]; lower values come first.
   const Priority(this.value);
 
-  /// The priority; lower values win.
+  /// The priority; lower values win and sort first.
   final int value;
 }

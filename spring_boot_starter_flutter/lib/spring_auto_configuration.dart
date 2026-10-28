@@ -1,5 +1,9 @@
-/// Discovered by the generator of every application that depends on
-/// `spring_boot_starter_flutter` (see `AutoConfigurationModule`).
+/// The starter's auto-configuration, found by the code generator in every
+/// application that depends on `spring_boot_starter_flutter`.
+///
+/// Applications do not import it: the generated `main.spring.dart` does
+/// (the module below is marked `@AutoConfigurationModule()`). A test that
+/// builds a context by hand imports it to name the module.
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -17,10 +21,15 @@ export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 const _source =
     'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 
-/// `asset:` resources, the advice behind `@NotifyListeners` (and the one
-/// telling Spring widgets which notifier beans they read), and the
-/// app's themes (`SpringThemes`, `ThemeSelection`) of
-/// `spring.flutter.theme.*`.
+/// The beans the starter adds to every Flutter application:
+///
+/// - support for `asset:` locations, so `@Value('asset:...')` injects
+///   Flutter assets as resources;
+/// - the advice that calls `notifyListeners()` for `@NotifyListeners` and
+///   `@ChangeNotifierComponent` beans, and the one that tells Spring
+///   widgets which of those beans their `build` read;
+/// - the app's themes from `spring.flutter.theme.*` (`SpringThemes`) and
+///   the choice of the theme shown (`ThemeSelection`).
 @AutoConfigurationModule()
 final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
   'springBootStarterFlutterAutoConfiguration',

@@ -3,14 +3,21 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// The app's font files, found among its assets wherever they are and
-/// loaded before the first frame: every `.ttf` / `.otf` that
-/// `flutter: assets:` declares (any directory), in the family its own
-/// `name` table gives (`Inter-SemiBold.ttf` → `Inter`), so the theme names
-/// fonts without listing files anywhere.
+/// Loads the app's font files from its assets, so a theme can name a font
+/// family without the files being listed under `flutter: fonts:`.
 ///
-/// `spring.flutter.fonts.auto-load=false` switches it off;
-/// `spring.flutter.fonts.exclude` leaves files out (`assets/pdf/**`).
+/// Every `.ttf` and `.otf` file that `flutter: assets:` declares, in any
+/// directory, is loaded into the family its own `name` table gives
+/// (`Inter-SemiBold.ttf` becomes a weight of `Inter`). Then a family the
+/// themes name but no file provides is logged as a warning, since Flutter
+/// would quietly fall back to its default font. `SpringApplicationWidget`
+/// does all this behind the splash screen, before the first frame; apps
+/// do not call it.
+///
+/// ```properties
+/// spring.flutter.fonts.auto-load=true         # false: load nothing
+/// spring.flutter.fonts.exclude=assets/pdf/**  # files for other uses
+/// ```
 abstract final class ThemeFonts {
   static const _log = SpringLog('spring_boot_starter_flutter.ThemeFonts');
 
@@ -18,10 +25,12 @@ abstract final class ThemeFonts {
   // files.
   static final _loaded = <String, String>{};
 
-  /// Loads the font files among [assets] (asset keys) from [bundle], minus
-  /// those matching [exclude] (globs: `*`, `**`); returns family → asset
-  /// keys. A file whose family cannot be read (a `.ttc` collection, a
-  /// broken file) is skipped with a warning.
+  /// Loads the font files among [assets] (asset keys) from [bundle], except
+  /// those matching an [exclude] glob (`*`, `**`) and those of other
+  /// packages. Returns the asset keys of each family loaded. A file whose
+  /// family cannot be read (a `.ttc` collection, a broken file) is skipped
+  /// with a warning. Files loaded before, by an earlier start, are not
+  /// loaded again.
   static Future<Map<String, List<String>>> load(
     AssetBundle bundle,
     Iterable<String> assets, {
@@ -79,8 +88,8 @@ abstract final class ThemeFonts {
     return families;
   }
 
-  /// The families of `flutter: fonts:` in the pubspec (the app's
-  /// `FontManifest.json`), empty when there is none.
+  /// The families declared under `flutter: fonts:` in the pubspec (the
+  /// app's `FontManifest.json`); empty when there is none.
   static Future<Set<String>> declaredFamilies(AssetBundle bundle) async {
     try {
       // Not loadString: its cached Future would outlive a widget test's
@@ -102,8 +111,8 @@ abstract final class ThemeFonts {
     }
   }
 
-  /// The family name of the font in [bytes] from its `name` table: the
-  /// typographic family (name 16, so `Inter-SemiBold.ttf` is `Inter`),
+  /// The family name of the font file in [bytes], from its `name` table:
+  /// the typographic family (name 16, so `Inter-SemiBold.ttf` is `Inter`),
   /// else the family (name 1); `null` when it cannot be read.
   static String? familyName(Uint8List bytes) {
     try {
@@ -164,11 +173,12 @@ abstract final class ThemeFonts {
     return family == null || family.trim().isEmpty ? null : family.trim();
   }
 
-  /// Loads the fonts of [context]'s app (unless
-  /// `spring.flutter.fonts.auto-load=false`) from [bundle], listed by
-  /// [assets], and warns about font families its themes name but neither
+  /// Loads the fonts of [context]'s app from [bundle], among [assets],
+  /// with the `spring.flutter.fonts.*` settings; nothing when `auto-load`
+  /// is `false`. Then logs a warning for the [themeFamilies] that neither
   /// the assets nor `flutter: fonts:` have (they may still be the
-  /// platform's own).
+  /// platform's own; names starting with `.` and `monospace` are not
+  /// reported).
   static Future<void> loadFor(
     ApplicationContext context,
     AssetBundle bundle,

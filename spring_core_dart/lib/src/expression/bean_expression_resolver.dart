@@ -13,20 +13,24 @@ import 'package:spring_core_dart/src/expression/spel_parser.dart';
 import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
-/// The root object of `@Value('#{...}')` expressions: bean names are its
-/// properties, like Spring's `BeanExpressionContext`.
+/// The root object of `@Value('#{...}')` expressions, whose properties are
+/// the beans of a bean factory.
 ///
-/// Together with [BeanExpressionContextAccessor] this makes `#{mailer}`
-/// evaluate to the bean named `mailer`. Like in a Spring application
-/// context, `systemEnvironment` is the map of environment variables (of
-/// the `environment` bean when there is one), unless beans with these
-/// names exist. Dart has no JVM system properties, so `systemProperties`
-/// is the map of `--key=value` command-line arguments (the
-/// `commandLineArgs` property source of the `environment` bean), which
-/// play the part of `-Dkey=value`; compile-time `-D` defines are constants
-/// and cannot be enumerated.
+/// It is why `#{mailer.defaultSender}` in an `@Value` reads the bean named
+/// `mailer`: unprefixed names are looked up on this root, and
+/// [BeanExpressionContextAccessor] answers them with beans.
+/// [StandardBeanExpressionResolver] creates it; applications only use it
+/// through those expressions. Two names are always present, unless beans
+/// with these names exist: `systemEnvironment`, the map of environment
+/// variables (of the `environment` bean when there is one), and
+/// `systemProperties`. Dart has no JVM system properties, so
+/// `systemProperties` is the map of `--key=value` command-line arguments
+/// (the `commandLineArgs` property source of the `environment` bean),
+/// which play the part of `-Dkey=value`; compile-time `-D` defines are
+/// constants and cannot be enumerated.
 ///
 /// ```dart
+/// // What `#{mailer}` and `#{systemEnvironment['HOME']}` see.
 /// final root = BeanExpressionContext(beanFactory);
 /// root.containsObject('mailer'); // true when the bean exists
 /// root.getObject('mailer'); // the bean, or null
@@ -100,12 +104,16 @@ final class BeanExpressionContext {
   }
 }
 
-/// Reads beans as properties of a [BeanExpressionContext], like Spring's
-/// `BeanExpressionContextAccessor`.
+/// A [PropertyAccessor] that reads the beans of a [BeanExpressionContext]
+/// as its properties, so that `#{mailer}` is the bean `mailer`.
 ///
-/// Read-only; registered by [StandardBeanExpressionResolver].
+/// [StandardBeanExpressionResolver] registers it for every `@Value`
+/// expression; you need it only to evaluate expressions against a
+/// [BeanExpressionContext] in a context of your own. Beans cannot be
+/// assigned through it.
 ///
 /// ```dart
+/// // `mailer` reads the bean of that name.
 /// final context = StandardEvaluationContext(BeanExpressionContext(factory))
 ///   ..addPropertyAccessor(const BeanExpressionContextAccessor());
 /// SpelExpressionParser().parseExpression('mailer').getValue(context);
@@ -140,12 +148,16 @@ final class BeanExpressionContextAccessor implements PropertyAccessor {
   ) => throw UnsupportedError('Beans cannot be assigned');
 }
 
-/// Reads beans as properties of a [BeanFactory] (`factory.mailer`), like
-/// Spring's `BeanFactoryAccessor`.
+/// A [PropertyAccessor] that reads beans as properties of a [BeanFactory]
+/// itself, for expressions whose value is a bean factory
+/// (`factory.mailer`).
 ///
-/// Read-only; registered by [StandardBeanExpressionResolver].
+/// [StandardBeanExpressionResolver] registers it for `@Value`
+/// expressions. Beans cannot be assigned through it: writing throws an
+/// `AccessException`.
 ///
 /// ```dart
+/// // The bean factory is the root: `mailer` is a bean.
 /// final context = StandardEvaluationContext(beanFactory)
 ///   ..addPropertyAccessor(const BeanFactoryAccessor());
 /// SpelExpressionParser().parseExpression('mailer').getValue(context);
@@ -180,11 +192,14 @@ final class BeanFactoryAccessor implements PropertyAccessor {
   ) => throw AccessException('Beans in a BeanFactory are read-only');
 }
 
-/// Reads environment properties (`environment['app.name']`), like
-/// Spring's `EnvironmentAccessor`.
+/// A [PropertyAccessor] that reads configuration properties of an
+/// `Environment`, so that `environment['app.name']` in an expression is
+/// the value of `app.name`.
 ///
-/// Any property name is readable; missing ones evaluate to `null`.
-/// Read-only; registered by [StandardBeanExpressionResolver].
+/// [StandardBeanExpressionResolver] registers it, which is what makes
+/// `#{environment['app.name']}` work in `@Value` (the `environment` bean
+/// being the application's environment). Any name is readable and a
+/// missing property is `null`; properties cannot be assigned.
 ///
 /// ```dart
 /// // In @Value: '#{environment['app.name'].toUpperCase()}'
@@ -224,13 +239,16 @@ final class EnvironmentAccessor implements PropertyAccessor {
   ) => throw UnsupportedError('Environment properties are read-only');
 }
 
-/// The methods of an `Environment` (or any `PropertyResolver`) in SpEL:
-/// `environment.getProperty('app.name')`, `getProperty(key, default)`,
-/// `getRequiredProperty`, `containsProperty`, `resolvePlaceholders`,
-/// `getActiveProfiles()`, `matchesProfiles(...)`.
+/// A [MethodResolver] that lets expressions call the methods of an
+/// `Environment` (or any `PropertyResolver`) under their Java names.
 ///
-/// Spring calls these reflectively; registered by
-/// [StandardBeanExpressionResolver].
+/// It covers `getProperty(key)` and `getProperty(key, default)`,
+/// `getRequiredProperty`, `containsProperty`, `resolvePlaceholders`,
+/// `resolveRequiredPlaceholders`, and on an `Environment` also
+/// `getActiveProfiles()`, `getDefaultProfiles()` and
+/// `matchesProfiles(...)`. Spring calls these by reflection; here
+/// [StandardBeanExpressionResolver] registers this resolver for `@Value`
+/// expressions.
 ///
 /// ```dart
 /// // In @Value:
@@ -295,14 +313,18 @@ final class EnvironmentMethodResolver implements MethodResolver {
   }
 }
 
-/// Resolves `@beanName` through a [BeanFactory], like Spring's
-/// `BeanFactoryResolver`.
+/// A [BeanResolver] that answers `@name` references with the beans of a
+/// [BeanFactory].
 ///
-/// `&name` resolves the factory bean itself (the `&` is passed on). A
-/// failing lookup (`BeansException`) is reported as
+/// [StandardBeanExpressionResolver] sets one for `@Value` expressions.
+/// Set one on your own `StandardEvaluationContext` when expressions you
+/// evaluate should reach the application's beans. `&name` resolves the
+/// factory bean itself (the `&` is passed on). A failing lookup
+/// (`BeansException`) is reported as
 /// `SpelMessage.exceptionDuringBeanResolution`.
 ///
 /// ```dart
+/// // `@mailer` is the bean named mailer.
 /// final context = StandardEvaluationContext()
 ///   ..beanResolver = BeanFactoryResolver(beanFactory);
 /// SpelExpressionParser().parseExpression('@mailer').getValue(context);
@@ -333,20 +355,29 @@ final class BeanFactoryResolver implements BeanResolver {
   }
 }
 
-/// Evaluates `#{...}` in `@Value`, like Spring's
-/// `StandardBeanExpressionResolver`. Parsed expressions are cached, and so
-/// is the evaluation context of each bean factory.
+/// Evaluates the `#{...}` parts of `@Value` strings (and of other
+/// framework values, such as `@ConditionalOnExpression`) against the
+/// beans of a bean factory.
 ///
-/// The evaluation context's root is a [BeanExpressionContext] (so
-/// `#{mailer}` is a bean), with `@bean` references, the `environment`
-/// accessor and methods, [BeanFactoryAccessor], the factory's
-/// `ConversionService` as type converter, and your extra accessors and
-/// resolvers. Override [customizeEvaluationContext] to add variables. The
+/// Every application context installs one, so `@Value('#{mailer.from}')`
+/// works without setup; most applications never touch it. Replace or
+/// subclass it to give those expressions more: variables, accessors for
+/// classes that are not `@Introspected`, or a parser with other limits.
+///
+/// The text is parsed as a template (placeholders `${...}` have already
+/// been resolved by then), and parsed expressions are cached by text. Each
+/// bean factory gets one evaluation context, created on first use and
+/// kept: its root is a [BeanExpressionContext] (so `#{mailer}` is a bean),
+/// with `@bean` references, the `environment` accessor and methods,
+/// [BeanFactoryAccessor], the factory's `ConversionService` as type
+/// converter, and the extra accessors and resolvers you pass. Override
+/// [customizeEvaluationContext] to add variables or functions. The
 /// default parser accepts expressions up to 10 000 characters, changed
 /// with the compile-time define
 /// `-Dspring.context.expression.maxLength=...`, like Spring's property.
 ///
 /// ```dart
+/// // `#answer` becomes available in every `@Value` expression.
 /// class MyResolver extends StandardBeanExpressionResolver {
 ///   MyResolver() : super(propertyAccessors: [userAccessor]);
 ///
@@ -375,7 +406,8 @@ class StandardBeanExpressionResolver implements BeanExpressionResolver {
   /// Creates a resolver using [parser] (a [SpelExpressionParser] limited to
   /// [maxExpressionLength] characters by default) and [parserContext];
   /// [propertyAccessors] and [methodResolvers] are added to every
-  /// evaluation context.
+  /// evaluation context, before the built-in ones. An application context
+  /// passes the accessor and resolver of its own introspector.
   StandardBeanExpressionResolver({
     ExpressionParser? parser,
     this.parserContext = ParserContext.template,
@@ -391,8 +423,9 @@ class StandardBeanExpressionResolver implements BeanExpressionResolver {
        _accessors = List.unmodifiable(propertyAccessors),
        _resolvers = List.unmodifiable(methodResolvers);
 
-  /// Compile-time define for the longest `@Value` expression (Spring's
-  /// `MAX_SPEL_EXPRESSION_LENGTH_PROPERTY_NAME`).
+  /// The name of the compile-time define that sets the longest `@Value`
+  /// expression (`dart run -Dspring.context.expression.maxLength=20000`;
+  /// Spring's `MAX_SPEL_EXPRESSION_LENGTH_PROPERTY_NAME`).
   static const maxSpelExpressionLengthPropertyName =
       'spring.context.expression.maxLength';
 
@@ -400,9 +433,12 @@ class StandardBeanExpressionResolver implements BeanExpressionResolver {
     maxSpelExpressionLengthPropertyName,
   );
 
-  /// The longest expression the default parser accepts:
-  /// `-Dspring.context.expression.maxLength` or
-  /// `SpelParserConfiguration.defaultMaxExpressionLength`.
+  /// The longest expression the default parser accepts: the value of
+  /// `-Dspring.context.expression.maxLength`, or
+  /// `SpelParserConfiguration.defaultMaxExpressionLength` (10 000) when it
+  /// is not defined.
+  ///
+  /// Throws an [ArgumentError] when the define is not a positive integer.
   static int maxExpressionLength() {
     final value = _maxLengthProperty.trim();
     if (value.isEmpty) {
@@ -422,17 +458,19 @@ class StandardBeanExpressionResolver implements BeanExpressionResolver {
   /// The parser for `@Value` strings.
   final ExpressionParser parser;
 
-  /// How strings are parsed; templates (`#{...}`) by default.
+  /// How strings are parsed: templates with `#{...}` by default, so text
+  /// around the expressions is kept.
   final ParserContext parserContext;
   final List<PropertyAccessor> _accessors;
   final List<MethodResolver> _resolvers;
   final _cache = <String, Expression>{};
   final _contexts = Expando<StandardEvaluationContext>();
 
-  /// Called once for each new evaluation context (add variables,
-  /// accessors...).
+  /// Called once for the evaluation context of each bean factory, after
+  /// the built-in setup and before its first evaluation.
   ///
-  /// Does nothing by default; override in a subclass.
+  /// Override it in a subclass to add variables, functions or accessors
+  /// that every expression should see. Does nothing by default.
   void customizeEvaluationContext(StandardEvaluationContext context) {}
 
   @override

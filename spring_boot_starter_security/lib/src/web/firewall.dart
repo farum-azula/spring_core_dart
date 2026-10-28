@@ -1,48 +1,73 @@
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
-/// A request was refused before any security rule looked at it, like
-/// Spring's `RequestRejectedException`: `400 Bad Request` (without the
-/// reason, which goes to the log).
+/// The error an [HttpFirewall] throws to refuse a request before any
+/// security rule or controller sees it.
+///
+/// The client gets `400 Bad Request` without the reason; the reason goes
+/// to the debug log. Throw it from your own firewall.
+///
+/// Spring (Java): `RequestRejectedException`.
 class RequestRejectedException extends ErrorResponseException {
-  /// Refused for [reason].
+  /// A refusal for [reason], answered with status 400.
   RequestRejectedException(this.reason) : super(HttpStatus.badRequest);
 
-  /// Why, for logs.
+  /// Why the request was refused, for the log; never sent to the client.
   final String reason;
 
   @override
   String toString() => 'RequestRejectedException: $reason';
 }
 
-/// Checks a request before the security rules, like Spring's
-/// `HttpFirewall`.
+/// A check that runs on every request before a security chain is chosen,
+/// to refuse requests that are malformed or could be misread.
+///
+/// The starter uses a [StrictHttpFirewall]. Declare an `HttpFirewall` bean
+/// to replace it, usually a `StrictHttpFirewall` with one rule relaxed.
+///
+/// Spring (Java): `HttpFirewall`.
 abstract interface class HttpFirewall {
-  /// Throws [RequestRejectedException] when [request] must not go on.
+  /// Returns normally to let [request] through; throws a
+  /// [RequestRejectedException] to refuse it.
   void check(ServerHttpRequest request);
 }
 
-/// Refuses requests whose path could be read two ways, like Spring's
-/// `StrictHttpFirewall` (docs/security.md, rule 3): a rule and the router must
-/// never see different paths.
+/// The default [HttpFirewall]: it refuses requests whose path could be
+/// read two ways, so a security rule and the router never disagree on
+/// which path was asked for.
 ///
-/// Refused (400):
+/// An attacker who can make a rule read `/admin` differently from the
+/// router (with `;`, encoded slashes, `..` and so on) could reach a
+/// protected controller through an unprotected rule. These requests are
+/// refused with 400 before any rule is looked at:
 ///
 /// - in the path: `;` and `%3B` (path parameters), encoded `/` (`%2F`),
 ///   `\` and `%5C`, encoded `%` (`%25`), encoded `.` (`%2E`), `//`, `.`
-///   and `..` segments, control characters and non-ASCII bytes, `%00`,
+///   and `..` segments, spaces, control and non-ASCII characters, `%00`,
 ///   line separators (`%0A`, `%0D`, `%E2%80%A8`, `%E2%80%A9`);
 /// - a request target that is not a path (`//host/path`, which Dart reads
 ///   as a host);
 /// - methods other than DELETE, GET, HEAD, OPTIONS, PATCH, POST and PUT
 ///   (TRACE echoes the request, cookies included);
-/// - control characters in header names and values.
+/// - header names that are not printable ASCII, and header values with
+///   control characters (a tab is allowed).
 ///
-/// On a real server `dart:io` has already normalized `..`, `%2E` and `\`
-/// (RFC 3986), so those reach the application normalized; the router and
-/// the rules then see the same normalized path. Spring refuses them with
-/// 400 instead: one of the documented differences.
+/// The `allow...` options relax one rule each; turn one on only when an
+/// application really needs such paths, and declare the firewall as a
+/// bean.
+///
+/// ```dart
+/// // Paths carry encoded slashes (`/files/a%2Fb`).
+/// @Bean()
+/// HttpFirewall firewall() => StrictHttpFirewall(allowUrlEncodedSlash: true);
+/// ```
+///
+/// Spring (Java): `StrictHttpFirewall`. One difference: on a real server
+/// `dart:io` normalizes `..`, `%2E` and `\` (RFC 3986) before the
+/// application, so those reach the router and the rules already
+/// normalized and are not refused; Spring refuses them with 400.
 final class StrictHttpFirewall implements HttpFirewall {
-  /// A firewall; [allowedMethods] replaces the default methods.
+  /// A firewall with every check on, unless relaxed by the `allow...`
+  /// options; [allowedMethods] replaces the default list of methods.
   StrictHttpFirewall({
     Set<HttpMethod>? allowedMethods,
     this.allowSemicolon = false,
@@ -62,22 +87,26 @@ final class StrictHttpFirewall implements HttpFirewall {
              HttpMethod.put,
            };
 
-  /// The methods let through.
+  /// The methods let through; others are refused with 400.
   final Set<HttpMethod> allowedMethods;
 
-  /// Whether `;` is allowed in the path.
+  /// Whether `;` and `%3B` are allowed in the path; `false` by default
+  /// because path parameters (`/admin;x=y`) can hide a path from a rule.
   final bool allowSemicolon;
 
-  /// Whether `%2F` is allowed.
+  /// Whether an encoded slash `%2F` is allowed in the path; `false` by
+  /// default.
   final bool allowUrlEncodedSlash;
 
-  /// Whether `\` and `%5C` are allowed.
+  /// Whether `\` and `%5C` are allowed in the path; `false` by default.
   final bool allowBackSlash;
 
-  /// Whether `%25` is allowed.
+  /// Whether an encoded percent sign `%25` is allowed in the path, which
+  /// allows double encoding; `false` by default.
   final bool allowUrlEncodedPercent;
 
-  /// Whether `%2E` is allowed.
+  /// Whether an encoded period `%2E` is allowed in the path; `false` by
+  /// default.
   final bool allowUrlEncodedPeriod;
 
   static const _lineSeparators = ['%0a', '%0d', '%e2%80%a8', '%e2%80%a9'];

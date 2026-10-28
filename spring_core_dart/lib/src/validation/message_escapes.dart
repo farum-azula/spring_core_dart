@@ -16,11 +16,14 @@ const _escapes = {
 final _escape = RegExp(r'\\[\\{}$]');
 final _escaped = RegExp('[\uE000-\uE003]');
 
-/// [template] with its escape sequences hidden from interpolation.
+/// [template] with each escape (`\{`, `\}`, `\$`, `\\`) replaced by a
+/// private-use character, so the following interpolation steps do not see
+/// a placeholder in it. Undo with [revealMessageEscapes].
 String hideMessageEscapes(String template) =>
     template.replaceAllMapped(_escape, (match) => _escapes[match[0]!]!);
 
-/// [message] with the hidden escapes turned into their literal characters.
+/// [message] with the characters [hideMessageEscapes] put in turned into
+/// the literal `\`, `{`, `}` and `$`; the last step of interpolation.
 String revealMessageEscapes(String message) => message.replaceAllMapped(
   _escaped,
   (match) => switch (match[0]!) {
@@ -33,10 +36,13 @@ String revealMessageEscapes(String message) => message.replaceAllMapped(
 
 final _attribute = RegExp(r'(?<!\$)\{(\w+)\}');
 
-/// [template] with `{attribute}` placeholders replaced by [attributes], in
-/// one pass, so an attribute value containing braces (a regular expression
-/// such as `[A-Z]{2,3}`) is not interpolated again; escapes are not
-/// handled here (see [hideMessageEscapes]).
+/// [template] with each `{name}` placeholder whose name is a key of
+/// [attributes] replaced by that value; other placeholders and `${...}`
+/// expressions stay.
+///
+/// One pass, so an inserted value with braces (a regular expression such
+/// as `[A-Z]{2,3}`) is not interpolated again. Escapes must already be
+/// hidden with [hideMessageEscapes].
 String interpolateAttributes(
   String template,
   Map<String, Object?> attributes,
@@ -46,9 +52,12 @@ String interpolateAttributes(
       attributes.containsKey(match[1]) ? '${attributes[match[1]]}' : match[0]!,
 );
 
-/// Hibernate Validator's default messages (its `ValidationMessages`), by
-/// constraint name: what `{jakarta.validation.constraints.<Name>.message}`
-/// stands for when no message source defines it.
+/// Hibernate Validator's English default messages (its
+/// `ValidationMessages`), by constraint name.
+///
+/// A message may refer to another constraint's message with
+/// `{jakarta.validation.constraints.<Name>.message}`; when the validator's
+/// message source does not define that key, the text comes from here.
 const builtInConstraintMessages = {
   'AssertFalse': 'must be false',
   'AssertTrue': 'must be true',

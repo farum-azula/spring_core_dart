@@ -7,19 +7,31 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 import 'package:spring_web_dart/testing.dart';
 import 'package:test_api/hooks.dart' show TestFailure;
 
-/// Calls the application's controllers without a socket, like Spring's
-/// `MockMvc`: the same dispatcher a real server uses (filters, mapping,
-/// binding, error handling), with requests built in the test.
+/// Sends HTTP requests to the application's controllers in memory, without
+/// a server or a socket, and checks the responses.
+///
+/// Use it to test the web layer as a client sees it: URL mapping, request
+/// binding, `@Valid` checks, filters, exception handlers and the JSON or
+/// `ProblemDetail` answers. It runs the same dispatcher a real server
+/// runs, so a test that passes here behaves the same over HTTP, but it is
+/// faster and needs no free port. With `spring_boot_starter_web`,
+/// `app.mockMvc` of a `springBootTest` (or an `@Autowired() late MockMvc
+/// mvc;` field in a test class) gives one.
+///
+/// Each call returns a [ResultActions]: chain [ResultActions.andExpect]
+/// to check the response, and `await` the chain, or a failed expectation
+/// is never reported.
 ///
 /// ```dart
 /// final app = springBootTest(springApplication);
 ///
-/// test('finds a book', () async {
+/// test('finds a book, rejects an invalid one', () async {
 ///   final mvc = app.mockMvc;
 ///   await mvc.get('/api/books/978-0').andExpect(
 ///     status: 200,
 ///     json: {'isbn': '978-0', 'title': 'Dune'},
 ///   );
+///   // An empty ISBN fails validation: a 400 with a ProblemDetail body.
 ///   await mvc
 ///       .post('/api/books', json: {'isbn': ''})
 ///       .andExpect(
@@ -36,11 +48,21 @@ import 'package:test_api/hooks.dart' show TestFailure;
 ///     .andExpect(jsonPath("$.title").value("Dune"));
 /// ```
 final class MockMvc {
-  /// Calls [handler] (the web starter's `dispatcherHandler`).
+  /// A `MockMvc` that sends requests to [handler], usually the web starter's
+  /// `dispatcherHandler` bean. Create one yourself to add
+  /// [defaultPostProcessors], such as a logged-in user for every request:
+  ///
+  /// ```dart
+  /// final mvc = MockMvc(
+  ///   app.getBean<DispatcherHandler>(),
+  ///   defaultPostProcessors: [user('ada')], // spring_boot_starter_security
+  /// );
+  /// ```
   MockMvc(this.handler, {this.defaultPostProcessors = const []});
 
-  /// The `MockMvc` of [context]: its `dispatcherHandler` bean (the web
-  /// starter's [HttpHandler]).
+  /// The `MockMvc` of [context], sending requests to its
+  /// `dispatcherHandler` bean. Throws a [StateError] when the context has
+  /// none, that is without `spring_boot_starter_web`.
   factory MockMvc.of(ApplicationContext context) {
     if (!context.containsBean('dispatcherHandler')) {
       throw StateError(
@@ -51,13 +73,22 @@ final class MockMvc {
     return MockMvc(context.getBeanByName('dispatcherHandler') as HttpHandler);
   }
 
-  /// Answers the requests.
+  /// The handler that answers the requests, as the server would call it.
   final HttpHandler handler;
 
-  /// Applied to every request first (a default user, headers).
+  /// Applied to every request, before the post-processors of the request
+  /// itself: a default user, common headers.
   final List<RequestPostProcessor> defaultPostProcessors;
 
-  /// Performs [request].
+  /// Sends the request that [request] describes; the shortcuts [get],
+  /// [post] and the others build one for you. Use it for what they do not
+  /// cover: cookies, a principal, a post-processor, another method.
+  ///
+  /// ```dart
+  /// await mvc.perform(
+  ///   MockRequestBuilder(HttpMethod.head, '/api/books/{isbn}', ['978-0']),
+  /// ).andExpect(status: 200);
+  /// ```
   ResultActions perform(MockRequestBuilder request) =>
       ResultActions._(_perform(request));
 
@@ -94,7 +125,8 @@ final class MockMvc {
         type.startsWith(MediaType.applicationNdjson);
   }
 
-  /// A `GET` of [path] (with an optional query).
+  /// Sends a `GET` to [path] with [headers] and query [params]; a `List`
+  /// value sends the parameter several times (`{'id': [1, 2]}`).
   ResultActions get(
     String path, {
     Map<String, String> headers = const {},
@@ -105,7 +137,9 @@ final class MockMvc {
       ..params.addAll(params),
   );
 
-  /// A `POST` with a [json] body (or [body]).
+  /// Sends a `POST` to [path]. [json] is encoded as the body with
+  /// `Content-Type: application/json`; otherwise [body], a `String` or
+  /// bytes, is sent as is. When both are given, [json] wins.
   ResultActions post(
     String path, {
     Object? json,
@@ -113,7 +147,7 @@ final class MockMvc {
     Map<String, String> headers = const {},
   }) => perform(_withBody(HttpMethod.post, path, json, body, headers));
 
-  /// A `PUT` with a [json] body (or [body]).
+  /// Sends a `PUT`, with a body as for [post].
   ResultActions put(
     String path, {
     Object? json,
@@ -121,7 +155,7 @@ final class MockMvc {
     Map<String, String> headers = const {},
   }) => perform(_withBody(HttpMethod.put, path, json, body, headers));
 
-  /// A `PATCH` with a [json] body (or [body]).
+  /// Sends a `PATCH`, with a body as for [post].
   ResultActions patch(
     String path, {
     Object? json,
@@ -129,19 +163,22 @@ final class MockMvc {
     Map<String, String> headers = const {},
   }) => perform(_withBody(HttpMethod.patch, path, json, body, headers));
 
-  /// A `DELETE` of [path].
+  /// Sends a `DELETE` to [path] with [headers].
   ResultActions delete(String path, {Map<String, String> headers = const {}}) =>
       perform(
         MockRequestBuilder(HttpMethod.delete, path)..headers.addAll(headers),
       );
 
-  /// A `multipart/form-data` request (a `POST` unless [method] says
-  /// otherwise) with [files] and the text fields [params], like Spring's
-  /// `MockMvcRequestBuilders.multipart`. A file without an original file
-  /// name is a plain part: with `application/json` it is a JSON part for
-  /// `@RequestPart`.
+  /// Sends a `multipart/form-data` upload to [path]: the [files] and the
+  /// text fields [params] as one body, through the same multipart parsing
+  /// and limits as the server. A `POST` unless [method] says otherwise, like
+  /// Spring's `MockMvcRequestBuilders.multipart`.
+  ///
+  /// A file without an original file name is a plain part; with
+  /// `application/json` it fills a `@RequestPart` object.
   ///
   /// ```dart
+  /// // A cover image plus the book's data as a JSON part.
   /// await mvc.multipart('/api/covers', files: [
   ///   MockMultipartFile('cover', 'dune.png', 'image/png', bytes),
   ///   MockMultipartFile('book', null, 'application/json',
@@ -173,8 +210,20 @@ final class MockMvc {
     return await _perform(builder);
   }());
 
-  /// Opens a WebSocket to [path] in memory (the application's endpoint
-  /// gets the server's end); throws when the handshake is refused.
+  /// Opens a WebSocket connection to the endpoint at [path] in memory and
+  /// returns the client's end of it; the application's handler gets the
+  /// server's end.
+  ///
+  /// Use it to test a `spring_boot_starter_websocket` endpoint: send
+  /// messages on the returned session and read its answers. [headers] and
+  /// [postProcessors] change the handshake request (a user, a token).
+  /// Throws a [WebSocketException] with the status and body when the
+  /// handshake is refused.
+  ///
+  /// ```dart
+  /// final session = await mvc.webSocket('/ws/chat');
+  /// session.sendMessage('hello');
+  /// ```
   Future<WebSocketSession> webSocket(
     String path, {
     Map<String, String> headers = const {},
@@ -227,8 +276,14 @@ final class MockMvc {
   }
 }
 
-/// Builds a request for [MockMvc.perform], like Spring's
-/// `MockHttpServletRequestBuilder`.
+/// Describes one request for [MockMvc.perform]: method, path, headers,
+/// query parameters, cookies, user and body.
+///
+/// The shortcuts of [MockMvc] ([MockMvc.get], [MockMvc.post] and the
+/// others) build it for you; build it yourself for cookies, a principal,
+/// a [RequestPostProcessor] (a test user, a CSRF token) or a method
+/// without a shortcut. Its collections are mutable, so a cascade fills
+/// them.
 ///
 /// ```dart
 /// await mvc.perform(
@@ -237,43 +292,53 @@ final class MockMvc {
 ///     ..headers['Accept'] = 'application/json',
 /// ).andExpect(status: 200);
 /// ```
+///
+/// Spring (Java): `MockHttpServletRequestBuilder`, from `get(...)`,
+/// `post(...)` and the other `MockMvcRequestBuilders`.
 final class MockRequestBuilder {
-  /// A [method] request to [path] (`{name}` placeholders are filled from
-  /// [uriVariables], encoded).
+  /// A [method] request to [path]. Each `{name}` placeholder of [path] is
+  /// filled, in order, from [uriVariables], URL-encoded; extra placeholders
+  /// stay as written.
   MockRequestBuilder(
     this.method,
     String path, [
     List<Object?> uriVariables = const [],
   ]) : path = _expand(path, uriVariables);
 
-  /// The method.
+  /// The HTTP method.
   final HttpMethod method;
 
-  /// The path (with an optional query).
+  /// The path, with the URI variables filled in; it may carry a query
+  /// (`/api/books?q=dune`).
   final String path;
 
-  /// Headers to send.
+  /// The headers to send, by name.
   final Map<String, String> headers = {};
 
-  /// Query parameters to add (a `List` for several values).
+  /// Query parameters to add; a `List` value sends the parameter once per
+  /// element.
   final Map<String, Object> params = {};
 
-  /// Cookies to send.
+  /// Cookies to send, by name.
   final Map<String, String> cookies = {};
 
-  /// The authenticated user, if any.
+  /// The authenticated user the request comes from; `null` for an anonymous
+  /// request. With `spring_boot_starter_security`, its `user(...)`
+  /// post-processor sets a full security context instead.
   Principal? principal;
 
   Object? _content;
   final _postProcessors = <RequestPostProcessor>[];
 
-  /// The body: a `String` or bytes.
+  /// Sets the body: a `String` (sent as UTF-8) or bytes. No `Content-Type`
+  /// is added; set one in [headers].
   // Spring's `content(...)` request builder method, used in cascades: public
   // API, not a property.
   // ignore: use_setters_to_change_properties
   void content(Object body) => _content = body;
 
-  /// A JSON body (`Content-Type: application/json`).
+  /// Sets the body to [value] encoded as JSON, and `Content-Type:
+  /// application/json` unless [headers] already have a content type.
   void json(Object? value) {
     _content = jsonEncode(value);
     headers.putIfAbsent(
@@ -282,10 +347,13 @@ final class MockRequestBuilder {
     );
   }
 
-  /// Adds [processor] (Spring's `.with(...)`).
+  /// Adds [processor], which changes the request just before it is sent,
+  /// after the [MockMvc.defaultPostProcessors]. Spring's `.with(...)`;
+  /// the trailing `_` is there because `with` is a Dart keyword.
   void with_(RequestPostProcessor processor) => _postProcessors.add(processor);
 
-  /// The request.
+  /// Builds the request; [MockMvc] calls it, and then applies the
+  /// post-processors, which this does not.
   MockServerHttpRequest build() {
     final request = MockServerHttpRequest(method, path);
     headers.forEach(request.headers.set);
@@ -316,16 +384,41 @@ final class MockRequestBuilder {
   }
 }
 
-/// A performed request: check it with [andExpect], or read [andReturn],
-/// like Spring's `ResultActions`. Await it for the [MvcResult].
+/// A request that [MockMvc] sent, whose response can be checked: chain
+/// [andExpect] and [andDo], then `await` the chain.
+///
+/// It is a `Future` of the [MvcResult], so `await` gives the result and a
+/// failed expectation fails the test where it is awaited. A chain that is
+/// not awaited checks nothing the test sees.
+///
+/// ```dart
+/// final result = await mvc
+///     .get('/api/books', params: {'q': 'dune'})
+///     .andExpect(status: 200, json: hasLength(1))
+///     .andReturn();
+/// final first = (result.response.json! as List).first;
+/// ```
+///
+/// Spring (Java): `ResultActions`, from `mockMvc.perform(...)`.
 final class ResultActions implements Future<MvcResult> {
   ResultActions._(this._result);
 
   final Future<MvcResult> _result;
 
-  /// Checks the response: [status], [contentType] (compatible media
-  /// type), [headers] (each value exact), [body] (exact text, or a
-  /// matcher), [json] (equal after decoding, or a matcher).
+  /// Checks the response; each argument left out is not checked.
+  ///
+  /// - [status]: the status code, exactly.
+  /// - [contentType]: a media type compatible with the response's
+  ///   (`application/json` matches `application/json;charset=utf-8`).
+  /// - [headers]: each listed header has exactly this value.
+  /// - [body]: the body as text, equal to a `String` or matching a matcher.
+  /// - [json]: the body decoded from JSON, equal to a value or matching a
+  ///   matcher (`hasLength(1)`, `containsPair('title', 'Dune')`). A body
+  ///   that is not JSON throws a `FormatException`.
+  ///
+  /// A failed check throws a `TestFailure` that names the request and shows
+  /// the whole response. Spring's `andExpect(status().isOk())`,
+  /// `content().json(...)` and the like, as named arguments.
   ResultActions andExpect({
     int? status,
     String? contentType,
@@ -380,7 +473,9 @@ final class ResultActions implements Future<MvcResult> {
     }
   }
 
-  /// Runs [action] with the result (Spring's `andDo`).
+  /// Runs [action] with the result, for example to print the response while
+  /// writing a test: `.andDo((result) => print(result.response.bodyText))`.
+  /// Spring's `andDo(print())`.
   ResultActions andDo(void Function(MvcResult result) action) =>
       ResultActions._(
         _result.then((result) {
@@ -389,7 +484,8 @@ final class ResultActions implements Future<MvcResult> {
         }),
       );
 
-  /// The result.
+  /// The [MvcResult], for checks that [andExpect] cannot express. The same
+  /// as awaiting this object; Spring's spelling.
   Future<MvcResult> andReturn() => _result;
 
   @override
@@ -418,25 +514,42 @@ final class ResultActions implements Future<MvcResult> {
       _result.whenComplete(action);
 }
 
-/// The request and the response of a [MockMvc] call, like Spring's
-/// `MvcResult`.
+/// The request a [MockMvc] call sent and the response it got.
+///
+/// Get it with `await` or [ResultActions.andReturn] to read what
+/// [ResultActions.andExpect] cannot check: response bytes, cookies, or the
+/// events of a stream. For a server-sent event stream it is ready once the
+/// headers are out, while the application is still writing; read the
+/// events from [MockServerHttpResponse.eventStream] and end the stream
+/// with [cancel].
+///
+/// ```dart
+/// final result = await app.mockMvc.get('/api/books/changes').andReturn();
+/// final next = result.response.eventStream.first; // the next event
+/// ...
+/// await result.cancel(); // the client goes away
+/// ```
+///
+/// Spring (Java): `MvcResult`.
 final class MvcResult {
   MvcResult._(this.request, this.response, this._handled);
 
-  /// The request performed.
+  /// The request as it was sent, after the post-processors.
   final MockServerHttpRequest request;
 
-  /// The response (still being written for a stream: see
-  /// [MockServerHttpResponse.eventStream]).
+  /// The response: `statusCode`, `headers`, `cookies`, `bodyText`,
+  /// `bodyBytes`, `json`. For a stream it is still being written; see
+  /// [MockServerHttpResponse.eventStream].
   final MockServerHttpResponse response;
 
   final Future<void> _handled;
 
-  /// Completes when the application finished the request (a stream
-  /// ended, or [cancel] was called).
+  /// Completes when the application has finished handling the request;
+  /// for a stream, when the stream ended or [cancel] was called.
   Future<void> get completion => _handled;
 
-  /// Ends a streamed response from the client's side.
+  /// Ends a streamed response from the client's side, as if the client went
+  /// away, and completes when the application has finished the request.
   Future<void> cancel() {
     response.disconnect();
     return _handled;

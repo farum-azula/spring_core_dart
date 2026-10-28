@@ -10,8 +10,17 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.mvc');
 
-/// Writes what handlers return, and errors, to the response, like
-/// Spring's `HttpMessageConverter`s and return value handlers:
+/// Turns what a controller method returns, or an error, into the HTTP
+/// response: status, headers and body.
+///
+/// The router hands it the result of each handler and of each
+/// `@ExceptionHandler`, and the dispatcher hands it the errors no
+/// exception handler answered. The result's type decides the response,
+/// and the mapping's `produces` and the request's `Accept` header decide
+/// the media type (a 406 when they do not meet).
+/// `@ResponseStatus(value)` sets the status of a normal answer;
+/// `@ResponseStatus(value, reason: ...)` turns any result into a problem
+/// with that detail.
 ///
 /// | Result | Response |
 /// |---|---|
@@ -25,10 +34,19 @@ const _log = SpringLog('spring.web.mvc');
 /// | `Resource`, `ResponseEntity<Resource>` | the content, with `Range` (206/416), `Last-Modified` (304) |
 /// | `SseEmitter` | `text/event-stream`, events as they are sent |
 /// | anything else | JSON through the `ObjectMapper` |
+///
+/// The starter declares it as the `responseWriter` bean, with the
+/// application's `ObjectMapper` and `MessageSource`. Applications return
+/// values from handlers; they do not call the writer. A filter or a
+/// handler mapping of your own may use it to answer the same way, for
+/// example with [writeError]. Spring spreads this work over its
+/// `HttpMessageConverter`s and return value handlers.
 final class ResponseWriter {
-  /// A writer with [mapper]; [messageSource] resolves validation messages,
-  /// [asyncTimeout] is the default `SseEmitter` timeout, [sseHeartbeat] the
-  /// interval of keep-alive comments in event streams.
+  /// A writer that writes JSON with [mapper]. [messageSource] resolves
+  /// the messages of validation errors, [asyncTimeout] is the timeout of
+  /// an [SseEmitter] that sets none, and [sseHeartbeat] the interval of
+  /// keep-alive comments in event streams; both `null` by default (no
+  /// timeout, no comments).
   ResponseWriter({
     required this.mapper,
     this.messageSource,
@@ -36,19 +54,28 @@ final class ResponseWriter {
     this.sseHeartbeat,
   });
 
-  /// Writes JSON.
+  /// Writes objects as JSON, and the data of server-sent events.
   final ObjectMapper mapper;
 
-  /// Resolves the messages of validation errors.
+  /// Turns the codes of validation errors into messages in the `errors`
+  /// of a 400; without it, the default messages are used.
   final MessageSource? messageSource;
 
-  /// The default timeout of an [SseEmitter].
+  /// How long an [SseEmitter] without its own timeout stays open
+  /// (`spring.mvc.async.request-timeout`); `null` for no limit.
   final Duration? asyncTimeout;
 
-  /// Keep-alive comments in event streams (`null`: none).
+  /// The interval at which an event stream gets an empty comment line,
+  /// so proxies keep an idle stream open
+  /// (`spring.mvc.sse.heartbeat-interval`); `null` for none.
   final Duration? sseHeartbeat;
 
-  /// Writes [result] of [handler] (and closes the response).
+  /// Writes [result], the value [handler] returned, and closes the
+  /// response; see the table above. [produces] are the media types of
+  /// the mapping. Completes when the body is written; for a stream, when
+  /// it ends or the client goes away. Throws an
+  /// `HttpMediaTypeNotAcceptableException` when the client accepts no
+  /// type the result can be written as.
   Future<void> writeResult(
     Object? result,
     ServerHttpRequest request,
@@ -224,7 +251,9 @@ final class ResponseWriter {
     return response.close();
   }
 
-  /// Writes [problem] as `application/problem+json` with its status.
+  /// Writes [problem] as `application/problem+json` with its status, and
+  /// closes the response. A problem without `instance` gets the request
+  /// path.
   Future<void> writeProblem(
     ProblemDetail problem,
     ServerHttpRequest request,
@@ -240,8 +269,11 @@ final class ResponseWriter {
     return response.close();
   }
 
-  /// Writes an [ErrorResponse]: its status, headers and problem (with the
-  /// field errors of a validation failure).
+  /// Writes an [ErrorResponse]: its status, its headers, and its problem
+  /// as `application/problem+json`. For a validation failure the problem
+  /// gets an `errors` list, one entry per field (`field`, `message`,
+  /// `rejectedValue`) or object error, with messages from the
+  /// [messageSource].
   Future<void> writeErrorResponse(
     ErrorResponse error,
     ServerHttpRequest request,
@@ -286,9 +318,15 @@ final class ResponseWriter {
     _ => '$value',
   };
 
-  /// The answer to an exception no `@ExceptionHandler` handled:
-  /// [ErrorResponse]s answer with their problem, anything else is a 500
-  /// (logged, without details for the client).
+  /// Writes the default answer to an exception that no
+  /// `@ExceptionHandler` handled.
+  ///
+  /// An [ErrorResponse] (such as a `ResponseStatusException`) answers with
+  /// its own status and problem; it is logged as an error from status
+  /// 500 on, else at debug level. A request body above the size limit is
+  /// a 413. Anything else is a 500 without details for the client, and
+  /// the exception is logged under `spring.web.mvc`. When the response is
+  /// already committed, the error is only logged and the response closed.
   Future<void> writeError(
     Object error,
     StackTrace stackTrace,
@@ -379,12 +417,22 @@ final class ResponseWriter {
     await response.close();
   }
 
-  /// Writes [resource] like Spring's `ResourceHttpMessageConverter` and
-  /// `ResourceRegionHttpMessageConverter`: the media type from the file
-  /// name (unless set), `Content-Length`, `Last-Modified` with
-  /// `If-Modified-Since` (304), `Accept-Ranges` and one `Range` (206, or
-  /// 416 when it cannot be satisfied); a resource that does not exist is a
-  /// 404. A `FileSystemResource` is streamed from the file.
+  /// Writes [resource] as a download and closes the response.
+  ///
+  /// - `Content-Type` comes from the file name (unless already set),
+  ///   `application/octet-stream` when unknown; `Content-Length` and
+  ///   `Accept-Ranges: bytes` are set.
+  /// - A `FileSystemResource` is streamed from the file, never read whole,
+  ///   and gets `Last-Modified`: a `GET` or `HEAD` with an
+  ///   `If-Modified-Since` at or after it is a 304 without a body.
+  /// - One byte range (`Range: bytes=0-99`) is a 206 with
+  ///   `Content-Range`; a range past the end is a 416. Several ranges or
+  ///   a malformed header get the whole content. `If-Range` with a date
+  ///   applies the range only when the file has that `Last-Modified`.
+  /// - A resource that does not exist or cannot be read is a 404.
+  ///
+  /// Spring's counterparts are `ResourceHttpMessageConverter` and
+  /// `ResourceRegionHttpMessageConverter`.
   Future<void> writeResource(
     Resource resource,
     ServerHttpRequest request,
@@ -631,8 +679,10 @@ final class ResponseWriter {
   }
 }
 
-/// Writes and flushes one piece after the other (`dart:io` refuses a
-/// write while a flush is pending).
+/// Writes and flushes the pieces of an event stream one after the other,
+/// because `dart:io` refuses a write while a flush is pending. After a
+/// failed write (the client went away), it calls [onFailure] once and
+/// drops the rest.
 final class _SerialWriter {
   _SerialWriter(this.response);
 
@@ -641,7 +691,7 @@ final class _SerialWriter {
   Future<void> Function()? onFailure;
   var _failed = false;
 
-  /// Completes when everything written so far is flushed.
+  /// Completes when everything written so far is flushed (or dropped).
   Future<void> get idle => _last;
 
   Future<void> write(String text) => _last = _last.then((_) async {
@@ -709,10 +759,16 @@ final class _EmitterHandler implements SseEmitterHandler {
   }
 }
 
-/// The response of a `HEAD` request: headers (with the length the body
-/// would have), without the body.
+/// The response the router gives a `GET` handler when it answers a `HEAD`
+/// request: the handler writes as usual, but no body goes out.
+///
+/// `HEAD` asks for the headers a `GET` would get, without the body. This
+/// wrapper lets every `GET` mapping answer `HEAD` without code of its own:
+/// it drops what is written and, when the handler did not set
+/// `Content-Length`, sets it from the first piece written. Applications
+/// do not use it.
 final class HeadResponse extends ServerHttpResponseDecorator {
-  /// Wraps the response of a `HEAD` request.
+  /// Wraps [delegate], the real response of a `HEAD` request.
   HeadResponse(super.delegate);
 
   @override
@@ -729,12 +785,19 @@ final class HeadResponse extends ServerHttpResponseDecorator {
   Future<void> addStream(Stream<List<int>> stream) => stream.drain<void>();
 }
 
-/// A body the handler writes itself, like Spring's
-/// `StreamingResponseBody`: return it (or put it in a `ResponseEntity`)
-/// for an export or a download produced on the fly. `application/octet-stream`
+/// A response body that the handler writes piece by piece, as it is
+/// produced.
+///
+/// Return it, or put it in a `ResponseEntity`, for an export or a
+/// download made on the fly, such as a CSV of every book: the first rows
+/// reach the client while the rest is still being read, and the whole
+/// file is never held in memory. Its function receives a
+/// [ResponseBodySink] to write to; the response ends when the function's
+/// `Future` completes. The media type is `application/octet-stream`
 /// unless the mapping's `produces` or the entity's headers say otherwise.
 ///
 /// ```dart
+/// // Every book as a CSV line, sent as soon as it is read.
 /// @GetMapping.of(path: '/export.csv', produces: 'text/csv')
 /// StreamingResponseBody export() => StreamingResponseBody((out) async {
 ///   await for (final book in books.all()) {
@@ -743,30 +806,44 @@ final class HeadResponse extends ServerHttpResponseDecorator {
 ///   }
 /// });
 /// ```
+///
+/// Spring (Java):
+/// ```java
+/// @GetMapping(path = "/export.csv", produces = "text/csv")
+/// StreamingResponseBody export() {
+///   return out -> books.all().forEach(book -> ...);
+/// }
+/// ```
 final class StreamingResponseBody {
   /// A body written by [writeTo].
   const StreamingResponseBody(this.writeTo);
 
-  /// Writes the body.
+  /// The function that writes the body to `out`; the response ends when
+  /// its `Future` completes.
   final Future<void> Function(ResponseBodySink out) writeTo;
 }
 
-/// Where a [StreamingResponseBody] writes.
+/// The output a [StreamingResponseBody] writes its body to.
+///
+/// What is written is buffered; call [flush] to send it to the client
+/// now, for example after each row of an export.
 final class ResponseBodySink {
   ResponseBodySink._(this._response);
 
   final ServerHttpResponse _response;
 
-  /// Writes [bytes].
+  /// Adds [bytes] to the body.
   void add(List<int> bytes) => _response.add(bytes);
 
-  /// Writes [text] in UTF-8.
+  /// Adds [text] to the body, encoded as UTF-8.
   void write(String text) => _response.write(text);
 
-  /// Sends what was written so far.
+  /// Sends what was written so far to the client; wait for it before
+  /// writing more.
   Future<void> flush() => _response.flush();
 
-  /// Writes every chunk of [stream].
+  /// Adds every chunk of [stream] to the body; completes when the stream
+  /// is done.
   Future<void> addStream(Stream<List<int>> stream) =>
       _response.addStream(stream);
 }

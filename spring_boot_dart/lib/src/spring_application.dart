@@ -20,50 +20,73 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _log = SpringLog('spring_boot_dart.SpringApplication');
 
-/// Bootstraps an application, like Spring Boot's `SpringApplication`.
+/// Starts an application: reads its configuration, creates its beans and
+/// runs its startup tasks, in a fixed and documented order.
 ///
-/// `run` does what an application would otherwise write by hand:
+/// A program built from beans needs the same steps every time: collect
+/// properties from the command line, the environment and the config
+/// files, set the log levels, create the context with the application's
+/// beans and the beans its libraries add, report a failed start in a
+/// readable way, and run the startup tasks. This class does all of that.
 ///
-/// 1. [ApplicationStartingEvent]; command-line arguments and OS
-///    environment variables as property sources;
-/// 2. `lib/resources/application.properties` (`classpath:`) and
-///    `application-{profile}` files (Spring Boot config data: profiles,
-///    imports, groups, ...); [ApplicationEnvironmentPreparedEvent];
-/// 3. `logging.level.root` and `logging.level.<logger>` (also
-///    `logging.group.<name>=a,b` and `LOGGING_LEVEL_<LOGGER>` variables)
-///    applied to [SpringLog];
-/// 4. the context: the application's modules, then [autoConfigurations]
-///    (so `@ConditionalOnMissingBean` sees the application's beans),
-///    `@ConfigurationProperties` binding, `ApplicationArguments` as a bean;
-///    the [initializers], [ApplicationContextInitializedEvent],
-///    [ApplicationPreparedEvent], then the refresh;
-/// 5. startup info logged through [SpringLog] at INFO like Spring Boot's
-///    (`Starting app using Dart 3.9.0 with PID 42`, in a Flutter app
-///    `using Flutter 3.47.7 (Dart 3.13.5)`, the active profiles,
-///    `Started app in 0.042 seconds`; off with
-///    `spring.main.log-startup-info=false`) and [ApplicationStartedEvent];
-///    or [ApplicationFailedEvent] and a readable
-///    `APPLICATION FAILED TO START` report (from [failureAnalyzers] and
-///    `FailureAnalyzer` beans first, then the built-in analysis) before
-///    the error is rethrown;
-/// 6. `ApplicationRunner` / `CommandLineRunner` beans, one after another
-///    in order: a runner's `Future` completes before the next starts, then
-///    [ApplicationReadyEvent]. A failing runner publishes
-///    [ApplicationFailedEvent], is reported (`Application run failed`) and
-///    the context is closed. [runAsync] completes after the last runner.
+/// Most applications never create one. With `@SpringBootApplication()`
+/// on `main`, the generator writes a `springApplication` getter (a new
+/// instance with the application's modules and the auto-configuration of
+/// its dependencies) and `runApplication(args)`, which calls [run]. Reach
+/// for this class directly to register listeners for the early events,
+/// to set default properties, or to end the process with an exit code
+/// ([exit]); tests usually go through `spring_boot_starter_test`.
 ///
-/// The events go to [listeners] (Spring Boot's `addListeners`); see
-/// [SpringApplicationEvent] for which of them `@EventListener` beans see.
+/// What [run] does, in order:
 ///
-/// `spring.main.lazy-initialization=true` makes every singleton lazy
-/// (see [LazyInitializationBeanFactoryPostProcessor]);
-/// `spring.main.allow-bean-definition-overriding=true` lets a definition
-/// replace another of the same name (off by default, as in Spring Boot).
+/// 1. Publishes [ApplicationStartingEvent]. Adds the command-line
+///    arguments, the `--dart-define` values and the OS environment
+///    variables as property sources.
+/// 2. Reads `lib/resources/application.properties` (or `.yml`), the
+///    `application-{profile}` files, imports and profile groups, then
+///    publishes [ApplicationEnvironmentPreparedEvent].
+/// 3. Applies `logging.level.*` to [SpringLog] (see [applyLoggingLevels])
+///    and prints the [banner].
+/// 4. Creates the context from [modules], then [autoConfigurations], so
+///    a `@ConditionalOnMissingBean()` of a library sees the application's
+///    beans. Registers [ApplicationArguments] as a bean and the binding of
+///    `@ConfigurationProperties`, runs the [initializers], publishes
+///    [ApplicationContextInitializedEvent] and [ApplicationPreparedEvent],
+///    then creates the beans.
+/// 5. Logs `Starting app using Dart 3.9.0 with PID 42` (in Flutter,
+///    `using Flutter 3.47.7 (Dart 3.13.5)`), the active profiles and
+///    `Started app in 0.042 seconds` at INFO (off with
+///    `spring.main.log-startup-info=false`), then publishes
+///    [ApplicationStartedEvent].
+/// 6. Calls the `ApplicationRunner` and `CommandLineRunner` beans one
+///    after another, sorted by `@Order`, each finishing (its `Future`
+///    included) before the next starts. Then publishes
+///    [ApplicationReadyEvent].
 ///
-/// With `@SpringBootApplication` the generator creates `runApplication`
-/// for you; written by hand:
+/// When a step fails, [ApplicationFailedEvent] is published and an
+/// `APPLICATION FAILED TO START` report explains the error (from the
+/// [failureAnalyzers] and the `FailureAnalyzer` beans first, then the
+/// built-in analysis); then the error is rethrown. A failing runner is
+/// reported as `Application run failed` and the context is closed.
+///
+/// [SpringApplicationEvent] explains which listeners receive which event.
+/// Two more properties change the context:
+/// `spring.main.lazy-initialization=true` creates every singleton on
+/// first use ([LazyInitializationBeanFactoryPostProcessor]), and
+/// `spring.main.allow-bean-definition-overriding=true` lets a bean
+/// definition replace another of the same name (off by default).
 ///
 /// ```dart
+/// // bin/main.dart: the generated getter, with a listener for an event
+/// // that happens before any bean exists.
+/// @SpringBootApplication()
+/// void main(List<String> args) => (springApplication
+///       ..addListener<ApplicationEnvironmentPreparedEvent>(
+///         (event) => print(event.environment.activeProfiles),
+///       ))
+///     .run(args);
+///
+/// // Without the generator, from a module written by hand:
 /// final context = SpringApplication([appBeans]).run(args);
 /// ```
 ///
@@ -73,7 +96,16 @@ const _log = SpringLog('spring_boot_dart.SpringApplication');
 ///     SpringApplication.run(App.class, args);
 /// ```
 class SpringApplication {
-  /// An application made of [modules] plus library [autoConfigurations].
+  /// An application made of its own [modules] and the [autoConfigurations]
+  /// of its libraries.
+  ///
+  /// The generated `springApplication` fills [modules],
+  /// [autoConfigurations], [autoConfigurationMetadata], [exclude],
+  /// [excludeName], [dartDefines] and [fingerprint]; the other parameters
+  /// are for code that creates the application itself. Each is described
+  /// at the field of the same name. [listeners] and [defaultProperties]
+  /// can also be changed after construction with [addListeners] and
+  /// [setDefaultProperties].
   SpringApplication(
     List<BeanModule> modules, {
     List<BeanModule> autoConfigurations = const [],
@@ -107,57 +139,77 @@ class SpringApplication {
        dartDefines = Map.unmodifiable(dartDefines),
        environmentPostProcessors = List.unmodifiable(environmentPostProcessors);
 
-  /// The application's own modules.
+  /// The application's own bean modules, registered first and in this
+  /// order. The generator passes one module with every bean of the
+  /// package.
   final List<BeanModule> modules;
 
-  /// Library modules registered after [modules], in Boot's
-  /// auto-configuration order (module name, `order`, `before` / `after`),
-  /// not in the order listed.
+  /// The auto-configuration modules of the libraries, registered after
+  /// [modules] so their conditions see the application's beans.
+  ///
+  /// They are registered in Spring Boot's auto-configuration order, not
+  /// in the order listed: by `order`, then name, then the `before` /
+  /// `after` constraints of [autoConfigurationMetadata]. The generator
+  /// passes the modules it finds in the dependencies.
   final List<BeanModule> autoConfigurations;
 
-  /// The `@AutoConfigurationModule` of each of [autoConfigurations] (what
-  /// the generator passes): its `order`, `before` and `after`.
+  /// The `@AutoConfigurationModule` annotation of each of
+  /// [autoConfigurations], whose `order`, `before` and `after` decide the
+  /// order of registration. A module without an entry has order `0` and
+  /// no constraints.
   final Map<BeanModule, AutoConfigurationModule> autoConfigurationMetadata;
 
-  /// Auto-configuration classes that are not applied
-  /// (`@SpringBootApplication(exclude:)`); a type that is none is an error.
+  /// `@AutoConfiguration` classes whose beans are not registered, from
+  /// `@SpringBootApplication(exclude:)`. A type that is not an
+  /// auto-configuration class fails the start.
   final List<Type> exclude;
 
-  /// Names of auto-configuration classes or modules that are not applied
-  /// (`@SpringBootApplication(excludeName:)`); `spring.autoconfigure.exclude`
-  /// adds more.
+  /// Names of auto-configuration classes or modules that are not
+  /// registered, from `@SpringBootApplication(excludeName:)`. The property
+  /// `spring.autoconfigure.exclude` adds more at run time. Unknown names
+  /// are ignored.
   final List<String> excludeName;
 
-  /// Whether the context is closed on SIGINT / SIGTERM (Spring Boot's
-  /// `setRegisterShutdownHook`), through the context's
-  /// `registerShutdownHook()`; `spring.main.register-shutdown-hook` wins
-  /// when set. Off by default, unlike Boot: a signal listener keeps a Dart
-  /// program alive, so a program that is done would never end. Turn it on
-  /// in programs that run until stopped. Nothing happens without `dart:io`.
+  /// Whether the context is closed cleanly when the process gets SIGINT
+  /// (Ctrl+C) or SIGTERM, so `@PreDestroy` methods and
+  /// `ContextClosedEvent` listeners run before the process ends.
+  ///
+  /// Turn it on in programs that run until they are stopped, such as
+  /// servers. It is off by default, unlike in Spring Boot: listening for
+  /// signals keeps a Dart program alive, so a program that has finished its
+  /// work would never end. The property `spring.main.register-shutdown-hook`
+  /// wins when set. It uses the context's `registerShutdownHook()` and
+  /// does nothing without `dart:io` (on the web).
   final bool registerShutdownHook;
 
-  /// Called with the context before it is refreshed, sorted by `Ordered`
-  /// (Spring's `ApplicationContextInitializer`): add post-processors,
-  /// register singletons, ...
+  /// Code that prepares the context before its beans are created: add
+  /// post-processors or property sources, register ready-made objects as
+  /// beans. Run in `Ordered` order (unordered ones last). Test tools use
+  /// them; see [ApplicationContextInitializer].
   final List<ApplicationContextInitializer> initializers;
 
-  /// Consulted, together with the `FailureAnalyzer` beans of the context,
-  /// before the built-in analysis when the start fails (Spring Boot's
-  /// `FailureAnalyzers` from `spring.factories`).
+  /// Analyzers asked first when the start fails, before the
+  /// `FailureAnalyzer` beans of the context and the built-in analysis.
+  ///
+  /// Unlike beans, they also work for failures that happen before the
+  /// beans are created. Spring Boot finds them in `spring.factories`.
   final List<FailureAnalyzer> failureAnalyzers;
 
   final List<GenericApplicationListener> _listeners;
 
-  /// The listeners of the application events ([SpringApplicationEvent]s),
-  /// like Spring Boot's `getListeners`.
+  /// The listeners registered on the application, from the constructor and
+  /// [addListeners]; an unmodifiable copy.
   List<GenericApplicationListener> get listeners =>
       List.unmodifiable(_listeners);
 
-  /// Adds listeners of the application events, like Spring Boot's
-  /// `addListeners`. They receive every [SpringApplicationEvent] — also
-  /// the ones published before the context exists, which `@EventListener`
-  /// beans cannot see — and, from [ApplicationPreparedEvent] on, the
-  /// events of the context as its listeners.
+  /// Registers listeners on the application itself, for the next runs.
+  ///
+  /// Unlike `@EventListener` beans, they receive every
+  /// [SpringApplicationEvent], also those published before any bean
+  /// exists. From [ApplicationPreparedEvent] on they are also listeners of
+  /// the context, so they receive its events too (`ContextClosedEvent`,
+  /// for example). Call it before [run]. [addListener] is shorter for a
+  /// single function.
   ///
   /// ```dart
   /// SpringApplication([appBeans])
@@ -171,7 +223,11 @@ class SpringApplication {
   void addListeners(Iterable<GenericApplicationListener> listeners) =>
       _listeners.addAll(listeners);
 
-  /// Adds a listener for events of type [E] (see [addListeners]).
+  /// Registers [listener] on the application for the events of type [E],
+  /// such as [ApplicationStartingEvent], which no bean can receive.
+  ///
+  /// [order] places it among the other listeners of the same event (lower
+  /// first); by default it comes last. See [addListeners].
   void addListener<E>(
     void Function(E event) listener, {
     int order = Ordered.lowestPrecedence,
@@ -180,8 +236,13 @@ class SpringApplication {
 
   final Map<String, Object?> _defaultProperties;
 
-  /// Properties below every other source, config files included (Spring
-  /// Boot's `setDefaultProperties`): the `defaultProperties` source.
+  /// Properties with the lowest precedence: every other source, config
+  /// files included, overrides them.
+  ///
+  /// Use them for defaults that belong to the program rather than to a
+  /// config file, such as the defaults of a tool that may run without
+  /// `application.properties`. They form the property source named
+  /// `defaultProperties`.
   ///
   /// ```dart
   /// SpringApplication(
@@ -192,30 +253,38 @@ class SpringApplication {
   Map<String, Object?> get defaultProperties =>
       Map.unmodifiable(_defaultProperties);
 
-  /// Replaces [defaultProperties] (Spring Boot's `setDefaultProperties`).
+  /// Replaces all of [defaultProperties] with [properties], for the next
+  /// runs.
   void setDefaultProperties(Map<String, Object?> properties) =>
       _defaultProperties
         ..clear()
         ..addAll(properties);
 
-  /// Profiles activated on top of the configured ones (Spring Boot's
-  /// `setAdditionalProfiles`); they come first, so their files have the
-  /// lowest precedence of the profile-specific ones. [run] and [runAsync]
-  /// can add more for one launch.
+  /// Profiles that are always active, on top of those configured with
+  /// `spring.profiles.active`.
+  ///
+  /// For a profile that belongs to the build rather than to the
+  /// configuration, such as `mobile` in a Flutter app. They come first, so
+  /// their `application-{profile}` files have the lowest precedence of
+  /// the profile-specific ones. [run] and [runAsync] can add more for one
+  /// launch.
   final List<String> additionalProfiles;
 
-  /// Values given at compile time with `--dart-define=KEY=value` (or
-  /// `-DKEY=value` for `dart compile` / `dart run`), as properties right
-  /// below the command-line arguments: above the OS environment and the
-  /// config files.
+  /// Values given at build time with `--dart-define=KEY=value` (or
+  /// `-DKEY=value` for `dart compile` / `dart run`), as properties.
   ///
-  /// Names are relaxed like environment variables: a define `API_URL`
-  /// answers `${API_URL}` and `api.url`, and `SPRING_PROFILES_ACTIVE`
-  /// activates profiles. The generator fills this from the keys the
-  /// application can read (placeholders, `@ConfigurationProperties`,
-  /// config files), because `String.fromEnvironment` works on the web
-  /// and in AOT builds only as a `const` with a literal key; only defines
-  /// that were given end up here.
+  /// A Flutter or web app has no command line and often no environment
+  /// variables, so build-time defines are how its configuration is
+  /// chosen. They rank right below the command-line arguments, above the
+  /// OS environment and the config files. Names are relaxed like
+  /// environment variables: a define `API_URL` answers `${API_URL}` and
+  /// `api.url`, and `SPRING_PROFILES_ACTIVE` activates profiles.
+  ///
+  /// The generator fills this map with the keys the application can read
+  /// (placeholders, `@ConfigurationProperties`, config files), because on
+  /// the web and in AOT builds `String.fromEnvironment` only works as a
+  /// `const` with a literal key. Only the defines that were given end up
+  /// here.
   ///
   /// ```sh
   /// flutter build apk --dart-define=SPRING_PROFILES_ACTIVE=prod \
@@ -226,16 +295,19 @@ class SpringApplication {
   /// never pass secrets this way.
   final Map<String, String> dartDefines;
 
-  /// Name of the property source holding [dartDefines].
+  /// The name of the property source that holds [dartDefines],
+  /// `dartDefines`.
   static const dartDefinesPropertySourceName = 'dartDefines';
 
-  /// The banner printed at startup (Spring Boot's `setBanner`); a
-  /// `classpath:banner.txt` (or `spring.banner.location`) wins, the default
-  /// is the [SpringBootBanner].
+  /// The banner printed at startup when there is no banner file.
+  ///
+  /// A `lib/resources/banner.txt` (or the file named by
+  /// `spring.banner.location`) wins over it; when both are missing, the
+  /// [SpringBootBanner] is printed.
   final Banner? banner;
 
-  /// Where the banner goes (Spring Boot's `setBannerMode`);
-  /// `spring.main.banner-mode` (`off`, `console`, `log`) wins.
+  /// Where the banner goes; [BannerMode.console] by default. The property
+  /// `spring.main.banner-mode` (`off`, `console` or `log`) wins when set.
   final BannerMode bannerMode;
 
   // Boot's printBanner: after the environment is prepared, before the
@@ -294,8 +366,9 @@ class SpringApplication {
     }
   }
 
-  /// Customize the environment before the context is created, around
-  /// config data loading by order (see [EnvironmentPostProcessor]).
+  /// Code that changes the properties or profiles before the context is
+  /// created, some before the config files are read and some after,
+  /// depending on their order. See [EnvironmentPostProcessor].
   final List<EnvironmentPostProcessor> environmentPostProcessors;
 
   // The post-processors before (`true`) or after config data, in order;
@@ -321,44 +394,62 @@ class SpringApplication {
     }
   }
 
-  /// Identifies the generated code the application was built from (a hash
-  /// written by the generator). [reload] keeps a running context when it
-  /// is unchanged.
+  /// A hash of the generated code the application was built from, written
+  /// by the generator.
+  ///
+  /// After a hot reload, [reload] compares it with the running context's:
+  /// when it is unchanged (only method bodies changed), the context keeps
+  /// running. Null when the application was not generated; [reload] then
+  /// always restarts.
   final String? fingerprint;
 
-  /// Reads config files; defaults to a `DefaultResourceLoader`. Use an
-  /// asset-aware loader (and [runAsync]) in Flutter.
+  /// Reads the config files, the banner file and `classpath:` resources;
+  /// a `DefaultResourceLoader` by default. In Flutter, pass a loader that
+  /// reads assets and start with [runAsync], since assets can only be
+  /// read asynchronously.
   final ResourceLoader? resourceLoader;
 
-  /// Where failure reports go instead of the log; `null` (the default)
-  /// logs them like Spring Boot: a failure analysis at error level under
+  /// Where the failure report of a failed start goes instead of the log;
+  /// for a tool that shows it somewhere else, or a test that checks it.
+  ///
+  /// With `null` (the default) failures are logged as in Spring Boot: an
+  /// analyzed failure at error level under
   /// `spring_boot_dart.diagnostics.LoggingFailureAnalysisReporter`, any
   /// other failure as `Application run failed` with the error and stack
   /// trace under `spring_boot_dart.SpringApplication`. A logging system
   /// (`spring_boot_starter_logging`) stays installed until the failure is
-  /// logged, so it reaches the log file too.
+  /// logged, so the report reaches the log file too. Given a function, it
+  /// receives the report text, or `Application run failed: <error>`.
   final void Function(String line)? out;
 
-  /// Starts the application synchronously (config files read with
-  /// `dart:io`). [systemEnvironment] replaces the OS environment and
-  /// [properties] take precedence over every other property source,
-  /// command line included (both for tests, like
-  /// `@SpringBootTest(properties = ...)`).
+  /// Starts the application with the program arguments [args] and returns
+  /// the running context.
   ///
-  /// Returns once the synchronous part is done: asynchronous runners keep
-  /// running one after another, and if one fails the context is closed and
-  /// the error is rethrown (uncaught, it ends the program). Use [runAsync]
-  /// to wait for the runners, as Spring Boot's `run` does.
+  /// Config files are read synchronously, which needs files on disk or
+  /// embedded resources; in Flutter use [runAsync]. When the start fails,
+  /// [ApplicationFailedEvent] is published, the failure report is logged
+  /// and the error is rethrown.
   ///
-  /// [additionalProfiles] are activated for this launch after the
-  /// application's own [SpringApplication.additionalProfiles] (more
-  /// specific last), before config files are read, so their
-  /// `application-{profile}` files load; a reload keeps them.
+  /// It returns as soon as the synchronous part is done: runners that
+  /// return a `Future` keep running one after another afterwards. If one
+  /// of them fails, the context is closed and the error is rethrown
+  /// outside any `try` (uncaught, it ends the program). Use [runAsync] to
+  /// wait for the runners, as Spring Boot's `run` does.
   ///
-  /// [hotReload] (the generated `runApplication` passes it) returns the
-  /// application as the code is now: with it, a hot reload on the Dart VM
-  /// restarts the context when the generated code changed
-  /// ([SpringHotReload]).
+  /// The named parameters are for tests and tools:
+  ///
+  /// - [systemEnvironment] replaces the OS environment variables.
+  /// - [properties] take precedence over every other property source,
+  ///   command line included (what `@SpringBootTest(properties: ...)`
+  ///   does).
+  /// - [additionalProfiles] are activated for this launch, after the
+  ///   application's own [SpringApplication.additionalProfiles] (the more
+  ///   specific last) and before the config files are read, so their
+  ///   `application-{profile}` files load. A [reload] keeps them.
+  /// - [hotReload] returns the application as the code is now (the
+  ///   generated `runApplication` passes `() => springApplication`). With
+  ///   it, a hot reload on the Dart VM restarts the context when the
+  ///   generated code changed; see [SpringHotReload].
   ConfigurableApplicationContext run(
     List<String> args, {
     Map<String, String>? systemEnvironment,
@@ -460,17 +551,16 @@ class SpringApplication {
     }
   }
 
-  /// Like [run], reading config files asynchronously (e.g. Flutter assets),
-  /// refreshing the context with `refreshAsync()` (asynchronous
-  /// `@PostConstruct` / init methods are awaited before the runners) and
-  /// completing once every runner has finished — like Spring Boot's
-  /// `SpringApplication.run`, which returns after the runners. A failing
-  /// runner fails the returned `Future` (the context is closed with
-  /// `closeAsync()`).
+  /// Starts the application like [run], and completes once every runner
+  /// has finished, as Spring Boot's `run` does.
   ///
-  /// [additionalProfiles]: as for [run].
-  ///
-  /// [hotReload]: see [run].
+  /// Use it in Flutter, where config files and the banner are assets that
+  /// can only be read asynchronously, and wherever `main` should wait for
+  /// the startup work. The beans are created with `refreshAsync()`, so
+  /// asynchronous `@PostConstruct` and init methods are awaited before the
+  /// runners start. A failing start or runner fails the returned `Future`;
+  /// after a runner failure the context is closed with `closeAsync()`.
+  /// The parameters are those of [run].
   Future<ConfigurableApplicationContext> runAsync(
     List<String> args, {
     Map<String, String>? systemEnvironment,
@@ -539,21 +629,27 @@ class SpringApplication {
     return context;
   }
 
-  /// Restarts [running] with this application if the generated code
-  /// changed, for hot reload: a hot reload does not run `main` again, but
-  /// the generated `springApplication` getter returns the new beans.
+  /// After a hot reload, returns a context built from the current code:
+  /// [running] itself when its beans did not change, or a restarted one.
+  ///
+  /// A hot reload does not run `main` again, so the beans of the running
+  /// context stay as they were built. Call this on the application the
+  /// generated `springApplication` getter returns after the reload
+  /// (Flutter's root widget does it through the generated
+  /// `reloadApplication`):
   ///
   /// - Same [fingerprint] (only method bodies changed): [running] is
-  ///   returned as it is, beans keep their state.
+  ///   returned as it is, and the beans keep their state.
   /// - Different (beans, annotations or `lib/resources/` changed):
   ///   [running] is closed and the application starts again with the same
-  ///   arguments.
+  ///   arguments, properties and profiles.
   ///
-  /// [runners]: whether `ApplicationRunner` / `CommandLineRunner` beans run
-  /// again after such a restart. They hold "on startup" work (migrations,
-  /// an `app_started` analytics event, a welcome log line); the app did not
-  /// really start again, so pass `false` to skip them. The default `true`
-  /// matches Spring Boot DevTools, which runs them after every restart.
+  /// [runners] says whether the `ApplicationRunner` and
+  /// `CommandLineRunner` beans run again after such a restart. They hold
+  /// "on startup" work (migrations, an `app_started` analytics event, a
+  /// welcome log line), and the app did not really start again, so pass
+  /// `false` to skip them. The default `true` matches Spring Boot
+  /// DevTools, which runs them after every restart.
   ///
   /// ```dart
   /// // Flutter, in the root widget's State:
@@ -583,9 +679,12 @@ class SpringApplication {
     );
   }
 
-  /// Like [reload], reading config files asynchronously and closing
-  /// [running] with `closeAsync()` (awaiting its asynchronous destroy
-  /// callbacks) before the new application starts with `refreshAsync()`.
+  /// The asynchronous form of [reload], for Flutter and for code that
+  /// uses [runAsync].
+  ///
+  /// [running] is closed with `closeAsync()`, which awaits its
+  /// asynchronous destroy callbacks, and the new application starts as
+  /// with [runAsync].
   Future<ConfigurableApplicationContext> reloadAsync(
     ConfigurableApplicationContext running, {
     bool runners = true,
@@ -1079,12 +1178,16 @@ class SpringApplication {
         : null;
   }
 
-  /// The exit code a failed run chose for [error]: what the
-  /// [ExitCodeExceptionMapper] beans say (they are asked while the context
-  /// is active, so for a failing runner, not for a failed refresh), or
-  /// [error] itself when it is an [ExitCodeGenerator]. `null` when there is
-  /// none. Spring Boot passes the code to its exception handler; here the
-  /// caller ends the process:
+  /// The exit code a failed run chose for [error], the error [run] or
+  /// [runAsync] threw; `null` when it chose none.
+  ///
+  /// The code comes from the [ExitCodeExceptionMapper] beans, which are
+  /// asked while the context is still active (so for a failing runner, not
+  /// for a start that failed while creating the beans), else from [error]
+  /// itself, or the error a `BeansException` wraps, when it is an
+  /// [ExitCodeGenerator]. Strings and numbers thrown as errors never have
+  /// one. Spring Boot passes the code to its exception handler; here
+  /// `main` ends the process with it:
   ///
   /// ```dart
   /// try {
@@ -1101,12 +1204,16 @@ class SpringApplication {
     }
   }
 
-  /// Closes [context] and returns the exit code of the application, like
-  /// Spring Boot's `SpringApplication.exit`: the code of the
-  /// [exitCodeGenerators] and of the [ExitCodeGenerator] beans, sorted by
-  /// order (`Ordered` / `@Order`): the first non-zero code wins. A code other than `0` is also
-  /// published as an [ExitCodeEvent] before the context closes. A failure
-  /// on the way is logged and gives `1` (unless a code was found).
+  /// Closes [context] and returns the code the process should exit with.
+  ///
+  /// Call it at the end of a program whose result is its exit code (a
+  /// batch job, a command-line tool), then pass the code to `exit`. The
+  /// code comes from [exitCodeGenerators] and the [ExitCodeGenerator]
+  /// beans, sorted by order (`Ordered`, `@Order`): the first non-zero code
+  /// wins, `0` when there is none. A non-zero code is published as an
+  /// [ExitCodeEvent] before the context closes. A failure on the way,
+  /// closing included, is logged as a warning and gives `1` unless a code
+  /// was found already.
   ///
   /// ```dart
   /// exit(SpringApplication.exit(context)); // dart:io
@@ -1186,8 +1293,13 @@ class SpringApplication {
       ? SpringLogLevel.off
       : parseSpringLogLevel(value);
 
-  /// Applies `logging.level.*` from [environment] to [SpringLog], like
-  /// Spring Boot's `LoggingApplicationListener`:
+  /// Sets the levels of [SpringLog] from the `logging.level.*` and
+  /// `logging.group.*` properties of [environment].
+  ///
+  /// [run] calls it once the config files are read, with or without a
+  /// logging starter, so applications only write the properties. Call it
+  /// yourself only when you prepare an environment without
+  /// `SpringApplication`:
   ///
   /// ```properties
   /// logging.level.root=info
@@ -1196,9 +1308,14 @@ class SpringApplication {
   /// logging.level.payments=trace
   /// ```
   ///
-  /// `LOGGING_LEVEL_NEON_CHECKOUT=debug` (environment variable) is the
-  /// same as `logging.level.neon.checkout`; `false` (YAML's `off`) is
-  /// `off`. Levels of an earlier run are replaced.
+  /// A level applies to the logger and every logger below it
+  /// (`neon.checkout.cart`); a group sets the level of each logger it
+  /// lists. The environment variable `LOGGING_LEVEL_NEON_CHECKOUT=debug`
+  /// is the same as `logging.level.neon.checkout`; `false` (what YAML
+  /// makes of an unquoted `off`) means `off`; an empty value leaves the
+  /// level inherited. The levels set by an earlier call are cleared first.
+  /// A value that is no level throws a
+  /// [ConfigurationPropertiesBindException], which fails the start.
   static void applyLoggingLevels(ConfigurableEnvironment environment) {
     // Bound like Boot's LoggingApplicationListener: groups as lists (a
     // comma list or `logging.group.x[0]`), levels as a map whose values
@@ -1273,13 +1390,18 @@ class SpringApplication {
   }
 }
 
-/// Makes every singleton lazy (created on first use), like Spring Boot's
-/// `LazyInitializationBeanFactoryPostProcessor`; [SpringApplication] adds
-/// it for `spring.main.lazy-initialization=true`.
+/// Makes every singleton bean lazy: created the first time it is needed,
+/// not at startup.
 ///
-/// Beans with their own `@Lazy(...)`, `SmartInitializingSingleton` beans
-/// and beans excluded by a [LazyInitializationExcludeFilter] bean are left
-/// alone.
+/// Starting faster matters for command-line tools and mobile apps that
+/// use only some of their beans per run. The application only sets the
+/// property `spring.main.lazy-initialization=true`, and
+/// [SpringApplication] adds this post-processor. The price is that a bean
+/// that cannot be created fails on first use instead of at startup.
+///
+/// Beans with their own `@Lazy(...)` annotation keep their setting.
+/// `SmartInitializingSingleton` beans and the beans a
+/// [LazyInitializationExcludeFilter] bean excludes stay eager.
 ///
 /// Spring (Java):
 /// ```java
@@ -1364,19 +1486,23 @@ typedef _Prepared = ({
   bool logStartupInfo,
 });
 
-/// Keeps beans eager under `spring.main.lazy-initialization=true`, like
-/// Spring Boot's `LazyInitializationExcludeFilter`: declare one as a bean
-/// (a `@Bean` method, static in Boot) and
-/// [LazyInitializationBeanFactoryPostProcessor] leaves the beans it excludes
-/// alone.
+/// Keeps some beans created at startup when
+/// `spring.main.lazy-initialization=true` makes the others lazy.
+///
+/// Some beans must exist from the start even in a lazy application: a
+/// bean that warms a cache, listens for messages or schedules work does
+/// nothing if nobody asks for it. Declare a filter as a bean, and
+/// [LazyInitializationBeanFactoryPostProcessor] leaves the beans it
+/// excludes eager. Filter beans are created before the other beans.
 ///
 /// ```dart
+/// // The cache warmer must run at startup, lazy or not.
 /// @Bean()
 /// LazyInitializationExcludeFilter eagerCaches() =>
 ///     const LazyInitializationExcludeFilter.forBeanTypes([CacheWarmer]);
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java), where the `@Bean` method is static:
 /// ```java
 /// @Bean
 /// static LazyInitializationExcludeFilter eagerCaches() {
@@ -1384,7 +1510,8 @@ typedef _Prepared = ({
 /// }
 /// ```
 abstract interface class LazyInitializationExcludeFilter {
-  /// A filter calling [isExcluded] (a Java lambda).
+  /// A filter that asks [isExcluded] for each bean, for rules other than
+  /// a list of types (by name, by annotation, ...).
   const factory LazyInitializationExcludeFilter.of(
     bool Function(
       String beanName,
@@ -1394,11 +1521,13 @@ abstract interface class LazyInitializationExcludeFilter {
     isExcluded,
   ) = _FunctionExcludeFilter;
 
-  /// Excludes the beans of [types] (registered under one of them).
+  /// A filter that keeps the beans of [types] eager: beans whose type, or
+  /// one of the types they are registered under, is in [types].
   const factory LazyInitializationExcludeFilter.forBeanTypes(List<Type> types) =
       _TypesExcludeFilter;
 
-  /// Whether the bean [beanName] stays eager.
+  /// Whether the bean [beanName], with its [definition] and [beanType],
+  /// stays eager (true) or may be made lazy (false).
   bool isExcluded(
     String beanName,
     BeanDefinition<Object> definition,
@@ -1432,12 +1561,20 @@ final class _TypesExcludeFilter implements LazyInitializationExcludeFilter {
   ) => types.any((type) => type == beanType || definition.types.contains(type));
 }
 
-/// Prepares a context before it is refreshed, like Spring's
-/// `ApplicationContextInitializer`; see [SpringApplication.initializers].
-/// [SpringApplication] runs them sorted by `Ordered` (unordered ones
-/// last).
+/// Code that prepares the context before its beans are created.
+///
+/// Some setup cannot be done with beans because it must happen before
+/// any bean exists: a property source that every bean should see, a
+/// ready-made object registered as a bean, a post-processor. Pass
+/// initializers to `SpringApplication(initializers: [...])`; they run
+/// after the context is created and before its beans are, sorted by
+/// `Ordered` (unordered ones last). Test tools are the main users: they
+/// add test properties and replace beans this way. Applications rarely
+/// need one.
 ///
 /// ```dart
+/// // Point the clients at the local test servers, before any bean reads
+/// // `api.url`.
 /// final class TestServers implements ApplicationContextInitializer, Ordered {
 ///   @override
 ///   int get order => Ordered.highestPrecedence;
@@ -1464,14 +1601,15 @@ final class _TypesExcludeFilter implements LazyInitializationExcludeFilter {
 /// application.addInitializers(new TestServers(), context -> ...);
 /// ```
 abstract interface class ApplicationContextInitializer {
-  /// An initializer calling [initialize] (a Java lambda), ordered by
-  /// [order].
+  /// An initializer that runs [initialize], placed by [order] (last by
+  /// default); the short form of a class.
   const factory ApplicationContextInitializer.of(
     void Function(ConfigurableApplicationContext context) initialize, {
     int order,
   }) = _FunctionInitializer;
 
-  /// Prepares [context].
+  /// Prepares [context], which has its environment and bean definitions
+  /// but no beans yet.
   void initialize(ConfigurableApplicationContext context);
 }
 

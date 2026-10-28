@@ -1,10 +1,18 @@
 import 'package:spring_core_dart/src/beans/type_info.dart';
 
-/// Marks a class for compile-time introspection: the generator emits its
-/// properties, methods and annotations, so data binding, validation and
-/// SpEL can use it without reflection (like Micronaut's `@Introspected`).
+/// Marks a class whose properties, constructor and methods the generator
+/// describes, so the framework can read and fill its objects without
+/// reflection.
+///
+/// Dart has no runtime reflection in Flutter or compiled programs, so
+/// anything that must list or set the fields of an object it did not write
+/// needs a description generated at build time. Put `@Introspected()` on
+/// the classes that are bound from requests or configuration, validated,
+/// turned into JSON or used in SpEL expressions. Micronaut's
+/// `@Introspected` works the same way.
 ///
 /// ```dart
+/// // A form that is validated and bound from request data.
 /// @Introspected()
 /// class Address {
 ///   @NotBlank()
@@ -32,19 +40,23 @@ import 'package:spring_core_dart/src/beans/type_info.dart';
 /// the scanned package. Classes of the same package used by an introspected
 /// class (property and constructor types) are introspected automatically.
 class Introspected {
-  /// Marks the annotated class; [classes] are introspected too.
+  /// Introspects the annotated class and the [classes] listed.
   const Introspected({this.classes = const []});
 
-  /// More classes to introspect, e.g. from another package.
+  /// More classes to introspect, typically from another package that has
+  /// no generator of its own.
   final List<Type> classes;
 }
 
-/// A property of an introspected class.
+/// The description of one property of an introspected class: its name,
+/// type, annotations, and closures that read and write it.
 ///
-/// Normally generated for `@Introspected` classes; `get` and `set` are
-/// closures over the field, so no reflection is needed.
+/// The generator writes these for `@Introspected` classes; `BeanWrapper`,
+/// validation and SpEL use them to reach a field by name. You write one by
+/// hand only in a hand-written [BeanIntrospection].
 ///
 /// ```dart
+/// // A property of Address, written by hand.
 /// final city = BeanProperty<Address>(
 ///   'city',
 ///   type: String,
@@ -63,8 +75,8 @@ class Introspected {
 /// city.getWriteMethod().invoke(address, "Lyon");
 /// ```
 final class BeanProperty<T extends Object> {
-  /// Describes property [name] of [T] with declared [type]; omit `set`
-  /// for a read-only property.
+  /// Describes the property [name] of [T] with the declared [type]; omit
+  /// `set` for a read-only property.
   BeanProperty(
     this.name, {
     required this.type,
@@ -75,10 +87,10 @@ final class BeanProperty<T extends Object> {
     List<Object> annotations = const [],
   }) : annotations = List.unmodifiable(annotations);
 
-  /// The property (field or getter) name.
+  /// The name of the field or getter.
   final String name;
 
-  /// Declared type without nullability.
+  /// The declared type, without its nullability (see [nullable]).
   final Type type;
 
   /// Whether the declared type is nullable.
@@ -88,20 +100,22 @@ final class BeanProperty<T extends Object> {
   /// written by the generator, `null` in hand-written introspections.
   final TypeInfo<Object?>? typeInfo;
 
-  /// Const annotations on the field or getter (e.g. constraints).
+  /// The const annotations on the field or getter (e.g. constraints).
   final List<Object> annotations;
 
   final Object? Function(T bean) _get;
   final void Function(T bean, Object? value)? _set;
 
-  /// Whether the property has a setter.
+  /// Whether the property can be written; `false` for a final field or a
+  /// getter without a setter.
   bool get isWritable => _set != null;
 
-  /// Reads the property of [bean] (which must be a [T]).
+  /// The value of the property in [bean], which must be a [T].
   Object? getValue(Object bean) => _get(bean as T);
 
-  /// Sets [value]; it must already have the property's type (use
-  /// `BeanWrapper` for conversion). Throws `StateError` if read-only.
+  /// Writes [value] into the property of [bean]. The value must already
+  /// have the property's type (`BeanWrapper` converts first). Throws
+  /// `StateError` for a read-only property.
   void setValue(Object bean, Object? value) {
     final setter = _set;
     if (setter == null) {
@@ -110,19 +124,23 @@ final class BeanProperty<T extends Object> {
     setter(bean as T, value);
   }
 
-  /// The annotations of type [A].
+  /// The annotations of the property of type [A].
   Iterable<A> annotationsOf<A>() => annotations.whereType<A>();
 
   @override
   String toString() => 'BeanProperty<$T>($name: $type${nullable ? '?' : ''})';
 }
 
-/// A public instance method of an introspected class (positional
-/// parameters only).
+/// The description of one public instance method of an introspected class
+/// or bean, with a closure that calls it.
 ///
-/// Used e.g. by SpEL method calls on introspected objects.
+/// SpEL uses it to call methods on introspected objects, and frameworks
+/// use the ones in `BeanDefinition.annotatedMethods` to call annotated
+/// methods of beans (`@Scheduled`, request handlers). You write one by
+/// hand only in a hand-written introspection.
 ///
 /// ```dart
+/// // Person.hello(String name), called by name from an expression.
 /// final hello = BeanMethod<Person>(
 ///   'hello',
 ///   returnType: String,
@@ -138,8 +156,8 @@ final class BeanProperty<T extends Object> {
 /// hello.invoke(person, "Ann");
 /// ```
 final class BeanMethod<T extends Object> {
-  /// Describes method [name] of [T], called through `invoke` (and
-  /// `invokeNamed` for named parameters).
+  /// Describes the method [name] of [T], called through `invoke` (and
+  /// `invokeNamed` when it has named parameters).
   BeanMethod(
     this.name, {
     required this._invoke,
@@ -155,7 +173,7 @@ final class BeanMethod<T extends Object> {
        parameters = List.unmodifiable(parameters),
        annotations = List.unmodifiable(annotations);
 
-  /// The method name.
+  /// The method's name.
   final String name;
 
   /// The declared return type; `null` for `void`.
@@ -181,7 +199,7 @@ final class BeanMethod<T extends Object> {
   /// Whether the result (or the future's value) is `void`.
   final bool isVoid;
 
-  /// Const annotations on the method.
+  /// The const annotations on the method.
   final List<Object> annotations;
   final Object? Function(T bean, List<Object?> arguments) _invoke;
   final Object? Function(
@@ -194,7 +212,8 @@ final class BeanMethod<T extends Object> {
   /// Calls the method on [bean] with positional [arguments] (already of
   /// the parameter types) and [namedArguments] (by [BeanParameter.symbol];
   /// an omitted optional one keeps its default value); returns its result
-  /// (`null` for `void`).
+  /// (`null` for `void`). Throws `ArgumentError` when named arguments are
+  /// given to a method described without them.
   Object? invoke(
     Object bean,
     List<Object?> arguments, [
@@ -226,7 +245,13 @@ final class BeanMethod<T extends Object> {
   String toString() => 'BeanMethod<$T>($name)';
 }
 
-/// A parameter of a [BeanConstructor].
+/// The description of one parameter of a constructor or method: its name,
+/// full type, whether it is named or required, and its annotations.
+///
+/// `ObjectMapper` reads those of a [BeanConstructor] to know which JSON
+/// fields to pass; request binding reads those of a [BeanMethod] to know
+/// what to bind (`@PathVariable()`, `@RequestParam()`). Written by the
+/// generator.
 ///
 /// ```dart
 /// // Book({required this.isbn, this.tags = const []})
@@ -238,8 +263,8 @@ final class BeanMethod<T extends Object> {
 ///
 /// Spring (Java): `java.lang.reflect.Parameter` (with `-parameters`).
 final class BeanParameter {
-  /// Describes parameter [name] of [type]. Named parameters carry their
-  /// [symbol] (a const symbol literal, safe in minified builds).
+  /// Describes the parameter [name] of [type]. A named parameter carries
+  /// its [symbol] (a const symbol literal, safe in minified builds).
   const BeanParameter(
     this.name, {
     required this.type,
@@ -248,10 +273,10 @@ final class BeanParameter {
     this.annotations = const [],
   });
 
-  /// The parameter name.
+  /// The parameter's name.
   final String name;
 
-  /// The declared type.
+  /// The full declared type.
   final TypeInfo<Object?> type;
 
   /// `#name` for a named parameter; `null` for a positional one.
@@ -261,7 +286,7 @@ final class BeanParameter {
   /// `required`).
   final bool isRequired;
 
-  /// Const annotations on the parameter.
+  /// The const annotations on the parameter.
   final List<Object> annotations;
 
   /// Whether the parameter is named.
@@ -271,9 +296,13 @@ final class BeanParameter {
   String toString() => 'BeanParameter($name: $type)';
 }
 
-/// The constructor an introspected class is created with: the unnamed one,
-/// or the one marked `@JsonCreator()`. Lets immutable classes (final
-/// fields, `required` and default values) be created from data.
+/// The description of the constructor an introspected class is created
+/// with (the unnamed one, or the one marked `@JsonCreator()`), with a
+/// closure that calls it.
+///
+/// It lets immutable classes (final fields, `required` and default values)
+/// be created from data, for example by `ObjectMapper` from JSON. Written
+/// by the generator.
 ///
 /// ```dart
 /// final constructor = BeanConstructor<Book>(
@@ -292,7 +321,8 @@ final class BeanParameter {
 /// Book book = Book.class.getConstructor(String.class).newInstance("978-0");
 /// ```
 final class BeanConstructor<T extends Object> {
-  /// A constructor with [parameters], called through `create`.
+  /// A constructor with [parameters], called through `create` with the
+  /// positional and named arguments.
   BeanConstructor({
     required List<BeanParameter> parameters,
     required this._create,
@@ -304,8 +334,8 @@ final class BeanConstructor<T extends Object> {
   final T Function(List<Object?> positional, Map<Symbol, Object?> named)
   _create;
 
-  /// Creates an instance; omitted optional parameters keep their default
-  /// values.
+  /// Calls the constructor with [positional] and [named] arguments;
+  /// omitted optional parameters keep their default values.
   T newInstance(
     List<Object?> positional, [
     Map<Symbol, Object?> named = const {},
@@ -315,13 +345,18 @@ final class BeanConstructor<T extends Object> {
   String toString() => 'BeanConstructor<$T>(${parameters.join(', ')})';
 }
 
-/// Compile-time metadata of a class, like Micronaut's `BeanIntrospection`.
+/// Everything the generator knows about an introspected class: its
+/// properties, methods, constructor and annotations, with closures to use
+/// them.
 ///
-/// Generated for `@Introspected` classes and registered in a
-/// [BeanIntrospector]; `BeanWrapper`, data binding, validation and SpEL
-/// read properties through it.
+/// It replaces reflection: `BeanWrapper`, data binding, validation, SpEL
+/// and `ObjectMapper` read and create objects through it. The generator
+/// writes one per `@Introspected` class and the module registers it in a
+/// [BeanIntrospector]; you write one by hand only for a class the
+/// generator cannot see. Micronaut's `BeanIntrospection` is the same idea.
 ///
 /// ```dart
+/// // A hand-written introspection of Address, then used by name.
 /// final addressIntrospection = BeanIntrospection<Address>(
 ///   properties: [
 ///     BeanProperty<Address>(
@@ -345,8 +380,9 @@ final class BeanConstructor<T extends Object> {
 /// Address address = BeanUtils.instantiateClass(Address.class);
 /// ```
 final class BeanIntrospection<T extends Object> {
-  /// Metadata of [T]; `instantiate` is the no-argument constructor, if
-  /// any.
+  /// The description of [T]. `instantiate` calls the no-argument
+  /// constructor, if there is one; the other closures are written by the
+  /// generator.
   BeanIntrospection({
     List<BeanProperty<T>> properties = const [],
     List<BeanMethod<T>> methods = const [],
@@ -410,7 +446,7 @@ final class BeanIntrospection<T extends Object> {
   /// Whether [S] is [T] or `T?`.
   bool describes<S>() => S == T || (<S>[] is List<T?> && <T?>[] is List<S>);
 
-  /// Const annotations on the class.
+  /// The const annotations on the class.
   final List<Object> annotations;
 
   /// The introspected class.
@@ -454,13 +490,17 @@ final class BeanIntrospection<T extends Object> {
   String toString() => 'BeanIntrospection<$T>';
 }
 
-/// A registry of [BeanIntrospection]s, like Micronaut's
-/// `BeanIntrospector`. Lookups fall back to [parent].
+/// The registry that finds the [BeanIntrospection] of a class or object.
 ///
-/// Each application context has its own introspector (bean
-/// `beanIntrospector`) filled from its modules, with [shared] as parent.
+/// Code that reads objects without reflection asks it for their
+/// description. Each application context has its own introspector (the
+/// bean `beanIntrospector`), filled from its modules, with [shared] as
+/// parent; lookups that fail here go to the [parent]. Applications rarely
+/// use it directly; `BeanWrapper` and `ObjectMapper` do. Micronaut's
+/// `BeanIntrospector` is the same idea.
 ///
 /// ```dart
+/// // List the property names of any introspected object.
 /// final introspector = BeanIntrospector(
 ///   introspections: [personIntrospection, addressIntrospection],
 /// );
@@ -483,10 +523,11 @@ class BeanIntrospector {
     introspections.forEach(register);
   }
 
-  /// A process-wide registry; contexts use their own child registries.
+  /// The process-wide registry, the default of `BeanWrapper`; each context
+  /// uses a child of it.
   static final BeanIntrospector shared = BeanIntrospector();
 
-  /// Registry consulted when this one has no match.
+  /// The registry consulted when this one has no match.
   final BeanIntrospector? parent;
   final _byType = <Type, BeanIntrospection<Object>>{};
   final _enums = <Type, EnumType<Enum>>{};
@@ -591,15 +632,17 @@ class BeanIntrospector {
     return _specialized[T] = found;
   }
 
-  /// Adds every one of [introspections].
+  /// Adds every one of [introspections] (see [register]).
   void registerAll(Iterable<BeanIntrospection<Object>> introspections) =>
       introspections.forEach(register);
 
-  /// The introspection registered for exactly [type].
+  /// The introspection registered for exactly [type], here or in the
+  /// [parent]; `null` when there is none.
   BeanIntrospection<Object>? forType(Type type) =>
       _byType[type] ?? parent?.forType(type);
 
-  /// The introspection of [T] (also when [T] is a nullable `Book?`).
+  /// The introspection of [T] (also when [T] is a nullable `Book?`), here
+  /// or in the [parent]; `null` when there is none.
   BeanIntrospection<Object>? forTypeArgument<T>() {
     final exact = _byType[T];
     if (exact != null) {
@@ -637,7 +680,8 @@ class BeanIntrospector {
     return best ?? parent?._mostSpecific(bean);
   }
 
-  /// Like [findIntrospection], but throws when [bean] is not introspected.
+  /// Like [findIntrospection], but throws `ArgumentError` when [bean]'s
+  /// class is not introspected (or its module is not registered).
   BeanIntrospection<Object> getIntrospection(Object bean) =>
       findIntrospection(bean) ??
       (throw ArgumentError.value(

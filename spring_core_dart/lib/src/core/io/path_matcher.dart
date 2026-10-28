@@ -1,6 +1,14 @@
-/// Path pattern matching, like Spring's `PathMatcher`.
+/// Tests paths such as `config/dev/app.properties` against patterns with
+/// wildcards such as `config/**/*.properties`, and pulls values out of
+/// them.
+///
+/// The resource pattern resolver and `@PropertySource` use it to expand
+/// location patterns. [AntPathMatcher] is the only implementation;
+/// applications rarely need either, but can use one for their own
+/// matching of paths or dotted names.
 ///
 /// ```dart
+/// // Which uploaded files are stylesheets.
 /// final PathMatcher matcher = AntPathMatcher();
 /// matcher.match('/static/**/*.css', '/static/css/app.css'); // true
 /// ```
@@ -11,7 +19,8 @@
 /// matcher.match("/static/**/*.css", "/static/css/app.css"); // true
 /// ```
 abstract interface class PathMatcher {
-  /// Whether [path] contains pattern syntax.
+  /// Whether [path] contains pattern syntax (`*`, `?` or a `{name}`
+  /// variable), so it must be matched rather than compared.
   ///
   /// ```dart
   /// matcher.isPattern('/users/{id}'); // true
@@ -19,7 +28,7 @@ abstract interface class PathMatcher {
   /// ```
   bool isPattern(String path);
 
-  /// Whether [path] fully matches [pattern].
+  /// Whether the whole of [path] matches [pattern].
   ///
   /// ```dart
   /// matcher.match('com/t?st.jsp', 'com/test.jsp'); // true
@@ -27,15 +36,17 @@ abstract interface class PathMatcher {
   /// ```
   bool match(String pattern, String path);
 
-  /// Whether [path] matches the beginning of [pattern] (it may still match
-  /// once more segments are added).
+  /// Whether [path] matches the beginning of [pattern], so a longer path
+  /// starting with it could still match. Used to skip directories that
+  /// cannot contain a match.
   ///
   /// ```dart
   /// matcher.matchStart('/api/*/users', '/api/v1'); // true
   /// ```
   bool matchStart(String pattern, String path);
 
-  /// The part of [path] matched by the wildcard part of [pattern].
+  /// The part of [path] matched by the wildcard part of [pattern], such as
+  /// the file path below a mapped directory.
   ///
   /// ```dart
   /// matcher.extractPathWithinPattern('/docs/*', '/docs/a/b.html');
@@ -43,7 +54,7 @@ abstract interface class PathMatcher {
   /// ```
   String extractPathWithinPattern(String pattern, String path);
 
-  /// `{name}` variables of [pattern] extracted from [path].
+  /// The values of the `{name}` variables of [pattern] in [path], by name.
   ///
   /// Throws [StateError] if [path] does not match [pattern].
   ///
@@ -53,7 +64,9 @@ abstract interface class PathMatcher {
   /// ```
   Map<String, String> extractUriTemplateVariables(String pattern, String path);
 
-  /// Orders patterns from most to least specific for [path].
+  /// A comparator that sorts patterns from the most to the least specific
+  /// for [path], to pick the best of several matching patterns. A pattern
+  /// equal to [path] comes first and `/**` last.
   ///
   /// ```dart
   /// final patterns = ['/**', '/hotels/*', '/hotels/{id}']
@@ -62,8 +75,8 @@ abstract interface class PathMatcher {
   /// ```
   Comparator<String> getPatternComparator(String path);
 
-  /// Combines two patterns, e.g. `/hotels/*` + `/booking` →
-  /// `/hotels/booking`.
+  /// Joins two patterns into one, such as a prefix and a sub-pattern:
+  /// `/hotels/*` and `/booking` give `/hotels/booking`.
   ///
   /// ```dart
   /// matcher.combine('/hotels', '{hotel}'); // '/hotels/{hotel}'
@@ -72,11 +85,17 @@ abstract interface class PathMatcher {
   String combine(String pattern1, String pattern2);
 }
 
-/// Ant-style matching, like Spring's `AntPathMatcher`.
+/// The [PathMatcher] for Ant-style patterns, the syntax of locations such
+/// as `classpath*:i18n/**/*.properties`.
 ///
-/// - `?` matches one character, `*` zero or more characters in a segment,
-///   `**` zero or more segments;
-/// - `{name}` captures a segment part, `{name:regex}` with a pattern.
+/// - `?` matches one character, `*` zero or more characters within a
+///   segment, `**` zero or more whole segments;
+/// - `{name}` captures part of a segment, `{name:regex}` only when it
+///   matches the regular expression.
+///
+/// The separator is `/` unless given, so the same matcher works for
+/// dotted names. Applications rarely create one; resource patterns use it
+/// already.
 ///
 /// ```dart
 /// final matcher = AntPathMatcher();
@@ -100,10 +119,10 @@ abstract interface class PathMatcher {
 /// dots.match("app.*.enabled", "app.cache.enabled");
 /// ```
 class AntPathMatcher implements PathMatcher {
-  /// Creates a matcher.
-  ///
-  /// [pathSeparator] splits paths into segments; [caseSensitive] controls
-  /// segment matching; [trimTokens] trims whitespace around segments.
+  /// Creates a matcher that splits paths at [pathSeparator] (`/` unless
+  /// given), compares segments case-sensitively unless [caseSensitive] is
+  /// `false`, and ignores whitespace around segments when [trimTokens] is
+  /// `true`.
   AntPathMatcher({
     this.pathSeparator = defaultPathSeparator,
     this.caseSensitive = true,
@@ -113,7 +132,7 @@ class AntPathMatcher implements PathMatcher {
   /// The default separator, `/`.
   static const defaultPathSeparator = '/';
 
-  /// Separator between path segments.
+  /// The text between path segments.
   final String pathSeparator;
 
   /// Whether segments are compared case-sensitively (default `true`).
@@ -122,10 +141,10 @@ class AntPathMatcher implements PathMatcher {
   /// Whether whitespace around segments is ignored (default `false`).
   final bool trimTokens;
 
-  /// Number of cached segment patterns after which caching is turned off,
-  /// like Spring's `AntPathMatcher.CACHE_TURNOFF_THRESHOLD`: that many
-  /// distinct patterns means they are generated, so caching would only
-  /// leak memory.
+  /// How many compiled segment patterns are cached before caching is
+  /// turned off, as Spring's `AntPathMatcher.CACHE_TURNOFF_THRESHOLD`
+  /// does: that many distinct patterns means they are generated, so the
+  /// cache would only grow.
   static const cacheTurnoffThreshold = 65536;
 
   // Compiled segment matchers by segment pattern, until the threshold.
@@ -351,7 +370,8 @@ class AntPathMatcher implements PathMatcher {
     return matcher;
   }
 
-  /// Number of cached segment patterns (for tests and diagnostics).
+  /// How many compiled segment patterns are cached now, for tests and
+  /// diagnostics.
   int get cachedPatternCount => _matchers.length;
 
   @override

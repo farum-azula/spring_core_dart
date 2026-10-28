@@ -1,23 +1,32 @@
-/// Testing support for `spring_boot_dart` applications and starters, like
-/// `spring-boot-starter-test`:
+/// Tools for testing a `spring_boot_dart` application or a starter: start
+/// the application in a test, swap beans for fakes, call controllers
+/// without a server, and check what an auto-configuration creates.
 ///
-/// - `springBootTest`: the whole application for a test file
-///   (`@SpringBootTest`), with properties, profiles, dynamic properties
-///   (`DynamicPropertyRegistry`) and `BeanOverride`s;
-/// - `ApplicationContextRunner`: small contexts to test auto-configuration;
-/// - matchers: `hasSingleBean`, `hasBean`, `doesNotHaveBean`,
-///   `hasBeanNamed`, `hasFailed`;
-/// - `captureLogs`: records logged through `SpringLog` in each test;
-/// - `MockHttpTransport` and `MockWebSocketTransport` (from
-///   `spring_web_dart`): prepared answers for Feign and WebSocket clients,
-///   like Spring's `MockRestServiceServer`;
-/// - test classes: `SpringBootTest`, `Autowired` fields, `TestBean`,
-///   `Test` methods and the other annotations, turned into tests by
-///   `spring_core_dart_generator` (`void main() => runSpringTests();`).
+/// Import it in test files only (it is a `dev_dependency`). It re-exports
+/// `spring_boot_dart` and the test doubles of `spring_web_dart`, so one
+/// import is enough. What it offers, by task:
 ///
-/// Built on `test_api` and `matcher`, so it works with both `package:test`
-/// and `flutter_test`. Re-exports `spring_boot_dart` and the transport mocks
-/// of `spring_web_dart` (`MockHttpTransport`, `MockWebSocketTransport`).
+/// - Test the whole application: `springBootTest` starts it once for the
+///   tests of a `main` or `group`, with test properties, profiles,
+///   `DynamicPropertyRegistry` values and `BeanOverride` fakes. The same
+///   tests can be written as classes with `@SpringBootTest()`,
+///   `@Autowired()` fields, `@TestBean()` and `@Test()`;
+///   `spring_core_dart_generator` turns them into these functions
+///   (`void main() => runSpringTests();`).
+/// - Test controllers: `MockMvc` (`app.mockMvc`) sends requests through
+///   the web starter's dispatcher in memory.
+/// - Test an auto-configuration: `ApplicationContextRunner` starts a small
+///   context per test, without config files.
+/// - Check a context: the matchers `hasSingleBean`, `hasBean`,
+///   `doesNotHaveBean`, `hasBeanNamed` and `hasFailed`.
+/// - Check logging: `captureLogs` records what `SpringLog` logged during
+///   each test.
+/// - Fake remote services: `MockHttpTransport` and `MockWebSocketTransport`
+///   (from `spring_web_dart`) give prepared answers to Feign and WebSocket
+///   clients, like Spring's `MockRestServiceServer`.
+///
+/// It is built on `test_api` and `matcher`, not on `package:test`, so it
+/// works with both `package:test` and `flutter_test`.
 library;
 
 export 'package:spring_boot_dart/spring_boot_dart.dart';

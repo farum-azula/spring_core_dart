@@ -1,11 +1,20 @@
 import 'package:spring_boot_starter_feign/src/feign_exception.dart';
 
-/// Decides whether a failed call is tried again, and after how long, like
-/// Feign's `Retryer`. Only [RetryableException]s (connection errors,
-/// timeouts, `Retry-After` responses) are retried. Spring Cloud OpenFeign's
-/// default is [Retryer.never]; declare a bean to retry:
+/// Decides whether a Feign call that failed is tried again, and after
+/// how long.
+///
+/// A remote service can be briefly out of reach, time out, or ask to be
+/// called later. A retryer makes such calls succeed without code around
+/// every call. Only [RetryableException]s are retried: no connection, a
+/// timeout, or an answer with a `Retry-After` header; an error status
+/// alone is not. Nothing is retried by default ([Retryer.never]), as in
+/// Spring Cloud OpenFeign. Declare a `Retryer` bean to retry the calls of
+/// every client, or put it in a client's `configuration` class for that
+/// client only. Each attempt is built again from the arguments and passes
+/// the interceptors again, so a refreshed token reaches the retry.
 ///
 /// ```dart
+/// // Up to 3 attempts per call, with pauses of 150 ms and 225 ms.
 /// @Bean()
 /// Retryer retryer() => const DefaultRetryer(maxAttempts: 3);
 /// ```
@@ -15,11 +24,13 @@ import 'package:spring_boot_starter_feign/src/feign_exception.dart';
 /// @Bean Retryer retryer() { return new Retryer.Default(100, 1000, 3); }
 /// ```
 abstract interface class Retryer {
-  /// Never retries (the default).
+  /// A retryer that never retries: the first failure is thrown. The
+  /// default.
   static const Retryer never = _NeverRetry();
 
-  /// The pause before attempt `attempt + 1` after [error] failed attempt
-  /// [attempt] (1-based), or `null` to give up and throw.
+  /// The pause before the next attempt, after attempt number [attempt]
+  /// (counted from 1) failed with [error]; `null` to give up, so the call
+  /// throws [error].
   Duration? nextDelay(int attempt, RetryableException error);
 }
 
@@ -30,12 +41,26 @@ final class _NeverRetry implements Retryer {
   Duration? nextDelay(int attempt, RetryableException error) => null;
 }
 
-/// Feign's `Retryer.Default`: up to [maxAttempts] attempts, waiting
-/// [period] × 1.5^attempt after failed attempt `attempt` (150 ms, 225 ms,
-/// ... with the default 100 ms, as in Feign), at most [maxPeriod] (or
-/// until the server's `Retry-After`).
+/// A [Retryer] with a growing pause between attempts, as Feign's
+/// `Retryer.Default`.
+///
+/// It makes up to [maxAttempts] attempts in all. After failed attempt
+/// `n`, it waits [period] × 1.5^n: 150 ms, 225 ms, 338 ms, ... with the
+/// default period of 100 ms. When the server sent `Retry-After`, it waits
+/// until then instead. No pause is longer than [maxPeriod].
+///
+/// ```dart
+/// // A slow partner: 4 attempts, pauses from 750 ms up to 5 s.
+/// @Bean()
+/// Retryer partnerRetryer() => const DefaultRetryer(
+///   period: Duration(milliseconds: 500),
+///   maxPeriod: Duration(seconds: 5),
+///   maxAttempts: 4,
+/// );
+/// ```
 class DefaultRetryer implements Retryer {
-  /// Retries with growing pauses.
+  /// Retries with growing pauses; by default 5 attempts, a period of
+  /// 100 ms and pauses of at most 1 second.
   const DefaultRetryer({
     this.period = const Duration(milliseconds: 100),
     this.maxPeriod = const Duration(seconds: 1),
@@ -45,10 +70,10 @@ class DefaultRetryer implements Retryer {
   /// The base of the pauses: the first one is 1.5 × [period].
   final Duration period;
 
-  /// The longest pause.
+  /// The longest pause, also when `Retry-After` asks for more.
   final Duration maxPeriod;
 
-  /// Attempts in total, the first one included.
+  /// How many attempts a call gets in all, the first one included.
   final int maxAttempts;
 
   @override

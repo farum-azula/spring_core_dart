@@ -3,22 +3,38 @@
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// How much a Feign client logs (Feign's `Logger.Level`), under the logger
-/// `feign.<Interface>` at debug level.
+/// How much a Feign client logs about its calls, set per client with the
+/// `logger-level` property.
+///
+/// Turn it up to see what a client sends and receives while developing
+/// or chasing a problem. The calls are logged under the logger
+/// `feign.<Interface>` at debug level, so that level must be on too
+/// (`logging.level.feign=debug`):
+///
+/// ```properties
+/// spring.cloud.openfeign.client.config.catalog.logger-level=basic
+/// logging.level.feign=debug
+/// ```
+///
+/// Feign's counterpart is `Logger.Level`.
 enum FeignLoggerLevel {
-  /// Nothing.
+  /// Nothing; the default. Failed connections and retries are not logged
+  /// either.
   none,
 
-  /// Method, URL, status and time.
+  /// The method and URL of each request, the status and the time of each
+  /// response, failed connections and retries.
   basic,
 
-  /// [basic] plus the headers.
+  /// [basic] plus the headers of requests and responses, with
+  /// `Authorization` masked.
   headers,
 
   /// [headers] plus the bodies.
   full;
 
-  /// The level for a property value such as `basic` or `FULL`.
+  /// The level for a property value such as `basic` or `FULL` (any case).
+  /// Throws an [ArgumentError] for another value.
   static FeignLoggerLevel parse(String value) => values.firstWhere(
     (level) => level.name == value.trim().toLowerCase(),
     orElse: () => throw ArgumentError.value(
@@ -29,10 +45,15 @@ enum FeignLoggerLevel {
   );
 }
 
-/// The settings of one Feign client from
-/// `spring.cloud.openfeign.client.config.<name>.*`, falling back to
-/// `spring.cloud.openfeign.client.config.default.*`, like Spring Cloud
-/// OpenFeign's `FeignClientProperties`.
+/// The settings of one Feign client: its URL, timeouts, logging, default
+/// headers and query parameters, redirects, event-stream reconnection,
+/// and the beans that retry, decode errors and intercept requests.
+///
+/// They come from `spring.cloud.openfeign.client.config.<name>.*`, where
+/// `<name>` is the client's name (or `contextId`); what a client does not
+/// set falls back to `spring.cloud.openfeign.client.config.default.*`.
+/// Applications set the properties; the starter reads them with [of] when
+/// it creates each client.
 ///
 /// ```properties
 /// spring.cloud.openfeign.client.config.default.read-timeout=10s
@@ -60,8 +81,10 @@ enum FeignLoggerLevel {
 ///
 /// The `event-stream.*` keys (reconnection of `EventStream<T>` methods)
 /// are additions of this starter: Spring Cloud OpenFeign cannot stream.
+/// Spring's counterpart is `FeignClientProperties`.
 final class FeignClientConfig {
-  /// Settings with these values.
+  /// Settings with these values; the defaults are those of a client
+  /// without any property.
   const FeignClientConfig({
     this.url,
     this.readTimeout = defaultReadTimeout,
@@ -79,70 +102,85 @@ final class FeignClientConfig {
     this.requestInterceptors = const [],
   });
 
-  /// The base URL (when `@FeignClient` has none).
+  /// The base URL of the client (`url`), used when `@FeignClient` has
+  /// none; `null` when not set.
   final String? url;
 
-  /// The default `read-timeout`: 60 s, like Feign's `Request.Options()`.
+  /// The `read-timeout` when none is set: 60 seconds, as in Feign's
+  /// `Request.Options()`.
   static const defaultReadTimeout = Duration(seconds: 60);
 
-  /// The default `connect-timeout`: 10 s, like Feign's `Request.Options()`.
+  /// The `connect-timeout` when none is set: 10 seconds, as in Feign's
+  /// `Request.Options()`.
   static const defaultConnectTimeout = Duration(seconds: 10);
 
-  /// The longest wait for data: for the response after the request was
-  /// sent, then between two chunks of the body — not a limit for the whole
-  /// call, like Feign's read timeout (`read-timeout`, default 60 s; `0`:
-  /// none). For an event stream it covers the wait for the response only.
+  /// The longest wait for data (`read-timeout`): for the response after
+  /// the request was sent, then between two chunks of the body. It is not
+  /// a limit for the whole call, as in Feign. 60 seconds by default;
+  /// `null` (the property set to `0`) waits forever. For an event stream
+  /// it covers the wait for the response only.
   final Duration? readTimeout;
 
-  /// What is logged.
+  /// How much the client logs (`logger-level`); nothing by default.
   final FeignLoggerLevel loggerLevel;
 
   /// Whether a 404 gives `null` (nullable results) or a `ResponseEntity`
-  /// instead of an exception; `void` methods still throw, like Feign.
-  /// `@FeignClient(dismiss404: true)` turns it on too.
+  /// instead of an exception (`dismiss404`, `false` by default); `void`
+  /// methods still throw, as in Feign. `@FeignClient(dismiss404: true)`
+  /// turns it on too.
   final bool dismiss404;
 
-  /// Headers sent with every request that has none of that name after the
-  /// interceptors ran (`default-request-headers.<name>`; a comma-separated
-  /// value or a list gives several values).
+  /// Headers sent with every request that has none of that name once the
+  /// interceptors ran (`default-request-headers.<name>`), such as a shop
+  /// id every call of a client carries. A comma-separated value or a list
+  /// gives several values. The client's entries add to those of
+  /// `default`, and win for the same name.
   final Map<String, List<String>> defaultRequestHeaders;
 
   /// Query parameters added to every request that has none of that name
-  /// after the interceptors ran (`default-query-parameters.<name>`; a
-  /// comma-separated value or a list gives several).
+  /// once the interceptors ran (`default-query-parameters.<name>`), such
+  /// as a language or an API key. A comma-separated value or a list gives
+  /// several. The client's entries add to those of `default`, and win for
+  /// the same name.
   final Map<String, List<String>> defaultQueryParameters;
 
-  /// Whether redirects are followed (`follow-redirects`, default `true`).
+  /// Whether the transport follows redirects (`follow-redirects`); `true`
+  /// by default. With `false`, a 3xx answer is an error status.
   final bool followRedirects;
 
   /// Whether a `/` in a `@PathVariable` value stays a `/` instead of
-  /// `%2F` (`spring.cloud.openfeign.client.decode-slash`, for all clients;
-  /// default `true`).
+  /// `%2F` (`spring.cloud.openfeign.client.decode-slash`, one setting for
+  /// all clients); `true` by default.
   final bool decodeSlash;
 
   /// Whether an event stream connects again after its connection ended or
-  /// broke (`event-stream.reconnect`, default `true`).
+  /// broke (`event-stream.reconnect`); `true` by default, as a browser's
+  /// `EventSource` does.
   final bool eventStreamReconnect;
 
-  /// The wait before reconnecting, until the server sends `retry:`
-  /// (`event-stream.reconnect-delay`, default 3 s).
+  /// The wait before connecting again (`event-stream.reconnect-delay`), 3
+  /// seconds by default; a `retry:` field sent by the server replaces it.
   final Duration eventStreamReconnectDelay;
 
-  /// The connections in a row without an event before an event stream
-  /// gives up (`event-stream.max-attempts`; default: no limit).
+  /// How many connections in a row may end without an event before the
+  /// stream gives up (`event-stream.max-attempts`); `null`, the default,
+  /// for no limit.
   final int? eventStreamMaxAttempts;
 
-  /// The `Retryer` bean of the client (`retryer`: a bean or class name),
-  /// instead of the one of its configuration classes or the application.
+  /// The `Retryer` bean of the client (`retryer`), named by bean name or
+  /// class name; it wins over the one of the client's configuration
+  /// classes and the application's. `null` when not set.
   final String? retryer;
 
-  /// The `ErrorDecoder` bean of the client (`error-decoder`: a bean or
-  /// class name).
+  /// The `ErrorDecoder` bean of the client (`error-decoder`), named by
+  /// bean name or class name; it wins over the others like [retryer].
+  /// `null` when not set.
   final String? errorDecoder;
 
-  /// `RequestInterceptor` beans added for the client
-  /// (`request-interceptors`: bean or class names; those of `default` and
-  /// of the client).
+  /// More `RequestInterceptor` beans for the client
+  /// (`request-interceptors`), by bean name or class name: those listed
+  /// under `default`, then those of the client. They run after the
+  /// interceptors the client has anyway.
   final List<String> requestInterceptors;
 
   static const _prefix = 'spring.cloud.openfeign.client.config.';
@@ -160,7 +198,13 @@ final class FeignClientConfig {
         ),
       };
 
-  /// The settings of client [name] from [environment].
+  /// Reads the settings of the client whose configuration key is [name]
+  /// from [environment], with `default` for what it does not set.
+  ///
+  /// Throws a [FormatException] for an on/off property that is not
+  /// `true`/`false` (or `on`/`off`, `yes`/`no`, `1`/`0`) or a
+  /// `max-attempts` that is not a number, and an [ArgumentError] for an
+  /// unknown `logger-level`.
   static FeignClientConfig of(Environment environment, String name) {
     String? get(String key) =>
         environment.getProperty('$_prefix$name.$key') ??
@@ -227,9 +271,10 @@ final class FeignClientConfig {
     );
   }
 
-  /// The connection timeout of the default transport
-  /// (`spring.cloud.openfeign.client.config.default.connect-timeout`;
-  /// [defaultConnectTimeout] when it is not set, `0` for none).
+  /// The connection timeout of the default transport, one setting for all
+  /// clients (`spring.cloud.openfeign.client.config.default.connect-timeout`):
+  /// [defaultConnectTimeout] when it is not set, `null` (no timeout) when
+  /// it is `0`.
   static Duration? connectTimeout(Environment environment) {
     final value = environment.getProperty('${_prefix}default.connect-timeout');
     final timeout = value == null

@@ -1,23 +1,41 @@
-/// A profile predicate, like Spring's `Profiles`.
+/// A condition on profiles, such as "`dev`, and `eu` or `us`", parsed
+/// once and tested against the active profiles.
 ///
-/// Several expressions are OR-ed. Operators: `!`, `&`, `|`, parentheses.
-/// Mixing `&` and `|` without parentheses is an error, as in Spring.
+/// Profiles are names switched on for a run (`prod`, `eu`, `test`). Code
+/// that must behave differently per profile asks the environment, and
+/// this is the condition it asks with. Most applications write the same
+/// expressions in `@Profile('...')` or `on-profile` in config files and
+/// never build one; in code, `environment.matchesProfiles([...])` is
+/// shorter. Build a `Profiles` to keep a parsed condition, or to test it
+/// against profiles that are not an environment's.
+///
+/// An expression is a profile name, or names combined with `!` (not), `&`
+/// (and), `|` (or) and parentheses. Mixing `&` and `|` without parentheses
+/// is an error, as in Spring. Several expressions in one list are joined
+/// with "or".
 ///
 /// ```dart
-/// final profiles = Profiles.of(['dev & (eu | us)', '!prod']);
-/// environment.acceptsProfiles(profiles);
-/// profiles.matches((profile) => profile == 'dev'); // true (via '!prod')
+/// // Parsed once, checked on every request.
+/// final euTraffic = Profiles.of(['prod & (eu | uk)']);
+/// if (environment.acceptsProfiles(euTraffic)) { ... }
+///
+/// // Without an environment: any test for "is this profile on".
+/// Profiles.of(['dev', '!prod']).matches({'dev'}.contains); // true
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// Profiles profiles = Profiles.of("dev & (eu | us)", "!prod");
-/// environment.acceptsProfiles(profiles);
-/// profiles.matches(profile -> profile.equals("dev"));
+/// Profiles euTraffic = Profiles.of("prod & (eu | uk)");
+/// if (environment.acceptsProfiles(euTraffic)) { ... }
+/// Profiles.of("dev", "!prod").matches(Set.of("dev")::contains);
 /// ```
 abstract interface class Profiles {
-  /// Parses [expressions]; throws [ArgumentError] when one is malformed or
-  /// the list is empty.
+  /// Parses [expressions] into one condition that holds when any of them
+  /// does.
+  ///
+  /// Throws [ArgumentError] when the list is empty, an expression is blank
+  /// or malformed (an unbalanced parenthesis, a missing operand, `&` and
+  /// `|` mixed at one level).
   ///
   /// ```dart
   /// Profiles.of(['cloud & !local']);
@@ -33,7 +51,8 @@ abstract interface class Profiles {
     return _AnyOf([for (final e in expressions) _ProfilesParser(e).parse()]);
   }
 
-  /// Whether the profiles are active according to [isProfileActive].
+  /// Whether the condition holds, given [isProfileActive], which tells for
+  /// one profile name whether it is on.
   ///
   /// ```dart
   /// Profiles.of(['a & b']).matches({'a', 'b'}.contains); // true

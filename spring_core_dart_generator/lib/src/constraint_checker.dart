@@ -2,25 +2,31 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 
-/// Checks the built-in constraints of `package:spring_core_dart` against
-/// the declared type of what they annotate, like Hibernate Validator's
-/// `UnexpectedTypeException` (here at build time): `@Size` on an `int` or
-/// `@NotBlank` on a `List` would silently pass at runtime.
+/// Checks one validation [annotation] against the [declared] type of the
+/// field, parameter or return value it is on, and returns the build error
+/// for [target] (a name such as `Form.age`), or `null` when it fits.
+///
+/// A built-in constraint of `package:spring_core_dart` on a type it cannot
+/// validate would pass silently at runtime: `@Size` on an `int`,
+/// `@NotBlank` on a `List`. The scanner calls this for every constraint it
+/// meets and fails the build with the message. Hibernate Validator reports
+/// the same mistake at runtime with an `UnexpectedTypeException`.
+///
+/// It also reports invalid attributes (`@Size(min: -1)`, `min > max`,
+/// negative `@Digits`, malformed `@DecimalMin` values and regular
+/// expressions), and `@Each` / `@EachKey` on a type that is not a
+/// collection or with element constraints that do not fit the element
+/// type.
+///
+/// `dynamic` and type parameters are not checked, since their values are
+/// only known at runtime. `Future<T>` and `FutureOr<T>` (method return
+/// values) are checked as `T`. Custom constraints are never checked.
 ///
 /// ```dart
-/// // @Introspected() class Form { @NotBlank() int age = 0; }
+/// // For `@Introspected() class Form { @NotBlank() int age = 0; }`:
 /// unsupportedConstraint(notBlank, intType, 'Form.age');
 /// // '@NotBlank on Form.age: it validates String values, not int ...'
 /// ```
-///
-/// Invalid attributes are reported too (`@Size(min: -1)`, `min > max`,
-/// negative `@Digits`, malformed `@DecimalMin` values and regular
-/// expressions), as are `@Each` / `@EachKey` element constraints that do
-/// not fit the element type or a declared type that is no collection.
-///
-/// `dynamic` and type parameters are not checked (their values are only
-/// known at runtime); `Future<T>` and `FutureOr<T>` (method return values)
-/// are checked as `T`. Custom constraints are never checked.
 String? unsupportedConstraint(
   DartObject annotation,
   DartType declared,

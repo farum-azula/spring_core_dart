@@ -4,12 +4,24 @@ import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 
-/// An error of the whole object, like Spring's `ObjectError`.
+/// A validation error about a whole object rather than one of its fields,
+/// such as "the passwords differ" or a failed class-level constraint.
 ///
-/// It is a [MessageSourceResolvable], so a `MessageSource` can turn it
-/// into a localized message.
+/// Its text is not fixed. It carries message [codes], from the most
+/// specific (`passwordsMismatch.signup`) to the plain one
+/// (`passwordsMismatch`), with [arguments] and a [defaultMessage] for when
+/// no code is defined. A `MessageSource` turns it into text in the user's
+/// language, using the first code `messages.properties` defines; this is
+/// how the web starter writes the messages of a 400.
+///
+/// Applications receive it in [Errors.globalErrors] (for example from a
+/// `MethodArgumentNotValidException` in an exception handler) and rarely
+/// create one: [Errors.reject] builds it with the right codes. A
+/// [FieldError] is the variant for one field.
 ///
 /// ```dart
+/// // A validator rejects the whole form; the message comes from
+/// // `passwordsMismatch=...` in messages.properties, if defined.
 /// final result = BeanPropertyBindingResult(form, 'signup')
 ///   ..reject('passwordsMismatch', defaultMessage: 'passwords differ');
 /// final error = result.globalError!;
@@ -25,8 +37,12 @@ import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
 /// messageSource.getMessage(error, Locale.getDefault());
 /// ```
 class ObjectError implements MessageSourceResolvable, DefaultMessageRendering {
-  /// Creates an error of [objectName] with message [codes] (most specific
-  /// first), optional message [arguments] and a [defaultMessage].
+  /// An error of the object named [objectName], with message [codes] (most
+  /// specific first), message [arguments] and a [defaultMessage] for when
+  /// no code has a message.
+  ///
+  /// [Errors.reject] is the usual way to make one; call this to build an
+  /// error for [BindingResult.addError].
   ObjectError(
     this.objectName,
     List<String> codes, {
@@ -36,13 +52,17 @@ class ObjectError implements MessageSourceResolvable, DefaultMessageRendering {
   }) : codes = List.unmodifiable(codes),
        arguments = List.unmodifiable(arguments);
 
-  /// Whether [defaultMessage] is formatted with [arguments]; `false` for
-  /// Bean Validation messages without `{0}`-style placeholders (Spring's
-  /// `ViolationFieldError`).
+  /// Whether a message source formats [defaultMessage] with [arguments]
+  /// (`{0}`, `{1}`) before showing it; `true` by default.
+  ///
+  /// The validator sets it to `false` for constraint messages that contain
+  /// no `{0}`-style placeholder, so a regular expression such as `\d{2,3}`
+  /// in the text is shown as written, like Spring's `ViolationFieldError`.
   @override
   final bool shouldRenderDefaultMessage;
 
-  /// Name of the validated object, e.g. `signup`.
+  /// Name of the validated object, such as `signup`; part of the message
+  /// codes. The web starter uses the name of the validated parameter.
   final String objectName;
 
   @override
@@ -54,11 +74,12 @@ class ObjectError implements MessageSourceResolvable, DefaultMessageRendering {
   @override
   final String? defaultMessage;
 
-  /// The plain error code, i.e. the last (least specific) code, like
-  /// Spring's `getCode()`: `NotBlank` for the codes
-  /// `[NotBlank.signup.name, NotBlank.name, NotBlank.String, NotBlank]`.
+  /// The plain error code, the last and least specific of [codes]:
+  /// `NotBlank` for `[NotBlank.signup.name, NotBlank.name, NotBlank.String,
+  /// NotBlank]`. For a failed constraint it is the constraint's name.
   ///
-  /// Use `codes.first` for the most specific code.
+  /// Use it to react to a kind of error in code; use `codes.first` for the
+  /// most specific code. Spring's `getCode()`.
   String get code => codes.last;
 
   @override
@@ -67,9 +88,22 @@ class ObjectError implements MessageSourceResolvable, DefaultMessageRendering {
       'default message [$defaultMessage]';
 }
 
-/// An error of one field, like Spring's `FieldError`.
+/// A validation or binding error about one field of an object: which field,
+/// the value that was rejected, and the message codes.
+///
+/// There are two kinds. A binding failure ([bindingFailure] is `true`)
+/// means the input could not be stored at all, such as `'old'` for an
+/// `int`; its code is `typeMismatch` and [rejectedValue] is the raw input.
+/// A validation error means the value was stored but breaks a rule, such
+/// as `@Min(18)`; its code is the constraint's name.
+///
+/// Applications read field errors to show them next to form fields or to
+/// shape an error response; they get them from
+/// [BindingResult.fieldErrors]. The web starter already writes each one
+/// into a 400 as `field`, `message` and `rejectedValue`.
 ///
 /// ```dart
+/// // After binding `{'age': 'old'}` onto a form with an int age.
 /// final error = binder.bindingResult.fieldError('age')!;
 /// error.field; // 'age'
 /// error.rejectedValue; // 'old'
@@ -84,8 +118,11 @@ class ObjectError implements MessageSourceResolvable, DefaultMessageRendering {
 /// error.isBindingFailure();
 /// ```
 class FieldError extends ObjectError {
-  /// Creates an error of [field] of [objectName] that rejected
-  /// [rejectedValue].
+  /// An error of [field] of the object [objectName] that rejected
+  /// [rejectedValue]; [bindingFailure] marks a value that could not be
+  /// converted.
+  ///
+  /// [Errors.rejectValue] is the usual way to make one.
   FieldError(
     super.objectName,
     this.field,
@@ -97,14 +134,18 @@ class FieldError extends ObjectError {
     this.bindingFailure = false,
   });
 
-  /// Full property path of the field, e.g. `address.city`.
+  /// Full property path of the field, such as `name`, `address.city` or
+  /// `items[0].sku`.
   final String field;
 
-  /// The value that was rejected (the raw input for binding failures).
+  /// The value that was rejected: the raw input for a binding failure, the
+  /// invalid value for a validation error. Show it to let the user fix
+  /// what they typed.
   final Object? rejectedValue;
 
-  /// Whether the error comes from binding (type mismatch) rather than
-  /// validation.
+  /// Whether the input could not be stored in the field (for example text
+  /// for a number) rather than breaking a constraint. A field with a
+  /// binding failure gets no constraint errors on top.
   final bool bindingFailure;
 
   @override
@@ -114,9 +155,18 @@ class FieldError extends ObjectError {
       '[$defaultMessage]';
 }
 
-/// Builds message codes for errors, like Spring's `MessageCodesResolver`.
+/// The rule that turns an error code and a field into the list of message
+/// codes an error carries.
+///
+/// The codes decide which keys of `messages.properties` can give the
+/// message of an error. [DefaultMessageCodesResolver] is Spring's scheme
+/// (`NotBlank.signup.name`, `NotBlank.name`, ..., `NotBlank`) and almost
+/// every application keeps it. Implement this interface only to use other
+/// keys, for example to match an existing translation file, and pass it to
+/// `DataBinder` or a binding result.
 ///
 /// ```dart
+/// // Upper-case codes: `NOTBLANK.name` in the message file.
 /// class UpperCodes implements MessageCodesResolver {
 ///   @override
 ///   List<String> resolveMessageCodes(String errorCode, String objectName) =>
@@ -150,11 +200,13 @@ class FieldError extends ObjectError {
 /// binder.setMessageCodesResolver(new UpperCodes());
 /// ```
 abstract interface class MessageCodesResolver {
-  /// Codes for a global error, most specific first.
+  /// The codes of an error of the whole object [objectName] with
+  /// [errorCode], most specific first.
   List<String> resolveMessageCodes(String errorCode, String objectName);
 
-  /// Codes for an error of [field] (of [fieldType], when known), most
-  /// specific first.
+  /// The codes of an error of [field] of [objectName] with [errorCode],
+  /// most specific first. [fieldType] is the declared type of the field,
+  /// `null` when unknown.
   List<String> resolveFieldMessageCodes(
     String errorCode,
     String objectName,
@@ -163,20 +215,31 @@ abstract interface class MessageCodesResolver {
   );
 }
 
-/// Spring's `DefaultMessageCodesResolver`: for code `NotBlank`, object
-/// `user`, field `orders[0].sku` of type `String`:
-/// `NotBlank.user.orders[0].sku`, `NotBlank.user.orders.sku`,
-/// `NotBlank.orders[0].sku`, `NotBlank.orders.sku`, `NotBlank.sku`,
-/// `NotBlank.String`, `NotBlank`.
+/// The standard message codes of errors, the ones every binding result and
+/// validator uses unless told otherwise.
 ///
-/// Keys are removed one at a time from the last (`a[0][1].b` also gives
-/// `a[0].b` and `a.b`), and the last path segment is a code of its own
-/// (`NotBlank.city` for `address.city`), exactly as in Spring. The field
-/// type is the Dart type name (`String`, not `java.lang.String`).
+/// You do not call it; you need its scheme to name the keys of
+/// `messages.properties`. An error carries several codes, from specific to
+/// general, and the first key the message file defines wins. So
+/// `NotBlank=must not be empty` covers every `@NotBlank()`, while
+/// `NotBlank.signup.name=Please enter your name` covers one field of one
+/// object.
 ///
-/// Global errors get `NotBlank.user` and `NotBlank`.
+/// For code `NotBlank`, object `user` and field `orders[0].sku` of type
+/// `String`, the codes are: `NotBlank.user.orders[0].sku`,
+/// `NotBlank.user.orders.sku`, `NotBlank.orders[0].sku`,
+/// `NotBlank.orders.sku`, `NotBlank.sku`, `NotBlank.String`, `NotBlank`.
+/// Indexes and keys are removed one at a time from the last (`a[0][1].b`
+/// also gives `a[0].b` and `a.b`), and the last path segment gets a code
+/// of its own (`NotBlank.city` for `address.city`), exactly as in Spring.
+/// The type is the Dart type name (`String`, not `java.lang.String`). An
+/// error of the whole object gets `NotBlank.user` and `NotBlank`.
+///
+/// Create one with a [prefix] or [postfixFormat] to change the keys, and
+/// pass it to `DataBinder(messageCodesResolver: ...)`.
 ///
 /// ```dart
+/// // All validation keys under `validation.` in the message file.
 /// const resolver = DefaultMessageCodesResolver(prefix: 'validation.');
 /// resolver.resolveFieldMessageCodes('NotBlank', 'user', 'name', String);
 /// // [validation.NotBlank.user.name, validation.NotBlank.name,
@@ -190,17 +253,19 @@ abstract interface class MessageCodesResolver {
 /// resolver.resolveMessageCodes("NotBlank", "user", "name", String.class);
 /// ```
 final class DefaultMessageCodesResolver implements MessageCodesResolver {
-  /// Creates a resolver with an optional code [prefix]; [postfixFormat]
-  /// puts the error code last.
+  /// A resolver that puts [prefix] before every code, and the error code
+  /// last when [postfixFormat] is `true`. The defaults give Spring's codes.
   const DefaultMessageCodesResolver({
     this.prefix = '',
     this.postfixFormat = false,
   });
 
-  /// Prepended to every code.
+  /// Text put before every code, such as `validation.`; empty by default.
   final String prefix;
 
-  /// Spring's `POSTFIX_ERROR_CODE` format (`user.name.NotBlank`).
+  /// Whether the error code comes last (`user.name.NotBlank`) instead of
+  /// first (`NotBlank.user.name`); `false` by default. Spring's
+  /// `POSTFIX_ERROR_CODE` format.
   final bool postfixFormat;
 
   @override
@@ -265,13 +330,22 @@ final class DefaultMessageCodesResolver implements MessageCodesResolver {
   }
 }
 
-/// Collects errors for an object, like Spring's `Errors`.
+/// The list of errors found for one object, and the way a validator
+/// records them.
 ///
-/// Validators receive it to record global errors ([reject]) and field
-/// errors ([rejectValue]). Nested paths let a validator for a nested
-/// object report fields relative to it.
+/// A `Validator` receives it in `validate` and calls [rejectValue] for a
+/// bad field or [reject] for a problem of the whole object; the error codes
+/// it passes are turned into full message codes. Code that shows the
+/// errors reads them through [fieldErrors], [globalErrors] and
+/// [hasErrors]; it usually holds a [BindingResult], which adds the target
+/// object.
+///
+/// A nested path lets a validator for a nested object name fields relative
+/// to that object, so one address validator serves `billing.city` and
+/// `shipping.city`.
 ///
 /// ```dart
+/// // Reuse an address check inside a larger object.
 /// void validateAddress(Address address, Errors errors) {
 ///   errors.pushNestedPath('address');
 ///   ValidationUtils.rejectIfEmpty(errors, 'city', 'required');
@@ -286,28 +360,33 @@ final class DefaultMessageCodesResolver implements MessageCodesResolver {
 /// errors.popNestedPath();
 /// ```
 abstract interface class Errors {
-  /// Name of the validated object, used in message codes.
+  /// Name of the validated object, such as `signup`; part of every message
+  /// code.
   String get objectName;
 
-  /// Prefix applied to field names (e.g. `address.`).
+  /// The path put before the field names given to [rejectValue] and the
+  /// field queries, such as `address.`; empty at the top level.
   String get nestedPath;
 
-  /// Replaces the nested path (a trailing `.` is added) and clears the
-  /// nested path stack.
+  /// Replaces the nested path, adding the trailing `.` when missing, and
+  /// forgets the paths saved by [pushNestedPath].
   set nestedPath(String path);
 
-  /// Appends [subPath] to the nested path, remembering the current one
-  /// for [popNestedPath].
+  /// Goes one level down: appends [subPath] (`address`, `items[0]`) to the
+  /// nested path and saves the current one for [popNestedPath].
   void pushNestedPath(String subPath);
 
-  /// Restores the nested path saved by the last [pushNestedPath]; throws a
-  /// [StateError] when there is none.
+  /// Goes back to the nested path saved by the last [pushNestedPath];
+  /// throws a [StateError] when none is saved.
   void popNestedPath();
 
-  /// Adds a global error.
+  /// Records an error of the whole object with [errorCode], such as
+  /// `passwordsMismatch`.
   ///
-  /// With [renderDefaultMessage] `false` the default message is shown
-  /// as-is instead of being formatted with [args].
+  /// [args] fill the `{0}`, `{1}` placeholders of the message, and
+  /// [defaultMessage] is used when no message code is defined. With
+  /// [renderDefaultMessage] `false` the default message is shown as
+  /// written instead of being formatted with [args].
   void reject(
     String errorCode, {
     List<Object?> args,
@@ -315,9 +394,13 @@ abstract interface class Errors {
     bool renderDefaultMessage,
   });
 
-  /// Adds an error for [field] (relative to [nestedPath]).
+  /// Records an error of [field] (relative to [nestedPath]) with
+  /// [errorCode], such as `required`; the field's current value becomes the
+  /// rejected value.
   ///
-  /// An empty [field] without a nested path adds a global error instead.
+  /// [args], [defaultMessage] and [renderDefaultMessage] are as in
+  /// [reject]. An empty [field] names the nested object itself; at the top
+  /// level it records an error of the whole object instead.
   void rejectValue(
     String field,
     String errorCode, {
@@ -326,45 +409,64 @@ abstract interface class Errors {
     bool renderDefaultMessage,
   });
 
-  /// Adds every error of [errors], which must have the same [objectName].
+  /// Copies every error of [errors], for example from a validator run on a
+  /// separate result. Throws an [ArgumentError] when its [objectName]
+  /// differs.
   void addAllErrors(Errors errors);
 
-  /// Whether any error was recorded.
+  /// Whether any error, of a field or of the object, was recorded.
   bool get hasErrors;
 
-  /// Number of global and field errors.
+  /// The number of errors, of fields and of the object.
   int get errorCount;
 
-  /// Global and field errors in the order they were added.
+  /// Every error, of fields and of the object, in the order they were
+  /// recorded.
   List<ObjectError> get allErrors;
 
-  /// Whether any global error was recorded.
+  /// Whether an error of the whole object (not of a field) was recorded.
   bool get hasGlobalErrors;
 
-  /// Errors that are not [FieldError]s.
+  /// The errors of the whole object, the ones that are not [FieldError]s,
+  /// in the order they were recorded.
   List<ObjectError> get globalErrors;
 
-  /// The first global error, if any.
+  /// The first error of the whole object; `null` when there is none.
   ObjectError? get globalError;
 
-  /// Whether there are field errors (for [field], which may end with `*`).
+  /// Whether a field has errors: any field when [field] is omitted, else
+  /// that field (relative to [nestedPath]), or every field under a path
+  /// that ends with `*` (`address.*`).
   bool hasFieldErrors([String? field]);
 
-  /// Field errors, all or those of [field] (relative to [nestedPath];
-  /// `address.*` matches every field under `address`).
+  /// The field errors in the order they were recorded: all when [field] is
+  /// omitted, else those of [field] (relative to [nestedPath]); a trailing
+  /// `*` matches every field under a path (`address.*`).
   List<FieldError> fieldErrors([String? field]);
 
-  /// The first error of [field] (or of any field when omitted).
+  /// The first error of [field] (or of any field when omitted); `null` when
+  /// there is none.
   FieldError? fieldError([String? field]);
 
-  /// The current value of [field], or the rejected value of its first
-  /// error (binding failure or validation error), like Spring.
+  /// The value to show for [field] in a form: the rejected value of its
+  /// first error when it has one, else its current value.
+  ///
+  /// After a binding failure the field still holds its old value, so this
+  /// returns what the user typed instead, as Spring does.
   Object? getFieldValue(String field);
 }
 
-/// [Errors] plus the target object, like Spring's `BindingResult`.
+/// The outcome of binding input onto an object and validating it: the
+/// [Errors] together with the object they are about.
+///
+/// This is the object applications read after validation: from
+/// `DataBinder.bindingResult`, from a `MethodArgumentNotValidException`
+/// in a web exception handler, or from a [BeanPropertyBindingResult] they
+/// passed to a validator. Besides the errors it gives the [target], reads
+/// field values, and lets framework code add prepared errors.
 ///
 /// ```dart
+/// // Print each field error after binding a form.
 /// final result = binder.bindingResult;
 /// if (result.hasErrors) {
 ///   for (final error in result.fieldErrors()) {
@@ -384,23 +486,33 @@ abstract interface class Errors {
 /// }
 /// ```
 abstract interface class BindingResult implements Errors {
-  /// Key under which a binding result is exposed in a model.
+  /// The start of the key under which [model] holds a binding result:
+  /// `BindingResult.signup` for the object `signup`. Spring's key starts
+  /// with the full class name, `org.springframework.validation.`.
   static const modelKeyPrefix = 'BindingResult.';
 
-  /// The object being bound or validated.
+  /// The object being bound or validated; `null` when constructor binding
+  /// could not create it.
   Object? get target;
 
-  /// Builds the message codes of new errors.
+  /// The rule that builds the message codes of new errors;
+  /// [DefaultMessageCodesResolver] unless one was given.
   MessageCodesResolver get messageCodesResolver;
 
-  /// Adds a prepared [error]; its object name must match [objectName].
+  /// Records an [error] built elsewhere, codes included; the validator uses
+  /// it to keep a rejected value it chose. Throws an [ArgumentError] when
+  /// the error's object name differs from [objectName].
   void addError(ObjectError error);
 
-  /// The field value without the rejected-value fallback.
+  /// The current value of [field] on the target, ignoring errors (unlike
+  /// [getFieldValue], which prefers the rejected value).
   Object? getRawFieldValue(String field);
 
-  /// Message codes for [errorCode], of [field] (relative to the nested
-  /// path) when given, like Spring's `BindingResult.resolveMessageCodes`.
+  /// The message codes an error with [errorCode] would get: of [field]
+  /// (relative to the nested path) when given, else of the whole object.
+  ///
+  /// Use it to build an error for [addError], or to see which keys a
+  /// message file can define.
   ///
   /// ```dart
   /// result.resolveMessageCodes('NotBlank', 'name');
@@ -408,7 +520,12 @@ abstract interface class BindingResult implements Errors {
   /// ```
   List<String> resolveMessageCodes(String errorCode, [String? field]);
 
-  /// Records a binding failure (e.g. type mismatch) for [field].
+  /// Records a binding failure of [field]: the input [rejectedValue] could
+  /// not be stored, for example text for a number.
+  ///
+  /// `DataBinder` calls it; the error is marked as a binding failure, so
+  /// validation adds no constraint error on top. [fieldType] is the
+  /// declared type, for the codes, when the target cannot tell it.
   void recordFieldError(
     String field,
     String errorCode,
@@ -418,15 +535,21 @@ abstract interface class BindingResult implements Errors {
     Type? fieldType,
   });
 
-  /// `{objectName: target, 'BindingResult.objectName': this}`.
+  /// A map for a view model: the target under [objectName] and this result
+  /// under `BindingResult.<objectName>`.
   Map<String, Object?> get model;
 }
 
-/// Shared [BindingResult] logic, like Spring's `AbstractBindingResult`.
+/// The common part of every [BindingResult]: the error list, nested
+/// paths, message codes and the field queries.
 ///
-/// Subclasses provide [target], [getRawFieldValue] and [getFieldType].
+/// Extend it only for a kind of target that neither
+/// [BeanPropertyBindingResult] (an `@Introspected` object) nor
+/// [MapBindingResult] (a map) covers; applications almost never do. A
+/// subclass provides [target], [getRawFieldValue] and [getFieldType].
 ///
 /// ```dart
+/// // Errors for a record, which has no introspection.
 /// class RecordBindingResult extends AbstractBindingResult {
 ///   RecordBindingResult(this.target) : super('point');
 ///
@@ -451,7 +574,8 @@ abstract interface class BindingResult implements Errors {
 /// }
 /// ```
 abstract class AbstractBindingResult implements BindingResult {
-  /// Creates an empty result for [objectName].
+  /// An empty result for the object [objectName], building codes with
+  /// [messageCodesResolver] (Spring's codes by default).
   AbstractBindingResult(
     this.objectName, {
     this.messageCodesResolver = const DefaultMessageCodesResolver(),
@@ -500,7 +624,8 @@ abstract class AbstractBindingResult implements BindingResult {
       ? _nestedPath.replaceFirst(RegExp(r'\.$'), '')
       : '$_nestedPath$field';
 
-  /// Declared type of [field], for message codes.
+  /// The declared type of [field], for the type code (`NotBlank.String`);
+  /// `null` when unknown, and that code is left out.
   Type? getFieldType(String field);
 
   @override
@@ -687,13 +812,16 @@ abstract class AbstractBindingResult implements BindingResult {
   }
 }
 
-/// Binding result for an introspected object, like Spring's
-/// `BeanPropertyBindingResult`.
+/// The [BindingResult] for an `@Introspected` object, the one used almost
+/// everywhere.
 ///
-/// Field values and types are read through a [BeanWrapper], so nested
-/// paths such as `address.city` and `items[0].sku` work.
+/// `DataBinder` and the web starter create it. Create one yourself to call
+/// a validator directly and collect its errors. Field values and types are
+/// read through a [BeanWrapper], so nested paths such as `address.city`
+/// and `items[0].sku` work.
 ///
 /// ```dart
+/// // Check a form outside of data binding.
 /// final errors = BeanPropertyBindingResult(form, 'signup');
 /// BeanValidator().validate(form, errors);
 /// errors.fieldError('name')?.codes;
@@ -707,11 +835,12 @@ abstract class AbstractBindingResult implements BindingResult {
 /// errors.getFieldError("name").getCodes();
 /// ```
 class BeanPropertyBindingResult extends AbstractBindingResult {
-  /// Creates an empty result for [target] named [objectName].
+  /// An empty result for [target], named [objectName] in message codes.
   ///
-  /// `introspector` and `conversionService` configure the [wrapper]. The
-  /// target is `null` while `DataBinder.construct` failed to create it;
-  /// field values and types then come from [recordFieldValue].
+  /// `introspector` (default `BeanIntrospector.shared`) and
+  /// `conversionService` configure the [wrapper]. [target] is `null` when
+  /// `DataBinder.construct` could not create the object; field values and
+  /// types then come from [recordFieldValue].
   BeanPropertyBindingResult(
     this.target,
     super.objectName, {
@@ -728,16 +857,17 @@ class BeanPropertyBindingResult extends AbstractBindingResult {
   final _fieldValues = <String, Object?>{};
   final _fieldTypes = <String, Type?>{};
 
-  /// Access to the target's properties; throws a [StateError] when there
-  /// is no target.
+  /// Reads and writes the target's properties by path; created on first
+  /// use. Throws a [StateError] when there is no target.
   late final BeanWrapper wrapper = BeanWrapper(
     target ?? (throw StateError('No target object for $objectName')),
     introspector: _introspector,
     conversionService: _conversionService,
   );
 
-  /// Remembers [value] (of [type]) for [field] when there is no target,
-  /// like Spring's `recordFieldValue` (constructor binding).
+  /// Remembers [value] (of [type]) for [field] when there is no target, so
+  /// a form can show what was entered after constructor binding failed.
+  /// `DataBinder.construct` calls it; Spring's `recordFieldValue`.
   void recordFieldValue(String field, Type? type, Object? value) {
     _fieldValues[field] = value;
     _fieldTypes[field] = type;
@@ -762,11 +892,15 @@ class BeanPropertyBindingResult extends AbstractBindingResult {
       target == null ? _fieldTypes[field] : wrapper.getPropertyType(field);
 }
 
-/// Binding result for a map target, like Spring's `MapBindingResult`.
+/// A [BindingResult] for values held in a map instead of an object.
 ///
-/// Field types are the runtime types of the current values.
+/// Use it to check loose input with a hand-written `Validator` or the
+/// `ValidationUtils` helpers, for example request parameters that were
+/// never bound onto a class. Field names are the map keys; a field's type
+/// is the runtime type of its current value.
 ///
 /// ```dart
+/// // A required parameter, checked without a form class.
 /// final errors = MapBindingResult({'email': ''}, 'request');
 /// ValidationUtils.rejectIfEmpty(errors, 'email', 'required');
 /// errors.hasFieldErrors('email'); // true
@@ -780,7 +914,8 @@ class BeanPropertyBindingResult extends AbstractBindingResult {
 /// errors.hasFieldErrors("email");
 /// ```
 class MapBindingResult extends AbstractBindingResult {
-  /// Creates an empty result for the map [target] named [objectName].
+  /// An empty result for the map [target], named [objectName] in message
+  /// codes.
   MapBindingResult(this.target, super.objectName, {super.messageCodesResolver});
 
   @override
@@ -793,10 +928,15 @@ class MapBindingResult extends AbstractBindingResult {
   Type? getFieldType(String field) => target[field]?.runtimeType;
 }
 
-/// Thrown when binding or validation produced errors, like Spring's
-/// `BindException`.
+/// The exception `DataBinder.close` throws when binding or validation
+/// found errors; it carries them in [bindingResult].
+///
+/// Throw or catch it where a whole bind-and-check step must succeed. The
+/// web starter reports invalid `@Valid()` arguments with its own
+/// `MethodArgumentNotValidException`, which also holds a binding result.
 ///
 /// ```dart
+/// // Bind, check, and stop on the first invalid input.
 /// try {
 ///   final model = binder.close();
 /// } on BindException catch (e) {
@@ -813,10 +953,10 @@ class MapBindingResult extends AbstractBindingResult {
 /// }
 /// ```
 class BindException implements Exception {
-  /// Creates an exception reporting the errors of [bindingResult].
+  /// An exception for the errors in [bindingResult].
   BindException(this.bindingResult);
 
-  /// The result holding the errors.
+  /// The errors, with the target they are about.
   final BindingResult bindingResult;
 
   @override

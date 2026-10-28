@@ -3,17 +3,22 @@ import 'dart:convert';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 
-/// Turns the content of a config file into property sources, like Spring
-/// Boot's `PropertySourceLoader`. Selected by file extension; `.properties`
-/// ([PropertiesPropertySourceLoader]) and `.yml` / `.yaml`
-/// (`YamlPropertySourceLoader`) are built in, add a loader for other
-/// formats.
+/// A reader for one config file format: it turns the text of a file into
+/// property sources, one per document in the file.
 ///
-/// Unlike Spring Boot, loaders get the file content as a string (resources
-/// may be async-only), not a `Resource`; it is decoded with [encoding]
-/// (UTF-8 unless the loader overrides it).
+/// The config data loader picks a loader by file extension. `.properties`
+/// ([PropertiesPropertySourceLoader]) and `.yml` / `.yaml`
+/// (`YamlPropertySourceLoader`) are built in, which covers almost every
+/// application. Write one only for another format, such as JSON or TOML
+/// config files, and pass it to a `ConfigDataEnvironment` you run
+/// yourself; `SpringApplication` always uses the two built-in loaders.
+///
+/// Unlike Spring Boot, a loader gets the file's content as a string, not a
+/// `Resource`, because some resources can only be read asynchronously; the
+/// file is decoded with [encoding] first.
 ///
 /// ```dart
+/// // `application.json` files next to the YAML ones.
 /// class JsonPropertySourceLoader extends PropertySourceLoader {
 ///   const JsonPropertySourceLoader();
 ///
@@ -56,26 +61,36 @@ import 'package:spring_core_dart/src/core/io/properties_parser.dart';
 /// // registered in META-INF/spring.factories
 /// ```
 abstract class PropertySourceLoader {
-  /// Const constructor for subclasses.
+  /// Lets subclasses be `const`.
   const PropertySourceLoader();
 
-  /// Extensions handled by this loader, without the dot.
+  /// The file extensions this loader reads, without the dot (`json`).
+  /// When several loaders claim one, the first in the list wins.
   List<String> get fileExtensions;
 
-  /// The encoding the files are read in; UTF-8 by default.
+  /// The character encoding the files are decoded with before [load];
+  /// UTF-8 unless overridden.
   Encoding get encoding => utf8;
 
-  /// One property source per document in [content], in file order. Empty
-  /// documents are skipped.
+  /// Parses [content], the text of one file, into one property source per
+  /// document, in file order, skipping empty documents. Keys must be
+  /// flat (`server.port`), as in a `.properties` file.
   ///
-  /// [name] is the base name for the sources; multi-document files should
-  /// make it unique per document (e.g. `'$name (document #1)'`).
+  /// [name] names the file in the sources (and so in error messages); a
+  /// file with several documents should make it unique per document, as
+  /// in `'$name (document #1)'`. Throw a [FormatException] for invalid
+  /// content: the config data loader reports it with the location.
   List<AbstractPropertySource<Object>> load(String name, String content);
 }
 
-/// `.properties` files, including multi-document files separated by a
-/// `#---` or `!---` line, like Spring Boot's
-/// `PropertiesPropertySourceLoader`.
+/// The reader for `.properties` config files, used for
+/// `application.properties` and its profile variants.
+///
+/// A file can hold several documents, separated by a line `#---` or
+/// `!---`; each becomes its own property source, so a later document can
+/// be limited to a profile. The config data loader uses it by default, so
+/// applications only write the files. Create one only to read
+/// `.properties` files in another encoding.
 ///
 /// ```dart
 /// final sources = const PropertiesPropertySourceLoader().load(
@@ -101,7 +116,8 @@ abstract class PropertySourceLoader {
 ///         new ClassPathResource("application.properties"));
 /// ```
 final class PropertiesPropertySourceLoader extends PropertySourceLoader {
-  /// Creates the loader reading files in [encoding] (use `const`).
+  /// Creates a loader that decodes files with [encoding], UTF-8 unless
+  /// given.
   const PropertiesPropertySourceLoader({this.encoding = utf8});
 
   @override

@@ -3,23 +3,44 @@ import 'dart:convert';
 
 import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 
-/// Parses a `text/event-stream` body (byte chunks, split anywhere) into
-/// events, following the HTML specification: `data:` lines are joined
-/// with newlines, `id:`, `event:` and `retry:` set the other fields, `:`
-/// starts a comment, a blank line ends the event. Line ends may be `\n`,
-/// `\r\n` or `\r`; an unfinished event at the end is dropped.
+/// A stream transformer that turns the bytes of a `text/event-stream`
+/// body into [ServerSentEvent]s with text data.
 ///
-/// Every block is emitted, also those without `data:` (a lone `retry:` or
-/// a heartbeat comment): their [ServerSentEvent.data] is `null`.
+/// The body arrives in chunks that may split a line or a character
+/// anywhere. This decoder reassembles them and parses the format as the
+/// HTML specification describes it:
+///
+/// - `data:` lines are joined with newlines;
+/// - `id:`, `event:` and `retry:` (whole milliseconds) set the other
+///   fields, and an invalid `retry:` is ignored;
+/// - a line starting with `:` is a comment;
+/// - a blank line ends the event.
+///
+/// Lines may end with `\n`, `\r\n` or `\r`, and bytes that are not valid
+/// UTF-8 become replacement characters. An unfinished event at the end of
+/// the body is dropped.
+///
+/// Unlike a browser, it emits every block, also those without `data:`
+/// (a lone `retry:`, a heartbeat comment): their [ServerSentEvent.data] is
+/// `null`. Fields do not carry over: each event has only the `id:` it
+/// sent.
+///
+/// `connectServerSentEvents` uses it, so applications rarely do; it is for
+/// code that reads an event stream from a raw response.
 ///
 /// ```dart
-/// final events = response.body.transform(const SseDecoder());
+/// // `response` comes from `HttpTransport.stream`.
+/// await for (final event in response.body.transform(const SseDecoder())) {
+///   if (event.data case final data?) print(data);
+/// }
 /// ```
 ///
-/// Spring (Java): `ServerSentEventHttpMessageReader`.
+/// Spring (Java): `ServerSentEventHttpMessageReader`, which `WebClient`
+/// uses to read `text/event-stream`.
 final class SseDecoder
     extends StreamTransformerBase<List<int>, ServerSentEvent<String?>> {
-  /// A decoder.
+  /// A decoder. It keeps no state between bodies, so one constant
+  /// instance serves every stream.
   const SseDecoder();
 
   @override
@@ -32,7 +53,10 @@ final class SseDecoder
         _SseSink.new,
       ).cast<ServerSentEvent<String?>>();
 
-  /// Parses a whole `text/event-stream` [body].
+  /// Parses a whole `text/event-stream` [body] that is already in memory,
+  /// such as a recorded response in a test. The rules are the same as for
+  /// a stream: blocks without `data:` are included, and an unfinished
+  /// event at the end is dropped.
   static List<ServerSentEvent<String?>> parse(String body) {
     final events = <ServerSentEvent<String?>>[];
     final sink = _SseSink(_ListSink(events));

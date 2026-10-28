@@ -1,6 +1,13 @@
-/// Built-in scope names, like Spring's `ConfigurableBeanFactory.SCOPE_*`.
+/// The names of the two built-in scopes, for `@Scope(...)` and
+/// `BeanDefinition.scope`.
+///
+/// A scope decides how many instances of a bean exist. By default a bean is
+/// a [singleton]: one shared instance. Choose [prototype] for a bean that
+/// holds state for a single use, such as a builder; anything else is the
+/// name of a custom scope registered with `registerScope`.
 ///
 /// ```dart
+/// // Every lookup gets a fresh builder.
 /// @Service()
 /// @Scope(ScopeType.prototype)
 /// class ReportBuilder {}
@@ -20,7 +27,8 @@
 /// class ReportBuilder {}
 /// ```
 abstract final class ScopeType {
-  /// One shared instance per container. The default.
+  /// One shared instance per container, created at startup unless lazy.
+  /// The default.
   static const singleton = 'singleton';
 
   /// A new instance for every injection and every lookup. The container
@@ -29,17 +37,21 @@ abstract final class ScopeType {
   static const prototype = 'prototype';
 }
 
-/// Whether a bean of a custom (or prototype) scope is injected through a
-/// scoped proxy, like Spring's `ScopedProxyMode` (`@Scope(proxyMode:)`).
+/// Whether a bean of a custom (or prototype) scope is injected directly or
+/// through a scoped proxy (`@Scope(proxyMode:)`).
 ///
-/// With a proxy, every injection point and lookup gets one shared object
-/// implementing the bean's class; each call on it asks the scope for the
-/// current instance, so a singleton can hold a request- or screen-scoped
-/// bean. The generator writes the proxy class (the type must be
-/// implementable from generated code, like for `@Lazy` injection points);
-/// by hand it is `BeanDefinition.scopedProxy`.
+/// A singleton keeps what it was injected with, so a screen-scoped bean
+/// injected directly stays the first screen's instance forever (the
+/// container logs a warning). With a proxy, every injection point and
+/// lookup gets one shared object implementing the bean's class; each call
+/// on it asks the scope for the current instance. The generator writes
+/// the proxy class (the type must be implementable from generated code,
+/// like for `@Lazy` injection points); by hand it is
+/// `BeanDefinition.scopedProxy`. An `ObjectProvider<T>` is the other way
+/// to reach the current instance.
 ///
 /// ```dart
+/// // A singleton that always talks to the state of the current screen.
 /// @Component()
 /// @Scope('screen', proxyMode: ScopedProxyMode.targetClass)
 /// class ScreenState { ... }
@@ -63,7 +75,7 @@ abstract final class ScopeType {
 /// implementing the bean's type (Dart classes are interfaces too); the
 /// target is not registered as a separate `scopedTarget.` bean.
 enum ScopedProxyMode {
-  /// No proxy: the instance is injected directly.
+  /// No proxy: the instance is injected directly. The default.
   no,
 
   /// A proxy implementing the bean's type (Spring's JDK interface proxy).
@@ -73,15 +85,20 @@ enum ScopedProxyMode {
   targetClass,
 }
 
-/// A custom bean scope, like Spring's `Scope` SPI (renamed because `@Scope`
-/// is the annotation).
+/// A place that keeps bean instances for a span of your choosing, such as
+/// a screen, a session or a job, and so defines a custom bean scope.
 ///
-/// Register it with `ConfigurableBeanFactory.registerScope` and use it with
-/// `@Scope('name')`. The container calls [get] on every lookup of a bean in
-/// this scope and registers destroy callbacks through
-/// [registerDestructionCallback].
+/// Singletons live as long as the container and prototypes not at all.
+/// When beans should live exactly as long as something else, implement a
+/// scope, register it with `ConfigurableBeanFactory.registerScope` and
+/// declare the beans with `@Scope('name')`. The container calls [get] on
+/// every lookup of such a bean and hands over its destroy callbacks through
+/// [registerDestructionCallback]; the scope runs them when it ends.
+/// [SimpleMapScope] is a ready-made one. Spring calls this interface
+/// `Scope`; here that name is the annotation.
 ///
 /// ```dart
+/// // A scope that keeps one instance per name until removed.
 /// class ZoneScope implements CustomScope {
 ///   final _objects = <String, Object>{};
 ///
@@ -122,26 +139,34 @@ enum ScopedProxyMode {
 /// beanFactory.registerScope("zone", new ZoneScope());
 /// ```
 abstract interface class CustomScope {
-  /// The scoped instance named [name], created with [objectFactory] when
-  /// the scope does not hold one yet.
+  /// The instance of the bean [name] in the current span, created with
+  /// [objectFactory] when the scope does not hold one yet. Throw a
+  /// `StateError` when the scope is not active right now (no screen open):
+  /// the container reports it as a `ScopeNotActiveException`.
   Object get(String name, Object Function() objectFactory);
 
-  /// Removes and returns the instance named [name], if any. Its destruction
-  /// callback is not run (the caller owns the object now).
+  /// Removes and returns the instance of the bean [name], or `null`. Its
+  /// destruction callback must not run: the caller owns the object now
+  /// (`destroyScopedBean` removes it and then destroys it).
   Object? remove(String name);
 
-  /// Runs [callback] when the instance named [name] is destroyed with the
-  /// scope.
+  /// Keeps [callback], which runs the destroy callbacks of the instance of
+  /// the bean [name]; the scope calls it when it destroys that instance.
   void registerDestructionCallback(String name, void Function() callback);
 
-  /// Identifier of the current scope instance (e.g. a session id), if any.
+  /// An id of the current span (a session id, say), or `null`.
   String? get conversationId;
 }
 
-/// A [CustomScope] backed by a map, ended explicitly with [destroy] (for
-/// example a screen, a session or a test).
+/// A ready-made [CustomScope] that keeps its instances in a map until you
+/// call [destroy].
+///
+/// Use it when you control the start and end of the span yourself: a
+/// screen, a wizard, a test. Register one instance per scope name; after
+/// [destroy] it starts again empty.
 ///
 /// ```dart
+/// // Beans in the 'screen' scope live until the checkout screen closes.
 /// final screen = SimpleMapScope(conversationId: 'checkout');
 /// context.beanFactory.registerScope('screen', screen);
 ///
@@ -156,7 +181,7 @@ abstract interface class CustomScope {
 /// beanFactory.registerScope("thread", new SimpleThreadScope());
 /// ```
 class SimpleMapScope implements CustomScope {
-  /// Creates an empty scope; [conversationId] identifies it (optional).
+  /// Creates an empty scope; [conversationId] is an optional id for it.
   SimpleMapScope({this.conversationId});
 
   @override
@@ -165,7 +190,7 @@ class SimpleMapScope implements CustomScope {
   final _objects = <String, Object>{};
   final _callbacks = <String, void Function()>{};
 
-  /// Names of the instances currently held.
+  /// The bean names whose instances the scope holds now.
   Iterable<String> get names => _objects.keys;
 
   @override
@@ -182,9 +207,9 @@ class SimpleMapScope implements CustomScope {
   void registerDestructionCallback(String name, void Function() callback) =>
       _callbacks[name] = callback;
 
-  /// Destroys every instance (newest first) and empties the scope.
-  ///
-  /// The scope stays usable: the next lookup creates fresh instances.
+  /// Runs the destroy callbacks of every instance, newest first (later
+  /// beans may use earlier ones), and empties the scope. The scope stays
+  /// usable: the next lookup creates fresh instances.
   void destroy() {
     // Reverse insertion order: beans created later may depend on earlier
     // ones, so they go first.

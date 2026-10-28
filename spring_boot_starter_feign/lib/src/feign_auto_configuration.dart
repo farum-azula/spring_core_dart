@@ -5,17 +5,21 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _source = 'package:spring_boot_starter_feign#FeignAutoConfiguration';
 
-/// The beans of the Feign starter, like Spring Cloud OpenFeign's
-/// `FeignAutoConfiguration`:
+/// The bean definitions the Feign starter adds to every application that
+/// lists it. The `@FeignClient` beans themselves are registered by the
+/// generator; these are what they need:
 ///
-/// - `httpTransport` — `platformHttpTransport()` (`dart:io` on the VM and
-///   in Flutter, `fetch` on the web), when the application declares no
-///   [HttpTransport]; connection timeout from
-///   `spring.cloud.openfeign.client.config.default.connect-timeout`;
-/// - `feignClientFactory` — creates the client implementations with the
-///   `ObjectMapper`, the transport and the `RequestInterceptor`,
-///   `ErrorDecoder` and `Retryer` beans (per client: see
-///   `FeignClient.configuration`).
+/// - `httpTransport` — sends the requests: `platformHttpTransport()`
+///   (`dart:io` on the VM and in Flutter, `fetch` on the web), unless the
+///   application declares an [HttpTransport] (a mock in tests, an adapter
+///   over another HTTP library). Its connection timeout is
+///   `spring.cloud.openfeign.client.config.default.connect-timeout`; it is
+///   closed with the context.
+/// - `feignClientFactory` — builds each client with the `ObjectMapper`,
+///   the transport and the `RequestInterceptor`, `ErrorDecoder` and
+///   `Retryer` beans (chosen per client, see `FeignClient.configuration`).
+///
+/// Spring Cloud OpenFeign's counterpart is `FeignAutoConfiguration`.
 final feignAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<HttpTransport>(
     name: 'httpTransport',

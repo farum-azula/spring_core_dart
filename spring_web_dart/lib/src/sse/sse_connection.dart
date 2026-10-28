@@ -6,21 +6,39 @@ import 'package:spring_web_dart/src/http_status.dart';
 import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 import 'package:spring_web_dart/src/sse/sse_decoder.dart';
 
-/// When an event stream connects again after its connection ended or
-/// broke, like the browser's `EventSource`: after [delay] (or the server's
-/// `retry:`), sending the last event id in `Last-Event-ID`.
+/// The reconnection rules of an event stream: whether, after how long and
+/// how many times it connects again when its connection ends or breaks.
+///
+/// An event stream is meant to last, but connections drop: a proxy times
+/// out, the phone changes networks, the server restarts. A browser's
+/// `EventSource` reconnects by itself, and so does
+/// [connectServerSentEvents], following these rules. It waits [delay], or
+/// the delay the server sent in a `retry:` field, and sends the last event
+/// id in `Last-Event-ID` so the server can resume.
+///
+/// Feign clients build one from their configuration (the
+/// `event-stream.reconnect`, `event-stream.reconnect-delay` and
+/// `event-stream.max-attempts` keys), so applications set properties
+/// rather than create it. You write one when you call
+/// [connectServerSentEvents] yourself.
 ///
 /// ```dart
-/// const SseReconnect(delay: Duration(seconds: 1), maxAttempts: 5)
-/// SseReconnect.never
+/// // Retry quickly, but give up after five connections in a row that
+/// // bring no event.
+/// const SseReconnect(delay: Duration(seconds: 1), maxAttempts: 5);
+///
+/// // A one-shot stream: it ends with its first connection.
+/// SseReconnect.never;
 /// ```
 ///
-/// Spring (Java): no built-in reconnection;
-/// `Flux.retryWhen(Retry.fixedDelay(...))`.
+/// Spring (Java): no built-in reconnection; the usual way is
+/// `Flux.retryWhen(Retry.fixedDelay(...))` on a `WebClient` stream.
 final class SseReconnect {
-  /// Reconnects after [delay]; [maxAttempts] limits the connections in a
-  /// row that bring no event (`null`: no limit); [retryIf] picks the
-  /// errors worth another try (default: [HttpTransportException]).
+  /// Rules that reconnect when [enabled] (the default), after [delay]
+  /// (3 seconds by default). [maxAttempts] limits the connections in a row
+  /// that bring no event (`null`, the default: no limit). [retryIf] picks
+  /// the errors worth another try; by default only an
+  /// [HttpTransportException], that is a network failure or a timeout.
   const SseReconnect({
     this.enabled = true,
     this.delay = const Duration(seconds: 3),
@@ -28,59 +46,91 @@ final class SseReconnect {
     this.retryIf = _isTransportError,
   });
 
-  /// Never reconnects: the stream ends with its connection.
+  /// Rules that never reconnect: the stream ends when its first connection
+  /// ends, and fails with its error.
   static const never = SseReconnect(enabled: false);
 
-  /// Whether to reconnect at all.
+  /// Whether to reconnect at all. When `false` the other fields do not
+  /// matter.
   final bool enabled;
 
-  /// The wait before connecting again (until the server sends `retry:`).
+  /// The wait before connecting again. Once the server has sent a
+  /// `retry:` field, its value is used instead.
   final Duration delay;
 
-  /// The connections in a row without an event before giving up.
+  /// How many connections in a row may end without bringing an event
+  /// before the stream gives up and ends (with the last error, if there
+  /// was one). The first connection counts, and any event with data
+  /// starts the count again. `null` for no limit.
   final int? maxAttempts;
 
-  /// Whether a failure is worth another try (others end the stream with
-  /// the error).
+  /// Decides whether a failure is worth another try. An error it rejects
+  /// ends the stream with that error, such as a `4xx` that `connect`
+  /// turned into an exception. A connection that simply ends is always
+  /// retried.
   final bool Function(Object error) retryIf;
 
   static bool _isTransportError(Object error) =>
       error is HttpTransportException;
 }
 
-/// The events of an endless `text/event-stream` connection: [connect]
-/// opens it (getting the last event id, `null` the first time) and returns
-/// the response, or throws to fail. A `204 No Content` response ends the
-/// stream (the server's way to say "stop", as for `EventSource`); a
-/// response or connection that ends is opened again as [reconnect] says.
-/// Blocks without `data:` (heartbeats, a lone `retry:`) update the id and
-/// delay but are not emitted. [onReconnect] is told about every retry
-/// (e.g. to log it).
+/// Reads server-sent events from an HTTP endpoint as one stream that
+/// survives lost connections: when a connection ends or breaks, it opens
+/// a new one and goes on.
 ///
-/// Starts connecting when listened to; cancelling the subscription closes
-/// the connection.
+/// This is the client side of an event stream, the job a browser's
+/// `EventSource` does. Feign clients use it for methods that return an
+/// `EventStream<T>`, so applications rarely call it. Call it to read an
+/// event stream with a bare [HttpTransport].
+///
+/// [connect] opens one connection. It gets the id of the last event
+/// received (`null` the first time) to send as `Last-Event-ID`, and
+/// returns the response with its headers. It throws if the server
+/// refused; the error is then retried or not as [reconnect] decides.
+/// A non-2xx status is not checked here, so [connect] must throw for it.
+///
+/// Then:
+///
+/// - A `204 No Content` response ends the stream: the server's way to say
+///   "stop", as for `EventSource`.
+/// - A connection that ends, or fails with an error [reconnect] accepts,
+///   is opened again after the delay, up to the limit of [reconnect].
+/// - Blocks without `data:` (heartbeat comments, a lone `retry:`) update
+///   the last id and the delay but are not emitted.
+/// - [onReconnect] is told about every retry, with the error (or `null`
+///   for a connection that ended), the delay and the attempt number, for
+///   example to log it.
+///
+/// Nothing happens until the stream is listened to; cancelling the
+/// subscription closes the connection and stops reconnecting.
 ///
 /// ```dart
-/// final events = connectServerSentEvents((lastEventId) async {
-///   final response = await transport.stream(HttpRequest(
-///     method: HttpMethod.get,
-///     url: Uri.parse('https://api.neon.books/orders/events'),
-///     headers: HttpHeaders({
-///       'Accept': MediaType.textEventStream,
-///       if (lastEventId != null) 'Last-Event-ID': lastEventId,
-///     }),
-///   ));
-///   if (!response.isSuccess) {
-///     throw StateError((await response.read()).bodyText);
-///   }
-///   return response;
-/// });
-/// final orders = EventStream<String>(() => events);
+/// // `transport` is the application's `HttpTransport` bean.
+/// Stream<ServerSentEvent<String>> orderEvents() =>
+///     connectServerSentEvents((lastEventId) async {
+///       final response = await transport.stream(HttpRequest(
+///         method: HttpMethod.get,
+///         url: Uri.parse('https://api.neon.books/orders/events'),
+///         headers: HttpHeaders({
+///           'Accept': MediaType.textEventStream,
+///           // Resume after the last event seen before the drop.
+///           if (lastEventId != null) 'Last-Event-ID': lastEventId,
+///         }),
+///       ));
+///       if (!response.isSuccess) {
+///         // Not a network failure: the stream ends with this error.
+///         throw StateError((await response.read()).bodyText);
+///       }
+///       return response;
+///     });
+///
+/// // Each listener of `orders` opens its own connection.
+/// final orders = EventStream<String>(orderEvents);
 /// ```
 ///
-/// Spring (Java):
-/// `WebClient.get().retrieve().bodyToFlux(ServerSentEvent.class)` with
-/// `retryWhen`.
+/// Spring (Java): no single call.
+/// `WebClient.get().retrieve().bodyToFlux(ServerSentEvent.class)` reads
+/// the events, and `retryWhen` on the `Flux` reconnects.
 Stream<ServerSentEvent<String>> connectServerSentEvents(
   Future<StreamedHttpResponse> Function(String? lastEventId) connect, {
   SseReconnect reconnect = const SseReconnect(),

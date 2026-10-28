@@ -3,11 +3,15 @@ import 'package:spring_core_dart/src/context/annotations.dart';
 import 'package:spring_core_dart/src/context/event/application_event.dart';
 import 'package:spring_core_dart/src/context/event/application_listener.dart';
 
-/// The declared result type [R] of a listener method (the element type of
-/// an `Iterable` result): its results are published as `R`, so they reach
-/// `PayloadApplicationEvent<R>` listeners like Spring's (which uses the
-/// result's runtime class). The generator passes it as
-/// `EventListenerMethod(resultType:)`.
+/// The declared result type [R] of an `@EventListener` method (the element
+/// type of an `Iterable` result), so that its results are published as
+/// `R`.
+///
+/// A listener's non-null result is published as a new event. Published as
+/// `R` instead of `Object`, it reaches the `PayloadApplicationEvent<R>`
+/// listeners, as in Spring (which uses the result's runtime class). The
+/// generator writes it; you only need it in a hand-written
+/// [EventListenerMethod].
 ///
 /// ```dart
 /// EventListenerMethod.of<Shipping, OrderPlaced>(
@@ -17,24 +21,30 @@ import 'package:spring_core_dart/src/context/event/application_listener.dart';
 /// );
 /// ```
 final class EventResultType<R extends Object> {
-  /// The result type [R].
+  /// Describes the result type [R].
   const EventResultType();
 
-  /// Publishes [result] through [publisher], as an [R] when it is one.
+  /// Publishes [result] through [publisher], typed as [R] when it is one
+  /// (as its static type otherwise).
   void publish(ApplicationEventPublisher publisher, Object result) =>
       result is R
       ? publisher.publishEvent<R>(result)
       : publisher.publishEvent(result);
 }
 
-/// An `@EventListener` method of a bean of type [T], prepared by generated
-/// code (no reflection).
+/// One `@EventListener` method of a bean class [T], described by generated
+/// code: which events it takes, its condition, its order and how to call
+/// it.
 ///
-/// The generator stores these in `BeanDefinition.eventListeners`; the
-/// context wraps each in a listener that fetches the bean per event. Write
-/// one by hand only for hand-made bean definitions.
+/// Dart has no reflection to find and call annotated methods at runtime,
+/// so the generator writes one of these per method into
+/// `BeanDefinition.eventListeners`. The context wraps each in a listener
+/// that looks the bean up when an event arrives. Applications never see
+/// it; write one only for a hand-written bean definition.
 ///
 /// ```dart
+/// // A hand-written definition whose onPlaced method listens to big
+/// // orders only.
 /// BeanDefinition<Shipping>(
 ///   name: 'shipping',
 ///   types: const [Shipping],
@@ -59,7 +69,9 @@ final class EventListenerMethod<T extends Object> {
   /// Creates a listener method from raw callbacks: `supports` decides on
   /// the event type, `shouldHandle` on the condition (called right before
   /// `invoke`, inside the multicaster's error handling), `invoke` calls
-  /// the method on the bean; [async] is the method's `@Async`.
+  /// the method on the bean; [async] is the method's `@Async`. [of],
+  /// [EventListenerMethod.matching] and [forPayload] build these callbacks
+  /// for the usual cases.
   EventListenerMethod({
     required this.id,
     required this._supports,
@@ -74,7 +86,7 @@ final class EventListenerMethod<T extends Object> {
   /// its payload; [condition] (a `bool Function(E)`) is applied to the
   /// accepted object.
   ///
-  /// Used for `@EventListener(classes: [A, B])`:
+  /// The generator uses it for `@EventListener(classes: [A, B])`:
   ///
   /// ```dart
   /// EventListenerMethod<Shipping>.matching(
@@ -100,8 +112,9 @@ final class EventListenerMethod<T extends Object> {
                  Function.apply(condition, [_matched(event, accepts)!.value]) ==
                  true);
 
-  /// A listener for events (or payloads) of type [E]; [condition] filters
-  /// the matched event or payload.
+  /// A listener for events (or published objects) of type [E], the
+  /// method's parameter type; [condition] filters the matched event or
+  /// object. The generator uses it for most `@EventListener` methods.
   static EventListenerMethod<T> of<T extends Object, E>(
     String id,
     Object? Function(T bean, E event) handler, {
@@ -169,7 +182,8 @@ final class EventListenerMethod<T extends Object> {
     _ => null,
   };
 
-  /// The accepted object: [event] itself or its payload; throws an
+  /// The object [accepts] takes from [event]: the payload of a
+  /// `PayloadApplicationEvent` first, else [event] itself. Throws an
   /// `ArgumentError` if neither is accepted.
   static Object match(Object event, bool Function(Object candidate) accepts) =>
       _matched(event, accepts)?.value ??
@@ -193,11 +207,13 @@ final class EventListenerMethod<T extends Object> {
   }
 
   /// The value a listener of [E] receives for [event], or `null` when it
-  /// does not handle it (boxed so that a `null` payload is
-  /// distinguishable). Like Spring's `ApplicationListenerMethodAdapter`:
-  /// when [E] is not an [ApplicationEvent] type (e.g. `Object`), the
-  /// payload of a [PayloadApplicationEvent] that is an [E]; else [event]
-  /// itself if it is an [E].
+  /// does not handle it; the record keeps a `null` payload apart from "not
+  /// handled".
+  ///
+  /// When [E] is not an [ApplicationEvent] type (`Object`, say) and
+  /// [event] is a [PayloadApplicationEvent] whose payload is an [E], the
+  /// listener gets the payload; otherwise it gets [event] itself if it is
+  /// an [E]. Spring's `ApplicationListenerMethodAdapter` decides the same.
   static ({E value})? unwrap<E>(Object event) {
     if (event is PayloadApplicationEvent && <E>[] is! List<ApplicationEvent>) {
       if (event.payload case final E payload) {
@@ -210,36 +226,39 @@ final class EventListenerMethod<T extends Object> {
     return null;
   }
 
-  /// `Class.method` by default.
+  /// The listener's id, shown in logs and errors: `@EventListener(id:)`,
+  /// or `Class.method` by default.
   final String id;
 
-  /// `@Order` of the method.
+  /// The method's `@Order`; `null` without one, which counts as the lowest
+  /// precedence (the listener runs last).
   final int? order;
 
   /// The method's `@Async` (`null` when it runs on the publishing call);
   /// see [Async].
   final Async? async;
 
-  /// The declared result type; results are published as it (as their
-  /// static type `Object` without it).
+  /// The declared result type; results are published as it (as `Object`
+  /// without it).
   final EventResultType<Object>? resultType;
 
   final bool Function(Object event) _supports;
   final bool Function(Object event)? _shouldHandle;
   final Object? Function(T bean, Object event) _invoke;
 
-  /// Whether the method listens to [event]'s type (or its payload's), like
-  /// Spring's `ApplicationListenerMethodAdapter.supportsEventType`; the
-  /// condition is checked by [shouldHandle].
+  /// Whether the method listens to [event]'s type (or its payload's); the
+  /// condition is checked separately by [shouldHandle] (Spring's
+  /// `ApplicationListenerMethodAdapter.supportsEventType`).
   bool supports(Object event) => _supports(event);
 
-  /// Whether the condition accepts [event] (`true` without one), like
-  /// Spring's `ApplicationListenerMethodAdapter.shouldHandle`; called for
-  /// a [supports]ed event right before [invoke], so a failing condition
-  /// reaches the multicaster's error handler like a failing listener.
+  /// Whether the condition accepts [event] (`true` without one). Called
+  /// for a [supports]ed event right before [invoke], so a failing
+  /// condition reaches the multicaster's error handler like a failing
+  /// listener (Spring's `ApplicationListenerMethodAdapter.shouldHandle`).
   bool shouldHandle(Object event) => _shouldHandle?.call(event) ?? true;
 
-  /// Calls the method; a non-null result is published by the caller.
+  /// Calls the method on [bean] with [event] (or its payload) and returns
+  /// the method's result; the caller publishes a non-null result.
   ///
   /// An AOP proxy that does not implement [T] is unwrapped to its target.
   Object? invoke(Object bean, Object event) =>

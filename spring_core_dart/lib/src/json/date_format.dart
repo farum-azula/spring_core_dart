@@ -1,9 +1,18 @@
-/// Date-time helpers of `ObjectMapper`: time zone offsets, strict ISO-8601
-/// parsing and `@JsonFormat(pattern: ...)` patterns.
+/// The date and time handling behind `ObjectMapper`: time zone offsets,
+/// strict ISO-8601 parsing and `@JsonFormat(pattern: ...)` patterns.
+///
+/// Internal: not exported by `package:spring_core_dart/json.dart`. Users
+/// configure dates with the mapper's `timeZone` and `@JsonFormat`.
 library;
 
-/// `UTC`, `GMT`, `Z`, or an offset such as `+02:00`, `-0530`, `GMT+2`,
-/// `UTC+02:00`. Named zones (`Europe/Berlin`) need a tz database.
+/// Returns the fixed offset a time zone setting names: `UTC`, `GMT`, `UT`
+/// or `Z` (zero), or an offset such as `+02:00`, `-0530`, `GMT+2`,
+/// `UTC+02:00`.
+///
+/// Throws an [ArgumentError] (naming the setting [name]) for anything
+/// else, including named zones such as `Europe/Berlin`, which would need
+/// a time zone database Dart does not have, and for offsets beyond 18
+/// hours.
 Duration parseTimeZone(String timeZone, [String name = 'timeZone']) {
   final match = RegExp(r'^(?:UTC|GMT|UT|Z)?(?:([+-])(\d{1,2})(?::?(\d{2}))?)?$')
       .firstMatch(timeZone.trim());
@@ -34,12 +43,14 @@ final _iso = RegExp(
   r'(Z|[+-]\d{2}(?::?\d{2})?)?)?$',
 );
 
-/// A strict ISO-8601 date-time (`2026-01-31`, `2026-01-31T12:00`,
-/// `2026-01-31T12:00:00.123456+02:00`), as Jackson's `StdDateFormat` reads
-/// it: text without an offset is in [defaultOffset] (the mapper's time
-/// zone, UTC by default). Returns a UTC `DateTime`, or `null` when the text
-/// is not such a date or a field is out of range (month 13, February 30,
-/// hour 24, ...).
+/// Parses a strict ISO-8601 date or date-time (`2026-01-31`,
+/// `2026-01-31T12:00`, `2026-01-31T12:00:00.123456+02:00`), as Jackson's
+/// `StdDateFormat` reads it, and returns it in UTC.
+///
+/// Text without an offset is taken to be in [defaultOffset] (the mapper's
+/// time zone, UTC by default). Returns `null` when the text is not such a
+/// date or a field is out of range (month 13, February 30, hour 24, ...),
+/// where `DateTime.parse` would roll over silently.
 DateTime? parseIsoDateTime(String text, Duration defaultOffset) {
   final match = _iso.firstMatch(text);
   if (match == null) {
@@ -138,17 +149,21 @@ const _days = [
   'Sunday',
 ];
 
-/// A `DateTimeFormatter`-style pattern (`yyyy-MM-dd HH:mm`), the subset
-/// `@JsonFormat(pattern: ...)` supports: `y`/`u` year, `M`/`L` month
+/// A compiled `@JsonFormat(pattern: ...)` date pattern such as
+/// `yyyy-MM-dd HH:mm`, which formats and parses `DateTime` values.
+///
+/// The mapper compiles each pattern once and caches it. It supports this
+/// subset of Java's `DateTimeFormatter` letters: `y`/`u` year, `M`/`L` month
 /// (`MMM` `Jan`, `MMMM` `January`), `d` day, `E` day of week, `a` AM/PM,
 /// `H` `k` `h` `K` hours, `m` minutes, `s` seconds, `S` fraction of a
 /// second, `X` `x` `Z` offsets, `'quoted text'`; other letters are
 /// rejected, other characters are literal.
 final class DatePattern {
-  /// Parses [pattern]; throws an [ArgumentError] for unsupported letters.
+  /// Compiles [pattern]; throws an [ArgumentError] for unsupported
+  /// letters.
   DatePattern(this.pattern) : _tokens = _tokenize(pattern);
 
-  /// The pattern.
+  /// The pattern as written.
   final String pattern;
   final List<_Token> _tokens;
 
@@ -197,10 +212,12 @@ final class DatePattern {
     return tokens;
   }
 
-  /// Whether the pattern has an offset field (`X`, `x` or `Z`).
+  /// Whether the pattern has an offset field (`X`, `x` or `Z`), so parsed
+  /// text carries its own offset.
   bool get hasOffset => _tokens.any((t) => 'XxZ'.contains(t.letter ?? '-'));
 
-  /// [value] written in [offset].
+  /// Returns [value] as text in this pattern, shown at [offset] from
+  /// UTC.
   String format(DateTime value, Duration offset) {
     final local = value.toUtc().add(offset);
     final out = StringBuffer();
@@ -268,9 +285,10 @@ final class DatePattern {
     };
   }
 
-  /// A UTC `DateTime` of [text]; text without an offset field is in
-  /// [defaultOffset]. Throws a [FormatException] when [text] does not match
-  /// or a field is out of range.
+  /// Parses [text] in this pattern and returns it in UTC; without an
+  /// offset field the text is taken to be in [defaultOffset]. Throws a
+  /// [FormatException] when [text] does not match or a field is out of
+  /// range.
   DateTime parse(String text, Duration defaultOffset) {
     var year = 1970;
     var month = 1;

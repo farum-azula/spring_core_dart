@@ -7,14 +7,22 @@ import 'package:spring_core_dart/src/beans/scope.dart';
 // Stereotypes
 // ---------------------------------------------------------------------------
 
-/// Marks a class as a bean, like Spring's `@Component`.
+/// Marks a class as a bean: an object the container creates once, injects
+/// into others and closes at shutdown.
+///
+/// This is how most of an application's objects are declared. The
+/// generator finds the annotated classes under a directory scanned by a
+/// [ComponentScan] (or `@SpringBootApplication`), and the container calls
+/// the constructor with the other beans it asks for. You never write
+/// `new` for such a class or pass its dependencies by hand.
 ///
 /// The bean name defaults to the class name in lowerCamelCase
-/// (`AuthService` → `authService`, `URLService` stays). Subclass
-/// [Component] to create your own stereotypes.
-///
-/// The class must live under a directory scanned by a [ComponentScan]
-/// module; its constructor parameters are injected.
+/// (`AuthService` becomes `authService`; `URLService` stays as it is). An
+/// explicit name must not be empty, blank or padded with spaces. Only
+/// classes can be beans: on a mixin, enum, extension or extension type the
+/// build fails. The scan skips abstract classes. [Service], [Repository]
+/// and [Controller] work the same way and only say what the class is for;
+/// subclass [Component] to make your own such annotation.
 ///
 /// ```dart
 /// @Component()
@@ -22,6 +30,8 @@ import 'package:spring_core_dart/src/beans/scope.dart';
 ///   DateTime now() => DateTime.now();
 /// }
 ///
+/// // Named explicitly because another library looks it up by name; the
+/// // container passes the Clock bean to the constructor.
 /// @Component('auditLog')
 /// class AuditLog {
 ///   AuditLog(this.clock);
@@ -40,18 +50,21 @@ import 'package:spring_core_dart/src/beans/scope.dart';
 /// }
 /// ```
 class Component {
-  /// Creates the annotation; [name] overrides the default bean name.
+  /// Declares the bean; [name] replaces the default bean name.
   const Component([this.name]);
 
-  /// Bean name. Defaults to the lowerCamelCase class name.
+  /// The bean name; `null` gives the class name in lowerCamelCase.
   final String? name;
 }
 
-/// Stereotype for service-layer beans, like Spring's `@Service`.
+/// Marks a class as a bean that holds business logic.
 ///
-/// Behaves exactly like [Component]; the name documents intent.
+/// It does exactly what [Component] does. The different name tells the
+/// reader which layer the class belongs to, and it can be used in scan
+/// filters and pointcuts.
 ///
 /// ```dart
+/// // The repository bean is injected through the constructor.
 /// @Service()
 /// class OrderService {
 ///   OrderService(this.repository);
@@ -67,14 +80,15 @@ class Component {
 /// }
 /// ```
 class Service extends Component {
-  /// Creates the annotation; [name] overrides the default bean name.
+  /// Declares the bean; [name] replaces the default bean name.
   const Service([super.name]);
 }
 
-/// Stereotype for data-access beans, like Spring's `@Repository`.
+/// Marks a class as a bean that stores and loads data.
 ///
-/// Behaves exactly like [Component] (there is no exception translation as
-/// in Spring).
+/// It does exactly what [Component] does; the name tells the reader that
+/// the class is the data-access layer. Spring also translates database
+/// exceptions for such beans; this package does not.
 ///
 /// ```dart
 /// @Repository()
@@ -92,16 +106,18 @@ class Service extends Component {
 /// }
 /// ```
 class Repository extends Component {
-  /// Creates the annotation; [name] overrides the default bean name.
+  /// Declares the bean; [name] replaces the default bean name.
   const Repository([super.name]);
 }
 
-/// Stereotype for controllers, like Spring's `@Controller`.
+/// Marks a class as a bean of the presentation layer.
 ///
-/// Behaves exactly like [Component]; useful for presentation-layer beans
-/// (for example Flutter view models).
+/// It does exactly what [Component] does. In this package it suits
+/// objects that drive a user interface, such as Flutter view models; the
+/// web starter gives it its request-handling meaning.
 ///
 /// ```dart
+/// // The login screen's logic, with the auth service injected.
 /// @Controller()
 /// class LoginController {
 ///   LoginController(this.auth);
@@ -117,27 +133,35 @@ class Repository extends Component {
 /// }
 /// ```
 class Controller extends Component {
-  /// Creates the annotation; [name] overrides the default bean name.
+  /// Declares the bean; [name] replaces the default bean name.
   const Controller([super.name]);
 }
 
-/// A bean that declares other beans through [Bean] methods, like Spring's
-/// `@Configuration`.
+/// Marks a class whose [Bean] methods create beans.
 ///
-/// Like Spring's default (`proxyBeanMethods = true`), the container creates
-/// a generated subclass of the class whose `@Bean` methods return the
-/// container's bean, so one `@Bean` method calling another gets the
-/// singleton (a prototype-scoped `@Bean` gives a new instance per call), as
-/// with Spring's CGLIB enhancement. Static `@Bean` methods are not
-/// intercepted. A class with instance `@Bean` methods must be extendable
-/// (not `final`, `sealed` or `interface`) with a public generative
-/// constructor; otherwise the build fails. With [proxyBeanMethods] `false`
-/// ("lite" mode) the methods are called as written: take other beans as method
-/// parameters instead.
+/// Use it for objects you cannot annotate yourself (a class from another
+/// package, a connection built from properties) or that need setup code:
+/// each `@Bean` method returns one bean, and its parameters are injected.
+/// The class itself is a bean too.
+///
+/// By default ([proxyBeanMethods] `true`) the container creates a
+/// generated subclass whose `@Bean` methods return the container's bean.
+/// So when one `@Bean` method calls another, it gets the existing
+/// singleton, not a second object (a prototype-scoped `@Bean` still gives
+/// a new instance per call). Static `@Bean` methods are not intercepted.
+/// Because of the subclass, a class with instance `@Bean` methods must be
+/// extendable (not `final`, `sealed` or `interface`) and have a public
+/// generative constructor; otherwise the build fails. With
+/// [proxyBeanMethods] `false` ("lite" mode) the methods run as written:
+/// take other beans as method parameters instead of calling the methods.
+///
+/// `@Lazy`, `@Profile` and conditions on the class apply to all its
+/// `@Bean` methods, unless a method says otherwise (`@Lazy(false)`).
 ///
 /// ```dart
 /// @Configuration()
 /// class DataConfig {
+///   // Opened with the URL from the configuration files.
 ///   @Bean(initMethod: 'connect')
 ///   Connection connection(@Value(r'${db.url}') String url) =>
 ///       Connection(url);
@@ -159,7 +183,7 @@ class Controller extends Component {
 /// }
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java), where the subclass is made with CGLIB:
 /// ```java
 /// @Configuration
 /// class DataConfig {
@@ -184,13 +208,14 @@ class Controller extends Component {
 /// }
 /// ```
 class Configuration extends Component {
-  /// Creates the annotation; [name] overrides the default bean name.
+  /// Declares the configuration class; [name] replaces the default bean
+  /// name.
   const Configuration({String? name, this.proxyBeanMethods = true})
     : super(name);
 
-  /// Whether `@Bean` methods are intercepted by a generated subclass that
-  /// returns the container's beans (Spring's `proxyBeanMethods`, default
-  /// `true`); `false` calls them as written ("lite" mode).
+  /// Whether a generated subclass makes `@Bean` methods return the
+  /// container's beans (default `true`). With `false` the methods are
+  /// called as written, which avoids the subclass and its restrictions.
   final bool proxyBeanMethods;
 }
 
@@ -198,20 +223,29 @@ class Configuration extends Component {
 // Bean declaration modifiers
 // ---------------------------------------------------------------------------
 
-/// Declares a bean produced by a method, like Spring's `@Bean`:
-/// `@Bean()`, `@Bean(name: 'x', initMethod: 'open')`.
+/// Marks a method whose return value is a bean.
 ///
-/// The bean type is what the method returns: the static type of the
-/// returned expression(s) when it is more specific than the declared return
-/// type (`DataSource dataSource() => HikariDataSource()` is registered as
-/// `HikariDataSource` and all its supertypes; Spring only knows the
-/// declared type until the bean is created). The name defaults to the
-/// method name, and method parameters are injected. Methods may be
-/// instance methods of a [Configuration] class or static methods.
+/// Use it when a class cannot carry [Component] itself (it comes from
+/// another package, or needs constructor arguments that are not beans), or
+/// when creating the object takes code. The method lives in a
+/// [Configuration] class (or a `@Component`, in "lite" mode) or is static;
+/// its parameters are injected like constructor parameters.
+///
+/// The bean name defaults to the method name. The bean type is what the
+/// method returns: the static type of the returned expression when it is
+/// more specific than the declared return type, so
+/// `DataSource dataSource() => HikariDataSource()` is registered as a
+/// `HikariDataSource` and all its supertypes (Spring only knows the
+/// declared type until the bean is created). A method declared `T?` may
+/// return `null`: the bean then exists by name but is absent for lookups
+/// and injection by type. A function type or record type can be a bean too,
+/// injected by that exact type.
 ///
 /// ```dart
 /// @Configuration()
 /// class AppConfig {
+///   // The pool size comes from the configuration, 4 when unset; open()
+///   // runs once the pool is created.
 ///   @Bean(name: 'mainPool', aliases: ['pool'], initMethod: 'open')
 ///   Pool pool(@Value(r'${pool.size:4}') int size) => Pool(size);
 ///
@@ -232,7 +266,7 @@ class Configuration extends Component {
 /// }
 /// ```
 class Bean {
-  /// Creates the annotation; every argument is optional.
+  /// Declares the bean; every argument is optional.
   const Bean({
     this.name,
     this.aliases = const [],
@@ -242,34 +276,43 @@ class Bean {
     this.defaultCandidate = true,
   });
 
-  /// Default for [destroyMethod]: call a public no-argument `close()`,
-  /// `shutdown()` or `dispose()` method of the declared return type, like
-  /// Spring's inferred destroy method (plus the Dart `dispose` idiom).
+  /// The default of [destroyMethod]: at shutdown, call a public
+  /// no-argument `close()`, `shutdown()` or `dispose()` method of the
+  /// declared return type, if it has one. Spring infers `close` and
+  /// `shutdown`; `dispose` is the Dart idiom.
   static const inferMethod = '(inferred)';
 
-  /// Bean name. Defaults to the method name.
+  /// The bean name; `null` gives the method name.
   final String? name;
 
-  /// Extra names for the bean (Spring puts them into the `name` array).
+  /// More names the bean can be found under. Spring puts them in the
+  /// `name` array after the first.
   final List<String> aliases;
 
-  /// Name of a no-argument method called after injection.
+  /// A no-argument method of the bean called once it is injected, for
+  /// objects that need a start call (`open`, `connect`) and that you cannot
+  /// annotate with `@PostConstruct`.
   final String? initMethod;
 
-  /// Name of a no-argument method called when the context closes; an empty
-  /// string disables the inferred method.
+  /// A no-argument method of the bean called when the context closes.
+  /// Defaults to [inferMethod]; an empty string calls nothing, for an
+  /// object whose `close()` must not run (for example one shared with code
+  /// outside the container).
   final String? destroyMethod;
 
-  /// Whether the bean is a candidate for injection by type at all (also
-  /// with a qualifier); lookups by name still find it.
+  /// Whether the bean can be injected by type at all (also with a
+  /// qualifier). With `false` it is still found by name.
   final bool autowireCandidate;
 
-  /// Whether the bean is injected by its plain type, like Spring 6.2's
-  /// `@Bean(defaultCandidate = false)`: when `false` it is injected only
-  /// where a qualifier (`@Qualifier`, bean name or alias) selects it, and
-  /// `@ConditionalOnBean` / `@ConditionalOnMissingBean` ignore it.
+  /// Whether the bean is injected where only its type is asked for. With
+  /// `false` it is injected only where a qualifier (`@Qualifier`, the bean
+  /// name or an alias) selects it, and `@ConditionalOnBean` /
+  /// `@ConditionalOnMissingBean` ignore it. Use it for a second bean of a
+  /// common type that must not get in the way of the main one (Spring
+  /// 6.2's `@Bean(defaultCandidate = false)`).
   ///
   /// ```dart
+  /// // Only injected where @Qualifier('audit') asks for it.
   /// @Bean(defaultCandidate: false)
   /// @Qualifier('audit')
   /// Executor auditExecutor() => Executor.single();
@@ -277,11 +320,16 @@ class Bean {
   final bool defaultCandidate;
 }
 
-/// Sets the bean scope, like Spring's `@Scope`. Without it a bean is a
-/// singleton. See [ScopeType] for built-in names; custom scopes are
-/// registered on the bean factory.
+/// Sets how many instances of a bean exist and how long each one lives.
+///
+/// Without it a bean is a singleton: one instance for the whole context.
+/// [ScopeType.prototype] gives a new instance for every injection and
+/// every lookup, for objects that hold per-use state. Other names refer
+/// to custom scopes registered with `registerScope` on the bean factory
+/// (for example a scope per screen or per request).
 ///
 /// ```dart
+/// // Each user of a cart gets their own instance.
 /// @Component()
 /// @Scope(ScopeType.prototype)
 /// class ShoppingCart {
@@ -296,41 +344,47 @@ class Bean {
 /// class ShoppingCart { ... }
 /// ```
 class Scope {
-  /// Creates the annotation for the scope named [value].
+  /// Puts the bean in the scope named [value].
   const Scope(this.value, {this.proxyMode = ScopedProxyMode.no});
 
-  /// The scope name, such as [ScopeType.prototype].
+  /// The scope name, such as [ScopeType.prototype] or the name of a
+  /// registered custom scope.
   final String value;
 
-  /// Whether the bean is injected through a scoped proxy that finds the
-  /// current instance on every call (see [ScopedProxyMode]).
+  /// Whether a generated proxy is injected instead of the instance
+  /// (default: no proxy). The proxy asks the scope for the current
+  /// instance on every call, so a singleton can hold a bean of a shorter
+  /// scope. See [ScopedProxyMode].
   final ScopedProxyMode proxyMode;
 }
 
-/// Delays creation, like Spring's `@Lazy`.
+/// Delays the creation of a bean, or of what an injection point receives,
+/// until it is first used.
 ///
-/// On a bean class or `@Bean` method the singleton is created on first use
-/// instead of at refresh; on a configuration class it applies to all its
-/// `@Bean` methods.
+/// On a bean class or `@Bean` method, the singleton is created on the
+/// first lookup or injection instead of at startup: use it for expensive
+/// beans that many runs never need. On a configuration class it applies
+/// to all its `@Bean` methods.
 ///
 /// On an injection point (constructor parameter, field, setter) a
-/// generated lazy proxy is injected instead of the bean: it finds the bean
-/// on every call. This breaks cycles and lets a bean call itself through
-/// its AOP proxy (self-invocation through `this` skips advice). The bean
-/// must still exist and be unique, which is checked at refresh. The type
-/// must be implementable from generated code (an interface, or a class
-/// without private members; not generic) and the point must not be
-/// nullable — use `ObjectProvider<T>` otherwise.
+/// generated proxy is injected instead of the bean; it finds the bean on
+/// every call. This breaks dependency cycles and lets a bean call itself
+/// through its AOP proxy, so that its advice applies (a call through
+/// `this` skips it). The bean must still exist and be unique, which is
+/// checked at startup. The type must be implementable from generated code
+/// (an interface, or a class without private members; not generic) and
+/// the point must not be nullable; use `ObjectProvider<T>` otherwise.
 ///
 /// ```dart
 /// @Component()
 /// @Lazy()
 /// class ReportGenerator { ... } // created on first getBean/injection
 ///
+/// // Calls through _self go through the proxy, so @Cacheable applies.
 /// @Service()
 /// class BookService implements Books {
 ///   BookService(@Lazy() this._self);
-///   final Books _self;          // the proxy: @Cacheable, @Timed... apply
+///   final Books _self;
 ///
 ///   List<Book> findAll(List<String> isbns) =>
 ///       [for (final isbn in isbns) _self.find(isbn)];
@@ -349,15 +403,20 @@ class Scope {
 /// }
 /// ```
 class Lazy {
-  /// Creates the annotation; `@Lazy(false)` forces eager creation.
+  /// Makes the bean or injection point lazy; `@Lazy(false)` makes a bean
+  /// eager where its configuration class or scan would make it lazy.
   const Lazy([this.value = true]);
 
   /// Whether the bean (or the injection point) is lazy.
   final bool value;
 }
 
-/// Prefers this bean when several beans match a type, like Spring's
-/// `@Primary`.
+/// Makes this bean the one injected when several beans have the requested
+/// type.
+///
+/// Without it, asking for a type that two beans have is an error. Mark
+/// the usual implementation `@Primary()` and inject the others by
+/// [Qualifier] where they are wanted.
 ///
 /// ```dart
 /// @Component()
@@ -377,12 +436,16 @@ class Lazy {
 /// class EnglishGreeter implements Greeter { ... }
 /// ```
 class Primary {
-  /// Creates the annotation.
+  /// Marks the bean as primary.
   const Primary();
 }
 
-/// Uses this bean only when no other candidate matches, like Spring's
-/// `@Fallback`.
+/// Makes this bean the one used only when no other bean of the type is
+/// there.
+///
+/// It is the opposite of [Primary]: a default that steps aside as soon as
+/// another candidate exists, for example a real implementation that a
+/// test profile replaces.
 ///
 /// ```dart
 /// @Component()
@@ -401,18 +464,23 @@ class Primary {
 /// class SystemClock implements Clock { ... }
 /// ```
 class Fallback {
-  /// Creates the annotation.
+  /// Marks the bean as fallback.
   const Fallback();
 }
 
-/// Selects a bean by name or qualifier at an injection point, or adds a
-/// qualifier to a bean declaration, like Spring's `@Qualifier`.
+/// Picks one bean among several of the same type, by a label or a bean
+/// name.
+///
+/// On a bean declaration it gives the bean that label. On an injection
+/// point it selects the bean with that label or name. Use it when several
+/// beans share a type and the one to inject is not the [Primary] one.
 ///
 /// ```dart
 /// @Component()
 /// @Qualifier('fr')
 /// class FrenchGreeter implements Greeter { ... }
 ///
+/// // This page is French, whatever the default greeter is.
 /// @Service()
 /// class Welcome {
 ///   Welcome(@Qualifier('fr') this.greeter);
@@ -432,15 +500,20 @@ class Fallback {
 /// }
 /// ```
 class Qualifier {
-  /// Creates the annotation with the qualifier or bean name [value].
+  /// Labels the bean, or selects one at an injection point, with [value].
   const Qualifier(this.value);
 
-  /// The qualifier value or bean name.
+  /// The label or bean name.
   final String value;
 }
 
-/// Beans that must be created (and destroyed after) this one, like Spring's
-/// `@DependsOn`.
+/// Names beans that must be created before this one and destroyed after
+/// it.
+///
+/// The container already orders beans by their injected dependencies. Use
+/// this only for a dependency it cannot see: a bean that relies on another
+/// bean's side effect (a database schema created, a global set up) without
+/// injecting it.
 ///
 /// ```dart
 /// @Component()
@@ -459,17 +532,17 @@ class Qualifier {
 /// class Migrations { ... }
 /// ```
 class DependsOn {
-  /// Creates the annotation with the bean names this bean depends on.
+  /// Declares the bean names this bean depends on.
   const DependsOn(this.value);
 
   /// Names of the beans created before this one.
   final List<String> value;
 }
 
-/// Human-readable description of a bean, like Spring's `@Description`.
+/// A human-readable description of a bean.
 ///
-/// The text is stored in the bean definition (useful for tooling and
-/// diagnostics) and has no runtime effect.
+/// The text is stored in the bean definition for tools and diagnostics
+/// that list beans. It changes nothing at runtime.
 ///
 /// ```dart
 /// @Component()
@@ -484,7 +557,7 @@ class DependsOn {
 /// class Mailer { ... }
 /// ```
 class Description {
-  /// Creates the annotation with the description text [value].
+  /// Describes the bean with [value].
   const Description(this.value);
 
   /// The description text.
@@ -495,19 +568,21 @@ class Description {
 // Injection
 // ---------------------------------------------------------------------------
 
-/// Marks an injection point, like Spring's `@Autowired`.
+/// Asks the container to inject beans into a field, setter, method or
+/// constructor.
 ///
-/// - Constructor: the constructor used to create the bean (only needed when
-///   a class has several constructors). Several constructors may be
-///   `@Autowired(required: false)`: the one with the most parameters whose
-///   beans exist is used.
-/// - Field or setter: assigned after construction; fields must be public
-///   and settable (`late final` or non-final).
-/// - Method: called after construction with injected arguments.
+/// Constructor parameters of a bean are injected without it. Use it:
+///
+/// - on a constructor, to choose it when the class has several. Several
+///   constructors may be `@Autowired(required: false)`: the one with the
+///   most parameters whose beans exist is used;
+/// - on a field or setter, to assign it after construction. Fields must be
+///   public and settable (`late final` or non-final);
+/// - on a method, to call it after construction with injected arguments.
 ///
 /// A nullable type makes the dependency optional. `List<T>`, `Set<T>` and
-/// `Map<String, T>` inject all beans of `T` (ordered); `ObjectProvider<T>`
-/// injects a lazy handle.
+/// `Map<String, T>` receive all beans of `T` (ordered);
+/// `ObjectProvider<T>` receives a handle that looks the bean up later.
 ///
 /// ```dart
 /// @Service()
@@ -537,33 +612,34 @@ class Description {
 /// }
 /// ```
 class Autowired {
-  /// Creates the annotation; [required] only matters on constructors.
+  /// Marks the injection point; [required] only matters on constructors.
   const Autowired({this.required = true});
 
-  /// On a constructor: `false` makes it one of several candidates, and the
-  /// container calls the one with the most parameters it can satisfy
-  /// (Spring's `@Autowired(required = false)` constructors). On fields,
-  /// setters and methods a nullable type expresses an optional dependency
-  /// instead (`required: false` there fails the build).
+  /// On a constructor, `false` makes it one of several candidates: the
+  /// container calls the one with the most parameters it can satisfy. On
+  /// fields, setters and methods a nullable type makes a dependency
+  /// optional instead (`required: false` there fails the build).
   final bool required;
 }
 
-/// Marks a method whose every call returns a bean of the container
-/// (lookup method injection): the bean named [value], else the bean of the
-/// method's return type. Typical use is a singleton that needs a fresh
-/// prototype bean per call.
+/// Marks a method that returns a bean of the container on every call.
 ///
-/// The bean is created as a generated subclass that overrides the method,
-/// so the method may be abstract (then the class may be abstract too: an
+/// A singleton receives its dependencies once. When it needs a fresh
+/// prototype bean each time (a command, a unit of work), it declares a
+/// `@Lookup` method: every call returns the bean named [value], else the
+/// bean of the method's return type.
+///
+/// The bean is created as a generated subclass that overrides the method.
+/// The method may be abstract (then the class may be abstract too: an
 /// abstract `@Component` class with `@Lookup` methods is a bean, unlike
-/// other abstract classes) or concrete (its body is never run). A nullable
-/// return type gives `null` when no bean matches the type.
+/// other abstract classes) or concrete (its body never runs). A nullable
+/// return type gives `null` when no bean of the type exists.
 ///
-/// Dart limits (checked at build time): the method must be public, take no
+/// Dart limits, checked at build time: the method must be public, take no
 /// parameters (Spring passes them as constructor arguments to `getBean`)
 /// and not be generic; the class must be extendable from the generated
-/// library (not `final`, `sealed` or `interface`), created through a public
-/// generative constructor, and not a full-mode `@Configuration` class.
+/// library (not `final`, `sealed` or `interface`), have a public generative
+/// constructor and not be a full-mode `@Configuration` class.
 ///
 /// ```dart
 /// @Component()
@@ -594,8 +670,7 @@ class Autowired {
 /// }
 /// ```
 class Lookup {
-  /// Creates the annotation; [value] is the name of the bean to return
-  /// (by default the bean of the return type).
+  /// Marks the lookup method; [value] names the bean to return.
   const Lookup([this.value]);
 
   /// The name (or alias) of the bean to return; `null` looks it up by the
@@ -603,7 +678,11 @@ class Lookup {
   final String? value;
 }
 
-/// JSR-330 alias of [Autowired].
+/// Asks the container to inject a field, setter, method or constructor;
+/// the standard Java (JSR-330) name for [Autowired].
+///
+/// It behaves like `@Autowired()`. It exists so that code ported from
+/// Java that uses `@Inject` reads the same.
 ///
 /// ```dart
 /// @Named()
@@ -621,17 +700,21 @@ class Lookup {
 /// }
 /// ```
 class Inject extends Autowired {
-  /// Creates the annotation.
+  /// Marks the injection point.
   const Inject();
 }
 
-/// JSR-330 alias of [Component] on classes and [Qualifier] at injection
-/// points.
+/// Marks a class as a bean, or selects a bean at an injection point; the
+/// standard Java (JSR-330) name for [Component] and [Qualifier].
+///
+/// On a class it behaves like `@Component`, on an injection point like
+/// `@Qualifier`. It exists for code ported from Java that uses `@Named`.
 ///
 /// ```dart
 /// @Named('fastGateway')
 /// class FastGateway implements PaymentGateway { ... }
 ///
+/// // Checkout always pays through the fast gateway.
 /// @Named()
 /// class Checkout {
 ///   Checkout(@Named('fastGateway') this.gateway);
@@ -651,28 +734,38 @@ class Inject extends Autowired {
 /// }
 /// ```
 class Named extends Component {
-  /// Creates the annotation; [name] is the bean name or qualifier.
+  /// Declares the bean, or selects one; [name] is the bean name or
+  /// qualifier.
   const Named([super.name]);
 }
 
-/// Injects a value from the environment, like Spring's `@Value`.
+/// Injects a value from the configuration (properties, environment
+/// variables) or from an expression, instead of a bean.
 ///
-/// `${key}` / `${key:default}` placeholders are resolved against property
-/// sources (config files, environment variables, ...); `#{...}` parts are
-/// evaluated as expressions when an expression resolver is installed. The
-/// result is converted to the target type with the conversion service.
-/// A nullable target receives `null` when a placeholder has no value.
+/// Use it for settings such as a port, a URL or a feature switch.
+/// `${key}` and `${key:default}` placeholders are resolved against the
+/// environment's property sources (config files, environment variables,
+/// command line); `#{...}` parts are evaluated as SpEL expressions, which
+/// can read other beans. The result is converted to the target type
+/// (`int`, `Duration`, `List<String>`, ...). A nullable target receives
+/// `null` when a placeholder has no value; a non-nullable one without a
+/// default fails the startup. For a group of related settings, a
+/// `@ConfigurationProperties` class of `spring_boot_dart` is often clearer.
+///
+/// Write the value as a raw string (`r'...'`) so that Dart does not read
+/// `$` as interpolation.
 ///
 /// ```dart
 /// @Service()
 /// class Server {
+///   // 8080 unless `server.port` is set.
 ///   Server(@Value(r'${server.port:8080}') this.port);
 ///   final int port;
 ///
-///   @Value(r'${server.tags}')
+///   @Value(r'${server.tags}') // "a,b,c" becomes a list
 ///   late final List<String> tags;
 ///
-///   @Value('#{appSettings.title.toUpperCase()}')
+///   @Value('#{appSettings.title.toUpperCase()}') // from the appSettings bean
 ///   late final String banner;
 /// }
 /// ```
@@ -687,11 +780,8 @@ class Named extends Component {
 ///   @Value("#{appSettings.title.toUpperCase()}") String banner;
 /// }
 /// ```
-///
-/// Use a raw string (`r'...'`) so Dart does not treat `$` as
-/// interpolation.
 class Value {
-  /// Creates the annotation with the placeholder/expression [value].
+  /// Injects the resolved [value].
   const Value(this.value);
 
   /// The text with `${...}` placeholders and/or `#{...}` expressions.
@@ -702,10 +792,14 @@ class Value {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-/// Called after injection, like Jakarta's `@PostConstruct`.
+/// Marks a method the container calls once a bean is fully injected,
+/// before anyone uses it.
 ///
-/// The method must take no arguments; it runs after all fields, setters and
-/// `@Autowired` methods were injected.
+/// Use it for setup that needs the injected fields: warming a cache,
+/// checking settings, opening a connection. The constructor is too early
+/// for that when fields or setters are injected. The method takes no
+/// arguments. It may return a `Future`; then the context must be started
+/// with `refreshAsync` (or `runAsync`), which waits for it.
 ///
 /// ```dart
 /// @Component()
@@ -715,7 +809,7 @@ class Value {
 /// }
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java), the Jakarta annotation:
 /// ```java
 /// @Component
 /// class Cache {
@@ -724,15 +818,18 @@ class Value {
 /// }
 /// ```
 class PostConstruct {
-  /// Creates the annotation.
+  /// Marks the init method.
   const PostConstruct();
 }
 
-/// Called when the context closes (singletons) or the scope ends, like
-/// Jakarta's `@PreDestroy`.
+/// Marks a method the container calls when a bean is destroyed: when the
+/// context closes for a singleton, when its scope ends for a scoped bean.
 ///
-/// Prototype beans are not tracked, so their `@PreDestroy` methods are not
-/// called (same as Spring).
+/// Use it to release what the bean holds: flush a buffer, close a file,
+/// cancel a timer. The method takes no arguments. It may return a
+/// `Future`, which `closeAsync` waits for (`close` logs it and goes on).
+/// Prototype beans are not tracked, so their `@PreDestroy` methods are
+/// never called (as in Spring).
 ///
 /// ```dart
 /// @Component()
@@ -742,7 +839,7 @@ class PostConstruct {
 /// }
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java), the Jakarta annotation:
 /// ```java
 /// @Component
 /// class Cache {
@@ -751,7 +848,7 @@ class PostConstruct {
 /// }
 /// ```
 class PreDestroy {
-  /// Creates the annotation.
+  /// Marks the destroy method.
   const PreDestroy();
 }
 
@@ -759,18 +856,24 @@ class PreDestroy {
 // Conditions and configuration
 // ---------------------------------------------------------------------------
 
-/// Registers the bean only when the profile expressions match, like
-/// Spring's `@Profile` (`'dev'`, `'!prod'`, `'eu & (dev | test)'`).
+/// Registers a bean only when the active profiles match.
 ///
-/// The bean is registered when any of the expressions matches. Profiles
-/// are activated with `spring.profiles.active` or
-/// `Environment.setActiveProfiles`.
+/// Profiles name the situations an application runs in (`dev`, `test`,
+/// `prod`). They are activated with the `spring.profiles.active` property
+/// or `Environment.setActiveProfiles`. Use `@Profile` to swap
+/// implementations between them, for example an in-memory mailer during
+/// development. Each entry is a profile expression: `'dev'`, `'!prod'`,
+/// `'eu & (dev | test)'`. The bean is registered when any entry matches.
+/// On a configuration class it applies to all its `@Bean` methods and to
+/// its `@PropertySource` files. Subclass it to name a set of profiles once:
+/// `class Dev extends Profile { const Dev() : super(const ['dev']); }`.
 ///
 /// ```dart
 /// @Component()
 /// @Profile(['dev', 'test'])
 /// class InMemoryMailer implements Mailer { ... }
 ///
+/// // The InMemoryMailer bean exists in this context only.
 /// final env = StandardEnvironment()..setActiveProfiles(['dev']);
 /// final context = ApplicationContext.run([appBeans], environment: env);
 /// ```
@@ -782,19 +885,23 @@ class PreDestroy {
 /// class InMemoryMailer implements Mailer { ... }
 /// ```
 class Profile {
-  /// Creates the annotation with profile expressions.
+  /// Restricts the bean to the profile expressions [value].
   const Profile(this.value);
 
-  /// Profile expressions; the bean is registered if any matches.
+  /// Profile expressions; the bean is registered if any of them matches.
   final List<String> value;
 }
 
-/// Registers the bean only when every condition matches, like Spring's
-/// `@Conditional`. Each type must implement `Condition` and have a
-/// no-argument constructor.
+/// Registers a bean only when every listed `Condition` matches.
 ///
-/// A const annotation class that implements `Condition` can also be used
-/// directly (see `Condition`).
+/// Use it when the rule is not a profile: an operating system, a property
+/// combination, the presence of another bean. Each type in [value] must
+/// implement `Condition` and have a no-argument constructor; the
+/// container calls its `matches` while it loads the bean definitions,
+/// before any bean is created. A const annotation class that implements
+/// `Condition` can be used directly instead (this is how Spring Boot's
+/// `@ConditionalOnProperty` works), and a subclass of [Conditional] names
+/// a set of conditions once.
 ///
 /// ```dart
 /// class OnLinux implements Condition {
@@ -805,6 +912,7 @@ class Profile {
 ///       context.environment.getProperty('os.name') == 'linux';
 /// }
 ///
+/// // Only on Linux machines, where systemd exists.
 /// @Component()
 /// @Conditional([OnLinux])
 /// class SystemdNotifier { ... }
@@ -823,15 +931,24 @@ class Profile {
 /// class SystemdNotifier { ... }
 /// ```
 class Conditional {
-  /// Creates the annotation with `Condition` types.
+  /// Restricts the bean to the `Condition` types [value].
   const Conditional(this.value);
 
   /// `Condition` implementations that all have to match.
   final List<Type> value;
 }
 
-/// Adds configuration classes (and their `@Bean` methods) that are not
-/// under the component scan, like Spring's `@Import`.
+/// Adds beans that the component scan does not find: configuration
+/// classes from elsewhere, or code that registers beans.
+///
+/// Put it on a configuration class. Each listed type is either a
+/// configuration (or component) class outside the scanned directories,
+/// whose beans are added with the importing class, or a class that
+/// registers beans in code: a `BeanRegistrar`, an `ImportSelector` (which
+/// returns more modules) or an `ImportBeanDefinitionRegistrar`. The
+/// generator creates those with their no-argument constructor. Imports
+/// share the importing class's conditions: if the class is skipped, so is
+/// what it imports.
 ///
 /// ```dart
 /// @Configuration()
@@ -846,20 +963,29 @@ class Conditional {
 /// class AppConfig {}
 /// ```
 class Import {
-  /// Creates the annotation with the imported classes.
+  /// Imports the classes [value].
   const Import(this.value);
 
-  /// Configuration (or component) classes to register.
+  /// Configuration or component classes, `BeanRegistrar`s,
+  /// `ImportSelector`s and `ImportBeanDefinitionRegistrar`s.
   final List<Type> value;
 }
 
-/// Adds property files to the environment, like Spring's `@PropertySource`.
+/// Adds property files to the environment, on top of the application's
+/// configuration files.
 ///
-/// Locations may contain `${...}` placeholders. When several files define
-/// the same key, the last location wins. The files are loaded before the
-/// module's conditions are evaluated.
+/// Use it for a file that belongs to one part of the application (a
+/// feature's defaults, a file outside the usual locations), so that its
+/// keys are available to `@Value` and `${...}`. The files are read while
+/// the bean definitions load, so later conditions and every bean see
+/// them; they are read only when the declaring class's conditions
+/// (`@Profile`, `@Conditional`, ...) match. Locations may contain `${...}`
+/// placeholders and patterns (`file:config/*.properties`); when several
+/// files define the same key, the last location wins. It reads
+/// `.properties` files; give a [factory] for another format such as YAML.
 ///
 /// ```dart
+/// // The local override is optional: skipped when it does not exist.
 /// @Configuration()
 /// @PropertySource([
 ///   'file:config/app.properties',
@@ -878,7 +1004,7 @@ class Import {
 /// class AppConfig {}
 /// ```
 class PropertySource {
-  /// Creates the annotation for the resource locations [value].
+  /// Adds the files at the resource locations [value].
   const PropertySource(
     this.value, {
     this.name,
@@ -887,32 +1013,40 @@ class PropertySource {
     this.encoding,
   });
 
-  /// Resource locations of the property files.
+  /// Resource locations of the property files (`file:`, `classpath:`,
+  /// patterns).
   final List<String> value;
 
   /// Name of the resulting property source; derived from the location
   /// when `null`.
   final String? name;
 
-  /// Whether a missing file is skipped instead of failing the refresh.
+  /// Whether a missing file is skipped (`true`) or fails the startup
+  /// (`false`, the default).
   final bool ignoreResourceNotFound;
 
-  /// A `PropertySourceFactory` type with a no-argument constructor; the
-  /// default reads `.properties` files.
+  /// A `PropertySourceFactory` type with a no-argument constructor, to read
+  /// another format; `null` reads `.properties` files.
   final Type? factory;
 
-  /// The charset the files are read in, such as `'ISO-8859-1'`; UTF-8
-  /// when `null`.
+  /// The charset of the files, such as `'ISO-8859-1'`; UTF-8 when `null`.
   final String? encoding;
 }
 
 /// Generates a module with every bean declared in the directory of the
-/// annotated file and its subdirectories, like Spring's `@ComponentScan`.
+/// annotated file and its subdirectories.
 ///
-/// Put it on a top-level variable initialized with the generated module,
-/// which has the same name prefixed with `$`:
+/// Dart cannot search the program for annotated classes at runtime, so
+/// the generator does it at build time (`build_runner`). Put
+/// `@ComponentScan()` on a top-level variable initialized with the
+/// generated module, which has the same name prefixed with `$`, then pass
+/// the variable to the context. A Spring Boot application uses
+/// `@SpringBootApplication()` instead, which scans too. A subdirectory
+/// with its own `@ComponentScan` belongs to that scan, and the enclosing
+/// scan imports its module instead of scanning its files again.
 ///
 /// ```dart
+/// // lib/src/beans.dart: everything under lib/src/ is scanned.
 /// import 'package:my_feature/src/beans.spring.dart';
 ///
 /// @ComponentScan()
@@ -933,10 +1067,12 @@ class PropertySource {
 ///     MyFeatureConfig.class);
 /// ```
 ///
-/// Unlike Spring, scanning happens at build time (`build_runner`), not by
-/// reading the classpath at startup. The filters are evaluated then too:
+/// Unlike Spring, which reads the classpath at startup, the filters are
+/// evaluated at build time too:
 ///
 /// ```dart
+/// // Plugin classes are beans without @Component, stubs never are, and
+/// // every bean is created on first use.
 /// @ComponentScan(
 ///   includeFilters: [
 ///     Filter(type: FilterType.assignableType, classes: [Plugin]),
@@ -947,7 +1083,8 @@ class PropertySource {
 /// final BeanModule myFeatureBeans = $myFeatureBeans;
 /// ```
 class ComponentScan {
-  /// Creates the annotation.
+  /// Scans the annotated file's directory; the arguments change what
+  /// counts as a bean.
   const ComponentScan({
     this.includeFilters = const [],
     this.excludeFilters = const [],
@@ -963,22 +1100,26 @@ class ComponentScan {
   /// their `@Bean` methods are skipped with them.
   final List<Filter> excludeFilters;
 
-  /// Whether `@Component` (and its stereotypes) marks a bean; with `false`
-  /// only [includeFilters] do.
+  /// Whether `@Component` (and annotations extending it) marks a bean
+  /// (default `true`); with `false` only [includeFilters] do.
   final bool useDefaultFilters;
 
   /// Whether the scanned beans (components and their `@Bean` methods) are
-  /// lazy unless annotated `@Lazy(false)`.
+  /// created on first use unless annotated `@Lazy(false)` (default
+  /// `false`).
   final bool lazyInit;
 }
 
-/// A type filter of [ComponentScan], like Spring's `@ComponentScan.Filter`.
+/// A rule that selects classes for [ComponentScan.includeFilters] or
+/// [ComponentScan.excludeFilters].
 ///
 /// ```dart
 /// Filter(classes: [Plugin])                          // annotated @Plugin
 /// Filter(type: FilterType.assignableType, classes: [Handler])
 /// Filter(type: FilterType.regex, pattern: ['.*Repository'])
 /// ```
+///
+/// Spring (Java): `@ComponentScan.Filter`.
 class Filter {
   /// Creates a filter; [classes] serve [FilterType.annotation] and
   /// [FilterType.assignableType], [pattern] serves [FilterType.regex].
@@ -988,18 +1129,20 @@ class Filter {
     this.pattern = const [],
   });
 
-  /// How the filter matches.
+  /// How the filter matches; [FilterType.annotation] by default.
   final FilterType type;
 
   /// Annotation classes (also matched by their subclasses, like Spring's
-  /// meta-annotations) or assignable types.
+  /// meta-annotations) or types the class must be assignable to.
   final List<Type> classes;
 
   /// Regular expressions matched against the class name.
   final List<String> pattern;
 }
 
-/// How a [Filter] matches a class, like Spring's `FilterType`.
+/// How a [Filter] decides whether a class matches.
+///
+/// Spring (Java): `FilterType` (without `ASPECTJ` and `CUSTOM`).
 enum FilterType {
   /// The class is annotated with one of the filter's classes.
   annotation,
@@ -1012,12 +1155,15 @@ enum FilterType {
   regex,
 }
 
-/// Lets `autowireBean` inject a class the container does not create (for
-/// example a Flutter `State`), like Spring's `@Configurable`.
+/// Lets the container inject an object it did not create, such as a
+/// Flutter `State`.
 ///
-/// Spring weaves `@Configurable` classes with AspectJ so `new` triggers
-/// injection; here the generator emits a configurer and you call
-/// `autowireBean` explicitly.
+/// Some objects are created by a framework, not by the container, yet need
+/// beans and settings. Mark the class `@Configurable()`: the generator
+/// writes an injector for its `@Autowired` and `@Value` members, and the
+/// object calls `autowireBean` on itself once it exists. Spring weaves such
+/// classes with AspectJ so that `new` triggers the injection; Dart has no
+/// weaving, so the call is explicit.
 ///
 /// ```dart
 /// @Configurable()
@@ -1029,6 +1175,7 @@ enum FilterType {
 ///   late final String title;
 /// }
 ///
+/// // Flutter created the state; fill in its beans and settings.
 /// final state = ProfileScreenState();
 /// context.autowireCapableBeanFactory.autowireBean(state);
 /// ```
@@ -1043,7 +1190,7 @@ enum FilterType {
 /// context.getAutowireCapableBeanFactory().autowireBean(state);
 /// ```
 class Configurable {
-  /// Creates the annotation.
+  /// Marks the class as injectable from outside the container.
   const Configurable();
 }
 
@@ -1051,20 +1198,30 @@ class Configurable {
 // Events
 // ---------------------------------------------------------------------------
 
-/// Marks a method as an application event listener, like Spring's
-/// `@EventListener`.
+/// Marks a bean method that the context calls for each published event of
+/// its parameter type.
 ///
-/// The event type is the method's single parameter type, or [classes] for
-/// methods without parameters (or with a common supertype parameter). A
-/// non-null return value is published as a new event (each element of an
-/// iterable result is published separately). Listeners run synchronously;
-/// use `@Order` on the method to order them.
+/// Events let one part of an application react to what another did
+/// without either knowing the other: a service publishes `OrderPlaced`
+/// with `ApplicationEventPublisher.publishEvent`, and any bean with an
+/// `@EventListener` method for `OrderPlaced` runs. This is the usual way
+/// to listen; it also receives the context's own events, such as
+/// `ContextRefreshedEvent` once every bean is ready.
+///
+/// The event type is the method's single parameter type; [classes] lists
+/// the types instead, for a method without parameters or one whose
+/// parameter is a common supertype. Any object can be an event. A non-null
+/// return value is published as a new event (each element of an iterable
+/// result separately, a `Future` result when it completes). Listeners run
+/// synchronously in the publishing call, ordered by `@Order` on the
+/// method; [Async] runs one on a task executor instead.
 ///
 /// ```dart
 /// bool isBigOrder(OrderPlaced order) => order.total >= 100;
 ///
 /// @Component()
 /// class Shipping {
+///   // Every placed order is shipped; the result is published in turn.
 ///   @EventListener()
 ///   OrderShipped onPlaced(OrderPlaced order) => OrderShipped(this, order.id);
 ///
@@ -1097,34 +1254,39 @@ class Configurable {
 ///
 /// Unlike Spring, [condition] is a Dart function rather than a SpEL string.
 class EventListener {
-  /// Creates the annotation; every argument is optional.
+  /// Marks the listener method; every argument is optional.
   const EventListener({this.classes = const [], this.condition, this.id});
 
-  /// Event types handled by the method.
+  /// The event types the method handles, when its parameter does not say
+  /// it; empty by default.
   final List<Type> classes;
 
-  /// A `bool Function(E event)` top-level or static function; the listener
-  /// runs only when it returns `true`.
+  /// A top-level or static `bool Function(E event)`; the method runs only
+  /// when it returns `true`. It is called inside the multicaster's error
+  /// handling, so an error it throws is treated like a listener's.
   final Function? condition;
 
-  /// Listener id; defaults to `Class.method`.
+  /// The listener's id, shown in logs and error messages; defaults to
+  /// `Class.method`.
   final String? id;
 }
 
-/// Runs an `@EventListener` method on a `TaskExecutor` instead of the
-/// publishing call, like Spring's `@Async` on an event listener.
+/// Runs an `@EventListener` method on a `TaskExecutor` instead of in the
+/// publishing call.
 ///
-/// [value] names the executor bean; without it the context uses the only
-/// (or `@Primary`) `TaskExecutor` bean, else the one named `taskExecutor`.
-/// Activation works like Spring's `@EnableAsync`: `@Async` takes effect
-/// only when the context has a `TaskExecutor` bean — the scheduling
-/// starter (`spring_boot_starter_scheduling`) registers one
-/// (`applicationTaskExecutor`, alias `taskExecutor`); without any,
-/// `@Async` is ignored and the listener runs synchronously. A failure
-/// (thrown, or from the returned `Future`) goes to the multicaster's error
-/// handler, else it is logged (Spring's
-/// `SimpleAsyncUncaughtExceptionHandler`); a result is published as an
-/// event, as for synchronous listeners.
+/// Use it for slow listeners (sending a mail, calling a remote service)
+/// so that the code publishing the event does not wait. [value] names the
+/// executor bean; without it the context uses the only (or `@Primary`)
+/// `TaskExecutor` bean, else the one named `taskExecutor`.
+///
+/// It takes effect only when the context has a `TaskExecutor` bean, as
+/// Spring's `@EnableAsync` switches it on. The scheduling starter
+/// (`spring_boot_starter_scheduling`) registers one
+/// (`applicationTaskExecutor`, alias `taskExecutor`). Without any, `@Async`
+/// is ignored and the listener runs synchronously. A failure (thrown, or
+/// from the returned `Future`) goes to the multicaster's error handler,
+/// else it is logged; a result is published as an event, as for
+/// synchronous listeners.
 ///
 /// The generator accepts `@Async` on `@EventListener` methods only: there
 /// are no runtime proxies for other methods.
@@ -1132,6 +1294,7 @@ class EventListener {
 /// ```dart
 /// @Component()
 /// class Mailer {
+///   // The order is confirmed without the publisher waiting for the mail.
 ///   @EventListener()
 ///   @Async()
 ///   Future<void> onPlaced(OrderPlaced order) => sendConfirmation(order);
@@ -1158,20 +1321,22 @@ class EventListener {
 /// }
 /// ```
 class Async {
-  /// Creates the annotation; see [value].
+  /// Runs the listener asynchronously; [value] names the executor bean.
   const Async([this.value]);
 
   /// Name of the `TaskExecutor` bean; `null` for the default one.
   final String? value;
 }
 
-/// Marks an annotation class whose methods the runtime looks up on beans.
+/// Marks an annotation class whose methods the runtime can find on beans.
 ///
-/// There is no reflection, so the generator writes, for every bean method
-/// carrying such an annotation, a `BeanMethod` in
-/// `BeanDefinition.annotatedMethods`: its name, annotations and a closure
-/// calling it. Starters use this to find their methods, e.g. `@Scheduled`
-/// of `spring_boot_starter_scheduling`.
+/// Libraries that act on annotated bean methods (a scheduler running
+/// `@Scheduled` methods, a message consumer) need to find and call them,
+/// and Dart has no reflection for that. Put `@BeanMethodAnnotation()` on
+/// such an annotation class: for every bean method carrying it, the
+/// generator writes a `BeanMethod` into `BeanDefinition.annotatedMethods`
+/// with the method's name, annotations and a closure that calls it.
+/// Application code rarely needs it; library authors do.
 ///
 /// ```dart
 /// @BeanMethodAnnotation()
@@ -1186,7 +1351,8 @@ class Async {
 ///   void check() { ... }
 /// }
 ///
-/// // A BeanPostProcessor, a lifecycle bean, ...:
+/// // In a BeanPostProcessor or lifecycle bean of the library: find the
+/// // @Poll methods and call them on the bean.
 /// for (final method in context.beanFactory
 ///     .getBeanDefinition('inbox')
 ///     .annotatedMethods) {
@@ -1198,6 +1364,6 @@ class Async {
 /// Spring finds such methods by reflection
 /// (`MethodIntrospector.selectMethods`), so it has no equivalent.
 class BeanMethodAnnotation {
-  /// Creates the marker.
+  /// Marks the annotation class.
   const BeanMethodAnnotation();
 }

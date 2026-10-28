@@ -552,8 +552,9 @@ void main() {
               .get('/x', headers: basicHeader('ada', 'pw'));
           expect(reply.reached, isTrue);
           expect(store.updates.keys, ['ada']);
-          expect(store.updates['ada'], startsWith('{argon2}'));
-          expect(store.updates['ada'], isNot(contains('pw')));
+          // An argon2 hash, not the password: checking that the hash does
+          // not contain `pw` failed now and then, as a random salt can.
+          expect(store.updates['ada'], startsWith(r'{argon2}$argon2id$'));
         });
       },
     );

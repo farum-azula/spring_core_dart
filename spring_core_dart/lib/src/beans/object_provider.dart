@@ -1,11 +1,17 @@
 import 'package:spring_core_dart/src/beans/jakarta.dart';
 
-/// A factory of one object of [T], like Spring's `ObjectFactory`.
+/// Something that returns an object of [T] when asked: the smallest form
+/// of a lazy dependency.
 ///
-/// An `ObjectFactory<T>` injection point receives an [ObjectProvider]: the
-/// bean is looked up on every [getObject] call.
+/// Inject an `ObjectFactory<T>` instead of a `T` when the bean must be
+/// looked up at the moment of use rather than when your bean is created:
+/// a prototype you want new each time, a scoped bean whose current
+/// instance changes. The injection point receives an [ObjectProvider],
+/// which looks the bean up on every [getObject] call. [ObjectProvider]
+/// offers more (optional and multiple beans); prefer it in new code.
 ///
 /// ```dart
+/// // Each report run gets the current session.
 /// @Service()
 /// class Reports {
 ///   Reports(this.sessions);
@@ -23,18 +29,21 @@ import 'package:spring_core_dart/src/beans/jakarta.dart';
 /// }
 /// ```
 abstract interface class ObjectFactory<T extends Object> {
-  /// The object; throws when it cannot be provided.
+  /// The object, looked up now; throws when it cannot be provided (for a
+  /// bean: none or several match).
   T getObject();
 }
 
-/// Lazy, optional access to beans of [T], like Spring's `ObjectProvider`.
+/// A handle on the beans of [T] that looks them up only when asked: one
+/// bean, the bean if there is one, or all of them.
 ///
-/// Inject `ObjectProvider<T>` instead of `T` to defer creation, to accept a
-/// missing bean, or to get every candidate. A provider dependency does not
-/// count for cycle detection, so it can break circular references.
-/// Iterating the provider creates the matching beans one by one, in
-/// registration order (Spring's `stream()`); [orderedList] sorts them.
-/// `toString`, `isEmpty` and `length` create no beans.
+/// Inject `ObjectProvider<T>` instead of `T` to create the bean later (or
+/// never), to accept that it is missing, or to go through every
+/// candidate. A provider does not count as a dependency for cycle
+/// detection, so it also breaks circular references. Iterating the
+/// provider creates the matching beans one by one, in registration order
+/// (Spring's `stream()`); [orderedList] sorts them. `toString`, `isEmpty`
+/// and `length` create no beans.
 ///
 /// An injected provider resolves on behalf of the bean it was injected
 /// into, like that bean's other injection points: the bean itself (and the
@@ -48,6 +57,7 @@ abstract interface class ObjectFactory<T extends Object> {
 /// also from parent factories.
 ///
 /// ```dart
+/// // Exporters are optional plug-ins: there may be none, one or several.
 /// @Service()
 /// class Reports {
 ///   Reports(this.exporters);
@@ -75,7 +85,10 @@ abstract interface class ObjectFactory<T extends Object> {
 /// ```
 abstract interface class ObjectProvider<T extends Object>
     implements ObjectFactory<T>, Provider<T>, Iterable<T> {
-  /// The single matching bean; throws when none or several match.
+  /// The matching bean, created if needed. Throws
+  /// `NoSuchBeanDefinitionException` when none matches and
+  /// `NoUniqueBeanDefinitionException` when several match and none wins
+  /// (`@Primary`, ...).
   ///
   /// ```dart
   /// final clock = provider.getObject();
@@ -83,29 +96,34 @@ abstract interface class ObjectProvider<T extends Object>
   @override
   T getObject();
 
-  /// The same as [getObject] (JSR-330's `Provider.get`).
+  /// The same as [getObject], under the name of JSR-330's `Provider.get`.
   @override
   T get();
 
-  /// The matching bean, [defaultSupplier]'s result, or `null` when none
-  /// matches. Throws when several match without a primary.
+  /// The matching bean; when none matches, [defaultSupplier]'s result, or
+  /// `null` without one. A bean whose scope is not active right now counts
+  /// as missing. Still throws when several match and none wins.
   ///
   /// ```dart
+  /// // Use the configured clock, or the system clock when there is none.
   /// final clock = clocks.getIfAvailable(SystemClock.new)!;
   /// ```
   T? getIfAvailable([T Function()? defaultSupplier]);
 
-  /// The matching bean, or [defaultSupplier]'s result (or `null`) when none
-  /// or several match.
+  /// The matching bean; [defaultSupplier]'s result (or `null`) when none
+  /// matches, or several match and none wins. Never throws for those.
   T? getIfUnique([T Function()? defaultSupplier]);
 
-  /// Calls [consumer] with the bean if one is available.
+  /// Calls [consumer] with the bean when [getIfAvailable] finds one; does
+  /// nothing otherwise.
   void ifAvailable(void Function(T bean) consumer);
 
-  /// Calls [consumer] with the bean if exactly one matches.
+  /// Calls [consumer] with the bean when [getIfUnique] finds one; does
+  /// nothing when none or several match.
   void ifUnique(void Function(T bean) consumer);
 
-  /// All matching beans in `@Order` order (Spring's `orderedStream()`);
-  /// empty when none match.
+  /// Every matching bean, created if needed and sorted: `PriorityOrdered`
+  /// first, then by `Ordered.order`, `@Order` or `@Priority`, then by
+  /// registration. Empty when none match. Spring: `orderedStream()`.
   List<T> orderedList();
 }

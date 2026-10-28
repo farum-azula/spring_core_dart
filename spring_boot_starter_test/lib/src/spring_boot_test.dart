@@ -4,42 +4,59 @@ import 'package:spring_boot_starter_test/src/dynamic_property_registry.dart';
 import 'package:spring_boot_starter_test/src/mock_mvc.dart';
 import 'package:test_api/scaffolding.dart';
 
-/// Starts [application] for the tests of the enclosing `main` or `group`,
-/// like `@SpringBootTest`: the context is created once before the first
-/// test (config files, auto-configuration, `@ConfigurationProperties`,
-/// runners: everything `runApplication` does) and closed with
-/// `closeAsync()` after the last (asynchronous `@PreDestroy` methods and
-/// lifecycle stops are awaited).
+/// Starts the whole application for the tests of the enclosing `main` or
+/// `group`, and returns a handle to reach its beans.
 ///
-/// - [resourceDirectories] (default `test/resources/`, relative to the
-///   package of the calling test file, wherever the tests are started
-///   from) come first on the classpath during the tests, like `src/test/resources`: put
-///   `application-test.properties` there (with `profiles: ['test']`) or
-///   test data read as `classpath:...`. They are never embedded into the
-///   application. A file with the same path as a `lib/resources/` file
-///   replaces it entirely, as in Spring;
-/// - [propertyFiles] are loaded as properties
-///   (`@TestPropertySource(locations = ...)`; later files win);
-/// - [properties] win over every other property source, [propertyFiles]
-///   included (`@SpringBootTest(properties = ...)`);
-/// - [dynamicProperties] adds properties whose values are known only when
-///   the context starts, e.g. the port of a server started in an earlier
-///   `setUpAll` (`@DynamicPropertySource`): it is called at every start
-///   and each value supplier whenever the property is read; these win
-///   over [properties];
-/// - [profiles] become `spring.profiles.active` (`@ActiveProfiles`);
-/// - [systemEnvironment] replaces the OS environment (empty by default, so
-///   tests do not depend on the machine);
-/// - [overrides] replace beans with fakes or mocks (`@MockitoBean`);
-/// - [initializers] run before the refresh
+/// Use it for tests that need the real wiring: services with their
+/// repositories, properties bound from the config files, controllers
+/// behind [SpringBootTestContext.mockMvc]. The context starts once, in a
+/// `setUpAll`, before the first test, and does everything
+/// `runApplication` does (config files, auto-configuration,
+/// `@ConfigurationProperties`, runners). It is closed with `closeAsync()`
+/// in a `tearDownAll` after the last test, so asynchronous `@PreDestroy`
+/// methods and lifecycle stops are awaited. Test classes marked
+/// `@SpringBootTest()` are generated into a call of this function.
+///
+/// The options change the application for these tests only:
+/// - [args]: command-line arguments.
+/// - [properties]: properties that win over every other source, the
+///   command line and [propertyFiles] included (Spring's
+///   `@SpringBootTest(properties = ...)`).
+/// - [propertyFiles]: resource locations of `.properties` files; later
+///   files win (`@TestPropertySource(locations = ...)`). A missing file
+///   fails the start with a [StateError].
+/// - [dynamicProperties]: properties whose values are known only when the
+///   tests run, such as the port of a server started in a `setUpAll`
+///   declared before this call (`@DynamicPropertySource`). It is called at
+///   every start of the context, and each value supplier whenever the
+///   property is read. These values win over [properties].
+/// - [resourceDirectories]: directories first on the classpath during the
+///   tests, like `src/test/resources` (default `test/resources`). Put
+///   `application-test.properties` (with `profiles: ['test']`) or test
+///   data read as `classpath:...` there. Relative paths are resolved
+///   against the package of the calling test file, wherever the tests are
+///   started from. They are never embedded into the application. A file
+///   with the same path as one in `lib/resources/` replaces it entirely,
+///   as in Spring.
+/// - [profiles]: become `spring.profiles.active`, replacing the value of
+///   the config files (`@ActiveProfiles`).
+/// - [systemEnvironment]: replaces the OS environment, which is empty by
+///   default so that tests do not depend on the machine.
+/// - [overrides]: replace beans with fakes or mocks before any bean is
+///   created (`@MockitoBean`, `@TestBean`).
+/// - [initializers]: run on the context before it is refreshed
 ///   (`@ContextConfiguration(initializers = ...)`).
+/// - [webEnvironment]: which web server starts; none by default.
 ///
-/// Logging levels and the log handler are restored afterwards.
+/// After [SpringBootTestContext.markDirty] the context is closed at the
+/// end of the current test, and the next test starts a new one. The
+/// `SpringLog` levels and handler are restored after the last test.
 ///
 /// ```dart
-/// import '../bin/shop.spring.dart'; // springApplication
+/// import '../bin/shop.spring.dart'; // the generated springApplication
 ///
 /// void main() {
+///   // The real shop, with a fake payment gateway and test settings.
 ///   final app = springBootTest(
 ///     springApplication,
 ///     properties: {'shop.name': 'Test Books'},
@@ -119,20 +136,46 @@ SpringBootTestContext springBootTest(
   return test;
 }
 
-/// Which web server a [springBootTest] starts (with
-/// `spring_boot_starter_web`), like Spring's `SpringBootTest.WebEnvironment`.
+/// Which web server [springBootTest] starts for the tests when the
+/// application uses `spring_boot_starter_web`.
+///
+/// Most web tests keep the default, [mock]: no socket, and requests go
+/// through [SpringBootTestContext.mockMvc], fast and without port
+/// conflicts. Choose [randomPort] when the client under test needs a real
+/// connection, such as a Feign client, `HttpClient` or a WebSocket client.
+/// The value reaches the web starter as the property
+/// `spring.test.web-environment`.
+///
+/// ```dart
+/// // A real server, for a client that opens a socket.
+/// final app = springBootTest(
+///   springApplication,
+///   webEnvironment: WebEnvironment.randomPort,
+/// );
+///
+/// test('over HTTP', () async {
+///   final url = 'http://localhost:${app.localServerPort}/api/books';
+///   ...
+/// });
+/// ```
+///
+/// Spring (Java): `SpringBootTest.WebEnvironment`, with `MOCK`,
+/// `RANDOM_PORT`, `DEFINED_PORT` and `NONE`.
 enum WebEnvironment {
   /// No server: [SpringBootTestContext.mockMvc] calls the controllers in
-  /// memory (the default).
+  /// memory. The default.
   mock('mock'),
 
-  /// A real server on a free port: [SpringBootTestContext.localServerPort].
+  /// A real server on a free port. The context counts as started once the
+  /// server listens; [SpringBootTestContext.localServerPort] gives the port.
   randomPort('random-port'),
 
-  /// A real server on `server.port`.
+  /// A real server on the port of the `server.port` property; the start
+  /// fails when that port is taken.
   definedPort('defined-port'),
 
-  /// No server and no mock.
+  /// No server. The web starter still creates its dispatcher, so
+  /// [SpringBootTestContext.mockMvc] works as with [mock].
   none('none');
 
   WebEnvironment(this._value);
@@ -140,7 +183,22 @@ enum WebEnvironment {
   final String _value;
 }
 
-/// The running context of a [springBootTest].
+/// The handle on the application that [springBootTest] started: its
+/// beans, its environment, what it printed and the port of its server.
+///
+/// [springBootTest] returns it at once, before the context exists; the
+/// context starts in `setUpAll`. So use it inside tests, `setUp`, or a
+/// `setUpAll` declared after the [springBootTest] call. In a test class,
+/// an `@Autowired() late SpringBootTestContext app;` field receives it.
+///
+/// ```dart
+/// final app = springBootTest(springApplication);
+///
+/// test('a new basket is empty', () {
+///   // The application's real Basket bean.
+///   expect(app.getBean<Basket>().items, isEmpty);
+/// });
+/// ```
 final class SpringBootTestContext {
   SpringBootTestContext._(
     this._application, {
@@ -165,18 +223,22 @@ final class SpringBootTestContext {
   bool _dirty = false;
   _LogState? _logState;
 
-  /// The test classpath directories (resolved [springBootTest]
-  /// `resourceDirectories`), first one first.
+  /// The classpath directories of the tests: the `resourceDirectories` of
+  /// [springBootTest], resolved against the test package, first one first.
   List<String> get resourceDirectories => _resourceDirectories;
 
-  /// The command-line arguments the application is started with.
+  /// The command-line arguments the application starts with.
   final List<String> args;
 
-  /// The web server the test starts.
+  /// The web server the tests asked for.
   final WebEnvironment webEnvironment;
 
-  /// The port of the real server (`WebEnvironment.randomPort` or
-  /// `definedPort`), like Spring's `@LocalServerPort`.
+  /// The port the real server listens on, read from the
+  /// `local.server.port` property: use it to build URLs for clients that
+  /// need a socket.
+  ///
+  /// Only with [WebEnvironment.randomPort] or [WebEnvironment.definedPort];
+  /// otherwise it throws a [StateError]. Spring's `@LocalServerPort`.
   int get localServerPort =>
       switch (environment.getProperty('local.server.port')) {
         final port? => int.parse(port),
@@ -186,12 +248,21 @@ final class SpringBootTestContext {
         ),
       };
 
-  /// Calls the controllers in memory (spring_boot_starter_web), like
-  /// Spring's `@AutoConfigureMockMvc`.
+  /// Sends requests to the application's controllers in memory, through
+  /// the dispatcher a real server would use.
+  ///
+  /// Needs `spring_boot_starter_web`; without it, it throws a [StateError].
+  /// It is created on first use and anew after the context restarts.
+  /// Spring's `@AutoConfigureMockMvc` with an injected `MockMvc`.
   MockMvc get mockMvc => _mockMvc ??= MockMvc.of(context);
   MockMvc? _mockMvc;
 
-  /// The application context. Available inside tests and `setUp`.
+  /// The running application context, for what the shortcuts of this class
+  /// do not cover.
+  ///
+  /// Throws a [StateError] before the context started or after it closed,
+  /// that is outside tests, `setUp` and a `setUpAll` declared after
+  /// [springBootTest].
   ConfigurableApplicationContext get context =>
       _context ??
       (throw StateError(
@@ -199,35 +270,47 @@ final class SpringBootTestContext {
         'or setUpAll() declared after springBootTest().',
       ));
 
-  /// The context's environment.
+  /// The context's environment, to read a property as the application sees
+  /// it.
   ConfigurableEnvironment get environment => context.environment;
 
-  /// What the application printed (failure reports; the startup info is
-  /// logged through `SpringLog`).
+  /// The lines the application printed, such as the failure report of a
+  /// context that did not start, over all the starts of this test file.
+  /// Each line is also shown when a test fails. The startup information is
+  /// logged through `SpringLog` and is not here; `captureLogs` records logs.
   List<String> get output => List.unmodifiable(_output);
 
-  /// The bean of type [T] (optionally with [qualifier]).
+  /// The bean of type [T]; with [qualifier], the one it names among several.
+  /// Throws when no bean matches.
   T getBean<T extends Object>({String? qualifier}) =>
       context.getBean<T>(qualifier: qualifier);
 
-  /// The bean named [name].
+  /// The bean called [name] (or an alias of it), whatever its type. Throws
+  /// when there is none.
   Object getBeanByName(String name) => context.getBeanByName(name);
 
-  /// The bean of type [T] (optionally with [qualifier]), or `null` when
-  /// there is none: an optional `@Autowired` field (`late Mailer? mailer`).
+  /// The bean of type [T] (with [qualifier], the one it names), or `null`
+  /// when there is none: what an optional `@Autowired()` field
+  /// (`late Mailer? mailer;`) receives.
   T? findBean<T extends Object>({String? qualifier}) =>
       context.getBeanProvider<T>(qualifier: qualifier).getIfAvailable();
 
-  /// Every bean of type [T] (optionally only those [qualifier] selects),
-  /// in `@Order` order: an `@Autowired` list field.
+  /// Every bean of type [T] (with [qualifier], only those it selects),
+  /// sorted by `@Order`: what an `@Autowired()` `List<T>` field receives.
   List<T> getBeans<T extends Object>({String? qualifier}) =>
       context.beanFactory.getSortedBeans<T>(qualifier: qualifier);
 
-  /// A `@Value` expression converted to [T]: `${...}` placeholders, then
-  /// `#{...}` expressions, as for a bean's `@Value` field.
+  /// Resolves a `@Value` expression as a bean's `@Value` field would:
+  /// `${...}` placeholders first, then `#{...}` expressions, converted to
+  /// [T]. What a `@Value` field of a test class receives.
+  ///
+  /// ```dart
+  /// final limit = app.value<int>(r'${shop.max-basket-size}');
+  /// ```
   T value<T>(String expression) => _resolver.value<T>(expression);
 
-  /// A `@Value` expression, `null` when a placeholder has no value.
+  /// Like [value], but `null` when a placeholder has no value: what a
+  /// nullable `@Value` field receives.
   T? optionalValue<T>(String expression) =>
       _resolver.optionalValue<T>(expression);
 
@@ -236,8 +319,11 @@ final class SpringBootTestContext {
     _ => throw StateError('The bean factory cannot resolve @Value'),
   };
 
-  /// Closes the context after the current test; the next test gets a
-  /// fresh one (Spring's `@DirtiesContext`).
+  /// Closes the context at the end of the current test, so the next test
+  /// starts a new one (Spring's `@DirtiesContext`).
+  ///
+  /// Call it in a test that changed the state of beans in a way later tests
+  /// must not see; `setUp(app.markDirty)` gives every test a fresh context.
   void markDirty() => _dirty = true;
 
   Future<void> _start() async {

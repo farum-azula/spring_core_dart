@@ -6,15 +6,24 @@ import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 
-/// Creates an AOP proxy programmatically, like Spring's `ProxyFactory`.
+/// Builds extra proxies of a bean in code, with advice chosen by the
+/// caller rather than by the context's aspects.
 ///
-/// Dart has no runtime proxy classes: the proxy class is the one the
-/// generator wrote for a bean ([AopProxyFactory], reachable as the bean
-/// definition's `aopProxy`), so [ProxyFactory.forBean] is the usual way
-/// in. Every [getProxy] call returns a new proxy of [target] with the
-/// advisors added so far (in order; pointcuts still decide per member).
+/// Use it when one object needs advice that the rest of the application
+/// must not get: a test that wraps a bean with a recording interceptor, or
+/// a library that hands out a guarded or logging view of a bean. Most
+/// applications never need it; aspects and advisor beans cover the usual
+/// cases.
+///
+/// Dart cannot create proxy classes at runtime, so it reuses the proxy
+/// class the generator wrote for the bean ([AopProxyFactory], the bean
+/// definition's `aopProxy`); [ProxyFactory.forBean] finds it. Every
+/// [getProxy] call returns a new proxy of [target] with the advisors added
+/// so far, outermost first; their pointcuts still decide per member. The
+/// bean in the context is not changed.
 ///
 /// ```dart
+/// // A logging view of the calculator bean, for this caller only.
 /// final factory = ProxyFactory.forBean(context.beanFactory, 'calculator')
 ///   ..addAdvice(LoggingInterceptor())
 ///   ..addAdvisor(DefaultPointcutAdvisor(
@@ -32,9 +41,9 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// Calculator calculator = (Calculator) factory.getProxy();
 /// ```
 class ProxyFactory {
-  /// A factory for proxies of [target] made by [proxies] (a generated
-  /// proxy factory of [target]'s class); [beanName] and [beanAliases]
-  /// count for `bean(...)` pointcuts.
+  /// A factory for proxies of [target] made by [proxies], the generated
+  /// proxy factory of [target]'s class; [beanName] and [beanAliases] are
+  /// what `bean(...)` pointcuts match.
   ProxyFactory(
     this.target,
     this.proxies, {
@@ -42,8 +51,8 @@ class ProxyFactory {
     List<String> beanAliases = const [],
   }) : beanAliases = List.unmodifiable(beanAliases);
 
-  /// A factory for proxies of the bean [beanName] of [factory] (of its
-  /// target, when the bean is already a proxy).
+  /// A factory for proxies of the bean [beanName] of [factory]; when the
+  /// bean is already a proxy, the new proxies wrap the object behind it.
   ///
   /// Throws an [AopConfigException] when the generator wrote no proxy for
   /// the bean (`aop_proxies: none`, an aspect, a post-processor, ...).
@@ -60,34 +69,40 @@ class ProxyFactory {
     );
   }
 
-  /// The object the proxies forward to.
+  /// The object the proxies call after their advice.
   final Object target;
 
-  /// The generated proxy factory of [target]'s class.
+  /// The generated proxy factory of [target]'s class, which makes the
+  /// proxies.
   final AopProxyFactory proxies;
 
-  /// The bean name, for `bean(...)` pointcuts.
+  /// The bean name `bean(...)` pointcuts match; empty when [target] is not
+  /// a bean.
   final String beanName;
 
-  /// Aliases and qualifier values, for `bean(...)` pointcuts.
+  /// The bean's aliases and qualifier values, which `bean(...)` pointcuts
+  /// also match.
   final List<String> beanAliases;
 
   final List<PointcutAdvisor> _advisors = [];
 
-  /// The advisors added so far, outermost first.
+  /// The advisors added so far, outermost first (a copy).
   List<PointcutAdvisor> get advisors => List.unmodifiable(_advisors);
 
-  /// Appends [advisor] (it becomes the innermost one).
+  /// Appends [advisor] as the innermost one, for the proxies made from
+  /// now on.
   void addAdvisor(PointcutAdvisor advisor) => _advisors.add(advisor);
 
-  /// Removes [advisor]; `false` when it was not added.
+  /// Removes [advisor]; returns `false` when it was not added. Proxies
+  /// already made keep it.
   bool removeAdvisor(PointcutAdvisor advisor) => _advisors.remove(advisor);
 
-  /// Appends [advice] for every member.
+  /// Appends [advice] as the innermost advice of every member.
   void addAdvice(MethodInterceptor advice) =>
       addAdvisor(DefaultPointcutAdvisor(const TruePointcut(), advice));
 
-  /// Removes the first advisor whose advice is [advice].
+  /// Removes the first advisor whose advice is [advice] (the same object);
+  /// returns `false` when there is none.
   bool removeAdvice(MethodInterceptor advice) {
     for (final advisor in _advisors) {
       if (identical(advisor.advice, advice)) {
@@ -97,7 +112,8 @@ class ProxyFactory {
     return false;
   }
 
-  /// A new proxy of [target] with the current advisors.
+  /// Returns a new proxy of [target] with the advisors added so far; cast
+  /// it to the bean's type.
   ///
   /// Throws an [AopConfigException] when [proxies] cannot proxy (its
   /// `unavailableReason`), or for a subclass proxy: the bean is its own
@@ -147,10 +163,16 @@ class ProxyFactory {
   }
 }
 
-/// A [ProxyFactory] that also takes `@Aspect` instances, like Spring's
-/// `AspectJProxyFactory`.
+/// A [ProxyFactory] that also takes the advice of an `@Aspect` object.
+///
+/// Use it to apply an aspect to one proxy only, for example in a test that
+/// checks an aspect against a real bean without registering the aspect in
+/// the context. The aspect's advice methods become advisors, in the same
+/// order the context would use.
 ///
 /// ```dart
+/// // Audit the orders bean through this proxy only. auditAspectMetadata
+/// // describes AuditAspect (written by hand in a test).
 /// final factory = AspectJProxyFactory.forBean(context.beanFactory, 'orders')
 ///   ..addAspect(AuditAspect(), auditAspectMetadata);
 /// final orders = factory.getProxy() as Orders;
@@ -163,8 +185,8 @@ class ProxyFactory {
 /// Orders proxy = factory.getProxy();
 /// ```
 class AspectJProxyFactory extends ProxyFactory {
-  /// A factory for proxies of [target] made by [proxies] (see
-  /// [ProxyFactory.new]).
+  /// A factory for proxies of [target] made by [proxies], the generated
+  /// proxy factory of [target]'s class.
   AspectJProxyFactory(
     super.target,
     super.proxies, {
@@ -172,8 +194,8 @@ class AspectJProxyFactory extends ProxyFactory {
     super.beanAliases,
   });
 
-  /// A factory for proxies of the bean [beanName] of [factory] (see
-  /// [ProxyFactory.forBean]).
+  /// A factory for proxies of the bean [beanName] of [factory]; throws an
+  /// [AopConfigException] when the generator wrote no proxy for it.
   factory AspectJProxyFactory.forBean(
     ConfigurableListableBeanFactory factory,
     String beanName,
@@ -190,10 +212,13 @@ class AspectJProxyFactory extends ProxyFactory {
     );
   }
 
-  /// Adds the advice of [aspect], described by [metadata] (the `aspect`
-  /// of its generated bean definition, or written by hand), ordered by
-  /// kind as in Spring. The aspect must be a singleton aspect: Spring's
-  /// `addAspect(Object)` rejects `perthis` / `pertarget` instances too.
+  /// Appends the advice methods of [aspect] as advisors, ordered by kind
+  /// as in Spring, at the aspect's `Ordered` order (else the lowest).
+  ///
+  /// [metadata] describes the aspect: take it from the aspect's generated
+  /// bean definition (its `aspect` field) or write it by hand. The aspect
+  /// must be a singleton aspect: a `perthis` / `pertarget` one throws an
+  /// [AopConfigException], as Spring's `addAspect(Object)` rejects it.
   void addAspect(Object aspect, AspectMetadata<Object> metadata) {
     final order = OrderComparator.orderOf(aspect);
     _advisors.addAll(

@@ -9,33 +9,50 @@ import 'package:spring_security_core/spring_security_core.dart';
 
 final Random _random = Random.secure();
 
-/// A CSRF token: what a state-changing request must carry, in the header
-/// [headerName] or the form field [parameterName], like Spring's
-/// `CsrfToken`.
+/// A CSRF token: a random secret a page must send back with every request
+/// that changes state, in the header [headerName] or the form field
+/// [parameterName].
+///
+/// Cross-site request forgery is a page on another site making the user's
+/// browser send a request to your application, with the user's cookies.
+/// That page cannot read your pages, so it cannot know the token, and its
+/// request fails. Pages get the current token with [csrfTokenOf].
+///
+/// Spring (Java): `CsrfToken`.
 final class CsrfToken {
-  /// A token [token].
+  /// A token whose value is [token], expected in the header [headerName]
+  /// or the form field [parameterName].
   const CsrfToken(this.headerName, this.parameterName, this.token);
 
-  /// `X-CSRF-TOKEN` (or `X-XSRF-TOKEN` with the cookie repository).
+  /// The request header that carries the token: `X-CSRF-TOKEN`, or
+  /// `X-XSRF-TOKEN` with the cookie repository.
   final String headerName;
 
-  /// `_csrf`.
+  /// The form field that carries the token, `_csrf` by default.
   final String parameterName;
 
-  /// The value.
+  /// The secret value.
   final String token;
 }
 
-/// The token is missing or wrong: 403, like Spring's `CsrfException`.
+/// A request that needed a CSRF token was refused because the token was
+/// missing or wrong; the client gets 403.
+///
+/// Spring (Java): `CsrfException`.
 class CsrfException extends AccessDeniedException {
-  /// Described by [message].
+  /// A refusal described by [message], for logs.
   CsrfException(super.message);
 }
 
-/// No token was expected (none saved), like Spring's
-/// `MissingCsrfTokenException`.
+/// A request was refused because no token is stored for its client yet, so
+/// there is nothing to compare with (a first request, or an expired
+/// session).
+///
+/// A token is created for the next page at the same time.
+///
+/// Spring (Java): `MissingCsrfTokenException`.
 class MissingCsrfTokenException extends CsrfException {
-  /// No token for the request.
+  /// The refusal, with Spring's message.
   MissingCsrfTokenException()
     : super(
         'Could not verify the provided CSRF token because no token was found '
@@ -43,26 +60,38 @@ class MissingCsrfTokenException extends CsrfException {
       );
 }
 
-/// The token sent does not match, like Spring's `InvalidCsrfTokenException`.
+/// A request was refused because the token it sent is missing or does not
+/// match the stored one.
+///
+/// Spring (Java): `InvalidCsrfTokenException`.
 class InvalidCsrfTokenException extends CsrfException {
-  /// A wrong or missing token.
+  /// The refusal, with Spring's message.
   InvalidCsrfTokenException()
     : super('Invalid CSRF Token was found on the request parameter or header.');
 }
 
-/// Keeps the expected token, like Spring's `CsrfTokenRepository`.
+/// Where the token a client is expected to send back is kept between
+/// requests.
+///
+/// The default, [HttpSessionCsrfTokenRepository], keeps it in the
+/// session. [CookieCsrfTokenRepository] keeps it in a cookie, for
+/// single-page apps. Set one with `csrf((c) => c.csrfTokenRepository(...))`.
+///
+/// Spring (Java): `CsrfTokenRepository`.
 abstract interface class CsrfTokenRepository {
-  /// A new token.
+  /// A new random token for [request]; not stored yet.
   CsrfToken generateToken(ServerHttpRequest request);
 
-  /// Stores [token] (`null` removes the stored one).
+  /// Stores [token] for the client of [request]; `null` removes the stored
+  /// one (at logout, and after a login so the token changes).
   FutureOr<void> saveToken(
     CsrfToken? token,
     ServerHttpRequest request,
     ServerHttpResponse response,
   );
 
-  /// The stored token, or `null`.
+  /// The token stored for the client of [request], or `null` when there
+  /// is none.
   FutureOr<CsrfToken?> loadToken(ServerHttpRequest request);
 }
 
@@ -71,22 +100,29 @@ String _randomToken() {
   return base64Url.encode(bytes).replaceAll('=', '');
 }
 
-/// The token in the session, like Spring's `HttpSessionCsrfTokenRepository`
-/// (Spring's default): the server remembers what each session must send.
+/// The default [CsrfTokenRepository]: the token is kept in the HTTP
+/// session, so the server remembers what each session must send.
+///
+/// Pages that render forms on the server use it as is. A session is
+/// created when a token is first needed.
+///
+/// Spring (Java): `HttpSessionCsrfTokenRepository`, also the default
+/// there.
 final class HttpSessionCsrfTokenRepository implements CsrfTokenRepository {
-  /// The repository.
+  /// A repository naming [headerName] and [parameterName] in its tokens.
   const HttpSessionCsrfTokenRepository({
     this.headerName = 'X-CSRF-TOKEN',
     this.parameterName = '_csrf',
   });
 
-  /// The header.
+  /// The request header that carries the token, `X-CSRF-TOKEN` by
+  /// default.
   final String headerName;
 
-  /// The form field.
+  /// The form field that carries the token, `_csrf` by default.
   final String parameterName;
 
-  /// The session attribute (Spring's name).
+  /// The session attribute holding the token; Spring's name.
   static const sessionAttributeName =
       'org.springframework.security.web.csrf.'
       'HttpSessionCsrfTokenRepository.CSRF_TOKEN';
@@ -114,12 +150,34 @@ final class HttpSessionCsrfTokenRepository implements CsrfTokenRepository {
           as CsrfToken?;
 }
 
-/// The token in a cookie (`XSRF-TOKEN`) that the page's script sends back
-/// in `X-XSRF-TOKEN`, like Spring's `CookieCsrfTokenRepository` — the
-/// pattern of Angular and other single-page apps. Use
-/// [CookieCsrfTokenRepository.withHttpOnlyFalse] so scripts can read it.
+/// A [CsrfTokenRepository] that keeps the token in a cookie, `XSRF-TOKEN`,
+/// which the page's script sends back in the `X-XSRF-TOKEN` header.
+///
+/// This is the pattern of Angular and other single-page apps: they render
+/// no forms on the server, so they read the token from the cookie. A
+/// page on another site cannot read your cookies, so it still cannot
+/// send the token. Use [CookieCsrfTokenRepository.withHttpOnlyFalse] so
+/// scripts can read the cookie, and the plain
+/// [CsrfTokenRequestAttributeHandler]: the default handler expects a
+/// masked token, not the raw cookie value.
+///
+/// ```dart
+/// http.csrf((c) => c
+///     .csrfTokenRepository(
+///         const CookieCsrfTokenRepository.withHttpOnlyFalse())
+///     .csrfTokenRequestHandler(const CsrfTokenRequestAttributeHandler()));
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// http.csrf(c -> c
+///     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+///     .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()));
+/// ```
 final class CookieCsrfTokenRepository implements CsrfTokenRepository {
-  /// A repository; [cookieHttpOnly] keeps scripts from reading the cookie.
+  /// A repository writing the cookie [cookieName]; with [cookieHttpOnly]
+  /// (the default) scripts cannot read it, which suits server-rendered
+  /// forms only.
   const CookieCsrfTokenRepository({
     this.cookieName = 'XSRF-TOKEN',
     this.headerName = 'X-XSRF-TOKEN',
@@ -130,7 +188,8 @@ final class CookieCsrfTokenRepository implements CsrfTokenRepository {
     this.sameSite,
   });
 
-  /// A repository whose cookie scripts can read (the usual SPA setup).
+  /// A repository whose cookie scripts can read: the usual setup of a
+  /// single-page app.
   const CookieCsrfTokenRepository.withHttpOnlyFalse({
     String cookieName = 'XSRF-TOKEN',
     String headerName = 'X-XSRF-TOKEN',
@@ -142,25 +201,27 @@ final class CookieCsrfTokenRepository implements CsrfTokenRepository {
          sameSite: sameSite,
        );
 
-  /// The cookie.
+  /// The cookie's name, `XSRF-TOKEN` by default.
   final String cookieName;
 
-  /// The header.
+  /// The request header that carries the token, `X-XSRF-TOKEN` by
+  /// default.
   final String headerName;
 
-  /// The form field.
+  /// The form field that carries the token, `_csrf` by default.
   final String parameterName;
 
-  /// Whether scripts cannot read the cookie.
+  /// Whether the cookie is `HttpOnly`, hidden from scripts.
   final bool cookieHttpOnly;
 
-  /// The cookie's path (`/` when `null`).
+  /// The cookie's `Path`; `/` when `null`.
   final String? cookiePath;
 
-  /// The cookie's domain.
+  /// The cookie's `Domain`; the current host only when `null`.
   final String? cookieDomain;
 
-  /// The cookie's `SameSite`.
+  /// The cookie's `SameSite` attribute (`Lax`, `Strict`, `None`); not
+  /// sent when `null`.
   final String? sameSite;
 
   @override
@@ -197,15 +258,23 @@ final class CookieCsrfTokenRepository implements CsrfTokenRepository {
   }
 }
 
-/// Exposes the token to the request and reads the token a request sent,
-/// like Spring's `CsrfTokenRequestHandler`.
+/// The part of CSRF protection that hands the token to pages and reads the
+/// token a request sent back.
+///
+/// The default, [XorCsrfTokenRequestAttributeHandler], masks the token
+/// differently on every page. [CsrfTokenRequestAttributeHandler] hands it
+/// over as it is, which the cookie pattern of single-page apps needs.
+///
+/// Spring (Java): `CsrfTokenRequestHandler`.
 abstract interface class CsrfTokenRequestHandler {
-  /// Makes [token] available (request attributes `_csrf` and
-  /// [CsrfToken]'s type name), loaded when first read.
+  /// Makes the token available to the request's pages through
+  /// [csrfTokenOf]; [token] is called, and a new token stored, only when
+  /// a page first reads it.
   void handle(ServerHttpRequest request, CsrfToken Function() token);
 
-  /// The token value [request] sent for [token] (header, then form
-  /// field), unmasked; `null` when none.
+  /// The token value [request] sent back for [token], read from the
+  /// header, else from the [form] fields, and unmasked; `null` when the
+  /// request sent none.
   String? resolveCsrfTokenValue(
     ServerHttpRequest request,
     CsrfToken token,
@@ -213,15 +282,20 @@ abstract interface class CsrfTokenRequestHandler {
   );
 }
 
-/// Sends the token as it is, like Spring's
-/// `CsrfTokenRequestAttributeHandler` (with the cookie repository, where
-/// scripts read the cookie).
+/// A [CsrfTokenRequestHandler] that hands the token to pages as it is
+/// stored, without masking.
+///
+/// Use it with [CookieCsrfTokenRepository], where scripts read the raw
+/// value from the cookie and send it back as it is.
+///
+/// Spring (Java): `CsrfTokenRequestAttributeHandler`.
 class CsrfTokenRequestAttributeHandler implements CsrfTokenRequestHandler {
-  /// The handler.
+  /// The stateless handler.
   const CsrfTokenRequestAttributeHandler();
 
-  /// The request attribute holding the [CsrfToken] (a function: the
-  /// token is created when first read).
+  /// The request attribute holding a function that returns the
+  /// [CsrfToken]; the token is created when the function is first
+  /// called. Read it with [csrfTokenOf].
   static const attributeName = '_csrf';
 
   @override
@@ -231,7 +305,7 @@ class CsrfTokenRequestAttributeHandler implements CsrfTokenRequestHandler {
     request.attributes[attributeName] = read;
   }
 
-  /// The token as pages get it.
+  /// The token as pages get it; this class returns [token] unchanged.
   CsrfToken present(CsrfToken token) => token;
 
   @override
@@ -244,13 +318,20 @@ class CsrfTokenRequestAttributeHandler implements CsrfTokenRequestHandler {
       form?[token.parameterName]?.firstOrNull;
 }
 
-/// Masks the token with fresh random bytes for each page, like Spring's
-/// `XorCsrfTokenRequestAttributeHandler` (Spring 6's default): the page
-/// never shows the same bytes twice, so compression attacks (BREACH)
-/// cannot read it; checks unmask and compare in constant time.
+/// The default [CsrfTokenRequestHandler]: each page gets the token mixed
+/// (XOR) with fresh random bytes, and a request's token is unmasked before
+/// the check.
+///
+/// The page never shows the same bytes twice, so an attack that guesses
+/// secrets from the size of compressed responses (BREACH) cannot read
+/// it. The check compares in constant time. With the cookie pattern of
+/// single-page apps, use [CsrfTokenRequestAttributeHandler] instead.
+///
+/// Spring (Java): `XorCsrfTokenRequestAttributeHandler`, the default
+/// since Spring Security 6.
 final class XorCsrfTokenRequestAttributeHandler
     extends CsrfTokenRequestAttributeHandler {
-  /// The handler.
+  /// The stateless handler.
   const XorCsrfTokenRequestAttributeHandler();
 
   @override
@@ -296,10 +377,12 @@ final class XorCsrfTokenRequestAttributeHandler
   }
 }
 
-/// The methods that need a token: all but GET, HEAD, TRACE and OPTIONS,
-/// like Spring's `CsrfFilter.DEFAULT_CSRF_MATCHER`.
+/// The default rule of which requests need a CSRF token: every method but
+/// GET, HEAD, TRACE and OPTIONS, which must not change state.
+///
+/// Spring (Java): `CsrfFilter.DEFAULT_CSRF_MATCHER`.
 final class DefaultRequiresCsrfMatcher extends SimpleRequestMatcher {
-  /// The matcher.
+  /// The stateless matcher.
   const DefaultRequiresCsrfMatcher();
 
   @override
@@ -314,12 +397,31 @@ final class DefaultRequiresCsrfMatcher extends SimpleRequestMatcher {
   String toString() => 'CsrfNotRequired [GET, HEAD, TRACE, OPTIONS]';
 }
 
-/// Checks the CSRF token of state-changing requests, like Spring's
-/// `CsrfFilter`: the token is created only when a page reads it (or a
-/// check needs it); a missing or wrong token is a 403 (also for anonymous
-/// users: CSRF is checked before anything else).
+/// The filter that refuses state-changing requests without the right CSRF
+/// token.
+///
+/// It runs early in the chain, before logins and access rules. For a
+/// request that needs a token (by default every method but GET, HEAD,
+/// TRACE and OPTIONS):
+///
+/// - no token stored for the client yet: 403 with a
+///   [MissingCsrfTokenException], and a new token is created for the
+///   next page;
+/// - a token sent that does not match the stored one, compared in
+///   constant time, or no token sent: 403 with an
+///   [InvalidCsrfTokenException].
+///
+/// The 403 comes from [accessDeniedHandler], also for anonymous users,
+/// who are not asked to log in. A login form posted without a token is
+/// refused too. The token is created only when a page reads it or a check
+/// needs it. `HttpSecurity` adds it unless `csrf((c) => c.disable())`;
+/// disable it only for APIs that authenticate with headers, never
+/// cookies.
+///
+/// Spring (Java): `CsrfFilter`.
 final class CsrfFilter implements WebFilter {
-  /// A filter keeping tokens in [tokenRepository].
+  /// A filter keeping tokens in [tokenRepository], by default masking them
+  /// and checking every method but GET, HEAD, TRACE and OPTIONS.
   const CsrfFilter(
     this.tokenRepository, {
     this.requestHandler = const XorCsrfTokenRequestAttributeHandler(),
@@ -327,21 +429,23 @@ final class CsrfFilter implements WebFilter {
     this.accessDeniedHandler = const AccessDeniedHandlerImpl(),
   });
 
-  /// Where the expected token is kept.
+  /// Where the token each client must send back is kept.
   final CsrfTokenRepository tokenRepository;
 
-  /// Exposes and reads tokens.
+  /// Hands tokens to pages and reads the tokens requests send.
   final CsrfTokenRequestHandler requestHandler;
 
-  /// Which requests need a token.
+  /// Decides which requests need a token.
   final RequestMatcher requireCsrfProtectionMatcher;
 
-  /// Answers a failed check.
+  /// Answers a refused request, with a 403 by default.
   final AccessDeniedHandler accessDeniedHandler;
 
-  /// The request attribute the test support (`csrf()`) sets to `true` (a
-  /// valid token) or `false` (an invalid one). Clients cannot set request
-  /// attributes: it is not a way around the check.
+  /// The request attribute that the test support's `csrf()` sets to `true`
+  /// (act as if a valid token was sent) or `false` (an invalid one).
+  ///
+  /// Request attributes live on the server side only and no client can
+  /// set them, so this is not a way around the check.
   static const testTokenAttribute = 'spring.security.test.csrfToken';
 
   @override
@@ -411,9 +515,13 @@ final class CsrfFilter implements WebFilter {
   }
 }
 
-/// Reads the token a page should send, from the request attributes
-/// (`HttpSecurity.csrf` puts it there): render it in a form as the hidden
-/// field `token.parameterName`, or send it in the header `token.headerName`.
+/// The CSRF token the page being rendered must send back, or `null` when
+/// CSRF protection is off for the request.
+///
+/// Every form that posts to the application needs it as a hidden field
+/// named `token.parameterName`; a script sends it in the header
+/// `token.headerName`. Reading it creates and stores the token if the
+/// client has none yet.
 ///
 /// ```dart
 /// @GetMapping('/form')
@@ -423,6 +531,9 @@ final class CsrfFilter implements WebFilter {
 ///       'value="${csrf.token}">';
 /// }
 /// ```
+///
+/// Spring (Java): the `_csrf` request attribute (`${_csrf.token}` in a
+/// template).
 CsrfToken? csrfTokenOf(ServerHttpRequest request) => switch (request
     .attributes[CsrfTokenRequestAttributeHandler.attributeName]) {
   final CsrfToken Function() read => read(),

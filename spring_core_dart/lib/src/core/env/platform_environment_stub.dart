@@ -1,12 +1,11 @@
-/// Environment variables are not available on this platform (web), so the
-/// map is empty.
+/// Always an empty map: a web page has no environment variables.
 ///
-/// Internal: selected by a conditional import in `StandardEnvironment`; the
-/// `dart:io` variant returns `Platform.environment`.
+/// Internal: a conditional import picks this file where `dart:io` is
+/// missing; the `dart:io` variant returns `Platform.environment`.
 Map<String, String> platformEnvironment() => const {};
 
-/// The platform locale is not known here (web): `''`.
+/// Always `''`: without `dart:io` the system locale is unknown.
 ///
-/// Internal: used by `Locales.systemLocale`; the `dart:io` variant returns
-/// `Platform.localeName`.
+/// Internal: `Locales.systemLocale` reads it; the `dart:io` variant
+/// returns `Platform.localeName`.
 String platformLocaleName() => '';

@@ -9,13 +9,18 @@ part of 'module_emitter.dart';
 // returned as it is, a prototype is created with them, and a singleton
 // ignores them when one is `null`.
 
-/// The generated marker class of a defaulted `@Bean` parameter left out of
-/// an inter-bean call.
+/// The name of the generated marker class that stands for a defaulted
+/// `@Bean` parameter left out of an inter-bean call.
+///
+/// The override passes `const _$Absent()` instead of the Dart default, so
+/// the container resolves that parameter as it would for itself (a bean,
+/// else the default). The bean is then the same whoever creates it first.
 const absentClass = r'_$Absent';
 
 extension _ConfigurationEmitter on ModuleEmitter {
-  /// `class _$Absent { const _$Absent(); }`, emitted when a full-mode
-  /// `@Bean` method has a defaulted parameter.
+  /// The marker class [absentClass], `class _$Absent { const _$Absent(); }`.
+  /// It is emitted once per module when a full-mode `@Bean` method has a
+  /// defaulted parameter.
   Class absentMarkerClass() => Class(
     (c) => c
       ..docs.add(
@@ -25,6 +30,12 @@ extension _ConfigurationEmitter on ModuleEmitter {
       ..constructors.add(Constructor((k) => k..constant = true)),
   );
 
+  /// The `create` expression of a bean declared by a full-mode `@Bean`
+  /// method: it fetches the configuration bean, casts it to its generated
+  /// subclass and calls the original method through `_$<method>(r)`.
+  ///
+  /// The override of `<method>` returns the container's bean, so the
+  /// container must call the original body by this other name:
   /// `(r.dependency<AppConfig>(...) as _$AppConfigConfiguration)._$m(r)`.
   Expression enhancedBeanMethodCall(
     BeanMethodCreation creation,
@@ -41,7 +52,12 @@ extension _ConfigurationEmitter on ModuleEmitter {
       .property('_\$${creation.methodName}')
       .call([refer('r')]);
 
-  /// The subclass of [model].
+  /// The generated subclass of a full-mode `@Configuration` class.
+  ///
+  /// Each instance `@Bean` method is overridden to return the container's
+  /// bean, so a call from one `@Bean` method to another gets the shared
+  /// singleton instead of a new object. `_$<method>(r)` keeps the original
+  /// body for the container to create the bean with.
   Class configurationClass(ConfigurationClassModel model) {
     final element = model.type.element;
     final withArguments = model.beanMethods.any((m) => m.parameters.isNotEmpty);

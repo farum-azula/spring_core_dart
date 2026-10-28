@@ -1,11 +1,17 @@
-/// Options of a `SpelExpressionParser`, like Spring's
-/// `SpelParserConfiguration`: auto-grow and the limits that protect
-/// against hostile expressions.
+/// The options of a `SpelExpressionParser`: the limits that protect
+/// against hostile or runaway expressions, and auto-grow for data
+/// binding.
 ///
-/// Create one with [SpelParserConfiguration.builder] (Spring 7's builder)
-/// or use [SpelParserConfiguration.withDefaults].
+/// The defaults suit most uses; pass a configuration when expressions are
+/// legitimately larger (a long generated rule, a big projection) or when
+/// a binding path such as `lines[3].product.name` should create the
+/// missing list elements and objects instead of failing. Build one with
+/// [SpelParserConfiguration.builder] (Spring 7's builder) or use
+/// [SpelParserConfiguration.withDefaults]. The parser hands it to every
+/// expression it returns.
 ///
 /// ```dart
+/// // Data binding: lists grow, and big forms get more operations.
 /// final parser = SpelExpressionParser(
 ///   SpelParserConfiguration.builder()
 ///       .autoGrowCollections()
@@ -53,8 +59,11 @@ final class SpelParserConfiguration {
   /// `DEFAULT_MAX_EXPRESSION_NESTING_DEPTH`).
   static const defaultMaxExpressionNestingDepth = 1000;
 
-  /// Compile-time define that changes the default of [maximumOperations]
-  /// (Spring's `SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME`).
+  /// The name of the compile-time define that changes the default of
+  /// [maximumOperations] for every parser
+  /// (`-Dspring.expression.maxOperations=50000`; Spring's
+  /// `SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME`). A value that is
+  /// not a positive integer makes `build()` throw an [ArgumentError].
   static const springExpressionMaxOperationsPropertyName =
       'spring.expression.maxOperations';
 
@@ -64,7 +73,8 @@ final class SpelParserConfiguration {
 
   static final SpelParserConfiguration _defaults = builder().build();
 
-  /// The default configuration (Spring's `withDefaults()`).
+  /// The default configuration, shared (Spring's `withDefaults()`): no
+  /// auto-grow and the default limits.
   static SpelParserConfiguration withDefaults() => _defaults;
 
   /// A builder starting from the defaults (Spring's `builder()`).
@@ -72,26 +82,34 @@ final class SpelParserConfiguration {
       SpelParserConfigurationBuilder._();
 
   /// Whether a `null` property followed by `.x` or `[i]` is replaced by a
-  /// new object, list or map (only where the property type is known, i.e.
-  /// `@Introspected` classes).
+  /// new object, list or map instead of failing. It works only where the
+  /// property type is known, that is on `@Introspected` classes. Off by
+  /// default.
   final bool autoGrowNullReferences;
 
-  /// Whether writing or reading past the end of a list grows it (filled
-  /// with `null`).
+  /// Whether reading or writing past the end of a list grows it, filled
+  /// with `null`, instead of failing with EL1025E. Off by default.
   final bool autoGrowCollections;
 
-  /// The largest size a list may grow to.
+  /// The largest size a list may grow to ([defaultMaxAutoGrowSize] by
+  /// default); growing further fails with EL1052E.
   final int maximumAutoGrowSize;
 
-  /// The longest expression text accepted by the parser.
+  /// The longest expression text the parser accepts, in characters
+  /// ([defaultMaxExpressionLength] by default); longer text fails with
+  /// EL1079E.
   final int maximumExpressionLength;
 
   /// The most operations (property and index accesses, method calls,
   /// variable lookups, selected and projected elements, ...) one
-  /// evaluation may perform.
+  /// evaluation may perform; going over fails with EL1085E. Defaults to
+  /// [defaultMaxOperations] or the `spring.expression.maxOperations`
+  /// define.
   final int maximumOperations;
 
-  /// The deepest nesting the parser accepts.
+  /// The deepest nesting (parentheses, arguments, inline collections,
+  /// unary chains) the parser accepts ([defaultMaxExpressionNestingDepth]
+  /// by default); deeper text fails with EL1087E.
   final int maximumNestingDepth;
 
   static int _defaultMaxOperations() {
@@ -119,10 +137,14 @@ final class SpelParserConfiguration {
       'maximumNestingDepth: $maximumNestingDepth)';
 }
 
-/// Builder of [SpelParserConfiguration], like Spring's
-/// `SpelParserConfiguration.Builder`.
+/// Builds a [SpelParserConfiguration], starting from the defaults.
+///
+/// Get one from [SpelParserConfiguration.builder], call the options you
+/// want to change, then [build]. Every limit must be positive (the auto-
+/// grow size may be 0); a wrong value throws an [ArgumentError] at once.
 ///
 /// ```dart
+/// // Short expressions only, and null references are created on demand.
 /// final configuration = SpelParserConfiguration.builder()
 ///     .autoGrowNullReferences()
 ///     .maximumExpressionLength(500)
@@ -148,44 +170,49 @@ final class SpelParserConfigurationBuilder {
   int _maximumNestingDepth =
       SpelParserConfiguration.defaultMaxExpressionNestingDepth;
 
-  /// Replaces `null` references followed by `.x` or `[i]` with new objects.
+  /// Turns on [SpelParserConfiguration.autoGrowNullReferences]: a `null`
+  /// property followed by `.x` or `[i]` is replaced by a new object.
   SpelParserConfigurationBuilder autoGrowNullReferences() {
     _autoGrowNullReferences = true;
     return this;
   }
 
-  /// Grows lists indexed past their end.
+  /// Turns on [SpelParserConfiguration.autoGrowCollections]: lists indexed
+  /// past their end grow.
   SpelParserConfigurationBuilder autoGrowCollections() {
     _autoGrowCollections = true;
     return this;
   }
 
-  /// The largest size a list may grow to (not negative; 0 disables
+  /// Sets the largest size a list may grow to (not negative; 0 disables
   /// growing).
   SpelParserConfigurationBuilder maximumAutoGrowSize(int size) {
     _maximumAutoGrowSize = _check(size, 'size', allowZero: true);
     return this;
   }
 
-  /// The longest accepted expression (positive).
+  /// Sets the longest accepted expression, in characters (positive).
   SpelParserConfigurationBuilder maximumExpressionLength(int length) {
     _maximumExpressionLength = _check(length, 'length');
     return this;
   }
 
-  /// The most operations per evaluation (positive).
+  /// Sets the most operations per evaluation (positive), instead of the
+  /// default or the `spring.expression.maxOperations` define.
   SpelParserConfigurationBuilder maximumOperations(int operations) {
     _maximumOperations = _check(operations, 'operations');
     return this;
   }
 
-  /// The deepest accepted nesting (positive).
+  /// Sets the deepest accepted nesting (positive).
   SpelParserConfigurationBuilder maximumNestingDepth(int depth) {
     _maximumNestingDepth = _check(depth, 'depth');
     return this;
   }
 
-  /// Creates the configuration.
+  /// Creates the configuration. Throws an [ArgumentError] when the
+  /// `spring.expression.maxOperations` define is invalid and no maximum
+  /// was set here.
   SpelParserConfiguration build() => SpelParserConfiguration._(
     autoGrowNullReferences: _autoGrowNullReferences,
     autoGrowCollections: _autoGrowCollections,

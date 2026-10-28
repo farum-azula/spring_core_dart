@@ -7,28 +7,38 @@ import 'package:spring_boot_starter_feign/src/request_template.dart';
 import 'package:spring_boot_starter_feign/src/retryer.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// Creates the handlers of `@FeignClient` interfaces (the bean
-/// `feignClientFactory` of the starter), with the application's
-/// [ObjectMapper] and [HttpTransport] and, per client, the
-/// [RequestInterceptor]s, [ErrorDecoder] and [Retryer] — from the bean
-/// factory, like Spring Cloud OpenFeign's child context per client:
+/// Builds the working client behind each `@FeignClient` interface: it
+/// gathers the client's settings and collaborators and creates its
+/// [FeignInvocationHandler].
+///
+/// The starter declares it as the `feignClientFactory` bean; when the
+/// container creates a client bean, the generated class asks this factory
+/// for its handler. Applications do not use it directly: they declare
+/// beans of the collaborator types and the factory finds them. Each
+/// client gets the application's [ObjectMapper] and [HttpTransport] and,
+/// chosen per client, its [RequestInterceptor]s, [ErrorDecoder] and
+/// [Retryer]:
 ///
 /// 1. the beans declared by the client's `@FeignClient(configuration:)`
-///    classes (they win; their interceptors are added);
+///    classes: their `ErrorDecoder` and `Retryer` win, their interceptors
+///    are added;
 /// 2. the application's other beans of these types (beans of a
 ///    configuration class never reach clients that do not list it);
-/// 3. the `retryer`, `error-decoder` and `request-interceptors` properties
-///    of `spring.cloud.openfeign.client.config.<name>` (or `default`),
-///    which win over both, like Spring's default `default-to-properties`.
+///    without any, a [DefaultErrorDecoder] and [Retryer.never];
+/// 3. the `retryer` and `error-decoder` properties of
+///    `spring.cloud.openfeign.client.config.<name>` (or `default`), which
+///    win over both, as with Spring's default `default-to-properties`;
+///    the `request-interceptors` property adds interceptors.
 ///
 /// [interceptors], [errorDecoder] and [retryer] given to the constructor
-/// replace the application's beans (step 2).
+/// replace the application's beans (step 2), for example in a test.
 ///
 /// Spring (Java): `FeignClientFactoryBean` with the beans of the client's
 /// `FeignClientFactory` context.
 final class FeignClientFactory
     implements InvocationHandlerFactory, BeanFactoryAware {
-  /// A factory using these collaborators.
+  /// A factory that resolves placeholders and properties in [environment],
+  /// writes and reads JSON with [mapper] and sends through [transport].
   FeignClientFactory({
     required this.environment,
     required this.mapper,
@@ -38,23 +48,28 @@ final class FeignClientFactory
     this.retryer,
   });
 
-  /// Configuration and placeholders.
+  /// The configuration: the clients' properties and the placeholders of
+  /// their URLs, paths and headers.
   final Environment environment;
 
-  /// JSON bodies.
+  /// Writes request bodies as JSON and reads response bodies, for every
+  /// client.
   final ObjectMapper mapper;
 
-  /// Sends the requests.
+  /// Sends the requests of every client.
   final HttpTransport transport;
 
-  /// Applied to every request; `null`: the `RequestInterceptor` beans.
+  /// Interceptors that replace the application's `RequestInterceptor`
+  /// beans for every client; `null` (the default) uses the beans.
   final List<RequestInterceptor>? interceptors;
 
-  /// Error responses → exceptions; `null`: the `ErrorDecoder` bean, else
+  /// The error decoder of clients that have none of their own; `null`
+  /// uses the application's `ErrorDecoder` bean, else
   /// [DefaultErrorDecoder].
   final ErrorDecoder? errorDecoder;
 
-  /// Retries; `null`: the `Retryer` bean, else [Retryer.never].
+  /// The retryer of clients that have none of their own; `null` uses the
+  /// application's `Retryer` bean, else [Retryer.never].
   final Retryer? retryer;
 
   BeanFactory? _beanFactory;
@@ -193,8 +208,9 @@ final class _ClientBeans {
   Never _fail(String message) =>
       throw StateError('Invalid Feign client $typeName: $message');
 
-  /// The interceptors: the application's (or the factory's) and the
-  /// client's own, in `@Order`.
+  /// The client's interceptors: the application's (or the factory's) and
+  /// the client's own, in `@Order`. Throws a [StateError] when a
+  /// configuration class of the client is not a bean.
   List<RequestInterceptor> interceptors() {
     final beans = _beans;
     if (beans == null) {
@@ -234,7 +250,8 @@ final class _ClientBeans {
   }
 
   /// The client's own bean of [T], else [given], else the application's
-  /// only (or primary) one; `null` when there is none.
+  /// only (or primary) one; `null` when there is none. Throws a
+  /// [StateError] when several beans qualify and none is primary.
   T? single<T extends Object>(T? given) {
     final beans = _beans;
     if (beans == null) {
@@ -281,9 +298,10 @@ final class _ClientBeans {
     _fail('several $what beans of one type: ${names.join(', ')}');
   }
 
-  /// The bean [reference] of a property: a bean name, or a class name
-  /// (`com.example.Audit` or `Audit`) matching the type of one bean of
-  /// [T].
+  /// The bean that a [property] names with [reference]: a bean name, or
+  /// a class name (`com.example.Audit` or `Audit`; the package part is
+  /// ignored) matching the class of exactly one bean of [T]. Throws a
+  /// [StateError] naming the property otherwise.
   T named<T extends Object>(String reference, String property) {
     final beans = _beans;
     final where =

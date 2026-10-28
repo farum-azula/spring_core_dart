@@ -1,10 +1,23 @@
-/// Spring MVC for Dart: `@RestController` classes with `@GetMapping`,
-/// `@PostMapping`, ... on `dart:io`'s `HttpServer` (behind a replaceable
-/// `WebServerFactory`), JSON through the `ObjectMapper`, `@Valid` bodies,
-/// `ProblemDetail` errors with `@ExceptionHandler`, server-sent events
-/// (`EventStream`, `SseEmitter`), filters, interceptors and CORS.
+/// An HTTP server for a Spring application: classes marked
+/// `@RestController` answer requests, one method per mapping.
+///
+/// Add the starter to an application to serve a REST API, a backend for
+/// a web page, or a local API inside a Flutter app. The starter maps
+/// `@GetMapping`, `@PostMapping`, ... methods to paths, binds path
+/// variables, query parameters, headers and JSON bodies to their
+/// parameters, validates `@Valid()` bodies, writes results as JSON, and
+/// answers errors as `ProblemDetail`s (customized with
+/// `@ExceptionHandler`). It also covers server-sent events (`EventStream`,
+/// `SseEmitter`), file uploads and downloads, sessions, filters,
+/// interceptors and CORS. The server is `dart:io`'s `HttpServer`, set up
+/// from `server.*`, and it starts and stops with the application.
+///
+/// This one import is enough: it re-exports `spring_boot_dart`,
+/// `spring_web_dart` (the annotations, `ResponseEntity`, `ProblemDetail`)
+/// and the logging starter.
 ///
 /// ```dart
+/// // GET /api/books/978-0 answers the book as JSON.
 /// @RestController()
 /// @RequestMapping('/api/books')
 /// class BookController {
@@ -13,6 +26,16 @@
 ///
 ///   @GetMapping('/{isbn}')
 ///   Future<Book> find(@PathVariable() String isbn) => books.find(isbn);
+/// }
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @RestController
+/// @RequestMapping("/api/books")
+/// class BookController {
+///   @GetMapping("/{isbn}")
+///   Book find(@PathVariable String isbn) { ... }
 /// }
 /// ```
 library;

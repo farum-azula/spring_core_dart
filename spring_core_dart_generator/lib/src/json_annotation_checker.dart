@@ -22,9 +22,13 @@ const _jsonProperty = TypeChecker.typeNamedLiterally(
   inPackage: 'spring_core_dart',
 );
 
-/// Checks the `@JsonValue` members of the `@Introspected` class [element]
-/// and of the classes it extends: at most one per class, public, and an
-/// instance field, getter or method without required parameters.
+/// Fails the build when a `@JsonValue` of the `@Introspected` class
+/// [element] or of one of its supertypes (`Object` aside) cannot work.
+///
+/// `@JsonValue` makes the object serialize as the value of one member, so
+/// a class may have at most one, and it must be a public instance field,
+/// getter or method without required parameters (not a setter). The
+/// runtime would only notice a mistake when it serializes the object.
 void checkJsonAnnotations(InterfaceElement element) {
   for (final current in [
     element,
@@ -35,16 +39,24 @@ void checkJsonAnnotations(InterfaceElement element) {
   }
 }
 
-/// The name of the `@JsonValue` field or getter of [element] (checked), or
-/// `null`.
+/// The name of the `@JsonValue` field or getter of the enum [element], or
+/// `null` when it has none.
+///
+/// Fails the build under the rules of [checkJsonAnnotations]; on an enum
+/// a method is not accepted either.
 String? enumJsonValueMember(EnumElement element) =>
     _jsonValueMember(element, enumConstants: true);
 
-/// The `jsonValue` function of an `EnumType` for [element], whose type is
-/// written as [enumType]: `(value) => value.<field>` for a `@JsonValue`
-/// field or getter, a lookup of the `@JsonProperty` names of its constants
-/// (`(value) => const {Color.red: 'RED'}[value] ?? value.name`), or `null`
-/// when the enum has neither (the JSON form is the name).
+/// The `jsonValue` function of the `EnumType` generated for [element],
+/// which writes a constant as JSON; [enumType] is how the generated code
+/// names the enum, and [closure] builds the function.
+///
+/// - With a `@JsonValue` field or getter: `(value) => value.<field>`.
+/// - With `@JsonProperty` names on constants: a lookup,
+///   `(value) => const {Color.red: 'RED'}[value] ?? value.name`.
+/// - With neither: `null`, and the JSON form is the constant's name.
+///
+/// An enum with both fails the build, since only one can apply.
 Expression? enumJsonValue(
   EnumElement element,
   Reference enumType,

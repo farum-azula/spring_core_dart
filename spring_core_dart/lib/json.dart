@@ -1,11 +1,16 @@
-/// JSON: `ObjectMapper` converts objects to JSON and back on generated
-/// metadata (no reflection), with Jackson-style annotations
-/// (`@JsonProperty`, `@JsonAlias`, `@JsonIgnore`, `@JsonInclude`,
-/// `@JsonPropertyOrder`, `@JsonCreator`, `@JsonValue`, `@JsonFormat`,
-/// `@JsonNaming`, `@JsonView`, `@JsonUnwrapped`, `@JsonAnyGetter` /
-/// `@JsonAnySetter`, `@JsonTypeInfo` / `@JsonSubTypes`), naming
-/// strategies, a tree model (`JsonNode`), `JsonMapper.builder()` and custom
-/// (de)serializers.
+/// JSON for Dart objects: `ObjectMapper` turns objects into JSON and back,
+/// without hand-written `fromJson` / `toJson` methods.
+///
+/// Import it to read and write JSON in your own code, to shape the JSON of
+/// a model with Jackson-style annotations (`@JsonProperty`, `@JsonIgnore`,
+/// `@JsonInclude`, `@JsonFormat`, `@JsonTypeInfo`, ...), or to add a
+/// serializer for a type the mapper does not know. It is also exported by
+/// `package:spring_core_dart/spring_core_dart.dart`. The web and Feign
+/// starters use the same mapper for request and response bodies, so these
+/// annotations shape the HTTP JSON too. The mapper reads metadata that
+/// `spring_core_dart_generator` writes for classes marked
+/// `@Introspected()`; there is no reflection. It also offers a tree model
+/// (`JsonNode`), naming strategies and `JsonMapper.builder()`.
 ///
 /// ```dart
 /// @Introspected()
@@ -15,6 +20,7 @@
 ///   final String title;
 /// }
 ///
+/// // In Spring Boot the mapper is a bean: inject ObjectMapper.
 /// final json = mapper.writeValueAsString(
 ///   const Book(isbn: '1', title: 'Dune'),
 /// );

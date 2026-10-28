@@ -1,8 +1,18 @@
-/// How Dart property names become JSON names, like Jackson's
-/// `PropertyNamingStrategies` (`spring.jackson.property-naming-strategy`).
-/// `@JsonProperty` on a property wins.
+/// A rule that turns Dart property names (`publishedAt`) into JSON names
+/// (`published_at`), applied to every property of a class or of the whole
+/// mapper.
+///
+/// Use it when the JSON you exchange follows another convention than Dart's
+/// lowerCamelCase, such as a snake_case API, instead of writing
+/// `@JsonProperty` on every field. Set it for all classes with
+/// `ObjectMapper(namingStrategy: ...)` (in Spring Boot, the property
+/// `spring.jackson.property-naming-strategy`), or for one class with
+/// `@JsonNaming`. A name given by `@JsonProperty` is used as it is. The
+/// translation follows Jackson's `PropertyNamingStrategies`, acronyms
+/// included.
 ///
 /// ```dart
+/// // Talk to a snake_case API.
 /// PropertyNamingStrategy.snakeCase.translate('publishedAt');  // published_at
 /// PropertyNamingStrategy.snakeCase.translate('myURLValue');   // my_urlvalue
 /// PropertyNamingStrategy.kebabCase.translate('URLValue');     // url-value
@@ -14,31 +24,33 @@
 /// mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 /// ```
 enum PropertyNamingStrategy {
-  /// `publishedAt` (the Dart name, unchanged).
+  /// The Dart name unchanged: `publishedAt`. The default.
   lowerCamelCase,
 
-  /// `PublishedAt`.
+  /// The first letter upper-cased: `PublishedAt`.
   upperCamelCase,
 
-  /// `published_at`.
+  /// Lower case, words joined by `_`: `published_at`.
   snakeCase,
 
-  /// `PUBLISHED_AT`.
+  /// Upper case, words joined by `_`: `PUBLISHED_AT`.
   upperSnakeCase,
 
-  /// `published-at`.
+  /// Lower case, words joined by `-`: `published-at`.
   kebabCase,
 
-  /// `publishedat`.
+  /// Lower case, no separator: `publishedat`.
   lowerCase,
 
-  /// `published.at`.
+  /// Lower case, words joined by `.`: `published.at`.
   lowerDotCase;
 
-  /// The JSON name of the Dart property [name], translated like Jackson's
-  /// `PropertyNamingStrategies` (an acronym is one word for snake case:
-  /// `myURLValue` → `my_urlvalue`; kebab and dot case split it before its
-  /// last letter: `my-url-value`).
+  /// Returns the JSON name for the Dart property [name].
+  ///
+  /// Acronyms follow Jackson: snake case keeps one as a single word with
+  /// the next one (`myURLValue` becomes `my_urlvalue`), kebab and dot case
+  /// split it before its last letter (`my-url-value`). A leading `_` is
+  /// dropped in snake case.
   String translate(String name) => switch (this) {
     lowerCamelCase => name,
     upperCamelCase =>
@@ -101,8 +113,12 @@ enum PropertyNamingStrategy {
     return result.join();
   }
 
-  /// The strategy for a property value such as `SNAKE_CASE`, `snake_case`,
-  /// `snakeCase` or `kebab-case`.
+  /// Returns the strategy a configuration value names, such as
+  /// `SNAKE_CASE`, `snake_case`, `snakeCase` or `kebab-case` (case,
+  /// `-`, `_`, `.` and spaces are ignored).
+  ///
+  /// Throws an [ArgumentError] listing the valid names for any other
+  /// value.
   static PropertyNamingStrategy parse(String value) {
     final key = value.replaceAll(RegExp('[-_ .]'), '').toLowerCase();
     for (final strategy in values) {

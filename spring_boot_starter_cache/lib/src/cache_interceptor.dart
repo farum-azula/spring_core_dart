@@ -8,11 +8,18 @@ import 'package:spring_boot_starter_cache/src/cache_resolver.dart';
 import 'package:spring_boot_starter_cache/src/caching_configurer.dart';
 import 'package:spring_boot_starter_cache/src/key_generator.dart';
 
-/// Matches the members carrying `@Cacheable`, `@CachePut`, `@CacheEvict`
-/// or `@Caching` (on the member, or on the class for its public methods),
-/// like Spring's `CacheOperationSourcePointcut`.
+/// The rule that picks which bean methods the [CacheInterceptor] wraps:
+/// those with `@Cacheable`, `@CachePut`, `@CacheEvict` or `@Caching`, on
+/// the method or, for public methods, on its class.
+///
+/// The starter pairs it with the interceptor in an advisor, so the
+/// generated proxies run the cache logic only around those methods.
+/// Applications do not use it, unless they set caching up without the
+/// starter's auto-configuration.
 ///
 /// ```dart
+/// // Caching without the auto-configuration: apply the interceptor to the
+/// // annotated methods of proxied beans.
 /// DefaultPointcutAdvisor(const CacheAnnotationPointcut(), interceptor);
 /// ```
 ///
@@ -21,10 +28,11 @@ import 'package:spring_boot_starter_cache/src/key_generator.dart';
 /// // Registered by @EnableCaching (BeanFactoryCacheOperationSourceAdvisor).
 /// ```
 final class CacheAnnotationPointcut implements AnnotationPointcut {
-  /// Creates the pointcut.
+  /// The pointcut; it has no settings.
   const CacheAnnotationPointcut();
 
-  /// Whether [annotation] is one of the cache annotations.
+  /// Whether [annotation] is a `@Cacheable`, `@CachePut`, `@CacheEvict`
+  /// or `@Caching`.
   static bool isCacheAnnotation(Object annotation) =>
       AnnotationCacheOperationSource.isCacheAnnotation(annotation);
 
@@ -36,29 +44,35 @@ final class CacheAnnotationPointcut implements AnnotationPointcut {
   String toString() => 'CacheAnnotationPointcut';
 }
 
-/// Applies the cache annotations around a call, like Spring's
-/// `CacheInterceptor`: evicts marked `beforeInvocation`, then looks the
-/// `@Cacheable` key up and returns a hit without running the method;
-/// otherwise runs it, stores the result (`@Cacheable` unless `unless`,
-/// `@CachePut`) and evicts (`@CacheEvict`).
+/// The code that runs around every call of a cached method and does what
+/// its cache annotations say.
 ///
-/// For methods returning a `Future` the resolved value is cached when the
-/// future completes (errors are never cached) and a hit returns a
-/// completed future. Errors of the cache itself go to the
-/// [errorHandler] (by default rethrown to the caller).
+/// For one call it:
 ///
-/// The defaults — [cacheManager], [cacheResolver], [keyGenerator],
-/// [errorHandler] — are the ones passed in, else those of the
-/// `CachingConfigurer` bean of [beanFactory], else the `CacheManager`
-/// bean, a [SimpleCacheResolver], [SimpleKeyGenerator] and
-/// [SimpleCacheErrorHandler].
+/// 1. removes the entries of `@CacheEvict(beforeInvocation: true)`;
+/// 2. looks the `@Cacheable` key up and, on a hit, returns the stored value
+///    without running the method (unless a `@CachePut` on the same method
+///    forces the call);
+/// 3. otherwise runs the method, stores the result for `@Cacheable` (unless
+///    its `unless` says no) and for `@CachePut`;
+/// 4. removes the entries of the other `@CacheEvict`s, after a hit too.
 ///
-/// The starter registers it with a [CacheAnnotationPointcut] advisor (and
-/// checks the annotations of every proxied bean at startup, see
-/// [CacheOperationValidator]); build one yourself to use caching without
-/// the auto-configuration:
+/// For a method returning a `Future`, the value is stored when the future
+/// completes (errors are never stored) and a hit returns a completed
+/// future; every error, even of a SpEL expression, comes through the
+/// future. Errors thrown by a cache go to the [errorHandler], which by
+/// default rethrows them to the caller.
+///
+/// The starter creates it as a bean and applies it with a
+/// [CacheAnnotationPointcut]; applications never call it. Its defaults
+/// ([cacheManager], [cacheResolver], [keyGenerator], [errorHandler]) are
+/// the ones passed in, else those of the `CachingConfigurer` bean, else
+/// the `CacheManager` bean, a [SimpleCacheResolver], [SimpleKeyGenerator]
+/// and [SimpleCacheErrorHandler]. Build one yourself only to use caching
+/// without the auto-configuration:
 ///
 /// ```dart
+/// // A hand-made setup: caches in memory, applied to annotated methods.
 /// final interceptor = CacheInterceptor(
 ///   cacheManager: InMemoryCacheManager(),
 /// );
@@ -73,10 +87,15 @@ final class CacheAnnotationPointcut implements AnnotationPointcut {
 /// interceptor.setCacheOperationSource(new AnnotationCacheOperationSource());
 /// ```
 final class CacheInterceptor implements MethodInterceptor {
-  /// An interceptor with the given defaults (see the class documentation).
-  /// `cacheManager:`, `cacheResolver:` and `keyGenerator:` names in
-  /// annotations are looked up in [beanFactory]; [introspector] gives SpEL
-  /// access to properties of `@Introspected` arguments (`#book.isbn`).
+  /// An interceptor with the given defaults; every argument is optional.
+  ///
+  /// `cacheManager`, `cacheResolver`, `keyGenerator` and `errorHandler`
+  /// override the defaults described above. [beanFactory] is where the
+  /// bean names in annotations (`cacheManager: 'sessionCaches'`), the
+  /// `CachingConfigurer` and the `CacheManager` bean are found; without it,
+  /// pass a `cacheManager`. [introspector] lets SpEL read properties of
+  /// `@Introspected` arguments (`#book.isbn`); `cacheOperationSource` and
+  /// `parser` replace how annotations and expressions are read.
   CacheInterceptor({
     this._cacheManager,
     this._cacheResolver,
@@ -91,14 +110,16 @@ final class CacheInterceptor implements MethodInterceptor {
        introspector = introspector ?? BeanIntrospector.shared,
        _parser = parser ?? SpelExpressionParser();
 
-  /// Where named cache managers, resolvers and key generators (and the
-  /// `CachingConfigurer`) come from.
+  /// The container in which bean names from annotations, the
+  /// `CachingConfigurer` and the `CacheManager` bean are looked up; `null`
+  /// when the interceptor was built without one.
   final BeanFactory? beanFactory;
 
-  /// Reads the annotations of the members.
+  /// Turns the annotations of a method into the operations to apply.
   final AnnotationCacheOperationSource cacheOperationSource;
 
-  /// Introspection metadata for SpEL property access.
+  /// The generated accessors that let SpEL read properties and call
+  /// methods of `@Introspected` classes (`#book.isbn`).
   final BeanIntrospector introspector;
 
   final ExpressionParser _parser;
@@ -130,8 +151,9 @@ final class CacheInterceptor implements MethodInterceptor {
     _errorHandler ??= configurer.errorHandler();
   }
 
-  /// The default cache manager: the one passed in, else the
-  /// `CachingConfigurer`'s, else the `CacheManager` bean.
+  /// The cache manager of operations that name none: the one passed in,
+  /// else the `CachingConfigurer`'s, else the `CacheManager` bean. Throws a
+  /// `StateError` when there is neither a manager nor a [beanFactory].
   CacheManager get cacheManager {
     _configure();
     return _cacheManager ??= switch (beanFactory) {
@@ -142,35 +164,37 @@ final class CacheInterceptor implements MethodInterceptor {
     };
   }
 
-  /// The default cache resolver: the one passed in, else the
-  /// `CachingConfigurer`'s, else a [SimpleCacheResolver] of
-  /// [cacheManager].
+  /// The cache resolver of operations that name neither a manager nor a
+  /// resolver: the one passed in, else the `CachingConfigurer`'s, else a
+  /// [SimpleCacheResolver] of [cacheManager].
   CacheResolver get cacheResolver {
     _configure();
     return _cacheResolver ??= SimpleCacheResolver(cacheManager);
   }
 
-  /// The default key generator: the one passed in, else the
-  /// `CachingConfigurer`'s, else [SimpleKeyGenerator].
+  /// The key generator of operations with neither `key` nor
+  /// `keyGenerator`: the one passed in, else the `CachingConfigurer`'s,
+  /// else [SimpleKeyGenerator].
   KeyGenerator get keyGenerator {
     _configure();
     return _keyGenerator ??= const SimpleKeyGenerator();
   }
 
   /// What happens when a cache throws: the handler passed in, else the
-  /// `CachingConfigurer`'s, else [SimpleCacheErrorHandler] (rethrows).
+  /// `CachingConfigurer`'s, else [SimpleCacheErrorHandler], which rethrows.
   CacheErrorHandler get errorHandler {
     _configure();
     return _errorHandler ??= const SimpleCacheErrorHandler();
   }
 
-  /// The validated cache operations of the member [signature] (empty when
-  /// it has none), computed once. Throws a `StateError` naming the member
-  /// for invalid annotations (see [AnnotationCacheOperationSource]) and for
-  /// an operation without cache names that no resolver can complete.
+  /// The cache operations of the member [signature], checked; empty when
+  /// it has none. Computed once per member.
   ///
-  /// [CacheOperationValidator] calls it for every proxied member when the
-  /// bean is created, so wrong annotations fail the startup.
+  /// Throws a `StateError` naming the member for a wrong combination of
+  /// settings (see [AnnotationCacheOperationSource]) and for an operation
+  /// without cache names when no resolver can pick the caches.
+  /// [CacheOperationValidator] calls it for every annotated member when the
+  /// bean is created, so these mistakes fail the startup.
   List<CacheOperation> cacheOperations(MethodSignature signature) =>
       _operations[signature] ??= _validate(signature);
 
@@ -332,32 +356,42 @@ final class CacheInterceptor implements MethodInterceptor {
   }
 }
 
-/// Checks the cache annotations of every member of a proxied bean when
-/// the bean is created (before its proxy is), so a wrong annotation fails
-/// the startup instead of the first call — as Spring does when it builds
-/// the proxy. Registered by the starter's auto-configuration.
+/// Checks the cache annotations of each proxied bean when the bean is
+/// created, so a wrong annotation fails the startup instead of the first
+/// call of the method.
+///
+/// It is a bean post-processor: the container hands it every new bean,
+/// and for the beans with a generated proxy it asks the [CacheInterceptor]
+/// to read and check the annotations of every member
+/// ([CacheInterceptor.cacheOperations]). Spring does the same when it
+/// builds the proxy. The starter registers it; applications do not use
+/// it.
 ///
 /// ```dart
-/// // In the auto-configuration:
+/// // In the auto-configuration: the interceptor is fetched at first use.
 /// CacheOperationValidator.lazy(() => factory.getBean<CacheInterceptor>())
 /// ```
 final class CacheOperationValidator extends BeanPostProcessor
     implements BeanFactoryAware {
-  /// A validator using the rules of [interceptor].
+  /// A validator that checks with [interceptor].
   CacheOperationValidator(CacheInterceptor interceptor)
     : _interceptor = (() => interceptor);
 
-  /// A validator asking [interceptor] for the interceptor at the first bean
-  /// with cache annotations. A post-processor's own dependencies are
-  /// created before the other post-processors are registered and miss them
-  /// (the context logs that they are "not eligible for getting processed by
-  /// all BeanPostProcessors"); the auto-configuration uses this one.
+  /// A validator that calls [interceptor] to get the interceptor only when
+  /// the first bean with cache annotations comes.
+  ///
+  /// The auto-configuration uses this one. The dependencies of a
+  /// post-processor are created before the other post-processors are
+  /// registered, so they would miss them (the context then logs that they
+  /// are "not eligible for getting processed by all BeanPostProcessors");
+  /// fetching the interceptor late avoids that.
   CacheOperationValidator.lazy(CacheInterceptor Function() interceptor)
     : _interceptor = interceptor;
 
   final CacheInterceptor Function() _interceptor;
 
-  /// Validates the operations ([CacheInterceptor.cacheOperations]).
+  /// The interceptor whose [CacheInterceptor.cacheOperations] checks the
+  /// annotations; obtained on first use.
   late final CacheInterceptor interceptor = _interceptor();
 
   BeanFactory? _beanFactory;

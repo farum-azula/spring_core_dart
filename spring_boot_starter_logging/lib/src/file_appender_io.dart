@@ -7,25 +7,47 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 
-/// Writes formatted records to the file [path], rolling it over by size,
-/// like Logback's rolling file appender (`logging.file.*`,
-/// `logging.logback.rollingpolicy.*`).
+/// A log file: each record is formatted with a [LogPattern] and appended
+/// to the file [path], which is rolled over when it grows too large.
+///
+/// Most applications do not create one: setting `logging.file.name` (a
+/// file) or `logging.file.path` (a directory, with `spring.log` in it)
+/// makes the starter create it, with its limits from
+/// `logging.logback.rollingpolicy.*`; it is then `LoggingSystem.file`.
+/// Create one yourself for a second file, such as one that keeps only
+/// errors.
 ///
 /// Lines logged in one synchronous burst are written together at the end
-/// of the current microtask (one write instead of one per record); [flush]
-/// writes immediately and [close] writes the rest. When the file would grow
-/// past [maxFileSize], it is renamed to `<path>.1` (older files shift to
-/// `.2`, `.3`, ...); only [maxHistory] such archives are kept (all with
-/// `0`, like Logback), and the oldest are deleted while together they
-/// exceed [totalSizeCap].
+/// of the current microtask, one write instead of one per record; [flush]
+/// writes at once and [close] writes the rest. When the file would grow
+/// past [maxFileSize], it is renamed to `<path>.1` and a new file is
+/// started; older files shift to `.2`, `.3`, and so on. Only [maxHistory]
+/// such files are kept (all of them with `0`, as in Logback), and the
+/// oldest are deleted while together they exceed [totalSizeCap].
 ///
 /// ```dart
+/// // A second file with the errors only, kept apart from the main log.
 /// LoggingSystem.instance.addAppender(
-///   FileAppender('/var/log/neon/shop.log', maxFileSize: 5 * 1024 * 1024),
+///   FileAppender(
+///     'logs/errors.log',
+///     maxFileSize: 5 * 1024 * 1024,
+///     threshold: SpringLogLevel.error,
+///   ),
 /// );
 /// ```
+///
+/// Spring (Java): Logback's `RollingFileAppender` with a size-based policy,
+/// which Spring Boot sets up from the same properties. Here files roll over
+/// by size only, into numbered files that are not compressed.
 class FileAppender extends LogAppender {
-  /// An appender writing to [path] (directories are created).
+  /// Opens [path] for appending, creating missing directories.
+  ///
+  /// [pattern] defaults to Spring Boot's file pattern
+  /// ([LogPattern.defaultFilePattern], without colours). The limits
+  /// default to 10 MB per file, 7 rolled-over files and no total limit.
+  /// [cleanHistoryOnStart] deletes the rolled-over files (`<path>.1`,
+  /// `<path>.2`, ...) first. Throws an [ArgumentError] for a negative
+  /// limit, and a [FileSystemException] when the file cannot be opened.
   FileAppender(
     this.path, {
     LogPattern? pattern,
@@ -55,28 +77,34 @@ class FileAppender extends LogAppender {
     _open();
   }
 
-  /// Whether files can be written on this platform.
+  /// Whether log files can be written on this platform: `true` here, and
+  /// `false` on the web, where creating a [FileAppender] throws.
   static const bool isSupported = true;
 
-  /// The log file.
+  /// The location of the log file, as given to the constructor.
   final String path;
 
-  /// The line format.
+  /// How a record becomes a line; it can be replaced at runtime.
   LogPattern pattern;
 
-  /// Size that triggers a rollover, in bytes; `0` never rolls over.
+  /// The size in bytes the file may not grow past: the line that would
+  /// cross it goes into a new file. `0` never rolls over. A single line
+  /// larger than the limit is still written whole.
   final int maxFileSize;
 
-  /// Number of rolled-over files kept (`<path>.1` is the newest); `0`
-  /// keeps all, like Logback's `maxHistory`.
+  /// How many rolled-over files are kept (`<path>.1` is the newest);
+  /// `0` keeps all of them. Unlike Logback's `maxHistory`, it counts
+  /// files, not days.
   final int maxHistory;
 
-  /// The charset of the file (`logging.charset.file`, UTF-8 by default);
-  /// characters it cannot encode are written as `?`, like Java.
+  /// The charset the lines are written in (`logging.charset.file`, UTF-8
+  /// by default). Characters it cannot encode are written as `?`, as in
+  /// Java.
   final Encoding encoding;
 
-  /// Total size of the rolled-over files, in bytes: the oldest are deleted
-  /// while they exceed it; `0` sets no limit.
+  /// The most bytes the rolled-over files may take together: after each
+  /// rollover the oldest are deleted until they fit. `0` sets no limit.
+  /// The current file is not counted.
   final int totalSizeCap;
 
   RandomAccessFile? _file;
@@ -117,7 +145,9 @@ class FileAppender extends LogAppender {
     ];
   }
 
-  /// Writes buffered lines now.
+  /// Writes the lines waiting for the end of the microtask now, rolling
+  /// the file over when needed. Useful before reading the file, such as
+  /// in a test or before sharing it.
   void flush() {
     _flushScheduled = false;
     final file = _file;
@@ -192,7 +222,9 @@ class FileAppender extends LogAppender {
     }
   }
 
-  /// Writes the rest and closes the file; later records are ignored.
+  /// Writes the waiting lines and closes the file; records that arrive
+  /// later are dropped. The logging system calls it when the application
+  /// context closes or the file settings change.
   @override
   void close() {
     flush();

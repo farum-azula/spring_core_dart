@@ -1,47 +1,54 @@
 import 'dart:typed_data';
 
-/// The content of an uploaded file (in memory: no files without
-/// `dart:io`).
+/// Where the content of one uploaded file waits while the request is
+/// handled.
+///
+/// Internal to the multipart resolver; a controller sees the file as a
+/// `MultipartFile`. This is the version for platforms without
+/// `dart:io`, where there are no files: the content stays in memory.
 abstract interface class StoredFile {
-  /// The size in bytes.
+  /// The size of the content in bytes.
   int get size;
 
-  /// Whether it is a temporary file to delete after the request.
+  /// Whether the content is in a temporary file to delete when the
+  /// request ends; always `false` here.
   bool get isTemporary;
 
-  /// The content.
+  /// The whole content.
   Future<Uint8List> readBytes();
 
-  /// The content, streamed.
+  /// The content as a stream.
   Stream<List<int>> openRead();
 
-  /// Copies the content to [path] (not supported here).
+  /// Puts the content at [path]; throws an [UnsupportedError] here, since
+  /// there is no file system.
   Future<void> copyTo(String path);
 
-  /// Deletes the temporary file.
+  /// Deletes the temporary file; nothing to do here.
   Future<void> delete();
 }
 
-/// Keeps an uploaded file in memory.
+/// Stores one uploaded file in memory as its bytes arrive.
 final class FileWriter {
-  /// A writer ([threshold] and [location] are ignored: memory only).
+  /// A writer; [threshold] and [location] are accepted for the same
+  /// signature as the `dart:io` version, and ignored.
   FileWriter({required this.threshold, this.location});
 
-  /// Ignored.
+  /// Ignored: everything stays in memory.
   final int threshold;
 
-  /// Ignored.
+  /// Ignored: there are no temporary files.
   final String? location;
 
   final _memory = BytesBuilder(copy: false);
 
-  /// Adds [chunk].
+  /// Stores the next [chunk] of the file.
   Future<void> add(List<int> chunk) async => _memory.add(chunk);
 
-  /// Drops what was written.
+  /// Gives up the file, dropping what was stored.
   Future<void> abort() async => _memory.clear();
 
-  /// The stored content.
+  /// Finishes the file and returns its stored content.
   Future<StoredFile> close() async => _MemoryFile(_memory.takeBytes());
 }
 

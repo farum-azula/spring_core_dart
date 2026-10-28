@@ -1,12 +1,17 @@
 import 'dart:async';
 
-/// The AOP proxy of the call in progress, like Spring's `AopContext`.
+/// Gives an advised bean access to its own proxy, so it can call itself
+/// with the advice applied.
 ///
-/// Inside a method called through a proxy, [currentProxy] returns that
-/// proxy, so the bean can call itself *through* the proxy and get the
-/// advice applied (a plain `this.method()` call skips it).
+/// Advice runs only for calls that go through the proxy. When a bean calls
+/// one of its own methods (`find` calling `count`), the call goes through
+/// `this` and skips the advice: a `@Timed` or `@Cacheable` on the called
+/// method has no effect. Inside a method called through a proxy,
+/// [currentProxy] returns that proxy; calling the method on it applies the
+/// advice. Injecting the bean into itself with `@Lazy()` is the other way.
 ///
 /// ```dart
+/// // Each find goes through the proxy, so @Timed applies to it.
 /// @Service()
 /// class BookService implements Books {
 ///   @Timed()
@@ -34,13 +39,18 @@ import 'dart:async';
 /// that call starts.
 ///
 /// A generated subclass proxy is the bean itself, so `currentProxy()`
-/// returns `this`: the call made right after it on that object is
-/// advised (call `currentProxy()` for every advised self-call, as in the
-/// example above; a stored reference advises only its first call).
+/// returns `this`, and only the one call made right after it on that
+/// object is advised. Call `currentProxy()` for every advised self-call,
+/// as in the example above; a stored reference advises only its first
+/// call.
 abstract final class AopContext {
-  /// The proxy whose call is in progress.
+  /// Returns the proxy whose call is in progress; cast it to the bean's
+  /// type to call it.
   ///
-  /// Throws a [StateError] outside a call through an AOP proxy.
+  /// Throws a [StateError] when no call through an AOP proxy is in
+  /// progress. A bean that no advice matched has no proxy, so calling it
+  /// from such a bean's own method fails unless an advised call is under
+  /// way further up, whose proxy is then returned.
   static Object currentProxy() {
     final proxy =
         _current ??
@@ -60,7 +70,8 @@ abstract final class AopContext {
 Object? _throughProxy;
 
 /// Whether the call on [proxy] that starts now was made through
-/// [AopContext.currentProxy] (one call per `currentProxy()`).
+/// [AopContext.currentProxy]; it consumes the mark, so each
+/// `currentProxy()` advises one call.
 ///
 /// Used by `ProxyInvoker`; not exported.
 bool takeCallThroughProxy(Object proxy) {
@@ -88,8 +99,8 @@ void callThroughProxyReference(Object bean) {
 final _bodies = <Object>[];
 final _bodyZoneKey = Object();
 
-/// Whether code of the subclass proxy [proxy] itself is running (a call
-/// it makes on itself is a self-call, not advised as in Spring).
+/// Whether code of the subclass proxy [proxy] itself is running, so a
+/// call it makes on itself is a self-call and not advised, as in Spring.
 ///
 /// Used by `ProxyInvoker`; not exported.
 bool isInProxyBody(Object proxy) =>
@@ -99,8 +110,9 @@ bool isInProxyBody(Object proxy) =>
         ) ??
         false);
 
-/// Runs [body], the own code of the subclass proxy [proxy]; with [async],
-/// the code it schedules counts too (a zone).
+/// Runs [body], the own code of the subclass proxy [proxy], and returns
+/// its result; with [async], the code it schedules counts too (through a
+/// zone).
 ///
 /// Used by `ProxyInvoker`; not exported.
 T runProxyBody<T>(Object proxy, T Function() body, {bool async = false}) {
@@ -130,7 +142,8 @@ Object? _current;
 // Zone value carrying the proxy into asynchronous continuations.
 final _zoneKey = Object();
 
-/// Runs [body] as part of a call through [proxy] (synchronous part).
+/// Runs [body] with [proxy] as the current proxy, for the synchronous
+/// part of a call.
 ///
 /// Used by `ProxyInvoker`; not exported.
 T runWithCurrentProxy<T>(Object proxy, T Function() body) {
@@ -143,8 +156,8 @@ T runWithCurrentProxy<T>(Object proxy, T Function() body) {
   }
 }
 
-/// Runs [body] as part of an asynchronous call through [proxy]: the proxy
-/// stays current in the code the call schedules.
+/// Runs [body] with [proxy] as the current proxy, also in the code the
+/// call schedules (through a zone), for members returning a `Future`.
 ///
 /// Used by `ProxyInvoker`; not exported.
 T runAsyncWithCurrentProxy<T>(Object proxy, T Function() body) => runZoned(

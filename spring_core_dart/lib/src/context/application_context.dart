@@ -40,13 +40,29 @@ import 'package:spring_core_dart/src/core/order.dart';
 import 'package:spring_core_dart/src/expression/bean_expression_resolver.dart';
 import 'package:spring_core_dart/src/expression/introspection_access.dart';
 
-/// The application context, like Spring's `ApplicationContext`: a bean
-/// factory plus environment, events, messages and resources.
+/// A running application's container: it holds the beans and gives
+/// access to the configuration, events, translated messages and resource
+/// files.
 ///
-/// Read-only view: lookups, events, messages and resources. Lifecycle
-/// methods (`refresh`, `close`) live on [ConfigurableApplicationContext].
+/// Once started, the context has created every bean, injected each one's
+/// dependencies and called their init methods. It is also the place where
+/// the rest of the framework meets: beans are looked up here
+/// ([getBean]), events are published to listeners ([publishEvent]),
+/// messages are translated ([getMessage]) and files are found
+/// ([getResource]). It falls back to a [parent] context for beans and
+/// messages it does not have itself.
+///
+/// Most application code never touches it: beans receive what they need
+/// by injection (an `ApplicationEventPublisher`, a `MessageSource`, the
+/// `Environment`). You meet the context in `main`, where
+/// [ApplicationContext.run] or Spring Boot's `SpringApplication.run`
+/// returns it; in tests; and in code outside the container that needs a
+/// bean, such as a Flutter widget. A bean can also inject it. This
+/// interface only reads; starting and stopping is on
+/// [ConfigurableApplicationContext].
 ///
 /// ```dart
+/// // In main: start the beans, then use a bean and the context's services.
 /// final context = ApplicationContext.run([coreBeans, authBeans]);
 /// final auth = context.getBean<AuthFacade>();
 /// context.publishEvent(UserLoggedIn('ada'));
@@ -68,9 +84,19 @@ abstract interface class ApplicationContext
         MessageSource,
         ApplicationEventPublisher,
         ResourcePatternResolver {
-  /// Creates and refreshes an [AnnotationConfigApplicationContext].
+  /// Creates an [AnnotationConfigApplicationContext] for [modules], starts
+  /// it with [ConfigurableApplicationContext.refresh] and returns it.
+  ///
+  /// This is how a program without Spring Boot starts its beans. The
+  /// optional arguments are those of the
+  /// [AnnotationConfigApplicationContext] constructor: a [parent] context,
+  /// an [environment] (for example with active profiles or properties
+  /// read beforehand), a [resourceLoader] and an [id]. Throws what
+  /// `refresh` throws, such as a missing dependency. Close the returned
+  /// context when the program ends.
   ///
   /// ```dart
+  /// // The `dev` profile picks the development beans.
   /// final context = ApplicationContext.run(
   ///   [appBeans],
   ///   environment: StandardEnvironment()..setActiveProfiles(['dev']),
@@ -97,8 +123,14 @@ abstract interface class ApplicationContext
     id: id,
   )..refresh();
 
-  /// Like [run], refreshing with [ConfigurableApplicationContext.refreshAsync]
-  /// (asynchronous init callbacks are awaited).
+  /// Like [run], but starts the context with
+  /// [ConfigurableApplicationContext.refreshAsync] and completes once it
+  /// is running.
+  ///
+  /// Use it when an init callback (`@PostConstruct`, `afterPropertiesSet`,
+  /// init method) returns a `Future`, or when a `@PropertySource` reads a
+  /// resource that is only available asynchronously, such as a Flutter
+  /// asset.
   static Future<ConfigurableApplicationContext> runAsync(
     List<BeanModule> modules, {
     ApplicationContext? parent,
@@ -117,30 +149,47 @@ abstract interface class ApplicationContext
     return context;
   }
 
-  /// Unique id of the context; by default the class name and identity
-  /// hash code (`AnnotationConfigApplicationContext@1b2c3d`), like Spring's
-  /// `ObjectUtils.identityToString`. Spring Boot's `SpringApplication`
+  /// A name that tells this context apart from others in logs, for example
+  /// a parent and a child.
+  ///
+  /// By default the class name and identity hash code
+  /// (`AnnotationConfigApplicationContext@1b2c3d`, as Spring's
+  /// `ObjectUtils.identityToString`). Spring Boot's `SpringApplication`
   /// uses `spring.application.name` (or `application`).
   String get id;
 
-  /// Human-readable name used in error messages and `toString`.
+  /// The name used in error messages and `toString`: the [id], or the
+  /// class name with the id when one was given explicitly.
   String get displayName;
 
-  /// When the last refresh started; `null` before.
+  /// When the refresh started, for uptime reports; `null` before.
   DateTime? get startupDate;
 
-  /// The parent context, or `null`. Beans, messages and events fall back
-  /// to (or propagate to) the parent.
+  /// The context this one extends, or `null`.
+  ///
+  /// A child context sees the parent's beans and messages when it has none
+  /// of its own, and every event published in the child is also published
+  /// in the parent. Use a parent for beans shared by several contexts.
   ApplicationContext? get parent;
 
-  /// The environment: properties, profiles and conversion.
+  /// The configuration the context was built with: properties from all
+  /// sources, the active profiles and the type conversion used for them.
   Environment get environment;
 
-  /// The factory for injecting objects the container did not create.
+  /// The factory that injects objects the container did not create, such
+  /// as a `@Configurable` Flutter `State` (`autowireBean`).
+  ///
+  /// Throws a `StateError` before the refresh and after the close.
   AutowireCapableBeanFactory get autowireCapableBeanFactory;
 
-  /// Adds a listener for events (or payloads) of type [E]; remove it with
-  /// the returned registration. Lower [order] values run first.
+  /// Calls [listener] for every event published from now on whose type,
+  /// or payload type, is [E].
+  ///
+  /// Use it for code that is not a bean, for example a Flutter widget that
+  /// refreshes when an event arrives, or a test that records events. Beans
+  /// use `@EventListener` instead. Call `remove()` on the returned
+  /// registration to stop listening. Listeners with a lower [order] run
+  /// first; the default runs last.
   ///
   /// ```dart
   /// final registration = context.addListener<OrderPlaced>(
@@ -163,12 +212,19 @@ abstract interface class ApplicationContext
   });
 }
 
-/// A configurable [ApplicationContext], like Spring's
-/// `ConfigurableApplicationContext`.
+/// An application context that can also be set up, started, paused and
+/// closed.
 ///
-/// Adds module registration, [refresh], [close] and [Lifecycle] control.
+/// [ApplicationContext] is what code that uses the beans needs. This
+/// interface is for the code that owns the context: `main`, a test, or
+/// Spring Boot's `SpringApplication`, which returns one from `run`. Before
+/// [refresh] it accepts more modules, post-processors and listeners;
+/// [refresh] creates the beans; [close] stops and destroys them. A bean
+/// that must shut the application down can inject it.
 ///
 /// ```dart
+/// // A plugin module and a post-processor join before the start; the
+/// // finally block destroys the beans even when the app fails.
 /// final context = AnnotationConfigApplicationContext([appBeans])
 ///   ..register(pluginBeans)
 ///   ..addBeanFactoryPostProcessor(MyPostProcessor())
@@ -197,16 +253,27 @@ abstract interface class ConfigurableApplicationContext
   @override
   ApplicationContext? get parent;
 
-  /// Sets the parent context; its environment is merged into this one.
+  /// Sets the parent context; set it before [refresh]. The parent's bean
+  /// factory becomes this context's parent factory, and the parent's
+  /// environment (property sources and profiles) is merged into this one.
   set parent(ApplicationContext? parent);
 
-  /// The underlying bean factory (available before refresh).
+  /// The bean factory inside the context, which holds the bean
+  /// definitions and the created beans.
+  ///
+  /// It is available before [refresh], so code that sets up the context can
+  /// change definitions or register ready-made objects
+  /// (`registerSingleton`). Bean lookups go through the context itself.
   ConfigurableListableBeanFactory get beanFactory;
 
-  /// Adds a [BeanModule], a `BeanRegistrar`, an `ImportSelector` or an
-  /// `ImportBeanDefinitionRegistrar` before [refresh] (Spring's
-  /// `register(Class...)` / `register(BeanRegistrar...)`); they are
-  /// processed in registration order while the modules load. Throws an
+  /// Adds beans before [refresh]: a [BeanModule], or an object that
+  /// registers beans in code (a `BeanRegistrar`, an `ImportSelector` or an
+  /// `ImportBeanDefinitionRegistrar`).
+  ///
+  /// Use it for beans chosen at runtime, such as plugins or test
+  /// replacements. Components are processed in registration order, after
+  /// the modules given to the constructor, while the modules load (Spring's
+  /// `register(Class...)` / `register(BeanRegistrar...)`). Throws an
   /// `ArgumentError` for other objects and a `StateError` once [refresh]
   /// has started.
   ///
@@ -217,12 +284,24 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void register(Object component);
 
-  /// Adds a post-processor applied during [refresh].
+  /// Adds a post-processor that [refresh] runs once every bean definition
+  /// is loaded and before any bean is created.
+  ///
+  /// Use it to adjust definitions from the code that builds the context,
+  /// without declaring the processor as a bean. Processors added here run
+  /// before the post-processor beans; one added after [refresh] never runs.
   void addBeanFactoryPostProcessor(BeanFactoryPostProcessor processor);
 
-  /// Adds a listener; works before and after [refresh].
+  /// Adds a listener object that is not a bean; works before and after
+  /// [refresh].
+  ///
+  /// Listeners added before [refresh] also receive the context's own
+  /// events, such as `ContextRefreshedEvent`. For a plain function,
+  /// [addListener] is shorter; for an `ApplicationListener<E>` object, wrap
+  /// it with `ApplicationListenerAdapter.forListener`.
   ///
   /// ```dart
+  /// // Run ready() once every bean exists.
   /// context.addApplicationListener(
   ///   ApplicationListenerAdapter.of<ContextRefreshedEvent>((_) => ready()),
   /// );
@@ -235,30 +314,50 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void addApplicationListener(GenericApplicationListener listener);
 
-  /// Removes a listener added with [addApplicationListener].
+  /// Removes a listener added with [addApplicationListener]; it receives
+  /// no more events.
   void removeApplicationListener(GenericApplicationListener listener);
 
-  /// The listeners added with [addApplicationListener] (Spring's
-  /// `getApplicationListeners`), including the singleton
-  /// [GenericApplicationListener] beans and `registerSingleton` objects
-  /// added once created, as Spring's `ApplicationListenerDetector` does;
+  /// The listener objects the context holds, for diagnostics.
+  ///
+  /// These are the listeners added with [addApplicationListener], plus the
+  /// singleton [GenericApplicationListener] beans and `registerSingleton`
+  /// objects, which the context adds once they are created (as Spring's
+  /// `ApplicationListenerDetector` does). Not included:
   /// `ApplicationListener<E>` beans (wired by bean name), lazy listener
-  /// beans not created yet and `@EventListener` methods are not included.
+  /// beans not created yet and `@EventListener` methods.
   List<GenericApplicationListener> get applicationListeners;
 
-  /// Adds a resolver for a custom location scheme (for example `asset:`),
-  /// like Spring's `DefaultResourceLoader.addProtocolResolver`.
+  /// Teaches [getResource] a custom location prefix, such as `asset:` for
+  /// Flutter assets.
+  ///
+  /// The resolver is asked before the built-in prefixes, for every
+  /// location, including `@Value` resources and `@PropertySource` files.
+  /// Add it before [refresh] so that the beans see it. Throws a
+  /// `StateError` when the context was given a resource loader that is not
+  /// a `DefaultResourceLoader` (Spring's
+  /// `DefaultResourceLoader.addProtocolResolver`).
   void addProtocolResolver(ProtocolResolver resolver);
 
-  /// Registers, validates and creates eager singletons. Call once.
+  /// Starts the context: registers the beans, checks them and creates
+  /// every singleton that is not lazy. Call it once.
   ///
-  /// Steps: validate required properties, load modules (property sources,
-  /// conditions), run bean factory post-processors, register bean
-  /// post-processors, init message source and event multicaster, register
-  /// listeners, validate the bean graph, create eager singletons, start
-  /// auto-startup [SmartLifecycle] beans and publish
-  /// `ContextRefreshedEvent`. On failure created singletons are destroyed
-  /// and the context becomes unusable.
+  /// In order: check the required properties; load the modules (their
+  /// `@PropertySource` files and conditions decide which beans exist); run
+  /// the bean factory post-processors; register the bean post-processors;
+  /// set up the message source and the event multicaster; register the
+  /// listeners; check the bean graph (a missing or ambiguous dependency
+  /// or a cycle fails here, before any constructor runs); create the eager
+  /// singletons; start the auto-startup [SmartLifecycle] beans; publish
+  /// `ContextRefreshedEvent`.
+  ///
+  /// When a step fails, the lifecycle beans already started are stopped,
+  /// the created singletons are destroyed, the error is rethrown and the
+  /// context becomes unusable. Like Spring's `GenericApplicationContext`,
+  /// a second call throws a `StateError`, also after a failed refresh. An
+  /// init callback (`@PostConstruct`, `afterPropertiesSet`, init method)
+  /// that returns a `Future` fails the refresh: use [refreshAsync] for
+  /// those.
   ///
   /// ```dart
   /// final context = AnnotationConfigApplicationContext([appBeans])
@@ -271,21 +370,19 @@ abstract interface class ConfigurableApplicationContext
   /// context.register(AppConfig.class);
   /// context.refresh();
   /// ```
-  ///
-  /// Like Spring's `GenericApplicationContext`, a second call throws (a
-  /// `StateError`), also after a failed refresh. An init callback
-  /// (`@PostConstruct`, `afterPropertiesSet`, init method) that returns a
-  /// `Future` fails the refresh: use [refreshAsync] for those.
   void refresh();
 
-  /// Like [refresh], awaiting asynchronous init callbacks: the eager
-  /// singletons are created, then every `Future` returned by their
-  /// `@PostConstruct`, `afterPropertiesSet` and init methods is awaited
-  /// (a failure fails the refresh, naming the bean) before
-  /// `SmartInitializingSingleton`, the lifecycle start and
-  /// `ContextRefreshedEvent`. A failed refresh stops the lifecycle beans
-  /// already started and destroys the created singletons, awaiting
-  /// asynchronous destroy callbacks.
+  /// Like [refresh], for beans whose init callbacks are asynchronous.
+  ///
+  /// It first reads `@PropertySource` files that are only available
+  /// asynchronously (Flutter assets). The eager singletons are created,
+  /// then every `Future` returned by their `@PostConstruct`,
+  /// `afterPropertiesSet` and init methods is awaited, one bean after
+  /// another, before `SmartInitializingSingleton`, the lifecycle start and
+  /// `ContextRefreshedEvent`; a failure fails the refresh and names the
+  /// bean. A failed refresh stops the lifecycle beans already started and
+  /// destroys the created singletons, awaiting asynchronous destroy
+  /// callbacks.
   ///
   /// ```dart
   /// final context = AnnotationConfigApplicationContext([appBeans]);
@@ -293,11 +390,20 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   Future<void> refreshAsync();
 
-  /// Publishes `ContextClosedEvent`, stops lifecycle beans and destroys
-  /// singletons. Safe to call more than once. Does not wait: a
-  /// `SmartLifecycle` callback that comes later or a destroy callback
-  /// returning a `Future` is logged and the shutdown goes on; see
-  /// [closeAsync].
+  /// Shuts the context down: publishes `ContextClosedEvent`, stops the
+  /// running [Lifecycle] beans and destroys the singletons (each bean after
+  /// the beans that depend on it), which runs their `@PreDestroy` and
+  /// destroy methods.
+  ///
+  /// Call it when the program ends, or let [registerShutdownHook] do it. It
+  /// does nothing unless the context is active, so a second call is
+  /// harmless; it also works during [refresh], for example from a
+  /// `ContextRefreshedEvent` listener. It never throws because of a failing
+  /// `ContextClosedEvent` listener or a bean that fails to stop: the error
+  /// is logged and the shutdown goes on. It does not wait: a
+  /// `SmartLifecycle` stop callback that comes later, or a destroy callback
+  /// that returns a `Future`, is logged and skipped; use [closeAsync] to
+  /// wait for them.
   ///
   /// ```dart
   /// final context = ApplicationContext.run([appBeans]);
@@ -310,13 +416,15 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void close();
 
-  /// Closes the context with [closeAsync] (waiting for asynchronous
-  /// `SmartLifecycle` stops and destroy callbacks) when the process gets
-  /// SIGINT or SIGTERM, then ends the process with `128 + signal` (`130`,
-  /// `143`),
-  /// like Spring's `registerShutdownHook()` on the JVM. Registered once;
-  /// the signals are no longer watched once the context closes (a Dart
-  /// program that watches signals does not end by itself). Does nothing
+  /// Closes the context when the process is asked to stop (Ctrl+C or a
+  /// `kill`), so that the beans release their resources.
+  ///
+  /// On SIGINT or SIGTERM it runs [closeAsync], which waits for
+  /// asynchronous `SmartLifecycle` stops and destroy callbacks, then ends
+  /// the process with `128 + signal` (`130`, `143`), like Spring's
+  /// `registerShutdownHook()` on the JVM. A second call does nothing. The
+  /// signals are no longer watched once the context closes, because a Dart
+  /// program that watches signals does not end by itself. Does nothing
   /// without `dart:io` (web).
   ///
   /// ```dart
@@ -330,11 +438,16 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void registerShutdownHook();
 
-  /// Stops the running [Lifecycle] beans except the [SmartLifecycle] beans
-  /// that are not [SmartLifecycle.isPauseable], then publishes
-  /// `ContextPausedEvent`, like Spring 7's `pause()`; [restart] resumes.
-  /// A no-op for the beans unless the lifecycle is running. Does not wait
-  /// for `SmartLifecycle.stopWithCallback` callbacks; see [pauseAsync].
+  /// Stops the running [Lifecycle] beans for a while, keeping every bean
+  /// alive, then publishes `ContextPausedEvent`; [restart] resumes them.
+  ///
+  /// Use it when the application goes to the background, for example a
+  /// Flutter app on `AppLifecycleState.paused`, so that pollers and
+  /// connections stop. [SmartLifecycle] beans whose
+  /// [SmartLifecycle.isPauseable] is `false` keep running. Nothing is
+  /// stopped unless the lifecycle is running. It does not wait for
+  /// `SmartLifecycle.stopWithCallback` callbacks; [pauseAsync] does. Like
+  /// Spring 7's `pause()`.
   ///
   /// ```dart
   /// // Flutter: AppLifecycleState.paused / resumed
@@ -349,29 +462,34 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   void pause();
 
-  /// Like [pause], waiting for the `SmartLifecycle.stopWithCallback`
-  /// callbacks of each phase (at most the lifecycle processor's timeout
-  /// per phase) before `ContextPausedEvent` is published.
+  /// Like [pause], but waits for the `SmartLifecycle.stopWithCallback`
+  /// callbacks of each phase (at most the lifecycle processor's timeout per
+  /// phase) before `ContextPausedEvent` is published.
   Future<void> pauseAsync();
 
-  /// Stops the pauseable [Lifecycle] beans if the lifecycle is running,
-  /// then starts the auto-startup [SmartLifecycle] beans again (restoring
-  /// the state after [refresh]) and publishes `ContextRestartedEvent`,
-  /// like Spring 7's `restart()`. Unlike [start], beans that are not
-  /// auto-startup stay stopped. A bean whose
-  /// `SmartLifecycle.stopWithCallback` callback is still pending is started
-  /// when the callback fires.
+  /// Brings the lifecycle beans back to the state right after [refresh],
+  /// typically after [pause], then publishes `ContextRestartedEvent`.
+  ///
+  /// It stops the pauseable [Lifecycle] beans if the lifecycle is still
+  /// running, then starts the auto-startup [SmartLifecycle] beans again.
+  /// Unlike [start], beans that are not auto-startup stay stopped. A bean
+  /// whose `SmartLifecycle.stopWithCallback` callback is still pending is
+  /// started when the callback fires. Like Spring 7's `restart()`.
   void restart();
 
-  /// Like [close], waiting: for the `SmartLifecycle.stopWithCallback`
-  /// callbacks of each phase (at most the lifecycle processor's timeout
-  /// per phase, 10 seconds by default; then the beans still running are
-  /// logged and the next phase is stopped) and for destroy callbacks
-  /// (`@PreDestroy`, `DisposableBean.destroy`, destroy methods) that
-  /// return a `Future`, each bean after its dependents. Completes once
-  /// the context is closed; a no-op unless active.
+  /// Like [close], but waits for asynchronous shutdown work and completes
+  /// once the context is closed.
+  ///
+  /// It waits for the `SmartLifecycle.stopWithCallback` callbacks of each
+  /// phase (at most the lifecycle processor's timeout per phase, 10
+  /// seconds by default; then the beans still running are logged and the
+  /// next phase is stopped) and for the destroy callbacks (`@PreDestroy`,
+  /// `DisposableBean.destroy`, destroy methods) that return a `Future`,
+  /// each bean after its dependents. Use it when beans flush or disconnect
+  /// asynchronously. Does nothing unless the context is active.
   ///
   /// ```dart
+  /// // Your own signal handling, instead of registerShutdownHook().
   /// ProcessSignal.sigint.watch().listen((_) async {
   ///   await context.closeAsync();
   ///   exit(0);
@@ -379,12 +497,12 @@ abstract interface class ConfigurableApplicationContext
   /// ```
   Future<void> closeAsync();
 
-  /// Whether the context is active: from the start of [refresh] until
-  /// [close] has finished (`false` again after a failed refresh), like
-  /// Spring's `isActive()`.
+  /// Whether beans can be looked up: `true` from the start of [refresh]
+  /// until [close] has finished, `false` again after a failed refresh.
   bool get isActive;
 
-  /// Whether [close] has completed.
+  /// Whether [close] (or [closeAsync]) has completed; a closed context
+  /// cannot be started again.
   bool get isClosed;
 }
 
@@ -393,17 +511,28 @@ abstract interface class ConfigurableApplicationContext
 // refresh) allows bean lookups.
 enum _State { created, refreshing, active, closing, failed, closed }
 
-/// The standard context for generated modules, like Spring's
-/// `AnnotationConfigApplicationContext`.
+/// The application context of this package: it builds its beans from the
+/// [BeanModule]s the generator writes for `@ComponentScan`.
 ///
-/// Beans come from [BeanModule]s (usually generated by `@ComponentScan`)
-/// instead of scanned classes. Override infrastructure by declaring beans
-/// with the well-known names below (for example a `messageSource` bean).
+/// It is the only implementation of [ConfigurableApplicationContext] here;
+/// [ApplicationContext.run] and Spring Boot's `SpringApplication` create
+/// one for you. Construct it yourself when something must happen between
+/// creating the context and starting it: [register] more modules,
+/// [registerBean] a bean in code, add a post-processor, set a parent. Then
+/// call [refresh]. A subclass can override the template methods
+/// [postProcessBeanFactory], [onRefresh] and [onClose].
+///
+/// Some of its own parts can be replaced by declaring a bean with a
+/// well-known name: [messageSourceBeanName] for the translated messages,
+/// [applicationEventMulticasterBeanName] for event delivery,
+/// [lifecycleProcessorBeanName] for starting and stopping lifecycle
+/// beans, [conversionServiceBeanName] for `@Value` conversion.
 ///
 /// ```dart
 /// @ComponentScan()
 /// final BeanModule appBeans = $appBeans;
 ///
+/// // The `dev` profile is set before any bean definition is loaded.
 /// void main() {
 ///   final context = AnnotationConfigApplicationContext(
 ///     [appBeans],
@@ -425,11 +554,15 @@ enum _State { created, refreshing, active, closing, failed, closed }
 /// ```
 class AnnotationConfigApplicationContext
     implements ConfigurableApplicationContext {
-  /// Creates a context for [modules]; call [refresh] before using it.
+  /// Creates a context for [modules]; nothing is loaded or created until
+  /// [refresh].
   ///
-  /// Defaults: a new `StandardEnvironment`, a `DefaultResourceLoader` and
-  /// a unique id (see [ApplicationContext.id]). With a [parent], its
-  /// environment is merged into [environment].
+  /// Without an [environment] the context uses a new
+  /// `StandardEnvironment` (OS environment variables, no config files;
+  /// read those beforehand with `ConfigDataEnvironment`, or use Spring
+  /// Boot). Without a [resourceLoader] it uses a `DefaultResourceLoader`;
+  /// without an [id], the class name and identity hash code. With a
+  /// [parent], the parent's environment is merged into [environment].
   AnnotationConfigApplicationContext(
     List<BeanModule> modules, {
     ApplicationContext? parent,
@@ -445,32 +578,56 @@ class AnnotationConfigApplicationContext
     this.parent = parent;
   }
 
-  /// Name of the message source bean the context looks for.
+  /// The bean name of the context's `MessageSource`.
+  ///
+  /// Declare a bean with this name (for example a
+  /// `ReloadableResourceBundleMessageSource` reading `messages.properties`)
+  /// and [getMessage] uses it; in a child context it falls back to the
+  /// parent's message source. Without one, the context registers an empty
+  /// `DelegatingMessageSource` that asks the parent, if any.
   static const messageSourceBeanName = 'messageSource';
 
-  /// Name of the event multicaster bean the context looks for.
+  /// The bean name of the object that delivers events to listeners.
+  ///
+  /// Declare an `ApplicationEventMulticaster` bean with this name to change
+  /// how events are delivered, for example a
+  /// `SimpleApplicationEventMulticaster` with a task executor so that
+  /// listeners run asynchronously. Without one, the context registers a
+  /// synchronous `SimpleApplicationEventMulticaster`.
   static const applicationEventMulticasterBeanName =
       'applicationEventMulticaster';
 
-  /// Name of the lifecycle processor bean the context looks for.
+  /// The bean name of the object that starts and stops the [Lifecycle]
+  /// beans.
+  ///
+  /// Declare a `DefaultLifecycleProcessor` bean with this name to change
+  /// its shutdown timeouts. Without one, the context registers a default
+  /// one.
   static const lifecycleProcessorBeanName = 'lifecycleProcessor';
 
-  /// Name of the conversion service bean used for `@Value`.
+  /// The bean name of a `ConversionService` that replaces the
+  /// environment's for converting `@Value` texts to their target types.
+  ///
+  /// A bean of this name in this context or an ancestor is used; without
+  /// one, the environment's conversion service converts.
   static const conversionServiceBeanName = 'conversionService';
 
-  /// Name of the environment bean.
+  /// The bean name under which the context registers its [environment],
+  /// so it can be injected as `Environment` or looked up by name.
   static const environmentBeanName = 'environment';
 
-  /// Name of the `TaskExecutor` bean `@Async` falls back to when there are
-  /// several (Spring's
+  /// The bean name of the `TaskExecutor` that `@Async` listeners use when
+  /// there are several executors and none is `@Primary` (Spring's
   /// `AsyncExecutionAspectSupport.DEFAULT_TASK_EXECUTOR_BEAN_NAME`).
   static const defaultTaskExecutorBeanName = 'taskExecutor';
 
-  /// Name of the context's [BeanIntrospector] bean.
+  /// The bean name under which the context registers its [introspector].
   static const beanIntrospectorBeanName = 'beanIntrospector';
 
-  /// Introspection metadata of this context's modules (falls back to
-  /// [BeanIntrospector.shared]).
+  /// The generated descriptions of the `@Introspected` classes of this
+  /// context's modules: their properties and methods, which data binding,
+  /// validation and SpEL use instead of reflection. Classes it does not
+  /// know are looked up in [BeanIntrospector.shared].
   final BeanIntrospector introspector = BeanIntrospector(
     parent: BeanIntrospector.shared,
   );
@@ -487,7 +644,7 @@ class AnnotationConfigApplicationContext
   String get displayName =>
       _explicitId == null ? id : 'AnnotationConfigApplicationContext($id)';
 
-  /// When the last refresh started; `null` before.
+  /// When [refresh] started; `null` before. Set by the context.
   @override
   DateTime? startupDate;
 
@@ -567,13 +724,19 @@ class AnnotationConfigApplicationContext
     _components.add(component);
   }
 
-  /// Registers a bean of type [T] made by [supplier] before [refresh],
-  /// like Spring's `GenericApplicationContext.registerBean`; the options
-  /// are those of [BeanRegistry.registerBean]. The bean is registered
-  /// when the modules load, in registration order with [register]ed
-  /// components.
+  /// Adds a bean of type [T], created by [supplier], before [refresh].
+  ///
+  /// Use it for a bean that is not in a module: an object built from
+  /// command-line arguments, or a test replacement marked `primary`. The
+  /// [supplier] gets a resolver for the bean's own dependencies. The
+  /// options are those of [BeanRegistry.registerBean]; without a [name]
+  /// the bean is called `Type#0`, `Type#1`, ... The bean is registered while
+  /// the modules load, in order with the [register]ed components. Throws a
+  /// `StateError` once [refresh] has started.
   ///
   /// ```dart
+  /// // A system clock, and a mailer that takes precedence over the
+  /// // module's one.
   /// final context = AnnotationConfigApplicationContext([appBeans])
   ///   ..registerBean<Clock>((_) => SystemClock(), name: 'clock')
   ///   ..registerBean<Mailer>(
@@ -702,7 +865,6 @@ class AnnotationConfigApplicationContext
   // Refresh
   // ---------------------------------------------------------------------
 
-  /// See [ConfigurableApplicationContext.refresh].
   @override
   void refresh() {
     _prepareRefresh();
@@ -719,7 +881,6 @@ class AnnotationConfigApplicationContext
     }
   }
 
-  /// See [ConfigurableApplicationContext.refreshAsync].
   @override
   Future<void> refreshAsync() async {
     _prepareRefresh();
@@ -870,10 +1031,15 @@ class AnnotationConfigApplicationContext
 
   final _conditionEvaluations = <ConditionEvaluation>[];
 
-  /// The outcome of every condition evaluated by the last refresh, in
-  /// evaluation order (Spring Boot's `ConditionEvaluationReport`, printed
-  /// by `SpringApplication` for `--debug`). A condition group (the
-  /// conditions of a configuration class) appears once, under its key.
+  /// Every condition the refresh evaluated, with its outcome, in
+  /// evaluation order.
+  ///
+  /// It answers "why is this bean missing?": each entry names the bean or
+  /// class, the condition (a profile, `@ConditionalOnProperty`, ...) and
+  /// whether it matched. `SpringApplication` prints it as the condition
+  /// evaluation report for `--debug` (Spring Boot's
+  /// `ConditionEvaluationReport`). The conditions shared by a
+  /// configuration class appear once, under the class's key.
   List<ConditionEvaluation> get conditionEvaluations =>
       List.unmodifiable(_conditionEvaluations);
 
@@ -1338,7 +1504,8 @@ class AnnotationConfigApplicationContext
     return _factory.isTypeMatch(name, Ordered) || order != null ? 1 : 2;
   }
 
-  /// Beans [names] as [T], `PriorityOrdered` first, then by order.
+  /// The beans named [names] as [T], sorted: `PriorityOrdered` first,
+  /// then by order.
   List<T> _sortedBeans<T extends Object>(List<String> names) {
     final beans = <T, int?>{
       for (final name in names)
@@ -1579,7 +1746,9 @@ class AnnotationConfigApplicationContext
   // Lifecycle
   // ---------------------------------------------------------------------
 
-  /// Starts all [Lifecycle] beans and publishes `ContextStartedEvent`.
+  /// Starts every [Lifecycle] bean that is not running, also those that
+  /// are not auto-startup, then publishes `ContextStartedEvent`. Throws a
+  /// `StateError` unless the context is active.
   @override
   void start() {
     _checkActive();
@@ -1587,7 +1756,9 @@ class AnnotationConfigApplicationContext
     publishEvent(ContextStartedEvent(this));
   }
 
-  /// Stops running [Lifecycle] beans and publishes `ContextStoppedEvent`.
+  /// Stops every running [Lifecycle] bean, keeping the beans themselves,
+  /// then publishes `ContextStoppedEvent`; [start] starts them again.
+  /// Throws a `StateError` unless the context is active.
   @override
   void stop() {
     _checkActive();
@@ -1595,7 +1766,6 @@ class AnnotationConfigApplicationContext
     publishEvent(ContextStoppedEvent(this));
   }
 
-  /// See [ConfigurableApplicationContext.restart].
   @override
   void restart() {
     _checkActive();
@@ -1603,7 +1773,6 @@ class AnnotationConfigApplicationContext
     publishEvent(ContextRestartedEvent(this));
   }
 
-  /// See [ConfigurableApplicationContext.pause].
   @override
   void pause() {
     _checkActive();
@@ -1611,7 +1780,6 @@ class AnnotationConfigApplicationContext
     publishEvent(ContextPausedEvent(this));
   }
 
-  /// See [ConfigurableApplicationContext.pauseAsync].
   @override
   Future<void> pauseAsync() async {
     _checkActive();
@@ -1622,7 +1790,6 @@ class AnnotationConfigApplicationContext
   @override
   bool get isRunning => _lifecycleProcessor?.isRunning ?? false;
 
-  /// See [ConfigurableApplicationContext.registerShutdownHook].
   @override
   void registerShutdownHook() {
     if (_stopShutdownHook != null) {
@@ -1637,9 +1804,6 @@ class AnnotationConfigApplicationContext
     );
   }
 
-  /// See [ConfigurableApplicationContext.close]; a no-op unless active
-  /// (like Spring, it also works while refreshing, e.g. from a
-  /// `ContextRefreshedEvent` listener).
   @override
   void close() {
     if (!_beginClose()) {
@@ -1654,14 +1818,16 @@ class AnnotationConfigApplicationContext
     _finishClose();
   }
 
-  /// Template method called by [refresh] after the modules are loaded
-  /// (every bean definition is registered, no bean is created yet) and
-  /// before the bean factory post-processors run, like Spring's
-  /// `postProcessBeanFactory`. Override in a subclass to register
-  /// definitions, singletons or post-processors; not meant to be called
-  /// directly. Does nothing by default.
+  /// A hook for subclasses, called by [refresh] once every bean
+  /// definition is registered and before the bean factory post-processors
+  /// run; no bean exists yet.
+  ///
+  /// Override it in a context subclass that always adds the same
+  /// definitions, singletons or post-processors. Does nothing by default;
+  /// not meant to be called directly. Spring's `postProcessBeanFactory`.
   ///
   /// ```dart
+  /// // Every MyContext has a `clock` bean.
   /// class MyContext extends AnnotationConfigApplicationContext {
   ///   MyContext(super.modules);
   ///
@@ -1672,21 +1838,23 @@ class AnnotationConfigApplicationContext
   /// ```
   void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {}
 
-  /// Template method called by [refresh] once the message source and the
-  /// event multicaster exist, before the listeners are registered and the
-  /// eager singletons are created, like Spring's `onRefresh`. Override in
-  /// a subclass for context-specific refresh work; not meant to be called
-  /// directly. Does nothing by default.
+  /// A hook for subclasses, called by [refresh] once the message source
+  /// and the event multicaster exist, before the listeners are registered
+  /// and the eager singletons are created.
+  ///
+  /// Override it for work a special kind of context must do at that point
+  /// (Spring's web contexts create their server here). Does nothing by
+  /// default; not meant to be called directly. Spring's `onRefresh`.
   void onRefresh() {}
 
-  /// Template method called by [close] and [closeAsync] last, after the
-  /// singletons are destroyed and before the context counts as closed,
-  /// like Spring's `onClose`. Override in a subclass for context-specific
-  /// shutdown work; not meant to be called directly. Does nothing by
-  /// default.
+  /// A hook for subclasses, called last by [close] and [closeAsync], after
+  /// the singletons are destroyed and before the context counts as closed.
+  ///
+  /// Override it to release what the context subclass itself holds. Does
+  /// nothing by default; not meant to be called directly. Spring's
+  /// `onClose`.
   void onClose() {}
 
-  /// See [ConfigurableApplicationContext.closeAsync].
   @override
   Future<void> closeAsync() async {
     if (!_beginClose()) {
@@ -1745,13 +1913,18 @@ class AnnotationConfigApplicationContext
   // Events
   // ---------------------------------------------------------------------
 
-  /// Dispatches [event] to matching listeners synchronously, then to the
-  /// parent context. Non-[ApplicationEvent] objects are wrapped in a
-  /// [PayloadApplicationEvent] of their static type [T] (Spring uses the
-  /// runtime type), so `addListener<PayloadApplicationEvent<OrderPlaced>>`
-  /// sees `publishEvent(OrderPlaced(...))`. Like Spring 7, before [refresh],
-  /// after a failed refresh and after [close] the event is not delivered
-  /// locally (only to the parent).
+  /// Delivers [event] to this context's listeners, then publishes it in
+  /// the parent context.
+  ///
+  /// The listeners run in the publishing call, unless the event
+  /// multicaster has a task executor. An object that is not an
+  /// [ApplicationEvent] is wrapped in a [PayloadApplicationEvent] of its
+  /// static type [T] (Spring uses the runtime type): listeners of `T` get
+  /// the object, listeners of `PayloadApplicationEvent<T>` the wrapper.
+  /// Events published during [refresh] before the listeners are registered
+  /// are kept and delivered once they are. Like Spring 7, an event
+  /// published before [refresh], after a failed refresh or after [close]
+  /// reaches only the parent.
   ///
   /// ```dart
   /// context.publishEvent(OrderPlaced(1, 250)); // payload event
@@ -1836,10 +2009,15 @@ class AnnotationConfigApplicationContext
     return _messageSource!;
   }
 
-  /// Resolves [code] through the context's message source (the
-  /// `messageSource` bean, then the parent context).
+  /// Looks up the message [code] in the context's message source (the
+  /// `messageSource` bean, else the parent's) and fills in [args].
+  ///
+  /// Throws a `StateError` unless the context is active, and a
+  /// `NoSuchMessageException` when the code is unknown and there is no
+  /// [defaultMessage].
   ///
   /// ```dart
+  /// // The Russian greeting: messages_ru_RU.properties, else messages_ru.
   /// context.getMessage('greeting', args: ['Ada'], locale: 'ru_RU');
   /// ```
   ///
@@ -1993,8 +2171,12 @@ class AnnotationConfigApplicationContext
   String toString() => displayName;
 }
 
-/// Invokes an `@EventListener` method of a bean, fetching the bean when an
-/// event arrives (so lazy and prototype beans work).
+/// The listener the context registers for one `@EventListener` method (or
+/// the `onApplicationEvent` of an `ApplicationListener` bean).
+///
+/// It looks the bean up when an event arrives, so lazy and prototype beans
+/// work. It checks the method's condition, runs an `@Async` method on its
+/// executor, and publishes the method's non-null results as new events.
 final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   _BeanMethodListener(this._context, this._beanName, this._method);
 
@@ -2104,10 +2286,12 @@ final class _BeanMethodListener implements GenericApplicationListener, Ordered {
   String toString() => '_BeanMethodListener($_beanName, ${_method.id})';
 }
 
-/// A lazy [GenericApplicationListener] bean known by name, like a listener
-/// bean name in Spring's multicaster: the first event creates the bean
-/// (whose detector registration then receives the later events), asks it
-/// whether it handles the event, and retires this placeholder.
+/// A stand-in for a lazy [GenericApplicationListener] bean that does not
+/// exist yet, like a listener bean name in Spring's multicaster.
+///
+/// The first event creates the bean, asks it whether it handles the event,
+/// and removes this stand-in; from then on the bean receives the events
+/// directly (the detector registered it when it was created).
 final class _LazyListenerBean implements GenericApplicationListener, Ordered {
   _LazyListenerBean(this._context, this._beanName);
 
@@ -2148,12 +2332,15 @@ final class _LazyListenerBean implements GenericApplicationListener, Ordered {
   String toString() => '_LazyListenerBean($_beanName)';
 }
 
-/// Registers listener beans with the context once they are created, like
-/// Spring's `ApplicationListenerDetector`: a singleton that is a
-/// [GenericApplicationListener] (an `ApplicationListener<E>` bean is wired
-/// by the generator instead, through its `onApplicationEvent` method) is
-/// added when initialized and removed when destroyed; a non-singleton one
-/// is not reachable and gets a warning.
+/// Adds listener beans to the context when they are created and removes
+/// them when they are destroyed, like Spring's
+/// `ApplicationListenerDetector`.
+///
+/// A singleton [GenericApplicationListener] is added once initialized. A
+/// non-singleton one cannot be reached and is logged as a warning. An
+/// `ApplicationListener<E>` bean is wired by the generator through its
+/// `onApplicationEvent` method instead; when it is destroyed, its listener
+/// is removed, and added back if the bean is created again.
 final class _ApplicationListenerDetector
     extends DestructionAwareBeanPostProcessor {
   _ApplicationListenerDetector(this._context);
@@ -2292,15 +2479,18 @@ final class _ConfigurationClass {
   bool? skipped;
 }
 
-/// A bean registered by `AnnotationConfigApplicationContext.registerBean`.
+/// One bean added with `AnnotationConfigApplicationContext.registerBean`,
+/// kept until the modules load so that it is registered in order with the
+/// other components.
 final class _SingleBeanRegistrar {
   _SingleBeanRegistrar(this.register);
 
   final void Function(BeanRegistry registry) register;
 }
 
-/// The [BeanRegistry] handed to a [BeanRegistrar], like Spring 7's
-/// `BeanRegistryAdapter`.
+/// The [BeanRegistry] a [BeanRegistrar] registers its beans in: it turns
+/// each call into a bean definition of the context's factory, like
+/// Spring 7's `BeanRegistryAdapter`.
 final class _BeanRegistryAdapter implements BeanRegistry {
   _BeanRegistryAdapter(this._factory, this._environment, this._origin);
 
@@ -2373,10 +2563,12 @@ final class _BeanRegistryAdapter implements BeanRegistry {
       registrar.register(this, _environment);
 }
 
-/// Spring's `BeanPostProcessorChecker`: logs (info) a bean created while
-/// the post-processors are registered, since the processors registered
-/// after it never see it (no AOP proxy, for example) — usually a
-/// post-processor depending on a regular bean.
+/// Logs, at INFO, a bean created while the post-processors are still being
+/// registered, like Spring's `BeanPostProcessorChecker`.
+///
+/// The processors registered after such a bean never see it, so it may
+/// miss its AOP proxy, for example. The usual cause is a post-processor
+/// that injects a regular bean; the message names it.
 final class _BeanPostProcessorChecker extends BeanPostProcessor {
   _BeanPostProcessorChecker(
     this._context,
@@ -2416,7 +2608,9 @@ final class _BeanPostProcessorChecker extends BeanPostProcessor {
   }
 }
 
-/// The [ConditionContext] handed to conditions while modules load.
+/// The [ConditionContext] that conditions receive while the modules load;
+/// it also caches shared decisions and records every outcome for
+/// [AnnotationConfigApplicationContext.conditionEvaluations].
 final class _ConditionContext
     implements
         ConditionContext,

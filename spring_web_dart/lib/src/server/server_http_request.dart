@@ -12,58 +12,118 @@ import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 // generated then imports it from this library.
 export 'package:spring_core_dart/core.dart' show Principal;
 
-/// An incoming HTTP request as a server hands it to the application, like
-/// Spring's `ServerHttpRequest`. The web starter's server (`dart:io`) and
-/// `MockMvc` both implement it, so filters and controllers never see the
-/// server behind it.
+/// An HTTP request received by the application: method, URL, headers,
+/// cookies and a body that can be read once.
+///
+/// It hides which server received the request: the web starter's
+/// `dart:io` server and `MockMvc` (with a `MockServerHttpRequest`) both
+/// provide one, so filters and controllers run the same in production and
+/// in tests.
+///
+/// Most controllers never touch it: they take the values they need with
+/// `@PathVariable`, `@RequestParam`, `@RequestHeader` or `@RequestBody`.
+/// Declare a parameter of this type when a method needs the raw request;
+/// a `WebFilter` or a `HandlerMapping` always works with it.
+///
+/// ```dart
+/// // A controller method that needs the client's address and a header.
+/// @GetMapping('/whoami')
+/// String whoami(ServerHttpRequest request) =>
+///     '${request.remoteAddress} ${request.headers['User-Agent']}';
+/// ```
+///
+/// Spring (Java): `ServerHttpRequest` (Spring WebFlux), or
+/// `HttpServletRequest` on the servlet stack:
+/// ```java
+/// @GetMapping("/whoami")
+/// String whoami(HttpServletRequest request) {
+///   return request.getRemoteAddr() + " " + request.getHeader("User-Agent");
+/// }
+/// ```
 abstract interface class ServerHttpRequest {
-  /// The method (`GET`, `POST`, ...).
+  /// The HTTP method of the request.
   HttpMethod get method;
 
-  /// The full URI: scheme, host, port, path and query.
+  /// The full URL as the client asked for it: scheme, host, port, path
+  /// and query (on the web starter's server, the host is the one of the
+  /// `Host` header).
   Uri get uri;
 
-  /// The path, still percent-encoded (`/api/books/978-0`).
+  /// The path without the query, still percent-encoded
+  /// (`/api/books/978-0`). Behind a `server.servlet.context-path`, filters
+  /// and handlers see the path without that prefix.
   String get path;
 
-  /// The request headers (read-only).
+  /// The headers the client sent. Treat them as read-only; to change
+  /// them for the rest of the chain, wrap the request in a
+  /// [ServerHttpRequestDecorator].
   HttpHeaders get headers;
 
-  /// The query parameters, each with all its values.
+  /// The query parameters, decoded, each name with all its values in
+  /// order (`?tag=a&tag=b` gives `{'tag': ['a', 'b']}`).
   Map<String, List<String>> get queryParameters;
 
-  /// The cookies sent, by name.
+  /// The cookies of the `Cookie` header, by name (quotes around a value
+  /// removed).
   Map<String, String> get cookies;
 
-  /// The client's address, when the server knows it.
+  /// The IP address of the client, or `null` when the server does not
+  /// know it. Behind a proxy this is the proxy's address.
   String? get remoteAddress;
 
-  /// Whether the request came over TLS (`https`, `wss`).
+  /// Whether the request came over TLS (`https` or `wss`).
   bool get isSecure;
 
-  /// Values filters and handlers attach to the request (Spring's request
-  /// attributes).
+  /// A mutable map where filters and handlers leave values for the code
+  /// that runs later on the same request, such as a parsed form or a
+  /// trace id. It lives as long as the request.
   Map<String, Object?> get attributes;
 
-  /// Who sent the request; set by an authentication filter.
+  /// The authenticated user or client, or `null` while nobody is
+  /// authenticated. An authentication filter (for example the security
+  /// starter's) sets it; a controller parameter of type `Principal`
+  /// receives it.
   Principal? get principal;
   set principal(Principal? value);
 
-  /// The body, read once.
+  /// The body as a stream of bytes. It can be listened to only once: a
+  /// second read throws a `StateError`. On the web starter's server a body
+  /// above `server.max-http-request-body-size` ends with a
+  /// [PayloadTooLargeException] (multipart uploads have their own limits,
+  /// `spring.servlet.multipart.*`). For small bodies,
+  /// [ServerHttpRequestBody.readBodyBytes] and
+  /// [ServerHttpRequestBody.readBodyText] are simpler.
   Stream<Uint8List> get body;
 
-  /// Whether this is a WebSocket handshake (`Upgrade: websocket`).
+  /// Whether the client asks to open a WebSocket on this request
+  /// (`Upgrade: websocket`).
   bool get isWebSocketUpgrade;
 
-  /// Accepts the WebSocket handshake and returns the open session;
-  /// [protocol] is the sub-protocol chosen from the client's
-  /// `Sec-WebSocket-Protocol`. The response must not be used afterwards.
+  /// Accepts the WebSocket handshake and returns the open connection.
+  ///
+  /// [protocol] is the sub-protocol the server picked among those the
+  /// client listed in `Sec-WebSocket-Protocol`, or `null` for none. Throws
+  /// a `StateError` when the request is not a handshake
+  /// ([isWebSocketUpgrade] is false). After the upgrade the HTTP response
+  /// must not be used any more. The WebSocket starter calls this for its
+  /// endpoints; applications rarely do.
   Future<WebSocketSession> upgradeToWebSocket({String? protocol});
 }
 
-/// Reading the body of a [ServerHttpRequest].
+/// Helpers to read the body and the `Content-Type` of a
+/// [ServerHttpRequest] without handling the byte stream yourself.
+///
+/// ```dart
+/// // The handler of a HandlerMapping reads a webhook's payload itself.
+/// final webhook = FunctionHttpHandler((request, response) async {
+///   final payload = await request.readBodyText(maxLength: 64 * 1024);
+///   await events.publish(payload);
+///   await response.send(202, 'accepted');
+/// });
+/// ```
 extension ServerHttpRequestBody on ServerHttpRequest {
-  /// The `Content-Type`, or `null` when absent or malformed.
+  /// The `Content-Type` header parsed, or `null` when it is missing or
+  /// is not a valid media type.
   MediaType? get contentType {
     final value = headers.contentType;
     if (value == null) {
@@ -76,8 +136,9 @@ extension ServerHttpRequestBody on ServerHttpRequest {
     }
   }
 
-  /// The whole body as bytes; more than [maxLength] bytes throws a
-  /// [PayloadTooLargeException].
+  /// Reads the whole body into memory. Throws a [PayloadTooLargeException]
+  /// as soon as it grows past [maxLength] bytes (no limit when `null`).
+  /// Like [ServerHttpRequest.body], it can be called only once.
   Future<Uint8List> readBodyBytes({int? maxLength}) async {
     final builder = BytesBuilder(copy: false);
     await for (final chunk in body) {
@@ -89,8 +150,10 @@ extension ServerHttpRequestBody on ServerHttpRequest {
     return builder.takeBytes();
   }
 
-  /// The whole body as text, in the `charset` of the `Content-Type`
-  /// (UTF-8 by default).
+  /// Reads the whole body as text, decoded with the `charset` of the
+  /// `Content-Type`: ISO-8859-1 and US-ASCII are recognised, anything else
+  /// (or no charset) is read as UTF-8, with malformed bytes replaced.
+  /// [maxLength] limits the size in bytes as in [readBodyBytes].
   Future<String> readBodyText({int? maxLength}) async {
     final bytes = await readBodyBytes(maxLength: maxLength);
     final charset = contentType?.getParameter('charset')?.toLowerCase();
@@ -102,12 +165,18 @@ extension ServerHttpRequestBody on ServerHttpRequest {
   }
 }
 
-/// A request body longer than the server accepts.
+/// Thrown while reading a request body that is longer than allowed.
+///
+/// The web starter's server raises it from [ServerHttpRequest.body] when
+/// a body passes `server.max-http-request-body-size` (10 MB by default),
+/// and [ServerHttpRequestBody.readBodyBytes] raises it past its
+/// `maxLength`. The web starter turns it into a 413 response, so a
+/// controller does not need to catch it.
 class PayloadTooLargeException implements Exception {
-  /// The body exceeded [maxLength] bytes.
+  /// A body that went past [maxLength] bytes.
   PayloadTooLargeException(this.maxLength);
 
-  /// The largest accepted body, in bytes.
+  /// The limit that was passed, in bytes.
   final int maxLength;
 
   @override
@@ -115,7 +184,12 @@ class PayloadTooLargeException implements Exception {
       'PayloadTooLargeException: the body is larger than $maxLength bytes';
 }
 
-/// Parses a `Cookie` header (`a=1; b=2`) into a map.
+/// Reads the cookies of `Cookie` header [values] (`a=1; b=2`) into a map
+/// from name to value.
+///
+/// Servers use it to fill [ServerHttpRequest.cookies]. Quotes around a
+/// value are removed, parts without `=` are skipped, and a name that
+/// appears twice keeps its last value.
 Map<String, String> parseCookieHeader(Iterable<String> values) => {
   for (final value in values)
     for (final part in value.split(';'))
@@ -128,14 +202,31 @@ String _unquote(String value) =>
     ? value.substring(1, value.length - 1)
     : value;
 
-/// A [ServerHttpRequest] passing everything to [delegate]; override what
-/// changes, like Spring's `ServerHttpRequestDecorator` (a filter changing
-/// the path, the headers, the principal).
+/// A [ServerHttpRequest] that forwards every call to another request, so
+/// a subclass can change one part of a request and keep the rest.
+///
+/// A filter uses it to hand a modified request down the chain: a
+/// different path, extra headers, a body that was already read and must
+/// be replayed. Extend it and override only what changes.
+///
+/// ```dart
+/// // A filter strips the `/v1` prefix before the controllers see the path.
+/// final class _Unversioned extends ServerHttpRequestDecorator {
+///   _Unversioned(super.delegate);
+///
+///   @override
+///   String get path => delegate.path.substring('/v1'.length);
+/// }
+/// ```
+///
+/// Spring (Java): `ServerHttpRequestDecorator` (Spring WebFlux), or
+/// `HttpServletRequestWrapper` on the servlet stack.
 class ServerHttpRequestDecorator implements ServerHttpRequest {
-  /// Wraps [delegate].
+  /// A request that behaves like [delegate] until a subclass overrides a
+  /// member.
   ServerHttpRequestDecorator(this.delegate);
 
-  /// The wrapped request.
+  /// The request every call is forwarded to.
   final ServerHttpRequest delegate;
 
   @override

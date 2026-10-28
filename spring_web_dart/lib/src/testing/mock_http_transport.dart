@@ -10,59 +10,80 @@ import 'package:spring_web_dart/src/http_method.dart';
 import 'package:spring_web_dart/src/media_type.dart';
 import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 
-/// An [HttpTransport] for tests: answers with prepared responses and
-/// records every request, like Spring's `MockRestServiceServer`. Several
-/// `when` calls for the same request are answered in order, the last one
-/// repeats; a request nobody expected throws a `StateError` listing the
-/// expected ones.
+/// A fake HTTP connection for tests: it answers requests with responses
+/// prepared in advance, without any network, and records every request
+/// sent.
+///
+/// It replaces the real [HttpTransport] under the code being tested,
+/// typically a Feign client, so a test decides what the remote service
+/// answers (data, errors, failures, event streams) and checks what the
+/// client sent. Prepare an answer with [when] for a method and a path.
+/// Several answers prepared for the same request are used in order, and
+/// the last one repeats. A request without a prepared answer throws a
+/// `StateError` that lists the prepared ones.
 ///
 /// ```dart
-/// final transport = MockHttpTransport();
-/// transport.when(HttpMethod.get, '/books/1').respond(200, json: {'isbn': '1', 'title': 'Dune'});
-/// transport.when(HttpMethod.get, '/books?q=dune').respond(200, json: []);
-/// transport.when(HttpMethod.post, 'https://api.neon.books/books')
-///     .respondWith((request) => HttpResponse(201, request: request));
-/// transport.when(HttpMethod.get, '/flaky').fail(HttpTransportException('down'));
-/// transport.when(HttpMethod.get, '/orders/events').respondEvents([
-///   ServerSentEvent({'id': 1, 'status': 'NEW'}, id: '1'),
-/// ]);
+/// // The catalog service a Feign client calls is played by the mock.
+/// final catalog = MockHttpTransport()
+///   ..when(HttpMethod.get, '/books/978-0')
+///       .respond(200, json: {'isbn': '978-0', 'title': 'Dune'})
+///   ..when(HttpMethod.get, '/books/000').respond(404)
+///   ..when(HttpMethod.get, '/flaky')
+///       .fail(HttpTransportException('down')); // to test retries
 ///
-/// // In a Spring Boot test: BeanOverride<HttpTransport>(transport)
-/// expect(transport.lastRequest.headers['Accept'], 'application/json');
+/// final app = springBootTest(
+///   springApplication,
+///   overrides: [BeanOverride<HttpTransport>(catalog)],
+/// );
+///
+/// test('finds a book', () async {
+///   final book = await app.getBean<CatalogClient>().find('978-0');
+///   expect(book.title, 'Dune');
+///   expect(catalog.lastRequest.headers['Accept'], 'application/json');
+/// });
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// MockRestServiceServer server =
 ///     MockRestServiceServer.bindTo(builder).build();
-/// server.expect(requestTo("/books/1"))
-///     .andRespond(withSuccess("{\"isbn\":\"1\"}", MediaType.APPLICATION_JSON));
+/// server.expect(requestTo("/books/978-0"))
+///     .andRespond(withSuccess("{\"title\":\"Dune\"}",
+///         MediaType.APPLICATION_JSON));
 /// ```
 class MockHttpTransport implements HttpTransport {
-  /// An empty mock: add expectations with [when].
+  /// A mock with no prepared answer yet; add them with [when].
   MockHttpTransport();
 
   final _expectations = <_Expectation>[];
   final _requests = <HttpRequest>[];
 
-  /// Prepares the answer to [method] requests for [path]: a path
-  /// (`/books/1`) or a full URL (`https://api.neon.books/books/1`); with a
-  /// `?` the query must match too.
+  /// Starts preparing the answer to [method] requests for [path]; finish
+  /// it with one of the methods of the returned [MockResponseBuilder].
+  ///
+  /// [path] is a path (`/books/1`, any host matches) or a full URL
+  /// (`https://api.neon.books/books/1`, scheme, host and port must match).
+  /// A trailing `/` does not matter. Without a `?` any query matches; with
+  /// one (`/books?q=dune`) the query must have exactly the same parameters
+  /// and values.
   MockResponseBuilder when(HttpMethod method, String path) {
     final expectation = _Expectation(method, path);
     _expectations.add(expectation);
     return MockResponseBuilder._(expectation);
   }
 
-  /// The requests sent so far, in order.
+  /// Every request sent so far, in order, including those that had no
+  /// prepared answer.
   List<HttpRequest> get requests => List.unmodifiable(_requests);
 
-  /// The last request sent; throws `StateError` when there was none.
+  /// The last request sent, to check its headers or body; throws a
+  /// `StateError` when none was sent.
   HttpRequest get lastRequest => _requests.isEmpty
       ? throw StateError('No request was sent')
       : _requests.last;
 
-  /// Forgets the expectations and the recorded requests.
+  /// Forgets the prepared answers and the recorded requests, for example
+  /// between two tests that share the mock.
   void reset() {
     _expectations.clear();
     _requests.clear();
@@ -103,10 +124,23 @@ class MockHttpTransport implements HttpTransport {
   void close() {}
 }
 
-/// Sets the answer of one expected request of a [MockHttpTransport].
+/// Sets how a [MockHttpTransport] answers one prepared request; returned
+/// by [MockHttpTransport.when].
+///
+/// Call exactly one of its methods: a fixed response ([respond]), one
+/// computed from the request ([respondWith]), a stream ([respondStream],
+/// [respondEvents]) or a failure ([fail]). A request matched before any
+/// of them was called throws a `StateError`.
 ///
 /// ```dart
-/// transport.when(HttpMethod.get, '/books/1').respond(404);
+/// // The remote service answers a created book with its location.
+/// transport.when(HttpMethod.post, '/books').respondWith(
+///   (request) => HttpResponse(
+///     201,
+///     headers: HttpHeaders({'Location': '/books/978-0'}),
+///     request: request,
+///   ),
+/// );
 /// ```
 ///
 /// Spring (Java): `ResponseActions.andRespond(...)`.
@@ -115,8 +149,11 @@ class MockResponseBuilder {
 
   final _Expectation _expectation;
 
-  /// Answers with [status] and a body: [json] (encoded, with
-  /// `Content-Type: application/json`), [body] text or [bytes].
+  /// Answers with [status], [headers] and at most one kind of body:
+  /// [json], encoded, with `Content-Type: application/json` unless
+  /// [headers] set another; [body], text sent in UTF-8; or [bytes]. With
+  /// none of them the body is empty. If several are given, [json] wins,
+  /// then [body].
   void respond(
     int status, {
     Object? json,
@@ -147,7 +184,8 @@ class MockResponseBuilder {
     );
   }
 
-  /// Answers with what [handler] returns for the request.
+  /// Answers with the response [handler] builds from the request, for an
+  /// answer that depends on what was sent (an echo, a generated id).
   void respondWith(
     FutureOr<HttpResponse> Function(HttpRequest request) handler,
   ) => _expectation.answer = (request) async {
@@ -160,10 +198,18 @@ class MockResponseBuilder {
     );
   };
 
-  /// Answers with a `text/event-stream` body of [events], one chunk each;
-  /// data that is not a `String` is written as JSON. The response ends
-  /// after the last event unless [keepOpen] (then it stays open until the
-  /// client cancels).
+  /// Answers with a stream of server-sent events, as an
+  /// `EventStream` endpoint does: `Content-Type: text/event-stream` (unless
+  /// [headers] set another), then [events], one chunk each. Data that is
+  /// not a `String` is written as JSON. The stream ends after the last
+  /// event, so a client that reconnects sends a new request; with
+  /// [keepOpen] it stays open until the client cancels.
+  ///
+  /// ```dart
+  /// transport.when(HttpMethod.get, '/orders/events').respondEvents([
+  ///   ServerSentEvent({'id': 1, 'status': 'NEW'}, id: '1'),
+  /// ]);
+  /// ```
   void respondEvents(
     List<ServerSentEvent<Object?>> events, {
     int status = 200,
@@ -189,8 +235,9 @@ class MockResponseBuilder {
     }, headers: responseHeaders.toMap());
   }
 
-  /// Answers with [status] and a body streamed from what [body] returns
-  /// (called for every request).
+  /// Answers with [status], [headers] and the byte stream [body] returns;
+  /// [body] is called again for each request, so every request gets a
+  /// fresh stream. Use it for a slow or endless body.
   void respondStream(
     int status,
     Stream<List<int>> Function() body, {
@@ -202,8 +249,9 @@ class MockResponseBuilder {
     request: request,
   );
 
-  /// Fails the request with [error] (e.g. an `HttpTransportException` to
-  /// test retries).
+  /// Makes the request fail with [error] instead of answering, as a lost
+  /// connection does; an [HttpTransportException] tests how the client
+  /// retries or reports it.
   void fail(Object error) =>
       // Any object can be prepared as the failure, as the caller passes it.
       // ignore: only_throw_errors

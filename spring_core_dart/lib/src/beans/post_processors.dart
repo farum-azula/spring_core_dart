@@ -2,15 +2,25 @@ import 'package:spring_core_dart/src/beans/bean_definition.dart';
 import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/core/order.dart';
 
-/// Hooks into bean initialization, like Spring's `BeanPostProcessor`.
+/// A hook that sees every bean as it is created, and may change or replace
+/// it before the container hands it out.
 ///
-/// Both methods may return a different object (e.g. a wrapper); the default
-/// returns the bean unchanged. Order processors with `Ordered` /
-/// `PriorityOrdered` / `@Order`. An application context detects
-/// post-processor beans automatically; on a bare factory register them
-/// with `ConfigurableBeanFactory.addBeanPostProcessor`.
+/// This is how cross-cutting features are built: wrapping beans in
+/// proxies (AOP, caching, transactions), checking or logging every bean,
+/// injecting something special. Applications rarely write one; the
+/// starters and annotations bring the ones they need. Both methods may
+/// return a different object (a wrapper); the defaults return the bean
+/// unchanged.
+///
+/// An application context finds post-processor beans by itself, creates
+/// them before the other beans and orders them by `PriorityOrdered`,
+/// `Ordered` or `@Order`. On a bare factory, register them with
+/// `ConfigurableBeanFactory.addBeanPostProcessor`. A post-processor only
+/// sees beans created after it was added, so it should depend on few
+/// beans.
 ///
 /// ```dart
+/// // Log each bean when it is ready.
 /// @Component()
 /// class TimingPostProcessor extends BeanPostProcessor {
 ///   @override
@@ -36,21 +46,29 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// Init callbacks always run on the raw instance, even if
 /// [postProcessBeforeInitialization] returned a wrapper.
 abstract class BeanPostProcessor {
-  /// Called after injection and aware callbacks, before the init callbacks
-  /// (`@PostConstruct`, `afterPropertiesSet`, init method). Returns the
-  /// object to expose (usually [bean] itself).
+  /// Called for each new bean after injection and the aware callbacks,
+  /// before the init callbacks (`@PostConstruct`, `afterPropertiesSet`,
+  /// init method). Returns the object to go on with, usually [bean]
+  /// itself.
   Object postProcessBeforeInitialization(Object bean, String beanName) => bean;
 
-  /// Called after the init callbacks; the returned object (e.g. a proxy)
-  /// is what the container exposes and injects. Also applied to
-  /// `FactoryBean` products.
+  /// Called for each new bean after its init callbacks. The returned
+  /// object (a proxy, say) is what the container exposes and injects.
+  /// Also applied to `FactoryBean` products.
   Object postProcessAfterInitialization(Object bean, String beanName) => bean;
 }
 
-/// A [BeanPostProcessor] that is also told about destruction, like Spring's
-/// `DestructionAwareBeanPostProcessor`.
+/// A [BeanPostProcessor] that is also called before each bean is
+/// destroyed.
+///
+/// Use it to release, in one place, something that many beans hold
+/// without each declaring a destroy callback: closing every sink, ending
+/// every subscription a framework added. It runs before the bean's own
+/// `@PreDestroy` and destroy callbacks. For one bean, a `@PreDestroy`
+/// method is simpler.
 ///
 /// ```dart
+/// // Close every bean that is a Sink, when the context closes.
 /// class ClosingPostProcessor extends DestructionAwareBeanPostProcessor {
 ///   @override
 ///   bool requiresDestruction(Object bean) => bean is Sink<Object?>;
@@ -76,24 +94,29 @@ abstract class BeanPostProcessor {
 /// }
 /// ```
 abstract class DestructionAwareBeanPostProcessor extends BeanPostProcessor {
-  /// Called with the exposed bean before its `@PreDestroy`,
-  /// `DisposableBean.destroy` and destroy-method callbacks run. Errors are
-  /// collected and do not stop the shutdown.
+  /// Called with the exposed bean (the one others received) before its
+  /// `@PreDestroy`, `DisposableBean.destroy` and destroy-method callbacks
+  /// run. Errors are logged and collected; they do not stop the shutdown.
   void postProcessBeforeDestruction(Object bean, String beanName);
 
-  /// Whether [bean] needs [postProcessBeforeDestruction]. Returning `false`
-  /// lets the container skip tracking beans without destroy callbacks.
+  /// Whether [bean] needs [postProcessBeforeDestruction]; `true` by
+  /// default. Returning `false` lets the container skip tracking beans
+  /// that have no destroy callbacks of their own.
   bool requiresDestruction(Object bean) => true;
 }
 
-/// Modifies bean definitions before any bean is created, like Spring's
-/// `BeanFactoryPostProcessor`.
+/// A hook that runs once at startup, after all bean definitions are
+/// registered and before any ordinary bean is created, to inspect or
+/// change them.
 ///
-/// Declared as a bean, it is instantiated and run by the application
-/// context during refresh, after all definitions are registered and before
-/// the bean graph is validated and singletons are created.
+/// Use it to adjust beans you did not declare yourself: make a library's
+/// bean lazy, change a scope, check that a required bean exists. It sees
+/// definitions, not beans. Declared as a bean, it is created and run by
+/// the application context during refresh, before the bean graph is
+/// validated. Most applications never need one.
 ///
 /// ```dart
+/// // The slow `reports` bean starts on first use, not at startup.
 /// @Component()
 /// class MakeReportsLazy implements BeanFactoryPostProcessor {
 ///   @override
@@ -116,15 +139,21 @@ abstract class DestructionAwareBeanPostProcessor extends BeanPostProcessor {
 /// ```
 abstract interface class BeanFactoryPostProcessor {
   /// Inspects or changes the definitions in [beanFactory] (scope, lazy,
-  /// primary, ...). Avoid creating beans here: they would miss later
-  /// post-processing.
+  /// primary, ...). Avoid creating beans here: they would be created before
+  /// the bean post-processors exist and miss their processing.
   void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory);
 }
 
-/// Registers more bean definitions before the factory post-processors run,
-/// like Spring's `BeanDefinitionRegistryPostProcessor`.
+/// A [BeanFactoryPostProcessor] that may also add, remove or replace bean
+/// definitions, before any `postProcessBeanFactory` runs.
+///
+/// Use it when the set of beans is only known at startup: one bean per
+/// entry of a configuration file, one per plug-in found. Definitions it
+/// registers are seen by every later post-processor. A library uses it more
+/// often than an application.
 ///
 /// ```dart
+/// // Adds a German greeter, written by hand, to the scanned greeters.
 /// @Component()
 /// class GermanRegistrar implements BeanDefinitionRegistryPostProcessor {
 ///   @override
@@ -157,13 +186,18 @@ abstract interface class BeanFactoryPostProcessor {
 /// ```
 abstract interface class BeanDefinitionRegistryPostProcessor
     implements BeanFactoryPostProcessor {
-  /// Adds, removes or replaces definitions in [registry]; runs before every
-  /// [BeanFactoryPostProcessor.postProcessBeanFactory].
+  /// Adds, removes or replaces definitions in [registry]. Runs before every
+  /// [BeanFactoryPostProcessor.postProcessBeanFactory], this processor's
+  /// own included.
   void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry);
 }
 
-/// A post-processor that also hooks into instantiation, like Spring's
-/// `InstantiationAwareBeanPostProcessor`.
+/// A [BeanPostProcessor] that is also called around the creation and the
+/// injection of each bean, not only around its initialization.
+///
+/// It is for framework code that must supply a bean instead of the
+/// container (a stub in tests, a remote proxy), skip or add injection.
+/// Applications almost never need it.
 ///
 /// [postProcessBeforeInstantiation] may return the bean itself (a proxy,
 /// a stub), short-circuiting the container: no instantiation, injection
@@ -175,6 +209,7 @@ abstract interface class BeanDefinitionRegistryPostProcessor
 /// generated code does, so it is the hook to inject or check more).
 ///
 /// ```dart
+/// // In tests, the remote client is replaced by a fake one.
 /// class StubRemote extends InstantiationAwareBeanPostProcessor {
 ///   @override
 ///   Object? postProcessBeforeInstantiation(Type beanType, String beanName) =>
@@ -191,30 +226,37 @@ abstract interface class BeanDefinitionRegistryPostProcessor
 /// }
 /// ```
 abstract class InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
-  /// The bean to use instead of creating one of [beanType], or `null` to
-  /// create it as usual.
+  /// The object to use as the bean [beanName] instead of creating one of
+  /// [beanType], or `null` (the default) to create it as usual. A returned
+  /// object gets no injection, init or destroy callbacks; only
+  /// `postProcessAfterInitialization` runs on it.
   Object? postProcessBeforeInstantiation(Type beanType, String beanName) =>
       null;
 
-  /// Whether the fields and setters of the freshly created [bean] are
-  /// injected; `false` skips the injection (and the following
-  /// [postProcessProperties] calls).
+  /// Called right after [bean] was constructed. Return `false` to skip its
+  /// field, setter and method injection (and the following
+  /// [postProcessProperties] calls); `true` by default.
   bool postProcessAfterInstantiation(Object bean, String beanName) => true;
 
   /// Called after the fields and setters of [bean] were injected, before
-  /// the Aware callbacks and init callbacks.
+  /// the aware callbacks and the init callbacks: the place to inject or
+  /// check more.
   void postProcessProperties(Object bean, String beanName) {}
 }
 
-/// An [InstantiationAwareBeanPostProcessor] that predicts bean types, like
-/// Spring's `SmartInstantiationAwareBeanPostProcessor`:
-/// [predictBeanType] answers `getType(name)` for a bean not created yet
-/// (e.g. a processor that replaces beans with subtypes). Dart has no
-/// early references for circular dependencies and the generator picks the
-/// constructor, so `getEarlyBeanReference` and
-/// `determineCandidateConstructors` have no counterpart.
+/// An [InstantiationAwareBeanPostProcessor] that can also tell the type a
+/// bean will have before it is created.
+///
+/// Write one when your processor replaces beans with objects of another
+/// type, so that `getType(name)` reports that type without creating the
+/// bean. Applications almost never need it. Spring's
+/// `SmartInstantiationAwareBeanPostProcessor` also has
+/// `getEarlyBeanReference` and `determineCandidateConstructors`; they have
+/// no counterpart here, because there are no early references for circular
+/// dependencies and the generator picks the constructor.
 ///
 /// ```dart
+/// // This processor replaces Repo beans with an instrumented subclass.
 /// class Instrumenting extends SmartInstantiationAwareBeanPostProcessor {
 ///   @override
 ///   Type? predictBeanType(Type beanType, String beanName) =>
@@ -230,20 +272,24 @@ abstract class InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 /// ```
 abstract class SmartInstantiationAwareBeanPostProcessor
     extends InstantiationAwareBeanPostProcessor {
-  /// The type the bean named [beanName] will have, or `null` for
-  /// [beanType] (the definition's).
+  /// The type the bean named [beanName] will have, or `null` (the default)
+  /// when it keeps [beanType], the definition's type.
   Type? predictBeanType(Type beanType, String beanName) => null;
 }
 
-/// A post-processor told about each bean definition before its first
-/// bean is initialized, like Spring's `MergedBeanDefinitionPostProcessor`
-/// (Dart definitions have no parents, so they are already "merged").
-/// [postProcessMergedBeanDefinition] runs once per definition, after the
-/// first instance is created and before it is injected (cache metadata
-/// there); [resetBeanDefinition] when the definition is replaced or
-/// removed.
+/// A [BeanPostProcessor] that is shown each bean definition once, when
+/// its first bean has been constructed and before it is injected.
+///
+/// Framework code uses it to read and cache what it needs from a
+/// definition (its annotations, say) once, rather than on every bean.
+/// [postProcessMergedBeanDefinition] runs once per definition;
+/// [resetBeanDefinition] runs when the definition is replaced or removed,
+/// to drop the cache. Applications almost never need it. The name comes
+/// from Spring's `MergedBeanDefinitionPostProcessor`; Dart definitions
+/// have no parents, so they are already "merged".
 ///
 /// ```dart
+/// // Keeps the annotations of each bean for later lookups.
 /// class Metadata extends MergedBeanDefinitionPostProcessor {
 ///   final cache = <String, List<Object>>{};
 ///   @override
@@ -265,8 +311,9 @@ abstract class SmartInstantiationAwareBeanPostProcessor
 /// }
 /// ```
 abstract class MergedBeanDefinitionPostProcessor extends BeanPostProcessor {
-  /// Called once for [definition] (of a bean of [beanType]) before its
-  /// first bean is injected.
+  /// Called once for [definition] of the bean [beanName] (of class
+  /// [beanType]), after its first instance is constructed and before it is
+  /// injected.
   void postProcessMergedBeanDefinition(
     BeanDefinition<Object> definition,
     Type beanType,
@@ -278,15 +325,19 @@ abstract class MergedBeanDefinitionPostProcessor extends BeanPostProcessor {
   void resetBeanDefinition(String beanName) {}
 }
 
-/// Where `@PostConstruct` methods run in the post-processor chain, like
-/// Spring's `CommonAnnotationBeanPostProcessor`: a [PriorityOrdered]
-/// processor with order `Ordered.lowestPrecedence - 3`, so `@PostConstruct`
-/// runs after the `postProcessBeforeInitialization` of the processors
-/// before it (`PriorityOrdered` ones with a smaller order, those added to
-/// the factory directly) and before the others (`Ordered` and plain
-/// ones). `afterPropertiesSet` and init methods still run after all of
+/// A marker in the post-processor chain that says where the
+/// `@PostConstruct` methods run.
+///
+/// It does nothing itself: when the factory reaches it in the chain, it
+/// runs the bean's `@PostConstruct` methods. It is [PriorityOrdered] with
+/// order `Ordered.lowestPrecedence - 3`, so `@PostConstruct` runs after
+/// the `postProcessBeforeInitialization` of the processors before it
+/// (`PriorityOrdered` ones with a smaller order, those added to the
+/// factory directly) and before the others (`Ordered` and plain ones), as
+/// in Spring. `afterPropertiesSet` and init methods still run after all of
 /// them. An application context registers it; on a bare factory without
 /// it, `@PostConstruct` runs after every `postProcessBeforeInitialization`.
+/// Add it to a bare factory to get the context's order.
 ///
 /// ```dart
 /// factory.addBeanPostProcessor(CommonAnnotationBeanPostProcessor());
@@ -298,8 +349,7 @@ abstract class MergedBeanDefinitionPostProcessor extends BeanPostProcessor {
 /// ```
 class CommonAnnotationBeanPostProcessor extends BeanPostProcessor
     implements PriorityOrdered {
-  /// The `@PostConstruct` step (stateless; the factory runs the callbacks
-  /// when it reaches this processor).
+  /// Creates the marker; it holds no state.
   CommonAnnotationBeanPostProcessor();
 
   /// The bean name an application context registers it under.

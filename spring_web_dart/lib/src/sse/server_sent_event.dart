@@ -1,25 +1,48 @@
-/// One server-sent event (one chunk of a `text/event-stream` response):
-/// the [data] plus the optional [id], [event] name, [retry] delay and
-/// [comment]. [T] is the type of the data: `String` as sent, or a class
-/// read from the JSON data.
+/// One server-sent event, the unit of a `text/event-stream` response: its
+/// [data], plus an optional [id], [event] name, [retry] delay and
+/// [comment].
 ///
-/// Usually you do not write this type: a Feign method returns
-/// `EventStream<OrderEvent>`, which is a `Stream<OrderEvent>`; the whole
-/// events are there when you need them (`stream.events`).
+/// [T] is the type of the data: `String` as it travels, or a class that
+/// is written to and read from JSON. The extra fields are what the
+/// protocol adds to plain data. The [event] name lets one stream carry
+/// several kinds of messages. The [id] lets a client resume after a lost
+/// connection, since it sends the last id back in `Last-Event-ID`. The
+/// [retry] delay tells the client how long to wait before reconnecting.
+///
+/// You need this type only when those fields matter. A client reading an
+/// `EventStream<T>` gets the data directly and finds the whole events in
+/// `EventStream.events`. A server writes the data of a plain `Stream<T>`
+/// or `EventStream<T>` as events by itself; it emits a `ServerSentEvent`
+/// (in a stream or through an `SseEmitter`) to set a name or an id.
 ///
 /// ```dart
-/// api.orders().events.listen((ServerSentEvent<OrderEvent> e) {
+/// // Server: name each event so the client can tell the kinds apart, and
+/// // give it an id so a reconnecting client can resume after it.
+/// @GetMapping('/orders/events')
+/// Stream<ServerSentEvent<Order>> events() => orders.changes.map(
+///   (order) => ServerSentEvent(order, id: order.id, event: 'order-updated'),
+/// );
+///
+/// // Client: a Feign method returning EventStream<Order>.
+/// client.events().events.listen((ServerSentEvent<Order> e) {
 ///   print('${e.id} ${e.event}: ${e.data.status}');
 /// });
 /// ```
 ///
-/// Spring (Java): `ServerSentEvent<T>`.
+/// Spring (Java): `ServerSentEvent<T>`, built with a builder on the server
+/// and read with `WebClient` on the client:
 /// ```java
-/// Flux<ServerSentEvent<OrderEvent>> events = webClient.get().uri("/orders/events")
-///     .retrieve().bodyToFlux(new ParameterizedTypeReference<>() {});
+/// ServerSentEvent.builder(order).id(order.id()).event("order-updated")
+///     .build();
+///
+/// Flux<ServerSentEvent<Order>> events = webClient.get()
+///     .uri("/orders/events")
+///     .retrieve()
+///     .bodyToFlux(new ParameterizedTypeReference<>() {});
 /// ```
 final class ServerSentEvent<T> {
-  /// An event carrying [data].
+  /// An event carrying [data], with the other fields when given. A `null`
+  /// field is left out when the event is written.
   const ServerSentEvent(
     this.data, {
     this.id,
@@ -28,24 +51,30 @@ final class ServerSentEvent<T> {
     this.comment,
   });
 
-  /// The data (the `data:` lines, joined with newlines, then decoded).
+  /// The payload. On the wire it is the event's `data:` lines, joined with
+  /// newlines; a client then decodes that text into [T].
   final T data;
 
-  /// The `id:` of this event, if it has one. After a lost connection the
-  /// last id is sent back in the `Last-Event-ID` header.
+  /// The event's `id:`, or `null` when it has none. After a lost
+  /// connection a client sends the last id it saw back in the
+  /// `Last-Event-ID` header, so the server can resume after it.
   final String? id;
 
-  /// The `event:` name, e.g. `order-created` (`null`: the default
-  /// `message`).
+  /// The `event:` name, such as `order-created`; `null` for an unnamed
+  /// event, which the protocol calls `message`.
   final String? event;
 
-  /// The `retry:` delay the server asks for before reconnecting.
+  /// The `retry:` delay: how long the server asks clients to wait before
+  /// reconnecting. Sent in whole milliseconds.
   final Duration? retry;
 
-  /// The `:` comment lines, joined with newlines.
+  /// The comment lines (lines starting with `:`), joined with newlines.
+  /// Clients ignore them; servers send them as keep-alive heartbeats.
   final String? comment;
 
-  /// This event with other [data] (e.g. the decoded form of the text).
+  /// This event with other [data] and the same id, name, retry and
+  /// comment: for example the decoded object in place of the received
+  /// text.
   ServerSentEvent<R> withData<R>(R data) => ServerSentEvent<R>(
     data,
     id: id,
@@ -54,11 +83,17 @@ final class ServerSentEvent<T> {
     comment: comment,
   );
 
-  /// This event in the `text/event-stream` format, ending with the blank
-  /// line; [text] turns the data into text (default: `toString`).
+  /// This event in the `text/event-stream` format, ready to write to a
+  /// response: comment, `id:`, `event:`, `retry:` and `data:` lines, then
+  /// the blank line that ends the event.
+  ///
+  /// [text] turns the data into text (the web starter passes a JSON
+  /// encoder); without it `toString` is used. A multi-line value becomes
+  /// one line per line, and a `null` [data] gives no `data:` line.
   ///
   /// ```dart
-  /// const ServerSentEvent('hello', id: '1').encode(); // 'id: 1\ndata: hello\n\n'
+  /// // 'id: 1\ndata: hello\n\n'
+  /// const ServerSentEvent('hello', id: '1').encode();
   /// ```
   String encode([String Function(T data)? text]) {
     final out = StringBuffer();

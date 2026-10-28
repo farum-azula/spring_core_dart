@@ -4,13 +4,37 @@ import 'dart:io';
 
 import 'package:dart_spring_language_server/src/workspace.dart';
 
-/// A minimal Language Server Protocol server over a byte stream
-/// (stdin/stdout in production, in-memory streams in tests).
+/// The `dart_spring` language server: answers an editor's questions about
+/// a Spring project over the Language Server Protocol, as JSON-RPC
+/// messages framed by `Content-Length` headers.
 ///
-/// Supported: definition (beans, properties), hover, semantic tokens for
-/// placeholders and SpEL, diagnostics (unknown keys, invalid SpEL).
+/// The editor runs it next to the Dart analysis server, which still
+/// handles Dart itself; this server adds what needs Spring knowledge. Go
+/// to definition leads from an injection point to its beans and from a
+/// `${key}` to the property. Hover shows the candidate beans and the
+/// values of a property. Semantic tokens colour placeholders, SpEL,
+/// pointcuts and the parameters of closures. Diagnostics report invalid
+/// SpEL, unknown keys and the like. [SpringWorkspace] does the work; this
+/// class decodes the messages, tracks the open documents and encodes the
+/// answers.
+///
+/// Documents are synchronised as full text on every change. Diagnostics
+/// are published for the open documents only, 300 ms after the last
+/// change or save. Semantic tokens are offered for whole documents, with
+/// no modifiers. An unknown request gets "method not found"; a handler
+/// that throws answers with an internal error and logs the stack trace
+/// to stderr.
+///
+/// ```dart
+/// // bin/dart_spring_lsp.dart: the editor starts the process and talks to
+/// // it over stdin and stdout. Tests pass in-memory streams instead.
+/// final code = await SpringLanguageServer(stdin, stdout).serve();
+/// exit(code);
+/// ```
 final class SpringLanguageServer {
-  /// A server reading `input` and writing to `output`.
+  /// A server that reads the editor's messages from the first argument (a
+  /// byte stream such as stdin) and writes its answers and notifications to
+  /// the second (such as stdout). Nothing happens until [serve].
   SpringLanguageServer(this._input, this._output);
 
   final Stream<List<int>> _input;
@@ -21,7 +45,9 @@ final class SpringLanguageServer {
   Timer? _diagnostics;
   final _done = Completer<int>();
 
-  /// Serves until `exit`; completes with the process exit code.
+  /// Handles messages until the input ends or the editor sends `exit`, and
+  /// completes with the exit code the protocol asks for: 0 when a
+  /// `shutdown` request came first, 1 otherwise.
   Future<int> serve() {
     final buffer = <int>[];
     _input.listen(

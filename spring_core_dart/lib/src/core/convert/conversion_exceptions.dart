@@ -1,13 +1,22 @@
-/// Base class of conversion errors, like Spring's `ConversionException`.
+/// The error a conversion service throws when a value cannot be turned
+/// into the requested type.
 ///
-/// Sealed: every conversion error is either a [ConversionFailedException]
-/// or a [ConverterNotFoundException].
+/// Catch it where a value comes from outside and a bad one should not be
+/// fatal, such as a query parameter or a line of an import file. When it
+/// happens while beans are created (a bad `@Value`), the start fails.
+/// It is sealed: every conversion error is either a
+/// [ConversionFailedException] (a converter exists but the value is bad)
+/// or a [ConverterNotFoundException] (nothing converts to that type).
 ///
 /// ```dart
-/// try {
-///   conversionService.convert<int>('abc');
-/// } on ConversionException catch (error) {
-///   print(error.message);
+/// // A page size typed by a user: fall back instead of failing.
+/// int pageSize(String input) {
+///   try {
+///     return conversionService.convert<int>(input);
+///   } on ConversionException catch (error) {
+///     log.warn(error.message);
+///     return 20;
+///   }
 /// }
 /// ```
 ///
@@ -20,10 +29,10 @@
 /// }
 /// ```
 sealed class ConversionException implements Exception {
-  /// Creates an exception with a human-readable [message].
+  /// Creates the exception with its [message].
   const ConversionException(this.message);
 
-  /// Human-readable description of the failure.
+  /// What failed, naming the value and the target type.
   final String message;
 
   @override
@@ -32,8 +41,13 @@ sealed class ConversionException implements Exception {
   String toString() => '$runtimeType: $message';
 }
 
-/// A converter exists but failed (or produced `null` for a non-nullable
-/// target).
+/// The conversion error for a value the converter could not handle, such
+/// as `'12x'` for an `int`.
+///
+/// Also thrown when the converter, or the source itself, gives `null` for
+/// a non-nullable target: `convert<int>('')` fails this way because a
+/// blank string converts to `null`. The converter's own error is kept in
+/// [cause].
 ///
 /// ```dart
 /// try {
@@ -53,7 +67,7 @@ sealed class ConversionException implements Exception {
 /// ```
 final class ConversionFailedException extends ConversionException {
   /// Creates the exception for converting [value] to [targetType], with
-  /// the optional underlying [cause].
+  /// the converter's error as [cause] when there was one.
   ConversionFailedException(this.value, this.targetType, [this.cause])
     : super(
         "Failed to convert ${value.runtimeType} '$value' to $targetType"
@@ -66,11 +80,17 @@ final class ConversionFailedException extends ConversionException {
   /// The requested target type.
   final Type targetType;
 
-  /// The error thrown by the converter, if any.
+  /// The error the converter threw, such as a [FormatException]; `null`
+  /// when the conversion failed because the result was `null`.
   final Object? cause;
 }
 
-/// No converter can turn the value into the target type.
+/// The conversion error for a target type that nothing converts to, or a
+/// source that no converter of that target accepts.
+///
+/// It usually means a type was never registered: an enum without
+/// `addEnum`, a `List` of a type without `addCollectionConverters`, or a
+/// class of the application without `addConverter`.
 ///
 /// ```dart
 /// try {
@@ -89,12 +109,12 @@ final class ConversionFailedException extends ConversionException {
 /// }
 /// ```
 final class ConverterNotFoundException extends ConversionException {
-  /// Creates the exception for the missing [sourceType] → [targetType]
-  /// conversion.
+  /// Creates the exception for the missing conversion from [sourceType] to
+  /// [targetType].
   ConverterNotFoundException(this.sourceType, this.targetType)
     : super('No converter found from $sourceType to $targetType');
 
-  /// Runtime type of the source value.
+  /// The run-time type of the value that was to be converted.
   final Type sourceType;
 
   /// The requested target type.

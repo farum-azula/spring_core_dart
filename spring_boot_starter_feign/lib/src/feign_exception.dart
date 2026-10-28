@@ -1,11 +1,19 @@
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// A failed Feign call, like Feign's `FeignException`: the [status] of the
-/// response (`-1` when there was none), the request and the response body.
-/// HTTP errors are thrown as subclasses such as [FeignNotFound] or
-/// [FeignServiceUnavailable] (see [FeignException.errorStatus]).
+/// The error a Feign client method throws when its call fails.
+///
+/// It carries what is known about the failure: the [status] of the
+/// response (`-1` when there was none), the [request], and the response
+/// body and headers. An error status is thrown as a subclass, so callers
+/// catch the cases they handle: [FeignNotFound] for a 404,
+/// [FeignClientException] for any 4xx, [FeignServerException] for any 5xx
+/// (see [FeignException.errorStatus]). A call that got no answer throws a
+/// [RetryableException]; a body that does not fit the return type a
+/// [DecodeException]. An `ErrorDecoder` bean can throw exceptions of
+/// your own instead.
 ///
 /// ```dart
+/// // A missing book is not an error for the shop; anything else is.
 /// try {
 ///   await catalog.find('978-0');
 /// } on FeignNotFound {
@@ -21,7 +29,7 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// catch (FeignException.NotFound e) { return null; }
 /// ```
 class FeignException implements Exception {
-  /// A failure with [status] and [message].
+  /// A failure with [status] (`-1` without a response) and [message].
   FeignException(
     this.status,
     this.message, {
@@ -31,27 +39,33 @@ class FeignException implements Exception {
     this.cause,
   });
 
-  /// The response status; `-1` when no response was received.
+  /// The status of the response; `-1` when no response was received.
   final int status;
 
-  /// What happened.
+  /// What happened, in Feign's form:
+  /// `[404 Not Found] during [GET] to [<url>] [<method key>]`.
   final String message;
 
-  /// The request that failed.
+  /// The request that failed, when known.
   final HttpRequest? request;
 
-  /// The response body as text, if there was one.
+  /// The response body as text, often an error message or a problem
+  /// document from the server; `null` without a response.
   final String? responseBody;
 
-  /// The response headers, if there was a response.
+  /// The response headers; `null` without a response.
   final HttpHeaders? responseHeaders;
 
-  /// The underlying error (e.g. an `HttpTransportException`).
+  /// The error that caused this one, such as an `HttpTransportException`
+  /// for a failed connection; `null` when none.
   final Object? cause;
 
-  /// The exception for an error [response] of the method [methodKey]
-  /// (`CatalogClient#find(String)`): a client (4xx) or server (5xx)
-  /// subclass.
+  /// The exception for the error [response] of the method [methodKey]
+  /// (`CatalogClient#find(String)`): the subclass for its status (such as
+  /// [FeignNotFound]), else a [FeignClientException] for another 4xx, a
+  /// [FeignServerException] for another 5xx, or a plain [FeignException]
+  /// for any other status. An `ErrorDecoder` of your own may call it for
+  /// the statuses it leaves alone.
   static FeignException errorStatus(String methodKey, HttpResponse response) {
     final status = response.statusCode;
     final reason = HttpStatus.resolve(status)?.reasonPhrase;
@@ -123,9 +137,14 @@ class FeignException implements Exception {
   }
 }
 
-/// A 4xx response (`FeignException.FeignClientException`).
+/// The error of a call answered with a 4xx status: the server refused
+/// the request as it was sent.
+///
+/// Catch it for every client error at once; the common statuses have
+/// subclasses of their own, such as [FeignNotFound]. Feign's counterpart
+/// is `FeignException.FeignClientException`.
 class FeignClientException extends FeignException {
-  /// A client error with [status].
+  /// A client error with [status] and [message].
   FeignClientException(
     super.status,
     super.message, {
@@ -135,9 +154,13 @@ class FeignClientException extends FeignException {
   });
 }
 
-/// A 5xx response (`FeignException.FeignServerException`).
+/// The error of a call answered with a 5xx status: the server failed.
+///
+/// Catch it for every server error at once; the common statuses have
+/// subclasses of their own, such as [FeignServiceUnavailable]. Feign's
+/// counterpart is `FeignException.FeignServerException`.
 class FeignServerException extends FeignException {
-  /// A server error with [status].
+  /// A server error with [status] and [message].
   FeignServerException(
     super.status,
     super.message, {
@@ -147,9 +170,11 @@ class FeignServerException extends FeignException {
   });
 }
 
-/// 400 Bad Request.
+/// The error of a call answered with 400 Bad Request: the server found the
+/// request malformed or invalid.
 class FeignBadRequest extends FeignClientException {
-  /// The exception for a 400 response.
+  /// The exception [FeignException.errorStatus] builds for a 400 response,
+  /// with its message, request, body and headers.
   FeignBadRequest(
     String message,
     HttpRequest? request,
@@ -164,9 +189,11 @@ class FeignBadRequest extends FeignClientException {
       );
 }
 
-/// 401 Unauthorized.
+/// The error of a call answered with 401 Unauthorized: the call lacks valid
+/// credentials.
 class FeignUnauthorized extends FeignClientException {
-  /// The exception for a 401 response.
+  /// The exception [FeignException.errorStatus] builds for a 401 response,
+  /// with its message, request, body and headers.
   FeignUnauthorized(
     String message,
     HttpRequest? request,
@@ -181,9 +208,11 @@ class FeignUnauthorized extends FeignClientException {
       );
 }
 
-/// 403 Forbidden.
+/// The error of a call answered with 403 Forbidden: the credentials are valid
+/// but not allowed to do this.
 class FeignForbidden extends FeignClientException {
-  /// The exception for a 403 response.
+  /// The exception [FeignException.errorStatus] builds for a 403 response,
+  /// with its message, request, body and headers.
   FeignForbidden(
     String message,
     HttpRequest? request,
@@ -198,9 +227,11 @@ class FeignForbidden extends FeignClientException {
       );
 }
 
-/// 404 Not Found.
+/// The error of a call answered with 404 Not Found: what the call asks for does
+/// not exist.
 class FeignNotFound extends FeignClientException {
-  /// The exception for a 404 response.
+  /// The exception [FeignException.errorStatus] builds for a 404 response,
+  /// with its message, request, body and headers.
   FeignNotFound(
     String message,
     HttpRequest? request,
@@ -215,9 +246,11 @@ class FeignNotFound extends FeignClientException {
       );
 }
 
-/// 405 Method Not Allowed.
+/// The error of a call answered with 405 Method Not Allowed: the path does not
+/// take this HTTP method.
 class FeignMethodNotAllowed extends FeignClientException {
-  /// The exception for a 405 response.
+  /// The exception [FeignException.errorStatus] builds for a 405 response,
+  /// with its message, request, body and headers.
   FeignMethodNotAllowed(
     String message,
     HttpRequest? request,
@@ -232,9 +265,11 @@ class FeignMethodNotAllowed extends FeignClientException {
       );
 }
 
-/// 406 Not Acceptable.
+/// The error of a call answered with 406 Not Acceptable: the server cannot
+/// answer in a type the `Accept` header allows.
 class FeignNotAcceptable extends FeignClientException {
-  /// The exception for a 406 response.
+  /// The exception [FeignException.errorStatus] builds for a 406 response,
+  /// with its message, request, body and headers.
   FeignNotAcceptable(
     String message,
     HttpRequest? request,
@@ -249,9 +284,11 @@ class FeignNotAcceptable extends FeignClientException {
       );
 }
 
-/// 409 Conflict.
+/// The error of a call answered with 409 Conflict: the call conflicts with the
+/// current state, such as a duplicate.
 class FeignConflict extends FeignClientException {
-  /// The exception for a 409 response.
+  /// The exception [FeignException.errorStatus] builds for a 409 response,
+  /// with its message, request, body and headers.
   FeignConflict(
     String message,
     HttpRequest? request,
@@ -266,9 +303,11 @@ class FeignConflict extends FeignClientException {
       );
 }
 
-/// 410 Gone.
+/// The error of a call answered with 410 Gone: what the call asks for existed
+/// but was removed for good.
 class FeignGone extends FeignClientException {
-  /// The exception for a 410 response.
+  /// The exception [FeignException.errorStatus] builds for a 410 response,
+  /// with its message, request, body and headers.
   FeignGone(
     String message,
     HttpRequest? request,
@@ -283,9 +322,11 @@ class FeignGone extends FeignClientException {
       );
 }
 
-/// 415 Unsupported Media Type.
+/// The error of a call answered with 415 Unsupported Media Type: the server
+/// does not read the body's `Content-Type`.
 class FeignUnsupportedMediaType extends FeignClientException {
-  /// The exception for a 415 response.
+  /// The exception [FeignException.errorStatus] builds for a 415 response,
+  /// with its message, request, body and headers.
   FeignUnsupportedMediaType(
     String message,
     HttpRequest? request,
@@ -300,9 +341,11 @@ class FeignUnsupportedMediaType extends FeignClientException {
       );
 }
 
-/// 422 Unprocessable Entity.
+/// The error of a call answered with 422 Unprocessable Entity: the body is
+/// well-formed but its content is rejected.
 class FeignUnprocessableEntity extends FeignClientException {
-  /// The exception for a 422 response.
+  /// The exception [FeignException.errorStatus] builds for a 422 response,
+  /// with its message, request, body and headers.
   FeignUnprocessableEntity(
     String message,
     HttpRequest? request,
@@ -317,9 +360,11 @@ class FeignUnprocessableEntity extends FeignClientException {
       );
 }
 
-/// 429 Too Many Requests.
+/// The error of a call answered with 429 Too Many Requests: the client called
+/// too often and must slow down.
 class FeignTooManyRequests extends FeignClientException {
-  /// The exception for a 429 response.
+  /// The exception [FeignException.errorStatus] builds for a 429 response,
+  /// with its message, request, body and headers.
   FeignTooManyRequests(
     String message,
     HttpRequest? request,
@@ -334,9 +379,11 @@ class FeignTooManyRequests extends FeignClientException {
       );
 }
 
-/// 500 Internal Server Error.
+/// The error of a call answered with 500 Internal Server Error: the server
+/// failed while handling the call.
 class FeignInternalServerError extends FeignServerException {
-  /// The exception for a 500 response.
+  /// The exception [FeignException.errorStatus] builds for a 500 response,
+  /// with its message, request, body and headers.
   FeignInternalServerError(
     String message,
     HttpRequest? request,
@@ -351,9 +398,11 @@ class FeignInternalServerError extends FeignServerException {
       );
 }
 
-/// 501 Not Implemented.
+/// The error of a call answered with 501 Not Implemented: the server does not
+/// offer this operation.
 class FeignNotImplemented extends FeignServerException {
-  /// The exception for a 501 response.
+  /// The exception [FeignException.errorStatus] builds for a 501 response,
+  /// with its message, request, body and headers.
   FeignNotImplemented(
     String message,
     HttpRequest? request,
@@ -368,9 +417,11 @@ class FeignNotImplemented extends FeignServerException {
       );
 }
 
-/// 502 Bad Gateway.
+/// The error of a call answered with 502 Bad Gateway: a proxy or gateway got a
+/// bad answer from the server behind it.
 class FeignBadGateway extends FeignServerException {
-  /// The exception for a 502 response.
+  /// The exception [FeignException.errorStatus] builds for a 502 response,
+  /// with its message, request, body and headers.
   FeignBadGateway(
     String message,
     HttpRequest? request,
@@ -385,9 +436,11 @@ class FeignBadGateway extends FeignServerException {
       );
 }
 
-/// 503 Service Unavailable.
+/// The error of a call answered with 503 Service Unavailable: the server is
+/// overloaded or down for now.
 class FeignServiceUnavailable extends FeignServerException {
-  /// The exception for a 503 response.
+  /// The exception [FeignException.errorStatus] builds for a 503 response,
+  /// with its message, request, body and headers.
   FeignServiceUnavailable(
     String message,
     HttpRequest? request,
@@ -402,9 +455,11 @@ class FeignServiceUnavailable extends FeignServerException {
       );
 }
 
-/// 504 Gateway Timeout.
+/// The error of a call answered with 504 Gateway Timeout: a proxy or gateway
+/// timed out waiting for the server behind it.
 class FeignGatewayTimeout extends FeignServerException {
-  /// The exception for a 504 response.
+  /// The exception [FeignException.errorStatus] builds for a 504 response,
+  /// with its message, request, body and headers.
   FeignGatewayTimeout(
     String message,
     HttpRequest? request,
@@ -419,11 +474,17 @@ class FeignGatewayTimeout extends FeignServerException {
       );
 }
 
-/// A failure that may succeed when tried again: a connection error, a
-/// timeout, or a response with `Retry-After` (Feign's
-/// `RetryableException`). The `Retryer` bean decides whether to retry.
+/// The error of a call that may succeed when tried again: no connection,
+/// a timeout, or a response with a `Retry-After` header.
+///
+/// Only these errors are retried: the client asks its `Retryer` whether
+/// and when to try again, and throws this when the retryer gives up (or
+/// when there is none). Its [status] is `-1` when there was no response.
+/// An `ErrorDecoder` of your own can throw it to make more answers
+/// retryable, such as every 503.
 ///
 /// ```dart
+/// // A busy server is worth another try.
 /// final class Retry503 implements ErrorDecoder {
 ///   @override
 ///   Exception decode(String methodKey, HttpResponse response) =>
@@ -439,7 +500,8 @@ class FeignGatewayTimeout extends FeignServerException {
 ///     (Long) null, request);
 /// ```
 class RetryableException extends FeignException {
-  /// A retryable failure; [retryAfter] is when to try again, if known.
+  /// A failure that may be tried again; [retryAfter] is when, if the
+  /// server said so.
   RetryableException(
     super.status,
     super.message, {
@@ -450,28 +512,50 @@ class RetryableException extends FeignException {
     super.cause,
   });
 
-  /// When the server asked to try again (`Retry-After`).
+  /// The time the server asked to be called again (`Retry-After`), or
+  /// `null`. `DefaultRetryer` waits until then, at most its `maxPeriod`.
   final DateTime? retryAfter;
 }
 
-/// A response body that could not be read as the method's return type
-/// (Feign's `DecodeException`).
+/// The error of a call whose answer could not be read as the method's
+/// return type, such as JSON of another shape or text where an object
+/// was expected.
+///
+/// It usually means the interface does not match the service. For an
+/// event stream, an event that cannot be read is this error on the
+/// stream, which goes on. Feign's counterpart is `DecodeException`.
 class DecodeException extends FeignException {
-  /// A decoding failure of a response with [status].
+  /// A decoding failure of a response with [status]; [cause] is the
+  /// parse error.
   DecodeException(super.status, super.message, {super.request, super.cause});
 }
 
-/// A request body that could not be written (Feign's `EncodeException`).
+/// The error of a call whose arguments could not be written into the
+/// request: a body the `ObjectMapper` cannot write, a nested object in a
+/// form, or a value whose runtime type is an object where a path, query
+/// or header needs a single value.
+///
+/// It is thrown before anything is sent, with [status] `-1`. Feign's
+/// counterpart is `EncodeException`.
 class EncodeException extends FeignException {
-  /// An encoding failure.
+  /// An encoding failure described by [message]; [cause] is the error
+  /// behind it.
   EncodeException(String message, {super.cause}) : super(-1, message);
 }
 
-/// Turns an error response (status ≥ 400) into the exception the client
-/// method throws, like Feign's `ErrorDecoder`. Declare a bean to replace the
-/// [DefaultErrorDecoder].
+/// Decides which exception a Feign call throws when the answer is not a
+/// success.
+///
+/// By default ([DefaultErrorDecoder]) a client throws the
+/// [FeignException] subclass of the status. Declare an `ErrorDecoder` bean
+/// to throw exceptions of your own domain instead, read an error document
+/// the service sends, or make some answers retryable; put it in a
+/// client's `configuration` class to apply it to that client only. It is
+/// called for every status outside 2xx, except for a dismissed 404 and
+/// for methods that return the raw `HttpResponse`.
 ///
 /// ```dart
+/// // The catalog's 404 becomes the shop's own exception.
 /// final class ShopErrors implements ErrorDecoder {
 ///   @override
 ///   Exception decode(String methodKey, HttpResponse response) =>
@@ -488,16 +572,22 @@ class EncodeException extends FeignException {
 /// }
 /// ```
 abstract interface class ErrorDecoder {
-  /// The exception for the error [response] of [methodKey]
-  /// (`CatalogClient#find(String)`).
+  /// The exception the call throws for the error [response] of the
+  /// method [methodKey] (`CatalogClient#find(String)`). Return a
+  /// [RetryableException] to let the `Retryer` try again.
   Exception decode(String methodKey, HttpResponse response);
 }
 
-/// The default [ErrorDecoder]: a `Retry-After` header (seconds or an HTTP
-/// date) makes it a [RetryableException], otherwise
-/// [FeignException.errorStatus]. Like Feign's `ErrorDecoder.Default`.
+/// The [ErrorDecoder] every client uses unless another is declared.
+///
+/// It throws the exception of [FeignException.errorStatus] for the
+/// status, such as [FeignNotFound]; a response with a `Retry-After` header
+/// (seconds or an HTTP date) becomes a [RetryableException] instead, so a
+/// `Retryer` can wait and try again. A decoder of your own can hand the
+/// cases it does not handle to it. Feign's counterpart is
+/// `ErrorDecoder.Default`.
 class DefaultErrorDecoder implements ErrorDecoder {
-  /// The default decoder.
+  /// The default decoder; it has no state.
   const DefaultErrorDecoder();
 
   @override
