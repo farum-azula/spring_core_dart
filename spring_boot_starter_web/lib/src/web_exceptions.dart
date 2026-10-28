@@ -1,10 +1,33 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// No handler maps the request: 404, like Spring's
-/// `NoHandlerFoundException`.
+/// The error of a request that no controller or other handler maps; it
+/// is answered with a 404.
+///
+/// The dispatcher throws it when every handler mapping has passed on the
+/// request, and also for a path outside `server.servlet.context-path`.
+/// Catch it in a `@ControllerAdvice` to answer unknown paths your own
+/// way.
+///
+/// ```dart
+/// // Unknown API paths answer with a hint where the documentation is.
+/// @ExceptionHandler()
+/// @ResponseStatus(HttpStatus.notFound)
+/// ProblemDetail unknown(NoHandlerFoundException e) =>
+///     ProblemDetail.forStatusAndDetail(
+///       HttpStatus.notFound,
+///       'No ${e.path}; see https://shop.example/api-docs',
+///     );
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @ExceptionHandler
+/// ProblemDetail unknown(NoHandlerFoundException e) { ... }
+/// ```
 class NoHandlerFoundException extends ErrorResponseException {
-  /// No handler for [method] [path].
+  /// No handler for [method] on [path]; the detail says
+  /// `No endpoint GET /x.`.
   NoHandlerFoundException(this.method, this.path)
     : super(
         HttpStatus.notFound,
@@ -14,17 +37,21 @@ class NoHandlerFoundException extends ErrorResponseException {
         ),
       );
 
-  /// The request method.
+  /// The method of the request.
   final HttpMethod method;
 
-  /// The request path.
+  /// The path of the request.
   final String path;
 }
 
-/// The path is mapped, but not for this method: 405 with `Allow`, like
-/// Spring's `HttpRequestMethodNotSupportedException`.
+/// The error of a request whose path is mapped, but not for its method,
+/// such as a `DELETE` on a path that only has a `GET`; it is answered with
+/// a 405 and an `Allow` header listing the methods the path supports.
+///
+/// The router throws it. Spring's counterpart is
+/// `HttpRequestMethodNotSupportedException`.
 class HttpRequestMethodNotSupportedException extends ErrorResponseException {
-  /// [method] is not one of [supported].
+  /// [method] is not one of the [supported] methods of the path.
   HttpRequestMethodNotSupportedException(this.method, this.supported)
     : super(
         HttpStatus.methodNotAllowed,
@@ -37,17 +64,23 @@ class HttpRequestMethodNotSupportedException extends ErrorResponseException {
         }),
       );
 
-  /// The request method.
+  /// The method of the request.
   final HttpMethod method;
 
-  /// The methods the path supports.
+  /// The methods the path supports (a `GET` mapping also supports
+  /// `HEAD`).
   final Set<HttpMethod> supported;
 }
 
-/// The request's `Content-Type` is not one the handler consumes: 415 with
-/// `Accept`, like Spring's `HttpMediaTypeNotSupportedException`.
+/// The error of a request whose body has a `Content-Type` the handler
+/// does not read; it is answered with a 415 and, when known, an `Accept`
+/// header listing the types it reads.
+///
+/// The router throws it when no mapping's `consumes` matches, and the
+/// body binding when a `@RequestBody` object comes in another type than
+/// JSON. Spring's counterpart is `HttpMediaTypeNotSupportedException`.
 class HttpMediaTypeNotSupportedException extends ErrorResponseException {
-  /// [contentType] is not one of [supported].
+  /// [contentType] is not one of the [supported] types.
   HttpMediaTypeNotSupportedException(this.contentType, this.supported)
     : super(
         HttpStatus.unsupportedMediaType,
@@ -61,17 +94,22 @@ class HttpMediaTypeNotSupportedException extends ErrorResponseException {
         }),
       );
 
-  /// The request's content type.
+  /// The `Content-Type` of the request; `null` when it has none.
   final String? contentType;
 
-  /// What the handler accepts.
+  /// The media types the handler reads.
   final List<String> supported;
 }
 
-/// The handler cannot produce what `Accept` asks for: 406, like Spring's
+/// The error of a request whose `Accept` header admits nothing the
+/// handler can write; it is answered with a 406.
+///
+/// The router throws it when no mapping's `produces` matches `Accept`,
+/// and the response writer when an object cannot be written as JSON
+/// because the client does not accept JSON. Spring's counterpart is
 /// `HttpMediaTypeNotAcceptableException`.
 class HttpMediaTypeNotAcceptableException extends ErrorResponseException {
-  /// None of [supported] is acceptable.
+  /// None of the [supported] types is acceptable to the client.
   HttpMediaTypeNotAcceptableException(this.supported)
     : super(
         HttpStatus.notAcceptable,
@@ -81,15 +119,20 @@ class HttpMediaTypeNotAcceptableException extends ErrorResponseException {
         ),
       );
 
-  /// What the handler produces.
+  /// The media types the handler can write.
   final List<String> supported;
 }
 
-/// A required request value is missing: 400, like Spring's
-/// `MissingRequestValueException` family.
+/// The error of a request that lacks a value a controller parameter
+/// requires; it is answered with a 400, such as
+/// `Required parameter 'q' is not present.`.
+///
+/// A parameter is required unless it is nullable or has a default value,
+/// so `@RequestParam('q') String q` throws this for a request without
+/// `q`, while `String? q` gets `null`. Spring has one exception per kind
+/// of value (`MissingServletRequestParameterException`, ...).
 class MissingRequestValueException extends ErrorResponseException {
-  /// The [kind] (`parameter`, `header`, `cookie`, `path variable`) [name]
-  /// is missing.
+  /// The [kind] of value named [name] is missing.
   MissingRequestValueException(this.kind, this.name)
     : super(
         HttpStatus.badRequest,
@@ -99,17 +142,22 @@ class MissingRequestValueException extends ErrorResponseException {
         ),
       );
 
-  /// What is missing: `parameter`, `header`, `cookie` or `path variable`.
+  /// The kind of value that is missing: `parameter`, `header`, `cookie`,
+  /// `path variable` or `part`.
   final String kind;
 
-  /// Its name.
+  /// The name of the missing parameter, header, cookie, variable or part.
   final String name;
 }
 
-/// A request value cannot be converted to the parameter's type: 400, like
-/// Spring's `MethodArgumentTypeMismatchException`.
+/// The error of a request value that does not convert to the type of its
+/// parameter, such as `?page=two` for an `int page`; it is answered with
+/// a 400 naming the parameter.
+///
+/// Spring's counterpart is `MethodArgumentTypeMismatchException`.
 class MethodArgumentTypeMismatchException extends ErrorResponseException {
-  /// [value] of [name] is not a [requiredType].
+  /// The text [value] of [name] does not convert to [requiredType];
+  /// [cause] is the conversion error.
   MethodArgumentTypeMismatchException(
     this.name,
     this.value,
@@ -124,20 +172,26 @@ class MethodArgumentTypeMismatchException extends ErrorResponseException {
          cause: cause,
        );
 
-  /// The parameter (or variable, header) name.
+  /// The name of the parameter, path variable, header or cookie.
   final String name;
 
-  /// The text sent.
+  /// The text the request sent.
   final String value;
 
-  /// The type it should have been.
+  /// The name of the type the parameter needs, such as `int`.
   final String requiredType;
 }
 
-/// The body cannot be read (missing, malformed JSON, wrong shape): 400,
-/// like Spring's `HttpMessageNotReadableException`.
+/// The error of a request body, or a JSON part of an upload, that cannot
+/// be read into its parameter: missing while required, malformed JSON, or
+/// JSON of the wrong shape. It is answered with a 400 whose detail stays
+/// vague (`Failed to read request`); the reason is in [message], for the
+/// logs.
+///
+/// Spring's counterpart is `HttpMessageNotReadableException`.
 class HttpMessageNotReadableException extends ErrorResponseException {
-  /// The body is unreadable because of [message].
+  /// The body cannot be read because of [message]; [cause] is the parse
+  /// error, if any.
   HttpMessageNotReadableException(this.message, [Object? cause])
     : super(
         HttpStatus.badRequest,
@@ -148,17 +202,36 @@ class HttpMessageNotReadableException extends ErrorResponseException {
         cause: cause,
       );
 
-  /// Why (not sent to the client).
+  /// Why the body could not be read; not sent to the client.
   final String message;
 
   @override
   String toString() => 'HttpMessageNotReadableException: $message';
 }
 
-/// A `@Valid` argument has constraint violations: 400 with the field
-/// errors, like Spring's `MethodArgumentNotValidException`. The problem
-/// lists them as `errors`: `[{"field": "isbn", "message": "...",
-/// "rejectedValue": ""}]`.
+/// The error of a `@Valid()` argument that breaks its constraints; it is
+/// answered with a 400 that lists the violations.
+///
+/// The problem's `errors` property has one entry per violation, with the
+/// message resolved through the `MessageSource`:
+/// `[{"field": "isbn", "message": "must not be blank", "rejectedValue": ""}]`.
+/// Catch it in an `@ExceptionHandler` to answer in another shape.
+///
+/// ```dart
+/// // Answer with a plain map of field to message.
+/// @ExceptionHandler()
+/// @ResponseStatus(HttpStatus.badRequest)
+/// Map<String, String?> invalid(MethodArgumentNotValidException e) => {
+///   for (final error in e.bindingResult.fieldErrors())
+///     error.field: error.defaultMessage,
+/// };
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// @ExceptionHandler
+/// Map<String, String> invalid(MethodArgumentNotValidException e) { ... }
+/// ```
 class MethodArgumentNotValidException extends ErrorResponseException {
   /// The argument [parameterName] failed validation; [bindingResult]
   /// holds the errors.
@@ -171,10 +244,11 @@ class MethodArgumentNotValidException extends ErrorResponseException {
         ),
       );
 
-  /// The parameter that was validated.
+  /// The name of the parameter that was validated.
   final String parameterName;
 
-  /// The errors.
+  /// The violations, by field (`fieldErrors()`) and for the whole object
+  /// (`globalErrors`).
   final BindingResult bindingResult;
 
   @override
@@ -183,10 +257,12 @@ class MethodArgumentNotValidException extends ErrorResponseException {
       '${bindingResult.errorCount} errors';
 }
 
-/// The request body is larger than `server.max-http-request-body-size`:
-/// 413.
+/// The error of a request body larger than
+/// `server.max-http-request-body-size` (10 MB by default); it is answered
+/// with a 413. Uploads have their own limit and error,
+/// `MaxUploadSizeExceededException`.
 class PayloadTooLargeErrorException extends ErrorResponseException {
-  /// The limit is [maxLength] bytes.
+  /// The body passed the limit of [maxLength] bytes.
   PayloadTooLargeErrorException(int maxLength)
     : super(
         HttpStatus.contentTooLarge,
@@ -197,9 +273,13 @@ class PayloadTooLargeErrorException extends ErrorResponseException {
       );
 }
 
-/// An async request (an `SseEmitter`) timed out: 503, like Spring's
-/// `AsyncRequestTimeoutException`.
+/// The error of an asynchronous request that timed out, answered with a
+/// 503 when thrown.
+///
+/// The starter itself does not throw it: an `SseEmitter` that times out
+/// just ends its stream. It exists so that application code can signal
+/// such a timeout with Spring's name, `AsyncRequestTimeoutException`.
 class AsyncRequestTimeoutException extends ErrorResponseException {
-  /// The timeout.
+  /// A timeout, with the 503 problem and no detail.
   AsyncRequestTimeoutException() : super(HttpStatus.serviceUnavailable);
 }

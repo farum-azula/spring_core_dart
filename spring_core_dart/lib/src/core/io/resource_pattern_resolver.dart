@@ -6,35 +6,59 @@ import 'package:spring_core_dart/src/core/io/path_matcher.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 
-/// Resolves location patterns to several resources, like Spring's
-/// `ResourcePatternResolver`.
+/// A [ResourceLoader] that also finds all resources matching a pattern
+/// with wildcards, such as `classpath:templates/*.html` or
+/// `file:config/**/*.properties`.
+///
+/// Use it to load every file of a kind without listing them: all
+/// templates, all seed data files, all message bundles. The application
+/// context is one, so a constructor parameter of type
+/// `ResourcePatternResolver` receives it.
 ///
 /// ```dart
-/// final ResourcePatternResolver resolver =
-///     PathMatchingResourcePatternResolver();
-/// final files = resolver.getResources('file:config/**/*.properties');
+/// @Component()
+/// class Templates {
+///   Templates(this.resources);
+///   final ResourcePatternResolver resources; // the application context
+///
+///   // Every mail template shipped in lib/resources/mail/.
+///   List<Resource> all() => resources.getResources('classpath:mail/*.txt');
+/// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// ResourcePatternResolver resolver =
-///     new PathMatchingResourcePatternResolver();
-/// Resource[] files = resolver.getResources("file:config/**/*.properties");
+/// @Component
+/// class Templates {
+///   private final ResourcePatternResolver resources;
+///
+///   Templates(ResourcePatternResolver resources) {
+///     this.resources = resources;
+///   }
+///
+///   Resource[] all() throws IOException {
+///     return resources.getResources("classpath:mail/*.txt");
+///   }
+/// }
 /// ```
 abstract interface class ResourcePatternResolver implements ResourceLoader {
-  /// Resources matching [locationPattern]; a location without wildcards
-  /// yields that single resource (if it exists).
+  /// All resources matching [locationPattern], possibly none. A location
+  /// without wildcards gives that one resource when it exists.
   ///
-  /// Unlike Spring, a missing non-pattern location gives an empty list.
+  /// Unlike Spring, a missing location without wildcards gives an empty
+  /// list instead of a resource that does not exist.
   List<Resource> getResources(String locationPattern);
 }
 
-/// Ant-style patterns such as `file:config/**/*.properties` or
-/// `classpath:i18n/*.properties`, like Spring's
-/// `PathMatchingResourcePatternResolver`. Patterns are supported for
-/// `file:` and classpath locations (`classpath:`, `classpath*:` or no
-/// prefix, as in [DefaultResourceLoader]); other locations are delegated
-/// to [resourceLoader] without wildcard expansion.
+/// The [ResourcePatternResolver] used everywhere: it expands Ant-style
+/// patterns (`*`, `**`, `?`) in `file:` and classpath locations.
+///
+/// The application context uses one, so applications usually go through
+/// the context; create one to search files without a context, in a tool
+/// or a test. Patterns work for `file:` and classpath locations
+/// (`classpath:`, `classpath*:` or no prefix, as in
+/// [DefaultResourceLoader]); other locations go to [resourceLoader] as
+/// they are, without wildcard expansion.
 ///
 /// The classpath roots are the directories added with
 /// `ClasspathResources.addDirectory` (latest first), then the embedded
@@ -47,6 +71,8 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 /// root; directories the pattern cannot match below are not walked.
 ///
 /// ```dart
+/// // A tool that adds every properties file of ./config/ to its
+/// // environment, then finds the message bundles of all packages.
 /// final resolver = PathMatchingResourcePatternResolver();
 /// for (final resource in resolver.getResources('file:config/*.properties')) {
 ///   environment.propertySources.addLast(
@@ -67,22 +93,25 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 /// resolver.getResources("classpath*:i18n/messages*.properties");
 /// ```
 class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
-  /// Creates a resolver; [resourceLoader] defaults to
-  /// [DefaultResourceLoader] and [pathMatcher] to [AntPathMatcher].
+  /// Creates a resolver that loads single resources with [resourceLoader]
+  /// (a [DefaultResourceLoader] unless given) and matches paths with
+  /// [pathMatcher] (an [AntPathMatcher] unless given).
   PathMatchingResourcePatternResolver({
     ResourceLoader? resourceLoader,
     PathMatcher? pathMatcher,
   }) : resourceLoader = resourceLoader ?? DefaultResourceLoader(),
        pathMatcher = pathMatcher ?? AntPathMatcher();
 
-  /// Prefix searching every classpath root, like Spring's
+  /// The prefix that searches every classpath root instead of the first
+  /// one that has the base directory: `classpath*:`, Spring's
   /// `CLASSPATH_ALL_URL_PREFIX`.
   static const classpathAllUrlPrefix = 'classpath*:';
 
-  /// Loads single resources and non-file locations.
+  /// The loader for locations without wildcards and for prefixes this
+  /// resolver does not expand.
   final ResourceLoader resourceLoader;
 
-  /// Matches file paths against the pattern.
+  /// The matcher that compares paths with the pattern.
   final PathMatcher pathMatcher;
 
   @override

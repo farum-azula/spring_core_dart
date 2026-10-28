@@ -19,8 +19,11 @@ const _source =
     'package:spring_boot_starter_security#SecurityAutoConfiguration';
 const _log = SpringLog('spring.security.autoconfigure');
 
-/// `spring.security.*`, like Spring Boot's `SecurityProperties` and
-/// `OAuth2ResourceServerProperties`.
+/// The `spring.security.*` properties the starter reads: the default user,
+/// the place of the security filter, and the JWT resource server.
+///
+/// Set them in `application.properties` (or YAML, or the environment).
+/// Applications rarely use this class; the auto-configuration reads it.
 ///
 /// | Property | Default |
 /// |---|---|
@@ -36,10 +39,31 @@ const _log = SpringLog('spring.security.autoconfigure');
 /// | `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | `scope`, else `scp` |
 /// | `spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter` | a space |
 /// | `spring.security.oauth2.resourceserver.jwt.principal-claim-name` | `sub` |
+///
+/// ```properties
+/// # A development user instead of the generated password.
+/// spring.security.user.name=admin
+/// spring.security.user.password=change-me
+/// spring.security.user.roles=ADMIN
+///
+/// # Or an API that accepts the identity provider's tokens.
+/// spring.security.oauth2.resourceserver.jwt.issuer-uri=https://login.example.com
+/// spring.security.oauth2.resourceserver.jwt.audiences=orders-api
+/// ```
+///
+/// With `issuer-uri` or `jwk-set-uri` set, every request needs a valid
+/// bearer token and there is no default user. With `jwk-set-uri`, the
+/// issuer (when also set) and the audiences are checked too; with
+/// `issuer-uri` alone, the keys come from the issuer's metadata and
+/// `jws-algorithms` is not used.
+///
+/// Spring (Java): Spring Boot's `SecurityProperties` and
+/// `OAuth2ResourceServerProperties`, with the same names.
 final class SecurityProperties {
   SecurityProperties._(this._environment);
 
-  /// The properties of [environment].
+  /// The properties as [environment] holds them now; each getter reads
+  /// the environment when called.
   factory SecurityProperties.of(Environment environment) =>
       SecurityProperties._(environment);
 
@@ -65,27 +89,36 @@ final class SecurityProperties {
 
   static const _jwt = 'spring.security.oauth2.resourceserver.jwt';
 
-  /// The default user's name.
+  /// `spring.security.user.name`: the default user's name, `user` when
+  /// unset.
   String get userName => _text('spring.security.user.name') ?? 'user';
 
-  /// The default user's password, when set.
+  /// `spring.security.user.password`: the default user's password, or
+  /// `null` when unset (a random one is then generated and logged).
   String? get userPassword => _text('spring.security.user.password');
 
-  /// The default user's roles.
+  /// `spring.security.user.roles`: the default user's roles, without
+  /// `ROLE_`; none when unset.
   List<String> get userRoles => _list('spring.security.user.roles');
 
-  /// The order of the security filter among the web filters.
+  /// `spring.security.filter.order`: the place of the security filter
+  /// among the web filters, `-100` when unset or not a number.
   int get filterOrder =>
       int.tryParse(_text('spring.security.filter.order') ?? '') ??
       FilterChainProxy.defaultFilterOrder;
 
-  /// `issuer-uri`.
+  /// `spring.security.oauth2.resourceserver.jwt.issuer-uri`: the identity
+  /// provider whose tokens are accepted, or `null`.
   String? get issuerUri => _text('$_jwt.issuer-uri');
 
-  /// `jwk-set-uri`.
+  /// `spring.security.oauth2.resourceserver.jwt.jwk-set-uri`: the URL of
+  /// the provider's public keys, or `null`.
   String? get jwkSetUri => _text('$_jwt.jwk-set-uri');
 
-  /// `jws-algorithms` (`RS256`).
+  /// `spring.security.oauth2.resourceserver.jwt.jws-algorithms`: the
+  /// signature algorithms accepted with `jwk-set-uri`, `RS256` when unset.
+  ///
+  /// Throws an [ArgumentError] for an unknown name.
   Set<JwsAlgorithm> get jwsAlgorithms {
     final names = _list('$_jwt.jws-algorithms');
     if (names.isEmpty) {
@@ -98,13 +131,18 @@ final class SecurityProperties {
     };
   }
 
-  /// `audiences`.
+  /// `spring.security.oauth2.resourceserver.jwt.audiences`: tokens must
+  /// name one of them in `aud`; no audience check when empty.
   List<String> get audiences => _list('$_jwt.audiences');
 
-  /// Whether a resource server is configured by properties.
+  /// Whether `issuer-uri` or `jwk-set-uri` is set, which makes the
+  /// application a JWT resource server.
   bool get hasResourceServer => issuerUri != null || jwkSetUri != null;
 
-  /// The authorities converter of the properties.
+  /// A [JwtAuthenticationConverter] following `authority-prefix`
+  /// (`SCOPE_`, may be empty), `authorities-claim-name`,
+  /// `authorities-claim-delimiter` (a space) and `principal-claim-name`
+  /// (`sub`).
   JwtAuthenticationConverter get jwtAuthenticationConverter =>
       JwtAuthenticationConverter(
         authoritiesConverter: JwtGrantedAuthoritiesConverter(
@@ -137,11 +175,24 @@ final class _OnNoResourceServerProperties implements Condition {
       !SecurityProperties.of(context.environment).hasResourceServer;
 }
 
-/// Reads `principal.claims['sub']`, `principal.subject`, ... of a JWT in
-/// method security expressions.
+/// Makes a JWT readable in method security expressions:
+/// `principal.subject`, `principal.claims['tenant']`, and
+/// `authentication.token` or `authentication.tokenAttributes`.
+///
+/// The auto-configuration registers it, so `@PreAuthorize` works on APIs
+/// with bearer tokens as on form logins:
+///
+/// ```dart
+/// @PreAuthorize("principal.claims['tenant'] == #order.tenant")
+/// Future<void> cancel(Order order) async { ... }
+/// ```
+///
+/// A [Jwt] exposes `claims`, `headers`, `subject`, `issuer`, `audience`,
+/// `id`, `expiresAt`, `issuedAt` and `notBefore`; a
+/// [JwtAuthenticationToken] exposes `tokenAttributes` and `token`.
 final class JwtExpressionCustomizer
     implements SecurityExpressionContextCustomizer {
-  /// The customizer.
+  /// The stateless customizer.
   const JwtExpressionCustomizer();
 
   @override
@@ -180,29 +231,39 @@ String _generatedPassword() {
       '${hex.sublist(10).join()}';
 }
 
-/// The beans of the security starter, like Spring Boot's
-/// `SecurityAutoConfiguration`, `SpringBootWebSecurityConfiguration`,
-/// `UserDetailsServiceAutoConfiguration` and
-/// `OAuth2ResourceServerAutoConfiguration`:
+/// The beans the starter adds to every application; they make the
+/// application secure by default and let it change one part at a time.
 ///
-/// - `httpSecurity` — a new [HttpSecurity] for every `SecurityFilterChain`
-///   bean method (a prototype);
-/// - `defaultSecurityFilterChain` — without a `SecurityFilterChain` bean:
-///   every request needs a login, with form login and HTTP Basic (with a
-///   JWT decoder: bearer tokens instead), like Spring Boot;
-/// - `securityFilterChain` — the [FilterChainProxy] web filter over the
-///   chains (`spring.security.filter.order`), behind the `HttpFirewall`
-///   bean or the strict one;
-/// - `inMemoryUserDetailsManager` — the default user
-///   (`spring.security.user.*`; a generated password, logged at startup),
-///   unless the application has users, providers, a manager or a JWT
-///   decoder;
-/// - `jwtDecoder` — from `spring.security.oauth2.resourceserver.jwt.*`;
-/// - `jwtAuthenticationConverter` — the authorities and the principal
-///   claim of JWTs;
-/// - argument resolvers for `@AuthenticationPrincipal`,
-///   `@CurrentSecurityContext` and `Authentication` parameters, and JWT
-///   properties in method security expressions.
+/// - `httpSecurity`: a new [HttpSecurity] for every `SecurityFilterChain`
+///   bean method (a prototype).
+/// - `defaultSecurityFilterChain`, unless the application declares a
+///   `SecurityFilterChain`: every request needs a login, with form login
+///   and HTTP Basic, or with bearer tokens when there is a `JwtDecoder`.
+/// - `securityFilterChain`: the [FilterChainProxy] web filter over all
+///   chains, at `spring.security.filter.order`, behind the `HttpFirewall`
+///   bean or a [StrictHttpFirewall]. Startup fails when a chain that
+///   matches every request is not the last one.
+/// - `inMemoryUserDetailsManager`: the default user from
+///   `spring.security.user.*`, unless the application has a
+///   `UserDetailsService`, an `AuthenticationProvider`, an
+///   `AuthenticationManager` or a `JwtDecoder`, or sets the resource server
+///   properties. Without a password property, a random one is generated
+///   and logged at startup, for development only. Without a
+///   `PasswordEncoder` bean the password is stored as `{noop}` unless it
+///   already starts with an `{id}`; with one, it is stored as given, so it
+///   must already be encoded (and a generated password cannot log in).
+/// - `jwtDecoder`, when `issuer-uri` or `jwk-set-uri` is set and the
+///   application declares none.
+/// - `jwtAuthenticationConverter`: the authorities and the name of JWT
+///   users, from the properties.
+/// - The resolver of `@AuthenticationPrincipal`, `@CurrentSecurityContext`
+///   and `Authentication` controller parameters, and [JwtExpressionCustomizer]
+///   for JWTs in method security expressions.
+///
+/// Spring (Java): Spring Boot's `SecurityAutoConfiguration`,
+/// `SpringBootWebSecurityConfiguration`,
+/// `UserDetailsServiceAutoConfiguration` and
+/// `OAuth2ResourceServerAutoConfiguration`.
 final securityAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<HttpSecurity>(
     name: 'httpSecurity',

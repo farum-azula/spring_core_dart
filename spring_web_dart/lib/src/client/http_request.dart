@@ -1,15 +1,22 @@
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 
-/// A request for an `HttpTransport`: method, URL, headers, body and
-/// timeouts. Like Spring's `ClientHttpRequest`.
+/// One outgoing HTTP request, complete and ready to send: method, URL,
+/// headers, body bytes and timeouts.
 ///
-/// Two timeouts, both optional: [readTimeout] is the longest wait for data
-/// — for the response to start and then between two chunks of the body,
-/// like Spring's and Feign's read timeout (`SO_TIMEOUT`); [timeout] is a
-/// deadline for the whole exchange, however steadily data arrives.
+/// It is what an `HttpTransport` sends. Feign clients build one for every
+/// call of an interface method, so most applications never create it.
+/// You write one when you call a transport directly, or when you
+/// implement a transport and read it.
+///
+/// There are two timeouts, both off by default. [readTimeout] is the
+/// longest wait for data: for the response to start, then between two
+/// chunks of the body. It is an idle timeout, the read timeout of Spring
+/// and Feign (`SO_TIMEOUT`). [timeout] is a deadline for the whole
+/// exchange, however steadily the data arrives.
 ///
 /// ```dart
+/// // `transport` is the application's `HttpTransport` bean.
 /// final request = HttpRequest(
 ///   method: HttpMethod.post,
 ///   url: Uri.parse('https://api.neon.books/books'),
@@ -17,12 +24,14 @@ import 'package:spring_web_dart/src/http_method.dart';
 ///     HttpHeaders.contentTypeHeader: MediaType.applicationJson,
 ///   }),
 ///   body: utf8.encode('{"isbn":"1"}'),
+///   // Fail if the server goes quiet for a minute.
 ///   readTimeout: const Duration(seconds: 60),
 /// );
 /// final response = await transport.send(request);
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java): `ClientHttpRequest`, which a factory creates and which
+/// then sends itself:
 /// ```java
 /// ClientHttpRequest request = factory.createRequest(uri, HttpMethod.POST);
 /// request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
@@ -30,8 +39,10 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// ClientHttpResponse response = request.execute();
 /// ```
 final class HttpRequest {
-  /// A request; [timeout] covers sending it and reading the whole
-  /// response, [readTimeout] each wait for data.
+  /// A request for [method] on [url]. Without [headers] it starts with an
+  /// empty, writable set. [timeout] covers sending the request and reading
+  /// the whole response; [readTimeout] covers each wait for data. Both
+  /// are `null` (no limit) by default, and redirects are followed.
   HttpRequest({
     required this.method,
     required this.url,
@@ -42,28 +53,34 @@ final class HttpRequest {
     this.followRedirects = true,
   }) : headers = headers ?? HttpHeaders();
 
-  /// The HTTP method.
+  /// The HTTP method, such as [HttpMethod.get].
   final HttpMethod method;
 
-  /// The full URL, query included.
+  /// The full URL, query string included: transports send it as it is.
   final Uri url;
 
-  /// The request headers.
+  /// The request headers. They can still be changed until the request is
+  /// sent. A transport sets `Content-Length` from [body] itself.
   final HttpHeaders headers;
 
-  /// The body bytes, if any.
+  /// The body bytes, or `null` to send no body.
   final List<int>? body;
 
-  /// The limit for the whole exchange (a deadline); `null` for none.
+  /// The deadline for the whole exchange, from sending the request to the
+  /// last byte of the response; `null` for none. A transport that runs out
+  /// of it throws an `HttpTransportException` with `isTimeout` set.
   final Duration? timeout;
 
   /// The longest wait for data: for the status and headers after the
-  /// request was sent, then between two chunks of the body (an idle
-  /// timeout, not a deadline); `null` for none.
+  /// request was sent, then between two chunks of the body. It is an idle
+  /// timeout, not a deadline: a slow download that keeps sending data
+  /// never runs out of it. `null` for none.
   final Duration? readTimeout;
 
-  /// Whether redirects (`3xx` with `Location`) are followed by the
-  /// transport, like Feign's `Request.Options.isFollowRedirects()`.
+  /// Whether the transport follows redirects (a `3xx` with `Location`) by
+  /// itself; `true` by default. When `false`, the `3xx` response is
+  /// returned (in a browser: an opaque response with status 0). Feign's
+  /// `Request.Options.isFollowRedirects()`.
   final bool followRedirects;
 
   @override

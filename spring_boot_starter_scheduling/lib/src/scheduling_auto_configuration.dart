@@ -10,22 +10,28 @@ const _enabled = ConditionalOnProperty(
   matchIfMissing: true,
 );
 
-/// The beans of the scheduling starter: a [TaskScheduler]
-/// ([TimerTaskScheduler], unless the application declares its own), the
-/// [ScheduledAnnotationBeanPostProcessor] that runs `@Scheduled` methods
-/// and a [TaskExecutor] (`applicationTaskExecutor`, alias `taskExecutor`,
-/// a [SimpleAsyncTaskExecutor] unless the application declares a
-/// `TaskExecutor`; Spring Boot's `TaskExecutionAutoConfiguration`), which
-/// turns `@Async` event listeners on.
+/// The bean definitions this starter adds to every application that
+/// depends on it. Applications do not use the list directly; the
+/// generator adds it through `springBootStarterSchedulingAutoConfiguration`.
+///
+/// - `taskScheduler`, a [TimerTaskScheduler], unless the application
+///   declares its own [TaskScheduler]. It reads the shutdown properties
+///   below and uses the only or primary `ErrorHandler` bean.
+/// - `scheduledAnnotationBeanPostProcessor`, the
+///   [ScheduledAnnotationBeanPostProcessor] that finds `@Scheduled`
+///   methods and runs them.
+/// - `applicationTaskExecutor` (alias `taskExecutor`), a
+///   [SimpleAsyncTaskExecutor], unless the application declares a
+///   [TaskExecutor]; having one turns `@Async` event listeners on, as
+///   Spring Boot's `TaskExecutionAutoConfiguration` does.
 ///
 /// Spring Boot schedules only with `@EnableScheduling`; here the
-/// dependency is enough. Switch it off with
-/// `spring.task.scheduling.enabled=false` (handy in tests). With
+/// dependency is enough. `spring.task.scheduling.enabled=false` switches
+/// scheduling off, which keeps tests deterministic: no scheduler and no
+/// tasks; the executor stays. With
 /// `spring.task.scheduling.shutdown.await-termination=true` the context's
 /// `closeAsync()` waits for the runs going on, at most
-/// `spring.task.scheduling.shutdown.await-termination-period`. An
-/// `ErrorHandler` bean (the only or the primary one) receives the errors
-/// of the tasks.
+/// `spring.task.scheduling.shutdown.await-termination-period`.
 ///
 /// ```properties
 /// spring.task.scheduling.enabled=false

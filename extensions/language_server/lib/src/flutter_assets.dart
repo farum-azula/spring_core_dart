@@ -3,9 +3,10 @@
 // and Flutter's rules.
 import 'package:yaml/yaml.dart';
 
-/// The entries of `flutter: assets:` in [pubspec]: plain strings and the
-/// `path:` of map entries (`- path: assets/x/`, with `flavors:`); empty
-/// when there are none or the YAML is invalid.
+/// The entries of `flutter: assets:` in the text of a `pubspec.yaml`
+/// ([pubspec]): plain strings, and the `path:` of map entries
+/// (`- path: assets/x/`, with `flavors:`). Empty when there are none or
+/// the YAML is invalid.
 List<String> flutterAssets(String pubspec) {
   final Object? yaml;
   try {
@@ -28,9 +29,10 @@ List<String> flutterAssets(String pubspec) {
   ];
 }
 
-/// Whether [key] is one of [entries]: the file itself, or a directory
-/// entry (`assets/images/`) holding it directly — not in a subdirectory,
-/// as in Flutter.
+/// Whether the asset [key] (`assets/images/logo.png`) is declared by one
+/// of [entries]: the file itself, or a directory entry (`assets/images/`)
+/// that holds it directly. As in Flutter, a directory entry does not
+/// include its subdirectories. A leading `./` of an entry is ignored.
 bool declaredAsset(List<String> entries, String key) {
   final slash = key.lastIndexOf('/');
   final directory = slash < 0 ? '' : key.substring(0, slash + 1);

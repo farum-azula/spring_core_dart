@@ -5,16 +5,22 @@ import 'package:spring_boot_starter_websocket/src/web_socket_client_config.dart'
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// Manages the one connection (a `WebSocketSession`) of a
-/// `@WebSocketClient`, shared by its streams and sends: opened on demand,
-/// handed to every listener, opened again after a loss while someone
-/// listens (see [WebSocketReconnectPolicy]). Created by
-/// `WebSocketInvocationHandler`.
+/// Keeps the one connection of a `@WebSocketClient`: it opens it when
+/// first needed, hands every message to all listeners, and opens it again
+/// after a loss while someone listens.
+///
+/// Each client has one, created by its `WebSocketInvocationHandler`, and
+/// the generated client calls it; applications reach it only through
+/// `WebSocketInvocationHandler.connectionManager`. The open connection is
+/// a `WebSocketSession` of `spring_web_dart`. How it reconnects is set by
+/// the [WebSocketReconnectPolicy] of its [config]; every attempt goes
+/// through the [interceptors].
 ///
 /// Spring (Java): `WebSocketConnectionManager`, which connects a
-/// `WebSocketHandler` through a `WebSocketClient` (without reconnecting).
+/// `WebSocketHandler` through a `WebSocketClient` but does not reconnect.
 final class WebSocketConnectionManager {
-  /// A manager of client [clientName]'s connection to [url].
+  /// A manager of the connection of client [clientName] to [url]; it
+  /// does not connect until asked.
   WebSocketConnectionManager({
     required this.clientName,
     required this.url,
@@ -25,8 +31,11 @@ final class WebSocketConnectionManager {
     this.interceptors = const [],
   });
 
-  /// Close codes after which the connection is opened again: none, going
-  /// away, no status, lost, and the server's temporary failures.
+  /// The close codes after which the connection is opened again, as the
+  /// cause may be temporary: none, going away (1001), no status (1005),
+  /// lost (1006), and the server's failures (1011 to 1014). Any other code
+  /// ends the message streams: 1000 normally, others with a
+  /// `WebSocketException`.
   static final Set<int?> retryableCloseCodes = {
     null,
     CloseStatus.goingAway.code,
@@ -38,22 +47,23 @@ final class WebSocketConnectionManager {
     1014, // bad gateway
   };
 
-  /// The `@WebSocketClient` name.
+  /// The name of the `@WebSocketClient`.
   final String clientName;
 
-  /// The address (before interceptors).
+  /// The address, before the interceptors change it.
   final Uri url;
 
-  /// The offered subprotocols.
+  /// The subprotocols offered in each handshake.
   final List<String> protocols;
 
-  /// Timeouts, reconnection and default headers.
+  /// The client's settings: handshake timeout, reconnection and default
+  /// headers.
   final WebSocketClientConfig config;
 
-  /// Opens the connections.
+  /// Opens the connections: `dart:io`, the browser, or a mock in tests.
   final WebSocketTransport transport;
 
-  /// Applied to every handshake.
+  /// Called on every handshake, in this order, before it is sent.
   final List<WebSocketHandshakeInterceptor> interceptors;
 
   final SpringLog _log;
@@ -73,11 +83,14 @@ final class WebSocketConnectionManager {
   var _generation = 0;
   var _disposed = false;
 
-  /// Whether a connection is open, like Spring's `isConnected()`.
+  /// Whether a connection is open now; `false` before the first use,
+  /// during a reconnection and after [close].
   bool get isConnected => _connection != null;
 
-  /// The incoming messages (`String` or `Uint8List`); listening opens the
-  /// connection. Done when the connection ends for good.
+  /// The incoming messages as they arrive, a `String` or a `Uint8List`
+  /// each. Listening opens the connection; the stream is done when the
+  /// connection ends for good: closed by [close], closed normally by the
+  /// server, or given up. After [dispose] the stream gives a [StateError].
   Stream<Object> messages() {
     late final StreamController<Object> controller;
     controller = StreamController<Object>(
@@ -119,16 +132,16 @@ final class WebSocketConnectionManager {
 
   /// Sends a text (`String`) or binary (`List<int>`) message, opening the
   /// connection first when needed. Without a connection the send waits for
-  /// the next attempt only (at most the reconnect delay and the connect
-  /// timeout): if it fails, so does the send, while the listeners' client
-  /// goes on reconnecting.
+  /// the next attempt only, so at most the reconnect delay and the connect
+  /// timeout. If that attempt fails, so does the send, while the client
+  /// goes on reconnecting for its listeners.
   Future<void> sendMessage(Object message) async {
     final connection = await _awaitConnection();
     connection.sendMessage(message);
   }
 
-  /// Opens the connection now (if it is not open); fails when the next
-  /// attempt fails, like [sendMessage].
+  /// Opens the connection now, if it is not open, instead of on first
+  /// use; fails when the next attempt fails, like [sendMessage].
   Future<void> connect() => _awaitConnection();
 
   Future<WebSocketSession> _awaitConnection() {
@@ -158,7 +171,8 @@ final class WebSocketConnectionManager {
     }
   }
 
-  /// Closes the connection (normal closure); listeners are done. Using the
+  /// Closes the connection with a normal closure (1000) and ends every
+  /// message stream; a reconnection that was waiting is dropped. Using the
   /// client again opens a new connection.
   Future<void> close() async {
     final connection = _connection;
@@ -173,7 +187,8 @@ final class WebSocketConnectionManager {
     }
   }
 
-  /// Closes for good (the application stops).
+  /// Closes for good, when the application stops: like [close], and
+  /// every later use fails with a [StateError].
   Future<void> dispose() async {
     if (_disposed) {
       return;

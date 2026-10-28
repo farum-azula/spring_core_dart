@@ -1,5 +1,14 @@
-/// Test support for the security starter, like `spring-security-test`:
-/// request post-processors for `MockMvc`.
+/// Helpers for `MockMvc` tests of a secured web application: make a test
+/// request as a given user, with a JWT, or with a CSRF token, without
+/// going through a real login.
+///
+/// Each helper is a request post-processor: add it to a
+/// `MockRequestBuilder` with `with_`. The user helpers put the user in
+/// the request's security context, so the request skips the login and
+/// the access rules see that user. They rely on the chain reading the
+/// request attribute repository, which every chain does unless it sets
+/// its own `securityContextRepository`. This library also re-exports
+/// `withMockUser` and its siblings from `spring_security_core`.
 ///
 /// ```dart
 /// import 'package:spring_boot_starter_security/testing.dart';
@@ -14,6 +23,9 @@
 ///       ..with_(csrf()))
 ///     .andExpect(status: 201);
 /// ```
+///
+/// Spring (Java): `spring-security-test`'s
+/// `SecurityMockMvcRequestPostProcessors` (`user`, `jwt`, `csrf`, ...).
 library;
 
 import 'dart:convert';
@@ -32,12 +44,23 @@ MockServerHttpRequest _withContext(
   return request;
 }
 
-/// The request is made by [username] (password `password`, role `USER`
-/// unless set), like Spring's `user("ada")`; skips the login itself.
+/// Makes the request as the user [username], already logged in: no
+/// password is checked.
+///
+/// The user has the password `password` and the role `USER` unless
+/// changed with the returned processor's methods.
+///
+/// ```dart
+/// MockRequestBuilder(HttpMethod.get, '/api/admin')
+///   ..with_(user('ada').roles(['ADMIN']));
+/// ```
+///
+/// Spring (Java): `user("ada").roles("ADMIN")`.
 UserRequestPostProcessor user(String username) =>
     UserRequestPostProcessor._(username);
 
-/// A user for a request: change [roles], [authorities], [password].
+/// The request post-processor [user] returns; its methods change the
+/// user's [roles], [authorities] or [password].
 final class UserRequestPostProcessor implements RequestPostProcessor {
   UserRequestPostProcessor._(this._username);
 
@@ -45,19 +68,24 @@ final class UserRequestPostProcessor implements RequestPostProcessor {
   String _password = 'password';
   List<GrantedAuthority> _authorities = [SimpleGrantedAuthority('ROLE_USER')];
 
-  /// The roles (without `ROLE_`).
+  /// Sets the roles, written without `ROLE_` (`['ADMIN']` gives
+  /// `ROLE_ADMIN`); replaces the default `USER` and earlier authorities.
+  ///
+  /// Throws an [ArgumentError] for a role that starts with `ROLE_`.
   UserRequestPostProcessor roles(List<String> roles) {
     _authorities = User.withUsername('x').roles(roles).build().authorities;
     return this;
   }
 
-  /// The authorities.
+  /// Sets the authorities by their full names (`SCOPE_read`), replacing
+  /// the roles.
   UserRequestPostProcessor authorities(List<String> authorities) {
     _authorities = AuthorityUtils.createAuthorityList(authorities);
     return this;
   }
 
-  /// The password.
+  /// Sets the user's password, which only matters to code that reads it;
+  /// no login runs.
   UserRequestPostProcessor password(String password) {
     _password = password;
     return this;
@@ -80,7 +108,8 @@ final class UserRequestPostProcessor implements RequestPostProcessor {
   }
 }
 
-/// The request is made by [user].
+/// Makes the request as [user], already logged in, for tests that need
+/// your own `UserDetails` class as the principal.
 RequestPostProcessor userDetails(UserDetails user) =>
     FunctionRequestPostProcessor(
       (request) => _withContext(
@@ -93,13 +122,15 @@ RequestPostProcessor userDetails(UserDetails user) =>
       ),
     );
 
-/// The request is made with [authentication].
+/// Makes the request with [authentication] as the current user, for any
+/// kind of login, such as a custom token.
 RequestPostProcessor authentication(Authentication authentication) =>
     FunctionRequestPostProcessor(
       (request) => _withContext(request, authentication),
     );
 
-/// The request is made by an anonymous user.
+/// Makes the request as an anonymous user (`anonymousUser` with
+/// `ROLE_ANONYMOUS`), what a visitor without a login is.
 RequestPostProcessor anonymous() => FunctionRequestPostProcessor(
   (request) => _withContext(
     request,
@@ -111,8 +142,12 @@ RequestPostProcessor anonymous() => FunctionRequestPostProcessor(
   ),
 );
 
-/// `Authorization: Basic` with [username] and [password] (the real login
-/// runs).
+/// Adds an `Authorization: Basic` header with [username] and [password],
+/// so the real Basic login runs and checks them against the application's
+/// users.
+///
+/// Use it to test the login itself; [user] is shorter for everything
+/// else.
 RequestPostProcessor httpBasic(String username, String password) =>
     FunctionRequestPostProcessor((request) {
       request.headers.set(
@@ -122,17 +157,23 @@ RequestPostProcessor httpBasic(String username, String password) =>
       return request;
     });
 
-/// A valid CSRF token, like Spring's `csrf()`; `useInvalidToken` for a
-/// wrong one.
+/// Makes the request pass the CSRF check as if it carried a valid token;
+/// call `useInvalidToken()` on the result to test a refused one.
+///
+/// Requests other than GET, HEAD, TRACE and OPTIONS need it while CSRF
+/// protection is on.
+///
+/// Spring (Java): `csrf()`.
 CsrfRequestPostProcessor csrf() => CsrfRequestPostProcessor._();
 
-/// A CSRF token for a request.
+/// The request post-processor [csrf] returns.
 final class CsrfRequestPostProcessor implements RequestPostProcessor {
   CsrfRequestPostProcessor._();
 
   bool _valid = true;
 
-  /// A wrong token (the request should be refused).
+  /// Makes the request act as if it carried a wrong token, so the CSRF
+  /// check refuses it with 403.
   CsrfRequestPostProcessor useInvalidToken() {
     _valid = false;
     return this;
@@ -145,27 +186,41 @@ final class CsrfRequestPostProcessor implements RequestPostProcessor {
   }
 }
 
-/// The request carries a verified JWT (no decoding), like Spring's
-/// `jwt()`: subject `user`, scope `read` unless set.
+/// Makes the request as if it carried a valid JWT bearer token: no token
+/// is decoded or verified.
+///
+/// The token has the subject `user` and the scope `read` (the authority
+/// `SCOPE_read`), is issued now and expires in 5 minutes, unless changed
+/// with the returned processor's methods. The authorities come from the
+/// default converter, not from the application's `jwt.*` properties.
+///
+/// ```dart
+/// MockRequestBuilder(HttpMethod.get, '/api/orders')
+///   ..with_(jwt().subject('ada').claim('scope', 'orders:read'));
+/// ```
+///
+/// Spring (Java): `jwt().jwt(j -> j.subject("ada"))`.
 JwtRequestPostProcessor jwt() => JwtRequestPostProcessor._();
 
-/// A JWT for a request.
+/// The request post-processor [jwt] returns; its methods change the
+/// token's claims and authorities.
 final class JwtRequestPostProcessor implements RequestPostProcessor {
   JwtRequestPostProcessor._();
 
   final _claims = <String, Object?>{'sub': 'user', 'scope': 'read'};
   List<GrantedAuthority>? _authorities;
 
-  /// Sets the claim [name].
+  /// Sets the claim [name] to [value], replacing the default one.
   JwtRequestPostProcessor claim(String name, Object? value) {
     _claims[name] = value;
     return this;
   }
 
-  /// The subject.
+  /// Sets the `sub` claim, which is also the user's name.
   JwtRequestPostProcessor subject(String subject) => claim('sub', subject);
 
-  /// The authorities (instead of those of the `scope` claim).
+  /// Sets the authorities by their full names, instead of those derived
+  /// from the `scope` claim.
   JwtRequestPostProcessor authorities(List<String> authorities) {
     _authorities = AuthorityUtils.createAuthorityList(authorities);
     return this;

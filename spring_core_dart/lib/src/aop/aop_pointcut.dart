@@ -1,12 +1,21 @@
 import 'package:spring_core_dart/src/aop/join_point.dart';
 
-/// Decides which members advice applies to, like Spring's `Pointcut`
-/// (renamed because `@Pointcut` is the annotation).
+/// A rule that decides which members of which beans an advisor's advice
+/// applies to.
 ///
-/// Unlike Spring's `ClassFilter` + `MethodMatcher` pair, one static check
-/// sees the member signature and the bean name.
+/// Each `PointcutAdvisor` pairs one with its advice. Most code never
+/// implements it: aspects write pointcut expressions, and in code an
+/// [ExpressionPointcut] takes the same syntax. Implement it when the rule
+/// is easier to write in Dart, such as a test on the member's
+/// annotations. [matches] runs once per member of each proxied bean, at
+/// startup, not on every call. It is named `AopPointcut` because
+/// `@Pointcut` is the annotation.
+///
+/// Unlike Spring's `ClassFilter` + `MethodMatcher` pair, one check sees
+/// both the member signature and the bean name.
 ///
 /// ```dart
+/// // Advises the read-only members: find* methods and getters.
 /// final class ReadOnlyPointcut implements AopPointcut {
 ///   const ReadOnlyPointcut();
 ///
@@ -26,21 +35,23 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// }
 /// ```
 abstract interface class AopPointcut {
-  /// Whether advice applies to the member described by [signature] of
+  /// Whether the advice applies to the member described by [signature] of
   /// the bean named [beanName].
   bool matches(MethodSignature signature, String beanName);
 }
 
-/// A pointcut that matches only members or classes carrying annotations
-/// from outside `package:spring_core_dart` (`@Cacheable`, `@Validated`),
-/// like Spring's annotation-driven advisors.
+/// A marker for pointcuts that match only members or classes carrying
+/// annotations from outside `package:spring_core_dart`, such as
+/// `@Cacheable` or `@Validated`.
 ///
-/// The build skips the proxy classes of beans no pointcut can match
-/// (`aop_prune`), keeping every bean that carries such an annotation. An
-/// advisor bean of a starter's auto-configuration whose pointcut is an
-/// `AnnotationPointcut` (declared so in the advisor's static type) keeps
-/// that saving; any other advisor bean of a starter turns it off, since
-/// the build cannot tell which beans it matches.
+/// It exists for the build's proxy pruning (`aop_prune`): the build skips
+/// the proxy classes of beans no pointcut can match, but always keeps the
+/// beans that carry such an annotation. A starter's auto-configuration
+/// that declares an advisor bean whose pointcut is an `AnnotationPointcut`
+/// (in the advisor's static type, as the build sees it) keeps that saving;
+/// any other advisor bean of a starter turns pruning off, since the build
+/// cannot tell which beans it matches. Implement it in a library that
+/// offers annotation-driven advice; applications do not need it.
 ///
 /// Read [MethodSignature.mergedAnnotations] to also see the annotations of
 /// the superclass, mixin and interface declarations the member overrides
@@ -49,6 +60,7 @@ abstract interface class AopPointcut {
 /// `@annotation(...)` matches.
 ///
 /// ```dart
+/// // The cache starter's pointcut: members with @Cacheable.
 /// final class CacheAnnotationPointcut implements AnnotationPointcut {
 ///   const CacheAnnotationPointcut();
 ///
@@ -67,9 +79,14 @@ abstract interface class AopPointcut {
 /// ```
 abstract interface class AnnotationPointcut implements AopPointcut {}
 
-/// Matches every member.
+/// A pointcut that matches every member of every bean.
+///
+/// Use it for advice that applies everywhere it is attached, such as
+/// logging all calls of one proxy made with `ProxyFactory`. Adding advice
+/// with `addAdvice` uses it.
 ///
 /// ```dart
+/// // Logs every call of every proxied bean.
 /// DefaultPointcutAdvisor(const TruePointcut(), LoggingInterceptor());
 /// ```
 ///
@@ -78,17 +95,22 @@ abstract interface class AnnotationPointcut implements AopPointcut {}
 /// new DefaultPointcutAdvisor(Pointcut.TRUE, new LoggingInterceptor());
 /// ```
 final class TruePointcut implements AopPointcut {
-  /// Creates the match-all pointcut.
+  /// The pointcut that matches everything.
   const TruePointcut();
 
   @override
   bool matches(MethodSignature signature, String beanName) => true;
 }
 
-/// Matches member names with `*` wildcards, like Spring's
-/// `NameMatchMethodPointcut`.
+/// A pointcut that matches members by name, with `*` wildcards.
+///
+/// Use it in an advisor when the advised members follow a naming
+/// convention, like `find*`. It matches the name only, in every bean and
+/// for getters and setters too; combine it with other pointcuts in a
+/// [ComposablePointcut] to narrow it.
 ///
 /// ```dart
+/// // Caches the find* methods and count.
 /// DefaultPointcutAdvisor(
 ///   const NameMatchMethodPointcut(['find*', 'count']),
 ///   CachingInterceptor(),
@@ -102,10 +124,11 @@ final class TruePointcut implements AopPointcut {
 /// new DefaultPointcutAdvisor(pointcut, new CachingInterceptor());
 /// ```
 final class NameMatchMethodPointcut implements AopPointcut {
-  /// Creates a pointcut matching any of the [names] patterns.
+  /// Matches members whose name matches any of the [names] patterns.
   const NameMatchMethodPointcut(this.names);
 
-  /// Member name patterns; `*` matches any characters.
+  /// The name patterns; `*` matches any characters, everything else
+  /// literally, and the whole name must match.
   final List<String> names;
 
   @override
@@ -113,8 +136,15 @@ final class NameMatchMethodPointcut implements AopPointcut {
       names.any((pattern) => wildcardMatch(pattern, signature.name));
 }
 
-/// Matches members (or classes) carrying an annotation of type [A], like
-/// Spring's `AnnotationMatchingPointcut`.
+/// A pointcut that matches members carrying an annotation of type [A], or
+/// every member of beans whose class carries it.
+///
+/// Use it in an advisor for annotation-driven advice: a `@Timed()` marker
+/// on the methods to time. It tests the runtime type of the const
+/// annotation objects, so [A] must be the annotation class. On members it
+/// reads [MethodSignature.annotations] (like `@annotation(...)`, not the
+/// overridden declarations'); with `onClass`, the bean class's
+/// annotations.
 ///
 /// ```dart
 /// // Methods annotated with @Timed().
@@ -129,11 +159,12 @@ final class NameMatchMethodPointcut implements AopPointcut {
 /// AnnotationMatchingPointcut.forClassAnnotation(Service.class);
 /// ```
 final class AnnotationMatchingPointcut<A> implements AnnotationPointcut {
-  /// Creates a pointcut for annotations of type [A] on members (or on
-  /// the class when [onClass] is `true`).
+  /// Matches members annotated with [A], or with [onClass] every member of
+  /// a bean whose class is.
   const AnnotationMatchingPointcut({this.onClass = false});
 
-  /// Match the class annotation instead of the member annotation.
+  /// Whether to test the bean class's annotations instead of the
+  /// member's; `false` by default.
   final bool onClass;
 
   @override
@@ -143,9 +174,13 @@ final class AnnotationMatchingPointcut<A> implements AnnotationPointcut {
       );
 }
 
-/// Combines pointcuts with [union] and [intersection], like Spring's
-/// `ComposablePointcut` (a mutable builder: both return the pointcut
-/// itself).
+/// A pointcut built from other pointcuts with "or" ([union]) and "and"
+/// ([intersection]).
+///
+/// Use it to combine pointcuts written in code, such as a name pattern and
+/// an annotation, when one expression cannot say it. It is a mutable
+/// builder: both methods change this pointcut and return it, so calls
+/// chain.
 ///
 /// The match is static: an [ExpressionPointcut] part that depends on the
 /// call (`args(id)`, bindings) counts as matching here; use it on its own
@@ -166,7 +201,7 @@ final class AnnotationMatchingPointcut<A> implements AnnotationPointcut {
 ///     .intersection(servicePointcut);
 /// ```
 final class ComposablePointcut implements AopPointcut {
-  /// Starts from [pointcut] (every member by default).
+  /// Starts from [pointcut]; by default every member matches.
   ComposablePointcut([AopPointcut pointcut = const TruePointcut()])
     : _matches = ((s, name, aliases, introduced) => pointcutMatchesBean(
         pointcut,
@@ -184,7 +219,8 @@ final class ComposablePointcut implements AopPointcut {
   )
   _matches;
 
-  /// Matches what this pointcut or [other] matches.
+  /// From now on, also matches what [other] matches; returns this
+  /// pointcut.
   ComposablePointcut union(AopPointcut other) {
     final current = _matches;
     _matches = (s, name, aliases, introduced) =>
@@ -199,7 +235,8 @@ final class ComposablePointcut implements AopPointcut {
     return this;
   }
 
-  /// Matches what both this pointcut and [other] match.
+  /// From now on, matches only what [other] matches too; returns this
+  /// pointcut.
   ComposablePointcut intersection(AopPointcut other) {
     final current = _matches;
     _matches = (s, name, aliases, introduced) =>
@@ -229,13 +266,19 @@ final class ComposablePointcut implements AopPointcut {
   }) => _matches(signature, beanName, beanAliases, introducedTypes);
 }
 
-/// Whether [pointcut] matches [signature] of the bean [beanName], with its
-/// aliases and qualifier values ([beanAliases]) for pointcuts that test
-/// bean names and the interfaces `@DeclareParents` adds to the bean's proxy
-/// ([introducedTypes]) for `this(...)` ([ExpressionPointcut],
-/// [ComposablePointcut]).
+/// Whether [pointcut] matches the member [signature] of the bean
+/// [beanName], with everything the bean is known by.
+///
+/// [AopPointcut.matches] sees only the bean name. The pointcuts that test
+/// names or types ([ExpressionPointcut], [ComposablePointcut]) also get the
+/// bean's aliases and qualifier values ([beanAliases]), for `bean(...)`,
+/// and the interfaces `@DeclareParents` adds to its proxy
+/// ([introducedTypes]), for `this(...)`. The proxy machinery calls this;
+/// call it too when matching pointcuts yourself, for example in a test.
 ///
 /// ```dart
+/// // Does the advisor apply to `find` of the bean also known as
+/// // primaryOrders?
 /// pointcutMatchesBean(pointcut, signature, 'orders', ['primaryOrders']);
 /// ```
 bool pointcutMatchesBean(
@@ -260,9 +303,10 @@ bool pointcutMatchesBean(
   _ => pointcut.matches(signature, beanName),
 };
 
-/// `*` wildcard matching.
+/// Whether [text] matches [pattern], where `*` stands for any characters.
 ///
-/// The whole [text] must match; every other character is literal.
+/// The whole [text] must match; every other character is literal. Name
+/// patterns of pointcuts (`find*`, `bean(order*)`) use it.
 ///
 /// ```dart
 /// wildcardMatch('find*', 'findAll'); // true
@@ -272,16 +316,19 @@ bool wildcardMatch(String pattern, String text) =>
     RegExp('^${pattern.split('*').map(RegExp.escape).join('.*')}\$')
         .hasMatch(text);
 
-/// An advice parameter that a pointcut expression binds, like the
-/// parameter names Spring's `AspectJExpressionPointcut` binds
-/// (`@annotation(timed)`, `args(id, ..)`, `this(service)`).
+/// The type of an advice parameter that the pointcut fills in, such as
+/// `timed` in `@annotation(timed)` or `id` in `args(id, ..)`.
 ///
-/// Written by the generator for every advice parameter that is neither a
-/// `JoinPoint` nor the returned value / thrown error: [typeName] is the
-/// simple name of the parameter type (release-safe) and [accepts] tests a
-/// value against that type.
+/// When a pointcut names a parameter instead of a type, the advice method
+/// receives the matched value (the annotation, the argument, the bean).
+/// The pointcut must know the parameter's type to match only calls where
+/// the value fits, and Dart cannot read it at runtime, so the generator
+/// writes one `AdviceBinding` per such parameter. [typeName] is the simple
+/// name of the type, written at build time so it survives minified
+/// builds; [accepts] tests a value. Applications do not write it.
 ///
 /// ```dart
+/// // Generated for the `timed` parameter of:
 /// // @Around('@annotation(timed)')
 /// // Object? time(ProceedingJoinPoint call, Timed timed) => ...
 /// AdviceBinding('Timed', (value) => value is Timed);
@@ -293,63 +340,83 @@ bool wildcardMatch(String pattern, String text) =>
 /// Object time(ProceedingJoinPoint call, Timed timed) throws Throwable { ... }
 /// ```
 final class AdviceBinding {
-  /// Binds a parameter of the type named [typeName]; `accepts` checks a
-  /// value against that type.
+  /// Describes a parameter of the type named [typeName]; `accepts` tests
+  /// whether a value has that type.
   AdviceBinding(this.typeName, this._accepts);
 
-  /// Simple name of the parameter type, e.g. `Timed`.
+  /// The simple name of the parameter type, such as `Timed`. The pointcut
+  /// matches it against the member's names at startup: `@annotation(timed)`
+  /// selects the members annotated with `Timed`.
   final String typeName;
 
   final bool Function(Object? value) _accepts;
 
-  /// Whether [value] has the parameter type.
+  /// Whether [value] has the parameter type, so it can be passed.
   bool accepts(Object? value) => _accepts(value);
 
   @override
   String toString() => 'AdviceBinding($typeName)';
 }
 
-/// Pointcut expressions in Spring's syntax (`execution(...)`, `within(...)`,
-/// `bean(...)`, ...).
+/// A pointcut written as an AspectJ-style expression, the syntax of the
+/// `@Before` / `@Around` / ... annotations.
 ///
-/// Supported designators (names match simple type names; package parts of
-/// patterns are ignored since Dart has libraries, not packages):
-/// - `execution([modifiers] ret [Type.]method(params))` — `*` wildcards,
-///   `..` for any parameters, `*` for one parameter, `Type+` for the type
-///   and its subtypes; modifiers `public`, `protected` (`@protected`
-///   members), `private` (never), optionally negated with `!`; a `throws`
-///   clause is rejected (Dart methods declare no exceptions);
-/// - `within(TypePattern)` — the class whose body runs for the member (the
-///   bean class, or the superclass or mixin it inherits the member from;
-///   `Type+`: or a subtype of it);
-/// - `target(Type)` / `this(Type)` — the bean class or any supertype;
-/// - `args(...)` — the parameters (`..` for any number): the declared
-///   type, or the runtime argument when `typeTests` has the type;
-/// - `@args(...)` — arguments whose runtime class carries the annotation
-///   (`argumentAnnotations`);
-/// - `bean(namePattern)` — the bean name, an alias or a qualifier value;
-/// - `@annotation(Name)` — an annotation on the member;
-/// - `@within(Name)` — an annotation on the class whose body runs;
-/// - `@target(Name)` — an annotation on the bean class;
-/// - named pointcuts `name()` (of the same aspect) / `Type.name()`;
-/// - `&&` / `and`, `||` / `or`, `!` / `not`, parentheses.
+/// Aspects use it behind the scenes: each advice annotation's string
+/// becomes one. Create one yourself for a `DefaultPointcutAdvisor` bean,
+/// to select members by name, type, annotation or bean name without
+/// writing an [AopPointcut] class. The expression is parsed at once; an
+/// invalid one throws a [FormatException] with the reason.
 ///
-/// With [bindings] (written by the generator for advice parameters), an
-/// identifier naming an advice parameter in `@annotation(x)`,
-/// `@within(x)`, `@target(x)`, `this(x)`, `target(x)`, `args(...)` or
-/// `@args(...)` binds that parameter: the advice receives the annotation,
-/// the proxy, the target or the argument ([bind]).
+/// Type and name patterns use simple names: Dart has libraries, not Java
+/// packages, so `com.x.Service` means `Service`, and a package wildcard
+/// such as `com.x..*` is rejected rather than matching everything. `*`
+/// matches any characters in a name, `Type+` means the type and its
+/// subtypes, and type arguments and `?` are ignored (`Future<int>` matches
+/// `Future`). The designators:
 ///
-/// The expression is parsed eagerly; invalid expressions throw a
-/// [FormatException].
+/// - `execution([modifiers] ret [Type.]name(params))` selects methods (not
+///   getters or setters) by return type, declaring type, name and
+///   parameters. In the parameters, `..` stands for any number and `*` for
+///   exactly one. The modifiers are `public`, `protected` (members marked
+///   `@protected`) and `private` (never matches), each optionally negated
+///   with `!`. A `throws` clause is rejected, since Dart methods declare no
+///   exceptions.
+/// - `within(TypePattern)` selects every member whose body is in a
+///   matching class: the bean class, or the superclass or mixin it
+///   inherits the member from.
+/// - `target(Type)` and `this(Type)` select every member of beans whose
+///   class is that type or a subtype.
+/// - `args(types)` selects members by their parameters (`..` for any
+///   number): the declared type, or the runtime type of the argument when
+///   `typeTests` knows the type.
+/// - `@args(Annotation, ..)` selects calls whose arguments' runtime classes
+///   carry the annotations (through `argumentAnnotations`).
+/// - `bean(namePattern)` selects every member of beans with that name, an
+///   alias or a qualifier value.
+/// - `@annotation(Name)` selects members carrying the annotation;
+///   `@within(Name)` members whose body is in a class carrying it;
+///   `@target(Name)` members of beans whose class carries it.
+/// - `name()` refers to a named pointcut of the same aspect (or of
+///   [owner]), `Type.name()` to one of another class.
+///
+/// Designators combine with `&&` / `and`, `||` / `or`, `!` / `not` and
+/// parentheses.
+///
+/// With [bindings] (written by the generator for advice parameters), a
+/// lowercase identifier in `@annotation(x)`, `@within(x)`, `@target(x)`,
+/// `this(x)`, `target(x)`, `args(...)` or `@args(...)` names an advice
+/// parameter, which receives the annotation, the proxy, the target or the
+/// argument ([bind]). Such an expression is also checked on every call.
 ///
 /// ```dart
+/// // Logs the calls of the services, except their slow* methods.
 /// final pointcut = ExpressionPointcut(
 ///   'service() && !execution(* *.slow*(..))',
 ///   namedPointcuts: {'service': 'within(*Service) || @within(Service)'},
 /// );
 /// DefaultPointcutAdvisor(pointcut, LoggingInterceptor());
 ///
+/// // Other expressions.
 /// ExpressionPointcut('execution(Future<int> Calculator.slowAdd(int, *))');
 /// ExpressionPointcut('bean(echoShouter) or @annotation(Timed)');
 /// ExpressionPointcut('within(Repository+)');
@@ -363,7 +430,8 @@ final class AdviceBinding {
 /// new DefaultPointcutAdvisor(pointcut, new LoggingInterceptor());
 /// ```
 final class ExpressionPointcut implements AopPointcut {
-  /// Parses [expression].
+  /// Parses [expression]; throws a [FormatException] when it is invalid,
+  /// or when a binding is not used by it.
   ///
   /// [namedPointcuts] resolve references: an unqualified `name()` is looked
   /// up as `'$owner.name'`, then as `'name'`; a qualified `Type.name()`
@@ -429,25 +497,28 @@ final class ExpressionPointcut implements AopPointcut {
     return root;
   }
 
-  /// The source expression.
+  /// The expression as written.
   final String expression;
 
-  /// The type (aspect or pointcut holder) whose pointcuts unqualified
-  /// references refer to.
+  /// The class (aspect or pointcut holder) whose named pointcuts an
+  /// unqualified `name()` refers to; `null` outside an aspect.
   final String? owner;
 
-  /// Advice parameters this expression may bind, by name.
+  /// The advice parameters this expression binds, by name; empty for an
+  /// expression written in code.
   final Map<String, AdviceBinding> bindings;
 
   // The expression compiled into a tree, evaluated per member.
   final _Node _root;
 
   /// Whether the expression binds advice parameters or tests arguments,
-  /// so it must also be evaluated for every call ([bind]).
+  /// so the startup match is not enough and every call is checked too
+  /// ([bind]).
   bool get isRuntime => _root.isRuntime;
 
-  /// Static match: `false` only when no call of the member can match
-  /// (parts that depend on the arguments are assumed to match).
+  /// Whether the member can match, decided once at startup; `false` only
+  /// when no call of the member can match. Parts that depend on the
+  /// arguments are assumed to match.
   @override
   bool matches(MethodSignature signature, String beanName) =>
       matchesBean(signature, beanName, const []);
@@ -467,9 +538,11 @@ final class ExpressionPointcut implements AopPointcut {
       ) !=
       false;
 
-  /// Evaluates the expression for one call: the bound advice parameters
-  /// (empty when nothing is bound), or `null` when the call does not
-  /// match (e.g. `args(id)` with an argument of another type).
+  /// Checks one call against the expression and returns the values of the
+  /// bound advice parameters (empty when nothing is bound), or `null` when
+  /// the call does not match, such as `args(id)` with an argument of
+  /// another type. [beanName], [beanAliases] and [introducedTypes] are as
+  /// in [matchesBean].
   Map<String, Object?>? bind(
     MethodInvocation invocation, {
     String beanName = '',

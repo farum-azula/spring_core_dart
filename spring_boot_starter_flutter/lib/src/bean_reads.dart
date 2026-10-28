@@ -2,16 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
 
-/// Matches the members of the beans whose reads Spring widgets track: the
-/// public getters, methods and setters of a `@ChangeNotifierComponent`
+/// The rule that picks the bean members whose calls Spring widgets watch:
+/// the public getters, methods and setters of a `@ChangeNotifierComponent`
 /// class or of a class carrying `@NotifyListeners` (not the members of
 /// `ChangeNotifier` and `Object`).
 ///
-/// With it a `SpringStatelessWidget` or `SpringState` subscribes to such a
-/// bean only when it reads the bean's state (a getter, a field) in
-/// `build`; calling its methods (`onPressed: counter.increment`) is free.
+/// It exists so that a widget listens to a state bean only when it shows
+/// the bean's state. With it, a `SpringStatelessWidget` or `SpringState`
+/// subscribes to such a bean only when its `build` reads a getter or a
+/// field; calling a method (`onPressed: counter.increment`) costs no
+/// rebuilds. The starter pairs it with [BeanReadsInterceptor];
+/// applications do not use it.
 final class BeanReadsPointcut implements AnnotationPointcut {
-  /// Creates the pointcut.
+  /// The pointcut; it has no settings.
   const BeanReadsPointcut();
 
   static const _objectMembers = {
@@ -38,10 +41,13 @@ final class BeanReadsPointcut implements AnnotationPointcut {
   String toString() => 'BeanReadsPointcut';
 }
 
-/// Tells the Spring widgets that a getter of a bean ran (a read of its
-/// state); keeps a bean's own reads in its methods and setters out.
+/// The advice that reports each read of a state bean's getter or field to
+/// the Spring widget being built, so the widget knows it shows that bean.
+///
+/// Reads made by the bean itself, inside its own methods and setters, are
+/// not reported. The starter registers it; applications do not use it.
 final class BeanReadsInterceptor implements MethodInterceptor {
-  /// Creates the interceptor.
+  /// The interceptor; it has no settings.
   const BeanReadsInterceptor();
 
   @override
@@ -65,20 +71,24 @@ final class BeanReadsInterceptor implements MethodInterceptor {
   String toString() => 'BeanReadsInterceptor';
 }
 
-/// The `Listenable` beans of one Spring widget and which of them it is
-/// subscribed to.
+/// The listening of one Spring widget: which of its `Listenable` beans it
+/// subscribes to, and so which bean changes rebuild it.
 ///
 /// A bean whose reads are tracked (its proxy has [BeanReadsInterceptor])
-/// is subscribed to when the widget read it in its latest build, or once
-/// it was read outside any build of a widget holding it (a `ListView`
-/// item builder, a callback): the widget cannot tell then whether its UI
-/// shows it, so it keeps listening. Every other `Listenable` bean is
+/// is subscribed to when the widget read it in its latest build, or for
+/// good once it was read outside any build of a widget holding it (in a
+/// `ListView` item builder, a callback): the widget cannot tell then
+/// whether its UI shows it, so it keeps listening rather than show stale
+/// data. Every other `Listenable` bean (a plain `ChangeNotifier` bean) is
 /// subscribed to always.
+///
+/// The Spring widgets use it internally; it is not exported.
 final class BeanReads {
-  /// The reads of a widget that calls [onChange] to rebuild.
+  /// The listening of a widget that rebuilds by calling [onChange].
   BeanReads(this.onChange);
 
-  /// Rebuilds the widget.
+  /// Called when a subscribed bean notifies; it marks the widget for a
+  /// rebuild.
   final VoidCallback onChange;
 
   static BeanReads? _building;
@@ -91,9 +101,10 @@ final class BeanReads {
   final _always = <Listenable>{};
   final _subscribed = <Listenable>{};
 
-  /// A read of [bean]'s state: by the widget building now when it holds
-  /// [bean]; otherwise, but in [bean]'s own methods, by an unknown part
-  /// of the UI, so every widget holding it keeps listening.
+  /// Records a read of [bean]'s state. During the build of a widget that
+  /// holds [bean], the read counts for that widget. Elsewhere, unless it
+  /// happens inside [bean]'s own methods, it comes from an unknown part of
+  /// the UI, so every widget holding [bean] listens to it from then on.
   static void read(Object bean) {
     if (bean is! Listenable) {
       return;
@@ -113,7 +124,7 @@ final class BeanReads {
     }
   }
 
-  /// Whether reads of [bean] are tracked: its proxy runs
+  /// Whether reads of [bean] are tracked, that is whether its proxy runs
   /// [BeanReadsInterceptor].
   static bool _isTracked(Object bean) => switch (bean) {
     final Advised advised => advised.aopAdvisors.any(
@@ -122,7 +133,9 @@ final class BeanReads {
     _ => false,
   };
 
-  /// Sets the beans of the widget's record (the `Listenable` ones count).
+  /// Sets the beans of the widget's record; only the `Listenable` ones
+  /// matter. Untracked ones are subscribed to at once. The same beans as
+  /// before change nothing; other beans drop every earlier subscription.
   void setBeans(List<Object?> beans) {
     final listenables = [
       for (final bean in beans)
@@ -144,8 +157,9 @@ final class BeanReads {
     }
   }
 
-  /// Runs [build], noting the reads of the tracked beans, then listens to
-  /// the beans read (and to the untracked ones).
+  /// Runs [build] and returns its result, noting the reads of the tracked
+  /// beans. Afterwards the widget listens to the beans read (and to those
+  /// read outside a build earlier) and stops listening to the others.
   T track<T>(T Function() build) {
     final previous = _building;
     _building = this;
@@ -175,7 +189,8 @@ final class BeanReads {
       [for (var i = 0; i < other.length; i++) i]
           .every((i) => identical(other[i], _beans[i]));
 
-  /// Stops listening.
+  /// Stops listening to every bean and forgets them; called when the
+  /// widget goes away or gets other beans.
   void dispose() {
     for (final bean in _subscribed) {
       bean.removeListener(onChange);

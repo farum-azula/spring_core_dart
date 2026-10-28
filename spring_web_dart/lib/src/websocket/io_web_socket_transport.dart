@@ -5,12 +5,19 @@ import 'dart:typed_data';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 
-/// A [WebSocketTransport] on `dart:io`'s `WebSocket`: the VM, Flutter
-/// mobile and desktop. Sends handshake headers (e.g. `Authorization`).
+/// The [WebSocketTransport] for platforms with `dart:io` (the Dart VM,
+/// Flutter on mobile and desktop), built on `dart:io`'s `WebSocket`.
+///
+/// `platformWebSocketTransport()` returns one on these platforms, so you
+/// create it yourself only to pass an `HttpClient` for the handshakes: a
+/// proxy, trusted certificates. Unlike the browser transport it sends
+/// handshake headers, such as `Authorization`. A handshake that fails or
+/// runs out of time throws a [WebSocketException].
 ///
 /// ```dart
 /// import 'package:spring_web_dart/io.dart';
 ///
+/// // A token in a header, which a browser could not send.
 /// final transport = IoWebSocketTransport();
 /// final session = await transport.connect(
 ///   Uri.parse('wss://chat.neon.books/ws'),
@@ -20,8 +27,9 @@ import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 ///
 /// Spring (Java): `StandardWebSocketClient`.
 class IoWebSocketTransport implements WebSocketTransport {
-  /// A transport; `client` is used for the handshakes (proxy, TLS
-  /// settings).
+  /// A transport whose handshakes go through `client`, an `HttpClient`
+  /// with your proxy or TLS settings; without it `dart:io` uses a default
+  /// client.
   IoWebSocketTransport({this._client});
 
   // The client for the handshakes (`null`: a default one).
@@ -74,11 +82,21 @@ class IoWebSocketTransport implements WebSocketTransport {
   }
 }
 
-/// A [WebSocketSession] over `dart:io`'s `WebSocket`: what
-/// [IoWebSocketTransport] connects, and what the web starter's server
-/// accepts (`ServerHttpRequest.upgradeToWebSocket`).
+/// A [WebSocketSession] over an open `dart:io` `WebSocket`, on either
+/// side of the connection.
+///
+/// [IoWebSocketTransport] returns one for a client connection, and the
+/// web starter's server returns one from
+/// `ServerHttpRequest.upgradeToWebSocket` for an accepted connection.
+/// Create one yourself only to wrap a `WebSocket` you opened with
+/// `dart:io` directly.
+///
+/// A broken connection ends [messages] with a [WebSocketException].
+/// [closeStatus] gives the code the other side sent; if this side closed
+/// first and no answer has arrived yet, it gives the status passed to
+/// [close].
 final class IoWebSocketSession implements WebSocketSession {
-  /// The session of the open `socket`, connected to [uri].
+  /// A session over the open `socket`, whose address is [uri].
   IoWebSocketSession(this._socket, this.uri);
 
   final io.WebSocket _socket;

@@ -1,10 +1,14 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// Spring's bean name of a class, as `ApplicationContextRunner.withBean`
-/// and [BeanOverride] name a new bean of [type]: lower camel case
-/// (`HttpClient` → `httpClient`), a name starting with two capitals stays
-/// (`URLService`, `Introspector.decapitalize`), type arguments are left
-/// out (`Cache<String>` → `cache`).
+/// The bean name Spring would give a class, used for a bean that
+/// `ApplicationContextRunner.withBean` or a [BeanOverride] adds without a
+/// `name`.
+///
+/// The type name in lower camel case (`HttpClient` → `httpClient`); a name
+/// that starts with two capitals stays as it is (`URLService`, Java's
+/// `Introspector.decapitalize`); type arguments are left out
+/// (`Cache<String>` → `cache`). Tests need it to look such a bean up by
+/// name.
 String defaultBeanName(String type) {
   final generic = type.indexOf('<');
   final simple = generic < 0 ? type : type.substring(0, generic);
@@ -20,44 +24,60 @@ String defaultBeanName(String type) {
   return simple[0].toLowerCase() + simple.substring(1);
 }
 
-/// Replaces the bean of type [T] with [instance] in a test context, like
-/// Spring's `@TestBean` / `@MockitoBean` (bean overriding).
+/// Replaces one of the application's beans with an object of the test, a
+/// fake or a mock, in a context started by `springBootTest` or
+/// `ApplicationContextRunner`.
 ///
-/// The original definition is removed before any bean is created, so the
-/// real object (and whatever it would connect to) is never built. The
-/// replacement keeps the original's name, aliases, qualifiers and
-/// `@Primary` / `@Fallback` flags, so `@Qualifier` injection points still
-/// find it. Among several beans of [T] the single `@Primary` one is
-/// replaced; [name] may also be an alias. Without an existing bean of [T]
-/// the instance is simply registered.
+/// Use it when the real bean talks to something a test cannot use: a
+/// payment provider, the wall clock, a mail server. The original
+/// definition is removed before any bean is created, so the real object
+/// (and whatever it would connect to) is never built, and every bean that
+/// injects it gets [instance]. The replacement keeps the original's name,
+/// aliases, qualifiers, order and `@Primary` / `@Fallback` flags, so
+/// `@Qualifier` injection points still find it. It is registered under
+/// [T] only (use [BeanOverride.named] to keep the original's types).
+///
+/// Which bean: the one called [name] (or whose alias it is) when given;
+/// else the only bean of [T]; among several, the single `@Primary` one,
+/// and a [StateError] listing them when there is no single primary.
+/// Without any bean of [T], [instance] is simply registered as a new
+/// bean. Any mock library works (for example `mocktail`); reset shared
+/// mocks in `setUp`, since nothing is reset between tests.
 ///
 /// ```dart
+/// final gateway = FakeGateway();
 /// final app = springBootTest(
 ///   springApplication,
 ///   overrides: [
-///     BeanOverride<PaymentGateway>(FakeGateway()),        // the only one
-///     BeanOverride<Mailer>(MockMailer(), name: 'mailer'),  // one of many
+///     // No real payment: the checkout charges the fake.
+///     BeanOverride<PaymentGateway>(gateway),
+///     // One of several mailers, chosen by name.
+///     BeanOverride<Mailer>(MockMailer(), name: 'mailer'),
 ///   ],
 /// );
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java): `@MockitoBean` and `@TestBean`. Here the object is your
+/// own, ready-made; no mock is generated.
 /// ```java
 /// @MockitoBean PaymentGateway gateway;
 /// ```
 final class BeanOverride<T extends Object> {
-  /// Overrides the bean of type [T] (or the bean called [name]).
+  /// Replaces the bean of type [T], or the bean called [name], with
+  /// [instance].
   const BeanOverride(this.instance, {this.name}) : _keepTypes = false;
 
-  /// Overrides the bean called [name] with [instance], keeping the types
-  /// the bean is registered under but its own class (so a fake of another
-  /// class replaces it: injection points of an interface get the fake, a
-  /// lookup of the real class finds nothing), plus the class of
-  /// [instance]; without such a bean, [instance] is registered under
-  /// [name] with its runtime type. What a `@TestBean(name: ...)` field
-  /// generates.
+  /// Replaces the bean called [name] with [instance], whatever the bean's
+  /// type; this is what a `@TestBean(name: ...)` field generates.
+  ///
+  /// The replacement keeps the types the bean was registered under except
+  /// its own class, and adds the class of [instance]. So a fake of another
+  /// class takes its place: injection points of the interface get the fake,
+  /// and a lookup of the real class finds nothing. Without such a bean,
+  /// [instance] is registered under [name] with its runtime type.
   ///
   /// ```dart
+  /// // The 'sandbox' PaymentGateway becomes the fake.
   /// BeanOverride.named(FakeGateway(), name: 'sandbox')
   /// ```
   const BeanOverride.named(this.instance, {required String this.name})
@@ -78,20 +98,27 @@ final class BeanOverride<T extends Object> {
     instance.runtimeType,
   }.toList();
 
-  /// The object to inject instead of the real bean.
+  /// The object that every injection point of the replaced bean receives.
   final T instance;
 
-  /// The bean (or an alias of it) to replace when several beans of [T]
-  /// exist and none is `@Primary`; also the name of
-  /// a newly registered bean (default: [defaultBeanName] of [T], the rule
-  /// of `ApplicationContextRunner.withBean`).
+  /// The name, or an alias, of the bean to replace; when given it wins over
+  /// the choice by type. Needed when several beans of [T] exist and none is
+  /// `@Primary`.
+  ///
+  /// When no bean has that name, [instance] is added under it, next to any
+  /// existing bean of [T] (a misspelt name does not fail). Without [name],
+  /// a new bean is called [defaultBeanName] of [T].
   final String? name;
 
-  /// The overridden type.
+  /// The type the replacement is registered under, [T].
   Type get type => T;
 
-  /// Replaces the definition in [registry] ([factory] finds the beans of
-  /// [T]); called by [BeanOverrideProcessor].
+  /// Removes the chosen bean definition from [registry] and registers
+  /// [instance] in its place; [factory] is used to find the beans of [T].
+  ///
+  /// [BeanOverrideProcessor] calls it; tests do not. Throws a [StateError]
+  /// when several beans of [T] exist and neither [name] nor a single
+  /// `@Primary` one chooses.
   void apply(
     ConfigurableListableBeanFactory factory,
     BeanDefinitionRegistry registry,
@@ -157,15 +184,23 @@ final class BeanOverride<T extends Object> {
   String toString() => 'BeanOverride<$T>(${name ?? ''})';
 }
 
-/// Applies [overrides] after every registry post-processor ran, before any
-/// application bean is created.
+/// The container hook that applies a list of [BeanOverride]s: after the
+/// bean definitions are registered, before any application bean is
+/// created.
+///
+/// `springBootTest(overrides:)` and
+/// `ApplicationContextRunner.withBeanOverride` add it for you; tests do not
+/// create it. It replaces the definitions in `postProcessBeanFactory`
+/// rather than earlier, so the beans that the application's own registry
+/// post-processors add can be replaced too.
 final class BeanOverrideProcessor
     implements BeanDefinitionRegistryPostProcessor {
-  /// Creates the processor.
+  /// A processor that applies [overrides].
   BeanOverrideProcessor(List<BeanOverride<Object>> overrides)
     : overrides = List.unmodifiable(overrides);
 
-  /// The overrides, applied in order.
+  /// The overrides, applied in order: when two replace the same bean, the
+  /// last wins.
   final List<BeanOverride<Object>> overrides;
 
   BeanDefinitionRegistry? _registry;

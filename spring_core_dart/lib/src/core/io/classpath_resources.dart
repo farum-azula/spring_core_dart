@@ -4,44 +4,52 @@ import 'dart:typed_data';
 import 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
-/// A file of the application's `lib/resources/` folder, embedded into the
-/// generated code at build time.
+/// The content of one file of `lib/resources/`, written into the generated
+/// code at build time.
 ///
-/// Generated modules carry them (`BeanModule(resources: ...)`), so
-/// `classpath:` locations work the same in `dart run`, AOT executables,
-/// Flutter and the web — no Flutter asset declarations needed.
+/// Embedding is what makes `classpath:` locations work the same in
+/// `dart run`, AOT executables, Flutter and the web, where there is no
+/// project folder at run time and no asset declaration is needed. The
+/// generator writes these (`BeanModule(resources: ...)`); applications
+/// never create one.
 final class EmbeddedResource {
-  /// A text file.
+  /// A text file with the content [text].
   const EmbeddedResource.text(String this.text) : base64 = null;
 
-  /// A binary file, base64-encoded.
+  /// A binary file whose content is encoded in base64.
   const EmbeddedResource.base64(String this.base64) : text = null;
 
-  /// Content of a text file.
+  /// The content of a text file; `null` for a binary file.
   final String? text;
 
-  /// Base64 content of a binary file.
+  /// The base64 content of a binary file; `null` for a text file.
   final String? base64;
 
-  /// The content as bytes.
+  /// The content as bytes (text encoded as UTF-8).
   Uint8List get bytes => text != null
       ? Uint8List.fromList(utf8.encode(text!))
       : base64Decode(base64!);
 }
 
-/// The `classpath:` resources of the application, like the classpath
-/// resources of a Java application (`src/main/resources`).
+/// The registry behind `classpath:` locations: the files of
+/// `lib/resources/` of the application and of its dependencies.
 ///
-/// Files under `lib/resources/` are embedded by the generator and
-/// registered here when the generated module is created; when a path is not
-/// embedded (e.g. while developing without regenerating), the file
-/// `lib/resources/<path>` is read from disk.
+/// Dart has no classpath, so the generator embeds every file of a
+/// package's `lib/resources/` into its generated module, and the files are
+/// registered here when the module is created. That is how
+/// `application.yml`, message bundles and templates are found on every
+/// platform. A path that is not embedded (a file added while developing
+/// without regenerating) is read from `lib/resources/<path>` on disk.
+/// Directories added with [addDirectory] come first, like
+/// `src/test/resources` before `src/main/resources` on a test classpath: a
+/// file there shadows the embedded file with the same path.
 ///
-/// Directories added with [addDirectory] come first, like `src/test/resources`
-/// before `src/main/resources` on a test classpath: a file there shadows the
-/// embedded file with the same path.
+/// Applications only write locations (`classpath:templates/mail.txt`);
+/// resource loaders call this class. Code calls it directly in tests, to
+/// add a directory, or to list the embedded files.
 ///
 /// ```dart
+/// // Reads lib/resources/banner.txt, embedded or from disk.
 /// final resource =
 ///     DefaultResourceLoader().getResource('classpath:banner.txt');
 /// print(resource.readAsStringSync());
@@ -55,16 +63,18 @@ abstract final class ClasspathResources {
   /// The location prefix, `classpath:`.
   static const prefix = 'classpath:';
 
-  /// Directory read from disk for paths that are not embedded.
+  /// The directory read from disk for paths that are not embedded:
+  /// `lib/resources`, relative to the working directory.
   static const directory = 'lib/resources';
 
   static final _embedded = <String, EmbeddedResource>{};
   static final _owners = <String, String>{};
   static final _directories = <String>[];
 
-  /// Searches [directory] (on disk) before the embedded files, until the
-  /// returned function is called. The most recently added directory comes
-  /// first. Used by `spring_boot_starter_test` for `test/resources/`.
+  /// Makes `classpath:` look in [directory] on disk before the embedded
+  /// files, until the returned function is called. The most recently
+  /// added directory comes first. `spring_boot_starter_test` uses it for
+  /// `test/resources/`, so test config files win over packaged ones.
   ///
   /// ```dart
   /// final remove = ClasspathResources.addDirectory('test/resources');
@@ -85,15 +95,17 @@ abstract final class ClasspathResources {
     };
   }
 
-  /// Directories searched before the embedded files, first one first.
+  /// The directories searched before the embedded files, in search order.
   static List<String> get directories => List.unmodifiable(_directories);
 
-  /// Registers embedded files (path relative to `lib/resources/`); the
-  /// first registration of a path wins, like the first classpath entry.
+  /// Registers embedded files, keyed by their path under
+  /// `lib/resources/`. Generated modules call it; applications do not.
   ///
-  /// With an [owner] (the module name), registering again replaces that
-  /// owner's previous files — how a module rebuilt after a hot reload
-  /// brings its changed `application.properties`.
+  /// The first registration of a path wins, as the first classpath entry
+  /// does in Java. With an [owner] (the module name),
+  /// registering again replaces that owner's earlier files: that is how a
+  /// module rebuilt after a hot reload brings its changed
+  /// `application.properties`.
   static void registerAll(
     Map<String, EmbeddedResource> resources, {
     String? owner,
@@ -119,10 +131,12 @@ abstract final class ClasspathResources {
     }
   }
 
-  /// Paths of the embedded files.
+  /// The paths of all embedded files, relative to `lib/resources/`.
   static Iterable<String> get paths => _embedded.keys;
 
-  /// The resource for `classpath:<path>` (or a plain [path]).
+  /// The resource for `classpath:<path>` or a plain [path]: a file of an
+  /// added directory when it exists there, otherwise the embedded file,
+  /// otherwise the file under [directory] (which may not exist).
   static Resource resolve(String path) {
     final normalized = _normalize(
       path.startsWith(prefix) ? path.substring(prefix.length) : path,
@@ -136,8 +150,8 @@ abstract final class ClasspathResources {
     return resolveEmbedded(normalized);
   }
 
-  /// The resource for [path] without the added [directories]: the
-  /// embedded file, or the file under [directory].
+  /// The resource for [path], ignoring the added [directories]: the
+  /// embedded file, or else the file under [directory].
   ///
   /// ```dart
   /// ClasspathResources.resolveEmbedded('application.yml');

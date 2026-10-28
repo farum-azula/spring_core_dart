@@ -14,7 +14,9 @@ import 'package:spring_core_dart/expression.dart';
 // ignore: implementation_imports
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
 
-/// Directories never scanned.
+/// Directories the scan never enters: tool and build output, and the
+/// platform folders of a Flutter app, which hold no Spring sources.
+/// Hidden directories (a leading `.`) are skipped as well.
 const _skippedDirectories = {
   '.dart_tool',
   '.git',
@@ -29,7 +31,13 @@ const _skippedDirectories = {
   'linux',
 };
 
-/// Annotations whose strings may contain placeholders and SpEL.
+/// Annotations whose strings are read as templates of `${...}`
+/// placeholders and `#{...}` SpEL expressions, for highlighting,
+/// navigation and checks.
+///
+/// In these, an interpolated (non-raw) `'${key}'` is an error, since Dart
+/// would replace it before the framework sees it. The strings of other
+/// annotations are read as templates too when they contain `${` or `#{`.
 const templateAnnotations = {
   'Value',
   'ConditionalOnExpression',
@@ -40,19 +48,27 @@ const templateAnnotations = {
   'Scheduled',
 };
 
-/// Annotation arguments that are one whole SpEL expression (no `#{}`),
-/// like the keys and conditions of the cache annotations. Also inside
-/// `@Caching(cacheable: [Cacheable(key: ...)])`.
+/// Annotation arguments whose whole string is one SpEL expression, without
+/// `#{}`: the keys and conditions of the cache annotations, by annotation
+/// name. Also inside `@Caching(cacheable: [Cacheable(key: ...)])`.
+///
+/// They are highlighted and parsed, and a `#name` in them must be a
+/// parameter of the annotated method, or one of the variables every cache
+/// expression has (`#root`, `#result`, `#p0`, ...).
 const spelArguments = {
   'Cacheable': {'key', 'condition', 'unless'},
   'CachePut': {'key', 'condition', 'unless'},
   'CacheEvict': {'key', 'condition'},
 };
 
-/// SpEL variables that are always there in cache expressions.
+/// The SpEL variables a cache expression may use besides the method's
+/// parameters: `#root`, `#this`, `#result`, and `#p0` or `#a0` for a
+/// parameter by position.
 final _builtinSpelVariable = RegExp(r'^(root|this|result|[pa]\d+)$');
 
-/// Annotations whose string arguments are bean names.
+/// Annotations whose string arguments name beans: go to definition on
+/// `'cash'` in `@Qualifier('cash')` leads to the beans named or qualified
+/// `cash`.
 const _beanNameAnnotations = {
   'Qualifier',
   'DependsOn',
@@ -60,7 +76,8 @@ const _beanNameAnnotations = {
   'ConditionalOnMissingBean',
 };
 
-/// Methods whose type argument is a bean type.
+/// Methods whose type argument is a bean type: go to definition on `Clock`
+/// in `context.getBean<Clock>()` lists the `Clock` beans.
 const _beanLookupMethods = {
   'getBean',
   // spring_boot_starter_flutter: `context.bean<T>()`, `SpringScope.beanOf<T>`.
@@ -75,7 +92,9 @@ const _beanLookupMethods = {
   'provider',
 };
 
-/// Methods whose first string argument is a property key.
+/// Methods whose first string argument is a property key: go to
+/// definition on `'shop.name'` in `environment.getProperty('shop.name')`
+/// lists the files that define it.
 const _propertyMethods = {
   'getProperty',
   'getRequiredProperty',
@@ -83,12 +102,19 @@ const _propertyMethods = {
   'getPropertyAs',
 };
 
-/// Collections and providers whose element type is the bean type.
+/// Types that wrap the bean type at an injection point: for
+/// `List<Mailer>`, `ObjectProvider<Mailer>` or `Map<String, Mailer>`, the
+/// beans of `Mailer` (the last type argument) are meant.
 const _containers = {'List', 'Set', 'Iterable', 'ObjectProvider', 'Map'};
 
-/// A location in a file (zero-based line and UTF-16 column).
+/// A span of text in a file, in LSP terms: zero-based lines, and columns
+/// counted in UTF-16 code units.
+///
+/// Definitions and diagnostics are reported as ranges; the server turns
+/// them into LSP locations.
 final class SourceRange {
-  /// Creates a range.
+  /// The span of [path] from [startLine], [startColumn] to [endLine],
+  /// [endColumn].
   const SourceRange(
     this.path,
     this.startLine,
@@ -97,41 +123,54 @@ final class SourceRange {
     this.endColumn,
   );
 
-  /// File path.
+  /// The absolute path of the file.
   final String path;
 
-  /// Start line.
+  /// The zero-based line where the span starts.
   final int startLine;
 
-  /// Start column.
+  /// The zero-based column where the span starts.
   final int startColumn;
 
-  /// End line.
+  /// The zero-based line where the span ends.
   final int endLine;
 
-  /// End column.
+  /// The zero-based column just after the span's last character.
   final int endColumn;
 
   @override
   String toString() => '$path:$startLine:$startColumn';
 }
 
-/// A problem shown in the editor.
+/// A diagnostic for the editor to underline: where, what, and whether it
+/// is an error or a warning.
+///
+/// [SpringWorkspace.problems] produces them; the server publishes them
+/// with the source `dart_spring`.
 final class Problem {
-  /// Creates a problem.
+  /// A warning, or with [error] an error, about [range].
   const Problem(this.range, this.message, {this.error = false});
 
-  /// Where.
+  /// The text to underline.
   final SourceRange range;
 
-  /// What.
+  /// What is wrong, and where possible how to fix it, as shown to the user.
   final String message;
 
-  /// Error (otherwise warning).
+  /// Whether it is an error (LSP severity 1) rather than a warning
+  /// (severity 2). Errors mark what cannot work, such as invalid SpEL;
+  /// warnings what may still be fine, such as a key the workspace does not
+  /// define but the deployment may.
   final bool error;
 }
 
-/// Semantic token types, in legend order.
+/// The semantic token types the server reports, in the order of the
+/// legend it announces at `initialize`: a token's type is an index into
+/// this list.
+///
+/// The first nine are standard LSP types, which every theme colours.
+/// `closureParameter` is the server's own, for a closure's parameters where
+/// they are declared and used; it needs an editor rule to get a colour.
 const semanticTokenTypes = [
   'keyword',
   'operator',
@@ -147,25 +186,32 @@ const semanticTokenTypes = [
   'closureParameter',
 ];
 
-/// One semantic token (absolute position, single line).
+/// One piece of text to colour: a SpEL keyword, a placeholder key, a
+/// closure parameter.
+///
+/// The position is absolute (zero-based line and UTF-16 column) and the
+/// token stays on one line; the server sorts the tokens and turns them
+/// into LSP's relative encoding.
 final class SemanticToken {
-  /// Creates a token.
+  /// A token of [length] UTF-16 units at [line], [column], of [type].
   const SemanticToken(this.line, this.column, this.length, this.type);
 
-  /// Line.
+  /// The zero-based line.
   final int line;
 
-  /// Column.
+  /// The zero-based column where the token starts, in UTF-16 units.
   final int column;
 
-  /// Length.
+  /// The length in UTF-16 units.
   final int length;
 
-  /// Index into [semanticTokenTypes].
+  /// The token's type, as an index into [semanticTokenTypes].
   final int type;
 }
 
-/// A string in an annotation or call, with its source position.
+/// A string literal that is an argument of an annotation or a method
+/// call, with the name of that annotation or method: what decides how the
+/// string is read (bean name, property key, template, pointcut).
 final class _StringRef {
   _StringRef(this.literal, this.annotation, this.method);
 
@@ -177,13 +223,36 @@ final class _StringRef {
   int get contentEnd => literal.contentsEnd;
 }
 
-/// The project: Dart files, beans and properties files, kept up to date
-/// from disk (by modification time) and from documents open in the editor.
+/// What the language server knows about the open project: its Dart files,
+/// the beans they declare and its config files, and the answers to the
+/// editor's questions ([definition], [hover], [semanticTokens],
+/// [problems]).
+///
+/// It reads syntax only, with no type resolution, so it is fast and works
+/// without `pub get` and on code that does not compile. The price: types
+/// are matched by their simple name, and supertypes are followed only
+/// through classes of the workspace; beans of dependencies (such as the
+/// starters' auto-configuration) are not seen. Files are read from disk
+/// when their modification time changes, skipping the generated
+/// `*.spring.dart` and `*.g.dart`; the unsaved text of an open document
+/// ([setOverlay]) wins over the disk. The indexes are rebuilt on the next
+/// query after a change.
+///
+/// ```dart
+/// final workspace = SpringWorkspace(['/home/ada/shop'])
+///   ..refresh(force: true);
+/// // A click at offset 120 of the checkout: where are its beans?
+/// final targets = workspace.definition(
+///   '/home/ada/shop/lib/checkout.dart',
+///   120,
+/// );
+/// ```
 final class SpringWorkspace {
-  /// A workspace over [roots] (directories).
+  /// A workspace over the directories [roots]. Nothing is read until
+  /// [refresh] or a query.
   SpringWorkspace(this.roots);
 
-  /// Root directories.
+  /// The workspace folders the editor opened, scanned recursively.
   final List<String> roots;
 
   final _files = <String, DartFile>{};
@@ -196,8 +265,12 @@ final class SpringWorkspace {
   Map<String, List<ClassInfo>>? _classes;
   DateTime _lastScan = DateTime.fromMillisecondsSinceEpoch(0);
 
-  /// Text of an open document (or `null` to fall back to disk). A config
-  /// file ([isConfigFile]) is read as properties, anything else as Dart.
+  /// Sets the unsaved [text] of the document open at [path]; with `null`
+  /// (the document was closed), the file on disk counts again.
+  ///
+  /// A Dart document is parsed at once, so the next query sees it. A config
+  /// file ([isConfigFile]) is read as properties, so its unsaved keys count
+  /// for navigation and for the unknown-key check. Other files are ignored.
   void setOverlay(String path, String? text) {
     if (!path.endsWith('.dart')) {
       _setConfigOverlay(path, text);
@@ -232,9 +305,10 @@ final class SpringWorkspace {
     _bundles = null;
   }
 
-  /// Whether [path] is a config file of the application: any `.properties`
-  /// file, and YAML named `application*` or under a `resources/` directory
-  /// (not every YAML: `${{ }}` in a CI workflow is no placeholder).
+  /// Whether [path] is a config file of the application, whose keys are
+  /// indexed and whose values are highlighted: any `.properties` file, and
+  /// YAML named `application*` or under a `resources/` directory. Not every
+  /// YAML: `${{ }}` in a CI workflow is no placeholder.
   static bool isConfigFile(String path) {
     final name = path.split(RegExp(r'[\\/]')).last;
     return name.endsWith('.properties') ||
@@ -242,7 +316,12 @@ final class SpringWorkspace {
             (_inResources(path) || name.startsWith('application')));
   }
 
-  /// Re-reads changed files (at most every [interval] unless [force]).
+  /// Scans [roots] again: re-reads the files changed on disk and forgets
+  /// those that are gone.
+  ///
+  /// Queries call it, so to stay cheap it scans at most once per [interval]
+  /// (2 seconds by default) unless [force] is set. The server forces it on
+  /// `initialized`, on save and when watched files change.
   void refresh({
     bool force = false,
     Duration interval = const Duration(seconds: 2),
@@ -356,8 +435,9 @@ final class SpringWorkspace {
     }
   }
 
-  /// The parsed Dart file at [path] (open document or disk); `null` for
-  /// other files.
+  /// The parsed Dart file at [path]: the open document's text if there is
+  /// one, else the file on disk, read on first use. `null` when [path] is
+  /// not a Dart file or does not exist.
   DartFile? file(String path) {
     if (!path.endsWith('.dart')) {
       return null;
@@ -392,7 +472,10 @@ final class SpringWorkspace {
     return _classes = index;
   }
 
-  /// Every type name [name] can be used as (itself and supertypes, by name).
+  /// Every type name that a class called [name] can be used as: itself and
+  /// its supertypes (`extends`, `implements`, `with`), followed through the
+  /// classes of the workspace by simple name. A type from a dependency ends
+  /// its branch.
   Set<String> supertypesOf(String name) {
     final result = <String>{};
     final pending = [name];
@@ -408,7 +491,9 @@ final class SpringWorkspace {
     return result;
   }
 
-  /// Annotation names that make a class a bean (base and custom).
+  /// The names of the annotations that make a class a bean: the
+  /// [baseStereotypes], plus the classes of the workspace that extend one of
+  /// them (a custom `UseCase` annotation that extends `Component`).
   Set<String> get stereotypes => {
     ...baseStereotypes,
     for (final MapEntry(key: name, value: infos) in _classIndex.entries)
@@ -417,7 +502,9 @@ final class SpringWorkspace {
         name,
   };
 
-  /// Every bean found in the sources.
+  /// Every bean declared in the workspace: the classes with a stereotype
+  /// annotation, and the `@Bean` methods inside them. Built on first use
+  /// after a change.
   List<BeanInfo> get beans => _beans ??= _collectBeans();
 
   List<BeanInfo> _collectBeans() {
@@ -515,8 +602,9 @@ final class SpringWorkspace {
         ...stringList(positionalArgument(annotation)),
   ];
 
-  /// Beans that can be injected as [type] (with [qualifier]: only those
-  /// answering to it), `@Primary` first.
+  /// The beans that can be injected where [type] is asked for, `@Primary`
+  /// ones first: what go to definition on an injection point lists. With
+  /// [qualifier], only the beans whose name, alias or `@Qualifier` it is.
   List<BeanInfo> beansOfType(String type, {String? qualifier}) {
     final candidates = [
       for (final bean in beans)
@@ -526,13 +614,16 @@ final class SpringWorkspace {
     return candidates;
   }
 
-  /// Beans named (or aliased, or qualified) [name].
+  /// The beans that answer to [name], by bean name, by
+  /// `@Bean(aliases: ...)` or by `@Qualifier`.
   List<BeanInfo> beansNamed(String name) => [
     for (final bean in beans)
       if (bean.matches(name)) bean,
   ];
 
-  /// The `@Pointcut` methods of `@Aspect` classes.
+  /// The `@Pointcut` methods of the workspace's `@Aspect` classes. Other
+  /// pointcuts refer to them by name (`pricing()`, `AuditAspect.pricing()`),
+  /// so the pointcut check and navigation need them.
   List<PointcutMethod> get pointcutMethods => [
     for (final file in _files.values)
       for (final info in file.classes)
@@ -556,10 +647,16 @@ final class SpringWorkspace {
   // Properties
   // ---------------------------------------------------------------------
 
-  /// Entries for [key] in every properties file (relaxed: `my-key`,
-  /// `myKey` and `MY_KEY` match), `application.properties` first. In a
-  /// test file ([from]), the properties the test sets for its context
-  /// come first (see [testProperties]).
+  /// The definitions of the property [key] in every properties and YAML file
+  /// of the workspace (message bundles excluded): `application.*` first,
+  /// then by file name and line.
+  ///
+  /// Keys match the relaxed way the framework binds them: `my-key`, `myKey`,
+  /// `my_key` and `MY_KEY` are one key. In a test file ([from]), the
+  /// properties the test sets for its own context come first (see
+  /// [testProperties]); its environment variables match the way the
+  /// framework maps them (`SHOP_MAX_BASKET_SIZE` for
+  /// `shop.max-basket-size`).
   List<PropertyEntry> property(String key, {DartFile? from}) {
     final wanted = _canonical(key);
     final variables = _environmentNames(key);
@@ -599,7 +696,9 @@ final class SpringWorkspace {
     };
   }
 
-  /// Entries whose key starts with [prefix] + `.`.
+  /// The definitions whose key starts with [prefix] and a dot, with relaxed
+  /// names as in [property]: the keys a `@ConfigurationProperties('shop')`
+  /// class binds.
   List<PropertyEntry> propertiesWithPrefix(String prefix) {
     final wanted = '${_canonical(prefix)}.';
     final bundles = _messageBundles();
@@ -611,9 +710,9 @@ final class SpringWorkspace {
     ]..sort((a, b) => _fileOrder(a).compareTo(_fileOrder(b)));
   }
 
-  /// The message [code] in every message bundle (`messages.properties`,
-  /// `messages_ja.properties`, ... or the bundles of
-  /// `spring.messages.basename`), the default bundle first; with [from],
+  /// The definitions of the message [code] in every message bundle
+  /// (`messages.properties`, `messages_ja.properties`, ..., or the bundles of
+  /// `spring.messages.basename`), the default bundle first. With [from],
   /// only the bundles of that file's package.
   List<PropertyEntry> messages(String code, {String? from}) {
     final package = from == null ? null : _packageRoot(from);
@@ -640,7 +739,8 @@ final class SpringWorkspace {
 
   Map<String, Set<String>>? _addedMessages;
 
-  /// Whether the package of [path] has a message bundle.
+  /// Whether the package of [path] has a message bundle; only then are the
+  /// message codes of its files checked.
   bool hasMessageBundles(String path) {
     final package = _packageRoot(path);
     return _messageBundlePackages().values.contains(package);
@@ -751,7 +851,14 @@ final class SpringWorkspace {
   // Queries
   // ---------------------------------------------------------------------
 
-  /// Go to definition at [offset] in [path].
+  /// The targets of go to definition at [offset] (in UTF-16 units) of the
+  /// Dart file [path].
+  ///
+  /// Depending on what is there: the beans of an injection point or a bean
+  /// name, the definitions of a property key or a message code, the file of
+  /// a `classpath:` location, the class or method a pointcut names. Empty
+  /// when there is nothing Spring-specific at [offset]; the Dart analysis
+  /// server answers for the rest.
   List<SourceRange> definition(String path, int offset) {
     final file = this.file(path);
     if (file == null) {
@@ -786,7 +893,12 @@ final class SpringWorkspace {
     };
   }
 
-  /// Markdown for a hover at [offset] in [path].
+  /// Markdown for a hover at [offset] of the Dart file [path], about the same
+  /// target as [definition]: the candidate beans with their files, the
+  /// value of a property in each file, the files a location resolves to.
+  ///
+  /// When nothing is found it says so (and, for a location, where it looked).
+  /// `null` when [offset] is not on such a target.
   String? hover(String path, int offset) {
     final file = this.file(path);
     if (file == null) {
@@ -849,7 +961,8 @@ final class SpringWorkspace {
     return rangeOf(file, bean.offset, bean.offset + bean.length);
   }
 
-  /// [start]..[end] of [file] as lines and columns.
+  /// The span from offset [start] to offset [end] of [file], as zero-based
+  /// lines and columns.
   SourceRange rangeOf(DartFile file, int start, int end) {
     final from = file.lineInfo.getLocation(start);
     final to = file.lineInfo.getLocation(end);
@@ -1469,8 +1582,13 @@ final class SpringWorkspace {
     }
   }
 
-  /// Semantic tokens for placeholders and SpEL in [path]: in the strings of
-  /// annotations of a Dart file, in the values of a config file.
+  /// The semantic tokens of [path], sorted by position.
+  ///
+  /// In a Dart file: the placeholders and SpEL of annotation strings, the
+  /// SpEL arguments of the cache annotations, pointcut expressions, and the
+  /// parameters of closures where they are declared and used. In a config
+  /// file ([isConfigFile]): the placeholders and SpEL of its values. Empty
+  /// for other files. A token that would span lines is left out.
   List<SemanticToken> semanticTokens(String path) {
     if (!path.endsWith('.dart')) {
       return _configTokens(path);
@@ -1783,8 +1901,24 @@ final class SpringWorkspace {
     }
   }
 
-  /// Problems in [path]: invalid SpEL, unknown property keys, placeholders
-  /// written in interpolated (non-raw) strings.
+  /// The problems of the Dart file [path], for the editor to underline;
+  /// empty for other files.
+  ///
+  /// - an interpolated `'${key}'` in a [templateAnnotations] string (error:
+  ///   write `r'${key}'`);
+  /// - an unclosed placeholder or SpEL expression, or invalid SpEL (errors);
+  /// - a `${key}` without a default that no config file and no property of
+  ///   the test itself defines (warning). Not reported for a key that looks
+  ///   like an environment variable (`PORT`) or for a nullable target;
+  /// - an invalid pointcut, checked by the runtime's own parser with the
+  ///   workspace's `@Pointcut` methods (error);
+  /// - in a cache key or condition: invalid SpEL (error), or a `#name` that
+  ///   is not a parameter of the method (warning, listing the parameters);
+  /// - a message code that no bundle of the package defines, when the
+  ///   package has bundles and does not use codes as default messages
+  ///   (warning);
+  /// - an `asset:` location whose file is missing or not declared under
+  ///   `flutter: assets:` in `pubspec.yaml` (warning).
   List<Problem> problems(String path) {
     final file = this.file(path);
     if (file == null) {
@@ -2092,11 +2226,14 @@ final class _PropertyTarget extends _Target {
   final String key;
   final List<PropertyEntry> entries;
 
-  /// A message code (`context.message('key')`), not a property.
+  /// Whether [key] is a message code (`context.message('key')`) rather than
+  /// a property.
   final bool message;
 }
 
-/// Methods whose first argument is a message code.
+/// Methods whose first positional argument is a message code:
+/// `context.message('cart.empty')`, `messageSource.getMessage(...)`.
+/// `Intl.message(...)` is not one.
 const _messageMethods = {'message', 'getMessage'};
 
 // The first argument of `context.message(...)` / `getMessage(...)`.
@@ -2157,9 +2294,15 @@ final class _MessageCallCollector extends RecursiveAstVisitor<void> {
   }
 }
 
-/// A `@Pointcut` method of an `@Aspect` class.
+/// A `@Pointcut` method of an `@Aspect` class: a named pointcut that other
+/// pointcuts use as `name()` or `Aspect.name()`.
+///
+/// [SpringWorkspace.pointcutMethods] finds them. The pointcut check hands
+/// them to the runtime's parser, so a reference to an unknown name is
+/// reported, and go to definition on a reference jumps to the method.
 final class PointcutMethod {
-  /// Creates a pointcut method.
+  /// The pointcut [name] of [className], defined by [expression], whose
+  /// method name is at [offset] of [path].
   const PointcutMethod(
     this.className,
     this.name,
@@ -2168,19 +2311,20 @@ final class PointcutMethod {
     this.offset,
   );
 
-  /// The aspect class.
+  /// The aspect class that declares it: `AuditAspect` in
+  /// `AuditAspect.pricing()`.
   final String className;
 
-  /// Method name (the pointcut's name).
+  /// The method's name, which is the pointcut's name.
   final String name;
 
-  /// The expression of `@Pointcut(...)`.
+  /// The pointcut expression written in `@Pointcut(...)`.
   final String expression;
 
-  /// File path.
+  /// The file that declares it.
   final String path;
 
-  /// Offset of the method name.
+  /// The offset of the method name in [path], where navigation goes.
   final int offset;
 }
 
@@ -2249,10 +2393,15 @@ final class _AliasUse extends RecursiveAstVisitor<void> {
   }
 }
 
-/// Finds the parameters of closures (`(alert) => ...`) and the places in
-/// their bodies that use them, for [SpringWorkspace.semanticTokens]. A name
-/// declared again inside (a local variable, a loop or catch variable, a
-/// pattern, a parameter of a nested function) hides the parameter there.
+/// Reports the parameters of closures (`(alert) => ...`) where they are
+/// declared and wherever the closure's body uses them: the
+/// `closureParameter` tokens of [SpringWorkspace.semanticTokens].
+///
+/// Parameters of methods and of local or top-level functions are not
+/// reported. A name declared again inside the closure (a local variable,
+/// a loop or catch variable, a pattern variable, a parameter of a local
+/// function) hides the parameter there. A member or label with the same
+/// name (`x.alert`, `alert:`) is not a use of it.
 final class _ClosureParameters extends RecursiveAstVisitor<void> {
   _ClosureParameters(this._add);
 

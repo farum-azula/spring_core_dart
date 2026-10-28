@@ -1,10 +1,21 @@
 import 'package:spring_core_dart/src/json/object_mapper.dart';
 
-/// Writes values of [T] as JSON yourself, like a Jackson `JsonSerializer`;
-/// register it with `ObjectMapper(serializers: [...])` or as a bean (Spring
-/// Boot picks up serializer beans).
+/// Custom code that writes values of [T] as JSON, for a type the mapper
+/// cannot handle or should write differently.
+///
+/// The mapper writes introspected classes, enums and the common Dart types
+/// on its own. Write a serializer for a class you cannot annotate (from
+/// another package), or for a compact form such as money as
+/// `"12.50 EUR"`. It returns plain JSON values; maps and lists it returns
+/// are written further, so they may hold other objects. Register it with
+/// `ObjectMapper(serializers: [...])`, in a [JsonModule], or, in Spring
+/// Boot, as a bean: the auto-configured mapper picks it up. Serializers
+/// are tried in order before the built-in handling, the first that
+/// [handles] a value wins, and subtypes of [T] count. Pair it with a
+/// [JsonDeserializer] to read the same form back.
 ///
 /// ```dart
+/// // Money is written as one string, "1250 EUR".
 /// final class MoneySerializer extends JsonSerializer<Money> {
 ///   const MoneySerializer();
 ///   @override
@@ -21,26 +32,38 @@ import 'package:spring_core_dart/src/json/object_mapper.dart';
 /// }
 /// ```
 abstract class JsonSerializer<T extends Object> {
-  /// Const base constructor.
+  /// Lets subclasses be `const`.
   const JsonSerializer();
 
-  /// Whether this serializer writes [value].
+  /// Whether this serializer writes [value]; by default, whether it is a
+  /// [T] (subtypes included). Override it to be more selective.
   bool handles(Object value) => value is T;
 
-  /// The JSON form of [value]: `null`, a bool, number, string, or a list or
-  /// map of those. [mapper] writes nested values.
+  /// Returns the JSON form of [value]: `null`, a bool, a number, a string,
+  /// or a list or map, whose elements the mapper writes in turn. [mapper]
+  /// is the mapper at work, for writing nested values with its settings.
   Object? serialize(T value, ObjectMapper mapper);
 
-  /// Calls [serialize] (internal: avoids a cast at the call site).
+  /// Calls [serialize] with [value] cast to [T]; the mapper uses it, since
+  /// it only knows the serializer as a `JsonSerializer<Object>`.
   Object? write(Object value, ObjectMapper mapper) =>
       serialize(value as T, mapper);
 }
 
-/// Reads values of [T] from JSON yourself, like a Jackson
-/// `JsonDeserializer`; register it with `ObjectMapper(deserializers: [...])`
-/// or as a bean.
+/// Custom code that builds values of [T] from decoded JSON, for a type the
+/// mapper cannot read on its own or should read differently.
+///
+/// It is the reading half of a [JsonSerializer]: use it for classes you
+/// cannot annotate, or for a compact JSON form. It receives what
+/// `jsonDecode` produced (never `null`; a JSON `null` gives `null`
+/// without calling it). Register it with `ObjectMapper(deserializers:
+/// [...])`, in a [JsonModule], or, in Spring Boot, as a bean. It is used
+/// when the requested type is exactly [T] or `T?`, not a subtype, before
+/// the built-in handling. An error it throws becomes a
+/// `JsonMappingException` with the path of the value.
 ///
 /// ```dart
+/// // Reads the "1250 EUR" form back.
 /// final class MoneyDeserializer extends JsonDeserializer<Money> {
 ///   const MoneyDeserializer();
 ///   @override
@@ -58,22 +81,32 @@ abstract class JsonSerializer<T extends Object> {
 /// }
 /// ```
 abstract class JsonDeserializer<T extends Object> {
-  /// Const base constructor.
+  /// Lets subclasses be `const`.
   const JsonDeserializer();
 
-  /// Whether this deserializer creates values of [S] (`T` or `T?`).
+  /// Whether this deserializer reads the requested type [S]: `true` for
+  /// `T` and `T?`.
   bool handles<S>() => S == T || (<S>[] is List<T?> && <T?>[] is List<S>);
 
-  /// A [T] from the non-null decoded [json] (a string, number, bool, list
-  /// or map). [mapper] reads nested values.
+  /// Returns a [T] built from the decoded [json]: a string, number, bool,
+  /// list or map, never `null`. [mapper] is the mapper at work, for reading
+  /// nested values with its settings. Throw when [json] has the wrong
+  /// shape.
   T deserialize(Object json, ObjectMapper mapper);
 }
 
-/// A set of serializers and deserializers, like a Jackson `SimpleModule`.
-/// In a Spring Boot application every `JsonModule` bean is added to the
-/// `ObjectMapper` bean (as Boot registers Jackson `Module` beans).
+/// A group of serializers and deserializers that is added to a mapper in
+/// one step.
+///
+/// Use it to ship the JSON support of a set of types together, for
+/// example a library's money and currency types. In Spring Boot every
+/// `JsonModule` bean is added to the auto-configured `ObjectMapper`, as
+/// Boot registers Jackson `Module` beans; otherwise pass it to
+/// `ObjectMapper(modules: [...])`. Its serializers and deserializers come
+/// after those passed to the mapper directly.
 ///
 /// ```dart
+/// // Money support for the whole application.
 /// @Configuration()
 /// class JsonSetup {
 ///   @Bean()
@@ -94,15 +127,16 @@ abstract class JsonDeserializer<T extends Object> {
 /// }
 /// ```
 class JsonModule {
-  /// A module with [serializers] and [deserializers].
+  /// A module holding [serializers] and [deserializers]; both default to
+  /// none.
   const JsonModule({
     this.serializers = const [],
     this.deserializers = const [],
   });
 
-  /// Writers for values of particular types.
+  /// The serializers, tried in order.
   final List<JsonSerializer<Object>> serializers;
 
-  /// Readers for values of particular types.
+  /// The deserializers, tried in order.
   final List<JsonDeserializer<Object>> deserializers;
 }

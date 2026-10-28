@@ -9,26 +9,43 @@ import 'package:spring_security_core/src/userdetails/user_details_service.dart';
 
 const _source = 'package:spring_security_core#SecurityCoreAutoConfiguration';
 
-/// Where the method security advisor sits among the advisors: before
-/// every other one (Spring's `AuthorizationInterceptorsOrder.FIRST` +
-/// 100), so `@Cacheable`, `@Validated` and the application's aspects run
-/// only for an authorized call — a cached result is never returned to
-/// someone who may not call the method.
+/// The position of method security among the advice wrapped around a bean
+/// method: before every other advice.
+///
+/// So `@Cacheable`, `@Validated` and the application's own aspects run
+/// only for an authorized call, and a cached result is never returned to
+/// someone who may not call the method. An aspect that must run before
+/// the security check needs a lower order than this value.
+///
+/// Spring (Java): `AuthorizationInterceptorsOrder.FIRST` + 100.
 const int methodSecurityAdvisorOrder = Ordered.highestPrecedence + 100;
 
-/// The prefix `hasRole` adds, like Spring's `GrantedAuthorityDefaults`:
-/// declare a bean to change `ROLE_`.
+/// Changes the prefix that role checks add, `ROLE_` by default.
+///
+/// `hasRole('ADMIN')` looks for the authority `ROLE_ADMIN`. When your
+/// authorities are named differently, for example plain `ADMIN` from an
+/// external directory, declare a bean of this type: method security
+/// expressions and the web starter's `hasRole` rules then use your prefix.
 ///
 /// ```dart
+/// // Roles are stored without a prefix: hasRole('ADMIN') finds 'ADMIN'.
 /// @Bean()
 /// GrantedAuthorityDefaults authorityDefaults() =>
 ///     const GrantedAuthorityDefaults('');
 /// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Bean
+/// static GrantedAuthorityDefaults authorityDefaults() {
+///   return new GrantedAuthorityDefaults("");
+/// }
+/// ```
 final class GrantedAuthorityDefaults {
-  /// Roles get [rolePrefix].
+  /// Role checks add [rolePrefix] to role names.
   const GrantedAuthorityDefaults(this.rolePrefix);
 
-  /// The prefix.
+  /// The prefix added to role names; `''` adds none.
   final String rolePrefix;
 }
 
@@ -44,25 +61,31 @@ final class _OnAuthenticationSources implements Condition {
           .isNotEmpty;
 }
 
-/// The beans of `spring_security_core`, like the parts of Spring
-/// Security's `@EnableMethodSecurity` and `AuthenticationConfiguration`:
+/// The beans this package adds to every application that depends on it;
+/// they switch method security and password logins on without any setup.
 ///
-/// - **method security** — the interceptor behind `@PreAuthorize`,
+/// - **Method security**: the interceptor behind `@PreAuthorize`,
 ///   `@PostAuthorize`, `@Secured`, `@PreFilter` and `@PostFilter`, its
-///   advisor, and a check at startup that every expression parses and
-///   every bean with such annotations is proxied. Spring needs
-///   `@EnableMethodSecurity`; here the dependency is enough, so an
-///   annotation is never silently ignored. Optional beans:
-///   `RoleHierarchy`, `PermissionEvaluator`, `GrantedAuthorityDefaults`,
-///   `SecurityExpressionContextCustomizer`s;
-/// - **authentication events** — an `AuthenticationEventPublisher`
-///   publishing `AuthenticationSuccessEvent` and the failure events;
-/// - **an `AuthenticationManager`** — when the application declares a
-///   `UserDetailsService` or `AuthenticationProvider`s and no manager:
-///   its providers, or a `DaoAuthenticationProvider` over the user
-///   service with the `PasswordEncoder` bean (the delegating encoder
-///   without one), upgrading hashes through a
-///   `UserDetailsPasswordService` bean.
+///   advisor, and a startup check that every expression parses and every
+///   bean with such annotations is proxied. The application can add a
+///   `RoleHierarchy`, a `PermissionEvaluator`, `GrantedAuthorityDefaults`
+///   and `SecurityExpressionContextCustomizer`s as beans, or replace the
+///   `MethodSecurityExpressionHandler`.
+/// - **Authentication events**: an `AuthenticationEventPublisher` that
+///   publishes `AuthenticationSuccessEvent` and the failure events as
+///   application events, unless the application declares its own.
+/// - **An `AuthenticationManager`**, when the application declares a
+///   `UserDetailsService` or `AuthenticationProvider`s and no manager.
+///   With providers, a `ProviderManager` over all of them. Otherwise a
+///   `DaoAuthenticationProvider` over the user service, with the
+///   `PasswordEncoder` bean (the delegating encoder without one), storing
+///   upgraded hashes through a `UserDetailsPasswordService` bean or the
+///   user service itself when it is one.
+///
+/// Spring (Java): parts of `@EnableMethodSecurity` and
+/// `AuthenticationConfiguration`. Spring needs `@EnableMethodSecurity`;
+/// here the dependency is enough, so an annotation is never silently
+/// ignored.
 final securityCoreAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<MethodSecurityExpressionHandler>(
     name: 'methodSecurityExpressionHandler',

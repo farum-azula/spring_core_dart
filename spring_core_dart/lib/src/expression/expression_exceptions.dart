@@ -1,4 +1,5 @@
-/// Severity of a [SpelMessage], like Spring's `SpelMessage.Kind`.
+/// The severity of a [SpelMessage]. Every message defined today is an
+/// [error]; the other kinds exist because Spring defines them.
 ///
 /// ```dart
 /// SpelMessage.typeNotFound.kind; // SpelMessageKind.error
@@ -19,14 +20,17 @@ enum SpelMessageKind {
   error,
 }
 
-/// Messages and codes of SpEL failures, like Spring's `SpelMessage`.
+/// The catalogue of SpEL failures: each value is one kind of error with
+/// its code (`EL1005E`) and message text.
 ///
 /// Every [SpelParseException] and [SpelEvaluationException] carries one of
-/// these as its `messageCode`, with the same names (in lowerCamelCase),
-/// numbers and texts as Spring, so callers can react to a specific failure
-/// without parsing the message.
+/// these as its `messageCode`, so code can react to a specific failure
+/// (an unknown type, a missing property) without parsing the message
+/// text. Names (in lowerCamelCase), numbers and texts are Spring's, so a
+/// code looked up in Spring's documentation means the same here.
 ///
 /// ```dart
+/// // Tell an unknown type apart from other failures.
 /// try {
 ///   SpelExpressionParser().parseExpression('T(Missing)').getValue();
 /// } on SpelEvaluationException catch (e) {
@@ -45,7 +49,8 @@ enum SpelMessageKind {
 /// ```
 ///
 /// A few codes are never raised here (no compiler, no Java arrays or
-/// static-method checks) and exist so the numbering matches Spring.
+/// static-method checks, no overloads) and exist so the numbering matches
+/// Spring; their comments say "not raised".
 enum SpelMessage {
   /// `EL1001E`: a value cannot be converted (also a condition that is not a
   /// boolean).
@@ -374,7 +379,7 @@ enum SpelMessage {
     "Cannot find terminating '' for string",
   ),
 
-  /// `EL1047E`: a real literal starts with `.` (`.5`).
+  /// `EL1047E`: not raised (`.5` fails with [ood] instead).
   missingLeadingZeroForNumber(
     SpelMessageKind.error,
     1047,
@@ -423,21 +428,25 @@ enum SpelMessage {
     'Unable to grow collection: unable to determine list element type',
   ),
 
-  /// `EL1054E`: auto-growing a `null` list reference failed.
+  /// `EL1054E`: not raised (with auto-grow on, a `null` list property
+  /// that cannot be created gives [unableToDynamicallyCreateObject]).
   unableToCreateListForIndexing(
     SpelMessageKind.error,
     1054,
     'Unable to dynamically create a List to replace a null value',
   ),
 
-  /// `EL1055E`: auto-growing a `null` map reference failed.
+  /// `EL1055E`: not raised (with auto-grow on, a `null` map property
+  /// that cannot be created gives [unableToDynamicallyCreateObject]).
   unableToCreateMapForIndexing(
     SpelMessageKind.error,
     1055,
     'Unable to dynamically create a Map to replace a null value',
   ),
 
-  /// `EL1056E`: auto-growing a `null` object reference failed.
+  /// `EL1056E`: with auto-grow on, a `null` property could not be
+  /// replaced by a new value (its type is unknown or cannot be created
+  /// without arguments).
   unableToDynamicallyCreateObject(
     SpelMessageKind.error,
     1056,
@@ -505,7 +514,8 @@ enum SpelMessage {
     'Array initializer size does not match array dimensions',
   ),
 
-  /// `EL1065E`: not raised.
+  /// `EL1065E`: a backslash outside a string (`a \ b`); strings have no
+  /// backslash escapes.
   unexpectedEscapeChar(
     SpelMessageKind.error,
     1065,
@@ -681,18 +691,22 @@ enum SpelMessage {
 
   SpelMessage(this.kind, this.code, this.message);
 
-  /// The severity.
+  /// The severity; [SpelMessageKind.error] for every message.
   final SpelMessageKind kind;
 
-  /// The number, e.g. `1008` for `EL1008E`.
+  /// The number, such as `1008` for `EL1008E`.
   final int code;
 
   /// The message template in `java.text.MessageFormat` syntax (`{0}`
   /// placeholders, `''` for a quote).
   final String message;
 
-  /// The message with its code and [inserts], like Spring's
-  /// `SpelMessage.formatMessage`.
+  /// The text of an exception: the code, then [message] with [inserts]
+  /// in place of `{0}`, `{1}`, ... (integers with thousands separators,
+  /// like Java's `MessageFormat`).
+  ///
+  /// The exceptions call it; you need it only to build the same text
+  /// yourself.
   ///
   /// ```dart
   /// SpelMessage.typeNotFound.formatMessage(['Point']);
@@ -749,13 +763,17 @@ enum SpelMessage {
   }
 }
 
-/// Limits that keep untrusted expressions from exhausting memory, with
-/// Spring's values.
+/// The fixed size limits of what one operator may build, which keep a
+/// hostile expression from exhausting memory or time.
 ///
-/// The expression length, nesting depth and number of operations are
-/// configured per parser in `SpelParserConfiguration`.
+/// They have Spring's values and cannot be changed. Going over one fails
+/// the evaluation with the matching code (EL1075E to EL1078E). The
+/// limits that can be configured, expression length, nesting depth and
+/// operations per evaluation, are set per parser in
+/// `SpelParserConfiguration`.
 ///
 /// ```dart
+/// // 400 characters would be built: refused.
 /// parser.parseExpression("'ab' * 200").getValue();
 /// // SpelEvaluationException: EL1076E (400 > 256)
 /// ```
@@ -767,26 +785,34 @@ enum SpelMessage {
 /// // ConstructorReference.MAX_ARRAY_ELEMENTS
 /// ```
 abstract final class SpelLimits {
-  /// Maximum length of a string built by `'text' * n`.
+  /// Maximum length, in characters, of a string built by `'text' * n`.
   static const maxRepeatedTextSize = 256;
 
-  /// Maximum length of a `matches` pattern.
+  /// Maximum length, in characters, of a `matches` pattern (operator and
+  /// String method).
   static const maxRegexLength = 1000;
 
-  /// Maximum length of a string built by `+`.
+  /// Maximum length, in characters, of a string built by `+`.
   static const maxConcatenatedStringLength = 100000;
 
-  /// Maximum number of elements of an array built by `new int[n]`.
+  /// Maximum number of elements of an array built by `new int[n]`
+  /// (262 144).
   static const int maxArrayElements = 256 * 1024;
 }
 
-/// Base class of expression errors, like Spring's `ExpressionException`.
+/// The common supertype of everything that can go wrong with an
+/// expression: invalid text ([ParseException]) or a failed evaluation
+/// ([EvaluationException]).
 ///
-/// Catch this type to handle both parse and evaluation failures.
-/// [simpleMessage] is the bare message; [message] adds the expression and
-/// position, like Spring's `getMessage()` / `toDetailedString()`.
+/// Catch it where an expression comes from configuration or a user and a
+/// bad one should be reported rather than crash the caller. [message]
+/// says which expression failed and where (`Expression [1 +] @3: ...`);
+/// [simpleMessage] is the bare reason. Exceptions thrown by methods and
+/// constructors the expression calls are not wrapped in it (those of
+/// registered functions are, as EL1023E).
 ///
 /// ```dart
+/// // A rule typed by an administrator: report it, keep running.
 /// try {
 ///   SpelExpressionParser().parseExpression(input).getValue(context);
 /// } on ExpressionException catch (e) {
@@ -812,26 +838,28 @@ class ExpressionException implements Exception {
     this.cause,
   });
 
-  /// The message without the expression and position (Spring's
-  /// `getSimpleMessage()`).
+  /// The reason alone, without the expression and position (Spring's
+  /// `getSimpleMessage()`), such as `EL1044E: Unexpectedly ran out of
+  /// input`.
   final String simpleMessage;
 
-  /// The expression text, when known.
+  /// The text of the failed expression, or `null` when unknown.
   final String? expressionString;
 
-  /// Position in [expressionString], or -1.
+  /// The character offset in [expressionString] where the problem was
+  /// found, or -1 when unknown.
   final int position;
 
-  /// The underlying error, if any.
+  /// The error that caused this one (a converter's or an accessor's), or
+  /// `null`.
   final Object? cause;
 
-  /// The message with the expression and position, like Spring's
-  /// `getMessage()`.
+  /// The full message, with the expression and position; the same as
+  /// [toDetailedString] (Spring's `getMessage()`).
   String get message => toDetailedString();
 
-  /// `Expression [text] @position: message` (Spring's
-  /// `toDetailedString()`); only [simpleMessage] when the expression is
-  /// unknown.
+  /// `Expression [text] @position: message`, or only [simpleMessage] when
+  /// the expression is unknown (Spring's `toDetailedString()`).
   String toDetailedString() {
     final expression = expressionString;
     if (expression == null) {
@@ -848,9 +876,15 @@ class ExpressionException implements Exception {
       '$runtimeType: $message${cause == null ? '' : '; caused by $cause'}';
 }
 
-/// Evaluating an expression failed, like Spring's `EvaluationException`.
+/// An expression was valid but could not be evaluated: a missing
+/// property, an unknown type, a failed conversion.
+///
+/// SpEL itself throws the subtype [SpelEvaluationException], which adds
+/// the error code. Catch this type when the parse step happened earlier
+/// and only evaluation failures are expected here.
 ///
 /// ```dart
+/// // The expression was parsed at startup; this order lacks a field.
 /// try {
 ///   expression.getValue(context);
 /// } on EvaluationException catch (e) {
@@ -876,13 +910,17 @@ class EvaluationException extends ExpressionException {
   });
 }
 
-/// The expression text is invalid, like Spring's `ParseException`.
+/// The text of an expression or template is not valid, so it cannot be
+/// parsed.
 ///
-/// Template structure errors (an unclosed `#{`, an empty `#{}`) are plain
+/// Thrown by `parseExpression`, before anything is evaluated, so parsing
+/// at startup finds bad expressions early. Template structure errors (an
+/// unclosed `#{`, an empty `#{}`, unbalanced brackets) are plain
 /// `ParseException`s; errors inside an expression are
 /// [SpelParseException]s with a [SpelMessage].
 ///
 /// ```dart
+/// // An `@Value`-style template missing its closing brace.
 /// try {
 ///   parser.parseExpression('#{1 + 2', ParserContext.template);
 /// } on ParseException catch (e) {
@@ -908,11 +946,16 @@ class ParseException extends ExpressionException {
   });
 }
 
-/// A SpEL expression is invalid, like Spring's `SpelParseException`.
+/// The text of a SpEL expression is not valid; [messageCode] says what is
+/// wrong.
 ///
-/// Thrown by `SpelExpressionParser.parseExpression` before any evaluation.
+/// Thrown by `SpelExpressionParser.parseExpression` before any
+/// evaluation: a syntax error, a character SpEL does not know, a text
+/// longer than `maximumExpressionLength` or nested deeper than
+/// `maximumNestingDepth`.
 ///
 /// ```dart
+/// // An operator without its right operand.
 /// try {
 ///   SpelExpressionParser().parseExpression('1 +');
 /// } on SpelParseException catch (e) {
@@ -938,22 +981,26 @@ class SpelParseException extends ParseException {
   }) : inserts = List.unmodifiable(inserts),
        super(messageCode.formatMessage(inserts));
 
-  /// The kind of parse failure (Spring's `getMessageCode()`).
+  /// What is wrong, as a code to compare against (Spring's
+  /// `getMessageCode()`).
   final SpelMessage messageCode;
 
-  /// The values inserted into the message (Spring's `getInserts()`).
+  /// The values put into the message, such as the unexpected token
+  /// (Spring's `getInserts()`); unmodifiable.
   final List<Object?> inserts;
 }
 
-/// Evaluating a SpEL expression failed, like Spring's
-/// `SpelEvaluationException`.
+/// Evaluating a SpEL expression failed; [messageCode] says why.
 ///
-/// Thrown by `Expression.getValue`, `setValue` and friends; `cause` holds
-/// the underlying error when an accessor or converter threw. Exceptions
-/// thrown by your methods and constructors are rethrown unchanged, like
-/// Spring.
+/// Thrown by `Expression.getValue`, `setValue` and the other evaluating
+/// methods: a property no accessor can read, a method or type that is not
+/// found, a value that cannot be converted, a limit exceeded. [cause]
+/// holds the underlying error when an accessor, converter or function
+/// threw. Exceptions thrown by your methods and constructors are rethrown
+/// unchanged, like Spring.
 ///
 /// ```dart
+/// // `T(Missing)` names a type nobody registered.
 /// try {
 ///   SpelExpressionParser().parseExpression('T(Missing)').getValue();
 /// } on SpelEvaluationException catch (e) {
@@ -981,22 +1028,27 @@ class SpelEvaluationException extends EvaluationException {
   }) : inserts = List.unmodifiable(inserts),
        super(messageCode.formatMessage(inserts));
 
-  /// The kind of evaluation failure (Spring's `getMessageCode()`).
+  /// Why evaluation failed, as a code to compare against (Spring's
+  /// `getMessageCode()`).
   final SpelMessage messageCode;
 
-  /// The values inserted into the message (Spring's `getInserts()`).
+  /// The values put into the message, such as the property name and the
+  /// target type (Spring's `getInserts()`); unmodifiable.
   final List<Object?> inserts;
 }
 
-/// A property accessor, index accessor, resolver or executor could not do
-/// its job, like Spring's `AccessException`.
+/// The exception a plug-in (property or index accessor, method,
+/// constructor or bean resolver, executor) throws to say it could not do
+/// its job.
 ///
-/// Throw it from your own accessors and executors to have the failure
-/// reported as a [SpelEvaluationException] with the matching code
-/// (`exceptionDuringMethodInvocation`, `exceptionDuringIndexRead`, ...);
-/// other exceptions from methods and constructors propagate unchanged.
+/// Throw it from your own plug-ins to have the failure reported as a
+/// [SpelEvaluationException] with the matching code
+/// (`exceptionDuringMethodInvocation`, `exceptionDuringBeanResolution`,
+/// ...) and the expression's position; other exceptions from method and
+/// constructor executors propagate unchanged.
 ///
 /// ```dart
+/// // A method that cannot run while its service is closed.
 /// MethodExecutor executor = (context, target, args) =>
 ///     throw AccessException('Service is closed');
 /// ```
@@ -1009,10 +1061,10 @@ class AccessException implements Exception {
   /// Creates an exception with [message], optionally wrapping [cause].
   AccessException(this.message, [this.cause]);
 
-  /// What went wrong.
+  /// What went wrong; it becomes part of the SpEL error message.
   final String message;
 
-  /// The underlying error, if any.
+  /// The error that caused this one, or `null`.
   final Object? cause;
 
   @override

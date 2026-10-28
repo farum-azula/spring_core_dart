@@ -1,21 +1,41 @@
-/// Spring Security for `spring_boot_starter_web`, like Spring Boot's
-/// security starter: a filter chain in front of the controllers.
+/// Web security for `spring_boot_starter_web` applications: logins and
+/// access rules in front of the controllers. Import it, and add it as the
+/// only dependency, to secure an HTTP server.
 ///
-/// - `HttpSecurity` builds `SecurityFilterChain`s: access rules by path
-///   pattern (`AuthorizeHttpRequestsConfigurer`), HTTP Basic, form login
-///   with sessions, JWT resource servers (`NimbusJwtDecoder`), CSRF, CORS,
-///   security headers, logout;
-/// - without a chain of the application's: every request needs a login,
-///   with a default user (`spring.security.user.*`);
-/// - a `StrictHttpFirewall` refuses ambiguous paths before any rule;
-/// - `@AuthenticationPrincipal`, `@CurrentSecurityContext` and
-///   `Authentication` parameters in controllers;
-/// - `package:spring_boot_starter_security/testing.dart`: users, Basic,
-///   JWTs and CSRF tokens for `MockMvc`.
+/// Adding the package is enough to be secure: with nothing configured,
+/// every request needs a login, browsers get a login page, programs a
+/// `401` asking for HTTP Basic, and there is one user (`user`, with the
+/// password from `spring.security.user.password` or one generated and
+/// logged at startup). CSRF protection, security headers and logout at
+/// `POST /logout` are on.
 ///
-/// Re-exports `spring_security_core` (users, passwords, `@PreAuthorize`)
-/// and `spring_boot_starter_web`: the starter is the only dependency an
-/// application lists.
+/// To set your own rules, declare a `SecurityFilterChain` bean built with
+/// `HttpSecurity`:
+///
+/// ```dart
+/// @Configuration()
+/// class SecurityConfig {
+///   @Bean()
+///   SecurityFilterChain filterChain(HttpSecurity http) => http
+///       .authorizeHttpRequests((auth) => auth
+///           .requestMatchers('/public/**').permitAll()
+///           .requestMatchers('/api/admin/**').hasRole('ADMIN')
+///           .anyRequest().authenticated())
+///       .formLogin()
+///       .httpBasic()
+///       .build();
+/// }
+/// ```
+///
+/// Also here: JWT resource servers (`oauth2ResourceServer`, or the
+/// `spring.security.oauth2.resourceserver.jwt.*` properties), CORS, a
+/// firewall that refuses ambiguous paths before any rule, and
+/// `@AuthenticationPrincipal` for controller parameters. Test helpers are
+/// in `package:spring_boot_starter_security/testing.dart`.
+///
+/// This import re-exports `spring_security_core` (users, passwords,
+/// `@PreAuthorize`) and `spring_boot_starter_web`. It is the Dart version
+/// of Spring Boot's `spring-boot-starter-security`.
 library;
 
 export 'package:spring_boot_starter_security/src/config/http_security.dart';

@@ -1,5 +1,12 @@
-/// Discovered by the generator of every application that depends on
-/// `spring_boot_starter_feign` (see `AutoConfigurationModule`).
+/// The beans the Feign starter adds to an application: the HTTP transport
+/// and the factory that builds the `@FeignClient` clients.
+///
+/// The generator finds this library in every dependency that has one and
+/// registers its module (it is marked `@AutoConfigurationModule()`), so
+/// listing the starter in `pubspec.yaml` is enough; Spring Boot finds its
+/// auto-configurations through `AutoConfiguration.imports` the same way.
+/// Applications do not import it; a test that builds a context by hand
+/// may name [springBootStarterFeignAutoConfiguration].
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -10,7 +17,8 @@ import 'package:spring_boot_starter_feign/src/feign_auto_configuration.dart';
 // starter can name them.
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
-/// The HTTP transport and the factory of the `@FeignClient` beans.
+/// The Feign starter's auto-configuration module: the HTTP transport and
+/// the factory of the `@FeignClient` beans (`feignAutoConfiguration`).
 @AutoConfigurationModule()
 final BeanModule springBootStarterFeignAutoConfiguration = BeanModule(
   'springBootStarterFeignAutoConfiguration',

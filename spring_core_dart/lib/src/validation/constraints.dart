@@ -1,11 +1,15 @@
 import 'package:spring_core_dart/src/validation/message_escapes.dart';
 
-/// Default validation group (constraints without groups belong to it).
+/// The validation group of every constraint declared without `groups`.
 ///
-/// Validating without groups runs the constraints of this group; list it
-/// explicitly to combine it with other groups.
+/// Groups let one class carry rules for different situations. A group is
+/// just a type, usually an empty `abstract final class OnUpdate {}`, named
+/// in a constraint's `groups` and in the groups a validation asks for.
+/// Validating without groups checks only this group; to check other groups
+/// as well as the ordinary rules, list [Default] next to them.
 ///
 /// ```dart
+/// // An update checks the ordinary rules and the update ones.
 /// abstract final class OnUpdate {}
 ///
 /// validator.validateObject(form, groups: [Default, OnUpdate]);
@@ -17,12 +21,20 @@ import 'package:spring_core_dart/src/validation/message_escapes.dart';
 /// ```
 abstract final class Default {}
 
-/// A declarative constraint, like a Jakarta Bean Validation annotation.
+/// The base class of every validation rule written as an annotation, such
+/// as `@NotBlank()` or `@Min(18)`, and the class to extend for your own.
 ///
-/// Constraints are const annotations on properties of `@Introspected`
-/// classes (or on the class itself for class-level checks). Subclass it
-/// for custom constraints. Like Jakarta, most constraints accept `null`;
-/// combine with [NotNull] to require a value.
+/// A constraint is a const object put on a property of an `@Introspected`
+/// class, on the class itself (to compare properties), or on a method
+/// parameter or method of a `@Validated()` bean. The validator calls
+/// [isValid] (through [isValidWithContext]) with the value; when it
+/// returns `false` it reports a violation with [name] as error code and
+/// [message] (or [defaultMessage]) as text.
+///
+/// Write a subclass for a rule the built-in constraints do not cover, so
+/// it can be reused as an annotation and its errors get message codes like
+/// the others. Like Jakarta's, most constraints accept `null`; add
+/// [NotNull] to require a value.
 ///
 /// ```dart
 /// // A class-level constraint comparing two properties.
@@ -66,39 +78,61 @@ abstract final class Default {}
 /// }
 /// ```
 abstract class Constraint {
-  /// Creates a constraint with an optional custom [message] and [groups].
+  /// A constraint with an optional custom [message] and the [groups] it
+  /// belongs to (none: [Default]).
   const Constraint({this.message, this.groups = const []});
 
-  /// Custom message; `{attribute}` placeholders are interpolated.
+  /// The text of a violation instead of [defaultMessage]; `null` keeps the
+  /// default.
+  ///
+  /// `{min}`-style placeholders take the constraint's [attributes],
+  /// `${validatedValue}` the invalid value, and `{some.key}` a message of
+  /// the validator's `validationMessageSource`. This text is the violation
+  /// message and the field error's default message; a `messages.properties`
+  /// key such as `NotBlank.signup.name` still wins when errors are shown
+  /// through a message source.
   final String? message;
 
-  /// Groups the constraint belongs to; empty means [Default].
+  /// The validation groups the constraint belongs to, such as `[OnUpdate]`;
+  /// it is only checked when one of them is asked for. Empty means
+  /// [Default].
   final List<Type> groups;
 
-  /// Error code, e.g. `NotBlank`.
+  /// The error code of a violation, such as `NotBlank`: the start of the
+  /// message codes (`NotBlank.signup.name`, ..., `NotBlank`) and the
+  /// Jakarta name of the constraint. Custom constraints usually return
+  /// their class name.
   String get name;
 
-  /// Message used when [message] is not set.
+  /// The text of a violation when [message] is not set, with the same
+  /// placeholders, such as `size must be between {min} and {max}`.
   String get defaultMessage;
 
-  /// Attributes for messages and error arguments (e.g. `min`, `max`).
+  /// The settings of the constraint by name, such as `{'max': 20, 'min':
+  /// 0}`: they fill the `{max}` placeholders of messages and, sorted by
+  /// name, become the arguments `{1}`, `{2}`, ... of field errors. Empty by
+  /// default; override it when a custom constraint has settings.
   Map<String, Object?> get attributes => const {};
 
-  /// Whether [value] satisfies the constraint.
+  /// Whether [value] satisfies the constraint; the method a custom
+  /// constraint implements.
   ///
-  /// For property constraints [value] is the property value; for
-  /// class-level constraints it is the annotated object itself.
+  /// For a property constraint [value] is the property value (often
+  /// `null`: return `true` for it unless the rule is about presence); for a
+  /// class-level constraint it is the annotated object itself.
   bool isValid(Object? value);
 
   /// Whether [value] satisfies the constraint, with access to the
-  /// validation [context] (its clock, custom violations), like Jakarta's
+  /// validation [context]; the method `BeanValidator` calls. By default it
+  /// returns [isValid].
+  ///
+  /// Override it to read the validator's clock or to report violations
+  /// yourself, for example on one property of a class-level constraint so
+  /// the error appears next to that form field. Jakarta's
   /// `ConstraintValidator.isValid(value, context)`.
   ///
-  /// `BeanValidator` calls this method; by default it calls [isValid].
-  /// Override it to read the injectable clock or to report violations on
-  /// a property of a class-level constraint:
-  ///
   /// ```dart
+  /// // Report a password mismatch on the `confirm` field.
   /// @override
   /// bool isValidWithContext(
   ///     Object? value, ConstraintValidatorContext context) {
@@ -115,7 +149,9 @@ abstract class Constraint {
   bool isValidWithContext(Object? value, ConstraintValidatorContext context) =>
       isValid(value);
 
-  /// [message] or [defaultMessage] with attributes interpolated.
+  /// [message], or [defaultMessage], with the `{attribute}` placeholders
+  /// filled in; message keys and `${...}` expressions stay, since only the
+  /// validator can resolve them.
   ///
   /// ```dart
   /// const Size(max: 20).interpolatedMessage();
@@ -123,9 +159,9 @@ abstract class Constraint {
   /// ```
   String interpolatedMessage() => interpolate(message ?? defaultMessage);
 
-  /// [template] with `{attribute}` placeholders replaced by the attribute
-  /// values; other placeholders and `${...}` expressions are kept, and the
-  /// Jakarta escapes `\{`, `\}`, `\$`, `\\` become literal characters.
+  /// [template] with its `{attribute}` placeholders replaced by the values
+  /// of [attributes]; other placeholders and `${...}` expressions stay, and
+  /// the escapes `\{`, `\}`, `\$`, `\\` become the literal characters.
   ///
   /// ```dart
   /// const Size(max: 20).interpolate('at most {max}'); // 'at most 20'
@@ -135,23 +171,33 @@ abstract class Constraint {
     interpolateAttributes(hideMessageEscapes(template), attributes),
   );
 
-  /// Whether the constraint can validate [value] (a non-null value), like
-  /// Hibernate Validator finding a `ConstraintValidator` for its type. When
-  /// it cannot, `BeanValidator` throws an [UnexpectedTypeException] (e.g.
-  /// `@Size` on an `int`). Custom constraints accept everything.
+  /// Whether the constraint can check a value of this type at all; [value]
+  /// is never `null`. `@Size` supports strings, collections and maps, not
+  /// an `int`.
+  ///
+  /// When it returns `false`, `BeanValidator` throws an
+  /// [UnexpectedTypeException] instead of calling [isValid]: the
+  /// declaration is wrong, not the value (Hibernate Validator finds no
+  /// `ConstraintValidator` for the type). Returns `true` by default;
+  /// override it in a custom constraint that only makes sense for some
+  /// types.
   bool supports(Object value) => true;
 
-  /// Throws a [ConstraintDeclarationException] when the attributes are
-  /// invalid (`Size(min: -1)`, `min > max`, a malformed regular expression),
-  /// like Hibernate Validator initializing the constraint's validator.
-  /// `BeanValidator` calls it before the first use of the constraint.
+  /// Throws a [ConstraintDeclarationException] when the constraint's own
+  /// settings are invalid: `Size(min: -1)`, `min > max`, a malformed
+  /// regular expression. Does nothing by default.
+  ///
+  /// `BeanValidator` calls it once, before the first use of each
+  /// constraint, as Hibernate Validator does when it initializes a
+  /// validator. Override it when a custom constraint has settings.
   ///
   /// ```dart
   /// const Size(min: 5, max: 2).checkParameters(); // throws
   /// ```
   void checkParameters() {}
 
-  /// Whether the constraint applies when validating [requested] groups.
+  /// Whether the constraint is checked when a validation asks for the
+  /// [requested] groups: when one of its [groups] is requested.
   ///
   /// No requested groups means [Default]; a constraint without groups
   /// belongs to [Default].
@@ -166,10 +212,16 @@ abstract class Constraint {
   }
 }
 
-/// The current time for the date constraints, like Jakarta's
-/// `ClockProvider` (here the time itself; Dart has no `Clock` type).
+/// Where the date constraints (`@Past()`, `@FutureDate()`, ...) get the
+/// current time.
+///
+/// The validator uses [DefaultClockProvider], the system clock. Give a
+/// `BeanValidator` another one to make date checks repeatable in tests, or
+/// to use a server-wide clock. Jakarta's `ClockProvider`; it returns the
+/// time itself, since Dart has no `Clock` type.
 ///
 /// ```dart
+/// // Tests run on a fixed date.
 /// final class FixedClock implements ClockProvider {
 ///   const FixedClock(this.time);
 ///   final DateTime time;
@@ -186,22 +238,28 @@ abstract class Constraint {
 /// validator.setClockProvider(() -> Clock.fixed(instant, ZoneOffset.UTC));
 /// ```
 abstract interface class ClockProvider {
-  /// The current time.
+  /// The current time, read once per date constraint check.
   DateTime now();
 }
 
-/// The system clock (`DateTime.now()`), Jakarta's default `ClockProvider`.
+/// The [ClockProvider] of the system clock, `DateTime.now()`; the default
+/// of `BeanValidator`.
 final class DefaultClockProvider implements ClockProvider {
-  /// Creates the system clock provider.
+  /// The system clock.
   const DefaultClockProvider();
 
   @override
   DateTime now() => DateTime.now();
 }
 
-/// What a constraint can use and report while validating a value, like
-/// Jakarta's `ConstraintValidatorContext` (see
-/// [Constraint.isValidWithContext]).
+/// The help a constraint gets while it checks one value: the validator's
+/// clock, and a way to report violations other than the default one.
+///
+/// The validator creates one per check and passes it to
+/// [Constraint.isValidWithContext]. Only custom constraints that override
+/// that method use it, mostly to put a class-level violation on a property
+/// or to report several problems with their own messages. Jakarta's
+/// `ConstraintValidatorContext`.
 ///
 /// ```dart
 /// // A class-level constraint reporting on the `confirm` property.
@@ -222,44 +280,58 @@ final class DefaultClockProvider implements ClockProvider {
 final class ConstraintValidatorContext {
   /// A context for a constraint whose message template is
   /// [defaultConstraintMessageTemplate]; [clockProvider] gives the time.
+  /// The validator creates it; build one yourself only to test a
+  /// constraint.
   ConstraintValidatorContext({
     required this.defaultConstraintMessageTemplate,
     this.clockProvider = const DefaultClockProvider(),
   });
 
-  /// The clock of the validator, for date constraints.
+  /// The validator's clock; date constraints read "now" from it.
   final ClockProvider clockProvider;
 
-  /// The constraint's message template (`message` or its default).
+  /// The constraint's message before interpolation: its `message`, else
+  /// its default. Pass it to [buildConstraintViolationWithTemplate] to move
+  /// the usual message to another property.
   final String defaultConstraintMessageTemplate;
 
   bool _defaultDisabled = false;
   final _violations = <({String messageTemplate, List<String> nodes})>[];
 
-  /// Whether [disableDefaultConstraintViolation] was called (read by the
-  /// validator).
+  /// Whether [disableDefaultConstraintViolation] was called; the validator
+  /// reads it after the check.
   bool get defaultConstraintViolationDisabled => _defaultDisabled;
 
   /// The violations added with [buildConstraintViolationWithTemplate], in
-  /// order: their message template and property nodes (read by the
-  /// validator).
+  /// order: their message template and property nodes. The validator reads
+  /// them after the check.
   List<({String messageTemplate, List<String> nodes})> get customViolations =>
       List.unmodifiable(_violations);
 
-  /// Leaves out the violation the validator reports when the constraint
-  /// fails, so only custom ones are reported.
+  /// Drops the violation the validator would report when the constraint
+  /// fails, so only the ones built with
+  /// [buildConstraintViolationWithTemplate] are reported.
   void disableDefaultConstraintViolation() => _defaultDisabled = true;
 
-  /// Starts a custom violation with [messageTemplate] (`{key}` and
-  /// attribute placeholders are interpolated).
+  /// Starts an extra violation with [messageTemplate], interpolated like a
+  /// constraint message (`{key}`, `{attribute}`). Finish it with
+  /// [ConstraintViolationBuilder.addConstraintViolation], or it is not
+  /// reported.
   ConstraintViolationBuilder buildConstraintViolationWithTemplate(
     String messageTemplate,
   ) => ConstraintViolationBuilder._(this, messageTemplate);
 }
 
-/// Builds a custom violation, like Jakarta's `ConstraintViolationBuilder`.
+/// A violation being put together inside a constraint: its message is
+/// set, a property path may be added, and [addConstraintViolation]
+/// reports it.
+///
+/// It comes from
+/// [ConstraintValidatorContext.buildConstraintViolationWithTemplate] and
+/// is never created directly. Jakarta's `ConstraintViolationBuilder`.
 ///
 /// ```dart
+/// // The mismatch is shown next to the `confirm` field.
 /// context
 ///     .buildConstraintViolationWithTemplate('must match the password')
 ///     .addPropertyNode('confirm')
@@ -272,14 +344,15 @@ final class ConstraintViolationBuilder {
   final String _template;
   final _nodes = <String>[];
 
-  /// Reports the violation on property [name] (relative to the validated
-  /// object; call again for nested properties).
+  /// Puts the violation on the property [name] of the validated object,
+  /// such as `confirm`; call it again to go deeper (`address`, then
+  /// `city`). Without it the violation stays on the value itself.
   ConstraintViolationBuilder addPropertyNode(String name) {
     _nodes.add(name);
     return this;
   }
 
-  /// Adds the violation to the context.
+  /// Reports the violation; returns the context, to build another one.
   ConstraintValidatorContext addConstraintViolation() {
     _context._violations.add((
       messageTemplate: _template,
@@ -289,8 +362,13 @@ final class ConstraintViolationBuilder {
   }
 }
 
-/// The base of the errors of the validation engine itself (not of the
-/// validated values), like Jakarta's `ValidationException`.
+/// The base of the exceptions that mean validation itself is set up
+/// wrongly: a bad constraint declaration or group definition, never an
+/// invalid value.
+///
+/// Invalid values are reported as violations or errors, not thrown. One of
+/// these is a programming error to fix in the code; you do not normally
+/// catch it, except to report it. Jakarta's `ValidationException`.
 ///
 /// ```dart
 /// try {
@@ -305,10 +383,10 @@ final class ConstraintViolationBuilder {
 /// } catch (jakarta.validation.ValidationException e) { ... }
 /// ```
 class ValidationException implements Exception {
-  /// Reports [message].
+  /// An exception explaining the problem in [message].
   const ValidationException(this.message);
 
-  /// What is wrong.
+  /// What is wrong and where, for the developer.
   final String message;
 
   @override
@@ -317,10 +395,10 @@ class ValidationException implements Exception {
   String toString() => '$runtimeType: $message';
 }
 
-/// A constraint is declared wrongly: invalid attributes (`Size(min: -1)`,
-/// `min > max`), `@ConvertGroup` without `@Valid`, element constraints on
-/// a value that is no collection; like Jakarta's
-/// `ConstraintDeclarationException`.
+/// Thrown when a constraint is declared wrongly: invalid settings
+/// (`Size(min: -1)`, `min > max`, a malformed regular expression),
+/// `@ConvertGroup` without `@Valid()`, or `@Each` on a value that is not a
+/// collection. Jakarta's `ConstraintDeclarationException`.
 ///
 /// ```dart
 /// // @Size(min: 5, max: 2) String name = '';
@@ -332,15 +410,17 @@ class ValidationException implements Exception {
 /// } catch (jakarta.validation.ConstraintDeclarationException e) { ... }
 /// ```
 class ConstraintDeclarationException extends ValidationException {
-  /// Reports [message].
+  /// An exception explaining the wrong declaration in [message].
   const ConstraintDeclarationException(super.message);
 }
 
-/// A built-in constraint validates a value of a type it does not support
-/// (`@Size` on an `int`, `@NotBlank` on a `List`), like Jakarta's
-/// `UnexpectedTypeException`. Generated code reports declared types at
-/// build time already; this catches `dynamic` / `Object` properties and
-/// hand-written metadata.
+/// Thrown when a constraint meets a value of a type it cannot check:
+/// `@Size` on an `int`, `@NotBlank` on a `List`. Jakarta's
+/// `UnexpectedTypeException`.
+///
+/// The generator already rejects such declarations at build time when the
+/// declared type is known; this catches `dynamic` and `Object` properties
+/// and hand-written metadata at run time.
 ///
 /// ```dart
 /// // @Size(max: 3) Object age = 42;
@@ -353,12 +433,14 @@ class ConstraintDeclarationException extends ValidationException {
 /// // 'jakarta.validation.constraints.Size' validating type 'java.lang.Integer'
 /// ```
 class UnexpectedTypeException extends ConstraintDeclarationException {
-  /// Reports [message].
+  /// An exception naming the constraint, the type and the path in
+  /// [message].
   const UnexpectedTypeException(super.message);
 }
 
-/// A group sequence is defined wrongly (a cycle, `Default` in a class's
-/// `@GroupSequence`, or the class missing from it), like Jakarta's
+/// Thrown when a group sequence is defined wrongly: a cycle, `Default` in
+/// a class's `@GroupSequence`, the class missing from it, or [Default] as
+/// a key of `BeanValidator.groupSequences`. Jakarta's
 /// `GroupDefinitionException`.
 ///
 /// ```dart
@@ -371,21 +453,28 @@ class UnexpectedTypeException extends ConstraintDeclarationException {
 /// } catch (jakarta.validation.GroupDefinitionException e) { ... }
 /// ```
 class GroupDefinitionException extends ValidationException {
-  /// Reports [message].
+  /// An exception explaining the wrong definition in [message].
   const GroupDefinitionException(super.message);
 }
 
-/// Class-level: redefines the [Default] group of the class as a sequence,
-/// like Jakarta's `@GroupSequence` on a bean class. The groups are
-/// validated in order and validation stops at the first group with a
-/// violation; the class itself stands for its [Default] constraints and
-/// must be listed (`Default` must not).
+/// A class annotation that checks the class's rules in stages: the groups
+/// in [value] are checked in order, and checking stops at the first group
+/// with a violation.
 ///
-/// Sequences used as groups (Jakarta's `@GroupSequence` on a group
-/// interface) are given to `BeanValidator(groupSequences: ...)`, since a
-/// Dart group type cannot carry annotations that are read at runtime.
+/// Use it when some rules are expensive (a database lookup) or pointless
+/// while simpler ones fail: they then run only on otherwise valid data. It
+/// replaces the [Default] group of the class, so every ordinary
+/// validation follows the sequence. The class itself stands for its
+/// ordinary constraints and must be listed; [Default] must not be. Jakarta's
+/// `@GroupSequence` on a bean class.
+///
+/// A sequence used as a group of its own (Jakarta's `@GroupSequence` on a
+/// group interface) is given to `BeanValidator(groupSequences: ...)`
+/// instead, since a Dart group type cannot carry annotations that are read
+/// at run time.
 ///
 /// ```dart
+/// // The stock lookup only runs when the SKU is filled in.
 /// abstract final class Expensive {}
 ///
 /// @Introspected()
@@ -406,17 +495,25 @@ class GroupDefinitionException extends ValidationException {
 /// class Order { ... }
 /// ```
 class GroupSequence {
-  /// Validates [value] in order.
+  /// A sequence of the groups [value].
   const GroupSequence(this.value);
 
-  /// The groups, in order.
+  /// The groups, in the order they are checked; the annotated class stands
+  /// for its own ordinary constraints.
   final List<Type> value;
 }
 
-/// With `@Valid`: validates the nested value with group [to] where the
-/// outer validation runs group [from], like Jakarta's `@ConvertGroup`.
+/// An annotation next to `@Valid()` that checks the nested value with
+/// another group: when the outer validation runs group [from], the nested
+/// value is checked with group [to].
+///
+/// Use it when a nested object's rules depend on its owner's situation,
+/// for example a car's driver whose licence only matters for the car's
+/// checks. Without `@Valid()` it is a declaration error. Jakarta's
+/// `@ConvertGroup`.
 ///
 /// ```dart
+/// // The ordinary check of a Car checks its driver's DriverChecks rules.
 /// abstract final class DriverChecks {}
 ///
 /// @Introspected()
@@ -434,25 +531,33 @@ class GroupSequence {
 /// private Driver driver;
 /// ```
 class ConvertGroup {
-  /// Converts [from] (default: [Default]) into [to].
+  /// Turns the group [from] (by default [Default]) into [to] for the
+  /// nested value; one conversion per [from] group.
   const ConvertGroup({required this.to, this.from = Default});
 
-  /// The group of the outer validation.
+  /// The group of the outer validation that is converted.
   final Type from;
 
-  /// The group the nested value is validated with.
+  /// The group the nested value is checked with instead.
   final Type to;
 }
 
-/// Constraints on the elements of a collection (or the values of a map),
-/// like Jakarta's container element constraints (`List<@NotBlank String>`;
-/// Dart has no annotations on type arguments).
+/// An annotation that checks every element of a list or set, or every
+/// value of a map, against [constraints].
 ///
-/// List elements are reported as `names[1].<list element>` (Spring field
-/// `names[1]`), other iterables as `tags[].<iterable element>`, map values
-/// as `scores[math].<map value>`. Use [EachKey] for map keys.
+/// Use it for rules about the items rather than the collection: each
+/// answer non-blank, each score at least 0. Jakarta writes these on the
+/// type argument (`List<@NotBlank String>`); Dart has no annotations
+/// there. A `null` collection is skipped, and a value that is not a
+/// collection or map throws a [ConstraintDeclarationException].
+///
+/// A list element is reported as `answers[1].<list element>` (field error
+/// on `answers[1]`), another iterable's as `tags[].<iterable element>`,
+/// and a map value as `scores[math].<map value>`. Use [EachKey] for map
+/// keys, and `@Valid()` to check the constraints inside element objects.
 ///
 /// ```dart
+/// // Short, non-blank answers, and no negative scores.
 /// @Introspected()
 /// class Survey {
 ///   @Each([NotBlank(), Size(max: 20)])
@@ -471,18 +576,25 @@ class ConvertGroup {
 /// }
 /// ```
 class Each {
-  /// Checks [constraints] on every element.
+  /// Checks [constraints] on every element or map value.
   const Each(this.constraints);
 
-  /// The element constraints.
+  /// The constraints each element must meet, such as
+  /// `[NotBlank(), Size(max: 20)]`.
   final List<Constraint> constraints;
 }
 
-/// Constraints on the keys of a map, like Jakarta's container element
-/// constraints on a map key (`Map<@NotBlank String, Integer>`). Reported as
-/// `scores<K>[key].<map key>` (Spring field `scores[key]`).
+/// An annotation that checks every key of a map against [constraints].
+///
+/// Use it when the keys are user input, such as the names of a score
+/// table. A `null` map is skipped; a value that is not a map throws a
+/// [ConstraintDeclarationException]. A key is reported as
+/// `scores<K>[key].<map key>` (field error on `scores[key]`). Jakarta's
+/// container element constraint on a map key
+/// (`Map<@NotBlank String, Integer>`).
 ///
 /// ```dart
+/// // Subject names of at most 10 characters.
 /// @Introspected()
 /// class Survey {
 ///   @EachKey([Size(max: 10)])
@@ -495,21 +607,32 @@ class Each {
 /// private Map<@Size(max = 10) String, Integer> scores;
 /// ```
 class EachKey {
-  /// Checks [constraints] on every key.
+  /// Checks [constraints] on every key of the map.
   const EachKey(this.constraints);
 
-  /// The key constraints.
+  /// The constraints each key must meet.
   final List<Constraint> constraints;
 }
 
-/// Validates nested objects, collections and maps, like Jakarta's `@Valid`.
+/// An annotation that asks for the constraints inside an object to be
+/// checked: of a nested object, of the objects in a list, set or map, or
+/// of a request body or method argument.
 ///
-/// Elements of lists are reported as `items[0].sku`, of other iterables
-/// (sets) as `items[].sku`, map values as `byKey[key].sku`; `null` values
-/// are skipped. [ConvertGroup] changes the groups of the nested
-/// validation.
+/// Constraints are not checked inside a property by default; `@Valid()`
+/// says "go in here". In the web starter, `@Valid()` on a `@RequestBody`
+/// parameter checks the body and answers a 400 when it is invalid. On a
+/// parameter or method of a `@Validated()` bean it checks the argument or
+/// the result.
+///
+/// Errors inside a list element are reported as `items[0].sku`, inside
+/// another iterable (a set) as `items[].sku`, inside a map value as
+/// `byKey[key].sku`. `null` values are skipped. An object reached on
+/// several paths is checked on each, but one that contains itself is not
+/// entered again. [ConvertGroup] changes the groups of the nested check.
+/// Jakarta's `@Valid`.
 ///
 /// ```dart
+/// // An order is only valid with a valid address and valid items.
 /// @Introspected()
 /// class Order {
 ///   @Valid()
@@ -531,7 +654,7 @@ class EachKey {
 /// }
 /// ```
 class Valid {
-  /// Creates the `@Valid()` annotation.
+  /// The `@Valid()` annotation; it has no settings.
   const Valid();
 }
 
@@ -579,9 +702,15 @@ int? _length(Object? value) => switch (value) {
   _ => null,
 };
 
-/// The annotated value must not be `null`.
+/// A constraint that requires a value: `null` fails, anything else passes.
+///
+/// Most other constraints let `null` pass, so combine it with them when
+/// the value is required, as in `@NotNull() @Email()`. For text that must
+/// not be empty either, use [NotBlank]. In a class with non-nullable
+/// fields it matters for nullable ones and for input that may be missing.
 ///
 /// ```dart
+/// // The email may be missing in the JSON, but not in a valid signup.
 /// @Introspected()
 /// class Signup {
 ///   @NotNull()
@@ -597,7 +726,8 @@ int? _length(Object? value) => switch (value) {
 /// }
 /// ```
 class NotNull extends Constraint {
-  /// Creates the `@NotNull()` constraint.
+  /// The constraint; [message] replaces `must not be null`, and [groups]
+  /// limits it to those validation groups.
   const NotNull({super.message, super.groups});
 
   @override
@@ -610,10 +740,15 @@ class NotNull extends Constraint {
   bool isValid(Object? value) => value != null;
 }
 
-/// The annotated value must be `null`; error code `Null` (renamed: `Null`
-/// is a Dart core type).
+/// A constraint that requires the value to be `null`, usually in one
+/// validation group only.
+///
+/// The typical use is an `id` that a client must not send when creating
+/// a record, but must send on update. Its error code is Jakarta's `Null`;
+/// the class has another name because `Null` is a Dart core type.
 ///
 /// ```dart
+/// // A new user gets its id from the database, not from the client.
 /// @Introspected()
 /// class NewUser {
 ///   @MustBeNull(groups: [OnCreate])
@@ -629,7 +764,8 @@ class NotNull extends Constraint {
 /// }
 /// ```
 class MustBeNull extends Constraint {
-  /// Creates the `@MustBeNull()` constraint.
+  /// The constraint; [message] replaces `must be null`, and [groups]
+  /// limits it to those validation groups.
   const MustBeNull({super.message, super.groups});
 
   @override
@@ -642,11 +778,17 @@ class MustBeNull extends Constraint {
   bool isValid(Object? value) => value == null;
 }
 
-/// Not null, and a non-empty string, collection or map.
+/// A constraint that requires a string, list, set or map that is neither
+/// `null` nor empty.
 ///
-/// Other non-null values are always valid.
+/// Use it for a collection that needs at least one entry, such as the
+/// items of a cart. For text, [NotBlank] is usually better, since it also
+/// rejects `'   '`. On a value of another type it is a declaration error:
+/// the generator rejects it at build time, and the validator throws an
+/// [UnexpectedTypeException].
 ///
 /// ```dart
+/// // A cart cannot be ordered empty.
 /// @Introspected()
 /// class Cart {
 ///   @NotEmpty()
@@ -662,7 +804,8 @@ class MustBeNull extends Constraint {
 /// }
 /// ```
 class NotEmpty extends Constraint {
-  /// Creates the `@NotEmpty()` constraint.
+  /// The constraint; [message] replaces `must not be empty`, and [groups]
+  /// limits it to those validation groups.
   const NotEmpty({super.message, super.groups});
 
   @override
@@ -678,11 +821,18 @@ class NotEmpty extends Constraint {
   bool isValid(Object? value) => value != null && (_length(value) ?? 1) > 0;
 }
 
-/// Not null and with at least one character above U+0020, like Hibernate
-/// Validator (Java's `String.trim()`: a no-break space counts as text,
-/// control characters do not).
+/// A constraint that requires text with at least one visible character:
+/// `null`, `''` and `'   '` fail.
+///
+/// The usual rule for required text fields: names, titles, comments.
+/// "Visible" means a character above U+0020, as Hibernate Validator checks
+/// it with Java's `String.trim()`: a no-break space counts as text,
+/// control characters do not. Only for strings: on another type the
+/// generator fails the build, and the validator throws an
+/// [UnexpectedTypeException].
 ///
 /// ```dart
+/// // A name of only spaces is not a name.
 /// @Introspected()
 /// class Signup {
 ///   @NotBlank()
@@ -698,7 +848,8 @@ class NotEmpty extends Constraint {
 /// }
 /// ```
 class NotBlank extends Constraint {
-  /// Creates the `@NotBlank()` constraint.
+  /// The constraint; [message] replaces `must not be blank`, and [groups]
+  /// limits it to those validation groups.
   const NotBlank({super.message, super.groups});
 
   @override
@@ -715,12 +866,24 @@ class NotBlank extends Constraint {
       value != null && '$value'.codeUnits.any((unit) => unit > 0x20);
 }
 
-/// Length of a string, collection or map within [min]..[max].
+/// A constraint on the length of a string, or the number of entries of a
+/// list, set or map: from [min] to [max], both included.
 ///
-/// `null` and other value types are valid. Error arguments are
-/// `[field, max, min]` (attributes sorted by name).
+/// Use it for limits such as a name of 2 to 20 characters or at most 5
+/// tags; the limits often mirror a database column. `null` passes (add
+/// [NotNull] to require a value), and `Size(min: 1)` does not reject
+/// `'  '` (use [NotBlank]). The arguments of a field error are
+/// `[field, max, min]`, so a message such as `Size={0} has {2} to {1}
+/// characters` can show the limits. On a value of another type the
+/// generator fails the build and the validator throws an
+/// [UnexpectedTypeException]; invalid limits throw a
+/// [ConstraintDeclarationException].
+///
+/// In Flutter apps the class is exported as `SizeConstraint`, since
+/// Flutter has a `Size` class of its own.
 ///
 /// ```dart
+/// // A display name of 2 to 20 characters.
 /// @Introspected()
 /// class Signup {
 ///   @Size(min: 2, max: 20)
@@ -736,7 +899,9 @@ class NotBlank extends Constraint {
 /// }
 /// ```
 class Size extends Constraint {
-  /// Creates a `@Size` constraint; both bounds are inclusive.
+  /// The constraint for a length from [min] to [max], both included; at
+  /// least one of them is usually given. [message] replaces `size must be
+  /// between {min} and {max}`, and [groups] limits it to those groups.
   const Size({
     this.min = 0,
     this.max = 0x7FFFFFFF,
@@ -744,10 +909,12 @@ class Size extends Constraint {
     super.groups,
   });
 
-  /// Minimum length (inclusive), `0` by default.
+  /// The smallest allowed length, included; `0` by default. Must not be
+  /// negative.
   final int min;
 
-  /// Maximum length (inclusive), unbounded by default.
+  /// The largest allowed length, included; by default 2147483647 (Java's
+  /// `Integer.MAX_VALUE`), so no limit. Must not be below [min].
   final int max;
 
   @override
@@ -787,7 +954,8 @@ final class _Decimal implements Comparable<_Decimal> {
     r'^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$',
   );
 
-  /// `BigDecimal(text)`: `12`, `-1.50`, `1e3`; `null` when malformed.
+  /// [text] parsed like Java's `new BigDecimal(text)`: `12`, `-1.50`,
+  /// `1e3`; `null` when it is not a number.
   static _Decimal? parse(String text) {
     final match = _syntax.firstMatch(text);
     if (match == null) {
@@ -806,7 +974,8 @@ final class _Decimal implements Comparable<_Decimal> {
     );
   }
 
-  /// [value] as a decimal: a finite `num`, a `BigInt` or a numeric string.
+  /// [value] as a decimal when it is a finite `num`, a `BigInt` or a
+  /// numeric string; else `null`.
   static _Decimal? of(Object? value) => switch (value) {
     final int value => _Decimal(BigInt.from(value), 0),
     final double value when value.isFinite => parse('$value'),
@@ -817,7 +986,8 @@ final class _Decimal implements Comparable<_Decimal> {
 
   int get signum => unscaled.sign;
 
-  /// Number of significant digits of [unscaled] (`BigDecimal.precision()`).
+  /// The number of digits of [unscaled], `1` for zero
+  /// (`BigDecimal.precision()`).
   int get precision =>
       unscaled == BigInt.zero ? 1 : unscaled.abs().toString().length;
 
@@ -864,13 +1034,18 @@ _Decimal _bound(num value) =>
     _Decimal.of(value) ??
     (throw ArgumentError.value(value, 'value', 'not a finite number'));
 
-/// A number greater than or equal to [value]; `null` is valid.
+/// A constraint that requires a number of at least [value].
 ///
-/// Checks `int`, `double`, `BigInt` and numeric strings (exactly, like
-/// Hibernate Validator; a string that is not a number fails); other value
-/// types are valid.
+/// Use it for lower limits such as an age of 18 or a quantity of 1. It
+/// checks `int`, `double`, `BigInt` and numeric strings, compared exactly
+/// as Hibernate Validator does; a string that is not a number fails, and
+/// so does `double.nan`. `null` passes. The arguments of a field error are
+/// `[field, value]`: `Min={0} must be at least {1}`. On a value of another
+/// type the generator fails the build and the validator throws an
+/// [UnexpectedTypeException].
 ///
 /// ```dart
+/// // Only adults may sign up.
 /// @Introspected()
 /// class Signup {
 ///   @Min(18)
@@ -886,10 +1061,12 @@ _Decimal _bound(num value) =>
 /// }
 /// ```
 class Min extends Constraint {
-  /// Creates a `@Min` constraint with the inclusive lower bound [value].
+  /// The constraint for numbers of at least [value]; [message] replaces
+  /// `must be greater than or equal to {value}`, and [groups] limits it to
+  /// those groups.
   const Min(this.value, {super.message, super.groups});
 
-  /// The inclusive lower bound.
+  /// The smallest allowed number, included; it must be finite.
   final num value;
 
   @override
@@ -916,11 +1093,14 @@ class Min extends Constraint {
   }
 }
 
-/// A number less than or equal to [value]; `null` is valid.
+/// A constraint that requires a number of at most [value].
 ///
-/// Checks `int`, `double`, `BigInt` and numeric strings like [Min].
+/// Use it for upper limits such as 100 items per order. It checks the
+/// same values the same way as [Min]; `null` passes. The arguments of a
+/// field error are `[field, value]`.
 ///
 /// ```dart
+/// // No more than 100 copies in one order.
 /// @Introspected()
 /// class Order {
 ///   @Max(100)
@@ -936,10 +1116,12 @@ class Min extends Constraint {
 /// }
 /// ```
 class Max extends Constraint {
-  /// Creates a `@Max` constraint with the inclusive upper bound [value].
+  /// The constraint for numbers of at most [value]; [message] replaces
+  /// `must be less than or equal to {value}`, and [groups] limits it to
+  /// those groups.
   const Max(this.value, {super.message, super.groups});
 
-  /// The inclusive upper bound.
+  /// The largest allowed number, included; it must be finite.
   final num value;
 
   @override
@@ -966,14 +1148,17 @@ class Max extends Constraint {
   }
 }
 
-/// A decimal number greater than (or equal to, when [inclusive]) [value],
-/// like Jakarta's `@DecimalMin`; `null` is valid.
+/// A constraint that requires a number above a decimal limit, or equal to
+/// it when [inclusive].
 ///
-/// [value] is a decimal string (`'0.01'`), compared exactly with `int`,
-/// `double`, `BigInt` and numeric strings. Error arguments are
-/// `[field, inclusive, value]`.
+/// Use it instead of [Min] when the limit has decimals, such as a price of
+/// at least 0.01, or must be excluded (`inclusive: false`: more than 0).
+/// The limit is a string (`'0.01'`) so it is exact; values are compared
+/// exactly like [Min]'s, and `null` passes. The arguments of a field error
+/// are `[field, inclusive, value]`.
 ///
 /// ```dart
+/// // Nothing is free: at least one cent.
 /// @Introspected()
 /// class Product {
 ///   @DecimalMin('0.01')
@@ -989,7 +1174,9 @@ class Max extends Constraint {
 /// }
 /// ```
 class DecimalMin extends Constraint {
-  /// Creates a `@DecimalMin` constraint with the lower bound [value].
+  /// The constraint for numbers above [value] (or equal, when [inclusive]);
+  /// [message] replaces the default message, and [groups] limits it to
+  /// those groups.
   const DecimalMin(
     this.value, {
     this.inclusive = true,
@@ -997,10 +1184,11 @@ class DecimalMin extends Constraint {
     super.groups,
   });
 
-  /// The lower bound, as a decimal string.
+  /// The limit, as a decimal string such as `'0.01'` or `'1e3'`; a string
+  /// that is not a number throws a [ConstraintDeclarationException].
   final String value;
 
-  /// Whether [value] itself is valid.
+  /// Whether [value] itself passes; `true` by default.
   final bool inclusive;
 
   @override
@@ -1032,10 +1220,15 @@ class DecimalMin extends Constraint {
   }
 }
 
-/// A decimal number less than (or equal to, when [inclusive]) [value],
-/// like Jakarta's `@DecimalMax`; `null` is valid.
+/// A constraint that requires a number below a decimal limit, or equal to
+/// it when [inclusive].
+///
+/// The counterpart of [DecimalMin], for limits such as "less than 100
+/// percent". `null` passes. The arguments of a field error are
+/// `[field, inclusive, value]`.
 ///
 /// ```dart
+/// // A discount below 100 percent.
 /// @Introspected()
 /// class Discount {
 ///   @DecimalMax('100', inclusive: false)
@@ -1051,7 +1244,9 @@ class DecimalMin extends Constraint {
 /// }
 /// ```
 class DecimalMax extends Constraint {
-  /// Creates a `@DecimalMax` constraint with the upper bound [value].
+  /// The constraint for numbers below [value] (or equal, when [inclusive]);
+  /// [message] replaces the default message, and [groups] limits it to
+  /// those groups.
   const DecimalMax(
     this.value, {
     this.inclusive = true,
@@ -1059,10 +1254,11 @@ class DecimalMax extends Constraint {
     super.groups,
   });
 
-  /// The upper bound, as a decimal string.
+  /// The limit, as a decimal string such as `'100'`; a string that is not
+  /// a number throws a [ConstraintDeclarationException].
   final String value;
 
-  /// Whether [value] itself is valid.
+  /// Whether [value] itself passes; `true` by default.
   final bool inclusive;
 
   @override
@@ -1112,10 +1308,13 @@ _Decimal _decimalBound(String value) =>
     _Decimal.parse(value.trim()) ??
     (throw ArgumentError.value(value, 'value', 'not a decimal number'));
 
-/// A number strictly greater than 0; `null` is valid (numbers, `BigInt`s
-/// and numeric strings are checked, like [Min]).
+/// A constraint that requires a number greater than 0.
+///
+/// Use it for prices, quantities and amounts where zero makes no sense. It
+/// checks the same values the same way as [Min]; `null` passes.
 ///
 /// ```dart
+/// // A price must be above zero.
 /// @Introspected()
 /// class Product {
 ///   @Positive()
@@ -1131,7 +1330,8 @@ _Decimal _decimalBound(String value) =>
 /// }
 /// ```
 class Positive extends Constraint {
-  /// Creates the `@Positive()` constraint.
+  /// The constraint; [message] replaces `must be greater than 0`, and
+  /// [groups] limits it to those validation groups.
   const Positive({super.message, super.groups});
 
   @override
@@ -1150,9 +1350,13 @@ class Positive extends Constraint {
   }
 }
 
-/// A number greater than or equal to 0; `null` is valid (see [Positive]).
+/// A constraint that requires a number of 0 or more.
+///
+/// Use it for counts and balances that may be zero but never negative. It
+/// checks the same values as [Min]; `null` passes.
 ///
 /// ```dart
+/// // A balance may be empty, not overdrawn.
 /// @Introspected()
 /// class Account {
 ///   @PositiveOrZero()
@@ -1168,7 +1372,8 @@ class Positive extends Constraint {
 /// }
 /// ```
 class PositiveOrZero extends Constraint {
-  /// Creates the `@PositiveOrZero()` constraint.
+  /// The constraint; [message] replaces `must be greater than or equal to
+  /// 0`, and [groups] limits it to those validation groups.
   const PositiveOrZero({super.message, super.groups});
 
   @override
@@ -1187,9 +1392,13 @@ class PositiveOrZero extends Constraint {
   }
 }
 
-/// A number strictly less than 0; `null` is valid (see [Positive]).
+/// A constraint that requires a number below 0.
+///
+/// Use it for amounts stored with a sign, such as refunds. It checks the
+/// same values as [Min]; `null` passes.
 ///
 /// ```dart
+/// // A refund is booked as a negative amount.
 /// @Introspected()
 /// class Refund {
 ///   @Negative()
@@ -1205,7 +1414,8 @@ class PositiveOrZero extends Constraint {
 /// }
 /// ```
 class Negative extends Constraint {
-  /// Creates the `@Negative()` constraint.
+  /// The constraint; [message] replaces `must be less than 0`, and [groups]
+  /// limits it to those validation groups.
   const Negative({super.message, super.groups});
 
   @override
@@ -1224,9 +1434,12 @@ class Negative extends Constraint {
   }
 }
 
-/// A number less than or equal to 0; `null` is valid (see [Positive]).
+/// A constraint that requires a number of 0 or less.
+///
+/// It checks the same values as [Min]; `null` passes.
 ///
 /// ```dart
+/// // A correction may only lower the stock.
 /// @Introspected()
 /// class Adjustment {
 ///   @NegativeOrZero()
@@ -1242,7 +1455,8 @@ class Negative extends Constraint {
 /// }
 /// ```
 class NegativeOrZero extends Constraint {
-  /// Creates the `@NegativeOrZero()` constraint.
+  /// The constraint; [message] replaces `must be less than or equal to 0`,
+  /// and [groups] limits it to those validation groups.
   const NegativeOrZero({super.message, super.groups});
 
   @override
@@ -1261,8 +1475,10 @@ class NegativeOrZero extends Constraint {
   }
 }
 
-/// Regular expression flags of [Matches] and [Email], like Jakarta's
-/// `Pattern.Flag` (the ones Dart's `RegExp` supports).
+/// Options for the regular expression of [Matches] and [Email], such as
+/// matching without regard to case.
+///
+/// Jakarta's `Pattern.Flag`, limited to the options Dart's `RegExp` has.
 enum PatternFlag {
   /// `CASE_INSENSITIVE`: letters match regardless of case.
   caseInsensitive,
@@ -1289,13 +1505,24 @@ bool _fullMatch(String regexp, List<PatternFlag> flags, String text) =>
     ).matchAsPrefix(text) !=
     null;
 
-/// A string fully matching [regexp]; error code `Pattern` (renamed: `Pattern`
-/// is a Dart core type).
+/// A constraint that requires a string to match the regular expression
+/// [regexp] as a whole.
 ///
-/// The whole value must match (Java's `Matcher.matches()`); `null` is
-/// valid. Error arguments are `[field, flags, regexp]`, as in Spring.
+/// Use it for formats with a fixed shape: postal codes, ISBNs, product
+/// codes. The whole value must match, as with Java's `Matcher.matches()`,
+/// so `^` and `$` are not needed. `null` passes. Since the default message
+/// shows the expression, give a [message] users understand, or a
+/// `Pattern.<object>.<field>` key in `messages.properties`.
+///
+/// Its error code is Jakarta's `Pattern`; the class has another name
+/// because `Pattern` is a Dart core type. The arguments of a field error
+/// are `[field, flags, regexp]`, as in Spring. Only for strings: on
+/// another type the generator fails the build and the validator throws an
+/// [UnexpectedTypeException]; a malformed expression throws a
+/// [ConstraintDeclarationException].
 ///
 /// ```dart
+/// // A five-digit postal code, and a code of letters in any case.
 /// @Introspected()
 /// class Address {
 ///   @Matches(r'\d{5}', message: 'must be 5 digits')
@@ -1317,7 +1544,9 @@ bool _fullMatch(String regexp, List<PatternFlag> flags, String text) =>
 /// }
 /// ```
 class Matches extends Constraint {
-  /// Creates a `@Matches` constraint for the regular expression [regexp].
+  /// The constraint for strings that match [regexp] with [flags]; [message]
+  /// replaces `must match "{regexp}"`, and [groups] limits it to those
+  /// groups.
   const Matches(
     this.regexp, {
     this.flags = const [],
@@ -1325,10 +1554,12 @@ class Matches extends Constraint {
     super.groups,
   });
 
-  /// The regular expression the whole value must match.
+  /// The regular expression, in Dart's `RegExp` syntax, that the whole
+  /// value must match.
   final String regexp;
 
-  /// How [regexp] is matched (Jakarta's `flags`).
+  /// Options for matching [regexp], such as
+  /// [PatternFlag.caseInsensitive]; none by default.
   final List<PatternFlag> flags;
 
   @override
@@ -1353,18 +1584,24 @@ class Matches extends Constraint {
       value == null || _fullMatch(regexp, flags, '$value');
 }
 
-/// A well-formed email address, checked like Hibernate Validator's
-/// `@Email`: a local part of at most 64 characters (dot-separated atoms or
-/// quoted strings), `@`, and a domain name (labels without leading or
-/// trailing `-`, at most 63 characters each and 255 in total) or an IP
-/// address literal (`[192.168.0.1]`, `[IPv6:::1]`).
+/// A constraint that requires a string to look like an email address.
 ///
-/// `null` and the empty string are valid; combine with [NotBlank] to
-/// require an address. [regexp] (with [flags]) is an additional pattern
-/// the whole address must match. Error arguments are
-/// `[field, flags, regexp]`.
+/// It checks the form only, as Hibernate Validator's `@Email` does, not
+/// that the address exists: a local part of at most 64 characters
+/// (dot-separated atoms or quoted strings), `@`, and a domain name (labels
+/// without a leading or trailing `-`, at most 63 characters each and 255
+/// in total) or an IP address literal (`[192.168.0.1]`, `[IPv6:::1]`). A
+/// domain without a dot, such as `localhost`, passes.
+///
+/// `null` and the empty string pass; add [NotBlank] to require an address.
+/// [regexp] (with [flags]) adds a pattern the whole address must also
+/// match, for example one company domain. The arguments of a field error
+/// are `[field, flags, regexp]`. Only for strings: on another type the
+/// generator fails the build and the validator throws an
+/// [UnexpectedTypeException].
 ///
 /// ```dart
+/// // Every user needs an address; a work address must be the company's.
 /// @Introspected()
 /// class Signup {
 ///   @NotNull()
@@ -1388,7 +1625,9 @@ class Matches extends Constraint {
 /// }
 /// ```
 class Email extends Constraint {
-  /// Creates the `@Email()` constraint.
+  /// The constraint, optionally with an extra [regexp] and its [flags];
+  /// [message] replaces `must be a well-formed email address`, and
+  /// [groups] limits it to those groups.
   const Email({
     this.regexp = '.*',
     this.flags = const [],
@@ -1396,10 +1635,11 @@ class Email extends Constraint {
     super.groups,
   });
 
-  /// An additional pattern the whole address must match (`.*`: any).
+  /// An extra regular expression the whole address must match; `.*` (the
+  /// default) accepts any well-formed address.
   final String regexp;
 
-  /// How [regexp] is matched.
+  /// Options for matching [regexp]; none by default.
   final List<PatternFlag> flags;
 
   static const _atom = r"[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-￿-]";
@@ -1491,15 +1731,21 @@ class Email extends Constraint {
   }
 }
 
-/// At most [integer] integer digits and [fraction] fraction digits, like
-/// Hibernate Validator's `@Digits`.
+/// A constraint that limits how many digits a number has before and after
+/// the decimal point.
 ///
-/// Numbers and `BigInt`s are counted without trailing zeros (`1.50` has one
-/// fraction digit, `1000` four integer digits); numeric strings as written
-/// (`'1.50'` has two, like `new BigDecimal("1.50")`), and a string that is
-/// not a number fails. `null` and other value types are valid.
+/// Use it when the value must fit a fixed-point column or format, such as
+/// amounts with at most 6 integer and 2 fraction digits. Numbers and
+/// `BigInt`s are counted without trailing zeros (`1.50` has one fraction
+/// digit, `1000` four integer digits); numeric strings as written (`'1.50'`
+/// has two, like `new BigDecimal("1.50")`), and a string that is not a
+/// number fails. `null` passes. The arguments of a field error are
+/// `[field, fraction, integer]`. On a value that is not a number or string
+/// the generator fails the build and the validator throws an
+/// [UnexpectedTypeException], as Hibernate Validator does.
 ///
 /// ```dart
+/// // Up to 999999.99, as in a DECIMAL(8, 2) column.
 /// @Introspected()
 /// class Invoice {
 ///   @Digits(integer: 6, fraction: 2)
@@ -1515,7 +1761,9 @@ class Email extends Constraint {
 /// }
 /// ```
 class Digits extends Constraint {
-  /// Creates a `@Digits` constraint with the maximum digit counts.
+  /// The constraint for at most [integer] digits before the point and
+  /// [fraction] after it; [message] replaces the default message, and
+  /// [groups] limits it to those groups.
   const Digits({
     required this.integer,
     required this.fraction,
@@ -1523,10 +1771,12 @@ class Digits extends Constraint {
     super.groups,
   });
 
-  /// Maximum number of integer digits.
+  /// The most digits allowed before the decimal point; must not be
+  /// negative.
   final int integer;
 
-  /// Maximum number of fraction digits.
+  /// The most digits allowed after the decimal point; `0` allows whole
+  /// numbers only. Must not be negative.
   final int fraction;
 
   @override
@@ -1580,9 +1830,13 @@ class Digits extends Constraint {
   }
 }
 
-/// The annotated value must be `true`; `null` is valid.
+/// A constraint that requires a `bool` to be `true`; `null` passes.
+///
+/// Use it for a box that must be ticked, such as accepted terms, usually
+/// with a [message] that says what to do.
 ///
 /// ```dart
+/// // The signup is refused until the terms are accepted.
 /// @Introspected()
 /// class Signup {
 ///   @AssertTrue(message: 'terms must be accepted')
@@ -1598,7 +1852,8 @@ class Digits extends Constraint {
 /// }
 /// ```
 class AssertTrue extends Constraint {
-  /// Creates the `@AssertTrue()` constraint.
+  /// The constraint; [message] replaces `must be true`, and [groups]
+  /// limits it to those validation groups.
   const AssertTrue({super.message, super.groups});
 
   @override
@@ -1614,9 +1869,12 @@ class AssertTrue extends Constraint {
   bool isValid(Object? value) => value == null || value == true;
 }
 
-/// The annotated value must be `false`; `null` is valid.
+/// A constraint that requires a `bool` to be `false`; `null` passes.
+///
+/// Use it for a state that must not hold, such as a locked account.
 ///
 /// ```dart
+/// // A locked account cannot be used.
 /// @Introspected()
 /// class Account {
 ///   @AssertFalse()
@@ -1632,7 +1890,8 @@ class AssertTrue extends Constraint {
 /// }
 /// ```
 class AssertFalse extends Constraint {
-  /// Creates the `@AssertFalse()` constraint.
+  /// The constraint; [message] replaces `must be false`, and [groups]
+  /// limits it to those validation groups.
   const AssertFalse({super.message, super.groups});
 
   @override
@@ -1676,14 +1935,19 @@ int? _compareToNow(Object? value, DateTime now) {
   };
 }
 
-/// A `DateTime` in the past, like Jakarta's `@Past`.
+/// A constraint that requires a `DateTime` before now.
 ///
-/// A `DateTime` without a time of day (`DateTime(2026, 5, 1)`, what
-/// `DateTime.parse('2026-05-01')` gives) is a date compared by day, like a
-/// `LocalDate`: today is not in the past. "Now" comes from the validator's
-/// `ClockProvider`. `null` and non-`DateTime` values are valid.
+/// Use it for birthdays, the dates of past events, payment dates. A
+/// `DateTime` without a time of day (`DateTime(2026, 5, 1)`, what
+/// `DateTime.parse('2026-05-01')` gives) is a date compared by day, like
+/// Java's `LocalDate`: today is not in the past. Other values are compared
+/// to the instant. "Now" comes from the validator's [ClockProvider], so
+/// tests can fix it. `null` passes. On a value that is not a `DateTime`
+/// the generator fails the build and the validator throws an
+/// [UnexpectedTypeException].
 ///
 /// ```dart
+/// // A birthday cannot be today or later.
 /// @Introspected()
 /// class Person {
 ///   @Past()
@@ -1699,7 +1963,8 @@ int? _compareToNow(Object? value, DateTime now) {
 /// }
 /// ```
 class Past extends Constraint {
-  /// Creates the `@Past()` constraint.
+  /// The constraint; [message] replaces `must be a past date`, and
+  /// [groups] limits it to those validation groups.
   const Past({super.message, super.groups});
 
   @override
@@ -1724,13 +1989,16 @@ class Past extends Constraint {
   }
 }
 
-/// A `DateTime` in the past or the present, like Jakarta's
-/// `@PastOrPresent`; dates without a time of day are compared by day (see
-/// [Past]).
+/// A constraint that requires a `DateTime` that is not in the future.
 ///
-/// `null` and non-`DateTime` values are valid.
+/// Use it for things that have happened, where today counts, such as the
+/// moment a payment was made. Dates without a time of day are compared by
+/// day, so today passes (see [Past]); "now" comes from the validator's
+/// [ClockProvider]. `null` passes; other types are rejected as for
+/// [Past].
 ///
 /// ```dart
+/// // A payment cannot be dated in the future.
 /// @Introspected()
 /// class Payment {
 ///   @PastOrPresent()
@@ -1746,7 +2014,8 @@ class Past extends Constraint {
 /// }
 /// ```
 class PastOrPresent extends Constraint {
-  /// Creates the `@PastOrPresent()` constraint.
+  /// The constraint; [message] replaces `must be a date in the past or in
+  /// the present`, and [groups] limits it to those validation groups.
   const PastOrPresent({super.message, super.groups});
 
   @override
@@ -1771,13 +2040,16 @@ class PastOrPresent extends Constraint {
   }
 }
 
-/// A `DateTime` in the future; error code `Future` (renamed: `Future` is a
-/// Dart core type). Dates without a time of day are compared by day (see
-/// [Past]).
+/// A constraint that requires a `DateTime` after now.
 ///
-/// `null` and non-`DateTime` values are valid.
+/// Use it for bookings, deadlines and appointments. Dates without a time of
+/// day are compared by day, so today is not in the future (see [Past]);
+/// "now" comes from the validator's [ClockProvider]. `null` passes; other
+/// types are rejected as for [Past]. Its error code is Jakarta's `Future`;
+/// the class has another name because `Future` is a Dart core type.
 ///
 /// ```dart
+/// // A booking starts tomorrow at the earliest.
 /// @Introspected()
 /// class Booking {
 ///   @FutureDate()
@@ -1793,7 +2065,8 @@ class PastOrPresent extends Constraint {
 /// }
 /// ```
 class FutureDate extends Constraint {
-  /// Creates the `@FutureDate()` constraint.
+  /// The constraint; [message] replaces `must be a future date`, and
+  /// [groups] limits it to those validation groups.
   const FutureDate({super.message, super.groups});
 
   @override
@@ -1818,13 +2091,15 @@ class FutureDate extends Constraint {
   }
 }
 
-/// A `DateTime` in the present or the future, like Jakarta's
-/// `@FutureOrPresent`; dates without a time of day are compared by day
-/// (today is present, see [Past]).
+/// A constraint that requires a `DateTime` that is not in the past.
 ///
-/// `null` and non-`DateTime` values are valid.
+/// Use it for due dates and start dates where today is allowed. Dates
+/// without a time of day are compared by day, so today passes (see
+/// [Past]); "now" comes from the validator's [ClockProvider]. `null`
+/// passes; other types are rejected as for [Past].
 ///
 /// ```dart
+/// // A reminder cannot be due yesterday.
 /// @Introspected()
 /// class Reminder {
 ///   @FutureOrPresent()
@@ -1840,7 +2115,8 @@ class FutureDate extends Constraint {
 /// }
 /// ```
 class FutureOrPresent extends Constraint {
-  /// Creates the `@FutureOrPresent()` constraint.
+  /// The constraint; [message] replaces `must be a date in the present or
+  /// in the future`, and [groups] limits it to those validation groups.
   const FutureOrPresent({super.message, super.groups});
 
   @override

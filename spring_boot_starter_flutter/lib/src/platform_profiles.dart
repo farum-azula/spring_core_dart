@@ -1,13 +1,18 @@
 import 'package:flutter/foundation.dart';
 
-/// The profiles of the platform the app runs on, which `SpringApplicationWidget` adds to
-/// the active profiles: `web` in a browser; else `mobile` plus `android` /
-/// `ios`, or `desktop` plus `macos` / `windows` / `linux` (`fuchsia` on
-/// Fuchsia). The specific one comes last, so its
-/// `application-android.properties` wins over
-/// `application-mobile.properties`.
+/// The profile names of the platform the app runs on: `web` in a browser;
+/// else `mobile` plus `android` or `ios`, or `desktop` plus `macos`,
+/// `windows` or `linux` (`fuchsia` on Fuchsia).
+///
+/// `SpringApplicationWidget` adds them to the active profiles, so an app
+/// can configure and assemble itself per platform without code:
+/// `application-ios.properties` is read on iPhones only, and a bean marked
+/// `@Profile(['android'])` exists on Android only. The specific profile
+/// comes last, so `application-android.properties` wins over
+/// `application-mobile.properties`. You rarely call the function yourself.
 ///
 /// ```dart
+/// // Each platform gets its own push service.
 /// @Component()
 /// @Profile(['ios'])
 /// class ApnsPushService implements PushService { ... }
@@ -17,8 +22,8 @@ import 'package:flutter/foundation.dart';
 /// class NoPushService implements PushService { ... }
 /// ```
 ///
-/// Follows `defaultTargetPlatform`, so a test can set
-/// `debugDefaultTargetPlatformOverride`.
+/// It follows `defaultTargetPlatform`, so a test can pretend to run on
+/// another platform by setting `debugDefaultTargetPlatformOverride`.
 List<String> platformProfiles() {
   if (kIsWeb) {
     return const ['web'];

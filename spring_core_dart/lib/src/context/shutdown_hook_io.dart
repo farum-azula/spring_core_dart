@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-/// Calls [onSignal] with the conventional exit code (`130`, `143`) when the
-/// process gets SIGINT or SIGTERM; the returned function stops listening.
-/// A signal the platform cannot watch (SIGTERM on Windows) is skipped.
+/// Calls [onSignal] with the conventional exit code (`130` for SIGINT,
+/// `143` for SIGTERM) when the process gets one of these signals; the
+/// returned function stops listening. A signal the platform cannot watch
+/// (SIGTERM on Windows) is skipped.
 void Function() watchShutdownSignals(void Function(int exitCode) onSignal) {
   final subscriptions = <StreamSubscription<ProcessSignal>>[];
   for (final (signal, code) in [
@@ -23,5 +24,5 @@ void Function() watchShutdownSignals(void Function(int exitCode) onSignal) {
   };
 }
 
-/// Ends the process with [code].
+/// Ends the process with the exit [code].
 void exitProcess(int code) => exit(code);

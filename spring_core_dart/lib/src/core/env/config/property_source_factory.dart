@@ -11,15 +11,19 @@ import 'package:spring_core_dart/src/core/io/resource_pattern_resolver.dart';
 import 'package:spring_core_dart/src/core/io/resource_property_source.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
-/// Creates a property source from a resource, like Spring's
-/// `PropertySourceFactory` used by `@PropertySource(factory: ...)`.
+/// Turns a file named in `@PropertySource` into a property source; write
+/// one to let `@PropertySource` read a format other than `.properties`.
 ///
-/// The factory type needs a no-argument constructor so generated code can
-/// instantiate it. As in Spring, `@PropertySource` reads `.properties`
-/// files unless a factory says otherwise; for YAML, use
-/// `YamlPropertySourceLoader` in a factory:
+/// `@PropertySource(['classpath:extra.properties'])` adds one file's
+/// properties to the environment from a `@Configuration` class. As in
+/// Spring, it reads `.properties` files unless the annotation's `factory`
+/// names a class implementing this interface. The usual reason to write
+/// one is YAML. The factory class needs a constructor without arguments,
+/// so the generated code can create it. Most applications need neither:
+/// `application.yml` and `spring.config.import` already read YAML.
 ///
 /// ```dart
+/// // Lets `@PropertySource` read YAML: all documents merged into one.
 /// class YamlPropertySourceFactory implements PropertySourceFactory {
 ///   const YamlPropertySourceFactory();
 ///
@@ -61,18 +65,21 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 /// class AppConfig {}
 /// ```
 abstract interface class PropertySourceFactory {
-  /// Reads [resource] synchronously, in its encoding; [name] overrides
-  /// the default name.
+  /// Reads [resource] synchronously, decoded with its encoding, and
+  /// returns its properties as one source. Name the source [name] when it
+  /// is given (the annotation's `name`), otherwise after the resource.
   AbstractPropertySource<Object> createPropertySource(
     String? name,
     EncodedResource resource,
   );
 }
 
-/// `.properties` resources, like Spring's `DefaultPropertySourceFactory`.
+/// The factory `@PropertySource` uses when none is named: it reads the file
+/// as `.properties`.
 ///
-/// Creates a `ResourcePropertySource` named after the resource unless a
-/// name is given.
+/// It creates a `ResourcePropertySource` named after the resource unless a
+/// name is given. Applications do not use it directly; it is the default
+/// value of [PropertySourceProcessor.processPropertySource]'s `factory`.
 ///
 /// ```dart
 /// final source = const DefaultPropertySourceFactory().createPropertySource(
@@ -88,7 +95,8 @@ abstract interface class PropertySourceFactory {
 ///         new FileSystemResource("config/app.properties")));
 /// ```
 final class DefaultPropertySourceFactory implements PropertySourceFactory {
-  /// Creates the factory (stateless; use `const`).
+  /// Creates the factory. It holds no state, so a `const` one can be
+  /// shared.
   const DefaultPropertySourceFactory();
 
   @override
@@ -102,9 +110,12 @@ final class DefaultPropertySourceFactory implements PropertySourceFactory {
   );
 }
 
-/// A `@PropertySource` location that does not exist.
+/// The startup error for a file named in `@PropertySource` that does not
+/// exist.
 ///
-/// Not thrown when `ignoreResourceNotFound` is `true`.
+/// Applications meet it as a failed start. Set `ignoreResourceNotFound:
+/// true` on the annotation when the file is allowed to be missing, such as
+/// a local override file.
 ///
 /// ```dart
 /// try {
@@ -121,14 +132,14 @@ final class DefaultPropertySourceFactory implements PropertySourceFactory {
 /// @PropertySource("file:missing.properties")
 /// ```
 final class PropertySourceNotFoundException implements Exception {
-  /// Creates the exception for [location], resolved to the resource
-  /// described by [description].
+  /// Creates the exception for [location], which was looked up as the
+  /// resource described by [description].
   PropertySourceNotFoundException(this.location, this.description);
 
-  /// The location as declared (before placeholder resolution).
+  /// The location as declared, before `${...}` placeholders were resolved.
   final String location;
 
-  /// Description of the resource that was looked up.
+  /// The resource that was looked for, with placeholders resolved.
   final String description;
 
   @override
@@ -137,16 +148,21 @@ final class PropertySourceNotFoundException implements Exception {
       '(location "$location") does not exist';
 }
 
-/// Loads `@PropertySource` locations into an environment, like Spring's
-/// `PropertySourceProcessor`.
+/// The code that reads the files of `@PropertySource` annotations into an
+/// environment.
 ///
-/// The first source is added with the lowest precedence; every later one
-/// is added just above the previous, so the last declared location wins.
+/// The application context runs it for every `@PropertySource`, so
+/// applications just write the annotation. Use it directly to add
+/// property files to an environment by hand, with the same rules:
+/// `${...}` in locations, patterns such as `file:conf/*.properties`,
+/// missing files allowed or not.
 ///
-/// The application context runs it for every `@PropertySource`; use it
-/// directly to add files to an environment by hand.
+/// The first source it adds goes last in the environment (lowest
+/// precedence); every later one goes just above the previous one, so the
+/// last location declared wins.
 ///
 /// ```dart
+/// // A tool that reads an optional local override on top of a base file.
 /// final processor = PropertySourceProcessor(
 ///   environment,
 ///   DefaultResourceLoader(),
@@ -166,33 +182,38 @@ final class PropertySourceNotFoundException implements Exception {
 ///     true, null, DefaultPropertySourceFactory.class, null));
 /// ```
 class PropertySourceProcessor {
-  /// Creates a processor adding sources to [environment], loading
-  /// locations with [resourceLoader].
+  /// Creates a processor that adds sources to [environment] and finds the
+  /// files with [resourceLoader].
   PropertySourceProcessor(this.environment, this.resourceLoader);
 
-  /// The environment that receives the property sources.
+  /// The environment the sources are added to; placeholders in locations
+  /// are resolved against it.
   final ConfigurableEnvironment environment;
 
-  /// Resolves (placeholder-resolved) locations to resources.
+  /// Finds the resource for each location once its placeholders are
+  /// resolved.
   final ResourceLoader resourceLoader;
 
   // Names of the sources this processor added, oldest first; the next
   // source goes right above the last one.
   final _added = <String>[];
 
-  /// Loads every location in [locations]. `${...}` in locations is
-  /// resolved against the environment first.
+  /// Reads every file in [locations] into the environment, with the
+  /// arguments of `@PropertySource`. `${...}` in a location is resolved
+  /// against the environment first.
   ///
-  /// With [ignoreResourceNotFound], missing files and unresolvable
-  /// placeholders are skipped; otherwise they throw
+  /// A pattern (`file:conf/*.properties`, `classpath*:`) adds every match,
+  /// and no match is fine. With [ignoreResourceNotFound], missing files and
+  /// unresolvable placeholders are skipped; otherwise they throw
   /// `PropertySourceNotFoundException` or `PlaceholderResolutionException`.
-  /// [factory] creates the source (default: `.properties`); [name] names
-  /// all sources of this call, which are then merged into one composite.
-  /// [encoding] is the charset name the files are read in (such as
-  /// `ISO-8859-1`; UTF-8 when `null`).
+  /// [factory] reads each file (`.properties` unless given). [name] gives
+  /// all sources of this call one name, so they are merged into one
+  /// composite source. [encoding] is the name of the charset the files are
+  /// read in (such as `ISO-8859-1`; UTF-8 when `null`); an unknown name
+  /// throws [ArgumentError].
   ///
-  /// Resources that can only be read asynchronously (Flutter assets) must
-  /// be [preload]ed first; otherwise they throw a [StateError].
+  /// Resources that can only be read asynchronously (Flutter assets, URLs)
+  /// must be [preload]ed first; otherwise they throw a [StateError].
   void processPropertySource(
     List<String> locations, {
     String? name,
@@ -246,14 +267,15 @@ class PropertySourceProcessor {
 
   static final _patterns = AntPathMatcher();
 
-  /// Reads the resources of [locations] that only support asynchronous
-  /// reading (such as Flutter assets behind a `ProtocolResolver`), so a
-  /// later [processPropertySource] can load them synchronously.
+  /// Reads ahead the resources of [locations] that can only be read
+  /// asynchronously (Flutter assets behind a `ProtocolResolver`, URLs), so
+  /// that a later [processPropertySource] can use them synchronously.
   ///
   /// Locations whose placeholders cannot be resolved yet, and missing
-  /// resources, are skipped (processing reports them).
-  /// `ConfigurableApplicationContext.refreshAsync` does this for every
-  /// `@PropertySource`.
+  /// resources, are skipped here; [processPropertySource] reports them.
+  /// `ConfigurableApplicationContext.refreshAsync` calls it for every
+  /// `@PropertySource`, which is why such files need an asynchronous
+  /// start.
   ///
   /// ```dart
   /// await processor.preload(['asset:config/app.properties']);

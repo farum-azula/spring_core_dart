@@ -6,55 +6,101 @@ import 'dart:typed_data';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/media_type.dart';
 
-/// An uploaded file of a `multipart/form-data` request, like Spring's
-/// `MultipartFile`. A controller takes it with `@RequestPart('file')` (or
-/// `@RequestParam('file')`); its content is in memory or, above
-/// `spring.servlet.multipart.file-size-threshold`, in a temporary file
-/// deleted after the request.
+/// A file uploaded with a form (a `multipart/form-data` request): its
+/// name, type, size and content.
+///
+/// A controller receives it as a parameter, with `@RequestPart('file')`,
+/// `@RequestParam('file')` or no annotation at all (the parameter name is
+/// then the field name); `List<MultipartFile>` takes every file of a
+/// field. A nullable parameter makes the file optional. The web starter
+/// writes the content of each file part to a temporary file while the
+/// request is read, unless it fits under
+/// `spring.servlet.multipart.file-size-threshold` (0 by default) or there
+/// is no `dart:io` (then it stays in memory); the temporary files are
+/// deleted when the request ends. Keep the content with [transferTo] or
+/// by reading it during the request.
+///
+/// A Feign client sends a `MultipartFile` argument as a file part.
 ///
 /// ```dart
+/// // Saves an uploaded cover under its original name.
 /// @PostMapping.of(path: '/covers', consumes: MediaType.multipartFormData)
 /// Future<void> upload(@RequestPart('file') MultipartFile file) async {
 ///   await storage.save(file.originalFilename ?? 'cover', await file.bytes);
 /// }
 /// ```
 ///
-/// Spring (Java): `MultipartFile`.
+/// Spring (Java):
+/// ```java
+/// @PostMapping(path = "/covers",
+///     consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+/// void upload(@RequestPart("file") MultipartFile file) throws IOException {
+///   storage.save(file.getOriginalFilename(), file.getBytes());
+/// }
+/// ```
 abstract interface class MultipartFile {
-  /// The name of the form field.
+  /// The name of the form field the file was sent in (`name=` of the
+  /// part), not the file name.
   String get name;
 
-  /// The file name the client sent (`filename=` of the part), if any.
+  /// The file name on the client's machine (`filename=` of the part), or
+  /// `null` when it sent none. Do not use it as a path as it is: it comes
+  /// from the client.
   String? get originalFilename;
 
-  /// The part's `Content-Type`, if sent.
+  /// The `Content-Type` the client gave the part (`image/png`), or `null`
+  /// when it sent none. It is the client's claim, not checked.
   String? get contentType;
 
-  /// The size in bytes.
+  /// The size of the content, in bytes.
   int get size;
 
-  /// Whether the file is empty (no file chosen in a browser form).
+  /// Whether the content is empty, which is what a browser sends when no
+  /// file was chosen in the form.
   bool get isEmpty;
 
-  /// The part's headers.
+  /// All the headers of the part, for anything besides the name and the
+  /// type.
   HttpHeaders get headers;
 
-  /// The content.
+  /// The whole content, loaded into memory; for a large file prefer
+  /// [openRead] or [transferTo].
   Future<Uint8List> get bytes;
 
-  /// The content as a stream (read from the temporary file without loading
-  /// it whole).
+  /// The content as a stream of chunks, read from the temporary file
+  /// without loading it whole; each call starts a new read.
   Stream<List<int>> openRead();
 
-  /// Writes the content to the file at [path] (`dart:io` only), like
-  /// Spring's `transferTo`.
+  /// Saves the content as the file at [path], like Spring's `transferTo`.
+  /// A temporary file is moved there when possible (else copied), so call
+  /// it once, after any other read. Needs `dart:io`; an
+  /// [InMemoryMultipartFile] throws an `UnsupportedError`.
   Future<void> transferTo(String path);
 }
 
-/// A [MultipartFile] whose content is in memory: what a test passes to a
-/// controller, or a small upload.
+/// A [MultipartFile] whose content is a list of bytes in memory.
+///
+/// Use it to pass a file to a controller method or a Feign client from
+/// code (a test, a file produced on the fly), where no upload took place.
+/// Tests usually use `MockMultipartFile`, which extends it with Spring's
+/// argument order.
+///
+/// ```dart
+/// // A Feign client uploads a generated report.
+/// await archive.store(InMemoryMultipartFile.fromString(
+///   'report',
+///   csv,
+///   originalFilename: 'report.csv',
+///   contentType: 'text/csv',
+/// ));
+/// ```
+///
+/// Spring (Java): no direct equivalent; `MockMultipartFile` or a
+/// `ByteArrayResource` play this part.
 class InMemoryMultipartFile implements MultipartFile {
-  /// A file of field [name] with [content].
+  /// A file for the form field [name] holding [content], with optional
+  /// [originalFilename], [contentType] and part [headers]. The content is
+  /// not copied when it is already a `Uint8List`.
   InMemoryMultipartFile(
     this.name,
     List<int> content, {
@@ -64,7 +110,8 @@ class InMemoryMultipartFile implements MultipartFile {
   }) : _content = content is Uint8List ? content : Uint8List.fromList(content),
        headers = headers ?? HttpHeaders();
 
-  /// A file of field [name] with UTF-8 [text].
+  /// A file for the form field [name] holding [text] in UTF-8; its
+  /// [contentType] is `text/plain; charset=utf-8` unless given.
   factory InMemoryMultipartFile.fromString(
     String name,
     String text, {
@@ -114,61 +161,91 @@ class InMemoryMultipartFile implements MultipartFile {
       'MultipartFile($name, ${originalFilename ?? '-'}, $size bytes)';
 }
 
-/// One part of a multipart body while it is read: its headers and its
-/// content as a stream (read it before the next part is delivered).
+/// One part of a multipart body, as [MultipartParser] delivers it while
+/// the body is read: its headers and its content as a stream.
+///
+/// The content must be read or drained before the next part can arrive,
+/// because the parts come one after the other from the same body.
+/// Applications rarely see it: the web starter turns the parts into
+/// [MultipartFile]s and form fields.
 final class MultipartPart {
-  /// A part with [headers] and [content].
+  /// A part with its [headers] and its [content] stream.
   MultipartPart(this.headers, this.content);
 
-  /// The part's headers.
+  /// The headers of the part: `Content-Disposition`, often
+  /// `Content-Type`.
   final HttpHeaders headers;
 
-  /// The content; must be read (or drained) before the next part arrives.
+  /// The bytes of the part, delivered as they are read from the body.
+  /// Read or drain it before the next part arrives.
   final Stream<List<int>> content;
 
-  /// The `Content-Disposition` of the part.
+  /// The `Content-Disposition` of the part parsed, or `null` when it has
+  /// none.
   ContentDisposition? get disposition => headers.contentDisposition;
 
-  /// The form field name (`name=`).
+  /// The form field name (`name=`), or `null` when the part has none.
   String? get name => disposition?.name;
 
-  /// The file name (`filename=`), for a file.
+  /// The file name (`filename=`) of a file part, or `null` for a plain
+  /// field.
   String? get filename => disposition?.filename;
 
-  /// Whether the part is a file (it has a `filename`).
+  /// Whether the part is a file, which is decided by the presence of a
+  /// `filename` (even an empty one).
   bool get isFile => filename != null;
 }
 
-/// A malformed multipart body.
+/// Thrown by [MultipartParser] when a multipart body does not follow the
+/// format: no boundary, a part that never ends, headers too large.
+///
+/// The web starter turns it into a 400 response, so a controller does
+/// not need to catch it.
 class MultipartException implements Exception {
-  /// The body is malformed because of [message].
+  /// A malformed body, described by [message].
   MultipartException(this.message);
 
-  /// What is wrong.
+  /// What is wrong with the body, for the error response or the log.
   final String message;
 
   @override
   String toString() => 'MultipartException: $message';
 }
 
-/// Reads a `multipart/form-data` (or any `multipart/*`) body part by part,
-/// streaming: the content of a part is delivered as it arrives, so a large
-/// file never has to be in memory. Like the parsing behind Spring's
-/// `StandardServletMultipartResolver`.
+/// Reads a `multipart/form-data` body (or any `multipart/*` body) part by
+/// part, while it arrives.
+///
+/// The content of each part is delivered as a stream as soon as its bytes
+/// are read, so a large upload never has to be in memory at once, and a
+/// slow consumer slows the reading down. The web starter reads uploads
+/// with it; use it yourself only to handle a multipart body by hand, for
+/// example to stream an upload elsewhere without a temporary file.
 ///
 /// ```dart
+/// // A handler streams each uploaded file straight to storage.
 /// final boundary = MultipartParser.boundaryOf(request.contentType!)!;
 /// await for (final part in MultipartParser(boundary).bind(request.body)) {
-///   print('${part.name}: ${(await part.content.toList()).length} chunks');
+///   if (part.isFile) {
+///     await storage.write(part.filename!, part.content);
+///   } else {
+///     await part.content.drain<void>();
+///   }
 /// }
 /// ```
+///
+/// Spring (Java): no public equivalent; the servlet container parses the
+/// body behind `StandardServletMultipartResolver`.
 final class MultipartParser {
-  /// A parser for the [boundary] of the `Content-Type`.
+  /// A parser for bodies whose parts are separated by [boundary], the
+  /// `boundary` parameter of the `Content-Type` (see [boundaryOf]).
+  /// [maxHeaderSize] limits the header block of each part.
   MultipartParser(String boundary, {this.maxHeaderSize = 16 * 1024})
     : _delimiter = ascii.encode('\r\n--$boundary'),
       _first = ascii.encode('--$boundary');
 
-  /// The `boundary` parameter of a multipart [contentType], or `null`.
+  /// The `boundary` parameter of [contentType], or `null` when the type is
+  /// not `multipart/*` or the boundary is missing, empty or longer than
+  /// the 70 characters the format allows.
   static String? boundaryOf(MediaType contentType) {
     if (contentType.type != 'multipart') {
       return null;
@@ -180,13 +257,18 @@ final class MultipartParser {
     return boundary;
   }
 
-  /// The largest header block of one part, in bytes.
+  /// The largest header block of one part, in bytes (16 KB by default);
+  /// a larger one is a [MultipartException].
   final int maxHeaderSize;
 
   final Uint8List _delimiter;
   final Uint8List _first;
 
-  /// The parts of [body], in order.
+  /// The parts of [body], in order, read when the returned stream is
+  /// listened to. A malformed body ends the stream with a
+  /// [MultipartException]; an error of [body] itself (a size limit) is
+  /// passed on as it is. The preamble before the first boundary and the
+  /// epilogue after the last are skipped.
   Stream<MultipartPart> bind(Stream<List<int>> body) {
     final parts = StreamController<MultipartPart>();
     parts.onListen = () => _run(body, parts);
@@ -419,9 +501,23 @@ final class _ByteReader {
   }
 }
 
-/// A part to send in a multipart body.
+/// One part of a multipart body to send: a form field, a file or a JSON
+/// value, with its headers.
+///
+/// Parts are put together into a [MultipartBody]. A Feign client builds
+/// them from its `@RequestPart` parameters; build them yourself only to
+/// send a multipart body by hand.
+///
+/// ```dart
+/// final parts = [
+///   MultipartBodyPart.field('title', 'Dune'),
+///   MultipartBodyPart.json('meta', '{"pages": 412}'),
+///   MultipartBodyPart.file('cover', bytes, filename: 'dune.png'),
+/// ];
+/// ```
 final class MultipartBodyPart {
-  /// A plain form field [name] with [value].
+  /// A text field [name] holding [value], sent in UTF-8 without a
+  /// `Content-Type`, as a browser sends a text input.
   MultipartBodyPart.field(String name, String value)
     : headers = HttpHeaders({
         HttpHeaders.contentDispositionHeader: ContentDisposition(
@@ -431,7 +527,10 @@ final class MultipartBodyPart {
       }),
       body = utf8.encode(value);
 
-  /// A file field [name] with [content], [filename] and [contentType].
+  /// A file field [name] holding [content], with an optional [filename].
+  /// [contentType] defaults to the type guessed from the [filename]
+  /// extension ([MediaTypeFactory]), else `application/octet-stream`.
+  /// Without a [filename] the receiver sees a plain part, not a file.
   MultipartBodyPart.file(
     String name,
     List<int> content, {
@@ -450,7 +549,9 @@ final class MultipartBodyPart {
        }),
        body = content;
 
-  /// A part [name] holding [json] (`application/json`).
+  /// A part [name] holding the JSON text [json], with
+  /// `Content-Type: application/json`; a server reads it into an object
+  /// for an `@RequestPart` parameter.
   MultipartBodyPart.json(String name, String json)
     : headers = HttpHeaders({
         HttpHeaders.contentDispositionHeader: ContentDisposition(
@@ -461,40 +562,67 @@ final class MultipartBodyPart {
       }),
       body = utf8.encode(json);
 
-  /// The part's headers.
+  /// The headers of the part: `Content-Disposition`, and `Content-Type`
+  /// for a file or JSON part.
   final HttpHeaders headers;
 
-  /// The content.
+  /// The bytes of the part.
   final List<int> body;
 }
 
-/// Writes a `multipart/form-data` body, like Spring's
-/// `MultipartBodyBuilder` with `FormHttpMessageWriter`.
+/// A `multipart/form-data` body to send: the parts and the boundary that
+/// separates them, encoded into bytes by [encode].
+///
+/// It is how a client uploads files together with form fields. Feign
+/// clients and `MockMvc.multipart` build one for you; use it directly to
+/// send an upload through an `HttpTransport`.
 ///
 /// ```dart
+/// // Uploads a book with its cover to another service.
 /// final body = MultipartBody([
 ///   MultipartBodyPart.field('title', 'Dune'),
 ///   MultipartBodyPart.file('cover', bytes, filename: 'dune.png'),
 /// ]);
-/// request.headers.contentType = body.contentType;
-/// request.add(body.encode());
+/// final response = await transport.send(HttpRequest(
+///   method: HttpMethod.post,
+///   url: Uri.parse('https://api.neon.books/books'),
+///   headers: HttpHeaders({HttpHeaders.contentTypeHeader: body.contentType}),
+///   body: body.encode(),
+/// ));
+/// ```
+///
+/// Spring (Java): `MultipartBodyBuilder`, written by
+/// `FormHttpMessageWriter`:
+/// ```java
+/// MultipartBodyBuilder builder = new MultipartBodyBuilder();
+/// builder.part("title", "Dune");
+/// builder.part("cover", new ByteArrayResource(bytes) {
+///   @Override public String getFilename() { return "dune.png"; }
+/// });
+/// webClient.post().uri("/books")
+///     .body(BodyInserters.fromMultipartData(builder.build())).retrieve();
 /// ```
 final class MultipartBody {
-  /// A body with [parts] (and a random [boundary] unless given).
+  /// A body with [parts], in order. The [boundary] is random
+  /// (`spring-` and 24 letters or digits) unless given; give one only to
+  /// get the same bytes every time, as a test may.
   MultipartBody(this.parts, {String? boundary})
     : boundary = boundary ?? _randomBoundary();
 
-  /// The parts.
+  /// The parts, in the order they are written.
   final List<MultipartBodyPart> parts;
 
-  /// The boundary between the parts.
+  /// The text that separates the parts in the body; it must not appear in
+  /// any part.
   final String boundary;
 
-  /// The `Content-Type` to send.
+  /// The `Content-Type` to send with the body:
+  /// `multipart/form-data; boundary=...`. Without it the receiver cannot
+  /// split the parts.
   String get contentType =>
       '${MediaType.multipartFormData}; boundary=$boundary';
 
-  /// The whole body.
+  /// The whole body as bytes, ready to send; each call encodes it again.
   Uint8List encode() {
     final out = BytesBuilder(copy: false);
     for (final part in parts) {
@@ -525,8 +653,21 @@ final class MultipartBody {
   }
 }
 
-/// The media type of a file from its name, like Spring's
-/// `MediaTypeFactory`.
+/// Guesses the media type of a file from the extension of its name
+/// (`cover.png` is `image/png`).
+///
+/// It fills in the `Content-Type` when only a file name is known: a file
+/// part sent without a type, a file a controller returns for download.
+/// It knows the common text, image, audio, video, font, archive and web
+/// types.
+///
+/// ```dart
+/// MediaTypeFactory.getMediaType('dune.png'); // 'image/png'
+/// MediaTypeFactory.getMediaType('notes'); // null
+/// ```
+///
+/// Spring (Java): `MediaTypeFactory.getMediaType("dune.png")`, which
+/// returns an `Optional<MediaType>`.
 abstract final class MediaTypeFactory {
   static const _types = {
     'txt': 'text/plain',
@@ -568,7 +709,8 @@ abstract final class MediaTypeFactory {
     'yml': 'application/yaml',
   };
 
-  /// The media type of [filename] by its extension, or `null`.
+  /// The media type for the extension of [filename], in any case, or
+  /// `null` when [filename] is `null`, has no extension or an unknown one.
   static String? getMediaType(String? filename) {
     if (filename == null) {
       return null;

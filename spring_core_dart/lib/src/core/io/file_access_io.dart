@@ -2,12 +2,15 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-/// File system access through `dart:io`.
+/// The file and network access of the resource classes, through
+/// `dart:io`.
 ///
-/// Internal: chosen by a conditional import (`dart.library.io`) in
-/// `FileSystemResource` and `PathMatchingResourcePatternResolver`, so the
-/// rest of the library compiles on the web. Spring has no equivalent; it
-/// uses `java.io.File` / `java.nio.file.Files` directly.
+/// Internal: a conditional import (`dart.library.io`) picks this file in
+/// `FileSystemResource`, `UrlResource`, the resource loader, the pattern
+/// resolver and the config data loader, and the stub elsewhere, so none of
+/// them imports `dart:io` and the library still compiles for the web.
+/// Spring has no equivalent; it uses `java.io.File` and
+/// `java.nio.file.Files` directly.
 abstract final class FileAccess {
   /// Always `true`: the file system is available.
   static bool get isSupported => true;
@@ -29,8 +32,8 @@ abstract final class FileAccess {
   static Stream<List<int>> openRead(String path, [int? start, int? end]) =>
       File(path).openRead(start, end);
 
-  /// The body of a GET request to [url]; a status of 400 or above throws
-  /// an [HttpException].
+  /// The body of a GET request to [url]. A status of 400 or above throws
+  /// an [HttpException]; network errors propagate.
   static Future<Uint8List> readUrl(Uri url) async {
     final client = HttpClient();
     try {
@@ -50,10 +53,10 @@ abstract final class FileAccess {
     }
   }
 
-  /// Whether [url] exists, like Spring's `AbstractFileResolvingResource
-  /// .exists()`: a `HEAD` request (a `GET` when the server rejects `HEAD`
-  /// with 405 or 501) that answers below 400. A connection error means it
-  /// does not exist.
+  /// Whether [url] answers: a `HEAD` request (repeated as a `GET` when
+  /// the server rejects `HEAD` with 405 or 501) with a status below 400.
+  /// A connection error counts as "does not exist". Spring's
+  /// `AbstractFileResolvingResource.exists()` checks the same way.
   static Future<bool> urlExists(Uri url) async {
     final client = HttpClient();
     try {
@@ -72,24 +75,25 @@ abstract final class FileAccess {
     }
   }
 
-  /// [path] made absolute against the current directory.
+  /// [path] made absolute against the current working directory.
   static String absolute(String path) => File(path).absolute.path;
 
-  /// Size in bytes of the file at [path].
+  /// The size in bytes of the file at [path]; throws when it is missing.
   static int length(String path) => File(path).lengthSync();
 
-  /// Last modification time of the file at [path].
+  /// The last modification time of the file at [path]; throws when it is
+  /// missing.
   static DateTime lastModified(String path) => File(path).lastModifiedSync();
 
-  /// Paths of all files under [directory], using `/` separators, sorted so
-  /// results are deterministic across platforms.
+  /// The paths of all files under [directory], at any depth, with `/`
+  /// separators and sorted, so results are the same on every platform.
   static List<String> listFilesRecursively(String directory) => [
     for (final entity in Directory(directory).listSync(recursive: true))
       if (entity is File) entity.path.replaceAll(r'\', '/'),
   ]..sort();
 
-  /// Paths of the directories directly in [directory], using `/`
-  /// separators, sorted; empty if [directory] is not a directory.
+  /// The paths of the directories directly in [directory], with `/`
+  /// separators and sorted; empty if [directory] does not exist.
   static List<String> listDirectories(String directory) {
     final dir = Directory(directory);
     if (!dir.existsSync()) {
@@ -101,8 +105,8 @@ abstract final class FileAccess {
     ]..sort();
   }
 
-  /// Paths of the files directly in [directory], using `/` separators,
-  /// sorted; empty if [directory] is not a directory.
+  /// The paths of the files directly in [directory], with `/` separators
+  /// and sorted; empty if [directory] does not exist.
   static List<String> listFiles(String directory) {
     final dir = Directory(directory);
     if (!dir.existsSync()) {
@@ -114,9 +118,10 @@ abstract final class FileAccess {
     ]..sort();
   }
 
-  /// The file path of a `package:` [uri] through the package config of
-  /// the running program; `null` when it cannot be resolved (an AOT
-  /// executable has no package config).
+  /// The file path behind a `package:` [uri], looked up in the package
+  /// config of the running program. `null` when it cannot be resolved,
+  /// which is always the case in an AOT executable (it has no package
+  /// config).
   static String? resolvePackageUri(String uri) {
     try {
       final resolved = Isolate.resolvePackageUriSync(Uri.parse(uri));

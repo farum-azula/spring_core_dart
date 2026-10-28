@@ -4,20 +4,25 @@ import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
-/// Reads and writes properties of `@Introspected` objects in SpEL, the
-/// counterpart of Spring's reflective property accessor.
+/// A [PropertyAccessor] that reads and writes the properties of
+/// `@Introspected` classes, using the metadata the code generator wrote
+/// for them.
 ///
-/// Property metadata comes from generated [BeanIntrospection]s instead of
-/// reflection. Written values that are not already of the property type
-/// are converted with the context's type converter when it can; others
-/// (e.g. an `English` for a `Greeter` property) are passed as they are.
-/// Application contexts register it for `@Value('#{...}')` automatically.
+/// It is how expressions see your own classes without reflection: the
+/// generator describes each `@Introspected` class in a
+/// [BeanIntrospection], registered in a [BeanIntrospector]. Both contexts
+/// already have one over `BeanIntrospector.shared`, and an application
+/// context adds one over its own introspector for `@Value('#{...}')`.
+/// Create one yourself only for another introspector. A written value
+/// that is not of the property type is converted with the context's type
+/// converter when it can be; others (an `English` for a `Greeter`
+/// property) are passed as they are.
 ///
 /// ```dart
+/// // A Person described by the introspector of a plugin, not the shared
+/// // one: `address.city` is read and `age` set from a string.
 /// final context = StandardEvaluationContext(person)
-///   ..addPropertyAccessor(
-///     IntrospectionPropertyAccessor(BeanIntrospector.shared),
-///   );
+///   ..addPropertyAccessor(IntrospectionPropertyAccessor(pluginIntrospector));
 /// final parser = SpelExpressionParser();
 /// parser.parseExpression('address.city').getValue(context);
 /// parser.parseExpression('age').setValue(context, null, '7'); // age = 7
@@ -31,10 +36,10 @@ import 'package:spring_core_dart/src/expression/spel_type.dart';
 /// parser.parseExpression("age").setValue(context, "7");
 /// ```
 final class IntrospectionPropertyAccessor implements PropertyAccessor {
-  /// Looks up introspections of targets in [introspector].
+  /// Reads the classes described in [introspector].
   const IntrospectionPropertyAccessor(this.introspector);
 
-  /// The registry of generated introspections.
+  /// The registry the descriptions of the targets' classes come from.
   final BeanIntrospector introspector;
 
   BeanProperty<Object>? _property(Object target, String name) =>
@@ -66,11 +71,14 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
     );
   }
 
-  /// A new, empty value for property [name] of [target], for
-  /// `SpelParserConfiguration.autoGrowNullReferences`: an empty list, set
-  /// or map of the declared element types, or an instance of an
+  /// A new, empty value for property [name] of [target]: an empty list,
+  /// set or map of the declared element types, or an instance of an
   /// introspected class with a no-argument constructor; `null` when the
   /// type is not known well enough.
+  ///
+  /// The evaluator calls it when
+  /// `SpelParserConfiguration.autoGrowNullReferences` is on and a path
+  /// such as `order.lines[0]` meets a `null` property.
   ///
   /// ```dart
   /// accessor.newValue(order, 'lines'); // <OrderLine>[]
@@ -91,7 +99,14 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
   }
 }
 
-/// Calls methods of `@Introspected` objects in SpEL.
+/// A [MethodResolver] that calls the methods of `@Introspected` classes,
+/// using the metadata the code generator wrote for them.
+///
+/// Like [IntrospectionPropertyAccessor], it replaces Java's reflection: a
+/// `StandardEvaluationContext` has one over `BeanIntrospector.shared`, a
+/// `SimpleEvaluationContext` after `withInstanceMethods()`, and an
+/// application context adds one over its own introspector for
+/// `@Value('#{...}')`.
 ///
 /// A method matches by name when it declares at least as many parameters
 /// as there are arguments. Arguments that are not already of the
@@ -103,10 +118,9 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
 /// unchanged, like Spring.
 ///
 /// ```dart
+/// // hello('Bob') on a Person described by a plugin's introspector.
 /// final context = StandardEvaluationContext(person)
-///   ..addMethodResolver(
-///     IntrospectionMethodResolver(BeanIntrospector.shared),
-///   );
+///   ..addMethodResolver(IntrospectionMethodResolver(pluginIntrospector));
 /// SpelExpressionParser()
 ///     .parseExpression("hello('Bob')")
 ///     .getValue(context);
@@ -118,10 +132,10 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
 /// parser.parseExpression("hello('Bob')").getValue(context);
 /// ```
 final class IntrospectionMethodResolver implements MethodResolver {
-  /// Looks up introspections of targets in [introspector].
+  /// Calls the methods of the classes described in [introspector].
   const IntrospectionMethodResolver(this.introspector);
 
-  /// The registry of generated introspections.
+  /// The registry the descriptions of the targets' classes come from.
   final BeanIntrospector introspector;
 
   @override

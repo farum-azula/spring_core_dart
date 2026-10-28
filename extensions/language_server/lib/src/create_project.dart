@@ -2,15 +2,17 @@ import 'dart:io';
 
 import 'package:dart_spring_language_server/src/project_template.dart';
 
-/// Runs a process in [workingDirectory], forwarding its output; returns the
-/// exit code.
+/// Runs `executable` with `arguments` in `workingDirectory`, letting its
+/// output through, and returns its exit code. [createProject] takes one so
+/// that tests can create a project without running `dart pub get`.
 typedef ProcessRunner = Future<int> Function(
   String executable,
   List<String> arguments,
   String workingDirectory,
 );
 
-/// Help of the `create` command.
+/// The help text of the `create` command, printed for `--help` and after a
+/// missing argument.
 const createUsage = '''
 Creates a Spring Boot application (like Spring Initializr).
 
@@ -27,7 +29,17 @@ Examples:
   dart_spring_lsp create .        # into the current (empty) directory
 ''';
 
-/// `dart_spring_lsp create ...`; returns the exit code.
+/// Runs `dart_spring_lsp create <directory> [options]` with [args] (the
+/// words after `create`) and returns the process exit code.
+///
+/// It writes [springBootProjectFiles] into the directory, then runs
+/// `dart pub get` and `dart run build_runner build` there unless
+/// `--no-pub` is given. A directory with visible files is refused unless
+/// `--force` is given. Exit codes: 0 on success, 64 for a usage error (an
+/// unknown option, no directory, an invalid `--name`), 73 for a directory
+/// that is not empty, 1 when `pub get` or `build_runner` fails. Messages go
+/// to [out] and [err] (stdout and stderr by default); [run] starts the
+/// processes.
 Future<int> createProject(
   List<String> args, {
   IOSink? out,

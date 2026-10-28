@@ -1,7 +1,16 @@
-/// Spring Boot for Dart: `@SpringBootApplication`, `SpringApplication`,
-/// `@ConfigurationProperties`, auto-configuration conditions, runners,
-/// application events and startup failure reports, on top of `spring_core_dart`
-/// (re-exported, so one import is enough).
+/// The application layer on top of `spring_core_dart`: it turns a set of
+/// beans into a running program.
+///
+/// Import it in `main()`. An application marks `main` with
+/// `@SpringBootApplication()`, and the generator writes `runApplication`,
+/// which reads the config files, applies log levels, creates the beans and
+/// runs the startup tasks. The library also holds what an application
+/// configures that process with: `@ConfigurationProperties` classes,
+/// `ApplicationRunner` / `CommandLineRunner` beans, application events,
+/// the `@ConditionalOn...` annotations of auto-configuration (what a
+/// library uses to add beans by itself) and the startup failure report.
+///
+/// It re-exports `spring_core_dart`, so this one import is enough.
 library;
 
 export 'package:spring_boot_dart/src/annotations.dart';

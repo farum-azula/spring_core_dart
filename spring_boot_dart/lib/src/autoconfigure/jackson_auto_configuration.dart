@@ -6,13 +6,20 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 const _source = 'package:spring_boot_dart#JacksonAutoConfiguration';
 const _log = SpringLog('spring_boot_dart.JacksonAutoConfiguration');
 
-/// Registers a `jacksonJsonMapper` bean (Boot 4's name) built from
-/// `spring.jackson.*` when the application declares no `ObjectMapper`, like
-/// Spring Boot's `JacksonAutoConfiguration`. It reads the classes of the
-/// context's `BeanIntrospector` and adds every `JsonSerializer` /
-/// `JsonDeserializer` bean (Boot's `@JsonComponent`) and every `JsonModule`
-/// bean, then lets the [JsonMapperBuilderCustomizer] beans change the builder
-/// (in order).
+/// The `ObjectMapper` bean every application gets for reading and writing
+/// JSON, set up from the `spring.jackson.*` properties.
+///
+/// Any bean can inject `ObjectMapper` and convert its `@Introspected`
+/// classes to and from JSON; web starters use the same bean for request
+/// and response bodies. The bean is named `jacksonJsonMapper` (Spring Boot
+/// 4's name). It knows every class of the context's `BeanIntrospector`,
+/// and adds every `JsonSerializer` / `JsonDeserializer` bean (Spring
+/// Boot's `@JsonComponent`) and every `JsonModule` bean. Then the
+/// [JsonMapperBuilderCustomizer] beans adjust it, in `@Order` order.
+///
+/// It is left out when the application declares its own `ObjectMapper`
+/// bean, or with `spring.autoconfigure.exclude=JacksonAutoConfiguration`.
+/// [objectMapperFromProperties] lists the properties.
 ///
 /// ```properties
 /// # lib/resources/application.properties
@@ -24,6 +31,8 @@ const _log = SpringLog('spring_boot_dart.JacksonAutoConfiguration');
 /// spring.jackson.time-zone=UTC
 /// spring.jackson.mapper.sort-properties-alphabetically=false
 /// ```
+///
+/// Spring (Java): `JacksonAutoConfiguration`.
 final jacksonAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ObjectMapper>(
     name: 'jacksonJsonMapper',
@@ -53,15 +62,22 @@ final jacksonAutoConfiguration = <BeanDefinition<Object>>[
   ),
 ];
 
-/// Changes the builder of the auto-configured mapper, like Spring Boot 4's
-/// `JsonMapperBuilderCustomizer`: declare beans of it to keep the
-/// `spring.jackson.*` properties and adjust the rest. They run after the
-/// properties are applied, in `@Order` order.
+/// A bean that adjusts the auto-configured `ObjectMapper` while keeping
+/// everything else about it.
+///
+/// Declaring your own `ObjectMapper` replaces the auto-configured one
+/// completely, `spring.jackson.*` properties included. A customizer
+/// instead changes one thing on the builder: a setting that has no
+/// property, or a module that should only be added in some cases.
+/// Customizers run after the properties are applied, in `@Order` order,
+/// so they win over the properties.
 ///
 /// ```dart
+/// // The partner API expects snake_case, whatever the properties say.
 /// @Bean()
 /// JsonMapperBuilderCustomizer snakeCase() => JsonMapperBuilderCustomizer.of(
-///   (builder) => builder.namingStrategy = PropertyNamingStrategy.snakeCase,
+///   (builder) =>
+///       builder.propertyNamingStrategy(PropertyNamingStrategy.snakeCase),
 /// );
 /// ```
 ///
@@ -74,12 +90,14 @@ final jacksonAutoConfiguration = <BeanDefinition<Object>>[
 /// }
 /// ```
 abstract interface class JsonMapperBuilderCustomizer {
-  /// A customizer calling [customize].
+  /// A customizer that runs [customize]; the short form for a `@Bean`
+  /// method.
   const factory JsonMapperBuilderCustomizer.of(
     void Function(JsonMapperBuilder builder) customize,
   ) = _FunctionCustomizer;
 
-  /// Changes [builder].
+  /// Changes [builder] before the mapper is built. Called once, when the
+  /// `ObjectMapper` bean is created.
   void customize(JsonMapperBuilder builder);
 }
 
@@ -92,9 +110,27 @@ final class _FunctionCustomizer implements JsonMapperBuilderCustomizer {
   void customize(JsonMapperBuilder builder) => _customize(builder);
 }
 
-/// An [ObjectMapper] configured from `spring.jackson.*` of [environment]
-/// (what the auto-configured bean is); [introspector], [serializers],
-/// [deserializers] and [modules] are passed on.
+/// Builds an [ObjectMapper] from the `spring.jackson.*` properties of
+/// [environment], the same way the auto-configured bean is built.
+///
+/// For code that needs a mapper outside the context: a command-line tool
+/// without beans, a test, or a second mapper with other settings.
+/// [introspector] describes the classes to map (without it the mapper
+/// uses its default); [serializers], [deserializers] and [modules] are
+/// added to the mapper.
+///
+/// ```dart
+/// // In a test: the mapper the application would use.
+/// final mapper = objectMapperFromProperties(
+///   StandardEnvironment()..propertySources.addFirst(
+///     MapPropertySource('test', {
+///       'spring.jackson.property-naming-strategy': 'SNAKE_CASE',
+///     }),
+///   ),
+/// );
+/// ```
+///
+/// The properties:
 ///
 /// | Property | Default |
 /// |---|---|
@@ -112,10 +148,13 @@ final class _FunctionCustomizer implements JsonMapperBuilderCustomizer {
 /// | `spring.jackson.mapper.default-view-inclusion` | `false` |
 /// | `spring.jackson.time-zone` | none (each date in its own zone, read in UTC); `UTC` or a fixed offset such as `+02:00` |
 ///
-/// Any other `spring.jackson.*` key is logged as a warning and ignored (Boot
-/// binds the keys of Jackson's features, which this mapper does not have).
-/// A named time zone (`Europe/Berlin`) throws an [ArgumentError]: Dart has no
-/// time zone database, so only `UTC` / `Z` and fixed offsets work.
+/// Any other `spring.jackson.*` key is logged as a warning and ignored:
+/// Spring Boot binds every Jackson feature flag, and most of them do not
+/// exist in this mapper. A named time zone (`Europe/Berlin`) throws an
+/// [ArgumentError]: Dart has no time zone database, so only `UTC` / `Z`
+/// and fixed offsets work. An unknown naming strategy or inclusion throws
+/// too. A boolean property is on only when its value is `true` (in any
+/// case); any other value turns it off.
 ObjectMapper objectMapperFromProperties(
   Environment environment, {
   BeanIntrospector? introspector,
@@ -130,8 +169,13 @@ ObjectMapper objectMapperFromProperties(
   modules: modules,
 ).build();
 
-/// The [JsonMapperBuilder] of [objectMapperFromProperties], before it is
-/// built (what [JsonMapperBuilderCustomizer]s receive).
+/// The [JsonMapperBuilder] that [objectMapperFromProperties] would build,
+/// with the `spring.jackson.*` properties of [environment] applied.
+///
+/// Use it to change a setting before building the mapper; the
+/// auto-configuration hands this builder to the
+/// [JsonMapperBuilderCustomizer] beans. The parameters are those of
+/// [objectMapperFromProperties].
 JsonMapperBuilder jsonMapperBuilderFromProperties(
   Environment environment, {
   BeanIntrospector? introspector,

@@ -10,25 +10,37 @@ import 'package:spring_boot_starter_feign/src/request_template.dart';
 import 'package:spring_boot_starter_feign/src/retryer.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// Performs the calls of one `@FeignClient` interface: builds the request
-/// from the mapping annotations and arguments, runs the
-/// [RequestInterceptor]s, sends it with retries, turns errors into
-/// exceptions and the body into the method's return type, and calls the
-/// fallback when the call fails. Created by `FeignClientFactory`.
+/// The engine behind one `@FeignClient` interface: the generated class
+/// hands every method call to it, and it makes the HTTP call.
 ///
-/// Every method is checked when the client bean is created, so a path
-/// variable without a parameter or a method without a mapping stops the
-/// application at startup with the reason.
+/// For each call it builds a [RequestTemplate] from the method's mapping
+/// annotations and the arguments, lets the [interceptors] change it, adds
+/// the configured default headers and query parameters, and sends it
+/// through the [transport]. A 2xx answer is decoded into the method's
+/// return type with the [mapper]; another status becomes an exception
+/// through the [errorDecoder]. A `RetryableException` (no connection, a
+/// timeout, a `Retry-After`) is tried again as long as the [retryer]
+/// allows, each attempt on a new template. When the call still fails and
+/// the client has a [fallback], the fallback bean answers instead.
 ///
 /// Methods returning `EventStream<T>` (or `Stream<T>`) read
-/// `text/event-stream` responses: each listener opens a connection, every
-/// event's data is decoded into `T`, and lost connections are opened again
-/// with `Last-Event-ID` (see `FeignClientConfig.eventStreamReconnect`).
+/// `text/event-stream` responses: each listener opens its own connection,
+/// every event's data is decoded into `T`, and a lost connection is opened
+/// again with `Last-Event-ID` (see
+/// [FeignClientConfig.eventStreamReconnect]).
+///
+/// The starter's `FeignClientFactory` creates one per client bean;
+/// applications never create or call it, they call the interface. Every
+/// method is checked at creation, so a path variable without a parameter
+/// or a method without a mapping stops the application at startup with
+/// the reason.
 ///
 /// Spring (Java): Feign's `SynchronousMethodHandler` behind the proxy that
 /// `FeignClientFactoryBean` creates.
 final class FeignInvocationHandler implements InvocationHandler {
-  /// The handler of the interface described by [metadata].
+  /// The handler of the interface described by [metadata]. Throws a
+  /// [StateError] listing every problem found in its methods, or when no
+  /// URL is configured.
   FeignInvocationHandler({
     required InterfaceMetadata<Object> metadata,
     required this.client,
@@ -58,34 +70,40 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
   }
 
-  /// The interface name.
+  /// The name of the interface, such as `CatalogClient`; the logger is
+  /// `feign.<typeName>`.
   final String typeName;
 
-  /// The `@FeignClient` annotation.
+  /// The interface's `@FeignClient` annotation.
   final FeignClient client;
 
-  /// The client's settings.
+  /// The client's settings from `spring.cloud.openfeign.client.config.*`.
   final FeignClientConfig config;
 
-  /// Placeholders in `url`, `path` and headers are resolved here.
+  /// Resolves the `${...}` placeholders of the URL, the paths and the
+  /// mapping headers.
   final Environment environment;
 
-  /// Writes request bodies and reads response bodies.
+  /// Writes request bodies as JSON and reads response bodies.
   final ObjectMapper mapper;
 
   /// Sends the requests.
   final HttpTransport transport;
 
-  /// Applied to every request, in order.
+  /// Change every request before it is sent, in this order, at every
+  /// attempt.
   final List<RequestInterceptor> interceptors;
 
-  /// Turns error responses into exceptions.
+  /// Turns a response with an error status into the exception the call
+  /// throws.
   final ErrorDecoder errorDecoder;
 
-  /// Decides about retries.
+  /// Decides whether and when a failed attempt is tried again; by
+  /// default never.
   final Retryer retryer;
 
-  /// Returns the fallback bean (looked up on the first failure).
+  /// Gives the fallback bean that answers when a call fails; it is looked
+  /// up at the first failure. `null` when the client has none.
   final Object Function()? fallback;
 
   final SpringLog _log;
@@ -210,8 +228,9 @@ final class FeignInvocationHandler implements InvocationHandler {
     throw errorDecoder.decode(plan.methodKey, whole);
   }
 
-  /// Whether a 404 gives an empty result: `@FeignClient(dismiss404:)` or
-  /// the `dismiss404` property.
+  /// Whether a 404 gives an empty result instead of an exception: set by
+  /// `@FeignClient(dismiss404: true)` or the `dismiss404` property. For an
+  /// event stream, a dismissed 404 ends the stream.
   bool get dismiss404 => client.dismiss404 || config.dismiss404;
 
   // A fresh template for a call with [arguments] (and its [multipart]
@@ -394,13 +413,16 @@ final class FeignInvocationHandler implements InvocationHandler {
 }
 
 /// A parameter bound to a path variable, query parameter, header or part:
-/// required unless the parameter is nullable.
+/// its name in the request, its position in the arguments, and whether a
+/// `null` argument is an error (the parameter is not nullable).
 typedef _Binding = ({String name, int index, bool required});
 
-/// An encoded multipart body and its `Content-Type` (with the boundary).
+/// An encoded multipart body and its `Content-Type`, which carries the
+/// boundary.
 typedef _Multipart = ({Uint8List bytes, String contentType});
 
-/// How one method becomes a request, worked out once.
+/// How one method becomes a request and how its answer is read, worked
+/// out once when the client is created.
 final class _Plan {
   _Plan._(
     this.handler,
@@ -709,14 +731,15 @@ final class _Plan {
   final List<(String, String)> staticHeaders;
   final int? body;
 
-  /// The `@RequestPart` parameters of a multipart method (`null`: not
-  /// multipart).
+  /// The `@RequestPart` parameters of a multipart method; `null` for a
+  /// method that sends no multipart body.
   final List<_Binding>? parts;
   final String? produces;
   final String? consumes;
   final List<BeanParameter> parameters;
 
-  /// The data type of an event stream method (`null`: a normal call).
+  /// The data type `T` of a method returning `EventStream<T>`; `null` for
+  /// a normal call.
   final TypeInfo<Object?>? eventType;
 
   ObjectMapper get mapper => handler.mapper;
@@ -751,10 +774,13 @@ final class _Plan {
     parameters[binding.index].name,
   );
 
-  /// A new template for a call with [arguments]: path, query, headers and
-  /// body from the method (the configured defaults come after the
-  /// interceptors, see [applyDefaults]); a multipart method sends
-  /// [multipart] (see [multipart]).
+  /// A new template for a call with [arguments]: the path with its
+  /// variables, the query, the headers and cookies, and the body (for a
+  /// multipart method, the body built by [multipart]). The configured
+  /// defaults are not in it yet: [applyDefaults] adds them after the
+  /// interceptors. A `null` argument for a non-nullable parameter throws
+  /// an [ArgumentError]; for a nullable one, the query parameter, header
+  /// or cookie is left out and a path variable becomes an empty string.
   RequestTemplate template(List<Object?> arguments, _Multipart? multipart) {
     final decodeSlash = handler.config.decodeSlash;
     var expanded = path;
@@ -923,9 +949,10 @@ final class _Plan {
     }
   }
 
-  /// The `multipart/form-data` body of a call with [arguments], or `null`
-  /// for a method without one. Like Spring Cloud OpenFeign's
-  /// `SpringFormEncoder`, each `@RequestPart` becomes:
+  /// The `multipart/form-data` body of a call with [arguments], built
+  /// once per call so that retries send the same bytes; `null` for a
+  /// method without `@RequestPart` parameters. As with Spring Cloud
+  /// OpenFeign's `SpringFormEncoder`, each `@RequestPart` becomes:
   /// - a `MultipartFile` (or a list of them): a file part each, with the
   ///   file's name and content type;
   /// - `Uint8List` / `List<int>`: a file part without file name;
@@ -934,7 +961,8 @@ final class _Plan {
   /// - anything else (an object, a Map, a list of objects): a JSON part
   ///   written with the client's `ObjectMapper`.
   ///
-  /// A null argument leaves the part out (an error when it is required).
+  /// A `null` argument leaves the part out for a nullable parameter, and
+  /// throws an [ArgumentError] for any other.
   Future<_Multipart?> multipart(List<Object?> arguments) async {
     final bindings = parts;
     if (bindings == null) {
@@ -1069,10 +1097,12 @@ final class _Plan {
     ].join('&');
   }
 
-  /// What the configuration adds after the interceptors, for names the
-  /// request does not have yet (like Spring Cloud OpenFeign's
-  /// `default-request-headers` / `default-query-parameters`), and the
-  /// `Accept` header (`produces`, else JSON or `text/event-stream`).
+  /// Adds what the configuration sets for every request, after the
+  /// interceptors ran: the `default-request-headers` and
+  /// `default-query-parameters` whose names the request does not have
+  /// yet, and an `Accept` header when there is none (the mapping's
+  /// `produces`, else `application/json`, or `text/event-stream` for an
+  /// event stream).
   void applyDefaults(RequestTemplate template) {
     final config = handler.config;
     final headers = template.headers;
@@ -1198,7 +1228,8 @@ final class _Plan {
   }
 
   /// Whether [method] returns the raw `HttpResponse` (Feign's
-  /// `Response`): no error decoding, no 404 handling, no body decoding.
+  /// `Response`). Such a method gets every response as it is: no error
+  /// decoding, no 404 handling, no body decoding.
   static bool isRaw(ProxyMethod method) =>
       method.returnType is ClassType<Object?> &&
       method.returnType.type == HttpResponse;
@@ -1286,7 +1317,9 @@ final class _Plan {
   }
 }
 
-/// Builds a `ResponseEntity<T>` with the body type's type argument.
+/// Builds a `ResponseEntity<T>` whose type argument is the declared body
+/// type, so the generated code's cast to the method's return type
+/// succeeds.
 final class _EntityFactory implements TypeInfoVisitor<ResponseEntity<Object?>> {
   _EntityFactory(this.status, this.body, this.headers);
 
@@ -1442,8 +1475,9 @@ final class _EventStreamFactory
 }
 
 /// Whether a custom `JsonDeserializer` of the mapper reads the class: the
-/// sign of a value type with a JSON form of its own (e.g. `Money` as
-/// `"10 EUR"`).
+/// sign of a value type with a JSON form of its own (such as `Money` as
+/// `"10 EUR"`), which may then be used as a single value in a path, query
+/// or header.
 final class _HasDeserializer implements TypeInfoVisitor<bool> {
   _HasDeserializer(this.mapper);
 

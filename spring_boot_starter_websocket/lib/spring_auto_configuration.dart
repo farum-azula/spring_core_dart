@@ -1,5 +1,7 @@
-/// Discovered by the generator of every application that depends on
-/// `spring_boot_starter_websocket` (see `AutoConfigurationModule`).
+/// The starter's auto-configuration. Applications never import it: the
+/// generator finds this file in every dependency and adds its module to
+/// the generated application, which is what makes the dependency alone
+/// enough. A test that builds a context by hand can name it.
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -10,8 +12,9 @@ import 'package:spring_boot_starter_websocket/src/web_socket_auto_configuration.
 // starter can name them.
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
-/// The WebSocket transport and the factory of the `@WebSocketClient`
-/// beans.
+/// The beans behind `@WebSocketClient` interfaces (the transport and the
+/// client factory) and behind server endpoints (the handshake mapping and
+/// the registry of open sessions).
 @AutoConfigurationModule()
 final BeanModule springBootStarterWebsocketAutoConfiguration = BeanModule(
   'springBootStarterWebsocketAutoConfiguration',

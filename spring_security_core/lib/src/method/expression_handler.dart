@@ -5,10 +5,17 @@ import 'package:spring_security_core/src/core/authority.dart';
 import 'package:spring_security_core/src/core/exceptions.dart';
 import 'package:spring_security_core/src/userdetails/user_details.dart';
 
-/// Decides `hasPermission(...)` in security expressions, like Spring's
-/// `PermissionEvaluator`.
+/// The application's answer to `hasPermission(...)` in security
+/// expressions: may this user do this to that object?
+///
+/// Roles say what a user may do in general; permissions are about one
+/// object ("may Ada cancel order 42?"). Write the rule once in a bean of
+/// this type and call it from any `@PreAuthorize` or `@PostAuthorize`.
+/// Without such a bean every `hasPermission` is `false`
+/// ([DenyAllPermissionEvaluator]).
 ///
 /// ```dart
+/// // @PreAuthorize("hasPermission(#order, 'cancel')")
 /// @Component()
 /// class OrderPermissions implements PermissionEvaluator {
 ///   @override
@@ -21,15 +28,21 @@ import 'package:spring_security_core/src/userdetails/user_details.dart';
 ///       String targetType, Object permission) => false;
 /// }
 /// ```
+///
+/// Spring (Java): `PermissionEvaluator`, the same two methods.
 abstract interface class PermissionEvaluator {
-  /// `hasPermission(#order, 'cancel')`.
+  /// Answers `hasPermission(#order, 'cancel')`: whether [authentication]
+  /// may apply [permission] to [targetDomainObject], an object the method
+  /// received or returned.
   bool hasPermission(
     Authentication authentication,
     Object? targetDomainObject,
     Object permission,
   );
 
-  /// `hasPermission(#id, 'Order', 'cancel')`.
+  /// Answers `hasPermission(#id, 'Order', 'cancel')`: the same question
+  /// when only the object's id ([targetId]) and type name ([targetType])
+  /// are known, so the evaluator loads what it needs.
   bool hasPermissionById(
     Authentication authentication,
     Object? targetId,
@@ -38,10 +51,13 @@ abstract interface class PermissionEvaluator {
   );
 }
 
-/// Denies every `hasPermission`, like Spring's `DenyAllPermissionEvaluator`
-/// (the default until the application declares a [PermissionEvaluator]).
+/// The [PermissionEvaluator] used until the application declares one: it
+/// answers `false` to every `hasPermission`, so a forgotten evaluator
+/// denies rather than allows.
+///
+/// Spring (Java): `DenyAllPermissionEvaluator`.
 final class DenyAllPermissionEvaluator implements PermissionEvaluator {
-  /// The evaluator.
+  /// The stateless evaluator.
   const DenyAllPermissionEvaluator();
 
   @override
@@ -60,11 +76,18 @@ final class DenyAllPermissionEvaluator implements PermissionEvaluator {
   ) => false;
 }
 
-/// Changes the evaluation context of security expressions: add property
-/// accessors for the application's principal types, variables, functions.
-/// Every bean of this type is applied.
+/// A hook that adjusts every evaluation context of security expressions,
+/// to make more things readable in `@PreAuthorize` and its siblings.
+///
+/// Expressions can read the built-in security types and the classes of
+/// the bean's package. Declare a bean of this type to add property
+/// accessors for other classes (such as your principal type from another
+/// package), variables or functions. Every bean of this type is applied,
+/// to each call's context.
 ///
 /// ```dart
+/// // Lets expressions read `principal.tenant` on the Account principal.
+/// // @PreAuthorize('#doc.tenant == principal.tenant')
 /// @Component()
 /// class AccountExpressions implements SecurityExpressionContextCustomizer {
 ///   @override
@@ -73,15 +96,25 @@ final class DenyAllPermissionEvaluator implements PermissionEvaluator {
 ///           getters: {'tenant': (a) => a.tenant}));
 /// }
 /// ```
+///
+/// Spring has no such interface: there you customize the
+/// `MethodSecurityExpressionHandler` bean.
 abstract interface class SecurityExpressionContextCustomizer {
-  /// Adjusts [context].
+  /// Adds accessors, variables or functions to [context], which is built
+  /// for one call and already holds the arguments.
   void customize(StandardEvaluationContext context);
 }
 
-/// The root object of security expressions, like Spring's
-/// `MethodSecurityExpressionRoot`: `hasRole`, `principal`, ...
+/// What a security expression reads its names from: `hasRole(...)`,
+/// `principal`, `returnObject` and the rest are members of this object.
+///
+/// Method security creates one per call; applications do not. Its
+/// methods describe what each function in an expression does.
+///
+/// Spring (Java): `MethodSecurityExpressionRoot`.
 final class MethodSecurityExpressionRoot {
-  /// The root for [authentication] (read when first needed).
+  /// A root for the user [authentication] returns, called only when an
+  /// expression first needs the user.
   MethodSecurityExpressionRoot(
     this._authentication, {
     this.trustResolver = const AuthenticationTrustResolverImpl(),
@@ -93,33 +126,39 @@ final class MethodSecurityExpressionRoot {
 
   final Authentication? Function() _authentication;
 
-  /// Tells anonymous from authenticated.
+  /// Tells anonymous users from real logins for `isAuthenticated()` and
+  /// `isAnonymous()`.
   final AuthenticationTrustResolver trustResolver;
 
-  /// Expands roles.
+  /// Adds the authorities implied by the user's roles before
+  /// `hasRole` and `hasAuthority` checks.
   final RoleHierarchy roleHierarchy;
 
-  /// Answers `hasPermission`.
+  /// Answers `hasPermission(...)`.
   final PermissionEvaluator permissionEvaluator;
 
-  /// Added to roles without it.
+  /// The prefix `hasRole` adds to a role that does not start with it;
+  /// `ROLE_` by default.
   final String defaultRolePrefix;
 
-  /// The bean the method belongs to (`this`).
+  /// The bean whose method is called; `this` in an expression.
   final Object? target;
 
-  /// The returned value (`@PostAuthorize`).
+  /// What the method returned, for `@PostAuthorize` (`returnObject`);
+  /// `null` before the method has run.
   Object? returnObject;
 
-  /// The element being filtered (`@PreFilter`, `@PostFilter`).
+  /// The element being tested by `@PreFilter` or `@PostFilter`
+  /// (`filterObject`).
   Object? filterObject;
 
   Set<String>? _authorities;
 
-  /// The current authentication (`null` when there is none).
+  /// The current user (`authentication`); `null` when there is none.
   Authentication? get authentication => _authentication();
 
-  /// The principal of [authentication].
+  /// The principal of [authentication] (`principal`), usually a
+  /// `UserDetails`.
   Object? get principal => authentication?.principal;
 
   Set<String> get _held => _authorities ??= AuthorityUtils.authorityListToSet(
@@ -128,17 +167,22 @@ final class MethodSecurityExpressionRoot {
     ),
   );
 
-  /// Whether the user has [authority].
+  /// Whether the user has [authority], written in full
+  /// (`SCOPE_read`), after the role hierarchy expanded the user's
+  /// authorities.
   bool hasAuthority(String authority) => _held.contains(authority);
 
-  /// Whether the user has one of [authorities].
+  /// Whether the user has one of [authorities], written in full.
   bool hasAnyAuthority(List<String> authorities) =>
       authorities.any(_held.contains);
 
-  /// Whether the user has [role] (the prefix is added when missing).
+  /// Whether the user has [role]: `hasRole('ADMIN')` looks for
+  /// `ROLE_ADMIN`; a role that already starts with the prefix is used as
+  /// written.
   bool hasRole(String role) => hasAnyRole([role]);
 
-  /// Whether the user has one of [roles].
+  /// Whether the user has one of [roles], each with the prefix added
+  /// when missing.
   bool hasAnyRole(List<String> roles) => roles.any(
     (role) => _held.contains(
       defaultRolePrefix.isEmpty || role.startsWith(defaultRolePrefix)
@@ -147,21 +191,26 @@ final class MethodSecurityExpressionRoot {
     ),
   );
 
-  /// Whether the request is authenticated and not anonymous.
+  /// Whether the user really logged in (not anonymous).
   bool isAuthenticated() => trustResolver.isAuthenticated(authentication);
 
-  /// Whether the user logged in fully (not remembered).
+  /// Whether the user logged in during this session (not "remember me");
+  /// here the same as [isAuthenticated].
   bool isFullyAuthenticated() =>
       trustResolver.isFullyAuthenticated(authentication);
 
-  /// Whether the request is anonymous.
+  /// Whether the user is anonymous (has not logged in).
   bool isAnonymous() => trustResolver.isAnonymous(authentication);
 
-  /// Whether the user came back through remember-me.
+  /// Whether the user came back through a "remember me" cookie; always
+  /// `false` with the default resolver.
   bool isRememberMe() => trustResolver.isRememberMe(authentication);
 
   /// `hasPermission(target, permission)` or
-  /// `hasPermission(id, type, permission)`.
+  /// `hasPermission(id, type, permission)`, answered by the
+  /// [permissionEvaluator]; `false` without a user.
+  ///
+  /// Throws an [ArgumentError] for any other list of [arguments].
   bool hasPermission(List<Object?> arguments) {
     final authentication = this.authentication;
     if (authentication == null) {
@@ -184,11 +233,20 @@ final class MethodSecurityExpressionRoot {
   }
 }
 
-/// Builds the evaluation contexts of security expressions, like Spring's
-/// `DefaultMethodSecurityExpressionHandler`.
+/// The engine behind method security: it parses the expressions of the
+/// security annotations and evaluates them for each call.
+///
+/// The auto-configuration builds it from the optional `RoleHierarchy`,
+/// `PermissionEvaluator`, `GrantedAuthorityDefaults` and
+/// [SecurityExpressionContextCustomizer] beans, so applications change
+/// its behaviour by declaring those. Declare your own bean of this type
+/// only to replace all of it.
+///
+/// Spring (Java): `DefaultMethodSecurityExpressionHandler`.
 final class MethodSecurityExpressionHandler {
-  /// A handler; [introspector] reads the application's classes (the
-  /// arguments), [beanFactory] resolves `@bean` references.
+  /// A handler. [introspector] makes the application's classes (the
+  /// arguments) readable in expressions, and [beanFactory] resolves
+  /// `@bean` references; without them, those parts of an expression fail.
   MethodSecurityExpressionHandler({
     this.introspector,
     this.beanFactory,
@@ -199,35 +257,41 @@ final class MethodSecurityExpressionHandler {
     List<SecurityExpressionContextCustomizer> customizers = const [],
   }) : customizers = List.unmodifiable(customizers);
 
-  /// Reads the application's classes.
+  /// Makes the application's classes readable in expressions; `null`
+  /// leaves only the security types readable.
   final BeanIntrospector? introspector;
 
-  /// Resolves `@bean` in expressions.
+  /// Resolves `@bean` references in expressions; `null` makes them
+  /// fail.
   final BeanFactory? beanFactory;
 
-  /// Tells anonymous from authenticated.
+  /// Tells anonymous users from real logins.
   final AuthenticationTrustResolver trustResolver;
 
-  /// Expands roles.
+  /// Adds the authorities implied by the user's roles.
   final RoleHierarchy roleHierarchy;
 
-  /// Answers `hasPermission`.
+  /// Answers `hasPermission(...)`.
   final PermissionEvaluator permissionEvaluator;
 
-  /// Added to roles without it.
+  /// The prefix `hasRole` adds; `ROLE_` by default.
   final String defaultRolePrefix;
 
-  /// Applied to every context.
+  /// Run on every evaluation context, in order.
   final List<SecurityExpressionContextCustomizer> customizers;
 
   final _parser = SpelExpressionParser();
   final _expressions = <String, Expression>{};
 
-  /// The parsed [text] (cached).
+  /// The parsed expression [text], cached after the first call.
+  ///
+  /// Throws when [text] is not valid SpEL; startup calls it for every
+  /// annotation so a broken expression stops the application.
   Expression parse(String text) =>
       _expressions[text] ??= _parser.parseExpression(text);
 
-  /// The root of a call by [authentication] on [target].
+  /// A new root object for one call on [target]; [authentication] is
+  /// called only when an expression needs the user.
   MethodSecurityExpressionRoot createRoot(
     Authentication? Function() authentication, {
     Object? target,
@@ -240,7 +304,9 @@ final class MethodSecurityExpressionHandler {
     target: target,
   );
 
-  /// A context for [root] with the arguments [args] of [signature].
+  /// A new evaluation context for [root] in which the arguments [args] of
+  /// [signature] are variables: by name (`#order`) and by position (`#p0`,
+  /// `#a0`). The customizers have run on it.
   StandardEvaluationContext createEvaluationContext(
     MethodSecurityExpressionRoot root,
     MethodSignature signature,
@@ -271,8 +337,12 @@ final class MethodSecurityExpressionHandler {
     return context;
   }
 
-  /// Evaluates [text] to a `bool`; anything else is an error (a broken
-  /// expression must never let a call through).
+  /// Evaluates the expression [text] in [context] and returns its `bool`.
+  ///
+  /// A broken expression must never let a call through: any error while
+  /// evaluating, or a result that is not a `bool`, throws an
+  /// [ArgumentError] naming the expression. An [AuthenticationException]
+  /// (no user at all) is thrown as it is.
   bool evaluate(String text, StandardEvaluationContext context) {
     final Object? value;
     try {

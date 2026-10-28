@@ -4,22 +4,32 @@ import 'package:spring_security_core/src/core/authentication.dart';
 import 'package:spring_security_core/src/core/authority.dart';
 import 'package:spring_security_core/src/core/exceptions.dart';
 
-/// The outcome of an authorization check, like Spring's
-/// `AuthorizationResult`.
+/// The answer of an access check: granted or not.
+///
+/// An [AuthorizationManager] returns one. Implement it only to carry more
+/// facts about a decision; otherwise return an [AuthorizationDecision].
+///
+/// Spring (Java): `AuthorizationResult`.
 abstract interface class AuthorizationResult {
-  /// Whether access is granted.
+  /// `true` lets the request or call through; `false` denies it.
   bool get isGranted;
 }
 
-/// A plain yes or no, like Spring's `AuthorizationDecision`.
+/// The usual [AuthorizationResult]: a plain yes or no.
+///
+/// ```dart
+/// return AuthorizationDecision(order.owner == user.name);
+/// ```
+///
+/// Spring (Java): `AuthorizationDecision`.
 class AuthorizationDecision implements AuthorizationResult {
-  /// A decision.
+  /// Grants when [isGranted] is `true`, denies otherwise.
   const AuthorizationDecision(this.isGranted);
 
-  /// Granted.
+  /// The shared "granted" decision.
   static const granted = AuthorizationDecision(true);
 
-  /// Denied.
+  /// The shared "denied" decision.
   static const denied = AuthorizationDecision(false);
 
   @override
@@ -32,13 +42,18 @@ class AuthorizationDecision implements AuthorizationResult {
   String toString() => '$runtimeType [granted=$isGranted]';
 }
 
-/// A decision about authorities, saying which were asked for, like
-/// Spring's `AuthorityAuthorizationDecision`.
+/// An [AuthorizationDecision] of a role or authority check that also says
+/// which authorities would have granted access, for logs and error pages.
+///
+/// [AuthorityAuthorizationManager] returns it.
+///
+/// Spring (Java): `AuthorityAuthorizationDecision`.
 class AuthorityAuthorizationDecision extends AuthorizationDecision {
-  /// A decision for [authorities].
+  /// A decision, granted or not, of a check for [authorities].
   const AuthorityAuthorizationDecision(super.isGranted, this.authorities);
 
-  /// The authorities that would grant access.
+  /// The authority names the check looked for, such as `ROLE_ADMIN`; any
+  /// one of them grants access.
   final List<String> authorities;
 
   @override
@@ -49,42 +64,94 @@ class AuthorityAuthorizationDecision extends AuthorizationDecision {
       '$runtimeType [granted=$isGranted, authorities=$authorities]';
 }
 
-/// Access was denied by an [AuthorizationManager], like Spring's
-/// `AuthorizationDeniedException`; a 403 (or a login challenge for an
-/// anonymous request).
+/// The [AccessDeniedException] thrown when an access check says no; it
+/// carries the [result] that denied.
+///
+/// Method security and the web starter's request rules throw it. A web
+/// request that fails with it is answered 403, or asked to log in (401 or
+/// a redirect) when the user is anonymous. Catch [AccessDeniedException]
+/// rather than this class unless you need the [result].
+///
+/// Spring (Java): `AuthorizationDeniedException`.
 class AuthorizationDeniedException extends AccessDeniedException {
-  /// Denied with [result].
+  /// A denial with a log [message] and the [result] that denied.
   AuthorizationDeniedException(super.message, this.result);
 
-  /// The result that denied.
+  /// The decision that denied; [AuthorizationDecision.denied] when the
+  /// check abstained.
   final AuthorizationResult result;
 }
 
-/// Decides whether the current user may access an object of type [T] (a
-/// request, a method call), like Spring's `AuthorizationManager`.
+/// An access check: given the current user and the thing being accessed,
+/// of type [T], it decides whether access is granted.
+///
+/// Every rule of the web starter is one: `hasRole('ADMIN')`,
+/// `authenticated()` and `permitAll()` in `authorizeHttpRequests` build
+/// the managers of this file, with `RequestAuthorizationContext` as [T].
+/// Write your own when a rule cannot be said with roles, for example "only
+/// the user named in the path", and pass it to `access(...)`.
 ///
 /// ```dart
-/// final class OwnerAuthorizationManager
-///     implements AuthorizationManager<MethodInvocation> {
+/// // Only the user named in the path may use /users/{name}/**.
+/// final class SameUser
+///     implements AuthorizationManager<RequestAuthorizationContext> {
+///   const SameUser();
+///
 ///   @override
-///   AuthorizationResult? authorize(authentication, invocation) =>
-///       AuthorizationDecision(
-///           (invocation.arguments.first as Order).owner ==
-///               authentication()?.name);
+///   AuthorizationResult authorize(
+///     Authentication? Function() authentication,
+///     RequestAuthorizationContext context,
+///   ) {
+///     final user = authentication();
+///     // Anonymous users have a name too ('anonymousUser'): check first.
+///     return AuthorizationDecision(
+///       const AuthenticationTrustResolverImpl().isAuthenticated(user) &&
+///           user!.name == context.variables['name'],
+///     );
+///   }
 /// }
+///
+/// // In the SecurityFilterChain bean:
+/// http.authorizeHttpRequests((auth) => auth
+///     .requestMatchers('/users/{name}/**').access(const SameUser())
+///     .anyRequest().authenticated());
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// http.authorizeHttpRequests(auth -> auth
+///     .requestMatchers("/users/{name}/**").access((authentication, context) ->
+///         new AuthorizationDecision(
+///             authentication.get().getName()
+///                 .equals(context.getVariables().get("name"))))
+///     .anyRequest().authenticated());
 /// ```
 abstract interface class AuthorizationManager<T> {
-  /// The decision for [object]; `null` abstains. [authentication] reads the
-  /// current authentication (`null` when there is none) only if needed.
+  /// Decides whether the current user may access [object].
+  ///
+  /// [authentication] returns the current user. Call it only when the
+  /// decision needs the user, so rules like `permitAll()` cost nothing.
+  /// When there is no authentication at all, the web starter's filter and
+  /// method security make it throw an
+  /// `AuthenticationCredentialsNotFoundException`, which asks the client to
+  /// log in.
+  ///
+  /// Return `null` to abstain. The caller treats an abstention like a
+  /// denial (fail closed), except inside [AuthorizationManagers]
+  /// combinations.
   FutureOr<AuthorizationResult?> authorize(
     Authentication? Function() authentication,
     T object,
   );
 }
 
-/// Calls [manager] and throws [AuthorizationDeniedException] unless it
-/// granted (an abstention denies: fail closed), like Spring's
-/// `AuthorizationManager.verify`.
+/// Asks [manager] about [object] and throws an
+/// [AuthorizationDeniedException] unless it granted access.
+///
+/// An abstention (`null`) denies too: when nothing says yes, the answer is
+/// no. Use it to enforce a manager in your own code.
+///
+/// Spring (Java): `AuthorizationManager.verify`.
 Future<void> verifyAuthorization<T>(
   AuthorizationManager<T> manager,
   Authentication? Function() authentication,
@@ -99,28 +166,44 @@ Future<void> verifyAuthorization<T>(
   }
 }
 
-/// Tells anonymous and full logins apart, like Spring's
-/// `AuthenticationTrustResolver`.
+/// Tells what kind of login an [Authentication] is: anonymous,
+/// "remember me", or a real one.
+///
+/// An anonymous user has an [Authentication] whose `isAuthenticated` flag
+/// is `true`, so that flag alone cannot tell a logged-in user. Rules such
+/// as `authenticated()` and `isAnonymous()` ask this resolver. Use
+/// [AuthenticationTrustResolverImpl] in your own checks.
+///
+/// Spring (Java): `AuthenticationTrustResolver`.
 abstract interface class AuthenticationTrustResolver {
-  /// Whether [authentication] is anonymous.
+  /// Whether [authentication] is an anonymous user, one who has not
+  /// logged in.
   bool isAnonymous(Authentication? authentication);
 
-  /// Whether [authentication] comes from a remember-me cookie.
+  /// Whether [authentication] comes from a "remember me" cookie rather
+  /// than a login in this session.
   bool isRememberMe(Authentication? authentication);
 
-  /// Whether [authentication] is authenticated and not anonymous.
+  /// Whether [authentication] is a real login: present, authenticated and
+  /// not anonymous.
   bool isAuthenticated(Authentication? authentication);
 
-  /// Whether [authentication] is authenticated, not anonymous and not
-  /// remembered.
+  /// Whether [authentication] is a real login made in this session, not
+  /// restored from a "remember me" cookie.
   bool isFullyAuthenticated(Authentication? authentication);
 }
 
-/// The default [AuthenticationTrustResolver], like Spring's
-/// `AuthenticationTrustResolverImpl`.
+/// The standard [AuthenticationTrustResolver]: an
+/// [AnonymousAuthenticationToken] is anonymous, everything else that is
+/// authenticated is a real login.
+///
+/// There is no "remember me" login in these packages, so [isRememberMe]
+/// is always `false` and [isFullyAuthenticated] equals [isAuthenticated].
+///
+/// Spring (Java): `AuthenticationTrustResolverImpl`.
 final class AuthenticationTrustResolverImpl
     implements AuthenticationTrustResolver {
-  /// The resolver.
+  /// The stateless resolver.
   const AuthenticationTrustResolverImpl();
 
   @override
@@ -141,18 +224,29 @@ final class AuthenticationTrustResolverImpl
       isAuthenticated(authentication) && !isRememberMe(authentication);
 }
 
-/// Which roles imply which, like Spring's `RoleHierarchy`.
+/// The rule that a role includes others, such as "an admin can do all a
+/// staff member can".
+///
+/// Without one, a check for `ROLE_STAFF` fails for a user who only has
+/// `ROLE_ADMIN`, so every rule would have to list both. Declare a
+/// [RoleHierarchyImpl] bean and the role and authority checks (web rules,
+/// `hasRole` in expressions, `@Secured`) use the expanded authorities.
+///
+/// Spring (Java): `RoleHierarchy`.
 abstract interface class RoleHierarchy {
-  /// [authorities] with those they imply added.
+  /// [authorities] plus every authority they imply, directly or through
+  /// other roles.
   List<GrantedAuthority> getReachableGrantedAuthorities(
     Iterable<GrantedAuthority> authorities,
   );
 }
 
-/// No hierarchy: each role is only itself, like Spring's
-/// `NullRoleHierarchy`.
+/// The [RoleHierarchy] used when the application declares none: every
+/// role is only itself.
+///
+/// Spring (Java): `NullRoleHierarchy`.
 final class NullRoleHierarchy implements RoleHierarchy {
-  /// The empty hierarchy.
+  /// The hierarchy that adds nothing.
   const NullRoleHierarchy();
 
   @override
@@ -161,20 +255,41 @@ final class NullRoleHierarchy implements RoleHierarchy {
   ) => List.of(authorities);
 }
 
-/// A hierarchy from lines like `ROLE_ADMIN > ROLE_STAFF`, like Spring's
-/// `RoleHierarchyImpl`: an admin also has the staff's authorities (and
-/// those staff imply, transitively).
+/// A [RoleHierarchy] written as text, one rule per line:
+/// `ROLE_ADMIN > ROLE_STAFF` means an admin also has every authority of
+/// staff.
+///
+/// The rules chain: with `ROLE_ADMIN > ROLE_STAFF` and
+/// `ROLE_STAFF > ROLE_USER`, an admin is also a user. Declare it as a bean
+/// to make it apply everywhere.
 ///
 /// ```dart
-/// final hierarchy = RoleHierarchyImpl.fromHierarchy('''
+/// @Bean()
+/// RoleHierarchy roleHierarchy() => RoleHierarchyImpl.fromHierarchy('''
 ///   ROLE_ADMIN > ROLE_STAFF
 ///   ROLE_STAFF > ROLE_USER
 /// ''');
 /// ```
+///
+/// Spring (Java):
+/// ```java
+/// @Bean
+/// static RoleHierarchy roleHierarchy() {
+///   return RoleHierarchyImpl.fromHierarchy("""
+///       ROLE_ADMIN > ROLE_STAFF
+///       ROLE_STAFF > ROLE_USER
+///       """);
+/// }
+/// ```
 final class RoleHierarchyImpl implements RoleHierarchy {
   RoleHierarchyImpl._(this._reachable);
 
-  /// Parses [hierarchy]: one `A > B` (or `A > B > C`) per line.
+  /// Parses [hierarchy]: one `A > B` or `A > B > C` rule per line, with
+  /// full authority names (`ROLE_ADMIN`, not `ADMIN`); blank lines are
+  /// skipped.
+  ///
+  /// Throws an [ArgumentError] for a line that is not such a rule and for
+  /// a cycle (`A > B` and `B > A`).
   factory RoleHierarchyImpl.fromHierarchy(String hierarchy) {
     final direct = <String, Set<String>>{};
     for (final raw in hierarchy.split('\n')) {
@@ -229,9 +344,23 @@ final class RoleHierarchyImpl implements RoleHierarchy {
   }
 }
 
-/// Grants when the authentication has one of [authorities], like Spring's
-/// `AuthorityAuthorizationManager`; never for a missing or unauthenticated
-/// one.
+/// An [AuthorizationManager] that grants access when the user has one of
+/// the given [authorities], after the [roleHierarchy] expanded the user's
+/// own.
+///
+/// It is behind `hasRole`, `hasAnyRole`, `hasAuthority` and
+/// `hasAnyAuthority` of the web rules, and behind `@Secured`. It denies
+/// when there is no authentication or its `isAuthenticated` flag is
+/// `false`. An anonymous user has that flag set, so a rule for
+/// `ROLE_ANONYMOUS` grants them.
+///
+/// ```dart
+/// // A rule built by hand, for code that composes managers.
+/// final admins = AuthorityAuthorizationManager<RequestAuthorizationContext>
+///     .hasRole('ADMIN');
+/// ```
+///
+/// Spring (Java): `AuthorityAuthorizationManager.hasRole("ADMIN")`.
 final class AuthorityAuthorizationManager<T>
     implements AuthorizationManager<T> {
   AuthorityAuthorizationManager._(
@@ -239,7 +368,12 @@ final class AuthorityAuthorizationManager<T>
     this.roleHierarchy = const NullRoleHierarchy(),
   });
 
-  /// Grants with the role [role] (`hasRole('ADMIN')` → `ROLE_ADMIN`).
+  /// Grants users with the role [role]: `hasRole('ADMIN')` looks for
+  /// `ROLE_ADMIN`.
+  ///
+  /// Throws an [ArgumentError] when [role] already starts with
+  /// [rolePrefix]; use [AuthorityAuthorizationManager.hasAuthority] for
+  /// full names.
   factory AuthorityAuthorizationManager.hasRole(
     String role, {
     String rolePrefix = 'ROLE_',
@@ -250,7 +384,10 @@ final class AuthorityAuthorizationManager<T>
     roleHierarchy: roleHierarchy,
   );
 
-  /// Grants with any of [roles].
+  /// Grants users with any of [roles], each with [rolePrefix] added.
+  ///
+  /// Throws an [ArgumentError] when a role already starts with
+  /// [rolePrefix].
   factory AuthorityAuthorizationManager.hasAnyRole(
     List<String> roles, {
     String rolePrefix = 'ROLE_',
@@ -270,7 +407,7 @@ final class AuthorityAuthorizationManager<T>
     ], roleHierarchy: roleHierarchy);
   }
 
-  /// Grants with the authority [authority].
+  /// Grants users with [authority], used as written (no prefix added).
   factory AuthorityAuthorizationManager.hasAuthority(
     String authority, {
     RoleHierarchy roleHierarchy = const NullRoleHierarchy(),
@@ -278,7 +415,7 @@ final class AuthorityAuthorizationManager<T>
     authority,
   ], roleHierarchy: roleHierarchy);
 
-  /// Grants with any of [authorities].
+  /// Grants users with any of [authorities], used as written.
   factory AuthorityAuthorizationManager.hasAnyAuthority(
     List<String> authorities, {
     RoleHierarchy roleHierarchy = const NullRoleHierarchy(),
@@ -287,10 +424,10 @@ final class AuthorityAuthorizationManager<T>
     roleHierarchy: roleHierarchy,
   );
 
-  /// The authorities that grant.
+  /// The full authority names, any one of which grants access.
   final List<String> authorities;
 
-  /// Expands the user's roles.
+  /// Adds the authorities implied by the user's roles before the check.
   final RoleHierarchy roleHierarchy;
 
   @override
@@ -318,25 +455,33 @@ final class AuthorityAuthorizationManager<T>
       'AuthorityAuthorizationManager[authorities=$authorities]';
 }
 
-/// Grants by how the request is authenticated, like Spring's
-/// `AuthenticatedAuthorizationManager`.
+/// An [AuthorizationManager] that grants by the kind of login, not by
+/// authorities: any real login, a full login, or only anonymous users.
+///
+/// It is behind the web rules `authenticated()`, `fullyAuthenticated()`
+/// and `anonymous()`.
+///
+/// Spring (Java): `AuthenticatedAuthorizationManager`.
 final class AuthenticatedAuthorizationManager<T>
     implements AuthorizationManager<T> {
   const AuthenticatedAuthorizationManager._(this._kind, this._resolver);
 
-  /// Any authenticated, non-anonymous request.
+  /// Grants any real login; denies anonymous users and requests with no
+  /// authentication.
   const AuthenticatedAuthorizationManager.authenticated({
     AuthenticationTrustResolver resolver =
         const AuthenticationTrustResolverImpl(),
   }) : this._(_Kind.authenticated, resolver);
 
-  /// A full login (not remembered).
+  /// Grants a real login made in this session (not "remember me"); here
+  /// the same as [AuthenticatedAuthorizationManager.authenticated].
   const AuthenticatedAuthorizationManager.fullyAuthenticated({
     AuthenticationTrustResolver resolver =
         const AuthenticationTrustResolverImpl(),
   }) : this._(_Kind.fully, resolver);
 
-  /// Only anonymous requests.
+  /// Grants only anonymous users, for pages such as a login or sign-up
+  /// form that logged-in users should not see.
   const AuthenticatedAuthorizationManager.anonymous({
     AuthenticationTrustResolver resolver =
         const AuthenticationTrustResolverImpl(),
@@ -364,22 +509,26 @@ final class AuthenticatedAuthorizationManager<T>
 
 enum _Kind { authenticated, fully, anonymous }
 
-/// The same answer for everything: `permitAll()` / `denyAll()`, like
-/// Spring's `SingleResultAuthorizationManager`.
+/// An [AuthorizationManager] that gives the same answer every time,
+/// without looking at the user.
+///
+/// It is behind the web rules `permitAll()` and `denyAll()`.
+///
+/// Spring (Java): `SingleResultAuthorizationManager`.
 final class SingleResultAuthorizationManager<T>
     implements AuthorizationManager<T> {
-  /// Always [result].
+  /// A manager that always answers [result].
   const SingleResultAuthorizationManager(this.result);
 
-  /// Always granted.
+  /// Grants everyone, logged in or not.
   const SingleResultAuthorizationManager.permitAll()
     : result = AuthorizationDecision.granted;
 
-  /// Always denied.
+  /// Denies everyone, even logged-in users.
   const SingleResultAuthorizationManager.denyAll()
     : result = AuthorizationDecision.denied;
 
-  /// The answer.
+  /// The answer given every time.
   final AuthorizationResult result;
 
   @override
@@ -393,21 +542,39 @@ final class SingleResultAuthorizationManager<T>
       'SingleResultAuthorizationManager[granted=${result.isGranted}]';
 }
 
-/// Combinations of managers, like Spring's `AuthorizationManagers`.
+/// Builds one [AuthorizationManager] out of several: either, both, or the
+/// opposite.
+///
+/// ```dart
+/// // Admins, or the user named in the path.
+/// final rule = AuthorizationManagers.anyOf<RequestAuthorizationContext>([
+///   AuthorityAuthorizationManager.hasRole('ADMIN'),
+///   const SameUser(),
+/// ]);
+/// ```
+///
+/// Spring (Java): `AuthorizationManagers`.
 abstract final class AuthorizationManagers {
-  /// Granted when any of [managers] grants; denied when one denies and
-  /// none grants; abstains (so the caller denies) when all abstain.
+  /// A manager that asks [managers] in order and grants as soon as one
+  /// grants.
+  ///
+  /// It denies when at least one denied and none granted, and abstains
+  /// (so the caller denies) when all abstain.
   static AuthorizationManager<T> anyOf<T>(
     List<AuthorizationManager<T>> managers,
   ) => _Combined(managers, any: true);
 
-  /// Granted when all of [managers] grant (abstentions ignored, at least
-  /// one must grant).
+  /// A manager that asks [managers] in order and denies as soon as one
+  /// denies.
+  ///
+  /// Abstentions are skipped. It grants when at least one granted and none
+  /// denied, and abstains (so the caller denies) when all abstain.
   static AuthorizationManager<T> allOf<T>(
     List<AuthorizationManager<T>> managers,
   ) => _Combined(managers, any: false);
 
-  /// The opposite of [manager] (an abstention stays one).
+  /// A manager answering the opposite of [manager]; an abstention stays an
+  /// abstention, so the caller still denies.
   static AuthorizationManager<T> not<T>(AuthorizationManager<T> manager) =>
       _Not(manager);
 }

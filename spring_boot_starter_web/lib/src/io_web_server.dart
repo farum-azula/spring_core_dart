@@ -10,11 +10,32 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.server');
 
-/// The default [WebServerFactory]: `dart:io`'s `HttpServer`, on the VM and
-/// in Flutter apps on mobile and desktop. Spring Boot's
-/// `TomcatServletWebServerFactory` in its place.
+/// Creates the HTTP server the starter uses by default: `dart:io`'s
+/// `HttpServer`, on the VM and in Flutter apps on mobile and desktop.
+///
+/// The starter declares one as the `webServerFactory` bean, with
+/// [settings] read from `server.*` and then passed to every
+/// `WebServerFactoryCustomizer` bean. Applications rarely touch it: they
+/// set properties, or change [settings] in a customizer. Import it from
+/// `package:spring_boot_starter_web/io.dart` to wrap it in a factory of
+/// your own, or to start a server outside the context, for example in a
+/// tool.
+///
+/// ```dart
+/// // A server for a test, on a free port, answering with a plain handler.
+/// final server = IoWebServerFactory(const ServerProperties(port: 0))
+///     .getWebServer(FunctionHttpHandler(
+///       (request, response) => response.send(200, 'pong'),
+///     ));
+/// await server.start();
+/// print('listening on ${server.port}');
+/// ```
+///
+/// Spring Boot's default is Tomcat (`TomcatServletWebServerFactory`) in
+/// its place.
 final class IoWebServerFactory implements ConfigurableWebServerFactory {
-  /// A factory with [settings] (`server.*`).
+  /// A factory whose servers use [settings]; Spring Boot's defaults when
+  /// none are given (port 8080, all addresses).
   IoWebServerFactory([this.settings = const ServerProperties()]);
 
   @override
@@ -24,15 +45,34 @@ final class IoWebServerFactory implements ConfigurableWebServerFactory {
   WebServer getWebServer(HttpHandler handler) => IoWebServer(handler, settings);
 }
 
-/// A [WebServer] on `dart:io`'s `HttpServer`.
+/// An HTTP server on `dart:io`'s `HttpServer`, made by
+/// [IoWebServerFactory].
+///
+/// [start] binds the socket (with TLS when [settings] have `ssl`), and
+/// every request goes to [handler] as a `ServerHttpRequest` and
+/// `ServerHttpResponse`. A port in use is a [PortInUseException], any
+/// other failure to listen a [WebServerException]. Requests with a method
+/// that `HttpMethod` does not list get a 501, and, with
+/// `server.ssl.client-auth=need`, requests without a client certificate a
+/// 403. [stop] follows `server.shutdown`: gracefully, running requests
+/// may finish within the timeout; event streams and WebSocket sessions
+/// are closed at once in both modes.
+///
+/// The `Server` header is not sent, nor `X-XSS-Protection`; `dart:io`'s
+/// `X-Frame-Options: SAMEORIGIN` and `X-Content-Type-Options: nosniff`
+/// stay.
+///
+/// The starter's lifecycle bean starts and stops it with the context;
+/// applications do not create one directly.
 final class IoWebServer implements WebServer {
-  /// A server handing requests to [handler], with [settings].
+  /// A server that hands requests to [handler] and listens as [settings]
+  /// say.
   IoWebServer(this.handler, this.settings);
 
-  /// Answers the requests.
+  /// Answers every request; in the application, the `dispatcherHandler`.
   final HttpHandler handler;
 
-  /// The `server.*` settings.
+  /// The `server.*` settings: address, port, TLS, compression, shutdown.
   final ServerProperties settings;
 
   io.HttpServer? _server;
@@ -227,7 +267,8 @@ final class IoWebServer implements WebServer {
   }
 }
 
-/// One request and its response.
+/// One request in progress and its response, tracked so that a stop can
+/// wait for it or end it.
 final class _Exchange {
   _Exchange(this.server, this.ioRequest)
     : response = _IoResponse(ioRequest.response);
@@ -404,7 +445,8 @@ final class _IoResponse implements ServerHttpResponse {
 
   var _closed = false;
 
-  /// An event stream or NDJSON: closed at shutdown instead of awaited.
+  /// Whether the response is an event stream or NDJSON, which never ends
+  /// by itself: a stop closes it instead of waiting for it.
   bool get isStreaming {
     final type = (headers.contentType ?? '').toLowerCase();
     return type.startsWith(MediaType.textEventStream) ||

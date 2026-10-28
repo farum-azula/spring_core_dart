@@ -26,31 +26,55 @@ const _outputExtension = '.spring.dart';
 
 const _bootUrl = 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// `@SpringBootApplication` from `spring_boot_dart` (matched by URL, so the
-/// generator does not depend on that package).
+/// Recognises `@SpringBootApplication` from `spring_boot_dart`, which marks
+/// the `main` whose output scans the whole package.
+///
+/// It is matched by URL, so the generator does not depend on that package.
 const springBootApplicationChecker = TypeChecker.fromUrl(
   'package:spring_boot_dart/src/annotations.dart#SpringBootApplication',
 );
 
-/// `@AutoConfigurationModule` from `spring_boot_dart`.
+/// Recognises `@AutoConfigurationModule` from `spring_boot_dart`: the
+/// annotation a starter puts on the module variables it contributes to
+/// every application that depends on it (matched by URL).
 const autoConfigurationModuleChecker = TypeChecker.fromUrl(
   'package:spring_boot_dart/src/annotations.dart#AutoConfigurationModule',
 );
 
-/// Where a library declares its auto-configuration modules (like Spring
-/// Boot's `META-INF/spring/...AutoConfiguration.imports`).
+/// The library, relative to a package root, where a starter lists its
+/// auto-configuration modules.
+///
+/// When an application is built, this file is read in every package it
+/// depends on, and the `@AutoConfigurationModule` variables found there are
+/// passed to its `SpringApplication`. Spring Boot reads
+/// `META-INF/spring/...AutoConfiguration.imports` for the same purpose.
 const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 
-/// For every library with a `@ComponentScan` variable, scans the library's
-/// directory recursively and writes `<file>.spring.dart` with a `BeanModule`.
+/// The builder that writes `<file>.spring.dart`: the bean module of a
+/// `@ComponentScan()` variable, or the whole application of a
+/// `@SpringBootApplication()` `main`.
 ///
-/// The builder runs on every `.dart` input, but only does real work for a
-/// library with exactly one public top-level variable annotated with
-/// `@ComponentScan()`. It then resolves every library under that file's
-/// directory (sorted by path, so output is deterministic), feeds them to a
-/// [BeanScanner], checks that bean names and aliases are unique, and
-/// writes the module with a [ModuleEmitter]. The generated variable is the
-/// scan variable's name prefixed with `$`.
+/// It is what `dart run build_runner build` runs for an application;
+/// `springCoreDartBuilder` creates it from the `build.yaml` options.
+/// It runs on every `.dart` input but only does work for two kinds of
+/// library:
+///
+/// - One with a public top-level variable annotated `@ComponentScan()` (at
+///   most one per file). Every library under that file's directory is
+///   resolved, in path order so the output is deterministic. A
+///   subdirectory with its own `@ComponentScan` is left to that scan, and
+///   its module is imported instead. The generated getter is named after
+///   the scan variable, prefixed with `$`.
+/// - One with a `main` annotated `@SpringBootApplication()`. Then `lib/`
+///   and the directory of `main` are scanned (only `example/` for an entry
+///   point under `example/`). The output also declares
+///   `springApplication`, `runApplication` and the hot-reload functions,
+///   with the auto-configuration modules of every dependency and the
+///   `--dart-define` keys the application reads.
+///
+/// The libraries go through a [BeanScanner]. Bean names and aliases must be
+/// unique, and the module is written by a [ModuleEmitter], with the files
+/// of `lib/resources/` embedded (see [_resources]).
 ///
 /// Example (generated code uses import prefixes such as `_i1.`; they are
 /// omitted here):
@@ -69,7 +93,7 @@ const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 ///
 /// // Output: lib/src/beans.spring.dart
 /// /// Beans found by `@ComponentScan` in `lib/src/`.
-/// final BeanModule $appBeans = BeanModule(r'appBeans', [
+/// BeanModule get $appBeans => BeanModule(r'appBeans', [
 ///   BeanDefinition<Greeter>(
 ///     name: r'greeter',
 ///     source: r'package:app/src/greeting/greeter.dart#Greeter',
@@ -96,15 +120,19 @@ const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 /// // (here: InvalidGenerationSource during the build).
 /// ```
 class SpringBuilder implements Builder {
-  /// Creates the builder; [proxyMode] defaults to [ProxyMode.all].
+  /// Creates the builder with the `aop_proxies` ([proxyMode], default
+  /// [ProxyMode.all]) and `aop_prune` ([pruneProxies], default `true`)
+  /// options.
   ///
-  /// [readExistingOutput] returns the current content of a generated file
-  /// (`null` when there is none); by default the file is read from disk
-  /// (outputs are built to source, so it is at the asset path relative to
-  /// the package directory the build runs in). Tests inject it so they need
-  /// no real files.
+  /// [readExistingOutput] returns the current content of a generated file,
+  /// or `null` when there is none. The builder keeps that content when the
+  /// sources have errors. By default the file is read from disk: outputs are
+  /// built to source, so it is at the asset path relative to the package
+  /// directory the build runs in. Tests pass their own function so they
+  /// need no real files.
   ///
   /// ```dart
+  /// // What `aop_proxies: interfaces` in build.yaml amounts to.
   /// final builder = SpringBuilder(proxyMode: ProxyMode.interfaces);
   /// ```
   SpringBuilder({
@@ -113,13 +141,16 @@ class SpringBuilder implements Builder {
     Future<String?> Function(AssetId output)? readExistingOutput,
   }) : _readExistingOutput = readExistingOutput ?? _readOutputFile;
 
-  /// Which beans get generated AOP proxies (build option `aop_proxies`:
-  /// `all`, `interfaces` or `none`).
+  /// Which beans get a generated AOP proxy class (build option
+  /// `aop_proxies`: `all`, `interfaces` or `none`).
   final ProxyMode proxyMode;
 
-  /// Whether `aop_proxies: all` skips, in the `@SpringBootApplication`
-  /// output, the proxy classes of beans no pointcut of the application can
-  /// match (build option `aop_prune`, `true` by default).
+  /// Whether the `@SpringBootApplication` output leaves out the proxy
+  /// classes of beans that no pointcut of the application can match (build
+  /// option `aop_prune`, `true` by default).
+  ///
+  /// Only that output prunes: it knows every module of the application.
+  /// `@ComponentScan` outputs keep every proxy.
   final bool pruneProxies;
 
   final Future<String?> Function(AssetId output) _readExistingOutput;
@@ -132,27 +163,33 @@ class SpringBuilder implements Builder {
   // a successful generation.
   final Set<AssetId> _warned = {};
 
-  /// Every `.dart` input may produce a `.spring.dart` output next to it.
+  /// Every `.dart` input may produce a `.spring.dart` output next to it
+  /// (most produce none).
   @override
   Map<String, List<String>> get buildExtensions => const {
     '.dart': [_outputExtension],
   };
 
-  /// Generates `<input>.spring.dart` when [buildStep]'s input declares a
-  /// `@ComponentScan` variable; does nothing for any other input.
+  /// Writes `<input>.spring.dart` when [buildStep]'s input declares a
+  /// `@ComponentScan` variable or a `@SpringBootApplication` function. Any
+  /// other input is skipped after a cheap text check, without resolving it.
   ///
   /// Throws `InvalidGenerationSource` when a file has more than one
-  /// `@ComponentScan`, when the scan variable is private or starts with
-  /// `$`, when a scanned class is invalid (see [BeanScanner]) or when two
-  /// beans share a name or alias.
+  /// `@ComponentScan` or `@SpringBootApplication`, when the scan variable is
+  /// private or starts with `$`, when `@ComponentScan` is not on a top-level
+  /// variable, when a scanned declaration is invalid (see [BeanScanner]) or
+  /// when two unconditional beans share a name or alias. A starter whose
+  /// `requires` range does not allow the `spring_boot_dart` version in use
+  /// fails the build too.
   ///
   /// An error in the sources never removes or changes an output that
-  /// already exists (from this process or on disk): while a scanned library
-  /// has syntax errors (`build_runner watch` while typing) the existing
-  /// file is written again unchanged and one warning is logged until the
-  /// next successful generation; a validation error keeps the file too and
-  /// is reported as the build error. Without an existing output (a cold
-  /// build) both fail the build as before.
+  /// already exists, whether it was generated by this process or is on
+  /// disk. Otherwise `build_runner watch` would delete and regenerate the
+  /// file on every keystroke. While a scanned library has syntax errors the
+  /// existing file is written again unchanged, and one warning is logged
+  /// until the next successful generation. A validation error keeps the
+  /// file too, and is reported as the build error. Without an existing
+  /// output (a cold build) both errors fail the build.
   @override
   Future<void> build(BuildStep buildStep) async {
     final input = buildStep.inputId;
@@ -208,8 +245,9 @@ class SpringBuilder implements Builder {
     await buildStep.writeAsString(output, source);
   }
 
-  /// The content of [output] from its last generation in this process, else
-  /// from [_readExistingOutput]; `null` when there is none (a cold build).
+  /// The content of [output] to keep when generation fails: the last one
+  /// this process generated, else the file read by [_readExistingOutput].
+  /// `null` when there is none (a cold build).
   Future<String?> _existingOutput(AssetId output) async =>
       _lastGood[output] ?? await _readExistingOutput(output);
 
@@ -220,9 +258,11 @@ class SpringBuilder implements Builder {
     return file.existsSync() ? await file.readAsString() : null;
   }
 
-  /// The source of [output] for [buildStep]'s input, or `null` when the
-  /// input declares neither a `@ComponentScan` variable nor a
-  /// `@SpringBootApplication` function.
+  /// Scans and emits the source of [output] for [buildStep]'s input.
+  ///
+  /// Returns `null` when the input is not a library or declares neither a
+  /// `@ComponentScan` variable nor a `@SpringBootApplication` function.
+  /// Throws the build errors listed on [build].
   Future<String?> _generate(BuildStep buildStep, AssetId output) async {
     final input = buildStep.inputId;
     final resolver = buildStep.resolver;
@@ -303,17 +343,22 @@ class SpringBuilder implements Builder {
     );
   }
 
-  /// Files under `lib/resources/` (Spring's classpath resources), embedded
-  /// so `classpath:` works everywhere without Flutter asset declarations.
-  /// Text files stay readable; other files are base64-encoded; files above
+  /// The files under `lib/resources/`, keyed by their path below that
+  /// directory, to embed in the generated module.
+  ///
+  /// They are the application's `classpath:` resources (config files,
+  /// templates, messages). Embedding them makes `classpath:` work on every
+  /// platform without declaring Flutter assets. Text files are kept as
+  /// text, other files are base64-encoded, and files above
   /// [_maxEmbeddedBytes] are skipped with a warning.
   ///
   /// An application whose `main` is outside `lib/` (`example/`,
   /// `example/shop/bin/`, `tool/demo/`) also gets the `lib/resources/` of
-  /// every directory from the package root down to its own: an example's
-  /// `example/lib/resources/application.properties` wins over the package's,
-  /// as an application's config wins over a library's; the nearer to `main`,
-  /// the higher the precedence, however deep it is.
+  /// every directory from the package root down to its own (see
+  /// [resourceDirectories]). The nearer to `main`, the higher the
+  /// precedence: an example's `example/lib/resources/application.properties`
+  /// wins over the package's, as an application's config wins over a
+  /// library's.
   static Future<Map<String, ({String? text, String? base64})>> _resources(
     BuildStep buildStep, {
     String? entryDirectory,
@@ -356,11 +401,19 @@ class SpringBuilder implements Builder {
 
   static const int _maxEmbeddedBytes = 1024 * 1024;
 
-  /// The resource directories of an application whose `main` is in
-  /// [entryDirectory] (package-relative, `/`-separated), lowest precedence
-  /// first: `lib/resources/`, then `<dir>/lib/resources/` for each directory
-  /// from the top one down to [entryDirectory]. Within `lib/` only
-  /// `lib/resources/`.
+  /// The directories whose files are embedded as resources for an
+  /// application whose `main` is in [entryDirectory] (package-relative,
+  /// `/`-separated), lowest precedence first.
+  ///
+  /// That is `lib/resources/`, then `<dir>/lib/resources/` for each
+  /// directory from the top one down to [entryDirectory]. For an entry
+  /// point inside `lib/`, or no entry point, it is only `lib/resources/`.
+  ///
+  /// ```dart
+  /// SpringBuilder.resourceDirectories('example/shop/bin');
+  /// // [lib/resources/, example/lib/resources/,
+  /// //  example/shop/lib/resources/, example/shop/bin/lib/resources/]
+  /// ```
   static List<String> resourceDirectories(String? entryDirectory) {
     final directories = ['lib/resources/'];
     if (entryDirectory == null ||
@@ -908,18 +961,20 @@ class SpringBuilder implements Builder {
     return value == null ? null : Version.parse(value);
   }
 
-  /// The `.dart` files below [roots] (glob characters in directory names
-  /// are escaped), sorted by path, generated files excluded.
+  /// The `.dart` files this build scans: those below [roots], sorted by
+  /// path, generated files excluded. Glob characters in directory names are
+  /// escaped.
   ///
-  /// A `@ComponentScan` file below them other than the input owns its
-  /// directory: its files are left out and its module variable is added to
-  /// [module]'s imports (the outermost ones only), so a bean is registered
-  /// once even when both modules are used (Spring skips candidates that
-  /// an overlapping scan already registered). Two `@ComponentScan` files in
-  /// one directory ([scanRoot], the input's for a `@ComponentScan`) fail
-  /// the build.
+  /// A `@ComponentScan` file below them, other than the input, owns its
+  /// directory. Its files are left out and its module variable is added to
+  /// [module]'s imports (the outermost ones only). So a bean is registered
+  /// once even when both modules are used; Spring likewise skips candidates
+  /// that an overlapping scan already registered. Two `@ComponentScan`
+  /// files in one directory fail the build when that directory is
+  /// [scanRoot] (the input's directory, for a `@ComponentScan` input).
   ///
-  /// [nestedAssets] receives the files left to the nested scans.
+  /// [nestedAssets] receives the files left to the nested scans (proxy
+  /// pruning reads their aspects).
   Future<List<AssetId>> _scannedAssets(
     BuildStep buildStep,
     Set<String> roots,
@@ -975,17 +1030,15 @@ class SpringBuilder implements Builder {
     ];
   }
 
-  /// The direct dependencies of the root package (with itself) that the
-  /// input's directory may import, from its `pubspec.yaml` (dev
-  /// dependencies only outside `lib/` and `bin/`, as the
-  /// `depend_on_referenced_packages` lint checks); `null` when it cannot be
-  /// read.
   /// The packages the application of [buildStep]'s input depends on,
-  /// directly or not (its own [_dependencies], then the `dependencies` of
-  /// each, read from their `pubspec.yaml`), or `null` when its pubspec
-  /// cannot be read. In a pub workspace the package config lists every
-  /// member, so being in it does not make a package a dependency: an app
-  /// must not get the auto-configurations of its siblings.
+  /// directly or not: its own [_dependencies], then the `dependencies` of
+  /// each, read from their `pubspec.yaml`.
+  ///
+  /// Auto-configurations are only taken from these packages. In a pub
+  /// workspace the package config lists every member, so being in it does
+  /// not make a package a dependency, and an app must not get the
+  /// auto-configurations of its siblings. Returns `null` (no filtering)
+  /// when a pubspec cannot be read.
   static Future<Set<String>?> _reachablePackages(BuildStep buildStep) async {
     final direct = await _dependencies(buildStep);
     if (direct == null) {
@@ -1064,6 +1117,15 @@ class SpringBuilder implements Builder {
     }
   }
 
+  /// The direct dependencies of the root package (with itself) that the
+  /// input's directory may import, from its `pubspec.yaml`; `null` when it
+  /// cannot be read.
+  ///
+  /// Dev dependencies count only outside `lib/` and `bin/`, as the
+  /// `depend_on_referenced_packages` lint checks. The emitter imports a
+  /// type through the public library of one of these packages, when the
+  /// scanned library imports it that way, rather than through its `src/`
+  /// file.
   static Future<Set<String>?> _dependencies(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
     final pubspec = AssetId(package, 'pubspec.yaml');
@@ -1132,8 +1194,15 @@ class SpringBuilder implements Builder {
     }
   }
 
-  /// Scans the libraries among [assets] with [scanner], resolving the
-  /// bodies of their `@Bean` methods first (for the inferred bean types).
+  /// Scans the libraries among [assets] with [scanner].
+  ///
+  /// First it records where each public type is declared (the runtime's
+  /// public library first, then the scanned files), so an error can name
+  /// the import a library misses. The bodies of each library's `@Bean`
+  /// methods are resolved before the library is scanned, because a
+  /// `@Bean` method's bean type is inferred from what its body returns
+  /// (`DataSource dataSource() => HikariDataSource(url)` registers a
+  /// `HikariDataSource`).
   Future<void> _scanLibraries(
     BuildStep buildStep,
     BeanScanner scanner,

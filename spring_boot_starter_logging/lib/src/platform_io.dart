@@ -1,17 +1,20 @@
 import 'dart:io' as io;
 import 'dart:isolate';
 
-/// The process id (`${PID}`).
+/// The id of this process, for `${PID}` in log patterns.
 int? get processId => io.pid;
 
-/// The name of the current isolate (`%thread`); `main` for the main one.
+/// The name of the current isolate, for `%thread`; `main` when the
+/// isolate has no debug name, as the main one.
 String get isolateName => Isolate.current.debugName ?? 'main';
 
-/// Whether the console shows ANSI colours
-/// (`spring.output.ansi.enabled=detect`): a terminal that understands them,
-/// or a Flutter app in a debug or profile build, whose output goes through
-/// the device log to `flutter run` and the IDEs, which show colours (a
-/// release build has no console to colour).
+/// Whether the console can show ANSI colours; this decides
+/// `spring.output.ansi.enabled=detect`.
+///
+/// True for standard output attached to a terminal that understands the
+/// codes, and for a Flutter app in a debug or profile build: its output
+/// goes through the device log to `flutter run` and the IDEs, which show
+/// colours. A release build has no console to colour.
 bool get stdoutSupportsAnsi {
   if (_isFlutterDebug) {
     return true;

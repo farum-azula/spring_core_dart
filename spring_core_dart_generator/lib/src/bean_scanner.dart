@@ -103,11 +103,9 @@ const _cacheable = TypeChecker.fromUrl('$_cacheAnnotations#Cacheable');
 const _cachePut = TypeChecker.fromUrl('$_cacheAnnotations#CachePut');
 const _caching = TypeChecker.fromUrl('$_cacheAnnotations#Caching');
 
-/// Infrastructure types that are never proxied.
-///
-/// Like Spring's `AbstractAutoProxyCreator.isInfrastructureClass`, which
-/// skips `Advice`, `Pointcut`, `Advisor` and `AopInfrastructureBean`.
-/// Members every generated AOP proxy declares (from `Advised`).
+/// The members every generated AOP proxy declares (from `Advised`). A
+/// proxied class must not declare a member with one of these names, since
+/// the proxy's member would replace it.
 const _advisedMembers = {
   'aopTarget',
   'aopAdvisors',
@@ -121,6 +119,12 @@ String _reservedMessage(String? type, String member) =>
     '$type.$member has the name of a member every proxy declares '
     '(Advised.$member). Rename it.';
 
+/// Infrastructure types whose beans never get a proxy: they set up the
+/// container and AOP itself, and advising them could make AOP advise its
+/// own machinery.
+///
+/// Like Spring's `AbstractAutoProxyCreator.isInfrastructureClass`, which
+/// skips `Advice`, `Pointcut`, `Advisor` and `AopInfrastructureBean`.
 final List<TypeChecker> _notProxied = [
   _spring('BeanPostProcessor'),
   _spring('BeanFactoryPostProcessor'),
@@ -128,13 +132,20 @@ final List<TypeChecker> _notProxied = [
   _spring('FactoryBean'),
 ];
 
-/// Which beans get generated AOP proxies.
+/// Which beans get a generated AOP proxy class, the class that runs advice
+/// (`@Around`, `@Transactional`, `@Cacheable`...) around the bean's
+/// methods.
 ///
-/// Set with the `aop_proxies` build option. Proxies are generated at build
-/// time because Dart cannot create classes at runtime; a proxy can only be
-/// generated for a type that another library may `implements` (public, not
-/// sealed/final/base, no private members, no operators, emittable member
-/// types and literal default values).
+/// Dart cannot create classes at runtime, so every proxy a bean might need
+/// is generated at build time, and a bean without matching advice is used
+/// unwrapped. More proxies mean more generated code. Applications choose a
+/// mode with the `aop_proxies` build option; the default, [all], suits
+/// most of them.
+///
+/// A proxy can only be generated for a type that another library may
+/// `implements`: public, not sealed, final or base, without private
+/// members or operators, with member types and default values the
+/// generated code can write.
 ///
 /// ```dart
 /// // Input:
@@ -165,13 +176,15 @@ final List<TypeChecker> _notProxied = [
 /// // Not enabling auto-proxying at all is like `none`.
 /// ```
 enum ProxyMode {
-  /// Every bean whose class (or interfaces) can be implemented.
+  /// A proxy for every bean whose class, or one of its interfaces, can be
+  /// implemented. The default.
   all,
 
-  /// Only through abstract types (like JDK dynamic proxies).
+  /// Proxies only through the bean's abstract supertypes, like JDK dynamic
+  /// proxies; a bean without one gets no proxy.
   interfaces,
 
-  /// No proxies (AOP disabled for this module).
+  /// No proxies: AOP cannot advise the beans of this module.
   none,
 }
 
@@ -210,7 +223,9 @@ final _literalDefault = RegExp(
   r'''^(-?\d+(\.\d+)?|true|false|null|'[^'\\$]*'|"[^"\\$]*"|(const\s*)?\[\]|(const\s*)?\{\})$''',
 );
 
-/// Spring's own DI annotations are not copied into introspection metadata.
+/// Annotations of the container itself that are not kept in the runtime
+/// annotation metadata of members (introspection, proxies): they only
+/// configure injection, and advice or user code has no use for them.
 const _diAnnotations = {
   'Autowired',
   'Inject',
@@ -232,10 +247,11 @@ const _diAnnotations = {
   'Introspected',
 };
 
-/// Marks the scan root.
+/// Recognises `@ComponentScan`, the annotation that marks a scan root: the
+/// top-level variable whose file's directory is scanned for beans.
 ///
-/// Matches `@ComponentScan` from `package:spring_core_dart` by name, so the
-/// generator needs no dependency on the runtime package.
+/// It matches `@ComponentScan` of `package:spring_core_dart` by name, like
+/// every annotation the scanner reads.
 ///
 /// ```dart
 /// // Input (the scan root; its directory is scanned recursively):
@@ -254,9 +270,12 @@ const _diAnnotations = {
 /// ```
 final TypeChecker componentScanChecker = _spring('ComponentScan');
 
-/// Several independent validation errors of one build, reported together
-/// (each with its message, library URI and location) instead of one per
-/// build.
+/// The error thrown when a build finds several independent problems.
+///
+/// Fixing errors one build at a time is slow, so the scanner keeps going
+/// after a bad declaration and reports all of them at once, each with its
+/// message, library URI and location. A build with a single problem
+/// throws that `InvalidGenerationSource` itself.
 ///
 /// ```dart
 /// // Two broken classes in one scanned directory:
@@ -268,7 +287,7 @@ final TypeChecker componentScanChecker = _spring('ComponentScan');
 /// // 2. Only one constructor may be @Autowired ...
 /// ```
 class BuildErrors implements Exception {
-  /// Wraps [errors] (at least two).
+  /// Wraps [errors], which should hold at least two.
   BuildErrors(List<InvalidGenerationSource> errors)
     : errors = List.unmodifiable(errors);
 
@@ -283,17 +302,21 @@ class BuildErrors implements Exception {
   ].join('\n\n');
 }
 
-/// [error] as text with the library URI of its element, also when no
-/// source span can be computed for it.
+/// The text of [error] for a [BuildErrors] list: its message and location,
+/// plus the library URI of its element when the text lacks it (when no
+/// source span could be computed).
 String describeBuildError(InvalidGenerationSource error) {
   final text = error.toString();
   final uri = error.element?.library?.uri;
   return uri == null || text.contains('$uri') ? text : '$text\n($uri)';
 }
 
-/// Reads the options of the `@ComponentScan` [annotation] on [element]
-/// (`includeFilters`, `excludeFilters`, `useDefaultFilters`, `lazyInit`).
-/// A filter without the argument its type uses fails the build.
+/// Reads the options of the `@ComponentScan` [annotation] on [element]:
+/// `includeFilters`, `excludeFilters`, `useDefaultFilters` and `lazyInit`.
+///
+/// The filters are evaluated at build time, so they must be read from the
+/// annotation as data. A filter without the argument its type uses, or
+/// with an invalid regular expression, fails the build.
 ///
 /// ```dart
 /// // @ComponentScan(includeFilters: [Filter(type: FilterType.regex, pattern: ['.*Repo'])])
@@ -353,19 +376,27 @@ TypeFilterModel _typeFilter(
   return TypeFilterModel(kind, classes: classes, patterns: patterns);
 }
 
-/// Reads bean declarations from analyzer elements.
+/// Reads the annotated declarations of the scanned libraries and turns
+/// them into the models the emitter writes.
 ///
-/// The scanner fills a [ModuleModel] with one [BeanModel] per component
-/// class and `@Bean` method, plus `@Configurable`, `@Introspected` and
-/// `@PropertySource` metadata. It validates declarations eagerly and
-/// reports problems as `InvalidGenerationSource` errors pointing at the
-/// offending element (private or abstract bean classes, ambiguous
-/// constructors, async lifecycle methods, nullable collection elements,
-/// ...).
+/// This is the part of the generator that understands the annotations. It
+/// fills a [ModuleModel] with one [BeanModel] per component class and
+/// `@Bean` method (with its injection points, conditions, lifecycle
+/// methods, listeners and proxy), plus `@Configurable`, `@Introspected`,
+/// `@PropertySource`, `@Log` and Flutter widget metadata. The builder
+/// creates one scanner per output file.
+///
+/// It also validates every declaration, because a mistake the scanner lets
+/// through would show up as generated code that does not compile. A
+/// problem throws an `InvalidGenerationSource` pointing at the element:
+/// private or abstract bean classes, ambiguous constructors, async
+/// lifecycle methods, nullable collection elements, and more. The scan
+/// goes on after an error, so one build reports every independent problem
+/// (see [collectErrors] and [throwErrors]).
 ///
 /// ```dart
 /// // Input:
-/// @Configuration()
+/// @Configuration(proxyBeanMethods: false)
 /// class Config {
 ///   @Bean()
 ///   Clock clock() => SystemClock();
@@ -383,9 +414,12 @@ TypeFilterModel _typeFilter(
 ///   types: const [Config],
 ///   create: (r) => Config(),
 /// ),
-/// BeanDefinition<Clock>(
+/// // Registered under the type the method returns, and the declared one:
+/// BeanDefinition<SystemClock>(
 ///   name: r'clock',
-///   types: const [Clock],
+///   types: const [SystemClock, Clock],
+///   factoryBeanName: r'config',
+///   factoryMethodName: r'clock',
 ///   dependencies: const [Dependency(Config, qualifier: r'config')],
 ///   create: (r) => r.dependency<Config>(qualifier: r'config').clock(),
 /// ),
@@ -414,6 +448,10 @@ TypeFilterModel _typeFilter(
 class BeanScanner {
   /// Creates a scanner that adds everything it finds to [module].
   ///
+  /// [proxyMode] decides which beans get a proxy model (default
+  /// [ProxyMode.all]). [scan] holds the `@ComponentScan` filters and
+  /// `lazyInit`; the default accepts every component.
+  ///
   /// ```dart
   /// final module = ModuleModel();
   /// final scanner = BeanScanner(module, proxyMode: ProxyMode.interfaces);
@@ -425,13 +463,14 @@ class BeanScanner {
     this.scan = const ComponentScanModel(),
   });
 
-  /// The model being filled.
+  /// The model being filled; the emitter writes it once the scan is done.
   final ModuleModel module;
 
-  /// Which beans get a [ProxyModel].
+  /// Which beans get a [ProxyModel] (build option `aop_proxies`).
   final ProxyMode proxyMode;
 
-  /// The `@ComponentScan` filters and `lazyInit` of the module.
+  /// The `@ComponentScan` filters and `lazyInit` of the module, which
+  /// decide which classes become beans and whether they start lazily.
   final ComponentScanModel scan;
 
   // Classes introspected so far (explicitly or automatically).
@@ -442,11 +481,12 @@ class BeanScanner {
   final _beanMethodDeclarations = <String, MethodDeclaration>{};
 
   /// Resolves the bodies of the `@Bean` methods of [library]'s classes
-  /// (and of the classes they `@Import`), so that [scanLibrary] can
-  /// register each bean under the type its method really returns. Call it
-  /// before [scanLibrary]; [astNodeFor] is the build resolver's
-  /// `astNodeFor(fragment, resolve: true)`. Without it, beans get the
-  /// declared return type.
+  /// and of the classes they `@Import`, so that [scanLibrary] can register
+  /// each bean under the type its method really returns.
+  ///
+  /// Call it before [scanLibrary]; [astNodeFor] is the build resolver's
+  /// `astNodeFor(fragment, resolve: true)`. Without this step, beans are
+  /// registered under the declared return type only.
   ///
   /// ```dart
   /// await scanner.resolveBeanMethods(
@@ -460,12 +500,18 @@ class BeanScanner {
     Future<AstNode?> Function(Fragment fragment) astNodeFor,
   ) => resolveBeanMethodDeclarations(library, astNodeFor);
 
-  /// Adds the components, configurables and property sources of [library].
+  /// Adds to [module] everything [library] declares: beans, configurables,
+  /// introspected classes, interface proxies, Flutter widgets and `@Log`
+  /// classes.
   ///
-  /// Every class annotated with `@Component` (or a stereotype such as
-  /// `@Service`, `@Repository`, `@Configuration`, `@Named`) is passed to
-  /// [scanClass]; `@Configurable` and `@Introspected` classes are recorded
-  /// as well (a class may be several of these at once).
+  /// A class annotated with `@Component` (or a stereotype such as
+  /// `@Service`, `@Repository`, `@Configuration`, `@Named`) that the
+  /// `@ComponentScan` filters accept is passed to [scanClass]. An abstract
+  /// class is skipped unless it has `@Lookup` methods, as in Spring.
+  /// `@Configurable` and `@Introspected` classes are recorded too, and a
+  /// class may be several of these at once. `@Component` on a mixin, enum,
+  /// extension or extension type, and `@Bean` on a top-level function, fail
+  /// the build instead of being ignored.
   ///
   /// ```dart
   /// // Input: lib/src/greeting/greeter.dart
@@ -525,12 +571,16 @@ class BeanScanner {
     _rejectUnsupportedTargets(library);
   }
 
-  /// Adds the aspects and advisor beans of [library] (a library of another
-  /// module of the application) to [into], for proxy pruning; nothing is
-  /// added to [module]. A class the scanner cannot read marks [into]
-  /// unknown (its own build reports the error).
+  /// Adds the aspects and advisor beans of [library], a library of another
+  /// module of the application, to [into]; nothing is added to [module].
+  ///
+  /// The `@SpringBootApplication` output uses it to learn every pointcut
+  /// of the application before it prunes proxies. A class the scanner
+  /// cannot read marks [into] as unknown, which turns pruning off; that
+  /// module's own build reports the error.
   ///
   /// ```dart
+  /// // The libraries of a nested @ComponentScan module.
   /// final foreign = ForeignAdvice();
   /// scanner.collectAdvice(nestedLibrary, foreign);
   /// ```
@@ -565,11 +615,17 @@ class BeanScanner {
     }
   }
 
-  /// Validation errors of the declarations scanned so far, in scan order.
+  /// The validation errors of the declarations scanned so far, in scan
+  /// order; [throwErrors] reports them.
   final errors = <InvalidGenerationSource>[];
 
   /// Runs [action], adding an `InvalidGenerationSource` it throws to
-  /// [errors] instead of stopping the build.
+  /// [errors] instead of stopping the build. Other exceptions pass
+  /// through.
+  ///
+  /// The builder also wraps its own checks in it (unique bean names,
+  /// `@BuildContextAccess`, assets), so they are reported together with
+  /// the scan's errors.
   void collectErrors(void Function() action) {
     try {
       action();
@@ -578,8 +634,9 @@ class BeanScanner {
     }
   }
 
-  /// Throws the collected [errors]: the single error itself, or a
-  /// [BuildErrors] listing all of them; does nothing without errors.
+  /// Throws the collected [errors], once everything is scanned: the error
+  /// itself when there is one, a [BuildErrors] listing them when there are
+  /// several. Does nothing without errors.
   void throwErrors() {
     switch (errors) {
       case []:
@@ -646,14 +703,16 @@ class BeanScanner {
     }
   }
 
-  /// Adds the beans of [element] (a component, or an `@Import`ed class).
+  /// Adds the beans of the class [element]: a scanned component, or a
+  /// class reached through `@Import`.
   ///
-  /// [annotation] is the component annotation, used for an explicit bean
-  /// name (`@Component('x')`); without one the name is the decapitalized
-  /// class name (`AuthService` → `authService`, `URLService` stays).
-  /// The class becomes one bean, each of its `@Bean` methods another, and
-  /// every class in `@Import([...])` is scanned recursively. A class is
-  /// added only once even if reached several times.
+  /// The class becomes one bean and each of its `@Bean` methods another.
+  /// Every class in `@Import([...])` is scanned the same way, recursively,
+  /// and registered only when its importer is. A class reached several
+  /// times is added once. [annotation] is the component annotation, which
+  /// may give the bean name (`@Component('x')`); without one the name is
+  /// the decapitalized class name (`AuthService` → `authService`,
+  /// `URLService` stays).
   ///
   /// ```dart
   /// // Input:
@@ -885,10 +944,12 @@ class BeanScanner {
     }
   }
 
-  /// The `@Bean` methods of [type], its superclasses and mixins (Spring
-  /// scans the class hierarchy), each with its annotation. A method is
-  /// taken from its most derived declaration (with the type arguments of
-  /// [type] substituted); the annotation may sit on an overridden one.
+  /// The `@Bean` methods of [type], its superclasses and mixins, each with
+  /// its `@Bean` annotation; Spring scans the class hierarchy the same way.
+  ///
+  /// A method is taken from its most derived declaration, with the type
+  /// arguments of [type] substituted, so an override runs. The annotation
+  /// may sit on an overridden declaration only.
   ///
   /// ```dart
   /// // Input:
@@ -921,8 +982,10 @@ class BeanScanner {
     ];
   }
 
-  /// [type] and its superclasses and mixins, most derived first, as Dart
-  /// linearizes them (`class C extends B with M1, M2`: C, M2, M1, B).
+  /// [type] and its superclasses and mixins, most derived first, in the
+  /// order Dart looks members up (`class C extends B with M1, M2`: C, M2,
+  /// M1, B). Interfaces are not included.
+  ///
   /// Each type has the type arguments substituted, so the members of
   /// `BaseService<R>` seen through `UserService extends BaseService<User>`
   /// mention `User`.
@@ -938,8 +1001,9 @@ class BeanScanner {
     return chain;
   }
 
-  /// [type] first, then every supertype (subclass declarations win), with
-  /// the type arguments substituted (see [_linearization]).
+  /// [type] first, then every supertype including interfaces, with the
+  /// type arguments substituted (see [_linearization]). Callers keep the
+  /// first declaration of a name, so subclass declarations win.
   Iterable<InterfaceType> _hierarchyTypes(InterfaceType type) => [
     type,
     for (final supertype in type.allSupertypes)
@@ -1267,12 +1331,14 @@ class BeanScanner {
     return false;
   }
 
-  /// [_userAnnotations] of a getter or setter; for the implicit accessors of
-  /// a field, also those of the field (`@Timed() int count = 0;` advises
-  /// `count` like an annotated explicit getter). Constraints and `@Valid`
-  /// stay out: on a field they validate the field, while on an accessor
-  /// method validation would check the return value of the getter and of
-  /// every setter call.
+  /// The annotations a proxy sees on [accessor]: its [_userAnnotations],
+  /// and for the implicit accessors of a field also those of the field, so
+  /// `@Timed() int count = 0;` advises `count` like an annotated explicit
+  /// getter.
+  ///
+  /// The field's constraints and `@Valid` stay out. On a field they
+  /// validate the field; on an accessor, method validation would check the
+  /// getter's return value and every setter call.
   List<DartObject> _accessorAnnotations(PropertyAccessorElement accessor) => [
     ..._userAnnotations(accessor),
     if (accessor.isOriginVariable)
@@ -1283,13 +1349,15 @@ class BeanScanner {
           annotation,
   ];
 
-  /// Const annotations worth keeping at runtime: user annotations and
-  /// constraints, not `dart:` ones or Spring's DI annotations.
+  /// The annotations of [element] that are kept in the generated metadata,
+  /// where pointcuts, validation and user code read them at runtime: user
+  /// annotations and constraints. SDK annotations, private ones and the
+  /// container's own injection annotations are dropped.
   ///
   /// An annotation the generated library cannot re-create (a private
-  /// constant or function among its values, `@Audit(_level)`) is left out;
-  /// a constraint or `@Valid` fails the build instead, since leaving it
-  /// out would skip the validation.
+  /// constant or function among its values, `@Audit(_level)`) is left out.
+  /// A constraint or `@Valid` fails the build instead, since leaving it
+  /// out would silently skip the validation.
   List<DartObject> _userAnnotations(Element element) => [
     for (final annotation in element.metadata.annotations)
       if (annotation.computeConstantValue() case final value?)
@@ -1322,9 +1390,10 @@ class BeanScanner {
   }
 
   /// The annotations of a bean class or `@Bean` method for
-  /// `BeanDefinition.annotations` (`findAnnotationOnBean`,
-  /// `getBeansWithAnnotation`): every const annotation not from the SDK
-  /// that generated code can re-create; others are left out silently.
+  /// `BeanDefinition.annotations`, which `findAnnotationOnBean` and
+  /// `getBeansWithAnnotation` read at runtime: every public annotation not
+  /// from the SDK that generated code can re-create. Others are left out
+  /// silently.
   List<DartObject> _beanAnnotations(Element element) => [
     for (final annotation in element.metadata.annotations)
       if (annotation.computeConstantValue() case final value?)
@@ -2138,12 +2207,16 @@ class BeanScanner {
       !_configuration.hasAnnotationOf(element) &&
       !_notProxied.any((c) => c.isAssignableFromType(element.thisType));
 
-  /// The proxy of [targetType]; `null` when proxies are off or the type is
-  /// from the SDK. A component class (created by the container through
-  /// [constructor]) that cannot be implemented gets a subclass proxy in
-  /// `all` mode, or fails the build when it cannot be extended either; any
-  /// other type that cannot be proxied gets a signature-only model with
-  /// [ProxyModel.unavailableReason].
+  /// The proxy model of [targetType], to be generated as [className];
+  /// `null` when proxies are off or the type is from the SDK.
+  ///
+  /// A component class that no generated class can implement (private
+  /// members, `final`, `base`, `sealed`) gets a subclass proxy in `all`
+  /// mode, created through [constructor]. When it cannot be extended
+  /// either, or for any other type that cannot be proxied, the model only
+  /// has the signatures and [ProxyModel.unavailableReason]. The build then
+  /// goes on, and the context fails at startup, saying what to change,
+  /// only if advice matches the bean.
   ProxyModel? _proxyModel(
     InterfaceType targetType,
     String className, {
@@ -3150,7 +3223,6 @@ class BeanScanner {
     }
   }
 
-  /// Whether generated code can name `type`.
   // Whether generated code can re-create the constant [value] (public
   // types, constructors and constants only).
   static bool _isRevivable(DartObject value) {
@@ -3227,7 +3299,9 @@ class BeanScanner {
     _ => false,
   };
 
-  /// Whether a class in another library can `implements` [type].
+  /// Whether a class in another library can `implements` [type]: it is
+  /// public, not `final`, `base` or `sealed`, and has no private members a
+  /// generated class would have to implement.
   static bool _canImplement(InterfaceType type) {
     final element = type.element;
     if (!element.isPublic ||
@@ -3446,8 +3520,13 @@ class BeanScanner {
       ),
   ];
 
-  /// Public `@Autowired` / `@Value` fields and setters of the class and its
-  /// supertypes, in injection order (see [injectionRank]).
+  /// The field and setter injections of a bean of [type]: its
+  /// `@Autowired` (or `@Inject`), `@Resource` and `@Value` fields and
+  /// setters, inherited ones included, in injection order (see
+  /// [injectionRank]).
+  ///
+  /// The generated code is another library, so an injected field must be
+  /// public and settable; otherwise the build fails.
   List<PropertyInjection> _propertyInjections(InterfaceType type) {
     final seen = <String>{};
     final result = <PropertyInjection>[];
@@ -3526,8 +3605,10 @@ class BeanScanner {
     return sortedByRank(result, (p) => p.rank);
   }
 
-  /// Depth of each class of [type]'s hierarchy for [injectionRank]: 0 for
-  /// the topmost one. The superclass chain is linearized like Dart does
+  /// The depth of each class of [type]'s hierarchy for [injectionRank], 0
+  /// for the topmost one, so superclass members are injected first.
+  ///
+  /// The superclass chain is linearized like Dart does
   /// (`class C extends B with M1, M2`: B, M1, M2, C); interfaces count as
   /// above it.
   Map<InterfaceElement, int> _injectionDepths(InterfaceType type) {
@@ -3580,8 +3661,12 @@ class BeanScanner {
     }
   }
 
-  /// Public `@Autowired` methods of the class and its supertypes, in
-  /// injection order (see [injectionRank]).
+  /// The method injections of a bean of [type]: its `@Autowired`
+  /// methods, inherited ones included, in injection order (see
+  /// [injectionRank]).
+  ///
+  /// A private or asynchronous `@Autowired` method fails the build: the
+  /// generated code cannot call the first and would not await the second.
   List<MethodInjection> _methodInjections(InterfaceType type) {
     final seen = <String>{};
     final result = <MethodInjection>[];
@@ -3616,8 +3701,10 @@ class BeanScanner {
     return sortedByRank(result, (m) => m.rank);
   }
 
-  /// `@PostConstruct` / `@PreDestroy` method names; superclass and mixin
-  /// methods first for init, last for destroy (like Spring).
+  /// The names of the `@PostConstruct` or `@PreDestroy` methods of
+  /// [type]: superclass and mixin methods first for init, last for
+  /// destroy, as in Spring. A name inherited from several levels runs
+  /// once.
   List<String> _lifecycleMethods(
     InterfaceType type,
     TypeChecker checker, {
@@ -3674,7 +3761,9 @@ class BeanScanner {
     }
   }
 
-  /// The class first, then its supertypes (subclass declarations win).
+  /// The class of [type] first, then the classes of all its supertypes
+  /// except `Object`. Callers keep the first declaration of a name, so
+  /// subclass declarations win.
   Iterable<InterfaceElement> _hierarchy(InterfaceType type) => [
     type.element,
     for (final supertype in type.allSupertypes)
@@ -3863,8 +3952,9 @@ class BeanScanner {
     }
   }
 
-  /// The lazy proxy class for `@Lazy` injection of [type], shared by all
-  /// injection points of that type in the module.
+  /// The lazy proxy class for `@Lazy` injection of [type]: an object
+  /// injected in place of the bean that resolves the bean on first use. It
+  /// is shared by all injection points of that type in the module.
   ProxyModel _lazyProxy(InterfaceType type, Element element, {String? what}) {
     final typeName = type.element.name!;
     final subject = what ?? '@Lazy on ${element.displayName}';
@@ -4110,7 +4200,8 @@ class BeanScanner {
       ConstantReader(annotation).read('value').stringValue,
   };
 
-  /// `@Qualifier` or `@Named` value at an injection point.
+  /// The `@Qualifier` or `@Named` value at the injection point [element],
+  /// or `null` when it has neither.
   String? _qualifierOf(Element element) {
     final qualifier = _qualifier.firstAnnotationOf(element);
     if (qualifier != null) {
@@ -4768,7 +4859,9 @@ class BeanScanner {
   String _requireName(Element element) =>
       element.name ?? _fail('Unnamed element.', element);
 
-  /// Spring's rule: `AuthService` → `authService`, `URLService` stays.
+  /// The default bean name of a class, by Spring's rule: the first letter
+  /// in lower case (`AuthService` → `authService`), except when the first
+  /// two letters are capitals (`URLService` stays).
   static String _decapitalize(String name) {
     if (name.length > 1 &&
         name[0].toUpperCase() == name[0] &&
@@ -4783,13 +4876,12 @@ class BeanScanner {
   // Private declarations
   // ---------------------------------------------------------------------
 
-  /// Fails when `type` (or a type argument) is private to its library: the
-  /// generated module is another library and cannot name it. `use` says
-  /// what references it ("constructor parameter dep of Cache has"),
-  /// `alternative` a second way out besides making the type public.
-  /// Public types of the scanned libraries and of the runtime, by name:
-  /// where to import a type from when the analyzer cannot resolve it (a
-  /// missing import). Filled by the builder before scanning.
+  /// The public types of the scanned libraries and of the runtime, by
+  /// name, with the library that declares them.
+  ///
+  /// When the analyzer cannot resolve a type (usually a missing import),
+  /// the build error names the import to add from here. The builder fills
+  /// it before scanning.
   final Map<String, Uri> knownTypes = {};
 
   // A type the analyzer could not resolve (`InvalidType`, usually a
@@ -4893,6 +4985,11 @@ class BeanScanner {
         names.firstOrNull;
   }
 
+  /// Fails when [type], or a type it mentions, is private to its library:
+  /// the generated module is another library and cannot name it.
+  ///
+  /// [use] says what references it ("constructor parameter dep of Cache
+  /// has"), [alternative] a second way out besides making the type public.
   void _requirePublicType(
     DartType type,
     Element element,
@@ -4913,7 +5010,7 @@ class BeanScanner {
     );
   }
 
-  /// The private class [type] mentions (itself, a type argument, a
+  /// The first private class [type] mentions (itself, a type argument, a
   /// function or record part), or `null`.
   static InterfaceType? _privateType(DartType type) => switch (type) {
     InterfaceType() when type.element.isPrivate => type,
@@ -4938,9 +5035,9 @@ class BeanScanner {
     return null;
   }
 
-  /// [value], the default of [parameter], when the generated module can
-  /// write it; fails when it refers to a private function, class or
-  /// constant.
+  /// Returns [value], the default of [parameter], when the generated
+  /// module can write it. Fails the build when it refers to a private
+  /// function, class or constant.
   DartObject _publicConstant(
     DartObject value,
     FormalParameterElement parameter,

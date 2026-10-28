@@ -7,14 +7,20 @@ import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/java_format.dart';
 import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 
-/// A type usable in `T(Name)`, `new Name(...)`, `new Name[n]` and
-/// `instanceof`, registered in a [StandardTypeLocator] (Dart cannot look up
-/// classes by name).
+/// The description of a type that expressions may name: its name, its
+/// static fields and methods, its constructor, and how to test an
+/// instance.
 ///
-/// Statics and constructors are plain functions (or [VarargsFunction]s),
-/// so only what you register is reachable from expressions.
+/// Java's SpEL finds any class by name. Dart cannot look up classes by
+/// name, so a type is usable in `T(Name)`, `new Name(...)`,
+/// `new Name[n]` and `instanceof T(Name)` only once it is registered as a
+/// `SpelType` in a [StandardTypeLocator]. Statics and constructors are
+/// plain functions (or [VarargsFunction]s): only what you list is
+/// reachable from expressions. The core types (`int`, `String`, `Math`,
+/// `Integer`, ...) are registered already.
 ///
 /// ```dart
+/// // Rules may use Point constants, parse points and create them.
 /// final locator = StandardTypeLocator()
 ///   ..registerType(SpelType.of<Point>(
 ///     'Point',
@@ -38,10 +44,13 @@ import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 /// parser.parseExpression("new com.example.Point(1, 2)").getValue();
 /// ```
 final class SpelType {
-  /// Creates a type named [name]; [isInstance] implements `instanceof`.
+  /// Creates a type named [name]; [isInstance] implements `instanceof`,
+  /// and [type] is the Dart type, if any. Arrays of it are `List<Object?>`.
   ///
   /// Use [SpelType.of] when there is a Dart type; this constructor is for
-  /// pseudo-types without instances such as `Math`.
+  /// pseudo-types without instances such as `Math`, or types whose
+  /// instance test is not a Dart type test (`Character` is a one-letter
+  /// `String`).
   SpelType(
     String name, {
     required bool Function(Object? value) isInstance,
@@ -73,8 +82,9 @@ final class SpelType {
       staticMethods = Map.unmodifiable(staticMethods),
       constructors = Map.unmodifiable(constructors);
 
-  /// A type for [T] (instance check and array element type from the type
-  /// argument).
+  /// A type for the Dart type [T], named [name] in expressions: the
+  /// instance test is `is T`, and `new Name[n]` builds a list of `T`
+  /// (`List<T?>` while it holds `null`s).
   ///
   /// ```dart
   /// SpelType.of<User>('User', constructors: {'': User.new});
@@ -105,24 +115,29 @@ final class SpelType {
   static List<Object?> _objectListOf(List<Object?> elements) =>
       List<Object?>.of(elements);
 
-  /// The name used in `T(name)` and `new name(...)`.
+  /// The name used in `T(name)` and `new name(...)`; it may contain dots
+  /// (`app.Point`), see [StandardTypeLocator.registerImport].
   final String name;
 
-  /// The Dart type, if there is one (`Math` has none).
+  /// The Dart type, or `null` for a pseudo-type such as `Math`.
   final Type? type;
   final bool Function(Object? value) _isInstance;
   final List<Object?> Function(int length, Object? fill) _newList;
   final List<Object?> Function(List<Object?> elements) _listOf;
 
-  /// `T(Name).FIELD` values.
+  /// The values of `T(Name).FIELD`, by field name; each function is
+  /// called on every read, so a field may change.
   final Map<String, Object? Function()> staticFields;
 
-  /// `T(Name).method(args)` functions (Dart functions or
-  /// [VarargsFunction]s).
+  /// The functions run for `T(Name).method(args)`, by method name (Dart
+  /// functions or [VarargsFunction]s). Arguments are converted to the
+  /// parameter types where needed, as for instance methods.
   final Map<String, Object> staticMethods;
 
-  /// `new Name(args)` functions (Dart functions or [VarargsFunction]s);
-  /// `''` is the default constructor.
+  /// The functions run for `new Name(args)` (Dart functions or
+  /// [VarargsFunction]s). Only the entry under `''` is used: SpEL has no
+  /// named constructors, so a type has one constructor function, which
+  /// may take optional parameters.
   final Map<String, Object> constructors;
 
   /// Whether [value] is an instance of this type (`instanceof`).
@@ -140,15 +155,19 @@ final class SpelType {
   String toString() => 'T($name)';
 }
 
-/// A function taking a variable number of trailing arguments, like a Java
-/// varargs method (`String.join(delimiter, String... elements)`).
+/// A wrapper that lets a Dart function accept any number of trailing
+/// arguments when an expression calls it, like a Java varargs method
+/// (`String.join(delimiter, String... elements)`).
 ///
-/// Dart has no varargs: wrap the function and it is called with the first
-/// [fixedArity] arguments followed by a `List` of the rest. Accepted by
+/// Dart has no varargs, and an expression may call a function with any
+/// number of arguments. Wrap the function: it is called with the first
+/// [fixedArity] arguments one by one, followed by a `List` of the rest
+/// (empty when there are none). Accepted by
 /// `StandardEvaluationContext.registerFunction`, `SpelType.staticMethods`
 /// and `SpelType.constructors`.
 ///
 /// ```dart
+/// // `#sum` adds any number of values.
 /// context.registerFunction(
 ///   'sum',
 ///   VarargsFunction((List<Object?> numbers) =>
@@ -167,18 +186,21 @@ final class SpelType {
 /// ```
 final class VarargsFunction {
   /// Wraps [function], which takes [fixedArity] positional parameters
-  /// followed by one `List<Object?>` parameter for the rest.
+  /// followed by one `List<Object?>` parameter for the rest; a call with
+  /// fewer than [fixedArity] arguments does not match.
   const VarargsFunction(this.function, {this.fixedArity = 0});
 
   /// The wrapped function.
   final Function function;
 
-  /// How many leading arguments are passed individually.
+  /// How many leading arguments are passed individually (0 by default:
+  /// all arguments arrive in the list).
   final int fixedArity;
 
   /// Whether [function] (a Dart `Function` or a [VarargsFunction]) can be
-  /// called with [count] positional arguments; `true` when this cannot be
-  /// told (more than 8 arguments).
+  /// called with [count] positional arguments, judged from its type;
+  /// `true` when this cannot be told (more than 8 arguments). Resolvers
+  /// use it to skip functions that do not fit a call.
   static bool accepts(Object function, int count) => switch (function) {
     VarargsFunction(:final fixedArity) => count >= fixedArity,
     Function() => switch (count) {
@@ -218,8 +240,8 @@ final class VarargsFunction {
     _ => false,
   };
 
-  /// The smallest number of arguments [function] accepts (for messages),
-  /// or `null` when unknown.
+  /// The smallest number of arguments [function] accepts, for error
+  /// messages, or `null` when unknown (more than 8).
   static int? minimumArity(Object function) {
     for (var count = 0; count <= 8; count++) {
       if (accepts(function, count)) {
@@ -231,7 +253,8 @@ final class VarargsFunction {
 
   /// [arguments] converted with [converter] to the parameter types of
   /// [function] where they do not fit, like Spring's
-  /// `ReflectionHelper.convertAllArguments`: `#half(3)` with a `double`
+  /// `ReflectionHelper.convertAllArguments`; the list is returned as it is
+  /// when nothing changes: `#half(3)` with a `double`
   /// parameter gets `3.0`, `'abc'.substring('1')` gets `1`,
   /// `'abc'.charAt(1.0)` gets `1`. Dart has no reflection, so the
   /// parameter types are probed: `int`, `double`, `num`, `String` and
@@ -291,7 +314,8 @@ final class VarargsFunction {
     return result ?? arguments;
   }
 
-  /// How many positional parameters [convertArguments] can probe.
+  /// How many positional parameters [convertArguments] can probe; a
+  /// function with more gets its arguments unconverted.
   static const maxConvertedArity = 4;
 
   static void _noFunction() {}
@@ -324,7 +348,8 @@ final class VarargsFunction {
       };
 
   /// Calls [function] (a Dart `Function` or a [VarargsFunction]) with
-  /// [arguments].
+  /// [arguments], packing the trailing ones into a list for a
+  /// [VarargsFunction].
   ///
   /// Throws a `NoSuchMethodError` when the arguments do not fit, and
   /// whatever the function throws.
@@ -352,7 +377,12 @@ final class VarargsFunction {
   }
 }
 
-/// Registry-based [TypeLocator], like Spring's `StandardTypeLocator`.
+/// The usual [TypeLocator]: a registry of [SpelType]s by name, with the
+/// core Dart types and the common Java names already in it.
+///
+/// Every `StandardEvaluationContext` starts with one. Register your own
+/// types on it (or on a new one set as the context's `typeLocator`) so
+/// that expressions can use `T(Point)` or `new Point(...)`.
 ///
 /// Pre-registered: the Dart types `int`, `double`, `num`, `String`,
 /// `bool`, `Object`, `List`, `Map`, `Set`, `DateTime`, `Duration`, the
@@ -368,6 +398,7 @@ final class VarargsFunction {
 /// import prefix (`java.lang.Integer`, `java.util.List`).
 ///
 /// ```dart
+/// // Users can be created in expressions; Math and Integer work as is.
 /// final context = StandardEvaluationContext()
 ///   ..typeLocator = (StandardTypeLocator()
 ///     ..registerType(SpelType.of<User>('User',
@@ -387,7 +418,8 @@ final class VarargsFunction {
 /// ```
 class StandardTypeLocator implements TypeLocator {
   /// Creates a locator with the pre-registered types and the import
-  /// prefixes `java.lang`, `java.util` and `dart.core`.
+  /// prefixes `java.lang`, `java.util` and `dart.core`, so `T(Integer)`
+  /// and `T(java.lang.Integer)` both work.
   StandardTypeLocator() {
     _defaults().forEach(registerType);
   }
@@ -395,21 +427,25 @@ class StandardTypeLocator implements TypeLocator {
   final _types = <String, SpelType>{};
   final _imports = <String>['java.lang', 'java.util', 'dart.core'];
 
-  /// Adds or replaces [type].
+  /// Adds [type] under its name, replacing a type registered under the
+  /// same name (a pre-registered one too).
   void registerType(SpelType type) => _types[type.name] = type;
 
-  /// Names of the registered types.
+  /// The names of the registered types, pre-registered ones included.
   Iterable<String> get typeNames => _types.keys;
 
   /// Adds an import prefix (Spring's `registerImport`): `T(app.Point)`
   /// then finds a type registered as `Point`, and `T(Point)` one
-  /// registered as `app.Point`.
+  /// registered as `app.Point`. Lets expressions written for Java, with
+  /// package names, run unchanged.
   void registerImport(String prefix) => _imports.add(prefix);
 
-  /// Removes an import prefix (Spring's `removeImport`).
+  /// Removes an import prefix (Spring's `removeImport`), the default
+  /// ones too.
   void removeImport(String prefix) => _imports.remove(prefix);
 
-  /// The import prefixes (Spring's `getImportPrefixes`), unmodifiable.
+  /// The import prefixes, in the order they are tried (Spring's
+  /// `getImportPrefixes`); an unmodifiable copy.
   List<String> get importPrefixes => List.unmodifiable(_imports);
 
   @override
@@ -832,12 +868,15 @@ class StandardTypeLocator implements TypeLocator {
   }
 }
 
-/// Resolves methods of registered types used as `T(Name).method(...)`.
+/// The [MethodResolver] for static methods, `T(Name).method(...)`: it
+/// runs the functions listed in [SpelType.staticMethods].
 ///
-/// Used automatically when the target of a method call is a [SpelType];
-/// you do not need to register it.
+/// The evaluator asks it first whenever the target of a call is a
+/// [SpelType], in every context; you never register it. Its
+/// [callChecked] is shared by the other built-in resolvers.
 ///
 /// ```dart
+/// // Integer parsing through a pre-registered type.
 /// SpelExpressionParser()
 ///     .parseExpression("T(int).parse('42')")
 ///     .getValue(); // 42
@@ -877,10 +916,11 @@ final class SpelTypeMethodResolver implements MethodResolver {
     );
   }
 
-  /// Calls [function] with [arguments]; a `NoSuchMethodError` or
-  /// `TypeError` (arguments that do not fit, as Dart cannot tell them from
-  /// errors inside the function) becomes [notFound]; anything else the
-  /// function throws propagates unchanged.
+  /// Calls [function] with [arguments]. A `NoSuchMethodError` or
+  /// `TypeError` becomes the exception [notFound] returns, with the error
+  /// as cause: it usually means the arguments did not fit, and Dart
+  /// cannot tell it from the same error raised inside the function.
+  /// Anything else the function throws propagates unchanged.
   static Object? callChecked(
     Object function,
     List<Object?> arguments,
@@ -908,15 +948,20 @@ final class SpelTypeMethodResolver implements MethodResolver {
       args.map((a) => a == null ? 'null' : '${a.runtimeType}').join(',');
 }
 
-/// Resolves `new Name(...)` with the constructors registered on a
-/// [SpelType], the counterpart of Spring's `ReflectiveConstructorResolver`.
+/// The default [ConstructorResolver]: it runs the constructor function
+/// registered on a [SpelType] for `new Name(...)`.
 ///
-/// Registered by default in `StandardEvaluationContext`. A
+/// It replaces Spring's reflective constructor lookup. A
+/// `StandardEvaluationContext` has it by default; registering a type with
+/// a `''` constructor is all `new` needs. An unknown name fails with
+/// `typeNotFound` (EL1005E). Arguments are converted to the parameter
+/// types where needed. A
 /// `NoSuchMethodError` or `TypeError` from the call (arguments that do not
 /// fit) is reported as `SpelMessage.constructorNotFound`; anything else the
 /// constructor throws propagates unchanged, like Spring.
 ///
 /// ```dart
+/// // `new Point(1, 2)` once Point is registered.
 /// final context = StandardEvaluationContext()
 ///   ..typeLocator = (StandardTypeLocator()
 ///     ..registerType(SpelType.of<Point>('Point',

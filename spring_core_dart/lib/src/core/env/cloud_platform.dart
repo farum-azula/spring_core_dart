@@ -3,29 +3,44 @@ import 'package:spring_core_dart/src/core/env/property_resolver.dart';
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 import 'package:spring_core_dart/src/core/env/system_environment_property_source.dart';
 
-/// The cloud platform the application runs on, detected from environment
-/// variables, like Spring Boot's `CloudPlatform`.
+/// A cloud platform an application can run on (Kubernetes, Heroku, Cloud
+/// Foundry, ...), recognised from the environment variables the platform
+/// sets.
 ///
-/// `spring.main.cloud-platform` ([propertyName]) overrides the detection:
-/// a platform name (`kubernetes`, `cloud-foundry`, `CLOUD_FOUNDRY`; case
-/// and separators are ignored) enforces it, `none` turns detection off.
-/// Used by `spring.config.activate.on-cloud-platform` documents and
-/// `@ConditionalOnCloudPlatform`.
+/// It lets one build behave differently in the cloud without a profile per
+/// platform. Applications mostly name a value: in a config file document
+/// guarded by `spring.config.activate.on-cloud-platform: kubernetes`, or
+/// in `@ConditionalOnCloudPlatform(CloudPlatform.kubernetes)` on a bean.
+/// Code asks [getActive] only when it needs the answer itself.
+///
+/// The property `spring.main.cloud-platform` ([propertyName]) overrides
+/// the detection: a platform name (`kubernetes`, `cloud-foundry`,
+/// `CLOUD_FOUNDRY`; case and separators are ignored) forces it, and
+/// `none` turns detection off.
 ///
 /// ```dart
-/// final platform = CloudPlatform.getActive(environment);
-/// if (platform == CloudPlatform.kubernetes) {
-///   // ...
-/// }
+/// // Health probes only make sense where Kubernetes calls them.
+/// @Bean()
+/// @ConditionalOnCloudPlatform(CloudPlatform.kubernetes)
+/// ProbesController probes() => ProbesController();
+///
+/// // The same question in code.
+/// final onKubernetes =
+///     CloudPlatform.getActive(environment) == CloudPlatform.kubernetes;
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// CloudPlatform platform = CloudPlatform.getActive(environment);
-/// if (platform == CloudPlatform.KUBERNETES) { ... }
+/// @Bean
+/// @ConditionalOnCloudPlatform(CloudPlatform.KUBERNETES)
+/// ProbesController probes() { return new ProbesController(); }
+///
+/// boolean onKubernetes =
+///     CloudPlatform.getActive(environment) == CloudPlatform.KUBERNETES;
 /// ```
 enum CloudPlatform {
-  /// No cloud platform; enforce it to turn detection off.
+  /// No cloud platform. Never detected; set
+  /// `spring.main.cloud-platform=none` to turn detection off.
   none,
 
   /// Cloud Foundry: `VCAP_APPLICATION` or `VCAP_SERVICES` is set.
@@ -41,8 +56,9 @@ enum CloudPlatform {
   nomad,
 
   /// Kubernetes: `KUBERNETES_SERVICE_HOST` and `KUBERNETES_SERVICE_PORT`
-  /// are set, or any `<NAME>_SERVICE_HOST` with its `<NAME>_SERVICE_PORT`
-  /// (in the system environment property source).
+  /// are set, or any `<NAME>_SERVICE_HOST` with its `<NAME>_SERVICE_PORT`.
+  /// Only the real environment variables count (the `systemEnvironment`
+  /// source), not properties of the same name from elsewhere.
   kubernetes,
 
   /// Azure App Service: `WEBSITE_SITE_NAME`, `WEBSITE_INSTANCE_ID`,
@@ -53,23 +69,25 @@ enum CloudPlatform {
   /// `ECS_CONTAINER_METADATA_URI_V4` is set.
   amazonEcs;
 
-  /// Property that enforces a platform (Boot's
-  /// `spring.main.cloud-platform`).
+  /// The property that forces a platform, or turns detection off with
+  /// `none`: `spring.main.cloud-platform`, as in Spring Boot.
   static const propertyName = 'spring.main.cloud-platform';
 
-  /// Whether this platform is active in [environment]: enforced by
-  /// [propertyName], or detected when that property is not set.
+  /// Whether this platform is active in [environment]: forced by
+  /// [propertyName], or detected when that property is not set at all.
   bool isActive(PropertyResolver environment) {
     final property = environment.getProperty(propertyName);
     return isEnforced(property) ||
         (property == null && isDetected(environment));
   }
 
-  /// Whether [value] (a [propertyName] value) names this platform.
+  /// Whether [value], a value of [propertyName], names this platform, case
+  /// and separators ignored.
   bool isEnforced(String? value) =>
       value != null && _lenient(value) == _lenient(name);
 
-  /// Whether the environment variables of this platform are present.
+  /// Whether the variables this platform sets are present in
+  /// [environment], ignoring [propertyName].
   bool isDetected(PropertyResolver environment) => switch (this) {
     none => false,
     cloudFoundry =>
@@ -90,9 +108,12 @@ enum CloudPlatform {
           environment.containsProperty('ECS_CONTAINER_METADATA_URI_V4'),
   };
 
-  /// The active platform of [environment] (the first one, in declaration
-  /// order, that is enforced or detected), or `null`. [none] when
-  /// `spring.main.cloud-platform=none`.
+  /// The platform the application runs on: the first, in declaration
+  /// order, that is forced or detected in [environment].
+  ///
+  /// `null` when there is none, when [environment] is `null`, or when
+  /// [propertyName] names no known platform. [none] when the property is
+  /// `none`.
   static CloudPlatform? getActive(PropertyResolver? environment) {
     if (environment == null) {
       return null;
@@ -105,7 +126,8 @@ enum CloudPlatform {
     return null;
   }
 
-  /// The platform [value] names (case and separators ignored), or `null`.
+  /// The platform [value] names (`kubernetes`, `cloud-foundry`), case and
+  /// separators ignored, or `null` for an unknown name.
   static CloudPlatform? parse(String value) {
     for (final platform in values) {
       if (platform.isEnforced(value)) {

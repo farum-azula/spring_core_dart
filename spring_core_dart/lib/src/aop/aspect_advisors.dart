@@ -3,16 +3,19 @@ import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 
-/// The advisors of one aspect, in Spring's order within an aspect (around,
-/// before, after, afterReturning, afterThrowing, then declaration order).
+/// Turns the advice methods of one aspect into advisors, one each, at
+/// [order], in Spring's order within an aspect: around, before, after,
+/// afterReturning, afterThrowing, then declaration order.
 ///
 /// Shared by the `AspectAutoProxyCreator` and `AspectJProxyFactory`; not
-/// exported. [aspect] returns the aspect (looked up per call, so lazy and
-/// prototype aspects work; called once per proxy or target for a
-/// `perthis` / `pertarget` aspect). [named] are the named pointcuts the
-/// advice may refer to, [typeTests] / [argumentAnnotations] the runtime
-/// type tests (see `ExpressionPointcut`). [singleton] tells whether the
-/// aspect is one shared instance: a per-clause aspect must not be.
+/// exported. [aspect] returns the aspect instance: it is called per call,
+/// so lazy and prototype aspects work, and once per proxy or target for a
+/// `perthis` / `pertarget` aspect, whose pointcut is then combined with
+/// each advice's. [named] are the named pointcuts the advice may refer
+/// to, [typeTests] and [argumentAnnotations] the runtime type tests (see
+/// `ExpressionPointcut`). [singleton] tells whether the aspect bean is one
+/// shared instance. Throws an `AopConfigException` for an unsupported
+/// instantiation model or a singleton per-clause aspect.
 List<PointcutAdvisor> aspectAdvisors(
   AspectMetadata<Object> metadata, {
   required Object Function() aspect,

@@ -1,5 +1,9 @@
-/// Discovered by the generator of every application that depends on
-/// `spring_boot_starter_cache` (see `AutoConfigurationModule`).
+/// The starter's auto-configuration, found by the code generator in every
+/// application that depends on `spring_boot_starter_cache`.
+///
+/// Applications do not import it: the generated `*.spring.dart` file does
+/// (the module below is marked `@AutoConfigurationModule()`). A test that
+/// builds a context by hand imports it to name the module.
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -10,8 +14,9 @@ import 'package:spring_boot_starter_cache/src/cache_auto_configuration.dart';
 // starter can name them.
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
-/// Turns caching on: a `CacheManager` from `spring.cache.*` and the
-/// interceptor behind `@Cacheable`, `@CachePut` and `@CacheEvict`.
+/// The beans that switch caching on: the default `CacheManager` built from
+/// `spring.cache.*`, and the interceptor that runs `@Cacheable`,
+/// `@CachePut` and `@CacheEvict` around the methods of proxied beans.
 @AutoConfigurationModule()
 final BeanModule springBootStarterCacheAutoConfiguration = BeanModule(
   'springBootStarterCacheAutoConfiguration',

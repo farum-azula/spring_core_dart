@@ -11,8 +11,10 @@ part of 'bean_scanner.dart';
 
 extension _LookupScanning on BeanScanner {
   /// Whether [element] or one of its supertypes declares a `@Lookup`
-  /// method (or a getter or field marked `@Lookup`, which
-  /// [lookupClassModel] rejects).
+  /// method. A getter or field marked `@Lookup` counts too, so that
+  /// [lookupClassModel] can reject it with a clear error.
+  ///
+  /// Such a class is a bean candidate even when it is abstract.
   bool hasLookupMethods(ClassElement element) =>
       _hierarchy(element.thisType).any(
         (current) =>
@@ -24,10 +26,12 @@ extension _LookupScanning on BeanScanner {
             ),
       );
 
-  /// The generated subclass overriding the `@Lookup` methods of [type]
-  /// (the type of [element]), created through [constructor]; `null` when
-  /// the class has none. Fails the build when a method or the class
-  /// cannot be overridden from the generated library.
+  /// The model of the generated subclass that overrides the `@Lookup`
+  /// methods of [type] (the type of [element]), created through
+  /// [constructor]; `null` when the class has none.
+  ///
+  /// Fails the build when the class or one of the methods cannot be
+  /// overridden from the generated library.
   LookupClassModel? lookupClassModel(
     ClassElement element,
     InterfaceType type,

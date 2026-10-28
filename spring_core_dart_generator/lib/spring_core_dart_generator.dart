@@ -1,8 +1,18 @@
-/// Code generator for `spring_core_dart`.
+/// The code generator of `spring_core_dart`: a `build_runner` builder that
+/// turns annotated classes into plain Dart code at build time.
 ///
-/// Add it as a dev dependency next to `build_runner`; `build.yaml` applies
-/// the builder automatically to packages that depend on it. Each library
-/// with a `@ComponentScan()` variable gets a `<file>.spring.dart` module.
+/// The container needs to know which classes are beans, how to construct
+/// them and what they inject. Dart has no runtime reflection on AOT or
+/// Flutter, so this package reads the annotations at build time instead
+/// and writes the answers down as code. A library with a `@ComponentScan()`
+/// variable, or a `main` annotated with `@SpringBootApplication()`, gets a
+/// sibling `<file>.spring.dart` with the bean definitions, AOP proxies and
+/// accessors the runtime uses.
+///
+/// Applications never import this library. Add the package as a dev
+/// dependency next to `build_runner`; its `build.yaml` applies the builder
+/// to every package that depends on it. Then run
+/// `dart run build_runner build` (or `watch`).
 ///
 /// ```yaml
 /// dev_dependencies:

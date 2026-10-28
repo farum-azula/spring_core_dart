@@ -6,22 +6,23 @@ import 'package:spring_boot_starter_scheduling/src/trigger.dart';
 
 const _log = SpringLog('spring.scheduling');
 
-/// Finds `@Scheduled` methods and runs them, like Spring's
-/// `ScheduledAnnotationBeanPostProcessor`. Registered by the starter's
-/// auto-configuration; you rarely use it directly.
+/// The bean that turns `@Scheduled` methods into running tasks. The
+/// starter registers it; applications only look at it to list their
+/// scheduled tasks, for example on an admin page or in a test.
 ///
-/// The methods come from `BeanDefinition.annotatedMethods` (written by the
-/// generator). Each `@Scheduled` is checked when its bean is created —
-/// a wrong attribute fails the startup naming `Class.method` — and becomes
-/// a task when the context has been refreshed (beans created later, e.g.
-/// `@Lazy` ones, start right away). Closing the context cancels them.
-/// Only singletons are scheduled; `@Scheduled` on other scopes is ignored
-/// with a warning.
+/// It reads the methods from `BeanDefinition.annotatedMethods`, which the
+/// generator writes. Each `@Scheduled` is checked when its bean is
+/// created, so a wrong attribute fails the start naming `Class.method`.
+/// The tasks start when the context has been refreshed; a bean created
+/// later, such as a `@Lazy` one, starts its tasks at once. Closing the
+/// context cancels them. Only singletons are scheduled: `@Scheduled` on a
+/// bean of another scope is ignored with a warning.
 ///
 /// The method is called on the bean as other beans see it, so AOP advice
 /// (`@Around`, `@Cacheable`, ...) applies.
 ///
 /// ```dart
+/// // An admin command lists the scheduled tasks and their next runs.
 /// final processor = context.getBean<ScheduledAnnotationBeanPostProcessor>();
 /// for (final task in processor.scheduledTasks) {
 ///   print('${task.name}: next at ${task.nextExecution}');
@@ -37,14 +38,16 @@ const _log = SpringLog('spring.scheduling');
 final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     with SmartLifecycle
     implements BeanFactoryAware, DisposableBean {
-  /// A processor scheduling through [scheduler], resolving placeholders
-  /// with [environment].
+  /// A processor that runs the methods on [scheduler], unless they name
+  /// another one, and resolves `${...}` in the attributes with
+  /// [environment].
   ScheduledAnnotationBeanPostProcessor(this.scheduler, this.environment);
 
-  /// Runs the tasks.
+  /// The default scheduler of `@Scheduled` methods, used when they give
+  /// no `scheduler:`.
   final TaskScheduler scheduler;
 
-  /// Resolves `${...}` in the attributes.
+  /// Resolves the `${...}` placeholders of the attributes.
   final PropertyResolver environment;
 
   BeanFactory? _beanFactory;
@@ -52,7 +55,9 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
   final _tasks = <ScheduledTask>[];
   var _running = false;
 
-  /// The running tasks of `@Scheduled` methods.
+  /// The tasks started for `@Scheduled` methods, one per annotation, in
+  /// start order. A one-time task stays listed after its run; the list is
+  /// empty before the context is refreshed and after it closes.
   List<ScheduledTask> get scheduledTasks => List.unmodifiable(_tasks);
 
   @override
@@ -281,7 +286,8 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     );
   }
 
-  /// Starts the tasks (at context refresh).
+  /// Starts a task for every `@Scheduled` found so far. The context calls
+  /// it at the end of its refresh; calling it again does nothing.
   @override
   void start() {
     if (_running) {
@@ -291,7 +297,8 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     _definitions.forEach(_start);
   }
 
-  /// Cancels the tasks (at context close); [start] schedules them again.
+  /// Cancels every task; runs going on finish. The context calls it when
+  /// it closes. A later [start] schedules the methods again.
   @override
   void stop() {
     _running = false;
@@ -307,7 +314,8 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
   @override
   bool get isAutoStartup => true;
 
-  /// Starts after the other lifecycle beans and stops before them.
+  /// The last phase, so the tasks start after the other lifecycle beans
+  /// and stop before them.
   @override
   int get phase => SmartLifecycle.defaultPhase;
 

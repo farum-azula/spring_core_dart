@@ -4,15 +4,30 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _source = 'package:spring_boot_dart#ValidationAutoConfiguration';
 
-/// Registers a `defaultValidator` ([BeanValidator] on the context's
-/// [BeanIntrospector]) when the application declares no [BeanValidator]
-/// (Boot's `@ConditionalOnMissingBean(jakarta.validation.Validator.class)`:
-/// plain form `Validator` beans don't count), and a
-/// `methodValidationPostProcessor` that validates the methods of
-/// `@Validated` beans with the unique [BeanValidator] (a new one when there
-/// is none or several), like Spring Boot's `ValidationAutoConfiguration`.
-/// `@ConfigurationProperties` classes are excluded from method validation
-/// (their `@Validated` turns on binding validation instead).
+/// The beans that make validation work without setup: a `Validator` for
+/// the constraint annotations, and method validation of `@Validated()`
+/// beans.
+///
+/// Every application gets them through `springBootAutoConfiguration`:
+///
+/// - `defaultValidator`, a [BeanValidator] that checks constraint
+///   annotations such as `@NotBlank()`, using the context's
+///   [BeanIntrospector]. Inject `Validator` to validate objects by hand.
+///   It is left out when the application declares its own [BeanValidator];
+///   a bean that only implements the plain `Validator` interface does not
+///   replace it (as in Spring Boot, where only a
+///   `jakarta.validation.Validator` does).
+/// - `methodValidationPostProcessor`, which checks the parameters and
+///   return values of the methods of `@Validated()` beans with the single
+///   [BeanValidator] bean, or a new one when there is none or several.
+///   `@ConfigurationProperties` classes are left out: there `@Validated()`
+///   means validation after binding instead. It is left out when the
+///   application declares its own `MethodValidationPostProcessor`.
+///
+/// Switch both off with
+/// `spring.autoconfigure.exclude=ValidationAutoConfiguration`.
+///
+/// Spring (Java): `ValidationAutoConfiguration`.
 final validationAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<BeanValidator>(
     name: 'defaultValidator',

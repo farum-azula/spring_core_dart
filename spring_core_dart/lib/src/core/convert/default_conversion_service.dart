@@ -6,28 +6,42 @@ import 'package:spring_core_dart/src/core/convert/generic_conversion_service.dar
 import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 
-/// [GenericConversionService] with the standard converters, like Spring's
-/// `DefaultConversionService`.
+/// A conversion service that already knows the types configuration values
+/// are usually read as: numbers, booleans, durations, data sizes, URIs,
+/// dates, encodings, resources and lists, sets and maps of them.
+///
+/// It is what the environment, `@Value` injection and
+/// `@ConfigurationProperties` binding use unless the application provides
+/// a `conversionService` bean, which is why `server.port=8080` can be read
+/// as an `int` and `timeout=10s` as a `Duration`. An application creates
+/// one itself only to add converters for its own types (as its
+/// `conversionService` bean) or to convert values in code or tests.
 ///
 /// Built in:
-/// - `String` → `int` (also hex `0x1F` / `#1F`), `double`, `num`, `BigInt`,
-///   `bool`, `Uri`, `DateTime` (ISO-8601), `Duration` (`10s`, `5m`,
-///   `PT10S`, plain millis), `RegExp`; an empty or blank string becomes
-///   `null`.
-/// - `int` → `Duration` (milliseconds); `BigInt` → `int` (failing on
-///   overflow) and `double`; `num` → `BigInt`.
-/// - `String` → `Encoding` (`utf-8`, `latin1`, ...; Spring's `Charset`)
+/// - `String` to `int` (also hex `0x1F` and `#1F`), `double`, `num`,
+///   `BigInt`, `bool`, `Uri`, `DateTime` (ISO-8601), `Duration` (`10s`,
+///   `5m`, `PT10S`, a plain number of milliseconds), `DataSize` (`10MB`),
+///   `RegExp` (the text as is, not trimmed) and `Resource` (a location
+///   such as `classpath:a.txt`). For the number, boolean, URI, date,
+///   duration, size and encoding targets a blank string becomes `null`.
+/// - `bool` from `true`, `on`, `yes`, `1` and `false`, `off`, `no`, `0`, in
+///   any case; anything else fails.
+/// - `int` to `Duration` (milliseconds) and to `DataSize` (bytes);
+///   `BigInt` to `int` (failing on overflow) and `double`; `num` to
+///   `BigInt`, `int` (truncated, `1.9` is `1`) and `double`.
+/// - `String` to `Encoding` (`utf-8`, `latin1`, like Spring's `Charset`)
 ///   and back to its name.
-/// - Enums → `String`: the name (`red`, not `Color.red`).
-/// - `bool` from `true/on/yes/1` and `false/off/no/0`, case-insensitive.
-/// - `num` → `int`, `double`; anything → `String` (`toString`; a list or
-///   set as `a,b`; `Duration` as ISO-8601 `PT10S` and `DateTime` in their
-///   parseable forms).
-/// - `List` / `Set` of `String`, `int`, `double`, `num`, `bool`, `BigInt`,
-///   `Duration`, `Uri` from comma-separated strings, other iterables and
-///   single values (a one-element collection).
-/// - `Map` → `Map<String, V>` for those element types and `Object?`, keys
-///   and values converted.
+/// - Anything to `String` with `toString`, except: an enum is its name
+///   (`red`, not `Color.red`), a list or set is `a,b`, a `Duration` is
+///   ISO-8601 (`PT10S`) and a `DateTime` is ISO-8601 too.
+/// - `List` and `Set` of `String`, `int`, `double`, `num`, `bool`,
+///   `BigInt`, `Duration`, `DataSize` and `Uri`, from comma-separated
+///   strings, other iterables and single values (a one-element
+///   collection).
+/// - `Map<String, V>` for those element types and for `Object?`, from any
+///   map, keys and values converted.
+///
+/// Enums are not built in: register them with [addEnum].
 ///
 /// ```dart
 /// final service = DefaultConversionService();
@@ -47,18 +61,24 @@ import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 ///     .convert("10s", Duration.class);
 /// ```
 class DefaultConversionService extends GenericConversionService {
-  /// Creates a service with all default converters registered.
+  /// Creates a new service with the default converters, ready for more
+  /// registrations of your own.
   DefaultConversionService() {
     addDefaultConverters(this);
   }
 
-  /// A lazily created shared instance; do not register converters on it.
+  /// One instance shared by everything that was given no service of its
+  /// own, such as a new `StandardEnvironment` or bean factory. Do not
+  /// register converters on it: the change would leak into every user.
+  /// Create your own instance instead.
   ///
   /// Like Spring's `DefaultConversionService.getSharedInstance()`.
   static final DefaultConversionService sharedInstance =
       DefaultConversionService();
 
-  /// Registers the default converters on [service].
+  /// Registers the default converters on [service], for a
+  /// [GenericConversionService] (or subclass) that you build yourself but
+  /// that should still understand the standard types.
   ///
   /// ```dart
   /// final service = GenericConversionService();

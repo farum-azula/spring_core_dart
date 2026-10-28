@@ -1,42 +1,50 @@
-// The runtime package is not a dependency of the generator (consumers pull
-// both from git without overrides), but every consumer has it, and the
-// build script resolves packages with the consumer's package config: the
-// build parses pointcuts with the very parser the application runs.
+// The only import of the runtime package in the generator: the build
+// parses pointcuts with the very parser the application runs, so a
+// pointcut accepted here is accepted at startup. The build script resolves
+// packages with the consumer's package config, so this is the consumer's
+// version of spring_core_dart.
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart/aop.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 
-/// Build-time checks and savings for AOP, run on the scanned [module]
-/// before it is emitted.
+/// Checks the AOP declarations of the scanned [module] and adjusts its
+/// proxies before the module is emitted.
 ///
-/// - Every advice expression is parsed with the runtime's own parser
-///   ([ExpressionPointcut]): a syntax error fails the build, naming the
-///   aspect, the advice and the position, instead of failing the context
-///   at startup. A reference to a pointcut the build cannot see (another
-///   package's holder class) is left to the runtime.
-/// - `@DeclareParents` introductions of the module's aspects are added to
-///   the proxies of the module's beans whose class matches the type
-///   pattern (the proxy class implements the interface).
-/// - With [prune] and [foreign] (the other modules of the application),
-///   `aop_proxies: all` keeps its meaning but not its weight: a proxy
-///   class is not generated for a bean no pointcut of the application can
-///   match. The bean keeps its signatures (`AopProxyFactory.unavailable`),
-///   so an advisor from elsewhere that turns out to match it fails the
-///   startup with the reason instead of being skipped silently.
+/// The module emitter calls it once per module. It does three things:
 ///
-/// Pruning needs certainty, so it is off (every bean keeps its proxy)
-/// without [foreign], when no module has advice, when a module declares
-/// an advisor bean, or when a pointcut refers to one the build cannot
-/// follow; a bean is kept when its class or a member carries an
+/// - It parses every advice, `@Pointcut` and `@Aspect('perthis(...)')`
+///   expression of the module's aspects with the runtime's own parser
+///   ([ExpressionPointcut]). A syntax error throws an
+///   `InvalidGenerationSource` that names the aspect, the advice and the
+///   character position, instead of failing the context at startup. A
+///   reference to a pointcut the build cannot see (another package's
+///   holder class) is left to the runtime.
+/// - It adds the `@DeclareParents` introductions of the module's aspects
+///   to the proxies of the module's beans whose class matches the type
+///   pattern, so the proxy class implements the introduced interface.
+/// - With [prune] and [foreign] (the advice of the application's other
+///   modules), it skips the proxy class of every bean that no pointcut of
+///   the application can match. `aop_proxies: all` keeps its meaning but
+///   not its weight. The bean keeps its signatures
+///   (`AopProxyFactory.unavailable`), so an advisor from elsewhere that
+///   matches it after all fails the startup with the reason instead of
+///   being skipped silently.
+///
+/// Pruning needs certainty. It is off, and every bean keeps its proxy,
+/// without [foreign], when no module has advice, when a module declares an
+/// advisor bean, or when a pointcut refers to one the build cannot follow.
+/// A bean always keeps its proxy when its class or a member carries an
 /// annotation from outside `package:spring_core_dart` (annotation-driven
 /// advisors of starters, like `@Cacheable`) or `@Validated`, when it is a
-/// subclass proxy (it is the bean itself), when it has an introduction,
-/// and when a pointcut might match it.
+/// subclass proxy (the proxy is the bean itself), when it has an
+/// introduction, and when a pointcut might match it.
 ///
 /// ```dart
-/// analyzeAop(module, prune: true, foreign: ForeignAdvice());
+/// // In the @SpringBootApplication output: prune, knowing the advice of
+/// // the nested modules and the auto-configurations.
+/// analyzeAop(module, prune: true, foreign: foreignAdvice);
 /// ```
 void analyzeAop(
   ModuleModel module, {

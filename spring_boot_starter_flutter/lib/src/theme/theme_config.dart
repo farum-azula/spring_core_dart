@@ -1,15 +1,17 @@
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
 
-/// The theme properties (`spring.flutter.theme.*`) as named themes:
-/// the shared part at the root, each theme of `themes.<name>` on top of
-/// it (and of the theme it `extends`), and which one is active.
+/// The theme properties (`spring.flutter.theme.*`) sorted into named
+/// themes: the shared part at the root, each theme of `themes.<name>` on
+/// top of it (or of the theme it `extends`), and which theme is active.
 ///
-/// Keys are kept relative to `spring.flutter.theme` and canonical
-/// (`seed-color`, `seedColor` → `seedcolor`); list entries are indexed
+/// `SpringThemes` builds one from the properties and makes each theme from
+/// it; apps do not use it. Keys are kept relative to
+/// `spring.flutter.theme` and canonical (`seed-color` and `seedColor` both
+/// become `seedcolor`); list entries are indexed
 /// (`typography.fontfamilyfallback.0`) or one comma-separated value.
 final class ThemeConfig {
-  /// The config of [properties] (relative keys in any form, as a `Binder`
-  /// gives them).
+  /// Sorts [properties], whose keys are relative to `spring.flutter.theme`
+  /// in any form (as a `Binder` gives them).
   ThemeConfig(Map<String, String> properties) {
     for (final MapEntry(:key, :value) in properties.entries) {
       final segments = key.split('.');
@@ -36,21 +38,25 @@ final class ThemeConfig {
     }
   }
 
-  /// The theme shown now: `system` or a theme name.
+  /// The theme to show at the start, from `active`: `system` (the default)
+  /// or a theme name.
   String active = 'system';
 
-  /// The theme `system` shows when the device is in light mode.
+  /// The theme `system` shows when the device is in light mode, from
+  /// `system-light`; `light` by default.
   String systemLight = 'light';
 
-  /// The theme `system` shows when the device is in dark mode.
+  /// The theme `system` shows when the device is in dark mode, from
+  /// `system-dark`; `dark` by default.
   String systemDark = 'dark';
 
   final _base = <String, String>{};
   final _own = <String, Map<String, String>>{};
   final _displayNames = <String, String>{'light': 'light', 'dark': 'dark'};
 
-  /// Every theme: `light` and `dark`, then the others by name (property
-  /// sources, imported files included, have no meaningful order).
+  /// The names of every theme: `light` and `dark`, then the others in
+  /// alphabetical order (property sources, imported files included, have
+  /// no meaningful order).
   late final List<String> names = List.unmodifiable([
     'light',
     'dark',
@@ -60,12 +66,15 @@ final class ThemeConfig {
     ]..sort(),
   ]);
 
-  /// The name of the theme [name] stands for (ignoring case and `-`), or
-  /// `null`.
+  /// The theme's name as first declared, for [name] in any case or with
+  /// `-` and `_`; `null` when there is no such theme.
   String? nameOf(String name) => _displayNames[ThemeValues.canonical(name)];
 
-  /// The properties of theme [name]: Material's brightness for `light` /
-  /// `dark`, the shared part, the theme it extends, its own.
+  /// The properties of theme [name], each layer over the previous one: the
+  /// brightness (`dark` for the `dark` theme, else `light`), the shared
+  /// part or the theme it extends, then its own. A list in a later layer
+  /// replaces the whole list. Throws an `ArgumentError` for an unknown
+  /// name, and a `StateError` for an `extends` cycle or unknown parent.
   Map<String, String> resolve(String name) => _resolve(
     nameOf(name) ??
         (throw ArgumentError.value(
@@ -130,25 +139,30 @@ final class ThemeConfig {
   }
 }
 
-/// Reads a resolved theme's properties: values by path, lists, and the
-/// full property name for messages.
+/// The resolved properties of one theme, with the helpers that read them:
+/// values by path, lists, child keys, parsed values, and the full property
+/// name for error messages. Internal to the starter.
 final class ThemeProperties {
-  /// The properties [values] of theme [name].
+  /// The resolved [values] of theme [name].
   ThemeProperties(this.name, this.values);
 
-  /// The theme's name.
+  /// The theme's name, used in error messages.
   final String name;
 
-  /// Canonical relative path → value.
+  /// The values by canonical path relative to the theme
+  /// (`components.card.shape`).
   final Map<String, String> values;
 
-  /// The value at [path] (canonical), or `null`.
+  /// The trimmed value at the canonical [path]; `null` when missing or
+  /// empty.
   String? operator [](String path) {
     final value = values[path]?.trim();
     return value == null || value.isEmpty ? null : value;
   }
 
-  /// The list at [path]: indexed entries, else one comma-separated value.
+  /// The list at [path]: the indexed entries in order, else one
+  /// comma-separated value split; empty items are dropped, and `null` when
+  /// there is neither.
   List<String>? list(String path) {
     final indexed = <int, String>{};
     for (final MapEntry(:key, :value) in values.entries) {
@@ -174,15 +188,17 @@ final class ThemeProperties {
           ];
   }
 
-  /// The direct children of [path] (`components` → `card`, `appbar`, ...).
+  /// The names directly below [path]; for `components`, `card`, `appbar`
+  /// and so on.
   Set<String> children(String path) => {
     for (final key in values.keys)
       if (key.startsWith('$path.'))
         key.substring(path.length + 1).split('.').first,
   };
 
-  /// Reads [path] with [parse]; throws a [ThemePropertyException] naming
-  /// the property when the value cannot be read.
+  /// The value at [path] parsed with [parse]; `null` when there is none.
+  /// Throws a [ThemePropertyException] naming the property and [expected]
+  /// when [parse] cannot read it.
   T? read<T>(String path, T? Function(String value) parse, String expected) {
     final value = this[path];
     if (value == null) {
@@ -192,7 +208,8 @@ final class ThemeProperties {
         (throw ThemePropertyException(propertyName(path), value, expected));
   }
 
-  /// The property's name as written in files, for messages.
+  /// The full name of the property at [path] as written in files, for
+  /// error messages; the shared part's properties also name the theme.
   String propertyName(String path) => name == 'light' || name == 'dark'
       ? 'spring.flutter.theme.$path (theme $name)'
       : 'spring.flutter.theme.themes.$name.$path';

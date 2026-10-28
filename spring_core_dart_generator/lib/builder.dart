@@ -1,13 +1,21 @@
-/// `build_runner` entry point of `spring_core_dart_generator`.
+/// The `build_runner` entry points of `spring_core_dart_generator`.
 ///
-/// The generator turns annotated Dart classes into plain Dart code at build
-/// time: for every library that declares a `@ComponentScan()` variable it
-/// writes a sibling `*.spring.dart` file with a `BeanModule` holding one
-/// `BeanDefinition` per bean, generated AOP proxy classes, introspection
-/// metadata and `@Configurable` configurers. Nothing is discovered by
-/// reflection at runtime (Dart AOT and Flutter have no `dart:mirrors`).
+/// `build_runner` finds the two factories here through the package's
+/// `build.yaml`; applications do not import this library. The generator
+/// turns annotated Dart classes into plain Dart code at build time, because
+/// Dart AOT and Flutter have no `dart:mirrors` to discover them at runtime:
 ///
-/// Setup (in the consuming package):
+/// - A library with a `@ComponentScan()` variable gets a sibling
+///   `*.spring.dart` file with a `BeanModule`: one `BeanDefinition` per bean
+///   found in its directory, plus the generated AOP proxy classes,
+///   introspection metadata and `@Configurable` configurers.
+/// - A `main` annotated with `@SpringBootApplication()` (from
+///   `spring_boot_dart`) gets the same for the whole package, plus
+///   `springApplication` and `runApplication(args)`.
+/// - A test file with `@SpringBootTest` classes gets a
+///   `test/spring/<name>.test.spring.dart` file with `runSpringTests()`.
+///
+/// Setup, in the application's package:
 ///
 /// ```yaml
 /// # pubspec.yaml
@@ -23,12 +31,13 @@
 /// import 'package:spring_core_dart/spring_core_dart.dart';
 /// import 'package:my_app/src/beans.spring.dart';
 ///
+/// // Every bean class under lib/src/ ends up in this module.
 /// @ComponentScan()
 /// final BeanModule appBeans = $appBeans;
 /// ```
 ///
-/// Then run `dart run build_runner build` and register `appBeans` with an
-/// application context.
+/// Then run `dart run build_runner build` and pass `appBeans` to the
+/// application context, for example `ApplicationContext.run([appBeans])`.
 ///
 /// Spring (Java):
 ///
@@ -50,17 +59,23 @@ import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
 
-/// Creates the [SpringBuilder]; referenced from the package's `build.yaml`
-/// (`builder_factories: ["springCoreDartBuilder"]`).
+/// Creates the main builder ([SpringBuilder]), which writes the
+/// `*.spring.dart` files; `build.yaml` names it in `builder_factories`.
 ///
-/// Reads the `aop_proxies` option (`all` by default, `interfaces` or
-/// `none`; see [ProxyMode]) and throws an [ArgumentError] for any other
-/// value, and `aop_prune` (`true` by default): whether the
-/// `@SpringBootApplication` output skips the proxy classes of beans no
-/// pointcut of the application can match (`@ComponentScan` modules are
-/// never pruned: any other module may import them).
+/// Two options tune it, set in the `build.yaml` of the application's
+/// package. They only change how much code is generated: a bean without
+/// matching advice is never wrapped at runtime either way.
 ///
-/// Example `build.yaml` in a consuming package:
+/// - `aop_proxies` (see [ProxyMode]): `all` (the default) generates a proxy
+///   class for every bean that can be implemented, `interfaces` proxies
+///   only the abstract supertypes of a bean (a bean without one gets no
+///   proxy), `none` no proxies at all. Any other value throws an
+///   [ArgumentError].
+/// - `aop_prune` (`true` by default; anything but a `bool` throws an
+///   [ArgumentError]): the `@SpringBootApplication` output leaves out the
+///   proxy classes of beans that no pointcut of the application can match.
+///   `@ComponentScan` modules are never pruned, because any other module
+///   may import them and bring aspects the build cannot see.
 ///
 /// ```yaml
 /// targets:
@@ -68,7 +83,9 @@ import 'package:spring_core_dart_generator/src/test_builder.dart';
 ///     builders:
 ///       spring_core_dart_generator:spring_core_dart:
 ///         options:
-///           aop_proxies: interfaces # JDK-proxy style: only abstract types
+///           # Smaller output: only beans with an abstract supertype can
+///           # be advised, through that type.
+///           aop_proxies: interfaces
 /// ```
 ///
 /// Spring (Java):
@@ -99,7 +116,11 @@ Builder springCoreDartBuilder(BuilderOptions options) {
   );
 }
 
-/// Creates the [SpringTestBuilder]: `<name>_test.dart` files with
-/// `@SpringBootTest` classes get `<name>.test.spring.dart` with
-/// `runSpringTests()` (build.yaml `spring_test`).
+/// Creates the test builder ([SpringTestBuilder]), registered in
+/// `build.yaml` as `spring_test`.
+///
+/// For every `test/<name>_test.dart` that declares `@SpringBootTest`
+/// classes it writes `test/spring/<name>.test.spring.dart` with a
+/// `runSpringTests()` function, which the test's `main` calls to register
+/// the tests of those classes. It takes no options.
 Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();

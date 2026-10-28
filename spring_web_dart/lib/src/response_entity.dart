@@ -1,84 +1,118 @@
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_status.dart';
 
-/// A response with its status code and headers, not only the body, like
-/// Spring's `ResponseEntity`. A Feign client method returning
-/// `Future<ResponseEntity<Book>>` gets all three.
+/// An HTTP response as a value: a status code, headers and an optional
+/// body.
+///
+/// A controller method normally returns just the body, and the server
+/// answers `200 OK` with it. Return a `ResponseEntity` instead when the
+/// status or the headers depend on what happened: `201 Created` with a
+/// `Location` header, `404 Not Found` when nothing was found, an `ETag`
+/// for caching. Build one with the shortcuts ([ResponseEntity.ok],
+/// [created], [notFound], [status], ...). In the other direction, a Feign
+/// client method declared to return `Future<ResponseEntity<Book>>` gives
+/// the caller the status and headers of the answer next to the decoded
+/// body. The client still throws a `FeignException` for an error status
+/// (unless the client dismisses 404s, which then come back as a 404
+/// entity without a body).
 ///
 /// ```dart
-/// final response = await catalog.create(book); // ResponseEntity<Book>
-/// if (response.statusCode == HttpStatus.created) {
-///   print(response.headers.location);
-///   print(response.body!.title);
+/// // A controller: 201 Created, with the address of the new book.
+/// @PostMapping('/books')
+/// Future<ResponseEntity<Book>> create(@RequestBody() Book book) async {
+///   final saved = await books.save(book);
+///   return ResponseEntity.created(Uri.parse('/books/${saved.isbn}'))
+///       .body(saved);
 /// }
-/// response.statusCode.is2xxSuccessful; // true
-/// ResponseEntity.ok(book);
-/// ResponseEntity.created(Uri.parse('/books/1')).body(book);
-/// ResponseEntity.notFound().build<Book>();
+///
+/// // 200 with the book, or 404 without a body.
+/// @GetMapping('/books/{isbn}')
+/// Future<ResponseEntity<Book>> find(@PathVariable() String isbn) async =>
+///     ResponseEntity.ofNullable(await books.findOrNull(isbn));
+///
+/// // A Feign client returning ResponseEntity<Book> for the same call:
+/// // the caller learns where the book was stored.
+/// final response = await catalog.create(book);
+/// print(response.headers.location); // /books/978-0
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// ResponseEntity<Book> response = catalog.create(book);
-/// response.getStatusCode(); response.getHeaders().getLocation();
-/// response.getBody();
-/// response.getStatusCode().is2xxSuccessful();
-/// ResponseEntity.ok(book);
-/// ResponseEntity.created(URI.create("/books/1")).body(book);
-/// ResponseEntity.notFound().build();
+/// @PostMapping("/books")
+/// ResponseEntity<Book> create(@RequestBody Book book) {
+///   Book saved = books.save(book);
+///   return ResponseEntity.created(URI.create("/books/" + saved.isbn()))
+///       .body(saved);
+/// }
+///
+/// @GetMapping("/books/{isbn}")
+/// ResponseEntity<Book> find(@PathVariable String isbn) {
+///   return ResponseEntity.of(books.findById(isbn));
+/// }
 /// ```
 class ResponseEntity<T> {
-  /// A response with [statusCode], [body] and [headers]; [headers] are
-  /// read-only from here on, like Spring's `HttpEntity`. Throws an
-  /// [ArgumentError] unless [statusCode] has three digits (100–999), like
-  /// Spring's `HttpStatusCode.valueOf`.
+  /// A response with [statusCode], [body] and [headers]. Throws an
+  /// [ArgumentError] unless [statusCode] has three digits (100–999).
+  ///
+  /// The entity's [headers] are a read-only view of the [headers] given
+  /// here: they cannot be changed through the entity, but later changes
+  /// to the object passed in show through. The builders ([status],
+  /// [created], ...) are usually shorter.
   ResponseEntity(int statusCode, {this.body, HttpHeaders? headers})
     : statusCode = HttpStatusCode.valueOf(statusCode),
       headers = HttpHeaders.readOnly(headers ?? HttpHeaders());
 
-  /// A `200 OK` response with [body].
+  /// A `200 OK` response with [body] and no headers: the same as
+  /// returning [body] itself from a controller.
   ResponseEntity.ok(T this.body)
     : statusCode = HttpStatus.ok,
       headers = HttpHeaders.readOnly(HttpHeaders());
 
   /// `200 OK` with [body], or `404 Not Found` without a body when [body]
-  /// is `null`, like Spring's `ResponseEntity.of(Optional)` (Dart has no
-  /// `Optional`: a nullable body stands for it).
+  /// is `null`; for a lookup that may find nothing. The same as
+  /// [ofNullable]; it mirrors Spring's `ResponseEntity.of(Optional)`, and
+  /// a nullable value stands for the `Optional`.
   static ResponseEntity<T> of<T>(T? body) => ofNullable(body);
 
   /// `200 OK` with [body], or `404 Not Found` without a body when [body]
-  /// is `null`, like Spring's `ResponseEntity.ofNullable`.
+  /// is `null`; for a lookup that may find nothing.
   static ResponseEntity<T> ofNullable<T>(T? body) => body == null
       ? ResponseEntity<T>(HttpStatus.notFound)
       : ResponseEntity<T>(HttpStatus.ok, body: body);
 
-  /// A builder for a response with [statusCode] (100–999, an
-  /// [ArgumentError] otherwise), like Spring's `ResponseEntity.status(...)`.
+  /// A builder for a response with any [statusCode]; throws an
+  /// [ArgumentError] unless it is between 100 and 999. Use it for the
+  /// statuses without a shortcut here (`409 Conflict`, `304 Not
+  /// Modified`, ...).
   static ResponseEntityBuilder status(int statusCode) =>
       ResponseEntityBuilder._(statusCode);
 
-  /// A builder for a `201 Created` response with the `Location`
-  /// [location], like Spring's `ResponseEntity.created(uri)`.
+  /// A builder for a `201 Created` response, with [location], the address
+  /// of the new resource, in the `Location` header.
   static ResponseEntityBuilder created(Uri location) =>
       ResponseEntityBuilder._(HttpStatus.created)..location(location);
 
-  /// A builder for a `202 Accepted` response.
+  /// A builder for a `202 Accepted` response: the request was taken but
+  /// is processed later.
   static ResponseEntityBuilder accepted() =>
       ResponseEntityBuilder._(HttpStatus.accepted);
 
-  /// A builder for a `204 No Content` response.
+  /// A builder for a `204 No Content` response: success, with no body.
   static ResponseEntityBuilder noContent() =>
       ResponseEntityBuilder._(HttpStatus.noContent);
 
-  /// A builder for a `400 Bad Request` response.
+  /// A builder for a `400 Bad Request` response: the request itself is
+  /// wrong.
   static ResponseEntityBuilder badRequest() =>
       ResponseEntityBuilder._(HttpStatus.badRequest);
 
-  /// A builder for a `404 Not Found` response.
+  /// A builder for a `404 Not Found` response; usually finished with
+  /// `build()`.
   static ResponseEntityBuilder notFound() =>
       ResponseEntityBuilder._(HttpStatus.notFound);
 
-  /// A builder for a `422 Unprocessable Content` response.
+  /// A builder for a `422 Unprocessable Content` response: the request is
+  /// well formed but its content cannot be processed.
   static ResponseEntityBuilder unprocessableContent() =>
       ResponseEntityBuilder._(HttpStatus.unprocessableContent);
 
@@ -86,23 +120,25 @@ class ResponseEntity<T> {
   static ResponseEntityBuilder internalServerError() =>
       ResponseEntityBuilder._(HttpStatus.internalServerError);
 
-  /// The status code (an `int` with `is2xxSuccessful`, ...), like
-  /// Spring's `getStatusCode()`.
+  /// The status code: an `int` that also has checks such as
+  /// `is2xxSuccessful`, and compares with the [HttpStatus] constants.
   final HttpStatusCode statusCode;
 
-  /// The body, if any.
+  /// The body, or `null` when the response has none.
   final T? body;
 
-  /// The headers.
+  /// The response headers; read-only.
   final HttpHeaders headers;
 
-  /// Whether there is a body, like Spring's `hasBody()`.
+  /// Whether [body] is not `null`.
   bool get hasBody => body != null;
 
-  /// Whether the status is 2xx.
+  /// Whether the status is a success (2xx).
   bool get isSuccess => statusCode.is2xxSuccessful;
 
-  /// The same status code, headers and body, like Spring's `equals`.
+  /// Whether [other] has the same status code, headers and body. Lists,
+  /// maps and sets in the body are compared by content, so an entity
+  /// decoded from JSON equals one built by hand in a test.
   @override
   bool operator ==(Object other) =>
       other is ResponseEntity &&
@@ -149,15 +185,34 @@ class ResponseEntity<T> {
   };
 }
 
-/// Builds a [ResponseEntity], like Spring's `ResponseEntity.BodyBuilder`
-/// (from [ResponseEntity.status], [ResponseEntity.created], ...): set
-/// headers, then finish with [body] or [build].
+/// The builder returned by [ResponseEntity.status], [ResponseEntity.created]
+/// and the other shortcuts: the status is set, headers are added one by
+/// one, and [body] or [build] makes the [ResponseEntity].
+///
+/// It saves building an [HttpHeaders] object by hand when a response
+/// needs a header or two. Each header method returns the builder, so the
+/// calls chain.
 ///
 /// ```dart
-/// ResponseEntity.status(HttpStatus.created)
-///     .header('X-Id', '1')
-///     .contentType(MediaType.applicationJson)
-///     .body(book);
+/// // An image with caching headers, so browsers can revalidate it.
+/// @GetMapping('/books/{isbn}/cover')
+/// Future<ResponseEntity<Uint8List>> cover(@PathVariable() String isbn) async {
+///   final cover = await covers.find(isbn);
+///   return ResponseEntity.status(HttpStatus.ok)
+///       .contentType(MediaType.imagePng)
+///       .eTag(cover.hash)
+///       .lastModified(cover.updatedAt)
+///       .body(cover.bytes);
+/// }
+/// ```
+///
+/// Spring (Java): `ResponseEntity.BodyBuilder`.
+/// ```java
+/// return ResponseEntity.status(HttpStatus.OK)
+///     .contentType(MediaType.IMAGE_PNG)
+///     .eTag(cover.hash())
+///     .lastModified(cover.updatedAt())
+///     .body(cover.bytes());
 /// ```
 final class ResponseEntityBuilder {
   ResponseEntityBuilder._(int statusCode)
@@ -166,7 +221,8 @@ final class ResponseEntityBuilder {
   final int _statusCode;
   final _headers = HttpHeaders();
 
-  /// Adds [values] to header [name].
+  /// Adds [values] to the header [name], after any values it already
+  /// has: `.header('Cache-Control', ['no-store'])`.
   ResponseEntityBuilder header(String name, List<String> values) {
     for (final value in values) {
       _headers.add(name, value);
@@ -174,42 +230,47 @@ final class ResponseEntityBuilder {
     return this;
   }
 
-  /// Sets every header of [headers], replacing the values of those names,
-  /// like Spring's `headers(HttpHeaders)` (`putAll`).
+  /// Copies every header of [headers]; a name already set on the builder
+  /// gets the new values instead of its old ones.
   ResponseEntityBuilder headers(HttpHeaders headers) {
     _headers.putAll(headers);
     return this;
   }
 
-  /// Sets the `Location`.
+  /// Sets the `Location` header: where the new or moved resource is.
   ResponseEntityBuilder location(Uri location) {
     _headers.location = location;
     return this;
   }
 
-  /// Sets the `Content-Type`.
+  /// Sets the `Content-Type` header, such as `MediaType.applicationJson`.
+  /// Without it, the server picks the type from the body and the
+  /// request's `Accept` header.
   ResponseEntityBuilder contentType(String mediaType) {
     _headers.contentType = mediaType;
     return this;
   }
 
-  /// Sets the `ETag` (quoted unless it already is).
+  /// Sets the `ETag` header, a version tag of the body for caching; [tag]
+  /// is put in quotes unless it already is (`W/"..."` included).
   ResponseEntityBuilder eTag(String tag) {
     _headers.eTag = tag;
     return this;
   }
 
-  /// Sets `Last-Modified`.
+  /// Sets the `Last-Modified` header, written as an HTTP date in UTC.
   ResponseEntityBuilder lastModified(DateTime date) {
     _headers.lastModified = date;
     return this;
   }
 
-  /// The response with [body].
+  /// Finishes the response with [body]; `T` is usually inferred from the
+  /// method's return type.
   ResponseEntity<T> body<T>(T? body) =>
       ResponseEntity<T>(_statusCode, body: body, headers: _headers.copy());
 
-  /// The response without a body.
+  /// Finishes the response without a body; write `build<Book>()` when
+  /// `T` cannot be inferred.
   ResponseEntity<T> build<T>() =>
       ResponseEntity<T>(_statusCode, headers: _headers.copy());
 }

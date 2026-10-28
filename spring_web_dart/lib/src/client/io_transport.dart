@@ -8,32 +8,57 @@ import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 
-/// An [HttpTransport] on `dart:io`'s `HttpClient`: the VM, Flutter mobile
-/// and desktop. Follows redirects when the request says so
-/// (`HttpRequest.followRedirects`, as far as `HttpClient` does: `GET` and
-/// `HEAD`, and `303` after a `POST`). The request's `readTimeout` limits
-/// each wait for data (the response, then every chunk of the body), its
-/// `timeout` the whole exchange; the request is aborted when one runs out.
-/// Like Spring's `JdkClientHttpRequestFactory`.
+/// The [HttpTransport] for platforms with `dart:io` (the Dart VM, Flutter
+/// on mobile and desktop), built on `dart:io`'s `HttpClient`.
+///
+/// `platformHttpTransport()` returns one on these platforms, so you create
+/// it yourself only to configure the `HttpClient`: a proxy, trusted
+/// certificates, a user agent. Declare it as an `HttpTransport` bean and
+/// the Feign starter uses it.
+///
+/// How it treats an [HttpRequest]:
+///
+/// - Its headers replace the `HttpClient` defaults of the same name
+///   (`User-Agent`, `Accept-Encoding`); `Content-Length` is always taken
+///   from the body.
+/// - Redirects are followed when `followRedirects` is set, as far as
+///   `HttpClient` follows them: for `GET` and `HEAD`, and a `303` after a
+///   `POST`.
+/// - `readTimeout` limits each wait for data (the response, then every
+///   chunk of the body) and `timeout` the whole exchange. When one runs
+///   out the request is aborted and an [HttpTransportException] with
+///   `isTimeout` is thrown.
+/// - Socket and other I/O errors become an [HttpTransportException]
+///   whose `cause` is the original error.
 ///
 /// ```dart
+/// import 'dart:io';
+///
 /// import 'package:spring_web_dart/io.dart';
 ///
-/// final transport =
-///     IoHttpTransport(connectTimeout: const Duration(seconds: 3));
-/// final response = await transport.send(
-///   HttpRequest(method: HttpMethod.get, url: Uri.parse('https://api.neon.books/books')),
-/// );
+/// // Feign calls go through the company proxy.
+/// @Configuration()
+/// class HttpSetup {
+///   @Bean()
+///   HttpTransport httpTransport() => IoHttpTransport(
+///     connectTimeout: const Duration(seconds: 3),
+///     client: HttpClient()
+///       ..findProxy = (_) => 'PROXY proxy.neon.books:3128',
+///   );
+/// }
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java): `JdkClientHttpRequestFactory`, on the JDK's
+/// `HttpClient`:
 /// ```java
 /// var factory = new JdkClientHttpRequestFactory(HttpClient.newHttpClient());
 /// factory.setReadTimeout(Duration.ofSeconds(5));
 /// ```
 class IoHttpTransport implements HttpTransport {
-  /// A transport on [client] (a new `HttpClient` by default);
-  /// [connectTimeout] limits opening connections.
+  /// A transport that sends through [client], or through a new
+  /// `HttpClient` when none is given. [connectTimeout], when set, becomes
+  /// the client's `connectionTimeout`: the longest wait for a connection
+  /// to open. [close] closes the client, also one passed in.
   IoHttpTransport({Duration? connectTimeout, io.HttpClient? client})
     : _client = client ?? io.HttpClient() {
     if (connectTimeout != null) {

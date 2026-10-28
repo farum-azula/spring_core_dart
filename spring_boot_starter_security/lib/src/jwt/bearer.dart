@@ -10,21 +10,33 @@ import 'package:spring_security_core/spring_security_core.dart';
 
 const _rfc6750 = 'https://tools.ietf.org/html/rfc6750#section-3.1';
 
-/// A failed OAuth 2.0 authentication carrying its [error], like Spring's
-/// `OAuth2AuthenticationException`.
+/// A refused OAuth 2.0 login, such as a bad bearer token, with the
+/// standard [error] code to report to the client.
+///
+/// The bearer-token entry point puts the error's code and description in
+/// the `WWW-Authenticate` header of the 401.
+///
+/// Spring (Java): `OAuth2AuthenticationException`.
 class OAuth2AuthenticationException extends AuthenticationException {
-  /// Failed with [error].
+  /// A refusal with [error]; the log [message] defaults to the error's
+  /// description, else its code.
   OAuth2AuthenticationException(this.error, [String? message, Object? cause])
     : super(message ?? error.description ?? error.errorCode, cause);
 
-  /// The OAuth 2.0 error.
+  /// The OAuth 2.0 error, such as `invalid_token`.
   final OAuth2Error error;
 }
 
-/// The bearer token is malformed, expired or wrongly signed, like Spring's
-/// `InvalidBearerTokenException`.
+/// A request was refused because its bearer token is malformed, expired,
+/// wrongly signed or otherwise not acceptable.
+///
+/// The client gets a 401 with
+/// `WWW-Authenticate: Bearer error="invalid_token"` and the description.
+///
+/// Spring (Java): `InvalidBearerTokenException`.
 class InvalidBearerTokenException extends OAuth2AuthenticationException {
-  /// Invalid for [description].
+  /// An `invalid_token` error with [description], which is sent to the
+  /// client in the `WWW-Authenticate` header.
   InvalidBearerTokenException(String description, [Object? cause])
     : super(
         OAuth2Error('invalid_token', description, _rfc6750),
@@ -33,13 +45,19 @@ class InvalidBearerTokenException extends OAuth2AuthenticationException {
       );
 }
 
-/// A bearer token not yet authenticated, like Spring's
-/// `BearerTokenAuthenticationToken`.
+/// The login request of a bearer token: the raw token as the request
+/// sent it, not checked yet.
+///
+/// The bearer-token filter passes it to the `AuthenticationManager`,
+/// whose [JwtAuthenticationProvider] returns a [JwtAuthenticationToken].
+/// Write an `AuthenticationProvider` for it to accept opaque tokens.
+///
+/// Spring (Java): `BearerTokenAuthenticationToken`.
 final class BearerTokenAuthenticationToken extends AbstractAuthenticationToken {
-  /// The request for [token].
+  /// A login request for [token].
   BearerTokenAuthenticationToken(this.token);
 
-  /// The token.
+  /// The raw token, as sent after `Bearer `.
   final String token;
 
   @override
@@ -48,15 +66,30 @@ final class BearerTokenAuthenticationToken extends AbstractAuthenticationToken {
   @override
   Object get credentials => token;
 
-  /// The token is never shown.
+  /// Always `''`, so the token never appears where a name is shown or
+  /// logged.
   @override
   String get name => '';
 }
 
-/// An authenticated JWT, like Spring's `JwtAuthenticationToken`: the
-/// principal is the [Jwt], the name its `sub` (or another claim).
+/// The `Authentication` of a request with a valid JWT bearer token.
+///
+/// The principal is the decoded [Jwt], the name its `sub` claim (or the
+/// claim set by `principal-claim-name`), and the authorities come from
+/// its scopes (`SCOPE_read`). A controller gets it as an `Authentication`
+/// parameter, or the token itself with `@AuthenticationPrincipal() Jwt`.
+///
+/// ```dart
+/// @GetMapping('/me')
+/// String me(Authentication authentication) =>
+///     (authentication as JwtAuthenticationToken).tokenAttributes['email']
+///         as String;
+/// ```
+///
+/// Spring (Java): `JwtAuthenticationToken`.
 final class JwtAuthenticationToken extends AbstractAuthenticationToken {
-  /// [jwt] with [authorities], named by [name].
+  /// An authenticated token for [jwt] with [authorities]; [name] defaults
+  /// to the `sub` claim, else `''`.
   JwtAuthenticationToken(
     this.jwt,
     Iterable<GrantedAuthority> authorities, {
@@ -66,7 +99,7 @@ final class JwtAuthenticationToken extends AbstractAuthenticationToken {
     super.isAuthenticated = true;
   }
 
-  /// The token.
+  /// The decoded, verified token.
   final Jwt jwt;
 
   final String _name;
@@ -80,31 +113,54 @@ final class JwtAuthenticationToken extends AbstractAuthenticationToken {
   @override
   String get name => _name;
 
-  /// The claims (Spring's `getTokenAttributes`).
+  /// The token's claims; Spring's `getTokenAttributes`.
   Map<String, Object?> get tokenAttributes => jwt.claims;
 }
 
-/// The authorities of a JWT: its scopes as `SCOPE_x`, like Spring's
-/// `JwtGrantedAuthoritiesConverter` — `scope` (space-separated) or `scp`
-/// (a list or a string) unless [authoritiesClaimName] names another claim.
+/// Reads the authorities of a JWT from one claim: by default its scopes,
+/// each as `SCOPE_x`.
+///
+/// The claim is [authoritiesClaimName], else `scope`, else `scp`. A string
+/// claim is split at [authoritiesClaimDelimiter] (a space); a list claim
+/// gives its string elements. Each value gets [authorityPrefix]. A token
+/// without the claim has no authorities. Configure it with the
+/// `authority-prefix`, `authorities-claim-name` and
+/// `authorities-claim-delimiter` properties under
+/// `spring.security.oauth2.resourceserver.jwt`, or build one.
+///
+/// ```dart
+/// // Keycloak-style `roles` claim: ["admin"] becomes ROLE_admin.
+/// @Bean()
+/// JwtAuthenticationConverter jwtAuthenticationConverter() =>
+///     const JwtAuthenticationConverter(
+///       authoritiesConverter: JwtGrantedAuthoritiesConverter(
+///         authoritiesClaimName: 'roles',
+///         authorityPrefix: 'ROLE_',
+///       ),
+///     );
+/// ```
+///
+/// Spring (Java): `JwtGrantedAuthoritiesConverter`.
 final class JwtGrantedAuthoritiesConverter {
-  /// A converter.
+  /// A converter with the given claim, prefix and delimiter.
   const JwtGrantedAuthoritiesConverter({
     this.authorityPrefix = 'SCOPE_',
     this.authoritiesClaimName,
     this.authoritiesClaimDelimiter = ' ',
   });
 
-  /// Put before each value.
+  /// Put before each value: `SCOPE_` by default, `''` for none.
   final String authorityPrefix;
 
-  /// The claim (default: `scope`, else `scp`).
+  /// The claim holding the authorities; `null` looks for `scope`, else
+  /// `scp`.
   final String? authoritiesClaimName;
 
-  /// Splits a string claim.
+  /// Separates the values of a string claim; a space by default.
   final String authoritiesClaimDelimiter;
 
-  /// The authorities of [jwt].
+  /// The authorities of [jwt]; blank values are skipped and the rest
+  /// trimmed.
   List<GrantedAuthority> convert(Jwt jwt) {
     final name =
         authoritiesClaimName ??
@@ -132,22 +188,31 @@ final class JwtGrantedAuthoritiesConverter {
   }
 }
 
-/// Turns a verified [Jwt] into an authentication, like Spring's
-/// `JwtAuthenticationConverter`.
+/// Turns a verified [Jwt] into the `Authentication` of the request: which
+/// claim names the user and which give the authorities.
+///
+/// The auto-configuration builds one from the
+/// `spring.security.oauth2.resourceserver.jwt.*` properties. Declare a
+/// bean of this type to change it (see [JwtGrantedAuthoritiesConverter]
+/// for an example).
+///
+/// Spring (Java): `JwtAuthenticationConverter`.
 final class JwtAuthenticationConverter {
-  /// A converter naming the principal by [principalClaimName] (`sub`).
+  /// A converter naming the user by [principalClaimName] (`sub` by
+  /// default) and reading authorities with [authoritiesConverter].
   const JwtAuthenticationConverter({
     this.authoritiesConverter = const JwtGrantedAuthoritiesConverter(),
     this.principalClaimName = 'sub',
   });
 
-  /// The authorities.
+  /// Reads the authorities from the token.
   final JwtGrantedAuthoritiesConverter authoritiesConverter;
 
-  /// The claim naming the user.
+  /// The claim whose value becomes `Authentication.name`.
   final String principalClaimName;
 
-  /// The authentication of [jwt].
+  /// A [JwtAuthenticationToken] for [jwt]; when the principal claim is
+  /// missing, the name falls back to `sub`, else `''`.
   Authentication convert(Jwt jwt) => JwtAuthenticationToken(
     jwt,
     authoritiesConverter.convert(jwt),
@@ -155,21 +220,30 @@ final class JwtAuthenticationConverter {
   );
 }
 
-/// Authenticates bearer tokens as JWTs, like Spring's
-/// `JwtAuthenticationProvider`: a bad token is a 401 `invalid_token`; a
-/// decoder that cannot work (the issuer is down) a 401 too, without
-/// details.
+/// The [AuthenticationProvider] of JWT bearer tokens: it verifies the
+/// token with a [JwtDecoder] and converts it into a
+/// [JwtAuthenticationToken].
+///
+/// A token the decoder rejects (bad signature, expired, wrong issuer or
+/// audience) fails with an [InvalidBearerTokenException], a 401
+/// `invalid_token`. A decoder that cannot work, for example because the
+/// key server is down, fails with an `AuthenticationServiceException`, a
+/// 401 without details. `oauth2ResourceServer((s) => s.jwt())` sets it
+/// up.
+///
+/// Spring (Java): `JwtAuthenticationProvider`.
 final class JwtAuthenticationProvider implements AuthenticationProvider {
-  /// Decodes with [jwtDecoder].
+  /// A provider verifying tokens with [jwtDecoder] and converting them
+  /// with [converter].
   const JwtAuthenticationProvider(
     this.jwtDecoder, {
     this.converter = const JwtAuthenticationConverter(),
   });
 
-  /// The decoder.
+  /// Verifies and decodes the tokens.
   final JwtDecoder jwtDecoder;
 
-  /// Makes the authentication.
+  /// Turns a verified token into the authentication.
   final JwtAuthenticationConverter converter;
 
   @override
@@ -195,22 +269,38 @@ final class JwtAuthenticationProvider implements AuthenticationProvider {
   }
 }
 
-/// Finds the bearer token of a request, like Spring's
-/// `DefaultBearerTokenResolver`: `Authorization: Bearer <token>` (RFC 6750
-/// syntax); `access_token` in the query or a form only when allowed (off by
-/// default: URLs end up in logs). A malformed header, or a token in two
-/// places, is a 401.
+/// Finds the bearer token of a request: the header
+/// `Authorization: Bearer <token>`, in the syntax of RFC 6750.
+///
+/// The `access_token` query parameter counts only with
+/// [allowUriQueryParameter], off by default because URLs end up in logs
+/// and browser histories. A form field is never read. A header of another
+/// scheme gives no token. A malformed `Bearer` header, more than one
+/// header, a token both in the header and the query, or an empty query
+/// value fails with an [InvalidBearerTokenException] (401).
+///
+/// ```dart
+/// // Server-sent events from a browser cannot set headers.
+/// http.oauth2ResourceServer((s) => s
+///     .jwt()
+///     .bearerTokenResolver(
+///         const DefaultBearerTokenResolver(allowUriQueryParameter: true)));
+/// ```
+///
+/// Spring (Java): `DefaultBearerTokenResolver`.
 final class DefaultBearerTokenResolver {
-  /// A resolver.
+  /// A resolver reading [bearerTokenHeaderName] (`Authorization`) and,
+  /// with [allowUriQueryParameter], the `access_token` query parameter.
   const DefaultBearerTokenResolver({
     this.allowUriQueryParameter = false,
     this.bearerTokenHeaderName = HttpHeaders.authorizationHeader,
   });
 
-  /// Whether `?access_token=` counts.
+  /// Whether the `access_token` query parameter counts; `false` by
+  /// default.
   final bool allowUriQueryParameter;
 
-  /// The header.
+  /// The header carrying the token, `Authorization` by default.
   final String bearerTokenHeaderName;
 
   static final _token = RegExp(
@@ -218,7 +308,10 @@ final class DefaultBearerTokenResolver {
     caseSensitive: false,
   );
 
-  /// The token of [request], or `null`.
+  /// The token of [request], or `null` when it sent none.
+  ///
+  /// Throws an [InvalidBearerTokenException] for a malformed or repeated
+  /// token.
   String? resolve(ServerHttpRequest request) {
     final values = request.headers.getAll(bearerTokenHeaderName);
     if (values.length > 1) {
@@ -271,14 +364,22 @@ String _challenge(String? realm, OAuth2Error? error) {
   return parameters.isEmpty ? 'Bearer' : 'Bearer ${parameters.join(', ')}';
 }
 
-/// `401` with `WWW-Authenticate: Bearer` (and the error when a token was
-/// sent), like Spring's `BearerTokenAuthenticationEntryPoint`.
+/// The [AuthenticationEntryPoint] of bearer tokens: a `401` with a
+/// `WWW-Authenticate: Bearer` challenge.
+///
+/// When a token was sent and refused, the challenge also carries the
+/// OAuth 2.0 error, its description and its URI, so the client knows to
+/// get a new token: `Bearer error="invalid_token", error_description=...`.
+/// The body is the usual `ProblemDetail`.
+///
+/// Spring (Java): `BearerTokenAuthenticationEntryPoint`.
 final class BearerTokenAuthenticationEntryPoint
     implements AuthenticationEntryPoint {
-  /// An entry point (with [realmName] when set).
+  /// An entry point naming [realmName] in the challenge when it is
+  /// set.
   const BearerTokenAuthenticationEntryPoint({this.realmName});
 
-  /// The realm.
+  /// The realm named in the challenge, or `null` for none.
   final String? realmName;
 
   @override
@@ -302,13 +403,20 @@ final class BearerTokenAuthenticationEntryPoint
   }
 }
 
-/// `403` with `WWW-Authenticate: Bearer error="insufficient_scope"`, like
-/// Spring's `BearerTokenAccessDeniedHandler`.
+/// The [AccessDeniedHandler] of bearer-token requests: a `403` with
+/// `WWW-Authenticate: Bearer error="insufficient_scope"` when the user
+/// logged in with a JWT.
+///
+/// The error tells the client its token is valid but lacks a scope. For
+/// a user who did not log in with a JWT the challenge is a plain
+/// `Bearer`.
+///
+/// Spring (Java): `BearerTokenAccessDeniedHandler`.
 final class BearerTokenAccessDeniedHandler implements AccessDeniedHandler {
-  /// A handler (with [realmName] when set).
+  /// A handler naming [realmName] in the challenge when it is set.
   const BearerTokenAccessDeniedHandler({this.realmName});
 
-  /// The realm.
+  /// The realm named in the challenge, or `null` for none.
   final String? realmName;
 
   @override
@@ -342,13 +450,22 @@ final class BearerTokenAccessDeniedHandler implements AccessDeniedHandler {
   }
 }
 
-/// Authenticates `Authorization: Bearer` tokens, like Spring's
-/// `BearerTokenAuthenticationFilter`: a valid token makes the request the
-/// token's user (this request only); an invalid one gets the
-/// [authenticationEntryPoint]'s 401 `invalid_token`; a request without one
-/// goes on unauthenticated.
+/// The filter of bearer-token logins: it checks the token sent with every
+/// request of an API.
+///
+/// `oauth2ResourceServer((s) => s.jwt())` adds it. For each request:
+///
+/// - no token: the request goes on without a login (the rules may then
+///   ask for one);
+/// - a valid token: the request goes on as the token's user, for this
+///   request only (no session);
+/// - a malformed or refused token: the [authenticationEntryPoint] answers,
+///   a 401 with `error="invalid_token"` by default, and the request stops.
+///
+/// Spring (Java): `BearerTokenAuthenticationFilter`.
 final class BearerTokenAuthenticationFilter implements WebFilter {
-  /// A filter authenticating with [authenticationManager].
+  /// A filter checking tokens with [authenticationManager]; the context
+  /// is kept for the current request only by default.
   const BearerTokenAuthenticationFilter(
     this.authenticationManager, {
     this.bearerTokenResolver = const DefaultBearerTokenResolver(),
@@ -357,16 +474,17 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
         const RequestAttributeSecurityContextRepository(),
   });
 
-  /// Checks tokens.
+  /// Checks the tokens, usually with a [JwtAuthenticationProvider].
   final AuthenticationManager authenticationManager;
 
-  /// Finds tokens.
+  /// Finds the token in the request.
   final DefaultBearerTokenResolver bearerTokenResolver;
 
-  /// Answers failures.
+  /// Answers a malformed or refused token.
   final AuthenticationEntryPoint authenticationEntryPoint;
 
-  /// Where the context is kept (the request only).
+  /// Where the context of a valid token is saved; the request only, by
+  /// default.
   final SecurityContextRepository securityContextRepository;
 
   @override

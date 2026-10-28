@@ -3,10 +3,20 @@ import 'dart:convert';
 
 import 'package:spring_core_dart/src/json/json_exception.dart';
 
-/// A node of a JSON tree, like Jackson 3's `JsonNode`: what
-/// `ObjectMapper.readTree` returns, to navigate JSON without a class.
+/// One value of a JSON document held as a tree: an object, array, string,
+/// number, boolean or `null`, with typed accessors for navigating it.
+///
+/// Use it when JSON has no fixed shape worth a class: a webhook payload
+/// where two fields matter, a document to patch before passing it on, or
+/// a property whose content varies. `ObjectMapper.readTree` parses text
+/// into one; a property or a value typed `JsonNode` (or a subtype) is read
+/// as a tree too, and a node is written back as its JSON. Compared with
+/// the plain maps and lists of `jsonDecode`, it adds safe paths
+/// ([path], [at]) and conversions ([asInt], [stringValue], ...). Nodes are
+/// equal when their JSON is.
 ///
 /// ```dart
+/// // Read a few fields of a document without a model class.
 /// final root = mapper.readTree('{"book": {"title": "Dune", "tags": ["sf"]}}');
 /// root.get('book')?.get('title')?.asString();   // Dune
 /// root.path('book').path('price').asInt(10);    // 10 (missing → default)
@@ -24,8 +34,12 @@ import 'package:spring_core_dart/src/json/json_exception.dart';
 sealed class JsonNode {
   const JsonNode();
 
-  /// The node of decoded JSON [json] (what `jsonDecode` returns); a
-  /// [JsonNode] is returned as it is.
+  /// Wraps decoded JSON [json] (what `jsonDecode` returns) in nodes; a
+  /// [JsonNode] is returned as it is. Map keys become strings.
+  ///
+  /// Throws an [ArgumentError] for a value that is not decoded JSON, such
+  /// as a `DateTime`; convert objects with `ObjectMapper.valueToTree`
+  /// first.
   factory JsonNode.from(Object? json) => switch (json) {
     null => NullNode.instance,
     final JsonNode node => node,
@@ -42,8 +56,9 @@ sealed class JsonNode {
     _ => throw ArgumentError.value(json, 'json', 'not decoded JSON'),
   };
 
-  /// The decoded JSON of this node: `null`, a bool, number, string, list or
-  /// map ([MissingNode] gives `null`).
+  /// Returns this node as plain decoded JSON: `null`, a bool, number,
+  /// string, list or map, as `jsonEncode` takes it ([MissingNode] gives
+  /// `null`).
   Object? toJson();
 
   /// The property [nameOrIndex] of an object, or the element at index
@@ -54,8 +69,10 @@ sealed class JsonNode {
   /// chained: `root.path('a').path('b')`.
   JsonNode path(Object nameOrIndex) => get(nameOrIndex) ?? MissingNode.instance;
 
-  /// The node at the JSON Pointer [pointer] (`/book/tags/0`; `~1` is `/`,
-  /// `~0` is `~`); a [MissingNode] when there is none.
+  /// Returns the node at the JSON Pointer [pointer] (`/book/tags/0`;
+  /// `~1` stands for `/`, `~0` for `~`), or a [MissingNode] when there is
+  /// none. An empty pointer gives this node; one not starting with `/`
+  /// throws an [ArgumentError].
   JsonNode at(String pointer) {
     if (pointer.isEmpty) {
       return this;
@@ -79,10 +96,11 @@ sealed class JsonNode {
     return node;
   }
 
-  /// Whether [get] finds a node.
+  /// Whether [get] finds a node for [nameOrIndex].
   bool has(Object nameOrIndex) => get(nameOrIndex) != null;
 
-  /// The number of properties or elements (0 for other nodes).
+  /// The number of properties of an object or elements of an array; 0
+  /// for other nodes.
   int get size => 0;
 
   /// Whether the object or array has no children (`true` for other nodes).
@@ -152,7 +170,8 @@ sealed class JsonNode {
         '$type',
       );
 
-  /// The text of a [StringNode]; throws a [JsonNodeException] for others.
+  /// Returns the text of a [StringNode]; throws a [JsonNodeException] for
+  /// other nodes. Use [asString] to convert instead.
   String stringValue() => throw _wrong('a string');
 
   /// The value of a [NumericNode] as an int, when it is one exactly;
@@ -160,13 +179,16 @@ sealed class JsonNode {
   /// and other nodes.
   int intValue() => throw _wrong('a number');
 
-  /// The value of a [NumericNode] as a double; throws for others.
+  /// Returns the value of a [NumericNode] as a double; throws a
+  /// [JsonNodeException] for other nodes.
   double doubleValue() => throw _wrong('a number');
 
-  /// The value of a [NumericNode]; throws for others.
+  /// Returns the value of a [NumericNode]; throws a [JsonNodeException]
+  /// for other nodes.
   num numberValue() => throw _wrong('a number');
 
-  /// The value of a [BooleanNode]; throws for others.
+  /// Returns the value of a [BooleanNode]; throws a [JsonNodeException]
+  /// for other nodes.
   bool booleanValue() => throw _wrong('a boolean');
 
   JsonNodeException _wrong(String expected) =>
@@ -174,16 +196,19 @@ sealed class JsonNode {
       // ignore: no_runtimetype_tostring
       JsonNodeException('expected $expected node, got $runtimeType');
 
-  /// The elements of an array or the property values of an object.
+  /// The elements of an array or the property values of an object; empty
+  /// for other nodes.
   Iterable<JsonNode> values() => const [];
 
-  /// The property names of an object.
+  /// The property names of an object, in order; empty for other nodes.
   Iterable<String> propertyNames() => const [];
 
-  /// The properties of an object.
+  /// The properties of an object as name/node entries, in order; empty
+  /// for other nodes.
   Iterable<MapEntry<String, JsonNode>> properties() => const [];
 
-  /// A copy that shares no containers with this node.
+  /// Returns a copy that shares no objects or arrays with this node, so
+  /// it can be changed independently.
   JsonNode deepCopy() => JsonNode.from(_copy(toJson()));
 
   static Object? _copy(Object? json) => switch (json) {
@@ -194,11 +219,11 @@ sealed class JsonNode {
     _ => json,
   };
 
-  /// Compact JSON.
+  /// This node as compact JSON text.
   @override
   String toString() => jsonEncode(toJson());
 
-  /// Indented JSON.
+  /// This node as JSON text indented by two spaces, for people to read.
   String toPrettyString() =>
       const JsonEncoder.withIndent('  ').convert(toJson());
 
@@ -243,9 +268,20 @@ sealed class JsonNode {
   }
 }
 
-/// A JSON object: properties in insertion order.
+/// A JSON object: named child nodes, kept in insertion order.
+///
+/// Besides reading, it is the node to build or change JSON with: [put],
+/// [set], [remove] and the `put...` helpers change it in place and most
+/// return it, so calls chain.
+///
+/// ```dart
+/// // Build a request body by hand.
+/// final body = ObjectNode()
+///   ..put('query', 'dune')
+///   ..putArray('tags').add('sf');
+/// ```
 final class ObjectNode extends JsonNode {
-  /// An object with [children] (empty by default).
+  /// An object with the properties [children]; empty by default.
   ObjectNode([Map<String, JsonNode>? children])
     : _children = LinkedHashMap.of(children ?? const {});
 
@@ -255,19 +291,20 @@ final class ObjectNode extends JsonNode {
   JsonNode? get(Object nameOrIndex) =>
       nameOrIndex is String ? _children[nameOrIndex] : null;
 
-  /// Sets property [name] to [value] (decoded JSON or a [JsonNode]).
+  /// Sets property [name] to [value], decoded JSON or a [JsonNode], and
+  /// returns this object.
   ObjectNode put(String name, Object? value) {
     _children[name] = JsonNode.from(value);
     return this;
   }
 
-  /// Sets property [name] to [node].
+  /// Sets property [name] to [node] and returns this object.
   ObjectNode set(String name, JsonNode node) {
     _children[name] = node;
     return this;
   }
 
-  /// Sets property [name] to `null`.
+  /// Sets property [name] to JSON `null` and returns this object.
   ObjectNode putNull(String name) => set(name, NullNode.instance);
 
   /// Adds an empty object under [name] and returns it.
@@ -284,10 +321,11 @@ final class ObjectNode extends JsonNode {
     return child;
   }
 
-  /// Removes property [name]; returns its node.
+  /// Removes property [name] and returns its node, or `null` when there
+  /// was none.
   JsonNode? remove(String name) => _children.remove(name);
 
-  /// Removes every property.
+  /// Removes every property and returns this object.
   ObjectNode removeAll() {
     _children.clear();
     return this;
@@ -314,9 +352,10 @@ final class ObjectNode extends JsonNode {
   };
 }
 
-/// A JSON array.
+/// A JSON array: an ordered list of child nodes, which can be changed in
+/// place.
 final class ArrayNode extends JsonNode {
-  /// An array of [elements] (empty by default).
+  /// An array of [elements]; empty by default.
   ArrayNode([List<JsonNode>? elements]) : _elements = [...?elements];
 
   final List<JsonNode> _elements;
@@ -327,19 +366,21 @@ final class ArrayNode extends JsonNode {
       ? _elements[nameOrIndex]
       : null;
 
-  /// Appends [value] (decoded JSON or a [JsonNode]).
+  /// Appends [value], decoded JSON or a [JsonNode], and returns this
+  /// array.
   ArrayNode add(Object? value) {
     _elements.add(JsonNode.from(value));
     return this;
   }
 
-  /// Inserts [value] at [index].
+  /// Inserts [value] at [index] and returns this array.
   ArrayNode insert(int index, Object? value) {
     _elements.insert(index, JsonNode.from(value));
     return this;
   }
 
-  /// Replaces the element at [index]; returns the old one.
+  /// Replaces the element at [index] with [value] and returns the old
+  /// one.
   JsonNode set(int index, Object? value) {
     final old = _elements[index];
     _elements[index] = JsonNode.from(value);
@@ -360,7 +401,7 @@ final class ArrayNode extends JsonNode {
     return child;
   }
 
-  /// Removes the element at [index]; returns it.
+  /// Removes the element at [index] and returns it.
   JsonNode remove(int index) => _elements.removeAt(index);
 
   @override
@@ -376,12 +417,13 @@ final class ArrayNode extends JsonNode {
   List<Object?> toJson() => [for (final element in _elements) element.toJson()];
 }
 
-/// A JSON string (Jackson 3's `StringNode`).
+/// A JSON string. [asInt], [asDouble] and [asBoolean] convert numeric and
+/// `"true"` / `"false"` text.
 final class StringNode extends JsonNode {
   /// The string [value].
   const StringNode(this.value);
 
-  /// The text.
+  /// The string's text.
   final String value;
 
   @override
@@ -418,12 +460,13 @@ final class StringNode extends JsonNode {
   String toJson() => value;
 }
 
-/// A JSON number.
+/// A JSON number: an `int` when the JSON had no fraction, else a
+/// `double`.
 final class NumericNode extends JsonNode {
   /// The number [value].
   const NumericNode(this.value);
 
-  /// The number.
+  /// The number, as decoded.
   final num value;
 
   @override
@@ -473,12 +516,12 @@ final class NumericNode extends JsonNode {
   num toJson() => value;
 }
 
-/// `true` or `false`.
+/// A JSON `true` or `false`.
 final class BooleanNode extends JsonNode {
   /// The boolean [value].
   const BooleanNode(this.value);
 
-  /// The value.
+  /// The boolean.
   final bool value;
 
   @override
@@ -503,11 +546,11 @@ final class BooleanNode extends JsonNode {
   bool toJson() => value;
 }
 
-/// JSON `null`.
+/// A JSON `null` value, which is present (unlike a [MissingNode]).
 final class NullNode extends JsonNode {
   const NullNode._();
 
-  /// The only instance.
+  /// The one JSON `null` node.
   static const instance = NullNode._();
 
   @override
@@ -529,11 +572,17 @@ final class NullNode extends JsonNode {
   Object? toJson() => null;
 }
 
-/// What [JsonNode.path] and [JsonNode.at] return when there is no node.
+/// The stand-in that [JsonNode.path] and [JsonNode.at] return where the
+/// document has no node, so navigation can go on without `null` checks.
+///
+/// Its `as...` accessors return their default (`0`, `''`, `false`, or
+/// the one given), so `root.path('a').path('b').asInt(10)` reads a value
+/// or falls back. It differs from a [NullNode]: the property is absent,
+/// not `null`, and it equals only itself.
 final class MissingNode extends JsonNode {
   const MissingNode._();
 
-  /// The only instance.
+  /// The one missing node.
   static const instance = MissingNode._();
 
   @override
@@ -558,9 +607,12 @@ final class MissingNode extends JsonNode {
   String toString() => '';
 }
 
-/// A [JsonNode] accessor called on the wrong kind of node (Jackson 3's
-/// `JsonNodeException`), e.g. `stringValue()` on a number.
+/// The error a [JsonNode] accessor throws when the node has the wrong
+/// kind, such as `stringValue()` on a number, or cannot be converted.
+///
+/// It is a [JsonMappingException], so code that handles mapping errors
+/// handles it too. Avoid it with the `as...` accessors and a default.
 class JsonNodeException extends JsonMappingException {
-  /// The failure [message].
+  /// An error described by [message].
   JsonNodeException(super.message);
 }

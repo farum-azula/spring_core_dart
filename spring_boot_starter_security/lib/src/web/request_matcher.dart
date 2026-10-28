@@ -1,35 +1,60 @@
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
-/// The outcome of [RequestMatcher.matcher]: whether it matched, and the
-/// path variables of a pattern (`/users/{id}`), like Spring's
-/// `RequestMatcher.MatchResult`.
+/// The answer of [RequestMatcher.matcher]: whether the request matched,
+/// and the path variables a pattern such as `/users/{id}` captured.
+///
+/// The access rules pass the variables on to their `AuthorizationManager`
+/// in a `RequestAuthorizationContext`.
+///
+/// Spring (Java): `RequestMatcher.MatchResult`.
 final class MatchResult {
-  /// A match with [variables].
+  /// A match, with the captured path [variables] (none by default).
   const MatchResult.match([this.variables = const {}]) : isMatch = true;
 
-  /// No match.
+  /// No match; [variables] is empty.
   const MatchResult.notMatch() : isMatch = false, variables = const {};
 
-  /// Whether the request matched.
+  /// `true` when the request matched.
   final bool isMatch;
 
-  /// The path variables, decoded.
+  /// The path variables by name, percent-decoded: `{'id': '42'}` for
+  /// `/users/42` and the pattern `/users/{id}`.
   final Map<String, String> variables;
 }
 
-/// Decides whether a rule applies to a request, like Spring's
-/// `RequestMatcher`.
+/// A test on a request (its path, method or headers) that decides whether
+/// a chain, a rule or a handler applies to it.
+///
+/// `HttpSecurity` builds them from path patterns, so applications rarely
+/// create one. Implement it, or extend [SimpleRequestMatcher], for a rule
+/// that depends on something else, and pass it to `requestMatchersOf` or
+/// `securityMatcherOf`.
+///
+/// ```dart
+/// // Requests coming through the internal load balancer.
+/// final class InternalRequests extends SimpleRequestMatcher {
+///   const InternalRequests();
+///
+///   @override
+///   bool matches(ServerHttpRequest request) =>
+///       request.headers['X-Internal'] == 'true';
+/// }
+/// ```
+///
+/// Spring (Java): `RequestMatcher`.
 abstract interface class RequestMatcher {
-  /// Whether [request] matches.
+  /// Whether [request] matches. It must not throw: a throwing matcher fails
+  /// the request.
   bool matches(ServerHttpRequest request);
 
-  /// Whether [request] matches, with the path variables.
+  /// Whether [request] matches, with the path variables it captured.
   MatchResult matcher(ServerHttpRequest request);
 }
 
-/// A matcher from [matches] alone.
+/// A base class for [RequestMatcher]s that capture no path variables:
+/// implement [matches] only.
 abstract class SimpleRequestMatcher implements RequestMatcher {
-  /// The matcher.
+  /// Lets subclasses be `const`.
   const SimpleRequestMatcher();
 
   @override
@@ -38,11 +63,14 @@ abstract class SimpleRequestMatcher implements RequestMatcher {
       : const MatchResult.notMatch();
 }
 
-/// Matches every request, like Spring's `AnyRequestMatcher`.
+/// The [RequestMatcher] that matches every request; behind
+/// `anyRequest()` and a chain without `securityMatcher`.
+///
+/// Spring (Java): `AnyRequestMatcher.INSTANCE`.
 final class AnyRequestMatcher extends SimpleRequestMatcher {
   const AnyRequestMatcher._();
 
-  /// The matcher.
+  /// The only instance.
   static const instance = AnyRequestMatcher._();
 
   @override
@@ -52,23 +80,29 @@ final class AnyRequestMatcher extends SimpleRequestMatcher {
   String toString() => 'any request';
 }
 
-/// Matches the path with a `PathPattern` — the router's own patterns, on
-/// the same path the router sees, so a rule covers exactly the requests the
-/// controllers mapped under it get (`/api/**`, `/users/{id}`) — and
-/// optionally the method, like Spring's `PathPatternRequestMatcher`.
+/// A [RequestMatcher] that tests the path against a `PathPattern`, and
+/// optionally the method; it is behind `requestMatchers('/api/**')`.
 ///
-/// The path is case-sensitive and a trailing slash counts, as in the
-/// router: `/admin/` is not `/admin`. Protect both (`/admin`, `/admin/**`)
-/// when a controller maps both.
+/// It uses the router's own patterns (`/api/**`, `/users/{id}`) on the
+/// same path the router sees, so a rule covers exactly the requests the
+/// controllers mapped under it get. The path is case-sensitive and a
+/// trailing slash counts, as in the router: `/admin/` is not `/admin`.
+/// Protect both (`/admin`, `/admin/**`) when a controller maps both. The
+/// path does not include the context path.
+///
+/// Spring (Java): `PathPatternRequestMatcher`.
 final class PathPatternRequestMatcher implements RequestMatcher {
-  /// Requests whose path matches [pattern] (and whose method is [method]).
+  /// Matches requests whose path matches [pattern] and, when [method] is
+  /// given, whose method is [method]. A missing leading `/` is added.
+  ///
+  /// Throws when [pattern] is not a valid path pattern.
   PathPatternRequestMatcher(String pattern, {this.method})
     : pattern = PathPattern.parse(_absolute(pattern));
 
-  /// The pattern.
+  /// The parsed path pattern.
   final PathPattern pattern;
 
-  /// The method, or `null` for any.
+  /// The method requests must have, or `null` for any method.
   final HttpMethod? method;
 
   static String _absolute(String pattern) =>
@@ -93,12 +127,14 @@ final class PathPatternRequestMatcher implements RequestMatcher {
       'PathPattern [${method == null ? '' : '${method!.value} '}$pattern]';
 }
 
-/// Matches the method only.
+/// A [RequestMatcher] that tests the method only, whatever the path.
+///
+/// Spring has no such class; there you pass a method and `/**`.
 final class HttpMethodRequestMatcher extends SimpleRequestMatcher {
-  /// Requests with [method].
+  /// Matches requests whose method is [method].
   const HttpMethodRequestMatcher(this.method);
 
-  /// The method.
+  /// The method requests must have.
   final HttpMethod method;
 
   @override
@@ -108,13 +144,18 @@ final class HttpMethodRequestMatcher extends SimpleRequestMatcher {
   String toString() => 'method ${method.value}';
 }
 
-/// All of [matchers], like Spring's `AndRequestMatcher`.
+/// A [RequestMatcher] that matches when all of its [matchers] do.
+///
+/// The path variables of all of them are merged.
+///
+/// Spring (Java): `AndRequestMatcher`.
 final class AndRequestMatcher implements RequestMatcher {
-  /// Matches when all of [matchers] do.
+  /// Matches when all of [matchers] do; an empty list matches every
+  /// request.
   AndRequestMatcher(List<RequestMatcher> matchers)
     : matchers = List.unmodifiable(matchers);
 
-  /// The matchers.
+  /// The matchers, in order; cannot be modified.
   final List<RequestMatcher> matchers;
 
   @override
@@ -138,13 +179,17 @@ final class AndRequestMatcher implements RequestMatcher {
   String toString() => 'And $matchers';
 }
 
-/// Any of [matchers], like Spring's `OrRequestMatcher`.
+/// A [RequestMatcher] that matches when any of its [matchers] does.
+///
+/// The path variables are those of the first matcher that matched.
+///
+/// Spring (Java): `OrRequestMatcher`.
 final class OrRequestMatcher implements RequestMatcher {
-  /// Matches when one of [matchers] does.
+  /// Matches when one of [matchers] does; an empty list matches nothing.
   OrRequestMatcher(List<RequestMatcher> matchers)
     : matchers = List.unmodifiable(matchers);
 
-  /// The matchers.
+  /// The matchers, in order; cannot be modified.
   final List<RequestMatcher> matchers;
 
   @override
@@ -166,12 +211,14 @@ final class OrRequestMatcher implements RequestMatcher {
   String toString() => 'Or $matchers';
 }
 
-/// The opposite of [matcher], like Spring's `NegatedRequestMatcher`.
+/// A [RequestMatcher] that matches exactly when [negated] does not.
+///
+/// Spring (Java): `NegatedRequestMatcher`.
 final class NegatedRequestMatcher extends SimpleRequestMatcher {
-  /// Matches when [negated] does not.
+  /// Matches the requests [negated] does not match.
   const NegatedRequestMatcher(this.negated);
 
-  /// The negated matcher.
+  /// The matcher whose answer is reversed.
   final RequestMatcher negated;
 
   @override
@@ -181,16 +228,19 @@ final class NegatedRequestMatcher extends SimpleRequestMatcher {
   String toString() => 'Not [$negated]';
 }
 
-/// A header present (and equal to [value] when given), like Spring's
-/// `RequestHeaderRequestMatcher`.
+/// A [RequestMatcher] that tests a request header: present, or equal to
+/// a given value.
+///
+/// Spring (Java): `RequestHeaderRequestMatcher`.
 final class RequestHeaderRequestMatcher extends SimpleRequestMatcher {
-  /// Requests with header [name] (equal to [value] when set).
+  /// Matches requests with the header [name], whose value equals [value]
+  /// when one is given.
   const RequestHeaderRequestMatcher(this.name, [this.value]);
 
-  /// The header.
+  /// The header name.
   final String name;
 
-  /// The required value.
+  /// The exact value the header must have, or `null` for any value.
   final String? value;
 
   @override
@@ -203,28 +253,37 @@ final class RequestHeaderRequestMatcher extends SimpleRequestMatcher {
   String toString() => 'header $name${value == null ? '' : '=$value'}';
 }
 
-/// Matches the media types the client accepts (`Accept`), like Spring's
-/// `MediaTypeRequestMatcher`: [ignoredMediaTypes] in `Accept` are skipped;
-/// with [useEquals] only an exact type counts (no wildcards either way).
+/// A [RequestMatcher] that tests the media types the client accepts (the
+/// `Accept` header).
+///
+/// The starter uses it to tell browsers, which accept `text/html` and get
+/// a redirect to the login page, from programs, which get a 401. Types in
+/// [ignoredMediaTypes] are skipped in `Accept`; with [useEquals] only an
+/// exact type counts, with no wildcards on either side.
+///
+/// Spring (Java): `MediaTypeRequestMatcher`.
 final class MediaTypeRequestMatcher extends SimpleRequestMatcher {
-  /// Requests accepting one of [mediaTypes].
+  /// Matches requests that accept one of [mediaTypes].
   const MediaTypeRequestMatcher(
     this.mediaTypes, {
     this.ignoredMediaTypes = const [],
     this.useEquals = false,
   });
 
-  /// The media types (`text/html`).
+  /// The media types looked for, such as `text/html`.
   final List<String> mediaTypes;
 
-  /// Accepted types skipped (`*/*`).
+  /// Types in `Accept` that are skipped, such as `*/*`, so a client that
+  /// accepts anything does not match everything.
   final List<String> ignoredMediaTypes;
 
-  /// Whether a type must be equal, not just compatible.
+  /// Whether an accepted type must equal a wanted one, rather than just
+  /// be compatible (`text/*` with `text/html`).
   final bool useEquals;
 
-  /// The accepted types of [request]; `*/*` when it sends none, like
-  /// Spring's content negotiation.
+  /// The types [request] accepts, in `Accept` order; `*/*` when it sends
+  /// none, as in Spring's content negotiation. Unreadable entries are
+  /// skipped.
   static List<MediaType> accepted(ServerHttpRequest request) {
     final header = request.headers.getAll(HttpHeaders.acceptHeader);
     final types = <MediaType>[];

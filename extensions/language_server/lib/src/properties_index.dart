@@ -2,9 +2,12 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
-/// One `key=value` entry of a properties file, with its position.
+/// One key of a config file, or a property a test sets for its own
+/// context, with its value and the position of its key: what go to
+/// definition jumps to and what a hover lists.
 final class PropertyEntry {
-  /// Creates an entry.
+  /// An entry for [key] whose key sits at [line], [keyStart]..[keyEnd] of
+  /// [path].
   const PropertyEntry({
     required this.path,
     required this.key,
@@ -20,25 +23,30 @@ final class PropertyEntry {
   /// names to variables.
   final bool environment;
 
-  /// File path.
+  /// The file that defines the entry.
   final String path;
 
-  /// The key.
+  /// The key as written in a properties file, or flattened from YAML
+  /// (`shop.servers[0].host`).
   final String key;
 
-  /// The value (continuation lines joined).
+  /// The value as text, trimmed, with the continuation lines of a properties
+  /// file joined. For a property of a test, the source of the value
+  /// expression.
   final String value;
 
-  /// Zero-based line of the key.
+  /// The zero-based line of the key.
   final int line;
 
-  /// Zero-based column range of the key (UTF-16 units).
+  /// The zero-based column where the key starts, in UTF-16 units.
   final int keyStart;
 
-  /// End column of the key.
+  /// The column just after the key.
   final int keyEnd;
 
-  /// `application-prod` for `.../application-prod.properties` (or `.yml`).
+  /// The file's name without directory and extension: `application-prod`
+  /// for `.../application-prod.properties` (or `.yml`, `.yaml`). Hovers show
+  /// it, and `application` files sort first.
   String get fileName {
     final name = path.split(Platform.pathSeparator).last;
     for (final extension in ['.properties', '.yml', '.yaml']) {
@@ -50,7 +58,12 @@ final class PropertyEntry {
   }
 }
 
-/// Parses [content] (Java properties syntax) keeping key positions.
+/// Reads [content] as a Java `.properties` file and returns its entries,
+/// each with the position of its key. Never throws.
+///
+/// It follows the format's rules: `#` and `!` comment lines, `=`, `:` or
+/// white space between key and value, backslash escapes in keys, and a
+/// trailing backslash that continues the value on the next line.
 List<PropertyEntry> parseProperties(String path, String content) {
   final entries = <PropertyEntry>[];
   final lines = content.split('\n');
@@ -119,14 +132,17 @@ bool _continues(String line) {
   return slashes.isOdd;
 }
 
-/// Parses a YAML config file ([content], one or more `---` documents) into
-/// flat entries exactly as the framework's `YamlPropertySourceLoader` does:
-/// `shop.payment.provider`, `shop.servers[0].host`, merge keys (`<<: *d`)
-/// applied, non-string keys as `[1]`, an empty map, list or `null` as `''`.
-/// A list of scalars gives only its indexed keys (`${shop.currencies}`
-/// does not resolve at run time either, as in Spring). Each entry points
-/// at its key in the file. Each document is parsed on its own, so a
-/// broken one leaves the others' keys.
+/// Reads a YAML config file ([content], one or more `---` documents) into
+/// flat entries, exactly as the framework's `YamlPropertySourceLoader`
+/// does, each pointing at its key in the file.
+///
+/// Nested keys are joined with dots (`shop.payment.provider`) and list
+/// elements indexed (`shop.servers[0].host`); merge keys (`<<: *d`) are
+/// applied; non-string keys are written `[1]`; an empty map, an empty list
+/// or `null` gives `''`. A list of scalars gives only its indexed keys:
+/// `${shop.currencies}` does not resolve at run time either, as in Spring.
+/// Each document is parsed on its own, so a broken one leaves the others'
+/// keys.
 List<PropertyEntry> parseYamlProperties(String path, String content) {
   final entries = <PropertyEntry>[];
 

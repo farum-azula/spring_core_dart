@@ -1,20 +1,27 @@
 import 'package:spring_core_dart/src/context/message/message_format.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 
-/// Shared logic of message sources, like Spring's `AbstractMessageSource`.
+/// The base class for message sources: it does the locale fallbacks, the
+/// formatting and the parent lookup, so that a subclass only says where
+/// the texts are.
 ///
-/// Lookup for code `c` and locale `ru_RU`: `ru_RU` → `ru` → [fallbackLocale]
-/// chain → base (no locale) → [commonMessages] → parent. Locales with a
-/// script follow Java's `ResourceBundle`: `zh_Hant_TW` → `zh_Hant` →
-/// `zh_TW` → `zh`. Arguments that are [MessageSourceResolvable]s are
-/// resolved by this source before the parent is asked (so a message of
-/// the parent can use arguments only the child knows), and messages are
-/// formatted with the number symbols of the requested locale.
+/// Extend it to read messages from a place this package does not support,
+/// such as a database or a map built in code; implement [resolveCode] and
+/// everything else is shared. Applications usually take
+/// `ReloadableResourceBundleMessageSource` (files) or
+/// [StaticMessageSource] (code) instead.
 ///
-/// Subclasses only implement [resolveCode]; formatting, fallbacks and
-/// argument resolution are shared.
+/// The lookup of code `c` for locale `ru_RU` tries `ru_RU`, then `ru`,
+/// then the [fallbackLocale] and its own fallbacks, then the base (no
+/// locale), then [commonMessages], then the parent. Locales with a script
+/// follow Java's `ResourceBundle`: `zh_Hant_TW`, `zh_Hant`, `zh_TW`, `zh`.
+/// Arguments that are [MessageSourceResolvable]s are resolved by this
+/// source before the parent is asked, so a message of the parent can use
+/// arguments only the child knows. Messages are formatted with the number
+/// symbols of the requested locale.
 ///
 /// ```dart
+/// // Messages from a map: locale, then code, then pattern.
 /// class MapMessageSource extends AbstractMessageSource {
 ///   MapMessageSource(this.bundles);
 ///
@@ -46,35 +53,44 @@ import 'package:spring_core_dart/src/context/message/message_source.dart';
 /// `MessageFormat`) and the default locale is [defaultLocale] rather than
 /// the JVM's `Locale.getDefault()`.
 abstract class AbstractMessageSource implements HierarchicalMessageSource {
-  /// The fallback source; see [HierarchicalMessageSource].
+  /// The source asked for codes this one does not have; `null` for none.
   @override
   MessageSource? parentMessageSource;
 
-  /// Return the code itself instead of throwing when nothing is found.
+  /// Whether an unknown code is returned as the message instead of
+  /// throwing a [NoSuchMessageException]; `false` by default. Handy while
+  /// translations are incomplete: the screen shows the code.
   bool useCodeAsDefaultMessage = false;
 
-  /// Apply [MessageFormat] rules (quotes) even without arguments.
+  /// Whether messages without arguments are formatted too, so that their
+  /// quotes follow [MessageFormat] rules (`''` becomes `'`); `false` by
+  /// default, which returns them as written. When it is `true`, an invalid
+  /// pattern throws a `FormatException` instead of being returned as is.
   bool alwaysUseMessageFormat = false;
 
-  /// Locale-independent messages used after all locales.
+  /// Messages that are the same in every language, by code; tried after
+  /// all locales and before the parent.
   Map<String, String>? commonMessages;
 
-  /// Locale tried after the requested one (like Spring's default locale);
-  /// empty means none (see [fallbackLocale]).
+  /// The locale tried after the requested one (Spring's default locale),
+  /// for example the language most texts are written in; empty means none
+  /// (see [fallbackLocale]).
   String defaultLocale = '';
 
-  /// The locale tried when the requested one misses (`''` = none):
-  /// [defaultLocale] here; `ReloadableResourceBundleMessageSource` falls
-  /// back to the system locale without one, like Spring's
+  /// The locale tried when the requested one has no message (`''` for
+  /// none): [defaultLocale] here. `ReloadableResourceBundleMessageSource`
+  /// uses the system locale when there is no default locale, as Spring's
   /// `AbstractResourceBasedMessageSource.getDefaultLocale()`.
   String get fallbackLocale => defaultLocale;
 
-  /// The raw message for [code] in exactly [locale] (`''` = base), or
-  /// `null`. [locale] is already normalized (see `Locales.normalize`).
+  /// The unformatted message for [code] in exactly [locale] (`''` for the
+  /// base), or `null`. This is the one method a subclass must write; the
+  /// fallbacks to other locales happen around it. [locale] is already
+  /// normalized (see `Locales.normalize`).
   String? resolveCode(String code, String locale);
 
-  /// The raw message for [code] in the first of [locales] (most specific
-  /// first, ending with `''`) that has one, or `null`.
+  /// The unformatted message for [code] in the first of [locales] (most
+  /// specific first, ending with `''`) that has one, or `null`.
   ///
   /// Calls [resolveCode] locale by locale; sources with several bundles
   /// override it to search bundle by bundle (see
@@ -144,7 +160,9 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
     );
   }
 
-  /// The formatted message, or `null` when no source has [code].
+  /// The formatted message for [code] from this source, its common
+  /// messages or its parent; `null` when none has it. Unlike
+  /// [getMessage], it neither throws nor uses a default message.
   String? getMessageInternal(String code, List<Object?> args, String? locale) {
     // Arguments are resolved once with this source (also for the parent,
     // like Spring); the locale chain, common messages and finally the
@@ -174,7 +192,8 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
     return null;
   }
 
-  /// Locales tried for [locale], most specific first, ending with `''`.
+  /// The locales tried for [locale]: its candidates, then those of
+  /// [fallbackLocale], ending with `''` (the base).
   List<String> localeChain(String? locale) {
     final chain = <String>[...Locales.candidates(locale ?? '')];
     for (final candidate in Locales.candidates(fallbackLocale)) {
@@ -185,7 +204,8 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
     return chain..add('');
   }
 
-  /// Resolves [MessageSourceResolvable] arguments to strings.
+  /// Replaces each [MessageSourceResolvable] in [args] by its message in
+  /// [locale]; other arguments stay as they are.
   List<Object?> resolveArguments(List<Object?> args, String? locale) => [
     for (final arg in args)
       if (arg is MessageSourceResolvable)
@@ -194,8 +214,9 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
         arg,
   ];
 
-  /// Applies [MessageFormat] unless there are no arguments (and
-  /// [alwaysUseMessageFormat] is off), like Spring.
+  /// Fills [args] into [pattern] with [MessageFormat]; without arguments
+  /// (and with [alwaysUseMessageFormat] off) returns [pattern] as it is,
+  /// like Spring.
   ///
   /// A pattern that is not a valid `MessageFormat` (for example a message
   /// containing a regular expression such as `[A-Z]{2,3}`) is returned
@@ -220,7 +241,8 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
     }
   }
 
-  /// Formats a default message with [args].
+  /// Formats a default message with [args], resolving resolvable
+  /// arguments first.
   String renderDefaultMessage(
     String defaultMessage,
     List<Object?> args,
@@ -228,11 +250,15 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
   ) => formatMessage(defaultMessage, resolveArguments(args, locale), locale);
 }
 
-/// Messages registered in code, like Spring's `StaticMessageSource`.
+/// A message source whose messages are added in code rather than read
+/// from files.
 ///
-/// Handy for tests and small apps.
+/// Use it in tests, or in a small program with a handful of texts. Declare
+/// it as the `messageSource` bean, or pass it where a [MessageSource] is
+/// expected.
 ///
 /// ```dart
+/// // A base text and a Russian one; ru_RU falls back to ru.
 /// final messages = StaticMessageSource()
 ///   ..addMessage('greeting', '', 'Hello {0}')
 ///   ..addMessages({'greeting': 'Привет {0}'}, 'ru');
@@ -249,11 +275,13 @@ abstract class AbstractMessageSource implements HierarchicalMessageSource {
 class StaticMessageSource extends AbstractMessageSource {
   final _messages = <String, String>{};
 
-  /// Adds [message] for [code] in [locale] (`''` = base).
+  /// Adds [message] for [code] in [locale] (`''` for the base, used when
+  /// no locale matches); a second call for the same code and locale
+  /// replaces it.
   void addMessage(String code, String locale, String message) =>
       _messages[_key(code, locale)] = message;
 
-  /// Adds every entry of [messages] for [locale].
+  /// Adds every entry of [messages] (code to message) for [locale].
   void addMessages(Map<String, String> messages, String locale) {
     for (final MapEntry(:key, :value) in messages.entries) {
       addMessage(key, locale, value);
@@ -272,11 +300,13 @@ class StaticMessageSource extends AbstractMessageSource {
   String toString() => 'StaticMessageSource: $_messages';
 }
 
-/// An empty message source that delegates to its parent, like Spring's
-/// `DelegatingMessageSource`; the context's default.
+/// A message source with no messages of its own: it asks its parent, or
+/// fails when there is none.
 ///
-/// The context registers one as `messageSource` when no such bean exists,
-/// so a child context transparently uses its parent's messages.
+/// The context registers one as `messageSource` when the application
+/// declares no such bean, so that a child context uses its parent's
+/// messages and a context without messages still answers (with a default
+/// message or a [NoSuchMessageException]). Applications do not create it.
 ///
 /// ```dart
 /// final source = DelegatingMessageSource(parentContext);
@@ -289,7 +319,7 @@ class StaticMessageSource extends AbstractMessageSource {
 /// source.setParentMessageSource(parentContext);
 /// ```
 class DelegatingMessageSource extends AbstractMessageSource {
-  /// Creates a source that forwards every lookup to [parent] (if any).
+  /// Creates a source that forwards every lookup to [parent], if any.
   DelegatingMessageSource([MessageSource? parent]) {
     parentMessageSource = parent;
   }

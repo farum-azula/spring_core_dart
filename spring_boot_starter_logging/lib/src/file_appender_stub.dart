@@ -4,10 +4,13 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 
-/// Writes records to a file; not available on this platform (no file
-/// system), see [isSupported].
+/// A log file, which the web cannot have: this version keeps the API of
+/// the real one so code compiles everywhere, but its constructor throws.
+///
+/// Check [isSupported] before creating one. The starter does: on the web
+/// it ignores `logging.file.*` with a warning.
 class FileAppender extends LogAppender {
-  /// Throws [UnsupportedError]: there is no file system here.
+  /// Always throws an [UnsupportedError]: there is no file system here.
   FileAppender(
     this.path, {
     LogPattern? pattern,
@@ -23,31 +26,33 @@ class FileAppender extends LogAppender {
     throw UnsupportedError('Log files need dart:io');
   }
 
-  /// Whether files can be written on this platform.
+  /// Whether log files can be written on this platform: always `false`
+  /// here.
   static const bool isSupported = false;
 
-  /// The log file.
+  /// The location of the log file, as given to the constructor.
   final String path;
 
-  /// The line format.
+  /// How a record becomes a line.
   LogPattern pattern;
 
-  /// Size that triggers a rollover, in bytes; `0` never rolls over.
+  /// The size in bytes that starts a new file; `0` never rolls over.
   final int maxFileSize;
 
-  /// Number of rolled-over files kept; `0` keeps all.
+  /// How many rolled-over files are kept; `0` keeps all of them.
   final int maxHistory;
 
-  /// The charset of the file (`logging.charset.file`, UTF-8 by default);
-  /// characters it cannot encode are written as `?`, like Java.
+  /// The charset the lines are written in (`logging.charset.file`, UTF-8
+  /// by default).
   final Encoding encoding;
 
-  /// Total size of the rolled-over files, in bytes; `0` sets no limit.
+  /// The most bytes the rolled-over files may take together; `0` sets no
+  /// limit.
   final int totalSizeCap;
 
   @override
   void write(SpringLogRecord record) {}
 
-  /// Writes buffered lines now.
+  /// Does nothing: nothing is ever buffered here.
   void flush() {}
 }

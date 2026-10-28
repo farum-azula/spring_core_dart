@@ -6,45 +6,66 @@ import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
-/// Which app widget [SpringApp] builds (`spring.flutter.app.type`).
+/// The kind of app widget [SpringApp] builds, chosen with
+/// `spring.flutter.app.type` (`widgets`, `material` or `cupertino`).
 enum AppType {
-  /// `WidgetsApp`: no Material or Cupertino design (the default).
+  /// A `WidgetsApp`, with no Material or Cupertino design; the default.
   widgets,
 
-  /// `MaterialApp`; needed by `Scaffold`, `AppBar` and other Material
-  /// widgets.
+  /// A `MaterialApp`, needed by `Scaffold`, `AppBar` and the other
+  /// Material widgets.
   material,
 
-  /// `CupertinoApp`.
+  /// A `CupertinoApp`, for the iOS look (for example with
+  /// `spring.flutter.app.type=cupertino` in `application-ios.properties`).
   cupertino,
 }
 
-/// Adjusts the app widget [SpringApp] builds, for what has no property:
-/// a bean of this type gets the [FlutterAppSettings] before the widget is
-/// built (in `@Order`), like Spring Boot's `WebServerFactoryCustomizer`.
+/// Changes the settings of the app widget that [SpringApp] builds, for
+/// what no property covers: a `builder`, keyboard shortcuts, a scroll
+/// behaviour, the app's own localization delegates.
+///
+/// Declare a bean that implements it. Every such bean receives the
+/// [FlutterAppSettings] once, before the app widget is first built, in
+/// `@Order`. It is only for apps that let the starter build the app widget
+/// (`SpringApplicationWidget(home: ...)`); an app with its own
+/// `MaterialApp` sets these on it directly.
 ///
 /// ```dart
+/// // The app's own translations, and text that never grows past 130 %.
 /// @Component()
 /// class AppLocalizations implements FlutterAppCustomizer {
 ///   @override
 ///   void customize(FlutterAppSettings app) {
 ///     app.localizationsDelegates.add(LegalTerms.delegate);
-///     app.builder = (context, child) =>
-///         MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: child!);
+///     app.builder = (context, child) => MediaQuery.withClampedTextScaling(
+///       maxScaleFactor: 1.3,
+///       child: child!,
+///     );
 ///   }
 /// }
 /// ```
+///
+/// Spring Boot (Java) customizes its web server the same way, with a
+/// `WebServerFactoryCustomizer` bean.
 abstract interface class FlutterAppCustomizer {
-  /// Changes [app] before the app widget is built.
+  /// Changes [app] in place; called once per application context, before
+  /// the app widget is built.
   void customize(FlutterAppSettings app);
 }
 
-/// What [SpringApp] builds the app widget from: the
+/// The settings [SpringApp] builds the app widget from: type, title,
+/// debug banner, locales, localization delegates, navigator observers,
+/// and a few more.
+///
+/// They are made once per application context from the
 /// `spring.flutter.app.*` properties and the `NavigatorObserver` beans,
-/// then whatever [FlutterAppCustomizer]s change. Made once per
-/// application context. The theme comes from [SpringThemes].
+/// then every [FlutterAppCustomizer] may change them. You meet the object
+/// in a customizer, where you change its fields. The theme is not here: it
+/// comes from [SpringThemes].
 final class FlutterAppSettings {
-  /// Settings for an app of [type]; the rest has Flutter's defaults.
+  /// Settings for an app of [type] (`widgets` by default); every other
+  /// value has Flutter's default, the locales default to English only.
   FlutterAppSettings({
     this.type = AppType.widgets,
     this.title = '',
@@ -56,40 +77,48 @@ final class FlutterAppSettings {
        localizationsDelegates = localizationsDelegates ?? [],
        navigatorObservers = navigatorObservers ?? [];
 
-  /// `spring.flutter.app.type`.
+  /// The kind of app widget, from `spring.flutter.app.type`; `widgets` by
+  /// default.
   AppType type;
 
-  /// `spring.flutter.app.title`: the app's name for the OS (task switcher,
-  /// browser tab).
+  /// The app's name for the OS (task switcher, browser tab), from
+  /// `spring.flutter.app.title`; empty by default.
   String title;
 
-  /// `spring.flutter.app.debug-banner`.
+  /// Whether debug builds show the "DEBUG" banner, from
+  /// `spring.flutter.app.debug-banner`; `true` by default, as in Flutter.
   bool debugShowCheckedModeBanner;
 
-  /// `spring.flutter.app.locales`, by default the languages of the messages
-  /// files (`messages.properties` counts as English, `messages_ja` adds
-  /// `ja`).
+  /// The locales the app supports, from `spring.flutter.app.locales`
+  /// (`en,ja`). By default the languages of the messages files
+  /// ([messageLocales]), so the app's locales and `context.message` agree.
   List<Locale> supportedLocales;
 
-  /// Flutter's own delegates for the app type (texts of its widgets in
-  /// every supported language); add the app's own here.
+  /// The localization delegates. They start with Flutter's own for the app
+  /// type (the texts of its widgets in every language); a customizer adds
+  /// the app's own here.
   List<LocalizationsDelegate<Object?>> localizationsDelegates;
 
-  /// The `NavigatorObserver` beans.
+  /// The app's navigator observers: the `NavigatorObserver` beans, in
+  /// `@Order`.
   List<NavigatorObserver> navigatorObservers;
 
-  /// Wraps every route (`MaterialApp.builder`).
+  /// Wraps the navigator, so what it adds sits above every page, like
+  /// `MaterialApp.builder`; `null` by default.
   TransitionBuilder? builder;
 
-  /// The app's scroll behavior.
+  /// The app's scroll behavior; `null` for the app widget's default. Not
+  /// used by a `WidgetsApp`.
   ScrollBehavior? scrollBehavior;
 
-  /// The app's keyboard shortcuts.
+  /// The app's keyboard shortcuts; `null` for Flutter's defaults.
   Map<ShortcutActivator, Intent>? shortcuts;
 
-  /// The settings of [context]'s application: made once per context from
-  /// its properties and beans. Throws when a property has an invalid value
-  /// (`SpringApplicationWidget` checks it at the start).
+  /// The settings of [context]'s application, made on the first call and
+  /// kept for the life of the context. Throws an `ArgumentError` naming the
+  /// property when a `spring.flutter.app.*` value is invalid;
+  /// `SpringApplicationWidget` calls it at the start, so such a value fails
+  /// the start.
   static FlutterAppSettings of(ApplicationContext context) =>
       _cache[context] ??= _settings(context);
 
@@ -130,9 +159,10 @@ final class FlutterAppSettings {
     return settings;
   }
 
-  /// The languages of the application's messages files
-  /// (`spring.messages.basename`, `messages` by default): English for the
-  /// file without a language, then one locale per `messages_<locale>` file.
+  /// The locales of the application's messages files: English for the
+  /// file without a language (`messages.properties`), then one locale per
+  /// `messages_<locale>.properties` file (`messages_ja` adds `ja`). The
+  /// files are those of `spring.messages.basename`, `messages` by default.
   static List<Locale> messageLocales(ApplicationContext context) {
     final basenames =
         context.environment.getProperty('spring.messages.basename') ??
@@ -207,26 +237,33 @@ final class FlutterAppSettings {
       };
 }
 
-/// The app widget built from the application's configuration: a
-/// `WidgetsApp`, `MaterialApp` or `CupertinoApp` (`spring.flutter.app.type`)
-/// with the title, debug banner and locales of `spring.flutter.app.*`
-/// ([FlutterAppSettings]) and the theme `ThemeSelection` picks among the
-/// `SpringThemes` of `spring.flutter.theme.*`; a [SpringTheme] above it
-/// gives that theme to the app's own widgets. A theme picked at run time
-/// (or one loaded from a server) shows at once.
-/// `SpringApplicationWidget(home: ...)` puts it at the root; tests may put
-/// it under a `SpringScope`.
+/// An app widget set up by properties instead of code: a `WidgetsApp`,
+/// `MaterialApp` or `CupertinoApp` with the title, debug banner, locales
+/// and themes of the configuration.
+///
+/// It saves writing and keeping a `MaterialApp` in step with the
+/// configuration: the type comes from `spring.flutter.app.type`, the other
+/// settings from `spring.flutter.app.*` ([FlutterAppSettings]), the theme
+/// from `spring.flutter.theme.*`. The theme shown is the one the
+/// `ThemeSelection` bean picks; a theme picked at run time, or loaded from
+/// a server, shows at once, and `system` follows the device's light or
+/// dark mode. A [SpringTheme] above the app gives that theme to the app's
+/// own widgets.
+///
+/// `SpringApplicationWidget(home: ...)` puts it at the root, so an app
+/// rarely creates it; widget tests put it under a `SpringScope`.
 ///
 /// ```properties
+/// # lib/resources/application.properties
 /// spring.flutter.app.type=material
 /// spring.flutter.app.title=Counter
 /// spring.flutter.theme.seed-color=deepPurple
 /// ```
 class SpringApp extends StatefulWidget {
-  /// The app with [home] as its first page.
+  /// The app widget with [home] as its first page.
   const SpringApp({required this.home, super.key});
 
-  /// The first page.
+  /// The first page, shown at the app's start.
   final Widget home;
 
   @override

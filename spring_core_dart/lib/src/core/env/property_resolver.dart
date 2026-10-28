@@ -4,11 +4,17 @@ import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 import 'package:spring_core_dart/src/core/env/mutable_property_sources.dart';
 import 'package:spring_core_dart/src/core/env/property_placeholder_helper.dart';
 
-/// Read access to properties, like Spring's `PropertyResolver`.
+/// Reading properties by key: as text or as a typed value, with or without
+/// a default, and resolving `${...}` placeholders in any text.
 ///
-/// Values are resolved (`${...}` placeholders) and converted on read.
+/// `Environment` is the property resolver an application meets; this
+/// interface only names the reading part of it, so code that needs nothing
+/// else (no profiles) can ask for less. On every read, placeholders in the
+/// value are resolved (`url=${host}:8080`) and the text is converted to the
+/// requested type.
 ///
 /// ```dart
+/// // The environment is the resolver beans get.
 /// final PropertyResolver resolver = environment;
 /// final host = resolver.getProperty('db.host', defaultValue: 'localhost');
 /// final port = resolver.getPropertyAs<int>('db.port', defaultValue: 5432);
@@ -26,20 +32,29 @@ import 'package:spring_core_dart/src/core/env/property_placeholder_helper.dart';
 /// Typed access is `getPropertyAs<T>` instead of an overloaded
 /// `getProperty(key, Class)`, as Dart has no overloading.
 abstract interface class PropertyResolver {
-  /// Whether [key] is defined (its value may still be an empty string).
+  /// Whether some source has the property [key], even with an empty
+  /// value. Use it to tell "set to empty" from "not set".
   bool containsProperty(String key);
 
-  /// The value of [key] as a string, or [defaultValue].
+  /// The value of the property [key] as text, placeholders resolved, or
+  /// [defaultValue] (`null` unless given) when no source has it.
+  ///
+  /// Throws `PlaceholderResolutionException` when the value contains a
+  /// placeholder that cannot be resolved and has no default.
   ///
   /// ```dart
   /// resolver.getProperty('app.name', defaultValue: 'demo');
   /// ```
   String? getProperty(String key, {String? defaultValue});
 
-  /// The value of [key] converted to [T], or [defaultValue].
+  /// The value of the property [key] converted to [T], or [defaultValue]
+  /// when no source has it.
   ///
-  /// Conversion uses the resolver's `ConversionService`; [defaultValue] is
-  /// also used when the value converts to `null` (e.g. a blank string).
+  /// The resolver's `ConversionService` converts, so every type it knows
+  /// works (`int`, `bool`, `Duration`, `List<String>`, ...). [defaultValue]
+  /// is also used when the value converts to `null`, as a blank string
+  /// does. Throws a `ConversionException` when the text cannot be
+  /// converted (`port=abc` read as `int`).
   ///
   /// ```dart
   /// final timeout = resolver.getPropertyAs<Duration>('http.timeout');
@@ -47,34 +62,50 @@ abstract interface class PropertyResolver {
   /// ```
   T? getPropertyAs<T>(String key, {T? defaultValue});
 
-  /// The value of [key]; throws `MissingPropertyException` if undefined.
+  /// The value of the property [key] as text, for settings the application
+  /// cannot run without. Throws `MissingPropertyException` when no source
+  /// has it.
   String getRequiredProperty(String key);
 
-  /// The value of [key] converted to [T]; throws `MissingPropertyException`
-  /// if undefined.
+  /// The value of the property [key] converted to [T]. Throws
+  /// `MissingPropertyException` when no source has it (or it converts to
+  /// `null`), and a `ConversionException` when it cannot be converted.
   ///
   /// ```dart
   /// final port = resolver.getRequiredPropertyAs<int>('server.port');
   /// ```
   T getRequiredPropertyAs<T>(String key);
 
-  /// Resolves `${...}` in [text]; unresolvable placeholders stay as they
-  /// are.
+  /// Replaces every `${key}` and `${key:default}` in [text] with the
+  /// property's value, for text written by someone else, such as a
+  /// message template. A placeholder that cannot be resolved and has no
+  /// default stays as it is.
   ///
   /// ```dart
   /// resolver.resolvePlaceholders(r'Hello ${user:guest}'); // 'Hello guest'
   /// ```
   String resolvePlaceholders(String text);
 
-  /// Resolves `${...}` in [text]; throws `PlaceholderResolutionException`
-  /// for unresolvable placeholders without a default.
+  /// Replaces every `${key}` and `${key:default}` in [text] like
+  /// [resolvePlaceholders], but throws `PlaceholderResolutionException`
+  /// for a placeholder that cannot be resolved and has no default. Use it
+  /// when a missing value is an error.
   String resolveRequiredPlaceholders(String text);
 }
 
-/// A [PropertyResolver] with configuration, like Spring's
-/// `ConfigurablePropertyResolver`.
+/// A [PropertyResolver] whose behaviour can be set: the conversion
+/// service, the placeholder syntax, and keys that must be present.
+///
+/// `ConfigurableEnvironment` is one, so these settings are made on the
+/// environment while the application starts, usually from an
+/// `EnvironmentPostProcessor`. Most applications never change them; the
+/// most useful part is [setRequiredProperties] with
+/// [validateRequiredProperties], which fails the start early and clearly
+/// when a key the application needs is missing.
 ///
 /// ```dart
+/// // A tool that reads `Level` values and cannot run without `app.name`:
+/// // the last call throws, listing every missing key.
 /// final ConfigurablePropertyResolver resolver = StandardEnvironment()
 ///   ..conversionService = (DefaultConversionService()..addEnum(Level.values))
 ///   ..ignoreUnresolvableNestedPlaceholders = true
@@ -92,62 +123,75 @@ abstract interface class PropertyResolver {
 /// ```
 abstract interface class ConfigurablePropertyResolver
     implements PropertyResolver {
-  /// Converts property values in [PropertyResolver.getPropertyAs].
+  /// The service that converts values in [PropertyResolver.getPropertyAs]
+  /// and in `@ConfigurationProperties` binding.
   ///
   /// Defaults to `DefaultConversionService.sharedInstance`.
   ConversionService get conversionService;
 
-  /// Replaces the service used for typed property access.
+  /// Replaces the service that converts values, for example with a
+  /// `DefaultConversionService` that knows the application's own types.
+  /// Do not add converters to the shared default instance.
   set conversionService(ConversionService value);
 
-  /// Start of a placeholder; defaults to `${`.
+  /// The text that opens a placeholder; `${` unless changed.
   // Write-only configuration, as Spring's setX methods of this interface;
   // a getter would be a new abstract member for every implementer.
   // ignore: avoid_setters_without_getters
   set placeholderPrefix(String value);
 
-  /// End of a placeholder; defaults to `}`.
+  /// The text that closes a placeholder; `}` unless changed.
   // Write-only configuration, as Spring's setX methods of this interface;
   // a getter would be a new abstract member for every implementer.
   // ignore: avoid_setters_without_getters
   set placeholderSuffix(String value);
 
-  /// Separator between key and default (`:` by default); `null` disables
-  /// defaults.
+  /// The text between a key and its default in `${key:default}`; `:`
+  /// unless changed. `null` turns defaults off, so the whole text is the
+  /// key.
   // Write-only configuration, as Spring's setX methods of this interface;
   // a getter would be a new abstract member for every implementer.
   // ignore: avoid_setters_without_getters
   set valueSeparator(String? value);
 
-  /// Escape for prefix and separator (`\` by default); `null` disables
-  /// escaping.
+  /// The character that makes a placeholder prefix or separator literal
+  /// (`\${` is the text `${`); `\` unless changed. `null` turns escaping
+  /// off.
   // Write-only configuration, as Spring's setX methods of this interface;
   // a getter would be a new abstract member for every implementer.
   // ignore: avoid_setters_without_getters
   set escapeCharacter(String? value);
 
-  /// When `true`, unresolvable placeholders inside property values are
-  /// kept instead of throwing.
+  /// Whether reading a property whose value contains an unresolvable
+  /// placeholder keeps the placeholder as text (`true`) instead of
+  /// throwing (`false`, the default).
   // Write-only configuration, as Spring's setX methods of this interface;
   // a getter would be a new abstract member for every implementer.
   // ignore: avoid_setters_without_getters
   set ignoreUnresolvableNestedPlaceholders(bool value);
 
-  /// Keys that [validateRequiredProperties] checks; adds to the keys set
-  /// earlier.
+  /// Adds [keys] to the properties [validateRequiredProperties] checks;
+  /// keys added earlier stay.
   void setRequiredProperties(List<String> keys);
 
-  /// Throws `MissingRequiredPropertiesException` listing every required
-  /// key that is not defined.
+  /// Checks that every key given to [setRequiredProperties] has a value,
+  /// and throws `MissingRequiredPropertiesException` listing all the
+  /// missing ones at once. An application context calls it when it
+  /// starts, before any bean is created.
   void validateRequiredProperties();
 }
 
-/// Shared logic of resolvers; subclasses supply [getRawProperty].
+/// The common part of property resolvers: placeholder resolution,
+/// conversion, defaults and required keys. A subclass only says where raw
+/// values come from, in [getRawProperty].
 ///
-/// Handles placeholder resolution, conversion, defaults and required
-/// properties, like Spring's `AbstractPropertyResolver`.
+/// Applications practically never extend it; the environment's resolver
+/// ([PropertySourcesPropertyResolver]) covers property sources. It is for
+/// a resolver over some other store that should behave like the
+/// environment, placeholders and conversion included.
 ///
 /// ```dart
+/// // Placeholders and typed reads over a plain map.
 /// class MapResolver extends AbstractPropertyResolver {
 ///   MapResolver(this.values);
 ///
@@ -193,10 +237,10 @@ abstract class AbstractPropertyResolver
   PropertyPlaceholderHelper? _strictHelper;
   PropertyPlaceholderHelper? _lenientHelper;
 
-  /// The unresolved value of [key], or `null`.
+  /// The stored value of [key] as it is, or `null` when there is none.
   ///
-  /// String values may still contain placeholders; they are resolved by
-  /// [getPropertyAs].
+  /// String values may still contain placeholders; the reading methods
+  /// resolve them and convert the result.
   Object? getRawProperty(String key);
 
   @override
@@ -300,10 +344,12 @@ abstract class AbstractPropertyResolver
       );
 }
 
-/// Resolves properties from [propertySources] in order, like Spring's
-/// `PropertySourcesPropertyResolver`.
+/// The property resolver that reads from a list of property sources, the
+/// first source with a non-`null` value winning.
 ///
-/// The first source that defines a key (non-`null` value) wins.
+/// It does the reading for `StandardEnvironment`, which hands every
+/// property call to one of these. Create one directly only to read a list
+/// of sources that is not an environment's.
 ///
 /// ```dart
 /// final resolver = PropertySourcesPropertyResolver(
@@ -320,14 +366,15 @@ abstract class AbstractPropertyResolver
 /// Integer port = resolver.getProperty("port", Integer.class);
 /// ```
 class PropertySourcesPropertyResolver extends AbstractPropertyResolver {
-  /// Creates a resolver over [propertySources] (not copied).
+  /// Creates a resolver over [propertySources]. The list is not copied, so
+  /// sources added to it later are read too.
   PropertySourcesPropertyResolver(this.propertySources);
 
-  /// The sources searched in order, first wins.
+  /// The sources read in order, the first with a value winning.
   final MutablePropertySources propertySources;
 
-  /// Whether any source defines [key], even with a `null` or empty value,
-  /// like Spring's `PropertySourcesPropertyResolver.containsProperty`.
+  /// Whether any source has [key], even with a `null` or empty value, like
+  /// Spring's `PropertySourcesPropertyResolver.containsProperty`.
   @override
   bool containsProperty(String key) =>
       propertySources.any((source) => source.containsProperty(key));

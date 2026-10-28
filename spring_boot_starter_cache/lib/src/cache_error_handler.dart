@@ -1,15 +1,22 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_cache/src/cache.dart';
 
-/// Handles errors thrown by a [Cache] during cache operations, like
-/// Spring's `CacheErrorHandler`. When a method returns normally, the call
-/// goes on as if the cache had answered: a failed `get` counts as a miss,
-/// a failed `put`, `evict` or `clear` is skipped. Rethrow to fail the
-/// call ([SimpleCacheErrorHandler], the default).
+/// Decides what happens when a [Cache] itself throws while a cache
+/// annotation reads or writes it.
 ///
-/// Set one with a `CachingConfigurer`:
+/// By default ([SimpleCacheErrorHandler]) the error reaches the caller of
+/// the cached method, so a broken cache store breaks the method too. A
+/// handler that returns normally lets the call go on as if the cache had
+/// answered: a failed `get` counts as a miss (the method runs), a failed
+/// `put`, `evict` or `clear` is skipped. A handler that throws fails the
+/// call. Errors of the cached method itself never come here.
+///
+/// You need one when the cache lives outside memory (a file, a database)
+/// and its failures should not take the feature down. Set it with a
+/// `CachingConfigurer`; [LoggingCacheErrorHandler] is the usual choice.
 ///
 /// ```dart
+/// // The cache store may be down: log the error, run the method anyway.
 /// @Configuration()
 /// class CacheSetup with CachingConfigurer {
 ///   @override
@@ -27,8 +34,11 @@ import 'package:spring_boot_starter_cache/src/cache.dart';
 ///   }
 /// }
 /// ```
+///
+/// Unlike Spring's, the methods also receive the stack trace of the error.
 abstract interface class CacheErrorHandler {
-  /// [cache] failed to look [key] up.
+  /// Called when [cache] threw [exception] while looking [key] up. Return
+  /// to treat the lookup as a miss, or throw to fail the call.
   void handleCacheGetError(
     Object exception,
     StackTrace stackTrace,
@@ -36,7 +46,8 @@ abstract interface class CacheErrorHandler {
     Object? key,
   );
 
-  /// [cache] failed to store [value] for [key].
+  /// Called when [cache] threw [exception] while storing [value] for
+  /// [key]. Return to go on without storing, or throw to fail the call.
   void handleCachePutError(
     Object exception,
     StackTrace stackTrace,
@@ -45,7 +56,8 @@ abstract interface class CacheErrorHandler {
     Object? value,
   );
 
-  /// [cache] failed to remove [key].
+  /// Called when [cache] threw [exception] while removing the entry of
+  /// [key]. Return to go on, or throw to fail the call.
   void handleCacheEvictError(
     Object exception,
     StackTrace stackTrace,
@@ -53,7 +65,8 @@ abstract interface class CacheErrorHandler {
     Object? key,
   );
 
-  /// [cache] failed to clear.
+  /// Called when [cache] threw [exception] while removing all its entries
+  /// (`allEntries: true`). Return to go on, or throw to fail the call.
   void handleCacheClearError(
     Object exception,
     StackTrace stackTrace,
@@ -61,10 +74,12 @@ abstract interface class CacheErrorHandler {
   );
 }
 
-/// The default [CacheErrorHandler], like Spring's
-/// `SimpleCacheErrorHandler`: rethrows, so cache errors reach the caller.
+/// The [CacheErrorHandler] used by default: it rethrows every cache error
+/// with its stack trace, so the caller of the cached method sees it.
+///
+/// Spring (Java): `SimpleCacheErrorHandler`, which also rethrows.
 final class SimpleCacheErrorHandler implements CacheErrorHandler {
-  /// Creates the handler.
+  /// The handler; it has no settings.
   const SimpleCacheErrorHandler();
 
   @override
@@ -100,12 +115,22 @@ final class SimpleCacheErrorHandler implements CacheErrorHandler {
   ) => Error.throwWithStackTrace(exception, stackTrace);
 }
 
-/// A [CacheErrorHandler] that logs cache errors at warning level and lets
-/// the calls go on (a failed lookup runs the method), like Spring's
-/// `LoggingCacheErrorHandler`.
+/// A [CacheErrorHandler] that logs each cache error as a warning and lets
+/// the call go on: a failed lookup runs the method, a failed write is
+/// skipped.
+///
+/// Use it when a cache is an optimisation the application can live
+/// without, so a cache store that is down only slows things down. It logs
+/// to `spring.cache` by default.
 ///
 /// ```dart
-/// LoggingCacheErrorHandler(logStackTraces: true)
+/// @Configuration()
+/// class CacheSetup with CachingConfigurer {
+///   // The full stack traces help while the store's failures are studied.
+///   @override
+///   CacheErrorHandler errorHandler() =>
+///       const LoggingCacheErrorHandler(logStackTraces: true);
+/// }
 /// ```
 ///
 /// Spring (Java):
@@ -114,16 +139,17 @@ final class SimpleCacheErrorHandler implements CacheErrorHandler {
 /// ```
 final class LoggingCacheErrorHandler implements CacheErrorHandler {
   /// A handler logging to [logger] (`spring.cache` by default), with the
-  /// stack traces when [logStackTraces] is `true`.
+  /// stack traces when [logStackTraces] is `true` (`false` by default).
   const LoggingCacheErrorHandler({
     this.logger = const SpringLog('spring.cache'),
     this.logStackTraces = false,
   });
 
-  /// Where the errors go.
+  /// The logger the warnings are written to.
   final SpringLog logger;
 
-  /// Whether the error and its stack trace are logged too.
+  /// Whether the stack trace is logged with the error. When `false`, only
+  /// the error's text is appended to the message.
   final bool logStackTraces;
 
   void _log(String message, Object exception, StackTrace stackTrace) =>

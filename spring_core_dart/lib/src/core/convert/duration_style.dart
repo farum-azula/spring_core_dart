@@ -1,12 +1,17 @@
-/// Parses and formats durations like Spring Boot's `DurationStyle`.
+/// Reads and writes durations as text, in the two forms configuration
+/// files use: the short form `10s` and ISO-8601 `PT10S`.
 ///
-/// Simple style: an integer with an optional unit `ns`, `us`, `ms`, `s`,
-/// `m`, `h`, `d` (no unit = milliseconds), e.g. `500ms`, `10s`, `-2h`.
-/// ISO-8601 style: `PT10S`, `P1DT2H30M`, `PT0.5S`, negative `-PT5S` or
-/// `P-1D` (as `java.time.Duration.parse`).
+/// The default conversion service calls it whenever a string becomes a
+/// `Duration` (a `@Value` parameter, a `@ConfigurationProperties` field,
+/// `getPropertyAs<Duration>`), and [formatIso] when a `Duration` becomes a
+/// string. An application calls it directly only to parse or print
+/// durations in its own code, such as a timeout typed by an operator.
 ///
-/// Used by `DefaultConversionService` for `String` ⇄ `Duration`
-/// (formatting with [formatIso], like Boot's `DurationToStringConverter`).
+/// - Short form: a whole number with an optional unit `ns`, `us`, `ms`,
+///   `s`, `m`, `h` or `d` in any case; no unit means milliseconds. For
+///   example `500ms`, `10s`, `-2h`.
+/// - ISO-8601: `PT10S`, `P1DT2H30M`, `PT0.5S`, negative as `-PT5S` or
+///   `P-1D`, as `java.time.Duration.parse` reads them.
 ///
 /// ```dart
 /// DurationStyle.parse('500ms'); // Duration(milliseconds: 500)
@@ -24,8 +29,8 @@
 /// ```
 ///
 /// Differences: Dart's `Duration` has microsecond precision, so `ns` values
-/// are truncated to microseconds; ISO-8601 years and months are not
-/// supported (as in `java.time.Duration`).
+/// are truncated to microseconds. ISO-8601 years and months are not
+/// supported, as in `java.time.Duration`.
 abstract final class DurationStyle {
   // Simple style: signed integer plus an optional unit of up to two letters
   // (the unit is validated separately to give a precise error message).
@@ -39,11 +44,12 @@ abstract final class DurationStyle {
     caseSensitive: false,
   );
 
-  /// Parses [value] in either style; throws [FormatException] otherwise.
+  /// Reads [value] in either form and throws a [FormatException] for
+  /// anything else.
   ///
-  /// Leading and trailing whitespace is ignored; units are
-  /// case-insensitive. A number without a unit is in [unit] (milliseconds
-  /// by default; Boot's `@DurationUnit`).
+  /// Surrounding whitespace is ignored and units may be in any case. A
+  /// number without a unit is in [unit], milliseconds unless given; this
+  /// is how Spring Boot's `@DurationUnit` works.
   ///
   /// ```dart
   /// DurationStyle.parse('-2h'); // -Duration(hours: 2)
@@ -90,9 +96,12 @@ abstract final class DurationStyle {
     throw FormatException("'$value' is not a valid duration", value);
   }
 
-  /// Formats [value] in ISO-8601 like `java.time.Duration.toString` (what
-  /// Boot's `DurationStyle.ISO8601` prints): hours, minutes and seconds,
-  /// no days; zero is `PT0S`, negative parts carry the sign (`PT-1H-30M`).
+  /// Writes [value] in ISO-8601, exactly as `java.time.Duration.toString`
+  /// (and Spring Boot's `DurationStyle.ISO8601`) does, so the text can go
+  /// to a Java service or back into a config file.
+  ///
+  /// Only hours, minutes and seconds appear, never days. Zero is `PT0S`;
+  /// in a negative duration every part carries the sign (`PT-1H-30M`).
   ///
   /// ```dart
   /// DurationStyle.formatIso(const Duration(days: 1)); // 'PT24H'
@@ -133,9 +142,10 @@ abstract final class DurationStyle {
     return buffer.toString();
   }
 
-  /// Formats [value] in the simple style with the largest exact unit.
+  /// Writes [value] in the short form, with the largest unit that divides
+  /// it exactly, for logs and messages people read.
   ///
-  /// The result can be parsed back with [parse]; zero is `0ms`.
+  /// [parse] reads the result back; zero is `0ms`.
   ///
   /// ```dart
   /// DurationStyle.format(const Duration(seconds: 120)); // '2m'
@@ -162,9 +172,14 @@ abstract final class DurationStyle {
   }
 }
 
-/// Units of a duration, like `java.time.temporal.ChronoUnit` (the ones a
-/// Dart [Duration] can hold): the unit of a number without one in
-/// [DurationStyle.parse] (Spring Boot's `@DurationUnit`).
+/// A unit of time, from nanoseconds to days: the unit in which a plain
+/// number is read as a duration.
+///
+/// An application meets it in `@DurationUnit(ChronoUnit.seconds)`, which
+/// makes `timeout=30` mean 30 seconds instead of 30 milliseconds, and in
+/// [DurationStyle.parse]. Only the units a Dart [Duration] can hold exist.
+///
+/// Spring (Java): `java.time.temporal.ChronoUnit`.
 enum ChronoUnit {
   /// Nanoseconds (truncated to microseconds).
   nanos,
@@ -187,7 +202,7 @@ enum ChronoUnit {
   /// Days (24 hours).
   days;
 
-  /// [amount] of this unit.
+  /// A duration of [amount] of this unit.
   ///
   /// ```dart
   /// ChronoUnit.seconds.of(30); // Duration(seconds: 30)

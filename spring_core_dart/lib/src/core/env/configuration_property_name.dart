@@ -1,15 +1,21 @@
-/// A property name made of dot-separated elements, compared the relaxed
-/// way, like Spring Boot's `ConfigurationPropertyName`.
+/// A property name split into its elements (`app`, `read-timeout`) and
+/// compared the relaxed way, so `app.readTimeout`, `app.read_timeout` and
+/// `app.read-timeout` are the same name.
 ///
-/// Canonical names ([ConfigurationPropertyName.of]) are lower-case with
+/// Config files, environment variables and command lines spell the same
+/// property differently, and `@ConfigurationProperties` binding must still
+/// match them to one field. The binder and the config data loader compare
+/// names through this class. Applications do not use it; it is for code
+/// that walks the configuration itself, such as a starter that binds a map
+/// of clients by name.
+///
+/// Canonical names ([ConfigurationPropertyName.of]) are lower case with
 /// `-` between words and `[index]` for list elements and map keys:
 /// `app.read-timeout`, `app.hosts[0].name`, `app.headers[X-Shop]`. Names
-/// as they appear in property sources are adapted with
-/// [ConfigurationPropertyName.adapt], so `app.readTimeout`,
-/// `app.read_timeout` and `app.READ-TIMEOUT` are all equal to
-/// `app.read-timeout`: outside `[...]`, comparison ignores case and every
-/// character that is not a letter or digit. `[...]` elements compare
-/// exactly, and `a.b.0` equals `a.b[0]`.
+/// as they appear in property sources are read with
+/// [ConfigurationPropertyName.adapt]. Outside `[...]`, comparison ignores
+/// case and every character that is not a letter or digit; `[...]`
+/// elements compare exactly, and `a.b.0` equals `a.b[0]`.
 ///
 /// ```dart
 /// final name = ConfigurationPropertyName.of('app.read-timeout');
@@ -26,8 +32,10 @@
 /// ConfigurationPropertyName.isValid("app.readTimeout"); // false
 /// ```
 final class ConfigurationPropertyName {
-  /// Splits [name] at [separator] (and `[...]`), accepting any case and
-  /// characters; elements without letters or digits are dropped.
+  /// Reads [name] as a source wrote it, split at [separator] and at
+  /// `[...]`. Any case and any character is accepted; elements without a
+  /// letter or digit are dropped. Use it for keys found in property
+  /// sources, which need not be canonical.
   ///
   /// ```dart
   /// ConfigurationPropertyName.adapt('Server.Read_Timeout', '.').toString();
@@ -78,10 +86,10 @@ final class ConfigurationPropertyName {
   ConfigurationPropertyName._(List<_Element> elements)
     : _elements = List.unmodifiable(elements);
 
-  /// Parses a canonical [name]; throws
-  /// [InvalidConfigurationPropertyNameException] if it is not one
-  /// (upper-case letters, `_`, a leading or trailing `.`, unbalanced
-  /// brackets, ...). The empty string is the [empty] name.
+  /// Parses [name], which must be canonical, such as a prefix written in
+  /// code. Throws [InvalidConfigurationPropertyNameException] when it is
+  /// not: upper-case letters, `_`, a leading or trailing `.`, an empty
+  /// element, unbalanced brackets. The empty string is the [empty] name.
   ///
   /// ```dart
   /// ConfigurationPropertyName.of('spring.profiles.include[0]');
@@ -93,25 +101,28 @@ final class ConfigurationPropertyName {
         _invalidCharacters(name),
       ));
 
-  /// Like [ConfigurationPropertyName.of], but `null` for an invalid name.
+  /// Parses [name] like [ConfigurationPropertyName.of], but returns `null`
+  /// instead of throwing when it is not canonical.
   static ConfigurationPropertyName? ofIfValid(String name) => _parse(name);
 
-  /// Whether [name] is a valid canonical name.
+  /// Whether [name] is canonical, so [ConfigurationPropertyName.of]
+  /// accepts it.
   static bool isValid(String name) => _parse(name) != null;
 
-  /// The name without elements.
+  /// The name with no elements, the root above every property.
   static final empty = ConfigurationPropertyName._(const []);
 
   final List<_Element> _elements;
 
-  /// Number of elements (`app.hosts[0]` has three).
+  /// How many elements the name has (`app.hosts[0]` has three).
   int get numberOfElements => _elements.length;
 
-  /// Whether the name has no elements.
+  /// Whether this is the [empty] name.
   bool get isEmpty => _elements.isEmpty;
 
-  /// Element [index] in the given [form]; `[...]` elements are returned
-  /// without brackets.
+  /// The text of the element at [index] in the given [form] (as written
+  /// unless given). A `[...]` element is returned as written, without the
+  /// brackets.
   ///
   /// ```dart
   /// final name = ConfigurationPropertyName.adapt('app.readTimeout', '.');
@@ -134,18 +145,22 @@ final class ConfigurationPropertyName {
     };
   }
 
-  /// Whether element [index] is a `[...]` element.
+  /// Whether the element at [index] was written in brackets (a list index
+  /// or a map key).
   bool isIndexed(int index) => _elements[index].indexed;
 
-  /// Whether element [index] is a `[...]` element of digits only.
+  /// Whether the element at [index] is a bracketed list index of digits
+  /// only, such as `[0]`.
   bool isNumericIndex(int index) =>
       _elements[index].indexed && _digits.hasMatch(_elements[index].value);
 
-  /// Whether the last element is a `[...]` element.
+  /// Whether the last element was written in brackets.
   bool get isLastElementIndexed =>
       _elements.isNotEmpty && _elements.last.indexed;
 
-  /// This name followed by [suffix] (a canonical name or `[index]`).
+  /// A new name: this one followed by [suffix], a canonical name or an
+  /// `[index]`. Throws [InvalidConfigurationPropertyNameException] for a
+  /// suffix that is not canonical.
   ///
   /// ```dart
   /// ConfigurationPropertyName.of('spring.profiles.include').append('[0]');
@@ -163,7 +178,8 @@ final class ConfigurationPropertyName {
     ]);
   }
 
-  /// The first [size] elements.
+  /// A new name with only the first [size] elements (this name when it
+  /// has no more).
   ConfigurationPropertyName chop(int size) => size >= _elements.length
       ? this
       : ConfigurationPropertyName._(_elements.sublist(0, size));
@@ -172,11 +188,13 @@ final class ConfigurationPropertyName {
   ConfigurationPropertyName get parent =>
       isEmpty ? this : chop(_elements.length - 1);
 
-  /// Whether [name] is this name plus exactly one element.
+  /// Whether [name] is this name plus exactly one element: `app` is the
+  /// parent of `app.port`, not of `app.db.port`.
   bool isParentOf(ConfigurationPropertyName name) =>
       name.numberOfElements == numberOfElements + 1 && _isPrefixOf(name);
 
-  /// Whether [name] starts with this name and has more elements.
+  /// Whether [name] is below this name at any depth: `app` is an ancestor
+  /// of `app.db.port`.
   bool isAncestorOf(ConfigurationPropertyName name) =>
       name.numberOfElements > numberOfElements && _isPrefixOf(name);
 
@@ -189,7 +207,9 @@ final class ConfigurationPropertyName {
     return true;
   }
 
-  /// Relaxed equality: see the class documentation.
+  /// Whether [other] has the same elements, compared the relaxed way:
+  /// case and non-alphanumeric characters ignored outside brackets, exact
+  /// inside them.
   @override
   bool operator ==(Object other) {
     if (other is! ConfigurationPropertyName ||
@@ -207,8 +227,8 @@ final class ConfigurationPropertyName {
   @override
   int get hashCode => Object.hashAll(_elements.map((e) => e.key));
 
-  /// The canonical form: dashed elements joined with `.`, `[...]`
-  /// elements in brackets.
+  /// The canonical text: elements in the dashed form joined with `.`,
+  /// bracketed elements in brackets (`app.read-timeout`, `app.hosts[0]`).
   @override
   String toString() {
     final result = StringBuffer();
@@ -313,23 +333,33 @@ final class ConfigurationPropertyName {
   }.toList();
 }
 
-/// The forms of a (non-indexed) element of a [ConfigurationPropertyName],
-/// like Spring Boot's `ConfigurationPropertyName.Form`.
+/// How an element of a [ConfigurationPropertyName] is returned by
+/// [ConfigurationPropertyName.getElement]: as written, dashed or reduced
+/// to letters and digits. Bracketed elements are always returned as
+/// written.
+///
+/// Spring (Java): Spring Boot's `ConfigurationPropertyName.Form`.
 enum ConfigurationPropertyNameForm {
-  /// As written: `readTimeout`, `read_timeout`, `read-timeout`.
+  /// As written in the source: `readTimeout`, `read_timeout`,
+  /// `read-timeout`.
   original,
 
-  /// Lower case with only letters, digits and dashes: `read-timeout`
-  /// (`readtimeout` for `readTimeout`).
+  /// Lower case with only letters, digits and dashes, as in a canonical
+  /// name: `read-timeout` stays, `readTimeout` gives `readtimeout`.
   dashed,
 
-  /// Lower case with only letters and digits: `readtimeout`.
+  /// Lower case with only letters and digits, the form names are compared
+  /// in: `readtimeout`.
   uniform,
 }
 
-/// A property name that is not a valid canonical
-/// [ConfigurationPropertyName], like Spring Boot's
-/// `InvalidConfigurationPropertyNameException`.
+/// The error for a name that should be canonical and is not, such as a
+/// `@ConfigurationProperties` prefix written `app.readTimeout` instead of
+/// `app.read-timeout`.
+///
+/// Thrown by [ConfigurationPropertyName.of]; the message lists the
+/// offending characters. Applications see it as a startup failure and fix
+/// the name.
 ///
 /// ```dart
 /// try {
@@ -338,14 +368,18 @@ enum ConfigurationPropertyNameForm {
 ///   print(error.invalidCharacters); // [T]
 /// }
 /// ```
+///
+/// Spring (Java): Spring Boot's `InvalidConfigurationPropertyNameException`.
 final class InvalidConfigurationPropertyNameException implements Exception {
-  /// Creates the exception for [name] with its [invalidCharacters].
+  /// Creates the exception for [name], listing its [invalidCharacters].
   InvalidConfigurationPropertyNameException(this.name, this.invalidCharacters);
 
-  /// The rejected name.
+  /// The name that was rejected.
   final String name;
 
-  /// The characters that are not allowed.
+  /// The characters of [name] that a canonical name cannot contain, each
+  /// once. Empty when the characters are fine but their arrangement is
+  /// not (`a..b`, `.a`).
   final List<String> invalidCharacters;
 
   @override

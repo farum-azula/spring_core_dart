@@ -23,13 +23,16 @@ import 'package:spring_core_dart/src/core/order.dart';
 
 Type _typeOf<T>() => T;
 
-/// Injects a `@Configurable` object the container did not create.
+/// A function that injects the dependencies of an object the container
+/// did not create, an instance of a `@Configurable` class.
 ///
-/// Generated per `@Configurable` class and registered with
-/// [DefaultListableBeanFactory.registerConfigurer] (modules do this);
-/// `autowireBean` then looks it up by the object's runtime type.
+/// The generator writes one per `@Configurable` class and the module
+/// registers it with [DefaultListableBeanFactory.registerConfigurer];
+/// `autowireBean` then finds it by the object's runtime type. You write one
+/// only for a factory used without generated modules.
 ///
 /// ```dart
+/// // How a ProfileScreenState gets its Profiles bean.
 /// factory.registerConfigurer(
 ///   ProfileScreenState,
 ///   (bean, r) =>
@@ -44,13 +47,18 @@ typedef BeanConfigurer = void Function(
   DependencyResolver resolver,
 );
 
-/// The bean container, like Spring's `DefaultListableBeanFactory`.
+/// The bean container itself: it holds the bean definitions, creates the
+/// beans in dependency order, injects them, and destroys them at the end.
 ///
-/// Usually used through an application context, which adds environment,
-/// events, post-processor detection and lifecycle management. Used alone it
-/// is a small, reflection-free DI container:
+/// Every application context owns one and adds the environment, events,
+/// the detection of post-processor beans and lifecycle management; an
+/// application reaches it as `context.beanFactory` and seldom needs more.
+/// Create one yourself for a small, reflection-free container without a
+/// context: a command-line tool, a test, a library that wires a few
+/// objects.
 ///
 /// ```dart
+/// // A container without a context: two beans, checked, created, closed.
 /// final factory = DefaultListableBeanFactory()
 ///   ..registerBeanDefinition(
 ///     BeanDefinition<Repo>(name: 'repo', create: (_) => Repo()),
@@ -88,23 +96,25 @@ typedef BeanConfigurer = void Function(
 /// validating the whole graph before anything is created.
 class DefaultListableBeanFactory
     implements DependencyResolver, BeanDefinitionRegistry {
-  /// Creates an empty factory; lookups that fail locally go to
-  /// [parentBeanFactory].
+  /// Creates an empty factory; lookups that find nothing here go to
+  /// [parentBeanFactory], if given.
   DefaultListableBeanFactory({BeanFactory? parentBeanFactory})
     : _parent = parentBeanFactory;
 
-  /// Whether a definition may replace another with the same name (and an
-  /// alias may be re-pointed). Off by default (Spring Boot's default too);
-  /// the replaced singleton is destroyed.
+  /// Whether a definition may replace another with the same name, and an
+  /// alias may be pointed at another bean. `false` by default, as in Spring
+  /// Boot, so two beans with one name fail fast. When a definition is
+  /// replaced, its singleton is destroyed. Turn it on in tests that swap a
+  /// bean on purpose.
   bool allowBeanDefinitionOverriding = false;
 
   @override
   ConversionService conversionService = DefaultConversionService.sharedInstance;
 
-  /// Turns `@Value` strings into [Resource]s (like Spring's
-  /// `ResourceEditor`, registered by the context), so protocol resolvers
-  /// and asset loaders of the context apply; `null` falls back to the
-  /// [conversionService].
+  /// Turns `@Value` strings into [Resource]s for points of type `Resource`
+  /// (like Spring's `ResourceEditor`), so the context's protocol resolvers
+  /// and asset loaders apply. The application context sets itself; `null`
+  /// leaves the conversion to the [conversionService].
   ResourceLoader? resourceLoader;
 
   @override
@@ -290,12 +300,15 @@ class DefaultListableBeanFactory
     _clearByTypeCache();
   }
 
-  /// Destroys the singleton named [name] (or alias) after the beans that
+  /// Destroys the singleton named [name] (or an alias) after the beans that
   /// depend on it, and forgets an object added with [registerSingleton].
-  /// The next lookup creates the bean again. Spring:
+  /// The next lookup creates the bean again from its definition. Use it to
+  /// reset one bean, in a test for instance. A destroy callback that
+  /// returns a `Future` is not awaited. Spring:
   /// `destroySingleton(String)`.
   ///
   /// ```dart
+  /// // The cache starts empty again; dependents are recreated too.
   /// factory.destroySingleton('cache'); // recreated on next use
   /// ```
   void destroySingleton(String name) {
@@ -493,7 +506,7 @@ class DefaultListableBeanFactory
   @override
   int get beanPostProcessorCount => _postProcessors.length;
 
-  /// Registered post-processors, in invocation order.
+  /// The registered bean post-processors, in the order they are called.
   List<BeanPostProcessor> get beanPostProcessors =>
       List.unmodifiable(_postProcessors);
 
@@ -522,9 +535,10 @@ class DefaultListableBeanFactory
   }
 
   /// Registers how `autowireBean` injects objects of [type] (the exact
-  /// runtime type), and the `@PostConstruct` / `@PreDestroy` methods that
-  /// `initializeBean` / `destroyBean` run for them. Generated modules do
-  /// this for `@Configurable` classes.
+  /// runtime type), and the `@PostConstruct` and `@PreDestroy` methods
+  /// that `initializeBean` and `destroyBean` run for them. The application
+  /// context does this for the `@Configurable` classes of its modules; call
+  /// it yourself only on a factory used without a context.
   ///
   /// ```dart
   /// factory.registerConfigurer(
@@ -742,7 +756,7 @@ class DefaultListableBeanFactory
   /// primary one (a local primary beats an ancestor's; two at the same
   /// level are ambiguous), the only non-fallback one, the one named like
   /// the injection point ([name]), the one named like the [qualifier], the
-  /// only default candidate.
+  /// one with the lowest `@Priority`, the only default candidate.
   _Candidate? _determineAutowireCandidate(
     Type type,
     List<_Candidate> candidates, {
@@ -908,8 +922,8 @@ class DefaultListableBeanFactory
 
   /// Spring's `resolveNamedBean`: the local bean of [type] (selected by
   /// [qualifier]). With several matches the autowire candidates are
-  /// preferred, then the primary, non-fallback, qualifier-named or only
-  /// default candidate.
+  /// preferred, then the primary, non-fallback, qualifier-named,
+  /// highest-`@Priority` or only default candidate.
   _Candidate? _resolveNamedBean(Type type, String? qualifier) {
     final key = (type, qualifier, null, null, false);
     final cacheable = _frozen;
@@ -1405,7 +1419,8 @@ class DefaultListableBeanFactory
 
   /// The order a bean of [definition] gets from its annotations when it is
   /// not `Ordered`: `@Order`, else jakarta's `@Priority` (Spring's
-  /// `OrderUtils.getOrderFromAnnotations`); `null` without either.
+  /// `OrderUtils.getOrderFromAnnotations`); `null` without either. Used by
+  /// framework code that sorts beans it found by definition.
   static int? annotatedOrderOf(BeanDefinition<Object> definition) =>
       definition.order ?? _priorityOf(definition);
 
@@ -2093,10 +2108,11 @@ class DefaultListableBeanFactory
   final _singletonsInstantiatedCallbacks = <void Function()>[];
 
   /// Runs [callback] once the eager singletons exist, before the
-  /// [SmartInitializingSingleton] callbacks: where an application context
-  /// registers its `@EventListener` methods, like Spring's
+  /// [SmartInitializingSingleton] callbacks. The application context
+  /// registers its `@EventListener` methods there, like Spring's
   /// `EventListenerMethodProcessor` (itself a `SmartInitializingSingleton`
-  /// registered before any other bean).
+  /// registered before any other bean). For framework code; an application
+  /// uses `SmartInitializingSingleton` or an event listener.
   ///
   /// ```dart
   /// factory.addSingletonsInstantiatedCallback(registerListenerMethods);

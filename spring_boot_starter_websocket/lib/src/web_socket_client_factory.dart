@@ -7,18 +7,23 @@ import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_invocation_handler.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// Creates the handlers of `@WebSocketClient` interfaces (the bean
-/// `webSocketClientFactory` of the starter), with the application's
+/// The bean that builds the implementation of every `@WebSocketClient`
+/// interface and closes their connections when the application stops.
+///
+/// The starter registers it as `webSocketClientFactory`; applications do
+/// not use it directly. When the container creates a client bean, the
+/// factory makes its [WebSocketInvocationHandler] with the client's
+/// settings ([WebSocketClientConfig]) and the application's
 /// [ObjectMapper], [WebSocketTransport] and
-/// [WebSocketHandshakeInterceptor] beans. Closes every connection when the
-/// application stops.
+/// [WebSocketHandshakeInterceptor] beans.
 ///
 /// Differs from Spring: Spring has no declarative WebSocket client, so no
 /// such factory; you create `WebSocketClient` / `WebSocketStompClient`
 /// beans yourself.
 final class WebSocketClientFactory
     implements InvocationHandlerFactory, DisposableBean {
-  /// A factory using these collaborators.
+  /// A factory reading the client settings from [environment], with the
+  /// given [mapper], [transport] and [interceptors].
   WebSocketClientFactory({
     required this.environment,
     required this.mapper,
@@ -26,16 +31,17 @@ final class WebSocketClientFactory
     this.interceptors = const [],
   });
 
-  /// Configuration and placeholders.
+  /// Where the `spring.websocket.client.config.*` properties and the
+  /// `${...}` of the URLs are read.
   final Environment environment;
 
-  /// JSON messages.
+  /// Reads and writes the JSON messages.
   final ObjectMapper mapper;
 
-  /// Opens the connections.
+  /// Opens the connections: `dart:io` or the browser, or a mock in tests.
   final WebSocketTransport transport;
 
-  /// Applied to every handshake.
+  /// Called on every handshake of every client, in this order.
   final List<WebSocketHandshakeInterceptor> interceptors;
 
   final _handlers = <WebSocketInvocationHandler>[];
@@ -60,9 +66,10 @@ final class WebSocketClientFactory
     return handler;
   }
 
-  /// Closes every client's connection; with open connections the
-  /// returned future completes once they are closed (awaited by
-  /// `closeAsync()`).
+  /// Closes every client's connection when the application stops; later
+  /// use of a client fails with a [StateError]. With open connections it
+  /// returns a future that completes once they are closed, which
+  /// `closeAsync()` awaits.
   @override
   FutureOr<void> destroy() {
     final handlers = [..._handlers];

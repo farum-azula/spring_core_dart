@@ -11,17 +11,36 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 import 'package:spring_web_dart/src/sse/sse_decoder.dart';
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 
-/// A [ServerHttpRequest] built in a test, like Spring's
-/// `MockHttpServletRequest`: what `MockMvc` hands to the application.
+/// An HTTP request built in memory, to call the application in a test
+/// without a server.
+///
+/// `MockMvc` builds one for every request it performs and hands it to the
+/// application; a `RequestPostProcessor` receives it to add a user, a
+/// header or a token. Build one yourself only to call an `HttpHandler`, a
+/// `WebFilter` or a controller method directly. Unlike a real request,
+/// everything can be set: headers, query parameters, cookies, body,
+/// [remoteAddress], [principal].
 ///
 /// ```dart
+/// // Calls a WebFilter directly with a JSON POST.
 /// final request = MockServerHttpRequest(HttpMethod.post, '/api/books')
 ///   ..headers.contentType = 'application/json'
 ///   ..setBody('{"isbn": "978-0"}');
+/// await filter.doFilter(request, MockServerHttpResponse(), chain);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// MockHttpServletRequest request =
+///     new MockHttpServletRequest("POST", "/api/books");
+/// request.setContentType("application/json");
+/// request.setContent("{\"isbn\": \"978-0\"}".getBytes());
 /// ```
 final class MockServerHttpRequest implements ServerHttpRequest {
-  /// A [method] request to [target] (a path with an optional query, or a
-  /// full URL; `http://localhost` by default).
+  /// A [method] request to [target]: a path with an optional query
+  /// (`/books?q=dune`), resolved against `http://localhost`, or a full URL
+  /// (`https://shop.test/books`, which also makes [isSecure] true).
+  /// [headers] start empty unless given.
   MockServerHttpRequest(this.method, String target, {HttpHeaders? headers})
     : uri = Uri.parse('http://localhost').resolve(target),
       headers = headers ?? HttpHeaders();
@@ -60,10 +79,13 @@ final class MockServerHttpRequest implements ServerHttpRequest {
   Uint8List _body = Uint8List(0);
   var _bodyRead = false;
 
-  /// The body as bytes.
+  /// The body set with [setBody] (empty by default), readable any number
+  /// of times, unlike [body].
   Uint8List get bodyBytes => _body;
 
-  /// Sets the body: a `String` (UTF-8) or bytes.
+  /// Sets the body to [body], a `String` (encoded in UTF-8) or a list of
+  /// bytes, and sets `Content-Length` to match. Throws an `ArgumentError`
+  /// for anything else. It does not set `Content-Type`.
   void setBody(Object body) {
     _body = switch (body) {
       final String text => utf8.encode(text),
@@ -74,7 +96,8 @@ final class MockServerHttpRequest implements ServerHttpRequest {
     headers.contentLength = _body.length;
   }
 
-  /// Adds the query parameter [name]=[value].
+  /// Adds [value] to the query parameter [name] of [uri] (the values
+  /// already there stay).
   void addParameter(String name, String value) {
     final all = {
       for (final entry in uri.queryParametersAll.entries)
@@ -84,7 +107,7 @@ final class MockServerHttpRequest implements ServerHttpRequest {
     uri = uri.replace(queryParameters: all);
   }
 
-  /// Adds the cookie [name]=[value].
+  /// Adds the cookie [name]=[value] to the `Cookie` header.
   void addCookie(String name, String value) {
     final existing = headers[HttpHeaders.cookieHeader];
     headers.set(
@@ -108,8 +131,10 @@ final class MockServerHttpRequest implements ServerHttpRequest {
 
   final _client = Completer<WebSocketSession>();
 
-  /// The client's end of the WebSocket once the application accepted the
-  /// handshake ([upgradeToWebSocket]).
+  /// The client's end of the WebSocket, once the application accepted the
+  /// handshake with [upgradeToWebSocket]; a test sends and receives
+  /// messages through it. It never completes when the handshake is
+  /// refused. `MockMvc.webSocket` returns it.
   Future<WebSocketSession> get webSocketClient => _client.future;
 
   @override
@@ -126,9 +151,33 @@ final class MockServerHttpRequest implements ServerHttpRequest {
   }
 }
 
-/// The response a test reads, like Spring's `MockHttpServletResponse`:
-/// status, headers, cookies and body, with [committed] and [closed] to
-/// follow a streamed answer.
+/// An HTTP response kept in memory, so a test can read what the
+/// application answered: status, headers, cookies and body.
+///
+/// `MockMvc` passes one to the application for every request and the
+/// test reads it from the result. Besides the full body ([bodyText],
+/// [json]) it can follow an answer that is still being streamed:
+/// [committed] and [closed] tell where the response is, [chunks] and
+/// [eventStream] deliver the body as it is written, and [disconnect]
+/// plays a client that goes away.
+///
+/// ```dart
+/// // Calls the application directly and checks its answer.
+/// final response = MockServerHttpResponse();
+/// await handler.handle(
+///   MockServerHttpRequest(HttpMethod.get, '/api/books/978-0'),
+///   response,
+/// );
+/// expect(response.statusCode, 200);
+/// expect((response.json! as Map)['title'], 'Dune');
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// MockHttpServletResponse response = mockMvc.perform(get("/api/books/978-0"))
+///     .andReturn().getResponse();
+/// assertEquals(200, response.getStatus());
+/// ```
 final class MockServerHttpResponse implements ServerHttpResponse {
   @override
   int statusCode = 200;
@@ -136,7 +185,7 @@ final class MockServerHttpResponse implements ServerHttpResponse {
   @override
   final HttpHeaders headers = HttpHeaders();
 
-  /// The cookies set.
+  /// The cookies the application set with [addCookie], in order.
   final List<ResponseCookie> cookies = [];
 
   final _body = BytesBuilder();
@@ -151,13 +200,15 @@ final class MockServerHttpResponse implements ServerHttpResponse {
   @override
   bool get isCommitted => _committed.isCompleted;
 
-  /// Completes when the status and headers were sent.
+  /// Completes when the response is committed: at the first body bytes, a
+  /// [flush] or [close]. For a stream this is when its headers are out.
   Future<void> get committed => _committed.future;
 
-  /// Completes when the application ended the response.
+  /// Completes when the application closed the response.
   Future<void> get closed => _closed.future;
 
-  /// Whether the application ended the response.
+  /// Whether the application closed the response. Writing after that
+  /// throws a `StateError`.
   bool get isClosed => _closed.isCompleted;
 
   void _commit() {
@@ -200,38 +251,57 @@ final class MockServerHttpResponse implements ServerHttpResponse {
   @override
   Future<void> get done => _done.future;
 
-  /// Ends the response from the client's side: an open stream stops.
+  /// Plays a client that goes away: [done] completes, so an endless
+  /// stream (server-sent events) stops writing. The response itself is
+  /// not closed.
   void disconnect() {
     if (!_done.isCompleted) {
       _done.complete();
     }
   }
 
-  /// The body written so far.
+  /// Every body byte written so far.
   Uint8List get bodyBytes => _body.toBytes();
 
-  /// The body as UTF-8 text.
+  /// The body written so far, decoded as UTF-8 (malformed bytes
+  /// replaced).
   String get bodyText => utf8.decode(bodyBytes, allowMalformed: true);
 
-  /// The body as JSON.
+  /// The body decoded as JSON; throws a `FormatException` when it is not
+  /// JSON.
   Object? get json => jsonDecode(bodyText);
 
-  /// The body's chunks from now on (until [close]).
+  /// The chunks written from now on, one event per write; the stream
+  /// ends when the response is closed. Earlier chunks are not repeated.
   Stream<List<int>> get chunks => _chunks.stream;
 
-  /// The server-sent events written so far.
+  /// The server-sent events written so far, read from the body.
   List<ServerSentEvent<String?>> get events => SseDecoder.parse(bodyText);
 
-  /// The server-sent events written from now on.
+  /// The server-sent events written from now on, as they arrive; ends
+  /// when the response is closed.
   Stream<ServerSentEvent<String?>> get eventStream =>
       chunks.transform(const SseDecoder());
 }
 
-/// Two connected [WebSocketSession]s in memory: what one sends, the other
-/// receives. `MockMvc` gives the [client] to a test and the [server] to
-/// the application.
+/// Two [WebSocketSession]s connected to each other in memory: what one
+/// sends, the other receives, and closing one closes both.
+///
+/// It is the WebSocket a [MockServerHttpRequest] opens when the
+/// application accepts a handshake: the [server] end goes to the
+/// application, the [client] end to the test (`MockMvc.webSocket`). Use
+/// it directly to test code that takes a session without any HTTP.
+///
+/// ```dart
+/// // The code under test gets the server end; the test talks on the other.
+/// final pair = WebSocketSessionPair(Uri.parse('ws://localhost/chat'));
+/// startEcho(pair.server); // answers 'echo: <message>' to each message
+/// pair.client.sendMessage('hello');
+/// expect(await pair.client.messages.first, 'echo: hello');
+/// ```
 final class WebSocketSessionPair {
-  /// A pair for [uri], with the agreed [protocol].
+  /// Two connected sessions, both with [uri] and with [protocol] as their
+  /// accepted sub-protocol.
   WebSocketSessionPair(Uri uri, {String? protocol}) {
     server = _PairedSession(uri, protocol);
     client = _PairedSession(uri, protocol);
@@ -239,10 +309,10 @@ final class WebSocketSessionPair {
     (client as _PairedSession)._peer = server as _PairedSession;
   }
 
-  /// The application's end.
+  /// The end the application uses.
   late final WebSocketSession server;
 
-  /// The test's end.
+  /// The end the test uses.
   late final WebSocketSession client;
 }
 
@@ -305,15 +375,32 @@ final class _PairedSession implements WebSocketSession {
   }
 }
 
-/// A [MultipartFile] for tests, like Spring's `MockMultipartFile`: pass it
-/// to `MockMvc.multipart`, or straight to a controller method.
+/// An uploaded file made in a test, with its content in memory.
+///
+/// Pass it to `MockMvc.multipart` to send it as a part of a
+/// `multipart/form-data` request, or straight to a controller method that
+/// takes a [MultipartFile]. Without an original file name (`null`),
+/// `MockMvc.multipart` sends it as a plain part; with `application/json`
+/// it is then a JSON part for `@RequestPart`.
 ///
 /// ```dart
+/// // Uploads a cover image to the controller under test.
 /// final cover = MockMultipartFile('cover', 'dune.png', 'image/png', bytes);
+/// await mvc.multipart('/api/covers', files: [cover])
+///     .andExpect(status: 201);
+/// ```
+///
+/// Spring (Java):
+/// ```java
+/// MockMultipartFile cover =
+///     new MockMultipartFile("cover", "dune.png", "image/png", bytes);
+/// mockMvc.perform(multipart("/api/covers").file(cover))
+///     .andExpect(status().isCreated());
 /// ```
 class MockMultipartFile extends InMemoryMultipartFile {
-  /// A file of field [name] named [originalFilename], with [contentType]
-  /// and [content].
+  /// A file for the form field [name], called [originalFilename] on the
+  /// client (or `null`), of type [contentType] (or `null`), holding
+  /// [content].
   MockMultipartFile(
     super.name,
     String? originalFilename,

@@ -1,8 +1,17 @@
-/// The value of [values] named [source], matched like Spring Boot's
-/// `LenientObjectToEnumConverterFactory`: the exact name first, then
-/// ignoring case and every character that is not a letter or digit, so
-/// `my-value`, `MY_VALUE` and `myValue` all find `myValue`. [alias] gives
-/// further names of a value (a JSON form, ...). `null` when none matches.
+/// Finds the value of [values] whose name matches [source] loosely, or
+/// `null` when none does.
+///
+/// Configuration writes enum values in many styles (`ON_SHOW_SELECTED`,
+/// `on-show-selected`, `onShowSelected`), so the conversion service and
+/// the data binder use this instead of an exact `byName`. The exact name
+/// wins first; then names are compared ignoring case and every character
+/// that is not a letter or digit. [alias] gives one more name per value
+/// (a JSON form, for example) that is compared the same loose way.
+///
+/// Internal: not exported. Applications get this matching through
+/// conversion and binding, never by calling it.
+///
+/// Spring (Java): Spring Boot's `LenientObjectToEnumConverterFactory`.
 E? findLenientEnum<E extends Enum>(
   List<E> values,
   String source, {

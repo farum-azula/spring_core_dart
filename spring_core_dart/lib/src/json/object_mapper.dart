@@ -11,17 +11,32 @@ import 'package:spring_core_dart/src/json/json_node.dart';
 import 'package:spring_core_dart/src/json/json_serializer.dart';
 import 'package:spring_core_dart/src/json/naming.dart';
 
-/// Converts objects to JSON and back, like Jackson's `ObjectMapper` — on
-/// metadata written by the generator instead of reflection, so it works in
-/// AOT, Flutter, the web and minified builds.
+/// Converts Dart objects to JSON and back: the one place where models,
+/// JSON text, decoded maps and [JsonNode] trees meet.
+///
+/// Dart has no runtime reflection, so turning a class into JSON usually
+/// takes hand-written or generated `toJson` / `fromJson` code per class.
+/// The mapper instead reads metadata the generator writes for classes
+/// marked `@Introspected()`, so it also works in AOT, Flutter, the web and
+/// minified builds. Use it wherever JSON crosses a boundary: files,
+/// message queues, caches, HTTP clients written by hand. The web and Feign
+/// starters already use it for request and response bodies, so a
+/// controller or client only declares the model types. In Spring Boot the
+/// mapper is a bean configured from `spring.jackson.*`: inject it rather
+/// than creating one, so every part of the application writes the same
+/// JSON.
 ///
 /// A class becomes JSON-ready with `@Introspected()`; classes of the same
-/// package that it uses are introspected too. Immutable classes are created
-/// through their constructor (`final` fields, `required` and default
-/// values); a class with its own `fromJson` / `toJson` (e.g. from
-/// `json_serializable` or `freezed`) is converted with those. Generic
+/// package that it uses (property and constructor types) are introspected
+/// too. Immutable classes are created through their constructor (`final`
+/// fields, `required` and default values; a missing optional property
+/// keeps its default); classes with setters and a no-argument constructor
+/// work too. A class with its own `fromJson` / `toJson` (from
+/// `json_serializable` or `freezed`, say) is converted with those. Generic
 /// classes (`Page<T>`) are read with their type arguments:
 /// `readValue(json, GenericType<Page<Book>>([ClassType<Book>()]))`.
+/// Failures throw a [JsonMappingException] naming the place, such as
+/// `items[2].price: expected a number, got "abc"`.
 ///
 /// ```dart
 /// @Introspected()
@@ -36,6 +51,7 @@ import 'package:spring_core_dart/src/json/naming.dart';
 ///   final List<String> tags;
 /// }
 ///
+/// // Store books in a file and load them back.
 /// final mapper = context.getBean<ObjectMapper>(); // or JsonMapper.builder()...build()
 /// final json = mapper.writeValueAsString(book);   // {"isbn":"1","tags":[],"title":"Dune"}
 /// final again = mapper.readValue<Book>(json);
@@ -46,21 +62,22 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// Built-in conversions: `String`, `int` (a number with a fraction is
 /// truncated, like Jackson's `ACCEPT_FLOAT_AS_INT`; out of range fails),
 /// `double`, `num` (`NaN` and infinities as the strings `"NaN"`,
-/// `"Infinity"`, `"-Infinity"`, like Jackson), `bool`, `DateTime`
-/// (ISO-8601 like Jackson writes an `OffsetDateTime`:
-/// `2026-01-01T12:00:00.000+02:00` for a local time, `Z` for UTC, converted
-/// to [timeZone] when set; read strictly, text without an offset in
-/// [timeZone] or UTC; or a timestamp with [writeDatesAsTimestamps]: seconds
-/// with the fraction (`1767268800.5`) like Jackson 3, or milliseconds
-/// without [writeDateTimestampsAsNanoseconds]), `Duration` (ISO-8601 such
-/// as `PT1M30S`, also read from `90s`; or seconds / milliseconds the same
-/// way with [writeDurationsAsTimestamps]), `Uri`, `BigInt` (as a string),
-/// enums (by name or `@JsonValue`; read also by index), `List`, `Set`,
-/// `Map`, nullable types (`""` reads as `null` for nullable numbers,
-/// booleans, dates and durations), [JsonNode] trees and nested objects.
-/// `Map<String, dynamic>`, `List<dynamic>` and `Object?` read without a
-/// type are the plain decoded JSON. Anything else: a [JsonSerializer] /
-/// [JsonDeserializer].
+/// `"Infinity"`, `"-Infinity"`, like Jackson), `bool`, `DateTime`,
+/// `Duration`, `Uri`, `BigInt` (as a string), enums (by name or
+/// `@JsonValue`; read also by index), `List`, `Set`, `Map`, nullable types
+/// (`""` reads as `null` for nullable numbers, booleans, dates and
+/// durations), [JsonNode] trees and nested objects. `Map<String, dynamic>`,
+/// `List<dynamic>` and `Object?` read without a type are the plain decoded
+/// JSON. Anything else needs a [JsonSerializer] / [JsonDeserializer].
+///
+/// A `DateTime` is ISO-8601, as Jackson writes an `OffsetDateTime`:
+/// `2026-01-01T12:00:00.000+02:00` for a local time, `Z` for UTC,
+/// converted to [timeZone] when set. It is read strictly; text without an
+/// offset is in [timeZone], else UTC. With [writeDatesAsTimestamps] it is a
+/// number instead: seconds with the fraction (`1767268800.5`) like Jackson
+/// 3, or milliseconds without [writeDateTimestampsAsNanoseconds]. A
+/// `Duration` is ISO-8601 such as `PT1M30S` (also read from `90s`), or
+/// seconds / milliseconds the same way with [writeDurationsAsTimestamps].
 ///
 /// Annotations: `@JsonProperty`, `@JsonAlias`, `@JsonIgnore`,
 /// `@JsonIgnoreProperties`, `@JsonInclude`, `@JsonPropertyOrder`,
@@ -78,32 +95,38 @@ import 'package:spring_core_dart/src/json/naming.dart';
 /// ```
 class ObjectMapper {
   /// A mapper reading class metadata from [introspector] (the context's one
-  /// in an application; [BeanIntrospector.shared] by default).
+  /// in an application; [BeanIntrospector.shared] by default). Every setting
+  /// is optional; the defaults are those of Jackson 3 and Spring Boot.
   ///
-  /// [namingStrategy] turns Dart names into JSON names; [inclusion] decides
-  /// which values are written; [failOnUnknownProperties] rejects JSON
-  /// properties a class does not have (off, like Spring Boot);
-  /// [acceptFloatAsInt] truncates numbers with a fraction read into an
-  /// `int` (on, like Jackson); [failOnNullForPrimitives] rejects a JSON
-  /// `null` or a missing constructor parameter for a non-nullable `int`,
-  /// `double`, `num` or `bool` (on, like Jackson 3; off reads them as `0` /
-  /// `false`); [writeDatesAsTimestamps] /
-  /// [writeDurationsAsTimestamps] write `DateTime` / `Duration` as numbers
-  /// (off, like Jackson 3), in seconds with the fraction
-  /// ([writeDateTimestampsAsNanoseconds], on) or milliseconds; numbers are
-  /// read as seconds when [readDateTimestampsAsNanoseconds] (on), else as
-  /// milliseconds (a number with a fraction is always seconds); [timeZone]
-  /// (`UTC`, `Z` or a fixed offset such as `+02:00` or `GMT+2`) is the
-  /// offset dates are written in and dates without an offset are read in;
-  /// [indentOutput] pretty-prints; [sortPropertiesAlphabetically] writes
-  /// the properties of an object sorted by JSON name (Jackson 3's default,
-  /// `MapperFeature.SORT_PROPERTIES_ALPHABETICALLY`; a class's constructor
-  /// parameters come first, like `SORT_CREATOR_PROPERTIES_FIRST`), `false`
-  /// writes them in declaration order (Jackson 2's, superclass first);
-  /// `@JsonPropertyOrder` wins either way; [defaultViewInclusion] includes
-  /// properties without `@JsonView` when a view is active (off, like
-  /// Jackson 3). The serializers and deserializers of [modules] come after
-  /// [serializers] / [deserializers].
+  /// - [namingStrategy] turns Dart names into JSON names.
+  /// - [inclusion] decides which values are written.
+  /// - [failOnUnknownProperties] rejects JSON properties a class does not
+  ///   have (off, like Spring Boot).
+  /// - [acceptFloatAsInt] truncates numbers with a fraction read into an
+  ///   `int` (on, like Jackson).
+  /// - [failOnNullForPrimitives] rejects a JSON `null` or a missing
+  ///   constructor parameter for a non-nullable `int`, `double`, `num` or
+  ///   `bool` (on, like Jackson 3; off reads them as `0` / `false`).
+  /// - [writeDatesAsTimestamps] / [writeDurationsAsTimestamps] write
+  ///   `DateTime` / `Duration` as numbers (off, like Jackson 3), in seconds
+  ///   with the fraction ([writeDateTimestampsAsNanoseconds], on) or
+  ///   milliseconds. Numbers are read as seconds when
+  ///   [readDateTimestampsAsNanoseconds] (on), else as milliseconds; a
+  ///   number with a fraction is always seconds.
+  /// - [timeZone] (`UTC`, `Z` or a fixed offset such as `+02:00` or
+  ///   `GMT+2`) is the offset dates are written in and dates without an
+  ///   offset are read in; a named zone throws an [ArgumentError].
+  /// - [indentOutput] pretty-prints.
+  /// - [sortPropertiesAlphabetically] writes the properties of an object
+  ///   sorted by JSON name (Jackson 3's default,
+  ///   `MapperFeature.SORT_PROPERTIES_ALPHABETICALLY`), a class's
+  ///   constructor parameters first (like `SORT_CREATOR_PROPERTIES_FIRST`);
+  ///   `false` writes them in declaration order (Jackson 2's, superclass
+  ///   first). `@JsonPropertyOrder` wins either way.
+  /// - [defaultViewInclusion] includes properties without `@JsonView` when a
+  ///   view is active (off, like Jackson 3).
+  /// - [serializers] and [deserializers] handle types the mapper does not
+  ///   know; those of [modules] come after them.
   ObjectMapper({
     BeanIntrospector? introspector,
     this.namingStrategy = PropertyNamingStrategy.lowerCamelCase,
@@ -153,17 +176,21 @@ class ObjectMapper {
       serializers = other.serializers,
       deserializers = other.deserializers;
 
-  /// Where class metadata comes from.
+  /// Where class metadata comes from: the generated introspections of the
+  /// `@Introspected` classes.
   final BeanIntrospector introspector;
 
-  /// Dart property name → JSON name (unless `@JsonProperty` or `@JsonNaming`
-  /// says).
+  /// How Dart property names become JSON names, for classes without
+  /// `@JsonNaming` and properties without a `@JsonProperty` name.
   final PropertyNamingStrategy namingStrategy;
 
-  /// Which property values are written (unless `@JsonInclude` says).
+  /// Which property values are written, for properties and classes without
+  /// `@JsonInclude`.
   final JsonInclusion inclusion;
 
-  /// Whether JSON properties a class does not have are an error.
+  /// Whether a JSON property a class does not have is an error rather than
+  /// skipped; `@JsonIgnoreProperties(ignoreUnknown: true)` and
+  /// `@JsonAnySetter` override it per class.
   final bool failOnUnknownProperties;
 
   /// Whether a number with a fraction read into an `int` is truncated
@@ -176,10 +203,10 @@ class ObjectMapper {
   /// otherwise it is read as `0` / `false`.
   final bool failOnNullForPrimitives;
 
-  /// Whether `DateTime` is written as a timestamp.
+  /// Whether `DateTime` is written as a number instead of ISO-8601 text.
   final bool writeDatesAsTimestamps;
 
-  /// Whether `Duration` is written as a number.
+  /// Whether `Duration` is written as a number instead of ISO-8601 text.
   final bool writeDurationsAsTimestamps;
 
   /// Whether timestamps are written as seconds with the fraction (Jackson
@@ -198,7 +225,7 @@ class ObjectMapper {
 
   final Duration? _offset;
 
-  /// Whether [writeValueAsString] pretty-prints.
+  /// Whether [writeValueAsString] indents its output for people to read.
   final bool indentOutput;
 
   /// Whether the properties of an object are written sorted by JSON name
@@ -210,10 +237,12 @@ class ObjectMapper {
   /// active (Jackson's `DEFAULT_VIEW_INCLUSION`).
   final bool defaultViewInclusion;
 
-  /// Custom writers, tried before the built-in conversions.
+  /// The custom serializers, including those of the modules, tried in order
+  /// before the built-in conversions.
   final List<JsonSerializer<Object>> serializers;
 
-  /// Custom readers, tried before the built-in conversions.
+  /// The custom deserializers, including those of the modules, tried in
+  /// order before the built-in conversions.
   final List<JsonDeserializer<Object>> deserializers;
 
   final Type? _view;
@@ -229,7 +258,8 @@ class ObjectMapper {
       ? 9007199254740992.0
       : 9223372036854775808.0;
 
-  /// Whether [feature] is on in this mapper.
+  /// Whether [feature] is on in this mapper; a feature this mapper does not
+  /// know gives its default.
   bool isEnabled(JsonFeature feature) => switch (feature) {
     SerializationFeature.indentOutput => indentOutput,
     DeserializationFeature.failOnUnknownProperties => failOnUnknownProperties,
@@ -246,10 +276,12 @@ class ObjectMapper {
     _ => feature.enabledByDefault,
   };
 
-  /// A builder with this mapper's configuration, to derive another mapper
-  /// (Jackson 3's `rebuild()`; mappers are immutable).
+  /// Returns a builder holding this mapper's settings, serializers and
+  /// deserializers, to derive a variant; this mapper stays unchanged
+  /// (Jackson 3's `rebuild()`).
   ///
   /// ```dart
+  /// // The same JSON, but strict about unknown properties.
   /// final strict = mapper.rebuild()
   ///     .enable(DeserializationFeature.failOnUnknownProperties)
   ///     .build();
@@ -290,16 +322,19 @@ class ObjectMapper {
       .addSerializers(serializers)
       .addDeserializers(deserializers);
 
-  /// A writer that writes only the properties of [view] (see `@JsonView`).
+  /// Returns a writer that writes only the properties of [view] (see
+  /// `@JsonView`), with this mapper's settings.
   ///
   /// ```dart
+  /// // The public form of a user, for an unauthenticated caller.
   /// mapper.writerWithView(Public).writeValueAsString(user);
   /// ```
   ObjectWriter writerWithView(Type view) =>
       ObjectWriter._(ObjectMapper._withView(this, view));
 
-  /// A reader that reads only the properties of [view]; the others in the
-  /// JSON are skipped.
+  /// Returns a reader that reads only the properties of [view] (see
+  /// `@JsonView`); the other properties in the JSON are skipped, so a
+  /// client cannot set them.
   ObjectReader readerWithView(Type view) =>
       ObjectReader._(ObjectMapper._withView(this, view));
 
@@ -307,7 +342,11 @@ class ObjectMapper {
   // Writing
   // -------------------------------------------------------------------
 
-  /// [value] as a JSON string.
+  /// Returns [value] as JSON text, indented when [indentOutput] is on.
+  ///
+  /// Throws a [JsonMappingException] when a value cannot be written (a
+  /// class that is not introspected and has no `toJson` or serializer, or a
+  /// cycle).
   ///
   /// ```dart
   /// mapper.writeValueAsString(Book(isbn: '1', title: 'Dune')); // {"isbn":"1",...}
@@ -319,10 +358,13 @@ class ObjectMapper {
         : jsonEncode(tree);
   }
 
-  /// [value] as decoded JSON: `null`, bools, numbers, strings, lists and
-  /// maps (what `jsonDecode` returns). [type] helps with enums that use
-  /// `@JsonValue`. Use `JsonNode.from(mapper.valueToTree(value))` for a
-  /// [JsonNode].
+  /// Returns [value] as decoded JSON: `null`, bools, numbers, strings, lists
+  /// and maps, what `jsonDecode` returns. Use it to hand JSON to an API that
+  /// takes maps, or to change it before encoding.
+  ///
+  /// [type] helps with enums that use `@JsonValue`. Use
+  /// `JsonNode.from(mapper.valueToTree(value))` for a [JsonNode]. Throws
+  /// like [writeValueAsString].
   Object? valueToTree(Object? value, [TypeInfo<Object?>? type]) =>
       _write(value, _Path.root, Set.identity(), type);
 
@@ -330,9 +372,12 @@ class ObjectMapper {
   // Reading
   // -------------------------------------------------------------------
 
-  /// A [T] from the JSON string [json]. Pass [type] for generic types:
-  /// `readValue(json, const ListType<Book>(ClassType<Book>()))` (or use
-  /// [readList] / [readMap]).
+  /// Returns a [T] read from the JSON text [json].
+  ///
+  /// Pass [type] for generic types, whose type arguments Dart cannot see at
+  /// runtime: `readValue(json, const ListType<Book>(ClassType<Book>()))`, or
+  /// use [readList] / [readMap]. Throws a [JsonMappingException] for text
+  /// that is not JSON or does not fit [T].
   ///
   /// ```dart
   /// final book = mapper.readValue<Book>('{"isbn":"1","title":"Dune"}');
@@ -351,29 +396,32 @@ class ObjectMapper {
     }
   }
 
-  /// The JSON string [json] as a tree of [JsonNode]s (Jackson's
-  /// `readTree`).
+  /// Returns the JSON text [json] as a tree of [JsonNode]s, to read parts of
+  /// a document without a class (Jackson's `readTree`). Throws a
+  /// [JsonMappingException] for text that is not JSON.
   ///
   /// ```dart
   /// mapper.readTree('{"a":[1,2]}').at('/a/1').intValue(); // 2
   /// ```
   JsonNode readTree(String json) => JsonNode.from(_decode(json));
 
-  /// An empty [ObjectNode].
+  /// Returns a new empty [ObjectNode], to build JSON by hand.
   ObjectNode createObjectNode() => ObjectNode();
 
-  /// An empty [ArrayNode].
+  /// Returns a new empty [ArrayNode], to build JSON by hand.
   ArrayNode createArrayNode() => ArrayNode();
 
-  /// A [T] from decoded JSON [tree] (e.g. what an HTTP client decoded) or a
-  /// [JsonNode].
+  /// Returns a [T] read from decoded JSON [tree] (such as what an HTTP
+  /// client or a message library already decoded) or from a [JsonNode].
+  /// [type] is as in [readValue].
   T treeToValue<T>(Object? tree, [TypeInfo<T>? type]) => _read(
     tree is JsonNode && !_isNodeType<T>() ? tree.toJson() : tree,
     type ?? _classType<T>(),
     _Path.root,
   ) as T;
 
-  /// A `List<E>` from the JSON array [json].
+  /// Returns a `List<E>` read from the JSON array [json]; [element]
+  /// describes a generic element type.
   ///
   /// ```dart
   /// final books = mapper.readList<Book>('[{"isbn":"1","title":"Dune"}]');
@@ -381,15 +429,19 @@ class ObjectMapper {
   List<E> readList<E>(String json, [TypeInfo<E>? element]) =>
       readValue(json, ListType<E>(element ?? _classType<E>()));
 
-  /// A `Map<String, V>` from the JSON object [json].
+  /// Returns a `Map<String, V>` read from the JSON object [json]; [value]
+  /// describes a generic value type.
   Map<String, V> readMap<V>(String json, [TypeInfo<V>? value]) => readValue(
     json,
     MapType<String, V>(const ClassType<String>(), value ?? _classType<V>()),
   );
 
-  /// [value] converted to [T] through JSON, like Jackson's `convertValue`
-  /// (e.g. a `Map` into an object, an object into another class with the
-  /// same properties, or anything into a [JsonNode]).
+  /// Returns [value] converted to [T] by writing it as JSON and reading it
+  /// back, like Jackson's `convertValue`.
+  ///
+  /// Use it to turn a `Map` into an object, an object into another class
+  /// with the same properties (an entity into a DTO), or anything into a
+  /// [JsonNode].
   T convertValue<T>(Object? value, [TypeInfo<T>? type]) =>
       treeToValue<T>(valueToTree(value), type);
 
@@ -1076,37 +1128,60 @@ class ObjectMapper {
   };
 }
 
-/// Writes with the configuration of a mapper and a `@JsonView` (Jackson's
-/// `ObjectWriter`, from `ObjectMapper.writerWithView`).
+/// A writer bound to one `@JsonView`: it writes only the properties of
+/// that view, with its mapper's settings.
+///
+/// Get one from `ObjectMapper.writerWithView` and keep it when the same
+/// view is written often, such as the public form of a model in a
+/// controller (Jackson's `ObjectWriter`).
+///
+/// ```dart
+/// // Hide internal fields from public callers.
+/// final public = mapper.writerWithView(Public);
+/// final json = public.writeValueAsString(user);
+/// ```
 final class ObjectWriter {
   ObjectWriter._(this._mapper);
 
   final ObjectMapper _mapper;
 
-  /// [value] as a JSON string.
+  /// Returns [value] as JSON text, with only the view's properties.
   String writeValueAsString(Object? value) => _mapper.writeValueAsString(value);
 
-  /// [value] as decoded JSON.
+  /// Returns [value] as decoded JSON (maps, lists and scalars), with only
+  /// the view's properties.
   Object? valueToTree(Object? value, [TypeInfo<Object?>? type]) =>
       _mapper.valueToTree(value, type);
 }
 
-/// Reads with the configuration of a mapper and a `@JsonView` (Jackson's
-/// `ObjectReader`, from `ObjectMapper.readerWithView`).
+/// A reader bound to one `@JsonView`: it reads only the properties of that
+/// view and skips the others, with its mapper's settings.
+///
+/// Get one from `ObjectMapper.readerWithView`. Use it to accept input in
+/// which a client may set only some properties, such as a profile update
+/// that must not change the role (Jackson's `ObjectReader`).
+///
+/// ```dart
+/// // Properties outside the Editable view are ignored.
+/// final user = mapper.readerWithView(Editable).readValue<User>(body);
+/// ```
 final class ObjectReader {
   ObjectReader._(this._mapper);
 
   final ObjectMapper _mapper;
 
-  /// A [T] from the JSON string [json].
+  /// Returns a [T] read from the JSON text [json], with only the view's
+  /// properties.
   T readValue<T>(String json, [TypeInfo<T>? type]) =>
       _mapper.readValue<T>(json, type);
 
-  /// A [T] from decoded JSON or a [JsonNode].
+  /// Returns a [T] read from decoded JSON or a [JsonNode], with only the
+  /// view's properties.
   T treeToValue<T>(Object? tree, [TypeInfo<T>? type]) =>
       _mapper.treeToValue<T>(tree, type);
 
-  /// A `List<E>` from the JSON array [json].
+  /// Returns a `List<E>` read from the JSON array [json], with only the
+  /// view's properties.
   List<E> readList<E>(String json, [TypeInfo<E>? element]) =>
       _mapper.readList<E>(json, element);
 }
@@ -2208,7 +2283,8 @@ final class _Polymorphism {
   }
 }
 
-/// A position in a JSON document: `items[2].price`.
+/// A position in a JSON document, such as `items[2].price`, for error
+/// messages.
 final class _Path {
   const _Path._(this._parent, this._segment);
 

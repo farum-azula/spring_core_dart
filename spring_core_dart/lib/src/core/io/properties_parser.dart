@@ -2,12 +2,18 @@ import 'dart:convert';
 
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
-/// Parses the `.properties` format Spring uses for config and message files.
+/// Reads text in the `.properties` format (`key=value` lines) into a map.
 ///
-/// Supports `=`, `:` and whitespace separators, `#` and `!` comments,
-/// line continuations with a trailing backslash, the escapes `\t \n \r \f`,
-/// `\uXXXX`, and escaped separators in keys. Keys keep file order; a
-/// repeated key keeps the last value.
+/// It is the parser behind `application.properties`, `@PropertySource`
+/// files and message bundles (`messages.properties`). Applications only
+/// write such files; call it directly to read a properties text of your
+/// own, such as a file uploaded by a user.
+///
+/// It supports `=`, `:` and whitespace as separators, `#` and `!`
+/// comment lines, lines continued with a trailing backslash, the escapes
+/// `\t \n \r \f` and `\uXXXX`, and escaped separators in keys. Keys keep
+/// file order; a repeated key keeps its last value; trailing spaces of a
+/// value are kept.
 ///
 /// ```dart
 /// final map = PropertiesParser.parse('''
@@ -26,10 +32,11 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 /// props.load(new StringReader(content));
 /// ```
 ///
-/// Content is a Dart string (decoded as UTF-8 by the resource), not
-/// ISO-8859-1 bytes as in `Properties.load(InputStream)`.
+/// The content is a Dart string, already decoded (as UTF-8 unless the
+/// caller chose otherwise), not ISO-8859-1 bytes as in
+/// `Properties.load(InputStream)`.
 abstract final class PropertiesParser {
-  /// Parses [content] into key/value pairs in file order.
+  /// Parses [content] into keys and values, in file order.
   ///
   /// Throws [FormatException] for a malformed `\uXXXX` escape.
   static Map<String, String> parse(String content) {
@@ -163,30 +170,38 @@ abstract final class PropertiesParser {
   }
 }
 
-/// Loads properties from resources, like Spring's `PropertiesLoaderUtils`.
+/// Reads a `.properties` [Resource] into a map of keys to values in one
+/// call.
+///
+/// Use it when the properties are data for your code rather than
+/// configuration, such as a mapping table shipped in `lib/resources/`; for
+/// configuration, put the file in the environment instead (a config file,
+/// `@PropertySource` or `ResourcePropertySource`).
 ///
 /// ```dart
-/// final props = await PropertiesLoaderUtils.loadProperties(
-///   FileSystemResource('config/app.properties'),
+/// // Country names shipped with the application.
+/// final countries = await PropertiesLoaderUtils.loadProperties(
+///   resourceLoader.getResource('classpath:countries.properties'),
 /// );
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// Properties props = PropertiesLoaderUtils.loadProperties(
-///     new FileSystemResource("config/app.properties"));
+/// Properties countries = PropertiesLoaderUtils.loadProperties(
+///     new ClassPathResource("countries.properties"));
 /// ```
 abstract final class PropertiesLoaderUtils {
-  /// Reads and parses [resource] asynchronously, decoding it with
-  /// [encoding].
+  /// Reads [resource], decoded with [encoding] (UTF-8 unless given), and
+  /// parses it. Works for every resource, including Flutter assets.
   static Future<Map<String, String>> loadProperties(
     Resource resource, {
     Encoding encoding = utf8,
   }) async =>
       PropertiesParser.parse(await resource.readAsString(encoding: encoding));
 
-  /// Reads and parses [resource] synchronously, decoding it with
-  /// [encoding]; throws [UnsupportedError] for async-only resources.
+  /// Reads [resource] without waiting, decoded with [encoding], and parses
+  /// it. Throws [UnsupportedError] for a resource that can only be read
+  /// asynchronously.
   static Map<String, String> loadPropertiesSync(
     Resource resource, {
     Encoding encoding = utf8,

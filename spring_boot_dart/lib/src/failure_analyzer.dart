@@ -1,22 +1,36 @@
 import 'package:spring_boot_dart/src/configuration_properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// A readable explanation of why the application failed to start, like
-/// Spring Boot's `FailureAnalysis`.
+/// A plain-language explanation of why the application failed to start,
+/// with what to do about it.
+///
+/// A start that fails deep in bean creation produces a long chain of
+/// wrapped exceptions. Instead of the stack trace, `SpringApplication`
+/// prints an `APPLICATION FAILED TO START` report built from one of these:
+/// a [description] of the problem and an [action] to fix it. The built-in
+/// analysis covers missing and ambiguous beans, dependency cycles,
+/// unresolved placeholders, duplicate bean names, missing config files and
+/// invalid properties. A [FailureAnalyzer] returns one for errors of your
+/// own.
+///
+/// Spring (Java): `FailureAnalysis`, with the same three parts.
 final class FailureAnalysis {
-  /// Creates an analysis.
+  /// An analysis that explains [cause] with [description] and suggests
+  /// [action].
   const FailureAnalysis(this.description, this.action, this.cause);
 
-  /// What went wrong.
+  /// What went wrong, in terms of the application (the bean, property or
+  /// file involved). It may span several lines.
   final String description;
 
-  /// How to fix it.
+  /// What the developer should do to fix it.
   final String action;
 
-  /// The underlying error.
+  /// The error that was analyzed.
   final Object cause;
 
-  /// The report printed at startup:
+  /// The whole report as it is printed when the start fails, with the
+  /// [description] and [action] filled in:
   ///
   /// ```text
   /// ***************************
@@ -37,15 +51,25 @@ final class FailureAnalysis {
       'Action:\n\n$action\n';
 }
 
-/// Analyzes a startup failure, like Spring Boot's `FailureAnalyzer`:
-/// returns a [FailureAnalysis] for failures it recognises, else `null`.
+/// Explains a startup error that `spring_boot_dart` does not know, as an
+/// `APPLICATION FAILED TO START` report instead of a stack trace.
 ///
-/// Register one on `SpringApplication(failureAnalyzers: ...)` or declare
-/// it as a bean (a starter can put it in its auto-configuration); they are
-/// consulted before the built-in analysis. [analyze] gets the failure as
-/// thrown; walk its causes yourself if needed.
+/// A library that fails the start in a predictable way (a port already
+/// in use, a database that cannot be reached, a missing licence key) can
+/// tell the developer what happened and how to fix it. Declare the
+/// analyzer as a bean (a starter puts it in its auto-configuration), or
+/// pass it to `SpringApplication(failureAnalyzers: ...)`. When the start
+/// fails, the analyzers passed to the constructor are asked first, then
+/// the beans sorted by `@Order`, then the built-in analysis; the first
+/// non-null answer is reported. Analyzer beans are only found when the
+/// context got far enough to create them.
+///
+/// [analyze] receives the error as it was thrown. An error raised while a
+/// bean is created is often wrapped in a `BeanCreationException`, so walk
+/// the `cause` chain when needed.
 ///
 /// ```dart
+/// // The web server could not bind its port.
 /// class PortInUseFailureAnalyzer implements FailureAnalyzer {
 ///   @override
 ///   FailureAnalysis? analyze(Object failure) => failure is PortInUseException
@@ -70,14 +94,29 @@ final class FailureAnalysis {
 /// }
 /// ```
 abstract interface class FailureAnalyzer {
-  /// The analysis of [failure], or `null` if this analyzer does not know it.
+  /// An explanation of [failure], or `null` when this analyzer does not
+  /// recognise it and the next one should be asked.
   FailureAnalysis? analyze(Object failure);
 }
 
-/// Turns startup errors into [FailureAnalysis] reports, like Spring Boot's
-/// `FailureAnalyzers`; returns `null` for errors it does not recognise.
-/// [analyzers] are asked first, in order (the first analysis wins), then
-/// the built-in analysis.
+/// Explains a startup error: the [FailureAnalysis] that `SpringApplication`
+/// prints when the start fails, or `null` when nothing recognises [error].
+///
+/// [analyzers] are asked first, in the given order, and the first analysis
+/// wins. Then the built-in analysis looks at [error] and the causes it
+/// wraps (through `BeansException.cause`), starting with the innermost:
+/// the real problem is usually the deepest one. Call it yourself to test
+/// an analyzer, or to report a failure the same way in a tool.
+///
+/// ```dart
+/// final analysis = analyzeFailure(
+///   error,
+///   analyzers: [PortInUseFailureAnalyzer()],
+/// );
+/// print(analysis?.report ?? 'Application run failed: $error');
+/// ```
+///
+/// Spring (Java): what Spring Boot's `FailureAnalyzers` does.
 FailureAnalysis? analyzeFailure(
   Object error, {
   Iterable<FailureAnalyzer> analyzers = const [],

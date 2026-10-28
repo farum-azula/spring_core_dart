@@ -1,15 +1,22 @@
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 
-/// Operating-system environment variables with relaxed names, like Spring's
-/// `SystemEnvironmentPropertySource`.
+/// The property source over the operating system's environment variables,
+/// which finds `server.port` in the variable `SERVER_PORT`.
 ///
-/// `my.prop-name` also matches `my_prop-name`, `my.prop_name`,
-/// `my_prop_name`, their upper-case forms (`MY_PROP_NAME`) and the
-/// dash-less upper-case form Spring Boot uses (`MY_PROPNAME`).
+/// Environment variable names cannot contain dots and are written in
+/// upper case by convention, so a direct lookup would never find a
+/// property. This source tries the usual spellings: `my.prop-name` also
+/// matches `my_prop-name`, `my.prop_name`, `my_prop_name`, their
+/// upper-case forms (`MY_PROP_NAME`) and the upper-case form without
+/// dashes that Spring Boot uses (`MY_PROPNAME`).
 ///
-/// `StandardEnvironment` adds one automatically under [defaultName].
+/// An application does not create it: `StandardEnvironment` adds one
+/// under [defaultName], which is why `SERVER_PORT=9090` works. On the web
+/// the map is empty. Create one yourself only to fake variables, though
+/// passing `systemEnvironment:` to `StandardEnvironment` is simpler.
 ///
 /// ```dart
+/// // In a test: a variable set as a container would set it.
 /// final source = SystemEnvironmentPropertySource(
 ///   SystemEnvironmentPropertySource.defaultName,
 ///   {'SERVER_PORT': '9090'},
@@ -25,13 +32,16 @@ import 'package:spring_core_dart/src/core/env/property_source.dart';
 /// source.getProperty("server.port"); // "9090"
 /// ```
 class SystemEnvironmentPropertySource extends MapPropertySource {
-  /// Creates a source called [name] over the variables in [source].
+  /// Creates a source called [name] over the variables in [source]
+  /// (variable name to value).
   const SystemEnvironmentPropertySource(super.name, super.source);
 
-  /// Default name of the system environment source.
+  /// The name `StandardEnvironment` gives its environment variable source:
+  /// `systemEnvironment`.
   static const defaultName = 'systemEnvironment';
 
-  /// Value of the first variable matching [name] in relaxed form.
+  /// The value of the first variable whose name is one of the spellings
+  /// of [name], tried in the order of [resolvePropertyName].
   @override
   Object? getProperty(String name) {
     final actual = resolvePropertyName(name);
@@ -41,7 +51,10 @@ class SystemEnvironmentPropertySource extends MapPropertySource {
   @override
   bool containsProperty(String name) => resolvePropertyName(name) != null;
 
-  /// The variable name that matches [name], or `null`.
+  /// The name of the variable that holds the property [name], or `null`.
+  ///
+  /// The exact name is tried first, then with `.`, `-` or both replaced by
+  /// `_`, then all of these in upper case, then upper case without dashes.
   ///
   /// ```dart
   /// source.resolvePropertyName('server.port'); // 'SERVER_PORT'

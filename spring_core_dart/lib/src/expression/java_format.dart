@@ -3,14 +3,18 @@
 
 import 'package:spring_core_dart/src/expression/spel_numbers.dart';
 
-/// A real number that is an `int` at run time (the web), as a format
-/// argument: `%s` prints it like Java's Double.toString (`2.0`), `%f` /
-/// `%e` take its value and `%d` rejects it, like a Java double.
+/// An integral real number (a Java `double` such as `2.0`) handed to
+/// [javaFormat]. Internal.
+///
+/// On the web `2.0` is an `int` at run time, so the evaluator wraps the
+/// arguments it knows to be real: `%s` then prints `2.0` like Java's
+/// `Double.toString`, `%f` / `%e` take its value and `%d` rejects it,
+/// like a Java double.
 final class JavaReal {
-  /// The real number [value].
+  /// Wraps the real number [value].
   const JavaReal(this.value);
 
-  /// The value.
+  /// The number, integral.
   final int value;
 
   @override
@@ -19,7 +23,9 @@ final class JavaReal {
 
 final _specifier = RegExp(r'%(\d+\$)?([-#+ 0,(<]*)?(\d+)?(\.\d+)?([a-zA-Z%])');
 
-/// [format] with [args] like Java's `String.format` (`Locale.ROOT`):
+/// [format] filled with [args] like Java's `String.format`
+/// (`Locale.ROOT`), for SpEL's `String.format(...)` and
+/// `'...'.formatted(...)`. Internal. Supported:
 /// `%s %S %d %f %e %E %x %X %o %c %b %B %n %%`, argument indexes (`%2$s`),
 /// the flags `-`, `0`, `+`, space and `,`, width and precision.
 ///

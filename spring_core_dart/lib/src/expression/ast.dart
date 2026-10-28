@@ -9,18 +9,20 @@ import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 import 'package:spring_core_dart/src/expression/spel_patterns.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
-/// Mutable state of one evaluation, like Spring's `ExpressionState`.
+/// The working state of one evaluation: which object names currently
+/// apply to, what `#this` is, and how many operations have run.
 ///
-/// Created by `SpelExpression` for each `getValue` / `setValue` call and
-/// passed down the tree. It tracks the *active context object* (what a
+/// `SpelExpression` creates one for each `getValue` / `setValue` call and
+/// passes it down the tree. It tracks the *active context object* (what a
 /// bare `name` or `method()` applies to, and what `#this` is), the *scope
 /// root* (the active object at the start of the current compound
 /// expression, against which method arguments are evaluated) and the
 /// number of operations performed so far (see
-/// `SpelParserConfiguration.maximumOperations`). You only meet it when
-/// writing your own [SpelNode]s.
+/// `SpelParserConfiguration.maximumOperations`). Applications never use
+/// it; you only meet it when writing your own [SpelNode]s.
 ///
 /// ```dart
+/// // Evaluating a node by hand, as a custom node would.
 /// final state = ExpressionState(
 ///   StandardEvaluationContext(),
 ///   {'n': 2},
@@ -250,13 +252,15 @@ final class ExpressionState {
       value == null ? 'null' : '${value.runtimeType}';
 }
 
-/// A reference that can be read and written (assignment targets), like
-/// Spring's `ValueRef`.
+/// A handle on the place an assignable expression names (a property, a
+/// variable, a list or map element), to read and write it.
 ///
-/// Returned by [SpelNode.getValueRef] for properties, variables and
-/// indexed elements; `++`/`--` write through it.
+/// [SpelNode.getValueRef] returns one, so that `x++` and `x = ...` find
+/// the target once and then read and write it. Applications never use
+/// it; it matters only to custom [SpelNode]s.
 ///
 /// ```dart
+/// // What `x++` does with its target.
 /// final ref = node.getValueRef(state);
 /// if (ref.isWritable) {
 ///   ref.setValue((ref.getValue()! as int) + 1);
@@ -271,10 +275,11 @@ final class ExpressionState {
 /// }
 /// ```
 abstract interface class ValueRef {
-  /// The current value.
+  /// The value stored at this place now.
   Object? getValue();
 
-  /// Replaces the value with [value].
+  /// Stores [value] at this place; throws a `SpelEvaluationException`
+  /// when it cannot.
   void setValue(Object? value);
 
   /// Whether [setValue] is supported.
@@ -314,13 +319,18 @@ final class _NullRef implements ValueRef {
   bool get isWritable => false;
 }
 
-/// A node of the expression tree, like Spring's `SpelNode` /
-/// `SpelNodeImpl`.
+/// One node of a parsed expression's syntax tree: a literal, a property
+/// reference, an operator, a method call, ...
 ///
-/// `SpelExpressionParser` builds the tree; `SpelExpression.ast` exposes the
-/// root. Nodes are immutable and evaluate against an [ExpressionState].
+/// `SpelExpressionParser` builds the tree and `SpelExpression.ast`
+/// exposes its root. Applications evaluate expressions, not nodes; the
+/// tree is for tools that inspect how an expression was read (its
+/// `toString()` prints it fully parenthesized). The concrete node classes
+/// are internal. Nodes evaluate against an [ExpressionState] and keep no
+/// state between evaluations that matters to callers.
 ///
 /// ```dart
+/// // How the parser read `a + 1`.
 /// final expression =
 ///     SpelExpressionParser().parseExpression('a + 1') as SpelExpression;
 /// final SpelNode ast = expression.ast; // BinaryOperator(add)
@@ -335,10 +345,11 @@ final class _NullRef implements ValueRef {
 /// String text = ast.toStringAST();
 /// ```
 abstract class SpelNode {
-  /// Creates a node starting at [start] in the expression text.
+  /// Creates a node whose text starts at offset [start].
   SpelNode(this.start);
 
-  /// Start position in the expression text.
+  /// The offset of the node in the expression text; error messages
+  /// report it as the position.
   final int start;
 
   // Whether the last value of this node is a real number (a Java double)
@@ -348,17 +359,21 @@ abstract class SpelNode {
   // operators using the value; see _realValue.
   bool _real = false;
 
-  /// Evaluates this node in [state].
+  /// The value of this node in [state].
   Object? getValue(ExpressionState state);
 
-  /// Whether this node can be the target of an assignment.
+  /// Whether this node can be the target of an assignment (a property,
+  /// a variable other than `#this` / `#root`, an indexed element, or a
+  /// chain ending in one).
   bool get isAssignable => false;
 
-  /// Whether this node uses safe navigation (`?.`).
+  /// Whether this node is a safe-navigation step (`?.`), which gives
+  /// `null` on a `null` target instead of failing.
   bool get isNullSafe => false;
 
-  /// A reference for `++`/`--` on this node; throws
-  /// [SpelMessage.notAssignable] unless [isAssignable].
+  /// A handle to read and write the place this node names, used by
+  /// `++`/`--` and assignment; throws [SpelMessage.notAssignable] unless
+  /// [isAssignable].
   ValueRef getValueRef(ExpressionState state) =>
       throw state.error(SpelMessage.notAssignable, start, [toString()]);
 
@@ -812,7 +827,9 @@ final class PropertyOrFieldReference extends SpelNode {
 /// static methods of `SpelType`s are tried first, then the context's
 /// method resolvers in order. Exceptions thrown by the method propagate
 /// unchanged, like Spring; an `AccessException` from an executor is
-/// reported as [SpelMessage.exceptionDuringMethodInvocation].
+/// reported as [SpelMessage.exceptionDuringMethodInvocation], and
+/// arguments that do not fit a built-in, introspected or static method as
+/// [SpelMessage.methodNotFound].
 ///
 /// ```dart
 /// SpelExpressionParser()
@@ -1716,9 +1733,9 @@ final class Projection extends SpelNode {
 
 /// `a.b.c`: each part is evaluated against the previous result.
 ///
-/// Safe navigation applies per step, like Spring 6.2: in `a?.b.c` a `null`
-/// `a` makes `a?.b` `null`, and `.c` then fails on `null`; write
-/// `a?.b?.c` to be null-safe throughout.
+/// Safe navigation applies per step, like current Spring: in `a?.b.c` a
+/// `null` `a` makes `a?.b` `null`, and `.c` then fails on `null` (EL1007E);
+/// write `a?.b?.c` to be null-safe throughout.
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();
@@ -2569,9 +2586,11 @@ final class BinaryOperator extends SpelNode {
     return '$value';
   }
 
-  /// Numbers are equal by value, collections deeply (lists in order, sets
-  /// and maps by content), otherwise `==` (or `compareTo == 0` for
-  /// comparable values of the same type), like Spring.
+  /// The `==` of SpEL, also used by `!=`: numbers are equal by value
+  /// (`1 == 1.0`), collections deeply (lists in order, sets and maps by
+  /// content, with numbers inside compared like Java's `equals`, so
+  /// `{2.0} == {2}` is `false`), other values by `==` or, for comparable
+  /// values of the same type, `compareTo == 0`, like Spring.
   static bool equalityCheck(EvaluationContext context, Object? l, Object? r) {
     // Numbers compare by value like Spring's OpEQ (`1 == 1.0`), with
     // Java's double semantics: NaN equals nothing, `0.0 == -0.0`.

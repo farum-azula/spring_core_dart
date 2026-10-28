@@ -3,13 +3,15 @@ import 'package:spring_core_dart/src/expression/evaluation_context.dart';
 import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 
-/// Parses expression strings, like Spring's `ExpressionParser`.
+/// Turns expression text into an [Expression] that can be evaluated.
 ///
-/// The standard implementation is `SpelExpressionParser`. Program against
-/// this interface when the parser should be replaceable (e.g. in
-/// `StandardBeanExpressionResolver`).
+/// The only implementation is `SpelExpressionParser`; create that one.
+/// The interface exists so that code which takes a parser, such as
+/// `StandardBeanExpressionResolver`, can be handed a configured or a
+/// different one.
 ///
 /// ```dart
+/// // Parse once, keep the expression, evaluate it whenever needed.
 /// ExpressionParser parser = SpelExpressionParser();
 /// final expression = parser.parseExpression('1 + 2');
 /// expression.getValue(); // 3
@@ -22,24 +24,32 @@ import 'package:spring_core_dart/src/expression/spel_parser_configuration.dart';
 /// Integer value = expression.getValue(Integer.class); // 3
 /// ```
 abstract interface class ExpressionParser {
-  /// Parses [expressionString]; with a template [context], literal text
-  /// and `#{...}` parts are combined.
+  /// Parses [expressionString] into an expression.
+  ///
+  /// Without [context] the whole text is one expression. With a template
+  /// context such as [ParserContext.template], the text outside `#{...}`
+  /// is kept as it is and only the `#{...}` parts are parsed.
   ///
   /// ```dart
   /// parser.parseExpression('Hi #{name}', ParserContext.template);
   /// ```
   ///
-  /// Throws a `SpelParseException` when the text is not valid SpEL.
+  /// Throws a `SpelParseException` when the text is not valid SpEL, and a
+  /// `ParseException` when a template is malformed (an unclosed `#{`).
   Expression parseExpression(String expressionString, [ParserContext? context]);
 }
 
-/// How to parse: plain or as a template, like Spring's `ParserContext`.
+/// Tells the parser whether a text is one expression or a template of
+/// literal text with embedded expressions, and which delimiters mark them.
 ///
-/// Without a context (or with a non-template one) the whole string is one
-/// expression. With [ParserContext.template], text outside `#{...}` is
-/// kept literally.
+/// Templates are what `@Value` uses: `'Hello #{name}!'` is mostly text,
+/// with one expression inside. Pass [ParserContext.template] for the usual
+/// `#{...}` delimiters, or a [TemplateParserContext] with others. Without
+/// a context (or with one whose [isTemplate] is `false`) the whole string
+/// is a single expression.
 ///
 /// ```dart
+/// // A greeting text from configuration, with the user's name filled in.
 /// final greeting = SpelExpressionParser()
 ///     .parseExpression('Hello #{name}!', ParserContext.template)
 ///     .getValue(StandardEvaluationContext({'name': 'Ada'}));
@@ -53,24 +63,30 @@ abstract interface class ExpressionParser {
 ///     .getValue(context, String.class);
 /// ```
 abstract interface class ParserContext {
-  /// `#{` ... `}` templates (Spring's
+  /// Templates with `#{` and `}` around each expression (Spring's
   /// `ParserContext.TEMPLATE_EXPRESSION`).
   static const ParserContext template = TemplateParserContext();
 
-  /// Whether the text is a template mixing literal text and expressions.
+  /// Whether the text is a template mixing literal text and expressions;
+  /// when `false` the prefix and suffix are ignored.
   bool get isTemplate;
 
-  /// The delimiter that opens an embedded expression, e.g. `#{`.
+  /// The delimiter that opens an embedded expression, such as `#{`.
   String get expressionPrefix;
 
-  /// The delimiter that closes an embedded expression, e.g. `}`.
+  /// The delimiter that closes an embedded expression, such as `}`.
   String get expressionSuffix;
 }
 
-/// Template parsing with configurable delimiters, like Spring's
-/// `TemplateParserContext`.
+/// A template [ParserContext] with delimiters of your choice.
+///
+/// Use it when the text itself contains `#{` (or when another tool already
+/// owns that syntax) and the expressions must be marked differently. The
+/// default delimiters are `#{` and `}`, the same as
+/// [ParserContext.template].
 ///
 /// ```dart
+/// // `[[...]]` marks the expressions of this message.
 /// final expression = SpelExpressionParser().parseExpression(
 ///   '[[n]] items',
 ///   const TemplateParserContext('[[', ']]'),
@@ -101,15 +117,19 @@ final class TemplateParserContext implements ParserContext {
   final String expressionSuffix;
 }
 
-/// A parsed expression, like Spring's `Expression`. Parse once, evaluate
-/// many times.
+/// A parsed expression, ready to be evaluated as often as needed.
 ///
-/// Implementations: [SpelExpression] (one SpEL expression),
-/// [LiteralExpression] and [CompositeStringExpression] (templates).
-/// Expressions are immutable and can be shared; per-evaluation state lives
-/// in the [EvaluationContext].
+/// Parsing costs more than evaluating, so parse a text once and keep the
+/// expression. It holds no state of its own: the values it reads come
+/// from the [EvaluationContext] and the root object given to each call,
+/// so one expression can be shared and evaluated against different
+/// objects.
+///
+/// The parser returns a [SpelExpression] for one SpEL expression, and a
+/// [LiteralExpression] or [CompositeStringExpression] for a template.
 ///
 /// ```dart
+/// // A pricing rule parsed once, evaluated for each order line.
 /// final expression = SpelExpressionParser().parseExpression('qty * 2');
 /// expression.getValue(StandardEvaluationContext({'qty': 3})); // 6
 /// expression.getValueAs<String>(null, {'qty': 4}); // '8'
@@ -122,23 +142,34 @@ final class TemplateParserContext implements ParserContext {
 /// String eight = expression.getValue(rootObject, String.class);
 /// ```
 abstract interface class Expression {
-  /// The original expression text.
+  /// The text the expression was parsed from (the whole template for a
+  /// template).
   String get expressionString;
 
-  /// Evaluates against [context] (a fresh `StandardEvaluationContext` when
-  /// omitted); [rootObject] overrides the context's root.
+  /// Evaluates the expression and returns its value.
   ///
-  /// A `null` [rootObject] means "use the context's root".
+  /// Names without a prefix (`name`, `size()`) are read on [rootObject],
+  /// or on the context's root object when [rootObject] is `null`. Without
+  /// [context] a new `StandardEvaluationContext` is used, so variables,
+  /// functions and registered types are only available when you pass a
+  /// context.
   ///
   /// ```dart
   /// parser.parseExpression('name.length').getValue(null, {'name': 'Ada'});
   /// // 3
   /// ```
   ///
-  /// Throws a `SpelEvaluationException` when evaluation fails.
+  /// Throws a `SpelEvaluationException` when evaluation fails. An
+  /// exception thrown by a method or constructor the expression calls is
+  /// rethrown as it is.
   Object? getValue([EvaluationContext? context, Object? rootObject]);
 
-  /// Like [getValue], converted to [T] with the context's type converter.
+  /// Evaluates like [getValue] and returns the value as a [T].
+  ///
+  /// A value that already is a [T] is returned unchanged; any other value
+  /// is converted with the context's `TypeConverter` (a `'42'` becomes
+  /// `42` for an `int`). Use it when the caller needs a typed value, such
+  /// as a `bool` for a condition.
   ///
   /// ```dart
   /// parser.parseExpression("'42'").getValueAs<int>(); // 42
@@ -148,8 +179,12 @@ abstract interface class Expression {
   /// value is `null` for a non-nullable [T] or cannot be converted.
   T getValueAs<T>([EvaluationContext? context, Object? rootObject]);
 
-  /// Assigns [value] to the property, variable or element the expression
-  /// denotes.
+  /// Stores [value] in the property, variable or element the expression
+  /// names, such as `user.name`, `#count` or `items[0]`.
+  ///
+  /// This is how data binding writes a form field addressed by a path. A
+  /// `null` [rootObject] means the context's root; a `null` [context] a
+  /// new `StandardEvaluationContext`.
   ///
   /// ```dart
   /// final data = {'count': 1};
@@ -158,20 +193,26 @@ abstract interface class Expression {
   /// ```
   ///
   /// Throws a `SpelEvaluationException` (`notAssignable`) when the target
-  /// is not assignable or the context disables assignment.
+  /// is not assignable (a literal, a template) or the context disables
+  /// assignment.
   void setValue(EvaluationContext? context, Object? rootObject, Object? value);
 
-  /// Whether [setValue] would succeed for this expression and context.
+  /// Whether [setValue] would store a value: the expression names a
+  /// writable property, variable or element and the context allows
+  /// assignment.
+  ///
+  /// Returns `false` instead of throwing when the path cannot be
+  /// evaluated.
   bool isWritable([EvaluationContext? context, Object? rootObject]);
 
-  /// The type of the value the expression evaluates to (`null` for a
-  /// `null` value), like Spring's `getValueType`.
+  /// The runtime type of the value, or `null` when the value is `null`
+  /// (`String` for a template).
   ///
   /// ```dart
   /// parser.parseExpression("'abc'.length").getValueType(); // int
   /// ```
   ///
-  /// Evaluates the expression; throws like [getValue].
+  /// It evaluates the expression, so it throws like [getValue].
   Type? getValueType([EvaluationContext? context, Object? rootObject]);
 }
 
@@ -204,12 +245,19 @@ T _convert<T>(Object? value, EvaluationContext context, String expression) {
   );
 }
 
-/// A compiled SpEL expression, like Spring's `SpelExpression`.
+/// One parsed SpEL expression: the syntax tree of the text and the parser
+/// options it runs under.
 ///
-/// Created by `SpelExpressionParser.parseExpression`; holds the parsed
-/// tree in [ast] and the parser's [configuration] (limits, auto-grow).
+/// `SpelExpressionParser` returns one for a plain expression (and for
+/// each `#{...}` part of a template). Use it through [Expression]; the
+/// concrete type only matters to tools that inspect the parsed tree in
+/// [ast]. Every evaluation counts operations against the limits of
+/// [configuration], and an expression nested too deeply for the stack
+/// fails with `maxExpressionNestingDepthExceeded` instead of a stack
+/// overflow.
 ///
 /// ```dart
+/// // A tool printing how an expression was understood.
 /// final expression = SpelExpressionParser().parseExpression('a + b');
 /// expression is SpelExpression; // true
 /// expression.getValue(StandardEvaluationContext({'a': 1, 'b': 2})); // 3
@@ -223,7 +271,8 @@ T _convert<T>(Object? value, EvaluationContext context, String expression) {
 /// ```
 final class SpelExpression implements Expression {
   /// Wraps the parsed [ast] of [expressionString], evaluated under
-  /// [configuration] (the defaults when omitted).
+  /// [configuration] (the defaults when omitted). The parser calls it;
+  /// applications do not.
   SpelExpression(
     this.expressionString,
     this.ast, [
@@ -233,10 +282,12 @@ final class SpelExpression implements Expression {
   @override
   final String expressionString;
 
-  /// The root node of the parsed tree.
+  /// The root node of the parsed tree; its `toString()` prints the
+  /// expression as the parser read it, with parentheses (`(a + b)`).
   final SpelNode ast;
 
-  /// The limits and auto-grow options of evaluations.
+  /// The operation limit and auto-grow options every evaluation uses,
+  /// taken from the parser.
   final SpelParserConfiguration configuration;
 
   // A fresh StandardEvaluationContext when none is given; an explicit root
@@ -316,12 +367,17 @@ final class SpelExpression implements Expression {
   String toString() => expressionString;
 }
 
-/// Plain text from a template without expressions, like Spring's
-/// `LiteralExpression`.
+/// An expression whose value is fixed text: a template with no `#{...}`
+/// in it, or a text part of a template.
 ///
-/// Its value is the text itself; it is never writable.
+/// Its value is the text itself whatever the context; [getValueAs]
+/// converts it with the context's type converter. It can never be
+/// assigned. You get one from the parser; there is rarely a reason to
+/// create one, except to pass fixed text where an [Expression] is
+/// expected.
 ///
 /// ```dart
+/// // A template that turned out to contain no expression.
 /// final literal = SpelExpressionParser()
 ///     .parseExpression('plain text', ParserContext.template);
 /// literal is LiteralExpression; // true
@@ -375,15 +431,18 @@ final class LiteralExpression implements Expression {
   String toString() => expressionString;
 }
 
-/// Literal text and expressions concatenated as a string, like Spring's
-/// `CompositeStringExpression`.
+/// A template made of several parts, text and `#{...}` expressions, whose
+/// value is the parts joined into one string.
 ///
-/// Each part is evaluated and converted to a `String` with the context's
-/// type converter (a list becomes `1,2`); `null` parts are skipped. A
-/// template with a single `#{...}` and no text is not composite and keeps
-/// the value's type.
+/// The parser returns one for templates such as `'Hello #{name}!'`. Each
+/// part is evaluated against the same context and root, converted to a
+/// `String` with the context's type converter (a list becomes `1,2`), and
+/// a `null` part adds nothing. A template that is a single `#{...}` with
+/// no text around it is not composite: the parser returns that expression
+/// itself, so its value keeps its type (`'#{2}'` gives the `int` 2).
 ///
 /// ```dart
+/// // A message whose numbers are computed when it is shown.
 /// final expression = SpelExpressionParser()
 ///     .parseExpression('#{a} + #{b} = #{a + b}', ParserContext.template);
 /// expression.getValue(StandardEvaluationContext({'a': 1, 'b': 2}));

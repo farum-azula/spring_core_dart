@@ -5,22 +5,34 @@ import 'dart:typed_data';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 
-/// A [WebSocketTransport] on the browser's `WebSocket` (Flutter web, Dart
-/// on the web), through `dart:js_interop`. Browsers send no custom
-/// headers with the handshake, so a non-empty `headers` fails: put a
-/// token in the URL or a protocol.
+/// The [WebSocketTransport] for code running in a browser (Flutter web,
+/// Dart compiled to JavaScript or WebAssembly), built on the browser's
+/// `WebSocket` through `dart:js_interop`.
+///
+/// `platformWebSocketTransport()` returns one in the browser, so
+/// applications rarely create it. The browser's `WebSocket` cannot send
+/// custom headers with the handshake, so `connect` with a non-empty
+/// `headers` fails at once with a [WebSocketException]: put a token in
+/// the URL or in a protocol instead. Binary messages arrive as
+/// `Uint8List`. The browser reports no detail when a connection fails, so
+/// the exception says only `cannot connect`, with the close code when
+/// there is one.
 ///
 /// ```dart
 /// import 'package:spring_web_dart/browser.dart';
 ///
+/// // The token travels in the URL, since a browser cannot send headers.
 /// final transport = BrowserWebSocketTransport();
-/// final session = await transport.connect(Uri.parse('wss://chat.neon.books/ws?token=$token'));
+/// final session = await transport.connect(
+///   Uri.parse('wss://chat.neon.books/ws?token=$token'),
+/// );
 /// ```
 ///
 /// Spring (Java): no browser in Java; on the browser side Spring
 /// applications use JavaScript (`WebSocket`, SockJS, STOMP.js).
 class BrowserWebSocketTransport implements WebSocketTransport {
-  /// A transport on `WebSocket`.
+  /// A transport on `WebSocket`. It has no settings: the browser decides
+  /// about proxies and certificates.
   BrowserWebSocketTransport();
 
   @override

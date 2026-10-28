@@ -20,66 +20,83 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 import 'package:spring_core_dart/src/core/io/resource_loader.dart';
 import 'package:spring_core_dart/src/core/io/url_resource.dart';
 
-/// Loads `application.properties` and `application.yml` config files into
-/// an environment, like Spring Boot's config data support.
+/// Reads the application's config files (`application.properties`,
+/// `application.yml` and their profile variants, imports, config trees)
+/// into an environment and sets the active profiles they name.
 ///
-/// - Files `<name>.<ext>` and `<name>-<profile>.<ext>` are searched in each
-///   location. Locations come in groups: in `spring.config.location` and
+/// This is what makes `lib/resources/application.yml` and
+/// `--spring.profiles.active=prod` work. `SpringApplication` runs it on
+/// every start, so applications with `spring_boot_dart` only write the
+/// files. Run it yourself when you start an `ApplicationContext` without
+/// `SpringApplication`, or in a tool or test that needs the configuration
+/// without a context. Run it once, after the command line and other
+/// sources are in the environment and before any bean reads a property.
+///
+/// What it reads, with Spring Boot's rules:
+///
+/// - Files `<name>.<ext>` and `<name>-<profile>.<ext>` in each location.
+///   Locations come in groups: in `spring.config.location` and
 ///   `spring.config.additional-location`, `,` separates groups and `;`
 ///   joins locations into one group. The defaults are two groups,
 ///   `optional:classpath:/;optional:classpath:/config/` and
 ///   `optional:file:./;optional:file:./config/;optional:file:./config/*/`
 ///   (`*/` searches every subdirectory, in alphabetical order). Within a
-///   group, later locations override earlier ones and profile-specific
-///   files override the non-profile ones; a later group overrides an
-///   earlier one entirely, so `./application.properties` beats a packaged
+///   group, later locations override earlier ones and profile files
+///   override plain ones; a later group overrides an earlier one entirely,
+///   so `./application.properties` beats a packaged
 ///   `application-prod.properties`. With several active profiles the last
-///   one wins. In one location `.properties` beats `.yml` / `.yaml`.
+///   one wins. In one location `.properties` beats `.yml` and `.yaml`.
 /// - `.properties` ([PropertiesPropertySourceLoader]) and YAML
 ///   ([YamlPropertySourceLoader]: nested keys become `a.b`, list items
 ///   `a.hosts[0]`) are built in; other formats need a
 ///   [PropertySourceLoader].
-/// - `spring.profiles.active` / `spring.profiles.include` /
-///   `spring.profiles.group.<name>` in config files activate profiles,
-///   with Boot's rules: a higher-precedence source (command line, OS
-///   environment) wins over a file's `spring.profiles.active`; profiles
-///   set programmatically (`setActiveProfiles`) are kept and the file's
-///   ones are added after them; `include` always adds; [additionalProfiles]
-///   come first. `spring.profiles.default` (environment, command line or a
-///   non-profile document) selects the profile-specific files while no
-///   profile is active, groups expanded. Profile names are validated like
-///   Boot's (letters, digits, `-_.+@`, starting and ending with a letter or
-///   digit; `spring.profiles.validate=false` turns this off).
-/// - Multi-document files: documents separated by `#---` (`---` in YAML),
-///   each optionally guarded by `spring.config.activate.on-profile` (an
-///   empty guard is no guard) and `spring.config.activate.on-cloud-platform`
-///   (the [CloudPlatform] detected from the environment or set by
-///   `spring.main.cloud-platform`; `none` matches when there is none). The
-///   legacy `spring.profiles` key is rejected.
+/// - `spring.profiles.active`, `spring.profiles.include` and
+///   `spring.profiles.group.<name>` in config files activate profiles. A
+///   higher source (command line, environment variables) wins over a
+///   file's `spring.profiles.active`; profiles set in code
+///   (`setActiveProfiles`) are kept and the file's are added after them;
+///   `include` always adds; [additionalProfiles] come first.
+///   `spring.profiles.default` (from the environment, the command line or
+///   a non-profile document) picks the profile files while no profile is
+///   active, groups expanded. Profile names are checked like Boot's
+///   (letters, digits, `-_.+@`, starting and ending with a letter or
+///   digit); `spring.profiles.validate=false` turns the check off.
+/// - A file can hold several documents, separated by `#---` (`---` in
+///   YAML). Each can be limited with `spring.config.activate.on-profile`
+///   (an empty guard is no guard) and
+///   `spring.config.activate.on-cloud-platform` (the [CloudPlatform]
+///   detected from the environment or set by `spring.main.cloud-platform`;
+///   `none` matches when there is none). The legacy `spring.profiles` key
+///   is rejected.
 /// - `spring.config.import` imports more files (relative to the importing
-///   file) or directories (`file:./config/`: `application*` files like a
-///   search location); imported files override the file that imports them
+///   file) or directories (`file:./config/`: `application*` files, like a
+///   search location). Imported files override the file that imports them
 ///   and get their `-{profile}` variants too. On the command line or as
 ///   `SPRING_CONFIG_IMPORT` it imports above every location.
 /// - `spring.config.name`, `spring.config.location` and
-///   `spring.config.additional-location` change what is searched.
-/// - `optional:` locations never fail when missing; a non-optional file,
-///   or directory that does not exist, fails the start (unless
+///   `spring.config.additional-location` change what is searched; they are
+///   read from the sources present before the files.
+/// - `optional:` locations never fail when missing. A required file or
+///   directory that does not exist fails (unless
 ///   `spring.config.on-not-found=ignore`). A location without a known
 ///   extension needs a trailing `/` (a directory) or an extension hint
 ///   (`file:./conf[.yml]`).
-/// - `configtree:` locations read a directory tree, a file per property
+/// - `configtree:` locations read a directory tree, one file per property
 ///   ([configTreePrefix]).
-/// - A `defaultProperties` source (`SpringApplication`'s default
-///   properties) stays below the config files.
-/// - Relaxed names: the environment gets Boot's
-///   [ConfigurationPropertySources] attached, so `app.read-timeout` also
-///   finds `app.readTimeout`, `app.read_timeout` or `APP_READTIMEOUT`.
 ///
-/// Config sources are added below the sources already present (command
-/// line, OS environment).
+/// The config sources go below the sources already present (command line,
+/// environment variables) and above a `defaultProperties` source
+/// (`SpringApplication`'s default properties). Last, relaxed names are
+/// switched on ([ConfigurationPropertySources.attach]), so
+/// `app.read-timeout` also finds `app.readTimeout`, `app.read_timeout` or
+/// `APP_READTIMEOUT`.
+///
+/// Errors fail with [ConfigDataResourceNotFoundException],
+/// [ConfigDataLocationNotFoundException],
+/// [InvalidConfigDataPropertyException] or [ConfigDataLoadException].
 ///
 /// ```dart
+/// // An application on spring_core_dart alone, without SpringApplication.
 /// Future<void> main(List<String> args) async {
 ///   final environment = StandardEnvironment()
 ///     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
@@ -90,15 +107,6 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 ///     [appBeans],
 ///     environment: environment,
 ///   );
-/// }
-/// ```
-///
-/// Spring (Java):
-/// ```java
-/// // Spring Boot runs config data processing inside SpringApplication.run,
-/// // via ConfigDataEnvironmentPostProcessor:
-/// public static void main(String[] args) {
-///   SpringApplication.run(App.class, args);
 /// }
 /// ```
 ///
@@ -115,18 +123,32 @@ import 'package:spring_core_dart/src/core/io/url_resource.dart';
 ///   debug: true
 /// ```
 ///
+/// Spring (Java):
+/// ```java
+/// // Spring Boot runs config data processing inside SpringApplication.run,
+/// // via ConfigDataEnvironmentPostProcessor:
+/// public static void main(String[] args) {
+///   SpringApplication.run(App.class, args);
+/// }
+/// ```
+///
 /// Differences from Spring Boot: without `SpringApplication`, run it
-/// explicitly before creating the context; the classpath is `lib/resources/`
+/// yourself before creating the context. The classpath is `lib/resources/`
 /// (custom resource loaders, such as Flutter assets, work too).
 class ConfigDataEnvironment {
-  /// Creates a processor for [environment].
+  /// Creates a loader that will fill [environment]; nothing is read until
+  /// [processAndApply] or [processAndApplySync].
   ///
-  /// [resourceLoader] resolves locations (default: `DefaultResourceLoader`),
-  /// [loaders] parse files by extension, and [defaultLocations] replaces
-  /// [defaultSearchLocations] (each entry is a group of `;`-separated
-  /// locations; still overridable by `spring.config.location`).
+  /// [resourceLoader] finds the files (a `DefaultResourceLoader` unless
+  /// given; pass one with a `ProtocolResolver` for Flutter assets or files
+  /// held in memory). [loaders] read the file formats, picked by
+  /// extension. [defaultLocations] replaces [defaultSearchLocations], each
+  /// entry a group of `;`-separated locations; `spring.config.location`
+  /// still overrides it. [additionalProfiles] are activated on top of the
+  /// configured ones.
   ///
   /// ```dart
+  /// // Config files held in memory, for a test.
   /// ConfigDataEnvironment(
   ///   environment,
   ///   resourceLoader: DefaultResourceLoader(
@@ -153,67 +175,82 @@ class ConfigDataEnvironment {
        defaultLocations = List.unmodifiable(defaultLocations),
        additionalProfiles = List.unmodifiable(additionalProfiles);
 
-  /// Name of the property source holding `SpringApplication`'s default
-  /// properties; config data is added above it, as in Boot's
+  /// The name of the property source that holds `SpringApplication`'s
+  /// default properties: `defaultProperties`. Config files are added just
+  /// above it, so they override the defaults, as in Spring Boot's
   /// `DefaultPropertiesPropertySource`.
   static const defaultPropertiesSourceName = 'defaultProperties';
 
-  /// Default search locations, Spring Boot's: two groups (lowest
-  /// precedence first) of `;`-separated locations. `classpath:` is
-  /// `lib/resources/` (see `ClasspathResources`); `config/*/` searches
-  /// each subdirectory of `./config/`.
+  /// Where config files are looked for unless configured otherwise, as in
+  /// Spring Boot: two groups of `;`-separated locations, the packaged one
+  /// first and the working directory second (which wins). `classpath:` is
+  /// `lib/resources/` (see `ClasspathResources`); `config/*/` searches each
+  /// subdirectory of `./config/`.
   static const defaultSearchLocations = [
     'optional:classpath:/;optional:classpath:/config/',
     'optional:file:./;optional:file:./config/;optional:file:./config/*/',
   ];
 
-  /// Base names of config files, comma-separated (default `application`).
+  /// The property with the base names of the config files,
+  /// comma-separated: `spring.config.name` (`application` when unset; a
+  /// later name wins).
   static const configNameProperty = 'spring.config.name';
 
-  /// Locations that replace [defaultSearchLocations] (`,` separates
-  /// groups, `;` joins locations into one group).
+  /// The property whose locations replace [defaultSearchLocations]:
+  /// `spring.config.location` (`,` separates groups, `;` joins locations
+  /// into one group).
   static const locationProperty = 'spring.config.location';
 
-  /// Locations searched in addition to (and after) the default ones.
+  /// The property with locations searched after the default ones, and so
+  /// winning over them: `spring.config.additional-location`.
   static const additionalLocationProperty = 'spring.config.additional-location';
 
-  /// Files to import from a config document, relative to that document.
+  /// The property that imports more files from a config document,
+  /// relative to that document: `spring.config.import`.
   static const importProperty = 'spring.config.import';
 
-  /// Profile expressions that must match for a document to be used.
+  /// The property that limits a document to profiles:
+  /// `spring.config.activate.on-profile`, a profile expression or a comma
+  /// list meaning "any of".
   static const onProfileProperty = 'spring.config.activate.on-profile';
 
-  /// The [CloudPlatform] that must be active for a document to be used.
+  /// The property that limits a document to a [CloudPlatform]:
+  /// `spring.config.activate.on-cloud-platform`.
   static const onCloudPlatformProperty =
       'spring.config.activate.on-cloud-platform';
 
-  /// Profiles to add to the active ones, comma-separated.
+  /// The property with profiles always added to the active ones,
+  /// comma-separated: `spring.profiles.include`.
   static const includeProfilesProperty = 'spring.profiles.include';
 
-  /// Prefix of profile group properties: `spring.profiles.group.prod=db,mq`
-  /// activates `db` and `mq` whenever `prod` is active.
+  /// The prefix of profile group properties:
+  /// `spring.profiles.group.prod=db,mq` activates `db` and `mq` whenever
+  /// `prod` is active.
   static const profileGroupPrefix = 'spring.profiles.group.';
 
-  /// `false` turns off the validation of profile names (Boot's
-  /// `spring.profiles.validate`, default `true`).
+  /// The property that turns the check of profile names off when `false`:
+  /// `spring.profiles.validate` (default `true`).
   static const validateProfilesProperty = 'spring.profiles.validate';
 
-  /// The legacy profile guard, rejected like Boot does since 2.4.
+  /// The pre-2.4 document guard `spring.profiles`, rejected as Spring Boot
+  /// rejects it; write [onProfileProperty] instead.
   static const legacyProfilesProperty = 'spring.profiles';
 
-  /// Prefix marking a location that may be missing.
+  /// The prefix that makes a location optional: `optional:`.
   static const optionalPrefix = 'optional:';
 
-  /// Prefix of a config tree location (`configtree:/etc/config/`): every
-  /// file below the directory is a property named by its path (`a/b` is
-  /// `a.b`) whose value is the file's content (one trailing newline
-  /// removed), like Spring Boot's Kubernetes-style volume mounts. Entries
-  /// whose name starts with `..` are skipped; `configtree:/etc/*/` reads
-  /// each subdirectory.
+  /// The prefix of a config tree location, `configtree:`, for secrets and
+  /// settings mounted as files (Kubernetes volumes, Docker secrets).
+  ///
+  /// In `configtree:/etc/config/` every file below the directory is a
+  /// property named by its path (`a/b` is `a.b`) whose value is the file's
+  /// content, one trailing newline removed. Entries whose name starts with
+  /// `..` are skipped; `configtree:/etc/*/` reads each subdirectory.
   static const configTreePrefix = 'configtree:';
 
-  /// What a missing non-optional location does: `fail` (default) or
-  /// `ignore` (Boot's `spring.config.on-not-found`).
+  /// The property that decides what a missing required location does:
+  /// `spring.config.on-not-found`, `fail` (default) or `ignore`. Any other
+  /// value fails with [ConfigDataLoadException].
   static const onNotFoundProperty = 'spring.config.on-not-found';
 
   // Properties that may only appear in non-profile documents.
@@ -223,29 +260,34 @@ class ConfigDataEnvironment {
     includeProfilesProperty,
   ];
 
-  /// The environment that receives the config sources and profiles.
+  /// The environment the config files are read into and whose profiles
+  /// are set.
   final ConfigurableEnvironment environment;
 
-  /// Resolves config locations to resources.
+  /// Finds the resource behind each location.
   final ResourceLoader resourceLoader;
 
-  /// File format loaders; the first one handling an extension is used.
+  /// The file format readers; for each extension the first that handles
+  /// it is used.
   final List<PropertySourceLoader> loaders;
 
-  /// Search location groups used when `spring.config.location` is not
+  /// The location groups searched when `spring.config.location` is not
   /// set; each entry is a group of `;`-separated locations.
   final List<String> defaultLocations;
 
-  /// Profiles activated on top of the configured ones (Boot's
-  /// `SpringApplication.setAdditionalProfiles`); they come first, so their
-  /// files have the lowest precedence of the profile-specific ones.
+  /// Profiles activated on top of the configured ones, as Spring Boot's
+  /// `SpringApplication.setAdditionalProfiles` does. They come first, so
+  /// their files lose to those of the other profiles.
   final List<String> additionalProfiles;
 
-  /// Loads the config files, reading async-only resources (such as Flutter
-  /// assets) asynchronously, and adds them to [environment].
+  /// Reads the config files into [environment] and sets its active and
+  /// default profiles. Call it once, before the application context is
+  /// created.
   ///
-  /// Also sets the resulting active profiles on [environment]. Call it once
-  /// before creating the application context.
+  /// Resources that can only be read asynchronously, such as Flutter
+  /// assets and `http:` imports, are awaited; use this form whenever such
+  /// resources may be involved. Throws the config data exceptions listed
+  /// on the class.
   ///
   /// ```dart
   /// await ConfigDataEnvironment(environment).processAndApply();
@@ -274,10 +316,12 @@ class ConfigDataEnvironment {
     }
   }
 
-  /// Synchronous variant of [processAndApply]; every resource must support
-  /// synchronous reading.
+  /// Does what [processAndApply] does, without waiting, for a synchronous
+  /// start (`SpringApplication.run` uses it). Every resource must be
+  /// readable synchronously: files and the generated classpath are.
   ///
-  /// Throws `ConfigDataLoadException` for an async-only resource.
+  /// Throws [ConfigDataLoadException] for a resource that can only be read
+  /// asynchronously.
   ///
   /// ```dart
   /// ConfigDataEnvironment(environment).processAndApplySync();

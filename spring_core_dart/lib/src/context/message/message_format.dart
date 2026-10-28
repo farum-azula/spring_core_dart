@@ -1,7 +1,11 @@
 import 'dart:typed_data';
 
-/// Formats messages with the `MessageFormat` syntax Spring message sources
-/// use.
+/// Fills arguments into a message pattern such as `Hello {0}!`, using the
+/// syntax of Java's `MessageFormat`, which message files are written in.
+///
+/// Message sources call it for every message with arguments, so the syntax
+/// below is what you can write in `messages.properties`. Call it directly
+/// to format a pattern that does not come from a message source.
 ///
 /// Supported: `{0}` placeholders; quoting (`''` is a quote, text inside
 /// single quotes is literal, a `}` outside a placeholder is literal);
@@ -14,7 +18,7 @@ import 'dart:typed_data';
 /// pattern (`{0,date,yyyy-MM-dd}`); `{0,choice,0#none|1#one|1<{0} many}`.
 /// Numbers are rounded half-even on their exact binary value, like Java's
 /// `DecimalFormat` (`0.15` with `#.#` gives `0.1`: the double is slightly
-/// below 0.15). Missing arguments stay as `{n}`. Like Java's
+/// below 0.15). Missing arguments stay as `{n}`. As with Java's
 /// `applyPattern`, the whole pattern is checked: a malformed element
 /// throws even when its argument is missing or of another type.
 ///
@@ -49,7 +53,8 @@ import 'dart:typed_data';
 /// `DateTime`'s (`UTC` or the local zone's name); no scientific notation
 /// (`0.##E0`).
 abstract final class MessageFormat {
-  /// Formats [pattern] with [args], with the number symbols of [locale].
+  /// Returns [pattern] with [args] filled in; numbers use the decimal and
+  /// grouping separators of [locale] (US ones without it).
   ///
   /// Throws a `FormatException` for an unclosed `{`, a bad argument index,
   /// an unknown format type or an invalid number/choice pattern.
@@ -500,8 +505,9 @@ abstract final class MessageFormat {
 
 typedef _Symbols = ({String decimal, String grouping});
 
-/// A parsed `DecimalFormat` pattern: digit counts, grouping, and the
-/// literal prefix/suffix of the positive and negative subpatterns.
+/// A parsed `DecimalFormat` pattern, as used by `{0,number,...}`: digit
+/// counts, grouping, and the literal prefix and suffix of the positive and
+/// negative subpatterns.
 final class _NumberPattern {
   const _NumberPattern({
     required this.minInteger,
@@ -519,17 +525,18 @@ final class _NumberPattern {
   final int minFraction;
   final int maxFraction;
 
-  /// Digits per group; 0 for no grouping.
+  /// Digits per group between grouping separators; 0 for no grouping.
   final int groupingSize;
   final String prefix;
   final String suffix;
   final String negativePrefix;
   final String negativeSuffix;
 
-  /// 100 for `%`, 1000 for `‰`.
+  /// What the value is multiplied by before formatting: 100 for `%`,
+  /// 1000 for `‰`, else 1.
   final int multiplier;
 
-  /// `#,##0.###`.
+  /// The format of `{0,number}`: `#,##0.###`.
   static const standard = _NumberPattern(
     minInteger: 1,
     minFraction: 0,
@@ -537,7 +544,7 @@ final class _NumberPattern {
     groupingSize: 3,
   );
 
-  /// `#,##0` with half-even rounding.
+  /// The format of `{0,number,integer}`: `#,##0` with half-even rounding.
   static const integer = _NumberPattern(
     minInteger: 1,
     minFraction: 0,
@@ -545,7 +552,7 @@ final class _NumberPattern {
     groupingSize: 3,
   );
 
-  /// `#,##0%`.
+  /// The format of `{0,number,percent}`: `#,##0%`.
   static const percent = _NumberPattern(
     minInteger: 1,
     minFraction: 0,
@@ -556,7 +563,8 @@ final class _NumberPattern {
     multiplier: 100,
   );
 
-  /// `#,##0.00` (no currency symbol).
+  /// The format of `{0,number,currency}`: `#,##0.00`, without a currency
+  /// symbol.
   static const currency = _NumberPattern(
     minInteger: 1,
     minFraction: 2,
@@ -686,8 +694,8 @@ final class _NumberPattern {
   }
 }
 
-/// One element of a `SimpleDateFormat` pattern: a letter run (`yyyy`,
-/// `MMM`) or literal text.
+/// One element of a `SimpleDateFormat` pattern, as used by
+/// `{0,date,...}`: a run of one letter (`yyyy`, `MMM`) or literal text.
 final class _DatePart {
   const _DatePart(this.letter, this.count, this.text);
 

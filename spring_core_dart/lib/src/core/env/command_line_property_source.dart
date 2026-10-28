@@ -1,14 +1,25 @@
 import 'package:spring_core_dart/src/core/env/property_source.dart';
 
-/// Command-line arguments, like Spring's `SimpleCommandLinePropertySource`.
+/// The property source over the program's command-line arguments, so that
+/// `--server.port=9090` sets the property `server.port`.
 ///
-/// `--key=value` defines `key`; `--flag` defines `flag` as an empty string;
-/// a repeated option keeps all values joined with commas. Other arguments
-/// are available as the comma-joined [nonOptionArgsPropertyName] property.
-/// A lone `--` ends the options: every argument after it is a non-option
-/// argument, as in Spring.
+/// It is why a setting can be overridden at launch without touching the
+/// config files: placed first in the environment, it wins over every other
+/// source. `SpringApplication` adds it for you from the `args` of `main`,
+/// so an application only writes the arguments; it creates one itself only
+/// when it builds a `StandardEnvironment` without `SpringApplication`.
+/// Arguments are parsed like this:
+///
+/// - `--key=value` sets `key`; only the first `=` separates.
+/// - `--flag` alone sets `flag` to an empty string.
+/// - A repeated option keeps all its values, joined with commas when read.
+/// - Other arguments are non-option arguments, readable as [nonOptionArgs]
+///   or as the comma-joined property [nonOptionArgsPropertyName].
+/// - A lone `--` ends the options: everything after it is a non-option
+///   argument, as in Spring.
 ///
 /// ```dart
+/// // A tool without SpringApplication that still takes `--key=value`.
 /// Future<void> main(List<String> args) async {
 ///   // args: --server.port=9090 --debug input.txt
 ///   final environment = StandardEnvironment()
@@ -28,11 +39,12 @@ import 'package:spring_core_dart/src/core/env/property_source.dart';
 /// }
 /// ```
 ///
-/// Spring Boot adds this source automatically in `SpringApplication.run`;
-/// here it is added by hand.
+/// Spring Boot's `SpringApplication.run` adds this source automatically,
+/// and so does `SpringApplication` here.
 class SimpleCommandLinePropertySource
     extends EnumerablePropertySource<Map<String, List<String>>> {
-  /// Parses [args]; throws [ArgumentError] for an option without a name
+  /// Parses [args] into a source called [name] (`commandLineArgs` unless
+  /// given). Throws [ArgumentError] for an option without a name
   /// (`--=value`).
   SimpleCommandLinePropertySource(
     List<String> args, {
@@ -43,16 +55,20 @@ class SimpleCommandLinePropertySource
     : nonOptionArgs = List.unmodifiable(parsed.nonOptions),
       super(name, parsed.options);
 
-  /// Default name of the command-line source.
+  /// The name the source has unless another is given: `commandLineArgs`.
   static const defaultName = 'commandLineArgs';
 
-  /// Property holding the non-option arguments.
+  /// The property that holds the non-option arguments, comma-joined:
+  /// `nonOptionArgs`.
   static const nonOptionArgsPropertyName = 'nonOptionArgs';
 
-  /// Arguments that are not `--options`, in order.
+  /// The arguments that are not `--options` (file names, sub-commands), in
+  /// order.
   final List<String> nonOptionArgs;
 
-  /// Values of option [name], or `null` if it was not given.
+  /// Every value given for the option [name], in order, or `null` when it
+  /// was not given. Use it for options that may repeat; reading the
+  /// property gives them comma-joined instead.
   ///
   /// A flag without a value (`--debug`) gives an empty list.
   ///

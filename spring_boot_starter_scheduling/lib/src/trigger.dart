@@ -1,11 +1,17 @@
 import 'package:spring_boot_starter_scheduling/src/cron_expression.dart';
 
-/// What a [Trigger] knows about the previous runs of its task, like
-/// Spring's `TriggerContext`.
+/// The facts a [Trigger] gets to decide the next run of its task: the
+/// current time, and when the previous run was due, started and finished.
+///
+/// The scheduler creates one before each run and passes it to
+/// [Trigger.nextExecution]; all the previous-run times are `null` before
+/// the first run. Code creates one only to ask a trigger by hand, such as
+/// in a test or to show when a schedule would first run.
 ///
 /// ```dart
-/// final context = TriggerContext(now: DateTime.now());
-/// trigger.nextExecution(context); // the first run
+/// // When would this cron trigger run first, if scheduled now?
+/// final first = CronTrigger(CronExpression.parse('0 0 9 * * MON-FRI'))
+///     .nextExecution(TriggerContext(now: DateTime.now()));
 /// ```
 ///
 /// Spring (Java):
@@ -14,7 +20,7 @@ import 'package:spring_boot_starter_scheduling/src/cron_expression.dart';
 /// trigger.nextExecution(context);
 /// ```
 final class TriggerContext {
-  /// A context; all times are `null` before the first run.
+  /// The facts at [now]; leave the other times out before the first run.
   TriggerContext({
     required this.now,
     this.lastScheduledExecution,
@@ -22,51 +28,89 @@ final class TriggerContext {
     this.lastCompletion,
   });
 
-  /// The current time of the scheduler's clock.
+  /// The current time of the scheduler's clock (`TaskScheduler.now`),
+  /// which a test may control.
   final DateTime now;
 
-  /// When the previous run was due.
+  /// When the previous run was due, as the trigger returned it; `null`
+  /// before the first run.
   final DateTime? lastScheduledExecution;
 
-  /// When the previous run actually started.
+  /// When the previous run actually started, which can be later than it
+  /// was due; `null` before the first run.
   final DateTime? lastActualExecution;
 
-  /// When the previous run completed (its `Future` included).
+  /// When the previous run finished, after its `Future` completed;
+  /// `null` before the first run.
   final DateTime? lastCompletion;
 }
 
-/// Decides when a task runs next, like Spring's `Trigger`.
+/// The rule that decides when a scheduled task runs next.
+///
+/// A `TaskScheduler` asks its trigger for the first run, and again after
+/// each run, and stops the task when the trigger returns `null`. The
+/// provided triggers cover the usual schedules: [PeriodicTrigger] (fixed
+/// rate or delay), [CronTrigger] and `OneShotTrigger`. Implement this
+/// interface for a schedule they cannot express, such as a delay that
+/// grows after each run or a task that stops after a date. `@Scheduled`
+/// builds its trigger itself.
 ///
 /// ```dart
-/// final class EveryWorkingHour implements Trigger {
+/// // Polls quickly at first, then backs off up to every 10 minutes.
+/// final class BackOff implements Trigger {
+///   var _delay = const Duration(seconds: 5);
+///
 ///   @override
-///   DateTime? nextExecution(TriggerContext context) =>
-///       CronExpression.parse('0 0 9-17 * * MON-FRI').next(context.now);
+///   DateTime? nextExecution(TriggerContext context) {
+///     final next = (context.lastCompletion ?? context.now).add(_delay);
+///     if (_delay < const Duration(minutes: 10)) {
+///       _delay *= 2;
+///     }
+///     return next;
+///   }
 /// }
 ///
-/// scheduler.schedule(sendReport, EveryWorkingHour());
+/// scheduler.schedule(checkInbox, BackOff());
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// Trigger trigger = context -> CronExpression.parse("0 0 9-17 * * MON-FRI")
-///     .next(context.getClock().instant());
+/// class BackOff implements Trigger {
+///   private Duration delay = Duration.ofSeconds(5);
+///
+///   @Override
+///   public Instant nextExecution(TriggerContext context) {
+///     Instant last = context.lastCompletion();
+///     Instant next = (last != null ? last : context.getClock().instant())
+///         .plus(delay);
+///     if (delay.compareTo(Duration.ofMinutes(10)) < 0) {
+///       delay = delay.multipliedBy(2);
+///     }
+///     return next;
+///   }
+/// }
 /// ```
 abstract interface class Trigger {
-  /// The next run after the runs described by [context]; `null` stops the
-  /// task.
+  /// When the task should run next, given the runs described by
+  /// [context]. A time in the past runs it at once; `null` ends the task.
   DateTime? nextExecution(TriggerContext context);
 }
 
-/// Runs at the times of a [CronExpression], like Spring's `CronTrigger`.
+/// A [Trigger] that runs a task at the times of a [CronExpression], such
+/// as 9:00 on working days.
 ///
-/// The next time is computed from the completion of the previous run (or
-/// from when it was due, if that is later), so a run that takes longer
-/// than the interval skips the times it missed.
+/// `@Scheduled(cron: ...)` uses it. Create one yourself to start a cron
+/// schedule from code, for example when the expression is chosen by a
+/// user at runtime.
+///
+/// The next time is computed from the end of the previous run (or from
+/// when it was due, if that is later), so a run that takes longer than
+/// the interval skips the times it missed.
 ///
 /// ```dart
-/// final trigger = CronTrigger(CronExpression.parse('0 */10 * * * *'));
-/// scheduler.schedule(cleanUp, trigger);
+/// // The cleanup time is a user setting, so it is scheduled in code.
+/// final trigger = CronTrigger(CronExpression.parse(settings.cleanupCron));
+/// scheduler.schedule(cleanUp, trigger, name: 'cleanup');
 /// ```
 ///
 /// Spring (Java):
@@ -74,14 +118,14 @@ abstract interface class Trigger {
 /// scheduler.schedule(this::cleanUp, new CronTrigger("0 */10 * * * *"));
 /// ```
 final class CronTrigger implements Trigger {
-  /// A trigger for [expression]; [utc] evaluates it in UTC instead of
-  /// local time.
+  /// A trigger at the times of [expression], read in local time, or in
+  /// UTC when [utc] is `true`.
   CronTrigger(this.expression, {this.utc = false});
 
-  /// The cron expression.
+  /// The times the task runs at.
   final CronExpression expression;
 
-  /// Whether the expression is evaluated in UTC.
+  /// Whether [expression] is read in UTC rather than local time.
   final bool utc;
 
   @override
@@ -103,15 +147,23 @@ final class CronTrigger implements Trigger {
       '${utc ? ', UTC' : ''})';
 }
 
-/// Runs periodically, like Spring's `PeriodicTrigger`: every [period]
-/// between starts ([fixedRate]) or [period] after each completion.
+/// A [Trigger] that runs a task again and again with a fixed interval:
+/// [period] after each run ends (fixed delay, the default), or every
+/// [period] between starts ([fixedRate]).
+///
+/// `@Scheduled(fixedRate:)`, `@Scheduled(fixedDelay:)` and the
+/// `TaskScheduler.scheduleAtFixedRate` and `scheduleWithFixedDelay`
+/// methods use it; create one yourself only to pass it to
+/// `TaskScheduler.schedule`.
 ///
 /// A fixed-rate run never overlaps the previous one: when a run takes
 /// longer than [period], the next one starts as soon as it completes, once,
-/// and the rate continues from there (missed runs are not caught up).
+/// and the rate continues from there; missed runs are not caught up.
 ///
 /// ```dart
+/// // A poll that keeps 30 s between the end of one and the next start.
 /// scheduler.schedule(poll, PeriodicTrigger(Duration(seconds: 30)));
+/// // A refresh every 5 minutes, the first one 10 s after the start.
 /// scheduler.schedule(
 ///   refresh,
 ///   PeriodicTrigger(Duration(minutes: 5), fixedRate: true,
@@ -126,7 +178,11 @@ final class CronTrigger implements Trigger {
 /// trigger.setInitialDelay(Duration.ofSeconds(10));
 /// ```
 final class PeriodicTrigger implements Trigger {
-  /// A trigger every [period] (> 0); [initialDelay] before the first run.
+  /// A trigger every [period], measured between starts when [fixedRate]
+  /// is `true`, else from the end of a run. The first run comes
+  /// [initialDelay] after the task is scheduled, at once by default.
+  /// Throws an [ArgumentError] when [period] is not positive or
+  /// [initialDelay] is negative.
   PeriodicTrigger(
     this.period, {
     this.fixedRate = false,
@@ -144,13 +200,15 @@ final class PeriodicTrigger implements Trigger {
     }
   }
 
-  /// The interval.
+  /// The time between runs: between two starts with [fixedRate], else
+  /// from the end of one run to the start of the next.
   final Duration period;
 
-  /// Measured between starts (`true`) or from completion to start.
+  /// Whether [period] is measured between starts (`true`) or from the end
+  /// of a run to the next start (`false`, the default).
   final bool fixedRate;
 
-  /// Delay before the first run.
+  /// How long after scheduling the first run comes; zero by default.
   final Duration initialDelay;
 
   @override

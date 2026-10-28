@@ -9,10 +9,14 @@ import 'package:spring_core_dart/src/beans/scope.dart';
 import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/context/event/event_listener_method.dart';
 
-/// How a dependency is injected; the kind of a [Dependency].
+/// The form of an injection point that a [Dependency] describes: one bean,
+/// all beans of a type, a provider, a `@Value`, and so on.
 ///
-/// Each kind corresponds to a form of injection point the generator
-/// understands:
+/// The generator picks the kind from the parameter or field it reads, and
+/// `validateBeanGraph` checks each kind in its own way (a provider is never
+/// required, a `@Lazy` point never closes a cycle). You choose one yourself
+/// only through the [Dependency] constructors of a hand-written
+/// definition. The forms, as the generator sees them:
 ///
 /// ```dart
 /// @Service()
@@ -40,24 +44,25 @@ import 'package:spring_core_dart/src/context/event/event_listener_method.dart';
 ///     @Value("${shop.currency:EUR}") String currency) { ... }
 /// ```
 enum DependencyKind {
-  /// One bean (`T` or `T?`).
+  /// One bean (`T`, or `T?` when it may be missing).
   single,
 
-  /// All beans of a type (`List<T>` / `Set<T>`).
+  /// All beans of a type (`List<T>` or `Set<T>`).
   collection,
 
-  /// All beans of a type by name (`Map<String, T>`).
+  /// All beans of a type by bean name (`Map<String, T>`).
   map,
 
-  /// A lazy `ObjectProvider<T>` (or `ObjectFactory<T>`); never required,
-  /// never part of a cycle.
+  /// A lazy `ObjectProvider<T>` (or `ObjectFactory<T>`, jakarta
+  /// `Provider<T>`): nothing is resolved before it is used, so it is never
+  /// required and never part of a cycle.
   provider,
 
   /// A `@Lazy` single bean: checked like [single] (present, unambiguous)
   /// but resolved on first use, so never part of a cycle.
   lazy,
 
-  /// A `@Value` expression.
+  /// A `@Value` expression; a required one must have a value at startup.
   value,
 
   /// A `@Resource` field or setter: the bean named [Dependency.name], or
@@ -66,15 +71,19 @@ enum DependencyKind {
   resource,
 }
 
-/// A declared dependency of a bean, used to validate the bean graph at
-/// refresh before anything is created.
+/// The description of one injection point of a bean, used to check the
+/// bean graph at startup before anything is created.
 ///
-/// Generated definitions list one [Dependency] per injection point so that
-/// missing, ambiguous and circular dependencies are reported by
-/// `validateBeanGraph` before any constructor runs. Hand-written
-/// definitions may omit them (validation then simply skips those edges).
+/// A definition's `create` and `inject` callbacks are closures: the
+/// container cannot see which beans they will ask for. So generated
+/// definitions also list one [Dependency] per injection point, and
+/// `validateBeanGraph` uses that list to report missing, ambiguous and
+/// circular dependencies before any constructor runs. Hand-written
+/// definitions may leave it out; validation then skips those edges and a
+/// problem shows only when the bean is created.
 ///
 /// ```dart
+/// // A hand-written definition that declares what `create` will ask for.
 /// BeanDefinition<Checkout>(
 ///   name: 'checkout',
 ///   dependencies: const [
@@ -96,7 +105,9 @@ enum DependencyKind {
 /// reflection at creation time (`DependencyDescriptor`,
 /// `InjectionPoint`); it does not validate the whole graph up front.
 final class Dependency {
-  /// One bean of [type].
+  /// One bean of [type]. [qualifier] is the `@Qualifier` value, [name] the
+  /// parameter or field name (it picks among several candidates), and
+  /// [optional] marks a nullable point.
   const Dependency(
     this.type, {
     this.qualifier,
@@ -106,7 +117,8 @@ final class Dependency {
        expression = null,
        fallbackToType = false;
 
-  /// All beans of [type] as a list or set.
+  /// All beans of [type], for a `List` or `Set` point; with [optional] (a
+  /// nullable point) having none is fine.
   const Dependency.collection(
     this.type, {
     this.qualifier,
@@ -116,7 +128,7 @@ final class Dependency {
        expression = null,
        fallbackToType = false;
 
-  /// All beans of [type] by name.
+  /// All beans of [type] by bean name, for a `Map<String, T>` point.
   const Dependency.map(this.type, {this.qualifier, this.optional = false})
     : kind = DependencyKind.map,
       name = null,
@@ -131,14 +143,16 @@ final class Dependency {
       expression = null,
       fallbackToType = false;
 
-  /// A `@Lazy` bean of [type]: validated at refresh, resolved on first use.
+  /// A `@Lazy` point of [type]: checked at startup like a single bean, but
+  /// resolved on first use, so it never closes a cycle.
   const Dependency.lazy(this.type, {this.qualifier, this.name})
     : kind = DependencyKind.lazy,
       optional = false,
       expression = null,
       fallbackToType = false;
 
-  /// A `@Value` [expression].
+  /// A `@Value` [expression]; with [optional] (a nullable point) a
+  /// placeholder without a value is fine.
   const Dependency.value(String this.expression, {this.optional = false})
     : kind = DependencyKind.value,
       type = String,
@@ -158,20 +172,21 @@ final class Dependency {
        qualifier = null,
        expression = null;
 
-  /// How the dependency is injected.
+  /// The form of the injection point.
   final DependencyKind kind;
 
-  /// Requested type (element type for collections and maps).
+  /// The requested type; for collections and maps, the element type.
   final Type type;
 
-  /// Bean name, alias or qualifier required at the injection point.
+  /// The bean name, alias or `@Qualifier` value the point requires, if any.
   final String? qualifier;
 
-  /// Parameter or field name; a fallback qualifier when several beans
-  /// match.
+  /// The parameter or field name. When several beans match, the one with
+  /// this name or alias is chosen.
   final String? name;
 
-  /// Whether a missing bean (or placeholder value) is allowed.
+  /// Whether the point accepts a missing bean (or a placeholder without a
+  /// value).
   final bool optional;
 
   /// The `@Value` expression for [DependencyKind.value].
@@ -192,21 +207,33 @@ final class Dependency {
   };
 }
 
-/// Recipe for a bean, like Spring's `BeanDefinition`.
+/// The recipe for one bean: its name, the types it can be found by, its
+/// scope and flags, and the closures that create, inject, initialize and
+/// destroy it.
 ///
-/// Generated code creates these from annotations; they can also be written
-/// by hand. Creation order: `create` → `inject` (fields, setters, methods)
-/// → aware callbacks → `postProcessBeforeInitialization` →
-/// `postConstruct` → `InitializingBean.afterPropertiesSet` →
-/// `initMethod` → `postProcessAfterInitialization`. Destruction:
+/// The container never creates objects by reflection; it follows these
+/// recipes. `create` calls the constructor with dependencies taken from the
+/// [DependencyResolver], and the other closures call the annotated
+/// methods. The generator writes one definition per `@Component` class and
+/// `@Bean` method into the `*.spring.dart` file, so applications usually
+/// never write one. You write one by hand for a bean the generator cannot
+/// see (a class of a package you do not scan, a bean built from settings),
+/// in a `BeanModule`, a `BeanDefinitionRegistryPostProcessor` or a
+/// container used without a context. A `BeanFactoryPostProcessor` may
+/// change the mutable fields ([scope], [lazy], [primary], ...) before the
+/// beans are created.
+///
+/// The container calls the closures in this order: `create` → `inject`
+/// (fields, setters, methods) → aware callbacks →
+/// `postProcessBeforeInitialization` → `postConstruct` →
+/// `InitializingBean.afterPropertiesSet` → `initMethod` →
+/// `postProcessAfterInitialization`. On destruction:
 /// `DestructionAwareBeanPostProcessor`s → `preDestroy` →
 /// `DisposableBean.destroy` → `destroyMethod`.
 ///
-/// Instead of reflection, a definition carries closures: `create` calls
-/// the constructor with dependencies from the [DependencyResolver], and the
-/// other callbacks invoke the annotated methods.
-///
 /// ```dart
+/// // A mailer from a package outside the scan, registered by hand. It can
+/// // be injected as a Mailer or a Notifier and wins over other Notifiers.
 /// final definition = BeanDefinition<Mailer>(
 ///   name: 'mailer',
 ///   types: const [Mailer, Notifier],
@@ -233,10 +260,10 @@ final class Dependency {
 /// looked up by (Dart has no runtime subtype checks on `Type`), and the
 /// definition is generic in the bean class.
 final class BeanDefinition<T extends Object> {
-  /// Creates a definition named [name] whose instances are made by
-  /// `create`.
+  /// A definition named [name] whose instances `create` makes. The
+  /// closures, all optional except `create`:
   ///
-  /// - `create`: calls the constructor (or `@Bean` method); obtain
+  /// - `create`: calls the constructor (or `@Bean` method), taking the
   ///   dependencies from the resolver (`r.dependency<Foo>()`). It may
   ///   return `null`: the bean is then a [NullBean].
   /// - `inject`: field, setter and method injection after construction.
@@ -246,12 +273,13 @@ final class BeanDefinition<T extends Object> {
   /// - `preDestroy` / `destroyMethod`: destroy callbacks (`@PreDestroy`,
   ///   `@Bean(destroyMethod:)`); a returned `Future` is awaited by
   ///   `closeAsync()`.
-  /// - [types]: lookup types; defaults to `[T]`.
   /// - `scopedProxy`: for a custom-scoped (or prototype) bean, wraps a
   ///   function returning the current instance into an object of `T`
   ///   that forwards every call to it (`@Scope(proxyMode:)`, see
   ///   [ScopedProxyMode]); it is injected and returned instead of the
   ///   instance.
+  ///
+  /// The other arguments set the fields of the same name.
   BeanDefinition({
     required this.name,
     required this._create,
@@ -299,35 +327,42 @@ final class BeanDefinition<T extends Object> {
            ? null
            : List.unmodifiable(factoryObjectTypes);
 
-  /// [destroyMethodName] of a definition whose destroy method was inferred
-  /// (`close`, `shutdown` or `dispose`), like Spring's
-  /// `AbstractBeanDefinition.INFER_METHOD`: it is skipped for a
-  /// `DisposableBean`.
+  /// The [destroyMethodName] of a definition whose destroy method was not
+  /// given but found by its name (`close`, `shutdown` or `dispose`), like
+  /// Spring's `AbstractBeanDefinition.INFER_METHOD`. An inferred method is
+  /// not called for a `DisposableBean`, whose `destroy()` runs instead.
   static const inferMethod = '(inferred)';
 
-  /// Unique bean name.
+  /// The bean's name, unique within its factory. The generator uses the
+  /// class name in lower camel case, or the `@Bean` method's name.
   final String name;
 
-  /// Types the bean can be requested by (the class and its supertypes).
+  /// The types the bean can be looked up and injected by: its class and
+  /// every supertype it should be found as. Dart cannot ask at run time
+  /// whether one `Type` is a subtype of another, so each one must be
+  /// listed. Defaults to `[T]`.
   final List<Type> types;
 
-  /// Scope name: [ScopeType.singleton], [ScopeType.prototype] or a
-  /// registered custom scope. Mutable for `BeanFactoryPostProcessor`s.
+  /// The scope name: [ScopeType.singleton] (the default),
+  /// [ScopeType.prototype] or the name of a registered custom scope. A
+  /// `BeanFactoryPostProcessor` may change it.
   String scope;
 
-  /// Whether a singleton is created on first use instead of at refresh.
+  /// Whether a singleton is created on first use instead of at startup
+  /// (`@Lazy()`). Defaults to `false`.
   bool lazy;
 
-  /// Whether this bean wins when several beans match a type.
+  /// Whether this bean wins when several beans match a type (`@Primary()`).
   bool primary;
 
-  /// Whether this bean is used only when no other candidate matches.
+  /// Whether this bean is used only when no other candidate matches
+  /// (`@Fallback()`).
   bool fallback;
 
-  /// Whether the bean takes part in injection by type at all (also with a
-  /// qualifier). A non-candidate is still returned by lookups by name,
-  /// `getBean<T>(qualifier: name)`, and `getBean<T>()` when it is the only
-  /// bean of `T`.
+  /// Whether the bean can be injected at all (`@Bean(autowireCandidate:)`),
+  /// even through a qualifier. When `false` it is never injected, but
+  /// lookups by name, `getBean<T>(qualifier: name)`, and `getBean<T>()`
+  /// when it is the only bean of `T` still return it.
   bool autowireCandidate;
 
   /// Whether the bean is injected by its plain type (Spring 6.2's
@@ -342,21 +377,24 @@ final class BeanDefinition<T extends Object> {
   /// bean is not `Ordered` itself.
   int? order;
 
-  /// Human-readable description (`@Description`).
+  /// A human-readable description (`@Description`), for tools and logs.
   String? description;
 
-  /// Where the definition comes from (e.g. `package:x/y.dart#Foo`);
-  /// registering the same name from the same source twice is a no-op.
+  /// Where the definition comes from (e.g. `package:x/y.dart#Foo`).
+  /// Registering a definition with the same name and the same source again
+  /// is ignored, so a module imported twice does no harm.
   final String? source;
 
-  /// For a `@Bean` instance method: the name of the configuration bean
-  /// that declares it, like Spring's `getFactoryBeanName()`. That bean
-  /// never receives this one in its own collections (Spring's
-  /// self-reference rule: creating it would need the configuration first).
+  /// For a `@Bean` instance method: the name of the configuration bean that
+  /// declares it, like Spring's `getFactoryBeanName()`. That bean is not
+  /// given this one, in a single injection point or a collection, unless
+  /// nothing else matches (Spring's self-reference rule: creating this bean
+  /// needs the configuration first).
   final String? factoryBeanName;
 
-  /// For a `@Bean` method: the method name, like Spring's
-  /// `getFactoryMethodName()`.
+  /// For a `@Bean` method: the method's name, like Spring's
+  /// `getFactoryMethodName()`. Its presence also means [order] came from
+  /// the method.
   final String? factoryMethodName;
 
   /// Name of the custom init method (`@Bean(initMethod:)`); an init method
@@ -370,22 +408,29 @@ final class BeanDefinition<T extends Object> {
   /// once).
   final String? destroyMethodName;
 
-  /// Extra names the bean can be selected by with `@Qualifier`.
+  /// The bean's `@Qualifier` values: extra names that select it at a
+  /// qualified injection point or lookup, besides its name and aliases.
   final Set<String> qualifiers;
 
-  /// Additional bean names.
+  /// More names for the bean; each also works as a qualifier.
   final List<String> aliases;
 
-  /// Beans created before (and destroyed after) this one.
+  /// The names of the beans that must be created before this one and
+  /// destroyed after it (`@DependsOn`), for an order that no injection
+  /// point expresses.
   final List<String> dependsOn;
 
-  /// Declared dependencies, used to validate the graph before creation.
+  /// The bean's injection points, which `validateBeanGraph` checks before
+  /// anything is created; empty in a hand-written definition that does not
+  /// list them.
   final List<Dependency> dependencies;
 
-  /// The bean is registered only when all conditions match.
+  /// The bean is registered only when all of these match (`@Profile`,
+  /// `@Conditional...`).
   final List<Condition> conditions;
 
-  /// `@EventListener` methods (and `ApplicationListener` implementations).
+  /// The bean's `@EventListener` methods (and its `ApplicationListener`
+  /// implementation), which the application context subscribes to events.
   final List<EventListenerMethod<T>> eventListeners;
 
   /// Methods carrying an annotation marked with `@BeanMethodAnnotation()`
@@ -393,6 +438,7 @@ final class BeanDefinition<T extends Object> {
   /// calls them; written by the generator.
   ///
   /// ```dart
+  /// // A scheduler starts every @Scheduled method of a bean.
   /// for (final method in definition.annotatedMethods) {
   ///   if (method.annotations.whereType<Scheduled>().isNotEmpty) {
   ///     method.invoke(bean, const []);
@@ -407,14 +453,16 @@ final class BeanDefinition<T extends Object> {
   /// by reflection.
   final List<Object> annotations;
 
-  /// For a `FactoryBean`: the product type and its supertypes. Lookups by
-  /// these types (and by [name]) return the product.
+  /// For a `FactoryBean`: its product type and the product's supertypes.
+  /// Lookups by these types (and by [name]) return the product. `null` for
+  /// any other bean.
   final List<Type>? factoryObjectTypes;
 
-  /// Creates the generated AOP proxy of this bean, if it can be proxied.
+  /// Creates the generated AOP proxy of the bean, when the generator could
+  /// write one; used when an aspect applies to the bean.
   final AopProxyFactory? aopProxy;
 
-  /// Advice and pointcuts when this bean is an `@Aspect`.
+  /// The advice and pointcuts of the bean, when its class is an `@Aspect`.
   final AspectMetadata<T>? aspect;
 
   // May return `null` (a `@Bean` method declared `T?`): the bean is then a
@@ -427,7 +475,7 @@ final class BeanDefinition<T extends Object> {
   final FutureOr<void> Function(T bean)? _destroyMethod;
   final T Function(T Function() target)? _scopedProxy;
 
-  /// The declared bean type.
+  /// The bean's class, the type argument [T].
   Type get beanType => T;
 
   /// Whether [scope] is [ScopeType.singleton].
@@ -439,19 +487,22 @@ final class BeanDefinition<T extends Object> {
   /// Whether the bean is a `FactoryBean` (it has [factoryObjectTypes]).
   bool get isFactoryBean => factoryObjectTypes != null;
 
-  /// Whether the definition has destroy callbacks of its own.
+  /// Whether the definition has destroy callbacks of its own (`preDestroy`
+  /// or `destroyMethod`).
   bool get hasDestroyCallbacks => _preDestroy != null || _destroyMethod != null;
 
   /// Whether lookups and injection get a scoped proxy instead of the
   /// instance (see [createScopedProxy]); never for singletons.
   bool get hasScopedProxy => _scopedProxy != null && !isSingleton;
 
-  /// The scoped proxy forwarding to the instance [target] returns.
+  /// Creates the scoped proxy: an object of the bean's type that forwards
+  /// every call to the instance [target] returns at that moment. The
+  /// container calls it once per bean.
   Object createScopedProxy(Object Function() target) =>
       _scopedProxy!(() => target() as T);
 
-  /// Whether this bean is selected by [qualifier] (name, alias or
-  /// qualifier).
+  /// Whether [qualifier] selects this bean: it is the bean's name, one of
+  /// its [aliases] or one of its [qualifiers].
   bool isQualifiedBy(String qualifier) =>
       name == qualifier ||
       aliases.contains(qualifier) ||
@@ -473,12 +524,14 @@ final class BeanDefinition<T extends Object> {
       (type == Object ||
           (factoryObjectTypes!.contains(type) && !types.contains(type)));
 
-  /// Creates a new instance (calls `create`); a [NullBean] when `create`
-  /// returns `null` (Spring's null bean). Used by the container.
+  /// Calls `create` and returns the new instance, or a [NullBean] when
+  /// `create` returned `null`. The container calls it; other code looks
+  /// beans up instead.
   Object instantiate(DependencyResolver resolver) =>
       _create(resolver) ?? NullBean();
 
-  /// Runs field, setter and method injection.
+  /// Runs the `inject` callback on [bean]: field, setter and method
+  /// injection.
   void populate(Object bean, DependencyResolver resolver) =>
       _inject?.call(bean as T, resolver);
 

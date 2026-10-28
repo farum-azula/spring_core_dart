@@ -6,12 +6,14 @@ import 'package:spring_core_dart/src/context/condition.dart';
 import 'package:spring_core_dart/src/core/env/config/property_source_factory.dart';
 import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 
-/// A `@PropertySource` declaration recorded in a [BeanModule].
+/// One `@PropertySource` annotation, recorded in a [BeanModule]: which
+/// property files to add to the environment, and when.
 ///
-/// The generator emits one per `@PropertySource` annotation; you only
-/// create it yourself when building a module by hand.
+/// The generator writes one per annotation. You only create one when you
+/// build a module by hand, for example in a test.
 ///
 /// ```dart
+/// // A module that only adds an optional property file.
 /// final module = BeanModule(
 ///   'settings',
 ///   const [],
@@ -32,7 +34,7 @@ import 'package:spring_core_dart/src/core/io/classpath_resources.dart';
 /// class Settings {}
 /// ```
 final class PropertySourceDeclaration {
-  /// Creates a declaration for the resource [locations].
+  /// Declares the property files at the resource [locations].
   const PropertySourceDeclaration(
     this.locations, {
     this.name,
@@ -42,45 +44,53 @@ final class PropertySourceDeclaration {
     this.encoding,
   });
 
-  /// The file is loaded only when all conditions match — the conditions of
-  /// the declaring class, so a `@Profile(['prod'])` class does not load its
-  /// `@PropertySource` in other profiles (as in Spring).
+  /// The conditions of the declaring class; the files are loaded only
+  /// when all of them match. So a `@Profile(['prod'])` class does not load
+  /// its `@PropertySource` in other profiles, as in Spring.
   final List<Condition> conditions;
 
-  /// Resource locations; may contain `${...}` placeholders.
+  /// Resource locations (`file:`, `classpath:`, patterns); may contain
+  /// `${...}` placeholders.
   final List<String> locations;
 
   /// Name of the property source; derived from the location when `null`.
   final String? name;
 
-  /// Whether missing files are skipped instead of failing the refresh.
+  /// Whether a missing file is skipped (`true`) or fails the refresh
+  /// (`false`, the default).
   final bool ignoreResourceNotFound;
 
-  /// Turns each resource into a property source.
+  /// Turns each file into a property source; the default reads
+  /// `.properties` files.
   final PropertySourceFactory factory;
 
   /// The charset name the files are read in (UTF-8 when `null`).
   final String? encoding;
 }
 
-/// An `@Import` of a [BeanRegistrar], [ImportSelector] or
-/// [ImportBeanDefinitionRegistrar] class, recorded in
-/// [BeanModule.registrars] by the generator.
+/// One entry of `@Import` that names code registering beans (a
+/// [BeanRegistrar], [ImportSelector] or [ImportBeanDefinitionRegistrar]),
+/// recorded in [BeanModule.registrars].
 ///
-/// [create] calls the class's no-argument constructor; it runs while the
-/// importing class is parsed and only when the parse-phase [conditions]
-/// (those of the importing class) match. Like Spring's configuration class
-/// parser and reader, per importing class: a selector runs while the class
-/// is parsed and the classes it selects are read before the importing
-/// class; registrars run right after the importing class's `@Bean`
-/// methods are registered, so later classes see their beans. The class is
-/// decided once, in the reader (its `registerBean`-phase conditions, such
-/// as Boot's `@ConditionalOnBean`, in class order), for itself, its `@Bean`
-/// methods and its imports: a skipped class runs no registrar, and the
-/// modules it selects are parsed but not registered (unless a kept class
-/// selects them too).
+/// The generator writes one per imported class; you only create one when
+/// you build a module by hand. It tells the context how to create the
+/// registrar and when to run it.
+///
+/// [create] calls the class's no-argument constructor while the importing
+/// class is parsed, and only when the parse-phase [conditions] (those of
+/// the importing class) match. Then, as in Spring's configuration class
+/// parser and reader: a selector runs while the class is parsed, and the
+/// classes it selects are read before the importing class; a registrar
+/// runs right after the importing class's `@Bean` methods are registered,
+/// so later classes see its beans. The importing class is decided once,
+/// by its `registerBean`-phase conditions (such as Boot's
+/// `@ConditionalOnBean`) in class order, for itself, its `@Bean` methods
+/// and its imports. A skipped class runs no registrar, and the modules it
+/// selects are parsed but not registered, unless a kept class selects them
+/// too.
 ///
 /// ```dart
+/// // A hand-written module whose only content is a registrar.
 /// final module = BeanModule(
 ///   'app',
 ///   const [],
@@ -95,38 +105,46 @@ final class PropertySourceDeclaration {
 /// class AppConfig {}
 /// ```
 final class ImportDeclaration {
-  /// Creates a declaration whose instance is made by [create].
+  /// Declares an import whose registrar or selector is made by [create].
   const ImportDeclaration(
     this.create, {
     this.conditions = const [],
     this.importer,
   });
 
-  /// Creates the registrar or selector.
+  /// Creates the registrar or selector; called once, when it is needed.
   final Object Function() create;
 
-  /// Conditions of the importing class.
+  /// The conditions of the importing class; nothing is created when they
+  /// do not match.
   final List<Condition> conditions;
 
-  /// The importing class (`library#Class`, the `source` of its bean
-  /// definition), which places the import among the module's classes; when
-  /// `null`, the key of the [ConditionGroup] in [conditions]. Without
-  /// either, selectors run before the module's classes and registrars
-  /// after them.
+  /// The importing class as `library#Class` (the `source` of its bean
+  /// definition), which places the import among the module's classes.
+  /// When `null`, the key of the [ConditionGroup] in [conditions] does.
+  /// Without either, selectors run before the module's classes and
+  /// registrars after them.
   final String? importer;
 }
 
-/// A named group of bean definitions, usually generated by
-/// `@ComponentScan`.
+/// Everything the generator found in one scanned directory: the bean
+/// definitions, plus the property files, imports and embedded resources
+/// that come with them.
 ///
-/// [propertySources] are loaded into the environment before the module's
-/// conditions are evaluated; [imports] are registered before this module;
-/// [registrars] are the `@Import`ed registrars and selectors;
-/// [configurers] let `autowireBean` inject `@Configurable` classes;
-/// [introspections] are registered in the context's `BeanIntrospector`.
+/// Dart cannot scan a program for annotated classes at runtime, so
+/// `@ComponentScan` makes the generator write a module at build time, and
+/// the application passes its modules to the context. A context is built
+/// from a list of modules; a library ships its beans as a module of its
+/// own.
 ///
-/// Normally you never construct one: annotate a top-level variable with
-/// `@ComponentScan()` and pass it to the context.
+/// You normally never construct one: annotate a top-level variable with
+/// `@ComponentScan()` and pass it to the context. Write one by hand for a
+/// few beans in a test or a plugin. When the context loads a module, it
+/// first loads its [imports], then adds its [propertySources] to the
+/// environment, then registers each definition whose conditions match and
+/// runs its [registrars]. [configurers] let `autowireBean` inject
+/// `@Configurable` classes, [introspections] go to the context's
+/// `BeanIntrospector`, and [resources] become `classpath:` files.
 ///
 /// ```dart
 /// @ComponentScan()
@@ -134,7 +152,7 @@ final class ImportDeclaration {
 ///
 /// final context = ApplicationContext.run([coreBeans, appBeans]);
 ///
-/// // Hand-written module (tests, plugins):
+/// // A hand-written module with a fixed clock, for a test:
 /// final testBeans = BeanModule('testBeans', [
 ///   BeanDefinition<Clock>(
 ///     name: 'clock',
@@ -154,7 +172,10 @@ final class ImportDeclaration {
 /// ```
 final class BeanModule {
   /// Creates a module named [name] from [definitions]; the collections are
-  /// copied into unmodifiable lists/maps.
+  /// copied into unmodifiable lists and maps.
+  ///
+  /// The [resources] are registered as `classpath:` files right away, so
+  /// configuration files read before the context starts can find them.
   BeanModule(
     this.name,
     Iterable<BeanDefinition<Object>> definitions, {
@@ -180,42 +201,52 @@ final class BeanModule {
     ClasspathResources.registerAll(resources, owner: name);
   }
 
-  /// Files of `lib/resources/` embedded by the generator, by path; served
-  /// as `classpath:` resources (see [ClasspathResources]).
+  /// The files of the package's `lib/resources/`, embedded by the
+  /// generator and keyed by path; they are served as `classpath:`
+  /// resources (see [ClasspathResources]), which works in AOT, Flutter and
+  /// the web too.
   final Map<String, EmbeddedResource> resources;
 
-  /// Module name, by convention the name of the annotated variable.
+  /// The module name, by convention the name of the annotated variable;
+  /// shown in logs and errors.
   final String name;
 
-  /// Bean definitions; each is registered only if its conditions match.
+  /// The bean definitions; each is registered only if its conditions
+  /// match.
   final List<BeanDefinition<Object>> definitions;
 
-  /// `@PropertySource` files loaded before conditions are evaluated.
+  /// The `@PropertySource` declarations of the module's classes, loaded
+  /// before the module's definitions are decided, so their conditions see
+  /// the properties.
   final List<PropertySourceDeclaration> propertySources;
 
-  /// Modules (e.g. from `@Import`) registered before this one.
+  /// Modules loaded before this one, such as those of imported
+  /// configuration classes or of nested `@ComponentScan` directories.
   final List<BeanModule> imports;
 
   /// The `@Import`ed `BeanRegistrar`, `ImportSelector` and
-  /// `ImportBeanDefinitionRegistrar` classes: a selector's modules are read
+  /// `ImportBeanDefinitionRegistrar` classes. A selector's modules are read
   /// before the importing class, registrars run right after its `@Bean`
-  /// methods, all decided with the importing class (see
+  /// methods, and all are decided with the importing class (see
   /// [ImportDeclaration]).
   final List<ImportDeclaration> registrars;
 
-  /// Injectors for `@Configurable` classes, keyed by class.
+  /// The generated injectors of the `@Configurable` classes, keyed by
+  /// class; `autowireBean` uses them.
   final Map<Type, BeanConfigurer> configurers;
 
-  /// The `@PostConstruct` methods of `@Configurable` classes, keyed by
-  /// class; run by `initializeBean` (Spring's
+  /// The `@PostConstruct` methods of the `@Configurable` classes, keyed by
+  /// class; `initializeBean` runs them (the job of Spring's
   /// `CommonAnnotationBeanPostProcessor`).
   final Map<Type, void Function(Object bean)> configurablePostConstruct;
 
-  /// The `@PreDestroy` methods of `@Configurable` classes, keyed by class;
-  /// run by `destroyBean`.
+  /// The `@PreDestroy` methods of the `@Configurable` classes, keyed by
+  /// class; `destroyBean` runs them.
   final Map<Type, void Function(Object bean)> configurablePreDestroy;
 
-  /// Metadata of `@Introspected` classes (data binding, validation, SpEL).
+  /// The generated descriptions of the `@Introspected` classes (their
+  /// properties and methods), used by data binding, validation and SpEL
+  /// instead of reflection.
   final List<BeanIntrospection<Object>> introspections;
 
   @override

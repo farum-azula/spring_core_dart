@@ -2,8 +2,20 @@ import 'package:spring_boot_dart/src/annotations.dart';
 import 'package:spring_boot_dart/src/configuration_properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// Binds properties of an environment to typed values, like Spring Boot's
-/// `Binder`: what `@ConfigurationProperties` uses, and usable directly.
+/// Reads a group of properties from the environment as one typed value: a
+/// list, a map, a `Duration` or a whole settings object.
+///
+/// `environment.getProperty` returns one string. Some settings are not one
+/// string: a list of hosts written as `app.hosts[0]`, `app.hosts[1]`, a map
+/// of headers, or a nested object. The binder collects the properties
+/// under a name and converts them to the requested type, with the same
+/// rules as `@ConfigurationProperties` (which uses it). Applications use
+/// `@ConfigurationProperties` classes; use the binder directly in code
+/// that runs before beans exist, such as an `EnvironmentPostProcessor` or
+/// a library's setup code, or to read one structured value without a
+/// class.
+///
+/// The rules:
 ///
 /// - **Relaxed names**: `app.max-size`, `app.maxSize`, `app.max_size` and
 ///   the environment variable `APP_MAXSIZE` are one property; the first
@@ -22,10 +34,14 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///   it has parameters (constructor binding, [DefaultValue]).
 ///
 /// ```dart
+/// // In an EnvironmentPostProcessor, before any bean exists.
 /// final hosts = Binder.get(environment)
 ///     .bind('app.hosts', const ListType<String>(ClassType<String>()))
 ///     .orElse(const []);
 /// ```
+///
+/// A value that cannot be converted throws a
+/// [ConfigurationPropertiesBindException] naming the property.
 ///
 /// Spring (Java):
 /// ```java
@@ -34,9 +50,13 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 ///     .orElse(List.of());
 /// ```
 final class Binder {
-  /// A binder reading [environment]; nested objects are described by
-  /// [introspector] (default `BeanIntrospector.shared`), values converted
-  /// by [conversionService] (default: the environment's).
+  /// A binder that reads [environment].
+  ///
+  /// [introspector] describes nested objects (default
+  /// `BeanIntrospector.shared`, which knows every `@Introspected` class of
+  /// the generated code); [conversionService] converts values (default:
+  /// the environment's). Creating a binder is cheap; it holds no state
+  /// between [bind] calls.
   Binder(
     this.environment, {
     BeanIntrospector? introspector,
@@ -44,32 +64,41 @@ final class Binder {
   }) : introspector = introspector ?? BeanIntrospector.shared,
        conversionService = conversionService ?? environment.conversionService;
 
-  /// Like the constructor, as Spring Boot's `Binder.get(environment)`.
+  /// A binder that reads [environment], with the environment's conversion
+  /// service; the same as the constructor, under Spring Boot's name.
   static Binder get(
     ConfigurableEnvironment environment, {
     BeanIntrospector? introspector,
   }) => Binder(environment, introspector: introspector);
 
-  /// The properties are read from here.
+  /// The environment whose property sources are read, in their order of
+  /// precedence.
   final ConfigurableEnvironment environment;
 
-  /// Metadata of the nested classes.
+  /// Describes the classes of nested objects: their setters or
+  /// constructor parameters.
   final BeanIntrospector introspector;
 
-  /// Converts property values to the target types.
+  /// Converts property values (strings, mostly) to the target types.
   final ConversionService conversionService;
 
-  /// Binds the properties at [name] (a canonical name such as
-  /// `app.hosts`) to [target]; unbound when none of them exists. Throws a
-  /// [ConfigurationPropertiesBindException] naming every property that
-  /// could not be converted.
+  /// Reads the properties at [name] as a value of type [target].
+  ///
+  /// [name] is in canonical form (lower case, dashes: `app.read-timeout`);
+  /// every relaxed spelling in the sources is found. The result says
+  /// whether anything was found ([BindResult.isBound]), so a missing
+  /// property can get a default. Throws a
+  /// [ConfigurationPropertiesBindException] that lists every property
+  /// that could not be converted.
+  ///
+  /// [handler] is told about each property bound on the way and may change
+  /// the result or ignore failures.
   ///
   /// ```dart
-  /// binder.bind('app.timeout', const ClassType<Duration>()).get();
+  /// final timeout = binder
+  ///     .bind('app.timeout', const ClassType<Duration>())
+  ///     .orElse(const Duration(seconds: 30));
   /// ```
-  ///
-  /// [handler] is told about each property bound on the way (Spring Boot's
-  /// `BindHandler`).
   BindResult<T> bind<T>(
     String name,
     TypeInfo<T> target, {
@@ -88,25 +117,44 @@ final class Binder {
   }
 }
 
-/// The result of [Binder.bind], like Spring Boot's `BindResult`.
+/// The outcome of [Binder.bind]: the value, or the fact that no property
+/// was set.
+///
+/// A property that is not set is different from one set to an empty value,
+/// and the caller usually wants a default for the first case. The methods
+/// here say what to do then: use a default ([orElse], [orElseGet]), fail
+/// ([orElseThrow], [get]) or do nothing ([ifBound]).
+///
+/// ```dart
+/// final port = Binder.get(environment)
+///     .bind('app.port', const ClassType<int>())
+///     .orElse(8080);
+/// ```
+///
+/// Spring (Java): `BindResult`, with the same methods.
 final class BindResult<T> {
   const BindResult._(this._value, {required this.isBound});
 
   final Object? _value;
 
-  /// Whether any property was bound.
+  /// Whether at least one property was found and bound. A value can be
+  /// bound and still be `null`.
   final bool isBound;
 
-  /// The bound value; throws a `StateError` when nothing was bound.
+  /// The bound value. Throws a `StateError` when nothing was bound; use it
+  /// when the property is known to be set.
   T get() => isBound ? _value as T : throw StateError('No value bound');
 
-  /// The bound value, or [other] when nothing was bound.
+  /// The bound value, or the default [other] when nothing was bound.
   T orElse(T other) => isBound ? _value as T : other;
 
   /// The bound value, or the result of [other] when nothing was bound.
+  /// [other] is only called then, so it suits a default that is costly to
+  /// build.
   T orElseGet(T Function() other) => isBound ? _value as T : other();
 
-  /// The bound value; throws the result of [error] when nothing was bound.
+  /// The bound value; when nothing was bound, throws what [error] returns.
+  /// Use it for a required setting, with a message that says what to set.
   ///
   /// ```dart
   /// binder
@@ -118,14 +166,17 @@ final class BindResult<T> {
       // ignore: only_throw_errors
       isBound ? _value as T : throw error();
 
-  /// Calls [action] with the bound value, if any.
+  /// Calls [action] with the bound value; does nothing when nothing was
+  /// bound.
   void ifBound(void Function(T value) action) {
     if (isBound) {
       action(_value as T);
     }
   }
 
-  /// The bound value mapped through [mapper]; unbound stays unbound.
+  /// A result holding the bound value transformed by [mapper]. When
+  /// nothing was bound, [mapper] is not called and the result stays
+  /// unbound.
   ///
   /// ```dart
   /// final port = binder
@@ -138,9 +189,14 @@ final class BindResult<T> {
       : BindResult<R>._(null, isBound: false);
 }
 
-/// Callbacks of a [Binder.bind] run for every property bound on the way
-/// (the top-level name, then nested properties and elements), like Spring
-/// Boot's `BindHandler`; extend it and override what you need.
+/// Hooks into a [Binder.bind] call, called for every property bound on the
+/// way: the top-level name, then each nested property and element.
+///
+/// Use one to watch or adjust binding: log which properties were used,
+/// skip some names, replace values, or decide that a value which cannot be
+/// converted is not an error (`@ConfigurationProperties(ignoreInvalidFields:
+/// true)` works this way). Extend it and override what you need; the
+/// defaults change nothing. Most code never needs one.
 ///
 /// ```dart
 /// final class LoggingBindHandler extends BindHandler {
@@ -161,32 +217,40 @@ final class BindResult<T> {
 /// ```
 ///
 /// Spring (Java): `binder.bind("app", Bindable.of(App.class), handler)`.
-///
-/// Differences: [onFailure] gets the error message and decides whether it
-/// counts (Boot's returns a replacement value or rethrows).
+/// One difference: [onFailure] gets the error message and decides whether
+/// it counts, where Spring Boot's returns a replacement value or
+/// rethrows.
 class BindHandler {
-  /// A handler that changes nothing.
+  /// A handler that changes nothing; subclasses override some methods.
   const BindHandler();
 
-  /// The default: binds as is and reports every failure.
+  /// The handler [Binder.bind] uses when none is given: it binds as is and
+  /// reports every failure.
   static const BindHandler defaultHandler = BindHandler();
 
-  /// Before [name] is bound to [target]; `false` skips it (unbound).
+  /// Called before [name] is bound to [target]. Return `false` to skip the
+  /// name: it stays unbound, as if no property were set.
   bool onStart(ConfigurationPropertyName name, TypeInfo<Object?> target) =>
       true;
 
-  /// After [name] was bound to [result]; returns the value to use.
+  /// Called after [name] was bound to [result]. Returns the value to use
+  /// instead, which is [result] by default.
   Object? onSuccess(
     ConfigurationPropertyName name,
     TypeInfo<Object?> target,
     Object? result,
   ) => result;
 
-  /// When [name] cannot be bound ([error] describes why); `true` (the
-  /// default) reports the failure, `false` ignores it (left unbound).
+  /// Called when [name] cannot be bound; [error] is the message that would
+  /// be reported (`app.port: failed to convert to int (was "x")`).
+  ///
+  /// Return `true` (the default) to report it, which fails the bind, or
+  /// `false` to ignore it: the name is left unbound and keeps its
+  /// default.
   bool onFailure(ConfigurationPropertyName name, String error) => true;
 
-  /// After [name] was bound or not ([result] `null` when unbound).
+  /// Called last for every name, bound or not; [result] is the final value,
+  /// or `null` when nothing was bound.
   void onFinish(
     ConfigurationPropertyName name,
     TypeInfo<Object?> target,
@@ -196,17 +260,27 @@ class BindHandler {
 
 Type _typeOf<T>() => T;
 
-/// Marks "nothing bound" (a bound value may be `null`).
+/// The value the binding internals return when no property was found.
+///
+/// `null` cannot mean that, because `null` is a valid bound value for a
+/// nullable target. Internal to `spring_boot_dart`; [BindResult] hides it
+/// from callers of [Binder.bind].
 const Object unbound = _Unbound();
 
 final class _Unbound {
   const _Unbound();
 }
 
-/// One binding run: the property sources and the errors found (internal
-/// to `spring_boot_dart`).
+/// The state of one binding run: the property sources read, the names
+/// bound and the errors collected.
+///
+/// Errors are collected rather than thrown at once, so a failed start
+/// lists every bad property together. Internal to `spring_boot_dart`:
+/// [Binder.bind] and the `@ConfigurationProperties` binding create one per
+/// run.
 final class BindContext {
-  /// Takes the property sources of [binder]'s environment, in order.
+  /// A run over the property sources of [binder]'s environment, in order
+  /// of precedence, reporting to [handler].
   BindContext(this.binder, {this.handler = BindHandler.defaultHandler})
     : sources = [
         for (final source in binder.environment.propertySources)
@@ -214,34 +288,39 @@ final class BindContext {
             BindSource(source),
       ];
 
-  /// The binder this run belongs to.
+  /// The binder whose environment, introspector and conversion service the
+  /// run uses.
   final Binder binder;
 
-  /// Told about every bind (Spring Boot's `BindHandler`).
+  /// Told about every name bound; it may change values and ignore
+  /// failures.
   final BindHandler handler;
 
   // Annotations of the field or constructor parameter being bound
   // (`@DurationUnit`, `@DataSizeUnit`), applied to its value and elements.
   List<Object> _annotations = const [];
 
-  /// The environment's property sources, in precedence order.
+  /// The environment's property sources, highest precedence first.
   final List<BindSource> sources;
 
-  /// One line per property that could not be bound.
+  /// One line per property that could not be bound and that the handler
+  /// did not ignore.
   final errors = <String>[];
 
   // Every failure, also those the handler ignored.
   int _failures = 0;
 
-  /// The names bound so far.
+  /// The names bound so far; used to find properties that bound to
+  /// nothing.
   final boundNames = <ConfigurationPropertyName>{};
 
   // Data object types being bound, against endless recursion through
   // sources that cannot list their names.
   final _binding = <Type>[];
 
-  /// Throws a [ConfigurationPropertiesBindException] for [prefix] when
-  /// there are [errors].
+  /// Throws a [ConfigurationPropertiesBindException] for [prefix] (and
+  /// [beanName], when a bean was bound) listing all [errors]; does nothing
+  /// when there are none.
   void throwIfFailed(String prefix, [String? beanName]) {
     if (errors.isNotEmpty) {
       throw ConfigurationPropertiesBindException(
@@ -260,9 +339,12 @@ final class BindContext {
     }
   }
 
-  /// Binds [name] to [type]; [existing] is the current value of a JavaBean
-  /// property (nested objects are bound into it, maps merged with it).
-  /// Returns [unbound] when no property applies.
+  /// Binds [name] to [type] and returns the value, or [unbound] when no
+  /// property applies.
+  ///
+  /// [existing] is the current value of the field being bound: a nested
+  /// object is bound into it and a map is merged with it. [only] limits
+  /// the sources read (all of them by default).
   Object? bind(
     ConfigurationPropertyName name,
     TypeInfo<Object?> type, {
@@ -298,8 +380,12 @@ final class BindContext {
   static String _memberName(String name, List<Object> annotations) =>
       dashedForm(annotations.whereType<Name>().firstOrNull?.value ?? name);
 
-  /// Binds the properties under [name] into [bean] through its setters
-  /// (JavaBean binding); whether any property was bound.
+  /// Sets the properties under [name] on [bean] through its setters, and
+  /// returns whether any was set.
+  ///
+  /// This is how a mutable `@ConfigurationProperties` class is bound. A
+  /// field without a setter whose value is a mutable list, set or map is
+  /// filled in place; an unmodifiable one is left as it is.
   bool bindProperties(
     Object bean,
     BeanIntrospection<Object> introspection,
@@ -386,9 +472,12 @@ final class BindContext {
     return _convert(name, raw, type);
   }
 
-  /// Binds a nested object of [introspection] at [name]: into [existing]
-  /// (JavaBean), a new instance through setters, or through its
-  /// constructor (constructor binding); [unbound] when nothing applies.
+  /// Binds a nested object of [introspection] at [name] and returns it,
+  /// or [unbound] when no property under [name] is set.
+  ///
+  /// A class whose constructor has parameters is created through it. Any
+  /// other class is bound through its setters, into [existing] when there
+  /// is one, else into a new instance.
   Object? bindDataObject(
     BeanIntrospection<Object> introspection,
     ConfigurationPropertyName name,
@@ -417,20 +506,26 @@ final class BindContext {
     }
   }
 
-  /// Whether instances of [introspection] are created through their
-  /// constructor (it has parameters), like Spring Boot's value objects.
+  /// Whether [introspection]'s class is bound through its constructor:
+  /// true when the constructor has parameters (Spring Boot's value
+  /// objects).
   static bool isValueObject(BeanIntrospection<Object> introspection) =>
       introspection.constructor?.parameters.isNotEmpty ?? false;
 
-  /// Creates an instance of [introspection] through its constructor, each
-  /// parameter bound from `name.<parameter-name>` (constructor binding).
+  /// Creates an instance of [introspection]'s class through its
+  /// constructor, each parameter bound from `name.<parameter-name>`
+  /// (constructor binding).
+  ///
   /// A parameter without a property gets its [DefaultValue], else its Dart
-  /// default value, else `null` when nullable; a missing collection is
-  /// empty and a missing nested object is created with its own defaults;
-  /// any other missing parameter is an error. With [requireAny], [unbound]
-  /// when no parameter was bound, without reporting missing ones (Spring
-  /// Boot's `ValueObjectBinder` returns `null`: a nullable nested object
-  /// whose own keys are all missing stays `null`).
+  /// default value, else `null` when it is nullable. For a required
+  /// parameter without any of them, a collection is empty and a nested
+  /// object is created with its own defaults; anything else is an error
+  /// that names the property.
+  ///
+  /// With [requireAny], the result is [unbound] when no parameter was
+  /// bound, and missing ones are not reported. This is how a nullable
+  /// nested object none of whose keys is set stays `null`, as with Spring
+  /// Boot's `ValueObjectBinder`.
   Object? bindConstructor(
     BeanIntrospection<Object> introspection,
     ConfigurationPropertyName name,
@@ -545,9 +640,11 @@ final class BindContext {
     return type.accept(_DefaultVisitor(this, name, values, scope));
   }
 
-  /// The raw value of [name] in the first of [scope] that has it, with
-  /// `${...}` placeholders resolved (unresolvable ones are kept, as in
-  /// Spring Boot).
+  /// The value of [name] in the first source of [scope] that has it, in
+  /// any relaxed spelling, or `null`.
+  ///
+  /// `${...}` placeholders in a string value are resolved; unresolvable
+  /// ones are kept as they are, as in Spring Boot.
   Object? findProperty(ConfigurationPropertyName name, List<BindSource> scope) {
     for (final source in scope) {
       final value = source.valueOf(name);
@@ -570,8 +667,12 @@ final class BindContext {
         source.isEnumerable ? source.containsDescendantOf(name) : !recursive,
   );
 
-  /// Converts [raw] to [type]; [unbound] (with an error recorded) when it
-  /// cannot be converted, and for blank input of non-string types.
+  /// Converts [raw] to [type], applying the `@DurationUnit` or
+  /// `@DataSizeUnit` of the field being bound to plain numbers.
+  ///
+  /// Returns [unbound] when the value cannot be converted (an error is
+  /// recorded) or when the conversion gives nothing (blank input for a
+  /// non-string type).
   Object? _convert(ConfigurationPropertyName name, Object raw, Type type) {
     try {
       // `@DurationUnit` / `@DataSizeUnit` give plain numbers their unit.
@@ -596,8 +697,9 @@ final class BindContext {
     }
   }
 
-  /// Like [_convert] with the static type [T], so `List<T>` elements come
-  /// out typed.
+  /// Converts [raw] to [T] and checks the result's type, so the elements
+  /// of a `List<T>` come out typed. Returns [unbound], with an error
+  /// recorded, when that fails.
   Object? convertTyped<T>(ConfigurationPropertyName name, Object raw) {
     if (raw is T) {
       return raw;
@@ -613,9 +715,12 @@ final class BindContext {
     return converted;
   }
 
-  /// [raw] as a value of enum [values], ignoring case and separators
-  /// (`MY_VALUE`, `my-value` and `myValue` are `myValue`), like Spring
-  /// Boot's lenient enum conversion.
+  /// The value of [values] that [raw] names, ignoring case and
+  /// separators: `MY_VALUE`, `my-value` and `myValue` all find `myValue`,
+  /// as with Spring Boot's lenient enum conversion.
+  ///
+  /// Blank input gives [unbound]. An unknown name is an error that lists
+  /// the allowed values.
   Object? convertEnum<E extends Enum>(
     ConfigurationPropertyName name,
     Object raw,
@@ -646,7 +751,9 @@ final class BindContext {
   static String _lenient(String text) =>
       text.toLowerCase().replaceAll(RegExp('[^a-z0-9]'), '');
 
-  /// The elements of a comma list or an iterable value.
+  /// Splits a property value into list elements: a string at its commas
+  /// (each part trimmed; a blank string gives none), an iterable as it is,
+  /// anything else as one element.
   static List<Object?> elementsOf(Object raw) => switch (raw) {
     final String text when text.trim().isEmpty => const [],
     final String text => [for (final part in text.split(',')) part.trim()],
@@ -654,9 +761,16 @@ final class BindContext {
     _ => [raw],
   };
 
-  /// Binds a list at [name]: a comma list or indexed keys, from the first
-  /// source that has either (Spring Boot's `IndexedElementsBinder`);
-  /// [unbound] when none has.
+  /// Binds the list elements at [name], or returns [unbound] when no
+  /// source has any.
+  ///
+  /// The elements come from one source only, the first that has either a
+  /// comma list (`app.hosts=a,b`) or indexed keys (`app.hosts[0]=a`): a
+  /// higher source replaces the whole list. Indexes must start at 0
+  /// without gaps; other indexes are reported as unbound. With a comma
+  /// list, one invalid element fails the whole list, so
+  /// `ignoreInvalidFields` keeps the field's default rather than the valid
+  /// part.
   Object? bindIndexed(
     ConfigurationPropertyName name,
     TypeInfo<Object?> element,
@@ -744,11 +858,14 @@ final class BindContext {
     'systemProperties',
   };
 
-  /// Reports the properties under [root] that were not bound (Spring
-  /// Boot's `NoUnboundElementsBindHandler`, used for
-  /// `@ConfigurationProperties(ignoreUnknownFields: false)`). OS
-  /// environment variables are not checked; list elements overridden by a
-  /// whole list from a higher-precedence source are not unbound.
+  /// Records an error listing the properties under [root] that bound to
+  /// nothing, usually typos such as `db.urll`.
+  ///
+  /// Used for `@ConfigurationProperties(ignoreUnknownFields: false)`. OS
+  /// environment variables are not checked (an unrelated variable could
+  /// look like a property), and neither are sources that cannot list
+  /// their names. List elements replaced by a whole list from a
+  /// higher-precedence source do not count as unbound.
   void checkNoUnboundProperties(ConfigurationPropertyName root) {
     final left = <String>{};
     for (final source in sources) {
@@ -787,9 +904,14 @@ final class BindContext {
     return false;
   }
 
-  /// Binds a map at [name]: an entry per key under it, from every source
-  /// (the first source that has a key wins; Spring Boot's `MapBinder`);
-  /// [unbound] when there is none. Keys keep their original form.
+  /// Binds the map entries under [name], or returns [unbound] when there
+  /// are none.
+  ///
+  /// Entries come from every source: the first source that has a key
+  /// wins for that key. Keys keep the form they are written in. For a map
+  /// of plain values the whole rest of the name is the key
+  /// (`app.headers.a.b=1` gives `a.b`); for a map of objects or maps the
+  /// key is one element.
   Object? bindMap(
     ConfigurationPropertyName name,
     TypeInfo<Object?> keyType,
@@ -860,26 +982,35 @@ final class BindContext {
   static final _digits = RegExp(r'^[0-9]+$');
 }
 
-/// A property source of the environment, read with relaxed names
-/// (internal to `spring_boot_dart`).
+/// One property source of the environment, read by property name in any
+/// relaxed spelling.
+///
+/// Internal to `spring_boot_dart`: [BindContext] wraps every source of
+/// the environment in one.
 final class BindSource {
-  /// Reads [source].
+  /// A wrapper that reads [source].
   BindSource(this.source);
 
-  /// The property source.
+  /// The wrapped property source.
   final AbstractPropertySource<Object> source;
 
-  /// Whether the source can list its property names.
+  /// Whether the source can list its property names. Lists, maps and
+  /// unbound-property checks need that; other sources only answer for
+  /// names asked directly.
   bool get isEnumerable => source is EnumerablePropertySource<Object>;
 
-  /// The value of [name] in any relaxed form, or `null`.
+  /// The value of [name] in any relaxed spelling (`app.max-size`,
+  /// `app.maxSize`, `APP_MAXSIZE`, ...), or `null` when the source does
+  /// not have it.
   Object? valueOf(ConfigurationPropertyName name) =>
       ConfigurationPropertySources.getProperty(source, name);
 
-  /// Whether the source has a property below [name]. For system
-  /// environment variables also below [name] with its dashes read as dots
-  /// (`APP_MAIN_SERVER_HOST` is below `app.main-server`), like Spring
-  /// Boot's legacy check in `SystemEnvironmentPropertyMapper`.
+  /// Whether the source has a property below [name], which tells whether
+  /// a nested object at [name] is worth binding.
+  ///
+  /// For OS environment variables, the dashes of [name] also count as
+  /// dots, so `APP_MAIN_SERVER_HOST` is below `app.main-server`, as with
+  /// Spring Boot's legacy check in `SystemEnvironmentPropertyMapper`.
   bool containsDescendantOf(ConfigurationPropertyName name) {
     if (names.any(name.isAncestorOf)) {
       return true;
@@ -915,7 +1046,8 @@ final class BindSource {
     return dashed ? ConfigurationPropertyName.ofIfValid(parts.join()) : null;
   }
 
-  /// Every property of the source (empty when it cannot be listed).
+  /// The names of every property of the source; empty when the source
+  /// cannot list them.
   Iterable<ConfigurationPropertyName> get names => switch (source) {
     final EnumerablePropertySource<Object> enumerable =>
       ConfigurationPropertySources.propertyNames(enumerable).keys,
@@ -1173,8 +1305,12 @@ final class _EmptyVisitor implements TypeInfoVisitor<Object?> {
   Object? visitMap<K, V>(MapType<K, V> type) => type.create(const []);
 }
 
-/// `maxSize` → `max-size`, Spring Boot's dashed form of a property or
-/// parameter name (`DataObjectPropertyName.toDashedForm`; `_` becomes `-`).
+/// The property name for a Dart field or parameter name: `maxSize` gives
+/// `max-size`, and `_` becomes `-`.
+///
+/// Used to find the property of each field of a `@ConfigurationProperties`
+/// class and to name it in error messages. Spring Boot's
+/// `DataObjectPropertyName.toDashedForm`.
 String dashedForm(String name) {
   final result = StringBuffer();
   var last = '';

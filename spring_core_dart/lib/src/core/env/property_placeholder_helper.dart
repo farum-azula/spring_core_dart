@@ -1,19 +1,27 @@
 import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 
-/// Replaces `${name}` / `${name:default}` placeholders, like Spring's
-/// `PropertyPlaceholderHelper`.
+/// The engine that replaces `${name}` and `${name:default}` placeholders
+/// in text, looking each name up with a function you give.
+///
+/// The environment uses it to resolve placeholders in property values and
+/// `@Value`. Use it directly to fill placeholders from something that is
+/// not the environment, such as a map of template variables or a
+/// database row; to resolve against the configuration, call
+/// `environment.resolvePlaceholders` instead.
 ///
 /// - Defaults may contain placeholders: `${a:${b:c}}`.
 /// - Keys may contain placeholders: `${prefix.${suffix}}`.
-/// - Resolved values are resolved again (recursively), with cycle
-///   detection.
-/// - The escape character (default `\`) before the prefix or separator
-///   keeps it literal: `\${not.a.placeholder}` → `${not.a.placeholder}`.
-///
-/// Environments use it internally; use it directly to resolve placeholders
-/// against any lookup function.
+/// - A found value is resolved again, so values may refer to other
+///   values; a loop is detected and reported.
+/// - `${db:url}` is first looked up as the key `db:url`, then as `db` with
+///   the default `url` (Spring 6.2).
+/// - The escape character (`\` by default) before the prefix or the
+///   separator makes it literal: `\${not.a.placeholder}` gives
+///   `${not.a.placeholder}`.
+/// - A `${` without a closing `}` is kept as text.
 ///
 /// ```dart
+/// // Fills a URL template from values that are not properties.
 /// final helper = PropertyPlaceholderHelper();
 /// final values = {'host': 'localhost', 'port': '8080'};
 /// helper.replacePlaceholders(
@@ -30,11 +38,12 @@ import 'package:spring_core_dart/src/core/env/env_exceptions.dart';
 ///     "http://${host}:${port:80}/${path:}", values::get);
 /// ```
 class PropertyPlaceholderHelper {
-  /// Creates a helper with the given syntax; the defaults match Spring's
-  /// `${key:default}` with `\` as escape character.
+  /// Creates a helper for the given syntax. The defaults give Spring's
+  /// `${key:default}` with `\` as the escape character.
   ///
-  /// When [ignoreUnresolvablePlaceholders] is `false`, unresolvable
-  /// placeholders without a default throw `PlaceholderResolutionException`.
+  /// With [ignoreUnresolvablePlaceholders] `false` (the default), a
+  /// placeholder that cannot be resolved and has no default throws
+  /// `PlaceholderResolutionException`; with `true` it stays in the text.
   PropertyPlaceholderHelper({
     this.prefix = r'${',
     this.suffix = '}',
@@ -43,19 +52,22 @@ class PropertyPlaceholderHelper {
     this.ignoreUnresolvablePlaceholders = false,
   }) : _simplePrefix = _simplePrefixFor(prefix, suffix);
 
-  /// Start of a placeholder, `${` by default.
+  /// The text that opens a placeholder, `${` by default.
   final String prefix;
 
-  /// End of a placeholder, `}` by default.
+  /// The text that closes a placeholder, `}` by default.
   final String suffix;
 
-  /// Separates a key from its default value; `null` disables defaults.
+  /// The text between a key and its default, `:` by default; `null` turns
+  /// defaults off.
   final String? valueSeparator;
 
-  /// Escapes [prefix] and [valueSeparator]; `null` disables escaping.
+  /// The character that makes a following [prefix] or [valueSeparator]
+  /// literal, `\` by default; `null` turns escaping off.
   final String? escapeCharacter;
 
-  /// Leaves unresolvable placeholders as they are instead of throwing.
+  /// Whether a placeholder that cannot be resolved stays in the text
+  /// (`true`) instead of throwing (`false`).
   final bool ignoreUnresolvablePlaceholders;
 
   // Opening bracket that nests with [suffix] (e.g. `{` for `${`/`}`), so
@@ -68,11 +80,14 @@ class PropertyPlaceholderHelper {
     return simple != null && prefix.endsWith(simple) ? simple : null;
   }
 
-  /// Replaces all placeholders in [value] using [resolver].
+  /// Returns [value] with every placeholder replaced, looking keys up with
+  /// [resolver].
   ///
-  /// [resolver] returns the raw value of a key or `null` if undefined;
-  /// returned values are resolved recursively. Throws
-  /// `PlaceholderResolutionException` for circular references.
+  /// [resolver] returns the value of a key, or `null` when it has none;
+  /// placeholders in what it returns are resolved too. Throws
+  /// `PlaceholderResolutionException` for a circular reference, and for a
+  /// placeholder without value or default unless
+  /// [ignoreUnresolvablePlaceholders] is set.
   ///
   /// ```dart
   /// helper.replacePlaceholders(r'${a:${b:c}}', (_) => null); // 'c'

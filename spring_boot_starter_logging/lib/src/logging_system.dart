@@ -10,9 +10,17 @@ import 'package:spring_boot_starter_logging/src/platform.dart' as platform;
 
 const _log = SpringLog('spring_boot_starter_logging');
 
-/// Parses a data size as used in properties: `10MB`, `512 KB`, `1GB`,
-/// `100B` or plain bytes (`1024`); units are binary (1 KB = 1024 bytes),
-/// like Spring's `DataSize`.
+/// Reads a size written in a property, such as
+/// `logging.logback.rollingpolicy.max-file-size`, and returns it in bytes.
+///
+/// Accepts `10MB`, `512 KB`, `1GB`, `100B` or a plain number of bytes
+/// (`1024`); the unit is case-insensitive. Units are binary, as in
+/// Spring's `DataSize`: 1 KB is 1024 bytes. Throws a [FormatException]
+/// for anything else, such as `10 megabytes` or `-1MB`.
+///
+/// ```dart
+/// parseDataSize('10MB'); // 10485760
+/// ```
 int parseDataSize(String value) {
   final match = RegExp(
     r'^\s*(\d+)\s*(B|KB|MB|GB|TB)?\s*$',
@@ -31,21 +39,33 @@ int parseDataSize(String value) {
   return int.parse(match.group(1)!) * unit;
 }
 
-/// The logging backend behind `SpringLog`, like Spring Boot's
-/// `LoggingSystem` (with Logback): sends records to the [console], the
-/// in-memory [buffer], a log [file] and any added [LogAppender]s, and
-/// changes logger
-/// levels at runtime (like the `/actuator/loggers` endpoint).
+/// Where log records go once this starter is installed: it receives every
+/// record written through `SpringLog` and sends it to the [console], the
+/// in-memory [buffer], the log [file] and any appender you added.
 ///
-/// With Spring Boot it is installed and configured from properties by the
-/// starter's auto-configuration; without Boot call [configure] / [install]
-/// yourself.
+/// `SpringLog` alone only prints plain lines. This class gives an
+/// application Spring Boot's logging: formatted, coloured console lines, a
+/// log file that rolls over, a buffer for an in-app log screen, and
+/// logger levels that can change while the application runs. There is one
+/// per process, [instance]. With Spring Boot, the starter configures it
+/// from the `logging.*` properties and installs it as the context starts,
+/// so most applications only write properties. Code uses it to change a
+/// level at runtime, to add an output with [addAppender], or, in Flutter,
+/// to send the console to `debugPrint` and set [fileDirectory] before the
+/// application starts. Without Spring Boot, call [configure] and
+/// [install] yourself.
 ///
 /// ```dart
-/// final logging = LoggingSystem.instance; // or inject LoggingSystem
-/// logging.console.out = debugPrint;       // Flutter
-/// logging.setLogLevel('neon.checkout', SpringLogLevel.debug);
-/// logging.buffer.watch();                 // the log screen
+/// // An admin action turns on debug lines for the checkout, no restart.
+/// @Service()
+/// class LogLevels {
+///   LogLevels(this.logging); // the starter's `loggingSystem` bean
+///
+///   final LoggingSystem logging;
+///
+///   void debugCheckout() =>
+///       logging.setLogLevel('neon.checkout', SpringLogLevel.debug);
+/// }
 /// ```
 ///
 /// Spring Boot (Java):
@@ -54,7 +74,9 @@ int parseDataSize(String value) {
 /// logging.setLogLevel("neon.checkout", LogLevel.DEBUG);
 /// ```
 ///
-/// Properties (`lib/resources/application.properties`):
+/// The properties it reads (`lib/resources/application.properties`); the
+/// `logging.level.*` and `logging.group.*` ones are applied by
+/// `spring_boot_dart` itself:
 ///
 /// ```properties
 /// logging.level.root=info                 # handled by spring_boot_dart
@@ -79,40 +101,61 @@ int parseDataSize(String value) {
 /// logging.enabled=false                   # leave SpringLog alone
 /// ```
 ///
-/// Relative file locations are resolved against [fileDirectory] when set
-/// (for example the app's documents directory in Flutter), else against
-/// the working directory. Files are not written on the web.
+/// Relative file locations are resolved against [fileDirectory] when it is
+/// set (for example the app's documents directory in Flutter), else
+/// against the working directory. Files are not written on the web.
 final class LoggingSystem {
   LoggingSystem._();
 
-  /// The process-wide logging system (`SpringLog` itself is global).
+  /// The logging system of this process. There is only one because
+  /// `SpringLog` is global; the starter's `loggingSystem` bean is this
+  /// object.
   static final instance = LoggingSystem._();
 
-  /// Formatted output, `print` by default.
+  /// The console output. The starter sets its pattern, colours and
+  /// threshold from `logging.pattern.console`,
+  /// `spring.output.ansi.enabled` and `logging.threshold.console`; its
+  /// lines go to `print` unless you change `console.out`.
   final console = ConsoleAppender();
 
-  /// The last records in memory, for a log viewer.
+  /// The last records in memory, for an in-app log screen; also the
+  /// `logBuffer` bean. It keeps `logging.buffer.capacity` records, 1000 by
+  /// default.
   final buffer = LogBuffer();
 
   final _appenders = <LogAppender>[];
   SpringLogHandler? _previous;
   FileAppender? _file;
 
-  /// Base directory of relative `logging.file.name` / `logging.file.path`
-  /// values; set it before the application starts.
+  /// The directory a relative `logging.file.name` or `logging.file.path`
+  /// is resolved against; `null` uses the working directory.
+  ///
+  /// Set it before the application starts, as it is read when the
+  /// properties are applied. A Flutter app needs it, since its writable
+  /// directory is only known at runtime:
+  ///
+  /// ```dart
+  /// LoggingSystem.instance.fileDirectory =
+  ///     (await getApplicationDocumentsDirectory()).path; // path_provider
+  /// ```
   String? fileDirectory;
 
-  /// The file appender configured by `logging.file.*`, if any.
+  /// The log file set up from `logging.file.*`; `null` when no file is
+  /// configured, on the web, or when `logging.pattern.file` is empty.
   FileAppender? get file => _file;
 
-  /// Whether [console] receives records.
+  /// Whether [console] receives records. The starter sets it from
+  /// `logging.console.enabled`, and to `false` when
+  /// `logging.pattern.console` is empty.
   bool consoleEnabled = true;
 
-  /// Whether [buffer] receives records.
+  /// Whether [buffer] receives records (`logging.buffer.enabled`, `true`
+  /// by default).
   bool bufferEnabled = true;
 
-  /// Every active appender: [console], [buffer], [file], then the added
-  /// ones.
+  /// The outputs that receive records now, in the order they get them:
+  /// [console] and [buffer] when enabled, [file] when there is one, then
+  /// the ones added with [addAppender]. An unmodifiable snapshot.
   List<LogAppender> get appenders => List.unmodifiable([
     if (consoleEnabled) console,
     if (bufferEnabled) buffer,
@@ -120,10 +163,14 @@ final class LoggingSystem {
     ..._appenders,
   ]);
 
-  /// Also sends records to [appender].
+  /// Sends every record from now on to [appender] as well, after the
+  /// built-in outputs. It stays until [removeAppender], also across
+  /// [uninstall] and a new start.
   void addAppender(LogAppender appender) => _appenders.add(appender);
 
-  /// Stops sending records to [appender] and closes it.
+  /// Stops sending records to [appender], an appender added with
+  /// [addAppender], and closes it. Returns `false`, and does nothing, when
+  /// it was not added.
   bool removeAppender(LogAppender appender) {
     final removed = _appenders.remove(appender);
     if (removed) {
@@ -132,11 +179,16 @@ final class LoggingSystem {
     return removed;
   }
 
-  /// Whether `SpringLog` records currently come here.
+  /// Whether this system is the `SpringLog.handler` now, so records come
+  /// here.
   bool get isInstalled => _previous != null;
 
-  /// Makes this the `SpringLog.handler` (the previous one is restored by
-  /// [uninstall]).
+  /// Makes this system receive every `SpringLog` record by becoming the
+  /// `SpringLog.handler`; the handler it replaces is kept for
+  /// [uninstall]. Does nothing when already installed.
+  ///
+  /// The starter calls it when the context starts. Call it yourself only
+  /// without Spring Boot, after [configure].
   void install() {
     if (_uninstallPending) {
       uninstall();
@@ -148,8 +200,9 @@ final class LoggingSystem {
     SpringLog.handler = _dispatch;
   }
 
-  /// Restores the `SpringLog.handler` that was active before [install] and
-  /// closes the log file.
+  /// Gives `SpringLog` back the handler it had before [install], and closes
+  /// the log file. The starter calls it when the context closes. When some
+  /// other code has replaced the handler in between, that handler stays.
   void uninstall() {
     _uninstallPending = false;
     _closeFile();
@@ -190,11 +243,20 @@ final class LoggingSystem {
     }
   }
 
-  /// Applies the `logging.*` properties of [environment] (see the class
-  /// documentation). The root level becomes `info`, Spring Boot's default,
-  /// unless `logging.level.root` (in any case) is set. The console gets
-  /// `logging.pattern.console` or Spring Boot's pattern
-  /// ([LogPattern.defaultConsolePattern]).
+  /// Sets up the outputs from the `logging.*` properties of [environment],
+  /// the ones listed on this class. It does not [install] the system.
+  ///
+  /// The root level becomes `info`, Spring Boot's default, unless
+  /// `logging.level` or `logging.level.root` (in any case) is set;
+  /// without this starter `SpringLog` starts at `warning`. The console
+  /// gets `logging.pattern.console` or Spring Boot's pattern
+  /// ([LogPattern.defaultConsolePattern]). An open log file is closed and
+  /// a new one is opened from the current `logging.file.*` values.
+  ///
+  /// Throws a [FormatException] for a value it cannot read: a pattern, a
+  /// level, a number, a size, a charset, an on/off value or
+  /// `spring.output.ansi.enabled`. In an application that fails the
+  /// start.
   void configure(PropertyResolver environment) {
     if (_uninstallPending) {
       uninstall();
@@ -487,8 +549,9 @@ final class LoggingSystem {
     }
   }
 
-  /// The name of the root logger, like Spring Boot's
-  /// `LoggingSystem.ROOT_LOGGER_NAME`; matched in any case.
+  /// The name that means the root logger in [setLogLevel] and [levelOf],
+  /// matched in any case, as Spring Boot's
+  /// `LoggingSystem.ROOT_LOGGER_NAME`.
   static const rootLoggerName = 'ROOT';
 
   static bool _isRoot(String? logger) =>
@@ -496,17 +559,23 @@ final class LoggingSystem {
       logger.isEmpty ||
       logger.toUpperCase() == rootLoggerName;
 
-  /// The root level (`logging.level.root`).
+  /// The level of every logger that has none of its own nor an ancestor
+  /// with one (`logging.level.root`); setting it takes effect at once.
   SpringLogLevel get rootLevel => SpringLog.level;
 
   set rootLevel(SpringLogLevel level) => SpringLog.level = level;
 
-  /// Sets the level of [loggerName] and its descendants, like Spring
-  /// Boot's `LoggingSystem.setLogLevel`; a `null` [level] inherits again.
-  /// `ROOT` (in any case) or `null` is the root logger, which needs a
-  /// level.
+  /// Changes the level of [loggerName] and its descendants while the
+  /// application runs, as `logging.level.<name>` does at startup.
+  ///
+  /// `neon` also applies to `neon.checkout`, unless that logger has a level
+  /// of its own. A `null` [level] removes the logger's own level, so it
+  /// inherits again. `ROOT` (in any case), an empty name or `null` is the
+  /// root logger; it needs a level, otherwise an [ArgumentError] is
+  /// thrown.
   ///
   /// ```dart
+  /// // Look into one part of the application, keep the rest quiet.
   /// logging.setLogLevel('neon.checkout', SpringLogLevel.debug);
   /// logging.setLogLevel('ROOT', SpringLogLevel.warning);
   /// ```
@@ -525,37 +594,46 @@ final class LoggingSystem {
     SpringLog.setLevel(loggerName!, level);
   }
 
-  /// The level that applies to [logger] (`ROOT` in any case: the root
-  /// level).
+  /// The level that applies to [logger]: its own, else that of its
+  /// nearest ancestor with one, else the root level. `ROOT` (in any case)
+  /// gives the root level.
   SpringLogLevel levelOf(String logger) =>
       _isRoot(logger) ? SpringLog.level : SpringLog.levelOf(logger);
 
-  /// Levels set per logger.
+  /// The levels set for single loggers, by logger name, from
+  /// `logging.level.*` and [setLogLevel]; the root level is not in it.
   Map<String, SpringLogLevel> get loggerLevels => SpringLog.configuredLevels;
 
   @override
   String toString() => 'LoggingSystem(installed: $isInstalled)';
 }
 
-/// Configures and installs the [LoggingSystem] as soon as the context
-/// starts processing (a `BeanFactoryPostProcessor`, so before application
-/// beans exist) and uninstalls it when the context closes. When the start
-/// fails it stays installed until the failure has been logged (Spring
-/// Boot's report reaches the log file too).
+/// The bean that ties the [LoggingSystem] to the life of an application
+/// context. Applications never use it; the starter registers it.
+///
+/// It configures and installs the logging system as soon as the context
+/// starts processing its beans (it is a `BeanFactoryPostProcessor`, so this
+/// happens before any application bean exists), and uninstalls it when the
+/// context closes. Lines logged earlier in the start, which Spring Boot
+/// holds as `DeferredLogs`, are then written to the file, the buffer and
+/// the added appenders; the console has shown them already. When the
+/// start fails, the system stays installed until the failure has been
+/// logged, so the report reaches the log file too.
 final class LoggingSystemInitializer
     implements
         BeanFactoryPostProcessor,
         PriorityOrdered,
         DisposableBean,
         ApplicationContextAware {
-  /// An initializer reading [environment].
+  /// An initializer that configures [system] ([LoggingSystem.instance] by
+  /// default) from [environment].
   LoggingSystemInitializer(this.environment, [LoggingSystem? system])
     : system = system ?? LoggingSystem.instance;
 
-  /// Source of the `logging.*` properties.
+  /// Where the `logging.*` properties are read.
   final Environment environment;
 
-  /// The configured system.
+  /// The logging system it configures and installs.
   final LoggingSystem system;
 
   @override

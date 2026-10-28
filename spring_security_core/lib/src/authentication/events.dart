@@ -2,140 +2,185 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_security_core/src/core/authentication.dart';
 import 'package:spring_security_core/src/core/exceptions.dart';
 
-/// An authentication happened, like Spring's
-/// `AbstractAuthenticationEvent`; its [authentication] is the source.
+/// The base class of the application events about logins and logouts.
+///
+/// Listen to a subclass with `@EventListener()` to audit logins, count
+/// failures or lock accounts; the security packages themselves keep no
+/// count. Listening to this class receives all of them.
+///
+/// Spring (Java): `AbstractAuthenticationEvent`.
 abstract class AbstractAuthenticationEvent extends ApplicationEvent {
-  /// An event about [authentication].
+  /// An event about [authentication], which is also the event's source.
   AbstractAuthenticationEvent(this.authentication) : super(authentication);
 
-  /// The authentication.
+  /// The login concerned: the authenticated result for a success, the
+  /// login request (with the typed username) for a failure.
   final Authentication authentication;
 }
 
-/// A login succeeded, like Spring's `AuthenticationSuccessEvent`.
+/// Published by `ProviderManager` each time a login succeeds, by any
+/// method (form, basic, bearer token, or a call of your own).
+///
+/// For basic and bearer-token logins that means every request that
+/// carries credentials.
 ///
 /// ```dart
 /// @EventListener()
 /// void onLogin(AuthenticationSuccessEvent event) =>
 ///     audit.loggedIn(event.authentication.name);
 /// ```
+///
+/// Spring (Java): `AuthenticationSuccessEvent`.
 class AuthenticationSuccessEvent extends AbstractAuthenticationEvent {
-  /// [authentication] succeeded.
+  /// A success; [authentication] is the authenticated result.
   AuthenticationSuccessEvent(super.authentication);
 }
 
-/// A login through a form or a login request succeeded and the user is now
-/// logged in, like Spring's `InteractiveAuthenticationSuccessEvent`.
+/// Published when a user logged in through the login form and is now
+/// logged in for the session.
+///
+/// It comes after the [AuthenticationSuccessEvent] of the same login, and
+/// only from the web starter's form login. Listen to it rather than to the
+/// success event to count real user logins.
+///
+/// Spring (Java): `InteractiveAuthenticationSuccessEvent`.
 class InteractiveAuthenticationSuccessEvent
     extends AbstractAuthenticationEvent {
-  /// [authentication] logged in.
+  /// A form login of [authentication].
   InteractiveAuthenticationSuccessEvent(super.authentication);
 }
 
-/// A login failed, like Spring's `AbstractAuthenticationFailureEvent`:
-/// count these to lock accounts or slow clients down (the packages do not).
+/// Published by `ProviderManager` when a login is refused; a subclass
+/// tells why.
+///
+/// Count these to lock accounts or slow clients down: the security
+/// packages do neither. An exception without a subclass of its own is
+/// published as this class itself.
 ///
 /// ```dart
 /// @EventListener()
 /// void onFailure(AbstractAuthenticationFailureEvent event) =>
 ///     attempts.failed(event.authentication.name);
 /// ```
+///
+/// Spring (Java): `AbstractAuthenticationFailureEvent` (abstract there).
 class AbstractAuthenticationFailureEvent extends AbstractAuthenticationEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AbstractAuthenticationFailureEvent(super.authentication, this.exception);
 
-  /// Why.
+  /// The reason the login was refused.
   final AuthenticationException exception;
 }
 
-/// Wrong username or password.
+/// A login was refused for a wrong password or an unknown username
+/// (a `BadCredentialsException` or `UsernameNotFoundException`).
 class AuthenticationFailureBadCredentialsEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureBadCredentialsEvent(
     super.authentication,
     super.exception,
   );
 }
 
-/// The account is disabled.
+/// A login was refused because the account is disabled.
 class AuthenticationFailureDisabledEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureDisabledEvent(super.authentication, super.exception);
 }
 
-/// The account is locked.
+/// A login was refused because the account is locked.
 class AuthenticationFailureLockedEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureLockedEvent(super.authentication, super.exception);
 }
 
-/// The account has expired.
+/// A login was refused because the account has expired.
 class AuthenticationFailureExpiredEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureExpiredEvent(super.authentication, super.exception);
 }
 
-/// The password has expired.
+/// A login was refused because the password has expired.
 class AuthenticationFailureCredentialsExpiredEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureCredentialsExpiredEvent(
     super.authentication,
     super.exception,
   );
 }
 
-/// No provider could handle the request.
+/// A login was refused because no `AuthenticationProvider` handles its
+/// kind of request, usually a configuration error.
 class AuthenticationFailureProviderNotFoundEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureProviderNotFoundEvent(
     super.authentication,
     super.exception,
   );
 }
 
-/// Authentication could not be done (a store failed).
+/// A login could not be checked because something failed, such as the
+/// user store (an `AuthenticationServiceException`).
 class AuthenticationFailureServiceExceptionEvent
     extends AbstractAuthenticationFailureEvent {
-  /// [authentication] failed with [exception].
+  /// A refusal of the login request [authentication], with [exception].
   AuthenticationFailureServiceExceptionEvent(
     super.authentication,
     super.exception,
   );
 }
 
-/// A user logged out, like Spring's `LogoutSuccessEvent`.
+/// Published by the web starter's logout when a logged-in user logged
+/// out; not for anonymous users.
+///
+/// Spring (Java): `LogoutSuccessEvent`.
 class LogoutSuccessEvent extends AbstractAuthenticationEvent {
-  /// [authentication] logged out.
+  /// The logout of [authentication].
   LogoutSuccessEvent(super.authentication);
 }
 
-/// Publishes authentication outcomes, like Spring's
-/// `AuthenticationEventPublisher`.
+/// Where `ProviderManager` reports each login outcome.
+///
+/// The auto-configured [DefaultAuthenticationEventPublisher] turns them
+/// into application events. Declare your own bean of this type to send
+/// them somewhere else, such as a security monitoring system.
+///
+/// Spring (Java): `AuthenticationEventPublisher`.
 abstract interface class AuthenticationEventPublisher {
-  /// [authentication] succeeded.
+  /// Reports that the login succeeded; [authentication] is the result.
   void publishAuthenticationSuccess(Authentication authentication);
 
-  /// [authentication] failed with [exception].
+  /// Reports that the login request [authentication] was refused with
+  /// [exception].
   void publishAuthenticationFailure(
     AuthenticationException exception,
     Authentication authentication,
   );
 }
 
-/// Publishes the events above as application events, like Spring's
-/// `DefaultAuthenticationEventPublisher`.
+/// The default [AuthenticationEventPublisher]: it publishes each outcome as
+/// an application event that `@EventListener` methods receive.
+///
+/// A success becomes an [AuthenticationSuccessEvent]. A failure becomes
+/// the event class matching its exception, such as
+/// [AuthenticationFailureBadCredentialsEvent] for wrong credentials, or
+/// [AbstractAuthenticationFailureEvent] for an exception with no event of
+/// its own.
+///
+/// Spring (Java): `DefaultAuthenticationEventPublisher`.
 final class DefaultAuthenticationEventPublisher
     implements AuthenticationEventPublisher {
-  /// Publishes through [publisher].
+  /// A publisher sending the events to [publisher], usually the
+  /// application context.
   DefaultAuthenticationEventPublisher(this.publisher);
 
-  /// Where events go.
+  /// The application's event publisher.
   final ApplicationEventPublisher publisher;
 
   @override

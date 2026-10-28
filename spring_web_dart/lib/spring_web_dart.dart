@@ -1,25 +1,56 @@
-/// Spring Web for Dart: request mapping annotations shared by Feign
-/// clients (`spring_boot_starter_feign`) and the coming web server,
-/// `ResponseEntity`, `HttpHeaders`, `HttpStatus`, `MediaType`, HTTP and
-/// WebSocket client transports for the VM, Flutter and the web, and
-/// server-sent events (`EventStream<T>`, `ServerSentEvent<T>`).
+/// The web vocabulary shared by the Spring Dart server and HTTP client:
+/// the annotations that map HTTP calls to methods, and the types that
+/// describe requests and responses.
+///
+/// Import it to write a web API or to call one. The same annotations
+/// serve both sides: on a `@RestController` class (with
+/// `spring_boot_starter_web`) they say which requests a method answers;
+/// on a `@FeignClient` interface (with `spring_boot_starter_feign`) they
+/// say which request calling a method sends. It holds:
+///
+/// - the mapping annotations (`@RequestMapping`, `@GetMapping`,
+///   `@PostMapping`, ...) and the parameter annotations (`@PathVariable`,
+///   `@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`,
+///   `@RequestPart`);
+/// - the controller annotations (`@RestController`, `@ControllerAdvice`,
+///   `@ExceptionHandler`, `@ResponseStatus`, `@CrossOrigin`);
+/// - the HTTP types: `ResponseEntity`, `HttpHeaders`, `HttpStatus`,
+///   `HttpMethod`, `MediaType`, `ProblemDetail` and the errors that carry
+///   a response (`ResponseStatusException`, ...), multipart bodies and
+///   uploaded files, path patterns;
+/// - the server's request and response (`ServerHttpRequest`,
+///   `ServerHttpResponse`);
+/// - the client transports that send HTTP and WebSocket traffic
+///   (`HttpTransport`, `WebSocketTransport`; `platformHttpTransport()`
+///   picks the right one for the VM, Flutter or the browser);
+/// - server-sent events (`EventStream<T>`, `ServerSentEvent<T>`).
 ///
 /// ```dart
+/// // The server side: GET /books/978-0 answers with the book as JSON.
+/// @RestController()
+/// @RequestMapping('/books')
+/// class BookController {
+///   BookController(this.books);
+///   final BookService books;
+///
+///   @GetMapping('/{isbn}')
+///   Future<Book> find(@PathVariable() String isbn) => books.find(isbn);
+/// }
+///
+/// // The client side: calling find sends that same request.
 /// @FeignClient('catalog', url: r'${catalog.url}')
 /// abstract interface class CatalogClient {
 ///   @GetMapping('/books/{isbn}')
-///   Future<Book> find(@PathVariable('isbn') String isbn);
+///   Future<Book> find(@PathVariable() String isbn);
 /// }
-///
-/// final transport = platformHttpTransport();
 /// ```
 ///
-/// Platform transports: `package:spring_web_dart/io.dart`
-/// (`IoHttpTransport`, `IoWebSocketTransport`),
+/// Platform transports are in `package:spring_web_dart/io.dart`
+/// (`IoHttpTransport`, `IoWebSocketTransport`) and
 /// `package:spring_web_dart/browser.dart` (`FetchHttpTransport`,
-/// `BrowserWebSocketTransport`); for tests
+/// `BrowserWebSocketTransport`); test doubles in
 /// `package:spring_web_dart/testing.dart` (`MockHttpTransport`,
-/// `MockWebSocketTransport`).
+/// `MockWebSocketTransport`, ...).
 ///
 /// Spring (Java): `spring-web` (`org.springframework.web.bind.annotation`,
 /// `org.springframework.http`, `org.springframework.http.client`).

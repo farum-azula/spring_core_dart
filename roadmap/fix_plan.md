@@ -149,6 +149,81 @@ Found while writing the guides (`example/server_guide`,
 - A model class named `Order` clashes with the `@Order` annotation, and
   the generator reports only "cannot be forwarded by a proxy".
 
+Found while rewriting the documentation comments (October 2026); the
+comments now describe what the code does:
+
+- Web: `@CrossOrigin()` without `methods` allows GET/HEAD/POST only
+  (Spring: the mapping's own methods), so a PUT/DELETE pre-flight gets 403;
+  `${...}` in a mapping's `headers` is resolved by clients, not the server;
+  a `HEAD` on a multi-chunk `StreamingResponseBody` reports the first
+  chunk's length; after `MultipartFile.transferTo` the file can no longer
+  be read or moved again; the session error suggests a non-existent
+  `spring.web.session.enabled`; the "(https)" start line looks at
+  `server.ssl.certificate`, not the real settings; `afterCompletion` gets
+  the exception even when an `@ExceptionHandler` answered it; a second
+  `Validator` bean without `@Primary` turns `@Valid()` bodies off silently.
+- HTTP types: `MediaType` parameters in single quotes split on `,`/`;`;
+  a duplicated cookie name keeps the last value; a bad `%xx` in
+  `filename*` throws `FormatException`; SSE: the last event id does not
+  carry over and an empty `id:` sends an empty `Last-Event-ID`;
+  `EventStream.fromEvents`/`of` fail a second listener on a
+  single-subscription source; `CloseStatus` range checked by an `assert`
+  only; the browser WebSocket session drops errors after opening;
+  `closeStatus` may stay null after a drop.
+- WebSocket starter: a `@SendMessage` value that is not JSON throws
+  synchronously from a `Future` method; a handler error is ignored by
+  `AbstractWebSocketHandler` (Spring closes with 1011);
+  `setAllowedOrigins`/`setAllowedOriginPatterns`/`setSupportedProtocols`
+  add instead of replace; a bad `reconnect.multiplier`/`max-retries` fails
+  with a `FormatException` that does not name the property.
+- Security: `{pbkdf2}` uses the v5_8 settings while Spring 6 maps it to
+  v5_5, so Java `{pbkdf2}` hashes may not verify; `offload_io.dart` catches
+  `ArgumentError` from the work itself and checks the password twice;
+  hash upgrades at login run on the main isolate; the global strategy's
+  `runWithContext` restores at the first `await`; with only `issuer-uri`,
+  `jws-algorithms` is ignored; `headers().defaultsDisabled()` ignores later
+  header calls; users from `HttpSecurity.userDetailsService(...)` never get
+  hash upgrades; form login reads 64 KB while docs/security.md says 1 MB;
+  the README's SPA CSRF advice needs `CsrfTokenRequestAttributeHandler`.
+- Boot: a `spring.jackson.*` boolean typo silently means false;
+  auto-configuration `before`/`after` match short names only, exclusion by
+  `Type` matches the simple name; `@ConfigurationProperties` validation
+  builds its own `BeanValidator`; `defaultValidator` has no
+  `validationMessageSource`, so `{key}` in constraint messages stays as is.
+- Context and container: `addBeanFactoryPostProcessor` after refresh is
+  ignored silently (`register` throws); the `parent` setter is not guarded
+  after refresh; `startupDate` is public and mutable; an `@EventListener`
+  whose id ends in `.onApplicationEvent` is taken for an
+  `ApplicationListener`; `ReloadableResourceBundleMessageSource` is not
+  `ResourceLoaderAware`; `ObjectProvider.isEmpty`/`length` count null beans
+  that iteration skips; `NullValueInNestedPathException` from
+  `_readSegment` names the whole path.
+- Configuration: an invalid profile name throws a plain `StateError`;
+  `urlExists` is true on the web, so an `optional:` URL import fails there;
+  `validateRequiredProperties` throws on an unresolvable placeholder
+  instead of listing the key; random ranges over 2^32 are slightly biased;
+  `ConfigurationPropertyName` accepts a leading digit its message forbids.
+- SpEL: `SpelType.constructors` entries other than `''` are ignored;
+  `MapAccessor.canWrite` is true for every map; `keys`/`keySet` give a
+  `List` as properties, a `Set` as methods; `.5` reports EL1044E (Spring
+  EL1047E). AOP: advice of one kind is sorted with the unstable
+  `List.sort`; the README says named pointcuts are shared as `name()`, the
+  code needs `Type.name()` for another aspect's.
+- Starters: cache `invalidate()` returns true for an empty or only-expired
+  cache; two `sync: true` methods on the same cache and key share one
+  pending result; `LogQuery.copyWith` cannot clear `fields` with null;
+  Flutter `ThemeConfig` is public API but not exported; widgets sharing a
+  beans record share one binding. Test starter: a misspelt
+  `BeanOverride(name:)` adds a second bean; without a name and a bean of
+  `T` it may replace an unrelated bean named `defaultBeanName(T)`; the
+  replacement keeps only type `T`; `andExpect(json:)` on a non-JSON body
+  throws `FormatException`; the runner ignores initializers' `order`.
+- READMEs: the web starter's says `@RequestParam` does not read form
+  fields (it does) and lists `HttpSession` under "Not yet"; the
+  generator's says it does not depend on `spring_core_dart` and lists only
+  `springCoreDartBuilder`; Feign's says `request-interceptors` wins over
+  the beans (it adds to them).
+
 Found by the reviews, not blocking:
 
 - Tenth review: unconditional `@Bean` methods are registered while parsing, not in the reader in class order (earlier bean conditions see them; registration order `[h2, h1]` vs Spring's `[h1, h2]` affects unordered `List<T>` injection) — document or defer; plain (non-`ConfigurationCondition`) conditions on `@Bean` methods evaluated while parsing; a component's `@ConditionalOnMissingBean` of its own type; `@ConditionalOnBean(B)` on a component when B is a later conditional component; `@ConditionalOnMissingBean()` without arguments on a class should fail like Boot; `UrlResource.existsAsync()` status rules (204, 500 with a body); `@Bean` products with private members get interface-only proxies (`BeanNotOfRequiredTypeException` when injected by class; README should say subclass proxies are for component classes); operators (`[]`) on subclass proxies aren't advised; a `*String` delay resolving to whitespace.

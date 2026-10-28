@@ -4,13 +4,19 @@ import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
-/// A file, like Spring's `FileSystemResource`. Unavailable on the web,
-/// where it never exists.
+/// A [Resource] for a file (or directory) on the local file system, given
+/// by its path.
 ///
-/// Supports synchronous reading (on platforms with `dart:io`). A directory
-/// exists but is not readable ([isReadable] is `false`), like in Spring.
+/// `file:` locations resolve to it, which is how `./application.yml` next
+/// to a server binary or `file:./data/import.csv` is read. An application
+/// gets it from a resource loader, or creates one directly for a path it
+/// already knows, for example to serve a file with [openRead]. It can be
+/// read synchronously where `dart:io` exists; on the web it never exists.
+/// A directory exists but is not readable ([isReadable] is `false`), as in
+/// Spring.
 ///
 /// ```dart
+/// // A config file next to the program, with its profile variant.
 /// final resource = FileSystemResource('config/application.properties');
 /// if (resource.exists()) {
 ///   final text = resource.readAsStringSync();
@@ -27,16 +33,20 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 /// }
 /// ```
 class FileSystemResource extends AbstractResource {
-  /// [path] uses `/` separators; `\` is converted.
+  /// Creates the resource for [path], relative to the working directory or
+  /// absolute. Nothing is read or checked yet.
   ///
-  /// The path is normalized: `.` segments and empty segments are removed
-  /// and `..` collapses with the previous segment.
+  /// The path is normalized: `\` becomes `/`, `.` and empty segments are
+  /// removed, and `..` cancels the previous segment (leading `..` segments
+  /// of a relative path are kept).
   FileSystemResource(String path) : path = _clean(path);
 
-  /// The file of a `file:` URL, percent-decoded like Spring's
-  /// `ResourceUtils.getFile` (`file:my%20dir/a.txt` is `my dir/a.txt`);
-  /// `file:///abs` and `file:/abs` are absolute. Invalid escapes are kept
-  /// as written.
+  /// Creates the resource for a `file:` URL, percent-decoded like Spring's
+  /// `ResourceUtils.getFile`: `file:my%20dir/a.txt` is `my dir/a.txt`.
+  ///
+  /// `file:///abs` and `file:/abs` are absolute paths; only a local host
+  /// (`file://localhost/abs`) is supported. A `%` that is not a valid
+  /// escape is kept as written.
   ///
   /// ```dart
   /// FileSystemResource.fromFileUrl('file:///srv/my%20app/a.properties')
@@ -60,7 +70,7 @@ class FileSystemResource extends AbstractResource {
     return FileSystemResource(rest);
   }
 
-  /// The normalized path, relative or absolute as given.
+  /// The normalized path, relative or absolute as it was given.
   final String path;
 
   // Like Spring's StringUtils.cleanPath: `.` and empty segments are
@@ -104,7 +114,8 @@ class FileSystemResource extends AbstractResource {
   @override
   bool exists() => FileAccess.isFile(path) || FileAccess.isDirectory(path);
 
-  /// Whether this is a readable file (not a directory).
+  /// Whether this is an existing file, which can be read; `false` for a
+  /// directory.
   @override
   bool get isReadable => FileAccess.isFile(path);
 
@@ -123,24 +134,28 @@ class FileSystemResource extends AbstractResource {
   @override
   bool get supportsSyncRead => FileAccess.isSupported;
 
-  /// Size in bytes; throws if the file does not exist.
+  /// The size of the file in bytes, for a `Content-Length` header for
+  /// example. Throws when the file does not exist.
   int contentLength() => FileAccess.length(path);
 
-  /// Last modification time; throws if the file does not exist.
+  /// When the file was last changed, for caching headers for example.
+  /// Throws when the file does not exist.
   DateTime lastModified() => FileAccess.lastModified(path);
 
   @override
   Future<Uint8List> readAsBytes() => FileAccess.readBytes(path);
 
-  /// The content from [start] (inclusive) to [end] (exclusive), streamed
-  /// without reading the whole file (a download, a `Range` request).
+  /// Streams the content from byte [start] (included) to [end] (excluded),
+  /// the whole file by default, without holding it in memory: for a
+  /// download or an HTTP `Range` request.
   Stream<List<int>> openRead([int? start, int? end]) =>
       FileAccess.openRead(path, start, end);
 
   @override
   Uint8List readAsBytesSync() => FileAccess.readBytesSync(path);
 
-  /// A file next to this one; [relativePath] may contain `..`.
+  /// The file at [relativePath] from this file's directory, such as a
+  /// sibling; [relativePath] may contain `..`.
   @override
   FileSystemResource createRelative(String relativePath) {
     final slash = path.lastIndexOf('/');
@@ -148,7 +163,7 @@ class FileSystemResource extends AbstractResource {
     return FileSystemResource('$parent$relativePath');
   }
 
-  /// Equal when the normalized paths are equal.
+  /// Whether [other] is a file resource with the same normalized path.
   @override
   bool operator ==(Object other) =>
       other is FileSystemResource && other.path == path;

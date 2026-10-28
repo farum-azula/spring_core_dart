@@ -10,16 +10,36 @@ import 'package:dart_style/dart_style.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
-/// Writes `test/spring/<name>.test.spring.dart` for a `test/<name>_test.dart` that
-/// declares `@SpringBootTest` classes: `runSpringTests()`, declaring their
-/// tests with `springBootTest`, `group`, `test`, `setUp` and `tearDown`.
+/// The builder that turns the `@SpringBootTest` classes of a test file into
+/// `package:test` tests.
 ///
-/// The test file is read as syntax, not resolved: the generated file
-/// imports what the test file imports (with the same prefixes and
-/// combinators) and the test file itself, so every type and constant
-/// written in the test class means the same in the generated code. Bean
-/// types are not written out: `instance.checkout = app.getBean();` takes
-/// its type from the field.
+/// A `@SpringBootTest` class describes an integration test: the
+/// application to start, the beans to inject into fields, and the `@Test`
+/// methods to run against them. `package:test` only runs functions
+/// registered with `test` and `group`, and Dart has no reflection to find
+/// the annotated methods. So for every `test/<name>_test.dart` with such
+/// classes this builder writes `test/spring/<name>.test.spring.dart` with
+/// a `runSpringTests()` function that registers them. It uses
+/// `springBootTest`, `group`, `test`, `setUp` and `tearDown` from
+/// `spring_boot_starter_test`. `springTestBuilder` creates it for
+/// `build_runner`.
+///
+/// The application is the package's only `main` with
+/// `@SpringBootApplication` in `bin/` or `lib/`, or the one named by
+/// `@SpringBootTest(application: ...)` when there are several. A test class
+/// that cannot be generated (no application, an unknown one, a private
+/// name in an annotation argument...) throws a [TestClassException] that
+/// points at the member. When the test file does not import its generated
+/// file, a warning says which import to add.
+///
+/// The test file is read as syntax, not resolved, so the builder stays
+/// fast. To make every type and constant written in the test class mean
+/// the same in the generated code, the generated file imports what the
+/// test file imports (with the same prefixes and combinators) and the test
+/// file itself. Bean types are not written out:
+/// `instance.checkout = app.getBean();` takes its type from the field.
+/// While the test file has syntax errors, the existing generated file is
+/// kept so the test's import of it keeps working.
 ///
 /// ```dart
 /// // test/checkout_test.dart
@@ -52,7 +72,7 @@ import 'package:path/path.dart' as p;
 /// Spring (Java): JUnit's `SpringExtension` does this at runtime with
 /// reflection; Dart has none, so it is generated.
 class SpringTestBuilder implements Builder {
-  /// Creates the builder.
+  /// Creates the builder; it has no options.
   SpringTestBuilder();
 
   @override
@@ -139,8 +159,12 @@ bool _isEntryPoint(String path, String source) {
   );
 }
 
-/// Where the generated file of the test [input] goes:
-/// `test/orders/basket_test.dart` → `test/spring/orders/basket.test.spring.dart`.
+/// The generated file of the test [input]: the same path under
+/// `test/spring/`, with `_test.dart` replaced by `.test.spring.dart`.
+///
+/// Keeping generated files in their own folder stops `dart test` from
+/// taking them for tests. For example `test/orders/basket_test.dart` gives
+/// `test/spring/orders/basket.test.spring.dart`.
 AssetId springTestOutput(AssetId input) {
   final inTest = input.path.substring('test/'.length);
   return AssetId(
@@ -151,12 +175,18 @@ AssetId springTestOutput(AssetId input) {
   );
 }
 
-/// A build error in a test class, pointing at the member.
+/// A build error in a `@SpringBootTest` class, located at the member that
+/// causes it.
+///
+/// The test builder works on syntax only, so it cannot use the analyzer's
+/// element-based errors. It throws this exception instead, and
+/// `build_runner` prints it as `path:line:column: message`.
 final class TestClassException implements Exception {
   /// The error [message] at [location] (`path:line:column`).
   TestClassException(this.location, this.message);
 
-  /// Where: `test/checkout_test.dart:12:3`.
+  /// Where the error is, as `path:line:column` with 1-based numbers, for
+  /// example `test/checkout_test.dart:12:3`.
   final String location;
 
   /// What is wrong and how to fix it.
@@ -166,28 +196,35 @@ final class TestClassException implements Exception {
   String toString() => '$location: $message';
 }
 
-/// The parsed test file: its imports and `@SpringBootTest` classes.
+/// A parsed (not resolved) test file, with the queries the test builder
+/// needs: its imports, its `@SpringBootTest` classes, and error locations.
 final class TestFile {
-  /// Reads [unit], the syntax of the file at [path].
+  /// Wraps [unit], the parsed syntax of the file at [path].
+  ///
+  /// [text] is the source as written; it defaults to [unit] printed back,
+  /// which may differ in spacing.
   TestFile(this.path, this.unit, this.lineInfo, [String? text])
     : text = text ?? unit.toSource();
 
-  /// The file's text.
+  /// The source as written, used to copy annotation arguments verbatim.
   final String text;
 
-  /// Superclasses of other files already warned about.
+  /// Names of superclasses declared in other files that were already
+  /// warned about. Their members cannot be seen, and the warning is logged
+  /// once per file.
   final Set<String> warnedSuperclasses = {};
 
   /// The file's path in its package (`test/checkout_test.dart`).
   final String path;
 
-  /// The file's syntax.
+  /// The parsed syntax of the file.
   final CompilationUnit unit;
 
-  /// Line numbers for errors.
+  /// Turns offsets into the line and column numbers of [error].
   final LineInfo lineInfo;
 
-  /// The classes annotated with `@SpringBootTest`.
+  /// The classes annotated with `@SpringBootTest`, in file order. The
+  /// builder writes nothing when there are none.
   late final List<ClassDeclaration> testClasses = [
     for (final declaration in unit.declarations)
       if (declaration is ClassDeclaration &&
@@ -195,7 +232,8 @@ final class TestFile {
         declaration,
   ];
 
-  /// The class called [name] declared in this file.
+  /// The class called [name] declared in this file, or `null` when it is
+  /// declared elsewhere.
   ClassDeclaration? classNamed(String name) {
     for (final declaration in unit.declarations) {
       if (declaration is ClassDeclaration &&
@@ -206,7 +244,7 @@ final class TestFile {
     return null;
   }
 
-  /// The import directives, as written.
+  /// The import directives, as written; the generated file repeats them.
   List<ImportDirective> get imports => [
     for (final directive in unit.directives)
       if (directive is ImportDirective) directive,
@@ -222,7 +260,8 @@ final class TestFile {
     return p.url.normalize(p.url.join(p.url.dirname(path), uri));
   }
 
-  /// An error at [node].
+  /// A [TestClassException] with [message], located at the start of
+  /// [node].
   TestClassException error(AstNode node, String message) {
     final location = lineInfo.getLocation(node.offset);
     return TestClassException(
@@ -308,7 +347,9 @@ const _instance = r'$instance';
 const _app = r'$app';
 const _logs = r'$logs';
 
-/// Writes the generated library for a [TestFile].
+/// Generates the source of `<name>.test.spring.dart` for a [TestFile]: the
+/// copied imports and a `runSpringTests()` function that registers one
+/// group per `@SpringBootTest` class.
 final class TestEmitter {
   /// An emitter for [file], written to [output] in [package], whose
   /// `@SpringBootApplication` entry points are [applications] (paths in
@@ -320,16 +361,18 @@ final class TestEmitter {
     required this.applications,
   });
 
-  /// The test file.
+  /// The test file whose classes are generated.
   final TestFile file;
 
-  /// The generated library.
+  /// The generated file; relative imports are re-pointed from its folder.
   final AssetId output;
 
-  /// The package of the test.
+  /// The package of the test, for `package:` imports of an application in
+  /// `lib/`.
   final String package;
 
-  /// The `@SpringBootApplication` entry points of the package.
+  /// The paths of the package's `@SpringBootApplication` entry points,
+  /// sorted. A test class without `application:` needs exactly one.
   final List<String> applications;
 
   // Entry point → its import prefix in the generated file.
@@ -337,7 +380,11 @@ final class TestEmitter {
 
   final StringBuffer _body = StringBuffer();
 
-  /// The formatted source of the generated library.
+  /// Generates every test class of [file] and returns the formatted
+  /// source of the generated library.
+  ///
+  /// Throws a [TestClassException] for a test class that cannot be
+  /// generated.
   String emit() {
     file.testClasses.forEach(_testClass);
     final out = StringBuffer()
@@ -424,10 +471,15 @@ final class TestEmitter {
   String _relative(String path) =>
       p.url.relative(path, from: p.url.dirname(output.path));
 
-  /// The source of [expression] (an annotation argument) as the generated
-  /// library can use it: names of static members of [scope] (the class a
-  /// member annotation is in, whose scope Dart resolves them in) are
-  /// qualified with their class; a private name fails the build.
+  /// The source of [expression], an annotation argument, rewritten so the
+  /// generated library can use it.
+  ///
+  /// In the test file, an annotation on a member may name static members of
+  /// its class without the class name, since Dart resolves them in that
+  /// class's scope. The generated library is outside the class, so those
+  /// names (from [scope]) are qualified with their class. A private name
+  /// cannot be reached from another library and throws a
+  /// [TestClassException].
   String? _code(Expression? expression, {_Scope? scope}) {
     if (expression == null) {
       return null;
@@ -864,7 +916,8 @@ final class TestEmitter {
   }
 }
 
-/// A Dart string literal of [value].
+/// A single-quoted Dart string literal of [value], with backslashes,
+/// quotes, `$` and newlines escaped.
 String _literal(String value) {
   final escaped = value
       .replaceAll(r'\', r'\\')
@@ -874,6 +927,10 @@ String _literal(String value) {
   return "'$escaped'";
 }
 
+/// The description of a test or `@Nested` group without `@DisplayName` or
+/// a name argument, made from the method or field name: words split at
+/// case changes and underscores, in lower case.
+///
 /// `paysThroughTheFake` → `pays through the fake`, `addsABook` → `adds a
 /// book`, `readsURLService` → `reads url service`, `checkout_pays` →
 /// `checkout pays`.
@@ -1005,10 +1062,12 @@ final class _Field extends _Member {
   @override
   List<Annotation> get metadata => node.metadata;
 
-  /// The declared type, as written; `null` when inferred.
+  /// The field's declared type, as written; `null` when it is inferred.
   String? get type => declarations.type?.toSource();
 
-  /// `Checkout` for `Checkout`, `p.Checkout?` and `List<Checkout>`.
+  /// The name of the declared type without prefix, `?` or type
+  /// arguments: `Checkout` for `Checkout`, `p.Checkout?` and
+  /// `Checkout<int>`; `null` for an inferred, function or record type.
   String? get simpleTypeName => switch (declarations.type) {
     final NamedType named => named.name.lexeme,
     _ => null,
@@ -1023,7 +1082,8 @@ final class _Field extends _Member {
     _ => const [],
   };
 
-  /// `WithOneBook` for `= WithOneBook()`.
+  /// The class the field's initializer creates, as written: `WithOneBook`
+  /// for `= WithOneBook()`; `null` for any other initializer.
   String? get initializerClass => switch (variable.initializer) {
     InstanceCreationExpression(:final constructorName) =>
       constructorName.type.name.lexeme,
@@ -1048,8 +1108,8 @@ final class _Members {
   final List<_Field> testBeans = [];
   final List<_Field> capturedOutput = [];
 
-  /// Tests and @Nested groups, in the order of the classes (superclass
-  /// first).
+  /// The tests and `@Nested` groups, in declaration order with the
+  /// superclass's first; they are registered in this order.
   final List<_Member> ordered = [];
 
   static _Members of(

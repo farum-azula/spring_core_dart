@@ -4,22 +4,43 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:yaml/yaml.dart';
 
-/// Property names an application can read, for the `dartDefines` of the
-/// generated `springApplication`: `String.fromEnvironment` works on the web
-/// and in AOT builds only as a `const` with a literal key, so every key a
-/// `--dart-define` could set has to be known at build time.
+/// Collects the property names an application may read, so that a
+/// `--dart-define` can set any of them.
 ///
-/// Collected from the scanned libraries (every `${...}` placeholder in
-/// annotation arguments, `@ConditionalOnProperty` names, the fields of
-/// `@ConfigurationProperties` classes), the `application*` config files
-/// of `lib/resources/` (their keys and placeholders) and a few properties
-/// read before or around config data ([alwaysIncluded]). Each key also
-/// gets its environment-variable form ([environmentForm]).
+/// `flutter build --dart-define=SPRING_PROFILES_ACTIVE=prod` passes values
+/// into the compiled program, but the program can only read them with
+/// `const String.fromEnvironment('KEY')`, a constant with a literal key
+/// (on the web and in AOT builds there is no other way). So the generated
+/// `springApplication` gets one `if (const bool.hasEnvironment(...))` entry
+/// per key in its `dartDefines`, and every key has to be known at build
+/// time.
+///
+/// The names come from three places:
+///
+/// - the scanned libraries: every `${...}` placeholder in annotation
+///   arguments, `@ConditionalOnProperty` names, and the fields of
+///   `@ConfigurationProperties` classes ([addLibrary]);
+/// - the `application*` config files of `lib/resources/`: their keys and
+///   placeholders ([addConfigFile]);
+/// - a few properties read before or around the config files
+///   ([alwaysIncluded]).
+///
+/// Each name is offered in its environment-variable form too
+/// ([environmentForm]).
+///
+/// ```dart
+/// final keys = DartDefineKeys()
+///   ..addPlaceholders(r'${shop.currency:EUR}')
+///   ..addName('api.url');
+/// keys.keys; // includes shop.currency, SHOP_CURRENCY, api.url, API_URL
+/// ```
 final class DartDefineKeys {
   final Set<String> _names = {};
 
-  /// Keys always offered: profiles, banner, debug flags, logging, and the
-  /// Flutter switch for the OS environment.
+  /// Keys always offered, because they are read before or around the
+  /// config files and no scanned code names them: profiles, banner mode,
+  /// the `debug` and `trace` flags, the root log level, and the Flutter
+  /// switch for the OS environment.
   static const alwaysIncluded = [
     'spring.profiles.active',
     'spring.profiles.include',
@@ -30,7 +51,11 @@ final class DartDefineKeys {
     'logging.level.root',
   ];
 
-  /// The sorted keys: each property name and its environment form.
+  /// The keys to generate, sorted: each collected name and its
+  /// environment form.
+  ///
+  /// A name with characters other than letters, digits, `_`, `.`, `-`, `[`
+  /// and `]` is skipped rather than escaped into the generated code.
   List<String> get keys {
     final result = <String>{};
     for (final name in {...alwaysIncluded, ..._names}) {
@@ -48,10 +73,12 @@ final class DartDefineKeys {
   // is skipped rather than escaped into the generated code).
   static final _valid = RegExp(r'^[A-Za-z0-9_.\-\[\]]+$');
 
-  /// The environment-variable form of a property name, like Spring Boot
-  /// expects it: upper case, `.` → `_`, `-` removed, `[0]` → `_0_`
-  /// (`shop.max-basket-size` → `SHOP_MAXBASKETSIZE`,
-  /// `app.servers[0].host` → `APP_SERVERS_0_HOST`).
+  /// The environment-variable form of a property name, the one Spring Boot
+  /// binds from: upper case, `.` → `_`, `-` removed, `[0]` → `_0_`,
+  /// trailing `_` dropped.
+  ///
+  /// `shop.max-basket-size` → `SHOP_MAXBASKETSIZE`,
+  /// `app.servers[0].host` → `APP_SERVERS_0_HOST`.
   static String environmentForm(String name) {
     final indexed = name.replaceAllMapped(
       RegExp(r'\[([^\]]*)\]\.?'),
@@ -64,9 +91,10 @@ final class DartDefineKeys {
     return form;
   }
 
-  /// Adds the keys of every placeholder in [text]: `${a}`, `${a:default}`,
-  /// nested ones (`${a:${b}}`) and placeholders in keys (`${${a}.b}` adds
-  /// `a`).
+  /// Adds the key of every placeholder in [text]: `${a}`, `${a:default}`,
+  /// nested ones (`${a:${b}}` adds `a` and `b`) and placeholders inside
+  /// keys (`${${a}.b}` adds only `a`, since the full key is not known).
+  /// An unclosed placeholder ends the search.
   void addPlaceholders(String text) {
     var index = text.indexOf(r'${');
     while (index != -1) {
@@ -122,7 +150,7 @@ final class DartDefineKeys {
     return -1;
   }
 
-  /// Adds a property name as it is.
+  /// Adds a property name as it is, trimmed; a blank name is ignored.
   void addName(String name) {
     final trimmed = name.trim();
     if (trimmed.isNotEmpty) {
@@ -130,9 +158,13 @@ final class DartDefineKeys {
     }
   }
 
-  /// Adds the keys and placeholders of a config file of `lib/resources/`
-  /// ([path] relative to it); only `application*.properties`, `.yml` and
-  /// `.yaml` files are read.
+  /// Adds the keys and the placeholder keys of a config file of
+  /// `lib/resources/` ([path] relative to it, [text] its content).
+  ///
+  /// Only `application*.properties`, `.yml` and `.yaml` files are read.
+  /// YAML keys are flattened (`server.port`, `app.hosts[0]`); a YAML file
+  /// that does not parse is skipped, as the application reports it when it
+  /// reads the file.
   void addConfigFile(String path, String text) {
     final file = path.split('/').last;
     if (!file.startsWith('application')) {
@@ -211,8 +243,10 @@ final class DartDefineKeys {
     }
   }
 
-  /// Adds what [library] can read: placeholders in its annotations,
-  /// `@ConditionalOnProperty` names and `@ConfigurationProperties` fields.
+  /// Adds the property names [library]'s declarations read: placeholders
+  /// in the arguments of their annotations, `@ConditionalOnProperty` names
+  /// (with their prefix), and the bound names of `@ConfigurationProperties`
+  /// classes (constructor parameters or public fields, in kebab case).
   void addLibrary(LibraryElement library) {
     for (final element in [
       ...library.classes,

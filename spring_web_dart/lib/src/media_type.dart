@@ -1,37 +1,46 @@
 import 'dart:convert';
 
-/// A media type such as `application/json;charset=UTF-8`, like Spring's
-/// `MediaType`: [parse] reads one, [includes] and [isCompatibleWith]
-/// compare them (wildcards and `+json`-style suffixes included).
+/// A parsed media type (MIME type), such as `application/json` or
+/// `text/plain;charset=UTF-8`: the kind of data a body holds.
 ///
-/// The static constants are the media types as `String`s (Spring's
-/// `..._VALUE` constants), so they work in annotations:
+/// HTTP names the format of a body in the `Content-Type` header and the
+/// formats a client can read in `Accept`. Most code only needs the
+/// static constants, which are plain `String`s and so work in annotations
+/// and headers: `produces: MediaType.applicationJson`. Parse a
+/// [MediaType] when a header's value must be examined: its [type] and
+/// [subtype], a parameter such as the [charset], or whether it matches
+/// another type with wildcards (`text/*`) or a suffix (`+json`), which
+/// [includes] and [isCompatibleWith] answer. A plain string comparison
+/// gets those cases wrong (`application/json; charset=utf-8`).
 ///
 /// ```dart
-/// headers.set(HttpHeaders.contentTypeHeader, MediaType.applicationJson);
-/// @PostMapping.of(path: '/books', consumes: MediaType.applicationJson)
+/// // Is the received body JSON? Also true for application/problem+json
+/// // and for a Content-Type with a charset.
+/// bool isJson(String? contentType) =>
+///     contentType != null &&
+///     MediaType.parse('application/*+json')
+///         .isCompatibleWith(MediaType.parse(contentType));
 ///
-/// final type = MediaType.parse('application/problem+json');
-/// MediaType.parse('application/*+json').includes(type);       // true
-/// type.isCompatibleWith(MediaType.parse(MediaType.all));      // true
-/// MediaType.parse('text/plain;charset=ISO-8859-1').charset;   // latin1
+/// // Read the text with the charset the server announced.
+/// final type = MediaType.parse(response.headers.contentType!);
+/// final text = (type.charset ?? utf8).decode(bytes);
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java): `MediaType`; the string constants here are Spring's
+/// `..._VALUE` constants.
 /// ```java
-/// headers.setContentType(MediaType.APPLICATION_JSON);
-/// @PostMapping(path = "/books", consumes = MediaType.APPLICATION_JSON_VALUE)
-///
-/// MediaType type = MediaType.parseMediaType("application/problem+json");
-/// MediaType.parseMediaType("application/*+json").includes(type);
-/// type.isCompatibleWith(MediaType.ALL);
+/// MediaType.parseMediaType("application/*+json")
+///     .isCompatibleWith(MediaType.parseMediaType(contentType));
 /// ```
 final class MediaType {
-  /// The media type [type]/[subtype] with [parameters]; type and subtype
-  /// are lower-cased, like Spring. Parameter names are tokens, values
-  /// tokens or quoted strings (`"..."` or `'...'`), `charset` a legal
-  /// charset name and `q` between 0 and 1; a name given twice (in any
-  /// case) keeps the last value.
+  /// The media type [type]/[subtype] (`*` by default) with [parameters];
+  /// type and subtype are lower-cased. Throws an
+  /// [InvalidMediaTypeException] for an invalid value: type, subtype and
+  /// parameter names must be HTTP tokens, parameter values tokens or
+  /// quoted strings (`"..."` or `'...'`), `charset` a legal charset name,
+  /// and `q` a number from 0 to 1. A wildcard type needs a wildcard
+  /// subtype (`*/*`). A parameter given twice, in any case, keeps the last
+  /// value. Use [parse] to read a header value.
   MediaType(
     String type, [
     String subtype = wildcardType,
@@ -57,9 +66,11 @@ final class MediaType {
     }
   }
 
-  /// Reads [value], e.g. `application/json`, `text/plain; charset=UTF-8`
-  /// or `*` (`*/*`), like Spring's `MediaType.parseMediaType`. Throws an
-  /// [InvalidMediaTypeException] for an invalid one.
+  /// Reads one media type from text such as a `Content-Type` value:
+  /// `application/json`, `text/plain; charset=UTF-8`, or `*` (read as
+  /// `*/*`, which some old clients send). Throws an
+  /// [InvalidMediaTypeException] for invalid text; a parameter without
+  /// `=` is skipped.
   static MediaType parse(String value) {
     final text = value.trim();
     if (text.isEmpty) {
@@ -106,109 +117,119 @@ final class MediaType {
     }
   }
 
-  /// Reads a comma-separated list such as an `Accept` header, like
-  /// Spring's `MediaType.parseMediaTypes`; empty for `null` or blank.
+  /// Reads a comma-separated list such as an `Accept` header, in order;
+  /// empty for `null` or blank text. Throws an
+  /// [InvalidMediaTypeException] when one entry is invalid.
   static List<MediaType> parseMediaTypes(String? value) => [
     if (value != null)
       for (final part in _split(value, ','))
         if (part.trim().isNotEmpty) parse(part),
   ];
 
-  /// `*`.
+  /// `*`: the wildcard for a type or subtype.
   static const wildcardType = '*';
 
-  /// `*/*`.
+  /// `*/*`: any media type, as in `Accept: */*`.
   static const all = '*/*';
 
-  /// `application/atom+xml`.
+  /// `application/atom+xml`: an Atom feed.
   static const applicationAtomXml = 'application/atom+xml';
 
-  /// `application/cbor`.
+  /// `application/cbor`: CBOR, a binary form of JSON.
   static const applicationCbor = 'application/cbor';
 
-  /// `application/x-www-form-urlencoded`.
+  /// `application/x-www-form-urlencoded`: the fields of an HTML form, as
+  /// `name=value&...`.
   static const applicationFormUrlencoded = 'application/x-www-form-urlencoded';
 
-  /// `application/graphql-response+json`.
+  /// `application/graphql-response+json`: a GraphQL answer.
   static const applicationGraphqlResponse = 'application/graphql-response+json';
 
-  /// `application/json`.
+  /// `application/json`: JSON, the default body format of controllers and
+  /// Feign clients.
   static const applicationJson = 'application/json';
 
   /// `application/x-ndjson`: newline-delimited JSON.
   static const applicationNdjson = 'application/x-ndjson';
 
-  /// `application/octet-stream`.
+  /// `application/octet-stream`: bytes of no particular format.
   static const applicationOctetStream = 'application/octet-stream';
 
-  /// `application/pdf`.
+  /// `application/pdf`: a PDF document.
   static const applicationPdf = 'application/pdf';
 
-  /// `application/problem+json`: RFC 9457 problem details.
+  /// `application/problem+json`: an error body in RFC 9457 form, as a
+  /// `ProblemDetail` is written.
   static const applicationProblemJson = 'application/problem+json';
 
-  /// `application/problem+xml`: RFC 9457 problem details.
+  /// `application/problem+xml`: an RFC 9457 error body in XML.
   static const applicationProblemXml = 'application/problem+xml';
 
-  /// `application/x-protobuf`.
+  /// `application/x-protobuf`: Protocol Buffers.
   static const applicationProtobuf = 'application/x-protobuf';
 
-  /// `application/rss+xml`.
+  /// `application/rss+xml`: an RSS feed.
   static const applicationRssXml = 'application/rss+xml';
 
-  /// `application/xhtml+xml`.
+  /// `application/xhtml+xml`: an XHTML page.
   static const applicationXhtmlXml = 'application/xhtml+xml';
 
-  /// `application/xml`.
+  /// `application/xml`: XML.
   static const applicationXml = 'application/xml';
 
-  /// `application/yaml`.
+  /// `application/yaml`: YAML.
   static const applicationYaml = 'application/yaml';
 
-  /// `image/gif`.
+  /// `image/gif`: a GIF image.
   static const imageGif = 'image/gif';
 
-  /// `image/jpeg`.
+  /// `image/jpeg`: a JPEG image.
   static const imageJpeg = 'image/jpeg';
 
-  /// `image/png`.
+  /// `image/png`: a PNG image.
   static const imagePng = 'image/png';
 
-  /// `multipart/form-data`.
+  /// `multipart/form-data`: an HTML form with files; read with
+  /// `@RequestPart`.
   static const multipartFormData = 'multipart/form-data';
 
-  /// `multipart/mixed`.
+  /// `multipart/mixed`: several bodies of different types in one.
   static const multipartMixed = 'multipart/mixed';
 
-  /// `multipart/related`.
+  /// `multipart/related`: a document with the parts it refers to.
   static const multipartRelated = 'multipart/related';
 
-  /// `text/event-stream`: server-sent events.
+  /// `text/event-stream`: server-sent events, a stream of messages from
+  /// the server.
   static const textEventStream = 'text/event-stream';
 
-  /// `text/html`.
+  /// `text/html`: an HTML page.
   static const textHtml = 'text/html';
 
-  /// `text/markdown`.
+  /// `text/markdown`: Markdown text.
   static const textMarkdown = 'text/markdown';
 
-  /// `text/plain`.
+  /// `text/plain`: plain text.
   static const textPlain = 'text/plain';
 
-  /// `text/xml`.
+  /// `text/xml`: XML, as text.
   static const textXml = 'text/xml';
 
-  /// The primary type, e.g. `application` (lower case).
+  /// The primary type, in lower case: `application` in
+  /// `application/json`, or `*`.
   final String type;
 
-  /// The subtype, e.g. `problem+json` (lower case).
+  /// The subtype, in lower case: `problem+json` in
+  /// `application/problem+json`, or `*`.
   final String subtype;
 
-  /// The parameters as written, e.g. `{charset: UTF-8}`.
+  /// The parameters with names and values as written, such as
+  /// `{charset: UTF-8}`; unmodifiable. Use [getParameter] to look one up
+  /// regardless of case.
   final Map<String, String> parameters;
 
-  /// The value of parameter [name] (case-insensitive), unquoted; `null`
-  /// when there is none.
+  /// The value of the parameter [name], found regardless of case and
+  /// without its quotes; `null` when there is none.
   String? getParameter(String name) {
     for (final MapEntry(:key, :value) in parameters.entries) {
       if (key.toLowerCase() == name.toLowerCase()) {
@@ -218,31 +239,35 @@ final class MediaType {
     return null;
   }
 
-  /// The encoding of the `charset` parameter, or `null` (also for one
-  /// Dart does not know).
+  /// The `dart:convert` encoding named by the `charset` parameter, such as
+  /// `latin1` for `ISO-8859-1`; `null` without one, or for a charset Dart
+  /// does not know.
   Encoding? get charset => switch (getParameter('charset')) {
     final name? => Encoding.getByName(name),
     null => null,
   };
 
-  /// The `q` parameter, `1.0` without one.
+  /// The quality of this type in an `Accept` list (its `q` parameter,
+  /// from 0 to 1); `1.0` without one.
   double get qualityValue => switch (getParameter('q')) {
     final value? => double.parse(value),
     null => 1.0,
   };
 
-  /// Whether the type is `*` (`*/*`).
+  /// Whether the type is `*`, which only `*/*` has.
   bool get isWildcardType => type == wildcardType;
 
-  /// Whether the subtype is `*` or `*+suffix` (`application/*+json`).
+  /// Whether the subtype is `*` (`text/*`) or `*+suffix`
+  /// (`application/*+json`).
   bool get isWildcardSubtype =>
       subtype == wildcardType || subtype.startsWith('*+');
 
-  /// Whether neither type nor subtype is a wildcard.
+  /// Whether neither type nor subtype is a wildcard: a type a body can
+  /// actually have.
   bool get isConcrete => !isWildcardType && !isWildcardSubtype;
 
-  /// The suffix after the last `+` of the subtype (`json` of
-  /// `problem+json`), or `null`.
+  /// The structure suffix of the subtype, after its last `+`: `json` for
+  /// `problem+json`; `null` without one.
   String? get subtypeSuffix {
     final plus = subtype.lastIndexOf('+');
     return plus < 0 || plus == subtype.length - 1
@@ -250,11 +275,12 @@ final class MediaType {
         : subtype.substring(plus + 1);
   }
 
-  /// Whether this media type includes [other], like Spring's `includes`:
-  /// `*/*` includes everything, `text/*` includes `text/plain`,
-  /// `application/*+json` includes `application/problem+json`; not
-  /// symmetric (`text/plain` does not include `text/*`). Parameters are
-  /// ignored.
+  /// Whether every body of type [other] is also of this type: `*/*`
+  /// includes everything, `text/*` includes `text/plain`, and
+  /// `application/*+json` includes `application/problem+json`. One-way:
+  /// `text/plain` does not include `text/*`. Parameters are ignored. A
+  /// server uses it to check a request's `Content-Type` against
+  /// `consumes`.
   bool includes(MediaType other) {
     if (isWildcardType) {
       return true;
@@ -278,10 +304,10 @@ final class MediaType {
         subtype.substring(plus + 1) == other.subtype.substring(otherPlus + 1);
   }
 
-  /// Whether this media type and [other] have something in common, like
-  /// Spring's `isCompatibleWith`: [includes] in either direction
-  /// (`text/*` and `text/plain` are compatible both ways). Parameters are
-  /// ignored.
+  /// Whether this media type and [other] can describe the same body: one
+  /// includes the other, in either direction (`text/*` and `text/plain`
+  /// are compatible both ways). Parameters are ignored. A server uses it
+  /// to match `produces` against the request's `Accept`.
   bool isCompatibleWith(MediaType other) {
     if (isWildcardType || other.isWildcardType) {
       return true;
@@ -309,17 +335,19 @@ final class MediaType {
     return false;
   }
 
-  /// Whether type and subtype are the same as those of [other]
-  /// (parameters ignored), like Spring's `equalsTypeAndSubtype`.
+  /// Whether [other] has the same type and subtype, whatever the
+  /// parameters: `text/plain;charset=UTF-8` and `text/plain` match.
   bool equalsTypeAndSubtype(MediaType other) =>
       type == other.type && subtype == other.subtype;
 
-  /// A copy with [parameters] instead of the current ones.
+  /// A copy with [parameters] instead of the current ones, such as
+  /// `type.withParameters({'charset': 'UTF-8'})`.
   MediaType withParameters(Map<String, String> parameters) =>
       MediaType(type, subtype, parameters);
 
-  /// Equal type, subtype and parameters (names case-insensitive, the
-  /// `charset` value too), like Spring.
+  /// Whether [other] has the same type, subtype and parameters, comparing
+  /// parameter names and the `charset` value regardless of case. Use
+  /// [equalsTypeAndSubtype] to ignore the parameters.
   @override
   bool operator ==(Object other) =>
       other is MediaType &&
@@ -331,7 +359,7 @@ final class MediaType {
   int get hashCode =>
       Object.hash(type, subtype, _normalized(parameters).toString());
 
-  /// `type/subtype;name=value`, like Spring.
+  /// The media type as a header value: `type/subtype;name=value`.
   @override
   String toString() => [
     '$type/$subtype',
@@ -423,16 +451,23 @@ final class MediaType {
   }
 }
 
-/// An invalid media type for [MediaType.parse], like Spring's
-/// `InvalidMediaTypeException`.
+/// The error thrown by [MediaType.parse] and the [MediaType] constructor
+/// for text that is not a valid media type.
+///
+/// It is an `ArgumentError`. The web server does not let it escape: it
+/// treats an invalid `Content-Type` or `Accept` of a request as missing,
+/// and reports an invalid `produces` or `consumes` of a mapping at
+/// startup.
+///
+/// Spring (Java): `InvalidMediaTypeException`.
 final class InvalidMediaTypeException extends ArgumentError {
-  /// [mediaType] is invalid because of [reason].
+  /// The text [mediaType] is invalid because of [reason].
   InvalidMediaTypeException(this.mediaType, this.reason)
     : super('Invalid media type "$mediaType": $reason');
 
-  /// The text that was parsed.
+  /// The text that could not be read.
   final String mediaType;
 
-  /// Why it is invalid.
+  /// Why it is invalid, such as `does not contain "/"`.
   final String reason;
 }

@@ -1,11 +1,17 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_cache/src/annotations.dart';
 
-/// One cache annotation of a member, with the defaults of the class's
-/// `@CacheConfig` applied, like Spring's `CacheOperation`: what a
-/// `CacheResolver` sees as `CacheOperationInvocationContext.operation`.
+/// One cache annotation of a method, as the framework applies it: the
+/// settings of the annotation with the class's `@CacheConfig` defaults
+/// filled in.
+///
+/// The framework reads the annotations once per method and turns each into
+/// an operation ([CacheableOperation], [CachePutOperation],
+/// [CacheEvictOperation]). Applications meet it only in a `CacheResolver`,
+/// which reads `context.operation` to decide which caches to use.
 ///
 /// ```dart
+/// // The resolver derives tenant caches from the names the operation has.
 /// final class TenantCacheResolver implements CacheResolver {
 ///   @override
 ///   Iterable<Cache> resolveCaches(CacheOperationInvocationContext context) =>
@@ -31,13 +37,15 @@ sealed class CacheOperation {
     this.condition,
   }) : cacheNames = List.unmodifiable(cacheNames);
 
-  /// The annotated member, `Class.member`.
+  /// The annotated method, written `Class.member` (`Books.find`).
   final String name;
 
-  /// The caches to use (may be empty when a `CacheResolver` picks them).
+  /// The cache names of the annotation, or of `@CacheConfig` when it named
+  /// none; may be empty when a `CacheResolver` picks the caches.
   final List<String> cacheNames;
 
-  /// SpEL computing the key; `null` for the key generator.
+  /// The SpEL expression computing the key; `null` when the key generator
+  /// computes it.
   final String? key;
 
   /// Name of the `KeyGenerator` bean; `null` for the default one.
@@ -49,13 +57,16 @@ sealed class CacheOperation {
   /// Name of the `CacheResolver` bean; `null` for the default one.
   final String? cacheResolver;
 
-  /// SpEL; the operation applies only when it is `true`.
+  /// SpEL deciding whether the operation applies to a call; `null` means
+  /// always.
   final String? condition;
 
-  /// The annotation's name (`Cacheable`, `CachePut`, `CacheEvict`).
+  /// The annotation's name without `@`: `Cacheable`, `CachePut` or
+  /// `CacheEvict`.
   String get annotation;
 
-  /// `@Cacheable on Books.find`, for error messages.
+  /// The operation in words, such as `@Cacheable on Books.find`, as error
+  /// messages name it.
   String get description => '@$annotation on $name';
 
   @override
@@ -68,9 +79,13 @@ sealed class CacheOperation {
       '${condition == null ? '' : " condition='$condition'"}';
 }
 
-/// A `@Cacheable` operation, like Spring's `CacheableOperation`.
+/// The operation of a `@Cacheable` annotation: look the key up, and on a
+/// miss run the method and store the result.
+///
+/// Spring (Java): `CacheableOperation`.
 final class CacheableOperation extends CacheOperation {
-  /// An operation of the member [name] (`Class.member`).
+  /// The operation of the method [name] (`Class.member`); the framework
+  /// builds it from the annotation.
   CacheableOperation({
     required super.name,
     required super.cacheNames,
@@ -83,19 +98,24 @@ final class CacheableOperation extends CacheOperation {
     this.sync = false,
   }) : super._();
 
-  /// SpEL with `#result`; the result is not stored when it is `true`.
+  /// SpEL with the result as `#result`: when it is `true`, the result is
+  /// not stored.
   final String? unless;
 
-  /// Whether concurrent calls with the same key share one call.
+  /// Whether calls of a `Future` method with the same key that overlap in
+  /// time share one call of the method.
   final bool sync;
 
   @override
   String get annotation => 'Cacheable';
 }
 
-/// A `@CachePut` operation, like Spring's `CachePutOperation`.
+/// The operation of a `@CachePut` annotation: always run the method and
+/// store the result.
+///
+/// Spring (Java): `CachePutOperation`.
 final class CachePutOperation extends CacheOperation {
-  /// An operation of the member [name] (`Class.member`).
+  /// The operation of the method [name] (`Class.member`).
   CachePutOperation({
     required super.name,
     required super.cacheNames,
@@ -107,16 +127,20 @@ final class CachePutOperation extends CacheOperation {
     this.unless,
   }) : super._();
 
-  /// SpEL with `#result`; nothing is stored when it is `true`.
+  /// SpEL with the result as `#result`: when it is `true`, nothing is
+  /// stored.
   final String? unless;
 
   @override
   String get annotation => 'CachePut';
 }
 
-/// A `@CacheEvict` operation, like Spring's `CacheEvictOperation`.
+/// The operation of a `@CacheEvict` annotation: remove one entry, or all
+/// of them, before or after the method runs.
+///
+/// Spring (Java): `CacheEvictOperation`.
 final class CacheEvictOperation extends CacheOperation {
-  /// An operation of the member [name] (`Class.member`).
+  /// The operation of the method [name] (`Class.member`).
   CacheEvictOperation({
     required super.name,
     required super.cacheNames,
@@ -129,31 +153,39 @@ final class CacheEvictOperation extends CacheOperation {
     this.beforeInvocation = false,
   }) : super._();
 
-  /// Clears the whole caches (the annotation's `allEntries`; Spring's
-  /// `isCacheWide()`).
+  /// Whether every entry of the caches is removed instead of one key: the
+  /// annotation's `allEntries` (Spring's `isCacheWide()`).
   final bool cacheWide;
 
-  /// Evicts before the method runs (also when it throws).
+  /// Whether the entries are removed before the method runs, so even a
+  /// call that throws removes them. When `false`, they are removed after
+  /// the method returned normally.
   final bool beforeInvocation;
 
   @override
   String get annotation => 'CacheEvict';
 }
 
-/// Reads the cache annotations of members, like Spring's
-/// `AnnotationCacheOperationSource`: applies the class's `@CacheConfig`
-/// and rejects invalid combinations (with a `StateError` naming the
-/// member), as Spring's `SpringCacheAnnotationParser` does:
+/// Turns the cache annotations of a method into [CacheOperation]s, and
+/// rejects wrong ones.
+///
+/// The `CacheInterceptor` uses it to learn what to do around a call:
+/// which annotations apply (the method's own, else the overridden
+/// method's, else those on the class), with the class's `@CacheConfig`
+/// defaults filled in. It fails with a `StateError` naming the method,
+/// as Spring's `SpringCacheAnnotationParser` does, for:
 ///
 /// - `key` together with `keyGenerator`, `cacheManager` together with
 ///   `cacheResolver`;
 /// - `sync: true` with other operations, several caches or `unless`;
-/// - `@Cacheable` / `@CachePut` on a member returning a `Stream` (a stream
-///   can be listened to once; return a `Future<List<T>>` instead).
+/// - `@Cacheable` / `@CachePut` on a method returning a `Stream` (a stream
+///   can be listened to only once; return a `Future<List<T>>` instead).
 ///
-/// The result is computed once per member.
+/// The result is computed once per method. Applications do not use it;
+/// it is useful in a test that checks how annotations are read.
 ///
 /// ```dart
+/// // A test checks the operations the annotations of `Books.find` give.
 /// final operations = AnnotationCacheOperationSource()
 ///     .getCacheOperations(signature); // [CacheableOperation(...)]
 /// ```
@@ -164,28 +196,31 @@ final class CacheEvictOperation extends CacheOperation {
 ///     .getCacheOperations(method, targetClass);
 /// ```
 final class AnnotationCacheOperationSource {
-  /// Creates the source.
+  /// A source with an empty per-method memory.
   AnnotationCacheOperationSource();
 
   final _operations = Map<MethodSignature, List<CacheOperation>>.identity();
 
-  /// Whether [annotation] is one of the cache annotations.
+  /// Whether [annotation] is a `@Cacheable`, `@CachePut`, `@CacheEvict`
+  /// or `@Caching`.
   static bool isCacheAnnotation(Object annotation) =>
       annotation is Cacheable ||
       annotation is CachePut ||
       annotation is CacheEvict ||
       annotation is Caching;
 
-  /// The cache annotations that apply to the member [signature], like
-  /// Spring's `AbstractFallbackCacheOperationSource`: its own (and those
-  /// of its interface declarations), else those of the superclass or
-  /// mixin method it overrides ([MethodSignature.mergedAnnotations], the
-  /// nearest first), else those on the class that declares the method's
-  /// body and its superclasses
-  /// ([MethodSignature.implementingTypeHierarchyAnnotations], like Spring's
-  /// fallback to `method.getDeclaringClass()` with find semantics):
-  /// `@Cacheable` on the class applies to every public method, not to
-  /// getters, setters or `Object`'s members.
+  /// The cache annotations that apply to the member [signature], looked
+  /// for in this order, the first place that has any winning:
+  ///
+  /// 1. the member itself (and its interface declarations);
+  /// 2. the superclass or mixin method it overrides
+  ///    ([MethodSignature.mergedAnnotations], the nearest first);
+  /// 3. the class that declares the method's body, then its superclasses
+  ///    (an annotation type found on a nearer class hides the same type
+  ///    further up). This step applies only to methods: not to getters,
+  ///    setters, `toString`, `==`, `hashCode` or `noSuchMethod`.
+  ///
+  /// The order is Spring's `AbstractFallbackCacheOperationSource`.
   static List<Object> cacheAnnotationsOf(MethodSignature signature) {
     var own = signature.annotations.where(isCacheAnnotation).toList();
     if (own.isEmpty) {
@@ -214,9 +249,10 @@ final class AnnotationCacheOperationSource {
 
   static const _objectMembers = {'toString', 'noSuchMethod', '==', 'hashCode'};
 
-  /// The operations of the cache annotations on the member [signature]
-  /// (or on its class, see [cacheAnnotationsOf]; empty when there are
-  /// none); throws a `StateError` for an invalid combination.
+  /// The operations of the cache annotations that apply to [signature]
+  /// (see [cacheAnnotationsOf]), with the class's `@CacheConfig` defaults
+  /// filled in; empty when there are none. Throws a `StateError` for a
+  /// wrong combination. Computed once per member.
   List<CacheOperation> getCacheOperations(MethodSignature signature) =>
       _operations[signature] ??= _parse(signature);
 

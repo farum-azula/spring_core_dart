@@ -1,11 +1,21 @@
-/// Kind of proxied member.
+/// Whether an advised member is a method, a getter or a setter.
 ///
-/// Only [MemberKind.method]s match `execution(...)` pointcuts; getters and
-/// setters can still be advised through other designators (`bean`,
-/// `@annotation`, ...) or custom [MethodInterceptor] advisors.
+/// Dart has getters and setters as members of their own, and a public
+/// field is an implicit getter (and setter, unless `final`); proxies advise
+/// them like methods. Advice reads the kind from
+/// [MethodSignature.kind] when it must treat property access differently.
+/// Only methods match `execution(...)` pointcuts; getters and setters are
+/// reached through `within`, `bean`, `target`, `@annotation`, ... or a
+/// custom [MethodInterceptor].
 ///
 /// ```dart
-/// if (joinPoint.signature.kind == MemberKind.getter) { ... }
+/// // Logs the calls to Account, but not the getter reads.
+/// @Before('within(Account)')
+/// void audit(JoinPoint joinPoint) {
+///   if (joinPoint.signature.kind != MemberKind.getter) {
+///     log.add(joinPoint.toShortString());
+///   }
+/// }
 /// ```
 ///
 /// Spring (Java):
@@ -16,23 +26,32 @@
 /// void beforeGetter(JoinPoint joinPoint) { ... }
 /// ```
 enum MemberKind {
-  /// A regular method.
+  /// A method; the only kind `execution(...)` matches.
   method,
 
-  /// A getter.
+  /// A getter, explicit or the implicit one of a public field.
   getter,
 
-  /// A setter.
+  /// A setter, explicit or the implicit one of a non-final public field.
+  /// Its name has no `=` (`count`, not `count=`).
   setter,
 }
 
-/// Static description of a proxied member, like Spring's
-/// `MethodSignature`.
+/// What is known about an advised member without calling it: its name,
+/// its types, its annotations and those of its class.
 ///
-/// Instances are created by generated proxy code; advice reads them from
-/// [JoinPoint.signature].
+/// Dart has no runtime reflection, so the generator writes one constant
+/// per proxied member. Pointcuts match against it, and advice reads it
+/// from [JoinPoint.signature] to know which member is being called: for
+/// a log line, a metric name, or the member's annotations (a `@Timed`
+/// threshold, a cache name). Applications read it, never create it.
+///
+/// Type names are simple class names without type arguments (`Future`,
+/// not `Future<int>`), written at build time so they survive minified
+/// builds.
 ///
 /// ```dart
+/// // Logs "int add(int, int)" style lines before each Calculator call.
 /// @Before('execution(* Calculator.*(..))')
 /// void before(JoinPoint joinPoint) {
 ///   final signature = joinPoint.signature;
@@ -52,7 +71,8 @@ enum MemberKind {
 /// }
 /// ```
 final class MethodSignature {
-  /// Creates the description of member [name] (used by generated code).
+  /// Describes the member [name]; written by the generator, one per
+  /// proxied member.
   const MethodSignature({
     required this.name,
     required this.declaringType,
@@ -76,69 +96,74 @@ final class MethodSignature {
     this.isProtected = false,
   });
 
-  /// The member name, e.g. `add`.
+  /// The member's name, such as `add`; a setter's name has no `=`.
   final String name;
 
-  /// The (most abstract) type that declares the member.
+  /// The most abstract type that declares the member, such as the
+  /// interface `Calculator` rather than the class `SimpleCalculator`.
   final String declaringType;
 
-  /// Every type of the bean that declares the member; `execution` type
-  /// patterns match any of them.
+  /// Every type of the bean that declares the member; the type part of an
+  /// `execution` pattern matches any of them.
   final List<String> declaringTypes;
 
-  /// The bean class.
+  /// The bean's class, such as `SimpleCalculator`.
   final String targetType;
 
-  /// Whether the member is a method, getter or setter.
+  /// Whether the member is a method, a getter or a setter.
   final MemberKind kind;
 
-  /// Return type name (`void` for none), without type arguments.
+  /// The return type's name without type arguments; `void` when it
+  /// returns nothing, `dynamic` when unknown.
   final String returnType;
 
-  /// Parameter type names, without type arguments.
+  /// The parameter types' names, without type arguments.
   final List<String> parameterTypes;
 
-  /// Parameter names, in the order of `JoinPoint.args` (positional, then
-  /// named); used e.g. by cache keys such as `key: '#isbn'`.
+  /// The parameter names, in the order of [JoinPoint.args] (positional
+  /// ones, then named ones). Expressions read arguments by these names,
+  /// such as the cache key `'#isbn'`.
   final List<String> parameterNames;
 
-  /// Const annotations of each parameter, in the order of [parameterNames]
-  /// (interface and implementation); used e.g. by method validation
-  /// (constraints and `@Valid` on parameters). Empty when no parameter
-  /// has annotations.
+  /// The annotations of each parameter, in the order of [parameterNames],
+  /// taken from both the interface and the implementation. Method
+  /// validation reads constraints and `@Valid` here. Empty when no
+  /// parameter has annotations.
   final List<List<Object>> parameterAnnotations;
 
-  /// Const annotations on the member: those of the method that runs and of
-  /// its interface declarations, what `@annotation(...)` pointcuts match
-  /// (like AspectJ, not those of a superclass or mixin method it
-  /// overrides; see [mergedAnnotations]).
+  /// The annotations on the member that `@annotation(...)` pointcuts match:
+  /// those of the method that runs and of the interface methods it
+  /// implements. As in AspectJ, an annotation that is only on a superclass
+  /// or mixin method it overrides does not count; see [mergedAnnotations].
   final List<Object> annotations;
 
   final List<Object>? _mergedAnnotations;
 
-  /// Const annotations on the member and on every declaration it
-  /// overrides or implements (superclasses, mixins, interfaces), most
-  /// specific first, like Spring's `AnnotatedElementUtils` find semantics.
+  /// The annotations on the member and on every declaration it overrides
+  /// or implements (superclasses, mixins, interfaces), most specific
+  /// first, as Spring's `AnnotatedElementUtils` finds them.
   ///
-  /// Annotation-driven advisors read these (`@Cacheable` on a superclass
-  /// method still applies to an override without it, as with Spring's
-  /// `AnnotationCacheOperationSource`); `@annotation(...)` matches
-  /// [annotations] only.
+  /// Annotation-driven advisors read these, so `@Cacheable` on a
+  /// superclass method still applies to an override without it, as with
+  /// Spring's `AnnotationCacheOperationSource`. `@annotation(...)`
+  /// pointcuts match [annotations] only.
   List<Object> get mergedAnnotations => _mergedAnnotations ?? annotations;
 
-  /// Names of the bean class and all its supertypes.
+  /// The names of the bean class and all its supertypes, for
+  /// `target(Type)` and `this(Type)`.
   final List<String> targetTypes;
 
-  /// Const annotations on the bean class.
+  /// The annotations on the bean class, for `@target(...)`.
   final List<Object> targetAnnotations;
 
-  /// Class names of [annotations], written by the generator. Pointcuts
-  /// such as `@annotation(Timed)` match these names, because
-  /// `runtimeType.toString()` is minified in release builds (dart2js,
-  /// `--obfuscate`).
+  /// The class names of [annotations], written by the generator.
+  /// `@annotation(Timed)` matches these names rather than
+  /// `runtimeType.toString()`, which is minified in release builds
+  /// (dart2js, `--obfuscate`).
   final List<String> annotationTypes;
 
-  /// Class names of [targetAnnotations] (see [annotationTypes]).
+  /// The class names of [targetAnnotations], for the same reason as
+  /// [annotationTypes].
   final List<String> targetAnnotationTypes;
 
   /// The class whose body runs for the member (the bean class, or the
@@ -150,35 +175,40 @@ final class MethodSignature {
   /// `Base` matches `within(Base)`, not `within(Sub)`.
   final List<String> implementingTypes;
 
-  /// Const annotations on the class of [implementingTypes] (for
-  /// `@within`); `null` when it is the bean class ([targetAnnotations]).
+  /// The annotations on [implementingType], for `@within(...)`; `null`
+  /// when that is the bean class, whose annotations are
+  /// [targetAnnotations].
   final List<Object>? implementingTypeAnnotations;
 
-  /// Class names of [implementingTypeAnnotations]; `null` when it is the
-  /// bean class ([targetAnnotationTypes]).
+  /// The class names of [implementingTypeAnnotations]; `null` when that is
+  /// the bean class ([targetAnnotationTypes]).
   final List<String>? implementingTypeAnnotationTypes;
 
-  /// Const annotations on each superclass and mixin (those that have some)
-  /// of the class whose body runs for the member ([implementingType]),
-  /// nearest first; see [implementingTypeHierarchyAnnotations].
+  /// The annotations of each superclass and mixin of [implementingType]
+  /// that has some, nearest first. Read them through
+  /// [implementingTypeHierarchyAnnotations].
   final List<List<Object>> superclassAnnotations;
 
-  /// Const annotations on the class whose body runs for the member (the
-  /// bean class, or the superclass or mixin it inherits the member from),
-  /// then on its superclasses and mixins, nearest first: the class
-  /// hierarchy Spring's `AnnotationUtils.findAnnotation` searches from
-  /// `method.getDeclaringClass()` (`@CacheConfig`, class-level
-  /// `@Cacheable`).
+  /// The annotations on [implementingType], then on its superclasses and
+  /// mixins, nearest first.
+  ///
+  /// Advisors that honour class-level annotations read this, such as
+  /// `@CacheConfig` or a `@Cacheable` on the class: it is the hierarchy
+  /// Spring's `AnnotationUtils.findAnnotation` searches from
+  /// `method.getDeclaringClass()`.
   List<Object> get implementingTypeHierarchyAnnotations => [
     ...(implementingTypeAnnotations ?? targetAnnotations),
     for (final level in superclassAnnotations) ...level,
   ];
 
   /// Whether the member is annotated `@protected` (`package:meta`), the
-  /// closest Dart has to Java's `protected` (`execution(protected ...)`).
+  /// closest Dart has to Java's `protected`; `execution(protected ...)`
+  /// matches it.
   final bool isProtected;
 
-  /// The class whose body runs for the member, for `within`.
+  /// The class whose body runs for the member: the bean class, or the
+  /// superclass or mixin it inherits the member from. `within(...)`
+  /// matches it.
   String get implementingType =>
       implementingTypes.isEmpty ? targetType : implementingTypes.first;
 
@@ -187,6 +217,7 @@ final class MethodSignature {
       ? [targetType, ...targetTypes]
       : implementingTypes;
 
+  /// The declaring type and the member name for logs, such as
   /// `Greeter.greet(..)`.
   String toShortString() => '$declaringType.$name(..)';
 
@@ -195,12 +226,18 @@ final class MethodSignature {
       '$returnType $declaringType.$name(${parameterTypes.join(', ')})';
 }
 
-/// A method call intercepted by AOP, like Spring's `JoinPoint`.
+/// One intercepted call, as advice sees it: which member is called, on
+/// which bean, with which arguments.
 ///
-/// `@Before`, `@After`, `@AfterReturning` and `@AfterThrowing` advice may
-/// take it as their first parameter.
+/// Advice methods receive it when they declare a parameter of this type;
+/// `@Before`, `@After`, `@AfterReturning` and `@AfterThrowing` advice may,
+/// `@Around` advice takes a [ProceedingJoinPoint] instead. Use it to log
+/// the call, to name a metric after the member, or to read the member's
+/// annotations through [signature]. Its [args] are a copy: changing them
+/// does not change the call.
 ///
 /// ```dart
+/// // Logs each call to the `calculator` bean with its arguments.
 /// @Before('bean(calculator)')
 /// void before(JoinPoint joinPoint) =>
 ///     print('${joinPoint.toShortString()} with ${joinPoint.args}');
@@ -215,25 +252,34 @@ final class MethodSignature {
 /// }
 /// ```
 abstract interface class JoinPoint {
-  /// The proxy.
+  /// The proxy the caller called, the object other beans hold. For a
+  /// generated subclass proxy it is the bean itself, like [target].
   Object get proxy;
 
-  /// The proxied bean.
+  /// The bean whose member runs: the object behind the proxy.
   Object get target;
 
-  /// Static description of the called member.
+  /// The called member: its name, types and annotations.
   MethodSignature get signature;
 
-  /// Arguments in declaration order (positional, then named).
+  /// The arguments in declaration order: positional ones, then named ones
+  /// (in the order of [MethodSignature.parameterNames]).
   List<Object?> get args;
 
-  /// `execution(Greeter.greet(..))`.
+  /// A short description for logs, such as `execution(Greeter.greet(..))`.
   String toShortString();
 }
 
-/// A [JoinPoint] that `@Around` advice uses to continue the call.
+/// The [JoinPoint] of `@Around` advice, which can also run the call.
+///
+/// An `@Around` advice replaces the call, so it needs a way to run the
+/// real method (or the next advice) when it chooses to: [proceed]. Calling
+/// it with new arguments changes what the method receives; not calling it
+/// skips the method; calling it again retries. An `@Around` advice method
+/// must take one.
 ///
 /// ```dart
+/// // Keeps the second factor of `multiply` between 0 and 10.
 /// @Around('execution(* Calculator.multiply(..))')
 /// Object? clamp(ProceedingJoinPoint joinPoint) {
 ///   final [a, b] = joinPoint.args;
@@ -251,16 +297,29 @@ abstract interface class JoinPoint {
 /// }
 /// ```
 abstract interface class ProceedingJoinPoint implements JoinPoint {
-  /// Calls the next advice or the target; [args] replaces the arguments.
+  /// Runs the next advice, or the member itself after the last one, and
+  /// returns its result.
   ///
-  /// For a method returning a `Future`, the result is that future.
+  /// [args] replaces the arguments and must have as many elements as the
+  /// call has arguments, else an [ArgumentError] is thrown. Without it the
+  /// current arguments are used. Errors of the call propagate. For a
+  /// member returning a `Future`, the result is that future, not its value.
   Object? proceed([List<Object?>? args]);
 }
 
-/// A call travelling through the interceptor chain, like AOP Alliance's
-/// `MethodInvocation`.
+/// One intercepted call as a [MethodInterceptor] sees it: the call's
+/// details plus a way to continue it.
+///
+/// Every advised call passes through a chain of interceptors, outermost
+/// first, and each one receives a `MethodInvocation`. An interceptor
+/// written by hand (for a `PointcutAdvisor` bean) gets it in
+/// [MethodInterceptor.invoke]; aspect advice sees a [JoinPoint] instead.
+/// Unlike a join point, its [args] are the live arguments: an interceptor
+/// may change them in place before calling [proceed]. For a member
+/// returning a `Future`, it is also an `AsyncMethodInvocation`.
 ///
 /// ```dart
+/// // Logs each call on the way in.
 /// class LoggingInterceptor implements MethodInterceptor {
 ///   @override
 ///   Object? invoke(MethodInvocation invocation) {
@@ -280,17 +339,25 @@ abstract interface class ProceedingJoinPoint implements JoinPoint {
 /// }
 /// ```
 abstract interface class MethodInvocation implements ProceedingJoinPoint {
-  /// Arguments; interceptors may change them before [proceed].
+  /// The arguments the next step receives; an interceptor may change
+  /// them in place before calling [proceed].
   @override
   List<Object?> get args;
 }
 
-/// Wraps calls, like AOP Alliance's `MethodInterceptor`.
+/// Code that runs around calls of other beans, written as a class instead
+/// of an `@Aspect` method.
 ///
-/// Combine it with a pointcut in a `DefaultPointcutAdvisor` bean to
-/// advise matching beans without an `@Aspect`.
+/// Implement it when the advice should be a reusable object: a library's
+/// cache or security check, or advice configured in code. Pair it with a
+/// pointcut in a `DefaultPointcutAdvisor` bean, and the container applies
+/// it to every proxied bean member the pointcut matches. In [invoke] it
+/// decides everything an `@Around` advice can: call
+/// `invocation.proceed()` or not, change the arguments, replace the result.
+/// Applications with one-off advice usually write an `@Aspect` instead.
 ///
 /// ```dart
+/// // Upper-cases every String the echoShouter bean returns.
 /// class UpperCaseInterceptor implements MethodInterceptor {
 ///   @override
 ///   Object? invoke(MethodInvocation invocation) =>
@@ -326,7 +393,10 @@ abstract interface class MethodInvocation implements ProceedingJoinPoint {
 /// }
 /// ```
 abstract interface class MethodInterceptor {
-  /// Handles [invocation]; call `invocation.proceed()` to continue the
-  /// chain and return (or replace) its result.
+  /// Runs around [invocation] and returns the call's result.
+  ///
+  /// Call `invocation.proceed()` to run the next interceptor or the member
+  /// itself, and return its result or a replacement. Not calling it skips
+  /// the member. An error thrown here reaches the caller.
   Object? invoke(MethodInvocation invocation);
 }

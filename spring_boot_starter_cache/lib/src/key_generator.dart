@@ -1,10 +1,17 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
-/// Computes cache keys from a call, like Spring's `KeyGenerator`. Used
-/// when an annotation has no `key`; a `KeyGenerator` bean can be named
-/// with `keyGenerator:`.
+/// Computes the cache key of a call from the bean, the method and the
+/// arguments.
+///
+/// A cache annotation without `key` gets its key from a key generator; the
+/// default one, [SimpleKeyGenerator], uses the arguments as they are. Write
+/// your own when the key needs code that a SpEL `key` cannot express well,
+/// or when many methods share the same rule. Declare it as a bean and name
+/// it with `keyGenerator:` in the annotation or in `@CacheConfig`, or make
+/// it the default of every operation with a `CachingConfigurer`.
 ///
 /// ```dart
+/// // `978-0-13` and `978013` are the same book: one cache entry for both.
 /// class IsbnKeys implements KeyGenerator {
 ///   const IsbnKeys();
 ///
@@ -34,14 +41,26 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// }
 /// ```
 abstract interface class KeyGenerator {
-  /// The key of a call of [method] on [target] with [args].
+  /// The key of a call of [method] on the bean [target] with [args].
+  ///
+  /// Keys are compared with `==` and `hashCode`, so equal calls must give
+  /// equal keys. Returning `null` fails the call with an `ArgumentError`.
   Object? generate(Object target, MethodSignature method, List<Object?> args);
 }
 
-/// The default [KeyGenerator], like Spring's `SimpleKeyGenerator`: no
-/// arguments give [SimpleKey.empty], one argument is the key itself
-/// (collections are wrapped so they compare by content), several give a
-/// [SimpleKey] of all of them.
+/// The [KeyGenerator] used when an annotation has no `key`: it makes the key
+/// from the arguments of the call.
+///
+/// - no arguments: [SimpleKey.empty], so the method has a single entry;
+/// - one argument: the argument itself (`find('978-0')` has the key
+///   `'978-0'`);
+/// - several arguments, or one that is `null`, a list, a set or a map: a
+///   [SimpleKey] of the arguments, which compares by content.
+///
+/// The keys are only as good as the arguments' `==`: a class of your own
+/// used as an argument needs `==` and `hashCode`, or the calls never hit.
+/// You do not normally create it; it is here for a key generator that
+/// builds on it.
 ///
 /// ```dart
 /// const generator = SimpleKeyGenerator();
@@ -54,15 +73,19 @@ abstract interface class KeyGenerator {
 /// ```java
 /// new SimpleKeyGenerator().generate(books, method, "978-0", 2);
 /// ```
+///
+/// Spring wraps only a single array argument; here a single list, set or
+/// map is wrapped too, because Dart collections compare by identity.
 final class SimpleKeyGenerator implements KeyGenerator {
-  /// Creates the generator.
+  /// The generator; it has no settings.
   const SimpleKeyGenerator();
 
   @override
   Object? generate(Object target, MethodSignature method, List<Object?> args) =>
       generateKey(args);
 
-  /// The key of [args] (see the class documentation).
+  /// The key of a call with [args], by the rules above; usable without an
+  /// instance, for a key generator of your own that falls back to them.
   static Object generateKey(List<Object?> args) {
     if (args.isEmpty) {
       return SimpleKey.empty;
@@ -77,10 +100,17 @@ final class SimpleKeyGenerator implements KeyGenerator {
   }
 }
 
-/// A key made of several values that compares by content (nested lists,
-/// sets and maps too), like Spring's `SimpleKey`.
+/// A cache key made of several values, equal to another key when the values
+/// are equal, also inside nested lists, sets and maps.
+///
+/// [SimpleKeyGenerator] builds one for a method with several arguments (or
+/// one collection argument). You meet it when you read a cache by hand or
+/// write a [KeyGenerator] that combines values.
 ///
 /// ```dart
+/// // A cache entry of `price(isbn, currency)`, read in a test.
+/// cache.get(SimpleKey(['978-0', 'EUR']))?.value;
+///
 /// SimpleKey(['978-0', 2]) == SimpleKey(['978-0', 2]); // true
 /// SimpleKey([[1, 2]]) == SimpleKey([[1, 2]]);         // true
 /// ```
@@ -90,7 +120,7 @@ final class SimpleKeyGenerator implements KeyGenerator {
 /// new SimpleKey("978-0", 2).equals(new SimpleKey("978-0", 2)); // true
 /// ```
 final class SimpleKey {
-  /// A key of [params] (copied).
+  /// A key of [params], in this order; the list is copied.
   SimpleKey(List<Object?> params) : params = List.unmodifiable(params);
 
   const SimpleKey._empty() : params = const [];
@@ -98,7 +128,7 @@ final class SimpleKey {
   /// The key of a call without arguments.
   static const SimpleKey empty = SimpleKey._empty();
 
-  /// The values.
+  /// The values of the key, unmodifiable.
   final List<Object?> params;
 
   @override

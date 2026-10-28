@@ -1,12 +1,37 @@
-/// Core utilities: ordering, type conversion, environment, profiles, config
-/// files and resources (Spring's `spring-core` plus Spring Boot's config
-/// data).
+/// The foundations under the container: the environment (properties,
+/// profiles, config files, placeholders), type conversion, resources,
+/// ordering and logging.
+///
+/// Import it for code that reads configuration or files without needing
+/// the container, such as a command-line tool, a test or a library; most
+/// applications import `spring_core_dart.dart` (or a starter), which
+/// includes it. What it holds:
+///
+/// - `Environment`, `StandardEnvironment` and the property sources: where
+///   properties come from and which one wins; `Profiles` for profile
+///   conditions.
+/// - `ConfigDataEnvironment`: reads `application.properties` and
+///   `application.yml` (with profiles, imports and config trees) into an
+///   environment, as Spring Boot does.
+/// - `ConversionService` and `DefaultConversionService`: turn text into
+///   `int`, `Duration`, `DataSize`, lists, enums and your own types.
+/// - `Resource`, `ResourceLoader` and `ResourcePatternResolver`: read
+///   `classpath:` (`lib/resources/`), `file:`, `http:` and custom
+///   locations; `AntPathMatcher` for wildcards.
+/// - `Ordered`, `Order` and `OrderComparator`: the order of beans run or
+///   injected in turn.
+/// - `SpringLog` and `@Log()`: logging for the framework and applications.
 ///
 /// ```dart
-/// final environment = StandardEnvironment();
-/// await ConfigDataEnvironment(environment).processAndApply();
-/// final port = environment.getPropertyAs<int>('server.port') ?? 8080;
-/// final dev = environment.matchesProfiles(['dev']);
+/// // A tool that reads the application's configuration without a
+/// // container.
+/// Future<void> main(List<String> args) async {
+///   final environment = StandardEnvironment()
+///     ..propertySources.addFirst(SimpleCommandLinePropertySource(args));
+///   await ConfigDataEnvironment(environment).processAndApply();
+///   final port = environment.getPropertyAs<int>('server.port') ?? 8080;
+///   final dev = environment.matchesProfiles(['dev']);
+/// }
 /// ```
 ///
 /// Spring (Java):
@@ -16,6 +41,8 @@
 /// int port = environment.getProperty("server.port", Integer.class, 8080);
 /// boolean dev = environment.matchesProfiles("dev");
 /// ```
+///
+/// This is Spring's `spring-core` plus Spring Boot's config data.
 library;
 
 export 'package:spring_core_dart/src/core/convert/conversion_exceptions.dart';

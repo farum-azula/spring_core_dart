@@ -5,9 +5,15 @@ import 'package:spring_boot_starter_security/src/jwt/signature_primitives.dart';
 import 'package:spring_security_core/spring_security_core.dart'
     show constantTimeEquals;
 
-/// A JWS signature algorithm, like Spring's `SignatureAlgorithm` and
-/// `MacAlgorithm`. `none` does not exist here: an unsigned token is never
-/// accepted.
+/// An algorithm a JWT can be signed with, as named in its `alg` header.
+///
+/// RS*, PS* and ES* use the identity provider's private key and are
+/// checked with its public key; HS* use a secret shared between the
+/// issuer and this server. A decoder accepts only the algorithms you
+/// allow (`jws-algorithms`, RS256 by default). `none` does not exist
+/// here: an unsigned token is never accepted.
+///
+/// Spring (Java): `SignatureAlgorithm` and `MacAlgorithm`.
 enum JwsAlgorithm {
   /// RSASSA-PKCS1-v1_5 with SHA-256.
   rs256('RS256', _Family.rsa, 256),
@@ -47,13 +53,14 @@ enum JwsAlgorithm {
 
   JwsAlgorithm(this.name, this._family, this._bits);
 
-  /// The `alg` header value.
+  /// The name in the `alg` header, such as `RS256`.
   final String name;
 
   final _Family _family;
   final int _bits;
 
-  /// The algorithm named [name] (`RS256`), or `null`.
+  /// The algorithm named [name] (`RS256`, case-sensitive), or `null` for
+  /// an unknown name (including `none`).
   static JwsAlgorithm? from(String name) {
     for (final algorithm in values) {
       if (algorithm.name == name) {
@@ -63,17 +70,18 @@ enum JwsAlgorithm {
     return null;
   }
 
-  /// Whether it uses a shared secret (HS*).
+  /// Whether it uses a shared secret (HS*) rather than a public key.
   bool get isMac => _family == _Family.hmac;
 
-  /// The JWK `kty` of its keys.
+  /// The JWK `kty` of the keys that verify it: `RSA`, `EC` or `oct`.
   String get keyType => switch (_family) {
     _Family.rsa || _Family.rsaPss => 'RSA',
     _Family.ec => 'EC',
     _Family.hmac => 'oct',
   };
 
-  /// The EC curve (`P-256`) of an ES algorithm.
+  /// The EC curve of an ES algorithm (`P-256` for ES256); `null` for the
+  /// others.
   String? get curve => switch (this) {
     es256 => 'P-256',
     es384 => 'P-384',
@@ -84,27 +92,46 @@ enum JwsAlgorithm {
 
 enum _Family { rsa, rsaPss, ec, hmac }
 
-/// A key that verifies signatures: an RSA or EC public key, or an HMAC
-/// secret.
+/// A key that verifies JWT signatures: an [RsaVerificationKey], an
+/// [EcVerificationKey] or a [SecretVerificationKey].
+///
+/// Usually parsed from the identity provider's JWK Set. Build one by hand
+/// for `NimbusJwtDecoder.withPublicKey` or a `StaticJwkSource`.
 sealed class VerificationKey {
   const VerificationKey({this.keyId, this.algorithm, this.use});
 
-  /// `kid`.
+  /// The key id (`kid`) tokens name to pick this key, or `null`.
   final String? keyId;
 
-  /// The `alg` the key is restricted to, if any.
+  /// The one algorithm (`alg`) this key may verify, or `null` for any that
+  /// fits it.
   final String? algorithm;
 
-  /// `use` (`sig` or `enc`).
+  /// The JWK `use`: `sig` for signatures, `enc` for encryption (never
+  /// used to verify), or `null`.
   final String? use;
 
-  /// Whether this key may verify [jws] (type, curve, size, restrictions).
+  /// Whether this key may verify tokens signed with [jws]: the right key
+  /// type, curve and size.
   bool fits(JwsAlgorithm jws);
 }
 
-/// An RSA public key (at least 2048 bits).
+/// An RSA public key, for RS* and PS* tokens.
+///
+/// Keys shorter than 2048 bits, or with an exponent of 1, never verify
+/// anything.
+///
+/// ```dart
+/// // The provider's public key, from its `n` and `e` JWK members.
+/// final key = RsaVerificationKey(
+///   BigInt.parse(modulusHex, radix: 16),
+///   BigInt.from(65537),
+/// );
+/// final decoder = NimbusJwtDecoder.withPublicKey(key);
+/// ```
 final class RsaVerificationKey extends VerificationKey {
-  /// The key with [modulus] and [exponent].
+  /// The key with [modulus] and [exponent], optionally named [keyId] and
+  /// restricted to [algorithm].
   RsaVerificationKey(
     this.modulus,
     this.exponent, {
@@ -113,10 +140,10 @@ final class RsaVerificationKey extends VerificationKey {
     super.use,
   });
 
-  /// n.
+  /// The modulus n.
   final BigInt modulus;
 
-  /// e.
+  /// The public exponent e, usually 65537.
   final BigInt exponent;
 
   @override
@@ -126,9 +153,13 @@ final class RsaVerificationKey extends VerificationKey {
       exponent > BigInt.one;
 }
 
-/// An EC public key on P-256, P-384 or P-521 (checked to be on its curve).
+/// An elliptic-curve public key on P-256, P-384 or P-521, for ES* tokens.
+///
+/// A point that is not on its curve never verifies anything, so a forged
+/// key cannot be used for invalid-curve attacks.
 final class EcVerificationKey extends VerificationKey {
-  /// The point ([x], [y]) on [curve].
+  /// The point ([x], [y]) on [curve], optionally named [keyId] and
+  /// restricted to [algorithm].
   EcVerificationKey(
     this.curve,
     this.x,
@@ -138,16 +169,17 @@ final class EcVerificationKey extends VerificationKey {
     super.use,
   });
 
-  /// `P-256`, `P-384` or `P-521`.
+  /// The curve: `P-256`, `P-384` or `P-521`.
   final String curve;
 
-  /// x.
+  /// The x coordinate of the point.
   final BigInt x;
 
-  /// y.
+  /// The y coordinate of the point.
   final BigInt y;
 
-  /// Whether the point satisfies the curve's equation.
+  /// Whether the point satisfies the curve's equation; `false` for an
+  /// unknown curve.
   bool get isOnCurve {
     final parameters = curveParameters(curve);
     if (parameters == null) {
@@ -165,13 +197,16 @@ final class EcVerificationKey extends VerificationKey {
       jws._family == _Family.ec && jws.curve == curve && isOnCurve;
 }
 
-/// An HMAC secret (at least as many bits as the hash: 256 for HS256).
+/// A secret shared with the token issuer, for HS* tokens.
+///
+/// It verifies an algorithm only when it has at least as many bits as the
+/// algorithm's hash: 256 for HS256, 512 for HS512.
 final class SecretVerificationKey extends VerificationKey {
-  /// The secret [bytes].
+  /// The secret, copied from [bytes].
   SecretVerificationKey(List<int> bytes, {super.keyId, super.algorithm})
     : bytes = Uint8List.fromList(bytes);
 
-  /// The secret.
+  /// The secret bytes.
   final Uint8List bytes;
 
   @override
@@ -179,46 +214,58 @@ final class SecretVerificationKey extends VerificationKey {
       jws._family == _Family.hmac && bytes.length * 8 >= jws._bits;
 }
 
-/// A parsed, not yet verified JWS in compact serialization.
+/// A token split into its parts and decoded, before its signature is
+/// checked; nothing in it can be trusted yet.
 final class ParsedJws {
   ParsedJws._(this.header, this.claims, this.signingInput, this.signature);
 
-  /// The protected header.
+  /// The token's header.
   final Map<String, Object?> header;
 
-  /// The payload, a JSON object (the claims).
+  /// The token's payload: the claims, a JSON object.
   final Map<String, Object?> claims;
 
-  /// `base64url(header).base64url(payload)`, what was signed.
+  /// The bytes the signature covers: `base64url(header).base64url(payload)`
+  /// as sent.
   final Uint8List signingInput;
 
-  /// The signature bytes.
+  /// The decoded signature.
   final Uint8List signature;
 
-  /// `alg`.
+  /// The `alg` of the header.
   String? get algorithmName => header['alg'] as String?;
 
-  /// `kid`.
+  /// The `kid` of the header, or `null`.
   String? get keyId => header['kid'] as String?;
 }
 
-/// Why a token was refused.
+/// A token was refused while it was parsed, before any signature check:
+/// too long, not three base64url parts, not JSON, or a forbidden header.
+///
+/// The decoder turns it into a `BadJwtException` (a 401).
 class JoseException implements Exception {
-  /// Refused for [message].
+  /// A refusal for [message].
   JoseException(this.message);
 
-  /// What was wrong.
+  /// What was wrong with the token.
   final String message;
 
   @override
   String toString() => message;
 }
 
-/// The longest token accepted (characters).
+/// The longest token accepted, in characters: 64 KiB, so an oversized
+/// token costs no decoding work.
 const int maxTokenLength = 64 * 1024;
 
-/// Parses [token] (`header.payload.signature`): strict base64url, JSON
-/// objects, no `crit`, no nested JWT. Throws [JoseException].
+/// Splits and decodes [token] (`header.payload.signature`) without
+/// checking the signature.
+///
+/// Throws a [JoseException] for a token over [maxTokenLength], an
+/// encrypted (five-part) or otherwise malformed token, base64url that is
+/// not strict, a header or payload that is not a JSON object, a `crit`
+/// header, a nested JWT (`cty: JWT`), a missing `alg`, or a `kid` that is
+/// not a string.
 ParsedJws parseJws(String token) {
   if (token.length > maxTokenLength) {
     throw JoseException('The token is too long');
@@ -282,8 +329,12 @@ Map<String, Object?> _jsonObject(Uint8List bytes, String what) {
   return json;
 }
 
-/// Whether [key] verifies [jws] signed with [algorithm]. `false` for a
-/// key that does not fit the algorithm (never "try anyway").
+/// Whether [key] verifies the signature of [jws] made with [algorithm].
+///
+/// `false`, never an error, for a key that does not fit the algorithm or
+/// is restricted to another one, a key not meant for signatures, a
+/// signature of the wrong length, or input the primitives cannot read.
+/// HMAC signatures are compared in constant time.
 bool verifySignature(
   ParsedJws jws,
   JwsAlgorithm algorithm,
@@ -356,16 +407,23 @@ BigInt _unsigned(List<int> bytes) {
   return result;
 }
 
-/// The big-endian unsigned integer of base64url [text] (JWK `n`, `e`, `x`,
-/// `y`).
+/// The unsigned big-endian integer encoded in base64url [text], as in the
+/// JWK members `n`, `e`, `x` and `y`.
+///
+/// Throws a [JoseException] for text that is not strict base64url.
 BigInt base64UrlToBigInt(String text) =>
     _unsigned(_base64Url(text, 'key parameter'));
 
-/// Bytes of base64url [text] (JWK `k`).
+/// The bytes encoded in base64url [text], as in the JWK member `k`.
+///
+/// Throws a [JoseException] for text that is not strict base64url.
 Uint8List base64UrlToBytes(String text) => _base64Url(text, 'key parameter');
 
-/// Whether the compact JWS [token] (any payload, not only JWT claims) is
-/// signed by [key] with its `alg`; for test vectors and tools.
+/// Whether the compact JWS [token] is signed by [key] with the algorithm
+/// named in its header; the payload may be anything, not only claims.
+///
+/// For test vectors and tools: it checks no claims, so never use it to
+/// accept a token.
 bool verifyCompactJws(String token, VerificationKey key) {
   final parts = token.split('.');
   if (parts.length != 3 || token.length > maxTokenLength) {

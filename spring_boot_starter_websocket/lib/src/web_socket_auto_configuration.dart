@@ -8,15 +8,24 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 const _source =
     'package:spring_boot_starter_websocket#WebSocketAutoConfiguration';
 
-/// The beans of the WebSocket starter:
+/// The bean definitions this starter adds to every application that
+/// depends on it. Applications do not use the list directly; the
+/// generator adds it through `springBootStarterWebsocketAutoConfiguration`.
 ///
-/// - `webSocketTransport` — `platformWebSocketTransport()` (`dart:io` on
-///   the VM and in Flutter, the browser's `WebSocket` on the web), when the
-///   application declares no [WebSocketTransport];
-/// - `webSocketClientFactory` — creates the `@WebSocketClient`
+/// - `webSocketTransport`: `platformWebSocketTransport()` (`dart:io` on
+///   the VM and in Flutter, the browser's `WebSocket` on the web), unless
+///   the application declares its own [WebSocketTransport], as a test
+///   does with a mock server.
+/// - `webSocketClientFactory`: creates the `@WebSocketClient`
 ///   implementations with the `ObjectMapper`, the transport and every
 ///   [WebSocketHandshakeInterceptor] bean, and closes their connections
 ///   when the application stops.
+/// - `webSocketSessionRegistry`: the open server sessions, for
+///   broadcasting.
+/// - `webSocketHandlerMapping`: routes the handshakes of the server
+///   endpoints; the web starter's dispatcher uses it when
+///   `spring_boot_starter_web` is a dependency, and nothing does
+///   otherwise.
 final webSocketAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<WebSocketTransport>(
     name: 'webSocketTransport',

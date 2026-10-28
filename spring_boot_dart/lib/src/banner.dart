@@ -1,32 +1,53 @@
 import 'package:spring_boot_dart/src/version.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// Where `SpringApplication` prints the banner, like Spring Boot's
-/// `Banner.Mode` (`spring.main.banner-mode`).
+/// Where the startup banner goes: the console, the log, or nowhere.
+///
+/// Usually set with the property `spring.main.banner-mode` (`off`,
+/// `console` or `log`), which wins over `SpringApplication(bannerMode:)`.
+/// Any other property value fails the start. `log` is useful when the
+/// console is not read but the log file is.
+///
+/// ```properties
+/// # A service whose output goes to a log collector: no ASCII art.
+/// spring.main.banner-mode=off
+/// ```
+///
+/// Spring (Java): `Banner.Mode`, set the same way.
 enum BannerMode {
-  /// No banner.
+  /// No banner is printed. The property value `false` means this too.
   off,
 
-  /// Printed to the console (`print`; Boot's `System.out`).
+  /// Printed with `print` (Spring Boot's `System.out`). The default.
   console,
 
-  /// Logged at INFO (logger `spring_boot_dart.SpringApplication`).
+  /// Logged at INFO under the logger `spring_boot_dart.SpringApplication`,
+  /// so it goes wherever the log goes (a log file, for example).
   log,
 }
 
-/// The banner printed when the application starts, like Spring Boot's
-/// `Banner`. Pass one as `SpringApplication(banner:)`; a
-/// `classpath:banner.txt` (or `spring.banner.location`) wins over it, like
-/// in Boot.
+/// Text printed once when the application starts, before the context is
+/// created.
+///
+/// By default it is the Spring logo ([SpringBootBanner]). Most
+/// applications that want their own banner just add a
+/// `lib/resources/banner.txt` file (or point `spring.banner.location` at
+/// one), which is printed as a [ResourceBanner]. Implement this interface
+/// when the banner is computed, for example from properties, and pass it
+/// as `SpringApplication(banner:)`; a banner file still wins over it.
 ///
 /// ```dart
-/// final class TextBanner implements Banner {
-///   const TextBanner();
+/// // The shop's name and stage, from the configuration.
+/// final class ShopBanner implements Banner {
+///   const ShopBanner();
 ///
 ///   @override
 ///   void printBanner(Environment environment, void Function(String) out) =>
-///       out('== Shop ==');
+///       out('== ${environment.getProperty('shop.name')} '
+///           '(${environment.activeProfiles.join(', ')}) ==');
 /// }
+///
+/// SpringApplication([appBeans], banner: const ShopBanner()).run(args);
 /// ```
 ///
 /// Spring (Java):
@@ -34,13 +55,22 @@ enum BannerMode {
 /// app.setBanner((environment, sourceClass, out) -> out.println("== Shop =="));
 /// ```
 abstract interface class Banner {
-  /// Writes the banner through [out], one call per line or block.
+  /// Writes the banner through [out], which prints or logs it depending on
+  /// the [BannerMode]. Call [out] once per line or once for the whole text.
+  /// [environment] is fully prepared: config files and profiles are
+  /// loaded.
   void printBanner(Environment environment, void Function(String text) out);
 }
 
-/// The default banner, like Spring Boot's `SpringBootBanner`.
+/// The banner printed when the application sets none: the Spring logo in
+/// ASCII art and the `spring_boot_dart` version.
+///
+/// There is no reason to create it yourself, except to print it from
+/// another [Banner].
+///
+/// Spring (Java): `SpringBootBanner`.
 final class SpringBootBanner implements Banner {
-  /// The default banner.
+  /// The default banner; it has no settings.
   const SpringBootBanner();
 
   static const _lines = [
@@ -63,15 +93,31 @@ final class SpringBootBanner implements Banner {
   }
 }
 
-/// A banner read from a text resource, like Spring Boot's
-/// `ResourceBanner`: `${...}` placeholders are resolved against the
-/// environment (unresolvable ones are kept), plus `spring-boot.version`
-/// and `spring-boot.formatted-version` (` (v0.1.7)`).
+/// A banner whose text comes from a file, such as
+/// `lib/resources/banner.txt`.
+///
+/// `SpringApplication` uses it by itself when `classpath:banner.txt` (or
+/// the file named by `spring.banner.location`) exists, so applications
+/// only write the file. `${...}` placeholders in the text are resolved
+/// against the environment, and unresolvable ones are printed as they
+/// are. Two more are known: `${spring-boot.version}` (`0.4.0`) and
+/// `${spring-boot.formatted-version}` (` (v0.4.0)`).
+///
+/// ```text
+/// ${spring.application.name}${spring-boot.formatted-version}
+/// ```
+///
+/// The file is read synchronously when the banner is printed. In Flutter,
+/// where assets can only be read asynchronously, `runAsync` reads it
+/// first.
+///
+/// Spring (Java): `ResourceBanner`, with the same placeholders.
 final class ResourceBanner implements Banner {
-  /// The banner in [resource].
+  /// A banner that prints the text of [resource].
   const ResourceBanner(this.resource);
 
-  /// The banner text.
+  /// The file holding the banner text; it must be readable synchronously
+  /// when the banner is printed.
   final Resource resource;
 
   @override

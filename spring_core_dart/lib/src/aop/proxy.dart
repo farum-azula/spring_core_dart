@@ -6,9 +6,18 @@ import 'package:spring_core_dart/src/aop/aop_context.dart';
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 
-/// Implemented by AOP proxies, like Spring's `Advised`.
+/// The interface every generated AOP proxy implements: it exposes the
+/// bean behind the proxy and the advice applied to it.
+///
+/// A bean that some advice matches is replaced by its proxy, so the object
+/// `getBean` returns or another bean receives may be an `Advised`. Check
+/// for it to find out which advisors apply (in a test or a diagnostic
+/// page), to reach the real object, or to change the advice of a live
+/// proxy. Most applications never touch it; [AopUtils] covers the common
+/// "is this a proxy, what is behind it" questions.
 ///
 /// ```dart
+/// // In a test: is the Calculator advised, and by what?
 /// final calculator = context.getBean<Calculator>();
 /// if (calculator is Advised) {
 ///   print(calculator.aopTarget); // the SimpleCalculator
@@ -26,13 +35,16 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// ```
 ///
 /// A generated subclass proxy (for a class that cannot be implemented) is
-/// the bean itself: its [aopTarget] is the proxy.
+/// the bean itself: its [aopTarget] is the proxy. Such a bean implements
+/// `Advised` even when no advice matched it; then it has no advisors, and
+/// the methods that change them throw an [AopConfigException].
 ///
 /// Advisors can be added and removed at runtime, like Spring's
-/// `Advised.addAdvisor` / `removeAdvisor`: a later call of an affected
+/// `Advised.addAdvisor` / `removeAdvisor`: the next call of an affected
 /// member uses the new chain.
 ///
 /// ```dart
+/// // Turn on call logging for a live bean, for example while debugging.
 /// (calculator as Advised).addAdvice(LoggingInterceptor());
 /// ```
 ///
@@ -41,33 +53,43 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// ((Advised) calculator).addAdvice(new LoggingInterceptor());
 /// ```
 abstract interface class Advised {
-  /// The proxied bean.
+  /// The bean behind the proxy; the proxy itself for a generated
+  /// subclass proxy.
   Object get aopTarget;
 
-  /// Advisors that apply to the proxy.
+  /// The advisors that apply to this proxy, outermost first; empty for a
+  /// subclass proxy no advice matched.
   List<PointcutAdvisor> get aopAdvisors;
 
-  /// Appends [advisor] (it becomes the innermost one).
+  /// Appends [advisor] as the innermost one; the next calls of the members
+  /// its pointcut matches run it.
   void addAdvisor(PointcutAdvisor advisor);
 
-  /// Removes [advisor]; `false` when it was not there.
+  /// Removes [advisor]; returns `false` when it was not there.
   bool removeAdvisor(PointcutAdvisor advisor);
 
-  /// Appends [advice] for every member (Spring's `addAdvice`: a
-  /// `DefaultPointcutAdvisor` with a `TruePointcut`).
+  /// Appends [advice] as the innermost advice of every member, wrapped in
+  /// a `DefaultPointcutAdvisor` with a `TruePointcut` (as Spring's
+  /// `addAdvice` does).
   void addAdvice(MethodInterceptor advice);
 
-  /// Removes the first advisor whose advice is [advice]; `false` when
-  /// there is none.
+  /// Removes the first advisor whose advice is [advice] (the same object);
+  /// returns `false` when there is none.
   bool removeAdvice(MethodInterceptor advice);
 }
 
-/// An interface that `@DeclareParents` adds to the proxies of matching
-/// beans (Spring's introductions), written by the generator: the proxy
-/// implements [interfaceName] and forwards its members to the object
-/// [create] returns (one per proxy, created on first use).
+/// An extra interface that a `@DeclareParents` field adds to the proxies of
+/// matching beans, with the way to create its implementation.
+///
+/// The generator writes one into the proxy factory of each bean that a
+/// `@DeclareParents` pattern matches. The generated proxy class implements
+/// [interfaceName] and forwards its members to the object [create]
+/// returns, one per proxy, created on first use. Applications never write
+/// it; they declare the `@DeclareParents` field.
 ///
 /// ```dart
+/// // Generated for: @DeclareParents('*Service+',
+/// //   defaultImpl: DefaultUsageTracked) static UsageTracked? mixin;
 /// Introduction(
 ///   interfaceName: 'UsageTracked',
 ///   aspectType: 'UsageTracking',
@@ -82,33 +104,43 @@ abstract interface class Advised {
 /// public static UsageTracked mixin;
 /// ```
 final class Introduction {
-  /// Creates the introduction of [interfaceName] declared by the aspect
-  /// named [aspectType]; [create] makes the delegate.
+  /// Describes the interface [interfaceName] introduced by the aspect
+  /// named [aspectType]; `create` makes a new implementation.
   Introduction({
     required this.interfaceName,
     required this.aspectType,
     required this._create,
   });
 
-  /// The introduced interface.
+  /// The simple name of the introduced interface; `this(Name)` pointcuts
+  /// match it.
   final String interfaceName;
 
-  /// The aspect declaring it (its `AspectMetadata.typeName`): the bean is
-  /// proxied for the introduction only while that aspect is registered.
+  /// The aspect declaring it (its `AspectMetadata.typeName`). The bean is
+  /// proxied for the introduction only while that aspect is registered in
+  /// the context, so a condition or profile can turn it off.
   final String aspectType;
 
   final Object Function() _create;
 
-  /// A new delegate implementing the interface.
+  /// Creates a new object implementing the interface; the proxy calls it
+  /// once, on first use.
   Object create() => _create();
 
   @override
   String toString() => 'Introduction($interfaceName by $aspectType)';
 }
 
-/// Unwraps AOP proxies, like Spring's `AopUtils` / `AopProxyUtils`.
+/// Helpers that tell whether an object is an AOP proxy and find the bean
+/// behind it.
+///
+/// Code that needs the real object rather than its proxy uses them: a
+/// test that checks advice was applied, code that compares a bean's
+/// runtime class, or a library that inspects beans. Proxying is invisible
+/// to most application code, which never needs this.
 ///
 /// ```dart
+/// // In a test: the Calculator bean is advised, and this is its target.
 /// final calculator = context.getBean<Calculator>();
 /// AopUtils.isAopProxy(calculator); // true
 /// AopUtils.getTarget(calculator); // the SimpleCalculator
@@ -121,14 +153,16 @@ final class Introduction {
 /// AopProxyUtils.getSingletonTarget(calculator);
 /// ```
 abstract final class AopUtils {
-  /// Whether [object] is an AOP proxy: a wrapper around a target, or a
-  /// subclass proxy with advice attached.
+  /// Whether [object] is an AOP proxy: a wrapper around another object, or
+  /// a generated subclass proxy with advice attached. A subclass proxy no
+  /// advice matched is not one.
   static bool isAopProxy(Object? object) =>
       object is Advised &&
       (!identical(object.aopTarget, object) || object.aopAdvisors.isNotEmpty);
 
-  /// The innermost target of [object] (itself when not proxied, and for a
-  /// subclass proxy, which is its own target).
+  /// The object behind [object], unwrapping nested proxies; [object]
+  /// itself when it is not a proxy or is a subclass proxy (its own
+  /// target).
   static Object getTarget(Object object) {
     var current = object;
     while (current is Advised) {
@@ -142,14 +176,26 @@ abstract final class AopUtils {
   }
 }
 
-/// Creates the generated proxy for a bean class.
+/// Knows how to wrap one bean class in its generated proxy class, and which
+/// of its members can be advised.
 ///
-/// Generated code attaches one to the bean definition (`aopProxy`); the
-/// proxy class implements the bean's interfaces and forwards every
-/// member through a [ProxyInvoker]. Unlike Spring's JDK/CGLIB proxies it
-/// is written at build time, so no reflection is needed at runtime.
+/// Dart cannot create classes at runtime, so the generator writes a proxy
+/// class for each bean class and attaches one of these factories to the
+/// bean definition (its `aopProxy` field). When the context starts, the
+/// `AspectAutoProxyCreator` asks it which advisors match the bean and has
+/// it create the proxy. There are three forms: a wrapper class that
+/// implements the bean's class or interfaces and forwards to it (the main
+/// constructor), a generated subclass the bean is created as
+/// ([AopProxyFactory.subclass]), and a placeholder for beans that cannot be
+/// proxied ([AopProxyFactory.unavailable]). Applications do not create it;
+/// `ProxyFactory.forBean` uses it to make more proxies of a bean.
+///
+/// Unlike Spring's JDK and CGLIB proxies, the proxy class is written at
+/// build time, so no reflection is needed at runtime.
 ///
 /// ```dart
+/// // In a test, with a proxy class CalculatorProxy written by hand:
+/// // wrap a SimpleCalculator so every call is logged.
 /// final factory = AopProxyFactory(
 ///   signatures: CalculatorProxy.signatures,
 ///   create: (target, invoker) =>
@@ -169,11 +215,12 @@ abstract final class AopUtils {
 /// Calculator proxy = (Calculator) factory.getProxy();
 /// ```
 final class AopProxyFactory {
-  /// Creates a factory for proxies of members [signatures]; `create`
-  /// instantiates the generated proxy class.
+  /// A factory for a wrapper proxy class whose advisable members are
+  /// [signatures]; `create` instantiates the generated class around a
+  /// target.
   ///
   /// [introductions] are the interfaces `@DeclareParents` adds to the
-  /// proxy class (see [Introduction]).
+  /// proxy class.
   AopProxyFactory({
     required List<MethodSignature> signatures,
     required Object Function(Object target, ProxyInvoker invoker) this._create,
@@ -183,10 +230,13 @@ final class AopProxyFactory {
        _advise = null,
        unavailableReason = null;
 
-  /// The members of a bean that cannot be proxied, and why: advice that
-  /// matches one of [signatures] makes the bean fail to start with
-  /// [reason] instead of being silently skipped (Spring fails the same way
-  /// when it cannot create a proxy).
+  /// A placeholder for a bean whose class cannot be proxied, with the
+  /// [reason].
+  ///
+  /// [signatures] are the bean's members. Advice that matches one of them
+  /// makes the bean fail at startup with an [AopConfigException] carrying
+  /// [reason], instead of the advice being silently skipped. Spring fails
+  /// the same way when it cannot create a proxy.
   AopProxyFactory.unavailable({
     required List<MethodSignature> signatures,
     required String reason,
@@ -196,12 +246,14 @@ final class AopProxyFactory {
        _advise = null,
        unavailableReason = reason;
 
-  /// For a bean whose class cannot be implemented but can be extended: the
-  /// container already created an instance of the generated subclass,
-  /// whose members call `super` through the advice chain once `advise`
-  /// attached the invoker (like a CGLIB proxy). `advise` returns the
-  /// advised bean, or `null` when the bean is not the generated subclass
-  /// (another post-processor replaced it).
+  /// A factory for a bean whose class cannot be implemented but can be
+  /// extended, which the container creates as a generated subclass.
+  ///
+  /// The subclass's members call `super` directly until `advise` attaches
+  /// a [ProxyInvoker]; from then on they run through the advice, like a
+  /// CGLIB proxy in Spring. `advise` returns the advised bean, or `null`
+  /// when the bean is not the generated subclass (another post-processor
+  /// replaced it).
   ///
   /// ```dart
   /// AopProxyFactory.subclass(
@@ -212,8 +264,8 @@ final class AopProxyFactory {
   /// ```
   ///
   /// [introductions] are the interfaces `@DeclareParents` adds to the
-  /// subclass (see [Introduction]); their members work once the aspect
-  /// declaring them is registered (it attaches the invoker).
+  /// subclass; their members work once the aspect declaring them is
+  /// registered, which attaches the invoker.
   AopProxyFactory.subclass({
     required List<MethodSignature> signatures,
     required Object? Function(Object bean, ProxyInvoker invoker) this._advise,
@@ -223,26 +275,28 @@ final class AopProxyFactory {
        _create = null,
        unavailableReason = null;
 
-  /// Proxied members, indexed like the generated proxy calls them.
+  /// The bean's advisable members; the generated proxy refers to each by
+  /// its index in this list.
   final List<MethodSignature> signatures;
 
-  /// Interfaces the generated proxy class implements for `@DeclareParents`,
-  /// indexed like the proxy calls [ProxyInvoker.introduction].
+  /// The interfaces the proxy class implements for `@DeclareParents`; the
+  /// proxy refers to each by its index in [ProxyInvoker.introduction].
   final List<Introduction> introductions;
 
   final Object Function(Object target, ProxyInvoker invoker)? _create;
   final Object? Function(Object bean, ProxyInvoker invoker)? _advise;
 
-  /// Why no proxy can be generated for the bean; `null` when it can.
+  /// Why the bean cannot be proxied; `null` when it can.
   final String? unavailableReason;
 
-  /// Whether the bean is an instance of a generated subclass that advice
-  /// is attached to (instead of being wrapped).
+  /// Whether the bean is created as a generated subclass that advice is
+  /// attached to, instead of being wrapped.
   bool get isSubclass => _advise != null;
 
-  /// Advisors among [advisors] that match at least one member of the bean
-  /// named [beanName] ([beanAliases]: its aliases and qualifier values,
-  /// for `bean(...)` pointcuts).
+  /// The advisors among [advisors] that match at least one member of the
+  /// bean named [beanName], in their order. [beanAliases] (the bean's
+  /// aliases and qualifier values) also count for `bean(...)` pointcuts.
+  /// An empty result means the bean needs no proxy.
   List<PointcutAdvisor> eligibleAdvisors(
     List<PointcutAdvisor> advisors,
     String beanName, {
@@ -264,7 +318,12 @@ final class AopProxyFactory {
         advisor,
   ];
 
-  /// A proxy of [target] applying [advisors] (in order).
+  /// Returns the proxy of [target] that runs [advisors], outermost first.
+  ///
+  /// For a subclass factory, [target] is the generated subclass instance
+  /// and is returned advised. Throws an [AopConfigException] when the bean
+  /// cannot be proxied ([unavailableReason]) or, for a subclass factory,
+  /// when [target] is not the generated subclass.
   Object createProxy(
     Object target,
     List<PointcutAdvisor> advisors, {
@@ -299,9 +358,16 @@ final class AopProxyFactory {
   }
 }
 
-/// A proxy could not be created, like Spring's `AopConfigException`.
+/// Thrown when AOP is set up in a way that cannot work, usually at
+/// startup: advice matches a bean that cannot be proxied, an aspect has an
+/// unsupported instantiation model, or a proxy's advisors are changed
+/// although it has none.
+///
+/// The message says what is wrong and how to fix it, such as adding an
+/// interface with the advised methods. Applications do not catch it; they
+/// fix the configuration.
 class AopConfigException implements Exception {
-  /// Creates the exception.
+  /// Creates the exception with [message].
   const AopConfigException(this.message);
 
   /// What went wrong and how to fix it.
@@ -311,11 +377,15 @@ class AopConfigException implements Exception {
   String toString() => 'AopConfigException: $message';
 }
 
-/// An advised call failed because of a misconfiguration, like Spring's
-/// `AopInvocationException` (e.g. an `async` `@Before` advice on a
-/// synchronous method, which the call cannot wait for).
+/// Thrown by an advised call when the advice cannot run as written, like
+/// Spring's `AopInvocationException`.
+///
+/// The case today: a `@Before`, `@After`, `@AfterReturning` or
+/// `@AfterThrowing` advice that is `async` (returns a `Future`) on a
+/// synchronous method, which cannot wait for it. Make the advice
+/// synchronous, or the advised method return a `Future`.
 class AopInvocationException implements Exception {
-  /// Creates the exception.
+  /// Creates the exception with [message].
   const AopInvocationException(this.message);
 
   /// What went wrong and how to fix it.
@@ -325,13 +395,20 @@ class AopInvocationException implements Exception {
   String toString() => 'AopInvocationException: $message';
 }
 
-/// Runs calls of a generated proxy through the matching advice.
+/// The runtime engine behind one proxy: it runs each call of a proxied
+/// member through the advice that matches that member.
 ///
-/// Each proxied member forwards to [invoke] (or [invokeAsync] for
-/// `Future`-returning members, [invokeFutureOr] for `FutureOr` ones) with
-/// its index in [signatures] and a closure calling the target.
+/// Generated proxy classes contain no advice logic. Each member forwards to
+/// [invoke] (or [invokeAsync] for members returning a `Future`,
+/// [invokeFutureOr] for `FutureOr` ones) with its index in [signatures],
+/// its arguments and a closure that calls the real member. The invoker
+/// works out, once per member, which advisors match, runs them in order,
+/// and also handles self-calls, `AopContext.currentProxy()` and the
+/// `@DeclareParents` delegates. It also stores the proxy's advisors, so
+/// [Advised] methods forward to it. Only generated code uses it.
 ///
 /// ```dart
+/// // The shape of a generated wrapper proxy.
 /// class CalculatorProxy implements Calculator, Advised {
 ///   CalculatorProxy(this._target, this._invoker);
 ///
@@ -365,12 +442,11 @@ class AopInvocationException implements Exception {
 ///     targetClass, chain).proceed();
 /// ```
 final class ProxyInvoker {
-  /// Creates an invoker applying [advisors] (in order) to the members
+  /// An invoker running `advisors` (outermost first) on the members
   /// [signatures] of the bean named [beanName]; [beanAliases] (aliases and
   /// qualifier values) also count for `bean(...)` pointcuts.
   ///
-  /// [introductions] are the `@DeclareParents` interfaces of the proxy
-  /// ([introduction]).
+  /// [introductions] are the `@DeclareParents` interfaces of the proxy.
   ProxyInvoker(
     this.signatures,
     List<PointcutAdvisor> advisors,
@@ -382,17 +458,19 @@ final class ProxyInvoker {
        introductions = List.unmodifiable(introductions),
        _delegates = List.filled(introductions.length, null);
 
-  /// Fails the call of an `Advised` method on a generated subclass proxy
-  /// that no advice matched when the bean was created (it has no invoker).
+  /// Throws the [AopConfigException] for a call of an [Advised] method on
+  /// a generated subclass proxy that no advice matched when the bean was
+  /// created, so it has no invoker and no advisors to change.
   static Never notAdvised(Object proxy) => throw AopConfigException(
     'The ${proxy.runtimeType} bean is not advised: no advice matched it when '
     'it was created, so it has no advisors to change. Declare advice that '
     'matches it (or a PointcutAdvisor bean) to have it proxied.',
   );
 
-  /// Fails the call of a `@DeclareParents` member ([interfaceName]) on a
-  /// generated subclass proxy that has no invoker: the aspect declaring the
-  /// introduction is not registered (a condition or profile left it out).
+  /// Throws the [AopConfigException] for a call of a member of the
+  /// introduced interface [interfaceName] on a generated subclass proxy
+  /// without an invoker: the aspect declaring the introduction is not
+  /// registered (a condition or profile left it out).
   static Never notIntroduced(Object proxy, String interfaceName) =>
       throw AopConfigException(
         'The ${proxy.runtimeType} bean implements $interfaceName through a '
@@ -401,37 +479,39 @@ final class ProxyInvoker {
         'implementation to call.',
       );
 
-  /// Proxied members, by index.
+  /// The proxied members; generated code refers to each by its index.
   final List<MethodSignature> signatures;
 
   final List<PointcutAdvisor> _advisors;
 
-  /// Advisors that apply to the proxy, outermost first (a view: it
-  /// follows [addAdvisor] and [removeAdvisor]).
+  /// The advisors of the proxy, outermost first. It is a read-only view
+  /// that follows [addAdvisor] and [removeAdvisor].
   late final List<PointcutAdvisor> advisors = UnmodifiableListView(_advisors);
 
-  /// The `@DeclareParents` interfaces of the proxy, by index.
+  /// The `@DeclareParents` interfaces of the proxy; generated code refers
+  /// to each by its index.
   final List<Introduction> introductions;
 
-  /// The names of the [introductions] interfaces, for `this(...)`.
+  /// The names of the [introductions] interfaces, which `this(...)`
+  /// pointcuts match.
   late final List<String> introducedTypes = [
     for (final introduction in introductions) introduction.interfaceName,
   ];
 
   final List<Object?> _delegates;
 
-  /// The delegate of introduction [index], created on first use (one per
-  /// proxy).
+  /// The object implementing introduction [index] for this proxy, created
+  /// on first use and reused afterwards.
   Object introduction(int index) =>
       _delegates[index] ??= introductions[index].create();
 
-  /// Appends [advisor]; calls from now on use it.
+  /// Appends [advisor] as the innermost one; the next calls use it.
   void addAdvisor(PointcutAdvisor advisor) {
     _advisors.add(advisor);
     _chains.clear();
   }
 
-  /// Removes [advisor]; `false` when it was not there.
+  /// Removes [advisor]; returns `false` when it was not there.
   bool removeAdvisor(PointcutAdvisor advisor) {
     final removed = _advisors.remove(advisor);
     if (removed) {
@@ -440,11 +520,12 @@ final class ProxyInvoker {
     return removed;
   }
 
-  /// Appends [advice] for every member.
+  /// Appends [advice] as the innermost advice of every member.
   void addAdvice(MethodInterceptor advice) =>
       addAdvisor(DefaultPointcutAdvisor(const TruePointcut(), advice));
 
-  /// Removes the first advisor whose advice is [advice].
+  /// Removes the first advisor whose advice is [advice] (the same object);
+  /// returns `false` when there is none.
   bool removeAdvice(MethodInterceptor advice) {
     for (final advisor in _advisors) {
       if (identical(advisor.advice, advice)) {
@@ -454,18 +535,22 @@ final class ProxyInvoker {
     return false;
   }
 
-  /// Name of the proxied bean, for `bean(...)` pointcuts.
+  /// The name of the proxied bean, which `bean(...)` pointcuts match.
   final String beanName;
 
-  /// Aliases and qualifier values of the proxied bean, for `bean(...)`.
+  /// The aliases and qualifier values of the proxied bean, which
+  /// `bean(...)` pointcuts also match.
   final List<String> beanAliases;
 
   // Interceptor chains per member index, computed on first call.
   final _chains = <int, List<MethodInterceptor>>{};
 
-  /// Interceptors for member [index], in invocation order. Advice whose
-  /// pointcut depends on the call (bindings, `args(...)`) is decided per
-  /// call.
+  /// The interceptors for member [index], outermost first, computed on
+  /// the first call and cached until the advisors change.
+  ///
+  /// Advice whose pointcut depends on the call (bound parameters,
+  /// `args(...)` type tests) is included wrapped, and skipped for the calls
+  /// it does not match.
   List<MethodInterceptor> chainFor(int index) => _chains.putIfAbsent(index, () {
     final signature = signatures[index];
     return [
@@ -494,10 +579,13 @@ final class ProxyInvoker {
       isInProxyBody(proxy) &&
       !takeCallThroughProxy(proxy);
 
-  /// Invokes member [index] synchronously.
+  /// Calls the synchronous member [index] through its advice and returns
+  /// the result.
   ///
-  /// [call] invokes the target with the (possibly replaced) arguments; it
-  /// is called directly when no advice matches.
+  /// [arguments] are the caller's arguments; [call] runs the real member
+  /// with the arguments the advice passes on. Without matching advice,
+  /// [call] runs directly. A call a subclass proxy makes on itself from its
+  /// own code skips the advice, as a `this` call does in Spring.
   Object? invoke(
     Object proxy,
     Object target,
@@ -528,11 +616,13 @@ final class ProxyInvoker {
     });
   }
 
-  /// Invokes member [index] that returns `Future<T>`.
+  /// Calls member [index], which returns `Future<T>`, through its advice.
   ///
-  /// After-style advice runs when the future completes; the result is
-  /// retyped to `Future<T>` because `@Around` advice may return an
-  /// untyped future.
+  /// `@After`, `@AfterReturning` and `@AfterThrowing` run when the future
+  /// completes. The result is retyped to `Future<T>`, since `@Around`
+  /// advice may return a future of another type. The proxy stays current
+  /// for `AopContext.currentProxy()` in the asynchronous code the call
+  /// starts.
   Future<T> invokeAsync<T>(
     Object proxy,
     Object target,
@@ -566,11 +656,12 @@ final class ProxyInvoker {
     });
   }
 
-  /// Invokes member [index] that returns `FutureOr<T>`.
+  /// Calls member [index], which returns `FutureOr<T>`, through its
+  /// advice.
   ///
-  /// When the result is a `Future`, after-style advice runs when it
-  /// completes (and the result is retyped to `Future<T>`); otherwise
-  /// synchronously.
+  /// When the result is a `Future`, `@After`, `@AfterReturning` and
+  /// `@AfterThrowing` run when it completes and it is retyped to
+  /// `Future<T>`; a plain value is handled synchronously.
   FutureOr<T> invokeFutureOr<T>(
     Object proxy,
     Object target,

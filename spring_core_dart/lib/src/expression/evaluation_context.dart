@@ -6,15 +6,23 @@ import 'package:spring_core_dart/src/expression/expression_exceptions.dart';
 import 'package:spring_core_dart/src/expression/introspection_access.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
-/// Reads and writes properties of objects, like Spring's `PropertyAccessor`.
+/// A plug-in that tells expressions how to read and write the properties
+/// of some kind of object, so that `point.x` works.
 ///
-/// Dart has no reflection in Flutter/AOT, so user classes are accessed
-/// through accessors: [MapAccessor], [FunctionPropertyAccessor], or
-/// generated introspection metadata (`IntrospectionPropertyAccessor`).
-/// The first accessor in [EvaluationContext.propertyAccessors] whose
-/// [canRead] / [canWrite] returns `true` wins.
+/// Java's SpEL reads any public getter by reflection; Dart (in Flutter and
+/// AOT builds) has no reflection, so an expression can only see a
+/// property some accessor knows. The contexts already bring accessors for
+/// maps ([MapAccessor]), `@Introspected` classes
+/// (`IntrospectionPropertyAccessor`) and core Dart types
+/// (`BuiltinPropertyAccessor`). For a class that is not `@Introspected`,
+/// a [FunctionPropertyAccessor] is usually enough; implement this
+/// interface for anything more dynamic (a JSON document, a record from a
+/// database). For each property the context asks its accessors in order
+/// and the first whose [canRead] (or [canWrite]) returns `true` handles
+/// it.
 ///
 /// ```dart
+/// // A Point class from another package, without introspection data.
 /// final class PointAccessor implements PropertyAccessor {
 ///   @override
 ///   bool canRead(EvaluationContext c, Object target, String name) =>
@@ -55,18 +63,26 @@ import 'package:spring_core_dart/src/expression/spel_type.dart';
 /// context.addPropertyAccessor(new PointAccessor());
 /// ```
 abstract interface class PropertyAccessor {
-  /// Whether this accessor can read property [name] of [target].
+  /// Whether this accessor handles reading property [name] of [target];
+  /// `false` lets the next accessor try. [target] is never `null`.
   bool canRead(EvaluationContext context, Object target, String name);
 
-  /// Reads property [name] of [target]; only called after [canRead]
-  /// returned `true`.
+  /// The value of property [name] of [target]; only called after
+  /// [canRead] returned `true`.
+  ///
+  /// An exception other than a `SpelEvaluationException` is reported as
+  /// `exceptionDuringPropertyRead` (EL1021E) with the error as cause.
   Object? read(EvaluationContext context, Object target, String name);
 
-  /// Whether this accessor can write property [name] of [target].
+  /// Whether this accessor handles writing property [name] of [target];
+  /// return `false` for read-only properties.
   bool canWrite(EvaluationContext context, Object target, String name);
 
-  /// Writes [newValue] to property [name] of [target]; only called after
+  /// Stores [newValue] in property [name] of [target]; only called after
   /// [canWrite] returned `true`.
+  ///
+  /// An exception other than a `SpelEvaluationException` is reported as
+  /// `exceptionDuringPropertyWrite` (EL1034E).
   void write(
     EvaluationContext context,
     Object target,
@@ -75,10 +91,15 @@ abstract interface class PropertyAccessor {
   );
 }
 
-/// Calls a resolved method with evaluated arguments, like Spring's
-/// `MethodExecutor`.
+/// The function a [MethodResolver] returns to run one method call: it
+/// gets the target and the evaluated arguments and returns the result.
+///
+/// Throw an `AccessException` to report a failure as
+/// `exceptionDuringMethodInvocation` (EL1029E); any other exception
+/// reaches the caller of `getValue` unchanged.
 ///
 /// ```dart
+/// // Runs `text.padLeft(n)` for an expression `text.padLeft(8)`.
 /// MethodExecutor executor = (context, target, args) =>
 ///     (target as String).padLeft(args.first! as int);
 /// ```
@@ -93,14 +114,20 @@ typedef MethodExecutor = Object? Function(
   List<Object?> arguments,
 );
 
-/// Finds methods by name and arguments, like Spring's `MethodResolver`.
+/// A plug-in that tells expressions which code to run for a method call
+/// such as `greeter.greet('Ada')`.
 ///
-/// Without reflection, methods of user classes come from resolvers such as
-/// `FunctionMethodResolver` or `IntrospectionMethodResolver`; core Dart
-/// types are covered by `BuiltinMethodResolver`. Resolvers are asked in
-/// order; the first non-null executor is used.
+/// Without reflection an expression can only call methods some resolver
+/// knows. The contexts bring resolvers for `@Introspected` classes
+/// (`IntrospectionMethodResolver`) and core Dart types
+/// (`BuiltinMethodResolver`); for other classes a `FunctionMethodResolver`
+/// is usually enough. Implement this interface when the methods are only
+/// known at run time. For each call the context asks its resolvers in
+/// order and runs the first [MethodExecutor] returned; when none matches,
+/// the call fails with `methodNotFound` (EL1004E).
 ///
 /// ```dart
+/// // Lets rules call greet(...) on a Greeter from another package.
 /// final class GreeterResolver implements MethodResolver {
 ///   @override
 ///   MethodExecutor? resolve(EvaluationContext context, Object target,
@@ -124,7 +151,11 @@ typedef MethodExecutor = Object? Function(
 /// parser.parseExpression("greet('Ada')").getValue(context);
 /// ```
 abstract interface class MethodResolver {
-  /// An executor for [name] on [target], or `null` if not handled.
+  /// An executor that runs method [name] on [target] with [arguments]
+  /// (already evaluated), or `null` to let the next resolver try.
+  ///
+  /// Throwing an `AccessException` here is reported as
+  /// `problemLocatingMethod` (EL1031E).
   MethodExecutor? resolve(
     EvaluationContext context,
     Object target,
@@ -133,10 +164,15 @@ abstract interface class MethodResolver {
   );
 }
 
-/// Creates an object with evaluated arguments, like Spring's
-/// `ConstructorExecutor`.
+/// The function a [ConstructorResolver] returns to run one `new Name(...)`:
+/// it gets the evaluated arguments and returns the new object.
+///
+/// Throw an `AccessException` to report a failure as
+/// `constructorInvocationProblem` (EL1003E); any other exception reaches
+/// the caller unchanged.
 ///
 /// ```dart
+/// // Builds the Point of `new Point(1, 2)`.
 /// ConstructorExecutor executor = (context, args) =>
 ///     Point(args[0]! as int, args[1]! as int);
 /// ```
@@ -150,15 +186,20 @@ typedef ConstructorExecutor = Object? Function(
   List<Object?> arguments,
 );
 
-/// Finds constructors for `new Name(...)`, like Spring's
-/// `ConstructorResolver`.
+/// A plug-in that tells expressions how to create an object for
+/// `new Name(...)`.
 ///
-/// `StandardEvaluationContext` asks `SpelTypeConstructorResolver` (the
-/// constructors registered on a `SpelType`) by default; add your own with
+/// Usually not needed: a `StandardEvaluationContext` already runs the
+/// constructors registered on a `SpelType` (through
+/// `SpelTypeConstructorResolver`), so registering the type is enough.
+/// Implement this interface to create objects of types that are not
+/// registered, and add it with
 /// `StandardEvaluationContext.addConstructorResolver`. A
-/// `SimpleEvaluationContext` has none, so `new` always fails there.
+/// `SimpleEvaluationContext` has no constructor resolvers, so `new`
+/// always fails there.
 ///
 /// ```dart
+/// // Creates points without registering a Point type.
 /// final class PointResolver implements ConstructorResolver {
 ///   @override
 ///   ConstructorExecutor? resolve(EvaluationContext context,
@@ -180,8 +221,10 @@ typedef ConstructorExecutor = Object? Function(
 /// parser.parseExpression("new Point(1, 2)").getValue(context);
 /// ```
 abstract interface class ConstructorResolver {
-  /// An executor creating a [typeName] from [arguments], or `null` if not
-  /// handled.
+  /// An executor that creates a [typeName] (the name as written after
+  /// `new`, dots included) from [arguments], or `null` to let the next
+  /// resolver try. When no resolver matches, the call fails with
+  /// `constructorNotFound` (EL1002E).
   ///
   /// Throwing an `AccessException` is reported as
   /// `SpelMessage.constructorInvocationProblem`.
@@ -192,14 +235,17 @@ abstract interface class ConstructorResolver {
   );
 }
 
-/// Reads and writes `target[index]` for custom types, like Spring's
-/// `IndexAccessor` (6.2).
+/// A plug-in that makes `target[index]` work for your own indexable types.
 ///
-/// Lists, maps and strings are indexed natively; index accessors are asked
-/// for any other target before the fallbacks (other iterables, property
-/// access by a string index).
+/// Lists, maps and strings are indexed without any accessor. For any
+/// other target the context's index accessors are asked in order before
+/// the fallbacks (other iterables by position, then `obj['name']` as a
+/// property read). Implement it for a type that has its own notion of
+/// "element at", such as a matrix row or a sparse vector. Spring added
+/// the same interface in 6.2.
 ///
 /// ```dart
+/// // `#root[1]` reads row 1 of a Matrix.
 /// final class MatrixRowAccessor implements IndexAccessor {
 ///   @override
 ///   bool canRead(EvaluationContext c, Object target, Object? index) =>
@@ -227,18 +273,23 @@ abstract interface class ConstructorResolver {
 /// context.addIndexAccessor(new MatrixRowAccessor());
 /// ```
 abstract interface class IndexAccessor {
-  /// Whether this accessor can read [index] of [target].
+  /// Whether this accessor handles reading [index] (the evaluated index
+  /// value) of [target]. An accessor that answers `true` to [canRead] or
+  /// [canWrite] takes over the index for both reads and writes.
   bool canRead(EvaluationContext context, Object target, Object? index);
 
-  /// Reads [index] of [target]; only called after [canRead] returned
-  /// `true`.
+  /// The element at [index] of [target]; only called after [canRead]
+  /// returned `true`. Other exceptions than a `SpelEvaluationException`
+  /// are reported as `exceptionDuringIndexRead` (EL1083E).
   Object? read(EvaluationContext context, Object target, Object? index);
 
-  /// Whether this accessor can write [index] of [target].
+  /// Whether this accessor handles writing [index] of [target].
   bool canWrite(EvaluationContext context, Object target, Object? index);
 
-  /// Writes [newValue] to [index] of [target]; only called after
-  /// [canWrite] returned `true`.
+  /// Stores [newValue] at [index] of [target]; only called after
+  /// [canWrite] returned `true`. Other exceptions than a
+  /// `SpelEvaluationException` are reported as `exceptionDuringIndexWrite`
+  /// (EL1084E).
   void write(
     EvaluationContext context,
     Object target,
@@ -247,12 +298,17 @@ abstract interface class IndexAccessor {
   );
 }
 
-/// Finds `T(Name)` types, like Spring's `TypeLocator`.
+/// Finds the type a name stands for in `T(Name)`, `new Name(...)` and
+/// `instanceof T(Name)`.
 ///
-/// Dart cannot load classes by name, so types must be registered as
-/// [SpelType]s (see [StandardTypeLocator]).
+/// Java's SpEL loads any class by name. Dart cannot, so the types an
+/// expression may use are registered beforehand as [SpelType]s. The usual
+/// locator is [StandardTypeLocator], which already knows the core types;
+/// register your own types on it. Implement this interface only to look
+/// types up somewhere else.
 ///
 /// ```dart
+/// // Lets expressions create points with `new Point(1, 2)`.
 /// final context = StandardEvaluationContext()
 ///   ..typeLocator = (StandardTypeLocator()
 ///     ..registerType(SpelType.of<Point>('Point',
@@ -270,16 +326,23 @@ abstract interface class IndexAccessor {
 /// parser.parseExpression("new com.example.Point(1, 2)").getValue(context);
 /// ```
 abstract interface class TypeLocator {
-  /// The type registered as [typeName].
+  /// The type registered as [typeName], the name as written in the
+  /// expression (dots included).
   ///
   /// Throws a `SpelEvaluationException` (`typeNotFound`) when unknown.
   SpelType findType(String typeName);
 }
 
-/// Converts values, like Spring's expression `TypeConverter`.
+/// Converts a value to another type while an expression is evaluated.
 ///
-/// Used by `Expression.getValueAs`, boolean conditions, template parts and
-/// introspection setters. The default is [StandardTypeConverter].
+/// Expressions need conversions in several places: `Expression.getValueAs`
+/// returns the type the caller asked for, a condition must become a
+/// `bool`, template parts and the other side of `'text' + x` become
+/// strings, a list index such as `'2'` becomes an `int`, and arguments of
+/// methods and setters are adapted to the parameter types. The default,
+/// [StandardTypeConverter], delegates to a `ConversionService`; replace
+/// it to share the conversions of your application (a bean factory does
+/// that for `@Value`).
 ///
 /// ```dart
 /// final converter = StandardTypeConverter();
@@ -295,22 +358,28 @@ abstract interface class TypeLocator {
 ///     TypeDescriptor.valueOf(Integer.class));
 /// ```
 abstract interface class TypeConverter {
-  /// Whether [value] can be converted to [targetType].
+  /// Whether [value] can be converted to [targetType]; callers check it
+  /// before [convertValue] where a failed conversion is not an error.
   bool canConvert(Object? value, Type targetType);
 
-  /// Converts [value] to [targetType].
+  /// [value] converted to [targetType].
   ///
   /// Throws a `SpelEvaluationException` (`typeConversionError`) on
   /// failure.
   Object? convertValue(Object? value, Type targetType);
 }
 
-/// Orders values for `<`, `>`, `between`, like Spring's `TypeComparator`.
+/// Decides how two values are ordered for `<`, `<=`, `>`, `>=` and
+/// `between`.
 ///
-/// The default is [StandardTypeComparator]; replace it to order your own
-/// types.
+/// The default, [StandardTypeComparator], orders numbers, strings, dates,
+/// durations, booleans, enums and other `Comparable`s. Replace it in a
+/// `StandardEvaluationContext` when expressions must compare values of
+/// your own type that the default does not order the way you need, such
+/// as version numbers kept as strings.
 ///
 /// ```dart
+/// // `#a < #b` compares two versions by their numeric parts.
 /// final context = StandardEvaluationContext()
 ///   ..typeComparator = const VersionComparator();
 /// SpelExpressionParser()
@@ -324,7 +393,8 @@ abstract interface class TypeConverter {
 /// context.setTypeComparator(new VersionComparator());
 /// ```
 abstract interface class TypeComparator {
-  /// Whether [left] and [right] can be ordered.
+  /// Whether [left] and [right] can be ordered; when `false` the operator
+  /// fails with `notComparable` (EL1013E) without calling [compare].
   bool canCompare(Object? left, Object? right);
 
   /// Negative, zero or positive as [left] is less than, equal to or
@@ -332,12 +402,15 @@ abstract interface class TypeComparator {
   int compare(Object? left, Object? right);
 }
 
-/// Arithmetic operators, like Spring's `Operation`.
+/// The arithmetic operators an [OperatorOverloader] can take over.
 ///
-/// Passed to an [OperatorOverloader] when an arithmetic operator meets
-/// operands it does not handle natively.
+/// The evaluator passes one to the overloader when an operator meets
+/// operands it has no built-in rule for. Unary `-x` and `+x` arrive as
+/// [subtract] and [add] with a `null` right operand; `x++` and `x--` as
+/// [add] and [subtract] with `1`.
 ///
 /// ```dart
+/// // Asks whether `left + right` is handled.
 /// overloader.overridesOperation(Operation.add, left, right);
 /// ```
 ///
@@ -365,12 +438,17 @@ enum Operation {
   power,
 }
 
-/// Arithmetic on non-numeric operands, like Spring's `OperatorOverloader`.
+/// A plug-in that gives arithmetic operators a meaning for your own types,
+/// such as `+` on two money amounts.
 ///
-/// Consulted after the built-in rules (numbers, string concatenation,
-/// string repetition) did not apply.
+/// The evaluator asks it only after its built-in rules (numbers, string
+/// concatenation, `'text' * n`, `'d' - 3`) did not apply; without it such
+/// an expression fails with `operatorNotSupportedBetweenTypes`
+/// (EL1030E). Set it on a `StandardEvaluationContext`; the default,
+/// [StandardOperatorOverloader], handles nothing.
 ///
 /// ```dart
+/// // `{1} + {2}` concatenates lists.
 /// final class ListConcat implements OperatorOverloader {
 ///   @override
 ///   bool overridesOperation(Operation op, Object? l, Object? r) =>
@@ -401,18 +479,26 @@ abstract interface class OperatorOverloader {
   Object? operate(Operation operation, Object? left, Object? right);
 }
 
-/// Resolves `@beanName` / `&factoryBean`, like Spring's `BeanResolver`.
+/// Looks up the object an `@name` (or `&name`) reference stands for.
 ///
-/// `BeanFactoryResolver` adapts a bean factory; any lookup works.
+/// Bean references let an expression use a named object of the
+/// application, such as `@mailer.defaultSender`. In `@Value('#{...}')`
+/// the framework sets a `BeanFactoryResolver` for you. Set one on a
+/// `StandardEvaluationContext` yourself when your own expressions should
+/// see beans, or implement this interface to serve names from any
+/// registry. Without a resolver, `@name` fails with
+/// `noBeanResolverRegistered` (EL1057E); a `SimpleEvaluationContext`
+/// never has one.
 ///
 /// ```dart
+/// // Named objects from a map, for tests or a small rule engine.
 /// final class MapBeanResolver implements BeanResolver {
 ///   MapBeanResolver(this.beans);
 ///   final Map<String, Object> beans;
 ///
 ///   @override
 ///   Object? resolve(EvaluationContext context, String beanName) =>
-///       beans[beanName] ?? (throw StateError('No bean $beanName'));
+///       beans[beanName] ?? (throw AccessException('No bean $beanName'));
 /// }
 ///
 /// final context = StandardEvaluationContext()
@@ -426,20 +512,30 @@ abstract interface class OperatorOverloader {
 /// parser.parseExpression("@clock").getValue(context);
 /// ```
 abstract interface class BeanResolver {
-  /// The bean named [beanName] (prefixed with `&` for `&factoryBean`).
+  /// The object named [beanName]; for `&name` the name arrives with its
+  /// `&` (the factory bean itself rather than its product).
   ///
-  /// Throwing is reported as a `SpelEvaluationException`
-  /// (`beanNotFound`).
+  /// Throw an `AccessException` when there is no such object: it is
+  /// reported as `exceptionDuringBeanResolution` (EL1058E). Other
+  /// exceptions reach the caller unchanged.
   Object? resolve(EvaluationContext context, String beanName);
 }
 
-/// Everything an expression can use while evaluating, like Spring's
-/// `EvaluationContext`.
+/// The world an expression is evaluated in: its root object, its
+/// variables, and the plug-ins that decide which properties, methods,
+/// types and beans it can reach.
 ///
-/// Use [StandardEvaluationContext] for trusted expressions and
-/// [SimpleEvaluationContext] for restricted ones (e.g. user input).
+/// The same expression gives different results in different contexts,
+/// and a context also decides what an expression is allowed to do. Pick
+/// one of the two implementations: [StandardEvaluationContext] for
+/// expressions you wrote yourself (everything is available), and
+/// [SimpleEvaluationContext] for expressions that come from outside, such
+/// as a user-supplied filter (no types, constructors, bean references or
+/// variable assignment). A context may be reused for many evaluations;
+/// variables set on it stay.
 ///
 /// ```dart
+/// // `n` is read on the root object, `#factor` is a variable.
 /// EvaluationContext context = StandardEvaluationContext({'n': 2})
 ///   ..setVariable('factor', 10);
 /// SpelExpressionParser().parseExpression('n * #factor').getValue(context);
@@ -453,61 +549,82 @@ abstract interface class BeanResolver {
 /// parser.parseExpression("n * #factor").getValue(context);
 /// ```
 abstract interface class EvaluationContext {
-  /// The default root object (`#root`).
+  /// The object unprefixed names are read on (`name` means
+  /// `#root.name`) when `getValue` is called without a root object.
   Object? get rootObject;
 
-  /// Accessors for `obj.property`, asked in order.
+  /// The accessors asked, in order, for `obj.property`.
   List<PropertyAccessor> get propertyAccessors;
 
-  /// Resolvers for `obj.method(...)`, asked in order.
+  /// The resolvers asked, in order, for `obj.method(...)`.
   List<MethodResolver> get methodResolvers;
 
-  /// Resolvers for `new Name(...)`, asked in order; empty when
-  /// constructors are not supported.
+  /// The resolvers asked, in order, for `new Name(...)`; empty when the
+  /// context does not allow constructors.
   List<ConstructorResolver> get constructorResolvers;
 
-  /// Accessors for `target[index]` on types other than lists, maps and
-  /// strings, asked in order.
+  /// The accessors asked, in order, for `target[index]` when the target
+  /// is not a list, map or string.
   List<IndexAccessor> get indexAccessors;
 
-  /// Finds types for `T(Name)`, `new Name(...)` and `instanceof`.
+  /// Finds the types of `T(Name)`, `new Name(...)` and `instanceof`.
   TypeLocator get typeLocator;
 
-  /// Converts values (`getValueAs`, conditions, templates).
+  /// Converts values: for `getValueAs`, conditions, templates, indexes
+  /// and method arguments.
   TypeConverter get typeConverter;
 
-  /// Orders values for relational operators and `between`.
+  /// Orders values for `<`, `<=`, `>`, `>=` and `between`.
   TypeComparator get typeComparator;
 
-  /// Handles arithmetic on non-numeric operands.
+  /// Gives arithmetic operators a meaning for operands with no built-in
+  /// rule.
   OperatorOverloader get operatorOverloader;
 
-  /// Resolves `@bean` and `&bean`, or `null` when bean references are not
-  /// supported.
+  /// Looks up `@name` and `&name`, or `null` when the context has no bean
+  /// references (they then fail with EL1057E).
   BeanResolver? get beanResolver;
 
-  /// Whether assignment (`=`, `++`, `--`) is allowed.
+  /// Whether expressions may assign (`=`, `++`, `--`) and
+  /// `Expression.setValue` may write; when `false` both fail with
+  /// `notAssignable` (EL1068E).
   bool get isAssignmentEnabled;
 
-  /// Sets the variable `#name` to [value] (programmatic use).
+  /// Sets the variable `#name` to [value] from Dart code, before the
+  /// expression is evaluated.
+  ///
+  /// Variables are how an expression gets values that are not on its
+  /// root: the method arguments of a cache key (`#isbn`), a request, the
+  /// current user. Unset variables read as `null`.
   void setVariable(String name, Object? value);
 
-  /// Assigns the value from [valueSupplier] to `#name` for an assignment
-  /// inside an expression (`#name = ...`, `#name++`) and returns it, like
-  /// Spring's `assignVariable`.
+  /// Stores the value from [valueSupplier] in `#name` and returns it; the
+  /// evaluator calls this for `#name = ...` and `#name++` inside an
+  /// expression.
   ///
-  /// A `SimpleEvaluationContext` throws
-  /// `SpelMessage.variableAssignmentNotSupported` instead.
+  /// It is separate from [setVariable] so that a context can refuse
+  /// assignments written in expressions while still accepting variables
+  /// set from code: a `SimpleEvaluationContext` throws
+  /// `SpelMessage.variableAssignmentNotSupported` (EL1080E).
   Object? assignVariable(String name, Object? Function() valueSupplier);
 
-  /// The value of variable `#name`, or `null` when unset.
+  /// The value of variable `#name`, or `null` when unset. Registered
+  /// functions are variables too.
   Object? lookupVariable(String name);
 }
 
-/// [TypeConverter] backed by a [ConversionService], like Spring's
-/// `StandardTypeConverter`.
+/// The default [TypeConverter]: it hands every conversion to a
+/// [ConversionService].
+///
+/// Every context starts with one over the shared
+/// `DefaultConversionService` (strings to numbers, booleans, durations,
+/// lists, ...). Create one over your own service when expressions should
+/// convert with the converters your application registered. Failures
+/// become `typeConversionError` (EL1001E) with the original error as
+/// cause.
 ///
 /// ```dart
+/// // Expressions convert with the application's converters.
 /// final context = StandardEvaluationContext()
 ///   ..typeConverter = StandardTypeConverter(myConversionService);
 /// SpelExpressionParser()
@@ -538,7 +655,8 @@ final class StandardTypeConverter implements TypeConverter {
   static ConversionService Function() _always(ConversionService service) =>
       () => service;
 
-  /// The service doing the conversions.
+  /// The service doing the conversions (looked up again on each access
+  /// for a [StandardTypeConverter.lazy] converter).
   ConversionService get conversionService => _conversionService();
 
   @override
@@ -559,15 +677,19 @@ final class StandardTypeConverter implements TypeConverter {
   }
 }
 
-/// Compares numbers, strings, dates, durations, enums and `Comparable`s;
-/// `null` is smaller than anything, like Spring's `StandardTypeComparator`.
+/// The default [TypeComparator]: it orders numbers, strings, dates,
+/// durations, booleans, enums and other `Comparable`s, with `null` before
+/// everything.
 ///
 /// Numbers compare by value across `int` and `double`; booleans with
 /// `false < true` (Java's `Boolean` is `Comparable`); values of one enum
 /// type by their index (like Java enums, which are `Comparable` by
-/// ordinal); other `Comparable`s only with values of the same kind.
+/// ordinal); other `Comparable`s only with values of the same kind, so a
+/// string never compares with a date. Every context uses it unless you
+/// set another comparator; you rarely call it yourself.
 ///
 /// ```dart
+/// // What `1 < 2.5`, `null < 'a'` and `'a' < 1` do in an expression.
 /// const comparator = StandardTypeComparator();
 /// comparator.compare(1, 2.5); // negative
 /// comparator.compare(null, 'a'); // negative
@@ -633,9 +755,15 @@ final class StandardTypeComparator implements TypeComparator {
   }
 }
 
-/// Supports no operator overloading (Spring's default).
+/// The default [OperatorOverloader]: it takes over no operator, so
+/// arithmetic on operands without a built-in rule fails with
+/// `operatorNotSupportedBetweenTypes` (EL1030E).
+///
+/// Every context starts with it; replace it on a
+/// `StandardEvaluationContext` to give operators a meaning for your types.
 ///
 /// ```dart
+/// // `{1} + {2}` is not supported by default.
 /// const StandardOperatorOverloader()
 ///     .overridesOperation(Operation.add, [1], [2]); // false
 /// ```
@@ -660,20 +788,26 @@ final class StandardOperatorOverloader implements OperatorOverloader {
       );
 }
 
-/// The full-featured context, like Spring's `StandardEvaluationContext`.
+/// An evaluation context with every feature of the language enabled: the
+/// one to use for expressions you or your application wrote.
 ///
-/// Comes with [MapAccessor], properties and methods of `@Introspected`
-/// classes (`IntrospectionPropertyAccessor` and
-/// `IntrospectionMethodResolver` over `BeanIntrospector.shared`, the
-/// counterpart of Spring's reflective accessor and resolver) and the
-/// built-in accessors/methods for core Dart types; add accessors for other
-/// classes (or for the introspector of an application context, whose
-/// `@Value('#{...}')` expressions have them already). Supports variables,
-/// functions, `T(...)` types, constructors, bean references and
-/// assignment. Do not use it for untrusted expressions; use
-/// [SimpleEvaluationContext] instead.
+/// It reads maps ([MapAccessor]), the properties and methods of
+/// `@Introspected` classes registered in `BeanIntrospector.shared`
+/// (`IntrospectionPropertyAccessor` and `IntrospectionMethodResolver`,
+/// which replace Java's reflection), and the common properties and
+/// methods of core Dart types. It supports variables, functions, `T(...)`
+/// types, constructors, bean references (once [beanResolver] is set) and
+/// assignment. Add accessors or resolvers for classes that are not
+/// `@Introspected`, or for the introspector of an application context;
+/// the `@Value('#{...}')` expressions of a context have those already.
+///
+/// An expression evaluated here can call any method it can reach and
+/// assign values, so never use it for text that comes from users; use
+/// [SimpleEvaluationContext] for that.
 ///
 /// ```dart
+/// // A notification template: the user is the root, the greeting a
+/// // variable, `#shout` a function.
 /// final context = StandardEvaluationContext(user)
 ///   ..addPropertyAccessor(FunctionPropertyAccessor<User>(
 ///     getters: {'name': (u) => u.name},
@@ -699,7 +833,8 @@ final class StandardOperatorOverloader implements OperatorOverloader {
 /// `@Introspected` (registered in `BeanIntrospector.shared`) or have an
 /// accessor.
 class StandardEvaluationContext implements EvaluationContext {
-  /// Creates a context whose `#root` is [rootObject].
+  /// Creates a context whose `#root` is [rootObject] (none when omitted;
+  /// it can be set later, and `getValue` can pass another root per call).
   StandardEvaluationContext([this.rootObject]);
 
   @override
@@ -753,12 +888,13 @@ class StandardEvaluationContext implements EvaluationContext {
 
   final _variables = <String, Object?>{};
 
-  /// Adds [accessor] before the default ones.
+  /// Adds [accessor] so that it is asked before the built-in ones.
   ///
   /// The defaults ([MapAccessor], the shared introspection accessor,
-  /// [BuiltinPropertyAccessor]) stay last, so user accessors are asked
-  /// first; when they were removed from [propertyAccessors], [accessor] is
-  /// appended.
+  /// [BuiltinPropertyAccessor]) stay last, so your accessor wins for the
+  /// properties it handles; accessors you add later come after the ones
+  /// you added before. When the defaults were removed from
+  /// [propertyAccessors], [accessor] is appended.
   void addPropertyAccessor(PropertyAccessor accessor) => _insertBeforeDefaults(
     propertyAccessors,
     accessor,
@@ -768,17 +904,17 @@ class StandardEvaluationContext implements EvaluationContext {
         a is BuiltinPropertyAccessor,
   );
 
-  /// Adds [resolver] before the default ones (the shared introspection
-  /// resolver and `BuiltinMethodResolver`), or appends it when they were
-  /// removed from [methodResolvers].
+  /// Adds [resolver] so that it is asked before the built-in ones (the
+  /// shared introspection resolver and `BuiltinMethodResolver`), or
+  /// appends it when they were removed from [methodResolvers].
   void addMethodResolver(MethodResolver resolver) => _insertBeforeDefaults(
     methodResolvers,
     resolver,
     (r) => identical(r, _introspectionResolver) || r is BuiltinMethodResolver,
   );
 
-  /// Adds [resolver] before the default `SpelTypeConstructorResolver`
-  /// (Spring's `addConstructorResolver`).
+  /// Adds [resolver] so that it is asked before the default
+  /// `SpelTypeConstructorResolver`, which only knows registered types.
   void addConstructorResolver(ConstructorResolver resolver) =>
       _insertBeforeDefaults(
         constructorResolvers,
@@ -786,8 +922,8 @@ class StandardEvaluationContext implements EvaluationContext {
         (r) => r is SpelTypeConstructorResolver,
       );
 
-  /// Adds [accessor] after the existing index accessors (Spring's
-  /// `addIndexAccessor`).
+  /// Adds [accessor] after the index accessors already added; there are
+  /// none by default.
   void addIndexAccessor(IndexAccessor accessor) => indexAccessors.add(accessor);
 
   static void _insertBeforeDefaults<T>(
@@ -799,7 +935,10 @@ class StandardEvaluationContext implements EvaluationContext {
     list.insert(index < 0 ? list.length : index, element);
   }
 
-  /// Makes [function] callable as `#name(args)`.
+  /// Makes [function] callable from expressions as `#name(args)`.
+  ///
+  /// Functions are the way to offer helpers that belong to no object,
+  /// such as a formatting or a lookup function.
   ///
   /// ```dart
   /// context.registerFunction('reverse',
@@ -831,15 +970,24 @@ class StandardEvaluationContext implements EvaluationContext {
   Object? lookupVariable(String name) => _variables[name];
 }
 
-/// A restricted context for data binding, like Spring's
-/// `SimpleEvaluationContext`: no type references, no constructors, no bean
-/// references, no assignment to variables; assignment to properties only
-/// in read-write mode; methods only when enabled.
+/// An evaluation context that only lets an expression read (and, if
+/// allowed, write) properties: the one to use for expressions that come
+/// from outside, such as a filter typed by a user or a field path sent by
+/// a client.
 ///
-/// Created through [SimpleEvaluationContextBuilder]. Safe for expressions
-/// from less trusted sources.
+/// A [StandardEvaluationContext] lets an expression create objects, call
+/// static methods and reach beans, which is dangerous for text you did
+/// not write. Here `T(...)`, `new`, `@bean` references and assignments to
+/// variables always fail; properties can be assigned only in read-write
+/// mode, and methods can be called only after
+/// [SimpleEvaluationContextBuilder.withInstanceMethods] or
+/// [SimpleEvaluationContextBuilder.withMethodResolvers]. Properties are
+/// read on maps, `@Introspected` classes and core Dart types, as in the
+/// standard context. Create one with [forReadOnlyDataBinding],
+/// [forReadWriteDataBinding] or [forPropertyAccessors], then `build()`.
 ///
 /// ```dart
+/// // A search filter typed by a user: it may read, never change.
 /// final context = SimpleEvaluationContext.forReadOnlyDataBinding()
 ///     .withRootObject({'name': 'Ada'})
 ///     .build();
@@ -869,19 +1017,23 @@ class SimpleEvaluationContext implements EvaluationContext {
     this.isAssignmentEnabled,
   );
 
-  /// Properties can be read but not assigned (Spring's
-  /// `SimpleEvaluationContext.forReadOnlyDataBinding()`).
+  /// A builder for a context whose expressions can read properties but
+  /// not assign them, for evaluating conditions or paths.
   static SimpleEvaluationContextBuilder forReadOnlyDataBinding() =>
       SimpleEvaluationContextBuilder._(assignment: false);
 
-  /// Properties can be read and assigned (Spring's
-  /// `SimpleEvaluationContext.forReadWriteDataBinding()`).
+  /// A builder for a context whose expressions can read and assign
+  /// properties (`Expression.setValue` on `address.city`), for binding
+  /// submitted fields to an object.
   static SimpleEvaluationContextBuilder forReadWriteDataBinding() =>
       SimpleEvaluationContextBuilder._(assignment: true);
 
-  /// Only the given accessors (instead of [MapAccessor], the introspection
-  /// accessor and the built-in one); assignment enabled (Spring's
-  /// `SimpleEvaluationContext.forPropertyAccessors(...)`).
+  /// A builder for a context that reads properties only through
+  /// [accessors], instead of [MapAccessor], the introspection accessor and
+  /// the built-in one; assignment is enabled (turn it off with
+  /// [SimpleEvaluationContextBuilder.withAssignmentDisabled]).
+  ///
+  /// Use it to expose exactly the properties you list and nothing else.
   ///
   /// ```dart
   /// SimpleEvaluationContext.forPropertyAccessors([
@@ -931,8 +1083,9 @@ class SimpleEvaluationContext implements EvaluationContext {
   @override
   void setVariable(String name, Object? value) => _variables[name] = value;
 
-  /// Always throws: expressions in a simple context cannot assign
-  /// variables (Spring's EL1080E). Use [setVariable] from code.
+  /// Always throws `variableAssignmentNotSupported` (EL1080E):
+  /// expressions in a simple context cannot assign variables. Variables
+  /// set from code with [setVariable] can still be read.
   @override
   Object? assignVariable(String name, Object? Function() valueSupplier) =>
       throw SpelEvaluationException(
@@ -944,14 +1097,18 @@ class SimpleEvaluationContext implements EvaluationContext {
   Object? lookupVariable(String name) => _variables[name];
 }
 
-/// Builder of [SimpleEvaluationContext], like Spring's
-/// `SimpleEvaluationContext.Builder`.
+/// Sets up a [SimpleEvaluationContext]: which methods, index accessors,
+/// conversions and root object it has.
 ///
-/// Obtain one from [SimpleEvaluationContext.forReadOnlyDataBinding],
+/// Get one from [SimpleEvaluationContext.forReadOnlyDataBinding],
 /// [SimpleEvaluationContext.forReadWriteDataBinding] or
-/// [SimpleEvaluationContext.forPropertyAccessors].
+/// [SimpleEvaluationContext.forPropertyAccessors], chain the `with...`
+/// calls you need, then call [build]. Everything not enabled here stays
+/// off.
 ///
 /// ```dart
+/// // Binding a submitted form: fields may be set, and methods such as
+/// // `name.trim()` may be called.
 /// final context = SimpleEvaluationContext.forReadWriteDataBinding()
 ///     .withInstanceMethods()
 ///     .withConversionService(DefaultConversionService())
@@ -989,9 +1146,10 @@ final class SimpleEvaluationContextBuilder {
   TypeConverter _converter = StandardTypeConverter();
   Object? _root;
 
-  /// Enables instance methods: those of `@Introspected` classes in
-  /// `BeanIntrospector.shared` (Spring's `DataBindingMethodResolver`) and
-  /// the built-in ones of core Dart types (and [extra] resolvers).
+  /// Lets expressions call instance methods: those of `@Introspected`
+  /// classes in `BeanIntrospector.shared` (Spring's
+  /// `DataBindingMethodResolver`) and the built-in ones of core Dart
+  /// types, such as `name.toUpperCase()`. Off by default.
   ///
   /// [extra] resolvers, like those of [withMethodResolvers], are asked
   /// first.
@@ -1003,8 +1161,9 @@ final class SimpleEvaluationContextBuilder {
     return this;
   }
 
-  /// Adds method resolvers, e.g. a `FunctionMethodResolver` for your own
-  /// types (Spring's `withMethodResolvers`).
+  /// Lets expressions call only the methods [resolvers] offer, such as a
+  /// `FunctionMethodResolver` listing a few methods of your own type.
+  /// They are asked before the ones [withInstanceMethods] enables.
   SimpleEvaluationContextBuilder withMethodResolvers(
     List<MethodResolver> resolvers,
   ) {
@@ -1012,8 +1171,8 @@ final class SimpleEvaluationContextBuilder {
     return this;
   }
 
-  /// Adds index accessors for custom indexable types (Spring's
-  /// `withIndexAccessors`).
+  /// Adds index accessors so that `target[index]` works on your own
+  /// indexable types; lists, maps and strings need none.
   SimpleEvaluationContextBuilder withIndexAccessors(
     List<IndexAccessor> accessors,
   ) {
@@ -1021,31 +1180,36 @@ final class SimpleEvaluationContextBuilder {
     return this;
   }
 
-  /// Uses [converter] instead of the default [StandardTypeConverter].
+  /// Uses [converter] instead of a [StandardTypeConverter] over the shared
+  /// `DefaultConversionService`.
   SimpleEvaluationContextBuilder withTypeConverter(TypeConverter converter) {
     _converter = converter;
     return this;
   }
 
-  /// Uses a [StandardTypeConverter] backed by [service].
+  /// Converts with [service], typically the application's conversion
+  /// service, through a [StandardTypeConverter].
   SimpleEvaluationContextBuilder withConversionService(
     ConversionService service,
   ) => withTypeConverter(StandardTypeConverter(service));
 
-  /// Sets the default root object (`#root`).
+  /// Sets the default root object (`#root`), used when `getValue` gets no
+  /// root of its own.
   SimpleEvaluationContextBuilder withRootObject(Object? root) {
     _root = root;
     return this;
   }
 
-  /// Disables assignment, e.g. for a builder from `forPropertyAccessors`
-  /// (Spring's `withAssignmentDisabled`).
+  /// Forbids assignment, for example in a builder from
+  /// [SimpleEvaluationContext.forPropertyAccessors] whose properties
+  /// should only be read.
   SimpleEvaluationContextBuilder withAssignmentDisabled() {
     _assignment = false;
     return this;
   }
 
-  /// Creates the context; accessor and resolver lists are unmodifiable.
+  /// Creates the context. Its accessor and resolver lists are
+  /// unmodifiable: what the builder did not enable cannot be added later.
   SimpleEvaluationContext build() => SimpleEvaluationContext._(
     _root,
     List.unmodifiable(_accessors),

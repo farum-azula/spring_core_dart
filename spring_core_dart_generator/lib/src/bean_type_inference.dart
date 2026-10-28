@@ -26,14 +26,18 @@ part of 'bean_scanner.dart';
 // ```
 
 extension _BeanTypeInference on BeanScanner {
-  /// `library#Class.method` of [method], the key of
-  /// [BeanScanner._beanMethodDeclarations].
+  /// The key of [method] in [BeanScanner._beanMethodDeclarations]:
+  /// `library#Class.method`.
   static String methodKey(ExecutableElement method) =>
       '${method.library.uri}#${method.enclosingElement?.name}.${method.name}';
 
-  /// Resolves the declarations of the `@Bean` methods of [library]'s
-  /// classes and of the classes they `@Import` (which may live outside the
-  /// scanned directory).
+  /// Resolves and stores the declarations (with typed bodies) of the
+  /// `@Bean` methods of [library]'s classes, so [inferredBeanType] can read
+  /// what they return.
+  ///
+  /// The classes they `@Import` and their superclasses and mixins are
+  /// included, since those may live outside the scanned directory. SDK
+  /// classes are skipped. Must run before the library is scanned.
   Future<void> resolveBeanMethodDeclarations(
     LibraryElement library,
     Future<AstNode?> Function(Fragment fragment) astNodeFor,
@@ -76,9 +80,15 @@ extension _BeanTypeInference on BeanScanner {
     }
   }
 
-  /// The type a bean created by [method] has: the static type of the
-  /// returned expression(s) when it is more specific than [declared]
-  /// (several returns: their least upper bound), else [declared].
+  /// The type of the bean [method] creates: the static type of what its
+  /// body returns, when that is more specific than [declared]; otherwise
+  /// [declared].
+  ///
+  /// Several `return`s give their least upper bound, and `throw` is
+  /// ignored. The inference gives up and returns [declared] when the body
+  /// was not resolved, has a bare `return;`, returns a nullable or
+  /// non-class type, or returns a type the generated code cannot name
+  /// (private, internal to the SDK, or with type-parameter arguments).
   InterfaceType inferredBeanType(MethodElement method, InterfaceType declared) {
     final declaration = _beanMethodDeclarations[methodKey(method)];
     if (declaration == null) {
@@ -122,9 +132,13 @@ extension _BeanTypeInference on BeanScanner {
     return result;
   }
 
-  /// [inferred] and its public supertypes, plus [declared] and its
-  /// supertypes (`MemoryStore<String>` is also looked up as `Store<Object>`
-  /// when that is the declared type).
+  /// The types a bean with an inferred type is registered under:
+  /// [inferred] and its public supertypes, then [declared] and its
+  /// supertypes not already listed.
+  ///
+  /// The declared type stays because callers inject what the method
+  /// signature promises: `MemoryStore<String>` is also found as
+  /// `Store<Object>` when that is the declared type.
   List<InterfaceType> exposedInferredTypes(
     InterfaceType inferred,
     InterfaceType declared,

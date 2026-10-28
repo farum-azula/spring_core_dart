@@ -1,7 +1,16 @@
 // Rows of Markdown tables and sample log lines in documentation cannot wrap.
 // ignore_for_file: lines_longer_than_80_chars
-/// A cron expression in Spring's six-field format, like Spring's
-/// `CronExpression`:
+/// A repeating calendar schedule written as a cron expression, such as
+/// `0 0 9 * * MON-FRI` for 9:00 on working days; [next] gives the next
+/// matching time.
+///
+/// Most applications only write the text in `@Scheduled(cron: ...)`,
+/// which reads it with this class. Use it in code to check an expression
+/// a user typed ([isValid]), to show when something runs next, or to
+/// build a `CronTrigger` for `TaskScheduler.schedule`.
+///
+/// The format is Spring's: six fields, starting with the seconds (Unix
+/// cron has five):
 ///
 /// ```text
 /// ┌───────────── second (0-59)
@@ -43,6 +52,7 @@
 /// (`FRI-MON` is rejected; write `FRI-SUN,MON`).
 ///
 /// ```dart
+/// // A settings screen shows when the report will be sent next.
 /// final everyQuarter = CronExpression.parse('0 */15 * * * *');
 /// everyQuarter.next(DateTime(2026, 1, 1, 10, 7)); // 2026-01-01 10:15:00
 ///
@@ -59,7 +69,8 @@
 /// Local time and daylight saving time: [next] works on the wall clock. A
 /// time inside the hour skipped in spring is moved forward by the
 /// [DateTime] constructor (02:30 becomes 03:30); a time inside the hour
-/// repeated in autumn matches once.
+/// repeated in autumn matches once. `#k` in the day of week takes 1 to 5;
+/// Spring also accepts larger ordinals, which never match.
 final class CronExpression {
   CronExpression._(
     this.expression,
@@ -71,8 +82,9 @@ final class CronExpression {
     this._daysOfWeek,
   );
 
-  /// Parses [expression]; throws a [FormatException] naming the field
-  /// that is wrong.
+  /// Reads [expression], six fields or a macro, ignoring surrounding
+  /// spaces. Throws a [FormatException] that names the wrong field, so the
+  /// message can be shown to whoever wrote the expression.
   ///
   /// ```dart
   /// CronExpression.parse('0 0 * * * *'); // every hour
@@ -135,7 +147,8 @@ final class CronExpression {
     );
   }
 
-  /// Whether [expression] can be parsed.
+  /// Whether [expression] is a valid cron expression, for checking user
+  /// input without catching the [FormatException] of [CronExpression.parse].
   ///
   /// ```dart
   /// CronExpression.isValid('0 0 * * * *'); // true
@@ -150,7 +163,8 @@ final class CronExpression {
     }
   }
 
-  /// The source text.
+  /// The text the expression was read from, as given (a macro stays a
+  /// macro). Two expressions are equal when these texts are equal.
   final String expression;
 
   final _Bits _seconds;
@@ -170,9 +184,9 @@ final class CronExpression {
     '@hourly': '0 0 * * * *',
   };
 
-  /// The first matching time strictly after [after] (whole seconds), in
-  /// the time zone of [after] (local or UTC); `null` when the expression
-  /// never matches again (e.g. `0 0 0 30 2 *`, February 30th).
+  /// The first matching time strictly after [after], in whole seconds and
+  /// in the time zone of [after] (local or UTC). Returns `null` when the
+  /// expression never matches, such as `0 0 0 30 2 *` (February 30th).
   ///
   /// ```dart
   /// CronExpression.parse('0 0 12 * * *')

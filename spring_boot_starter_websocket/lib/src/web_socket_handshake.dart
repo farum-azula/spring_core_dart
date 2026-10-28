@@ -2,14 +2,21 @@ import 'dart:async';
 
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// The handshake of one connection attempt of a `@WebSocketClient`, open
-/// to [WebSocketHandshakeInterceptor]s: change the [url] (e.g. add a
-/// token as a query parameter), [headers] or [protocols].
+/// The request that opens one connection of a `@WebSocketClient`, before
+/// it is sent: its [url], [headers] and [protocols], which a
+/// [WebSocketHandshakeInterceptor] may change.
+///
+/// A new one is made for every attempt, reconnections included, from the
+/// client's URL, its `default-request-headers` and its protocols, so an
+/// interceptor can add a fresh token each time. Applications only meet
+/// it in an interceptor.
 ///
 /// Browsers cannot send headers with a WebSocket handshake: in Flutter web
-/// put tokens in the URL or a protocol instead (a header fails there).
+/// put tokens in the URL or a protocol instead (a header fails there with
+/// a `WebSocketException`).
 final class WebSocketHandshake {
-  /// The handshake of client [clientName] to [url].
+  /// The handshake of the client [clientName] to [url]; the starter
+  /// creates it.
   WebSocketHandshake({
     required this.clientName,
     required this.url,
@@ -18,19 +25,24 @@ final class WebSocketHandshake {
   }) : headers = headers ?? HttpHeaders(),
        protocols = [...protocols];
 
-  /// The `@WebSocketClient` name.
+  /// The name of the `@WebSocketClient` that connects, so one interceptor
+  /// can treat clients differently.
   final String clientName;
 
-  /// The address to connect to.
+  /// The address to connect to; replace it to change the server or the
+  /// query, or use [queryParameter].
   Uri url;
 
-  /// The handshake headers.
+  /// The headers sent with the handshake, starting with the configured
+  /// `default-request-headers`. Not possible in browsers.
   final HttpHeaders headers;
 
-  /// The subprotocols offered.
+  /// The subprotocols offered to the server (`Sec-WebSocket-Protocol`),
+  /// starting with `@WebSocketClient(protocols:)`; a modifiable list.
   final List<String> protocols;
 
-  /// Adds the query parameter [name] (replacing one with that name).
+  /// Sets the query parameter [name] of [url] to [value], replacing any
+  /// with that name, such as a token that works in browsers too.
   void queryParameter(String name, String value) {
     url = url.replace(
       queryParameters: {...url.queryParametersAll, name: value},
@@ -41,11 +53,16 @@ final class WebSocketHandshake {
   String toString() => 'WebSocketHandshake($clientName, $url)';
 }
 
-/// Changes every handshake of the `@WebSocketClient`s before it is sent,
-/// on each connection and reconnection (so a fresh token is used). Declare
-/// it as a bean.
+/// A bean that changes the handshake of every `@WebSocketClient`
+/// connection before it is sent, typically to add authentication.
+///
+/// Every bean implementing it is called, on each connection and
+/// reconnection, so a token that expired in the meantime is replaced by a
+/// fresh one. Check [WebSocketHandshake.clientName] when only some
+/// clients need it. A failing interceptor fails that connection attempt.
 ///
 /// ```dart
+/// // The chat server wants the user's current token in the URL.
 /// @Component()
 /// class ChatAuth implements WebSocketHandshakeInterceptor {
 ///   ChatAuth(this.tokens);
@@ -64,6 +81,7 @@ final class WebSocketHandshake {
 /// `WebSocketClient.execute`, or a `StompSessionHandler` adding headers to
 /// the `CONNECT` frame.
 abstract interface class WebSocketHandshakeInterceptor {
-  /// Changes [handshake].
+  /// Changes [handshake] before it is sent; it may wait, for example
+  /// for a token refresh.
   FutureOr<void> apply(WebSocketHandshake handshake);
 }

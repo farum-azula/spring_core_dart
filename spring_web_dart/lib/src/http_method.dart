@@ -1,8 +1,19 @@
-/// The HTTP request methods, like Spring's `HttpMethod`.
+/// The HTTP request methods (`GET`, `POST`, ...), as an enum.
+///
+/// Mapping annotations carry one (`@RequestMapping.of(method: ...)`), a
+/// server request tells its method with it, and a client request is sent
+/// with it. Code that compares or switches on methods uses the enum
+/// values instead of strings; [value] is the text sent on the wire.
 ///
 /// ```dart
-/// HttpMethod.post.value;           // 'POST'
-/// HttpMethod.parse('DELETE');      // HttpMethod.delete
+/// // An interceptor letting reads through and checking writes.
+/// final isRead = switch (request.method) {
+///   HttpMethod.get || HttpMethod.head || HttpMethod.options => true,
+///   _ => false,
+/// };
+///
+/// HttpMethod.parse('DELETE'); // HttpMethod.delete
+/// HttpMethod.post.value;      // 'POST'
 /// ```
 ///
 /// Spring (Java):
@@ -11,36 +22,38 @@
 /// HttpMethod.valueOf("DELETE");
 /// ```
 enum HttpMethod {
-  /// `GET`.
+  /// `GET`: reads a resource without changing it.
   get,
 
-  /// `HEAD`.
+  /// `HEAD`: like `GET`, but the answer has only the status and headers.
   head,
 
-  /// `POST`.
+  /// `POST`: sends data to create something or start an action.
   post,
 
-  /// `PUT`.
+  /// `PUT`: replaces the resource at the path with the body.
   put,
 
-  /// `PATCH`.
+  /// `PATCH`: changes part of the resource at the path.
   patch,
 
-  /// `DELETE`.
+  /// `DELETE`: removes the resource at the path.
   delete,
 
-  /// `OPTIONS`.
+  /// `OPTIONS`: asks which methods a path supports; browsers send it as
+  /// the CORS pre-flight request.
   options,
 
-  /// `TRACE`.
+  /// `TRACE`: asks the server to echo the request, for debugging.
   trace;
 
-  /// The method as sent on the wire: `GET`, `POST`, ...
+  /// The method's name as sent on the wire, in upper case: `GET`,
+  /// `POST`, ... [toString] returns it too.
   String get value => name.toUpperCase();
 
-  /// The method named exactly [value] (`GET`, `POST`, ...: case-sensitive,
-  /// like Spring's `HttpMethod.valueOf`); throws `ArgumentError` for any
-  /// other text (`'get'` too: HTTP methods are case-sensitive).
+  /// The method named exactly [value], such as `'DELETE'`. HTTP method
+  /// names are case-sensitive, so `'get'` or `' GET'` is an
+  /// `ArgumentError`, as is an unknown method.
   static HttpMethod parse(String value) {
     for (final method in values) {
       if (method.value == value) {

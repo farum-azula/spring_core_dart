@@ -6,14 +6,19 @@ import 'package:spring_core_dart/src/expression/java_format.dart';
 import 'package:spring_core_dart/src/expression/spel_patterns.dart';
 import 'package:spring_core_dart/src/expression/spel_type.dart';
 
-/// Reads and writes map entries as properties (`map.key`), like Spring's
-/// `MapAccessor`.
+/// A [PropertyAccessor] that treats the entries of a map as properties,
+/// so `user.name` works when `user` is a map such as decoded JSON.
 ///
-/// Registered by default in [StandardEvaluationContext] and
-/// [SimpleEvaluationContext]. Reading needs an existing key; writing
-/// always succeeds on a map.
+/// Both contexts register it by default (unless built with
+/// `SimpleEvaluationContext.forPropertyAccessors`), so you rarely create
+/// one. A key that is not in the map is not readable here: the next
+/// accessor is asked, and the expression fails if none can read it
+/// (`map['missing']` gives `null` instead). Writing stores the key, new
+/// or not; a value of the wrong type for a typed map fails with
+/// `exceptionDuringPropertyWrite` (EL1034E).
 ///
 /// ```dart
+/// // A JSON payload read without a class.
 /// final data = {'user': {'name': 'Ada'}};
 /// SpelExpressionParser()
 ///     .parseExpression('user.name')
@@ -51,12 +56,17 @@ final class MapAccessor implements PropertyAccessor {
   ) => (target as Map)[name] = newValue;
 }
 
-/// Getters (and setters) for objects of type [T], from functions.
+/// A [PropertyAccessor] for objects of type [T], built from one getter
+/// (and optionally one setter) function per property name.
 ///
-/// The reflection-free way to expose properties of your own classes;
-/// `IntrospectionPropertyAccessor` does the same from generated metadata.
+/// Use it to make a class readable in expressions when it is not
+/// `@Introspected`, for instance a class from another package: list the
+/// properties expressions may see, nothing else is exposed.
+/// `IntrospectionPropertyAccessor` does the same for `@Introspected`
+/// classes from generated metadata.
 ///
 /// ```dart
+/// // `name` can be read and assigned on a User.
 /// final context = StandardEvaluationContext(user)
 ///   ..addPropertyAccessor(FunctionPropertyAccessor<User>(
 ///     getters: {'name': (u) => u.name},
@@ -78,7 +88,8 @@ final class MapAccessor implements PropertyAccessor {
 final class FunctionPropertyAccessor<T extends Object>
     implements PropertyAccessor {
   /// Exposes [getters] (readable properties) and [setters] (writable
-  /// properties) of `T`, keyed by property name.
+  /// properties) of `T`, keyed by property name. A setter receives the
+  /// value unconverted, so it casts it itself.
   FunctionPropertyAccessor({
     Map<String, Object? Function(T target)> getters = const {},
     Map<String, void Function(T target, Object? value)> setters = const {},
@@ -109,10 +120,16 @@ final class FunctionPropertyAccessor<T extends Object>
   ) => _setters[name]!(target as T, newValue);
 }
 
-/// Methods of objects of type [T], from functions taking the target and
-/// the evaluated arguments.
+/// A [MethodResolver] for objects of type [T], built from one function per
+/// method name.
+///
+/// Use it to let expressions call a few methods of a class that is not
+/// `@Introspected`. Each function gets the target and the list of
+/// evaluated arguments, whatever their number, and checks them itself;
+/// arguments are not converted.
 ///
 /// ```dart
+/// // greet('Bob') can be called on a User.
 /// final context = StandardEvaluationContext(user)
 ///   ..addMethodResolver(FunctionMethodResolver<User>({
 ///     'greet': (u, args) => 'Hi ${args.first}, I am ${u.name}',
@@ -150,12 +167,16 @@ final class FunctionMethodResolver<T extends Object> implements MethodResolver {
   }
 }
 
-/// Read-only properties of core Dart types: `length`/`size`, `isEmpty`,
-/// `first`, `last`, map `keys`/`values`/`entries`, entry `key`/`value`,
-/// date and duration parts, enum `name`/`index`.
+/// A [PropertyAccessor] for the common read-only properties of core Dart
+/// types, which expressions cannot reach otherwise without reflection.
 ///
-/// Registered by default; Java-style aliases (`size`, `empty`, `keySet`,
-/// `entrySet`) work too.
+/// It covers `length`/`size`, `isEmpty`, `isNotEmpty`, `first` and `last`
+/// of strings and iterables; `keys`, `values` and `entries` of maps (as
+/// lists) and `key`/`value` of entries; `isNegative`, `isNaN`, `sign`, ...
+/// of numbers; the parts of a `DateTime` (`year`, `month`, `weekday`, ...)
+/// and of a `Duration` (`inSeconds`, ...); `name` and `index` of enums.
+/// Java-style names work too (`size`, `empty`, `keySet`, `entrySet`).
+/// Both contexts register it by default.
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();
@@ -248,23 +269,30 @@ final class BuiltinPropertyAccessor implements PropertyAccessor {
   ) => throw UnsupportedError('Built-in properties are read-only');
 }
 
-/// Common methods of core Dart types, with Dart names and the names
-/// Spring users know (`size()`, `toUpperCase()`, `charAt()`, `equals()`,
-/// `getOrDefault()`, `putIfAbsent()`).
+/// A [MethodResolver] for the common methods of core Dart types, under
+/// their Dart names and the Java names Spring expressions use
+/// (`size()`, `toUpperCase()`, `charAt()`, `equals()`, `getOrDefault()`,
+/// `putIfAbsent()`).
 ///
-/// Covers `String`, `List`, `Set`, `Iterable`, `Map`, `num`, `DateTime`
-/// and `Duration`, plus `toString()`, `hashCode()`, `equals()` and
-/// `compareTo()` on any object. Registered by default in
-/// [StandardEvaluationContext]; in a [SimpleEvaluationContext] only after
-/// `withInstanceMethods()`. Where Dart and Java share a name, the method
-/// behaves like Dart's: `split`, `replaceAll` and `contains` take plain
-/// strings (not regular expressions), `List.remove(x)` removes an
-/// element; `matches` uses Dart's `RegExp`.
+/// Without reflection expressions could not call `'abc'.toUpperCase()`;
+/// this table makes the usual methods of `String`, `List`, `Set`,
+/// `Iterable`, `Map`, `int`, `num`, `DateTime`, `Duration` and
+/// `StringBuffer` (Java's `StringBuilder`) available, plus `toString()`,
+/// `hashCode()`, `equals()` and `compareTo()` on any object. A
+/// [StandardEvaluationContext] registers it by default; a
+/// [SimpleEvaluationContext] only after `withInstanceMethods()`.
 ///
-/// Arguments that do not fit a method are reported as
-/// `SpelMessage.methodNotFound`; errors raised by the method itself
-/// (`RangeError` for `'abc'.charAt(9)`) propagate unchanged, like Java
-/// exceptions from Spring's reflective calls.
+/// Where Dart and Java share a name, the method behaves like Dart's:
+/// `split`, `replaceAll` and `contains` take plain strings (not regular
+/// expressions), `List.remove(x)` removes an element (not the one at an
+/// index); `matches` uses Dart's `RegExp`. String also has Java's
+/// `formatted`, `getBytes` (UTF-8) and `chars`.
+///
+/// Number, string and bool arguments are converted to the parameter type
+/// when needed (`'abc'.substring('1')`). Arguments that still do not fit
+/// are reported as `SpelMessage.methodNotFound`; errors raised by the
+/// method itself (`RangeError` for `'abc'.charAt(9)`) propagate
+/// unchanged, like Java exceptions from Spring's reflective calls.
 ///
 /// ```dart
 /// final parser = SpelExpressionParser();

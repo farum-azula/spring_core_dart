@@ -1,7 +1,18 @@
-/// Bean definitions, the bean factory, injection, post-processors, scopes,
-/// `BeanWrapper` and introspection (Spring's `spring-beans`).
+/// The dependency-injection container: bean definitions, the bean factory
+/// that creates and wires the beans, scopes, lifecycle callbacks and the
+/// post-processor hooks, plus `BeanWrapper` and the compile-time
+/// introspection that data binding and SpEL read.
+///
+/// Import it when you use the container without an application context
+/// (a small tool, a test), or when you write library code that registers
+/// bean definitions or post-processes beans. An application normally does
+/// not import it on its own: it declares beans with annotations
+/// (`@Component()`, `@Bean()`), lets the generator write the definitions
+/// and starts an `ApplicationContext`, which owns a factory from this
+/// library. `package:spring_core_dart/spring_core_dart.dart` exports it.
 ///
 /// ```dart
+/// // A container without a context: one bean registered by hand.
 /// final factory = DefaultListableBeanFactory()
 ///   ..registerBeanDefinition(
 ///     BeanDefinition<Clock>(name: 'clock', create: (_) => SystemClock()),
@@ -9,7 +20,7 @@
 /// final clock = factory.getBean<Clock>();
 /// ```
 ///
-/// Spring (Java):
+/// Spring (Java): the `spring-beans` module.
 /// ```java
 /// var factory = new DefaultListableBeanFactory();
 /// factory.registerBeanDefinition("clock",

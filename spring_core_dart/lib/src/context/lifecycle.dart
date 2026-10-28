@@ -5,11 +5,16 @@ import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/core/log.dart';
 
-/// A context-level failure, like Spring's `ApplicationContextException`:
-/// thrown, for example, when a [Lifecycle] bean fails to start
-/// ("Failed to start bean 'x'", the bean's error as [cause]).
+/// The error a context throws when one of its own steps fails, as opposed
+/// to an error in creating a bean.
+///
+/// Today it is thrown when a [Lifecycle] bean fails to start: the message
+/// is "Failed to start bean 'x'" and the bean's own error is the [cause].
+/// Applications receive it from `refresh()` or `start()`; they do not
+/// throw it.
 ///
 /// ```dart
+/// // Report which bean failed to start, and why.
 /// try {
 ///   context.refresh();
 /// } on ApplicationContextException catch (e) {
@@ -22,16 +27,24 @@ import 'package:spring_core_dart/src/core/log.dart';
 /// } catch (ApplicationContextException ex) { ... }
 /// ```
 class ApplicationContextException extends BeansException {
-  /// A failure described by [message], caused by [cause].
+  /// Creates the error with [message] and the underlying [cause].
   const ApplicationContextException(super.message, {super.cause});
 }
 
-/// A component that can be started and stopped, like Spring's `Lifecycle`.
+/// A bean that runs something in the background between a start and a
+/// stop, such as a timer, a server or a connection.
 ///
-/// Plain [Lifecycle] singletons are started only by an explicit
-/// `context.start()` and stopped by `context.stop()` / `close()`.
+/// Implement it so that the context can stop the background work: on
+/// `context.stop()`, on `close()` (before the beans are destroyed) and on
+/// `pause()`. A plain [Lifecycle] bean is not started at refresh, only by
+/// an explicit `context.start()`, or at refresh when an auto-startup bean
+/// depends on it. For a bean that should start by itself with the
+/// application, which is the usual case, use [SmartLifecycle]. Only
+/// singletons take part, and a lazy plain [Lifecycle] bean only once it
+/// was created.
 ///
 /// ```dart
+/// // Polls every 5 seconds while the context runs.
 /// @Component()
 /// class Poller implements Lifecycle {
 ///   Timer? _timer;
@@ -60,25 +73,39 @@ class ApplicationContextException extends BeansException {
 /// }
 /// ```
 abstract interface class Lifecycle {
-  /// Starts the component; not called when [isRunning] is already `true`.
+  /// Starts the background work. The context does not call it when
+  /// [isRunning] is already `true`; an error thrown here fails the start
+  /// as an [ApplicationContextException].
   void start();
 
-  /// Stops the component; only called when [isRunning] is `true`.
+  /// Stops the background work. The context calls it only when
+  /// [isRunning] is `true`; an error thrown here is logged and the other
+  /// beans are still stopped.
   void stop();
 
-  /// Whether the component is currently running.
+  /// Whether the background work is running; the context asks before
+  /// starting or stopping the bean.
   bool get isRunning;
 }
 
-/// A [Lifecycle] started automatically at refresh and ordered by [phase],
-/// like Spring's `SmartLifecycle`. Lower phases start first and stop last.
+/// A [Lifecycle] bean that the context starts by itself at the end of the
+/// refresh and stops in order at shutdown.
+///
+/// This is the usual way to run background work with the application: a
+/// client that connects at startup, a scheduler, a server. [phase] orders
+/// the beans: lower phases start first and stop last, so a bean that
+/// others need gets a lower phase. [stopWithCallback] lets a bean stop
+/// asynchronously (closing a socket), and `closeAsync()` waits for it.
+/// [isPauseable] keeps a bean running during `pause()`.
 ///
 /// Mix it in (`with SmartLifecycle`) or extend it to get Spring's
 /// defaults: [isAutoStartup] `true`, [phase] [defaultPhase] and
-/// [stopWithCallback] calling [stop], then the callback; `implements`
-/// works too (then every member is yours to write).
+/// [stopWithCallback] calling [stop], then the callback. `implements`
+/// works too; then every member is yours to write.
 ///
 /// ```dart
+/// // Connects when the application starts, disconnects at shutdown,
+/// // before the beans in lower phases stop.
 /// @Component()
 /// class WebSocketClient with SmartLifecycle {
 ///   bool _running = false;
@@ -108,31 +135,40 @@ abstract interface class Lifecycle {
 /// }
 /// ```
 abstract mixin class SmartLifecycle implements Lifecycle {
-  /// Spring's default phase for smart lifecycles (starts last, stops
-  /// first): `Integer.MAX_VALUE`, like `SmartLifecycle.DEFAULT_PHASE`.
+  /// The default [phase]: the highest value, so the bean starts after all
+  /// others and stops before them. Spring's `SmartLifecycle.DEFAULT_PHASE`
+  /// (`Integer.MAX_VALUE`).
   static const defaultPhase = 0x7FFFFFFF;
 
-  /// Whether the context starts it at refresh; `true` by default.
+  /// Whether the context starts the bean at the end of the refresh;
+  /// `true` by default. With `false` it starts only on an explicit
+  /// `context.start()`.
   bool get isAutoStartup => true;
 
-  /// Start/stop order: lower phases start earlier and stop later;
-  /// [defaultPhase] by default.
+  /// The start and stop order: lower phases start earlier and stop later;
+  /// [defaultPhase] by default. Plain [Lifecycle] beans count as phase 0.
+  /// A bean's dependencies start before it whatever their phase.
   int get phase => defaultPhase;
 
-  /// Whether `context.pause()` stops it (and `context.restart()` starts it
-  /// again); `true` by default, like Spring 7's `isPauseable()`. Return
-  /// `false` for a component that must keep running while the context is
-  /// paused (it still stops on `stop()` and `close()`).
+  /// Whether `context.pause()` stops the bean (and `context.restart()`
+  /// starts it again); `true` by default, as Spring 7's `isPauseable()`.
+  /// Return `false` for work that must go on while the application is in
+  /// the background; the bean still stops on `stop()` and `close()`.
   bool get isPauseable => true;
 
-  /// Stops the component and calls [callback] once it has stopped, like
-  /// Spring's `stop(Runnable callback)`; by default [stop], then
-  /// [callback]. The lifecycle processor stops smart lifecycles through
-  /// this method: `closeAsync()` waits for the callbacks of a phase (at
-  /// most the processor's timeout for that phase) before stopping the
-  /// next phase; the synchronous `stop()` / `close()` do not wait.
+  /// Stops the bean and calls [callback] once it has really stopped;
+  /// override it when stopping is asynchronous. By default it calls
+  /// [stop], then [callback].
+  ///
+  /// The lifecycle processor always stops smart lifecycle beans through
+  /// this method. `closeAsync()` waits for the callbacks of a phase (at
+  /// most the processor's timeout for that phase) before it stops the next
+  /// phase; the synchronous `stop()` and `close()` do not wait. Call
+  /// [callback] exactly once, also when stopping fails. Spring's
+  /// `stop(Runnable callback)`.
   ///
   /// ```dart
+  /// // The bean counts as stopped once the socket is closed.
   /// @override
   /// void stopWithCallback(void Function() callback) {
   ///   _socket.close().whenComplete(callback);
@@ -144,12 +180,17 @@ abstract mixin class SmartLifecycle implements Lifecycle {
   }
 }
 
-/// Starts and stops lifecycle beans, like Spring's `LifecycleProcessor`.
+/// The part of the context that starts and stops its [Lifecycle] beans,
+/// at refresh, pause, restart and close.
 ///
-/// The context uses a bean named `lifecycleProcessor` if one exists,
-/// otherwise a [DefaultLifecycleProcessor].
+/// Applications rarely touch it. The context uses a bean named
+/// `lifecycleProcessor` if one exists, otherwise a
+/// [DefaultLifecycleProcessor]. Declare one to change the shutdown
+/// timeouts; implement the interface only for a different start and stop
+/// strategy.
 ///
 /// ```dart
+/// // Give the beans 30 seconds per phase to stop.
 /// @Configuration()
 /// class LifecycleConfig {
 ///   @Bean()
@@ -172,36 +213,43 @@ abstract mixin class SmartLifecycle implements Lifecycle {
 /// }
 /// ```
 abstract interface class LifecycleProcessor implements Lifecycle {
-  /// Starts auto-startup [SmartLifecycle] beans (context refresh).
+  /// Starts the auto-startup [SmartLifecycle] beans; called at the end of
+  /// the context's refresh.
   void onRefresh();
 
-  /// Stops the pauseable beans if running, then starts the auto-startup
-  /// beans again (context `restart()`), like Spring 7's `onRestart()`.
+  /// Stops the pauseable beans if they are still running, then starts the
+  /// auto-startup beans again; called by the context's `restart()`
+  /// (Spring 7's `onRestart()`).
   void onRestart();
 
-  /// Stops running beans except the [SmartLifecycle] beans that are not
-  /// [SmartLifecycle.isPauseable] (context `pause()`), like Spring 7's
-  /// `onPause()`; does not wait for [SmartLifecycle.stopWithCallback]
-  /// callbacks that come later.
+  /// Stops the running beans except the [SmartLifecycle] beans that are
+  /// not [SmartLifecycle.isPauseable]; called by the context's `pause()`
+  /// (Spring 7's `onPause()`). Does not wait for
+  /// [SmartLifecycle.stopWithCallback] callbacks that come later.
   void onPause();
 
-  /// Like [onPause] (context `pauseAsync()`), waiting for the callbacks of
-  /// [SmartLifecycle.stopWithCallback] phase by phase.
+  /// Like [onPause], but waits for the callbacks of
+  /// [SmartLifecycle.stopWithCallback] phase by phase; called by the
+  /// context's `pauseAsync()`.
   Future<void> onPauseAsync();
 
-  /// Stops running beans (context close); does not wait for
-  /// [SmartLifecycle.stopWithCallback] callbacks that come later.
+  /// Stops the running beans; called by the context's `close()` and by a
+  /// failed refresh. Does not wait for [SmartLifecycle.stopWithCallback]
+  /// callbacks that come later.
   void onClose();
 
-  /// Stops running beans (context `closeAsync()`), waiting for the
-  /// callbacks of [SmartLifecycle.stopWithCallback] phase by phase.
+  /// Stops the running beans, waiting for the callbacks of
+  /// [SmartLifecycle.stopWithCallback] phase by phase; called by the
+  /// context's `closeAsync()`.
   Future<void> onCloseAsync();
 }
 
-/// Default [LifecycleProcessor], like Spring's `DefaultLifecycleProcessor`:
-/// phases ascending on start, descending on stop; plain [Lifecycle] beans
-/// have phase 0.
+/// The [LifecycleProcessor] every context uses unless it declares its own:
+/// it starts the lifecycle beans phase by phase, lowest first, and stops
+/// them in the reverse order.
 ///
+/// Applications meet it only to change the shutdown timeouts, by declaring
+/// a `lifecycleProcessor` bean. Plain [Lifecycle] beans have phase 0.
 /// Beans in the same phase start in registration order and stop in the
 /// reverse order; a bean's dependencies (injected or `dependsOn`) start
 /// before it and its dependents stop before it, whatever their phase. Like
@@ -227,6 +275,7 @@ abstract interface class LifecycleProcessor implements Lifecycle {
 /// restores the state after refresh.
 ///
 /// ```dart
+/// // Outside a context: drive the lifecycle beans of a bean factory.
 /// final processor = DefaultLifecycleProcessor(context.beanFactory)
 ///   ..start(); // starts every Lifecycle bean, auto-startup or not
 /// processor.stop();
@@ -239,24 +288,27 @@ abstract interface class LifecycleProcessor implements Lifecycle {
 /// processor.start();
 /// ```
 class DefaultLifecycleProcessor implements LifecycleProcessor {
-  /// Creates a processor managing the lifecycle singletons of
-  /// [beanFactory]; see [timeoutPerShutdownPhase] and
-  /// [timeoutsForShutdownPhases].
+  /// Creates a processor for the lifecycle singletons of [beanFactory].
+  /// [timeoutPerShutdownPhase] defaults to 10 seconds;
+  /// [timeoutsForShutdownPhases] overrides it for single phases.
   DefaultLifecycleProcessor(
     this.beanFactory, {
     this.timeoutPerShutdownPhase = const Duration(seconds: 10),
     Map<int, Duration> timeoutsForShutdownPhases = const {},
   }) : timeoutsForShutdownPhases = {...timeoutsForShutdownPhases};
 
-  /// The factory the lifecycle beans are looked up in.
+  /// The factory whose lifecycle beans are started and stopped.
   final ConfigurableListableBeanFactory beanFactory;
 
-  /// How long `closeAsync()` waits for the stop callbacks of one phase
-  /// (Spring's `timeoutPerShutdownPhase`, 10 seconds by default).
+  /// How long `closeAsync()` and `pauseAsync()` wait for the stop
+  /// callbacks of one phase before they log the beans still running and
+  /// go on; 10 seconds by default (Spring's `timeoutPerShutdownPhase`).
   Duration timeoutPerShutdownPhase;
 
-  /// Timeouts of specific phases, overriding [timeoutPerShutdownPhase]
-  /// (Spring's `timeoutsForShutdownPhases`).
+  /// Timeouts for single phases, by phase, overriding
+  /// [timeoutPerShutdownPhase]; for example a longer one for the phase of
+  /// a server that drains its requests (Spring's
+  /// `timeoutsForShutdownPhases`).
   final Map<int, Duration> timeoutsForShutdownPhases;
 
   bool _running = false;
@@ -268,7 +320,8 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
   final _stopping = <String, Completer<void>>{};
   final _startWhenStopped = <String>{};
 
-  /// The timeout for the shutdown of [phase] (Spring's
+  /// The timeout for the shutdown of [phase]: its entry in
+  /// [timeoutsForShutdownPhases], else [timeoutPerShutdownPhase] (Spring's
   /// `determineTimeout`).
   Duration timeoutForShutdownPhase(int phase) =>
       timeoutsForShutdownPhases[phase] ?? timeoutPerShutdownPhase;
@@ -277,14 +330,15 @@ class DefaultLifecycleProcessor implements LifecycleProcessor {
   bool get isRunning => _running;
 
   /// Starts every [Lifecycle] bean that is not running, auto-startup or
-  /// not (explicit `context.start()`).
+  /// not; called by an explicit `context.start()`.
   @override
   void start() {
     _startBeans(autoStartupOnly: false);
     _running = true;
   }
 
-  /// Stops every running [Lifecycle] bean, highest phase first.
+  /// Stops every running [Lifecycle] bean, highest phase first, without
+  /// waiting for stop callbacks; called by `context.stop()`.
   @override
   void stop() {
     _stopBeans();

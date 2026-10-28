@@ -9,17 +9,32 @@ import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 
-/// An [HttpTransport] on the browser's `fetch` (Flutter web, Dart on the
-/// web), through `dart:js_interop`. Follows redirects unless the request
-/// says not to (`redirect: 'manual'`: the browser then gives an opaque
-/// response with status 0). The request's `timeout` (whole exchange) and
-/// `readTimeout` (each wait for data) abort the request
-/// (`AbortController`). Non-2xx responses are ordinary responses; network
-/// failures (also CORS) throw [HttpTransportException].
+/// The [HttpTransport] for code running in a browser (Flutter web, Dart
+/// compiled to JavaScript or WebAssembly), built on the browser's `fetch`
+/// through `dart:js_interop`.
+///
+/// `platformHttpTransport()` returns one in the browser, so applications
+/// rarely create it. The browser stays in charge of the request: it adds
+/// cookies and its own headers, applies CORS, and has no connection
+/// timeout.
+///
+/// How it treats an [HttpRequest]:
+///
+/// - Several values of one header are sent joined with `, `.
+/// - Redirects are followed unless `followRedirects` is `false`; then
+///   `fetch` runs with `redirect: 'manual'` and the browser gives an
+///   opaque response with status 0, without its `Location`.
+/// - `timeout` (the whole exchange) and `readTimeout` (each wait for
+///   data) abort the request through an `AbortController`, and an
+///   [HttpTransportException] with `isTimeout` is thrown.
+/// - Non-2xx responses are ordinary responses. Network failures,
+///   including a request the browser blocks for CORS, throw an
+///   [HttpTransportException].
 ///
 /// ```dart
 /// import 'package:spring_web_dart/browser.dart';
 ///
+/// // A relative URL goes to the origin that served the web app.
 /// final transport = FetchHttpTransport();
 /// final response = await transport.send(
 ///   HttpRequest(method: HttpMethod.get, url: Uri.parse('/api/books')),
@@ -29,7 +44,8 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// Spring (Java): no browser in Java; the closest is a
 /// `ClientHttpRequestFactory` such as `JdkClientHttpRequestFactory`.
 class FetchHttpTransport implements HttpTransport {
-  /// A transport on `fetch`.
+  /// A transport on `fetch`. It has no settings: the browser decides
+  /// about connections, proxies and certificates.
   FetchHttpTransport();
 
   @override
@@ -231,7 +247,8 @@ extension type _ReadResult._(JSObject _) implements JSObject {
   external JSUint8Array? get value;
 }
 
-/// Aborts a request when its timeout runs out.
+/// A timer that aborts a request when its timeout runs out. With a `null`
+/// timeout it never fires.
 final class _Deadline {
   _Deadline(this._timeout, this._abort) {
     restart();
@@ -241,10 +258,11 @@ final class _Deadline {
   final void Function() _abort;
   Timer? _timer;
 
-  /// Whether the timeout ran out.
+  /// Whether the timeout ran out and the request was aborted.
   bool timedOut = false;
 
-  /// Starts the timeout again (for an idle timeout: data arrived).
+  /// Starts the timeout again from now: for an idle timeout, when data
+  /// arrived. Does nothing once it has run out.
   void restart() {
     final timeout = _timeout;
     _timer?.cancel();

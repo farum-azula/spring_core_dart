@@ -9,19 +9,24 @@ import 'package:spring_boot_starter_websocket/src/web_socket_connection_manager.
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
-/// Performs the calls of one `@WebSocketClient` interface on its
-/// [WebSocketConnectionManager]: `@OnMessage` methods give typed streams of the
-/// incoming messages, `@SendMessage` methods send, `connect()` and
-/// `close()` open and close. Created by `WebSocketClientFactory`.
+/// The implementation behind one `@WebSocketClient` interface: the
+/// generated class passes every method call here, and this object answers
+/// it over the client's [WebSocketConnectionManager].
 ///
-/// Every method is checked when the client bean is created, so a method
-/// the starter cannot implement stops the application at startup with the
-/// reason.
+/// `@OnMessage` methods give typed streams of the incoming messages,
+/// `@SendMessage` methods send, `connect()` and `close()` open and close.
+/// The `WebSocketClientFactory` creates one per client; applications do
+/// not use it directly. Every method, and the URL, is checked when the
+/// client bean is created, so a method the starter cannot implement or a
+/// missing or wrong URL stops the application at startup with the reason.
 ///
 /// Differs from Spring: Spring has no declarative WebSocket client (see
 /// `WebSocketClient`).
 final class WebSocketInvocationHandler implements InvocationHandler {
-  /// The handler of the interface described by [metadata].
+  /// The implementation of the interface described by [metadata], marked
+  /// with [client]. Throws a [StateError] listing every problem of the
+  /// interface: no URL, a URL that does not start with `ws://` or
+  /// `wss://`, a method of the wrong shape.
   WebSocketInvocationHandler({
     required InterfaceMetadata<Object> metadata,
     required this.client,
@@ -56,19 +61,20 @@ final class WebSocketInvocationHandler implements InvocationHandler {
     );
   }
 
-  /// The interface name.
+  /// The name of the interface, used in error messages and in the logger
+  /// name (`websocket.<typeName>`).
   final String typeName;
 
-  /// The `@WebSocketClient` annotation.
+  /// The `@WebSocketClient` annotation on the interface.
   final WebSocketClient client;
 
-  /// The client's settings.
+  /// The client's settings, from `spring.websocket.client.config.*`.
   final WebSocketClientConfig config;
 
-  /// Reads and writes JSON messages.
+  /// Reads and writes the JSON messages.
   final ObjectMapper mapper;
 
-  /// The shared connection.
+  /// Keeps the client's one connection, shared by all its methods.
   late final WebSocketConnectionManager connectionManager;
 
   final _plans = Map<ProxyMethod, Object? Function(List<Object?>)>.identity();
@@ -217,9 +223,17 @@ final class WebSocketInvocationHandler implements InvocationHandler {
       _plans[method]!(arguments);
 }
 
-/// A message that cannot be converted to or from the declared type.
+/// Thrown when a WebSocket message cannot be converted to or from the
+/// declared type: an incoming text that is not valid JSON for the type of
+/// an `@OnMessage` stream, or a value a `@SendMessage` method cannot write
+/// as JSON.
+///
+/// An incoming message that fails arrives as an error event on the
+/// stream, and the stream goes on, so one bad message does not stop a
+/// client.
 ///
 /// ```dart
+/// // Show the good messages, log the bad ones.
 /// socket.messages().listen(show, onError: (Object error) {
 ///   if (error is MessageConversionException) print(error.message);
 /// });
@@ -228,16 +242,18 @@ final class WebSocketInvocationHandler implements InvocationHandler {
 /// Spring (Java):
 /// `org.springframework.messaging.converter.MessageConversionException`.
 class MessageConversionException implements Exception {
-  /// A conversion failure described by [description].
+  /// A conversion failure described by [description], with the text
+  /// [message] that could not be read and the [cause].
   MessageConversionException(this.description, {this.message, this.cause});
 
-  /// What went wrong.
+  /// What went wrong, naming the client and the type.
   final String description;
 
-  /// The text message that could not be read, if any.
+  /// The text message that could not be read; `null` for a message that
+  /// could not be written.
   final String? message;
 
-  /// The underlying error.
+  /// The error of the JSON reader or writer.
   final Object? cause;
 
   @override

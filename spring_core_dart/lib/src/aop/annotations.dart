@@ -1,11 +1,21 @@
-/// Marks a bean as an aspect, like Spring's `@Aspect`. Its advice
-/// methods apply to proxied beans whose methods match their pointcuts.
+/// Marks a bean class as an aspect: a bean whose advice methods run around
+/// the calls of other beans.
 ///
-/// Like Spring, an aspect also needs `@Component()` to be picked up by
-/// the component scan; `@Order` orders aspects (lower runs first, i.e.
-/// outermost).
+/// Put it on a class whose methods carry `@Before`, `@After`,
+/// `@AfterReturning`, `@AfterThrowing` or `@Around`. Each advice method
+/// runs for the members its pointcut expression matches, in every bean the
+/// generator wrote a proxy for. This is how an application adds logging,
+/// timing, auditing or checks to many classes without editing them.
+///
+/// The aspect must also be a bean: add `@Component()` (or declare it with a
+/// `@Bean` method). It can inject other beans as usual and is never
+/// proxied itself. When several aspects advise the same call, `@Order` (or
+/// implementing `Ordered`) decides: the lower value is the outer one, so its
+/// `@Before` runs first and its `@After` last. Aspects without an order
+/// come last.
 ///
 /// ```dart
+/// // Logs every call to the Calculator bean, before the other aspects.
 /// @Aspect()
 /// @Component()
 /// @Order(1)
@@ -29,14 +39,17 @@
 /// }
 /// ```
 ///
-/// [value] is the instantiation model, as in Spring: empty for one
-/// (singleton) aspect, `perthis(pointcut)` for one aspect instance per
-/// proxy, `pertarget(pointcut)` for one per target bean. A per-instance
-/// aspect must be a prototype bean (`@Scope('prototype')`); its advice
-/// applies where both the per-clause pointcut and the advice's pointcut
-/// match.
+/// [value] is the instantiation model, as in Spring. Empty (the default)
+/// means one aspect instance for the whole application. `perthis(pointcut)`
+/// gives one aspect instance per proxy, `pertarget(pointcut)` one per
+/// target bean, so the aspect can keep state per advised object. Such an
+/// aspect must be a prototype bean (`@Scope('prototype')`), and its advice
+/// applies only where both the per-clause pointcut and the advice's own
+/// pointcut match. A singleton per-instance aspect, `percflow` and
+/// `pertypewithin` are rejected.
 ///
 /// ```dart
+/// // Counts the calls of each Orders proxy separately.
 /// @Aspect('perthis(execution(* Orders.*(..)))')
 /// @Component()
 /// @Scope('prototype')
@@ -56,33 +69,43 @@
 /// class CallCounter { ... }
 /// ```
 class Aspect {
-  /// Creates the `@Aspect()` annotation with the per-clause [value].
+  /// Marks the class as an aspect with the instantiation model [value].
   const Aspect([this.value = '']);
 
-  /// The instantiation model: empty (singleton), `perthis(...)` or
-  /// `pertarget(...)`.
+  /// The instantiation model: empty for one shared instance (the default),
+  /// `perthis(pointcut)` for one per proxy, `pertarget(pointcut)` for one
+  /// per target bean.
   final String value;
 }
 
-/// Makes the proxies of matching beans implement an interface, like
-/// AspectJ's `@DeclareParents` in Spring AOP (an introduction).
+/// Makes the proxies of matching beans implement an extra interface, with
+/// an implementation the aspect supplies (an AspectJ "introduction").
 ///
-/// Put it on a static field of an `@Aspect` whose type is the interface:
-/// the proxy of every bean whose class matches the [value] type pattern
-/// (`Orders`, `*Service`, `Repository+`) implements it, forwarding its
-/// members to a [defaultImpl] instance created per proxy. Advice can reach
-/// it with `this(tracked)`.
+/// Use it to add a capability to many beans without changing their
+/// classes, for example a usage counter every service can report. Put it on
+/// a static field of an `@Aspect` class: the field's type is the
+/// interface to add. The proxy of every bean whose class matches the
+/// [value] type pattern (`Orders`, `*Service`, `Repository+`) then
+/// implements it and forwards its members to a [defaultImpl] instance,
+/// created once per proxy on first use. Only beans of the aspect's own
+/// module get the interface, and only while the aspect is registered.
+/// Advice can receive the introduced object with `this(name)`.
 ///
 /// ```dart
 /// @Aspect()
 /// @Component()
 /// class UsageTracking {
+///   // Every *Service bean also implements UsageTracked.
 ///   @DeclareParents('*Service+', defaultImpl: DefaultUsageTracked)
 ///   static UsageTracked? mixin;
 ///
+///   // Each service call bumps that service's own counter.
 ///   @Before('execution(* *Service.*(..)) && this(usage)')
 ///   void count(UsageTracked usage) => usage.increment();
 /// }
+///
+/// // Elsewhere: read the counter through the introduced interface.
+/// final usage = context.getBean<OrderService>() as UsageTracked;
 /// ```
 ///
 /// Spring (Java):
@@ -92,27 +115,32 @@ class Aspect {
 /// public static UsageTracked mixin;
 /// ```
 class DeclareParents {
-  /// Introduces the field's interface into beans matching [value],
-  /// implemented by [defaultImpl] (a class with a no-argument
-  /// constructor).
+  /// Adds the field's interface to the proxies of beans matching [value],
+  /// implemented by [defaultImpl].
   const DeclareParents(this.value, {required this.defaultImpl});
 
-  /// Type pattern of the bean classes that get the interface.
+  /// The type pattern of the bean classes that get the interface: a name
+  /// with `*` wildcards, and `+` for the type and its subtypes.
   final String value;
 
-  /// The implementation each proxy forwards the interface's members to.
+  /// The class implementing the interface; it needs a constructor without
+  /// arguments. Each proxy gets its own instance.
   final Type defaultImpl;
 }
 
-/// A named pointcut on a method of an aspect, like Spring's `@Pointcut`.
-/// Reference it as `name()` or `AspectClass.name()` in other pointcuts.
+/// Gives a pointcut expression a name, so several advice methods can share
+/// it.
 ///
-/// The annotated method's body is never called.
+/// Put it on an empty method of an aspect; the method's body is never
+/// called. Other pointcuts of the same aspect refer to it as `name()`;
+/// pointcuts of another aspect write `AspectClass.name()`. Named pointcuts
+/// of the aspect's superclasses and mixins are inherited.
 ///
 /// ```dart
 /// @Aspect()
 /// @Component()
 /// class AuditAspect {
+///   // Every Calculator method, named once.
 ///   @Pointcut('execution(* Calculator.*(..))')
 ///   void calculator() {}
 ///
@@ -134,17 +162,25 @@ class DeclareParents {
 /// }
 /// ```
 class Pointcut {
-  /// Creates a named pointcut for [expression].
+  /// Names [expression] after the annotated method.
   const Pointcut(this.expression);
 
-  /// The pointcut expression (see `ExpressionPointcut` for the syntax).
+  /// The pointcut expression, in the syntax `ExpressionPointcut` describes.
   final String expression;
 }
 
-/// Advice run before the method, like Spring's `@Before`. The method may
-/// take a `JoinPoint`.
+/// Marks an aspect method to run before each matched call.
+///
+/// Use it for checks and logging that must happen before the method body.
+/// The advice may take a `JoinPoint` to read the method and its arguments.
+/// It cannot change the arguments or the result; throwing an error stops
+/// the call, and the caller gets that error. On a method returning a
+/// `Future` the advice may be `async`: the call waits for it before the
+/// method runs. On a synchronous method an `async` advice fails the call
+/// with an `AopInvocationException`.
 ///
 /// ```dart
+/// // Records each Calculator call before it runs.
 /// @Before('execution(* Calculator.*(..))')
 /// void before(JoinPoint joinPoint) => log.add(joinPoint.toShortString());
 /// ```
@@ -155,18 +191,22 @@ class Pointcut {
 /// void before(JoinPoint joinPoint) { log.add(joinPoint.toShortString()); }
 /// ```
 class Before {
-  /// Creates `@Before` advice for the [pointcut] expression.
+  /// Runs the annotated method before calls matching [pointcut].
   const Before(this.pointcut);
 
   /// The pointcut expression selecting the advised methods.
   final String pointcut;
 }
 
-/// Advice run after the method however it completes, like `@After`.
+/// Marks an aspect method to run after each matched call, whether it
+/// returned or threw, like a `finally` block.
 ///
-/// For methods returning a `Future`, it runs when the future completes.
+/// Use it for clean-up and "call finished" logging. It cannot change the
+/// result or the error. For a method returning a `Future`, it runs when the
+/// future completes, not when the method returns.
 ///
 /// ```dart
+/// // Records the end of every Calculator call, even a failed one.
 /// @After('execution(* Calculator.*(..))')
 /// void after() => log.add('after');
 /// ```
@@ -177,24 +217,30 @@ class Before {
 /// void after() { log.add("after"); }
 /// ```
 class After {
-  /// Creates `@After` advice for the [pointcut] expression.
+  /// Runs the annotated method after calls matching [pointcut].
   const After(this.pointcut);
 
   /// The pointcut expression selecting the advised methods.
   final String pointcut;
 }
 
-/// Advice run after the method returns, like `@AfterReturning`. The
-/// parameter named [returning] (by default the first parameter that is
-/// neither the `JoinPoint` nor bound by the pointcut) receives the return
-/// value (or the completed value of a `Future`); the advice only runs when
-/// the value has that parameter's type.
+/// Marks an aspect method to run after each matched call that returned
+/// normally, with the returned value.
+///
+/// Use it to inspect or log results. The parameter named [returning]
+/// receives the value; without it, the first parameter that is neither the
+/// `JoinPoint` nor bound by the pointcut does. The parameter's type
+/// filters: the advice runs only when the value has that type. For a method
+/// returning a `Future`, it runs when the future completes, with the
+/// completed value. It cannot replace the result (use `@Around` for that).
 ///
 /// ```dart
+/// // Logs results that are ints; other results pass by.
 /// @AfterReturning('execution(* Calculator.*(..))')
 /// void returned(JoinPoint joinPoint, int result) =>
 ///     log.add('${joinPoint.signature.name}=$result');
 ///
+/// // `timed` is bound by the pointcut, so `returning` names the result.
 /// @AfterReturning('@annotation(timed)', returning: 'result')
 /// void timed(Timed timed, Object? result) => log.add('$timed: $result');
 /// ```
@@ -208,25 +254,30 @@ class After {
 /// }
 /// ```
 class AfterReturning {
-  /// Creates `@AfterReturning` advice for the [pointcut] expression.
+  /// Runs the annotated method after calls matching [pointcut] return.
   const AfterReturning(this.pointcut, {this.returning});
 
   /// The pointcut expression selecting the advised methods.
   final String pointcut;
 
-  /// Name of the advice parameter that receives the return value.
+  /// The name of the advice parameter that receives the returned value;
+  /// `null` picks the first parameter that is neither the `JoinPoint` nor
+  /// bound by the pointcut.
   final String? returning;
 }
 
-/// Advice run when the method throws, like `@AfterThrowing`. The
-/// parameter named [throwing] (by default the first parameter that is
-/// neither the `JoinPoint` nor bound by the pointcut) receives the error;
-/// the advice only runs for errors of that type. The error is rethrown
-/// afterwards.
+/// Marks an aspect method to run after each matched call that threw, with
+/// the error.
 ///
-/// For methods returning a `Future`, it runs when the future fails.
+/// Use it to log or count failures. The parameter named [throwing]
+/// receives the error; without it, the first parameter that is neither the
+/// `JoinPoint` nor bound by the pointcut does. The parameter's type
+/// filters: the advice runs only for errors of that type. The error is
+/// always rethrown afterwards, so the caller still sees it. For a method
+/// returning a `Future`, it runs when the future fails.
 ///
 /// ```dart
+/// // Logs UnsupportedErrors of the Calculator; other errors pass by.
 /// @AfterThrowing('execution(* Calculator.*(..))')
 /// void failed(JoinPoint joinPoint, UnsupportedError error) =>
 ///     log.add('${joinPoint.signature.name} failed: $error');
@@ -241,24 +292,32 @@ class AfterReturning {
 /// }
 /// ```
 class AfterThrowing {
-  /// Creates `@AfterThrowing` advice for the [pointcut] expression.
+  /// Runs the annotated method after calls matching [pointcut] throw.
   const AfterThrowing(this.pointcut, {this.throwing});
 
   /// The pointcut expression selecting the advised methods.
   final String pointcut;
 
-  /// Name of the advice parameter that receives the error.
+  /// The name of the advice parameter that receives the error; `null`
+  /// picks the first parameter that is neither the `JoinPoint` nor bound by
+  /// the pointcut.
   final String? throwing;
 }
 
-/// Advice that wraps the method, like `@Around`. The method takes a
-/// `ProceedingJoinPoint` and returns the result (usually
-/// `joinPoint.proceed()`).
+/// Marks an aspect method to run instead of each matched call, deciding
+/// whether and how the real method runs.
 ///
-/// For methods returning a `Future`, `proceed()` returns that future;
-/// return it (or another future) to keep the call asynchronous.
+/// It is the most powerful advice: it can time the call, change the
+/// arguments, replace the result, retry, or skip the method entirely. The
+/// advice takes a `ProceedingJoinPoint` and returns the call's result,
+/// usually what `joinPoint.proceed()` returns; `proceed(args)` runs the
+/// method with other arguments. For a method returning a `Future`,
+/// `proceed()` returns that future: return it (or another future, for
+/// example from an `async` advice that awaits it) so the call stays
+/// asynchronous.
 ///
 /// ```dart
+/// // Prints how long each method marked @Timed() takes.
 /// @Around('@annotation(Timed)')
 /// Object? time(ProceedingJoinPoint joinPoint) {
 ///   final watch = Stopwatch()..start();
@@ -284,7 +343,7 @@ class AfterThrowing {
 /// }
 /// ```
 class Around {
-  /// Creates `@Around` advice for the [pointcut] expression.
+  /// Runs the annotated method instead of calls matching [pointcut].
   const Around(this.pointcut);
 
   /// The pointcut expression selecting the advised methods.

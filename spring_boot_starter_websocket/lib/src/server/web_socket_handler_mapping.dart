@@ -10,17 +10,28 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.websocket.server');
 
-/// Maps WebSocket handshakes to the [WebSocketHandler]s of the
-/// [WebSocketConfigurer] beans and to the `@WebSocketEndpoint` beans, like
-/// Spring's `WebSocketHandlerMapping`. The web starter's dispatcher asks it
-/// (it is a `HandlerMapping`), after the filters: a handshake is
-/// authenticated like any request.
+/// The bean that routes incoming WebSocket handshakes to the right
+/// handler: the `@WebSocketEndpoint` beans and the [WebSocketHandler]s of
+/// the [WebSocketConfigurer] beans.
 ///
-/// Every endpoint is checked at startup (two endpoints on one path, an
-/// `@PathVariable` that is not in the path, a parameter without a role).
+/// The starter registers it; applications do not call it. The web
+/// starter's dispatcher asks it for each request (it is a
+/// `HandlerMapping`), after the filters, so a handshake is authenticated
+/// like any request, and after the controllers. For a matching path it
+/// checks the origin, picks the subprotocol, runs the handshake
+/// interceptors, accepts the connection and registers the session in the
+/// [WebSocketSessionRegistry].
+///
+/// Every endpoint is checked at startup: two handlers on one path, an
+/// `@PathVariable` that is not in the path, a parameter of no known kind,
+/// several methods with the same annotation, an endpoint without any of
+/// `@OnOpen`, `@OnMessage` and `@OnClose`.
+///
+/// Spring (Java): `WebSocketHandlerMapping`.
 final class WebSocketHandlerMapping
     implements HandlerMapping, Ordered, SmartInitializingSingleton {
-  /// The mapping of the handlers and endpoints of [beanFactory].
+  /// The mapping of the endpoints found in [beanFactory] and the handlers
+  /// of [configurers].
   WebSocketHandlerMapping({
     required this.beanFactory,
     required this.mapper,
@@ -28,26 +39,27 @@ final class WebSocketHandlerMapping
     this.configurers = const [],
   });
 
-  /// Where the endpoints are found.
+  /// Where the `@WebSocketEndpoint` beans are found and taken from.
   final ListableBeanFactory beanFactory;
 
-  /// Reads and writes JSON messages.
+  /// Reads and writes the JSON messages of the endpoints.
   final ObjectMapper mapper;
 
-  /// Tracks the open sessions.
+  /// Where each accepted session is registered until it closes.
   final WebSocketSessionRegistry sessions;
 
-  /// Register handlers.
+  /// The beans that register Spring-style handlers.
   final List<WebSocketConfigurer> configurers;
 
   final _routes = <_Route>[];
   var _initialized = false;
 
-  /// After the controllers' mapping (order 0), like Spring.
+  /// 1: asked after the controllers' mapping (order 0), as in Spring.
   @override
   int get order => 1;
 
-  /// The mapped paths.
+  /// The path patterns of every endpoint and handler, most specific
+  /// first; empty before [initialize].
   List<String> get paths => [
     for (final route in _routes) route.pattern.pattern,
   ];
@@ -55,8 +67,9 @@ final class WebSocketHandlerMapping
   @override
   void afterSingletonsInstantiated() => initialize();
 
-  /// Finds the handlers and endpoints; throws a [StateError] listing every
-  /// problem.
+  /// Finds the handlers and endpoints and checks them; throws a
+  /// [StateError] listing every problem. Runs once, when the singletons are
+  /// ready or at the first request; later calls do nothing.
   void initialize() {
     if (_initialized) {
       return;
@@ -349,7 +362,8 @@ final class _Handler {
   final List<(BeanParameter, _Binder)> binders;
 }
 
-/// A `@WebSocketEndpoint` bean as a [WebSocketHandler].
+/// Calls the annotated methods of a `@WebSocketEndpoint` bean, with their
+/// parameters bound, as a [WebSocketHandler].
 final class _EndpointAdapter implements WebSocketHandler {
   _EndpointAdapter(
     this.owner,

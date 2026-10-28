@@ -20,15 +20,18 @@ import 'package:pointycastle/export.dart'
         Scrypt,
         ScryptParameters;
 
-/// The Argon2 variants (RFC 9106).
+/// The three Argon2 variants of RFC 9106; the encoders write [id] and
+/// read all three.
 enum Argon2Type {
-  /// Argon2d.
+  /// Argon2d: data-dependent memory access, fastest, but open to
+  /// side-channel attacks; only read in old hashes.
   d(Argon2Parameters.ARGON2_d),
 
-  /// Argon2i.
+  /// Argon2i: data-independent memory access; only read in old hashes.
   i(Argon2Parameters.ARGON2_i),
 
-  /// Argon2id.
+  /// Argon2id: a mix of both, the recommended variant and the one new
+  /// hashes use.
   id(Argon2Parameters.ARGON2_id);
 
   Argon2Type(this._value);
@@ -36,13 +39,18 @@ enum Argon2Type {
   final int _value;
 }
 
-/// Argon2 version 1.0 (`v=16`).
+/// The number of Argon2 version 1.0, written `v=16` in a hash; a hash
+/// without `v=` is read as this version.
 const argon2Version10 = 0x10;
 
-/// Argon2 version 1.3 (`v=19`), the current one.
+/// The number of Argon2 version 1.3, written `v=19` in a hash; the
+/// version of new hashes.
 const argon2Version13 = 0x13;
 
-/// Argon2 of [password] with [salt]: [length] bytes.
+/// The Argon2 hash of [password] with [salt], [length] bytes long,
+/// computed by `pointycastle`.
+///
+/// [memory] is in KiB. CPU-heavy: callers run it on another isolate.
 Uint8List argon2(
   List<int> password,
   Uint8List salt, {
@@ -66,9 +74,9 @@ Uint8List argon2(
         ))
         .process(Uint8List.fromList(password));
 
-/// The hash functions of PBKDF2's HMAC.
+/// The hash function inside the HMAC that [pbkdf2] iterates.
 enum Pbkdf2Hash {
-  /// SHA-1.
+  /// SHA-1, only for old hashes.
   sha1,
 
   /// SHA-256.
@@ -78,7 +86,8 @@ enum Pbkdf2Hash {
   sha512,
 }
 
-/// PBKDF2 with HMAC-[hash] of [password] and [salt]: [length] bytes.
+/// The PBKDF2 key of [password] and [salt], [length] bytes long, with
+/// [iterations] rounds of HMAC-[hash], computed by `pointycastle`.
 Uint8List pbkdf2(
   Pbkdf2Hash hash,
   List<int> password,
@@ -96,8 +105,9 @@ Uint8List pbkdf2(
       .process(Uint8List.fromList(password));
 }
 
-/// scrypt of [password] with [salt] (cost [n], block size [r],
-/// parallelization [p]): [length] bytes.
+/// The scrypt hash of [password] with [salt], [length] bytes long, with
+/// cost [n], block size [r] and parallelization [p], computed by
+/// `pointycastle`.
 Uint8List scrypt(
   List<int> password,
   Uint8List salt, {

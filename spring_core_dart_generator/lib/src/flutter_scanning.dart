@@ -9,23 +9,32 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 
-/// `@BuildContextAccess` of spring_boot_starter_flutter.
+/// Recognises `@BuildContextAccess` of `spring_boot_starter_flutter`, which
+/// asks for a `BuildContext` getter for a bean. Matched by URL, so the
+/// generator does not depend on that package.
 const contextAccessChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/annotations.dart#BuildContextAccess',
 );
 
-/// `SpringStatelessWidget` of spring_boot_starter_flutter.
+/// Recognises `SpringStatelessWidget` of `spring_boot_starter_flutter`, a
+/// widget that gets the beans named in its record type argument.
 const springWidgetChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/spring_widgets.dart#SpringStatelessWidget',
 );
 
-/// `SpringState` of spring_boot_starter_flutter (the `State` of a stateful
-/// widget that gets beans: `SpringState<W, R>`).
+/// Recognises `SpringState` of `spring_boot_starter_flutter`: the `State`
+/// of a stateful widget that gets the beans named in its record type
+/// argument (`SpringState<W, R>`).
 const springStateChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/spring_widgets.dart#SpringState',
 );
 
-/// A generated `BuildContext` getter for a `@BuildContextAccess` bean.
+/// A getter to generate in `extension SpringBeans on BuildContext` for a
+/// bean marked `@BuildContextAccess`.
+///
+/// It lets widget code write `context.basket` instead of looking the bean
+/// up by type and qualifier. The getter is written into the `.spring.dart`
+/// of the `@SpringBootApplication` or `@ComponentScan`.
 ///
 /// ```dart
 /// // Input:
@@ -40,32 +49,45 @@ class BuildContextAccessModel {
   /// The getter [getter] for [bean], typed [type].
   BuildContextAccessModel(this.getter, this.bean, this.type);
 
-  /// The getter's name.
+  /// The getter's name: `@BuildContextAccess(name: ...)`, else the bean
+  /// name.
   final String getter;
 
-  /// The bean it returns.
+  /// The bean it returns, looked up by its name as qualifier.
   final BeanModel bean;
 
-  /// The getter's type: the bean's type (a `FactoryBean`'s product type).
+  /// The getter's type: the bean class, a `@Bean` method's declared return
+  /// type, or a `FactoryBean`'s product type.
   final DartType type;
 }
 
-/// A record field of a `SpringStatelessWidget`'s beans.
+/// One field of the bean record of a Spring widget or state: a bean the
+/// widget gets.
 class SpringWidgetField {
   /// A field of bean type [type]; [name] for a named field.
   SpringWidgetField(this.type, {required this.optional, this.name});
 
-  /// The bean type (without `?`).
+  /// The bean type, without `?`.
   final InterfaceType type;
 
-  /// The field's name (named fields only).
+  /// The field's name for a named field, `null` for a positional one. When
+  /// several beans have [type], the name picks one.
   final String? name;
 
-  /// Whether the field is nullable (`findBean`, not required).
+  /// Whether the field is nullable: the bean is looked up with `findBean`
+  /// and may be missing; it is not checked at startup.
   final bool optional;
 }
 
-/// A `SpringStatelessWidget<R>` class: how its record [beans] is filled.
+/// A scanned `SpringStatelessWidget<R>` or `SpringState<W, R>` class, and
+/// how its bean record `R` ([beans]) is filled.
+///
+/// A widget gets its beans as one record, so code is needed that knows
+/// the record's fields and looks each bean up. Every widget of the module
+/// becomes one binding in the module's `SpringWidgetBindings` bean.
+/// `SpringApplicationWidget` uses the bindings to check at startup that
+/// the required beans exist, and the widget uses its binding to build the
+/// record.
 ///
 /// ```dart
 /// // Input:
@@ -91,13 +113,13 @@ class SpringWidgetModel {
     this.named,
   );
 
-  /// The widget class (for error messages and imports).
+  /// The widget or state class, for error messages and imports.
   final ClassElement widget;
 
-  /// `package:app/x.dart#Widget`.
+  /// The key of the binding, `package:app/x.dart#Widget`.
   final String source;
 
-  /// The record type.
+  /// The record type `R`.
   final RecordType beans;
 
   /// The positional fields, in order.
@@ -106,18 +128,20 @@ class SpringWidgetModel {
   /// The named fields, in the record type's order.
   final List<SpringWidgetField> named;
 
-  /// The bean types checked at startup (the required fields').
+  /// The bean types checked at startup: those of the non-nullable fields.
   Iterable<InterfaceType> get requiredTypes => [
     for (final field in [...positional, ...named])
       if (!field.optional) field.type,
   ];
 }
 
-/// Records [element] in `module.springWidgets` when it is a concrete
-/// `SpringStatelessWidget<R>` or `SpringState<W, R>`; throws
-/// `InvalidGenerationSource` when R is not a record of bean types.
-/// Abstract classes whose R is still a type parameter (base classes for
-/// widgets) are skipped.
+/// Adds a [SpringWidgetModel] for [element] to `module.springWidgets` when
+/// it extends `SpringStatelessWidget<R>` or `SpringState<W, R>`.
+///
+/// An abstract class whose `R` is still a type parameter (a base class for
+/// widgets) is skipped. Throws `InvalidGenerationSource` when `R` is not a
+/// non-nullable record, or when a field of it is not a class or interface
+/// type (`dynamic`, `Object`, `Function`, a record, `Null`).
 void scanSpringWidget(ClassElement element, ModuleModel module) {
   final supertype = element.allSupertypes
       .where(
@@ -185,12 +209,16 @@ void scanSpringWidget(ClassElement element, ModuleModel module) {
   );
 }
 
-/// Collects the `@BuildContextAccess` getters of `module.beans` into
-/// `module.buildContextAccess`, reporting each invalid one through
-/// [collectErrors]: a name that is no public identifier, a reserved word,
-/// a member of `BuildContext`, `Object` or spring_boot_starter_flutter's own
-/// extension, two beans with the same getter, or `@BuildContextAccess` on a
-/// class that is no bean of this module.
+/// Adds a [BuildContextAccessModel] to `module.buildContextAccess` for each
+/// bean of `module.beans` marked `@BuildContextAccess`, on its class or on
+/// its `@Bean` method.
+///
+/// Each invalid getter is reported through [collectErrors], so the build
+/// lists them together: a name that is not a public identifier, a reserved
+/// word, a member of `BuildContext`, `Object` or the starter's own
+/// `SpringBuildContext` extension (which would hide the getter), two beans
+/// with the same getter, or `@BuildContextAccess` on a class that is not a
+/// bean of this module.
 void scanBuildContextAccess(
   ModuleModel module,
   void Function(void Function() action) collectErrors,
@@ -328,25 +356,30 @@ const _takenMembers = {
   'message': 'SpringBuildContext',
 };
 
-/// `@ChangeNotifierComponent` of spring_boot_starter_flutter: a bean whose
-/// proxy mixes `ChangeNotifier` in.
+/// Recognises `@ChangeNotifierComponent` of `spring_boot_starter_flutter`:
+/// a bean whose generated proxy mixes `ChangeNotifier` in, so widgets
+/// rebuild when its state changes.
 const changeNotifierComponentChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/notify_listeners.dart'
   '#ChangeNotifierComponent',
 );
 
-/// `@NotifyListeners` of spring_boot_starter_flutter.
+/// Recognises `@NotifyListeners` of `spring_boot_starter_flutter`, which
+/// marks the methods and setters after which listeners are notified (on a
+/// class: every public one but those in `exclude`).
 const notifyListenersChecker = TypeChecker.fromUrl(
   'package:spring_boot_starter_flutter/src/notify_listeners.dart'
   '#NotifyListeners',
 );
 
-/// Flutter's `ChangeNotifier`.
+/// Recognises Flutter's `ChangeNotifier`, to tell whether a class already
+/// is one.
 const changeNotifierChecker = TypeChecker.fromUrl(
   'package:flutter/src/foundation/change_notifier.dart#ChangeNotifier',
 );
 
-/// The members a proxy that mixes `ChangeNotifier` in gets from it.
+/// The public members a proxy that mixes `ChangeNotifier` in gets from it.
+/// A `@ChangeNotifierComponent` class must not declare them.
 const changeNotifierMembers = {
   'addListener',
   'removeListener',
@@ -356,8 +389,9 @@ const changeNotifierMembers = {
 };
 
 /// Whether the proxy of a class with [classAnnotations] and [targetType]
-/// mixes `ChangeNotifier` in: a `@ChangeNotifierComponent` class that is no
-/// `ChangeNotifier` itself.
+/// mixes `ChangeNotifier` in: true for a `@ChangeNotifierComponent` class
+/// that is not a `ChangeNotifier` itself (one that is already notifies on
+/// its own).
 bool mixesChangeNotifierIn(
   List<DartObject> classAnnotations,
   InterfaceType targetType,
@@ -368,11 +402,14 @@ bool mixesChangeNotifierIn(
     }) &&
     !changeNotifierChecker.isAssignableFromType(targetType);
 
-/// Checks a class carrying `@ChangeNotifierComponent` or a class-level
-/// `@NotifyListeners`: every name in `exclude` is one of its public methods,
-/// setters or fields; a `@ChangeNotifierComponent` class that is no
-/// `ChangeNotifier` declares none of `ChangeNotifier`'s members (its proxy
-/// gets them).
+/// Fails the build when `@ChangeNotifierComponent` or a class-level
+/// `@NotifyListeners` on [element] cannot work as written.
+///
+/// Every name in `exclude` must be a public method, setter or field of the
+/// class, its own or inherited; otherwise a typo would silently exclude
+/// nothing. A `@ChangeNotifierComponent` class that is not a
+/// `ChangeNotifier` must not declare any of [changeNotifierMembers],
+/// because its proxy gets them from the mixin.
 void checkChangeNotifierComponent(ClassElement element) {
   final name = element.name ?? '?';
   for (final (checker, label) in [

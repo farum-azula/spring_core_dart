@@ -4,10 +4,11 @@ import 'dart:math' as math;
 // (where it rounds to 2^63).
 final num _two62 = math.pow(2, 62);
 
-/// Java's `Long.MAX_VALUE` (2^63 on the web, where it cannot be exact).
+/// Java's `Long.MAX_VALUE`, the largest SpEL integer (2^63 on the web,
+/// where it cannot be exact).
 final int maxJavaLong = (_two62 - 1 + _two62).toInt();
 
-/// Java's `Long.MIN_VALUE`.
+/// Java's `Long.MIN_VALUE`, the smallest SpEL integer.
 final int minJavaLong = (-_two62 - _two62).toInt();
 
 /// [value] truncated to an integer like Java's `(long)` cast: `NaN` is 0

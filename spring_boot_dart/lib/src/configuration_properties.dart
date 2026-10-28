@@ -2,22 +2,35 @@ import 'package:spring_boot_dart/src/annotations.dart';
 import 'package:spring_boot_dart/src/binder.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-/// Binding or validation of a `@ConfigurationProperties` bean (or a
-/// [Binder.bind] call) failed.
+/// The error thrown when configuration values are invalid: a value that
+/// cannot be converted, a required value that is missing, or a validation
+/// constraint that fails.
 ///
-/// Spring (Java): `BindException` / `BindValidationException` at startup.
+/// It carries every bad property at once, one line each, so the
+/// developer can fix them all in one go. It is thrown while binding a
+/// `@ConfigurationProperties` bean, by [Binder.bind], and by
+/// `SpringApplication` for invalid `logging.level.*` and
+/// `spring.main.banner-mode` values. A failed start turns it into a
+/// `Binding to target properties under '...' failed` report. Catch it
+/// only in code that binds by hand and can fall back to defaults.
+///
+/// Spring (Java): `BindException` / `BindValidationException`, which
+/// Spring Boot reports in the same way at startup.
 class ConfigurationPropertiesBindException implements Exception {
-  /// Creates the exception for [prefix] with the binding [errors].
+  /// An exception for the properties under [prefix], bound for the bean
+  /// [beanName] (null outside a bean), with one line per problem in
+  /// [errors].
   ConfigurationPropertiesBindException(this.prefix, this.beanName, this.errors);
 
-  /// The property prefix, e.g. `db`.
+  /// The prefix of the properties being bound, such as `db`.
   final String prefix;
 
-  /// The bean being bound; `null` for a [Binder.bind] call.
+  /// The name of the bean being bound, or `null` when no bean was bound
+  /// (a [Binder.bind] call, for example).
   final String? beanName;
 
-  /// One line per failed property, e.g. `db.max-size: must be at least 1`
-  /// or `db.hosts[0]: failed to convert to int (was "x")`.
+  /// One line per problem, naming the property: `db.max-size: must be at
+  /// least 1` or `db.hosts[0]: failed to convert to int (was "x")`.
   final List<String> errors;
 
   @override
@@ -27,29 +40,42 @@ class ConfigurationPropertiesBindException implements Exception {
       '${errors.join('; ')}';
 }
 
-/// Binds `@ConfigurationProperties` beans to the environment, like Spring
-/// Boot's `ConfigurationPropertiesBinder` and
-/// `ConfigurationPropertiesBindingPostProcessor`, with a [Binder]: relaxed
-/// names, lists, maps and nested objects.
+/// The machinery that fills `@ConfigurationProperties` beans from the
+/// environment and validates them.
 ///
-/// Mutable classes are bound through their setters before their init
-/// callbacks run; classes with a constructor that has parameters are
-/// created bound by [bindOrCreate] (constructor binding, called by the
-/// generated code through [ConstructorBound]). `@ConfigurationProperties`
-/// on a `@Bean` method binds the returned object (a class of another
-/// package too; the generator writes its introspection).
+/// `SpringApplication` registers it in every context, so applications
+/// never create it: they annotate a class with [ConfigurationProperties]
+/// and get it filled. Reach for it only when building a context without
+/// `SpringApplication` that should still bind such beans.
 ///
-/// Validation, like Spring Boot's: a `Validator` bean named
-/// `configurationPropertiesValidator` checks every bound object it
-/// supports; constraint annotations are checked when the class (or the
-/// `@Bean` method) is annotated `@Validated()`; an object that is itself a
-/// `Validator` validates itself.
+/// A mutable class is bound through its setters as a bean
+/// post-processor, before its init callbacks run. A class whose
+/// constructor has parameters is created already bound by [bindOrCreate]
+/// (constructor binding; the generated code calls it through
+/// [ConstructorBound]). `@ConfigurationProperties` on a `@Bean` method
+/// binds the object the method returns, also of a class from another
+/// package, whose introspection the generator writes. The rules for names,
+/// lists, maps and nested objects are those of [Binder].
 ///
-/// Registered by `SpringApplication`; see [ConfigurationProperties] for the
-/// naming rules.
+/// After binding, the object is validated by every validator that
+/// supports it:
+///
+/// - the `Validator` bean named [validatorBeanName], when there is one;
+/// - the constraint annotations (`@NotBlank()`, `@Min(1)`, ...), when the
+///   class or the `@Bean` method is annotated `@Validated()`;
+/// - the object itself, when it is a `Validator`.
+///
+/// Spring (Java): `ConfigurationPropertiesBinder` and
+/// `ConfigurationPropertiesBindingPostProcessor`, with the same
+/// validation rules.
 class ConfigurationPropertiesBinder extends BeanPostProcessor {
-  /// Creates a binder reading [environment] and the metadata of
-  /// [introspector]; [messageSource] renders validation messages.
+  /// A binder reading [environment] and the class metadata of
+  /// [introspector].
+  ///
+  /// [messageSource] turns validation errors into text (default: an empty
+  /// `StaticMessageSource`, which uses the constraints' default messages).
+  /// [beanFactory] gives access to the annotations of `@Bean` methods and
+  /// to the [validatorBeanName] bean; without it neither is used.
   ConfigurationPropertiesBinder(
     this.environment,
     this.introspector, {
@@ -57,22 +83,26 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
     this.beanFactory,
   }) : messageSource = messageSource ?? StaticMessageSource();
 
-  /// Name of the `Validator` bean applied to every bound object (Spring
-  /// Boot's `ConfigurationPropertiesBinder.VALIDATOR_BEAN_NAME`).
+  /// The name a `Validator` bean must have to check every bound
+  /// properties object it supports, `configurationPropertiesValidator`
+  /// (Spring Boot's `ConfigurationPropertiesBinder.VALIDATOR_BEAN_NAME`).
+  ///
+  /// Declare one for checks that span several fields or several classes.
   static const validatorBeanName = 'configurationPropertiesValidator';
 
-  /// The bean factory: the annotations of `@Bean` methods and the
-  /// [validatorBeanName] bean come from here (none without it).
+  /// The bean factory the annotations of `@Bean` methods and the
+  /// [validatorBeanName] bean come from; null when there is none.
   final ConfigurableListableBeanFactory? beanFactory;
 
-  /// The properties are read from here (and converted with its
-  /// conversion service).
+  /// The environment the properties are read from; its conversion
+  /// service converts them.
   final ConfigurableEnvironment environment;
 
-  /// Metadata of the property classes.
+  /// Describes the properties classes: their fields, setters, constructor
+  /// and annotations.
   final BeanIntrospector introspector;
 
-  /// Renders validation errors.
+  /// Turns validation errors into the text of the error lines.
   final MessageSource messageSource;
 
   // Beans created by bindOrCreate, already bound and validated.
@@ -143,11 +173,13 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
 
   /// Creates the `@ConfigurationProperties` class [T] through its
   /// constructor, each parameter bound from its property (constructor
-  /// binding), and validates it.
+  /// binding), validates it, and returns it as the bean [beanName].
   ///
-  /// Throws a [ConfigurationPropertiesBindException] when a property
-  /// cannot be converted, a required parameter has no value or a
-  /// constraint is violated.
+  /// The generated code calls it through [ConstructorBound]. Throws a
+  /// [ConfigurationPropertiesBindException] when a property cannot be
+  /// converted, a required parameter has no value or a constraint fails,
+  /// and a `StateError` when [T] is not a constructor-bound
+  /// `@ConfigurationProperties` class known to the introspector.
   T bindOrCreate<T extends Object>(String beanName) {
     final introspection = introspector.forTypeArgument<T>();
     final annotation = introspection?.annotations
@@ -251,18 +283,26 @@ final class _IgnoreErrorsBindHandler extends BindHandler {
   bool onFailure(ConfigurationPropertyName name, String error) => false;
 }
 
-/// Creates constructor-bound `@ConfigurationProperties` beans: the
-/// generated `create` of such a bean calls [from] (Spring Boot's
-/// `ConstructorBound`).
+/// The hook the generated code uses to create a
+/// `@ConfigurationProperties` bean whose class has constructor
+/// parameters.
+///
+/// Such a class cannot be created first and filled later, so its bean
+/// definition creates it already bound. Applications never call it; it
+/// matters only to hand-written bean definitions.
 ///
 /// ```dart
 /// // Generated for `@ConfigurationProperties('db') class DbProperties`
 /// // whose only constructor has parameters:
 /// create: (r) => ConstructorBound.from<DbProperties>(r, r'dbProperties'),
 /// ```
+///
+/// Spring (Java): the `ConstructorBound` binding of Spring Boot's
+/// `ConfigurationPropertiesBean`.
 abstract final class ConstructorBound {
-  /// The bean [beanName] of type [T], created bound from the context's
-  /// environment.
+  /// Creates the bean [beanName] of type [T], bound from the context's
+  /// environment and validated, using the environment, introspector and
+  /// bean factory that [resolver] provides.
   static T from<T extends Object>(
     DependencyResolver resolver,
     String beanName,

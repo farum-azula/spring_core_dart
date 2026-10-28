@@ -6,27 +6,41 @@ import 'package:spring_boot_starter_cache/src/no_op_cache.dart';
 
 const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 
-/// The [CacheManager] described by the `spring.cache.*` properties, like
-/// Spring Boot's `CacheAutoConfiguration`:
+/// Builds the [CacheManager] that the `spring.cache.*` properties of
+/// [environment] describe: the manager the starter creates when the
+/// application declares none.
 ///
-/// - `spring.cache.type`: `generic` (the default when [caches] are given:
-///   the `Cache` beans) is a [SimpleCacheManager] of them; `simple` (the
-///   default otherwise) is [InMemoryCacheManager]; `none` is
-///   [NoOpCacheManager];
-/// - `spring.cache.cache-names`: a fixed set of caches (`books,authors`);
-///   otherwise caches are created on demand;
+/// Applications set the properties and let the starter call it. Call it
+/// yourself when you declare your own `CacheManager` bean but still want
+/// it configured by the same properties, for example to wrap it.
+///
+/// - `spring.cache.type`: `generic` gives a [SimpleCacheManager] of
+///   [caches] (the `Cache` beans) and is the default when there are any;
+///   `simple` gives an [InMemoryCacheManager] and is the default
+///   otherwise; `none` gives a [NoOpCacheManager] (nothing is cached).
+///   Any other value throws a `StateError`, and so does `generic` without
+///   caches.
+/// - `spring.cache.cache-names`: a fixed set of caches (`books,authors`,
+///   or a YAML list); an annotation naming another cache then fails. When
+///   missing or empty, caches are created on demand.
 /// - `spring.cache.simple.time-to-live`: how long entries live (`10m`,
-///   `PT1H`, milliseconds);
-/// - `spring.cache.simple.max-size`: maximum entries per cache;
+///   `30s`, `PT1H`, or milliseconds); none by default.
+/// - `spring.cache.simple.max-size`: the most entries per cache; no limit
+///   by default.
 /// - `spring.cache.simple.caches.<name>.time-to-live` / `.max-size`: the
-///   same for one cache.
+///   same for one cache; what it leaves out comes from the two above.
+///
+/// Each of [customizers] then gets the new manager, in order.
 ///
 /// ```dart
-/// final manager = cacheManagerFromProperties(context.environment);
+/// // Your own manager bean, still configured by spring.cache.*.
+/// @Configuration()
+/// class CacheSetup {
+///   @Bean()
+///   CacheManager cacheManager(Environment environment) =>
+///       cacheManagerFromProperties(environment);
+/// }
 /// ```
-///
-/// [customizers] then customize the manager, like Spring Boot's
-/// `CacheManagerCustomizers`.
 ///
 /// Spring Boot (Java): `CacheAutoConfiguration` with
 /// `GenericCacheConfiguration` / `SimpleCacheConfiguration` /
@@ -107,12 +121,17 @@ CacheManager _cacheManager(Environment environment, List<Cache> caches) {
   );
 }
 
-/// The beans of the starter: a `cacheManager` from `spring.cache.*` (only
-/// when the application declares no [CacheManager] and no bean named
-/// `cacheResolver`, as in Spring Boot), the [CacheInterceptor], the
-/// [CacheOperationValidator] that checks the cache annotations of proxied
-/// beans at startup and the advisor that applies the interceptor to
-/// members with cache annotations.
+/// The bean definitions the starter adds to every application.
+///
+/// - `cacheManager`, built by [cacheManagerFromProperties], only when the
+///   application declares no [CacheManager] and no bean named
+///   `cacheResolver` (as in Spring Boot), with the `Cache` and
+///   [CacheManagerCustomizer] beans;
+/// - `cacheInterceptor`, the [CacheInterceptor] that does the caching;
+/// - `cacheOperationValidator`, the [CacheOperationValidator] that checks
+///   the annotations of proxied beans at startup;
+/// - `cacheAdvisor`, which applies the interceptor to the members that
+///   have cache annotations.
 final cacheAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<CacheManager>(
     name: 'cacheManager',

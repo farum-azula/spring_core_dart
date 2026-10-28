@@ -4,18 +4,23 @@ import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/properties_index.dart';
 
 /// The properties a test file sets for its own context, as entries at the
-/// place they are written:
+/// place they are written.
+///
+/// With them, a `${key}` that only a test defines is not reported as
+/// unknown, and go to definition finds the test's value first. Read from:
 ///
 /// - `@SpringBootTest(properties: {...}, args: ['--key=value'])` and
 ///   `springBootTest(properties: ..., args: ...)`;
 /// - `@TestPropertySource(properties: {...})`;
-/// - `@TestEnvironment({...})` and `springBootTest(systemEnvironment: ...)`
-///   (environment variables);
+/// - `@TestEnvironment({...})`, `springBootTest(systemEnvironment: ...)`
+///   and `withSystemEnvironment({...})` (environment variables);
 /// - `registry.add('key', () => ...)` of `@DynamicPropertySource` and
 ///   `dynamicProperties:`;
 /// - `ApplicationContextRunner().withPropertyValues(['key=value'])`.
 ///
-/// Only files under a `test/` directory; empty for others.
+/// Only keys written as string literals count. Files outside a `test/` or
+/// `integration_test/` directory give an empty list. The result is cached
+/// for each parsed file.
 List<PropertyEntry> testProperties(DartFile file) {
   if (!_isTest(file.path)) {
     return const [];

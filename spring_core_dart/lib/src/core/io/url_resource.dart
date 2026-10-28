@@ -4,16 +4,21 @@ import 'package:spring_core_dart/src/core/io/file_access_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/io/file_access_io.dart';
 import 'package:spring_core_dart/src/core/io/resource.dart';
 
-/// An `http:` / `https:` resource, read with a GET request, like Spring's
-/// `UrlResource`; `DefaultResourceLoader` returns one for such locations.
+/// A [Resource] on a web server, read with an HTTP GET request.
 ///
-/// Reading is asynchronous only ([supportsSyncRead] is `false`); a status
-/// of 400 or above fails the read. [exists] cannot ask the server
-/// synchronously and is `true`; [existsAsync] sends the `HEAD` request
-/// Spring's `exists()` sends, so a 404 means not found. Config data
-/// (`spring.config.import=optional:http://…`) and `@PropertySource`
+/// `http:` and `https:` locations resolve to it, so configuration can be
+/// imported from a config server (`spring.config.import=https://...`) and
+/// `@PropertySource` can name a URL. Applications get it from a resource
+/// loader; they rarely create one.
+///
+/// Reading is asynchronous only ([supportsSyncRead] is `false`), so such
+/// imports need an asynchronous start (`runAsync`, Flutter). A status of
+/// 400 or above fails the read. [exists] cannot ask the server
+/// synchronously and is always `true`; [existsAsync] sends the `HEAD`
+/// request Spring's `exists()` sends, so a 404 means not found. Config
+/// data (`optional:https://...`) and `@PropertySource`
 /// (`ignoreResourceNotFound`) check it before reading. Reading needs
-/// `dart:io` (not on the web).
+/// `dart:io`, so it does not work on the web.
 ///
 /// ```dart
 /// final resource = DefaultResourceLoader()
@@ -28,20 +33,21 @@ import 'package:spring_core_dart/src/core/io/resource.dart';
 /// String text = resource.getContentAsString(StandardCharsets.UTF_8);
 /// ```
 class UrlResource extends AbstractResource {
-  /// A resource for [url].
+  /// Creates the resource for [url]; nothing is requested yet.
   const UrlResource(this.url);
 
-  /// The URL read.
+  /// The URL that is requested.
   final Uri url;
 
-  /// Always `true`: a synchronous request is not possible; see
-  /// [existsAsync].
+  /// Always `true`, because the server cannot be asked synchronously; use
+  /// [existsAsync] to find out.
   @override
   bool exists() => true;
 
-  /// Whether the server has the resource: a `HEAD` request (a `GET` if the
-  /// server rejects `HEAD`) answered below 400, like Spring's `exists()`.
-  /// A 404 or a connection error means it does not exist.
+  /// Asks the server whether the resource is there: a `HEAD` request (a
+  /// `GET` when the server rejects `HEAD`) answered below 400, like
+  /// Spring's `exists()`. A 404 or a connection error means it does not
+  /// exist. Always `true` on the web, where reading then fails.
   ///
   /// ```dart
   /// if (await resource.existsAsync()) {
@@ -65,8 +71,9 @@ class UrlResource extends AbstractResource {
   @override
   Future<Uint8List> readAsBytes() => FileAccess.readUrl(url);
 
-  /// [relativePath] resolved against this URL (a leading `/` is ignored,
-  /// like Spring's).
+  /// The resource at [relativePath] resolved against this URL, such as a
+  /// profile variant next to a config file. A leading `/` is ignored, as
+  /// in Spring, so the path stays relative to this URL's directory.
   @override
   Resource createRelative(String relativePath) => UrlResource(
     url.resolve(

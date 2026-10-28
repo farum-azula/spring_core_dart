@@ -7,28 +7,46 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 
 const _log = SpringLog('spring_boot_dart.devtools.RestartApplicationListener');
 
-/// Hot reload of an application running on the Dart VM, like Spring Boot
-/// DevTools' restart: after the VM reloaded the code (a tool calls
-/// `reloadSources`), the tool calls the service extension
-/// [extensionName]; contexts whose generated code changed (new or changed
-/// beans, annotations, `lib/resources/`) are closed and started again with
-/// the same arguments, the others keep running with the new method bodies.
+/// Restarts a running server or command-line application when its beans
+/// change during a hot reload on the Dart VM.
 ///
-/// `spring.devtools.restart.enabled=false` (Spring Boot DevTools' switch)
-/// keeps a context running whatever changed: the server, its connections
-/// and the beans' state live until the program restarts.
+/// A VM hot reload swaps method bodies in place, but it does not run
+/// `main` again: a new bean, a new `@GetMapping` or a changed config file
+/// would not take effect, because the context was built from the old
+/// generated code. This class closes such a context and starts the
+/// application again, with the same arguments, from the new generated
+/// code. When only method bodies changed, the context keeps running and
+/// its beans keep their state.
 ///
-/// The generated `runApplication` / `runApplicationAsync` register their
-/// context. Only in debug runs on the Dart VM: not in an AOT or product
-/// build, not on the web, and not in Flutter, whose root widget restarts
-/// the context itself when Flutter hot reloads.
+/// Applications do nothing to get it: the generated `runApplication` and
+/// `runApplicationAsync` register their context. The development tool
+/// that reloads the program calls it: after the VM's `reloadSources`, it
+/// calls the VM service extension [extensionName]. The `dart run` tasks of
+/// the Zed extensions do this on save (`dart --enable-vm-service ...
+/// bin/main.dart`, then `build_runner build`, `reloadSources` and
+/// [extensionName]).
 ///
-/// The `dart run` tasks of the Zed extensions reload on save this way:
-/// `dart --enable-vm-service ... bin/main.dart`, then after a change
-/// `build_runner build`, `reloadSources` and [extensionName].
+/// It only works in debug runs on the Dart VM. In an AOT or product build
+/// and on the web it does nothing, and in Flutter the root widget
+/// restarts the context itself when Flutter hot reloads.
+///
+/// To keep a context running whatever changed (the server, its open
+/// connections and the beans' state then live until the program
+/// restarts), set:
+///
+/// ```properties
+/// spring.devtools.restart.enabled=false
+/// ```
+///
+/// Spring (Java): the restart of Spring Boot DevTools, which reacts to
+/// class files changing on disk instead of a service call.
 abstract final class SpringHotReload {
-  /// The service extension a tool calls after `reloadSources`; it answers
-  /// `{"restarted": <number of restarted contexts>}`.
+  /// The name of the VM service extension a development tool calls after
+  /// `reloadSources`.
+  ///
+  /// It runs [reloadAll] and answers `{"restarted": <count>}`, or a
+  /// service extension error when a restart fails (the failure is logged
+  /// too).
   static const extensionName = 'ext.spring_boot.reload';
 
   static const bool _enabled =
@@ -40,12 +58,19 @@ abstract final class SpringHotReload {
       <(ConfigurableApplicationContext, SpringApplication Function())>[];
   static var _registered = false;
 
-  /// Whether hot reload is available in this program.
+  /// Whether restarts on hot reload are possible in this program: true in
+  /// a debug run on the Dart VM, false in AOT and product builds, on the
+  /// web and in Flutter. When false, [track] does nothing.
   static bool get isEnabled => _enabled;
 
-  /// Restarts [context] with the application [application] returns (the
-  /// generated `springApplication`, up to date after a reload) when its
-  /// generated code changed.
+  /// Registers [context] for restarts on hot reload.
+  ///
+  /// [application] must return the application as the code is now: the
+  /// generated `springApplication` getter, which after a reload builds the
+  /// new beans. `SpringApplication.run(hotReload:)` calls this, so code
+  /// that uses the generated `runApplication` never does. The first call
+  /// also registers [extensionName]. Contexts that were closed in the
+  /// meantime are forgotten.
   static void track(
     ConfigurableApplicationContext context,
     SpringApplication Function() application,
@@ -66,8 +91,15 @@ abstract final class SpringHotReload {
     }
   }
 
-  /// Restarts the tracked contexts whose generated code changed, unless
-  /// `spring.devtools.restart.enabled=false`; the number restarted.
+  /// Restarts every registered context whose generated code changed and
+  /// returns how many were restarted.
+  ///
+  /// Each restart goes through [SpringApplication.reloadAsync], so the old
+  /// context is closed (its asynchronous destroy callbacks awaited) before
+  /// the new one starts, and the runners run again. Closed contexts and
+  /// those with `spring.devtools.restart.enabled=false` are skipped. The
+  /// extension [extensionName] calls this; a test can call it directly. A
+  /// failing restart throws.
   static Future<int> reloadAll() async {
     var restarted = 0;
     for (var i = 0; i < _tracked.length; i++) {
