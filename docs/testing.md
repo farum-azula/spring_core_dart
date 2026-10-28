@@ -1,18 +1,26 @@
 # Testing
 
-> Tests come in two forms, both working: **functions** in `main`
-> (`springBootTest(...)`, section 2) and **test classes with annotations**,
-> the way Spring writes them (sections 3–11), which
-> `spring_core_dart_generator` turns into the same functions (section 15).
+`spring_boot_starter_test` lets a test start the real application, get its
+beans, replace some of them with fakes, set properties for the test, and
+call the controllers without a server. It runs on top of `package:test`.
 
-Spring tests start the application (or a slice of it) once, inject beans
-into the test, replace some beans with fakes and set properties for the
-test. `spring_boot_starter_test` does the same for Dart, on top of
-`package:test`.
+Why start the application at all? A unit test that creates its objects by
+hand cannot show that the config files bind, that the beans find each
+other, or that a controller answers as a client expects. A test that
+starts the application can, and it stays fast because the application
+starts once for many tests.
+
+Tests come in two forms, and both work the same way:
+
+- **functions** in `main`: `springBootTest(...)`, `test(...)`, `setUp(...)`
+  ([section 2](#2-tests-as-functions));
+- **test classes with annotations**, the way Spring writes tests
+  (sections 3 to 11). `spring_core_dart_generator` turns each class into
+  the same functions ([section 15](#15-what-the-generator-writes)).
 
 **Flutter** apps have their own starter, `spring_boot_starter_flutter_test`
-([Flutter testing](flutter-testing.md)): it is built on this one, so
-everything on this page works there too, and adds widget tests, pumping
+([Flutter testing](flutter-testing.md)). It is built on this one, so
+everything on this page works there too; it adds widget tests that pump
 widgets with the test's beans, themes and platforms.
 
 | Spring (Java) | Here |
@@ -61,8 +69,9 @@ dev_dependencies:
   build_runner: ^2.17.0   # already there for the application
 ```
 
-Test configuration goes to `test/resources/`, which comes first on the
-classpath during tests, like `src/test/resources` (see
+Configuration and data for the tests go to `test/resources/`. During the
+tests it comes first on the classpath, before `lib/resources/`, and it is
+never shipped with the application (see
 [Configuration, section 19](configuration.md#19-tests)):
 
 ```
@@ -72,13 +81,14 @@ test/
   checkout_test.dart
 ```
 
-Test classes need `spring_core_dart_generator` (already a dev dependency
-of the application) and `build_runner`; it runs over `test/` by default
-with `dart run build_runner build` or `watch`.
+Test classes need `spring_core_dart_generator`, which the application
+already has as a dev dependency, and `build_runner`. The generator runs
+over `test/` by default with `dart run build_runner build` or `watch`.
 
 ## 2. Tests as functions
 
-The whole application, once for the test file, with a fake gateway:
+Here the whole application starts once for the test file, with a fake
+payment gateway in place of the real one:
 
 ```dart
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -103,6 +113,7 @@ void main() {
     args: ['--shop.name=Night Books'],
     profiles: ['dev', 'test'],
     systemEnvironment: {'SHOP_MAX_BASKET_SIZE': '25'},
+    // The dev profile has several gateways; 'sandbox' is the one Checkout uses.
     overrides: [BeanOverride<PaymentGateway>(gateway, name: 'sandbox')],
   );
 
@@ -119,9 +130,12 @@ void main() {
 }
 ```
 
-`springBootTest` registers `setUpAll` (start the context), `tearDownAll`
-(close it) and `tearDown` (restart after `app.markDirty()`). Every option
-is listed in [section 3](#3-a-test-class), next to its annotation.
+`springBootTest` registers a `setUpAll` that starts the context, a
+`tearDownAll` that closes it with `closeAsync()`, and a `tearDown` that
+closes it after a test that called `app.markDirty()`, so the next test
+starts a new one. It returns at once: use `app` inside tests, `setUp`, or
+a `setUpAll` declared after the call. Every option is listed in
+[section 3](#3-a-test-class), next to its annotation.
 
 ## 3. A test class
 
@@ -162,13 +176,13 @@ class CheckoutTest {
 void main() => runSpringTests();
 ```
 
-- **The class** holds the test's beans and its test methods; the
+- **The class** holds the test's beans and its test methods. The
   annotations above it say how the application starts.
-- **`main`** stays: `dart test` runs a file's `main`, and the generator
+- **`main` stays.** `dart test` runs a file's `main`, and the generator
   cannot write into your file. `runSpringTests()` comes from the generated
   `test/spring/checkout.test.spring.dart` and runs every test class of the
   file.
-- **Plain tests** can sit next to it in `main`, for what needs no context:
+- **Plain tests** that need no context can sit next to it in `main`:
 
   ```dart
   void main() {
@@ -178,6 +192,23 @@ void main() => runSpringTests();
   }
   ```
 
+Spring (Java):
+
+```java
+@SpringBootTest(args = "--shop.name=Night Books")
+@ActiveProfiles({"dev", "test"})
+class CheckoutTest {
+  @Autowired ShopProperties properties;
+  @Autowired Checkout checkout;
+  @TestBean(name = "sandbox") PaymentGateway gateway;
+
+  static PaymentGateway gateway() { return new FakeGateway(); }
+
+  @Test
+  void pays() { ... }
+}
+```
+
 ### `@SpringBootTest` options
 
 | Option | Type | Default | `springBootTest` parameter | Spring |
@@ -185,10 +216,10 @@ void main() => runSpringTests();
 | `application` | `String` | the package's only application ([section 4](#4-which-application)) | the first argument | `classes` |
 | `args` | `List<String>` | `[]` | `args:` | `args` |
 | `properties` | `Map<String, Object?>` | `{}` | `properties:` | `properties` |
-| `resourceDirectories` | `List<String>` | `['test/resources']` | `resourceDirectories:` | (the test classpath) |
+| `resourceDirectories` | `List<String>` | `['test/resources']` | `resourceDirectories:` | the test classpath |
 | `webEnvironment` | `WebEnvironment` | `WebEnvironment.mock` | `webEnvironment:` | `webEnvironment` ([section 17](#17-web-tests-mockmvc)) |
 
-The other options are their own annotations, so that a test reads like
+The other options have annotations of their own, so that a test reads like
 Spring's:
 
 | Annotation | On | `springBootTest` parameter | Spring |
@@ -199,14 +230,14 @@ Spring's:
 | `@DynamicPropertySource()` | static method | `dynamicProperties:` | `@DynamicPropertySource` |
 | `@ContextInitializer()` | static method | `initializers:` | `@ContextConfiguration(initializers = ...)` |
 | `@TestBean()` | field | `overrides:` | `@TestBean`, `@MockitoBean` |
-| `@DirtiesContext()` | class or method | `app.markDirty()` | `@DirtiesContext` |
+| `@DirtiesContext()` | class, method or `@Nested` field | `app.markDirty()` | `@DirtiesContext` |
 
 ## 4. Which application
 
-A test class starts the application of its package, the one generated
+A test class starts the application of its own package: the one generated
 into `bin/<name>.spring.dart` or `lib/main.spring.dart`. With one
 application in the package, nothing needs saying. With several (two
-executables in `bin/`), name the entry point:
+executables in `bin/`, say), name the entry point:
 
 ```dart
 @SpringBootTest(application: 'bin/admin.dart')
@@ -214,16 +245,17 @@ class AdminTest { ... }
 ```
 
 Spring names the application's class (`@SpringBootTest(classes =
-AdminApplication.class)`). Here it is a path because an annotation's
-arguments must be constants, and the generated `springApplication` is not
-one; the generator checks that the path is an entry point of the package
-([section 16](#16-build-errors)).
+AdminApplication.class)`). Here it is a path, because an annotation's
+arguments must be constants and the generated `springApplication` is not
+one. The generator checks that the path is an entry point with
+`@SpringBootApplication` ([section 16](#16-build-errors)).
 
 ## 5. Injecting beans
 
-`@Autowired()` on a `late` field: the field is set from the context before
-the first test of the class, and again after a restart
-([section 10](#10-a-fresh-context-dirtiescontext)).
+An `@Autowired()` field receives a bean of the application. It is set
+before every test, so after a restart
+([section 10](#10-a-fresh-context-dirtiescontext)) it holds the new
+context's bean.
 
 ```dart
 @SpringBootTest()
@@ -233,10 +265,10 @@ class OrdersTest {
 
   @Autowired()
   @Qualifier('express')
-  late Shipping shipping;                 // by name
+  late Shipping shipping;                 // one of several, by qualifier
 
   @Autowired()
-  late List<PaymentGateway> gateways;     // every bean of the type
+  late List<PaymentGateway> gateways;     // every bean of the type, by @Order
 
   @Autowired()
   late ApplicationContext context;        // the context itself
@@ -255,30 +287,36 @@ class OrdersTest {
 }
 ```
 
-With the web starter, `@LocalServerPort() late int port;` is the port of
-the real server (`webEnvironment: WebEnvironment.randomPort`, see
-[section 17](#17-web-tests-mockmvc)).
+With the web starter, a `@LocalServerPort() late int port;` field gets
+the port of the real server (`webEnvironment: WebEnvironment.randomPort`,
+see [section 17](#17-web-tests-mockmvc)).
 
-- A field must be `late`, public and not `final` (the generated code sets
-  it from outside the class).
-- The types and qualifiers are the ones of constructor injection: an
-  optional bean is a nullable field (`late Mailer? mailer;`), and
-  `List<T>` / `Iterable<T>` / `Set<T>`, `Map<String, T>` (by name) and
-  `ObjectProvider<T>` work too.
-- Spring Java allows constructor injection in tests too; here the fields
-  are the only way: the generated code creates the class with `Name()`,
-  so it must be public with an unnamed constructor without required
-  parameters.
+- A field must be `late`, public and not `final`: the generated code sets
+  it from outside the class.
+- The types are those of constructor injection. A nullable field is
+  optional (`late Mailer? mailer;` stays `null` without a bean).
+  `List<T>`, `Iterable<T>`, `Set<T>`, `Map<String, T>` (by bean name) and
+  `ObjectProvider<T>` work too. `ApplicationContext`,
+  `ConfigurableApplicationContext`, `Environment`,
+  `ConfigurableEnvironment`, `SpringBootTestContext` and `MockMvc` are
+  recognised by name.
+- Spring also allows constructor injection in tests; here fields are the
+  only way. The generated code creates the class with `Name()`, so it
+  must be public, not abstract, and have an unnamed constructor without
+  required parameters.
 - **Superclasses:** annotated members of a superclass declared in the same
-  file count (a base class of shared beans, tests and set-up). One in
-  another file is not seen (the test file is read as written) and the
-  build warns.
+  file count, for a base class of shared beans, tests and set-up. A
+  superclass in another file is not seen (the generator reads the test
+  file as written), and the build warns about it.
 
 ## 6. Replacing beans
 
-`@TestBean()` on a field with a value: the value replaces the application's
-bean of the field's type before the context starts, like `@TestBean` and
-`@MockitoBean` in Spring.
+A bean that talks to something a test cannot use (a payment provider, the
+wall clock, a mail server) is replaced with a field's value. Put
+`@TestBean()` on a field with a value: the value replaces the
+application's bean before the context starts. The real bean's definition
+is removed first, so the real object is never built, and every bean that
+injects it gets the value.
 
 ```dart
 @SpringBootTest()
@@ -290,7 +328,7 @@ class PaymentTest {
   @TestBean()                           // replaces the only Clock
   final Clock clock = FixedClock(DateTime(2026, 1, 1));
 
-  @TestBean()                           // adds a bean that did not exist
+  @TestBean()                           // no Mailer bean: adds one
   final Mailer mailer = RecordingMailer();
 
   @Autowired()
@@ -304,34 +342,51 @@ class PaymentTest {
 }
 ```
 
-Which bean is replaced:
+Which bean is replaced, and what the generator writes for it:
 
 | Given | Replaces | Generated |
 |---|---|---|
-| `name` | the bean (or alias) with that name, keeping the types it is registered under; without one, adds the value under that name | `BeanOverride.named(value, name: ...)` |
-| `type` (with or without `name`) | the only (or `@Primary`, or named) bean of `type` | `BeanOverride<Type>(value)` |
-| neither | the only bean of the field's declared type; the type must be written (`final Clock clock = ...`), else the build fails | `BeanOverride<Clock>(value)` |
+| `name` only | the bean (or alias) with that name. It keeps the types it was registered under, except its own class, and gains the class of the value | `BeanOverride.named(value, name: ...)` |
+| `type` (with or without `name`) | the bean called `name` if given; else the only bean of `type`, or the `@Primary` one among several. The value is registered under `type` only | `BeanOverride<Type>(value)` |
+| neither | the only (or `@Primary`) bean of the field's declared type. The type must be written (`final Clock clock = ...`), or the build fails | `BeanOverride<Clock>(value)` |
 
-Without such a bean, the value is added as a new bean.
+Without such a bean, the value is added as a new bean. Several beans of the
+type and no single `@Primary` one fail the start with a `StateError` that
+lists them: give a `name`.
 
 - The field is a normal field, so the test reads its fake directly
-  (`gateway.charged`), with its own type, not the bean's interface.
-- The value is created once with the test class. When it holds state
+  (`gateway.charged`), with the fake's own class.
+- The value is created once, with the test class. When it holds state
   between tests, reset it in `@BeforeEach` or use `@DirtiesContext`.
 - Mocks from `package:mocktail` work as values; the starter has no mocking
   library of its own (Spring ships Mockito).
 - As a function: `overrides: [BeanOverride.named(gateway, name:
   'sandbox')]`, or `BeanOverride<PaymentGateway>(gateway)`.
 
+Behaviour to know, as the code is today:
+
+- **A misspelt `name` does not fail.** When no bean has that name, the
+  value is added under it and the real bean stays. The usual symptom is
+  that the real bean is still used, or that two beans of the type now
+  compete.
+- **With `type` (or none given), the replacement is registered under that
+  one type.** If the original bean was also found under another interface,
+  that interface no longer finds it.
+- **Without `name` and without a bean of the type,** the value is
+  registered under the type's default bean name (`Mailer` → `mailer`). If
+  an unrelated bean already has that name, it is removed.
+
 ## 7. Properties and profiles
 
-Where test properties come from, highest first:
+Where the test's properties come from, highest first:
 
 1. `@DynamicPropertySource` values;
-2. `@TestPropertySource(properties:)` and `@SpringBootTest(properties:)`;
-3. `@TestPropertySource(locations:)` files, later files first;
+2. `@TestPropertySource(properties:)` and `@SpringBootTest(properties:)`
+   (merged; on the same key, `@TestPropertySource` wins);
+3. `@TestPropertySource(locations:)` files; when two files set a key, the
+   later file wins;
 4. command-line `args`;
-5. `@TestEnvironment`, in place of the OS environment;
+5. `@TestEnvironment`, which stands in for the OS environment;
 6. the config files: `test/resources/` first, then `lib/resources/`.
 
 ```dart
@@ -345,6 +400,7 @@ Where test properties come from, highest first:
 class ShopPropertiesTest {
   static final server = FakeServer();
 
+  // The fake server's URL exists only once it runs.
   @DynamicPropertySource()
   static void serverUrl(DynamicPropertyRegistry registry) {
     registry.add('shop.payments.url', () => server.url); // read when used
@@ -370,20 +426,25 @@ class ShopPropertiesTest {
 ```
 
 - **`@ActiveProfiles`** sets `spring.profiles.active`, replacing the
-  profiles of the config files, as in Spring.
-- **`@TestEnvironment`** replaces the OS environment completely: tests do
-  not depend on the machine's variables. Without it the environment is
+  profiles of the config files, as in Spring. List the application's own
+  profiles too when the tests need them.
+- **`@TestEnvironment`** replaces the OS environment completely, so tests
+  do not depend on the machine's variables. Without it the environment is
   empty.
-- **`@DynamicPropertySource`** must be a static method (it runs before the
-  test class is created). The value supplier is called each time the
-  property is read, so a server started in `@BeforeAll` can give its port.
-- In `test/resources/`, `application.yml` replaces the one in
-  `lib/resources/` entirely (same path); `application-test.yml` with the
-  `test` profile only adds to it.
+- **`@DynamicPropertySource`** must be a static method, because it runs
+  before the test class is created. It is called at every start of the
+  context, and each value supplier each time the property is read, so a
+  server started in `@BeforeAll` can hand over its port. A class may have
+  several; all are called.
+- **`@TestPropertySource(locations:)`**: a file that does not exist fails
+  the start with a `StateError`.
+- In `test/resources/`, an `application.yml` replaces the one in
+  `lib/resources/` entirely (same path); an `application-test.yml` read
+  with the `test` profile only adds to it.
 
 ## 8. Test methods
 
-Every method with `@Test()` is a test. A method returning `Future` is
+Every method with `@Test()` is a test. A method that returns a `Future` is
 awaited.
 
 ```dart
@@ -399,7 +460,7 @@ class BasketTest {
   void emptyBasket() => ...;
 
   @Test()
-  @DisplayName('checkout sends an email')       // Spring's spelling
+  @DisplayName('checkout sends an email')       // JUnit's spelling
   Future<void> checkoutSendsAnEmail() async => ...;
 
   @Test()
@@ -413,17 +474,18 @@ class BasketTest {
 | Annotation | Meaning |
 |---|---|
 | `@Test([name])` | a test; without a name, the method name split into words (`addsABook` → `adds a book`) |
-| `@DisplayName(name)` | the test's name, the same as `@Test(name)` |
-| `@Disabled([reason])` | skips the test (on the class: every test), like JUnit's `@Disabled` |
-| `@Tag(name)` | a tag for `dart test --tags` / `--exclude-tags`; several allowed; on the class for every test |
-| `@TestOptions(timeout:, retry:, testOn:, onPlatform:)` | `test()`'s other options; on the class for every test |
+| `@DisplayName(name)` | the test's name, the same as `@Test(name)`; it wins when both are given |
+| `@Disabled([reason])` | skips the test (on the class or a `@Nested` field: every test of it), shown as skipped with the reason |
+| `@Tag(name)` | a tag for `dart test --tags` / `--exclude-tags`; several allowed; on the class or a `@Nested` field for every test of it |
+| `@TestOptions(timeout:, retry:, testOn:, onPlatform:)` | the other options of `test()`; on the class or a `@Nested` field for every test of it |
 
 `package:test`'s own `@Skip`, `@Timeout`, `@Tags`, `@Retry`, `@TestOn` and
-`@OnPlatform` can only annotate a library (`@TestOn('vm') library;` at the
-top of the file still works); `@Disabled`, `@Tag` and `@TestOptions` are
-their per-test counterparts.
+`@OnPlatform` can only annotate a whole library (`@TestOn('vm') library;`
+at the top of the file still works). `@Disabled`, `@Tag` and
+`@TestOptions` bring them to a single test.
 
-The order of the tests is the order of the methods in the class.
+Tests run in the order of the methods in the class. A test method takes
+no parameters and is not static.
 
 ## 9. Before and after
 
@@ -434,10 +496,10 @@ class OrdersTest {
   late Orders orders;
 
   @BeforeAll()
-  static Future<void> startDatabase() async { ... } // before the context
+  static Future<void> startDatabase() async { ... } // before the context starts
 
   @BeforeEach()
-  void clear() => orders.clear();                 // beans are injected here
+  void clear() => orders.clear();                 // the beans are injected by now
 
   @AfterEach()
   Future<void> report() async { ... }
@@ -450,18 +512,21 @@ class OrdersTest {
 | Annotation | Runs | As a function |
 |---|---|---|
 | `@BeforeAll()` | once, before the context starts; a static method | `setUpAll` registered before `springBootTest(...)` |
-| `@BeforeEach()` | before every test, with the beans injected | `setUp` |
+| `@BeforeEach()` | before every test, after the fields were injected | `setUp` |
 | `@AfterEach()` | after every test, before a `@DirtiesContext` restart | `tearDown` |
-| `@AfterAll()` | once, after the context is closed; a static method | `tearDownAll` |
+| `@AfterAll()` | once, after the context is closed; a static method | `tearDownAll` registered before `springBootTest(...)` |
 
 Several methods with the same annotation run in the order of the class.
+`@BeforeAll` and `@AfterAll` methods belong to the `@SpringBootTest`
+class, not to a `@Nested` one. A returned `Future` is awaited.
 
 ## 10. A fresh context: `@DirtiesContext`
 
-One context serves all tests of a class. A test that leaves beans in a
-state the next tests should not see marks the context dirty; it is closed
-after the test and a new one starts before the next, with the
-`@Autowired` fields injected again.
+One context serves all the tests of a class, which keeps them fast. A test
+that leaves beans in a state the next tests must not see (a counter, an
+in-memory store, a cache) marks the context dirty. The context is closed
+after that test, a new one starts before the next, and the `@Autowired`
+fields are injected again.
 
 ```dart
 @SpringBootTest()
@@ -485,14 +550,16 @@ class CounterTest {
 class FreshCounterTest { ... }
 ```
 
-As a function: `app.markDirty()` in the test, or `setUp(app.markDirty)` for every
-test.
+On a `@Nested` field it applies to every test of the group. As a
+function: `app.markDirty()` in the test, or `setUp(app.markDirty)` for
+every test.
 
 ## 11. Groups: `@Nested`
 
-A field with `@Nested()` holds a class of tests run as a `group` with the
-outer class's context and beans. Its own `@BeforeEach` methods run after
-the outer ones.
+A field with `@Nested()` holds a class of tests that run as a `group`
+inside the outer class, with the same context and beans. Use it to group
+tests that share a setup, such as "with one book in the basket". The
+nested class's `@BeforeEach` methods run after the outer ones.
 
 ```dart
 @SpringBootTest()
@@ -506,7 +573,7 @@ class BasketTest {
 
 class WithOneBook {
   @Autowired()
-  late Basket basket;               // the same bean as the outer class
+  late Basket basket;               // the same bean as in the outer class
 
   @BeforeEach()
   void addBook() => basket.add('Dune', 10);
@@ -516,22 +583,28 @@ class WithOneBook {
 }
 ```
 
-Spring nests inner classes (`@Nested class WithOneBook`); Dart has none, so
-the group is a field of its own class.
+Spring nests inner classes (`@Nested class WithOneBook`). Dart has no
+inner classes, so the group is a field holding an instance of its own
+class.
 
-`@Disabled`, `@Tag`, `@TestOptions` and `@DirtiesContext` on the field (or
-on the nested class) apply to the whole group. The nested class must be
-declared in the test file; it may have `@CapturedOutput` fields.
+- `@Disabled`, `@Tag`, `@TestOptions` and `@DirtiesContext` on the field
+  (or on the nested class) apply to the whole group.
+- The nested class must be declared in the test file. It may have
+  `@Autowired`, `@Value` and `@CapturedOutput` fields, `@BeforeEach` and
+  `@AfterEach` methods, tests and further `@Nested` fields.
+- It may not have `@TestBean` fields or `@BeforeAll`, `@AfterAll`,
+  `@DynamicPropertySource` and `@ContextInitializer` methods: they belong
+  to the outer class, which owns the context.
 
 ## 12. Logs and console output
 
-As a function, `captureLogs()` records what is logged through `SpringLog` in
-each test; `app.output` is what the application printed (the failure
-report of a context that did not start, the banner when on).
+To check what the code logged, `captureLogs()` records what goes through
+`SpringLog` during each test. Call it once in `main` or a `group`, outside
+the tests; the capture is emptied before every test.
 
 ```dart
 void main() {
-  final logs = captureLogs();                  // before springBootTest
+  final logs = captureLogs();
   final app = springBootTest(springApplication);
 
   test('paying is logged', () {
@@ -541,13 +614,13 @@ void main() {
 }
 ```
 
-In a test class, a `@CapturedOutput()` field:
+In a test class, a `@CapturedOutput()` field does the same:
 
 ```dart
 @SpringBootTest()
 class CheckoutLogTest {
   @CapturedOutput()
-  late CapturedLogs logs;                      // cleared before every test
+  late CapturedLogs logs;                      // emptied before every test
 
   @Autowired()
   late Checkout checkout;
@@ -560,14 +633,25 @@ class CheckoutLogTest {
 }
 ```
 
-`CapturedLogs`: `records` (`SpringLogRecord`s), `messages`, `text`. `captureLogs(level: SpringLogLevel.debug)` records from
-that level.
+`CapturedLogs` has `records` (`SpringLogRecord`s with level, logger and
+message), `messages`, `text` (one `LEVEL [logger] message` line per
+record), `atLevel(level)` (exactly that level) and `ofLogger(name)` (that
+logger and the loggers below it). Records are captured after the loggers'
+levels filtered them; `captureLogs(level: SpringLogLevel.debug)` sets the
+global level during each test and restores it afterwards.
+
+`app.output` is something else: the lines the application printed, such
+as the failure report of a context that did not start, or the banner when
+it is on. Each line is also shown when a test fails.
 
 ## 13. Auto-configuration: `ApplicationContextRunner`
 
-A function, as in Spring: a small context per test,
-to check what an auto-configuration creates under which properties. No
-application, no config files.
+A starter's auto-configuration must react to its surroundings: create a
+bean by default, back off when the application declares its own, change
+with a property, fail on a bad value. `ApplicationContextRunner` starts a
+small context per test to check each case. There is no application and no
+config file, only the modules and properties the test gives. It is used as
+a function, as in Spring.
 
 ```dart
 void main() {
@@ -589,6 +673,7 @@ void main() {
 
   test('backs off when the application declares a CacheManager', () {
     final own = InMemoryCacheManager(cacheNames: ['books']);
+    // Registered before the auto-configuration, as the application's would be.
     runner.withBean<CacheManager>(() => own).run((context) {
       expect(context.getBean<CacheManager>(), same(own));
     });
@@ -596,29 +681,38 @@ void main() {
 }
 ```
 
-`withAutoConfiguration`, `withUserConfiguration`, `withBean`,
+The runner is immutable: each `with...` method returns a new one. The
+methods are `withAutoConfiguration`, `withUserConfiguration`, `withBean`,
 `withBeanOverride`, `withPropertyValues`, `withSystemEnvironment`,
-`withInitializer`, `withParent`; `run` (or `runAsync`) gives an
-`AssertableApplicationContext`, with `hasFailed` and `startupFailure` when
-the context did not start (`expect(context, hasFailed())`).
+`withInitializer` and `withParent`; the package README
+([`ApplicationContextRunner`](../spring_boot_starter_test/README.md#testing-auto-configuration-applicationcontextrunner))
+describes each. Initializers run in the order they were added; their
+`order` is not used.
+
+`run` (or `runAsync` for a body that awaits) passes an
+`AssertableApplicationContext`. A context that failed to start is passed
+too, instead of throwing: `expect(context, hasFailed())`, or read
+`startupFailure`.
 
 ## 14. Matchers
 
-| Matcher | Passes when |
+| Matcher | Passes when the context has |
 |---|---|
-| `hasSingleBean<T>()` | the context has exactly one bean of type `T` |
+| `hasSingleBean<T>()` | exactly one bean of type `T` |
 | `hasBean<T>()` | at least one |
 | `doesNotHaveBean<T>()` | none |
-| `hasBeanNamed(name)` | a bean with that name |
-| `hasFailed()` | the context did not start (`ApplicationContextRunner`) |
+| `hasBeanNamed(name)` | a bean with that name or alias |
+| `hasFailed([matcher])` | failed to start (`ApplicationContextRunner` only); with a matcher, the error must match it |
 
-They take a `SpringBootTestContext`, an `ApplicationContext` or an
-`AssertableApplicationContext`.
+They take a `SpringBootTestContext`, an `AssertableApplicationContext`, or
+any `ListableBeanFactory` such as an `ApplicationContext`. Beans of parent
+contexts count too. On failure they list the beans found, or the reason
+the context did not start.
 
 ## 15. What the generator writes
 
-The generated files go to their own folder, `test/spring/`, with the
-same structure as `test/`:
+The generated files go to their own folder, `test/spring/`, which mirrors
+the structure of `test/`:
 
 ```
 test/
@@ -631,24 +725,28 @@ test/
 ```
 
 The `_test` suffix becomes `.test`, so `dart test` never runs a generated
-file as a test of its own. Each test file has its own generated file, not
-one for all: `dart test` compiles every test file separately, and a shared
-file would make each of them compile all the tests (and an error in one
-break them all). The generated file of `test/checkout_test.dart`
-holds `runSpringTests()`, which writes the class out with the functions of
+file as a test of its own. Each test file gets its own generated file:
+`dart test` compiles every test file separately, and a shared file would
+make each of them compile all the tests (and an error in one would break
+them all).
+
+The generated file of `test/checkout_test.dart` holds `runSpringTests()`,
+which writes the class out with the functions of
 [section 2](#2-tests-as-functions). For the class of section 3:
 
 ```dart
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// Generated by spring_core_dart_generator from the @SpringBootTest classes of checkout_test.dart.
+
+// ignore_for_file: type=lint, unused_import, unused_shown_name, duplicate_import
+
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
-
 import '../checkout_test.dart';
-
 import 'package:spring_boot_starter_test/generated.dart' as _sbt;
-
 import '../../bin/shop.spring.dart' as _app0;
 
+/// Declares the tests of the `@SpringBootTest` classes of `checkout_test.dart`.
 void runSpringTests() {
   _sbt.group('CheckoutTest', () {
     final $instance = CheckoutTest();
@@ -672,68 +770,70 @@ void runSpringTests() {
 }
 ```
 
-- **The test file is read as written**, not resolved: the generated file
+- **The test file is read as written**, not resolved. The generated file
   imports what the test file imports (same prefixes, `show` and `hide`)
-  plus the test file itself (relative imports, conditional ones included,
-  re-pointed from `test/spring/`), so every type and constant in the
-  annotations means the same there; a static constant of the class used in
+  plus the test file itself; relative imports, conditional ones included,
+  are re-pointed from `test/spring/`. So every type and constant in the
+  annotations means the same there. A static constant of the class used in
   a member's annotation (`@Tag(slow)`) is written `ShopTest.slow`, and a
-  private name fails the build (another library cannot reach it).
-  Annotations are recognized by name (`@Test`, also `@spring.Test` with a
-  prefix). The generated names start with `$` (`$instance`, `$app`) so
+  private name fails the build, since another library cannot reach it.
+  Annotations are recognised by name (`@Test`, also `@spring.Test` with a
+  prefix). The generated names start with `$` (`$instance`, `$app`), so
   they never hide one of the test file's.
 - **Bean types are not repeated**: `$instance.checkout = $app.getBean();`
   takes `Checkout` from the field. A nullable field uses `findBean()`, a
   `List` field `getBeans()`, a `@Value` field `value(...)`.
-- **`@TestBean(name:)`** becomes `BeanOverride.named`, which keeps the
-  types of the bean it replaces but its own class, and adds the fake's:
-  a `FakeGateway` field replaces the `PaymentGateway` called `sandbox`;
-  `getBean<SandboxGateway>()` then finds nothing.
-- **The application** is the package's `@SpringBootApplication` entry point
-  in `bin/` or `lib/` (its generated `springApplication`).
+- **`@TestBean(name:)`** becomes `BeanOverride.named`. The replacement
+  keeps the types of the bean it replaces except its own class, and adds
+  the fake's class: a `FakeGateway` field replaces the `PaymentGateway`
+  called `sandbox`, and `getBean<SandboxGateway>()` then finds nothing.
+- **The application** is the package's `@SpringBootApplication` entry
+  point in `bin/` or `lib/`, through its generated `springApplication`.
 - **Order**: `@BeforeAll` and `@AfterAll` are declared before
   `springBootTest`, so they run before the context starts and after it
-  closes; the fields are injected in a `setUp` before every test (new beans
-  after a restart), then the `@BeforeEach` methods run.
+  closes. The fields are injected in a `setUp` before every test (new
+  beans after a restart), then the `@BeforeEach` methods run.
 - The test file and the generated file import each other, which Dart
-  allows; no `part` is needed, the generated code uses only public members.
-- Each test class becomes a `group` named after it, so `dart test --name`
-  and the editor's run buttons find its tests.
+  allows. No `part` is needed; the generated code uses only public
+  members.
+- Each test class becomes a `group` named after it, so
+  `dart test --name` and the editor's run buttons find its tests.
 - The generated file is plain code: open it to see what a test does, and
-  break on it in the debugger.
-- Keep `build_runner watch` running (or run `build`) before `dart test`, as
-  for the application: a stale generated file runs the old tests.
+  set breakpoints in it.
+- Keep `build_runner watch` running (or run `build`) before `dart test`,
+  as for the application: a stale generated file runs the old tests.
 
 ## 16. Build errors
 
-The generator stops the build with a message pointing at the
-member:
+When a test class cannot be generated, the build stops with a message that
+starts with the place (`test/checkout_test.dart:12:3: ...`):
 
 | Message | Fix |
 |---|---|
 | `@Autowired field 'checkout' must be late and not final or static` | `@Autowired() late Checkout checkout;` (also `@Value`, `@CapturedOutput`, `@LocalServerPort`) |
 | `@Autowired field 'checkout' needs its type written` | `late Checkout checkout;`, not `late var checkout;` |
 | `'_checkout' is private; the generated test cannot reach it` | make it public |
-| `@TestBean field 'gateway' needs a value` | `final gateway = FakeGateway();` |
+| `@TestBean field 'gateway' needs a value` | `final gateway = FakeGateway();` (a static field does not count) |
 | `@TestBean field 'gateway' needs the type of the bean it replaces` | `final PaymentGateway gateway = ...`, `@TestBean(type: PaymentGateway)` or `@TestBean(name: 'sandbox')` |
 | `@TestBean field 'gateway' in a @Nested class` | move it to the `@SpringBootTest` class (one context) |
 | `@BeforeAll method start must be static` | `static Future<void> start() ...` (also `@AfterAll`, `@DynamicPropertySource`, `@ContextInitializer`) |
+| `@BeforeAll in a @Nested class: it belongs to the @SpringBootTest class` | move it to the outer class (also `@AfterAll`, `@DynamicPropertySource`, `@ContextInitializer`) |
 | `@BeforeEach method before must not be static` | an instance method (also `@AfterEach`, `@Test`) |
 | `@Test method pays has parameters` | test methods take none (widget tests with a `WidgetTester`: [Flutter testing](flutter-testing.md)) |
-| `@ActiveProfiles on a method: it belongs to the class` | move it to the class, or a second class (also `@SpringBootTest`, `@TestPropertySource`, `@TestEnvironment`) |
+| `@ActiveProfiles on a method: it belongs to the class` | move it to the class, or write a second class (also `@SpringBootTest`, `@TestPropertySource`, `@TestEnvironment`) |
 | `@Disabled on helper, which is not a @Test method` | add `@Test()` (also `@DisplayName`, `@Tag`, `@TestOptions`) |
-| `@Nested field 'inner' must be created with a class of this file` | declare the class in the test file: `final inner = Inner();` |
-| `'CheckoutTest' needs a constructor without required parameters` | remove the constructor's parameters |
+| `@Disabled on the field x, which is not @Nested` | `@Disabled`, `@Tag`, `@TestOptions` and `@DirtiesContext` go on `@Test` methods, classes and `@Nested` fields |
+| `@Nested field 'inner' needs a value` | `final inner = Inner();` |
+| `@Nested field 'inner' must be created with a class of this file` | declare the class in the test file |
+| `'CheckoutTest' needs a constructor without required parameters` | remove the constructor's required parameters |
 | `'CheckoutTest' has no unnamed constructor` | add `CheckoutTest();` (the generated code calls it) |
+| `'CheckoutTest' is abstract` | make it a concrete class |
 | `'_CheckoutTest' is private` | make the class public (also a `@Nested` class) |
 | `'_env' is private to the test file` | a constant used in an annotation must be public |
-| `@Disabled on the field x, which is not @Nested` | `@Disabled`, `@Tag`, `@TestOptions`, `@DirtiesContext` go on `@Test` methods, classes and `@Nested` fields |
 | `No application in this package` | a `@SpringBootApplication` entry point in `bin/` or `lib/` |
 | `Several applications in this package (...)` | `@SpringBootTest(application: 'bin/shop.dart')` |
 | `'bin/x.dart' is not an entry point with @SpringBootApplication` | the path of an entry point |
 | `test/checkout_test.dart does not import 'spring/checkout.test.spring.dart'` (a warning) | add the import and `void main() => runSpringTests();` |
-
-Each message starts with the place: `test/checkout_test.dart:12:3: ...`.
 
 A missing bean is not a build error: the test fails when the context
 starts, with the same report as the application (`No bean of type
@@ -741,11 +841,15 @@ Mailer`).
 
 ## 17. Web tests: `MockMvc`
 
-With `spring_boot_starter_web`, a test calls the controllers either in
-memory through `MockMvc` (the default: no server starts) or over a real
-socket on a free port. `MockMvc` runs the same `HttpHandler` as the
-server: filters, mapping, binding, `@Valid`, exception handlers and the
-`ProblemDetail` answers, only without the socket.
+With `spring_boot_starter_web`, a test calls the controllers in one of two
+ways:
+
+- **in memory, through `MockMvc`** (the default: no server starts).
+  `MockMvc` runs the same handler as the server: filters, mapping,
+  binding, `@Valid`, exception handlers and the `ProblemDetail` answers,
+  only without the socket. It is fast and needs no free port;
+- **over a real socket** on a free port, for clients that need one
+  ([below](#a-real-server-webenvironment)).
 
 As a class:
 
@@ -767,6 +871,7 @@ class BookControllerTest {
 
   @Test()
   Future<void> rejectsAnInvalidBook() async {
+    // Empty fields fail @Valid: a 400 with a ProblemDetail body.
     await mvc
         .post('/api/books', json: {'isbn': '', 'title': ''})
         .andExpect(status: 400, contentType: MediaType.applicationProblemJson);
@@ -805,16 +910,19 @@ class BookControllerTest {
 }
 ```
 
+Each call returns a `ResultActions`, which is a `Future`. Always `await`
+it: a chain that is not awaited never reports a failed expectation.
+
 ### Requests and expectations
 
 | Call | Request |
 |---|---|
-| `mvc.get(path, headers:, params:)` | `GET`; `params: {'q': 'dune', 'id': [1, 2]}` adds query parameters |
-| `mvc.post(path, json:, body:, headers:)`, `put`, `patch` | a JSON body (`Content-Type: application/json`), or `body` (a `String` or bytes) |
+| `mvc.get(path, headers:, params:)` | `GET`; `params: {'q': 'dune', 'id': [1, 2]}` adds query parameters, a list sends the parameter once per element |
+| `mvc.post(path, json:, body:, headers:)`, `put`, `patch` | a JSON body (`Content-Type: application/json`), or `body` (a `String` or bytes, sent as is, no content type added); `json` wins when both are given |
 | `mvc.delete(path, headers:)` | `DELETE` |
-| `mvc.multipart(path, files: [...], params: {...}, headers:, method:)` | a `multipart/form-data` upload (a `POST` unless `method` says otherwise), like `MockMvcRequestBuilders.multipart`; see below |
-| `mvc.perform(MockRequestBuilder(HttpMethod.get, '/api/books/{isbn}', ['978-0']))` | anything else: the builder has `headers`, `params`, `cookies`, `principal`, `content(...)`, `json(...)`, `with_(postProcessor)`; `{name}` is filled from the list, encoded |
-| `mvc.webSocket(path, headers:)` | a WebSocket handshake in memory (see below) |
+| `mvc.multipart(path, files: [...], params: {...}, headers:, method:)` | a `multipart/form-data` upload, a `POST` unless `method` says otherwise, like `MockMvcRequestBuilders.multipart`; see below |
+| `mvc.perform(MockRequestBuilder(HttpMethod.get, '/api/books/{isbn}', ['978-0']))` | anything else. The builder has `headers`, `params`, `cookies`, `principal`, `content(...)`, `json(...)` and `with_(postProcessor)`; each `{name}` is filled from the list, URL-encoded |
+| `mvc.webSocket(path, headers:, postProcessors:)` | a WebSocket handshake in memory (see below) |
 
 | On the result | Spring |
 |---|---|
@@ -822,18 +930,24 @@ class BookControllerTest {
 | `.andDo((result) => print(result.response.bodyText))` | `andDo(print())` |
 | `await ....andReturn()` → `MvcResult` (`request`, `response`) | `andReturn()` |
 
-A failed expectation is a test failure naming the request and showing the
-response (`GET http://localhost/api/books/1111: expected status 404, got
-200`). The response is a `MockServerHttpResponse`: `statusCode`,
-`headers`, `cookies`, `bodyText`, `bodyBytes`, `json`.
+`andExpect` checks only what is given. `status` must be equal; `contentType`
+must be compatible (`application/json` matches
+`application/json;charset=utf-8`); each header in `headers` must have
+exactly that value. A failed expectation is a test failure that names the
+request and shows the response (`GET http://localhost/api/books/1111:
+expected status 404, got 200`). A `json:` check on a body that is not JSON
+throws a `FormatException` instead.
+
+The response is a `MockServerHttpResponse`: `statusCode`, `headers`,
+`cookies`, `bodyText`, `bodyBytes`, `json`.
 
 ### Files: uploads and downloads
 
 `mvc.multipart` sends `MockMultipartFile`s (field name, original file
-name, content type, bytes, like Spring's) and text fields (`params`) as
-one `multipart/form-data` body, through the same multipart parsing and
-limits as the server. A `MockMultipartFile` without a file name is a
-plain part; with `application/json` it fills a `@RequestPart` object:
+name, content type, bytes, as in Spring) and text fields (`params`) as one
+`multipart/form-data` body. It goes through the same multipart parsing
+and limits as on the server. A `MockMultipartFile` without a file name is
+a plain part; with `application/json` it fills a `@RequestPart` object:
 
 ```dart
 test('uploads a cover', () async {
@@ -854,12 +968,13 @@ test('a missing part, a file too large', () async {
 });
 ```
 
-`MockMultipartFile` comes with `spring_boot_starter_test`; set the limits
-for a test with `properties: {'spring.servlet.multipart.max-file-size': '64KB'}`.
+`MockMultipartFile` comes with `spring_boot_starter_test`. Set the limits
+for a test with `properties: {'spring.servlet.multipart.max-file-size':
+'64KB'}`.
 
-A download (`Resource`, a byte stream, `StreamingResponseBody`) is read
-from `response.bodyBytes` (or `bodyText`); headers such as `Range` and
-`If-Modified-Since` are sent like any other:
+A download (a `Resource`, a byte stream, a `StreamingResponseBody`) is
+read from `response.bodyBytes` (or `bodyText`). Headers such as `Range`
+and `If-Modified-Since` are sent like any other:
 
 ```dart
 test('downloads part of a cover', () async {
@@ -869,6 +984,7 @@ test('downloads part of a cover', () async {
       .andReturn();
   expect(result.response.bodyBytes, hasLength(100));
 
+  // Asked again with the date it got: nothing changed, so no body.
   final modified = result.response.headers['Last-Modified']!;
   await app.mockMvc
       .get('/api/books/9780441013593/cover', headers: {'If-Modified-Since': modified})
@@ -882,8 +998,8 @@ files as described in the Feign starter's
 
 ### Server-sent events
 
-A stream answers before it ends: `andReturn()` completes once the
-headers are out. Read the events as they come, and end the stream from
+A stream answers before it ends, so `andReturn()` completes as soon as
+the headers are out. Read the events as they come, and end the stream from
 the client's side:
 
 ```dart
@@ -902,14 +1018,15 @@ test('streams changes', () async {
 ```
 
 `response.events` holds the events written so far, `response.chunks` the
-raw body from now on, `result.completion` completes when the application
-ended the response. `SseEmitter`s are read the same way.
+raw body from now on, and `result.completion` completes when the
+application has finished the response. `SseEmitter`s and
+`application/x-ndjson` streams are read the same way.
 
 ### WebSocket endpoints
 
 With `spring_boot_starter_websocket`, `mvc.webSocket(path)` performs the
-handshake in memory (through the filters, the origin check and the
-handshake interceptors) and returns the client's end of the connection;
+handshake in memory, through the filters, the origin check and the
+handshake interceptors. It returns the client's end of the connection;
 the endpoint gets the other end:
 
 ```dart
@@ -928,12 +1045,16 @@ body of the answer.
 
 ### A real server: `webEnvironment`
 
+Some clients need a real socket: a Feign client, `dart:io`'s
+`HttpClient`, a WebSocket client. For them the test starts the server on a
+free port.
+
 | `webEnvironment` | Spring | What starts |
 |---|---|---|
 | `WebEnvironment.mock` (default) | `MOCK` | no server; `MockMvc` |
-| `WebEnvironment.randomPort` | `RANDOM_PORT` | the server on a free port; the context is ready once it listens |
-| `WebEnvironment.definedPort` | `DEFINED_PORT` | the server on `server.port` |
-| `WebEnvironment.none` | `NONE` | no server |
+| `WebEnvironment.randomPort` | `RANDOM_PORT` | the server on a free port; the context counts as started once it listens |
+| `WebEnvironment.definedPort` | `DEFINED_PORT` | the server on `server.port`; the start fails when the port is taken |
+| `WebEnvironment.none` | `NONE` | no server; `MockMvc` still works |
 
 ```dart
 import 'dart:io' as io;
@@ -954,38 +1075,42 @@ class ServerTest {
 }
 ```
 
-`app.localServerPort` (and a `@LocalServerPort()` field) is the
-`local.server.port` property; reading it without a running server is a
-`StateError`. A port in use fails the start with Spring Boot's report.
-`MockMvc` works in every web environment except when the application has
-no web starter.
+`app.localServerPort` (and a `@LocalServerPort()` field) reads the
+`local.server.port` property; without a running server it throws a
+`StateError`. A server that cannot start fails the context with Spring
+Boot's report. `MockMvc` works in every web environment; without the web
+starter it throws a `StateError`.
 
 ### Changing every request: `RequestPostProcessor`
 
-A `RequestPostProcessor` changes a request before it is performed, like
-Spring's (Spring Security's `user(...)`, `jwt()` and `csrf()` are ones;
-the planned security starter adds them):
+A `RequestPostProcessor` changes a request just before it is sent, as in
+Spring. `spring_boot_starter_security/testing.dart` provides the security
+ones: `user(...)`, `jwt()`, `csrf()`, `httpBasic(...)` and others. Write
+your own for anything else, such as a header every request needs:
 
 ```dart
-final asAdmin = FunctionRequestPostProcessor(
-  (request) => request..principal = User('admin')..headers.set('X-Role', 'admin'),
+// Every request arrives as if through the HTTPS proxy of production.
+final viaProxy = FunctionRequestPostProcessor(
+  (request) => request..headers.set('X-Forwarded-Proto', 'https'),
 );
 
 await app.mockMvc.perform(
-  MockRequestBuilder(HttpMethod.delete, '/api/books/1111')..with_(asAdmin),
+  MockRequestBuilder(HttpMethod.delete, '/api/books/1111')..with_(viaProxy),
 ).andExpect(status: 204);
 
-// For every request of a MockMvc:
-final mvc = MockMvc(app.getBean<DispatcherHandler>(), defaultPostProcessors: [asAdmin]);
+// For every request of a MockMvc (DispatcherHandler comes from spring_boot_starter_web):
+final mvc = MockMvc(app.getBean<DispatcherHandler>(), defaultPostProcessors: [viaProxy]);
 ```
+
+The `defaultPostProcessors` run before those of the request itself.
 
 ### `ApplicationContextRunner`
 
-The runner starts no server either (it sets
-`spring.test.web-environment=mock`), so auto-configuration tests of a web
-application never open a port. For a real server in a runner:
+The runner starts no server either: it sets
+`spring.test.web-environment=mock`, so auto-configuration tests of a web
+application never open a port. For a real server in a runner, add
 `.withPropertyValues(['spring.test.web-environment=random-port'])`, then
-`await context.getBean<WebServerStartStopLifecycle>().started` for the
+`await context.getBean<WebServerStartStopLifecycle>().started` gives the
 `WebServer` and its port.
 
 ## 18. Differences from Spring
@@ -995,23 +1120,24 @@ application never open a port. For a real server in a runner:
 - **Fields, not constructors**, for injection into tests, and they are
   `late`.
 - **`@TestBean` takes a value**, not a factory method name or a Mockito
-  mock; any object (a fake, a `mocktail` mock) works.
+  mock; any object (a fake, a `mocktail` mock) works. Nothing is reset
+  between tests.
 - **`@TestEnvironment`** does not exist in Spring: Java tests cannot
-  replace environment variables. Here the environment of a test is empty
-  unless given, so tests do not depend on the machine.
+  replace environment variables. Here a test's environment is empty unless
+  given, so tests do not depend on the machine.
 - **`@SpringBootTest(application:)`** is a path to the entry point, not a
   class, because annotation arguments must be constants.
 - **`@Nested`** is a field holding another class: Dart has no inner
   classes.
 - **One context per class**, not shared between classes with the same
   configuration (Spring's context cache). Each class starts its own;
-  starting is fast (no classpath scanning: everything is generated).
+  starting is fast, since nothing is scanned at run time: everything is
+  generated.
 - **Web tests** ([section 17](#17-web-tests-mockmvc)): `MockMvc` needs no
   `@AutoConfigureMockMvc` (an `@Autowired MockMvc` field or `app.mockMvc`
-  always works with the web starter), its expectations are named
+  always works with the web starter). Its expectations are named
   parameters with matchers instead of `status().isOk()` and
-  `jsonPath(...)`, and there is no `WebTestClient` or
-  `TestRestTemplate`: use a Feign client or `HttpClient` against
-  `localServerPort`.
+  `jsonPath(...)`. There is no `WebTestClient` or `TestRestTemplate`: use
+  a Feign client or `HttpClient` against `localServerPort`.
 - **No test slices** (`@WebMvcTest`, `@DataJpaTest`) yet; use
   `ApplicationContextRunner` for a part of the configuration.

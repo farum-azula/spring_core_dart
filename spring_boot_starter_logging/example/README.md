@@ -1,14 +1,17 @@
 # spring_boot_starter_logging: examples
 
-**What it does:** gives a
-[`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) app proper
-logging — formatted console output, log levels per part of the app, log
-files, and an in-memory log list you can show on a screen in Flutter.
+This starter gives a
+[`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
+application proper logging: console lines in Spring Boot's format, log
+levels per part of the application, log files, and an in-memory list of
+recent records that a Flutter app can show on a screen.
 
-## Setup
+[`example.dart`](example.dart) is a small Spring Boot application. A
+checkout service logs two payments with fields, at three levels; a
+receipt is logged through a logger made without the annotation; then the
+application reads the warnings back from the in-memory buffer.
 
-Add the dependency and run the generator again. That is all: the starter
-is found and switched on automatically.
+## Run it
 
 ```yaml
 dependencies:
@@ -19,29 +22,60 @@ dev_dependencies:
   spring_core_dart_generator: ^0.4.2   # required: turns annotations into code
 ```
 
+Adding the dependency and running the generator is all the setup: the
+starter is found and switched on automatically. From the package
+directory:
+
 ```bash
 dart run build_runner build
+dart run example/example.dart
+```
+
+After the startup lines it prints (each line starts with the date and
+time, shortened to `...` here):
+
+```text
+...  INFO 4711 --- [           main] shop.checkout                            : paid 12.5 {request=r-1, order=1}
+...  INFO 4711 --- [           main] shop.checkout                            : paid 250.0 {request=r-1, order=2}
+...  WARN 4711 --- [           main] shop.checkout                            : large payment {request=r-1, order=2}
+...  INFO 4711 --- [           main] shop.receipts                            : receipt printed {request=r-1, order=2}
+1 warning(s): large payment
+```
+
+The debug lines are not there: the default level is `info`. Turn them on
+for the `shop` loggers with a command-line argument or an environment
+variable, and `basket of order 1 checked` appears:
+
+```bash
+dart run example/example.dart --logging.level.shop=debug
+LOGGING_LEVEL_SHOP=debug dart run example/example.dart
 ```
 
 ## 1. Write logs
 
-`@Log` on a class gives it a `log` getter, like Lombok's `@Slf4j`. The
-generator writes it into the `.spring.dart` file of the scan; import that
-file:
+`@Log()` on a class gives it a `log` getter, as Lombok's `@Slf4j` does in
+Java. The generator writes the getter into the `.spring.dart` file of the
+scan, so import that file:
 
 ```dart
-import 'package:shop/app.spring.dart'; // the generated file
+import 'example.spring.dart'; // the generated file
 
 @Service()
-@Log(topic: 'shop.checkout') // without topic: 'shop.Checkout'
+@Log(topic: 'shop.checkout') // without topic: <package>.Checkout
 class Checkout {
-  void pay(double amount) {
-    log.info('paid $amount');
-    log.debug(() => 'details: ${expensiveDump()}'); // built only if debug is on
-    log.error('payment failed', error: e, stackTrace: s);
+  void pay(int order, double amount) {
+    log.info('paid $amount', fields: {'order': order});
+    // A function: the message is built only when debug is on for this logger.
+    log.debug(() => 'basket of order $order checked');
+    if (amount > 100) {
+      log.warning('large payment', fields: {'order': order});
+    }
   }
 }
 ```
+
+`log.error('payment failed', error: e, stackTrace: s)` logs an error with
+its stack trace.
 
 ### Without the annotation
 
@@ -49,19 +83,15 @@ Where no generated file is at hand (a library, a script, a top-level
 function), create the logger yourself: the same `SpringLog`, named by you.
 
 ```dart
-const log = SpringLog('shop.checkout');
+const _receipts = SpringLog('shop.receipts');
 
-void pay(double amount) => log.info('paid $amount');
-```
-
-Spring Boot's line (`[shop]` is `spring.application.name`, `[main]` the
-isolate):
-
-```text
-2026-10-22T12:00:01.120+02:00  INFO 4711 --- [shop] [           main] shop.checkout                            : paid 12.5
+void printReceipt(int order) =>
+    _receipts.info('receipt printed', fields: {'order': order});
 ```
 
 ## 2. Choose what is shown
+
+A level applies to a logger and every logger below it:
 
 ```properties
 # lib/resources/application.properties
@@ -69,32 +99,36 @@ logging.level.root=info              # everything: info and above
 logging.level.shop.checkout=debug    # this logger and everything below it
 ```
 
-Or without editing files: `LOGGING_LEVEL_SHOP_CHECKOUT=debug dart run bin/main.dart`.
-
 ## 3. Extra data on every line
 
-```dart
-log.info('order placed', fields: {'order': 42});
-// ... shop.checkout                            : order placed {order=42}
+Fields go after the message and can be searched in the buffer. Fields
+given to `SpringLog.withFields` go on every line logged inside, in async
+code too; in the example, every line carries `request=r-1`:
 
-// Everything logged inside gets the field (also in async code):
-SpringLog.withFields({'request': requestId}, () => handle(request));
+```dart
+SpringLog.withFields({'request': 'r-1'}, () {
+  checkout
+    ..pay(1, 12.5)
+    ..pay(2, 250);
+  printReceipt(2);
+});
 ```
 
 ## 4. Console format
 
 ```properties
 logging.pattern.console=%d{HH:mm:ss} %-5p [%logger{20}] %m%X%n%ex
-logging.threshold.console=warn       # console shows only warnings and errors
+logging.threshold.console=warn       # the console shows only warnings and errors
 # or keep Spring Boot's line and change parts of it:
 logging.pattern.dateformat=HH:mm:ss.SSS
 logging.pattern.level=%-5p
 ```
 
-Logback's pattern syntax: `%d` time, `%p` level, `%logger{20}` name
-(shortened to about 20 characters), `%m` message, `%X` fields, `%t`
-isolate, `%ex` error with stack trace, `%clr(...)` colours, `%-20` /
-`%.20` widths. A pattern it cannot read stops the start.
+The pattern syntax is Logback's: `%d` the time, `%p` the level,
+`%logger{20}` the logger name (shortened to about 20 characters), `%m` the
+message, `%X` the fields, `%t` the isolate, `%ex` the error with its stack
+trace, `%clr(...)` colours, `%-20` / `%.20` widths. A pattern it cannot
+read stops the start.
 
 ## 5. Log files
 
@@ -104,17 +138,35 @@ logging.logback.rollingpolicy.max-file-size=10MB   # then app.log.1, app.log.2, 
 logging.logback.rollingpolicy.max-history=7        # how many old files to keep
 ```
 
-In Flutter, set the writable folder before starting:
+In Flutter, set the writable directory before starting:
 
 ```dart
 LoggingSystem.instance.fileDirectory =
     (await getApplicationDocumentsDirectory()).path; // path_provider
 ```
 
-## 6. A log screen in Flutter
+## 6. Read the records back
 
-The last records are kept in memory (`LogBuffer`). Inject it or use
-`LoggingSystem.instance.buffer`, and show a live, filtered list:
+The last records are kept in memory, in the `LogBuffer` bean. The example
+injects it and asks for the warnings:
+
+```dart
+@Component()
+class PayOnStartup implements CommandLineRunner {
+  PayOnStartup(this.checkout, this.logs);
+  final Checkout checkout;
+  final LogBuffer logs;
+
+  @override
+  void run(List<String> args) {
+    // ... the payments above ...
+    final warnings = logs.query(const LogQuery(minLevel: SpringLogLevel.warning));
+    print('${warnings.length} warning(s): ${warnings.single.message}');
+  }
+}
+```
+
+In a Flutter app, the same buffer feeds a live, filtered log screen:
 
 ```dart
 StreamBuilder<List<SpringLogRecord>>(
@@ -132,12 +184,13 @@ StreamBuilder<List<SpringLogRecord>>(
 ```
 
 Also: `buffer.counts[SpringLogLevel.error]` for a badge,
-`query.copyWith(text: 'payment')` for search, `buffer.export()` to share,
-`buffer.clear()`.
+`query.copyWith(text: 'payment')` for a search box, `buffer.export()` to
+share, `buffer.clear()`.
 
 ## 7. Send logs somewhere else
 
 ```dart
+// Errors also go to the crash reporter.
 class CrashReports extends LogAppender {
   CrashReports() : super(threshold: SpringLogLevel.error);
 
@@ -149,15 +202,12 @@ class CrashReports extends LogAppender {
 LoggingSystem.instance.addAppender(CrashReports());
 ```
 
-## 8. Change levels while the app runs
+## 8. Change levels while the application runs
 
 ```dart
 context.getBean<LoggingSystem>().setLogLevel('shop', SpringLogLevel.debug);
 context.getBean<LoggingSystem>().setLogLevel('ROOT', SpringLogLevel.warning);
 ```
 
-## Try it
-
-[`example.dart`](example.dart) next to this file is a Spring Boot
-application showing levels, fields and the buffer:
-`dart run example/example.dart --logging.level.shop=debug`.
+Every property, pattern conversion and difference from Spring Boot is in
+the package [README](https://pub.dev/packages/spring_boot_starter_logging).

@@ -39,11 +39,11 @@ What comes next, in order:
    it must be shown to be safe, not assumed.~~ Done, with the evidence of
    [docs/security.md](../docs/security.md); what is left (BCrypt, multi-factor,
    session registry, opaque tokens, the ZAP scan) is in the two files.
-3. **Documentation comments, first after the 0.4.x release**
+3. ~~**Documentation comments, first after the 0.4.x release**
    ([documentation.md](documentation.md)): every `///` of every package
    rewritten to say what the thing is, why it exists and when you need it,
-   understandable without knowing Spring. The `///` comments are done
-   (October 2026); the READMEs and `docs/` are left.
+   understandable without knowing Spring.~~ Done (October 2026): the `///`
+   comments, the READMEs and `docs/`.
 4. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
    of the providers (Anthropic, OpenAI, Gemini, Ollama, ...) behind one
    `ChatClient`.

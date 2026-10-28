@@ -15,8 +15,10 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// do not call it.
 ///
 /// ```properties
-/// spring.flutter.fonts.auto-load=true         # false: load nothing
-/// spring.flutter.fonts.exclude=assets/pdf/**  # files for other uses
+/// # false: load no font files at all
+/// spring.flutter.fonts.auto-load=true
+/// # font files kept for other uses, not loaded
+/// spring.flutter.fonts.exclude=assets/pdf/**
 /// ```
 abstract final class ThemeFonts {
   static const _log = SpringLog('spring_boot_starter_flutter.ThemeFonts');

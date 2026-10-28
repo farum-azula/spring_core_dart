@@ -1,10 +1,23 @@
 # spring_boot_starter_test: examples
 
-**What it does:** tests a
-[`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) app the way
-it really runs — config files, profiles, all objects wired together — and
-lets you swap real services (payments, network, database) for fakes.
-Works with `package:test` and `flutter_test`.
+These examples test a
+[`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) application
+the way it really runs: with its config files and profiles, and with all
+its objects wired together. Where a real service cannot run in a test
+(payments, the network, a database), the test swaps it for a fake. They
+work with `package:test` and `flutter_test`.
+
+A complete, runnable test suite that uses every part shown here is the one
+of the server guide,
+[example/server_guide/test](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide/test).
+To run it from a clone of the repository:
+
+```bash
+cd example/server_guide
+dart run build_runner build          # writes the generated *.spring.dart files
+dart test                            # every test
+dart test --exclude-tags integration # without the tests that open real sockets
+```
 
 ## Setup
 
@@ -14,10 +27,11 @@ dev_dependencies:
   test: ^1.25.0          # or flutter_test
 ```
 
-Your app is built with `spring_core_dart_generator` (it creates the
-`springApplication` used below), so run `dart run build_runner build` first.
+The application is built with `spring_core_dart_generator`, which writes
+the `springApplication` the tests start. Run `dart run build_runner build`
+before the tests, and again after changing beans.
 
-## 1. Start the whole app in a test
+## 1. Start the whole application in a test
 
 ```dart
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -29,12 +43,14 @@ void main() {
   final app = springBootTest(springApplication);
 
   test('the shop has a name', () {
+    // A real bean, with its properties bound from the config files.
     expect(app.getBean<ShopProperties>().name, 'NEON Books');
   });
 }
 ```
 
-The app starts once before the tests of the file and stops after them.
+The application starts once, before the first test of the file, and stops
+after the last one. Every test of the file shares it.
 
 ## 2. Replace a real service with a fake
 
@@ -53,6 +69,7 @@ void main() {
   final payments = FakePayments();
   final app = springBootTest(
     springApplication,
+    // The real Payments is never created; Checkout gets the fake.
     overrides: [BeanOverride<Payments>(payments)],
   );
 
@@ -63,37 +80,58 @@ void main() {
 }
 ```
 
-The real `Payments` is never created. Mocks from `mocktail` work the same.
+Mocks from a library such as `mocktail` work the same way. Nothing is
+reset between tests, so reset a shared fake in `setUp`.
 
 ## 3. Test settings
 
+Settings for the tests only go to `test/resources/`, which is read before
+`lib/resources/` during the tests and never shipped with the application:
+
 ```text
-lib/resources/application.properties          # the app's settings
-test/resources/application-test.properties    # only for tests, not shipped
+lib/resources/application.properties          # the application's settings
+test/resources/application-test.properties    # only for tests
 ```
 
 ```dart
 final app = springBootTest(
   springApplication,
-  profiles: ['test'],                         // loads application-test.properties
-  properties: {'shop.name': 'Test Books'},    // wins over everything
-  systemEnvironment: {'DB_PASSWORD': 'x'},    // instead of the real environment
+  profiles: ['test'],                         // also reads application-test.properties
+  properties: {'shop.name': 'Test Books'},    // wins over every other source
+  systemEnvironment: {'DB_PASSWORD': 'x'},    // instead of the machine's variables
 );
 ```
 
 Test data files work too: `test/resources/books.json` is
-`classpath:books.json` in tests.
+`classpath:books.json` in the tests.
 
-## 4. A fresh app after a test that changes state
+## 4. A fresh application after a test that changes state
 
 ```dart
 test('clears the basket', () {
   app.getBean<Basket>().clear();
-  app.markDirty(); // the next test gets a newly started app
+  // The basket bean is now empty: the next test gets a newly started app.
+  app.markDirty();
 });
 ```
 
-## 5. Check what was logged
+## 5. Call the controllers without a server
+
+With `spring_boot_starter_web`, `app.mockMvc` sends requests through the
+real web layer in memory: filters, validation and error answers included.
+
+```dart
+test('an unknown book is a 404', () async {
+  await app.mockMvc
+      .get('/api/books/9780000000000')
+      .andExpect(status: 404, contentType: MediaType.applicationProblemJson);
+});
+```
+
+Always `await` the chain: a check that is not awaited never fails the
+test.
+
+## 6. Check what was logged
 
 ```dart
 final logs = captureLogs();
@@ -104,10 +142,39 @@ test('logs the payment', () {
 });
 ```
 
-## 6. Testing your own starter
+The capture is emptied before every test.
 
-`ApplicationContextRunner` starts small contexts with just your
-auto-configuration:
+## 7. The same test as a class
+
+The generator turns a class like this into the functions above; the test
+file keeps a one-line `main`:
+
+```dart
+import 'spring/checkout.test.spring.dart'; // generated next to the test
+
+@SpringBootTest()
+@ActiveProfiles(['test'])
+class CheckoutTest {
+  @TestBean()
+  final Payments payments = FakePayments(); // replaces the only Payments
+
+  @Autowired()
+  late Checkout checkout;
+
+  @Test()
+  void checkoutPaysOnce() {
+    checkout.buy('book');
+    expect((payments as FakePayments).paid, [9.99]);
+  }
+}
+
+void main() => runSpringTests();
+```
+
+## 8. Testing your own starter
+
+`ApplicationContextRunner` starts a small context per test, with just your
+auto-configuration and the properties of the test:
 
 ```dart
 final runner = const ApplicationContextRunner()
@@ -118,8 +185,8 @@ test('provides a cache', () {
 });
 
 test('steps aside when the app has its own cache', () {
-  // Registered before the auto-configuration, like Boot's withBean:
-  // a missing @ConditionalOnMissingBean would give two caches.
+  // Registered before the auto-configuration, as an application's bean
+  // would be: without @ConditionalOnMissingBean there would be two caches.
   runner.withBean<Cache>(AppCache.new).run((context) {
     expect(context, hasSingleBean<Cache>());
     expect(context.getBean<Cache>(), isA<AppCache>());
@@ -136,7 +203,14 @@ test('can be switched off', () {
 Matchers: `hasSingleBean<T>()`, `hasBean<T>()`, `doesNotHaveBean<T>()`,
 `hasBeanNamed('x')`, `hasFailed()`.
 
-## More
+## Where each part is used in the server guide
 
-A real test suite using all of this:
-[example/test/boot_test.dart](https://github.com/farum-azula/spring_core_dart/blob/main/example/test/boot_test.dart).
+| Part | File in `example/server_guide/test/` |
+|---|---|
+| `springBootTest` with the `test` profile | `support/app.dart`, used by every test |
+| a test class with `@TestBean`, `@Autowired`, `@Value`, `@CapturedOutput`, `@Nested` | `shop_class_test.dart` |
+| `MockMvc`, with a logged-in user and a CSRF token | `web_test.dart`, `security_test.dart` |
+| a real server on a free port | `server_integration_test.dart` |
+| `BeanOverride` | `supplier_test.dart`, `cache_scheduling_test.dart`, `data_access_test.dart` |
+| `ApplicationContextRunner` | `configuration_test.dart` |
+| `captureLogs` | `events_aop_test.dart`, `security_test.dart` |
