@@ -44,20 +44,30 @@ What comes next, in order:
    rewritten to say what the thing is, why it exists and when you need it,
    understandable without knowing Spring.~~ Done (October 2026): the `///`
    comments, the READMEs and `docs/`.
-4. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
+4. ~~**Single sign-on** ([spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md)):
+   OAuth 2.0 / OpenID Connect for servers (`oauth2Login()`) and apps
+   (PKCE, tokens in the Keychain / Keystore).~~ Done (October 2026), with
+   Keycloak in the examples; what is left (the differential test against
+   Spring, mutation testing, tokens on WebSocket handshakes) is in the file.
+5. **Logging like Spring's** (the logging section of
+   [spring_core_dart.md](spring_core_dart.md#logging-like-springs)): the
+   root level INFO without the logging starter too, as in Spring; the
+   framework's own debug and trace lines for its main steps (beans
+   created, config files loaded, requests mapped and completed, the
+   security chain's decisions), with Spring's texts; the `web` log group;
+   `--debug` and `--trace` as in Boot.
+6. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
    of the providers (Anthropic, OpenAI, Gemini, Ollama, ...) behind one
-   `ChatClient`.
-5. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
+   `ChatClient`, all in one package (`spring_boot_starter_ai`).
+7. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
    *MVC: views and static resources*): first find out whether it is worth
-   it. With it, maybe (not decided): browser SSO on the server,
-   `oauth2Login()` with OpenID Connect
-   ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)),
-   which only pages rendered by the server (or a backend-for-frontend)
-   need; apps log in on the client and send tokens, which the resource
-   server already checks.
-6. Later: the [MCP server starter](spring_ai_starter_mcp_server.md), the
+   it. Browser SSO on the server, `oauth2Login()` with OpenID Connect, is
+   done without it
+   ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)):
+   Flutter web uses the server as its backend-for-frontend.
+8. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
    actuator, data, the rest of the table.
-7. Under question, far off: **the starters on the generator** —
+9. Under question, far off: **the starters on the generator** —
    `@AutoConfiguration` classes with `@Bean` methods instead of the
    hand-written `BeanDefinition`s of their auto-configurations. For now
    hand-written stays: it reads better for this code and needs no
@@ -72,11 +82,11 @@ What comes next, in order:
 | [spring_boot_starter_web.md](spring_boot_starter_web.md) | `spring_boot_starter_web` | first version on `dart:io` behind a replaceable `WebServerFactory` (done): controllers, `ProblemDetail`, SSE and `SseEmitter`, files (multipart uploads, `Resource` downloads with `Range`, byte streams), filters, CORS, WebSocket endpoints, `MockMvc`, the slots for Spring Security; next: a shared session store, static files, forwarded headers, Flutter isolates (blocking warnings, JSON offload, background server), `shelf` |
 | [spring_boot_actuator.md](spring_boot_actuator.md) | `spring_boot_actuator` | planned on the web starter: beans, env, conditions, loggers, logs, health — over HTTP, in the editor extensions, in apps |
 | [spring_security_core.md](spring_security_core.md) | `spring_security_core` | done: security context, users, password encoders, method security; next: BCrypt, multi-factor |
-| [spring_boot_starter_security.md](spring_boot_starter_security.md) | `spring_boot_starter_security` | done: filter chain, Basic, form login, sessions, CSRF, CORS, headers, JWT resource server; next: remember-me, session registry, opaque tokens |
+| [spring_boot_starter_security.md](spring_boot_starter_security.md) | `spring_boot_starter_security` | done: filter chain, Basic, form login, OAuth 2.0 / OpenID Connect login (`oauth2Login`), sessions, CSRF, CORS, headers, JWT resource server; next: remember-me, session registry, opaque tokens |
 | [security_verification.md](security_verification.md) | security packages | done except the ZAP scan and coverage in CI: threat model, attack catalog as tests, differential tests against Spring Security, fuzzing, test vectors, mutation testing, ASVS checklist |
-| [spring_ai.md](spring_ai.md) | `spring_ai_*` | planned after security: `ChatClient`, model providers as starters, streaming, tool calling, structured output, chat memory, embeddings |
-| [spring_ai_starter_mcp_server.md](spring_ai_starter_mcp_server.md) | `spring_ai_starter_mcp_server` | later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
-| [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | planned: tokens for Feign / WebSocket, PKCE login in apps |
+| [spring_ai.md](spring_ai.md) | `spring_boot_starter_ai` | planned: `ChatClient`, the model providers in one package, streaming, tool calling, structured output, chat memory, embeddings |
+| [spring_ai_mcp.md](spring_ai_mcp.md) | `spring_boot_starter_ai` | MCP, later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
+| [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: registrations from `spring.security.oauth2.client.*`, discovery, PKCE logins of apps (`OAuth2LoginService`), refresh, `TokenStore`, Bearer tokens on Feign; next: tokens on WebSocket handshakes |
 | [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data_*` | planned: entities, repositories, `@Transactional` |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
 | [spring_boot_starter_http.md](spring_boot_starter_http.md) | `spring_boot_starter_http` | planned: `RestClient`, `@HttpExchange` |
@@ -86,7 +96,7 @@ What comes next, in order:
 | [spring_boot_starter_cache.md](spring_boot_starter_cache.md) | `spring_boot_starter_cache` | next: persistent stores |
 | [spring_boot_starter_test.md](spring_boot_starter_test.md) | `spring_boot_starter_test` | test classes with annotations (done, [docs/testing.md](../docs/testing.md)); next: editor run buttons and snippets |
 | [spring_boot_starter_flutter_test.md](spring_boot_starter_flutter_test.md) | `spring_boot_starter_flutter_test` | planned: Flutter tests on top of the test starter (`@WidgetTest`, `pumpSpring`, themes, platforms, goldens), spec in [docs/flutter-testing.md](../docs/flutter-testing.md) |
-| [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties (done), next: navigation, settings, `TokenStore` |
+| [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties, the `TokenStore` and login browser on own platform code (done), next: navigation, settings |
 | [flutter_spring_signals.md](flutter_spring_signals.md) | `flutter_spring_signals` | planned: `@Signal` fields |
 | [flutter_spring_scene.md](flutter_spring_scene.md) | `flutter_spring_scene` | planned: Flutter Scene (3D) |
 | [flutter_spring_rust.md](flutter_spring_rust.md) | `flutter_spring_rust` | planned: Rust code as beans |

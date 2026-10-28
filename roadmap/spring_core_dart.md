@@ -3,6 +3,37 @@
 The runtime: container, AOP, SpEL, validation, `ObjectMapper`. Open
 differences from Spring found in reviews: [fix_plan.md](fix_plan.md).
 
+## Logging like Spring's
+
+The levels, groups, `logging.level.*` properties, `--debug` (the
+conditions report) and changing levels at runtime are there; what the
+framework logs is not. Found in October 2026:
+
+- **The default level.** Without `spring_boot_starter_logging`,
+  `SpringLog` shows only warnings and errors, so an application of
+  `spring_boot_dart` alone (and the package examples) sees none of its
+  `log.info` lines. Spring's default is INFO either way (logback in Boot,
+  commons-logging over java.util.logging without it): make the root level
+  INFO, then drop the workarounds in the examples
+  (`setDefaultProperties({'logging.level.<topic>': 'info'})`,
+  `SpringLog.level = SpringLogLevel.info`) and the last `print` of the
+  `spring_web_dart` README.
+- **The framework's own lines.** Almost none today (debug and trace
+  calls: `spring_core_dart` 0, `spring_boot_dart` 0, the web starter 3,
+  security 8), so `logging.level.root=debug` shows next to nothing. Port
+  Spring's debug and trace lines for the main steps, with Spring's texts
+  so they are recognised: the container (`Creating shared instance of
+  singleton bean 'x'`, profiles, the config files loaded, events), the
+  web starter (`GET "/api/books", parameters={}`, `Mapped to
+  BookController#list()`, `Completed 200 OK`), security (`Securing GET
+  /api/books`, `Secured GET /api/books`, `Set SecurityContextHolder to
+  anonymous`, the chain's filters at startup), cache, scheduling, Feign,
+  WebSocket, the OAuth2 client.
+- **Boot's switches.** The predefined `web` group (`logging.level.web=debug`);
+  `--debug` also turning on debug for a selection of the framework's
+  loggers, and `--trace`, as Boot does.
+- Tests: the lines appear at debug and trace and not at info.
+
 ## JSON, next steps
 
 Polymorphic types (`sealed` hierarchies with `@JsonTypeInfo` /

@@ -11,20 +11,24 @@ import 'dart:async' as _i3;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i16;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i15;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i17;
-import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i18;
+import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i19;
+import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
+    as _i20;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i10;
 import 'package:spring_boot_starter_security/src/web/arguments.dart' as _i14;
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i6;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i19;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i21;
 import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i8;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i20;
+    as _i22;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i21;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i23;
 import 'package:spring_security_core/src/core/authentication.dart' as _i4;
 import 'package:spring_security_core/src/method/annotations.dart' as _i11;
 import 'package:spring_security_core/src/userdetails/user_details.dart' as _i5;
@@ -905,12 +909,29 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
   [$application],
   autoConfigurations: [
     _i16.springBootAutoConfiguration,
-    _i17.springBootStarterLoggingAutoConfiguration,
-    _i18.springBootStarterSecurityAutoConfiguration,
-    _i19.springBootStarterWebAutoConfiguration,
-    _i20.springBootStarterWebsocketAutoConfiguration,
-    _i21.springSecurityCoreAutoConfiguration,
+    _i17.springBootStarterFeignAutoConfiguration,
+    _i18.springBootStarterLoggingAutoConfiguration,
+    _i19.springBootStarterOauth2ClientAutoConfiguration,
+    _i20.springBootStarterSecurityAutoConfiguration,
+    _i20.springBootStarterSecurityOAuth2ClientAutoConfiguration,
+    _i21.springBootStarterWebAutoConfiguration,
+    _i22.springBootStarterWebsocketAutoConfiguration,
+    _i23.springSecurityCoreAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i19.springBootStarterOauth2ClientAutoConfiguration:
+        const _i15.AutoConfigurationModule(
+          after: ['springBootStarterFlutterAutoConfiguration'],
+        ),
+    _i20.springBootStarterSecurityAutoConfiguration:
+        const _i15.AutoConfigurationModule(
+          after: ['springBootStarterOauth2ClientAutoConfiguration'],
+        ),
+    _i20.springBootStarterSecurityOAuth2ClientAutoConfiguration:
+        const _i15.AutoConfigurationModule(
+          before: ['springBootStarterOauth2ClientAutoConfiguration'],
+        ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -957,7 +978,7 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'cb435634',
+  fingerprint: '324e9f92',
 );
 
 /// Starts the application: config files, environment, context, runners

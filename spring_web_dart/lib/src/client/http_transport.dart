@@ -37,7 +37,7 @@ import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 ///       url: Uri.parse('https://api.neon.books/books/1'),
 ///     ),
 ///   );
-///   print(response.bodyText);
+///   log.info(response.bodyText);
 /// } finally {
 ///   transport.close(); // Frees the pooled connections.
 /// }
@@ -97,8 +97,57 @@ abstract interface class HttpTransport {
 ///
 /// Spring (Java): Spring Boot picks a `ClientHttpRequestFactory` from the
 /// libraries on the classpath (`ClientHttpRequestFactories.get(settings)`).
-HttpTransport platformHttpTransport({Duration? connectTimeout}) =>
-    platform.createTransport(connectTimeout: connectTimeout);
+///
+/// [credentials] matters in the browser only: whether `fetch` sends
+/// cookies to the server (see [FetchCredentials]).
+HttpTransport platformHttpTransport({
+  Duration? connectTimeout,
+  FetchCredentials credentials = FetchCredentials.sameOrigin,
+}) => platform.createTransport(
+  connectTimeout: connectTimeout,
+  credentials: credentials,
+);
+
+/// Whether a browser sends its cookies (and HTTP authentication) with a
+/// request of a `FetchHttpTransport`: the `credentials` option of `fetch`.
+///
+/// A web app whose server keeps the login in a session cookie needs it.
+/// When the app and its API come from the same origin, the default
+/// ([sameOrigin]) is enough. When they have different origins on the same
+/// site (`localhost:5050` and `localhost:8080`, `app.example.com` and
+/// `api.example.com`), choose [include]; the server must then allow
+/// credentials in its CORS configuration (`allowCredentials: true`, with
+/// listed origins, never `*`). Browsers drop the cookies of another site
+/// whatever this says, so keep the app and the API on one site.
+///
+/// Ignored outside the browser: `IoHttpTransport` sends only the cookies
+/// you put in the headers.
+///
+/// ```dart
+/// // Flutter web at localhost:5050, the API at localhost:8080.
+/// final transport =
+///     FetchHttpTransport(credentials: FetchCredentials.include);
+/// ```
+///
+/// Spring (Java): no browser in Java. In a browser this is
+/// `fetch(url, {credentials: 'include'})`, or `withCredentials` of
+/// `XMLHttpRequest`.
+enum FetchCredentials {
+  /// Never send or store cookies (`omit`).
+  omit('omit'),
+
+  /// Cookies for requests to the page's own origin only (`same-origin`),
+  /// the browser's default.
+  sameOrigin('same-origin'),
+
+  /// Cookies for every request, other origins too (`include`).
+  include('include');
+
+  FetchCredentials(this.value);
+
+  /// The value of the `credentials` option of `fetch`.
+  final String value;
+}
 
 /// Thrown by an [HttpTransport] when a request got no response at all: the
 /// connection could not be opened, it broke, or the request's `timeout` or

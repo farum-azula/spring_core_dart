@@ -6,9 +6,6 @@
 //
 //   dart run example/example.dart
 
-// The example shows its result on the console: printing is the point.
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:io' as io;
 
@@ -47,6 +44,22 @@ class Chat {
   }
 }
 
+/// Asks the chat once the application has started and logs the answer;
+/// `@Log` gives it the `log` getter.
+@Component()
+@Log(topic: 'example')
+class ChatTour implements CommandLineRunner {
+  ChatTour(this.chat);
+
+  final Chat chat;
+
+  @override
+  Future<void> run(List<String> args) async {
+    final reply = await chat.ask('hello');
+    log.info('${reply.from}: ${reply.text}'); // me: hello
+  }
+}
+
 @SpringBootApplication()
 Future<void> main(List<String> args) async {
   // A local echo server standing in for a real chat server.
@@ -56,12 +69,10 @@ Future<void> main(List<String> args) async {
     socket.listen(socket.add); // sends every message back
   });
 
-  final context = springApplication.run(
+  final context = await springApplication.runAsync(
     args,
     properties: {'chat.url': 'ws://127.0.0.1:${server.port}/ws'},
   );
-  final reply = await context.getBean<Chat>().ask('hello');
-  print('${reply.from}: ${reply.text}'); // me: hello
 
   await context.closeAsync(); // closes the socket
   await server.close(force: true);

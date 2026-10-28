@@ -193,16 +193,16 @@ abstract interface class ApplicationContext
   ///
   /// ```dart
   /// final registration = context.addListener<OrderPlaced>(
-  ///   (order) => print('placed ${order.id}'),
+  ///   (order) => log.info('placed ${order.id}'),
   /// );
-  /// context.publishEvent(OrderPlaced(1, 20)); // prints "placed 1"
+  /// context.publishEvent(OrderPlaced(1, 20)); // logs "placed 1"
   /// registration.remove();
   /// ```
   ///
   /// Spring (Java):
   /// ```java
   /// context.addApplicationListener(ApplicationListener.forPayload(
-  ///     (OrderPlaced order) -> System.out.println("placed " + order.id())));
+  ///     (OrderPlaced order) -> log.info("placed " + order.id())));
   /// // Spring has no registration handle: keep the listener and call
   /// // removeApplicationListener.
   /// ```

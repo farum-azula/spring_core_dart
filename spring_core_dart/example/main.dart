@@ -7,8 +7,6 @@
 //   dart run example/main.dart
 //   dart run example/main.dart '--greeting.punctuation=?'
 
-// An example: printing to the console is how it shows its result.
-// ignore_for_file: avoid_print
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'main.spring.dart';
@@ -49,14 +47,17 @@ class Registration {
   }
 }
 
+/// `@Log` gives a class a `log` getter, like Lombok's `@Slf4j`.
 @Component()
+@Log(topic: 'tour')
 class WelcomeMail {
   @EventListener()
   void onRegistered(UserRegistered event) =>
-      print('event: ${event.name} registered');
+      log.info('event: ${event.name} registered');
 }
 
 @Component()
+@Log(topic: 'tour')
 class Tour implements CommandLineRunner {
   Tour(this.registration, @Value('#{2 * 21}') this.answer);
 
@@ -67,10 +68,15 @@ class Tour implements CommandLineRunner {
 
   @override
   void run(List<String> args) {
-    print(registration.register('Ada'));
-    print('answer: $answer');
+    log
+      ..info(registration.register('Ada'))
+      ..info('answer: $answer');
   }
 }
 
+/// Without the logging starter only warnings show, so this example turns
+/// its own logger (`tour`) up to info.
 @SpringBootApplication()
-void main(List<String> args) => runApplication(args);
+void main(List<String> args) =>
+    (springApplication..setDefaultProperties({'logging.level.tour': 'info'}))
+        .run(args);

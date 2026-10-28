@@ -292,12 +292,12 @@ abstract interface class OrdersClient {
 
 // Only the data:
 await for (final order in orders.events('neon')) {
-  print(order.status);
+  log.info(order.status);
 }
 
 // The whole events, when the id or event name matters:
 orders.events('neon').events.listen((e) {
-  print('${e.id} ${e.event}: ${e.data.status}');
+  log.info('${e.id} ${e.event}: ${e.data.status}');
 });
 ```
 

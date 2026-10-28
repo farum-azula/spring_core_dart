@@ -3,12 +3,10 @@
 // application you rarely call the transport yourself: Feign clients
 // (spring_boot_starter_feign) build requests from the mapping annotations.
 
-// The example shows its results on the console.
-// ignore_for_file: avoid_print
-
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 import 'package:spring_web_dart/testing.dart';
 
@@ -25,7 +23,14 @@ abstract interface class CatalogApi {
   );
 }
 
+/// The example's logger. There is no application here, so nothing sets up
+/// logging: records go to the console, but only warnings and errors by
+/// default, hence the level set in `main`.
+const _log = SpringLog('example');
+
 Future<void> main() async {
+  SpringLog.level = SpringLogLevel.info;
+
   // A local server standing in for a real API.
   final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
   server.listen((request) async {
@@ -51,7 +56,7 @@ Future<void> main() async {
       timeout: const Duration(seconds: 5),
     ),
   );
-  print('${response.statusCode} ${response.bodyText}');
+  _log.info('${response.statusCode} ${response.bodyText}');
   // 200 {"isbn":"978-0","title":"Dune"}
   transport.close();
   await server.close();
@@ -66,7 +71,7 @@ Future<void> main() async {
   final missing = await mock.send(
     HttpRequest(method: HttpMethod.get, url: Uri.parse('https://api/books/2')),
   );
-  print(
+  _log.info(
     '${found.bodyText}, ${HttpStatus.valueOf(missing.statusCode).reasonPhrase}',
   );
   // {"isbn":"1"}, Not Found

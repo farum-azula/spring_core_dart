@@ -56,9 +56,12 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:my_app/src/app.dart';
 import 'package:my_app/src/greeter.dart';
 
+const log = SpringLog('app'); // a logger by name, for code outside beans
+
 void main() {
+  SpringLog.level = SpringLogLevel.info; // by default only warnings show
   final context = ApplicationContext.run([appBeans]);
-  print(context.getBean<Greeter>().greet('Ada')); // Hello, Ada!
+  log.info(context.getBean<Greeter>().greet('Ada')); // Hello, Ada!
   context.close();
 }
 ```

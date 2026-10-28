@@ -25,12 +25,13 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// }
 ///
 /// @Service()
+/// @Log()
 /// class Chat {
 ///   Chat(this.socket); // the generated client bean
 ///   final ChatSocket socket;
 ///
 ///   // Listening opens the connection; it reconnects while we listen.
-///   void start() => socket.messages().listen(print);
+///   void start() => socket.messages().listen(log.info);
 ///
 ///   Future<void> say(String text) =>
 ///       socket.send(ChatMessage(from: 'me', text: text));

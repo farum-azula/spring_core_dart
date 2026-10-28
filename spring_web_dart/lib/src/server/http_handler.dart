@@ -22,7 +22,7 @@ import 'package:spring_web_dart/src/server/server_http_response.dart';
 ///   MockServerHttpRequest(HttpMethod.get, '/api/books'),
 ///   response,
 /// );
-/// print(response.statusCode); // 200
+/// log.info(response.statusCode); // 200
 /// ```
 ///
 /// Spring (Java): `HttpHandler` (Spring WebFlux; on the servlet stack the
@@ -107,10 +107,11 @@ abstract interface class HandlerMapping {
 /// ```dart
 /// // An audit service records who asked, without a request parameter.
 /// @Service()
+/// @Log()
 /// class AuditLog {
 ///   void record(String action) {
 ///     final request = RequestContextHolder.currentRequest;
-///     print('$action by ${request?.principal?.name ?? 'anonymous'}');
+///     log.info('$action by ${request?.principal?.name ?? 'anonymous'}');
 ///   }
 /// }
 /// ```

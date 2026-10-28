@@ -505,7 +505,7 @@ final class BeanIntrospection<T extends Object> {
 ///   introspections: [personIntrospection, addressIntrospection],
 /// );
 /// final meta = introspector.getIntrospection(person);
-/// print(meta.properties.map((p) => p.name));
+/// log.info(meta.properties.map((p) => p.name));
 /// ```
 ///
 /// Spring (Java): no counterpart; Spring introspects any class at runtime

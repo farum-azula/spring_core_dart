@@ -27,11 +27,13 @@ From the `spring_web_dart` directory:
 dart run example/example.dart
 ```
 
-It prints:
+It logs through a `SpringLog` named `example`
+(`const log = SpringLog('example')`, set to `info` in `main` because
+without an application only warnings show):
 
 ```text
-200 {"isbn":"978-0","title":"Dune"}
-{"isbn":"1"}, Not Found
+[example] INFO: 200 {"isbn":"978-0","title":"Dune"}
+[example] INFO: {"isbn":"1"}, Not Found
 ```
 
 ## 1. Describe an API with annotations
@@ -79,7 +81,7 @@ final response = await transport.send(
     timeout: const Duration(seconds: 5), // the whole exchange
   ),
 );
-print('${response.statusCode} ${response.bodyText}');
+log.info('${response.statusCode} ${response.bodyText}');
 // 200 {"isbn":"978-0","title":"Dune"}
 transport.close();
 ```

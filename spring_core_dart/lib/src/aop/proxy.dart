@@ -20,8 +20,8 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// // In a test: is the Calculator advised, and by what?
 /// final calculator = context.getBean<Calculator>();
 /// if (calculator is Advised) {
-///   print(calculator.aopTarget); // the SimpleCalculator
-///   print(calculator.aopAdvisors);
+///   log.info(calculator.aopTarget); // the SimpleCalculator
+///   log.info(calculator.aopAdvisors);
 /// }
 /// ```
 ///
@@ -29,8 +29,8 @@ import 'package:spring_core_dart/src/aop/join_point.dart';
 /// ```java
 /// Calculator calculator = context.getBean(Calculator.class);
 /// if (calculator instanceof Advised advised) {
-///   System.out.println(advised.getTargetSource().getTarget());
-///   System.out.println(Arrays.toString(advised.getAdvisors()));
+///   log.info("{}", advised.getTargetSource().getTarget());
+///   log.info(Arrays.toString(advised.getAdvisors()));
 /// }
 /// ```
 ///

@@ -6,9 +6,6 @@
 //
 //   dart run example/example.dart
 
-// The example shows its results on the console.
-// ignore_for_file: avoid_print
-
 import 'package:spring_security_core/spring_security_core.dart';
 
 import 'example.spring.dart';
@@ -59,42 +56,60 @@ class UserSetup {
   }
 }
 
+/// Logs in and calls the secured methods, logging what each call gives;
+/// `@Log` gives it the `log` getter.
+@Component()
+@Log(topic: 'example')
+class SecurityTour implements CommandLineRunner {
+  SecurityTour(this.manager, this.orders);
+
+  final AuthenticationManager manager;
+  final OrderService orders;
+
+  @override
+  Future<void> run(List<String> args) async {
+    // Log in (a Flutter app keeps the result as the logged-in user).
+    final ada = await manager.authenticate(
+      UsernamePasswordAuthenticationToken.unauthenticated('ada', 'ada-secret'),
+    );
+    SecurityContextHolder.setContext(SecurityContextImpl(ada));
+
+    final cancelled = await orders.cancel(const Order('1', 'ada'));
+    final mine = await orders.all();
+    log
+      ..info(cancelled) // cancelled 1
+      ..info('$mine'); // [Order(1 of ada)]
+    try {
+      await orders.find('2');
+    } on AccessDeniedException catch (e) {
+      log.warning('find 2: ${e.message}'); // find 2: Access Denied
+    }
+
+    // A wrong password, an unknown user: the same answer.
+    try {
+      await manager.authenticate(
+        UsernamePasswordAuthenticationToken.unauthenticated('ada', 'guess'),
+      );
+    } on BadCredentialsException catch (e) {
+      log.warning('login: ${e.message}'); // login: Bad credentials
+    }
+
+    // Work as another user for a while (a job, a test).
+    final root = await manager.authenticate(
+      UsernamePasswordAuthenticationToken.unauthenticated(
+        'root',
+        'root-secret',
+      ),
+    );
+    await SecurityContextHolder.runWithContext(() async {
+      // [Order(1 of ada), Order(2 of bob)]
+      log.info('${await orders.all()}');
+    }, SecurityContextImpl(root));
+  }
+}
+
 @SpringBootApplication()
 Future<void> main(List<String> args) async {
-  final context = springApplication.run(args);
-  final manager = context.getBean<AuthenticationManager>();
-  final orders = context.getBean<OrderService>();
-
-  // Log in (a Flutter app keeps the result as the logged-in user).
-  final ada = await manager.authenticate(
-    UsernamePasswordAuthenticationToken.unauthenticated('ada', 'ada-secret'),
-  );
-  SecurityContextHolder.setContext(SecurityContextImpl(ada));
-
-  print(await orders.cancel(const Order('1', 'ada'))); // cancelled 1
-  print(await orders.all()); // [Order(1 of ada)]
-  try {
-    await orders.find('2');
-  } on AccessDeniedException catch (e) {
-    print('find 2: ${e.message}'); // find 2: Access Denied
-  }
-
-  // A wrong password, an unknown user: the same answer.
-  try {
-    await manager.authenticate(
-      UsernamePasswordAuthenticationToken.unauthenticated('ada', 'guess'),
-    );
-  } on BadCredentialsException catch (e) {
-    print('login: ${e.message}'); // login: Bad credentials
-  }
-
-  // Work as another user for a while (a job, a test).
-  final root = await manager.authenticate(
-    UsernamePasswordAuthenticationToken.unauthenticated('root', 'root-secret'),
-  );
-  await SecurityContextHolder.runWithContext(() async {
-    print(await orders.all()); // [Order(1 of ada), Order(2 of bob)]
-  }, SecurityContextImpl(root));
-
+  final context = await springApplication.runAsync(args);
   context.close();
 }

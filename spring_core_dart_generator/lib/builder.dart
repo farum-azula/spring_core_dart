@@ -1,6 +1,6 @@
 /// The `build_runner` entry points of `spring_core_dart_generator`.
 ///
-/// `build_runner` finds the two factories here through the package's
+/// `build_runner` finds the factories here through the package's
 /// `build.yaml`; applications do not import this library. The generator
 /// turns annotated Dart classes into plain Dart code at build time, because
 /// Dart AOT and Flutter have no `dart:mirrors` to discover them at runtime:
@@ -14,6 +14,9 @@
 ///   `springApplication` and `runApplication(args)`.
 /// - A test file with `@SpringBootTest` classes gets a
 ///   `test/spring/<name>.test.spring.dart` file with `runSpringTests()`.
+/// - A Flutter app with `spring.flutter.web.*` properties in
+///   `lib/resources/` gets a `web_dev_config.yaml`, which sets the host,
+///   port, headers and proxy of `flutter run` on the web.
 ///
 /// Setup, in the application's package:
 ///
@@ -58,6 +61,7 @@ import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
+import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
 
 /// Creates the main builder ([SpringBuilder]), which writes the
 /// `*.spring.dart` files; `build.yaml` names it in `builder_factories`.
@@ -124,3 +128,23 @@ Builder springCoreDartBuilder(BuilderOptions options) {
 /// `runSpringTests()` function, which the test's `main` calls to register
 /// the tests of those classes. It takes no options.
 Builder springTestBuilder(BuilderOptions options) => SpringTestBuilder();
+
+/// Creates the builder of `web_dev_config.yaml` ([WebDevConfigBuilder]),
+/// registered in `build.yaml` as `spring_flutter_web`.
+///
+/// It writes the Flutter web dev server's config file from the
+/// `spring.flutter.web.*` properties of `lib/resources/` (read with the
+/// `web` profile), so `flutter run -d chrome` serves the app on a fixed
+/// port without flags. Without those properties it writes nothing, and it
+/// never changes or deletes a hand-written `web_dev_config.yaml`. It takes
+/// no options.
+///
+/// ```yaml
+/// # lib/resources/application-web.yaml
+/// spring:
+///   flutter:
+///     web:
+///       port: 5050
+/// ```
+Builder springFlutterWebBuilder(BuilderOptions options) =>
+    WebDevConfigBuilder();

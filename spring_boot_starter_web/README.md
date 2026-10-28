@@ -709,7 +709,7 @@ final class TimingInterceptor with HandlerInterceptor {
 
   @override
   void afterCompletion(request, response, handler, error) =>
-      print('${handler.description} took '
+      log.info('${handler.description} took '
           '${DateTime.now().difference(request.attributes['start'] as DateTime)}');
 }
 

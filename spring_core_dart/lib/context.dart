@@ -13,10 +13,11 @@
 ///
 /// ```dart
 /// // A small program without Spring Boot: start the beans, use them, stop.
+/// const log = SpringLog('app');
 /// final context = ApplicationContext.run([appBeans]);
-/// context.addListener<UserCreated>((event) => print(event.name));
+/// context.addListener<UserCreated>((event) => log.info(event.name));
 /// context.publishEvent(UserCreated('Ada'));
-/// print(context.getMessage('greeting', args: ['Ada'], locale: 'en'));
+/// log.info(context.getMessage('greeting', args: ['Ada'], locale: 'en'));
 /// context.close();
 /// ```
 ///

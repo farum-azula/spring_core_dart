@@ -53,7 +53,7 @@ sealed class ConversionException implements Exception {
 /// try {
 ///   DefaultConversionService().convert<int>('12x');
 /// } on ConversionFailedException catch (error) {
-///   print(error.cause); // the FormatException thrown by the parser
+///   log.warning(error.cause); // the FormatException thrown by the parser
 /// }
 /// ```
 ///
@@ -96,7 +96,7 @@ final class ConversionFailedException extends ConversionException {
 /// try {
 ///   GenericConversionService().convert<Uri>(42);
 /// } on ConverterNotFoundException catch (error) {
-///   print(error.sourceType); // int
+///   log.warning(error.sourceType); // int
 /// }
 /// ```
 ///

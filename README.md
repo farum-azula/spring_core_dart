@@ -52,13 +52,14 @@ A command-line application with Spring Boot: one service, one group of
 settings, a task that runs at start-up, and a test. The full example is
 [`spring_boot_dart/example`](spring_boot_dart/example/example.dart).
 
-**1. Dependencies** (`pubspec.yaml`). `spring_boot_dart` brings
-`spring_core_dart` with it; the generator and the test starter are only
-needed at build and test time.
+**1. Dependencies** (`pubspec.yaml`). `spring_boot_starter_logging`
+brings `spring_boot_dart` and `spring_core_dart` with it, and prints the
+log lines; the generator and the test starter are only needed at build
+and test time.
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.4.2
+  spring_boot_starter_logging: ^0.4.2
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -72,7 +73,10 @@ directory of `main` is scanned; there is no list of classes to keep up to
 date.
 
 ```dart
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
+
+// A logger for this file, logging as `greeting`.
+const log = SpringLog('greeting');
 
 // The `greeting.*` settings, bound from the config files, environment
 // variables and the command line.
@@ -101,7 +105,7 @@ class GreetOnStartup implements CommandLineRunner {
   @override
   void run(List<String> args) {
     for (var i = 0; i < properties.times; i++) {
-      print(greeter.greeting());
+      log.info(greeter.greeting());
     }
   }
 }
@@ -119,7 +123,7 @@ greeting.times=2
 **4. The entry point** (`bin/main.dart`). This is the whole of `main`.
 
 ```dart
-import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 import 'main.spring.dart'; // written by the generator, next to this file
 
@@ -132,7 +136,7 @@ annotations, or keep `watch` running.
 
 ```bash
 dart run build_runner build      # or: dart run build_runner watch
-dart run bin/main.dart           # Hello, Ada! (twice)
+dart run bin/main.dart           # logs Hello, Ada! (twice)
 dart run bin/main.dart --greeting.name=Grace
 GREETING_NAME=Grace dart run bin/main.dart
 ```
@@ -213,12 +217,13 @@ brings and re-exports the packages below it, so a web server lists
 | `spring_boot_starter_websocket` | [`spring_boot_starter_websocket/`](spring_boot_starter_websocket/README.md) | WebSocket clients written the same way: an abstract class with `@WebSocketClient`, `@OnMessage` (a `Stream<T>`) and `@SendMessage` methods becomes an injectable socket, with JSON, one shared connection opened on demand, reconnection with backoff and handshake interceptors. Spring has no declarative WebSocket client; this one follows the `@FeignClient` style. Server side, together with the web starter: `@WebSocketEndpoint` beans (`@OnOpen`, `@OnMessage`, `@OnClose`, `@OnError`), Spring's `WebSocketHandler` and `WebSocketConfigurer`, origin checks, and a session registry for broadcasting. |
 | `spring_boot_starter_web` | [`spring_boot_starter_web/`](spring_boot_starter_web/README.md) | A web server (Spring MVC): `@RestController` classes with `@GetMapping`, `@PostMapping`, ... served by `dart:io`'s `HttpServer` (behind a replaceable `WebServerFactory`; VM and Flutter mobile and desktop), JSON through the `ObjectMapper`, `@Valid` request bodies, errors as `ProblemDetail` with `@ExceptionHandler` and `@ControllerAdvice`, server-sent events (`EventStream`, `SseEmitter`), file uploads (`@RequestPart`, `MultipartFile`) and downloads (`Resource` with `Range`, byte streams), filters, interceptors, CORS, `server.*` properties and graceful shutdown. `MockMvc` for its tests is in the test starter. |
 | `spring_security_core` | [`spring_security_core/`](spring_security_core/README.md) | The core of Spring Security, for servers and Flutter apps alike: who is logged in (`SecurityContextHolder`, one per `Zone`), users (`UserDetailsService`, `InMemoryUserDetailsManager`), password hashing (Argon2 by default, PBKDF2, scrypt, in Spring's formats, with Bouncy Castle's cryptography), `AuthenticationManager`, and method security: `@PreAuthorize`, `@PostAuthorize`, `@Secured`, `@PreFilter`, `@PostFilter` with SpEL, always on and checked at startup. |
-| `spring_boot_starter_security` | [`spring_boot_starter_security/`](spring_boot_starter_security/README.md) | Security for the web starter, secure by default: the filter chain configured with `HttpSecurity` (request rules on the router's path patterns; a request no rule matches is denied), HTTP Basic, form login, JWT resource servers (RS, PS, ES and HS algorithms, JWK sets, issuer discovery), sessions, CSRF, CORS, security headers and a strict firewall; `user()`, `jwt()` and `csrf()` for `MockMvc`. Compared with Spring Security 7 request by request in [docs/security.md](docs/security.md). |
+| `spring_boot_starter_oauth2_client` | [`spring_boot_starter_oauth2_client/`](spring_boot_starter_oauth2_client/README.md) | Single sign-on with OAuth 2.0 and OpenID Connect from Spring Boot's `spring.security.oauth2.client.*` properties: registrations (Google, GitHub, Facebook, Okta built in; any provider by its issuer), the login of apps in the system browser (authorization code with PKCE, `state`, `nonce` and the ID token checked; `restore` and `logout` with revocation), tokens kept in a `TokenStore` and refreshed once before they expire, client credentials for servers, and the user's token on every Feign call. Pure Dart: the VM, Flutter, the web. |
+| `spring_boot_starter_security` | [`spring_boot_starter_security/`](spring_boot_starter_security/README.md) | Security for the web starter, secure by default: the filter chain configured with `HttpSecurity` (request rules on the router's path patterns; a request no rule matches is denied), HTTP Basic, form login, single sign-on with OAuth 2.0 / OpenID Connect providers (`oauth2Login()`, ID tokens checked with the provider's keys), JWT resource servers (RS, PS, ES and HS algorithms, JWK sets, issuer discovery), sessions, CSRF, CORS, security headers and a strict firewall; `user()`, `jwt()` and `csrf()` for `MockMvc`. Compared with Spring Security 7 request by request in [docs/security.md](docs/security.md). |
 | `spring_boot_starter_test` | [`spring_boot_starter_test/`](spring_boot_starter_test/README.md) | Tests: `springBootTest` (Spring's `@SpringBootTest`) starts the application, `BeanOverride` (`@MockitoBean`) replaces beans, `ApplicationContextRunner` tests auto-configuration, plus matchers, `captureLogs`, and `MockMvc` and `webEnvironment` (`@LocalServerPort`) for the web starter. Works with `package:test` and `flutter_test`. |
 | `spring_boot_starter_flutter` | [`spring_boot_starter_flutter/`](spring_boot_starter_flutter/README.md) | Spring Boot in Flutter apps: `SpringApplicationWidget` starts the application and hands its beans to the widgets (`context.bean<T>()`, getters for `@BuildContextAccess` beans, `SpringStatelessWidget<(...)>`, `SpringStatefulWidget<(...)>`). It brings and exports the core and Boot, so an app depends on it alone. The app's lifecycle pauses and restarts the context, the platform is a profile (`android`, `ios`, `mobile`, `desktop`, `web`, ...), and `context.message` gives texts in the app's locale. |
 | `spring_core_dart_generator` | [`spring_core_dart_generator/`](spring_core_dart_generator/README.md) | The `build_runner` builder that reads the annotations and writes the `*.spring.dart` files. A dev dependency of every application. |
-| `neon_books_server` | [`example/server_guide/`](example/server_guide/README.md) | **The server guide.** NEON Books, a bookstore's server that uses everything a Dart server can: beans, configuration, a REST API with files and server-sent events, Spring Security (sessions, CSRF, roles, method security), WebSocket, events and AOP, cache, scheduling, Feign, validation, logging and tests. Read it chapter by chapter; run it with `dart run bin/main.dart` in its folder. Not published. |
-| `neon_books_app` | [`example/flutter_guide/`](example/flutter_guide/README.md) | **The Flutter guide.** The bookstore's app, a client of the server guide: state in beans, themes and texts from properties, assets, Feign clients and a WebSocket with a session, login and roles with Spring Security, cache, scheduling, validation, a log screen, widget tests, goldens and end-to-end tests against the server. Run it with `flutter run` in its folder. Not published. |
+| `neon_books_server` | [`example/server_guide/`](example/server_guide/README.md) | **The server guide.** NEON Books, a bookstore's server that uses everything a Dart server can: beans, configuration, a REST API with files and server-sent events, Spring Security (sessions, CSRF, roles, method security, single sign-on with Keycloak: `oauth2Login()` and bearer tokens), WebSocket, events and AOP, cache, scheduling, Feign, validation, logging and tests. Read it chapter by chapter; run it with `dart run bin/main.dart` in its folder. Not published. |
+| `neon_books_app` | [`example/flutter_guide/`](example/flutter_guide/README.md) | **The Flutter guide.** The bookstore's app, a client of the server guide: state in beans, themes and texts from properties, assets, Feign clients and a WebSocket with a session, login and roles with Spring Security, single sign-on with Keycloak (the system browser on devices, the server on the web), cache, scheduling, validation, a log screen, widget tests, goldens and end-to-end tests against the server. Run it with `flutter run` in its folder. Not published. |
 
 The core is split into libraries that follow Spring's modules. Import
 one, or `package:spring_core_dart/spring_core_dart.dart` for all of them:
@@ -414,9 +419,10 @@ class Orders {
 }
 
 @Component()
+@Log()
 class Mailer {
   @EventListener()
-  void onPlaced(OrderPlaced order) => print('confirmation for ${order.id}');
+  void onPlaced(OrderPlaced order) => log.info('confirmation for ${order.id}');
 }
 ```
 
@@ -443,6 +449,7 @@ class Timed {
 // An aspect: a bean whose advice runs around every method marked @Timed().
 @Aspect()
 @Component()
+@Log()
 class TimingAspect {
   @Around('@annotation(Timed)')
   Object? time(ProceedingJoinPoint call) {
@@ -450,7 +457,7 @@ class TimingAspect {
     try {
       return call.proceed(); // runs the real method
     } finally {
-      print('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
+      log.info('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
     }
   }
 }
@@ -661,6 +668,7 @@ Every difference, with the reason, is listed per package:
 [scheduling](spring_boot_starter_scheduling/README.md#differences-from-spring),
 [cache](spring_boot_starter_cache/README.md#differences-from-spring),
 [security core](spring_security_core/README.md#differences-from-spring-security),
+[OAuth2 client](spring_boot_starter_oauth2_client/README.md#differences-from-spring),
 [security starter](spring_boot_starter_security/README.md#differences-from-spring-security),
 [tests](spring_boot_starter_test/README.md#differences-from-spring).
 

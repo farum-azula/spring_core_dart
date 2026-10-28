@@ -11,14 +11,14 @@
 /// // An admin page shows what is cached for one isbn.
 /// final wrapper = cacheManager.getCache('books')!.get('978-0');
 /// if (wrapper != null) {
-///   print(wrapper.value); // may be null: null was cached
+///   log.info(wrapper.value); // may be null: null was cached
 /// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
 /// Cache.ValueWrapper wrapper = cache.get("978-0");
-/// if (wrapper != null) System.out.println(wrapper.get());
+/// if (wrapper != null) log.info("{}", wrapper.get());
 /// ```
 final class ValueWrapper {
   /// Wraps [value], which may be `null`.

@@ -3,8 +3,6 @@
 //
 //   dart run bin/advanced.dart
 
-// A command line tool: the results go to the console.
-// ignore_for_file: avoid_print
 import 'package:neon_books_server/src/advanced/alarm_registrar.dart';
 import 'package:neon_books_server/src/advanced/bean_init_timer.dart';
 import 'package:neon_books_server/src/advanced/demos.dart';
@@ -18,7 +16,15 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'main.spring.dart';
 
+/// The tool's output goes through a logger, not `print`; `main` raises its
+/// level to info below, while the application's own loggers stay quiet.
+const _log = SpringLog('advanced');
+
 Future<void> main(List<String> args) async {
+  // These start applications of their own, which set the log levels again:
+  // run them before this tool sets its levels, show them at the end.
+  final reports = failureReports();
+
   final context = await runApplicationAsync([
     '--spring.profiles.active=dev,advanced',
     '--spring.main.web-application-type=none',
@@ -26,29 +32,30 @@ Future<void> main(List<String> args) async {
     '--spring.main.banner-mode=off',
     '--logging.level.root=warn',
     '--logging.level.shop=warn',
+    '--logging.level.advanced=info',
     ...args,
   ]);
-  void show(String label, Object? value) => print('  $label: $value');
+  void show(String label, Object? value) => _log.info('  $label: $value');
 
-  print('BeanPostProcessor: the slowest bean initializations');
+  _log.info('BeanPostProcessor: the slowest bean initializations');
   for (final MapEntry(:key, :value) in context.getBean<BeanInitTimer>().slowest(
     3,
   )) {
     show(key, value);
   }
 
-  print('Lifecycle callbacks of a bean, in order (closing comes below)');
-  lifecycleEvents.map((e) => '  $e').forEach(print);
+  _log.info('Lifecycle callbacks of a bean, in order (closing comes below)');
+  lifecycleEvents.map((e) => '  $e').forEach(_log.info);
   lifecycleEvents.clear();
 
-  print('Lifecycle: stop() and start() the running beans');
+  _log.info('Lifecycle: stop() and start() the running beans');
   final feed = context.getBean<StockFeed>();
   context.stop();
   show('stock feed running after stop()', feed.isRunning);
   context.start();
   show('after start()', feed.isRunning);
 
-  print('Custom scope (registered by a BeanFactoryPostProcessor)');
+  _log.info('Custom scope (registered by a BeanFactoryPostProcessor)');
   final importer = context.getBean<CatalogImporter>();
   final first = importer.import(const [
     NewBook(
@@ -70,29 +77,25 @@ Future<void> main(List<String> args) async {
   final second = importer.import(const []);
   show('second batch (a new one)', '${second.isbns}, same: ${first == second}');
 
-  print('Bean definition registered by hand (registry post-processor)');
+  _log.info('Bean definition registered by hand (registry post-processor)');
   show('lowStockAlarm', context.getBean<LowStockAlarm>().ringing());
 
-  print('@Configurable + autowireBean');
+  _log.info('@Configurable + autowireBean');
   final printer = StockReportPrinter();
   context.autowireCapableBeanFactory.autowireBean(printer);
   show('report', printer.print());
 
   final introspector = context.getBean<BeanIntrospector>();
   final books = context.getBean<Catalog>().all();
-  await context.closeAsync();
-  print('Closing: the destroy callbacks');
-  lifecycleEvents.map((e) => '  $e').forEach(print);
-
-  print('Parent and child contexts');
+  _log.info('Parent and child contexts');
   final (child, heard) = parentAndChild();
   show('child', child);
   show('events heard by the parent', heard);
 
-  print('SpEL');
+  _log.info('SpEL');
   spel(books, introspector).forEach(show);
 
-  print('DataBinder and BeanWrapper');
+  _log.info('DataBinder and BeanWrapper');
   final (settings, errors) = bindShopSettings({
     'name': 'Ignored',
     'opensAt': '22',
@@ -100,8 +103,14 @@ Future<void> main(List<String> args) async {
     'maxBasketSize': 'many',
   }, introspector);
   show('bound', 'opens ${settings.opensAt}, closes ${settings.closesAt}');
-  errors.forEach(print);
+  errors.forEach(_log.info);
 
-  print('Startup failure reports');
-  failureReports().forEach((label, report) => print('--- $label\n$report'));
+  _log.info('Startup failure reports');
+  reports.forEach((label, report) => _log.info('--- $label\n$report'));
+
+  // Last, so that every line above is logged by the running application's
+  // logging (it ends with the context).
+  await context.closeAsync();
+  _log.info('Closing: the destroy callbacks');
+  lifecycleEvents.map((e) => '  $e').forEach(_log.info);
 }

@@ -44,9 +44,10 @@ The differences are listed where they apply and again at the
 16. [Reference: WebSocket clients](#16-reference-websocket-clients)
 17. [Reference: Flutter](#17-reference-flutter)
 18. [Reference: web server](#18-reference-web-server)
-19. [Tests](#19-tests)
-20. [Code generation options (`build.yaml`)](#20-code-generation-options)
-21. [Differences from Spring Boot](#differences-from-spring-boot)
+19. [Reference: OAuth2 clients](#19-reference-oauth2-clients)
+20. [Tests](#20-tests)
+21. [Code generation options (`build.yaml`)](#21-code-generation-options)
+22. [Differences from Spring Boot](#differences-from-spring-boot)
 
 ---
 
@@ -2613,6 +2614,74 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 `linux`, `mobile`, `desktop`) are always active; see
 [Profiles](#profile-files-and-activation).
 
+### The web dev server
+
+`flutter run -d chrome` and `-d web-server` serve the web version on a
+random port unless configured. These keys set the dev server instead:
+`spring_core_dart_generator` writes them into `web_dev_config.yaml`,
+which `flutter run` reads on the web (Flutter 3.38 and later). They are
+read at build time, as the app reads its config in a browser:
+`application.*`, then `application-web.*`, plus the files of the
+profiles `spring.profiles.active` names there; environment variables and
+`--dart-define` values do not count. A `--web-port` or `--web-hostname`
+flag still wins. The app itself does not read these keys, and
+`flutter build web` does not use them. See
+[The web version's port](../spring_boot_starter_flutter/README.md#the-web-versions-port).
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+# application-web.yaml
+spring:
+  flutter:
+    web:
+      port: 5050
+      headers:
+        Cross-Origin-Opener-Policy: same-origin
+      proxy:
+        - prefix: /api/
+          target: http://localhost:8080
+```
+
+</td><td>
+
+```properties
+# application-web.properties
+spring.flutter.web.port=5050
+spring.flutter.web.headers.Cross-Origin-Opener-Policy=same-origin
+spring.flutter.web.proxy[0].prefix=/api/
+spring.flutter.web.proxy[0].target=http://localhost:8080
+```
+
+</td></tr>
+</table>
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.web.host` | string, not empty | any address | The address the dev server listens on: `localhost`, or `0.0.0.0` for other devices on the LAN |
+| `spring.flutter.web.port` | integer, 0 to 65535 | a free port | The dev server's port |
+| `spring.flutter.web.base-href` | path starting and ending with `/` | `/` | The path the app is served under (`/shop/`) |
+| `spring.flutter.web.https.cert-path` | file path | none (HTTP) | The TLS certificate (PEM). With `cert-key-path`, the dev server speaks HTTPS; set both or neither |
+| `spring.flutter.web.https.cert-key-path` | file path | none | The certificate's private key (PEM) |
+| `spring.flutter.web.headers.<Name>` | string | none | A header added to every response; the map merges across files, the more specific file winning per header |
+| `spring.flutter.web.proxy[n].target` | absolute URL | none | Where requests matching rule `n` are forwarded (`http://localhost:8080`). Required in every rule |
+| `spring.flutter.web.proxy[n].prefix` | path | none | Rule `n` matches paths starting with it (`/api/`) |
+| `spring.flutter.web.proxy[n].regex` | regular expression | none | Or the paths matching it; each rule sets exactly one of `prefix` and `regex` |
+| `spring.flutter.web.proxy[n].replace` | string | the path unchanged | The forwarded path: the matched part replaced, `$1` for the first group |
+
+The proxy list comes whole from the most specific file that has one, as
+lists do in Spring Boot. Forwarding `/api/` to the server is the simplest
+way to avoid CORS and third-party cookie trouble in development: the page
+and the API share one origin, so a session login works in every browser.
+
+An invalid value fails the build with the key's name; an unknown
+`spring.flutter.web.*` key is a warning. Without any of these keys no
+file is written, and a hand-written `web_dev_config.yaml` is never
+changed or deleted: with the keys set as well, the build fails and asks
+to remove one of the two.
+
 ---
 
 ## 18. Reference: web server
@@ -2736,7 +2805,112 @@ Not supported:
 
 ---
 
-## 19. Tests
+## 19. Reference: OAuth2 clients
+
+`spring_boot_starter_oauth2_client` logs users in with an OAuth 2.0 or
+OpenID Connect provider (Keycloak, Google, GitHub, Auth0, ...) and gets
+tokens for calls to other services. Each **registration** is one client
+of one provider: these keys say who the client is (its id and secret,
+the scopes it asks for, where the provider sends the browser back) and
+where the provider's endpoints are. An app logs in with
+`OAuth2LoginService`; a server with the security starter logs browsers
+in with `oauth2Login()`, which its default chain turns on as soon as a
+registration exists.
+
+`<id>` is the registration's id, as in `/oauth2/authorization/keycloak`.
+A registration uses the provider of the same id unless it names another
+(`provider`); `google`, `github`, `facebook` and `okta` are known
+providers that need no `provider.*` keys.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: neon-web
+            client-secret: ${KEYCLOAK_SECRET}
+            scope: [openid, profile, email]
+            client-name: NEON account
+          partner:
+            provider: keycloak
+            client-id: shop
+            client-secret: ${PARTNER_SECRET}
+            authorization-grant-type: client_credentials
+            scope: [orders.read]
+          github:
+            client-id: ${GITHUB_ID}
+            client-secret: ${GITHUB_SECRET}
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8180/realms/neon
+```
+
+</td><td>
+
+```properties
+spring.security.oauth2.client.registration.keycloak.client-id=neon-web
+spring.security.oauth2.client.registration.keycloak.client-secret=${KEYCLOAK_SECRET}
+spring.security.oauth2.client.registration.keycloak.scope=openid,profile,email
+spring.security.oauth2.client.registration.keycloak.client-name=NEON account
+spring.security.oauth2.client.registration.partner.provider=keycloak
+spring.security.oauth2.client.registration.partner.client-id=shop
+spring.security.oauth2.client.registration.partner.client-secret=${PARTNER_SECRET}
+spring.security.oauth2.client.registration.partner.authorization-grant-type=client_credentials
+spring.security.oauth2.client.registration.partner.scope=orders.read
+spring.security.oauth2.client.registration.github.client-id=${GITHUB_ID}
+spring.security.oauth2.client.registration.github.client-secret=${GITHUB_SECRET}
+spring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon
+```
+
+</td></tr>
+</table>
+
+The keys under `spring.security.oauth2.client.registration.<id>.`:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `client-id` | string | required | The client's id at the provider |
+| `client-secret` | string | — | The client's secret; none for an app (a public client). Never in an app's configuration |
+| `client-authentication-method` | `client_secret_basic` / `client_secret_post` / `none` | `client_secret_basic` with a secret, `none` without one (from the provider's metadata with `issuer-uri`) | How the client proves who it is at the token endpoint |
+| `authorization-grant-type` | `authorization_code` / `client_credentials` | `authorization_code` with `issuer-uri` or a known provider; required otherwise | A user's login, or the client's own tokens (server to server) |
+| `redirect-uri` | URI template | `{baseUrl}/{action}/oauth2/code/{registrationId}` (`/login/oauth2/code/keycloak` on a server) | Where the provider sends the browser back; the provider must accept it. `{baseUrl}` is the address the request came to (on a server) or `http://127.0.0.1` (an app's loopback); an app with a scheme of its own sets `neonbooks:/oauth2/callback` |
+| `scope` | list | none; the provider's defaults for the known providers | The scopes asked for; `openid` makes it an OpenID Connect login (an ID token, checked) |
+| `client-name` | string | the issuer, or the known provider's name | The name on the login page |
+| `provider` | id | the registration's id | The provider of the `provider.*` keys, or a known one |
+
+The keys under `spring.security.oauth2.client.provider.<id>.`:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `issuer-uri` | URL | — | The provider; the other endpoints come from its OpenID (or OAuth 2.0) metadata, whose `issuer` must equal it. Read at the first use of the registration, not at startup |
+| `authorization-uri` | URL | from the metadata | The provider's login page |
+| `token-uri` | URL | from the metadata | The token endpoint |
+| `user-info-uri` | URL | from the metadata | The user-info endpoint |
+| `user-info-authentication-method` | `header` / `form` / `query` | `header` | How the access token is sent to it |
+| `user-name-attribute` | string | `sub` with `issuer-uri` | The attribute that names the user |
+| `jwk-set-uri` | URL | from the metadata | The provider's public keys; a server checks ID token signatures with them |
+
+Two keys with Spring Cloud OpenFeign's names, read by this starter, add
+the token of a registration to every Feign call:
+`spring.cloud.openfeign.oauth2.enabled` (`false`) and
+`spring.cloud.openfeign.oauth2.client-registration-id` (else the Feign
+client's name); [section 15](#15-reference-feign-clients) has the other
+Feign keys.
+
+Difference from Spring Boot: providers with `issuer-uri` are discovered
+at the first use of their registrations, not at startup, so an app starts
+offline and a server starts while the provider is down (its logins fail
+until it is up).
+
+---
+
+## 20. Tests
 
 `spring_boot_starter_test` starts the application in a test with its own
 configuration, so a test can use other values than the application ships
@@ -2777,7 +2951,7 @@ final app = springBootTest(
 
 ---
 
-## 20. Code generation options
+## 21. Code generation options
 
 The generator (`spring_core_dart_generator`) is configured in the
 package's `build.yaml`, not in property files. Its options only change

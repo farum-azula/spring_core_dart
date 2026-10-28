@@ -26,6 +26,9 @@ The rest comes with it:
   is used on that platform only.
 - When the app goes to the background, scheduled tasks and WebSocket
   connections stop; they start again when it comes back.
+- The user's tokens are kept in the platform's secure storage (the
+  Keychain, the Android Keystore, DPAPI, libsecret), and a login opens
+  the system browser.
 - A hot reload that changed beans restarts the context with the new code.
 
 It is for Flutter developers who want dependency injection,
@@ -113,6 +116,8 @@ explained chapter by chapter.
 - [Platform profiles](#platform-profiles)
 - [Assets](#assets)
 - [Configuration at build time](#configuration-at-build-time)
+- [The web version's port](#the-web-versions-port)
+- [Login and tokens](#login-and-tokens)
 - [Hot reload](#hot-reload)
 - [Tests](#tests)
 - [Known limits](#known-limits)
@@ -980,6 +985,190 @@ Each name is offered as it is (`api.url`) and in the environment form
 Everything defined at build time ends up in the app and can be read from
 it: no secrets there.
 
+## The web version's port
+
+`flutter run -d chrome` (or `-d web-server`) serves the web version on a
+random port, such as `localhost:54385`. That breaks whatever needs a
+fixed origin: the server's CORS list, the page an SSO login sends the
+browser back to. Set the port in the app's config, and every
+`flutter run` on the web uses it, from an editor or the command line:
+
+```yaml
+# lib/resources/application-web.yaml: only the web reads it
+spring:
+  flutter:
+    web:
+      port: 5050
+```
+
+Since Flutter 3.38, `flutter run` on the web reads its dev server's
+settings from `web_dev_config.yaml` in the project directory.
+`spring_core_dart_generator` writes that file from the
+`spring.flutter.web.*` properties when `build_runner` runs. It reads them
+as the app reads its config in a browser: `application.*`, then
+`application-web.*` (the `web` platform profile), and the files of the
+profiles `spring.profiles.active` names there. Environment variables and
+`--dart-define` values do not count, because the file is written at
+build time. A `--web-port` or `--web-hostname` flag still wins over the
+file.
+
+| Property | Default | Description |
+|---|---|---|
+| `spring.flutter.web.host` | any address | The address to listen on (`localhost`, `0.0.0.0` for other devices on the LAN) |
+| `spring.flutter.web.port` | a free port | The port, from 0 to 65535 |
+| `spring.flutter.web.base-href` | `/` | The path the app is served under, starting and ending with `/` (`/shop/`) |
+| `spring.flutter.web.https.cert-path` | none (HTTP) | The TLS certificate (PEM); serves HTTPS together with `cert-key-path` |
+| `spring.flutter.web.https.cert-key-path` | none | Its private key (PEM) |
+| `spring.flutter.web.headers.<Name>` | none | A header added to every response (`spring.flutter.web.headers.Cross-Origin-Opener-Policy=same-origin`) |
+| `spring.flutter.web.proxy[n].target` | none | The server that the requests matching the rule are forwarded to (`http://localhost:8080`) |
+| `spring.flutter.web.proxy[n].prefix` | none | The rule matches paths starting with it (`/api/`) |
+| `spring.flutter.web.proxy[n].regex` | none | Or the paths matching this pattern; set exactly one of `prefix` and `regex` |
+| `spring.flutter.web.proxy[n].replace` | the path unchanged | The forwarded path: the matched part replaced, `$1` for a group |
+
+The proxy is the simplest way to talk to your own server during
+development. With `/api/` forwarded to the server, the page and the API
+have one origin: no CORS settings on the server, and a session cookie is
+an ordinary first-party cookie, so a login with a session works in every
+browser, including those that block third-party cookies.
+
+```properties
+# lib/resources/application-web.properties
+spring.flutter.web.port=5050
+spring.flutter.web.proxy[0].prefix=/api/
+spring.flutter.web.proxy[0].target=http://localhost:8080
+# the app calls the API at its own origin: http://localhost:5050/api/...
+```
+
+The build fails, naming the property, for a port outside 0..65535 or not
+a number, an empty host, a `base-href` without the slashes, only one of
+the two HTTPS paths, or a proxy rule without `target` or without exactly
+one of `prefix` and `regex`. A misspelt `spring.flutter.web.*` name is a
+warning.
+
+The generated file starts with a `# GENERATED FILE - DO NOT MODIFY BY HAND.`
+comment saying where its values come from; edit the properties, not the
+file. Commit it with the other
+generated files, so that `flutter run` works right after a checkout.
+Without these properties nothing is written. A `web_dev_config.yaml` you
+wrote yourself is never changed or deleted: with the properties set as
+well, the build fails and asks you to remove one of the two. After
+deleting the file, run `dart run build_runner clean` or change a file of
+`lib/resources/`: `build_runner` does not watch `web_dev_config.yaml`.
+
+These settings are for `flutter run` only: `flutter build web` makes
+files for your own web server, which has its own settings.
+
+## Login and tokens
+
+An app that logs its user in with an OAuth 2.0 / OpenID Connect provider
+(Keycloak, Google, Okta, ...) needs two things from the platform: a safe
+place for the tokens it gets, so the user stays logged in after the app
+restarts, and the system browser for the provider's login page, so the
+app never sees the password and the user's existing login there is
+reused (single sign-on). The starter brings both, as its own platform
+code (no other plugin), and makes them beans:
+
+- **`SecureTokenStore`**, the app's `TokenStore` bean: `read`, `write`
+  and `delete` of strings by key, in the platform's secure storage.
+- **`PlatformAuthorizationBrowser`**, the app's `AuthorizationBrowser`
+  bean on Android, iOS and macOS: opens the login page and returns the
+  URI the provider redirected to.
+
+The OAuth2 client (`spring_boot_starter_oauth2_client`) uses them by
+itself: its in-memory defaults give way to these. An app declares its own
+`TokenStore` or `AuthorizationBrowser` bean only to replace them. The
+store also suits other secrets of the user:
+
+```dart
+// An API key the user typed in, kept across restarts.
+@Service()
+class ApiKeys {
+  ApiKeys(this._store); // the SecureTokenStore bean
+  final TokenStore _store;
+
+  Future<void> remember(String key) => _store.write('api.key', key);
+  Future<String?> current() => _store.read('api.key');
+}
+```
+
+| Platform | Tokens | Login page |
+|---|---|---|
+| iOS | Keychain: generic passwords, this device only, after the first unlock, not synced | `ASWebAuthenticationSession` |
+| macOS | Keychain (see below) | `ASWebAuthenticationSession` |
+| Android | AES-256-GCM key in the Android Keystore (never leaves it), the encrypted values in a private preferences file | Custom Tab (the default browser without Custom Tabs) |
+| Windows | DPAPI (current user), one file per key in `%LOCALAPPDATA%\<app>\spring_token_store` | the OAuth2 client's loopback browser |
+| Linux | the Secret Service (GNOME Keyring, KWallet) through `libsecret` | the OAuth2 client's loopback browser |
+| Web | none | none: the server logs in |
+
+**Android: declare the redirect.** The provider sends the browser to the
+app's redirect URI (`neonbooks:/oauth2/callback`). An activity of the
+starter catches it; the app declares it with its scheme in
+`android/app/src/main/AndroidManifest.xml`, inside `<application>`:
+
+```xml
+<activity
+    android:name="dev.farumazula.spring_boot_starter_flutter.RedirectReceiverActivity"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="neonbooks" />
+    </intent-filter>
+</activity>
+```
+
+Apps that never log in declare nothing. Without the declaration a login
+fails at once with an `AuthorizationBrowserException`
+(`redirect_not_configured`) that shows this snippet. Pick a scheme of
+your own (reverse domain, `dev.neon.books`), not one another app may
+claim; PKCE makes a code caught by another app useless anyway. A user who
+comes back to the app without finishing (back button, closing the tab)
+cancels the login: `AuthorizationCancelledException`. A value that no
+longer decrypts (an Android backup restored on another phone, whose
+Keystore key did not move with it) is deleted and read as missing: the
+user logs in again.
+
+**iOS and macOS: nothing to set up** for a custom-scheme redirect: the
+scheme of the redirect URI is the one the login session waits for. An
+`https` redirect needs iOS 17.4 / macOS 14.4 and the app's associated
+domain (`webcredentials:`); older systems fail with an
+`UnsupportedError`. The login reuses Safari's session, and iOS asks
+"... wants to use ... to sign in"; `PlatformAuthorizationBrowser(preferEphemeralSession: true)`
+(a bean of your own) uses a private session that keeps no cookies and
+asks nothing.
+
+On macOS the tokens go to the data protection keychain (the iOS one)
+when the app may use it: a build signed with a team (a development
+team in Xcode, which gives the app its application identifier). A
+build signed only to run locally (the default of `flutter run`) gets
+`errSecMissingEntitlement` there and uses the login keychain instead.
+Its items belong to the signature of the build that wrote them; the
+store never lets macOS show a password prompt, so a value another build
+may not read reads as missing and the next write replaces it. Sign
+release builds with your team.
+
+**Linux: `libsecret` at run time.** The store loads `libsecret-1.so.0`
+(the `libsecret-1-0` package on Debian and Ubuntu, `libsecret` on Fedora
+and Arch) and needs a running Secret Service (GNOME Keyring, KWallet,
+KeePassXC). Without them every call throws a `SecureTokenStoreException`;
+the tokens are never written to a plain file.
+
+**Web: the server logs in.** A browser has no secure storage, and any
+script injected into the page reads what the app holds. So a Flutter web
+app keeps no tokens: no `SecureTokenStore` bean exists there, and its
+server logs the user in (`oauth2Login()` of
+`spring_boot_starter_security`) and sends only a session cookie.
+
+Errors: the store throws a `SecureTokenStoreException` (its message
+names the failure, never a value); the browser throws
+`AuthorizationCancelledException` when the user closes the page, a
+`StateError` when a login is already running (one at a time), and an
+`AuthorizationBrowserException` for the rest.
+
+Spring has no such types: Spring Security logs in browsers on a server,
+and Java has no apps.
+
 ## Hot reload
 
 A hot reload (`r` in `flutter run`, saving in the IDE) puts the new code
@@ -1133,3 +1322,8 @@ More, and the planned Flutter test starter:
 
 Android, iOS, macOS, Windows, Linux and the web. On Fuchsia the only
 platform profile is `fuchsia`.
+
+The starter is a Flutter plugin. Its platform code: Kotlin on Android
+(minimum API 24), one Swift source for iOS 13+ and macOS 10.15+ (Swift
+Package Manager and CocoaPods), and Dart through `dart:ffi` on Windows and
+Linux, which builds nothing native.

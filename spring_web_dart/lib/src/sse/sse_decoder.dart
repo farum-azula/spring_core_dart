@@ -31,7 +31,7 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 /// ```dart
 /// // `response` comes from `HttpTransport.stream`.
 /// await for (final event in response.body.transform(const SseDecoder())) {
-///   if (event.data case final data?) print(data);
+///   if (event.data case final data?) log.info(data);
 /// }
 /// ```
 ///

@@ -33,7 +33,7 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// // A Feign client returning ResponseEntity<Book> for the same call:
 /// // the caller learns where the book was stored.
 /// final response = await catalog.create(book);
-/// print(response.headers.location); // /books/978-0
+/// log.info(response.headers.location); // /books/978-0
 /// ```
 ///
 /// Spring (Java):

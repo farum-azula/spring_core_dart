@@ -74,7 +74,7 @@ const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 ///
 /// The libraries go through a [BeanScanner]. Bean names and aliases must be
 /// unique, and the module is written by a [ModuleEmitter], with the files
-/// of `lib/resources/` embedded (see [_resources]).
+/// of `lib/resources/` embedded (see [resources]).
 ///
 /// Example (generated code uses import prefixes such as `_i1.`; they are
 /// omitted here):
@@ -339,7 +339,7 @@ class SpringBuilder implements Builder {
       variableName: '\$$variableName',
       scannedDirectory: directory,
       module: module,
-      resources: await _resources(buildStep),
+      resources: await SpringBuilder.resources(buildStep),
     );
   }
 
@@ -359,7 +359,7 @@ class SpringBuilder implements Builder {
   /// precedence: an example's `example/lib/resources/application.properties`
   /// wins over the package's, as an application's config wins over a
   /// library's.
-  static Future<Map<String, ({String? text, String? base64})>> _resources(
+  static Future<Map<String, ({String? text, String? base64})>> resources(
     BuildStep buildStep, {
     String? entryDirectory,
   }) async {
@@ -505,7 +505,10 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    final resources = await _resources(buildStep, entryDirectory: directory);
+    final resources = await SpringBuilder.resources(
+      buildStep,
+      entryDirectory: directory,
+    );
     final defines = await _dartDefineKeys(buildStep, assets, resources);
     final source = emitter.emit(
       moduleName: 'application',

@@ -1,3 +1,7 @@
+## Unreleased
+
+- `oauth2Login()`: single sign-on with OAuth 2.0 and OpenID Connect providers (Spring Security's `OAuth2LoginConfigurer`, `OAuth2AuthorizationRequestRedirectFilter`, `OAuth2LoginAuthenticationFilter`, `OidcAuthorizationCodeAuthenticationProvider`, `HttpSessionOAuth2AuthorizationRequestRepository`, the authorized client repositories, `OidcClientInitiatedLogoutSuccessHandler`); ID token signatures checked with the provider's JWK Set (`OidcIdTokenDecoderFactory`, also the `oidcIdTokenDecoder` bean); the default chain logs browsers in through the `spring.security.oauth2.client.*` registrations. The starter depends on and re-exports `spring_boot_starter_oauth2_client`, whose `OAuth2Error`, `OAuth2AuthenticationException`, `OAuth2TokenValidator`, `OAuth2TokenValidatorResult` and `DelegatingOAuth2TokenValidator` replace the starter's own (same signatures). `defaultSuccessUrl`, failure and logout URLs may be absolute (`http://localhost:5050/`). `transportJwkFetcher`.
+
 ## 0.4.2
 
 - Docs (#9)

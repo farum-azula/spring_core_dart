@@ -22,10 +22,11 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// ```dart
 /// // Log each bean when it is ready.
 /// @Component()
+/// @Log()
 /// class TimingPostProcessor extends BeanPostProcessor {
 ///   @override
 ///   Object postProcessAfterInitialization(Object bean, String beanName) {
-///     print('ready: $beanName');
+///     log.info('ready: $beanName');
 ///     return bean;
 ///   }
 /// }
@@ -34,10 +35,11 @@ import 'package:spring_core_dart/src/core/order.dart';
 /// Spring (Java):
 /// ```java
 /// @Component
+/// @Slf4j
 /// class TimingPostProcessor implements BeanPostProcessor {
 ///   @Override
 ///   public Object postProcessAfterInitialization(Object bean, String name) {
-///     System.out.println("ready: " + name);
+///     log.info("ready: " + name);
 ///     return bean;
 ///   }
 /// }

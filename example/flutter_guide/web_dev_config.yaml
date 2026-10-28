@@ -1,0 +1,11 @@
+# GENERATED FILE - DO NOT MODIFY BY HAND.
+#
+# Written by spring_core_dart_generator from the spring.flutter.web.*
+# properties in lib/resources/ (application.yaml, application-web.yaml,
+# ...). Change those properties instead: this file is rewritten on
+# every build, and deleted when the properties are removed.
+# The Flutter tool reads it when it runs the web version
+# (flutter run -d chrome / -d web-server); --web-port and the other
+# flags still win over it.
+server:
+  port: 5050

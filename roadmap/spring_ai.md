@@ -1,23 +1,36 @@
-# Spring AI (planned, after security)
+# Spring AI (planned, next)
 
 Spring AI for Dart: one API over the model providers, like Spring AI's
 `ChatClient` and `ChatModel`, on the HTTP transports of `spring_web_dart`
 (the VM, Flutter and the web). No provider SDKs: each provider is a small
-starter speaking its HTTP API.
+client of its HTTP API.
 
-## Packages
+## One package
 
-| Package | What |
+Everything is in one starter, `spring_boot_starter_ai`: the API
+(`ChatModel`, `ChatClient`, prompts, messages, options, tool calling,
+structured output, advisors, `EmbeddingModel`) and every provider. An
+application lists only this starter, whatever provider it uses.
+
+| Provider | API |
 |---|---|
-| `spring_ai_core` | `ChatModel`, `ChatClient`, prompts, messages, options, tool calling, structured output, advisors, `EmbeddingModel` |
-| `spring_ai_starter_model_anthropic` | Claude (Messages API) |
-| `spring_ai_starter_model_openai` | OpenAI and compatible servers (Responses / Chat Completions) |
-| `spring_ai_starter_model_gemini` | Google Gemini |
-| `spring_ai_starter_model_ollama` | local models through Ollama |
-| later | Mistral, Bedrock, Azure OpenAI; vector stores; the MCP client and server ([spring_ai_starter_mcp_server](spring_ai_starter_mcp_server.md)) |
+| Anthropic | Claude, the Messages API |
+| OpenAI | OpenAI and compatible servers (Responses / Chat Completions) |
+| Google | Gemini |
+| Ollama | local models |
+| later | Mistral, Bedrock, Azure OpenAI; vector stores |
 
-An application lists the provider's starter only (it brings the core), as
-with every starter here.
+Spring AI has a starter per provider (`spring-ai-starter-model-anthropic`,
+...). Here one package is enough: the providers are small HTTP clients
+with no dependencies of their own, so an application pays little for the
+ones it does not use. The provider is picked by configuration: the one
+whose `spring.ai.<provider>.*` properties are set, or
+`spring.ai.model.chat` / `spring.ai.model.embedding` (as in Spring AI)
+when several are. The package is split only if it has to be (a provider
+that needs a dependency, or size).
+
+MCP goes into the same package later: servers built from beans' methods,
+then a client ([spring_ai_mcp.md](spring_ai_mcp.md)).
 
 ## ChatClient
 
@@ -73,11 +86,11 @@ A model's API key must never ship in an app (anyone can extract it, see
 `--dart-define` in [spring_boot_starter_flutter](spring_boot_starter_flutter.md)).
 In apps the `ChatClient` talks to the application's own backend (a
 controller of the web starter proxying the provider, with the user's
-authentication), or to a local model (Ollama on desktop). The starters
-warn when an API key property is set in a Flutter build.
+authentication), or to a local model (Ollama on desktop). The starter
+warns when an API key property is set in a Flutter build.
 
 ## Tests
 
 A `MockChatModel` with scripted answers (text, tool calls, streams), and
-recorded provider responses (`MockHttpTransport`) so the provider
-starters are tested without network or keys.
+recorded provider responses (`MockHttpTransport`) so the providers are
+tested without network or keys.

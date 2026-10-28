@@ -165,7 +165,10 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         annotations: const [_i6.Scheduled(cron: r'*/2 * * * * *')],
       ),
     ],
-    annotations: const [_i2.Component()],
+    annotations: const [
+      _i2.Component(),
+      _i2.Log(topic: r'example'),
+    ],
     aopProxy: _i2.AopProxyFactory(
       signatures: const [
         _i2.MethodSignature(
@@ -179,8 +182,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           ],
           annotationTypes: [r'Scheduled'],
           targetTypes: [r'Heartbeat'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'report',
@@ -191,8 +197,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           annotations: [_i6.Scheduled(cron: r'*/2 * * * * *')],
           annotationTypes: [r'Scheduled'],
           targetTypes: [r'Heartbeat'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'beats',
@@ -202,8 +211,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'int',
           targetTypes: [r'Heartbeat'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'beats',
@@ -213,8 +225,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.setter,
           returnType: r'int',
           targetTypes: [r'Heartbeat'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
       ],
       create: (target, invoker) =>
@@ -229,7 +244,10 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     dependencies: const [_i2.Dependency(_i5.TaskScheduler, name: r'scheduler')],
     create: (r) =>
         _i1.Reminder(r.dependency<_i5.TaskScheduler>(name: r'scheduler')),
-    annotations: const [_i2.Component()],
+    annotations: const [
+      _i2.Component(),
+      _i2.Log(topic: r'example'),
+    ],
     aopProxy: _i2.AopProxyFactory(
       signatures: const [
         _i2.MethodSignature(
@@ -241,8 +259,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           parameterTypes: [r'List'],
           parameterNames: [r'args'],
           targetTypes: [r'Reminder', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'scheduler',
@@ -252,8 +273,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'TaskScheduler',
           targetTypes: [r'Reminder', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
       ],
       create: (target, invoker) =>
@@ -321,7 +345,7 @@ _i7.SpringApplication get springApplication => _i7.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '767ba0ca',
+  fingerprint: '6e6c69ba',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -349,3 +373,13 @@ Future<_i7.ConfigurableApplicationContext> reloadApplicationAsync(
   _i7.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// `@Log` of [Heartbeat]: the logger 'example'.
+extension $HeartbeatLog on _i1.Heartbeat {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
+}
+
+/// `@Log` of [Reminder]: the logger 'example'.
+extension $ReminderLog on _i1.Reminder {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
+}

@@ -105,7 +105,7 @@ final class MissingRequiredPropertiesException implements Exception {
 /// try {
 ///   environment.getRequiredProperty('db.url');
 /// } on MissingPropertyException catch (error) {
-///   print(error.key); // db.url
+///   log.warning(error.key); // db.url
 /// }
 /// ```
 ///

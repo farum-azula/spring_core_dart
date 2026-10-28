@@ -145,7 +145,12 @@ dart run build_runner build   # or: dart run build_runner watch
 Start the container:
 
 ```dart
+const log = SpringLog('neon');
+
 Future<void> main(List<String> args) async {
+  // Without a logging backend only warnings are shown; show info too.
+  SpringLog.level = SpringLogLevel.info;
+
   // Creating the module registers the embedded lib/resources/ files.
   final modules = [appBeans];
 
@@ -155,7 +160,7 @@ Future<void> main(List<String> args) async {
   await ConfigDataEnvironment(environment).processAndApply();
 
   final context = ApplicationContext.run(modules, environment: environment);
-  print(context.getBean<Greeter>().greet('Ada')); // Hello Ada from NEON
+  log.info(context.getBean<Greeter>().greet('Ada')); // Hello Ada from NEON
   context.close();
 }
 ```
@@ -536,12 +541,13 @@ down: open a connection, warm a cache, flush a buffer.
 
 ```dart
 @Service()
+@Log()
 class SearchIndex {
   @PostConstruct()
-  void load() => print('loading the index'); // dependencies are set by now
+  void load() => log.info('loading the index'); // dependencies are set by now
 
   @PreDestroy()
-  void flush() => print('saving the index'); // on context.close()
+  void flush() => log.info('saving the index'); // on context.close()
 }
 ```
 
@@ -1338,7 +1344,7 @@ final binder = DataBinder(SignupForm(), objectName: 'signup',
   ..validate();
 
 final error = binder.bindingResult.fieldError('age'); // Min, with Spring's codes
-print(context.getMessageFromResolvable(error!)); // must be greater than or equal to 18
+final message = context.getMessageFromResolvable(error!); // must be greater than or equal to 18
 ```
 
 **Constraints:** `NotNull`, `MustBeNull`, `NotEmpty`, `NotBlank`, `Size`,
@@ -1567,6 +1573,7 @@ class Timed {
 
 @Aspect()
 @Component()
+@Log()
 class TimingAspect {
   @Around('@annotation(Timed)')
   Object? time(ProceedingJoinPoint call) {
@@ -1574,7 +1581,7 @@ class TimingAspect {
     try {
       return call.proceed(); // runs the real method
     } finally {
-      print('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
+      log.info('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
     }
   }
 }
@@ -1622,6 +1629,7 @@ Rules to remember:
 ```dart
 @Aspect()
 @Component()
+@Log()
 class AuditAspect {
   // A named pointcut: the method body is empty, its name is the pointcut.
   @Pointcut('within(OrderService)')
@@ -1629,18 +1637,18 @@ class AuditAspect {
 
   @Before('orders()')
   void before(JoinPoint call) =>
-      print('calling ${call.toShortString()} with ${call.args}');
+      log.info('calling ${call.toShortString()} with ${call.args}');
 
   // Runs only when the result is a double: the parameter type filters.
   @AfterReturning('orders()')
-  void returned(JoinPoint call, double total) => print('total: $total');
+  void returned(JoinPoint call, double total) => log.info('total: $total');
 
   // Runs only for StateError; other errors pass by.
   @AfterThrowing('orders()')
-  void failed(StateError error) => print('failed: ${error.message}');
+  void failed(StateError error) => log.warning('failed: ${error.message}');
 
   @After('orders()')
-  void after() => print('done');
+  void after() => log.info('done');
 
   // Change the arguments, the result, or skip the call entirely.
   @Around('execution(* OrderService.discount(..))')
@@ -1672,7 +1680,7 @@ Future<Object?> timeAsync(ProceedingJoinPoint call) async {
   try {
     return await (call.proceed()! as Future<Object?>);
   } finally {
-    print('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
+    log.info('${call.signature.name}: ${watch.elapsedMilliseconds} ms');
   }
 }
 ```
@@ -1763,10 +1771,11 @@ it with the class: `AuditAspect.orders()`.
 ```dart
 @Aspect()
 @Component()
+@Log()
 class MetricsAspect {
   // AuditAspect's pointcut, reused here.
   @After('AuditAspect.orders()')
-  void count() => print('order call');
+  void count() => log.info('order call');
 }
 ```
 
@@ -2015,10 +2024,11 @@ most applications never write them.
 ```dart
 // Logs every bean the container creates.
 @Component()
+@Log()
 class Audit extends BeanPostProcessor {
   @override
   Object postProcessAfterInitialization(Object bean, String name) {
-    print('created $name');
+    log.info('created $name');
     return bean; // or a wrapper around it
   }
 }

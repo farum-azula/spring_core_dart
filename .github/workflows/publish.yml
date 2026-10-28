@@ -10,7 +10,8 @@ name: 'Release: publish to pub.dev'
 #           spring_boot_starter_cache, spring_boot_starter_feign,
 #           spring_boot_starter_websocket, spring_boot_starter_web,
 #           spring_boot_starter_test
-#         → spring_security_core → spring_boot_starter_security
+#         → spring_security_core → spring_boot_starter_oauth2_client
+#         → spring_boot_starter_security
 #         → spring_boot_starter_flutter (with the Flutter SDK)
 #
 # (tests: not run again when the "Release" workflow tested the tagged
@@ -152,8 +153,10 @@ jobs:
       - run: dart pub get
       - run: dart run tool/publish.dart --package ${{ matrix.package }}
 
-  # spring_security_core needs the logging starter, spring_boot_starter_security
-  # the web starter and spring_security_core: one after the other.
+  # spring_security_core needs the logging starter,
+  # spring_boot_starter_oauth2_client Feign and spring_security_core,
+  # spring_boot_starter_security the web starter, spring_security_core and the
+  # OAuth2 client: one after the other.
   security:
     name: Publish the security packages
     needs: starters
@@ -167,6 +170,7 @@ jobs:
           sdk: stable
       - run: dart pub get
       - run: dart run tool/publish.dart --package spring_security_core
+      - run: dart run tool/publish.dart --package spring_boot_starter_oauth2_client
       - run: dart run tool/publish.dart --package spring_boot_starter_security
 
   # spring_boot_starter_flutter needs the Flutter SDK; it is outside the pub workspace,

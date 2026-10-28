@@ -117,7 +117,7 @@ exists.
   with controllers.
 - Later: STOMP, the [actuator](spring_boot_actuator.md) over HTTP, the
   [security starter](spring_boot_starter_security.md), the
-  [MCP server starter](spring_ai_starter_mcp_server.md).
+  [MCP server](spring_ai_mcp.md).
 
 ## Controllers
 
@@ -424,8 +424,8 @@ plugs into these slots:
 
 AI clients (Claude, IDEs, agents) call tools through MCP servers. A Dart
 MCP server on this starter can live in a backend or inside a Flutter app,
-exposing the app's beans as tools. Planned on top as its own package:
-[spring_ai_starter_mcp_server](spring_ai_starter_mcp_server.md).
+exposing the app's beans as tools. Planned in the AI starter
+(`spring_boot_starter_ai`): [spring_ai_mcp.md](spring_ai_mcp.md).
 
 What MCP's Streamable HTTP transport needs from this starter, and which
 exists now:
@@ -501,4 +501,4 @@ becoming Spring controllers.
 Later: the `shelf` server, `server.isolate: background`, STOMP, the
 [actuator](spring_boot_actuator.md) over HTTP, the
 [security starter](spring_boot_starter_security.md), the
-[MCP server starter](spring_ai_starter_mcp_server.md).
+[MCP server](spring_ai_mcp.md).

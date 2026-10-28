@@ -9,14 +9,15 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i5;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i6;
+import 'package:spring_boot_dart/src/runners.dart' as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i7;
-import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i8;
+import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
+    as _i9;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i4;
+    as _i5;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
 import 'example.dart' as _i1;
@@ -117,6 +118,58 @@ class _$ChatProxy implements _i1.Chat, _i2.Advised {
   ) as _i1.ChatSocket);
 }
 
+class _$ChatTourProxy
+    implements _i1.ChatTour, _i4.CommandLineRunner, _i2.Advised {
+  _$ChatTourProxy(this._target, this._invoker);
+
+  final _i1.ChatTour _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
+    this,
+    this._target,
+    0,
+    [args],
+    (args) => this._target.run((args[0] as List<String>)),
+  );
+
+  @override
+  _i1.Chat get chat => (this._invoker.invoke(
+    this,
+    this._target,
+    1,
+    const [],
+    (_) => this._target.chat,
+  ) as _i1.Chat);
+}
+
 /// Implements `ChatSocket` through an `InvocationHandler`.
 class _$ChatSocketImpl implements _i1.ChatSocket {
   _$ChatSocketImpl(this._handler, this._metadata);
@@ -128,14 +181,14 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
   static _$ChatSocketImpl $create(_i2.DependencyResolver r) {
     final metadata = _i2.InterfaceMetadata<_i1.ChatSocket>(
       typeName: r'ChatSocket',
-      annotations: const [_i4.WebSocketClient(r'chat', url: r'${chat.url}')],
+      annotations: const [_i5.WebSocketClient(r'chat', url: r'${chat.url}')],
       methods: [
         _i2.ProxyMethod(
           r'messages',
           returnType: const _i2.GenericType<_i3.Stream<_i1.ChatMessage>>([
             _i2.ClassType<_i1.ChatMessage>(),
           ]),
-          annotations: const [_i4.OnMessage()],
+          annotations: const [_i5.OnMessage()],
           call: (target, arguments) => (target as _i1.ChatSocket).messages(),
         ),
         _i2.ProxyMethod(
@@ -150,7 +203,7 @@ class _$ChatSocketImpl implements _i1.ChatSocket {
           returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          annotations: const [_i4.SendMessage()],
+          annotations: const [_i5.SendMessage()],
           call: (target, arguments) => (target as _i1.ChatSocket).send(
             (arguments[0] as _i1.ChatMessage),
           ),
@@ -184,7 +237,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       types: const [_i1.ChatSocket],
       primary: true,
       create: (r) => _$ChatSocketImpl.$create(r),
-      annotations: const [_i4.WebSocketClient(r'chat', url: r'${chat.url}')],
+      annotations: const [_i5.WebSocketClient(r'chat', url: r'${chat.url}')],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -193,11 +246,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'ChatSocket',
             declaringTypes: [r'ChatSocket'],
             returnType: r'Stream',
-            annotations: [_i4.OnMessage()],
+            annotations: [_i5.OnMessage()],
             annotationTypes: [r'OnMessage'],
             targetTypes: [r'ChatSocket'],
             targetAnnotations: [
-              _i4.WebSocketClient(r'chat', url: r'${chat.url}'),
+              _i5.WebSocketClient(r'chat', url: r'${chat.url}'),
             ],
             targetAnnotationTypes: [r'WebSocketClient'],
           ),
@@ -209,11 +262,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'ChatMessage'],
             parameterNames: [r'message'],
-            annotations: [_i4.SendMessage()],
+            annotations: [_i5.SendMessage()],
             annotationTypes: [r'SendMessage'],
             targetTypes: [r'ChatSocket'],
             targetAnnotations: [
-              _i4.WebSocketClient(r'chat', url: r'${chat.url}'),
+              _i5.WebSocketClient(r'chat', url: r'${chat.url}'),
             ],
             targetAnnotationTypes: [r'WebSocketClient'],
           ),
@@ -256,6 +309,53 @@ _i2.BeanModule get $application => _i2.BeanModule(
           ),
         ],
         create: (target, invoker) => _$ChatProxy((target as _i1.Chat), invoker),
+      ),
+    ),
+    _i2.BeanDefinition<_i1.ChatTour>(
+      name: r'chatTour',
+      source:
+          r'asset:spring_boot_starter_websocket/example/example.dart#ChatTour',
+      types: const [_i1.ChatTour, _i4.CommandLineRunner],
+      dependencies: const [_i2.Dependency(_i1.Chat, name: r'chat')],
+      create: (r) => _i1.ChatTour(r.dependency<_i1.Chat>(name: r'chat')),
+      annotations: const [
+        _i2.Component(),
+        _i2.Log(topic: r'example'),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'run',
+            declaringType: r'CommandLineRunner',
+            targetType: r'ChatTour',
+            declaringTypes: [r'ChatTour', r'CommandLineRunner'],
+            returnType: r'Future',
+            parameterTypes: [r'List'],
+            parameterNames: [r'args'],
+            targetTypes: [r'ChatTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+          _i2.MethodSignature(
+            name: r'chat',
+            declaringType: r'ChatTour',
+            targetType: r'ChatTour',
+            declaringTypes: [r'ChatTour'],
+            kind: _i2.MemberKind.getter,
+            returnType: r'Chat',
+            targetTypes: [r'ChatTour', r'CommandLineRunner'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'example'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$ChatTourProxy((target as _i1.ChatTour), invoker),
       ),
     ),
   ],
@@ -306,12 +406,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i5.SpringApplication get springApplication => _i5.SpringApplication(
+_i6.SpringApplication get springApplication => _i6.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterLoggingAutoConfiguration,
-    _i8.springBootStarterWebsocketAutoConfiguration,
+    _i7.springBootAutoConfiguration,
+    _i8.springBootStarterLoggingAutoConfiguration,
+    _i9.springBootStarterWebsocketAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('CHAT_URL'))
@@ -363,31 +463,36 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c854ddfe',
+  fingerprint: 'a9d391b4',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i5.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i6.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i5.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i6.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i5.ConfigurableApplicationContext reloadApplication(
-  _i5.ConfigurableApplicationContext running, {
+_i6.ConfigurableApplicationContext reloadApplication(
+  _i6.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i5.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i5.ConfigurableApplicationContext running, {
+Future<_i6.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i6.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// `@Log` of [ChatTour]: the logger 'example'.
+extension $ChatTourLog on _i1.ChatTour {
+  _i2.SpringLog get log => const _i2.SpringLog(r'example');
+}

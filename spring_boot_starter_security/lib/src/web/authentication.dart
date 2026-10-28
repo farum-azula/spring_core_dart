@@ -244,8 +244,11 @@ final class SavedRequestAwareAuthenticationSuccessHandler
   /// Where the page the user wanted was saved.
   final RequestCache requestCache;
 
-  /// The path to go to when no page was saved, `/` by default; the
-  /// [contextPath] is put in front.
+  /// Where to go when no page was saved, `/` by default: a path of this
+  /// application (the [contextPath] is put in front) or an absolute URL,
+  /// such as the address of a Flutter web app served elsewhere
+  /// (`http://localhost:5050/`). It is configuration: nothing in the
+  /// request can change it.
   final String defaultTargetUrl;
 
   /// Whether to go to [defaultTargetUrl] even when a page was saved;
@@ -266,7 +269,10 @@ final class SavedRequestAwareAuthenticationSuccessHandler
         ? null
         : await requestCache.getRedirectUrl(request);
     await requestCache.removeRequest(request);
-    await sendRedirect(response, saved ?? '$contextPath$defaultTargetUrl');
+    await sendRedirect(
+      response,
+      saved ?? _redirectUrl(contextPath, defaultTargetUrl),
+    );
   }
 }
 
@@ -283,7 +289,8 @@ final class SimpleUrlAuthenticationFailureHandler
     this.contextPath = '',
   });
 
-  /// The path to redirect to.
+  /// The path to redirect to (the context path is put in front), or an
+  /// absolute URL.
   final String failureUrl;
 
   /// The application's context path; `''` for none.
@@ -294,7 +301,7 @@ final class SimpleUrlAuthenticationFailureHandler
     ServerHttpRequest request,
     ServerHttpResponse response,
     AuthenticationException exception,
-  ) => sendRedirect(response, '$contextPath$failureUrl');
+  ) => sendRedirect(response, _redirectUrl(contextPath, failureUrl));
 }
 
 /// An [AuthenticationFailureHandler] that answers a failed login like a
@@ -708,7 +715,8 @@ final class SimpleUrlLogoutSuccessHandler implements LogoutSuccessHandler {
   /// A handler redirecting to [targetUrl], prefixed with [contextPath].
   const SimpleUrlLogoutSuccessHandler(this.targetUrl, {this.contextPath = ''});
 
-  /// The path to redirect to.
+  /// The path to redirect to (the context path is put in front), or an
+  /// absolute URL.
   final String targetUrl;
 
   /// The application's context path; `''` for none.
@@ -719,7 +727,7 @@ final class SimpleUrlLogoutSuccessHandler implements LogoutSuccessHandler {
     ServerHttpRequest request,
     ServerHttpResponse response,
     Authentication? authentication,
-  ) => sendRedirect(response, '$contextPath$targetUrl');
+  ) => sendRedirect(response, _redirectUrl(contextPath, targetUrl));
 }
 
 /// A [LogoutSuccessHandler] that answers a plain status without a body:
@@ -813,13 +821,16 @@ final class LogoutFilter implements WebFilter {
 }
 
 /// The filter that serves the generated login page at `GET /login` when
-/// form login has no page of its own.
+/// form login or `oauth2Login()` has no page of its own.
 ///
-/// The page is plain HTML with a username field, a password field and the
-/// CSRF token. With `?error` it says "Bad credentials", with `?logout`
-/// "You have been signed out". Name your own page with
-/// `formLogin((f) => f.loginPage('/sign-in'))` and the generated one is
-/// gone.
+/// The page is plain HTML: with form login, a username field, a password
+/// field and the CSRF token; with `oauth2Login()`, a link per
+/// registration ("Login with OAuth 2.0"), named by its client name
+/// (HTML-escaped). With `?error` it says "Bad credentials", with
+/// `?logout` "You have been signed out"; the reason of a failed login is
+/// never shown. Name your own page with
+/// `formLogin((f) => f.loginPage('/sign-in'))` (or `oauth2Login`'s) and
+/// the generated one is gone.
 ///
 /// Spring (Java): `DefaultLoginPageGeneratingFilter`.
 final class DefaultLoginPageGeneratingFilter implements WebFilter {
@@ -831,6 +842,8 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
     this.usernameParameter = 'username',
     this.passwordParameter = 'password',
     this.contextPath = '',
+    this.formLoginEnabled = true,
+    this.oauth2AuthenticationUrlToClientName,
   }) : _page = PathPatternRequestMatcher(loginPageUrl, method: HttpMethod.get);
 
   /// The path the form posts to, `/login` by default.
@@ -843,8 +856,18 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
   final String passwordParameter;
 
   /// The application's context path, put in front of the form's
-  /// address; `''` for none.
+  /// address and the links; `''` for none.
   final String contextPath;
+
+  /// Whether the page has the username and password form; `true` by
+  /// default.
+  final bool formLoginEnabled;
+
+  /// The OAuth 2.0 logins to link to: the path that starts each
+  /// (`/oauth2/authorization/keycloak`) and the name to show; `null` for
+  /// none.
+  final FutureOr<Map<String, String>> Function()?
+  oauth2AuthenticationUrlToClientName;
 
   final RequestMatcher _page;
 
@@ -863,11 +886,11 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
         : query.containsKey('logout')
         ? '<div class="alert alert-success" role="alert">You have been signed out</div>'
         : '';
-    final csrf = csrfTokenOf(request);
-    final hidden = csrf == null
+    final form = formLoginEnabled ? _form(request, message) : '';
+    final links = oauth2AuthenticationUrlToClientName;
+    final oauth2 = links == null
         ? ''
-        : '<input name="${_escape(csrf.parameterName)}" type="hidden" '
-              'value="${_escape(csrf.token)}" />';
+        : _oauth2(await links(), formLoginEnabled ? '' : message);
     response
       ..statusCode = HttpStatus.ok
       ..headers.contentType = 'text/html;charset=UTF-8'
@@ -881,6 +904,20 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
   </head>
   <body>
     <div class="content">
+$form$oauth2    </div>
+  </body>
+</html>
+''');
+    await response.close();
+  }
+
+  String _form(ServerHttpRequest request, String message) {
+    final csrf = csrfTokenOf(request);
+    final hidden = csrf == null
+        ? ''
+        : '<input name="${_escape(csrf.parameterName)}" type="hidden" '
+              'value="${_escape(csrf.token)}" />';
+    return '''
       <form class="login-form" method="post" action="${_escape('$contextPath$loginProcessingUrl')}">
         <h2>Please sign in</h2>
         $message
@@ -895,11 +932,23 @@ final class DefaultLoginPageGeneratingFilter implements WebFilter {
         $hidden
         <button type="submit" class="primary">Sign in</button>
       </form>
-    </div>
-  </body>
-</html>
-''');
-    await response.close();
+''';
+  }
+
+  static String _row(String href, String name) =>
+      '          <tr><td><a href="$href">$name</a></td></tr>\n';
+
+  String _oauth2(Map<String, String> links, String message) {
+    final rows = [
+      for (final MapEntry(key: url, value: name) in links.entries)
+        _row(_escape('$contextPath$url'), _escape(name)),
+    ];
+    return '''
+      <h2>Login with OAuth 2.0</h2>
+      $message
+      <table class="table table-striped">
+${rows.join()}      </table>
+''';
   }
 }
 
@@ -965,3 +1014,10 @@ final class DefaultLogoutPageGeneratingFilter implements WebFilter {
 }
 
 String _escape(String text) => const HtmlEscape().convert(text);
+
+// Spring's DefaultRedirectStrategy: an absolute URL as is, a path after
+// the context path.
+String _redirectUrl(String contextPath, String url) =>
+    RegExp('^[a-z0-9.+-]+://', caseSensitive: false).hasMatch(url)
+    ? url
+    : '$contextPath$url';

@@ -82,12 +82,13 @@ class ChatMessage {
 }
 
 @Service()
+@Log()
 class Chat {
   Chat(this.socket);                       // the generated client, injected like any bean
   final ChatSocket socket;
 
   // Listening opens the connection; it reconnects while someone listens.
-  void start() => socket.messages().listen((m) => print('${m.from}: ${m.text}'));
+  void start() => socket.messages().listen((m) => log.info('${m.from}: ${m.text}'));
 
   Future<void> say(String text) => socket.send(ChatMessage(from: 'me', text: text));
 }
@@ -278,6 +279,7 @@ closes, and on errors. The annotation follows the names of Jakarta's
 ```dart
 // A chat with one room per path: /ws/rooms/neon, /ws/rooms/dart, ...
 @WebSocketEndpoint('/ws/rooms/{room}', allowedOrigins: ['https://chat.example'])
+@Log()
 class ChatEndpoint {
   ChatEndpoint(this.sessions);
   final WebSocketSessionRegistry sessions;
@@ -296,7 +298,7 @@ class ChatEndpoint {
 
   @OnClose()
   void close(ServerWebSocketSession session, CloseStatus status) =>
-      print('${session.id} left: ${status.code}');
+      log.info('${session.id} left: ${status.code}');
 
   @OnError()
   void error(ServerWebSocketSession session, Object error) =>

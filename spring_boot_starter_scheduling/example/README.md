@@ -10,8 +10,8 @@ start when the application is ready and stop when it closes.
 `Heartbeat` bean that beats every second (a fixed rate taken from a
 property) and reports every 2 seconds (a cron expression), and a
 `Reminder` that schedules a one-off task through the `TaskScheduler`
-bean. It runs for three seconds, closes the context, which cancels every
-task, and prints how many beats there were.
+bean. It runs for three seconds, logs how many beats there were, and
+closes the context, which cancels every task.
 
 ## Run it
 
@@ -33,17 +33,18 @@ dart run build_runner build
 dart run example/example.dart
 ```
 
-After the startup lines it prints something like:
+After the startup lines it logs something like (the date and time that
+start each line are left out here):
 
 ```text
-beat 1
-report at 2026-10-28 14:07:46.005713
-beat 2
-one-off after 1.5 s
-beat 3
-report at 2026-10-28 14:07:48.001638
-beat 4
-4 beats
+... example : beat 1
+... example : report at 2026-10-28 14:07:46.005713
+... example : beat 2
+... example : one-off after 1.5 s
+... example : beat 3
+... example : report at 2026-10-28 14:07:48.001638
+... example : beat 4
+... example : 4 beats
 ```
 
 The rate comes from the `heartbeat.rate` property (1 second when it is not
@@ -112,13 +113,14 @@ When the time is only known at runtime, inject the `TaskScheduler`:
 
 ```dart
 @Service()
+@Log()
 class Reminders {
   Reminders(this.scheduler);
   final TaskScheduler scheduler;
 
   // Once, at the time the user picked.
   ScheduledTask remindAt(DateTime at, String text) =>
-      scheduler.scheduleAt(() => print(text), at);
+      scheduler.scheduleAt(() => log.info(text), at);
 }
 ```
 

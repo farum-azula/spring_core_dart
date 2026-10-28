@@ -1,5 +1,10 @@
+import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
+import 'package:spring_boot_starter_security/src/oauth2/authorization_request_redirect.dart';
+import 'package:spring_boot_starter_security/src/oauth2/authorized_client_repository.dart';
+import 'package:spring_boot_starter_security/src/oauth2/login.dart';
+import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
 import 'package:spring_boot_starter_security/src/web/access.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
 import 'package:spring_boot_starter_security/src/web/csrf.dart';
@@ -9,7 +14,6 @@ import 'package:spring_boot_starter_security/src/web/headers.dart';
 import 'package:spring_boot_starter_security/src/web/request_cache.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
-import 'package:spring_security_core/spring_security_core.dart';
 
 const _log = SpringLog('spring.security.config');
 
@@ -64,6 +68,14 @@ abstract final class SecurityFilterOrder {
   /// [LogoutFilter]: `POST /logout`.
   static const logout = 500;
 
+  /// [OAuth2AuthorizationRequestRedirectFilter]: the start of an OAuth 2.0
+  /// login, `/oauth2/authorization/{registrationId}`.
+  static const oauth2AuthorizationRequestRedirect = 520;
+
+  /// [OAuth2LoginAuthenticationFilter]: the provider's callback,
+  /// `/login/oauth2/code/{registrationId}`.
+  static const oauth2Login = 560;
+
   /// [UsernamePasswordAuthenticationFilter]: the form login.
   static const formLogin = 600;
 
@@ -102,6 +114,9 @@ abstract final class SecurityFilterOrder {
     const (CorsFilter) => cors,
     const (CsrfFilter) => csrf,
     const (LogoutFilter) => logout,
+    const (OAuth2AuthorizationRequestRedirectFilter) =>
+      oauth2AuthorizationRequestRedirect,
+    const (OAuth2LoginAuthenticationFilter) => oauth2Login,
     const (UsernamePasswordAuthenticationFilter) => formLogin,
     const (DefaultLoginPageGeneratingFilter) => loginPage,
     const (DefaultLogoutPageGeneratingFilter) => logoutPage,
@@ -307,6 +322,39 @@ final class HttpSecurity {
         _mechanisms.whereType<OAuth2ResourceServerConfigurer>().firstOrNull ??
         (OAuth2ResourceServerConfigurer._()..let(_mechanisms.add));
     customizer(configurer);
+    return this;
+  }
+
+  /// Logs browsers in with an OAuth 2.0 or OpenID Connect provider
+  /// (Keycloak, Google, GitHub, Auth0, ...): single sign-on, the server
+  /// being the client of the authorization code flow.
+  ///
+  /// A browser that must log in goes to the login page, which lists the
+  /// registrations of `spring.security.oauth2.client.registration.*`
+  /// (with exactly one, and no form login, it goes straight to the
+  /// provider). `/oauth2/authorization/{registrationId}` sends it to the
+  /// provider with a fresh `state`, PKCE and `nonce`, kept in the
+  /// session; the provider sends it back to
+  /// `/login/oauth2/code/{registrationId}`, where the code is exchanged,
+  /// the ID token checked (its signature with the provider's keys), the
+  /// user loaded, the session given a new id, and the browser sent to the
+  /// page it wanted (or the default success URL). The tokens stay on the
+  /// server: the browser only has the session cookie, which is what a
+  /// Flutter web app needs (the server as its backend-for-frontend).
+  ///
+  /// [build] throws a [StateError] when there is no
+  /// `ClientRegistrationRepository` (no registration).
+  ///
+  /// ```dart
+  /// http
+  ///     .authorizeHttpRequests((auth) => auth.anyRequest().authenticated())
+  ///     .oauth2Login((login) => login.defaultSuccessUrl('/home'));
+  /// ```
+  HttpSecurity oauth2Login([Customizer<OAuth2LoginConfigurer>? customizer]) {
+    final configurer =
+        _mechanisms.whereType<OAuth2LoginConfigurer>().firstOrNull ??
+        (OAuth2LoginConfigurer._()..let(_mechanisms.add));
+    customizer?.call(configurer);
     return this;
   }
 
@@ -519,7 +567,14 @@ final class HttpSecurity {
     }
 
     final formLogin = _mechanisms.whereType<FormLoginConfigurer>().firstOrNull;
+    final oauth2Login = _mechanisms
+        .whereType<OAuth2LoginConfigurer>()
+        .firstOrNull;
 
+    // The login page of the redirects after logout: the form's, else the
+    // OAuth 2.0 login's.
+    final loginPage =
+        formLogin?._loginPage ?? oauth2Login?._loginPage ?? '/login';
     if (_logout._enabled) {
       final logoutUrl = _logout._url;
       filters.add((
@@ -541,8 +596,7 @@ final class HttpSecurity {
           successHandler:
               _logout._successHandler ??
               SimpleUrlLogoutSuccessHandler(
-                _logout._successUrl ??
-                    '${formLogin?._loginPage ?? '/login'}?logout',
+                _logout._successUrl ?? '$loginPage?logout',
                 contextPath: contextPath,
               ),
           methods: _csrf._enabled
@@ -561,6 +615,7 @@ final class HttpSecurity {
 
     // Login methods, and the entry points they register (in call order).
     final entryPoints = <(RequestMatcher, AuthenticationEntryPoint)>[];
+    _OAuth2LoginLinks? oauth2Links;
     AuthenticationManager? manager;
     AuthenticationManager requireManager() => manager ??=
         _resolveManager() ??
@@ -606,26 +661,23 @@ final class HttpSecurity {
             ),
             SecurityFilterOrder.formLogin,
           ));
-          if (form._loginPage == null) {
-            filters.add((
-              DefaultLoginPageGeneratingFilter(
-                loginProcessingUrl: processing,
-                usernameParameter: form._usernameParameter,
-                passwordParameter: form._passwordParameter,
-                contextPath: contextPath,
-              ),
-              SecurityFilterOrder.loginPage,
-            ));
-            if (_logout._enabled) {
-              filters.add((
-                DefaultLogoutPageGeneratingFilter(
-                  logoutUrl: _logout._url,
-                  contextPath: contextPath,
-                ),
-                SecurityFilterOrder.logoutPage,
-              ));
-            }
-          }
+        case final OAuth2LoginConfigurer login:
+          final built = login._build(
+            this,
+            requestCache: requestCache,
+            sessionStrategy: sessionStrategy,
+            securityContextRepository: repository,
+            eventPublisher: eventPublisher,
+            formLoginEnabled: formLogin != null,
+          );
+          entryPoints.add((_browserMatcher, built.entryPoint));
+          filters
+            ..add((
+              built.redirectFilter,
+              SecurityFilterOrder.oauth2AuthorizationRequestRedirect,
+            ))
+            ..add((built.loginFilter, SecurityFilterOrder.oauth2Login));
+          oauth2Links = built.links;
         case final HttpBasicConfigurer httpBasic:
           final challenge =
               httpBasic._entryPoint ??
@@ -662,6 +714,36 @@ final class HttpSecurity {
             ),
             SecurityFilterOrder.bearerToken,
           ));
+      }
+    }
+
+    // One generated login page for the form and the OAuth 2.0 links, as
+    // Spring's DefaultLoginPageGeneratingFilter.
+    final formPage = formLogin != null && formLogin._loginPage == null;
+    final oauth2Page = oauth2Login != null && oauth2Login._loginPage == null;
+    if (formPage || oauth2Page) {
+      final processing = formLogin?._processingUrl ?? '/login';
+      filters.add((
+        DefaultLoginPageGeneratingFilter(
+          loginProcessingUrl: processing,
+          usernameParameter: formLogin?._usernameParameter ?? 'username',
+          passwordParameter: formLogin?._passwordParameter ?? 'password',
+          contextPath: contextPath,
+          formLoginEnabled: formPage,
+          oauth2AuthenticationUrlToClientName: oauth2Page
+              ? oauth2Links?.resolve
+              : null,
+        ),
+        SecurityFilterOrder.loginPage,
+      ));
+      if (_logout._enabled) {
+        filters.add((
+          DefaultLogoutPageGeneratingFilter(
+            logoutUrl: _logout._url,
+            contextPath: contextPath,
+          ),
+          SecurityFilterOrder.logoutPage,
+        ));
       }
     }
 
@@ -1603,5 +1685,532 @@ final class SecurityContextConfigurer {
   ) {
     _repository = repository;
     return this;
+  }
+}
+
+/// The settings of OAuth 2.0 and OpenID Connect logins, in
+/// [HttpSecurity.oauth2Login].
+///
+/// Everything has a default, from the application's beans when it has
+/// them: the `ClientRegistrationRepository` (the
+/// `spring.security.oauth2.client.*` properties), the user services, the
+/// `GrantedAuthoritiesMapper`, the `OAuth2AuthorizedClientRepository` or
+/// `OAuth2AuthorizedClientService`, the `OidcIdTokenDecoder`.
+///
+/// ```dart
+/// http.oauth2Login((login) => login
+///     // The Flutter web app, served from another port of the same site.
+///     .defaultSuccessUrl('http://localhost:5050/', alwaysUse: true)
+///     .userInfoEndpoint((userInfo) => userInfo
+///         .userAuthoritiesMapper(KeycloakRealmRolesMapper())));
+/// ```
+///
+/// Spring (Java): `OAuth2LoginConfigurer`.
+final class OAuth2LoginConfigurer {
+  OAuth2LoginConfigurer._();
+
+  String? _loginPage;
+  String? _defaultSuccessUrl;
+  bool _alwaysUseDefaultSuccessUrl = false;
+  String? _failureUrl;
+  AuthenticationSuccessHandler? _successHandler;
+  AuthenticationFailureHandler? _failureHandler;
+  ClientRegistrationRepository? _clientRegistrationRepository;
+  OAuth2AuthorizedClientRepository? _authorizedClientRepository;
+  OidcIdTokenDecoder? _idTokenDecoder;
+  final _authorization = AuthorizationEndpointConfig._();
+  final _redirection = RedirectionEndpointConfig._();
+  final _token = TokenEndpointConfig._();
+  final _userInfo = UserInfoEndpointConfig._();
+
+  /// Uses your own login page at [url] instead of the generated one; the
+  /// browsers that must log in are sent there.
+  ///
+  /// Serve it from a controller, let everyone reach it
+  /// (`requestMatchers('/sign-in').permitAll()`), and link to
+  /// `/oauth2/authorization/{registrationId}` for each provider.
+  OAuth2LoginConfigurer loginPage(String url) {
+    _loginPage = url;
+    return this;
+  }
+
+  /// Sets where the browser goes after a login when no page was saved
+  /// before it, `/` by default; with [alwaysUse], in every case.
+  ///
+  /// [url] is a path of this application or an absolute `http(s)` URL,
+  /// such as the address of a Flutter web app served from another port
+  /// (`http://localhost:5050/`). Only this configuration decides it: no
+  /// request parameter can send the browser elsewhere (no open redirect).
+  ///
+  /// Throws an [ArgumentError] when [url] is neither.
+  OAuth2LoginConfigurer defaultSuccessUrl(
+    String url, {
+    bool alwaysUse = false,
+  }) {
+    _defaultSuccessUrl = _checkedRedirect(url);
+    _alwaysUseDefaultSuccessUrl = alwaysUse;
+    return this;
+  }
+
+  /// Sets where the browser goes after a failed login; the login page
+  /// with `?error` by default.
+  ///
+  /// Throws an [ArgumentError] when [url] is not a path or an absolute
+  /// `http(s)` URL.
+  OAuth2LoginConfigurer failureUrl(String url) {
+    _failureUrl = _checkedRedirect(url);
+    return this;
+  }
+
+  /// Answers successful logins with [handler] instead of the redirect.
+  OAuth2LoginConfigurer successHandler(AuthenticationSuccessHandler handler) {
+    _successHandler = handler;
+    return this;
+  }
+
+  /// Answers failed logins with [handler] instead of the redirect.
+  OAuth2LoginConfigurer failureHandler(AuthenticationFailureHandler handler) {
+    _failureHandler = handler;
+    return this;
+  }
+
+  /// Sets the path of the provider's callbacks, `/login/oauth2/code/*`
+  /// by default; the same as `redirectionEndpoint((r) => r.baseUri(url))`.
+  OAuth2LoginConfigurer loginProcessingUrl(String url) {
+    _redirection._baseUri = url;
+    return this;
+  }
+
+  /// Uses [repository] instead of the `ClientRegistrationRepository`
+  /// bean.
+  OAuth2LoginConfigurer clientRegistrationRepository(
+    ClientRegistrationRepository repository,
+  ) {
+    _clientRegistrationRepository = repository;
+    return this;
+  }
+
+  /// Keeps the tokens of the logins in [repository] instead of the
+  /// `OAuth2AuthorizedClientRepository` bean.
+  OAuth2LoginConfigurer authorizedClientRepository(
+    OAuth2AuthorizedClientRepository repository,
+  ) {
+    _authorizedClientRepository = repository;
+    return this;
+  }
+
+  /// Keeps the tokens of the logins in [service] (by user name), instead
+  /// of the beans.
+  OAuth2LoginConfigurer authorizedClientService(
+    OAuth2AuthorizedClientService service,
+  ) {
+    _authorizedClientRepository =
+        AuthenticatedPrincipalOAuth2AuthorizedClientRepository(service);
+    return this;
+  }
+
+  /// Checks the ID tokens of OpenID Connect logins with [decoder] instead
+  /// of the `OidcIdTokenDecoder` bean (an [OidcIdTokenDecoderFactory],
+  /// which verifies the signature with the provider's keys).
+  ///
+  /// Spring has no such method: there, the decoder is a
+  /// `JwtDecoderFactory<ClientRegistration>` bean.
+  OAuth2LoginConfigurer idTokenDecoder(OidcIdTokenDecoder decoder) {
+    _idTokenDecoder = decoder;
+    return this;
+  }
+
+  /// Configures the start of the logins
+  /// (`/oauth2/authorization/{registrationId}`).
+  OAuth2LoginConfigurer authorizationEndpoint(
+    Customizer<AuthorizationEndpointConfig> customizer,
+  ) {
+    customizer(_authorization);
+    return this;
+  }
+
+  /// Configures the callback the provider redirects to.
+  OAuth2LoginConfigurer redirectionEndpoint(
+    Customizer<RedirectionEndpointConfig> customizer,
+  ) {
+    customizer(_redirection);
+    return this;
+  }
+
+  /// Configures the exchange of the code at the provider's token
+  /// endpoint.
+  OAuth2LoginConfigurer tokenEndpoint(
+    Customizer<TokenEndpointConfig> customizer,
+  ) {
+    customizer(_token);
+    return this;
+  }
+
+  /// Configures how the user is loaded and which authorities they get.
+  OAuth2LoginConfigurer userInfoEndpoint(
+    Customizer<UserInfoEndpointConfig> customizer,
+  ) {
+    customizer(_userInfo);
+    return this;
+  }
+
+  static String _checkedRedirect(String url) {
+    final path = url.startsWith('/') && !url.startsWith('//');
+    final absolute = RegExp(
+      r'^https?://[^/\\]',
+      caseSensitive: false,
+    ).hasMatch(url);
+    if (!path && !absolute) {
+      throw ArgumentError.value(
+        url,
+        'url',
+        "must start with '/' or with 'http(s)://'",
+      );
+    }
+    return url;
+  }
+
+  _OAuth2Login _build(
+    HttpSecurity http, {
+    required RequestCache requestCache,
+    required SessionAuthenticationStrategy sessionStrategy,
+    required SecurityContextRepository securityContextRepository,
+    required ApplicationEventPublisher? eventPublisher,
+    required bool formLoginEnabled,
+  }) {
+    final registrations =
+        _clientRegistrationRepository ??
+        http._bean<ClientRegistrationRepository>() ??
+        (throw StateError(
+          'oauth2Login() needs a ClientRegistrationRepository: set '
+          'spring.security.oauth2.client.registration.* properties, declare '
+          'a bean, or call oauth2Login((login) => '
+          'login.clientRegistrationRepository(...))',
+        ));
+    HttpTransport? transport;
+    HttpTransport transportOrDefault() =>
+        transport ??= http._bean<HttpTransport>() ?? platformHttpTransport();
+    final tokenClient =
+        _token._client ??
+        http
+            ._bean<
+              OAuth2AccessTokenResponseClient<
+                OAuth2AuthorizationCodeGrantRequest
+              >
+            >() ??
+        DefaultAuthorizationCodeTokenResponseClient(transportOrDefault());
+    final userService =
+        _userInfo._userService ??
+        http._bean<OAuth2UserService<OAuth2UserRequest, OAuth2User>>() ??
+        DefaultOAuth2UserService(transportOrDefault());
+    final oidcUserService =
+        _userInfo._oidcUserService ??
+        http._bean<OAuth2UserService<OidcUserRequest, OidcUser>>() ??
+        OidcUserService(transportOrDefault());
+    final mapper =
+        _userInfo._authoritiesMapper ??
+        http._bean<GrantedAuthoritiesMapper>() ??
+        const NullAuthoritiesMapper();
+    // A server checks the signature: the app decoder of the OAuth2 client
+    // (which trusts TLS) is never taken from the beans.
+    final beanDecoder = http._bean<OidcIdTokenDecoder>();
+    final decoder =
+        _idTokenDecoder ??
+        (beanDecoder is TokenEndpointOidcIdTokenDecoder ? null : beanDecoder) ??
+        OidcIdTokenDecoderFactory(
+          fetcher: transportJwkFetcher(transportOrDefault()),
+        );
+    final authorizedClients =
+        _authorizedClientRepository ??
+        http._bean<OAuth2AuthorizedClientRepository>() ??
+        AuthenticatedPrincipalOAuth2AuthorizedClientRepository(
+          http._bean<OAuth2AuthorizedClientService>() ??
+              InMemoryOAuth2AuthorizedClientService(registrations),
+        );
+    final requestRepository =
+        _authorization._repository ??
+        const HttpSessionOAuth2AuthorizationRequestRepository();
+    final baseUri = _authorization._baseUri;
+    final resolver =
+        _authorization._resolver ??
+        DefaultOAuth2AuthorizationRequestResolver(
+          registrations,
+          authorizationRequestBaseUri: baseUri,
+          contextPath: http.contextPath,
+        );
+    final loginPage = _loginPage ?? '/login';
+    final links = _OAuth2LoginLinks(registrations, baseUri);
+    final loginUrlEntryPoint = LoginUrlAuthenticationEntryPoint(
+      loginPage,
+      contextPath: http.contextPath,
+    );
+    return (
+      redirectFilter: OAuth2AuthorizationRequestRedirectFilter(
+        resolver,
+        authorizationRequestRepository: requestRepository,
+      ),
+      loginFilter: OAuth2LoginAuthenticationFilter(
+        registrations,
+        authorizedClients,
+        ProviderManager([
+          OAuth2LoginAuthenticationProvider(
+            tokenClient,
+            userService,
+            authoritiesMapper: mapper,
+          ),
+          OidcAuthorizationCodeAuthenticationProvider(
+            tokenClient,
+            oidcUserService,
+            idTokenDecoder: decoder,
+            authoritiesMapper: mapper,
+          ),
+        ], eventPublisher: http._bean<AuthenticationEventPublisher>()),
+        filterProcessesUrl: _redirection._baseUri,
+        authorizationRequestRepository: requestRepository,
+        successHandler:
+            _successHandler ??
+            SavedRequestAwareAuthenticationSuccessHandler(
+              requestCache: requestCache,
+              defaultTargetUrl: _defaultSuccessUrl ?? '/',
+              alwaysUseDefaultTargetUrl: _alwaysUseDefaultSuccessUrl,
+              contextPath: http.contextPath,
+            ),
+        failureHandler:
+            _failureHandler ??
+            SimpleUrlAuthenticationFailureHandler(
+              _failureUrl ?? '$loginPage?error',
+              contextPath: http.contextPath,
+            ),
+        sessionStrategy: sessionStrategy,
+        securityContextRepository: securityContextRepository,
+        eventPublisher: eventPublisher,
+      ),
+      entryPoint: _loginPage == null
+          ? _OAuth2LoginEntryPoint(
+              links,
+              loginUrlEntryPoint,
+              loginPage: loginPage,
+              contextPath: http.contextPath,
+              formLoginEnabled: formLoginEnabled,
+            )
+          : loginUrlEntryPoint,
+      links: links,
+    );
+  }
+}
+
+typedef _OAuth2Login = ({
+  OAuth2AuthorizationRequestRedirectFilter redirectFilter,
+  OAuth2LoginAuthenticationFilter loginFilter,
+  AuthenticationEntryPoint entryPoint,
+  _OAuth2LoginLinks links,
+});
+
+/// The settings of the start of OAuth 2.0 logins, in
+/// `oauth2Login((l) => l.authorizationEndpoint(...))`.
+///
+/// Spring (Java): `OAuth2LoginConfigurer.AuthorizationEndpointConfig`.
+final class AuthorizationEndpointConfig {
+  AuthorizationEndpointConfig._();
+
+  String _baseUri = DefaultOAuth2AuthorizationRequestResolver
+      .defaultAuthorizationRequestBaseUri;
+  OAuth2AuthorizationRequestRepository? _repository;
+  OAuth2AuthorizationRequestResolver? _resolver;
+
+  /// Sets the path a login starts at, followed by the registration id;
+  /// `/oauth2/authorization` by default.
+  AuthorizationEndpointConfig baseUri(String uri) {
+    _baseUri = uri;
+    return this;
+  }
+
+  /// Keeps the authorization requests in [repository] instead of the
+  /// session.
+  AuthorizationEndpointConfig authorizationRequestRepository(
+    OAuth2AuthorizationRequestRepository repository,
+  ) {
+    _repository = repository;
+    return this;
+  }
+
+  /// Builds the authorization requests with [resolver], for example to
+  /// add parameters for the provider's page.
+  AuthorizationEndpointConfig authorizationRequestResolver(
+    OAuth2AuthorizationRequestResolver resolver,
+  ) {
+    _resolver = resolver;
+    return this;
+  }
+}
+
+/// The settings of the provider's callback, in
+/// `oauth2Login((l) => l.redirectionEndpoint(...))`.
+///
+/// Spring (Java): `OAuth2LoginConfigurer.RedirectionEndpointConfig`.
+final class RedirectionEndpointConfig {
+  RedirectionEndpointConfig._();
+
+  String _baseUri = OAuth2LoginAuthenticationFilter.defaultFilterProcessesUri;
+
+  /// Sets the path pattern of the callbacks, `/login/oauth2/code/*` by
+  /// default. The registrations' `redirect-uri` must point there.
+  RedirectionEndpointConfig baseUri(String uri) {
+    _baseUri = uri;
+    return this;
+  }
+}
+
+/// The settings of the code exchange, in
+/// `oauth2Login((l) => l.tokenEndpoint(...))`.
+///
+/// Spring (Java): `OAuth2LoginConfigurer.TokenEndpointConfig`.
+final class TokenEndpointConfig {
+  TokenEndpointConfig._();
+
+  OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>? _client;
+
+  /// Exchanges the codes with [client] instead of the bean (or a
+  /// [DefaultAuthorizationCodeTokenResponseClient] on the `HttpTransport`).
+  TokenEndpointConfig accessTokenResponseClient(
+    OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> client,
+  ) {
+    _client = client;
+    return this;
+  }
+}
+
+/// The settings of the user of a login, in
+/// `oauth2Login((l) => l.userInfoEndpoint(...))`.
+///
+/// Spring (Java): `OAuth2LoginConfigurer.UserInfoEndpointConfig`.
+final class UserInfoEndpointConfig {
+  UserInfoEndpointConfig._();
+
+  OAuth2UserService<OAuth2UserRequest, OAuth2User>? _userService;
+  OAuth2UserService<OidcUserRequest, OidcUser>? _oidcUserService;
+  GrantedAuthoritiesMapper? _authoritiesMapper;
+
+  /// Loads the users of OAuth 2.0 logins (without `openid`) with
+  /// [service].
+  UserInfoEndpointConfig userService(
+    OAuth2UserService<OAuth2UserRequest, OAuth2User> service,
+  ) {
+    _userService = service;
+    return this;
+  }
+
+  /// Loads the users of OpenID Connect logins with [service].
+  UserInfoEndpointConfig oidcUserService(
+    OAuth2UserService<OidcUserRequest, OidcUser> service,
+  ) {
+    _oidcUserService = service;
+    return this;
+  }
+
+  /// Maps the authorities of the users with [mapper], such as the
+  /// provider's roles to `ROLE_*`.
+  UserInfoEndpointConfig userAuthoritiesMapper(
+    GrantedAuthoritiesMapper mapper,
+  ) {
+    _authoritiesMapper = mapper;
+    return this;
+  }
+}
+
+// The logins the login page lists: the path that starts each and the
+// client name, for the authorization_code registrations of an in-memory
+// repository (Spring lists those of an Iterable repository). Resolved at
+// first use (a registration may be discovered then), kept once every
+// registration resolved.
+final class _OAuth2LoginLinks {
+  _OAuth2LoginLinks(this._repository, String baseUri)
+    : _baseUri = baseUri.endsWith('/')
+          ? baseUri.substring(0, baseUri.length - 1)
+          : baseUri;
+
+  final ClientRegistrationRepository _repository;
+  final String _baseUri;
+  Map<String, String>? _resolved;
+
+  Future<Map<String, String>> resolve() async {
+    final cached = _resolved;
+    if (cached != null) {
+      return cached;
+    }
+    final repository = _repository;
+    if (repository is! InMemoryClientRegistrationRepository) {
+      return _resolved = const {};
+    }
+    final links = <String, String>{};
+    var complete = true;
+    for (final id in repository.registrationIds) {
+      final url = '$_baseUri/${Uri.encodeComponent(id)}';
+      try {
+        final registration = await repository.findByRegistrationId(id);
+        if (registration != null &&
+            registration.authorizationGrantType ==
+                AuthorizationGrantType.authorizationCode) {
+          links[url] = registration.clientName;
+        }
+      } on Object {
+        // The provider cannot be discovered now: listed by its id, and
+        // tried again next time.
+        complete = false;
+        links[url] = id;
+      }
+    }
+    final result = Map<String, String>.unmodifiable(links);
+    if (complete) {
+      _resolved = result;
+    }
+    return result;
+  }
+}
+
+// The entry point of oauth2Login() without a login page of its own: with
+// exactly one registration, and no form login, a browser goes straight
+// to the provider (not a script, and not the login page itself);
+// otherwise to the login page. Spring's OAuth2LoginConfigurer
+// getLoginEntryPoint.
+final class _OAuth2LoginEntryPoint implements AuthenticationEntryPoint {
+  _OAuth2LoginEntryPoint(
+    this._links,
+    this._loginPage, {
+    required String loginPage,
+    required this.contextPath,
+    required this.formLoginEnabled,
+  }) : _defaultLoginPage = AndRequestMatcher([
+         OrRequestMatcher([
+           PathPatternRequestMatcher(loginPage),
+           PathPatternRequestMatcher('/favicon.ico'),
+         ]),
+         _browserMatcher,
+       ]);
+
+  final _OAuth2LoginLinks _links;
+  final AuthenticationEntryPoint _loginPage;
+  final String contextPath;
+  final bool formLoginEnabled;
+  final RequestMatcher _defaultLoginPage;
+
+  @override
+  Future<void> commence(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+    AuthenticationException authException,
+  ) async {
+    if (!formLoginEnabled &&
+        !_xhrMatcher.matches(request) &&
+        !_defaultLoginPage.matches(request)) {
+      final links = await _links.resolve();
+      if (links.length == 1) {
+        return await sendRedirect(
+          response,
+          '$contextPath${links.keys.single}',
+        );
+      }
+    }
+    await _loginPage.commence(request, response, authException);
   }
 }

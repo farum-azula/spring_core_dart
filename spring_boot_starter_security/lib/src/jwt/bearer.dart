@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
+    show OAuth2AuthenticationException, OAuth2Error;
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
@@ -9,23 +11,6 @@ import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 
 const _rfc6750 = 'https://tools.ietf.org/html/rfc6750#section-3.1';
-
-/// A refused OAuth 2.0 login, such as a bad bearer token, with the
-/// standard [error] code to report to the client.
-///
-/// The bearer-token entry point puts the error's code and description in
-/// the `WWW-Authenticate` header of the 401.
-///
-/// Spring (Java): `OAuth2AuthenticationException`.
-class OAuth2AuthenticationException extends AuthenticationException {
-  /// A refusal with [error]; the log [message] defaults to the error's
-  /// description, else its code.
-  OAuth2AuthenticationException(this.error, [String? message, Object? cause])
-    : super(message ?? error.description ?? error.errorCode, cause);
-
-  /// The OAuth 2.0 error, such as `invalid_token`.
-  final OAuth2Error error;
-}
 
 /// A request was refused because its bearer token is malformed, expired,
 /// wrongly signed or otherwise not acceptable.

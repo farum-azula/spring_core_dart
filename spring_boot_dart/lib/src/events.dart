@@ -35,7 +35,7 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// // Before any bean exists: only a listener on the application sees this.
 /// void main(List<String> args) => (springApplication
 ///       ..addListener<ApplicationEnvironmentPreparedEvent>(
-///         (event) => print(event.environment.activeProfiles),
+///         (event) => log.info(event.environment.activeProfiles),
 ///       ))
 ///     .run(args);
 /// ```

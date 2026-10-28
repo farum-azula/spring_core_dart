@@ -72,7 +72,7 @@ dev_dependencies:
 Configuration and data for the tests go to `test/resources/`. During the
 tests it comes first on the classpath, before `lib/resources/`, and it is
 never shipped with the application (see
-[Configuration, section 19](configuration.md#19-tests)):
+[Configuration, section 20](configuration.md#20-tests)):
 
 ```
 test/
@@ -927,7 +927,7 @@ it: a chain that is not awaited never reports a failed expectation.
 | On the result | Spring |
 |---|---|
 | `.andExpect(status: 201, contentType: ..., headers: {...}, body: ..., json: ...)` | `andExpect(status().isCreated())`, `content().contentType(...)`, `header().string(...)`, `content().string(...)`, `content().json(...)`; `body` and `json` take a value or a matcher (`hasLength(1)`, `containsPair(...)`) |
-| `.andDo((result) => print(result.response.bodyText))` | `andDo(print())` |
+| `.andDo((result) => log.info(result.response.bodyText))` | `andDo(print())` |
 | `await ....andReturn()` → `MvcResult` (`request`, `response`) | `andReturn()` |
 
 `andExpect` checks only what is given. `status` must be equal; `contentType`

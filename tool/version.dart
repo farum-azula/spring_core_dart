@@ -28,6 +28,7 @@ const family = [
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
   'spring_boot_starter_web',
+  'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
   'spring_boot_starter_test',
   // Flutter: outside the pub workspace, published with `flutter pub`.

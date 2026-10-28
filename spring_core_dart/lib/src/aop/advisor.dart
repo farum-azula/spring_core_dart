@@ -576,7 +576,7 @@ final class _AdviceJoinPoint implements ProceedingJoinPoint {
 ///   Object? invoke(MethodInvocation invocation) {
 ///     final result = invocation.proceed();
 ///     if (result is Future && invocation is AsyncMethodInvocation) {
-///       return invocation.chain(result, onValue: (v) => print('got $v'));
+///       return invocation.chain(result, onValue: (v) => log.info('got $v'));
 ///     }
 ///     return result;
 ///   }
@@ -587,7 +587,7 @@ final class _AdviceJoinPoint implements ProceedingJoinPoint {
 /// ```java
 /// Object result = invocation.proceed();
 /// if (result instanceof CompletableFuture<?> future) {
-///   return future.thenApply(v -> { System.out.println(v); return v; });
+///   return future.thenApply(v -> { log.info("got {}", v); return v; });
 /// }
 /// return result;
 /// ```

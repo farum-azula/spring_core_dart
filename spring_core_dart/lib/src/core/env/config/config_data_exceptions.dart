@@ -15,7 +15,7 @@
 /// try {
 ///   await ConfigDataEnvironment(environment).processAndApply();
 /// } on ConfigDataResourceNotFoundException catch (error) {
-///   print(error.location); // file:./missing.properties
+///   log.error(error.location); // file:./missing.properties
 /// }
 /// ```
 ///
@@ -65,7 +65,7 @@ final class ConfigDataResourceNotFoundException implements Exception {
 /// try {
 ///   ConfigDataEnvironment(environment).processAndApplySync();
 /// } on ConfigDataLocationNotFoundException catch (error) {
-///   print(error.location); // file:./missing/
+///   log.error(error.location); // file:./missing/
 /// }
 /// ```
 ///
@@ -114,7 +114,7 @@ final class ConfigDataLocationNotFoundException implements Exception {
 /// try {
 ///   ConfigDataEnvironment(environment).processAndApplySync();
 /// } on InvalidConfigDataPropertyException catch (error) {
-///   print('${error.property} in ${error.source}: ${error.reason}');
+///   log.error('${error.property} in ${error.source}: ${error.reason}');
 /// }
 /// ```
 ///
@@ -162,7 +162,7 @@ final class InvalidConfigDataPropertyException implements Exception {
 ///   ConfigDataEnvironment(environment).processAndApplySync();
 /// } on ConfigDataLoadException catch (error) {
 ///   // e.g. an asset resource: use processAndApply() instead
-///   print(error.message);
+///   log.error(error.message);
 /// }
 /// ```
 ///

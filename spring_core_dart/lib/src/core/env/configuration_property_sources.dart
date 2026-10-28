@@ -95,7 +95,7 @@ abstract final class ConfigurationPropertySources {
   /// final names = ConfigurationPropertySources.propertyNames(source);
   /// final parent = ConfigurationPropertyName.of('app.headers');
   /// for (final name in names.keys.where(parent.isParentOf)) {
-  ///   print(name.getElement(2));
+  ///   log.info(name.getElement(2));
   /// }
   /// ```
   static Map<ConfigurationPropertyName, List<String>> propertyNames(

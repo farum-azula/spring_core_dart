@@ -1,0 +1,19 @@
+# Keycloak for the NEON Books examples: single sign-on for the server
+# (example/server_guide) and the Flutter app (example/flutter_guide).
+#
+#   docker compose up        (in example/keycloak)
+#
+# Development only: the admin password, the users' passwords and the
+# server's client secret below are public. The realm (neon-realm.json) is
+# imported at the first start; `docker compose down` forgets everything.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8
+    command: start-dev --import-realm --http-port=8180
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./neon-realm.json:/opt/keycloak/data/import/neon-realm.json:ro

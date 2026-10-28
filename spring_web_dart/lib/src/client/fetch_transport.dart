@@ -21,6 +21,9 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// How it treats an [HttpRequest]:
 ///
 /// - Several values of one header are sent joined with `, `.
+/// - Cookies go with requests to the page's own origin only, unless
+///   [credentials] says otherwise ([FetchCredentials.include] for an API
+///   on another origin of the same site).
 /// - Redirects are followed unless `followRedirects` is `false`; then
 ///   `fetch` runs with `redirect: 'manual'` and the browser gives an
 ///   opaque response with status 0, without its `Location`.
@@ -44,9 +47,15 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// Spring (Java): no browser in Java; the closest is a
 /// `ClientHttpRequestFactory` such as `JdkClientHttpRequestFactory`.
 class FetchHttpTransport implements HttpTransport {
-  /// A transport on `fetch`. It has no settings: the browser decides
-  /// about connections, proxies and certificates.
-  FetchHttpTransport();
+  /// A transport on `fetch`. The browser decides about connections,
+  /// proxies and certificates; [credentials] says whether it sends its
+  /// cookies, which a server that keeps the login in a session cookie
+  /// needs when the API has another origin than the page.
+  FetchHttpTransport({this.credentials = FetchCredentials.sameOrigin});
+
+  /// Whether the browser sends cookies with the requests (the
+  /// `credentials` option of `fetch`).
+  final FetchCredentials credentials;
 
   @override
   Future<HttpResponse> send(HttpRequest request) async {
@@ -166,6 +175,7 @@ class FetchHttpTransport implements HttpTransport {
               headers: headers,
               signal: controller.signal,
               redirect: redirect,
+              credentials: credentials.value.toJS,
             )
           : _RequestInit(
               method: request.method.value.toJS,
@@ -173,6 +183,7 @@ class FetchHttpTransport implements HttpTransport {
               body: (body is Uint8List ? body : Uint8List.fromList(body)).toJS,
               signal: controller.signal,
               redirect: redirect,
+              credentials: credentials.value.toJS,
             );
       final response = await _fetch(request.url.toString().toJS, init).toDart;
       wait.cancel();
@@ -215,6 +226,7 @@ extension type _RequestInit._(JSObject _) implements JSObject {
     JSAny body,
     _AbortSignal signal,
     JSString redirect,
+    JSString credentials,
   });
 }
 

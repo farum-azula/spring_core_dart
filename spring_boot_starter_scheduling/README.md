@@ -166,7 +166,7 @@ To check an expression in code, for example one a user typed:
 
 ```dart
 final cron = CronExpression.parse('0 0 9 * * MON-FRI');
-print(cron.next(DateTime.now())); // when it runs next
+final next = cron.next(DateTime.now()); // when it runs next
 CronExpression.isValid('0 0 25 * * *'); // false: there is no hour 25
 ```
 
@@ -236,8 +236,8 @@ class Reminders {
 }
 
 final task = reminders.poll();
-print(task.nextExecution); // when the next run is due
-task.cancel();             // the screen closed
+final due = task.nextExecution; // when the next run is due
+task.cancel();                  // the screen closed
 ```
 
 | Method | Runs the task |

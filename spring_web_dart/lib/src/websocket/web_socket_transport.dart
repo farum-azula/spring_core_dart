@@ -32,7 +32,7 @@ import 'package:spring_web_dart/src/websocket/platform_web_socket_stub.dart'
 /// final transport = platformWebSocketTransport();
 /// final session =
 ///     await transport.connect(Uri.parse('wss://chat.neon.books/ws'));
-/// session.messages.listen(print);
+/// session.messages.listen(log.info);
 /// session.sendMessage('hello');
 /// await session.close();
 /// ```
@@ -163,7 +163,7 @@ WebSocketTransport platformWebSocketTransport() =>
 ///   await transport.connect(url, timeout: const Duration(seconds: 5));
 /// } on WebSocketException catch (error) {
 ///   // Tell a slow server from one that refused.
-///   print(error.isTimeout ? 'chat is not answering' : error.message);
+///   log.warning(error.isTimeout ? 'chat is not answering' : error.message);
 /// }
 /// ```
 ///

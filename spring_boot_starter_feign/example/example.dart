@@ -5,9 +5,6 @@
 //
 //   dart run example/example.dart
 
-// The example shows its results on the console.
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
@@ -59,22 +56,39 @@ class Shop {
   }
 }
 
+/// Reads from the catalog once the application has started and logs what
+/// it got; `@Log` gives it the `log` getter.
+@Component()
+@Log(topic: 'example')
+class ShopTour implements CommandLineRunner {
+  ShopTour(this.shop, this.catalog);
+
+  final Shop shop;
+  final CatalogClient catalog;
+
+  @override
+  Future<void> run(List<String> args) async {
+    final dune = await shop.title('978-0');
+    final missing = await shop.title('404');
+    final isbns = [for (final book in await catalog.search('du')) book.isbn];
+    log
+      ..info('title: $dune') // title: Dune
+      ..info('title: $missing') // title: null
+      ..info('search: $isbns'); // search: [978-0]
+    await for (final change in catalog.stock()) {
+      // 978-0: 4 left, then 978-1: 0 left
+      log.info('${change.isbn}: ${change.copies} left');
+    }
+  }
+}
+
 @SpringBootApplication()
 Future<void> main(List<String> args) async {
   final server = await _catalogServer();
-  final context = springApplication.run(
+  final context = await springApplication.runAsync(
     args,
     properties: {'catalog.url': 'http://127.0.0.1:${server.port}'},
   );
-  final shop = context.getBean<Shop>();
-  final catalog = context.getBean<CatalogClient>();
-
-  print(await shop.title('978-0')); // Dune
-  print(await shop.title('404')); // null
-  print([for (final book in await catalog.search('du')) book.isbn]); // [978-0]
-  await for (final change in catalog.stock()) {
-    print('${change.isbn}: ${change.copies} left'); // 978-0: 4, 978-1: 0
-  }
 
   await context.closeAsync();
   await server.close(force: true);

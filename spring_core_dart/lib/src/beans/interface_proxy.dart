@@ -131,7 +131,7 @@ final class ProxyMethod {
 /// // In a handler factory: read the client annotation and the methods.
 /// final client = metadata.annotation<FeignClient>()!;
 /// for (final method in metadata.methods) {
-///   print('${metadata.typeName}.${method.name}');
+///   log.debug('${metadata.typeName}.${method.name}');
 /// }
 /// ```
 ///
@@ -180,7 +180,7 @@ final class InterfaceMetadata<T extends Object> {
 /// final class LoggingHandler implements InvocationHandler {
 ///   @override
 ///   Object? invoke(ProxyMethod method, List<Object?> arguments) {
-///     print('${method.name}($arguments)');
+///     log.info('${method.name}($arguments)');
 ///     return null;
 ///   }
 /// }

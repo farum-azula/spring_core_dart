@@ -307,7 +307,10 @@ _i2.BeanModule get $application => _i2.BeanModule(
         r.dependency<_i1.Greeter>(name: r'greeter'),
         r.dependency<_i1.GreetingProperties>(name: r'properties'),
       ),
-      annotations: const [_i2.Component()],
+      annotations: const [
+        _i2.Component(),
+        _i2.Log(topic: r'greeting'),
+      ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -319,8 +322,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'args'],
             targetTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'greeting'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'greeter',
@@ -330,8 +336,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Greeter',
             targetTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'greeting'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
           _i2.MethodSignature(
             name: r'properties',
@@ -341,8 +350,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'GreetingProperties',
             targetTypes: [r'GreetOnStartup', r'CommandLineRunner'],
-            targetAnnotations: [_i2.Component()],
-            targetAnnotationTypes: [r'Component'],
+            targetAnnotations: [
+              _i2.Component(),
+              _i2.Log(topic: r'greeting'),
+            ],
+            targetAnnotationTypes: [r'Component', r'Log'],
           ),
         ],
         create: (target, invoker) =>
@@ -440,7 +452,7 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '1c28b41d',
+  fingerprint: '4fbf47ae',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -468,3 +480,8 @@ Future<_i5.ConfigurableApplicationContext> reloadApplicationAsync(
   _i5.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// `@Log` of [GreetOnStartup]: the logger 'greeting'.
+extension $GreetOnStartupLog on _i1.GreetOnStartup {
+  _i2.SpringLog get log => const _i2.SpringLog(r'greeting');
+}

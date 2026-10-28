@@ -14,7 +14,7 @@ import 'package:spring_core_dart/src/core/convert/default_conversion_service.dar
 /// try {
 ///   BeanWrapper(person).getPropertyValue('nickname');
 /// } on NotReadablePropertyException catch (e) {
-///   print(e.propertyName); // nickname
+///   log.warning(e.propertyName); // nickname
 /// }
 /// ```
 ///
@@ -23,7 +23,7 @@ import 'package:spring_core_dart/src/core/convert/default_conversion_service.dar
 /// try {
 ///   new BeanWrapperImpl(person).getPropertyValue("nickname");
 /// } catch (NotReadablePropertyException e) {
-///   System.out.println(e.getPropertyName());
+///   log.warn(e.getPropertyName());
 /// }
 /// ```
 class NotReadablePropertyException extends BeansException {
@@ -56,7 +56,7 @@ class NotReadablePropertyException extends BeansException {
 /// try {
 ///   BeanWrapper(person).setPropertyValue('id', 'p2'); // final field
 /// } on NotWritablePropertyException catch (e) {
-///   print(e.message); // ... 'id' of Person: read-only
+///   log.warning(e.message); // ... 'id' of Person: read-only
 /// }
 /// ```
 ///
@@ -65,7 +65,7 @@ class NotReadablePropertyException extends BeansException {
 /// try {
 ///   new BeanWrapperImpl(person).setPropertyValue("id", "p2");
 /// } catch (NotWritablePropertyException e) {
-///   System.out.println(e.getMessage());
+///   log.warn(e.getMessage());
 /// }
 /// ```
 class NotWritablePropertyException extends BeansException {
@@ -99,7 +99,7 @@ class NotWritablePropertyException extends BeansException {
 /// try {
 ///   BeanWrapper(person).setPropertyValue('items[', 'x');
 /// } on InvalidPropertyException catch (e) {
-///   print(e.propertyName); // items[
+///   log.warning(e.propertyName); // items[
 /// }
 /// ```
 ///
@@ -127,7 +127,7 @@ class InvalidPropertyException extends BeansException {
 /// try {
 ///   BeanWrapper(account).setPropertyValue('iban', 'nope');
 /// } on MethodInvocationException catch (e) {
-///   print(e.cause); // what the setter threw
+///   log.warning(e.cause); // what the setter threw
 /// }
 /// ```
 ///
@@ -155,7 +155,7 @@ class MethodInvocationException extends BeansException {
 /// try {
 ///   BeanWrapper(Person()).setPropertyValue('address.city', 'Lyon');
 /// } on NullValueInNestedPathException catch (e) {
-///   print(e.propertyName); // address
+///   log.warning(e.propertyName); // address
 /// }
 /// ```
 ///
@@ -164,7 +164,7 @@ class MethodInvocationException extends BeansException {
 /// try {
 ///   new BeanWrapperImpl(new Person()).setPropertyValue("address.city", "x");
 /// } catch (NullValueInNestedPathException e) {
-///   System.out.println(e.getPropertyName());
+///   log.warn(e.getPropertyName());
 /// }
 /// ```
 class NullValueInNestedPathException extends BeansException {
@@ -189,7 +189,7 @@ class NullValueInNestedPathException extends BeansException {
 /// try {
 ///   BeanWrapper(person).setPropertyValue('age', 'old');
 /// } on TypeMismatchException catch (e) {
-///   print('${e.propertyName}: ${e.requiredType}'); // age: int
+///   log.warning('${e.propertyName}: ${e.requiredType}'); // age: int
 /// }
 /// ```
 ///
@@ -198,7 +198,7 @@ class NullValueInNestedPathException extends BeansException {
 /// try {
 ///   new BeanWrapperImpl(person).setPropertyValue("age", "old");
 /// } catch (TypeMismatchException e) {
-///   System.out.println(e.getPropertyName() + ": " + e.getRequiredType());
+///   log.warn(e.getPropertyName() + ": " + e.getRequiredType());
 /// }
 /// ```
 class TypeMismatchException extends BeansException {
@@ -238,7 +238,7 @@ class TypeMismatchException extends BeansException {
 /// try {
 ///   wrapper.setPropertyValues({'age': 'old', 'nickname': 'x'});
 /// } on PropertyBatchUpdateException catch (e) {
-///   e.exceptions.forEach(print); // one entry per failed property
+///   e.exceptions.forEach(log.warning); // one entry per failed property
 /// }
 /// ```
 ///
@@ -248,7 +248,7 @@ class TypeMismatchException extends BeansException {
 ///   wrapper.setPropertyValues(new MutablePropertyValues(values));
 /// } catch (PropertyBatchUpdateException e) {
 ///   for (PropertyAccessException ex : e.getPropertyAccessExceptions()) {
-///     System.out.println(ex);
+///     log.warn(ex.getMessage());
 ///   }
 /// }
 /// ```

@@ -164,7 +164,10 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       r.dependency<_i1.Checkout>(name: r'checkout'),
       r.dependency<_i4.LogBuffer>(name: r'logs'),
     ),
-    annotations: const [_i2.Component()],
+    annotations: const [
+      _i2.Component(),
+      _i2.Log(topic: r'shop.startup'),
+    ],
     aopProxy: _i2.AopProxyFactory(
       signatures: const [
         _i2.MethodSignature(
@@ -176,8 +179,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           parameterTypes: [r'List'],
           parameterNames: [r'args'],
           targetTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'shop.startup'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'checkout',
@@ -187,8 +193,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'Checkout',
           targetTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'shop.startup'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
           name: r'logs',
@@ -198,8 +207,11 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'LogBuffer',
           targetTypes: [r'PayOnStartup', r'CommandLineRunner'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'shop.startup'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
         ),
       ],
       create: (target, invoker) =>
@@ -262,7 +274,7 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '68261e88',
+  fingerprint: '944af02e',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -294,4 +306,9 @@ Future<_i5.ConfigurableApplicationContext> reloadApplicationAsync(
 /// `@Log` of [Checkout]: the logger 'shop.checkout'.
 extension $CheckoutLog on _i1.Checkout {
   _i2.SpringLog get log => const _i2.SpringLog(r'shop.checkout');
+}
+
+/// `@Log` of [PayOnStartup]: the logger 'shop.startup'.
+extension $PayOnStartupLog on _i1.PayOnStartup {
+  _i2.SpringLog get log => const _i2.SpringLog(r'shop.startup');
 }

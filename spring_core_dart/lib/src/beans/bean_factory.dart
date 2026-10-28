@@ -200,7 +200,7 @@ abstract interface class HierarchicalBeanFactory implements BeanFactory {
 /// ```dart
 /// // Log which beans implement Greeter, then use all of them in order.
 /// for (final name in factory.getBeanNamesForType(Greeter)) {
-///   print(name);
+///   log.info(name);
 /// }
 /// final greeters = factory.getBeansOfType<Greeter>(); // name -> bean
 /// final ordered = factory.getSortedBeans<Greeter>();

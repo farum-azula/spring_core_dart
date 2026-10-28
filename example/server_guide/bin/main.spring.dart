@@ -16,15 +16,17 @@ import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i7;
-import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
     as _i8;
-import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
     as _i9;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i10;
+import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
+    as _i10;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i11;
+    as _i12;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
 _i1.BeanModule get $application => _i1.BeanModule(
@@ -37,6 +39,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
     ),
     r'application-prod.yml': _i1.EmbeddedResource.text(
       "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  servlet:\n    session:\n      cookie:\n        secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n  logback:\n    rollingpolicy:\n      max-file-size: 10MB\n      max-history: 5\n",
+    ),
+    r'application-sso.properties': _i1.EmbeddedResource.text(
+      '# The sso profile: single sign-on with Keycloak (example/keycloak, the\n# realm `neon` on port 8180) instead of the form login. Chapter 4.\n#   dart run bin/main.dart --spring.profiles.active=dev,sso\n\n# Where the browser goes after a Keycloak login or logout: the Flutter web\n# app (`flutter run -d chrome --web-port 5050` in example/flutter_guide).\nneon.app.web-url=http://localhost:5050/\n\n# --- oauth2Login(): this server logs browsers in (Flutter web) -----------\n# A confidential client: the server has a secret, the browser never sees\n# the tokens. Keycloak sends the browser back to the default redirect URI,\n# {baseUrl}/login/oauth2/code/{registrationId}\n# (http://localhost:8080/login/oauth2/code/keycloak).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-server\n# A development value, public in example/keycloak/neon-realm.json. Any\n# real Keycloak gets its own secret, from the environment:\n# NEON_KEYCLOAK_SECRET=... dart run bin/main.dart ...\nspring.security.oauth2.client.registration.keycloak.client-secret=\${NEON_KEYCLOAK_SECRET:neon-server-dev-secret}\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# Everything else (endpoints, keys) comes from the issuer\'s metadata.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# The user\'s name is `ada` or `root`, as with the form login (orders\n# belong to a name), not Keycloak\'s id (`sub`).\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n# --- Bearer tokens: the native apps log in themselves ---------------------\n# Their access tokens are checked against the realm\'s keys, issuer and\n# audience (Keycloak adds `neon-api` to the tokens of neon-app).\nspring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.resourceserver.jwt.audiences=neon-api\nspring.security.oauth2.resourceserver.jwt.principal-claim-name=preferred_username\n# The realm roles, in the token\'s `roles` claim: USER -> ROLE_USER.\nspring.security.oauth2.resourceserver.jwt.authorities-claim-name=roles\nspring.security.oauth2.resourceserver.jwt.authority-prefix=ROLE_\n',
     ),
     r'application.properties': _i1.EmbeddedResource.text(
       '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `classpath:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:classpath:config/supplier.properties\n# MessageSource: classpath:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.servlet.session.timeout=30m\nspring.servlet.multipart.max-file-size=2MB\nspring.servlet.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.jackson.default-property-inclusion=non_null\nspring.jackson.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.cloud.openfeign.client.config.default.connect-timeout=2s\nspring.cloud.openfeign.client.config.default.read-timeout=5s\nspring.cloud.openfeign.client.config.supplier-offers.logger-level=basic\nspring.cloud.openfeign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nspring.config.activate.on-profile=!prod\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
@@ -89,12 +94,28 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     _i5.springBootStarterCacheAutoConfiguration,
     _i6.springBootStarterFeignAutoConfiguration,
     _i7.springBootStarterLoggingAutoConfiguration,
-    _i8.springBootStarterSchedulingAutoConfiguration,
-    _i9.springBootStarterSecurityAutoConfiguration,
-    _i10.springBootStarterWebAutoConfiguration,
-    _i11.springBootStarterWebsocketAutoConfiguration,
-    _i12.springSecurityCoreAutoConfiguration,
+    _i8.springBootStarterOauth2ClientAutoConfiguration,
+    _i9.springBootStarterSchedulingAutoConfiguration,
+    _i10.springBootStarterSecurityAutoConfiguration,
+    _i10.springBootStarterSecurityOAuth2ClientAutoConfiguration,
+    _i11.springBootStarterWebAutoConfiguration,
+    _i12.springBootStarterWebsocketAutoConfiguration,
+    _i13.springSecurityCoreAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i8.springBootStarterOauth2ClientAutoConfiguration:
+        const _i3.AutoConfigurationModule(
+          after: ['springBootStarterFlutterAutoConfiguration'],
+        ),
+    _i10.springBootStarterSecurityAutoConfiguration:
+        const _i3.AutoConfigurationModule(
+          after: ['springBootStarterOauth2ClientAutoConfiguration'],
+        ),
+    _i10.springBootStarterSecurityOAuth2ClientAutoConfiguration:
+        const _i3.AutoConfigurationModule(
+          before: ['springBootStarterOauth2ClientAutoConfiguration'],
+        ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -130,6 +151,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'LOGGING_PATTERN_CONSOLE': const String.fromEnvironment(
         'LOGGING_PATTERN_CONSOLE',
       ),
+    if (const bool.hasEnvironment('NEON_APP_WEBURL'))
+      'NEON_APP_WEBURL': const String.fromEnvironment('NEON_APP_WEBURL'),
     if (const bool.hasEnvironment('NEON_CATALOG_PAGESIZE'))
       'NEON_CATALOG_PAGESIZE': const String.fromEnvironment(
         'NEON_CATALOG_PAGESIZE',
@@ -145,6 +168,10 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('NEON_COVERS_DIRECTORY'))
       'NEON_COVERS_DIRECTORY': const String.fromEnvironment(
         'NEON_COVERS_DIRECTORY',
+      ),
+    if (const bool.hasEnvironment('NEON_KEYCLOAK_SECRET'))
+      'NEON_KEYCLOAK_SECRET': const String.fromEnvironment(
+        'NEON_KEYCLOAK_SECRET',
       ),
     if (const bool.hasEnvironment('NEON_ORDERS_SHIPPINGDELAY'))
       'NEON_ORDERS_SHIPPINGDELAY': const String.fromEnvironment(
@@ -336,6 +363,83 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_PROFILES_INCLUDE': const String.fromEnvironment(
         'SPRING_PROFILES_INCLUDE',
       ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUERURI',
+    ))
+      'SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUERURI':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUERURI',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERNAMEATTRIBUTE',
+    ))
+      'SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERNAMEATTRIBUTE':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERNAMEATTRIBUTE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTID',
+    ))
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTID':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTID',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTNAME',
+    ))
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTNAME':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTNAME',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTSECRET',
+    ))
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTSECRET':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTSECRET',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_SCOPE',
+    ))
+      'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_SCOPE':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_SCOPE',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES',
+    ))
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUTHORITIESCLAIMNAME',
+    ))
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUTHORITIESCLAIMNAME':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUTHORITIESCLAIMNAME',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUTHORITYPREFIX',
+    ))
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUTHORITYPREFIX':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUTHORITYPREFIX',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI',
+    ))
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI',
+          ),
+    if (const bool.hasEnvironment(
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_PRINCIPALCLAIMNAME',
+    ))
+      'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_PRINCIPALCLAIMNAME':
+          const String.fromEnvironment(
+            'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_PRINCIPALCLAIMNAME',
+          ),
     if (const bool.hasEnvironment('SPRING_SERVLET_MULTIPART_MAXFILESIZE'))
       'SPRING_SERVLET_MULTIPART_MAXFILESIZE': const String.fromEnvironment(
         'SPRING_SERVLET_MULTIPART_MAXFILESIZE',
@@ -383,6 +487,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'logging.pattern.console': const String.fromEnvironment(
         'logging.pattern.console',
       ),
+    if (const bool.hasEnvironment('neon.app.web-url'))
+      'neon.app.web-url': const String.fromEnvironment('neon.app.web-url'),
     if (const bool.hasEnvironment('neon.catalog.page-size'))
       'neon.catalog.page-size': const String.fromEnvironment(
         'neon.catalog.page-size',
@@ -594,6 +700,83 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.profiles.include': const String.fromEnvironment(
         'spring.profiles.include',
       ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.client.provider.keycloak.issuer-uri',
+    ))
+      'spring.security.oauth2.client.provider.keycloak.issuer-uri':
+          const String.fromEnvironment(
+            'spring.security.oauth2.client.provider.keycloak.issuer-uri',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.client.provider.keycloak.user-name-attribute',
+    ))
+      'spring.security.oauth2.client.provider.keycloak.user-name-attribute':
+          const String.fromEnvironment(
+            'spring.security.oauth2.client.provider.keycloak.user-name-attribute',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.client.registration.keycloak.client-id',
+    ))
+      'spring.security.oauth2.client.registration.keycloak.client-id':
+          const String.fromEnvironment(
+            'spring.security.oauth2.client.registration.keycloak.client-id',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.client.registration.keycloak.client-name',
+    ))
+      'spring.security.oauth2.client.registration.keycloak.client-name':
+          const String.fromEnvironment(
+            'spring.security.oauth2.client.registration.keycloak.client-name',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.client.registration.keycloak.client-secret',
+    ))
+      'spring.security.oauth2.client.registration.keycloak.client-secret':
+          const String.fromEnvironment(
+            'spring.security.oauth2.client.registration.keycloak.client-secret',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.client.registration.keycloak.scope',
+    ))
+      'spring.security.oauth2.client.registration.keycloak.scope':
+          const String.fromEnvironment(
+            'spring.security.oauth2.client.registration.keycloak.scope',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.resourceserver.jwt.audiences',
+    ))
+      'spring.security.oauth2.resourceserver.jwt.audiences':
+          const String.fromEnvironment(
+            'spring.security.oauth2.resourceserver.jwt.audiences',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.resourceserver.jwt.authorities-claim-name',
+    ))
+      'spring.security.oauth2.resourceserver.jwt.authorities-claim-name':
+          const String.fromEnvironment(
+            'spring.security.oauth2.resourceserver.jwt.authorities-claim-name',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.resourceserver.jwt.authority-prefix',
+    ))
+      'spring.security.oauth2.resourceserver.jwt.authority-prefix':
+          const String.fromEnvironment(
+            'spring.security.oauth2.resourceserver.jwt.authority-prefix',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.resourceserver.jwt.issuer-uri',
+    ))
+      'spring.security.oauth2.resourceserver.jwt.issuer-uri':
+          const String.fromEnvironment(
+            'spring.security.oauth2.resourceserver.jwt.issuer-uri',
+          ),
+    if (const bool.hasEnvironment(
+      'spring.security.oauth2.resourceserver.jwt.principal-claim-name',
+    ))
+      'spring.security.oauth2.resourceserver.jwt.principal-claim-name':
+          const String.fromEnvironment(
+            'spring.security.oauth2.resourceserver.jwt.principal-claim-name',
+          ),
     if (const bool.hasEnvironment('spring.servlet.multipart.max-file-size'))
       'spring.servlet.multipart.max-file-size': const String.fromEnvironment(
         'spring.servlet.multipart.max-file-size',
@@ -605,7 +788,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '57439b66',
+  fingerprint: 'c4009401',
 );
 
 /// Starts the application: config files, environment, context, runners

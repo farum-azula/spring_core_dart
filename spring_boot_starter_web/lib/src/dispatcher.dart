@@ -78,6 +78,7 @@ abstract interface class WebFilterChain {
 /// ```dart
 /// // Requests are timed, except the health checks of the load balancer.
 /// @Component()
+/// @Log()
 /// class TimingFilter extends OncePerRequestFilter {
 ///   @override
 ///   bool shouldNotFilter(ServerHttpRequest request) =>
@@ -87,7 +88,7 @@ abstract interface class WebFilterChain {
 ///   Future<void> doFilterInternal(request, response, chain) async {
 ///     final watch = Stopwatch()..start();
 ///     await chain.doFilter(request, response);
-///     print('${request.path} took ${watch.elapsed}');
+///     log.info('${request.path} took ${watch.elapsed}');
 ///   }
 /// }
 /// ```

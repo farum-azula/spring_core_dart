@@ -236,7 +236,7 @@ abstract interface class HandlerMethodArgumentResolver {
 ///   @override
 ///   void afterCompletion(request, response, handler, error) {
 ///     final start = request.attributes['start'] as DateTime;
-///     print('${handler.description}: ${DateTime.now().difference(start)}');
+///     log.info('${handler.description}: ${DateTime.now().difference(start)}');
 ///   }
 /// }
 /// ```
