@@ -10,14 +10,19 @@
 import 'package:flutter/foundation.dart' as _i2;
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i6;
-import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i8;
+import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
+    as _i9;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i5;
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i9;
+    as _i10;
+import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i11;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
 
 import 'example.dart' as _i1;
 
@@ -146,9 +151,25 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
   [$application],
   autoConfigurations: [
     _i7.springBootAutoConfiguration,
-    _i8.springBootStarterFlutterAutoConfiguration,
-    _i9.springBootStarterLoggingAutoConfiguration,
+    _i8.springBootStarterFeignAutoConfiguration,
+    _i9.springBootStarterFlutterAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    _i11.springBootStarterOauth2ClientAutoConfiguration,
+    _i12.springSecurityCoreAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i9.springBootStarterFlutterAutoConfiguration:
+        const _i6.AutoConfigurationModule(
+          before: [
+            'springBootStarterOauth2ClientAutoConfiguration',
+            'OAuth2ClientAutoConfiguration',
+          ],
+        ),
+    _i11.springBootStarterOauth2ClientAutoConfiguration:
+        const _i6.AutoConfigurationModule(
+          after: ['springBootStarterFlutterAutoConfiguration'],
+        ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -195,7 +216,7 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '113df3e5',
+  fingerprint: '9bf87b7e',
 );
 
 /// Starts the application: config files, environment, context, runners
