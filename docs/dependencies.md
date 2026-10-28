@@ -3,12 +3,20 @@
 Every package the spring_core_dart family uses, who publishes it, what
 depends on what, and the rule that decides what may be added.
 
+Why it matters: every package a framework depends on ends up in the
+applications built on it, with its bugs, its vulnerabilities and its
+maintainers' decisions. Keeping that list short and limited to the Dart
+and Flutter teams means an application that adds this family adds
+almost nothing else to trust. Read this page when you add a dependency
+to a package of the repository, or when you want to know what your
+application downloads.
+
 > **The rule: only packages of the Dart and Flutter teams.** The packages
 > of this repository use each other, the Dart SDK, the Flutter SDK and
-> packages published on pub.dev by the Dart and Flutter teams. Everything
-> else is forbidden, transitive dependencies included, unless it is listed
-> as an exception with a reason ([section 2](#2-exceptions)). CI enforces
-> it.
+> packages published on pub.dev by the Dart and Flutter teams. Every
+> other package is forbidden, transitive dependencies included, unless it
+> is listed as an exception with a reason ([section 2](#2-exceptions)). CI
+> enforces it.
 
 **Contents**
 
@@ -45,29 +53,31 @@ depends on what, and the rule that decides what may be added.
 (`invertase.io`, `verygood.ventures`, people's own domains), packages
 without a verified publisher, and git or path dependencies from outside
 this repository. **Transitive dependencies count too**: a Dart team package
-that pulls in a third-party package is forbidden, unless it is an exception.
+that pulls in a third-party package is forbidden, unless that package is
+an exception.
 
 **Stricter for what ships in applications.** The packages that end up in
 an application's `dependencies` (`spring_core_dart`, `spring_boot_dart`,
-`spring_web_dart`, every runtime starter: logging, scheduling, cache,
-Feign, WebSocket, web, Flutter) depend only on packages of this
-repository. Two things are allowed besides them:
+`spring_web_dart`, `spring_security_core` and every runtime starter:
+logging, scheduling, cache, Feign, WebSocket, web, security, Flutter)
+depend only on packages of this repository. Not even other Dart team
+packages are allowed there. Three exceptions:
 
 - the Dart team's `yaml`, which parses `application.yml` (Spring Boot uses
   SnakeYAML for this);
 - the Flutter SDK, for `spring_boot_starter_flutter`;
-- ⚠️ `pointycastle`, a **third-party** package, for the security
+- ⚠️ `pointycastle`, a **third-party** package, for the two security
   packages only, **until it can be removed**
   ([section 2](#pointycastle-third-party-to-be-removed)).
 
-Not even other Dart team packages are allowed there.
-
 **How it is checked.** `tool/check_dependencies.dart` asks pub.dev who
-publishes each package the repository reaches and fails on anything
-outside the rule. CI runs it on every push and pull request (the
-`--flutter` run when a Flutter package is affected). The allowed publishers,
-the runtime list and the exceptions are written in that file, which is the
-source of truth.
+publishes each package the repository reaches, and fails on any package
+outside the rule, showing the path to it. CI runs it on every push and
+pull request (the `--flutter` run when a Flutter package is affected).
+The allowed publishers, the list of runtime packages and the exceptions
+are written in that file, which is the source of truth; this page
+explains them. CI also checks, with `tool/check_app_dependencies.dart`,
+that each starter works as an application's only dependency.
 
 ```bash
 dart pub get
@@ -81,9 +91,11 @@ dart run tool/check_dependencies.dart --flutter
 
 ## 2. Exceptions
 
-Each exception has a reason and, where possible, the packages that may
-pull it (`allowedPackages` in `tool/check_dependencies.dart`). What an
-exception depends on is allowed too, but only through it.
+A package outside the rule is allowed only when it cannot be avoided.
+Each exception has a reason and, where possible, the packages of the
+repository that may pull it in (`allowedPackages` in
+`tool/check_dependencies.dart`). What an exception depends on is allowed
+too, but only through it.
 
 | Package | Publisher | Why it is allowed | Who may pull it |
 |---|---|---|---|
@@ -152,13 +164,14 @@ What comes **only** through `melos`: `ansi_styles`, `conventional_commit`
 `http`, `platform`, `process`, `yaml_edit` and the Flutter team's
 `mustache_template`. None of them reach a package of the repository or an
 application. Dropping `melos` (its scripts can run as `tool/*.dart`) would
-remove all eight third-party packages.
+remove it and the eight third-party packages it brings.
 
 ## 3. The packages of this repository
 
-Published packages go to pub.dev under one version for the whole family.
+Published packages go to pub.dev with one version for the whole family.
 The examples, the language server and the workspace root are not
-published.
+published. The columns list the direct dependencies of each package, as
+in its `pubspec.yaml`.
 
 | Package | What it is | Published | `dependencies` | `dev_dependencies` |
 |---|---|---|---|---|
@@ -173,26 +186,28 @@ published.
 | `spring_boot_starter_websocket` | `@WebSocketClient` clients; `@WebSocketEndpoint` server endpoints (served by the web starter) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_web` | Spring MVC: `@RestController`, the `dart:io` server, `ProblemDetail`, SSE, filters, CORS | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
 | `spring_security_core` | Spring Security's core: `SecurityContextHolder`, users and password encoders, `AuthenticationManager`, `@PreAuthorize` and the other method security annotations | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `pointycastle` (no web: it works in Flutter apps and Feign clients without a server) | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_cache`, `spring_boot_starter_test`, `test` |
-| `spring_boot_starter_security` | Spring Security for the web starter: the filter chain, `HttpSecurity`, HTTP Basic, form login, JWT resource servers, CSRF, CORS, security headers | yes | `spring_boot_dart`, `spring_boot_starter_web`, `spring_security_core`, `spring_web_dart`, `pointycastle` | same as logging |
+| `spring_boot_starter_security` | Spring Security for the web starter: the filter chain, `HttpSecurity`, HTTP Basic, form login, JWT resource servers, CSRF, CORS, security headers | yes | `spring_boot_dart`, `spring_boot_starter_web`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
 | `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets | yes | `flutter`, `flutter_localizations` (SDK), `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
 | `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | `spring_boot_dart`, `spring_core_dart`, `spring_web_dart`, `spring_security_core` and the logging, scheduling, cache, Feign, WebSocket, web and security starters | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
 | `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter`, `spring_security_core`, the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
-| `spring_core_dart_workspace` (root) | The pub workspace | no | — | `lints`, `melos`, `path`, `test`, `yaml` |
+| `spring_core_dart_workspace` (root) | The pub workspace | no | — | `lints`, `melos`, `path`, `test`, `very_good_analysis`, `yaml` |
 
-**Two resolutions.** Everything except the Flutter packages is one pub
-workspace with one `pubspec.lock` at the root. `spring_boot_starter_flutter`
-and the Flutter guide (`example/flutter_guide`) resolve on their own (each with its own
-`pubspec.lock`) and reach the repository's packages by path. The reason is
-that `flutter_test` pins `test_api`, which would hold the workspace's
-`test` and `build_test` on an analyzer older than `build_runner` and
+**Three resolutions.** Everything except the Flutter packages is one pub
+workspace, with one `pubspec.lock` at the root.
+`spring_boot_starter_flutter` and the Flutter guide
+(`example/flutter_guide`) each resolve on their own, with their own
+`pubspec.lock`, and reach the repository's packages by path. The reason:
+`flutter_test` pins `test_api`, which would hold the workspace's `test`
+and `build_test` on an analyzer older than `build_runner` and
 `source_gen` need. Applications are not affected.
 
 ## 4. Graph of the repository's packages
 
-Runtime dependencies (`dependencies:`). An arrow reads "depends on".
-External packages are shown only where they leave the repository.
+The runtime dependencies (`dependencies:`) between the packages of the
+repository. An arrow reads "depends on". External packages are shown
+only where a dependency leaves the repository.
 
 ```mermaid
 graph TD
@@ -277,26 +292,29 @@ spring_core_dart ─────────────── yaml
 └── spring_core_dart_generator               (+ the code generation packages, section 6)
 ```
 
-**Re-exports.** Each package re-exports what it builds on, so an
-application lists only the starter it chooses: `spring_boot_dart` exports
-`spring_core_dart`; every starter exports `spring_boot_starter_logging`;
-Feign, WebSocket and web export `spring_web_dart`;
-`spring_boot_starter_security` exports the web starter and
-`spring_security_core`. See
+**Re-exports.** Each package re-exports the packages it builds on, so an
+application lists and imports only the starter it chooses:
+`spring_boot_dart` exports `spring_core_dart`; the logging starter
+exports `spring_boot_dart`; every other starter and
+`spring_security_core` export the logging starter; Feign, WebSocket and
+web also export `spring_web_dart`; `spring_boot_starter_security`
+exports the web starter and `spring_security_core`; the test starter
+exports `spring_boot_dart` and `spring_web_dart`. The plan behind it:
 [roadmap/dependencies.md](../roadmap/dependencies.md).
 
 **The WebSocket starter's server side runs on the web starter without
 depending on it.** `spring_boot_starter_websocket` registers its
-`WebSocketHandlerMapping` as a `HandlerMapping` of `spring_web_dart`; the
-web starter's dispatcher asks every such bean. An application that wants
-WebSocket endpoints lists both starters; one with WebSocket clients only
-(a Flutter app) lists the WebSocket starter alone and starts no server.
-The web starter has the WebSocket starter as a dev dependency only, for
-its tests.
+`WebSocketHandlerMapping` as a `HandlerMapping` of `spring_web_dart`, and
+the web starter's dispatcher asks every such bean. An application that
+wants WebSocket endpoints lists both starters; one with WebSocket clients
+only (a Flutter app) lists the WebSocket starter alone and starts no
+server. The web and security starters have the WebSocket starter as a
+dev dependency only, for their tests.
 
-**Dev dependencies between the repository's packages.** Every package that
-has an `example/` uses `build_runner` and `spring_core_dart_generator` to
-generate it. The starters test with `spring_boot_starter_test`.
+**Dev dependencies between the repository's packages.** The packages
+whose examples or tests use generated code have `build_runner` and
+`spring_core_dart_generator` as dev dependencies. The starters and
+`spring_security_core` test with `spring_boot_starter_test`.
 `spring_core_dart` has `spring_boot_dart` as a dev dependency for its
 example, and the generator has it for its tests, because generated code
 imports the runtime. Pub allows these cycles because they go through
@@ -304,8 +322,8 @@ imports the runtime. Pub allows these cycles because they go through
 
 ## 5. What an application gets
 
-What an application downloads at run time when it lists one package of
-the family. Packages of the repository are left out.
+The external packages an application gets at run time when it lists one
+package of the family. Packages of the repository are left out.
 
 | The application lists | External packages at run time |
 |---|---|
@@ -351,14 +369,16 @@ flutter_localizations      Flutter SDK
 └── path
 ```
 
-The dev tools (`build_runner`, the generator, `spring_boot_starter_test`,
-`test`) are build and test tools. They are never compiled into the
-application.
+The dev dependencies (`build_runner`, the generator,
+`spring_boot_starter_test`, `test`) are build and test tools. They are
+never compiled into the application.
 
 ## 6. Code generation
 
 `spring_core_dart_generator` and `build_runner` are dev dependencies of
-an application. Together they reach 50 packages, all from the Dart team.
+an application: they run on the developer's machine and in CI, never in
+the application. Together they reach 50 packages, all from the Dart and
+Google teams.
 
 ```
 spring_core_dart_generator
@@ -404,7 +424,7 @@ through `build_config` and `pubspec_parse`.
 | `flutter_test` (Flutter SDK) | `fake_async`, `leak_tracker`, `leak_tracker_testing`, `leak_tracker_flutter_testing` (`flutter.dev`), `test_api`, `matcher`, `vector_math` | the Flutter packages (dev) |
 
 `spring_boot_starter_test` depends on `test_api` and `matcher` rather than
-on `package:test`. That way it works both under `package:test` and under
+on `package:test`. That way it works both with `package:test` and with
 `flutter_test`, which pins its own `test_api`.
 
 ## 8. Lints, the language server and the workspace tools
@@ -424,8 +444,8 @@ on `package:test`. That way it works both under `package:test` and under
 
 ## 9. Every package
 
-Every package from outside the repository in the three resolutions (the
-pub workspace and the two Flutter packages).
+Every package from outside the repository, in the three resolutions (the
+pub workspace and the two Flutter packages). Columns:
 
 - **Publisher:** the publisher on pub.dev. ⚠️ marks a package outside the
   rule, with the exception that allows it.
@@ -450,7 +470,7 @@ pub workspace and the two Flutter packages).
 | `build` | `dart.dev` | codegen, tests | `analyzer`, `crypto`, `glob`, `logging`, `package_config`, `path` | `build_runner`, `build_test`, `source_gen`, `spring_core_dart_generator` |
 | `build_config` | `tools.dart.dev` | codegen, tests | `checked_yaml`, `json_annotation`, `path`, `pubspec_parse` | `build_runner`, `build_test` |
 | `build_daemon` | `tools.dart.dev` | codegen, tests | `built_collection`, `built_value`, `crypto`, `http_multi_server`, `logging`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_runner` |
-| `build_runner` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `async`, `build`, `build_config`, `build_daemon`, `built_collection`, `built_value`, `collection`, `convert`, `crypto`, `dart_style`, `glob`, `graphs`, `http_multi_server`, `io`, `json_annotation`, `logging`, `meta`, `mime`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_test`, `neon_books_app` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `neon_books_server` (dev) |
+| `build_runner` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `async`, `build`, `build_config`, `build_daemon`, `built_collection`, `built_value`, `collection`, `convert`, `crypto`, `dart_style`, `glob`, `graphs`, `http_multi_server`, `io`, `json_annotation`, `logging`, `meta`, `mime`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_test`, `neon_books_app` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev) |
 | `build_test` | `tools.dart.dev` | tests | `build`, `build_config`, `build_runner`, `built_collection`, `crypto`, `glob`, `html`, `logging`, `matcher`, `package_config`, `path`, `stream_transform`, `test`, `test_core`, `watcher` | `spring_core_dart_generator` (dev) |
 | `built_collection` | `dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test`, `built_value`, `code_builder` |
 | `built_value` | `dart.dev` | codegen, tests | `built_collection`, `collection`, `fixnum`, `meta` | `build_daemon`, `build_runner`, `code_builder` |
@@ -499,8 +519,8 @@ pub workspace and the two Flutter packages).
 | `mime` | `tools.dart.dev` | codegen, tests | — | `build_runner`, `shelf_static` |
 | `mustache_template` | `flutter.dev` | melos only | — | `melos` |
 | `node_preamble` | ⚠️ none — exception: pulled by `test` | tests | — | `test` |
-| `package_config` | `tools.dart.dev` | codegen, tests, language server | `meta`, `path` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `coverage`, `dart_style`, `frontend_server_client`, `spring_core_dart_generator` (dev), `test`, `test_core` |
-| `path` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `build`, `build_config`, `build_daemon`, `build_runner`, `build_test`, `cli_launcher`, `cli_util`, `coverage`, `dart_style`, `file`, `flutter_localizations`, `flutter_test`, `frontend_server_client`, `glob`, `intl`, `io`, `leak_tracker`, `melos`, `package_config`, `process`, `shelf`, `shelf_packages_handler`, `shelf_static`, `source_gen`, `source_map_stack_trace`, `source_span`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `stack_trace`, `test`, `test_core`, `watcher` |
+| `package_config` | `tools.dart.dev` | codegen, tests, language server | `meta` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `coverage`, `dart_style`, `frontend_server_client`, `spring_core_dart_generator` (dev), `test`, `test_core` |
+| `path` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `build`, `build_config`, `build_daemon`, `build_runner`, `build_test`, `cli_launcher`, `cli_util`, `coverage`, `dart_style`, `file`, `flutter_localizations`, `flutter_test`, `frontend_server_client`, `glob`, `intl`, `io`, `leak_tracker`, `melos`, `process`, `shelf`, `shelf_packages_handler`, `shelf_static`, `source_gen`, `source_map_stack_trace`, `source_span`, `spring_core_dart_generator`, `spring_core_dart_workspace` (dev), `stack_trace`, `test`, `test_core`, `watcher` |
 | `petitparser` | ⚠️ `lukas-renggli.ch` — only through `melos` | melos only | `collection`, `meta` | `xml` |
 | `platform` | `dart.dev` | melos only | — | `melos`, `process` |
 | `pointycastle` | ⚠️ `bouncycastle.org` — third-party, [to be removed](#pointycastle-third-party-to-be-removed) | app (security) | `collection`, `convert` | `spring_boot_starter_security`, `spring_security_core` |
@@ -524,7 +544,7 @@ pub workspace and the two Flutter packages).
 | `stream_transform` | `tools.dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test` |
 | `string_scanner` | `tools.dart.dev` | app, codegen, tests, language server, melos | `source_span` | `boolean_selector`, `glob`, `http_parser`, `io`, `melos`, `test_api`, `yaml` |
 | `term_glyph` | `tools.dart.dev` | app, codegen, tests, language server, melos | — | `matcher`, `source_span`, `test_api` |
-| `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `neon_books_server` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
+| `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_dart` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
 | `test_api` | `tools.dart.dev` | codegen, tests | `async`, `boolean_selector`, `collection`, `meta`, `source_span`, `stack_trace`, `stream_channel`, `string_scanner`, `term_glyph` | `flutter_test`, `matcher`, `spring_boot_starter_test`, `test`, `test_core` |
 | `test_core` | `tools.dart.dev` | tests | `analyzer`, `args`, `async`, `boolean_selector`, `collection`, `coverage`, `frontend_server_client`, `glob`, `io`, `meta`, `package_config`, `path`, `pool`, `source_map_stack_trace`, `source_maps`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `vm_service`, `yaml` | `build_test`, `test` |
 | `typed_data` | `dart.dev` | app (security), codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `test` |
@@ -543,7 +563,7 @@ pub workspace and the two Flutter packages).
 ## 10. Outside pub.dev
 
 The rule is about Dart and Flutter packages. Two other parts of the
-repository use their own ecosystems:
+repository use other ecosystems:
 
 - **Zed extension** (`extensions/zed/dart_spring`, Rust). Its only crate
   is `zed_extension_api`, Zed's official extension API, which every Zed
@@ -575,6 +595,8 @@ repository use their own ecosystems:
    to `allowedPackages` in `tool/check_dependencies.dart`. Give it a
    reason and `onlyIn` (the packages allowed to pull it), and add it to
    [section 2](#2-exceptions).
-5. **Update this page.** Update the tables in sections 3 and 9.
-   `tool/test/docs_dependency_graph_test.dart` fails when a package of the
-   pub workspace is missing from section 9.
+5. **Update this page:** the tables of sections 3 and 9, and section 2
+   for a new exception. `tool/test/docs_dependency_graph_test.dart` fails
+   when a package of the pub workspace has no row in section 9, a
+   package of the repository is missing from section 3, or an exception
+   of `tool/check_dependencies.dart` is missing from section 2.

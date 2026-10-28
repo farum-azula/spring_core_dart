@@ -115,3 +115,6 @@ The same comment, rewritten:
 | `spring_boot_starter_security` | October 2026 |
 | `spring_core_dart_generator` | October 2026 |
 | `extensions/language_server` | October 2026 |
+
+The READMEs (repository, packages, examples, guides, the Zed extension)
+and `docs/` were rewritten to the same rule in October 2026.

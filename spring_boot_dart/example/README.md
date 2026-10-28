@@ -1,15 +1,21 @@
-# spring_boot_dart: examples
+# spring_boot_dart: example
 
-**What it does:** starts a whole
-[`spring_core_dart`](https://pub.dev/packages/spring_core_dart) application
-from one annotation on `main`: reads the config files, the environment and
-the command line, creates your objects, plugs in installed starters and
+`spring_boot_dart` starts a whole
+[`spring_core_dart`](https://pub.dev/packages/spring_core_dart)
+application from one annotation on `main`. It reads the config files,
+the environment and the command line, creates your objects (beans) and
+wires them together, adds the beans of the starters you depend on, and
 explains clearly what is wrong when something cannot start.
 
-## Setup (the generator is required)
+[`example.dart`](example.dart) is a small but complete application: a
+`@ConfigurationProperties` class for its settings, a `@Service` that
+uses them, a `CommandLineRunner` that prints a greeting at start-up, and
+`@SpringBootApplication` on `main`.
 
-Dart has no runtime reflection, so annotations are turned into code by
-**`spring_core_dart_generator`** at build time:
+## Run it
+
+Dart has no runtime reflection, so the annotations are turned into code
+at build time by **`spring_core_dart_generator`**:
 
 ```yaml
 dependencies:
@@ -19,6 +25,20 @@ dev_dependencies:
   build_runner: ^2.17.0
   spring_core_dart_generator: ^0.4.2
 ```
+
+From the `spring_boot_dart` directory:
+
+```bash
+dart run build_runner build                         # writes example/example.spring.dart
+dart run example/example.dart                       # Hello, World!
+dart run example/example.dart --greeting.name=Ada   # Hello, Ada!
+GREETING_NAME=Grace dart run example/example.dart   # Hello, Grace!
+dart run example/example.dart --greeting.times=3    # three times
+```
+
+The greeting comes after the start-up banner. The sections below walk
+through what the example uses, and the next steps of a real
+application.
 
 ## 1. The whole entry point
 
@@ -36,22 +56,21 @@ dart run build_runner build   # scans lib/ and bin/, writes main.spring.dart
 dart run bin/main.dart
 ```
 
+Every `@Service` and `@Component` of the package is found
+automatically: there are no lists of classes and no setup code. With
+the logging starter (or `logging.level.root=info`), the start is
+reported:
+
 ```text
-Starting my-app using Dart 3.9.0 with PID 4242
+Starting my-app using Dart 3.13.5 with PID 4242
 No active profile set, falling back to 1 default profile: "default"
 Started my-app in 0.042 seconds
 ```
 
-(INFO lines through `SpringLog`: shown with `spring_boot_starter_logging`
-or `logging.level.root=info`.)
-
-Every `@Service` / `@Component` in `lib/` is found automatically — no lists
-of classes, no setup code.
-
 ## 2. Configuration files
 
-Put files in `lib/resources/` (they are embedded into the app, also in
-Flutter, without asset declarations):
+Put the files in `lib/resources/`. They are embedded into the program,
+also in Flutter, without asset declarations:
 
 ```properties
 # lib/resources/application.properties
@@ -63,7 +82,8 @@ db.password=${DB_PASSWORD:changeme}
 shop.name=NEON Books Online
 ```
 
-Values can be overridden without touching the files — later wins:
+A value can be changed without touching the files. The command line
+wins over environment variables, which win over the files:
 
 ```bash
 dart run bin/main.dart --shop.name=Test           # command line
@@ -73,8 +93,8 @@ dart run bin/main.dart --spring.profiles.active=prod
 
 ## 3. Settings as a typed object (`@ConfigurationProperties`)
 
-All `shop.*` keys go into one class, converted and (with `@Validated()`,
-as in Spring Boot) validated at start:
+All `shop.*` keys go into one class, converted to the field types and,
+with `@Validated()` as in Spring Boot, checked at start-up:
 
 ```dart
 @ConfigurationProperties('shop')
@@ -91,12 +111,12 @@ class ShopProperties {
 
 @Service()
 class Shop {
-  Shop(this.properties); // inject it like any object
+  Shop(this.properties); // injected like any bean
   final ShopProperties properties;
 }
 ```
 
-Invalid values stop the start with a readable report:
+An invalid value stops the start with a readable report:
 
 ```text
 APPLICATION FAILED TO START
@@ -113,9 +133,10 @@ Update the application's configuration (lib/resources/application.properties,
 command line or environment).
 ```
 
-## 4. Run code after start (`CommandLineRunner`)
+## 4. Run code after the start (`CommandLineRunner`)
 
 ```dart
+// Says hello once everything is ready.
 @Component()
 class Greeting implements CommandLineRunner {
   Greeting(this.properties);
@@ -126,14 +147,15 @@ class Greeting implements CommandLineRunner {
 }
 ```
 
-`ApplicationRunner` gets parsed arguments (`--mode=batch`, plain values).
-Runners run in `@Order`.
+An `ApplicationRunner` gets the arguments parsed (`--mode=batch`
+options and plain values). Runners run one after another in `@Order`.
 
 ## 5. Beans only when needed (conditions)
 
 ```dart
+// Only when features.recommendations is set, to anything but false.
 @Service()
-@ConditionalOnProperty('features.recommendations')  // only if =true
+@ConditionalOnProperty('features.recommendations')
 class Recommendations { ... }
 
 @Configuration()
@@ -147,7 +169,7 @@ class CacheConfig {
 ## 6. Starters: add a dependency, get the feature
 
 A starter is a package that brings ready-made beans. Add it to
-`pubspec.yaml`, run `build_runner` again — no code:
+`pubspec.yaml` and run `build_runner` again; no code is needed:
 
 ```yaml
 dependencies:
@@ -159,7 +181,7 @@ dev_dependencies:
 ```
 
 Anyone can write one: a `lib/spring_auto_configuration.dart` with an
-`@AutoConfigurationModule()` is all it takes — see
+`@AutoConfigurationModule()` is all it takes. See
 [Writing your own starter](https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_dart#writing-your-own-starter).
 
 ## 7. Clear errors instead of stack traces
@@ -177,8 +199,8 @@ Declare a bean of that type (a @Component class or a @Bean method), check its
 @Profile / conditions, or make the injection point nullable.
 ```
 
-The same for two candidates without `@Primary`, a dependency cycle or a
-missing `${placeholder}`.
+Two candidates without `@Primary`, a dependency cycle or a missing
+`${placeholder}` get the same kind of report.
 
 ## 8. Log levels from properties
 
@@ -189,7 +211,8 @@ logging.level.my_app.payments=debug   # this logger and everything below it
 
 ## 9. Flutter
 
-Use the async variant (config files may be Flutter assets):
+Use the async variant, which can read config files that are Flutter
+assets:
 
 ```dart
 @SpringBootApplication()
@@ -202,9 +225,9 @@ Future<void> main() async {
 ## 10. Hot reload keeps working
 
 After a hot reload, call the generated `reloadApplication` from
-`reassemble()` of your root widget. Changed method bodies keep the running
-beans; new or changed beans (regenerated by `build_runner watch`) restart
-the context with the new code:
+`reassemble()` of your root widget. If only method bodies changed, the
+running beans are kept. New or changed beans (regenerated by
+`build_runner watch`) restart the context with the new code:
 
 ```dart
 @override
@@ -215,21 +238,17 @@ void reassemble() {
 ```
 
 A restart runs your `CommandLineRunner`s again, like a fresh launch. If
-they do "on startup" work that must not repeat (migrations, an
+they do start-up work that must not repeat (migrations, an
 `app_started` analytics event), skip them:
 
 ```dart
 context = reloadApplication(context, runners: false);
 ```
 
-## Try it
+## Further
 
-[`example.dart`](example.dart) next to this file is a whole application:
-`@ConfigurationProperties`, a `@Service`, a `CommandLineRunner` and
-`@SpringBootApplication` on `main` (the generator writes
-`example.spring.dart`):
-`dart run example/example.dart --greeting.name=Ada` → `Hello, Ada!`
-
-A full Spring Boot app with tests:
-[example/ in the repository](https://github.com/farum-azula/spring_core_dart/tree/main/example)
-(`dart run bin/shop.dart`).
+- The package [README](https://pub.dev/packages/spring_boot_dart)
+  describes every feature.
+- The guides build complete applications step by step, with tests: a
+  [server](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide)
+  and a [Flutter app](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide).

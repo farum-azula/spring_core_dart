@@ -1,25 +1,35 @@
 # Flutter testing
 
-> **Status.** Section 2 describes what works today
-> (`spring_boot_starter_test` with `flutter_test`, `SpringScope`). The
-> starter `spring_boot_starter_flutter_test` and everything else on this
-> page is **planned** ([roadmap](../roadmap/spring_boot_starter_flutter_test.md));
-> this page is its specification and may still change.
+> **Status.** This page is mostly a **specification**. What works today:
+> section 2 (`spring_boot_starter_test` under `flutter_test`, with
+> `SpringScope`) and the first example of section 8
+> (`SpringApplicationWidget` in a widget test). The starter
+> `spring_boot_starter_flutter_test` and everything else on this page are
+> **planned** ([roadmap](../roadmap/spring_boot_starter_flutter_test.md));
+> the API described here may still change.
 
-Flutter apps get their own test starter, `spring_boot_starter_flutter_test`.
-It is built on [`spring_boot_starter_test`](testing.md) and re-exports it,
-so everything on the [Testing](testing.md) page works the same in a
-Flutter app: `@SpringBootTest` classes, `@Autowired` fields, `@TestBean`
-fakes, properties and profiles, `@DirtiesContext`, logs. This page adds what
+A widget test of a Spring app needs the app's beans: the widgets get
+their state and services from the application context, not from their
+constructors. So a test starts the application (or the part it needs),
+replaces some beans with fakes, and shows the widget with that context.
+
+Flutter apps get a test starter of their own for this,
+`spring_boot_starter_flutter_test`. It is built on
+[`spring_boot_starter_test`](testing.md) and re-exports it, so everything
+on the [Testing](testing.md) page works the same in a Flutter app:
+`@SpringBootTest` classes, `@Autowired` fields, `@TestBean` fakes,
+properties and profiles, `@DirtiesContext`, logs. This page adds what
 only Flutter has: widget tests, pumping widgets with the test's beans,
-themes, platforms and golden files.
+themes, platforms and golden files. `spring_boot_starter_test` itself
+stays free of Flutter, so Dart packages and servers do not pull Flutter
+in.
 
-| Spring / Flutter | Here |
+| Flutter | Here |
 |---|---|
 | `testWidgets(...)` | a `@WidgetTest()` method taking a `WidgetTester` |
-| `tester.pumpWidget(MaterialApp(home: ...))` | `tester.pumpSpring(...)`: the widget with the test's context and the app widget from the properties |
-| `debugDefaultTargetPlatformOverride` | `@TargetPlatformTest(TargetPlatform.iOS)`: the platform and its profiles |
-| `matchesGoldenFile` | the same, plus `@Golden()` for the theme × platform matrix |
+| `tester.pumpWidget(MaterialApp(home: ...))` | `tester.pumpSpring(...)`: the widget with the test's context, inside the app widget of the properties |
+| `debugDefaultTargetPlatformOverride` | `@TargetPlatformTest(TargetPlatform.iOS)` on the class: the platform and its profiles |
+| `matchesGoldenFile` | the same, plus `@Golden()` for one screenshot per theme |
 
 ## Contents
 
@@ -38,6 +48,8 @@ themes, platforms and golden files.
 
 ## 1. Setup
 
+*Planned.*
+
 ```yaml
 # pubspec.yaml
 dev_dependencies:
@@ -54,22 +66,26 @@ One import gives everything: `springBootTest`, the annotations of
 import 'package:spring_boot_starter_flutter_test/spring_boot_starter_flutter_test.dart';
 ```
 
-Test configuration goes to `test/resources/`, as in a Dart package.
+Test configuration goes to `test/resources/`, as in a Dart package:
+`springBootTest` reads it today already.
 
 ## 2. A widget test today
 
-*Works today*, with `spring_boot_starter_test` and `SpringScope` (a
-counter app; the [Flutter guide](../example/flutter_guide/README.md#11-testing)
-tests every screen this way):
+*Works today*, with `spring_boot_starter_test` as a dev dependency. The
+app is a counter whose `counter.step` property says how much a tap adds.
+The [Flutter guide](../example/flutter_guide/README.md#11-testing) tests
+every screen this way.
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:my_app/main.spring.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_app/main.dart';
+import 'package:my_app/main.spring.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 void main() {
+  // Starts the application once for this file, with a test property.
   final app = springBootTest(
     springApplication,
     properties: {'counter.step': 2},
@@ -95,14 +111,17 @@ void main() {
 }
 ```
 
-`SpringScope` gives the widgets below it the test's context, so
-`context.bean<T>()` and the Spring widgets find the test's beans and
-fakes. `SpringApp` builds the app widget (and themes) from the
-properties.
+- `SpringScope` gives the widgets below it the test's context, so
+  `context.bean<T>()`, the generated getters and the Spring widgets find
+  the test's beans and fakes (`springBootTest(overrides: [...])`).
+- `SpringApp` builds the app widget from the properties, with its
+  themes, texts and locales, as `SpringApplicationWidget(home: ...)`
+  does in the app. A widget that needs no app widget can go directly
+  under `SpringScope`.
 
 ## 3. A widget test class
 
-*Planned.* The same test as a class:
+*Planned.* The same test as a class, the way Spring writes tests:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -128,24 +147,25 @@ class CounterPageTest {
     expect(counter.value, 2);
   }
 
-  @Test() // a plain test in the same class, same context
+  @Test() // a plain test in the same class, with the same context
   void startsAtZero() => expect(counter.value, 0);
 }
 
 void main() => runSpringTests();
 ```
 
-- **`@WidgetTest([name])`** marks a widget test; the method takes a
-  `WidgetTester` and returns `Future<void>`. It runs as `testWidgets`, in
-  Flutter's fake async zone.
-- **`@Test()`** methods still work in the same class, run as `test`.
-- `@Disabled`, `@Tag` and `@TestOptions` apply as for `@Test`;
-  `@WidgetTest(variant: TargetPlatformVariant.mobile())` runs it once per
-  variant, like `testWidgets(variant:)`.
+- **`@WidgetTest([name])`** marks a widget test. The method takes a
+  `WidgetTester` and returns `Future<void>`. It runs as `testWidgets`,
+  in Flutter's fake async zone.
+- **`@Test()`** methods still work in the same class and run as `test`.
+- `@Disabled`, `@Tag` and `@TestOptions` apply as they do to `@Test`.
+  `@WidgetTest(variant: TargetPlatformVariant.mobile())` runs the test
+  once per variant, like `testWidgets(variant:)`.
 
 ## 4. `pumpSpring`
 
-*Planned*, an extension on `WidgetTester` (works in function tests too).
+*Planned.* An extension on `WidgetTester` that shows a widget with the
+test's beans in one call. It works in function tests too.
 
 ```dart
 await tester.pumpSpring(const CounterPage());
@@ -156,11 +176,11 @@ await tester.pumpSpring(page, context: otherContext);      // another context
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `widget` | | what to show |
-| `theme` | `spring.flutter.theme.active` | selects a theme (`ThemeSelection.select`) before pumping |
-| `app` | `true` | `true`: inside `SpringApp(home: widget)`, the app widget of the properties (`MaterialApp`, `CupertinoApp` or `WidgetsApp`, with themes, locale, title). `false`: only `SpringScope` and a `Directionality`, for a widget that needs no app |
-| `context` | the test class's context | the `ApplicationContext` to give the widget |
-| `settle` | `true` | `pumpAndSettle()` afterwards |
+| `widget` | | What to show |
+| `theme` | `spring.flutter.theme.active` | A theme to select (`ThemeSelection.select`) before pumping |
+| `app` | `true` | `true`: inside `SpringApp(home: widget)`, the app widget of the properties (`MaterialApp`, `CupertinoApp` or `WidgetsApp`, with themes, locales, title). `false`: only `SpringScope` and a `Directionality`, for a widget that needs no app widget |
+| `context` | the test class's context | The `ApplicationContext` to give the widget |
+| `settle` | `true` | Calls `pumpAndSettle()` afterwards |
 
 It is short for:
 
@@ -176,8 +196,11 @@ await tester.pumpAndSettle();
 
 ## 5. Beans in widget tests
 
-Everything of [Testing, sections 5–7](testing.md#5-injecting-beans) works:
-inject the beans the widget changes, replace those it calls.
+*Planned* in class form; with functions, `springBootTest(overrides:)`
+and `app.getBean` do the same today.
+
+Everything of [Testing, sections 5–7](testing.md#5-injecting-beans)
+works. Inject the beans the widget shows, and replace those it calls:
 
 ```dart
 @SpringBootTest()
@@ -205,18 +228,23 @@ class CheckoutPageTest {
 }
 ```
 
-- A `@ChangeNotifierComponent` bean changed in the test (`basket.add`)
-  rebuilds the widgets that read it, as in the app; `await tester.pump()`
-  shows the change.
-- Beans with `@PreDestroy` or running timers are closed with the context
-  after the class (or after a `@DirtiesContext` test), not after each
-  `@WidgetTest`, so Flutter's "a Timer is still pending" check does not
-  see them. Cancel a timer the test itself started.
+- A `@ChangeNotifierComponent` bean changed by the test itself
+  (`basket.add`) rebuilds the widgets that read it, as in the app;
+  `await tester.pump()` shows the change.
+- Beans with `@PreDestroy` methods or running timers are closed with the
+  context after the class (or after a `@DirtiesContext` test), not after
+  each `@WidgetTest`. So Flutter's "a Timer is still pending" check does
+  not see them. Cancel a timer the test itself started.
 
 ## 6. Themes
 
-Themes come from the properties ([Configuration, Themes](configuration.md#17-reference-flutter)),
-so a test chooses one with a property, a profile or `pumpSpring(theme:)`:
+*Planned:* the `theme:` parameter and the class form. A property in
+`springBootTest(properties:)` selects a theme today.
+
+Themes come from the properties
+([Configuration, 17. Reference: Flutter](configuration.md#17-reference-flutter)),
+so a test chooses one with a property, a profile or
+`pumpSpring(theme:)`:
 
 ```dart
 @SpringBootTest(properties: {'spring.flutter.theme.active': 'dark'})
@@ -239,29 +267,33 @@ class DarkThemeTest {
 }
 ```
 
-- `active: system` follows `tester.platformDispatcher.platformBrightnessTestValue`:
-  set it to `Brightness.dark` to test the system's dark mode.
-- Fonts from the theme are loaded in tests like in the app (from the
-  assets); golden tests show them, not the test font.
+- With `active: system`, the theme follows
+  `tester.platformDispatcher.platformBrightnessTestValue`: set it to
+  `Brightness.dark` to test the device's dark mode.
+- The theme's fonts are loaded from the assets in tests as in the app,
+  so golden tests show them instead of the test font.
 
 ## 7. Platforms and their profiles
 
-In the app, the platform's profiles are active (`android` + `mobile`,
-`ios` + `mobile`, `macos` + `desktop`, ...). In a test the platform is
-Android unless changed, so the `mobile` and `android` profiles are active
-(today this is the case for `SpringApplicationWidget` tests; `springBootTest`
-adds no platform profile).
+In the app, the platform's profiles are active: `android` and `mobile`,
+`ios` and `mobile`, `macos` and `desktop`, and so on. In a widget test
+the platform is Android unless the test changes it.
 
-*Planned:* `@TargetPlatformTest` on the class sets
-`debugDefaultTargetPlatformOverride` for its tests and adds that platform's
-profiles to the context:
+*Works today:* a test that pumps `SpringApplicationWidget` gets the
+profiles of the test's platform (`mobile` and `android` by default; set
+`debugDefaultTargetPlatformOverride` before pumping for another one).
+`springBootTest` adds no platform profile; pass `profiles:` to it.
+
+*Planned:* `@TargetPlatformTest` on a class sets
+`debugDefaultTargetPlatformOverride` for its tests and adds that
+platform's profiles to the context:
 
 ```dart
 @SpringBootTest()
-@TargetPlatformTest(TargetPlatform.macOS)       // desktop + macos profiles
+@TargetPlatformTest(TargetPlatform.macOS)       // the desktop and macos profiles
 class DesktopMenuTest {
   @Autowired()
-  late MenuLayout layout;                       // the @Profile('desktop') bean
+  late MenuLayout layout;                       // a @Profile(['desktop']) bean
 
   @WidgetTest()
   Future<void> showsTheMenuBar(WidgetTester tester) async {
@@ -271,17 +303,19 @@ class DesktopMenuTest {
 }
 ```
 
-- The profiles belong to the context, so the platform is per class; to
-  test several platforms, write a class per platform, or use
-  `@WidgetTest(variant: ...)` for widget-only differences (the context
-  and its profiles stay the class's).
-- `@TargetPlatformTest(null)`: no platform profile at all.
+- The profiles belong to the context, so the platform is set per class.
+  To test several platforms, write a class per platform. For differences
+  in the widgets only, use `@WidgetTest(variant: ...)`; the context and
+  its profiles stay the class's.
+- `@TargetPlatformTest(null)` adds no platform profile at all.
 
 ## 8. The whole app: `SpringApplicationWidget`
 
-To test the start itself (splash, a failed start, the platform profiles),
-let `SpringApplicationWidget` start the application as `flutter run` does;
-no `@SpringBootTest` context is involved. *Works today:*
+To test the start itself (the splash screen, a failed start, the
+platform profiles), let `SpringApplicationWidget` start the application
+as `flutter run` does. No `springBootTest` context is involved.
+
+*Works today:*
 
 ```dart
 testWidgets('SpringApplicationWidget starts the application', (tester) async {
@@ -293,12 +327,19 @@ testWidgets('SpringApplicationWidget starts the application', (tester) async {
   );
   await tester.pumpAndSettle();
 
-  // The test runs as Android: the mobile profile's title.
-  expect(find.text('Flutter Demo Home Page (mobile)'), findsOneWidget);
+  // The test runs as Android: the phone's profiles are active.
+  final context = SpringScope.of(tester.element(find.byType(CounterPage)));
+  expect(context.environment.activeProfiles, ['mobile', 'android']);
+  expect(find.text('0'), findsOneWidget);
 
-  await tester.pumpWidget(const SizedBox()); // closes the context
+  await tester.pumpWidget(const SizedBox()); // removing the widget closes the context
 });
 ```
+
+`SpringApplicationWidget` takes no test properties or bean overrides. A
+test that needs them passes its own `SpringApplication` built from
+`springApplication`; the Flutter guide does so in
+`test/support/fake_server.dart`.
 
 *Planned:* `tester.pumpSpringApplication(home: ..., properties: {...})`
 does the same with test properties and `test/resources/`, and closes the
@@ -306,9 +347,13 @@ context at the end of the test.
 
 ## 9. Golden files
 
-Golden tests are widget tests with `matchesGoldenFile`; `pumpSpring` gives
-them the real theme and fonts. *Planned:* `@Golden()` runs one widget test
-for each theme × platform given and names the files after them:
+Golden tests are widget tests that compare the screen with a stored
+image (`matchesGoldenFile`). `pumpSpring` gives them the real theme and
+fonts.
+
+*Planned:* `@Golden()` runs one widget test per theme given and names
+the image files after them. The platform comes from the class
+(`@TargetPlatformTest`).
 
 ```dart
 @SpringBootTest()
@@ -322,35 +367,37 @@ class HomeGoldens {
 }
 ```
 
-- Golden images depend on the operating system's text rendering; this
-  repository renders them on macOS in CI. Keep one OS for your goldens
-  too and tag them (`@Tag('golden')`) to run them only there.
+- Golden images depend on how the operating system draws text. This
+  repository makes and compares them on macOS, in CI too. Keep one OS for
+  your goldens as well, and tag them (`@Tag('golden')`) to run them only
+  there.
 - `flutter test --update-goldens` writes the files.
 
 ## 10. Plain tests next to widget tests
 
-A Flutter package can test its pure Dart beans with `@Test` methods (or
-plain `test(...)`): they run in `flutter test` like the rest, without a
-widget tree. Code without Flutter that is shared with a server is better
-in its own Dart package, tested with `spring_boot_starter_test` and
-`dart test`.
+A Flutter package can test its pure Dart beans with `@Test` methods or
+plain `test(...)` functions. They run in `flutter test` like the rest,
+without a widget tree. Code without Flutter that is shared with a server
+is better kept in its own Dart package, tested with
+`spring_boot_starter_test` and `dart test`.
 
 ## 11. What the generator writes
 
-The same generated file as in [Testing](testing.md#15-what-the-generator-writes):
-`test/spring/counter_page.test.spring.dart` with `runSpringTests()`. The Flutter
-starter adds:
+*Planned.* The test classes become the same generated file as in
+[Testing](testing.md#15-what-the-generator-writes):
+`test/spring/counter_page.test.spring.dart`, with `runSpringTests()`.
+The Flutter starter adds:
 
-- `@WidgetTest` methods as `testWidgets(name, (tester) =>
+- each `@WidgetTest` method as `testWidgets(name, (tester) =>
   instance.tapAdds(tester), variant: ..., skip: ...)`;
-- `@TargetPlatformTest` as `setUp`/`tearDown` setting
-  `debugDefaultTargetPlatformOverride`, and the platform profiles added to
-  `springBootTest(profiles: ...)`;
-- `@Golden` as one `testWidgets` per theme and the `matchesGoldenFile`
-  check after the method.
+- `@TargetPlatformTest` as a `setUp` and `tearDown` that set
+  `debugDefaultTargetPlatformOverride`, and the platform's profiles added
+  to `springBootTest(profiles: ...)`;
+- `@Golden` as one `testWidgets` per theme, with the
+  `matchesGoldenFile` check after the method.
 
-The generator learns these annotations from the Flutter starter; the core
-test starter knows nothing about Flutter.
+The generator learns these annotations from the Flutter test starter;
+the core test starter knows nothing about Flutter.
 
 ## 12. Build errors
 

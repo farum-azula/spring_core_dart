@@ -4,52 +4,26 @@
 > change APIs, properties and behaviour; the breaking changes are listed
 > in each package's CHANGELOG.
 
-Feign clients for [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
-applications, like Spring Cloud OpenFeign: describe an HTTP API as an
-abstract class with `@GetMapping`, `@PostMapping`, ... and inject it like
-any bean. The generator writes the implementation (no reflection), JSON
-goes through the `ObjectMapper` of `spring_core_dart`.
+Declarative HTTP clients for
+[`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
+applications. You describe a remote API as an abstract class, one method
+per endpoint, and inject it like any other bean. Calling a method sends
+the HTTP request and gives you the decoded answer.
 
-```dart
-@FeignClient('catalog', url: r'${catalog.url}')
-abstract interface class CatalogClient {
-  @GetMapping('/books/{isbn}')
-  Future<Book> find(@PathVariable() String isbn);
+Calling another service by hand means building URLs, encoding JSON,
+sending the request, checking the status and decoding the answer, for
+every endpoint. This starter does that part. The methods use the same
+mapping annotations as a controller (`@GetMapping`, `@PathVariable()`,
+`@RequestBody()`, ...), and the generator writes the implementation at
+build time, without reflection. JSON goes through the `ObjectMapper` of
+`spring_core_dart`. Error statuses become exceptions you can catch, and
+timeouts, logging, retries, request interceptors and fallbacks are set
+per client.
 
-  @GetMapping('/books')
-  Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int? page});
+Use it in a server that calls other services, or in a Flutter app that
+calls its backend. It is the Dart counterpart of Spring Cloud OpenFeign.
 
-  @PostMapping('/books')
-  Future<ResponseEntity<Book>> create(@RequestBody() Book book);
-
-  @DeleteMapping('/books/{isbn}')
-  Future<void> delete(@PathVariable() String isbn);
-}
-
-@Introspected()                       // JSON without fromJson / toJson
-class Book {
-  const Book({required this.isbn, required this.title});
-  final String isbn;
-  final String title;
-}
-
-@Service()
-class Shop {
-  Shop(this.catalog);                 // injected like any bean
-  final CatalogClient catalog;
-
-  Future<String> title(String isbn) async => (await catalog.find(isbn)).title;
-}
-```
-
-```properties
-# lib/resources/application.properties
-catalog.url=https://api.neon.books
-```
-
-*In the guides:* [server, 9. Feign](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#9-feign), [app, 6. Server access](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#6-server-access).
-
-## Setup
+## Install
 
 ```yaml
 dependencies:
@@ -64,22 +38,72 @@ dev_dependencies:
 dart run build_runner build
 ```
 
-The starter is found automatically (no `@EnableFeignClients`): every
+There is no `@EnableFeignClients`: listing the starter is enough. Every
 abstract class with `@FeignClient` in the scanned package becomes a bean,
-named after the interface (`catalogClient`). One import is enough:
-`package:spring_boot_starter_feign/spring_boot_starter_feign.dart`
-re-exports `spring_boot_dart`, `spring_web_dart` (the mapping
-annotations) and `spring_boot_starter_logging`. The starter is the only
-dependency an application needs: it brings the others, logging included,
-like every Spring Boot starter.
+named after the interface (`CatalogClient` → `catalogClient`).
 
-Classes used by the clients (parameters and results) are introspected for
-JSON automatically when they are in the same package.
+One import is enough:
+`package:spring_boot_starter_feign/spring_boot_starter_feign.dart`
+re-exports `spring_boot_dart`, `spring_web_dart` (the mapping annotations)
+and `spring_boot_starter_logging`. The starter is the only dependency an
+application needs: it brings the others, logging included, as every
+Spring Boot starter does.
+
+## A first client
+
+The shop asks a catalog service for books:
+
+```dart
+// The catalog service's API, as the shop calls it.
+@FeignClient('catalog', url: r'${catalog.url}')
+abstract interface class CatalogClient {
+  @GetMapping('/books/{isbn}')
+  Future<Book> find(@PathVariable() String isbn);
+
+  // GET /books?q=dune&page=2; page is left out when null.
+  @GetMapping('/books')
+  Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int? page});
+
+  // The book is sent as JSON; the answer gives the status and headers too.
+  @PostMapping('/books')
+  Future<ResponseEntity<Book>> create(@RequestBody() Book book);
+
+  @DeleteMapping('/books/{isbn}')
+  Future<void> delete(@PathVariable() String isbn);
+}
+
+@Introspected()                       // read and written as JSON without fromJson / toJson
+class Book {
+  const Book({required this.isbn, required this.title});
+  final String isbn;
+  final String title;
+}
+
+@Service()
+class Shop {
+  Shop(this.catalog);                 // the generated client, injected like any bean
+  final CatalogClient catalog;
+
+  Future<String> title(String isbn) async => (await catalog.find(isbn)).title;
+}
+```
+
+```properties
+# lib/resources/application.properties
+catalog.url=https://api.neon.books
+```
+
+Classes that the client methods take or return are introspected for
+JSON automatically when they are in the same package as the client.
+
+*In the guides:* [server, 9. Feign](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#9-feign), [app, 6. Server access](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#6-server-access).
 
 ## Methods
 
-Every method needs one mapping annotation and must return a `Future` —
-or an `EventStream<T>` for server-sent events (see below).
+Each method describes one endpoint. It needs exactly one mapping
+annotation, which gives the HTTP method and the path. It must return a
+`Future`, because HTTP calls are asynchronous, or an `EventStream<T>` for
+server-sent events (see [Server-sent events](#server-sent-events)).
 
 | Annotation | Request |
 |---|---|
@@ -88,82 +112,111 @@ or an `EventStream<T>` for server-sent events (see below).
 | `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | `PUT`, `PATCH`, `DELETE` |
 | `@RequestMapping.of(path: '/x', method: HttpMethod.head)` | any method (`GET` by default) |
 
-The path is joined to the client's `url` and `path`; without a path
-(`@GetMapping()`) the request goes to the client's `url` and `path` itself
-(`@FeignClient(url: 'https://api.shop.test', path: '/api')` →
-`https://api.shop.test/api`). A query in the path
-(`@GetMapping('/books?sort=title')`) is sent as written, the parameters of
-the call appended to it. Mapping annotations
-also take `headers: ['X-Shop=${shop.name}']` (Spring's `Name=value`,
-placeholders allowed; server conditions such as `'!X-Debug'` are ignored,
-Feign's `'Name: value'` stops the application), `produces` (the `Accept`
-header, `application/json` by default) and `consumes` (the `Content-Type`
-of the body). With a path they are written with the `.of` constructor, as
-Dart cannot combine an optional positional parameter with named ones:
-`@GetMapping.of(path: '/books', headers: ['X-Shop=neon'])`.
+The method's path is added to the client's `url` and `path`. A mapping
+without a path (`@GetMapping()`) calls the client's URL and path
+themselves: with `@FeignClient(url: 'https://api.shop.test', path: '/api')`
+it calls `https://api.shop.test/api`. A query written in the path
+(`@GetMapping('/books?sort=title')`) is sent as written, and the call's
+own query parameters are appended to it.
 
-Parameters:
+A mapping annotation can also set:
+
+- `headers`: fixed headers sent with every call of the method, written
+  as Spring writes them, `Name=value`, with `${...}` placeholders
+  resolved from the configuration (`'X-Shop=${shop.name}'`). Spring's
+  server-side conditions such as `'!X-Debug'` are ignored. Feign's own
+  syntax, `'Name: value'`, stops the application at startup.
+- `produces`: the `Accept` header (`application/json` by default).
+- `consumes`: the `Content-Type` of the body.
+
+With a path, these are written with the `.of` constructor, because a Dart
+constructor cannot have both an optional positional parameter and named
+ones: `@GetMapping.of(path: '/books', headers: ['X-Shop=neon'])`.
+
+### Parameters
+
+Each parameter's annotation says where its argument goes in the request:
 
 | Parameter | Goes to |
 |---|---|
-| `@PathVariable() String isbn` | `{isbn}` in the path (URL-encoded, a `/` stays a `/`: see `decode-slash`); `@PathVariable('id')` for another name |
+| `@PathVariable() String isbn` | `{isbn}` in the path, URL-encoded; a `/` in the value stays a `/` (see `decode-slash`). `@PathVariable('id')` for another name |
 | `@RequestParam('q') String query` | `?q=...`; `null` is left out, a `List` repeats the parameter |
-| `@RequestParam() Map<String, Object?> filters` | one query parameter per entry (`?author=...&year=...`; a `List` value repeats it, `null` is left out) |
+| `@RequestParam() Map<String, Object?> filters` | one query parameter per entry (`?author=...&year=...`); a `List` value repeats it, `null` is left out |
 | `@RequestHeader('X-Trace') String? trace` | a header; `null` is left out, a `List` gives several values |
 | `@RequestHeader() Map<String, String> headers` | one header per entry |
-| `@CookieValue('SESSION') String session` | a cookie: the cookies of a call go in one `Cookie: a=1; b=2` header; `null` is left out |
-| `@RequestBody() Book book` | the body: objects as JSON (`ObjectMapper`), `String` as text, `Uint8List` as bytes; with `consumes: MediaType.applicationFormUrlencoded` (or that `Content-Type` header) a `Map` or object is sent as a form (`name=value&...`, see below) |
-| `@RequestPart('file') MultipartFile file` | a part of a `multipart/form-data` body (files, text fields, JSON parts; see Files and multipart) |
-| a parameter without annotation | the body (only one such parameter) |
+| `@CookieValue('SESSION') String session` | a cookie. All cookies of a call go in one `Cookie: a=1; b=2` header; `null` is left out |
+| `@RequestBody() Book book` | the body: an object as JSON (through the `ObjectMapper`), a `String` as text, a `Uint8List` as bytes. With `consumes: MediaType.applicationFormUrlencoded` (or that `Content-Type` header), a `Map` or an object is sent as a form (see [Form bodies](#form-bodies)) |
+| `@RequestPart('file') MultipartFile file` | one part of a `multipart/form-data` body (see [Files and multipart](#files-and-multipart)) |
+| a parameter without annotation | the body (only one such parameter is allowed) |
 
-The Dart parameter says what Spring's `required` and `defaultValue` say
-in Java: a nullable parameter is optional, a default value is the
-argument when the caller passes none, any other parameter is required.
+Whether an argument may be left out follows from the Dart parameter
+itself. Java's `required` and `defaultValue` attributes have no
+counterpart here:
 
-| Parameter | Argument `null` |
+| Parameter | An argument of `null` |
 |---|---|
 | nullable (`String? sort`) | the query parameter, header or part is left out; a path variable becomes an empty string |
-| with a default value (`{String sort = 'asc'}`) | the caller cannot pass `null`; without an argument the default is sent |
-| non-nullable | the caller cannot pass `null` |
+| with a default value (`{String sort = 'asc'}`) | not possible; without an argument, the default is sent |
+| non-nullable | not possible |
 
-Results:
+Paths, query parameters, headers and cookies take single values (or
+lists of them). Enums, `DateTime` and similar values are written as in
+JSON: an enum by its name or its `@JsonValue`, a date in ISO-8601. A
+parameter whose type is an object, meaning a class the `ObjectMapper`
+writes as a JSON object (`@RequestParam() Book book`), stops the
+application at startup: pass its fields as separate parameters or as a
+`Map` instead. When only the runtime value can tell, as for a parameter of
+type `Object`, an object fails the call with an `EncodeException`.
+
+### Results
+
+The return type says how the response is read:
 
 | Return type | From the response |
 |---|---|
-| `Future<Book>`, `Future<List<Book>>`, `Future<Map<String, int>>` | the JSON body, through the `ObjectMapper` |
-| `Future<Book?>` | `null` for an empty body (or a 404 with `dismiss404`) |
-| `Future<void>` | nothing (the status must be 2xx) |
-| `Future<String>`, `Future<Uint8List>` | the body as text, as bytes |
-| `Future<ResponseEntity<Book>>` | status, headers and the body (read-only headers) |
-| `Future<ResponseEntity<void>>` | status and headers; the body is ignored |
-| `Future<HttpResponse>` | the raw response (Feign's `Response`): any status, no error decoding, no `dismiss404` |
-| `EventStream<OrderEvent>`, `Stream<OrderEvent>` | the events of a `text/event-stream` response (see Server-sent events) |
+| `Future<Book>`, `Future<List<Book>>`, `Future<Map<String, int>>` | the JSON body, read through the `ObjectMapper` |
+| `Future<Book?>` | `null` for an empty body (or for a 404 with `dismiss404`) |
+| `Future<void>` | nothing; the status must be 2xx |
+| `Future<String>`, `Future<Uint8List>` | the body as text, or as bytes |
+| `Future<ResponseEntity<Book>>` | the status, the headers (read-only) and the body |
+| `Future<ResponseEntity<void>>` | the status and headers; the body is ignored |
+| `Future<HttpResponse>` | the raw response, whatever its status: no error decoding, no `dismiss404` (Feign's `Response`) |
+| `EventStream<OrderEvent>`, `Stream<OrderEvent>` | the events of a `text/event-stream` response (see [Server-sent events](#server-sent-events)) |
 
-Form bodies work like Spring Cloud OpenFeign's `SpringFormEncoder`: the
-entries of a `Map` (or the properties of an object, as the `ObjectMapper`
-writes them) become `name=value` pairs, URL-encoded in the `charset` of
-the content type (UTF-8 by default); a `List` value repeats the name and
-`null` values are left out.
+A non-nullable result with an empty body, or a body that does not fit
+the type, throws a `DecodeException`.
+
+### Form bodies
+
+Some APIs, such as login endpoints, expect an HTML-form body instead of
+JSON. With `consumes: MediaType.applicationFormUrlencoded`, the body
+parameter is sent as `name=value` pairs: the entries of a `Map`, or the
+properties of an object as the `ObjectMapper` writes them. The pairs are
+URL-encoded in the `charset` of the content type (UTF-8 by default), a
+`List` value repeats the name, and `null` values are left out.
 
 ```dart
+// The login form of an older service.
 @PostMapping.of(path: '/login', consumes: MediaType.applicationFormUrlencoded)
 Future<void> login(@RequestBody() Map<String, String> form);
-// username=neo&password=s3cr%3Ft
+// sends: username=neo&password=s3cr%3Ft
 ```
 
-Enums, `DateTime` and other values in paths, query parameters, headers and
-cookies are written like in JSON (an enum's name or `@JsonValue`, ISO-8601
-dates); they must be single values (or lists of them). An object there —
-a class the `ObjectMapper` writes as a JSON object, e.g. `@RequestParam()
-Book book` — stops the application at startup; pass its fields as
-parameters or a `Map` instead (a value whose type only tells at runtime,
-such as `Object`, fails the call with an `EncodeException`).
+This is what Spring Cloud OpenFeign's `SpringFormEncoder` does.
 
-Every client is checked when it is created: a `{variable}` without a
-`@PathVariable` parameter (or the other way round), a method without a
-mapping, a synchronous method (other than an event stream), an object as
-a parameter value or a header in Feign's syntax stops the application at
-startup with the reason, for instance:
+### Checked at startup
+
+Every client is checked when it is created, so a mistake in an interface
+shows up when the application starts, not at the first call. The
+application stops with the reasons when it finds:
+
+- a `{variable}` in the path without a `@PathVariable` parameter, or the
+  other way round;
+- a method without a mapping annotation, or with several;
+- a method that returns neither a `Future` nor an event stream;
+- an object as a path, query, header or cookie value;
+- a header written in Feign's `Name: value` syntax;
+- a client without a URL.
 
 ```text
 Invalid Feign client CatalogClient:
@@ -172,19 +225,20 @@ Invalid Feign client CatalogClient:
 
 ## Files and multipart
 
-A method with `@RequestPart` parameters sends a `multipart/form-data`
-body, like Spring Cloud OpenFeign with `@RequestPart` / `MultipartFile`
-(`consumes: MediaType.multipartFormData` is optional; another `consumes`
-stops the application at startup):
+To upload files, give a method `@RequestPart` parameters: it then sends a
+`multipart/form-data` body, one part per parameter. `consumes:
+MediaType.multipartFormData` is optional; any other `consumes` stops the
+application at startup.
 
 ```dart
+// Uploads a book's cover with its description.
 @PostMapping.of(path: '/books/{isbn}/files', consumes: MediaType.multipartFormData)
 Future<UploadResult> upload(
   @PathVariable() String isbn,
   @RequestPart('file') MultipartFile file,   // a file part
-  @RequestPart('meta') FileMeta meta,        // an object → a JSON part
+  @RequestPart('meta') FileMeta meta,        // an object: a JSON part
   @RequestPart('note') String note,          // a text field
-  @RequestParam('draft') bool draft,         // still a query parameter: ?draft=true
+  @RequestParam('draft') bool draft,         // still a query parameter: ?draft=false
 );
 
 await books.upload(
@@ -198,32 +252,36 @@ await books.upload(
 
 | `@RequestPart('x')` parameter | Part |
 |---|---|
-| `MultipartFile` | a file: `filename` and content type from the file (else from the file name, else `application/octet-stream`); the part is named after the annotation, not `file.name` |
+| `MultipartFile` | a file. Its `filename` and content type come from the file (else the content type is guessed from the file name, else `application/octet-stream`). The part is named after the annotation, not after `file.name` |
 | `List<MultipartFile>` | one file part per file, all named `x` |
-| `Uint8List`, `List<int>` | a file part without file name (`application/octet-stream`) |
-| `String`, numbers, `bool`, enums, `DateTime` (or a `List` of them) | a text field (one per item), written like query parameters |
+| `Uint8List`, `List<int>` | a file part without a file name (`application/octet-stream`) |
+| `String`, numbers, `bool`, enums, `DateTime` (or a `List` of them) | a text field (one per item), written as query parameters are |
 | an object, a `Map`, a `List` of objects | a JSON part (`application/json`), written with the client's `ObjectMapper` |
 
-`MultipartFile` is the type controllers receive (from `spring_web_dart`);
-`InMemoryMultipartFile` builds one from bytes or text (and a received file
-can be passed on as it is). A nullable parameter
-(`@RequestPart('note') String? note`) leaves the part out for `null`.
-`@RequestParam`, `@RequestHeader` and `@PathVariable` work as on any
-method — `@RequestParam` stays in the query, like Spring Cloud OpenFeign.
-The `Content-Type` is `multipart/form-data; boundary=...` (it replaces
-`consumes`). At startup, `@RequestPart` together with `@RequestBody`, or a
-parameter with `@RequestPart` and another annotation, stops the
-application.
+`MultipartFile` is the same type controllers receive (from
+`spring_web_dart`), so a file a controller received can be passed on as
+it is. `InMemoryMultipartFile` builds one from bytes, or from text with
+`InMemoryMultipartFile.fromString`. A nullable parameter
+(`@RequestPart('note') String? note`) leaves its part out for `null`.
 
-The body is built in memory once per call (each file read once), so
-retries send the same bytes; there is no streaming upload yet.
+`@RequestParam`, `@RequestHeader` and `@PathVariable` work as on any other
+method; `@RequestParam` stays in the query, as in Spring Cloud OpenFeign.
+The `Content-Type` is `multipart/form-data; boundary=...` and replaces
+`consumes`. A method with both `@RequestPart` and `@RequestBody`, or a
+parameter with `@RequestPart` and another annotation, stops the
+application at startup.
+
+The body is built in memory once per call, reading each file once, so
+retries send the same bytes. There is no streaming upload yet.
 
 ## Server-sent events
 
-A method returning `EventStream<T>` reads a `text/event-stream` response.
-`EventStream<T>` **is** a `Stream<T>` of the decoded data, so the type stays
-short; the whole events (with `id`, `event`, `retry`) are there through
-`.events` when you need them:
+Some services push updates over a long-lived response in the
+`text/event-stream` format: order statuses, prices, progress. A method
+that returns `EventStream<T>` reads such a response. `EventStream<T>` is a
+`Stream<T>` of the decoded data, so the usual case needs no wrapper type;
+the whole events, with their `id`, `event` and `retry` fields, are
+available through `.events`.
 
 ```dart
 @FeignClient('orders', url: r'${orders.url}')
@@ -232,35 +290,39 @@ abstract interface class OrdersClient {
   EventStream<OrderEvent> events(@PathVariable() String shop);
 }
 
-// the data:
+// Only the data:
 await for (final order in orders.events('neon')) {
   print(order.status);
 }
 
-// the whole events:
+// The whole events, when the id or event name matters:
 orders.events('neon').events.listen((e) {
   print('${e.id} ${e.event}: ${e.data.status}');
 });
 ```
 
-- Each event's data is read like a JSON body (through the `ObjectMapper`);
-  `EventStream<String>` gives the data as sent. An event that cannot be read
-  is an error on the stream (a `DecodeException`), the stream goes on.
-- The stream is cold: every listener opens its own connection, cancelling the
-  subscription (or `break` in `await for`) closes it.
-- `Accept: text/event-stream` and `Cache-Control: no-cache` are sent
-  (`produces` changes `Accept`); interceptors run for every connection, so a
-  refreshed token is used on reconnect. `read-timeout` covers the wait for
-  the response headers only (a stream may stay quiet as long as it likes).
+- Each event's data is read like a JSON body, through the `ObjectMapper`.
+  `EventStream<String>` gives the data as sent. An event that cannot be
+  read arrives as an error on the stream (a `DecodeException`), and the
+  stream goes on.
+- The stream is cold: each listener opens its own connection. Cancelling
+  the subscription (or `break` in `await for`) closes it.
+- The request carries `Accept: text/event-stream` (`produces` changes it)
+  and `Cache-Control: no-cache`. Interceptors run for every connection,
+  so a refreshed token is used when the stream reconnects.
+- `read-timeout` covers only the wait for the response headers; after
+  that, the stream may stay quiet as long as it likes.
 - `Stream<T>` works as a return type too (you get an `EventStream<T>`).
   `Future<EventStream<T>>` is rejected at startup: return the stream
-  directly, it connects when listened to.
+  directly, it connects when someone listens.
 
-Reconnection works like the browser's `EventSource`: when the response ends
-or the connection breaks, the client connects again after a delay (the
-server's `retry:` wins), sending the last event id in `Last-Event-ID`. A
-`204 No Content` ends the stream; an error status ends it with the
-`FeignException` of the `ErrorDecoder` (a `RetryableException` reconnects).
+The stream reconnects as a browser's `EventSource` does. When the
+response ends or the connection breaks, the client connects again after a
+delay (a `retry:` field from the server replaces the configured one) and
+sends the last event id in `Last-Event-ID`. A `204 No Content` ends the
+stream. An error status ends it with the `FeignException` of the
+`ErrorDecoder`, unless that exception is a `RetryableException`, which
+reconnects.
 
 ```properties
 spring.cloud.openfeign.client.config.orders.event-stream.reconnect=true
@@ -272,10 +334,10 @@ spring.cloud.openfeign.client.config.orders.event-stream.max-attempts=10
 |---|---|
 | `event-stream.reconnect` | connect again after the connection ended or broke (default `true`) |
 | `event-stream.reconnect-delay` | the wait before connecting again, until the server sends `retry:` (default `3s`) |
-| `event-stream.max-attempts` | connections in a row without an event before the stream gives up (default: no limit) |
+| `event-stream.max-attempts` | how many connections in a row may end without an event before the stream gives up (default: no limit) |
 
 With a `fallback`, the fallback's stream takes over when the stream fails
-before its first event; later failures reach the listener.
+before its first event. Later failures reach the listener.
 
 In tests, `MockHttpTransport` answers with events:
 
@@ -284,20 +346,21 @@ server
   ..when(HttpMethod.get, '/shops/neon/orders/events').respondEvents([
     ServerSentEvent({'id': 1, 'status': 'NEW'}, id: '1'),
   ])
-  ..when(HttpMethod.get, '/shops/neon/orders/events').respond(204); // then stop
+  ..when(HttpMethod.get, '/shops/neon/orders/events').respond(204); // the reconnect: stop
 ```
 
-**This differs from Spring.** Spring Cloud OpenFeign cannot stream at all;
+**This differs from Spring.** Spring Cloud OpenFeign cannot stream at all.
 Spring's own answer is `Flux<ServerSentEvent<OrderEvent>>` (or
 `Flux<OrderEvent>`) from `WebClient` or an `@HttpExchange` interface, with
 reconnection left to `retryWhen`. Here `EventStream<T>` folds the event
-wrapper into the stream, reconnects by itself, and the `event-stream.*`
+wrapper into the stream and reconnects by itself; the `event-stream.*`
 properties are additions of this starter.
 
 ## Configuration
 
-Properties per client name (`@FeignClient('catalog')`), with `default`
-for all clients, like Spring Cloud OpenFeign:
+Each client is configured under its name (`@FeignClient('catalog')`).
+The name `default` applies to every client; a client's own setting wins.
+The keys are those of Spring Cloud OpenFeign:
 
 ```properties
 spring.cloud.openfeign.client.config.default.read-timeout=10s
@@ -316,42 +379,49 @@ spring.cloud.openfeign.client.decode-slash=false
 
 | Property | Default | Meaning |
 |---|---|---|
-| `url` | — | base URL when `@FeignClient(url:)` is not given (or empty); `http://` is put in front of one without a scheme |
-| `read-timeout` | `60s` | the longest wait for data — for the response, then between two chunks of the body — not a limit for the whole call, like Feign's (`10s`, `PT1M`, milliseconds; `0` for none) |
-| `connect-timeout` | `10s` | connection timeout of the default transport (`default` only; `0` for none) |
-| `logger-level` | `none` | `none`, `basic`, `headers`, `full` (see Logging) |
-| `dismiss404` | `false` | a 404 gives `null` (nullable results) or a `ResponseEntity` instead of an exception; a `void` method still throws, like Feign |
-| `default-request-headers.<Name>` | — | a header sent with every request that has none of that name (after the interceptors; `a,b` or a YAML list gives two values) |
-| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name (after the interceptors; `a,b` or a YAML list gives two) |
-| `retryer` | — | the `Retryer` of the client: a bean name, or a class name matching one bean (see Per-client configuration) |
-| `error-decoder` | — | the `ErrorDecoder` of the client (bean or class name) |
-| `request-interceptors` | — | more `RequestInterceptor`s for the client (a list of bean or class names) |
-| `follow-redirects` | `true` | whether redirects are followed |
-| `spring.cloud.openfeign.client.decode-slash` | `true` | for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: `%2F`) |
+| `url` | — | the base URL when `@FeignClient(url:)` is not given or is empty. `http://` is put in front of a URL without a scheme |
+| `read-timeout` | `60s` | the longest wait for data: for the response, then between two chunks of the body. It is not a limit for the whole call, as in Feign. `10s`, `PT1M` or milliseconds; `0` for none |
+| `connect-timeout` | `10s` | the connection timeout of the default transport. Read under `default` only, for all clients; `0` for none |
+| `logger-level` | `none` | `none`, `basic`, `headers` or `full` (see [Logging](#logging)) |
+| `dismiss404` | `false` | a 404 gives `null` (nullable results) or a `ResponseEntity` instead of an exception; a `void` method still throws, as in Feign |
+| `default-request-headers.<Name>` | — | a header added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values |
+| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values |
+| `retryer` | — | the client's `Retryer`: a bean name, or a class name matching exactly one bean (see [Per-client configuration](#per-client-configuration)) |
+| `error-decoder` | — | the client's `ErrorDecoder`, by bean name or class name |
+| `request-interceptors` | — | more `RequestInterceptor`s for the client: a list of bean names or class names, those under `default` first |
+| `follow-redirects` | `true` | whether redirects are followed; with `false`, a 3xx answer is an error status |
+| `spring.cloud.openfeign.client.decode-slash` | `true` | one setting for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: it is sent as `%2F`) |
+
+The `default-request-headers` and `default-query-parameters` of a client
+add to those of `default`, and win for the same name.
 
 The on/off properties (`dismiss404`, `follow-redirects`,
-`event-stream.reconnect`, `decode-slash`) take `true` / `false` in any case
-(also `on` / `off`, `yes` / `no`, `1` / `0`), like Boot's binding; other
-values fail naming the key.
+`event-stream.reconnect`, `decode-slash`) take `true` / `false` in any
+case, and also `on` / `off`, `yes` / `no`, `1` / `0`, as Spring Boot's
+binding does. Another value stops the application with an error naming
+the key.
 
-`@FeignClient(url:)` wins over the `url` property; `@FeignClient(path:)`
-prefixes every path. More attributes, as in Spring Cloud OpenFeign:
+`@FeignClient(url:)` wins over the `url` property, and
+`@FeignClient(path:)` is put before every method's path. The annotation
+has more attributes, as in Spring Cloud OpenFeign:
 
 | Attribute | Meaning |
 |---|---|
-| `contextId: 'catalog-admin'` | the configuration key instead of the name (`...config.catalog-admin.*`), e.g. for two clients of one service |
+| `contextId: 'catalog-admin'` | the configuration key to use instead of the name (`...config.catalog-admin.*`), for example for two clients of one service with different settings |
 | `qualifiers: ['books']` | more names that select the client bean with `@Qualifier('books')` |
 | `primary: false` | the client bean is not `@Primary` (it is by default) |
-| `dismiss404: true` | like the `dismiss404` property |
+| `dismiss404: true` | the same as the `dismiss404` property |
 | `configuration: [CatalogFeignConfig]` | configuration classes whose beans apply to this client only (see below) |
 
 ### Per-client configuration
 
-Like Spring Cloud OpenFeign, `@FeignClient(configuration:)` lists classes
-whose `Retryer`, `ErrorDecoder` and `RequestInterceptor` beans configure
-that client only:
+Sometimes one service needs other credentials or another retry policy
+than the rest. `@FeignClient(configuration:)` lists classes whose
+`Retryer`, `ErrorDecoder` and `RequestInterceptor` beans configure that
+client only:
 
 ```dart
+// The catalog needs its own account and a few retries.
 @FeignClient('catalog', url: r'${catalog.url}',
     configuration: [CatalogFeignConfig])
 abstract interface class CatalogClient { ... }
@@ -367,23 +437,39 @@ class CatalogFeignConfig {
 }
 ```
 
-The client's own `Retryer` / `ErrorDecoder` win over the application's;
-its interceptors run together with the application's, in `@Order`. Beans
-of a configuration class never reach the other clients. The `retryer`,
-`error-decoder` and `request-interceptors` properties win over both.
+A listed class must be a `@Configuration()` bean; the application stops
+otherwise. Beans of a configuration class never reach the other clients.
+For each client the starter picks:
+
+- **Retryer and error decoder**: the `retryer` / `error-decoder`
+  property when set; else the bean of the client's configuration classes;
+  else the application's bean; else no retries and the
+  `DefaultErrorDecoder`. Two candidate beans at one level need one of them
+  to be `@Primary`.
+- **Interceptors**: the application's `RequestInterceptor` beans and
+  those of the client's configuration classes, all together in `@Order`;
+  then the beans that the `request-interceptors` property names. The
+  property adds to the beans, it does not replace them. A bean that is
+  both an interceptor bean and named in the property runs once.
 
 ## Errors
 
-A response with status ≥ 400 throws a `FeignException` subclass:
+A response with a status of 400 or more throws a `FeignException`
+subclass, so callers catch exactly the cases they handle:
 
 | Status | Exception |
 |---|---|
 | 400, 401, 403, 404, 405, 406, 409, 410, 415, 422, 429 | `FeignBadRequest`, `FeignUnauthorized`, `FeignForbidden`, `FeignNotFound`, `FeignMethodNotAllowed`, `FeignNotAcceptable`, `FeignConflict`, `FeignGone`, `FeignUnsupportedMediaType`, `FeignUnprocessableEntity`, `FeignTooManyRequests` (all `FeignClientException`) |
+| another 4xx | `FeignClientException` |
 | 500, 501, 502, 503, 504 | `FeignInternalServerError`, `FeignNotImplemented`, `FeignBadGateway`, `FeignServiceUnavailable`, `FeignGatewayTimeout` (all `FeignServerException`) |
-| no response (connection, timeout) | `RetryableException` with status `-1` |
+| another 5xx | `FeignServerException` |
+| a response with a `Retry-After` header | `RetryableException` with the response's status |
+| no response (connection failed, timeout) | `RetryableException` with status `-1` |
 | a body that does not fit the return type | `DecodeException` |
+| arguments that cannot be written into the request | `EncodeException`, before anything is sent |
 
 ```dart
+// A missing book is not an error for the shop; anything else is.
 try {
   await catalog.find(isbn);
 } on FeignNotFound {
@@ -394,9 +480,14 @@ try {
 }
 ```
 
-Your own exceptions: declare an `ErrorDecoder` bean.
+To throw exceptions of your own domain instead, or to read the error
+document a service sends, declare an `ErrorDecoder` bean. It is called for
+every status outside 2xx, except a dismissed 404 and methods returning
+`HttpResponse`:
 
 ```dart
+// The catalog's 404 becomes the shop's own exception;
+// every other status keeps the default handling.
 final class ShopErrors implements ErrorDecoder {
   @override
   Exception decode(String methodKey, HttpResponse response) =>
@@ -412,35 +503,55 @@ class FeignSetup {
 }
 ```
 
+Returning a `RetryableException` from a decoder makes that answer
+retryable, for example every 503.
+
 ## Retries
 
-Like Spring Cloud OpenFeign, nothing is retried by default. A `Retryer`
-bean retries `RetryableException`s: connection errors, timeouts, and
-responses with a `Retry-After` header (seconds or an HTTP date). Every
-attempt is built again from the arguments and goes through the
-interceptors, so a refreshed token reaches the retry.
+A remote service may be briefly out of reach, time out, or ask to be
+called later. A `Retryer` bean tries such calls again, so the code around
+each call does not have to. As in Spring Cloud OpenFeign, nothing is
+retried by default.
+
+Only `RetryableException`s are retried: connection errors, timeouts, and
+responses with a `Retry-After` header (in seconds or as an HTTP date). An
+error status alone is not retried. Every attempt is built again from the
+arguments and goes through the interceptors, so a token refreshed in the
+meantime reaches the retry.
 
 ```dart
+// Up to 3 attempts per call: pauses of 150 ms, then 225 ms.
 @Bean()
-Retryer retryer() => const DefaultRetryer(maxAttempts: 3);   // 150 ms, 225 ms, ... up to 1 s, like Feign
+Retryer retryer() => const DefaultRetryer(maxAttempts: 3);
 ```
+
+`DefaultRetryer` works as Feign's `Retryer.Default`: by default 5
+attempts in all, pauses of `period` × 1.5ⁿ (150 ms, 225 ms, 338 ms, ...
+with the default `period` of 100 ms), never longer than `maxPeriod`
+(1 second). When the server sent `Retry-After`, it waits until then
+instead, still at most `maxPeriod`.
 
 ## Interceptors
 
-Every `RequestInterceptor` bean changes every request before it is sent:
-authentication, tracing ids, common query parameters.
+A `RequestInterceptor` changes every request before it is sent. Use it
+for what all calls need and no method should repeat: an authentication
+header, a tracing id, a common query parameter. Every `RequestInterceptor`
+bean applies to every client, in `@Order`.
 
 ```dart
 @Configuration()
 class FeignSetup {
+  // The user's token; the function may be async, and it is asked again
+  // at every attempt.
   @Bean()
   RequestInterceptor auth(TokenStore tokens) =>
-      BearerTokenRequestInterceptor(() => tokens.accessToken);   // may be async
+      BearerTokenRequestInterceptor(() => tokens.accessToken);
 
   @Bean()
   RequestInterceptor requestIds() => RequestIds();
 }
 
+// Every call carries a request id; the catalog also gets the language.
 final class RequestIds implements RequestInterceptor {
   @override
   void apply(RequestTemplate template) {
@@ -450,17 +561,25 @@ final class RequestIds implements RequestInterceptor {
 }
 ```
 
-`template.header(name, value)` adds a value, like Feign's; to replace a
-header, `removeHeader(name)` first. The interceptors run for every attempt
-of a call (retries too) on a new template; the `default-request-headers`,
-`default-query-parameters` and the default `Accept` come after them, for
-names they did not set. `BasicAuthRequestInterceptor(user, password)` is
-built in too (ISO-8859-1 like Feign's; `encoding: utf8` for other
-characters).
+- `template.header(name, value)` adds a value, as Feign's does. To
+  replace a header, call `removeHeader(name)` first.
+- `apply` may return a `Future`, for example to fetch a fresh token; the
+  call waits for it. An exception fails the call.
+- The interceptors run for every attempt of a call, retries included, each
+  time on a new template. The `default-request-headers`,
+  `default-query-parameters` and the default `Accept` header are added
+  after them, for names they did not set.
+- `BearerTokenRequestInterceptor(token)` sends `Authorization: Bearer ...`
+  and adds nothing when `token` returns `null`.
+- `BasicAuthRequestInterceptor(user, password)` sends HTTP Basic
+  credentials, encoded in ISO-8859-1 as Feign does; pass `encoding: utf8`
+  for other characters.
 
 ## Fallback
 
-A bean class implementing the interface answers when a call fails:
+A fallback answers instead of the remote service when a call fails, for
+example with cached or placeholder data. It is a bean class that
+implements the same interface:
 
 ```dart
 @FeignClient('motd', url: r'${motd.url}', fallback: OfflineMotd)
@@ -469,6 +588,7 @@ abstract interface class MotdApi {
   Future<String> messageOfTheDay();
 }
 
+// What the app shows while the service is unreachable.
 @Component()
 class OfflineMotd implements MotdApi {
   @override
@@ -476,38 +596,46 @@ class OfflineMotd implements MotdApi {
 }
 ```
 
-The generated client is `@Primary` (unless `@FeignClient(primary: false)`),
-so injecting `MotdApi` gives the client, not the fallback. The fallback answers **every** failure — a 404
-too — after the retries.
+The fallback answers **every** failure, a 404 too, after the retries. The
+generated client is `@Primary` (unless `@FeignClient(primary: false)`), so
+injecting `MotdApi` gives the client, not the fallback.
 
 ## Logging
 
-With `logger-level` above `none`, each call is logged under
-`feign.<Interface>` at debug level (so the debug level must be on, e.g.
-`logging.level.feign=debug` with `spring_boot_starter_logging`):
+To see what a client sends and receives, set its `logger-level` above
+`none`. Each call is then logged under the logger `feign.<Interface>` at
+debug level, so that level must be on too, for example
+`logging.level.feign=debug` with `spring_boot_starter_logging`:
 
 ```text
 ---> GET https://api.neon.books/books/978-0
 <--- 200 OK (84 ms)
 ```
 
-`headers` adds the headers (`Authorization` is masked), `full` the bodies.
-Failed connections (`<--- ERROR ...`) and retries (`---> RETRYING ...`) are
-logged only above `none` too, like Feign.
+| `logger-level` | Logged |
+|---|---|
+| `none` | nothing (the default) |
+| `basic` | the method and URL of each request, the status and time of each response, failed connections (`<--- ERROR ...`), retries (`---> RETRYING ...`) and event-stream reconnects (`---> RECONNECTING ...`) |
+| `headers` | `basic` plus the request and response headers; `Authorization` is masked |
+| `full` | `headers` plus the bodies |
+
+As in Feign, failed connections and retries are not logged at `none`.
 
 ## Transport
 
-Requests go through the `HttpTransport` bean: by default
-`platformHttpTransport()` of `spring_web_dart` — `dart:io` on the VM and in
-Flutter (mobile, desktop), `fetch` on the web (the server must allow your
-origin with CORS). Declare your own `HttpTransport` bean to use something
-else (e.g. a small adapter over another HTTP library).
+Requests go through the `HttpTransport` bean. By default it is
+`platformHttpTransport()` of `spring_web_dart`: `dart:io` on the VM and in
+Flutter (mobile, desktop), `fetch` on the web, where the server must allow
+your origin with CORS. Declare your own `HttpTransport` bean to send
+through something else, such as a small adapter over another HTTP
+library, or a mock in tests.
 
 ## Testing
 
-Replace the transport with `MockHttpTransport` from
-`spring_boot_starter_test` (the dev dependency of the tests; like
-Spring's `MockRestServiceServer` in `spring-test`):
+In tests, replace the transport with `MockHttpTransport`, which answers
+with prepared responses and records what was sent. It comes with
+`spring_boot_starter_test`, the tests' dev dependency, and plays the part
+of Spring's `MockRestServiceServer`:
 
 ```dart
 final server = MockHttpTransport();
@@ -524,51 +652,53 @@ test('reads a book', () async {
 });
 ```
 
-Or replace a whole client: `BeanOverride<CatalogClient>(FakeCatalog())`.
+To test code that uses a client without HTTP at all, replace the whole
+client: `BeanOverride<CatalogClient>(FakeCatalog())`.
 
 ## How it works
 
-`@FeignClient` is marked `@InterfaceProxy` (from `spring_core_dart`): for
-such an interface the generator writes a class whose methods hand each call,
-with the method's annotations, parameter names and types, to an
+`@FeignClient` is marked `@InterfaceProxy` (from `spring_core_dart`). For
+such an interface the generator writes a class whose methods hand each
+call, with the method's annotations, parameter names and types, to an
 `InvocationHandler`. The starter's `feignClientFactory` bean creates that
-handler. The client is a regular bean, so AOP applies to it — e.g.
+handler. The client is a regular bean, so AOP applies to it: for example,
 `@Cacheable` on a client method (with `spring_boot_starter_cache`) caches
 the responses.
 
 ## Differences from Spring Cloud OpenFeign
 
 - No `@EnableFeignClients`: the starter is enough.
-- Methods return `Future`s (HTTP is asynchronous in Dart).
+- Methods return `Future`s, because HTTP is asynchronous in Dart.
 - No service discovery or load balancing: every client needs a URL.
-- `connect-timeout` is set for all clients (`default`); `read-timeout` per
-  client.
-- The fallback answers every failure, without a circuit breaker; there is no
-  `FallbackFactory` yet.
+- `connect-timeout` is one setting for all clients (`default`);
+  `read-timeout` is per client.
+- The fallback answers every failure, without a circuit breaker; there is
+  no `FallbackFactory` yet.
 - `Accept: application/json` is sent by default (`text/event-stream` for
-  event streams); Spring Cloud OpenFeign sends `Accept` only for `produces`.
-- Spaces in query parameters are sent as `+` (form encoding), Feign sends
+  event streams); Spring Cloud OpenFeign sends `Accept` only for
+  `produces`.
+- Spaces in query parameters are sent as `+` (form encoding); Feign sends
   `%20`.
 - `Authorization` is masked (`***`) in the `headers` and `full` logs.
 - The logger is `feign.<Interface>` (`feign.CatalogClient`); Feign's
   `Slf4jLogger` logs under the interface's fully qualified class name.
-- Each retry starts from a new template (Feign runs the interceptors again
-  on the same one, where header values pile up).
+- Each retry starts from a new template; Feign runs the interceptors again
+  on the same one, where header values pile up.
 - `@FeignClient(configuration:)` classes are ordinary `@Configuration()`
-  beans (Dart cannot create a class by reflection, so they are not kept
-  out of the application context as in Spring's child contexts); the
+  beans. Dart cannot create a class by reflection, so they cannot be kept
+  out of the application context as Spring's child contexts do; the
   starter instead keeps their beans away from the other clients, which is
   what Spring does when the class is not component-scanned. Only
   `Retryer`, `ErrorDecoder` and `RequestInterceptor` beans are per client
   (not `Decoder`, `Encoder`, `Contract`, `Client`, `Logger.Level`).
 - The `retryer`, `error-decoder` and `request-interceptors` properties
-  name beans (by bean name, or by a class name matching exactly one bean);
+  name beans, by bean name or by a class name matching exactly one bean;
   Spring creates the class when there is no bean of it.
 - `primary` and `qualifiers` are read by the generator; there is no
   `<contextId>FeignClient` alias. A method may have several `Map`
   parameters (Feign: one query map and one header map).
-- Server-sent events (`EventStream<T>`, `event-stream.*` properties) are an
-  addition: OpenFeign has no streaming.
+- Server-sent events (`EventStream<T>`, `event-stream.*` properties) are
+  an addition: OpenFeign has no streaming.
 - Form bodies take the object's properties as the `ObjectMapper` writes
   them (`@JsonProperty` names), not feign-form's `@FormProperty`; a nested
   object in a form fails the call with an `EncodeException`.

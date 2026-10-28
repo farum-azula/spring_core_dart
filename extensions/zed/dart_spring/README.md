@@ -1,15 +1,27 @@
 # dart_spring for Zed
 
-Editor support for [`spring_core_dart`](https://pub.dev/packages/spring_core_dart),
+Editor support in Zed for applications built with
+[`spring_core_dart`](https://pub.dev/packages/spring_core_dart),
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) and the
 `spring_boot_starter_*` packages, in the spirit of IntelliJ IDEA's Spring
-support. The extension version always equals the framework version it
+support.
+
+In such an application much of the wiring lives in annotations and
+strings: which bean an injection point gets, which property a
+`${shop.name}` reads, what a SpEL expression or a pointcut means. The
+Dart analyzer sees none of that. This extension adds a second language
+server that does: it jumps from an injection point to its beans and from a
+placeholder to the property, shows values on hover, reports broken
+expressions while you type, colours SpEL and placeholders, and brings
+snippets.
+
+The extension's version always equals the version of the framework it
 supports.
 
 ## Features
 
-**Navigation** (Go to Definition, `F12` / `Cmd`-click). Results are added
-to those of the Dart language server:
+**Navigation** (Go to Definition, `F12` / `Cmd`-click). Its results are
+added to those of the Dart language server:
 
 | Click on | Goes to |
 |---|---|
@@ -33,23 +45,24 @@ Navigation puts the cursor at the target without selecting it.
 
 **Hover** shows the value of a property in every profile file, the
 candidate beans of an injection point, the file a `classpath:` location
-resolves to and the expression of a named pointcut.
+resolves to, and the expression of a named pointcut.
 
-**Checks**, while typing:
+**Checks**, while you type:
 
-- invalid SpEL (`#{1 +}`) — an error at the position the parser reports;
-- invalid pointcuts — checked by the runtime's own parser, with the
+- invalid SpEL (`#{1 +}`): an error at the position the parser reports;
+- invalid pointcuts, checked by the runtime's own parser with the
   project's `@Pointcut` methods: an unknown `ordrs()` is underlined;
 - cache keys and conditions (`key:`, `condition:`, `unless:` of
-  `@Cacheable`, `@CachePut`, `@CacheEvict`, also inside `@Caching`):
-  SpEL syntax, and `#isbm` that is not a parameter (nor `#root`,
-  `#result`, `#p0`) is a warning listing the parameters;
-- `${key}` without a default that no properties file defines — a warning;
-- `@Value('${key}')` in a normal (non-raw) string — an error: in Dart that
-  is string interpolation; write `r'${key}'`;
-- `@Value('asset:...')` (spring_boot_starter_flutter): a missing file, or
-  one not declared under `flutter: assets:` in `pubspec.yaml` — a warning
-  with the entry to add, as the generator's build error says.
+  `@Cacheable`, `@CachePut` and `@CacheEvict`, also inside `@Caching`):
+  the SpEL syntax, and a `#isbm` that is not a parameter (nor `#root`,
+  `#result`, `#p0`) is a warning that lists the parameters;
+- a `${key}` without a default that no properties file defines: a
+  warning;
+- `@Value('${key}')` in a normal (non-raw) string: an error, because in
+  Dart that is string interpolation; write `r'${key}'`;
+- `@Value('asset:...')` (`spring_boot_starter_flutter`): a missing file,
+  or one not declared under `flutter: assets:` in `pubspec.yaml`, is a
+  warning with the entry to add, as the generator's build error says.
 
 **SpEL, placeholder and pointcut highlighting** inside annotation
 strings: keywords, operators, numbers, strings, `#variables`, `@beans`,
@@ -59,12 +72,13 @@ designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
 types, annotations, bean patterns, method names and named pointcuts
 (needs the `semantic_tokens` setting below).
 
-**A closure's parameters** where they are declared and everywhere the
-closure's body uses them (`(alert) => heard.add('${alert.isbn}')`), a
-semantic token of their own (`closureParameter`) that a rule gives a
-colour (setup step 3). A name declared again inside the
-closure (a local variable, a loop variable, a nested function's parameter)
-hides it; parameters of functions and methods are left as they are.
+**A closure's parameters** get a semantic token of their own
+(`closureParameter`), where they are declared and everywhere the
+closure's body uses them (`(alert) => heard.add('${alert.isbn}')`), so a
+rule can give them a colour (setup step 3). A name declared again inside
+the closure (a local variable, a loop variable, a nested function's
+parameter) hides it; parameters of functions and methods are left as they
+are.
 
 **Config files**: `${key}`, `${key:default}` and `#{...}` in the values of
 `application*.yml` / `.yaml`, of YAML under `resources/` and of
@@ -239,15 +253,17 @@ is no palette entry for this.
    applies to every type and would come first for all of them).
 
 The language server is downloaded automatically the first time a Dart
-file is opened: the extension takes the native binary of its own version
-from the GitHub release `v<version>` (macOS Apple Silicon, Linux x64/arm64,
-Windows x64) and keeps it in its own folder; Zed shows the download in the
+file is opened. The extension takes the native binary of its own version
+from the GitHub release `v<version>` (macOS Apple Silicon, Linux x64 and
+arm64, Windows x64), or from the latest release when that one has no
+binaries, and keeps it in its own folder; Zed shows the download in the
 status bar. Navigation, hover and checks work without step 2.
 
 The server is looked up in this order, so a local build wins during
 development:
 
-1. `lsp.dart-spring.binary.path` in Zed settings;
+1. `lsp.dart-spring.binary.path` in Zed settings (with
+   `binary.arguments` if needed);
 2. `dart_spring_lsp` on the PATH — build it from this repository with
    `dart run tool/install_language_server.dart` (into `~/.pub-cache/bin`;
    also the way to go on platforms without a prebuilt binary, such as Intel

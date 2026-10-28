@@ -1,8 +1,15 @@
 # spring_core_dart: examples
 
-**What it does:** creates the objects of your app, connects them and
-configures them from settings files — you only declare what each class
-needs. It is a port of Spring, the popular Java framework.
+`spring_core_dart` creates the objects of your app, connects them, and
+configures them from settings files: each class only declares what it
+needs. It is a port of Spring, the Java framework, to Dart and Flutter.
+
+This page has two parts:
+
+- [The runnable example](#the-runnable-example): `main.dart` next to this
+  file, a small application you can start and change.
+- [A tour](#a-tour-of-the-features): one short example per feature, from
+  "objects that are created for you" to AOP and validation.
 
 ## Why use it
 
@@ -12,19 +19,19 @@ constructor, then `main`, where everything is built by hand in the right
 order, then every test that builds `Orders`:
 
 ```dart
-// main.dart, by hand — grows with every class
+// main.dart, by hand: it grows with every class
 final config = Config.load();
 final db = Database(config.dbUrl);
-final analytics = Analytics(config.analyticsKey);   // new
+final analytics = Analytics(config.analyticsKey);          // new
 final orders = Orders(db, Mailer(config.smtp), analytics);  // changed
 ```
 
-With the library you only change the class. Everything else follows:
+With the library you change only the class. Everything else follows:
 
 ```dart
 @Service()
 class Orders {
-  Orders(this.db, this.mailer, this.analytics); // new parameter — done
+  Orders(this.db, this.mailer, this.analytics); // new parameter: done
   final Database db;
   final Mailer mailer;
   final Analytics analytics;
@@ -40,7 +47,8 @@ command line, already converted to the right type:
 late final Duration deliveryTime;  // Duration(days: 2) in the field
 ```
 
-**3. Different behavior for dev, tests and production — without `if`s.**
+**3. Different behaviour for development, tests and production, without
+`if`s.**
 
 ```dart
 @Service() @Profile(['dev'])
@@ -55,17 +63,16 @@ the app as it really runs (see
 [`spring_boot_starter_test`](https://pub.dev/packages/spring_boot_starter_test)).
 
 **5. Logging, timing, retries, caching without touching the methods**
-(AOP, block 9 below).
+([AOP](#9-add-behaviour-to-methods-without-touching-them-aop)).
 
-**6. Familiar structure.** Anyone who knows Spring from Java or Kotlin
-reads the code immediately.
+**6. A familiar structure.** Anyone who knows Spring from Java or Kotlin
+reads the code at once.
 
 ## Setup (the generator is required)
 
 Dart has no runtime reflection (it is not available in Flutter), so the
-annotations are turned into plain Dart code by
-**`spring_core_dart_generator`** at build time. You always need both
-packages:
+annotations are turned into plain Dart code at build time by
+**`spring_core_dart_generator`**. You always need both packages:
 
 ```yaml
 dependencies:
@@ -76,7 +83,8 @@ dev_dependencies:
   spring_core_dart_generator: ^0.4.2
 ```
 
-One file tells the generator what to scan (everything under `lib/src/`):
+One file tells the generator where to look for beans: everything in its
+directory and below, here `lib/src/`:
 
 ```dart
 // lib/src/app.dart
@@ -106,12 +114,58 @@ void main() {
 ```
 
 > With [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart) the
-> whole `main` is one line: `@SpringBootApplication() void main(args) => runApplication(args);`
+> whole `main` is one line:
+> `@SpringBootApplication() void main(List<String> args) => runApplication(args);`
 
-## 1. Objects that are created for you
+## The runnable example
 
-Mark a class with `@Service()` (or `@Component()`). Whatever it needs in its
-constructor is created first and passed in.
+[`main.dart`](main.dart) is a small Spring Boot application (it uses
+`spring_boot_dart`, which starts the container from one annotation). It
+shows four things working together:
+
+- **beans and constructor injection:** `Registration` asks for a
+  `Greeter` and gets `EnglishGreeter`, the only class that implements it;
+- **a setting with a default:** `@Value(r'${greeting.punctuation:!}')`
+  reads `greeting.punctuation`, or `!` when it is not set;
+- **an expression:** `@Value('#{2 * 21}')` is evaluated once, at startup;
+- **events:** `Registration` publishes `UserRegistered`, and
+  `WelcomeMail` reacts to it through `@EventListener()`, without either
+  class knowing the other.
+
+`Tour` implements `CommandLineRunner`, so Spring Boot calls its `run` once
+the application has started. [`main.spring.dart`](main.spring.dart) is
+the code the generator wrote from the annotations.
+
+Run it from the package folder of the
+[repository](https://github.com/farum-azula/spring_core_dart/tree/main/spring_core_dart):
+
+```bash
+dart run example/main.dart
+```
+
+After the banner it prints:
+
+```text
+event: Ada registered
+Hello, Ada!
+answer: 42
+```
+
+A command-line argument overrides the setting:
+
+```bash
+dart run example/main.dart '--greeting.punctuation=?'   # Hello, Ada?
+```
+
+After changing an annotation, regenerate `main.spring.dart` with
+`dart run build_runner build`.
+
+## A tour of the features
+
+### 1. Objects that are created for you
+
+Mark a class with `@Service()` (or `@Component()`). Whatever it needs in
+its constructor is created first and passed in.
 
 ```dart
 @Service()
@@ -128,10 +182,10 @@ class Orders {
 }
 ```
 
-Every object is created once and shared (a *singleton*), so all classes get
-the same `Mailer`.
+Every object is created once and shared (a *singleton*), so all classes
+get the same `Mailer`.
 
-## 2. Depend on an interface, pick the implementation
+### 2. Depend on an interface, pick the implementation
 
 Ask for the interface; the library finds the class that implements it.
 
@@ -175,10 +229,10 @@ class Reports {
 }
 ```
 
-## 3. Settings from a properties file
+### 3. Settings from a properties file
 
-Put settings in `lib/resources/application.properties` (embedded into the
-app by the generator, no asset setup):
+Put settings in `lib/resources/application.properties`. The generator
+embeds the file into the app, so there is no asset setup:
 
 ```properties
 shop.name=NEON Books
@@ -186,9 +240,9 @@ shop.delivery=2d
 db.password=${DB_PASSWORD:changeme}
 ```
 
-Read them with `@Value`. Text is converted to the field type (`int`,
-`Duration`, `List`, enums...). `${DB_PASSWORD:changeme}` reads an
-environment variable with a default.
+Read them with `@Value`. Text is converted to the type of the field
+(`int`, `Duration`, `List`, enums...). `${DB_PASSWORD:changeme}` reads an
+environment variable, with a default.
 
 ```dart
 @Service()
@@ -204,18 +258,19 @@ class Shop {
 }
 ```
 
-> Write placeholders in **raw strings** `r'${...}'`: in a normal Dart string
-> `${...}` is string interpolation.
+> Write placeholders in **raw strings**, `r'${...}'`: in a normal Dart
+> string `${...}` is string interpolation.
 
 Load the files before starting the context:
 
 ```dart
+final modules = [appBeans]; // creating the module registers lib/resources/
 final environment = StandardEnvironment();
 ConfigDataEnvironment(environment).processAndApplySync();
-final context = ApplicationContext.run([appBeans], environment: environment);
+final context = ApplicationContext.run(modules, environment: environment);
 ```
 
-## 4. Different settings for dev and prod (profiles)
+### 4. Different settings for development and production (profiles)
 
 ```properties
 # lib/resources/application.properties
@@ -235,10 +290,11 @@ class FakePayments implements Payments { ... }
 class CardPayments implements Payments { ... }
 ```
 
-Switch at start: `dart run bin/main.dart --spring.profiles.active=prod`
-(add a `SimpleCommandLinePropertySource(args)` to the environment).
+Switch when starting: `dart run bin/main.dart --spring.profiles.active=prod`
+(add a `SimpleCommandLinePropertySource(args)` to the environment, so the
+command line is read).
 
-## 5. Objects from other libraries (`@Bean`)
+### 5. Objects from other libraries (`@Bean`)
 
 You cannot annotate `http.Client`, so create it in a method:
 
@@ -250,22 +306,23 @@ class HttpConfig {
 }
 ```
 
-`close()` / `dispose()` of such objects is called when the context closes.
+`close()` or `dispose()` of such objects is called when the context
+closes.
 
-## 6. Run code after creation and before shutdown
+### 6. Run code after creation and before shutdown
 
 ```dart
 @Service()
 class Cache {
   @PostConstruct()
-  void warmUp() => print('loading cache');   // after dependencies are set
+  void warmUp() => print('loading cache');   // after the dependencies are set
 
   @PreDestroy()
   void flush() => print('saving cache');     // on context.close()
 }
 ```
 
-## 7. Events between classes that do not know each other
+### 7. Events between classes that do not know each other
 
 ```dart
 class OrderPlaced {
@@ -288,7 +345,7 @@ class Emails {
 }
 ```
 
-## 8. Create objects later or many times
+### 8. Create objects later, or many times
 
 ```dart
 @Service() @Lazy()                 // created on first use, not at start
@@ -305,7 +362,7 @@ class Shop {
 }
 ```
 
-## 9. Add behavior to methods without touching them (AOP)
+### 9. Add behaviour to methods without touching them (AOP)
 
 Time every method marked `@Timed()`:
 
@@ -340,9 +397,10 @@ yourself through the aspect, inject yourself lazily:
 
 All kinds of advice (`@Before`, `@After`, `@AfterReturning`,
 `@AfterThrowing`, `@Around`), the pointcut syntax with a table of
-examples, and advice order: [AOP guide](https://pub.dev/packages/spring_core_dart#aop).
+examples, and the order of advice are in the
+[AOP guide](https://pub.dev/packages/spring_core_dart#aop).
 
-## 10. Validate forms and input
+### 10. Validate forms and input
 
 ```dart
 @Introspected()
@@ -367,10 +425,11 @@ for (final error in binder.bindingResult.allErrors) {
 }
 ```
 
-`introspector` is `context.getBean<BeanIntrospector>()`. Messages can be
-translated with `messages.properties` (next block).
+`introspector` is `context.getBean<BeanIntrospector>()`. `'old'` is not a
+number, so `age` gets a `typeMismatch` error instead of an exception.
+Messages can be translated with `messages.properties` (next section).
 
-## 11. Translations
+### 11. Translations
 
 ```properties
 # lib/resources/messages.properties
@@ -391,7 +450,7 @@ context.getMessage('greeting', args: ['NEON'], locale: 'ru');
 // Добро пожаловать в NEON!
 ```
 
-## 12. Expressions in settings (SpEL)
+### 12. Expressions in settings (SpEL)
 
 ```dart
 @Value('#{2 * 60}')                            // 120
@@ -404,7 +463,7 @@ late final String title;
 late final String appName;                     // (its class needs @Introspected())
 ```
 
-## 13. Files from `lib/resources/`
+### 13. Files from `lib/resources/`
 
 ```dart
 @Service()
@@ -416,10 +475,10 @@ class WelcomeLetter {
 }
 ```
 
-## 14. Hook into object creation (`BeanPostProcessor`)
+### 14. Hook into object creation (`BeanPostProcessor`)
 
-Runs for every object the library creates — for logging, wrapping,
-registration:
+A `BeanPostProcessor` runs for every object the library creates. Use it
+for logging, wrapping or registering objects:
 
 ```dart
 @Component()
@@ -434,11 +493,10 @@ class Audit extends BeanPostProcessor {
 
 ## More
 
-- A runnable app that uses every feature (with tests):
-  [example/ in the repository](https://github.com/farum-azula/spring_core_dart/tree/main/example)
-  — `dart run bin/main.dart` prints what each feature does.
-- [`main.dart`](main.dart) next to this file: the same ideas as a small
-  Spring Boot application (beans, `@Value`, SpEL, events), runnable with
-  `dart run example/main.dart`.
+- The guides: a bookstore's server and its Flutter app that use every
+  feature, chapter by chapter, with tests:
+  [example/ in the repository](https://github.com/farum-azula/spring_core_dart/tree/main/example).
+- [The package README](https://pub.dev/packages/spring_core_dart): every
+  feature in detail, and the differences from Spring.
 - [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart): starts
   everything above from one annotation.

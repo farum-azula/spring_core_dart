@@ -183,8 +183,10 @@ comments now describe what the code does:
   `runWithContext` restores at the first `await`; with only `issuer-uri`,
   `jws-algorithms` is ignored; `headers().defaultsDisabled()` ignores later
   header calls; users from `HttpSecurity.userDetailsService(...)` never get
-  hash upgrades; form login reads 64 KB while docs/security.md says 1 MB;
-  the README's SPA CSRF advice needs `CsrfTokenRequestAttributeHandler`.
+  hash upgrades; form login reads at most 64 KB, but when the CSRF token
+  comes as a form field the CSRF filter has already read the form with the
+  1 MiB limit and the login filter reuses it, so its own limit never
+  applies.
 - Boot: a `spring.jackson.*` boolean typo silently means false;
   auto-configuration `before`/`after` match short names only, exclusion by
   `Type` matches the simple name; `@ConfigurationProperties` validation
@@ -218,11 +220,30 @@ comments now describe what the code does:
   `T` it may replace an unrelated bean named `defaultBeanName(T)`; the
   replacement keeps only type `T`; `andExpect(json:)` on a non-JSON body
   throws `FormatException`; the runner ignores initializers' `order`.
-- READMEs: the web starter's says `@RequestParam` does not read form
-  fields (it does) and lists `HttpSession` under "Not yet"; the
-  generator's says it does not depend on `spring_core_dart` and lists only
-  `springCoreDartBuilder`; Feign's says `request-interceptors` wins over
-  the beans (it adds to them).
+
+
+Found while rewriting the READMEs and `docs/` (October 2026):
+
+- Objects made by hand without an introspector (`StandardEvaluationContext()`,
+  `DataBinder`, `BeanValidator`, `ObjectMapper`) read only
+  `BeanIntrospector.shared`, while the generated `@Introspected`
+  descriptions go to each context's introspector: they do not see
+  generated classes unless given the context's `BeanIntrospector` bean.
+- Configuration read before any `BeanModule` is created misses the
+  embedded `lib/resources/` files outside `dart run` (an AOT executable
+  started from another directory).
+- Flutter starter: `spring.flutter.app.locales` and `spring.messages.basename`
+  are read as single values (a YAML list is ignored), and a basename with
+  dots (`i18n.messages`) finds no locale files, while Boot's
+  `MessagesBundleCondition` reads both; after a hot-reload restart missing
+  font families are not logged again.
+- A non-numeric Feign `event-stream.max-attempts` fails with a
+  `FormatException` that does not name the property.
+- Test classes: an `@Autowired() Map<String, T>` field ignores
+  `@Qualifier` (`test_builder.dart`).
+- Not verified: `@Log` in a Boot app without `@ComponentScan` generates the
+  `log` getter into the scan's file (`bin/main.spring.dart`), which a
+  `lib/` library cannot import.
 
 Found by the reviews, not blocking:
 
