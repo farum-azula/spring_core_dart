@@ -49,25 +49,35 @@ What comes next, in order:
    (PKCE, tokens in the Keychain / Keystore).~~ Done (October 2026), with
    Keycloak in the examples; what is left (the differential test against
    Spring, mutation testing, tokens on WebSocket handshakes) is in the file.
-5. **Logging like Spring's** (the logging section of
+5. **Flutter security** ([spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md)):
+   the SSO's platform code out of `spring_boot_starter_flutter` into
+   `spring_boot_starter_flutter_security` (apps without a login carry
+   none of it), `SecretStore` / `SecretTemplate` for the app's own
+   secrets, display-only widgets that follow the user, login screens and
+   provider buttons (Google, Apple, Microsoft, GitHub), DPoP on the
+   server and in the apps, the SSO's hardening.
+6. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
+   `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
+   `@HttpExchange` later.
+7. **Logging like Spring's** (the logging section of
    [spring_core_dart.md](spring_core_dart.md#logging-like-springs)): the
    root level INFO without the logging starter too, as in Spring; the
    framework's own debug and trace lines for its main steps (beans
    created, config files loaded, requests mapped and completed, the
    security chain's decisions), with Spring's texts; the `web` log group;
    `--debug` and `--trace` as in Boot.
-6. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
+8. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
    of the providers (Anthropic, OpenAI, Gemini, Ollama, ...) behind one
    `ChatClient`, all in one package (`spring_boot_starter_ai`).
-7. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
+9. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
    *MVC: views and static resources*): first find out whether it is worth
    it. Browser SSO on the server, `oauth2Login()` with OpenID Connect, is
    done without it
    ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)):
    Flutter web uses the server as its backend-for-frontend.
-8. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
+10. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
    actuator, data, the rest of the table.
-9. Under question, far off: **the starters on the generator** —
+11. Under question, far off: **the starters on the generator** —
    `@AutoConfiguration` classes with `@Bean` methods instead of the
    hand-written `BeanDefinition`s of their auto-configurations. For now
    hand-written stays: it reads better for this code and needs no
@@ -89,13 +99,14 @@ What comes next, in order:
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: registrations from `spring.security.oauth2.client.*`, discovery, PKCE logins of apps (`OAuth2LoginService`), refresh, `TokenStore`, Bearer tokens on Feign; next: tokens on WebSocket handshakes |
 | [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data_*` | planned: entities, repositories, `@Transactional` |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
-| [spring_boot_starter_http.md](spring_boot_starter_http.md) | `spring_boot_starter_http` | planned: `RestClient`, `@HttpExchange` |
+| [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient`, `RestTemplate` (no package of its own), later `@HttpExchange` |
 | [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | next steps: files and forms, `FallbackFactory`, circuit breaker |
 | [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |
 | [spring_boot_starter_scheduling.md](spring_boot_starter_scheduling.md) | `spring_boot_starter_scheduling` | next: `TaskExecutor` (a pool of worker isolates), `@Async` on it |
 | [spring_boot_starter_cache.md](spring_boot_starter_cache.md) | `spring_boot_starter_cache` | next: persistent stores |
 | [spring_boot_starter_test.md](spring_boot_starter_test.md) | `spring_boot_starter_test` | test classes with annotations (done, [docs/testing.md](../docs/testing.md)); next: editor run buttons and snippets |
 | [spring_boot_starter_flutter_test.md](spring_boot_starter_flutter_test.md) | `spring_boot_starter_flutter_test` | planned: Flutter tests on top of the test starter (`@WidgetTest`, `pumpSpring`, themes, platforms, goldens), spec in [docs/flutter-testing.md](../docs/flutter-testing.md) |
+| [spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md) | `spring_boot_starter_flutter_security` | planned: the platform code of logins and secrets moved out of the Flutter starter, `SecretStore` / `SecretTemplate`, display-only authorization widgets, login screens and provider buttons |
 | [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties, the `TokenStore` and login browser on own platform code (done), next: navigation, settings |
 | [flutter_spring_signals.md](flutter_spring_signals.md) | `flutter_spring_signals` | planned: `@Signal` fields |
 | [flutter_spring_scene.md](flutter_spring_scene.md) | `flutter_spring_scene` | planned: Flutter Scene (3D) |

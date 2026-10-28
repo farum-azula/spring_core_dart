@@ -355,6 +355,27 @@ JVM servers (Netty, Tomcat) cannot run in a Dart process.
       offload-threshold: 256KB
   ```
 
+- **Later: several isolates on one port** (servers, off by default).
+  One isolate uses one core; the way to scale stays replicas behind a
+  load balancer (Kubernetes, Docker, nginx), as for Node.js and Go. For a
+  single machine without one, a property turns on more isolates:
+
+  ```yaml
+  server:
+    isolates: auto   # 1 by default; a number, or auto = one per core
+  ```
+
+  - Each isolate binds the same port (`HttpServer.bind(..., shared:
+    true)`); the OS spreads the connections.
+  - Isolates share no memory, so each runs its own context with its own
+    beans, like separate processes: sessions, caches, counters (and
+    DPoP's `jti` cache) need a shared store, as replicas do. Startup
+    warns when `isolates` > 1 with the in-memory session store.
+  - Singletons that must run once (`@Scheduled` jobs, startup runners
+    that change data) run in the first isolate only, or say so.
+  - Lifecycle: the main isolate starts and stops the others; graceful
+    shutdown waits for all.
+
 - **Later: `server.isolate: background`.** The whole server in a
   background isolate, for heavy servers.
   - Beans cannot be shared across isolates, so the isolate runs a second
