@@ -15,11 +15,11 @@ when the context closes.
 
 ```yaml
 dependencies:
-  spring_boot_starter_scheduling: ^0.4.0
+  spring_boot_starter_scheduling: ^0.4.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.0   # required: makes @Scheduled methods callable
+  spring_core_dart_generator: ^0.4.1   # required: makes @Scheduled methods callable
 ```
 
 The starter is the only dependency an application needs: it brings

@@ -1,3 +1,8 @@
+## 0.4.1
+
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+- feat: guides replace the examples; optional parameters from Dart nullability; coloured logs
+
 ## 0.4.0
 
 - `Principal` now comes from `spring_core_dart` (still exported here, the same type).

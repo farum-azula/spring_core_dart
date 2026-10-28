@@ -7,4 +7,4 @@
 ///
 /// It is kept equal to the version in `pubspec.yaml` by
 /// `tool/version.dart`, and CI checks that they match.
-const springBootVersion = '0.4.0';
+const springBootVersion = '0.4.1';
