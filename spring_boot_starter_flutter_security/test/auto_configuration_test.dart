@@ -66,6 +66,28 @@ void main() {
     });
   });
 
+  test('spring.flutter.security.ephemeral-session picks a private window', () {
+    on(TargetPlatform.iOS);
+    runner.run((context) {
+      expect(
+        context.getBean<PlatformAuthorizationWindow>().preferEphemeralSession,
+        isFalse,
+      );
+    });
+    runner
+        .withPropertyValues([
+          'spring.flutter.security.ephemeral-session=true',
+        ])
+        .run((context) {
+          expect(
+            context
+                .getBean<PlatformAuthorizationWindow>()
+                .preferEphemeralSession,
+            isTrue,
+          );
+        });
+  });
+
   test('on Windows and Linux: the secure store, the loopback window', () {
     for (final platform in [TargetPlatform.windows, TargetPlatform.linux]) {
       on(platform);

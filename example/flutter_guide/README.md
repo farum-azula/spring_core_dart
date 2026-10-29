@@ -562,9 +562,12 @@ full: [the roadmap](../../roadmap/spring_boot_starter_oauth2_client.md#which-flo
   after a reload. `/api/me` answers `name`, `authorities` and, after a
   Keycloak login, `registrationId`: the starter's contract (a form login
   of the server is restored the same way).
-- **Logout.** A native app revokes its tokens at Keycloak, forgets them
-  and ends Keycloak's session in the login window
-  (`logout(endSession: true)`, back to `books.neon.app:/oauth2/logout`).
+- **Logout.** A native app revokes its tokens at Keycloak and forgets
+  them, without a window: Keycloak's session in the browser stays, so
+  the next login may not ask for the password. `Session.logout(endSession:
+  true)` also ends Keycloak's session in the login window (back to
+  `books.neon.app:/oauth2/logout`), which iOS and macOS announce with
+  their "wants to use localhost to Sign In" prompt.
   The web app's `OAuth2LoginService.logout` posts `/api/logout` with the
   CSRF token (`spring.flutter.security.web.logout-url`); the server
   answers with Keycloak's logout URL (`{"logoutUrl": ...}`), and the page

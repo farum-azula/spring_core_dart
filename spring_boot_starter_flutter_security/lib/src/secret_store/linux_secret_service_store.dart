@@ -55,8 +55,15 @@ final class LinuxSecretServiceStore implements SecretStore {
   @override
   Future<void> deleteAll() {
     final application = this.application;
-    // Without a key, every item of the application matches.
-    return Isolate.run(() => _LibSecret.clear(application, null));
+    // Key by key: `secret_password_clearv_sync` with the application
+    // alone does not remove every matching item with every Secret Service
+    // (GNOME Keyring left some), so the keys are listed first and each
+    // item is removed by its exact attributes, as on macOS.
+    return Isolate.run(() {
+      for (final key in _LibSecret.keys(application)) {
+        _LibSecret.clear(application, key);
+      }
+    });
   }
 }
 
@@ -295,7 +302,7 @@ abstract final class _LibSecret {
         return keys;
       });
 
-  static void clear(String application, String? key) =>
+  static void clear(String application, String key) =>
       _withAttributes(application, key, (arena, schema, attributes, error) {
         final clear = _secret.lookupFunction<_ClearNative, _ClearDart>(
           'secret_password_clearv_sync',

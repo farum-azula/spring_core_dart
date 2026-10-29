@@ -294,7 +294,18 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
           ConditionalOnMissingBean(AuthorizationWindow),
         ]),
       ],
-      create: (_) => const PlatformAuthorizationWindow(),
+      // `spring.flutter.security.ephemeral-session=true`: a private
+      // session, no cookies shared with the browser (no single sign-on,
+      // no system prompt before the window on iOS and macOS).
+      create: (r) => PlatformAuthorizationWindow(
+        preferEphemeralSession:
+            r
+                .dependency<Environment>()
+                .getProperty('spring.flutter.security.ephemeral-session')
+                ?.trim()
+                .toLowerCase() ==
+            'true',
+      ),
     ),
     BeanDefinition<LoopbackAuthorizationWindow>(
       name: 'loopbackAuthorizationWindow',

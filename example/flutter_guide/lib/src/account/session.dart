@@ -151,13 +151,15 @@ class Session {
   }
 
   /// Logs out through the starter's login where there is one: a native
-  /// app's Keycloak login revokes its tokens at Keycloak, forgets them and
-  /// ends Keycloak's session in the system's login window; the web app
-  /// posts the server's logout (after a Keycloak login the page then goes
-  /// on to Keycloak's logout, which comes back to the app). A native app
-  /// without Keycloak posts the server's logout itself. Then the app
-  /// forgets the user and the cookies.
-  Future<void> logout() async {
+  /// app's Keycloak login revokes its tokens at Keycloak and forgets them,
+  /// without a window; with [endSession] (switching accounts) it also
+  /// ends Keycloak's own session in the system's login window, which iOS
+  /// and macOS announce with their "wants to use ... to Sign In" prompt.
+  /// The web app posts the server's logout (after a Keycloak login the
+  /// page then goes on to Keycloak's logout, which comes back to the
+  /// app). A native app without Keycloak posts the server's logout
+  /// itself. Then the app forgets the user and the cookies.
+  Future<void> logout({bool endSession = false}) async {
     if (_restoring case final restoring?) {
       await restoring;
     }
@@ -165,7 +167,7 @@ class Session {
     if (_login case final login?) {
       final postLogout = _sso.postLogoutRedirectUri;
       await login.logout(
-        endSession: postLogout != null,
+        endSession: endSession && postLogout != null,
         postLogoutRedirectUri: postLogout == null
             ? null
             : Uri.parse(postLogout),

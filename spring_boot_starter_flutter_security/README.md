@@ -173,9 +173,14 @@ provider refuses (`invalid_grant`) logs the user out, an unreachable
 provider does not (an app starts offline). `logout()` revokes the
 refresh and access tokens (`OAuth2TokenRevocationClient`, RFC 7009, when
 the provider has a `revocation_endpoint`), forgets them, clears the
-context and publishes a `LogoutSuccessEvent`; `logout(endSession: true)`
-also ends the provider's session in the login window (OpenID Connect
-RP-initiated logout, with the ID token as `id_token_hint`).
+context and publishes a `LogoutSuccessEvent`, all without a window. The
+user stays logged in at the provider in the system's browser, so the
+next login may need no password; that is the usual logout of a mobile
+app. `logout(endSession: true)` also ends the provider's session in the
+login window (OpenID Connect RP-initiated logout, with the ID token as
+`id_token_hint`): for "switch account"; iOS and macOS announce that
+window with their own "... wants to use ... to Sign In" prompt, whose
+text no app can change.
 
 The ID token's signature is not checked: it comes straight from the
 token endpoint over TLS, which OpenID Connect Core §3.1.3.7 allows (the
@@ -639,9 +644,12 @@ scheme of the redirect URI is the one the login session waits for. An
 `https` redirect needs iOS 17.4 / macOS 14.4 and the app's associated
 domain ([below](#ios-and-macos-https-redirects)); older systems fail
 with an `UnsupportedError`. The login reuses Safari's session, and iOS asks
-"... wants to use ... to sign in"; `PlatformAuthorizationWindow(preferEphemeralSession: true)`
-(a bean of your own) uses a private session that keeps no cookies and
-asks nothing.
+"... wants to use ... to sign in";
+`spring.flutter.security.ephemeral-session=true` (or a
+`PlatformAuthorizationWindow(preferEphemeralSession: true)` bean of your
+own) uses a private session that keeps no cookies and asks nothing: no
+prompt on login and logout, but no single sign-on either (every login
+asks for the password).
 
 On macOS the tokens go to the data protection keychain (the iOS one)
 when the app may use it: a build signed with a team (a development

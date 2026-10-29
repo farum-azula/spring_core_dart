@@ -492,17 +492,13 @@ class _$SessionProxy extends _i12.Session
   }
 
   @override
-  _i3.Future<void> logout() {
+  _i3.Future<void> logout({bool endSession = false}) {
     final _$i = this._$invoker;
     return _$i == null
-        ? super.logout()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            3,
-            const [],
-            (args) => super.logout(),
-          );
+        ? super.logout(endSession: endSession)
+        : _$i.invokeAsync<void>(this, this, 3, [
+            endSession,
+          ], (args) => super.logout(endSession: (args[0] as bool)));
   }
 
   @override
@@ -3764,6 +3760,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Session',
             declaringTypes: [r'Session'],
             returnType: r'Future',
+            parameterTypes: [r'bool'],
+            parameterNames: [r'endSession'],
             targetTypes: [r'Session'],
             targetAnnotations: [
               _i7.ChangeNotifierComponent(),
@@ -7892,7 +7890,7 @@ _i57.SpringApplication get springApplication => _i57.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '6c9e084f',
+  fingerprint: 'a8c64833',
 );
 
 /// Starts the application: config files, environment, context, runners

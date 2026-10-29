@@ -2780,6 +2780,7 @@ spring.flutter.security.web.logout-url=/api/logout
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
+| `spring.flutter.security.ephemeral-session` | `true` / `false` | `false` | iOS, Android, macOS: the login window keeps no cookies of the system's browser: no system prompt before the window (iOS, macOS), but no single sign-on (every login asks for the password) |
 | `spring.flutter.security.web.mode` | `server` / `spa` | `server` | Who logs in: the app's server (backend-for-frontend), or the browser by itself (`spa`: a public client with PKCE, tokens in the tab's memory, DPoP with a non-extractable WebCrypto key; without a registration the app stops at startup) |
 | `spring.flutter.security.web.silent-restore` | `true` / `false` | `true` | Spa mode: after a reload or in a new tab, `restore()` sends the page to the provider with `prompt=none` when someone logged in in this browser before, and comes back logged in (or with `login_required`: nobody) |
 | `spring.flutter.security.web.server-url` | absolute `http(s)` URL, no query | the page's origin | The app's server, with its context path if any. On another origin than the page, `fetch` is asked to send the cookies there (`FetchCredentials.include`), and the server must allow it (CORS with credentials) |

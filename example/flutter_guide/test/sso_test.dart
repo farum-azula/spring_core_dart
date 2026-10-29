@@ -360,12 +360,30 @@ void main() {
       expect(browser.opened, isEmpty); // no login page this time
     });
 
-    test('logout: revoked, forgotten, Keycloak session ended', () async {
+    test('logout: revoked and forgotten, no window', () async {
+      final session = app.getBean<Session>();
+      await started(session);
+      await session.signInWithKeycloak();
+      final windows = browser.opened.length;
+
+      await session.logout();
+
+      expect(current, isNull);
+      expect(
+        keycloak.revoked,
+        containsAll(['refresh-of-root', 'access-of-root']),
+      );
+      expect(await tokens.read(NativeOAuth2LoginService.sessionKey), isNull);
+      // Keycloak's session in the browser stays: no login window.
+      expect(browser.opened, hasLength(windows));
+    });
+
+    test('logout(endSession: true): Keycloak session ended too', () async {
       final session = app.getBean<Session>();
       await started(session);
       await session.signInWithKeycloak();
 
-      await session.logout();
+      await session.logout(endSession: true);
 
       expect(current, isNull);
       expect(
