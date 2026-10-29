@@ -12,6 +12,8 @@ topics:
 
 environment:
   sdk: ^3.13.0
+  # The Flutter that ships Dart 3.13; plugins must name one.
+  flutter: '>=3.47.0'
 
 
 dependencies:
