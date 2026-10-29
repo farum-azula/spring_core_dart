@@ -17,15 +17,15 @@ dependencies:
   # @PreAuthorize, the widgets that follow the user. It brings and
   # re-exports the Flutter starter, the OAuth2 client and
   # spring_security_core.
-  spring_boot_starter_flutter_security: ^0.4.2
+  spring_boot_starter_flutter_security: ^0.4.3
   # The server's REST API as @FeignClient interfaces (chapter 6).
-  spring_boot_starter_feign: ^0.4.2
+  spring_boot_starter_feign: ^0.4.3
   # The support chat as a @WebSocketClient (chapter 6).
-  spring_boot_starter_websocket: ^0.4.2
+  spring_boot_starter_websocket: ^0.4.3
   # @Cacheable catalog reads (chapter 8).
-  spring_boot_starter_cache: ^0.4.2
+  spring_boot_starter_cache: ^0.4.3
   # @Scheduled catalog refresh (chapter 8).
-  spring_boot_starter_scheduling: ^0.4.2
+  spring_boot_starter_scheduling: ^0.4.3
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -36,15 +36,15 @@ dev_dependencies:
   # on the real device.
   integration_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.4.2
-  spring_core_dart_generator: ^0.4.2
+  spring_boot_starter_test: ^0.4.3
+  spring_core_dart_generator: ^0.4.3
   # integration_test/dpop_key_test.dart: the DPoP proofs' signatures
   # checked by an ECDSA verifier that is not the code tested (it comes
   # with the OAuth2 client anyway).
   pointycastle: ^4.0.0
   # test/security_test.dart: package:spring_security_core/testing.dart
   # (withMockUser); the package itself comes with the security starter.
-  spring_security_core: ^0.4.2
+  spring_security_core: ^0.4.3
 
 flutter:
   uses-material-design: true

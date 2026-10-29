@@ -15,11 +15,11 @@ in for the catalog, then uses the client to read a book, turn a 404 into
 
 ```yaml
 dependencies:
-  spring_boot_starter_feign: ^0.4.2
+  spring_boot_starter_feign: ^0.4.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2   # required: writes the client implementations
+  spring_core_dart_generator: ^0.4.3   # required: writes the client implementations
 ```
 
 From the package directory, generate the code, then run the example:

@@ -1,7 +1,7 @@
 name: spring_boot_starter_web
 description: >-
   Spring MVC for Dart: @RestController with @GetMapping and @PostMapping on dart:io, JSON bodies, @Valid, ProblemDetail errors, server-sent events, filters, CORS.
-version: 0.4.2
+version: 0.4.3
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_web
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -16,16 +16,16 @@ environment:
 resolution: workspace
 
 dependencies:
-  spring_boot_dart: ^0.4.2
+  spring_boot_dart: ^0.4.3
   # Like every Spring Boot starter: logging comes with it.
-  spring_boot_starter_logging: ^0.4.2
-  spring_web_dart: ^0.4.2
+  spring_boot_starter_logging: ^0.4.3
+  spring_web_dart: ^0.4.3
 
 dev_dependencies:
   # For example/ and test/app/: the generator writes the *.spring.dart files.
   build_runner: ^2.17.0
-  spring_boot_starter_test: ^0.4.2
+  spring_boot_starter_test: ^0.4.3
   # The tests open WebSocket endpoints on the server over real sockets.
-  spring_boot_starter_websocket: ^0.4.2
-  spring_core_dart_generator: ^0.4.2
+  spring_boot_starter_websocket: ^0.4.3
+  spring_core_dart_generator: ^0.4.3
   test: ^1.33.0

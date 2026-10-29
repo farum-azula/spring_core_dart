@@ -97,11 +97,11 @@ chapter 7 (single sign-on with Keycloak).
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter_security: ^0.4.2
+  spring_boot_starter_flutter_security: ^0.4.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
+  spring_core_dart_generator: ^0.4.3
 ```
 
 **One package, one import.** It depends on and re-exports

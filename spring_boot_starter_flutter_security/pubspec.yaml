@@ -1,7 +1,7 @@
 name: spring_boot_starter_flutter_security
 description: >-
   Security for Spring Boot Flutter apps: the OAuth2 / OpenID Connect app login, secrets in the Keychain / Keystore, widgets that follow the logged-in user.
-version: 0.4.2
+version: 0.4.3
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter_security
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -23,22 +23,22 @@ dependencies:
   # storage and logs in on the server).
   flutter_web_plugins:
     sdk: flutter
-  spring_boot_dart: ^0.4.2
+  spring_boot_dart: ^0.4.3
   # Re-exported: an app lists only this package.
-  spring_boot_starter_flutter: ^0.4.2
+  spring_boot_starter_flutter: ^0.4.3
   # The registrations, token endpoint clients, users and authorized
   # clients the app login builds on. Re-exported.
-  spring_boot_starter_oauth2_client: ^0.4.2
+  spring_boot_starter_oauth2_client: ^0.4.3
   # SecurityContextHolder, the expressions of PrincipalView. Re-exported.
-  spring_security_core: ^0.4.2
+  spring_security_core: ^0.4.3
 
 dev_dependencies:
   # For example/: the generator writes example/example.spring.dart.
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
+  spring_core_dart_generator: ^0.4.3
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.4.2
+  spring_boot_starter_test: ^0.4.3
   lints: ^6.0.0
 
 # A Flutter plugin: its own platform code keeps secrets in the platform's

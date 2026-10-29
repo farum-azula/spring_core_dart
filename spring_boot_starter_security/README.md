@@ -15,12 +15,12 @@ are on as soon as the dependency is listed.
 
 ```yaml
 dependencies:
-  spring_boot_starter_security: ^0.4.2
+  spring_boot_starter_security: ^0.4.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
-  spring_boot_starter_test: ^0.4.2     # MockMvc, springBootTest
+  spring_core_dart_generator: ^0.4.3
+  spring_boot_starter_test: ^0.4.3     # MockMvc, springBootTest
 ```
 
 It brings the web starter,

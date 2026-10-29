@@ -59,12 +59,12 @@ and test time.
 
 ```yaml
 dependencies:
-  spring_boot_starter_logging: ^0.4.2
+  spring_boot_starter_logging: ^0.4.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
-  spring_boot_starter_test: ^0.4.2
+  spring_core_dart_generator: ^0.4.3
+  spring_boot_starter_test: ^0.4.3
   test: ^1.25.0
 ```
 
@@ -251,11 +251,11 @@ README has its own snippet). For the core alone:
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.4.2
+  spring_core_dart: ^0.4.3
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
+  spring_core_dart_generator: ^0.4.3
 ```
 
 Versions not yet released can be used from git:

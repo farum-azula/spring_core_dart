@@ -1,3 +1,9 @@
+## 0.4.3
+
+- Flutter security (#15)
+- feat: single sign-on with OAuth 2.0 / OpenID Connect (spring_boot_sta… (#11)
+- docs: the READMEs and docs/ rewritten: what it is, why and when you need it, an example, then Spring (#10)
+
 ## 0.4.2
 
 - Docs (#9)

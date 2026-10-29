@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.3
 
 - `PreAuthenticatedAuthenticationToken` (Spring's, of `spring-security-web`): a login another system has checked, such as the server of a Flutter web app (`spring_boot_starter_flutter_security`).
 - `GrantedAuthoritiesMapper` and `NullAuthoritiesMapper` (Spring's `org.springframework.security.core.authority.mapping`), for logins through other systems such as OAuth 2.0 (`spring_boot_starter_oauth2_client`).

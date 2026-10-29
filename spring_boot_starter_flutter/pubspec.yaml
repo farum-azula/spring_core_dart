@@ -1,7 +1,7 @@
 name: spring_boot_starter_flutter
 description: >-
   Spring Boot for Flutter apps: SpringApplicationWidget, beans in widgets, state beans that rebuild widgets, lifecycle, platform profiles, themes from properties.
-version: 0.4.2
+version: 0.4.3
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -18,14 +18,14 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  spring_boot_dart: ^0.4.2
-  spring_boot_starter_logging: ^0.4.2
+  spring_boot_dart: ^0.4.3
+  spring_boot_starter_logging: ^0.4.3
 
 dev_dependencies:
   # For example/: the generator writes example/example.spring.dart.
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
+  spring_core_dart_generator: ^0.4.3
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.4.2
+  spring_boot_starter_test: ^0.4.3
   lints: ^6.0.0

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.3
 
 - `web_dev_config.yaml`: `spring.flutter.web.content-security-policy` adds the page's Content Security Policy to the dev server's answers (`content-security-policy-report-only=true`: the report-only header); with `spring.flutter.security.web.mode=spa` and no policy set, a ready one (`WebDevServerSettings.spaContentSecurityPolicy`: the app's and Flutter's scripts, `'wasm-unsafe-eval'` and no `eval`, connections to the origin, Flutter's CDN and the origins of the `spring.security.oauth2.client.provider.*` URIs, `frame-ancestors 'none'`). The property and a `headers.Content-Security-Policy` both set fail the build.
 

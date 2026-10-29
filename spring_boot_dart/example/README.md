@@ -19,11 +19,11 @@ at build time by **`spring_core_dart_generator`**:
 
 ```yaml
 dependencies:
-  spring_boot_dart: ^0.4.2      # includes spring_core_dart
+  spring_boot_dart: ^0.4.3      # includes spring_core_dart
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.2
+  spring_core_dart_generator: ^0.4.3
 ```
 
 From the `spring_boot_dart` directory:
@@ -179,9 +179,9 @@ A starter is a package that brings ready-made beans. Add it to
 dependencies:
   # in place of spring_boot_dart: it brings it, with console, log files and
   # an in-app log buffer
-  spring_boot_starter_logging: ^0.4.2
+  spring_boot_starter_logging: ^0.4.3
 dev_dependencies:
-  spring_boot_starter_test: ^0.4.2      # testing the whole app
+  spring_boot_starter_test: ^0.4.3      # testing the whole app
 ```
 
 Anyone can write one: a `lib/spring_auto_configuration.dart` with an
