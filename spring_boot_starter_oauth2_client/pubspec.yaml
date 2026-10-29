@@ -15,10 +15,6 @@ environment:
 
 resolution: workspace
 
-# Test keys, made for the tests and used nowhere else: not leaked secrets.
-false_secrets:
-  - /test/jwt_client_secret_test.dart
-
 dependencies:
   # THIRD-PARTY, to be removed (docs/dependencies.md, "pointycastle"):
   # Bouncy Castle's Dart port, SHA-256 (PKCE, the OpenID Connect nonce,
