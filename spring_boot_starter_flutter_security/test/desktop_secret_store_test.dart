@@ -32,7 +32,7 @@ void main() {
   late SecretStore store;
   late SecretStore otherApp;
 
-  setUp(() {
+  setUp(() async {
     if (Platform.isWindows) {
       folder = Directory.systemTemp.createTempSync('dpapi_');
       store = WindowsDpapiSecretStore(directory: folder);
@@ -42,6 +42,12 @@ void main() {
     } else {
       store = LinuxSecretServiceStore(application: 'spring-ci-secret-store');
       otherApp = LinuxSecretServiceStore(application: 'spring-ci-other-app');
+      if (skip == null) {
+        // The keyring outlives the test run: start from nothing, whatever
+        // an earlier run left.
+        await store.deleteAll();
+        await otherApp.deleteAll();
+      }
     }
   });
 
