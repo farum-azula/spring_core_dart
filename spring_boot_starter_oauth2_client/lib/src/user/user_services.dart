@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/parameter_names.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/tokens.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_nonces.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_proof_builder.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 import 'package:spring_boot_starter_oauth2_client/src/user/oauth2_user.dart';
@@ -112,15 +115,25 @@ final class _FunctionUserService<
 /// the registration says); the JSON answer becomes the user's attributes,
 /// and the registration's user name attribute names the user. The user
 /// gets `OAUTH2_USER` and `SCOPE_<scope>` for each scope of the token.
+/// A DPoP-bound token goes as `Authorization: DPoP <token>` with a proof
+/// signed by [dPoPKey], whatever the registration's authentication method
+/// (RFC 9449 §7.1); a `use_dpop_nonce` answer is retried once with the
+/// endpoint's nonce.
 ///
-/// Spring (Java): `DefaultOAuth2UserService`.
+/// Spring (Java): `DefaultOAuth2UserService` (without DPoP).
 class DefaultOAuth2UserService
     implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
-  /// A service calling the endpoint through [transport].
-  DefaultOAuth2UserService(this.transport);
+  /// A service calling the endpoint through [transport]; [dPoPKey] signs
+  /// the proofs of DPoP-bound tokens.
+  DefaultOAuth2UserService(this.transport, {this.dPoPKey});
 
   /// The HTTP transport.
   final HttpTransport transport;
+
+  /// The key of the DPoP proofs, or `null` when the tokens are `Bearer`.
+  final DPoPKey? dPoPKey;
+
+  final DPoPNonces _nonces = DPoPNonces();
 
   @override
   Future<OAuth2User> loadUser(OAuth2UserRequest userRequest) async {
@@ -145,7 +158,12 @@ class DefaultOAuth2UserService
         ),
       );
     }
-    final attributes = await loadUserAttributes(transport, userRequest);
+    final attributes = await loadUserAttributes(
+      transport,
+      userRequest,
+      dPoPKey: dPoPKey,
+      nonces: _nonces,
+    );
     final authorities = <GrantedAuthority>[
       OAuth2UserAuthority(
         attributes,
@@ -168,15 +186,18 @@ class DefaultOAuth2UserService
   }
 }
 
-/// The attributes the user-info endpoint of [userRequest] returns.
+/// The attributes the user-info endpoint of [userRequest] returns; a DPoP
+/// token is sent with a proof of [dPoPKey], with the nonces of [nonces].
 ///
 /// Throws an [OAuth2AuthenticationException] (`invalid_user_info_response`)
 /// when the endpoint fails or answers with something other than a JSON
-/// object.
+/// object, or the token is DPoP-bound and there is no [dPoPKey].
 Future<Map<String, Object?>> loadUserAttributes(
   HttpTransport transport,
-  OAuth2UserRequest userRequest,
-) async {
+  OAuth2UserRequest userRequest, {
+  DPoPKey? dPoPKey,
+  DPoPNonces? nonces,
+}) async {
   final registration = userRequest.clientRegistration;
   final endpoint = registration.providerDetails.userInfoEndpoint;
   final uri = Uri.parse(endpoint.uri!);
@@ -188,48 +209,83 @@ Future<Map<String, Object?>> loadUserAttributes(
       'Resource: $details',
     ),
   );
-  final headers = HttpHeaders({
-    HttpHeaders.acceptHeader: MediaType.applicationJson,
-  });
-  final HttpRequest request;
-  if (endpoint.authenticationMethod == AuthenticationMethod.form) {
-    headers.set(
-      HttpHeaders.contentTypeHeader,
-      '${MediaType.applicationFormUrlencoded};charset=UTF-8',
-    );
-    request = HttpRequest(
-      method: HttpMethod.post,
-      url: uri,
-      headers: headers,
-      body: utf8.encode(
-        formUrlEncodeAll({OAuth2ParameterNames.accessToken: token}),
-      ),
-      followRedirects: false,
-    );
-  } else if (endpoint.authenticationMethod == AuthenticationMethod.query) {
-    request = HttpRequest(
-      method: HttpMethod.get,
-      url: uri.replace(
-        queryParameters: {
-          ...uri.queryParameters,
-          OAuth2ParameterNames.accessToken: token,
-        },
-      ),
-      headers: headers,
-      followRedirects: false,
-    );
-  } else {
+  final dPoP = userRequest.accessToken.tokenType == TokenType.dpop;
+  if (dPoP && dPoPKey == null) {
+    fail('the access token is DPoP-bound and there is no DPoP key');
+  }
+  final proofs = dPoP ? DPoPProofBuilder(dPoPKey!) : null;
+  final remembered = nonces ?? DPoPNonces();
+  Future<HttpRequest> request(String? nonce) async {
+    final headers = HttpHeaders({
+      HttpHeaders.acceptHeader: MediaType.applicationJson,
+    });
+    if (proofs != null) {
+      // RFC 9449 §7.1: a DPoP token goes in the Authorization header.
+      headers
+        ..set(HttpHeaders.authorizationHeader, 'DPoP $token')
+        ..set(
+          dPoPHeader,
+          await proofs.build(
+            method: 'GET',
+            url: uri,
+            accessToken: token,
+            nonce: nonce,
+          ),
+        );
+      return HttpRequest(
+        method: HttpMethod.get,
+        url: uri,
+        headers: headers,
+        followRedirects: false,
+      );
+    }
+    if (endpoint.authenticationMethod == AuthenticationMethod.form) {
+      headers.set(
+        HttpHeaders.contentTypeHeader,
+        '${MediaType.applicationFormUrlencoded};charset=UTF-8',
+      );
+      return HttpRequest(
+        method: HttpMethod.post,
+        url: uri,
+        headers: headers,
+        body: utf8.encode(
+          formUrlEncodeAll({OAuth2ParameterNames.accessToken: token}),
+        ),
+        followRedirects: false,
+      );
+    }
+    if (endpoint.authenticationMethod == AuthenticationMethod.query) {
+      return HttpRequest(
+        method: HttpMethod.get,
+        url: uri.replace(
+          queryParameters: {
+            ...uri.queryParameters,
+            OAuth2ParameterNames.accessToken: token,
+          },
+        ),
+        headers: headers,
+        followRedirects: false,
+      );
+    }
     headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-    request = HttpRequest(
+    return HttpRequest(
       method: HttpMethod.get,
       url: uri,
       headers: headers,
       followRedirects: false,
     );
   }
-  final HttpResponse response;
+
+  HttpResponse response;
   try {
-    response = await transport.send(request);
+    response = await transport.send(await request(remembered.of(uri)));
+    if (proofs != null) {
+      final nonce = remembered.remember(uri, response.headers);
+      if (nonce != null && resourceServerWantsNonce(response)) {
+        response = await transport.send(await request(nonce));
+        remembered.remember(uri, response.headers);
+      }
+    }
   } on HttpTransportException catch (e) {
     fail(e.message);
   }
@@ -267,18 +323,28 @@ Future<Map<String, Object?>> loadUserAttributes(
 /// token's: an answer about someone else fails the login
 /// (`invalid_user_info_response`). The user gets `OIDC_USER` and
 /// `SCOPE_<scope>` for each scope of the token, and is named by the
-/// registration's user name attribute (`sub` when not set).
+/// registration's user name attribute (`sub` when not set). A DPoP-bound
+/// token is sent with a proof of [dPoPKey], as by
+/// [DefaultOAuth2UserService].
 ///
-/// Spring (Java): `OidcUserService`.
+/// Spring (Java): `OidcUserService` (without DPoP).
 class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
-  /// A service calling the user-info endpoint through [transport].
+  /// A service calling the user-info endpoint through [transport];
+  /// [dPoPKey] signs the proofs of DPoP-bound tokens.
   OidcUserService(
     this.transport, {
     this.accessibleScopes = const {'profile', 'email', 'address', 'phone'},
+    this.dPoPKey,
   });
 
   /// The HTTP transport.
   final HttpTransport transport;
+
+  /// The key of the DPoP proofs, or `null` when the tokens are `Bearer`;
+  /// as for [DefaultOAuth2UserService].
+  final DPoPKey? dPoPKey;
+
+  final DPoPNonces _nonces = DPoPNonces();
 
   /// The scopes that allow reading the user info; with none, it is always
   /// read when the endpoint exists.
@@ -288,7 +354,12 @@ class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
   Future<OidcUser> loadUser(OidcUserRequest userRequest) async {
     OidcUserInfo? userInfo;
     if (_shouldRetrieveUserInfo(userRequest)) {
-      final claims = await loadUserAttributes(transport, userRequest);
+      final claims = await loadUserAttributes(
+        transport,
+        userRequest,
+        dPoPKey: dPoPKey,
+        nonces: _nonces,
+      );
       final subject = claims['sub'];
       if (subject is! String || subject.isEmpty) {
         throw OAuth2AuthenticationException(

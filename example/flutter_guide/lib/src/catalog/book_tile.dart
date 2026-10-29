@@ -3,7 +3,7 @@ import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/catalog/book_page.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// A book in the list: a tap opens it, the button puts it into the basket
 /// (`context.basket`, the getter `@BuildContextAccess` generates; a call,

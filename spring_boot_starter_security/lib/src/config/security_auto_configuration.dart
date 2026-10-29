@@ -532,11 +532,10 @@ const _oauth2Source =
 ///   `ClientRegistrationRepository` bean of the application): an
 ///   [OidcIdTokenDecoderFactory] on the `HttpTransport` bean, which checks
 ///   the signature of every ID token with the provider's JWK Set. The
-///   OAuth2 client starter's default trusts TLS instead (right for apps);
-///   on a server, the logins of `oauth2Login()`, the refreshed ID tokens
-///   of the authorized client manager and the `OAuth2LoginService` all
-///   use this one. An `OidcIdTokenDecoder` bean of the application
-///   replaces it.
+///   OAuth2 client starter's default trusts the token endpoint's TLS
+///   instead; on a server, the logins of `oauth2Login()` and the
+///   refreshed ID tokens of the authorized client manager both use this
+///   one. An `OidcIdTokenDecoder` bean of the application replaces it.
 ///
 /// Spring (Java): the `OidcIdTokenDecoderFactory` Spring Security's
 /// `OAuth2LoginConfigurer` creates when there is no

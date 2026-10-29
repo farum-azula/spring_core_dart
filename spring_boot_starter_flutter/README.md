@@ -26,9 +26,6 @@ The rest comes with it:
   is used on that platform only.
 - When the app goes to the background, scheduled tasks and WebSocket
   connections stop; they start again when it comes back.
-- The user's tokens are kept in the platform's secure storage (the
-  Keychain, the Android Keystore, DPAPI, libsecret), and a login opens
-  the system browser.
 - A hot reload that changed beans restarts the context with the new code.
 
 It is for Flutter developers who want dependency injection,
@@ -117,7 +114,6 @@ explained chapter by chapter.
 - [Assets](#assets)
 - [Configuration at build time](#configuration-at-build-time)
 - [The web version's port](#the-web-versions-port)
-- [Login and tokens](#login-and-tokens)
 - [Hot reload](#hot-reload)
 - [Tests](#tests)
 - [Known limits](#known-limits)
@@ -203,7 +199,11 @@ class LifecycleLog {
 
 **The other starters stay separate**, as in Spring Boot: add
 `spring_boot_starter_feign`, `spring_boot_starter_scheduling`,
-`spring_boot_starter_cache`, ... when the app uses them.
+`spring_boot_starter_cache`, ... when the app uses them. An app that
+logs its user in or keeps secrets lists
+[`spring_boot_starter_flutter_security`](https://pub.dev/packages/spring_boot_starter_flutter_security)
+instead of this package: it brings this one, the OAuth2 client and the
+security core.
 
 ## `SpringApplicationWidget`
 
@@ -1058,117 +1058,6 @@ deleting the file, run `dart run build_runner clean` or change a file of
 These settings are for `flutter run` only: `flutter build web` makes
 files for your own web server, which has its own settings.
 
-## Login and tokens
-
-An app that logs its user in with an OAuth 2.0 / OpenID Connect provider
-(Keycloak, Google, Okta, ...) needs two things from the platform: a safe
-place for the tokens it gets, so the user stays logged in after the app
-restarts, and the system browser for the provider's login page, so the
-app never sees the password and the user's existing login there is
-reused (single sign-on). The starter brings both, as its own platform
-code (no other plugin), and makes them beans:
-
-- **`SecureTokenStore`**, the app's `TokenStore` bean: `read`, `write`
-  and `delete` of strings by key, in the platform's secure storage.
-- **`PlatformAuthorizationBrowser`**, the app's `AuthorizationBrowser`
-  bean on Android, iOS and macOS: opens the login page and returns the
-  URI the provider redirected to.
-
-The OAuth2 client (`spring_boot_starter_oauth2_client`) uses them by
-itself: its in-memory defaults give way to these. An app declares its own
-`TokenStore` or `AuthorizationBrowser` bean only to replace them. The
-store also suits other secrets of the user:
-
-```dart
-// An API key the user typed in, kept across restarts.
-@Service()
-class ApiKeys {
-  ApiKeys(this._store); // the SecureTokenStore bean
-  final TokenStore _store;
-
-  Future<void> remember(String key) => _store.write('api.key', key);
-  Future<String?> current() => _store.read('api.key');
-}
-```
-
-| Platform | Tokens | Login page |
-|---|---|---|
-| iOS | Keychain: generic passwords, this device only, after the first unlock, not synced | `ASWebAuthenticationSession` |
-| macOS | Keychain (see below) | `ASWebAuthenticationSession` |
-| Android | AES-256-GCM key in the Android Keystore (never leaves it), the encrypted values in a private preferences file | Custom Tab (the default browser without Custom Tabs) |
-| Windows | DPAPI (current user), one file per key in `%LOCALAPPDATA%\<app>\spring_token_store` | the OAuth2 client's loopback browser |
-| Linux | the Secret Service (GNOME Keyring, KWallet) through `libsecret` | the OAuth2 client's loopback browser |
-| Web | none | none: the server logs in |
-
-**Android: declare the redirect.** The provider sends the browser to the
-app's redirect URI (`neonbooks:/oauth2/callback`). An activity of the
-starter catches it; the app declares it with its scheme in
-`android/app/src/main/AndroidManifest.xml`, inside `<application>`:
-
-```xml
-<activity
-    android:name="dev.farumazula.spring_boot_starter_flutter.RedirectReceiverActivity"
-    android:exported="true">
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="neonbooks" />
-    </intent-filter>
-</activity>
-```
-
-Apps that never log in declare nothing. Without the declaration a login
-fails at once with an `AuthorizationBrowserException`
-(`redirect_not_configured`) that shows this snippet. Pick a scheme of
-your own (reverse domain, `dev.neon.books`), not one another app may
-claim; PKCE makes a code caught by another app useless anyway. A user who
-comes back to the app without finishing (back button, closing the tab)
-cancels the login: `AuthorizationCancelledException`. A value that no
-longer decrypts (an Android backup restored on another phone, whose
-Keystore key did not move with it) is deleted and read as missing: the
-user logs in again.
-
-**iOS and macOS: nothing to set up** for a custom-scheme redirect: the
-scheme of the redirect URI is the one the login session waits for. An
-`https` redirect needs iOS 17.4 / macOS 14.4 and the app's associated
-domain (`webcredentials:`); older systems fail with an
-`UnsupportedError`. The login reuses Safari's session, and iOS asks
-"... wants to use ... to sign in"; `PlatformAuthorizationBrowser(preferEphemeralSession: true)`
-(a bean of your own) uses a private session that keeps no cookies and
-asks nothing.
-
-On macOS the tokens go to the data protection keychain (the iOS one)
-when the app may use it: a build signed with a team (a development
-team in Xcode, which gives the app its application identifier). A
-build signed only to run locally (the default of `flutter run`) gets
-`errSecMissingEntitlement` there and uses the login keychain instead.
-Its items belong to the signature of the build that wrote them; the
-store never lets macOS show a password prompt, so a value another build
-may not read reads as missing and the next write replaces it. Sign
-release builds with your team.
-
-**Linux: `libsecret` at run time.** The store loads `libsecret-1.so.0`
-(the `libsecret-1-0` package on Debian and Ubuntu, `libsecret` on Fedora
-and Arch) and needs a running Secret Service (GNOME Keyring, KWallet,
-KeePassXC). Without them every call throws a `SecureTokenStoreException`;
-the tokens are never written to a plain file.
-
-**Web: the server logs in.** A browser has no secure storage, and any
-script injected into the page reads what the app holds. So a Flutter web
-app keeps no tokens: no `SecureTokenStore` bean exists there, and its
-server logs the user in (`oauth2Login()` of
-`spring_boot_starter_security`) and sends only a session cookie.
-
-Errors: the store throws a `SecureTokenStoreException` (its message
-names the failure, never a value); the browser throws
-`AuthorizationCancelledException` when the user closes the page, a
-`StateError` when a login is already running (one at a time), and an
-`AuthorizationBrowserException` for the rest.
-
-Spring has no such types: Spring Security logs in browsers on a server,
-and Java has no apps.
-
 ## Hot reload
 
 A hot reload (`r` in `flutter run`, saving in the IDE) puts the new code
@@ -1323,7 +1212,8 @@ More, and the planned Flutter test starter:
 Android, iOS, macOS, Windows, Linux and the web. On Fuchsia the only
 platform profile is `fuchsia`.
 
-The starter is a Flutter plugin. Its platform code: Kotlin on Android
-(minimum API 24), one Swift source for iOS 13+ and macOS 10.15+ (Swift
-Package Manager and CocoaPods), and Dart through `dart:ffi` on Windows and
-Linux, which builds nothing native.
+The starter is pure Dart and Flutter: no platform code of its own, no
+plugin. Logins and secrets (the Keychain, the Android Keystore, the
+system's login window, widgets that follow the logged-in user) are
+[`spring_boot_starter_flutter_security`](https://pub.dev/packages/spring_boot_starter_flutter_security),
+which brings this package; an app without a login carries none of it.

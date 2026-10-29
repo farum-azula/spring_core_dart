@@ -52,15 +52,26 @@ abstract class AbstractOAuth2Token {
 
 /// The kind of an access token: how it is sent.
 ///
-/// Only `Bearer` tokens (RFC 6750) are supported: whoever holds one may
-/// use it, sent as `Authorization: Bearer <token>`.
+/// A `Bearer` token (RFC 6750) works for whoever holds it, sent as
+/// `Authorization: Bearer <token>`. A `DPoP` token (RFC 9449) is bound to
+/// a key of the client, sent as `Authorization: DPoP <token>` with a
+/// proof signed by that key; the resource server accepts both. The
+/// client gets `DPoP` tokens for the registrations that use DPoP
+/// (`ClientRegistration.dpop`), `Bearer` ones otherwise.
 ///
 /// Spring (Java): `OAuth2AccessToken.TokenType`.
+// A class, as Spring's, not an enum: the token response may name types
+// added later, and the public API stays the same when they are.
+// ignore: use_enums
 final class TokenType {
   const TokenType._(this.value);
 
   /// `Bearer`, the type of almost every access token.
   static const bearer = TokenType._('Bearer');
+
+  /// `DPoP`, a token bound to the client's key (RFC 9449): useless
+  /// without a proof signed by that key.
+  static const dpop = TokenType._('DPoP');
 
   /// The name as sent in the `Authorization` header and the token
   /// response.
@@ -101,7 +112,8 @@ class OAuth2AccessToken extends AbstractOAuth2Token {
     Set<String> scopes = const {},
   }) : scopes = Set.unmodifiable(scopes);
 
-  /// How the token is sent; always [TokenType.bearer] here.
+  /// How the token is sent: [TokenType.bearer], or [TokenType.dpop] for
+  /// a token bound to the client's `DPoPKey`.
   final TokenType tokenType;
 
   /// What the token allows, such as `openid` or `orders.read`; cannot be

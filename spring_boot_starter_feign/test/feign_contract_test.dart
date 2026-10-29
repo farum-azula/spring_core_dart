@@ -481,7 +481,7 @@ void main() {
     });
 
     test(
-      'headers: every value on its own line, Authorization masked',
+      'headers: every value on its own line, Authorization and DPoP masked',
       () async {
         server.when(HttpMethod.get, '/headers').respond(200, body: 'ok');
         await runner
@@ -491,12 +491,14 @@ void main() {
             .runAsync((context) async {
               await context.getBean<ContractClient>().headers({
                 'Authorization': 'Bearer secret',
+                'DPoP': 'proof-secret',
                 'X-Tag': ['a', 'b'],
               });
             });
         final request = logs.firstWhere((l) => l.startsWith('---> GET'));
         expect(request, contains('X-Tag: a\nX-Tag: b'));
         expect(request, contains('Authorization: ***'));
+        expect(request, contains('DPoP: ***'));
         expect(request, isNot(contains('secret')));
       },
     );

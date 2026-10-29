@@ -96,7 +96,7 @@ This is the contract between this server and the Flutter app.
 | PUT | `/api/books/{isbn}/cover` | ADMIN | uploads a cover (multipart, `@RequestPart MultipartFile`) |
 | DELETE | `/api/books/{isbn}` | ADMIN | removes a book (method security: `@PreAuthorize` on the service) |
 | GET | `/api/stock/events` | anyone | server-sent events `StockChanged {isbn, available}` (`EventStream` or `SseEmitter`), resumed with `Last-Event-ID` |
-| GET | `/api/me` | logged in | `{name, roles}` (an `Authentication` argument: any kind of login) |
+| GET | `/api/me` | logged in | `{name, roles, authorities, registrationId?}` (an `Authentication` argument: any kind of login; `registrationId` after a Keycloak login of the browser) |
 | GET | `/api/basket` | logged in | the user's basket, kept in the `HttpSession` |
 | PUT | `/api/basket/items/{isbn}` | logged in | sets a quantity, `{quantity}` |
 | POST | `/api/orders` | logged in | orders the basket: 201 with the `Order`; publishes `OrderPlaced` |
@@ -310,6 +310,13 @@ follow a redirect to another origin. So `SsoLogoutSuccessHandler`
 answers `200 {"logoutUrl": "..."}` (Keycloak's `end_session_endpoint`
 with the ID token and the web app as `post_logout_redirect_uri`), and the
 app navigates there. Native apps end their Keycloak session themselves.
+
+Both answers are the contract of the Flutter starter's web login
+(`ServerOAuth2LoginService` of `spring_boot_starter_flutter_security`,
+server mode): it posts the logout with the CSRF token and follows
+`logoutUrl`, and at startup it asks `/api/me` who holds the session, a
+user built from `name`, `authorities` and, after a Keycloak login,
+`registrationId` (`MeController`).
 
 Try it, with Keycloak running (`../keycloak/README.md`):
 

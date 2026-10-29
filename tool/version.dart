@@ -33,6 +33,7 @@ const family = [
   'spring_boot_starter_test',
   // Flutter: outside the pub workspace, published with `flutter pub`.
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_security',
 ];
 
 /// Packages that only depend on the family (not published).

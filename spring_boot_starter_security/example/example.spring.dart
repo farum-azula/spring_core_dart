@@ -919,10 +919,6 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     _i23.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i19.springBootStarterOauth2ClientAutoConfiguration:
-        const _i15.AutoConfigurationModule(
-          after: ['springBootStarterFlutterAutoConfiguration'],
-        ),
     _i20.springBootStarterSecurityAutoConfiguration:
         const _i15.AutoConfigurationModule(
           after: ['springBootStarterOauth2ClientAutoConfiguration'],
@@ -978,7 +974,7 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '324e9f92',
+  fingerprint: '7cee7167',
 );
 
 /// Starts the application: config files, environment, context, runners

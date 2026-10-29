@@ -2670,6 +2670,8 @@ spring.flutter.web.proxy[0].target=http://localhost:8080
 | `spring.flutter.web.proxy[n].prefix` | path | none | Rule `n` matches paths starting with it (`/api/`) |
 | `spring.flutter.web.proxy[n].regex` | regular expression | none | Or the paths matching it; each rule sets exactly one of `prefix` and `regex` |
 | `spring.flutter.web.proxy[n].replace` | string | the path unchanged | The forwarded path: the matched part replaced, `$1` for the first group |
+| `spring.flutter.web.content-security-policy` | string, not empty | none; in spa mode a ready policy (below) | The page's Content Security Policy, sent as the `Content-Security-Policy` header. Setting it and `headers.Content-Security-Policy` both fails the build |
+| `spring.flutter.web.content-security-policy-report-only` | `true` / `false` | `false` | Send the policy as `Content-Security-Policy-Report-Only`: violations are reported in the console, nothing is blocked (for development) |
 
 The proxy list comes whole from the most specific file that has one, as
 lists do in Spring Boot. Forwarding `/api/` to the server is the simplest
@@ -2677,10 +2679,116 @@ way to avoid CORS and third-party cookie trouble in development: the page
 and the API share one origin, so a session login works in every browser.
 
 An invalid value fails the build with the key's name; an unknown
-`spring.flutter.web.*` key is a warning. Without any of these keys no
-file is written, and a hand-written `web_dev_config.yaml` is never
-changed or deleted: with the keys set as well, the build fails and asks
-to remove one of the two.
+`spring.flutter.web.*` key is a warning. Without any of these keys (and
+not in spa mode) no file is written, and a hand-written
+`web_dev_config.yaml` is never changed or deleted: with the keys set as
+well, the build fails and asks to remove one of the two.
+
+### The Content Security Policy
+
+A Content Security Policy tells the browser which scripts, styles and
+connections the page may use, so a script injected into it (or loaded
+from a place the app never meant) is refused. The generator sends
+`spring.flutter.web.content-security-policy` with every answer of
+`flutter run`, so development runs under the policy production sends.
+An app whose browser logs in by itself
+(`spring.flutter.security.web.mode=spa`) and sets no policy gets this
+one, with the origins of its `spring.security.oauth2.client.provider.*`
+URIs (issuer, token, user info, keys) in `connect-src`:
+
+```text
+default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com;
+style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;
+font-src 'self' https://fonts.gstatic.com;
+connect-src 'self' https://www.gstatic.com https://fonts.gstatic.com <the providers>;
+worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';
+frame-ancestors 'none'
+```
+
+What Flutter's web engine needs, and why: `'wasm-unsafe-eval'` compiles
+the WebAssembly of CanvasKit and Skwasm (no `eval` of JavaScript);
+`https://www.gstatic.com` serves CanvasKit (not needed for builds with
+`--no-web-resources-cdn`); `https://fonts.gstatic.com` the fallback
+fonts (fetched, so in `connect-src` too); `'unsafe-inline'` styles, as
+the engine writes a `<style>` element; `blob:` workers for Skwasm. Set
+the whole policy yourself to add the APIs the app calls (`connect-src`,
+with `ws:` / `wss:` origins for sockets).
+
+```properties
+# application-web.properties
+spring.flutter.web.content-security-policy=default-src 'self'; \
+  script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com; \
+  style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; \
+  font-src 'self' https://fonts.gstatic.com; \
+  connect-src 'self' https://www.gstatic.com https://fonts.gstatic.com \
+  https://id.neon.books https://api.neon.books; \
+  object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+```
+
+The dev server is not production: send the same policy from the web
+server or CDN that serves `build/web` (the `Content-Security-Policy`
+header of `index.html`), and build with `flutter build web --csp` (no
+dynamically generated code). Where the host sets no headers, a
+`<meta http-equiv="Content-Security-Policy" content="...">` in
+`web/index.html` works as a fallback, except for `frame-ancestors`,
+which browsers ignore in a `<meta>`. Hot reload evaluates code in debug
+runs, which the policy forbids: use
+`content-security-policy-report-only=true` in a development profile when
+it gets in the way.
+
+### The web login
+
+`spring_boot_starter_flutter_security` reads these keys in a browser
+only (the `web` platform profile). In `server` mode (the default) the
+app's server logs the user in (`oauth2Login()`), the page holds only its
+session cookie, and `OAuth2LoginService` sends the page to the server's
+login, asks the server who is logged in and posts its logout. See
+[The web: the server logs in](../spring_boot_starter_flutter_security/README.md#the-web-the-server-logs-in).
+In `spa` mode the browser logs in by itself with the app's own
+registrations (`spring.security.oauth2.client.*`, a public client whose
+redirect URI is the page, `{baseUrl}/`), the tokens in the tab's memory;
+see [The web without a server](../spring_boot_starter_flutter_security/README.md#the-web-without-a-server-the-browser-logs-in-spa-mode).
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+# application-web.yaml
+spring:
+  flutter:
+    security:
+      web:
+        mode: server
+        server-url: https://api.neon.books
+        user-endpoint: /api/me
+        logout-url: /api/logout
+```
+
+</td><td>
+
+```properties
+# application-web.properties
+spring.flutter.security.web.mode=server
+spring.flutter.security.web.server-url=https://api.neon.books
+spring.flutter.security.web.user-endpoint=/api/me
+spring.flutter.security.web.logout-url=/api/logout
+```
+
+</td></tr>
+</table>
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.security.web.mode` | `server` / `spa` | `server` | Who logs in: the app's server (backend-for-frontend), or the browser by itself (`spa`: a public client with PKCE, tokens in the tab's memory, DPoP with a non-extractable WebCrypto key; without a registration the app stops at startup) |
+| `spring.flutter.security.web.silent-restore` | `true` / `false` | `true` | Spa mode: after a reload or in a new tab, `restore()` sends the page to the provider with `prompt=none` when someone logged in in this browser before, and comes back logged in (or with `login_required`: nobody) |
+| `spring.flutter.security.web.server-url` | absolute `http(s)` URL, no query | the page's origin | The app's server, with its context path if any. On another origin than the page, `fetch` is asked to send the cookies there (`FetchCredentials.include`), and the server must allow it (CORS with credentials) |
+| `spring.flutter.security.web.user-endpoint` | path or absolute URL | `/user` | `GET` with the session cookie: who is logged in, as `{"name", "authorities", "registrationId", "attributes"}` (only `name` required) |
+| `spring.flutter.security.web.logout-url` | path or absolute URL | `/logout` | `POST` with the CSRF token; an answer `{"logoutUrl": "..."}` or a `2xx` with `Location` sends the page to the provider's logout |
+| `spring.flutter.security.web.authorization-base-uri` | path or absolute URL | `/oauth2/authorization` | Where the server starts a login; `login('keycloak')` goes to `<server-url><this>/keycloak` |
+
+An invalid value stops the app at startup with the key's name. Outside a
+browser the keys are not read.
 
 ---
 
@@ -2807,15 +2915,15 @@ Not supported:
 
 ## 19. Reference: OAuth2 clients
 
-`spring_boot_starter_oauth2_client` logs users in with an OAuth 2.0 or
-OpenID Connect provider (Keycloak, Google, GitHub, Auth0, ...) and gets
-tokens for calls to other services. Each **registration** is one client
-of one provider: these keys say who the client is (its id and secret,
-the scopes it asks for, where the provider sends the browser back) and
-where the provider's endpoints are. An app logs in with
-`OAuth2LoginService`; a server with the security starter logs browsers
-in with `oauth2Login()`, which its default chain turns on as soon as a
-registration exists.
+`spring_boot_starter_oauth2_client` gets tokens from an OAuth 2.0 or
+OpenID Connect provider (Keycloak, Google, GitHub, Auth0, ...), for
+calls to other services and for logins. Each **registration** is one
+client of one provider: these keys say who the client is (its id and
+secret, the scopes it asks for, where the provider sends the browser
+back) and where the provider's endpoints are. A server with the security
+starter logs browsers in with `oauth2Login()`, which its default chain
+turns on as soon as a registration exists; a Flutter app logs in with
+`OAuth2LoginService` of `spring_boot_starter_flutter_security`.
 
 `<id>` is the registration's id, as in `/oauth2/authorization/keycloak`.
 A registration uses the provider of the same id unless it names another
@@ -2883,6 +2991,15 @@ The keys under `spring.security.oauth2.client.registration.<id>.`:
 | `scope` | list | none; the provider's defaults for the known providers | The scopes asked for; `openid` makes it an OpenID Connect login (an ID token, checked) |
 | `client-name` | string | the issuer, or the known provider's name | The name on the login page |
 | `provider` | id | the registration's id | The provider of the `provider.*` keys, or a known one |
+| `dpop` | `auto` / `true` / `false` | `auto` | DPoP (RFC 9449): the tokens are bound to the app's `DPoPKey` and every request carries a proof signed by it. `auto` turns it on when the key outlives the program (an app's key) and the provider's metadata lists `ES256` in `dpop_signing_alg_values_supported`, so servers keep `Bearer` unless `true`; `false` keeps `Bearer` tokens. Not in Spring Boot |
+| `response-mode` | `query` / `form_post` | `query`; `form_post` for the `apple` provider | How the provider returns the authorization response: in the redirect URI, or posted as a form to it (`response_mode=form_post`; only a server's `oauth2Login()` receives it, which then needs `server.servlet.session.cookie.same-site=none` over HTTPS). Not in Spring Boot |
+| `client-secret-jwt.issuer` | string | — | A client secret that is a JWT signed ES256 by the client's own key (Sign in with Apple's): its `iss` (Apple: the team id). With `key-id` and a key, the `clientSecretResolver` bean makes the JWT per token request. Not in Spring Boot |
+| `client-secret-jwt.key-id` | string | — | The JWT's `kid` (Apple: the key id) |
+| `client-secret-jwt.private-key-location` | resource location | — | The PKCS #8 private key (Apple's `.p8`), such as `file:/run/secrets/apple.p8`; read at the first token request, never logged |
+| `client-secret-jwt.private-key` | string | — | The PEM itself instead (from an environment variable; `\n` escapes allowed) |
+| `client-secret-jwt.audience` | string | the provider's `issuer-uri` | The JWT's `aud` |
+| `client-secret-jwt.lifetime` | duration | `1h` | How long each JWT is valid (at most `180d`); made again when a tenth is left |
+| `native-sign-in` | `none` / `apple` | `apple` for the `apple` provider, else `none` | Apps (`spring_boot_starter_flutter_security`): `apple` signs in with Sign in with Apple's sheet on iOS and macOS instead of the browser; the code then goes to the registration's `token-uri`, the app's server. Not in Spring Boot |
 
 The keys under `spring.security.oauth2.client.provider.<id>.`:
 
@@ -2903,10 +3020,17 @@ the token of a registration to every Feign call:
 client's name); [section 15](#15-reference-feign-clients) has the other
 Feign keys.
 
-Difference from Spring Boot: providers with `issuer-uri` are discovered
+Differences from Spring Boot: providers with `issuer-uri` are discovered
 at the first use of their registrations, not at startup, so an app starts
 offline and a server starts while the provider is down (its logins fail
-until it is up).
+until it is up); `dpop` is an addition (Spring Security 7 has no DPoP on
+the client's side), `auto` by default. In apps the Flutter security
+package's key survives restarts (the Secure Enclave, the Android
+Keystore, WebCrypto, the `SecretStore` on desktops); elsewhere the
+starter's default key is made for each run and `auto` leaves DPoP off
+(`Bearer`, as before). A server that sets `dpop=true` declares a
+`DPoPKey` bean that survives restarts and, with several instances
+sharing sessions, is shared (the client's README, *DPoP*).
 
 ---
 

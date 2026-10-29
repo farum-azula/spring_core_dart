@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authorization.AuthorizationDecision;
@@ -56,7 +57,12 @@ public class ReferenceApplication {
     SpringApplication.run(ReferenceApplication.class, args);
   }
 
+  /**
+   * The rules chain; the oauth2 profile has OAuth2LoginReference's instead,
+   * the dpop profile DPoPResourceServerReference's.
+   */
   @Bean
+  @Profile("!oauth2 & !dpop")
   SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.authorizeHttpRequests(auth -> auth
             .requestMatchers("/public/**", "/form").permitAll()

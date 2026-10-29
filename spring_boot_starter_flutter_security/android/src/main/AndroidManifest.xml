@@ -1,0 +1,27 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Opens the login page and waits for its redirect (or for the
+             user to come back without one: a cancelled login). Invisible. -->
+        <activity
+            android:name="dev.farumazula.spring_boot_starter_flutter_security.AuthorizationManagementActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <!-- Receives the provider's redirect. Not exported and without an
+             intent filter here: an app that logs in declares it again in
+             its own AndroidManifest.xml, exported, with an intent filter
+             for its redirect scheme (see the README). Apps that never log
+             in do nothing. -->
+        <activity
+            android:name="dev.farumazula.spring_boot_starter_flutter_security.RedirectReceiverActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    </application>
+    <!-- Android 11+ package visibility: find the browsers that support
+         Custom Tabs. -->
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+</manifest>

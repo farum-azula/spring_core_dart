@@ -221,7 +221,7 @@ class OidcUserAuthority extends OAuth2UserAuthority {
 /// Who is logged in through an OAuth 2.0 or OpenID Connect provider, as
 /// the security context holds it.
 ///
-/// The app login puts one in the `SecurityContextHolder`; anything that
+/// A login puts one in the security context; anything that
 /// asks who is logged in (`@PreAuthorize`, the Feign interceptor, your
 /// code) finds it there. [principal] is the [OAuth2User] (an [OidcUser]
 /// with OpenID Connect), [authorizedClientRegistrationId] the provider

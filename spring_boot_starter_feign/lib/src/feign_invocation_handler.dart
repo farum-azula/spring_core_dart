@@ -369,7 +369,11 @@ final class FeignInvocationHandler implements InvocationHandler {
     final lines = ['---> ${request.method.value} ${request.url}'];
     if (config.loggerLevel.index >= FeignLoggerLevel.headers.index) {
       request.headers.forEach((name, values) {
-        final masked = name.toLowerCase() == 'authorization';
+        // Credentials: the token, and the DPoP proof that goes with it.
+        final masked = const {
+          'authorization',
+          'dpop',
+        }.contains(name.toLowerCase());
         for (final value in values) {
           lines.add('$name: ${masked ? '***' : value}');
         }

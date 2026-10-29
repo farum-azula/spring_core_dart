@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client.dart';
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart';
+import 'package:spring_boot_starter_oauth2_client/src/client/oauth2_access_token_headers.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/tokens.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_nonces.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 
 const _log = SpringLog('spring.security.oauth2.client.feign');
 
 /// A Feign [RequestInterceptor] that sends the OAuth 2.0 access token of
 /// the current user (or of the client, for client credentials) with every
-/// call: `Authorization: Bearer <token>`.
+/// call: `Authorization: Bearer <token>`, or for a DPoP-bound token
+/// `Authorization: DPoP <token>` and a fresh proof.
 ///
 /// With it, the Feign clients of an app call the API as the logged-in
 /// user, and a server's clients call other services with its own
@@ -39,17 +43,31 @@ const _log = SpringLog('spring.security.oauth2.client.feign');
 /// not repeated: Feign's interceptors cannot see responses, and its
 /// `ErrorDecoder` and `Retryer` belong to the application.
 ///
+/// A DPoP-bound token ([TokenType.dpop], when the registration uses
+/// DPoP) is sent with a `DPoP` proof signed by [dPoPKey] for this request:
+/// its method, its URL without query and fragment, and the hash of the
+/// token (`ath`). When the API asks for a nonce (`DPoP-Nonce`), the error
+/// decoder hands it over ([rememberDPoPNonce]) and the next proof for that
+/// server carries it; the call that got the `use_dpop_nonce` answer is not
+/// repeated, for the reason above. Nonces sent in successful answers are
+/// not seen (Feign shows them to no hook).
+///
 /// Spring Cloud OpenFeign (Java): `OAuth2AccessTokenInterceptor`, with
-/// the same properties and the same choice of registration.
+/// the same properties and the same choice of registration; DPoP is an
+/// addition (Spring sends Bearer tokens only).
 class OAuth2AccessTokenInterceptor implements RequestInterceptor {
   /// An interceptor taking tokens from [authorizedClientManager];
   /// [authorizedClientService] (where the manager keeps the clients) lets
-  /// [invalidate] mark a rejected token expired.
+  /// [invalidate] mark a rejected token expired; [dPoPKey] signs the
+  /// proofs of DPoP-bound tokens; `clock` gives the proofs' time (the
+  /// current time by default).
   OAuth2AccessTokenInterceptor(
     this.authorizedClientManager, {
     String? clientRegistrationId,
     this.authorizedClientService,
     SecurityContextHolderStrategy? securityContextHolderStrategy,
+    this.dPoPKey,
+    this._clock,
   }) : clientRegistrationId =
            clientRegistrationId == null || clientRegistrationId.trim().isEmpty
            ? null
@@ -69,7 +87,12 @@ class OAuth2AccessTokenInterceptor implements RequestInterceptor {
   /// name.
   final String? clientRegistrationId;
 
+  /// The key of the DPoP proofs, or `null` when the tokens are `Bearer`.
+  final DPoPKey? dPoPKey;
+
   final SecurityContextHolderStrategy _strategy;
+  final DateTime Function()? _clock;
+  final DPoPNonces _nonces = DPoPNonces();
 
   // The tokens sent lately, with whose they are, for invalidate().
   final Map<String, (String, Authentication)> _sent = {};
@@ -94,10 +117,31 @@ class OAuth2AccessTokenInterceptor implements RequestInterceptor {
     _remember(token.tokenValue, registrationId, principal);
     template
       ..removeHeader(HttpHeaders.authorizationHeader)
-      ..header(
-        HttpHeaders.authorizationHeader,
-        '${token.tokenType.value} ${token.tokenValue}',
-      );
+      ..removeHeader(dPoPHeader);
+    final headers =
+        await OAuth2AccessTokenHeaders(
+          dPoPKey: dPoPKey,
+          clock: _clock,
+        ).of(
+          token,
+          method: template.method.value,
+          url: template.url,
+          nonce: _nonces.of(template.url),
+        );
+    headers.forEach(template.header);
+  }
+
+  /// Remembers the `DPoP-Nonce` [response] carries (if any) for its
+  /// server, for the next proof sent there.
+  ///
+  /// The [OAuth2AccessTokenErrorDecoder] calls it for every error answer;
+  /// call it yourself with answers it does not see (a successful answer
+  /// of a method that returns the raw `HttpResponse`).
+  void rememberDPoPNonce(HttpResponse response) {
+    final url = response.request?.url;
+    if (url != null) {
+      _nonces.remember(url, response.headers);
+    }
   }
 
   void _remember(String token, String registrationId, Authentication who) {
@@ -160,6 +204,11 @@ class OAuth2AccessTokenInterceptor implements RequestInterceptor {
 /// token is renewed at the next call, then decodes the error with
 /// [delegate] as usual.
 ///
+/// It also hands every `DPoP-Nonce` of an error answer to the
+/// interceptor, for the next DPoP proof; a 401 that only asks for a nonce
+/// (`WWW-Authenticate: DPoP error="use_dpop_nonce"`) leaves the token
+/// alone.
+///
 /// The starter declares it with the interceptor when the application has
 /// no `ErrorDecoder` bean. An application with its own decoder wraps it:
 ///
@@ -184,12 +233,23 @@ class OAuth2AccessTokenErrorDecoder implements ErrorDecoder {
 
   @override
   Exception decode(String methodKey, HttpResponse response) {
+    interceptor.rememberDPoPNonce(response);
     if (response.statusCode == 401) {
       final header = response.request?.headers[HttpHeaders.authorizationHeader];
-      if (header != null && header.startsWith('Bearer ')) {
+      final token = switch (header) {
+        final value? when value.startsWith('Bearer ') => value.substring(7),
+        final value?
+            when value.startsWith('DPoP ') &&
+                !wantsNonce(
+                  response.headers,
+                ) =>
+          value.substring(5),
+        _ => null,
+      };
+      if (token != null) {
         unawaited(
           interceptor
-              .invalidate(header.substring('Bearer '.length))
+              .invalidate(token)
               .then<void>((_) {}, onError: (Object _) {}),
         );
       }

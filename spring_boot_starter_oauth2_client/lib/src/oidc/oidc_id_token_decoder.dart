@@ -7,13 +7,15 @@ import 'package:spring_boot_starter_oauth2_client/src/registration/client_regist
 /// Turns the raw ID token of a token response into a checked
 /// [OidcIdToken]: the hook where the signature is (or is not) verified.
 ///
-/// The login calls it with the `id_token` the token endpoint returned.
-/// The default, [TokenEndpointOidcIdTokenDecoder], trusts the token
-/// because it came straight from the provider's token endpoint over TLS
-/// (OpenID Connect Core §3.1.3.7 allows it) and checks its claims; an app
-/// needs nothing else. A server that wants the signature checked too
-/// (the security starter's `oauth2Login()` does) implements it with the
-/// provider's JWK Set, then runs the same claim checks:
+/// A login, and the refresh of an authorized client
+/// (`RefreshTokenOAuth2AuthorizedClientProvider`), call it with the
+/// `id_token` the token endpoint returned. The starter's default,
+/// [TokenEndpointOidcIdTokenDecoder], trusts the token because it came
+/// straight from the provider's token endpoint over TLS (OpenID Connect
+/// Core §3.1.3.7 allows it) and checks its claims. The security starter
+/// replaces it with one that checks the signature with the provider's
+/// JWK Set too, as Spring does; a decoder of your own runs the same claim
+/// checks:
 ///
 /// ```dart
 /// // A decoder that verifies the signature with the provider's keys.
@@ -39,7 +41,8 @@ import 'package:spring_boot_starter_oauth2_client/src/registration/client_regist
 /// }
 /// ```
 ///
-/// Declare a bean of this type to replace the default in the app login.
+/// Declare a bean of this type (`oidcIdTokenDecoder`) to replace the
+/// default everywhere it is used.
 ///
 /// Spring (Java): the `JwtDecoderFactory<ClientRegistration>` of
 /// `OidcIdTokenDecoderFactory`, which always verifies the signature.
@@ -54,7 +57,7 @@ abstract interface class OidcIdTokenDecoder {
   );
 }
 
-/// The [OidcIdTokenDecoder] of apps: it reads the ID token without
+/// The starter's [OidcIdTokenDecoder]: it reads the ID token without
 /// checking its signature, then checks its claims with
 /// [OidcIdTokenValidator].
 ///
@@ -74,8 +77,11 @@ abstract interface class OidcIdTokenDecoder {
 /// );
 /// ```
 ///
-/// Spring Security has no such decoder: its `oauth2Login()` runs on
-/// servers, which verify the signature.
+/// Spring Security has no such decoder: its `OidcIdTokenDecoderFactory`
+/// always verifies the signature (as the security starter's does). This
+/// one is the default where no JWK machinery is at hand: for a public
+/// client (an app) and for refreshed ID tokens, both straight from the
+/// token endpoint.
 final class TokenEndpointOidcIdTokenDecoder implements OidcIdTokenDecoder {
   /// A decoder checking the claims with the validator [validatorFactory]
   /// makes per registration ([OidcIdTokenValidator] by default, with

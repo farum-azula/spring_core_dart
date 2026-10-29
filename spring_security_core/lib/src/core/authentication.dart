@@ -325,6 +325,66 @@ class AnonymousAuthenticationToken extends AbstractAuthenticationToken {
   Object? get credentials => '';
 }
 
+/// A login that another system has already checked: the application
+/// only learns who the user is and what they may do, and checks no
+/// password itself.
+///
+/// It exists for setups where the authentication happens elsewhere: a
+/// proxy or single sign-on gateway in front of a server that passes the
+/// user in a header, or a Flutter web app whose own server logged the
+/// user in (`ServerOAuth2LoginService` of
+/// `spring_boot_starter_flutter_security` builds one from the server's
+/// answer when the login was not an OAuth 2.0 one). Use
+/// [PreAuthenticatedAuthenticationToken.authenticated] only with what that
+/// trusted system said, never with input a client may forge.
+///
+/// ```dart
+/// // The app's server says who holds the session cookie.
+/// final user = PreAuthenticatedAuthenticationToken.authenticated(
+///   'ada',
+///   null,
+///   AuthorityUtils.createAuthorityList(['ROLE_USER']),
+/// );
+/// SecurityContextHolder.setContext(SecurityContextImpl(user));
+/// ```
+///
+/// Spring (Java): `PreAuthenticatedAuthenticationToken` of
+/// `spring-security-web`, the same two constructors:
+/// ```java
+/// var user = new PreAuthenticatedAuthenticationToken("ada", null,
+///     AuthorityUtils.createAuthorityList("ROLE_USER"));
+/// ```
+class PreAuthenticatedAuthenticationToken extends AbstractAuthenticationToken {
+  /// A request to look the user up: [principal] as the other system named
+  /// them, with its [credentials] (often `null`); not authenticated, no
+  /// authorities.
+  PreAuthenticatedAuthenticationToken(this.principal, this._credentials)
+    : super();
+
+  /// A login the other system checked: [principal] with [authorities].
+  PreAuthenticatedAuthenticationToken.authenticated(
+    this.principal,
+    this._credentials,
+    Iterable<GrantedAuthority> authorities,
+  ) : super(authorities) {
+    super.isAuthenticated = true;
+  }
+
+  @override
+  final Object? principal;
+
+  Object? _credentials;
+
+  @override
+  Object? get credentials => _credentials;
+
+  @override
+  void eraseCredentials() {
+    super.eraseCredentials();
+    _credentials = null;
+  }
+}
+
 /// An already authenticated token with the authorities you name, for
 /// tests and for code that runs as a fixed identity.
 ///

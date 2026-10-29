@@ -90,6 +90,7 @@ void main() {
     expect(jsonDecode(me.$2), {
       'name': 'root',
       'roles': ['ADMIN', 'USER'],
+      'authorities': ['ROLE_ADMIN', 'ROLE_USER'],
     });
     final basket = await browser.send(
       'PUT',

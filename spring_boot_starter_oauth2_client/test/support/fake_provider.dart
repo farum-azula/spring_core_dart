@@ -1,7 +1,7 @@
 // A fake OpenID Connect provider on the MockHttpTransport: discovery,
-// authorization (through FakeBrowser), the token endpoint with PKCE and
-// client authentication checks, user info and revocation. Tests change its
-// fields to make it misbehave (another issuer, a wrong nonce, ...).
+// authorization (approve), the token endpoint with PKCE and client
+// authentication checks, and user info. Tests change its fields to make it
+// misbehave (another issuer, an unreachable token endpoint, ...).
 import 'dart:async';
 import 'dart:convert';
 
@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 const issuer = 'https://sso.test/realms/neon';
 const clientId = 'neon-app';
 
-/// A JWT whose signature nobody checks here (the app trusts TLS).
+/// A JWT whose signature nobody checks here (the client trusts TLS).
 String jwt(Map<String, Object?> claims, {String alg = 'RS256'}) {
   String part(Object json) =>
       base64Url.encode(utf8.encode(jsonEncode(json))).replaceAll('=', '');
@@ -38,7 +38,6 @@ final class FakeProvider {
       ).respondWith((_) => _json(200, metadata()))
       ..when(HttpMethod.post, 'https://sso.test/token').respondWith(_token)
       ..when(HttpMethod.get, 'https://sso.test/userinfo').respondWith(_userInfo)
-      ..when(HttpMethod.post, 'https://sso.test/revoke').respondWith(_revoke)
       ..when(HttpMethod.get, 'https://api.test/me').respondWith(_api);
   }
 
@@ -62,13 +61,10 @@ final class FakeProvider {
   bool tokenUnreachable = false;
   bool includeIssParameter = true;
   bool advertiseIssParameter = false;
-  bool revocation = true;
-  bool endSession = true;
   Duration tokenDelay = Duration.zero;
 
   // What the provider saw.
   final List<Map<String, String>> tokenRequests = [];
-  final List<Map<String, String>> revoked = [];
   final List<String> rejectedAccessTokens = [];
   int _sequence = 0;
   final Map<String, _Grant> _codes = {};
@@ -82,8 +78,8 @@ final class FakeProvider {
     'token_endpoint': 'https://sso.test/token',
     'userinfo_endpoint': 'https://sso.test/userinfo',
     'jwks_uri': 'https://sso.test/certs',
-    if (revocation) 'revocation_endpoint': 'https://sso.test/revoke',
-    if (endSession) 'end_session_endpoint': 'https://sso.test/logout',
+    'revocation_endpoint': 'https://sso.test/revoke',
+    'end_session_endpoint': 'https://sso.test/logout',
     'token_endpoint_auth_methods_supported': ['client_secret_basic', 'none'],
     'authorization_response_iss_parameter_supported': advertiseIssParameter,
   };
@@ -212,14 +208,6 @@ final class FakeProvider {
     });
   }
 
-  Future<HttpResponse> _revoke(HttpRequest request) async {
-    final form = Uri.splitQueryString(utf8.decode(request.body!));
-    revoked.add(form);
-    _refreshTokens.remove(form['token']);
-    _accessTokens.remove(form['token']);
-    return HttpResponse(200);
-  }
-
   Future<HttpResponse> _api(HttpRequest request) async {
     final token = (request.headers['Authorization'] ?? '').replaceFirst(
       'Bearer ',
@@ -236,43 +224,6 @@ final class FakeProvider {
   void revokeEverything() {
     _refreshTokens.clear();
     _accessTokens.clear();
-  }
-}
-
-/// An AuthorizationBrowser that "logs in" at the [provider] (or answers
-/// with [respond], to forge redirects), recording what it was asked.
-final class FakeBrowser implements AuthorizationBrowser {
-  FakeBrowser(this.provider, {this.redirectPort});
-
-  final FakeProvider provider;
-
-  /// A port the browser puts into the redirect URI, as a loopback server.
-  final int? redirectPort;
-
-  /// Replaces the provider's answer: gets the authorization URI.
-  Uri Function(Uri authorizationUri)? respond;
-
-  final List<Uri> opened = [];
-  bool cancel = false;
-
-  @override
-  Future<Uri> authorize({
-    required Uri redirectUri,
-    required Uri Function(Uri redirectUri) authorizationUri,
-  }) async {
-    if (cancel) {
-      throw const AuthorizationCancelledException('closed');
-    }
-    final actual = redirectPort == null
-        ? redirectUri
-        : redirectUri.replace(port: redirectPort);
-    final uri = authorizationUri(actual);
-    opened.add(uri);
-    if (uri.path == '/logout') {
-      return Uri.parse(uri.queryParameters['post_logout_redirect_uri']!)
-          .replace(queryParameters: {'state': ?uri.queryParameters['state']});
-    }
-    return (respond ?? provider.approve)(uri);
   }
 }
 
@@ -294,34 +245,28 @@ Future<ClientRegistration> registration(
         .redirectUri(redirectUri)
         .build();
 
-/// Everything an OAuth2LoginService needs, on the fake provider.
-final class LoginFixture {
-  LoginFixture._(this.provider, this.repository, this.browser, this.store);
+/// An authorized client manager on the fake provider, and [signIn], the
+/// authorization code login of a user as a server's `oauth2Login()` does
+/// it: the authorization request, the provider's redirect, the code
+/// exchange, the ID token check, the user in the security context and the
+/// tokens in the authorized client service.
+final class ClientFixture {
+  ClientFixture._(this.provider, this.clientRegistration)
+    : repository = InMemoryClientRegistrationRepository([clientRegistration]);
 
-  static Future<LoginFixture> create({
-    FakeProvider? provider,
-    Set<String> scopes = const {'openid', 'profile', 'email'},
-  }) async {
+  static Future<ClientFixture> create({FakeProvider? provider}) async {
     final fake = provider ?? FakeProvider();
-    final reg = await registration(fake, scopes: scopes);
-    return LoginFixture._(
-      fake,
-      InMemoryClientRegistrationRepository([reg]),
-      FakeBrowser(fake, redirectPort: 49152),
-      InMemoryTokenStore(),
-    );
+    return ClientFixture._(fake, await registration(fake));
   }
 
   final FakeProvider provider;
+  final ClientRegistration clientRegistration;
   final InMemoryClientRegistrationRepository repository;
-  final FakeBrowser browser;
-  final InMemoryTokenStore store;
-  final List<Object> events = [];
   final SecurityContextHolderStrategy strategy =
       GlobalSecurityContextHolderStrategy();
 
-  late final TokenStoreOAuth2AuthorizedClientService clients =
-      TokenStoreOAuth2AuthorizedClientService(store, repository);
+  late final InMemoryOAuth2AuthorizedClientService clients =
+      InMemoryOAuth2AuthorizedClientService(repository);
 
   late final AuthorizedClientServiceOAuth2AuthorizedClientManager manager =
       AuthorizedClientServiceOAuth2AuthorizedClientManager(
@@ -337,34 +282,53 @@ final class LoginFixture {
                 .build(),
       );
 
-  OAuth2LoginService service({
-    AuthorizationBrowser? browser,
-    bool withBrowser = true,
-    GrantedAuthoritiesMapper mapper = const NullAuthoritiesMapper(),
-  }) => OAuth2LoginService(
-    clientRegistrationRepository: repository,
-    authorizedClientService: clients,
-    tokenStore: store,
-    accessTokenResponseClient: DefaultAuthorizationCodeTokenResponseClient(
-      provider.transport,
-      clock: () => provider.now,
-    ),
-    userService: DefaultOAuth2UserService(provider.transport),
-    oidcUserService: OidcUserService(provider.transport),
-    browser: withBrowser ? (browser ?? this.browser) : null,
-    authorizedClientManager: manager,
-    revocationClient: OAuth2TokenRevocationClient(provider.transport),
-    idTokenDecoder: TokenEndpointOidcIdTokenDecoder(clock: () => provider.now),
-    authoritiesMapper: mapper,
-    eventPublisher: _Events(events),
-    securityContextHolderStrategy: strategy,
-  );
-}
-
-final class _Events implements ApplicationEventPublisher {
-  _Events(this.events);
-  final List<Object> events;
-
-  @override
-  void publishEvent<T extends Object>(T event) => events.add(event);
+  /// Logs `user-1` in and returns their authentication.
+  Future<OAuth2AuthenticationToken> signIn() async {
+    final request = OAuth2AuthorizationRequest.forRegistration(
+      clientRegistration,
+      redirectUri: expandRedirectUri(clientRegistration),
+    );
+    final redirect = provider.approve(request.authorizationRequestUri);
+    final response = OAuth2AuthorizationResponse.fromRedirect(redirect);
+    expect(response.state, request.state);
+    final tokens =
+        await DefaultAuthorizationCodeTokenResponseClient(
+          provider.transport,
+          clock: () => provider.now,
+        ).getTokenResponse(
+          OAuth2AuthorizationCodeGrantRequest(
+            clientRegistration,
+            OAuth2AuthorizationExchange(request, response),
+          ),
+        );
+    final idToken =
+        await TokenEndpointOidcIdTokenDecoder(
+          clock: () => provider.now,
+        ).decode(
+          clientRegistration,
+          tokens.additionalParameters['id_token']! as String,
+        );
+    final user = await OidcUserService(provider.transport).loadUser(
+      OidcUserRequest(clientRegistration, tokens.accessToken, idToken),
+    );
+    final authentication = OAuth2AuthenticationToken(
+      user,
+      user.authorities,
+      clientRegistration.registrationId,
+    );
+    await clients.saveAuthorizedClient(
+      OAuth2AuthorizedClient(
+        clientRegistration,
+        authentication.name,
+        tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        idToken: idToken,
+      ),
+      authentication,
+    );
+    strategy.setContext(
+      strategy.createEmptyContext()..authentication = authentication,
+    );
+    return authentication;
+  }
 }

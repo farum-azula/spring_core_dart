@@ -2,7 +2,7 @@ import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/shop_client.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Ordering and the order list. Only for logged-in users:
 /// `@PreAuthorize('isAuthenticated()')` fails the call before it is sent

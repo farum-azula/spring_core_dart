@@ -1,6 +1,8 @@
 // The documentation has properties lines, which cannot be wrapped.
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart';
+
 /// How the client proves who it is to the provider's token endpoint.
 ///
 /// A server (a confidential client) has a secret and sends it either in
@@ -208,6 +210,113 @@ final class ProviderDetails {
       value is String && value.isNotEmpty ? value : null;
 }
 
+/// Whether a registration's tokens are bound to the app's key with DPoP
+/// (RFC 9449), set by the registration's `dpop` property.
+///
+/// With DPoP the token requests carry a proof signed by the app's
+/// `DPoPKey`, the provider binds the tokens to that key, and every API
+/// call sends `Authorization: DPoP <token>` with a fresh proof: a stolen
+/// token is useless without the key. [auto], the default, uses it when
+/// the provider says it can (its discovered metadata lists the key's
+/// algorithm in `dpop_signing_alg_values_supported`); [enabled] always,
+/// for a provider configured by hand; [disabled] never.
+///
+/// DPoP needs a key that lives as long as the tokens: an app with
+/// `spring_boot_starter_flutter_security` keeps it in the Secure Enclave,
+/// the Android Keystore or its `SecretStore`; elsewhere the starter's key
+/// lives as long as the process (the tokens die with it). A server with
+/// several instances sharing sessions declares a shared `DPoPKey` bean,
+/// or sets `dpop=false`.
+///
+/// ```properties
+/// spring.security.oauth2.client.registration.keycloak.dpop=true
+/// ```
+///
+/// Spring (Java): no such setting; Spring Security has no DPoP on the
+/// client's side yet (spring-security#18228 proposes
+/// `ClientSettings.requireDpop`). An addition of this port.
+enum DPoPMode {
+  /// On when the key outlives the program (the apps' keys:
+  /// [DPoPKey.persistent]) and the provider's metadata lists its
+  /// algorithm in `dpop_signing_alg_values_supported`; off otherwise, so
+  /// a server with a key made in memory keeps `Bearer` (`dpop=auto`, the
+  /// default).
+  auto,
+
+  /// Always on (`dpop=true`).
+  enabled,
+
+  /// Always off: `Bearer` tokens (`dpop=false`).
+  disabled;
+
+  /// The mode of the property value [value]: `auto`, `true` or `false`
+  /// (any case).
+  ///
+  /// Throws an [ArgumentError] for anything else.
+  static DPoPMode parse(String value) => switch (value.trim().toLowerCase()) {
+    'auto' => auto,
+    'true' => enabled,
+    'false' => disabled,
+    _ => throw ArgumentError.value(
+      value,
+      'dpop',
+      'must be auto, true or false',
+    ),
+  };
+}
+
+/// How the provider sends the authorization response (the `code` and
+/// `state`, or an `error`) back to the redirect URI: OAuth 2.0's
+/// `response_mode` parameter.
+///
+/// [query], the default of the code flow, redirects the browser with the
+/// parameters in the URI. [formPost] (OAuth 2.0 Form Post Response Mode)
+/// makes the browser post them as a form to the redirect URI, so they
+/// never appear in a URI, a log or the history. Sign in with Apple
+/// requires it when the login asks for the user's name or e-mail. Only a
+/// server can receive a form post: `oauth2Login()` of the security
+/// starter accepts the callback as a `POST` for these registrations (and
+/// only for them); an app's login window refuses it.
+///
+/// ```properties
+/// spring.security.oauth2.client.registration.apple.response-mode=form_post
+/// ```
+///
+/// Spring (Java): no such setting; Spring Security sends no
+/// `response_mode` and its callback reads the parameters of any method,
+/// so a Spring application adds the parameter with an authorization
+/// request customizer.
+enum ResponseMode {
+  /// The parameters in the redirect URI's query (`response_mode` not
+  /// sent): the default.
+  query('query'),
+
+  /// The parameters posted as an `application/x-www-form-urlencoded`
+  /// form to the redirect URI (`response_mode=form_post`).
+  formPost('form_post');
+
+  ResponseMode(this.value);
+
+  /// The value of `response_mode` and of the `response-mode` property.
+  final String value;
+
+  /// The mode named [value] (`query`, `form_post`), ignoring case and
+  /// `-` / `_`.
+  ///
+  /// Throws an [ArgumentError] for another value (`fragment` included:
+  /// a server never sees a URI's fragment).
+  static ResponseMode parse(String value) =>
+      switch (value.trim().toLowerCase().replaceAll('-', '_')) {
+        'query' => query,
+        'form_post' => formPost,
+        _ => throw ArgumentError.value(
+          value,
+          'response-mode',
+          'must be query or form_post',
+        ),
+      };
+}
+
 /// One client of one OAuth 2.0 or OpenID Connect provider: the client's
 /// id and secret there, the grant, the redirect URI, the scopes, and where
 /// the provider's endpoints are.
@@ -260,7 +369,9 @@ final class ClientRegistration {
         issuerUri: builder._issuerUri,
         configurationMetadata: builder._configurationMetadata,
       ),
-      clientName = builder._clientName ?? builder._registrationId;
+      clientName = builder._clientName ?? builder._registrationId,
+      dpop = builder._dpop,
+      responseMode = builder._responseMode;
 
   /// A builder for the registration [registrationId].
   static ClientRegistrationBuilder withRegistrationId(String registrationId) =>
@@ -304,13 +415,43 @@ final class ClientRegistration {
   /// when not set.
   final String clientName;
 
+  /// Whether the tokens are DPoP-bound: [DPoPMode.auto] by default (when
+  /// the provider announces it). Not in Spring (see [DPoPMode]).
+  final DPoPMode dpop;
+
+  /// How the provider returns the authorization response:
+  /// [ResponseMode.query] (the default of the code flow, a redirect with
+  /// the code in the URI) or [ResponseMode.formPost] (the browser posts
+  /// it to the redirect URI). Not in Spring (see [ResponseMode]).
+  final ResponseMode responseMode;
+
+  /// Whether this registration uses DPoP with [key]: [dpop] decides; for
+  /// [DPoPMode.auto] the key must outlive the program
+  /// ([DPoPKey.persistent]: the apps' keys, not a server's key made in
+  /// memory) and the provider's `dpop_signing_alg_values_supported`
+  /// metadata must list its algorithm.
+  bool usesDPoP(DPoPKey key) => switch (dpop) {
+    DPoPMode.enabled => true,
+    DPoPMode.disabled => false,
+    DPoPMode.auto =>
+      key.persistent &&
+          switch (providerDetails
+              .configurationMetadata['dpop_signing_alg_values_supported']) {
+            final List<Object?> algorithms => algorithms.contains(
+              key.algorithm,
+            ),
+            _ => false,
+          },
+  };
+
   @override
   String toString() =>
       'ClientRegistration{registrationId=$registrationId, '
       'clientId=$clientId, clientSecret=[PROTECTED], '
       'clientAuthenticationMethod=$clientAuthenticationMethod, '
       'authorizationGrantType=$authorizationGrantType, '
-      'redirectUri=$redirectUri, scopes=$scopes, clientName=$clientName}';
+      'redirectUri=$redirectUri, scopes=$scopes, clientName=$clientName, '
+      'dpop=${dpop.name}, responseMode=${responseMode.value}}';
 }
 
 /// Builds a [ClientRegistration]; get one from
@@ -345,7 +486,9 @@ final class ClientRegistrationBuilder {
       _configurationMetadata = {
         ...registration.providerDetails.configurationMetadata,
       },
-      _clientName = registration.clientName;
+      _clientName = registration.clientName,
+      _dpop = registration.dpop,
+      _responseMode = registration.responseMode;
 
   String _registrationId;
   String? _clientId;
@@ -363,6 +506,8 @@ final class ClientRegistrationBuilder {
   String? _issuerUri;
   Map<String, Object?> _configurationMetadata = const {};
   String? _clientName;
+  DPoPMode _dpop = DPoPMode.auto;
+  ResponseMode _responseMode = ResponseMode.query;
 
   /// Sets the registration id.
   ClientRegistrationBuilder registrationId(String registrationId) {
@@ -470,6 +615,21 @@ final class ClientRegistrationBuilder {
   /// Sets the name shown to users.
   ClientRegistrationBuilder clientName(String? name) {
     _clientName = name;
+    return this;
+  }
+
+  /// Sets whether the tokens are DPoP-bound ([DPoPMode.auto] by
+  /// default). Not in Spring (see [DPoPMode]).
+  ClientRegistrationBuilder dpop(DPoPMode mode) {
+    _dpop = mode;
+    return this;
+  }
+
+  /// Sets how the provider returns the authorization response
+  /// ([ResponseMode.query] by default). Not in Spring (see
+  /// [ResponseMode]).
+  ClientRegistrationBuilder responseMode(ResponseMode mode) {
+    _responseMode = mode;
     return this;
   }
 

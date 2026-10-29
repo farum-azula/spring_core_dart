@@ -36,10 +36,11 @@ class OidcIdToken extends AbstractOAuth2Token
   /// Reads the JWT [tokenValue]: its header must be a JSON object whose
   /// `alg` is not `none`, its payload a JSON object of claims.
   ///
-  /// The signature is **not** checked: an app trusts the ID token it got
-  /// straight from the token endpoint over TLS (OpenID Connect Core
-  /// §3.1.3.7); a server checks it with the provider's keys before (the
-  /// security starter's `OidcIdTokenDecoder`). Neither are the claims:
+  /// The signature is **not** checked: a client may trust the ID token it
+  /// got straight from the token endpoint over TLS (OpenID Connect Core
+  /// §3.1.3.7, `TokenEndpointOidcIdTokenDecoder`); a server checks it with
+  /// the provider's keys before (the security starter's
+  /// `OidcIdTokenDecoder`). Neither are the claims:
   /// run `OidcIdTokenValidator` on the result.
   ///
   /// Throws a [FormatException] for anything that is not such a JWT,

@@ -56,6 +56,7 @@ void main() {
       expect(jsonOf(await ada.get('/api/me')), {
         'name': 'ada',
         'roles': ['USER'],
+        'authorities': ['ROLE_USER'],
       });
       final logout = await ada.send(HttpMethod.post, '/api/logout');
       expect(logout.response.statusCode, 204);

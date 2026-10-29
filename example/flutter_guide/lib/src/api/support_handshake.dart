@@ -1,6 +1,6 @@
 import 'package:neon_books_app/src/account/sso_properties.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
-import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 
 /// Sends the session cookie with the support chat's handshake: the
@@ -12,17 +12,21 @@ import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart
 ///
 /// After a Keycloak login of a native app (the `sso` profile) the server
 /// knows the user by the access token, not by the session: the handshake
-/// carries `Authorization: Bearer` too, a fresh token from the
-/// [OAuth2AuthorizedClientManager] (a bean only where a registration is
-/// configured).
+/// carries it too, a fresh token from the [OAuth2AuthorizedClientManager]
+/// (a bean only where a registration is configured), as the token type
+/// says: `Authorization: Bearer <token>`, or for a token bound to the
+/// app's key `Authorization: DPoP <token>` and a proof for this handshake
+/// (`GET` of the `http(s)` form of the `ws(s)` URL), signed by the
+/// [DPoPKey] bean (the Secure Enclave's or the Keystore's key).
 @Component()
 @Profile(['!web'])
 class SupportHandshake implements WebSocketHandshakeInterceptor {
-  SupportHandshake(this._cookies, this._sso, this._tokens);
+  SupportHandshake(this._cookies, this._sso, this._tokens, this._dPoPKey);
 
   final CookieJar _cookies;
   final SsoProperties _sso;
   final OAuth2AuthorizedClientManager? _tokens;
+  final DPoPKey? _dPoPKey;
 
   @override
   Future<void> apply(WebSocketHandshake handshake) async {
@@ -39,8 +43,11 @@ class SupportHandshake implements WebSocketHandshakeInterceptor {
           _sso.registrationId,
         ).principal(user).build(),
       );
-      if (client?.accessToken.tokenValue case final token?) {
-        handshake.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      if (client?.accessToken case final token?) {
+        final headers = await OAuth2AccessTokenHeaders(
+          dPoPKey: _dPoPKey,
+        ).of(token, method: 'GET', url: handshake.url);
+        headers.forEach(handshake.headers.set);
       }
     }
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The theme's name on the brand's accent: the app's own tokens
 /// (`spring.flutter.theme.tokens.brand.*`), per theme, read through

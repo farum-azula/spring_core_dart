@@ -9,32 +9,28 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i10;
-import 'package:spring_boot_dart/src/runners.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
+import 'package:spring_boot_dart/src/runners.dart' as _i4;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i12;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i7;
+    as _i10;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i13;
+    as _i11;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i14;
-import 'package:spring_boot_starter_oauth2_client/src/authorization_browser.dart'
-    as _i4;
-import 'package:spring_boot_starter_oauth2_client/src/login/oauth2_login_service.dart'
-    as _i9;
-import 'package:spring_boot_starter_oauth2_client/src/loopback_authorization_browser.dart'
+    as _i12;
+import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart'
     as _i5;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i15;
-import 'package:spring_web_dart/src/annotations.dart' as _i8;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+import 'package:spring_web_dart/src/annotations.dart' as _i7;
 
 import 'example.dart' as _i1;
 
-class _$ApiClientProxy implements _i1.ApiClient, _i2.Advised {
-  _$ApiClientProxy(this._target, this._invoker);
+class _$OrdersClientProxy implements _i1.OrdersClient, _i2.Advised {
+  _$OrdersClientProxy(this._target, this._invoker);
 
-  final _i1.ApiClient _target;
+  final _i1.OrdersClient _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -64,163 +60,21 @@ class _$ApiClientProxy implements _i1.ApiClient, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i3.Future<Map<String, Object?>> me() =>
-      this._invoker.invokeAsync<Map<String, Object?>>(
+  _i3.Future<List<Object?>> orders() =>
+      this._invoker.invokeAsync<List<Object?>>(
         this,
         this._target,
         0,
         const [],
-        (args) => this._target.me(),
+        (args) => this._target.orders(),
       );
 }
 
-class _$AccountProxy extends _i1.Account implements _i2.Advised {
-  _$AccountProxy(super.p0, super.p1);
+class _$OrdersTourProxy
+    implements _i1.OrdersTour, _i4.CommandLineRunner, _i2.Advised {
+  _$OrdersTourProxy(this._target, this._invoker);
 
-  _i2.ProxyInvoker? _$invoker;
-
-  _$AccountProxy _$advise(_i2.ProxyInvoker invoker) {
-    _$invoker = invoker;
-    return this;
-  }
-
-  @override
-  Object get aopTarget => this;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
-        advisor,
-      );
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
-        advice,
-      );
-
-  @override
-  _i3.Future<bool> start() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.start()
-        : _$i.invokeAsync<bool>(
-            this,
-            this,
-            0,
-            const [],
-            (args) => super.start(),
-          );
-  }
-
-  @override
-  _i3.Future<String> signIn() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.signIn()
-        : _$i.invokeAsync<String>(
-            this,
-            this,
-            1,
-            const [],
-            (args) => super.signIn(),
-          );
-  }
-
-  @override
-  _i3.Future<Object?> whoAmI() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.whoAmI()
-        : _$i.invokeAsync<Object?>(
-            this,
-            this,
-            2,
-            const [],
-            (args) => super.whoAmI(),
-          );
-  }
-
-  @override
-  _i3.Future<void> signOut() {
-    final _$i = this._$invoker;
-    return _$i == null
-        ? super.signOut()
-        : _$i.invokeAsync<void>(
-            this,
-            this,
-            3,
-            const [],
-            (args) => super.signOut(),
-          );
-  }
-}
-
-class _$BrowserSetup$AuthorizationBrowserProxy
-    implements _i4.AuthorizationBrowser, _i2.Advised {
-  _$BrowserSetup$AuthorizationBrowserProxy(this._target, this._invoker);
-
-  final _i5.LoopbackAuthorizationBrowser _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<Uri> authorize({
-    required Uri redirectUri,
-    required Uri Function(Uri) authorizationUri,
-  }) => this._invoker.invokeAsync<Uri>(
-    this,
-    this._target,
-    0,
-    [redirectUri, authorizationUri],
-    (args) => this._target.authorize(
-      redirectUri: (args[0] as Uri),
-      authorizationUri: (args[1] as Uri Function(Uri)),
-    ),
-  );
-}
-
-class _$LoginTourProxy
-    implements _i1.LoginTour, _i6.CommandLineRunner, _i2.Advised {
-  _$LoginTourProxy(this._target, this._invoker);
-
-  final _i1.LoginTour _target;
+  final _i1.OrdersTour _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -259,208 +113,106 @@ class _$LoginTourProxy
   );
 
   @override
-  _i1.Account get account => (this._invoker.invoke(
+  _i1.OrdersClient get orders => (this._invoker.invoke(
     this,
     this._target,
     1,
     const [],
-    (_) => this._target.account,
-  ) as _i1.Account);
+    (_) => this._target.orders,
+  ) as _i1.OrdersClient);
+
+  @override
+  _i5.OAuth2AuthorizedClientManager get authorizedClients =>
+      (this._invoker.invoke(
+        this,
+        this._target,
+        2,
+        const [],
+        (_) => this._target.authorizedClients,
+      ) as _i5.OAuth2AuthorizedClientManager);
 }
 
-/// Implements `ApiClient` through an `InvocationHandler`.
-class _$ApiClientImpl implements _i1.ApiClient {
-  _$ApiClientImpl(this._handler, this._metadata);
+/// Implements `OrdersClient` through an `InvocationHandler`.
+class _$OrdersClientImpl implements _i1.OrdersClient {
+  _$OrdersClientImpl(this._handler, this._metadata);
 
   final _i2.InvocationHandler _handler;
 
-  final _i2.InterfaceMetadata<_i1.ApiClient> _metadata;
+  final _i2.InterfaceMetadata<_i1.OrdersClient> _metadata;
 
-  static _$ApiClientImpl $create(_i2.DependencyResolver r) {
-    final metadata = _i2.InterfaceMetadata<_i1.ApiClient>(
-      typeName: r'ApiClient',
-      annotations: const [_i7.FeignClient(r'api', url: r'${api.url}')],
+  static _$OrdersClientImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.OrdersClient>(
+      typeName: r'OrdersClient',
+      annotations: const [_i6.FeignClient(r'orders', url: r'${partner.url}')],
       methods: [
         _i2.ProxyMethod(
-          r'me',
-          returnType: const _i2.MapType<String, dynamic>(
-            _i2.ClassType<String>(),
-            _i2.DynamicType(),
-          ),
+          r'orders',
+          returnType: const _i2.ListType<dynamic>(_i2.DynamicType()),
           isFuture: true,
-          annotations: const [_i8.GetMapping(r'/me')],
-          call: (target, arguments) => (target as _i1.ApiClient).me(),
+          annotations: const [_i7.GetMapping(r'/orders')],
+          call: (target, arguments) => (target as _i1.OrdersClient).orders(),
         ),
       ],
     );
-    return _$ApiClientImpl(
+    return _$OrdersClientImpl(
       _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i3.Future<Map<String, Object?>> me() =>
-      _i2.retypeFuture<Map<String, Object?>>(
-        this._handler.invoke(this._metadata.methods[0], const []),
-      );
-}
-
-/// `BrowserSetup` whose `@Bean` methods return the beans of the container
-/// (full-mode `@Configuration`).
-class _$BrowserSetupConfiguration extends _i1.BrowserSetup {
-  _$BrowserSetupConfiguration(this._$beanFactory);
-
-  final _i2.BeanFactory _$beanFactory;
-
-  @override
-  _i4.AuthorizationBrowser authorizationBrowser() =>
-      (this._$beanFactory.getBeanByName(r'authorizationBrowser')
-          as _i4.AuthorizationBrowser);
-
-  _i4.AuthorizationBrowser _$authorizationBrowser(_i2.DependencyResolver r) =>
-      super.authorizationBrowser();
+  _i3.Future<List<Object?>> orders() => _i2.retypeFuture<List<Object?>>(
+    this._handler.invoke(this._metadata.methods[0], const []),
+  );
 }
 
 /// Beans found by `@ComponentScan` in `example/`.
 _i2.BeanModule get $application => _i2.BeanModule(r'application', [
-  _i2.BeanDefinition<_i1.ApiClient>(
-    name: r'apiClient',
-    source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#ApiClient',
-    types: const [_i1.ApiClient],
+  _i2.BeanDefinition<_i1.OrdersClient>(
+    name: r'ordersClient',
+    source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#OrdersClient',
+    types: const [_i1.OrdersClient],
     primary: true,
-    create: (r) => _$ApiClientImpl.$create(r),
-    annotations: const [_i7.FeignClient(r'api', url: r'${api.url}')],
+    create: (r) => _$OrdersClientImpl.$create(r),
+    annotations: const [_i6.FeignClient(r'orders', url: r'${partner.url}')],
     aopProxy: _i2.AopProxyFactory(
       signatures: const [
         _i2.MethodSignature(
-          name: r'me',
-          declaringType: r'ApiClient',
-          targetType: r'ApiClient',
-          declaringTypes: [r'ApiClient'],
+          name: r'orders',
+          declaringType: r'OrdersClient',
+          targetType: r'OrdersClient',
+          declaringTypes: [r'OrdersClient'],
           returnType: r'Future',
-          annotations: [_i8.GetMapping(r'/me')],
+          annotations: [_i7.GetMapping(r'/orders')],
           annotationTypes: [r'GetMapping'],
-          targetTypes: [r'ApiClient'],
-          targetAnnotations: [_i7.FeignClient(r'api', url: r'${api.url}')],
+          targetTypes: [r'OrdersClient'],
+          targetAnnotations: [
+            _i6.FeignClient(r'orders', url: r'${partner.url}'),
+          ],
           targetAnnotationTypes: [r'FeignClient'],
         ),
       ],
       create: (target, invoker) =>
-          _$ApiClientProxy((target as _i1.ApiClient), invoker),
+          _$OrdersClientProxy((target as _i1.OrdersClient), invoker),
     ),
   ),
-  _i2.BeanDefinition<_i1.Account>(
-    name: r'account',
-    source:
-        r'asset:spring_boot_starter_oauth2_client/example/example.dart#Account',
-    types: const [_i1.Account],
+  _i2.BeanDefinition<_i1.OrdersTour>(
+    name: r'ordersTour',
+    source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#OrdersTour',
+    types: const [_i1.OrdersTour, _i4.CommandLineRunner],
     dependencies: const [
-      _i2.Dependency(_i9.OAuth2LoginService, name: r'_login'),
-      _i2.Dependency(_i1.ApiClient, name: r'_api'),
+      _i2.Dependency(_i1.OrdersClient, name: r'orders'),
+      _i2.Dependency(
+        _i5.OAuth2AuthorizedClientManager,
+        name: r'authorizedClients',
+      ),
     ],
-    create: (r) => _$AccountProxy(
-      r.dependency<_i9.OAuth2LoginService>(name: r'_login'),
-      r.dependency<_i1.ApiClient>(name: r'_api'),
-    ),
-    annotations: const [_i2.Service()],
-    aopProxy: _i2.AopProxyFactory.subclass(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'start',
-          declaringType: r'Account',
-          targetType: r'Account',
-          declaringTypes: [r'Account'],
-          returnType: r'Future',
-          targetTypes: [r'Account'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-        _i2.MethodSignature(
-          name: r'signIn',
-          declaringType: r'Account',
-          targetType: r'Account',
-          declaringTypes: [r'Account'],
-          returnType: r'Future',
-          targetTypes: [r'Account'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-        _i2.MethodSignature(
-          name: r'whoAmI',
-          declaringType: r'Account',
-          targetType: r'Account',
-          declaringTypes: [r'Account'],
-          returnType: r'Future',
-          targetTypes: [r'Account'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-        _i2.MethodSignature(
-          name: r'signOut',
-          declaringType: r'Account',
-          targetType: r'Account',
-          declaringTypes: [r'Account'],
-          returnType: r'Future',
-          targetTypes: [r'Account'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-      ],
-      advise: (bean, invoker) =>
-          bean is _$AccountProxy ? bean._$advise(invoker) : null,
-    ),
-  ),
-  _i2.BeanDefinition<_i1.BrowserSetup>(
-    name: r'browserSetup',
-    source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#BrowserSetup',
-    types: const [_i1.BrowserSetup],
-    create: (r) => _$BrowserSetupConfiguration(r),
-    annotations: const [_i2.Configuration()],
-  ),
-  _i2.BeanDefinition<_i5.LoopbackAuthorizationBrowser>(
-    name: r'authorizationBrowser',
-    source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#BrowserSetup.authorizationBrowser',
-    types: const [_i5.LoopbackAuthorizationBrowser, _i4.AuthorizationBrowser],
-    factoryBeanName: r'browserSetup',
-    factoryMethodName: r'authorizationBrowser',
-    dependencies: const [
-      _i2.Dependency(_i1.BrowserSetup, qualifier: r'browserSetup'),
-    ],
-    create: (r) =>
-        ((r.dependency<_i1.BrowserSetup>(
-              qualifier: r'browserSetup',
-            ) as _$BrowserSetupConfiguration)._$authorizationBrowser(r)
-            as _i5.LoopbackAuthorizationBrowser),
-    annotations: const [_i2.Bean()],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'authorize',
-          declaringType: r'AuthorizationBrowser',
-          targetType: r'LoopbackAuthorizationBrowser',
-          declaringTypes: [r'AuthorizationBrowser'],
-          returnType: r'Future',
-          parameterTypes: [r'Uri', r'Function'],
-          parameterNames: [r'redirectUri', r'authorizationUri'],
-          targetTypes: [
-            r'LoopbackAuthorizationBrowser',
-            r'AuthorizationBrowser',
-          ],
-        ),
-      ],
-      create: (target, invoker) => _$BrowserSetup$AuthorizationBrowserProxy(
-        (target as _i5.LoopbackAuthorizationBrowser),
-        invoker,
+    create: (r) => _i1.OrdersTour(
+      r.dependency<_i1.OrdersClient>(name: r'orders'),
+      r.dependency<_i5.OAuth2AuthorizedClientManager>(
+        name: r'authorizedClients',
       ),
     ),
-  ),
-  _i2.BeanDefinition<_i1.LoginTour>(
-    name: r'loginTour',
-    source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#LoginTour',
-    types: const [_i1.LoginTour, _i6.CommandLineRunner],
-    dependencies: const [_i2.Dependency(_i1.Account, name: r'account')],
-    create: (r) => _i1.LoginTour(r.dependency<_i1.Account>(name: r'account')),
     annotations: const [
       _i2.Component(),
       _i2.Log(topic: r'example'),
@@ -470,12 +222,12 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         _i2.MethodSignature(
           name: r'run',
           declaringType: r'CommandLineRunner',
-          targetType: r'LoginTour',
-          declaringTypes: [r'LoginTour', r'CommandLineRunner'],
+          targetType: r'OrdersTour',
+          declaringTypes: [r'OrdersTour', r'CommandLineRunner'],
           returnType: r'Future',
           parameterTypes: [r'List'],
           parameterNames: [r'args'],
-          targetTypes: [r'LoginTour', r'CommandLineRunner'],
+          targetTypes: [r'OrdersTour', r'CommandLineRunner'],
           targetAnnotations: [
             _i2.Component(),
             _i2.Log(topic: r'example'),
@@ -483,13 +235,27 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           targetAnnotationTypes: [r'Component', r'Log'],
         ),
         _i2.MethodSignature(
-          name: r'account',
-          declaringType: r'LoginTour',
-          targetType: r'LoginTour',
-          declaringTypes: [r'LoginTour'],
+          name: r'orders',
+          declaringType: r'OrdersTour',
+          targetType: r'OrdersTour',
+          declaringTypes: [r'OrdersTour'],
           kind: _i2.MemberKind.getter,
-          returnType: r'Account',
-          targetTypes: [r'LoginTour', r'CommandLineRunner'],
+          returnType: r'OrdersClient',
+          targetTypes: [r'OrdersTour', r'CommandLineRunner'],
+          targetAnnotations: [
+            _i2.Component(),
+            _i2.Log(topic: r'example'),
+          ],
+          targetAnnotationTypes: [r'Component', r'Log'],
+        ),
+        _i2.MethodSignature(
+          name: r'authorizedClients',
+          declaringType: r'OrdersTour',
+          targetType: r'OrdersTour',
+          declaringTypes: [r'OrdersTour'],
+          kind: _i2.MemberKind.getter,
+          returnType: r'OAuth2AuthorizedClientManager',
+          targetTypes: [r'OrdersTour', r'CommandLineRunner'],
           targetAnnotations: [
             _i2.Component(),
             _i2.Log(topic: r'example'),
@@ -498,35 +264,29 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         ),
       ],
       create: (target, invoker) =>
-          _$LoginTourProxy((target as _i1.LoginTour), invoker),
+          _$OrdersTourProxy((target as _i1.OrdersTour), invoker),
     ),
   ),
 ]);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i10.SpringApplication get springApplication => _i10.SpringApplication(
+_i8.SpringApplication get springApplication => _i8.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i11.springBootAutoConfiguration,
-    _i12.springBootStarterFeignAutoConfiguration,
-    _i13.springBootStarterLoggingAutoConfiguration,
-    _i14.springBootStarterOauth2ClientAutoConfiguration,
-    _i15.springSecurityCoreAutoConfiguration,
+    _i9.springBootAutoConfiguration,
+    _i10.springBootStarterFeignAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
+    _i12.springBootStarterOauth2ClientAutoConfiguration,
+    _i13.springSecurityCoreAutoConfiguration,
   ],
-  autoConfigurationMetadata: {
-    _i14.springBootStarterOauth2ClientAutoConfiguration:
-        const _i10.AutoConfigurationModule(
-          after: ['springBootStarterFlutterAutoConfiguration'],
-        ),
-  },
   dartDefines: {
-    if (const bool.hasEnvironment('API_URL'))
-      'API_URL': const String.fromEnvironment('API_URL'),
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
     if (const bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
       'LOGGING_LEVEL_ROOT': const String.fromEnvironment('LOGGING_LEVEL_ROOT'),
+    if (const bool.hasEnvironment('PARTNER_URL'))
+      'PARTNER_URL': const String.fromEnvironment('PARTNER_URL'),
     if (const bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
       'SPRING_FLUTTER_SCANOSENVIRONMENT': const String.fromEnvironment(
         'SPRING_FLUTTER_SCANOSENVIRONMENT',
@@ -545,12 +305,12 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
       ),
     if (const bool.hasEnvironment('TRACE'))
       'TRACE': const String.fromEnvironment('TRACE'),
-    if (const bool.hasEnvironment('api.url'))
-      'api.url': const String.fromEnvironment('api.url'),
     if (const bool.hasEnvironment('debug'))
       'debug': const String.fromEnvironment('debug'),
     if (const bool.hasEnvironment('logging.level.root'))
       'logging.level.root': const String.fromEnvironment('logging.level.root'),
+    if (const bool.hasEnvironment('partner.url'))
+      'partner.url': const String.fromEnvironment('partner.url'),
     if (const bool.hasEnvironment('spring.flutter.scan-os-environment'))
       'spring.flutter.scan-os-environment': const String.fromEnvironment(
         'spring.flutter.scan-os-environment',
@@ -570,36 +330,36 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '071bba87',
+  fingerprint: 'f25a6b2e',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i10.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i8.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i10.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i8.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i10.ConfigurableApplicationContext reloadApplication(
-  _i10.ConfigurableApplicationContext running, {
+_i8.ConfigurableApplicationContext reloadApplication(
+  _i8.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i10.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i10.ConfigurableApplicationContext running, {
+Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i8.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
-/// `@Log` of [LoginTour]: the logger 'example'.
-extension $LoginTourLog on _i1.LoginTour {
+/// `@Log` of [OrdersTour]: the logger 'example'.
+extension $OrdersTourLog on _i1.OrdersTour {
   _i2.SpringLog get log => const _i2.SpringLog(r'example');
 }

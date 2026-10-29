@@ -14,9 +14,9 @@ comparisons with Spring Security itself.
 |---|---|
 | 1. Threat model and rules | done: [docs/security.md](../docs/security.md) |
 | 2. Attack catalog as tests | done, except denial of service beyond the size limits (rate limits are documented as the application's or the proxy's); `oauth2Login()` too (October 2026: `test/oauth2_login_test.dart`, against a fake OpenID Connect provider) |
-| 3. Differential tests against Spring Security | done: `tool/security_reference` (Spring Boot 4.1, Spring Security 7.1), `spring_boot_starter_security/test/differential_test.dart`, CI job "Security compared with Spring Security"; password hashes both ways. **Later: `oauth2Login()`** (the reference application with a registration and the same fake provider, the same callbacks to both) |
+| 3. Differential tests against Spring Security | done: `tool/security_reference` (Spring Boot 4.1, Spring Security 7.1), `spring_boot_starter_security/test/differential_test.dart`, CI job "Security compared with Spring Security"; password hashes both ways; `oauth2Login()` and the DPoP resource server (October 2026: profiles `oauth2` and `dpop` of the reference, a fake OpenID Connect provider both use, `test/differential_provider.dart`) |
 | 4. Generated inputs | done: `spring_boot_starter_security/test/fuzz_test.dart` (seeded) |
-| 5. Mutation testing and coverage | done: `tool/mutation_test.dart`; the scores are in [docs/security.md](../docs/security.md#how-it-is-shown). Coverage is measured, not yet reported by CI. **Later: the `oauth2Login()` code** (`lib/src/oauth2/`, the new parts of `http_security.dart`) |
+| 5. Mutation testing and coverage | done: `tool/mutation_test.dart`; the scores are in [docs/security.md](../docs/security.md#how-it-is-shown). Coverage is measured, not yet reported by CI. The SSO and DPoP code (October 2026): `dpop.dart`, `lib/src/oauth2/`, the client's ID token validator, DPoP proof builder and authorization response ([docs/security-mutation.md](../docs/security-mutation.md)); **later:** the `oauth2Login()` parts of `http_security.dart`, the app login's checks (`flutter test`) |
 | 6. Scanners and reviews | ASVS checklist done ([docs/security-asvs.md](../docs/security-asvs.md)); the ZAP scan and an external review are open |
 
 ## 1. Threat model and rules (before any code)

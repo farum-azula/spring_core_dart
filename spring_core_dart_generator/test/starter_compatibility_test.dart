@@ -108,7 +108,7 @@ void main() {
         _compact(result),
         matches(
           RegExp(
-            // Other starters of the workspace (oauth2_client, security)
+            // Other starters of the workspace (the security starter)
             // have constraints of their own in the same map.
             r'autoConfigurationMetadata:\{_i\d+\.neonCacheAutoConfiguration:'
             r"const_i\d+\.AutoConfigurationModule\(order:5,before:\['a'\],"
@@ -121,7 +121,7 @@ void main() {
 
   test('a starter without constraints adds no metadata', () async {
     final result = await _build('^$springBootVersion');
-    // The workspace's own starters may have some (oauth2_client, security);
+    // The workspace's own starters may have some (the security starter);
     // the test starter has none.
     expect(
       _compact(result),

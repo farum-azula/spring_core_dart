@@ -42,6 +42,17 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 ///       target: "http://localhost:8080"
 /// ```
 ///
+/// `spring.flutter.web.content-security-policy` adds the page's Content
+/// Security Policy to the dev server's answers (the
+/// `Content-Security-Policy` header, or `Content-Security-Policy-Report-Only`
+/// with `content-security-policy-report-only=true`), so development runs
+/// under the policy production sends. An app whose browser logs in by
+/// itself (`spring.flutter.security.web.mode=spa`) gets a ready policy
+/// when it sets none ([WebDevServerSettings.spaContentSecurityPolicy]):
+/// its scripts and Flutter's only, no `eval`, connections to its own
+/// origin, Flutter's CDN and the providers of its
+/// `spring.security.oauth2.client.provider.*` URIs, no framing.
+///
 /// The file is not a declared build output: `build_runner` would overwrite
 /// a hand-written file of that name, and delete one it once generated when
 /// the builder stops writing it. The builder manages it itself, only ever
@@ -270,6 +281,47 @@ final class WebDevServerSettings {
     this.proxy = const [],
   });
 
+  /// The Content Security Policy of an app whose browser logs in by itself
+  /// (`spring.flutter.security.web.mode=spa`) and sets no
+  /// `spring.flutter.web.content-security-policy`: what Flutter's web
+  /// engine needs and nothing more, plus [connectOrigins] (the providers'
+  /// origins) for `fetch`.
+  ///
+  /// - scripts: the app's own and CanvasKit from Flutter's CDN
+  ///   (`https://www.gstatic.com`; builds with `--no-web-resources-cdn`
+  ///   need only `'self'`), WebAssembly allowed (`'wasm-unsafe-eval'`,
+  ///   CanvasKit and Skwasm), no `eval` and no inline scripts;
+  /// - styles: `'unsafe-inline'`, as Flutter's engine writes a `<style>`
+  ///   element (a nonce would need a server that makes one per answer);
+  /// - fonts: the fallback fonts of `https://fonts.gstatic.com`;
+  /// - connections: the app's origin, the CDN and font host (the engine
+  ///   fetches them) and [connectOrigins];
+  /// - workers from the origin and `blob:` (Skwasm); images also from
+  ///   `data:` and `blob:`;
+  /// - no plugins, `<base>` and forms on the origin only, and no framing
+  ///   by other sites (`frame-ancestors 'none'`, clickjacking).
+  static String spaContentSecurityPolicy(Iterable<String> connectOrigins) {
+    final connect = {
+      "'self'",
+      'https://www.gstatic.com',
+      'https://fonts.gstatic.com',
+      ...connectOrigins,
+    };
+    return [
+      "default-src 'self'",
+      "script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' https://fonts.gstatic.com",
+      'connect-src ${connect.join(' ')}',
+      "worker-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ');
+  }
+
   /// `spring.flutter.web.host`: the address to listen on (`localhost`,
   /// `0.0.0.0`).
   final String? host;
@@ -288,7 +340,8 @@ final class WebDevServerSettings {
   final String? certKeyPath;
 
   /// `spring.flutter.web.headers.<Name>=<value>`: headers added to every
-  /// response of the dev server.
+  /// response of the dev server, with the Content Security Policy of
+  /// `spring.flutter.web.content-security-policy` (or the spa mode's).
   final Map<String, String> headers;
 
   /// `spring.flutter.web.proxy[n].*`: requests forwarded to other servers.
@@ -296,7 +349,8 @@ final class WebDevServerSettings {
 
   /// The settings of the config [files] of `lib/resources/` (path below
   /// that directory to content), read for the `web` profile; `null` when
-  /// no `spring.flutter.web.*` property is set.
+  /// no `spring.flutter.web.*` property is set and the browser does not
+  /// log in by itself (`spring.flutter.security.web.mode=spa`).
   ///
   /// Throws [WebDevConfigException] for an invalid value.
   static WebDevServerSettings? read(Map<String, String> files) {
@@ -304,7 +358,11 @@ final class WebDevServerSettings {
     // mentions the properties, so the files need not be loaded at all.
     final keys = DartDefineKeys();
     files.forEach(keys.addConfigFile);
-    if (!keys.keys.any((key) => key.startsWith('SPRING_FLUTTER_WEB_'))) {
+    if (!keys.keys.any(
+      (key) =>
+          key.startsWith('SPRING_FLUTTER_WEB_') ||
+          key == 'SPRING_FLUTTER_SECURITY_WEB_MODE',
+    )) {
       return null;
     }
     return _Reader(_environment(files)).read();
@@ -418,7 +476,8 @@ final class _Reader {
   ];
 
   WebDevServerSettings? read() {
-    if (_sources.every((source) => source.$2.isEmpty)) {
+    final spa = _spaMode();
+    if (!spa && _sources.every((source) => source.$2.isEmpty)) {
       return null;
     }
     _warnUnknown();
@@ -437,7 +496,7 @@ final class _Reader {
       baseHref: _baseHref(),
       certPath: certPath,
       certKeyPath: certKeyPath,
-      headers: _headers(),
+      headers: _withContentSecurityPolicy(_headers(), spa: spa),
       proxy: _proxy(),
     );
     if (settings.host == null &&
@@ -549,6 +608,108 @@ final class _Reader {
     return headers;
   }
 
+  // Whether the browser logs in by itself:
+  // spring.flutter.security.web.mode=spa.
+  bool _spaMode() {
+    try {
+      return _environment
+              .getProperty('spring.flutter.security.web.mode')
+              ?.trim()
+              .toLowerCase() ==
+          'spa';
+    } on Exception {
+      return false;
+    }
+  }
+
+  // [headers] with the Content Security Policy: the property's, else the
+  // spa mode's default; a policy in headers.<Name> as well is an error.
+  Map<String, String> _withContentSecurityPolicy(
+    Map<String, String> headers, {
+    required bool spa,
+  }) {
+    const enforced = 'Content-Security-Policy';
+    const reportOnly = 'Content-Security-Policy-Report-Only';
+    final policy = _string('content-security-policy');
+    final reportOnlyText = _string('content-security-policy-report-only');
+    final reportOnlyValue = switch (reportOnlyText?.toLowerCase()) {
+      null || 'false' => false,
+      'true' => true,
+      _ => throw WebDevConfigException(
+        '${WebDevConfigBuilder.prefix}.content-security-policy-report-only: '
+        "'$reportOnlyText' is not true or false.",
+      ),
+    };
+    final existing = headers.keys.where(
+      (name) =>
+          name.toLowerCase() == enforced.toLowerCase() ||
+          name.toLowerCase() == reportOnly.toLowerCase(),
+    );
+    if (policy != null && existing.isNotEmpty) {
+      throw WebDevConfigException(
+        '${WebDevConfigBuilder.prefix}.content-security-policy and '
+        '${WebDevConfigBuilder.prefix}.headers.${existing.first} are both '
+        'set: keep one of them.',
+      );
+    }
+    if (policy != null && policy.isEmpty) {
+      throw WebDevConfigException(
+        '${WebDevConfigBuilder.prefix}.content-security-policy is empty: '
+        "give the policy, such as default-src 'self'.",
+      );
+    }
+    final value =
+        policy ??
+        (spa && existing.isEmpty
+            ? WebDevServerSettings.spaContentSecurityPolicy(_providerOrigins())
+            : null);
+    if (value == null) {
+      return headers;
+    }
+    return {...headers, reportOnlyValue ? reportOnly : enforced: value};
+  }
+
+  // The origins of the spring.security.oauth2.client.provider.<id> URIs
+  // the browser fetches (issuer, token, user info, keys), sorted.
+  Set<String> _providerOrigins() {
+    final pattern = RegExp(
+      r'^spring\.security\.oauth2\.client\.provider\.[^.]+\.'
+      r'(issueruri|tokenuri|userinfouri|jwkseturi)$',
+    );
+    final origins = <String>{};
+    for (final source in _environment.propertySources) {
+      if (source is! EnumerablePropertySource<Object> ||
+          source is ConfigurationPropertySourcesPropertySource) {
+        continue;
+      }
+      for (final name in source.propertyNames) {
+        final relaxed = name
+            .toLowerCase()
+            .replaceAll('-', '')
+            .replaceAll(
+              '_',
+              '',
+            );
+        if (!pattern.hasMatch(relaxed)) {
+          continue;
+        }
+        final String? value;
+        try {
+          value = _environment.getProperty(name);
+        } on Exception {
+          continue; // not resolvable at build time
+        }
+        final uri = value == null ? null : Uri.tryParse(value.trim());
+        if (uri != null &&
+            (uri.isScheme('http') || uri.isScheme('https')) &&
+            uri.host.isNotEmpty) {
+          origins.add(uri.origin);
+        }
+      }
+    }
+    return {...origins.toList()..sort()};
+  }
+
   // A list comes whole from the first source that has it, as Spring Boot
   // binds lists.
   List<WebDevProxyRule> _proxy() {
@@ -648,8 +809,9 @@ final class _Reader {
             '$key${_origin(source)} is not a known '
             '${WebDevConfigBuilder.prefix}.* property and is ignored; the '
             'properties are host, port, base-href, https.cert-path, '
-            'https.cert-key-path, headers.<Name> and '
-            'proxy[n].target/prefix/regex/replace.',
+            'https.cert-key-path, headers.<Name>, '
+            'content-security-policy, content-security-policy-report-only '
+            'and proxy[n].target/prefix/regex/replace.',
           );
         }
       }
@@ -659,7 +821,11 @@ final class _Reader {
   static bool _known(ConfigurationPropertyName name) {
     final elements = name.numberOfElements;
     return switch (_field(name)) {
-      'host' || 'port' || 'basehref' => elements == 4,
+      'host' ||
+      'port' ||
+      'basehref' ||
+      'contentsecuritypolicy' ||
+      'contentsecuritypolicyreportonly' => elements == 4,
       'https' =>
         elements == 5 &&
             const {'certpath', 'certkeypath'}.contains(

@@ -25,11 +25,9 @@ import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
         HttpResponse,
         HttpTransportException,
         ServerSentEvent;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    show LogBuffer;
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'
+    show LogBuffer, SecurityContextHolder;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_security_core/spring_security_core.dart'
-    show SecurityContextHolder;
 
 import 'support/app.dart';
 import 'support/fake_server.dart';

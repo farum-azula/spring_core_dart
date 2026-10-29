@@ -1,5 +1,5 @@
 // PKCE and the authorization request, the token response clients (client
-// authentication, the forms, RFC 6749 §5.1 / §5.2 answers) and revocation.
+// authentication, the forms, RFC 6749 §5.1 / §5.2 answers).
 import 'dart:convert';
 
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
@@ -419,54 +419,27 @@ void main() {
     });
   });
 
-  group('revocation (RFC 7009)', () {
-    final registration =
-        ClientRegistration.withClientRegistration(
-          _registration(),
-        ).providerConfigurationMetadata({
-          'revocation_endpoint': 'https://sso.test/revoke',
-        }).build();
-
-    test('sends the token with its type hint', () async {
-      final transport = MockHttpTransport()
-        ..when(HttpMethod.post, 'https://sso.test/revoke').respond(200);
-      expect(
-        await OAuth2TokenRevocationClient(transport).revoke(
-          registration,
-          OAuth2RefreshToken('rt'),
-        ),
-        isTrue,
-      );
-      expect(_form(transport.lastRequest), {
-        'token': 'rt',
-        'token_type_hint': 'refresh_token',
-        'client_id': 'neon-app',
-      });
-    });
-
-    test('a refusal is an OAuth2AuthorizationException', () {
-      final transport = MockHttpTransport()
-        ..when(HttpMethod.post, 'https://sso.test/revoke').respond(
-          400,
-          json: {'error': 'unsupported_token_type'},
+  group('the authorization response', () {
+    OAuth2AuthorizationResponse read(String query) =>
+        OAuth2AuthorizationResponse.fromRedirect(
+          Uri.parse('neonbooks:/oauth2/callback?$query'),
         );
-      expect(
-        OAuth2TokenRevocationClient(transport).revoke(
-          registration,
-          OAuth2AccessToken(TokenType.bearer, 'at'),
-        ),
-        throwsA(isA<OAuth2AuthorizationException>()),
-      );
+
+    test('an error only with an error code that is not empty', () {
+      expect(read('error=access_denied&state=s').statusError, isTrue);
+      expect(read('code=c&state=s').statusError, isFalse);
+      expect(read('error=&state=s').statusError, isFalse);
+      // Given twice: no error code at all (RFC 6749 §3.1).
+      expect(read('error=a&error=b&state=s').statusError, isFalse);
     });
 
-    test('nothing without an endpoint', () async {
-      expect(
-        await OAuth2TokenRevocationClient(MockHttpTransport()).revoke(
-          _registration(),
-          OAuth2RefreshToken('rt'),
-        ),
-        isFalse,
-      );
+    test('the code, state and iss; the redirect URI without the query', () {
+      final response = read('code=c&state=s&iss=https%3A%2F%2Fsso.test');
+      expect(response.code, 'c');
+      expect(response.state, 's');
+      expect(response.issuer, 'https://sso.test');
+      expect(response.redirectUri, 'neonbooks:/oauth2/callback');
+      expect(read('code=c&state=s&state=t').state, isNull);
     });
   });
 }

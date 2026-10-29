@@ -26,6 +26,24 @@ Uri requestBaseUrl(ServerHttpRequest request, {String contextPath = ''}) {
   );
 }
 
+/// The parameters of the authorization response [request] carries: the
+/// posted form of a `POST` (`response_mode=form_post`; the form must have
+/// been read, as [readFormParameters] does, by the login filter), the
+/// query of any other request.
+///
+/// Spring (Java): `HttpServletRequest.getParameterMap()`, which merges
+/// the query and a posted form; here a callback carries its response in
+/// one of them, never both.
+Map<String, List<String>> authorizationResponseParameters(
+  ServerHttpRequest request,
+) {
+  if (request.method == HttpMethod.post) {
+    final form = request.attributes[formParametersAttribute];
+    return form is Map<String, List<String>> ? form : const {};
+  }
+  return request.queryParameters;
+}
+
 /// Where an OAuth 2.0 login keeps its [OAuth2AuthorizationRequest] between
 /// the redirect to the provider and the provider's redirect back.
 ///
@@ -38,7 +56,8 @@ Uri requestBaseUrl(ServerHttpRequest request, {String contextPath = ''}) {
 /// Spring (Java): `AuthorizationRequestRepository<OAuth2AuthorizationRequest>`.
 abstract interface class OAuth2AuthorizationRequestRepository {
   /// The saved request whose `state` is the `state` parameter of
-  /// [request], or `null`.
+  /// [request] (its query, or the form of a posted callback:
+  /// [authorizationResponseParameters]), or `null`.
   FutureOr<OAuth2AuthorizationRequest?> loadAuthorizationRequest(
     ServerHttpRequest request,
   );
@@ -85,7 +104,9 @@ final class HttpSessionOAuth2AuthorizationRequestRepository
   OAuth2AuthorizationRequest? loadAuthorizationRequest(
     ServerHttpRequest request,
   ) {
-    final state = switch (request.queryParameters[OAuth2ParameterNames.state]) {
+    final state = switch (authorizationResponseParameters(
+      request,
+    )[OAuth2ParameterNames.state]) {
       [final value] when value.isNotEmpty => value,
       _ => null,
     };

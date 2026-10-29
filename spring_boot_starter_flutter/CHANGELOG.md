@@ -1,11 +1,3 @@
-## Unreleased
-
-- The starter is a Flutter plugin with its own platform code (no community plugins), for the login of an app with OAuth 2.0 / OpenID Connect (`spring_boot_starter_oauth2_client`):
-  - `SecureTokenStore`, the app's `TokenStore` bean: the Keychain on iOS and macOS (generic passwords, this device only, not synced; the login keychain for macOS builds without a team), an AES-256-GCM key of the Android Keystore with the values in a private preferences file, DPAPI files on Windows and the Secret Service through libsecret on Linux (both through `dart:ffi`, nothing native to build). None on the web, where the server logs in. Errors are `SecureTokenStoreException`s.
-  - `PlatformAuthorizationBrowser`, the app's `AuthorizationBrowser` bean on Android, iOS and macOS: `ASWebAuthenticationSession` (custom schemes; `https` redirects on iOS 17.4 / macOS 14.4; `preferEphemeralSession`) and Custom Tabs with the redirect caught by the starter's `RedirectReceiverActivity`, which an app that logs in declares with its scheme in its `AndroidManifest.xml`. One login at a time; the user closing the page throws `AuthorizationCancelledException`; other failures are `AuthorizationBrowserException`s.
-  - Both are registered unless the application declares its own, before the OAuth2 client's auto-configuration, so they replace its defaults.
-- Depends on `spring_boot_starter_oauth2_client` (the Windows and Linux stores use `dart:ffi` alone, no `package:ffi`); exports `TokenStore`, `InMemoryTokenStore`, `AuthorizationBrowser` and `AuthorizationCancelledException` from it.
-
 ## 0.4.2
 
 - Docs (#9)

@@ -1,22 +1,21 @@
 // Chapter 7, single sign-on (the `sso` profile): the native apps' own
-// Keycloak login (OAuth2LoginService with the system browser, the tokens
-// in the TokenStore, Bearer on the server calls, restore at startup,
-// logout), and the web app's login through the server (the page leaves
+// Keycloak login (OAuth2LoginService with the system's login window, the
+// tokens in the SecretStore, Bearer on the server calls, restore at
+// startup, logout), and the web app's login through the server (the page leaves
 // for /oauth2/authorization/keycloak, comes back with a session cookie,
 // sends the CSRF cookie back as a header). Keycloak is played by the
-// fake server's MockHttpTransport, the system browser by a fake that
-// "logs in" at once, the browser page by a fake BrowserPage.
+// fake server's MockHttpTransport, the system's login window by a fake
+// that "logs in" at once, the browser page by a fake BrowserPage.
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/account/session.dart';
-import 'package:neon_books_app/src/api/browser_page.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/api/shop_client.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
-import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import 'support/app.dart';
@@ -135,9 +134,9 @@ final class FakeKeycloak {
   );
 }
 
-/// The system browser: the user logs in at once (or closes the page).
-final class FakeBrowser implements AuthorizationBrowser {
-  FakeBrowser(this.keycloak);
+/// The login window: the user logs in at once (or closes the page).
+final class FakeAuthorizationWindow implements AuthorizationWindow {
+  FakeAuthorizationWindow(this.keycloak);
 
   final FakeKeycloak keycloak;
   final opened = <Uri>[];
@@ -163,16 +162,19 @@ final class FakeBrowser implements AuthorizationBrowser {
   }
 }
 
-/// The web app's page: its cookies, and where it went.
-final class FakePage extends BrowserPage {
+/// The web app's page (localhost:5050): its cookies, and where it went.
+final class FakePage implements BrowserPage {
   final cookies = <String, String>{};
   final opened = <Uri>[];
+
+  @override
+  Uri get location => Uri.parse('http://localhost:5050/');
 
   @override
   String? cookie(String name) => cookies[name];
 
   @override
-  void open(Uri url) => opened.add(url);
+  void navigate(Uri url) => opened.add(url);
 }
 
 Authentication? get current =>
@@ -183,6 +185,24 @@ Authentication? get current =>
 Future<void> started(Session session) async {
   await pumpEventQueue();
   await session.restored;
+}
+
+/// The web app starts again (back from the server's login, or a reload)
+/// once the fake server has its answers: the context of the test started
+/// before them, so its restore found nobody.
+Future<Session> startedAgain(SpringBootTestContext app) async {
+  final session = app.getBean<Session>();
+  await started(session);
+  app.context.publishEvent(
+    ApplicationReadyEvent(
+      springApplication,
+      const [],
+      app.context,
+      Duration.zero,
+    ),
+  );
+  await started(session);
+  return session;
 }
 
 Future<void> openLogin(WidgetTester tester) async {
@@ -196,16 +216,16 @@ void main() {
   group('native apps: their own Keycloak login', () {
     final server = FakeServer();
     final keycloak = FakeKeycloak(server.http);
-    final browser = FakeBrowser(keycloak);
-    final tokens = _TokenStore();
+    final browser = FakeAuthorizationWindow(keycloak);
+    final tokens = _SecretStore();
     var keepTokens = false;
     final app = springBootTest(
       springApplication,
       profiles: ['mobile', 'android', 'sso'],
       overrides: [
         ...server.overrides,
-        BeanOverride<AuthorizationBrowser>(browser),
-        BeanOverride<TokenStore>(tokens),
+        BeanOverride<AuthorizationWindow>(browser),
+        BeanOverride<SecretStore>(tokens),
       ],
     );
 
@@ -238,7 +258,7 @@ void main() {
 
       expect(find.byKey(const Key('login-keycloak')), findsOneWidget);
       expect(find.text('Sign in with Keycloak'), findsOneWidget);
-      expect(find.byKey(const Key('login-username')), findsNothing);
+      expect(find.byType(LoginForm), findsNothing);
     });
 
     testWidgets('root signs in: ADMIN from the realm roles, a Bearer token', (
@@ -255,7 +275,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The app's own scheme, the system browser, PKCE.
+      // The app's own scheme, the system's login window, PKCE.
       final page = browser.opened.single;
       expect(
         page.queryParameters,
@@ -276,9 +296,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Admin'), findsOneWidget);
 
-      // The tokens are in the TokenStore (the Keychain / Keystore on a
+      // The tokens are in the SecretStore (the Keychain / Keystore on a
       // device), not somewhere the app chose.
-      expect(await tokens.read(OAuth2LoginService.sessionKey), isNotNull);
+      expect(await tokens.read(NativeOAuth2LoginService.sessionKey), isNotNull);
     });
 
     test('the server gets the access token, Keycloak no cookie', () async {
@@ -325,7 +345,7 @@ void main() {
 
     // The secure storage outlives the app: these two tests are one
     // restart (every test starts a new context, setUp keeps the tokens).
-    test('a login stays in the TokenStore ...', () async {
+    test('a login stays in the SecretStore ...', () async {
       await started(app.getBean<Session>());
       await app.getBean<Session>().signInWithKeycloak();
       keepTokens = true;
@@ -352,7 +372,7 @@ void main() {
         keycloak.revoked,
         containsAll(['refresh-of-root', 'access-of-root']),
       );
-      expect(await tokens.read(OAuth2LoginService.sessionKey), isNull);
+      expect(await tokens.read(NativeOAuth2LoginService.sessionKey), isNull);
       final logout = browser.opened.last;
       expect(logout.path, Uri.parse('$endpoints/logout').path);
       expect(
@@ -368,7 +388,7 @@ void main() {
     final app = springBootTest(
       springApplication,
       profiles: ['web', 'sso'],
-      overrides: [...server.overrides, BeanOverride<BrowserPage>(page)],
+      overrides: server.webOverrides(page),
     );
 
     setUp(() {
@@ -380,10 +400,17 @@ void main() {
         ..cookies.clear();
     });
 
-    test('no tokens in the browser: no registration, no login service', () {
-      expect(app.context.getBeanNamesForType(OAuth2LoginService), isEmpty);
+    test('no tokens in the browser: the server\'s login, no registration', () {
+      expect(
+        app.context.getBean<OAuth2LoginService>(),
+        isA<ServerOAuth2LoginService>(),
+      );
       expect(
         app.context.getBeanNamesForType(ClientRegistrationRepository),
+        isEmpty,
+      );
+      expect(
+        app.context.getBeanNamesForType(NativeOAuth2LoginService),
         isEmpty,
       );
     });
@@ -408,15 +435,39 @@ void main() {
           json: {
             'name': 'root',
             'roles': ['ADMIN', 'USER'],
+            'authorities': ['OIDC_USER', 'ROLE_ADMIN', 'ROLE_USER'],
+            'registrationId': 'keycloak',
           },
         )
         ..when(HttpMethod.get, '/api/basket').respond(200, json: {'items': []});
 
-      final session = app.getBean<Session>(); // the app starts again
-      await started(session);
+      final session = await startedAgain(app);
 
       expect(session.user, 'root');
       expect(session.isAdmin, isTrue);
+      expect(current, isA<OAuth2AuthenticationToken>());
+      final me = server.http.requests.firstWhere(
+        (r) => r.url.path == '/api/me',
+      );
+      expect(me.url.toString(), 'http://localhost:8080/api/me');
+    });
+
+    test('a form login of the server is restored too', () async {
+      server.http
+        ..when(HttpMethod.get, '/api/me').respond(
+          200,
+          json: {
+            'name': 'ada',
+            'roles': ['USER'],
+            'authorities': ['ROLE_USER'],
+          },
+        )
+        ..when(HttpMethod.get, '/api/basket').respond(200, json: {'items': []});
+      final session = await startedAgain(app);
+
+      expect(session.user, 'ada');
+      expect(session.isAdmin, isFalse);
+      expect(current, isA<PreAuthenticatedAuthenticationToken>());
     });
 
     test('unsafe requests carry the page\'s CSRF cookie', () async {
@@ -450,6 +501,8 @@ void main() {
           json: {
             'name': 'root',
             'roles': ['ADMIN', 'USER'],
+            'authorities': ['OIDC_USER', 'ROLE_ADMIN', 'ROLE_USER'],
+            'registrationId': 'keycloak',
           },
         )
         ..when(HttpMethod.get, '/api/basket').respond(200, json: {'items': []})
@@ -457,11 +510,16 @@ void main() {
           200,
           json: {'logoutUrl': '$endpoints/logout?id_token_hint=x'},
         );
-      final session = app.getBean<Session>();
-      await started(session);
+      page.cookies['XSRF-TOKEN'] = 'token-of-the-page';
+      final session = await startedAgain(app);
+      expect(session.user, 'root');
 
       await session.logout();
 
+      final logout = server.http.requests.lastWhere(
+        (r) => r.url.path == '/api/logout',
+      );
+      expect(logout.headers['X-XSRF-TOKEN'], 'token-of-the-page');
       expect(current, isNull);
       expect(
         page.opened.single.toString(),
@@ -469,10 +527,81 @@ void main() {
       );
     });
   });
+
+  group('the web app in spa mode (the optional spa profile)', () {
+    final server = FakeServer();
+    final keycloak = FakeKeycloak(server.http);
+    final page = _SpaPage();
+    final app = springBootTest(
+      springApplication,
+      profiles: ['web', 'sso', 'spa'],
+      overrides: [
+        BeanOverride<HttpTransport>(server.http, name: 'httpTransport'),
+        BeanOverride<SpaBrowserPage>(page),
+        BeanOverride<WebSocketTransport>(server.sockets),
+      ],
+    );
+
+    setUp(() {
+      app.markDirty();
+      server.http.reset();
+      server.answerCatalog();
+      keycloak.answer();
+      page.opened.clear();
+    });
+
+    test('the browser logs in itself, as neon-web, back to the page', () async {
+      expect(
+        app.context.getBean<OAuth2LoginService>(),
+        isA<SpaOAuth2LoginService>(),
+      );
+      expect(app.context.getBean<DPoPKey>(), isA<WebCryptoDPoPKey>());
+      final session = app.getBean<Session>();
+      await started(session);
+      expect(session.usesKeycloak, isTrue);
+
+      await session.signInWithKeycloak();
+
+      final login = page.opened.single;
+      expect(login.toString(), startsWith('$endpoints/auth?'));
+      expect(login.queryParameters['client_id'], 'neon-web');
+      expect(login.queryParameters['redirect_uri'], 'http://localhost:5050/');
+      expect(login.queryParameters['code_challenge_method'], 'S256');
+      expect(page.sessionStorage.items, hasLength(1)); // the round trip
+      expect(page.localStorage.items, isEmpty); // never a token
+    });
+  });
+}
+
+/// The web app's page in spa mode: its address and storages, and where
+/// it went.
+final class _SpaPage implements SpaBrowserPage {
+  final opened = <Uri>[];
+
+  @override
+  Uri get location => Uri.parse('http://localhost:5050/');
+
+  @override
+  Uri get baseUri => Uri.parse('http://localhost:5050/');
+
+  @override
+  String? cookie(String name) => null;
+
+  @override
+  void navigate(Uri url) => opened.add(url);
+
+  @override
+  void replaceLocation(Uri url) {}
+
+  @override
+  final InMemoryBrowserStorage sessionStorage = InMemoryBrowserStorage();
+
+  @override
+  final InMemoryBrowserStorage localStorage = InMemoryBrowserStorage();
 }
 
 /// The secure storage of the device, in memory.
-final class _TokenStore implements TokenStore {
+final class _SecretStore implements SecretStore {
   final values = <String, String>{};
 
   @override
@@ -483,4 +612,10 @@ final class _TokenStore implements TokenStore {
 
   @override
   Future<void> delete(String key) async => values.remove(key);
+
+  @override
+  Future<Set<String>> keys() async => values.keys.toSet();
+
+  @override
+  Future<void> deleteAll() async => values.clear();
 }

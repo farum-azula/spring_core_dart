@@ -13,6 +13,8 @@ name: 'Release: publish to pub.dev'
 #         → spring_security_core → spring_boot_starter_oauth2_client
 #         → spring_boot_starter_security
 #         → spring_boot_starter_flutter (with the Flutter SDK)
+#         → spring_boot_starter_flutter_security (after the security
+#           packages and the Flutter starter)
 #
 # (tests: not run again when the "Release" workflow tested the tagged
 # commit.)
@@ -207,3 +209,36 @@ jobs:
           done
           flutter test
       - run: dart run tool/publish.dart --package spring_boot_starter_flutter
+
+  # spring_boot_starter_flutter_security needs the Flutter starter, the
+  # OAuth2 client and spring_security_core: after both jobs above. Like the
+  # Flutter starter, it is tested against the versions just published.
+  flutter_security:
+    name: Publish spring_boot_starter_flutter_security
+    needs: [security, flutter]
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      # Sets up pub.dev's OpenID Connect token, which `flutter pub` uses too.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: dart pub get
+      - name: Tests against the published family
+        working-directory: spring_boot_starter_flutter_security
+        run: |
+          rm pubspec_overrides.yaml
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            flutter pub get && break
+            if [ "$attempt" = 10 ]; then exit 1; fi
+            echo "The new versions are not on pub.dev yet; retrying in 30 s ($attempt/10)"
+            sleep 30
+          done
+          flutter test
+      - run: dart run tool/publish.dart --package spring_boot_starter_flutter_security

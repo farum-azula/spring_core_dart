@@ -9,3 +9,7 @@ tags:
   # `differential` job, with the Spring application built.
   differential:
     timeout: 4x
+  # test/oauth2_form_post_keycloak_e2e_test.dart: oauth2Login() with
+  # response_mode=form_post against a running Keycloak (example/keycloak);
+  # skipped without it.
+  e2e:

@@ -1,4 +1,4 @@
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// `neon.sso.*`: single sign-on with Keycloak (the `sso` profile).
 @ConfigurationProperties('neon.sso')
@@ -13,7 +13,7 @@ class SsoProperties {
   /// with.
   String registrationId = 'keycloak';
 
-  /// Where Keycloak sends the system browser after a native app's logout
+  /// Where Keycloak sends the login window after a native app's logout
   /// ended the Keycloak session; Keycloak must allow it.
   String? postLogoutRedirectUri;
 }

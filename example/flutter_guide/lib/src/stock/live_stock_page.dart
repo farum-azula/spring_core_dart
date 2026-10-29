@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neon_books_app/src/stock/live_stock.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The Live stock screen: the stock changes as the server sends them.
 /// The stream is open while the screen is (`start` in `initState`, `stop`

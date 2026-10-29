@@ -1,5 +1,7 @@
 // Registrations: the builder's checks, the common providers, discovery,
 // the properties of Spring Boot and the lazy repository.
+import 'dart:convert';
+
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
@@ -425,6 +427,132 @@ void main() {
         isTrue,
       );
     });
+  });
+
+  group('plain http:// outside loopback', () {
+    late List<String> warnings;
+    setUp(() {
+      warnings = [];
+      final cancel = SpringLog.listen((record) {
+        if (record.level == SpringLogLevel.warning) {
+          warnings.add(record.message);
+        }
+      });
+      addTearDown(cancel);
+    });
+
+    Map<String, Object> partner(Map<String, Object> provider) => {
+      '$_r.partner.client-id': 'shop',
+      '$_r.partner.authorization-grant-type': 'authorization_code',
+      '$_r.partner.redirect-uri': 'neonbooks:/oauth2/callback',
+      '$_p.partner.authorization-uri': 'https://partner.test/a',
+      '$_p.partner.token-uri': 'https://partner.test/t',
+      for (final MapEntry(:key, :value) in provider.entries)
+        '$_p.partner.$key': value,
+    };
+
+    test('a token or authorization endpoint is warned about', () async {
+      await mapped(
+        partner({
+          'token-uri': 'http://partner.test/t',
+          'authorization-uri': 'HTTP://partner.test/a',
+        }),
+      );
+      expect(warnings, hasLength(1));
+      expect(
+        warnings.single,
+        allOf(
+          contains("'partner'"),
+          contains('token-uri http://partner.test/t'),
+          contains('authorization-uri HTTP://partner.test/a'),
+          contains('https://'),
+        ),
+      );
+    });
+
+    test('a redirect URI is warned about', () async {
+      await mapped({
+        ...partner({}),
+        '$_r.partner.redirect-uri': 'http://app.test/login/oauth2/code/x',
+      });
+      expect(warnings.single, contains('redirect-uri http://app.test/'));
+    });
+
+    test('loopback hosts, https, templates and app schemes are not', () async {
+      for (final host in ['localhost:8080', '127.0.0.1', '[::1]:9000']) {
+        await mapped({
+          ...partner({
+            'token-uri': 'http://$host/t',
+            'authorization-uri': 'http://$host/a',
+            'jwk-set-uri': 'http://$host/jwks',
+          }),
+          '$_r.partner.redirect-uri': 'http://$host/cb',
+        });
+      }
+      await mapped({
+        ...partner({}),
+        '$_r.partner.redirect-uri':
+            '{baseUrl}/{action}/oauth2/code/{registrationId}',
+      });
+      expect(warnings, isEmpty);
+    });
+
+    test(
+      'a discovered issuer and its endpoints, once, never failing',
+      () async {
+        const plain = 'http://sso.test/realms/neon';
+        final transport = MockHttpTransport();
+        var calls = 0;
+        transport
+            .when(
+              HttpMethod.get,
+              '$plain/.well-known/openid-configuration',
+            )
+            .respondWith((_) {
+              calls++;
+              if (calls == 1) {
+                return HttpResponse(500);
+              }
+              return HttpResponse(
+                200,
+                headers: HttpHeaders({'Content-Type': 'application/json'}),
+                body: utf8.encode(
+                  jsonEncode({
+                    'issuer': plain,
+                    'authorization_endpoint': 'http://sso.test/auth',
+                    'token_endpoint': 'http://sso.test/token',
+                    'jwks_uri': 'http://sso.test/certs',
+                  }),
+                ),
+              );
+            });
+        final suppliers = OAuth2ClientPropertiesMapper(
+          OAuth2ClientProperties.of(
+            environment({
+              '$_r.keycloak.client-id': clientId,
+              '$_r.keycloak.redirect-uri': 'neonbooks:/oauth2/callback',
+              '$_p.keycloak.issuer-uri': plain,
+            }),
+          ),
+          transport: transport,
+        ).asClientRegistrations();
+        expect(warnings, isEmpty); // nothing fetched yet
+        await expectLater(suppliers['keycloak']!(), throwsArgumentError);
+        final keycloak = await suppliers['keycloak']!();
+        await suppliers['keycloak']!();
+        expect(keycloak.providerDetails.tokenUri, 'http://sso.test/token');
+        expect(warnings, hasLength(1));
+        expect(
+          warnings.single,
+          allOf(
+            contains('issuer-uri $plain'),
+            contains('token-uri http://sso.test/token'),
+            contains('authorization-uri http://sso.test/auth'),
+            contains('jwk-set-uri http://sso.test/certs'),
+          ),
+        );
+      },
+    );
   });
 
   group('InMemoryClientRegistrationRepository', () {

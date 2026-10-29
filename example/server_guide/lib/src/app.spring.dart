@@ -11797,6 +11797,19 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
           typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
           get: (bean) => bean.roles,
         ),
+        _i2.BeanProperty<_i37.Me>(
+          r'authorities',
+          type: List<String>,
+          typeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
+          get: (bean) => bean.authorities,
+        ),
+        _i2.BeanProperty<_i37.Me>(
+          r'registrationId',
+          type: String,
+          nullable: true,
+          typeInfo: const _i2.ClassType<String>(nullable: true),
+          get: (bean) => bean.registrationId,
+        ),
       ],
       constructor: _i2.BeanConstructor<_i37.Me>(
         parameters: [
@@ -11811,6 +11824,17 @@ _i2.BeanModule get $appBeans => _i2.BeanModule(
             type: const _i2.ListType<String>(_i2.ClassType<String>()),
             symbol: #roles,
             isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'authorities',
+            type: const _i2.ListType<String>(_i2.ClassType<String>()),
+            symbol: #authorities,
+            isRequired: true,
+          ),
+          _i2.BeanParameter(
+            r'registrationId',
+            type: const _i2.ClassType<String>(nullable: true),
+            symbol: #registrationId,
           ),
         ],
         create: (positional, named) =>

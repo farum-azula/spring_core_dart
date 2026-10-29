@@ -13,9 +13,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show HttpMethod, ServerSentEvent;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 import 'support/app.dart';
 import 'support/fake_server.dart';
@@ -158,6 +156,78 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Log in'));
     await tester.pumpAndSettle();
     await matchesScreen(tester, 'login');
+  });
+
+  // The starter's brand buttons as their guidelines draw them (Google,
+  // Microsoft, GitHub; Apple's logo is the app's own artwork, which no
+  // repository may redistribute, so it is not here), light and dark,
+  // with the shapes and texts the rules allow.
+  goldenTest('the login buttons of the starter', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(420, 560));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    Widget panel(Color background, List<Widget> buttons) => ColoredBox(
+      color: background,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final button in buttons)
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: button),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(fontFamily: 'Roboto'),
+        home: Scaffold(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              panel(const Color(0xFFFFFFFF), const [
+                GoogleLoginButton(),
+                GoogleLoginButton(
+                  theme: GoogleButtonTheme.neutral,
+                  shape: LoginButtonShape.pill,
+                  text: LoginButtonText.continueWith,
+                ),
+                MicrosoftLoginButton(),
+                GitHubLoginButton(theme: GitHubButtonTheme.light),
+                Row(
+                  children: [
+                    GoogleLoginButton(iconOnly: true),
+                    SizedBox(width: 8),
+                    GoogleLoginButton(
+                      iconOnly: true,
+                      shape: LoginButtonShape.pill,
+                    ),
+                    SizedBox(width: 8),
+                    GitHubLoginButton(
+                      iconOnly: true,
+                      theme: GitHubButtonTheme.light,
+                    ),
+                  ],
+                ),
+              ]),
+              panel(const Color(0xFF202124), const [
+                GoogleLoginButton(
+                  theme: GoogleButtonTheme.dark,
+                  text: LoginButtonText.signUp,
+                ),
+                MicrosoftLoginButton(theme: MicrosoftButtonTheme.dark),
+                GitHubLoginButton(shape: LoginButtonShape.pill),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+    await expectLater(
+      find.byType(Scaffold),
+      matchesGoldenFile('goldens/login_buttons.png'),
+    );
   });
 
   goldenTest('Japanese texts', (tester) async {

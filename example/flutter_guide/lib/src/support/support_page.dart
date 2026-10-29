@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neon_books_app/src/account/login_page.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/support/support_chat.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The Support screen: a chat with the bookstore over a WebSocket. Only
 /// for logged-in users (the server refuses the handshake otherwise).

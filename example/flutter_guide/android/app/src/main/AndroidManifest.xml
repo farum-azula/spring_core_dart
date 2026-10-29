@@ -28,14 +28,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- The Keycloak login (spring_boot_starter_flutter, the sso
+        <!-- The Keycloak login (spring_boot_starter_flutter_security, the sso
              profile): Keycloak redirects the Custom Tab to
              books.neon.app:/oauth2/callback (and books.neon.app:/oauth2/logout
-             after the logout); this activity of the starter catches it,
+             after the logout); this activity of the package catches it,
              closes the tab and hands the URI to the app. The scheme is the
              app's own (reverse domain), as in application.properties. -->
         <activity
-            android:name="dev.farumazula.spring_boot_starter_flutter.RedirectReceiverActivity"
+            android:name="dev.farumazula.spring_boot_starter_flutter_security.RedirectReceiverActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

@@ -7,7 +7,6 @@ analyzer:
   exclude:
     - "**/*.spring.dart"
     - build/**
-    - android/**
   language:
     strict-casts: true
     strict-raw-types: true

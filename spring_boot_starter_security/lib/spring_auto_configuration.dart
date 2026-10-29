@@ -34,9 +34,9 @@ final BeanModule springBootStarterSecurityAutoConfiguration = BeanModule(
 /// The ID token decoder of servers (`oidcIdTokenDecoder`, an
 /// `OidcIdTokenDecoderFactory` that checks signatures with the provider's
 /// keys), registered before the OAuth2 client starter's module
-/// (`before`), so the client starter's default, which trusts TLS as apps
-/// do, steps aside for every user of the bean: `oauth2Login()`, the
-/// refresh of authorized clients, the app login service.
+/// (`before`), so the client starter's default, which trusts the token
+/// endpoint's TLS, steps aside for every user of the bean:
+/// `oauth2Login()` and the refresh of authorized clients.
 @AutoConfigurationModule(
   before: ['springBootStarterOauth2ClientAutoConfiguration'],
 )

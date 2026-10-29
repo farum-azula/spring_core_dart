@@ -60,13 +60,14 @@ an exception.
 an application's `dependencies` (`spring_core_dart`, `spring_boot_dart`,
 `spring_web_dart`, `spring_security_core` and every runtime starter:
 logging, scheduling, cache, Feign, WebSocket, web, OAuth2 client,
-security, Flutter)
+security, Flutter, Flutter security)
 depend only on packages of this repository. Not even other Dart team
 packages are allowed there. Three exceptions:
 
 - the Dart team's `yaml`, which parses `application.yml` (Spring Boot uses
   SnakeYAML for this);
-- the Flutter SDK, for `spring_boot_starter_flutter`;
+- the Flutter SDK, for `spring_boot_starter_flutter` and
+  `spring_boot_starter_flutter_security`;
 - ⚠️ `pointycastle`, a **third-party** package, for the two security
   packages and the OAuth2 client only, **until it can be removed**
   ([section 2](#pointycastle-third-party-to-be-removed)).
@@ -86,6 +87,7 @@ dart run tool/check_dependencies.dart            # the pub workspace
 
 # The Flutter packages resolve on their own (see section 3):
 (cd spring_boot_starter_flutter && flutter pub get)
+(cd spring_boot_starter_flutter_security && flutter pub get)
 (cd example/flutter_guide && flutter pub get)
 dart run tool/check_dependencies.dart --flutter
 ```
@@ -103,7 +105,7 @@ too, but only through it.
 | `very_good_analysis` | `verygood.ventures` (Very Good Ventures) | The lint rules of `analysis_options.yaml`, which CI's `quality` job enforces. Only rules (a YAML file), no code; a dev dependency of the workspace root, never of a package. | `spring_core_dart_workspace` only |
 | `melos` | `invertase.io` | Workspace scripts (`dart run melos run check`). It is a dev tool of the workspace root and is never a dependency of a package. | `spring_core_dart_workspace` only |
 | `material_color_utilities` | `material.io` (Google's Material team) | `package:flutter` depends on it and the Flutter SDK pins its version, so it cannot be avoided. | the Flutter packages only |
-| `pointycastle` | ⚠️ `bouncycastle.org` (Legion of the Bouncy Castle) | **Third-party, temporary.** The JWT signatures and the password hashes of the security packages, and the SHA-256 of PKCE in the OAuth2 client, until a Dart team package covers them: [below](#pointycastle-third-party-to-be-removed). | `spring_security_core`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_security` |
+| `pointycastle` | ⚠️ `bouncycastle.org` (Legion of the Bouncy Castle) | **Third-party, temporary.** The JWT signatures and the password hashes of the security packages, and the SHA-256 of PKCE and the ES256 DPoP proofs in the OAuth2 client, until a Dart team package covers them: [below](#pointycastle-third-party-to-be-removed). | `spring_security_core`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_security`; the Flutter guide as a dev dependency (its integration test verifies the DPoP proofs of the platform keys) |
 | `node_preamble` | none | `package:test` (Dart team) pulls it for browser tests. It has no publisher on pub.dev. | any package (through `test`) |
 
 ### pointycastle: third-party, to be removed
@@ -137,17 +139,20 @@ million downloads a month).
 - **One file per package uses it**, behind plain functions:
   `spring_security_core/lib/src/crypto/kdf_primitives.dart` (Argon2,
   PBKDF2, scrypt),
-  `spring_boot_starter_oauth2_client/lib/src/core/sha256.dart` (SHA-256
-  of the PKCE challenge and the OpenID Connect nonce; `package:crypto`
-  has it too, but would be one more package where `pointycastle` is
-  already there) and
+  `spring_boot_starter_oauth2_client/lib/src/core/crypto_primitives.dart`
+  (SHA-256 of the PKCE challenge, the OpenID Connect nonce, RFC 7638
+  thumbprints and DPoP's `ath`, where `package:crypto` would be one more
+  package; and ECDSA P-256 signing with RFC 6979 nonces and key
+  generation for the software DPoP key, `SoftwareDPoPKey`) and
   `spring_boot_starter_security/lib/src/jwt/signature_primitives.dart`
   (RSA PKCS#1 and PSS, ECDSA, HMAC, the NIST curves). Nothing else in
   `lib/` imports it (only the tests' token signing in
   `spring_boot_starter_security/test/app/jwt/keys.dart`).
 - **Its results are checked against other implementations**: password
   hashes against Spring Security's Java encoders both ways, signatures
-  against the RFC 7515 vectors, SHA-256 against the RFC 7636 vector,
+  against the RFC 7515 vectors, the DPoP signatures against the RFC 6979
+  vectors (and checked by the security starter's verifier), SHA-256
+  against the RFC 7636 vector,
   plus fuzz and mutation tests
   ([docs/security-mutation.md](security-mutation.md)). An update that
   changes a result fails them.
@@ -193,19 +198,20 @@ in its `pubspec.yaml`.
 | `spring_boot_starter_websocket` | `@WebSocketClient` clients; `@WebSocketEndpoint` server endpoints (served by the web starter) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_web` | Spring MVC: `@RestController`, the `dart:io` server, `ProblemDetail`, SSE, filters, CORS | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
 | `spring_security_core` | Spring Security's core: `SecurityContextHolder`, users and password encoders, `AuthenticationManager`, `@PreAuthorize` and the other method security annotations | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `pointycastle` (no web: it works in Flutter apps and Feign clients without a server) | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_cache`, `spring_boot_starter_test`, `test` |
-| `spring_boot_starter_oauth2_client` | OAuth 2.0 and OpenID Connect clients: registrations from `spring.security.oauth2.client.*`, PKCE logins of apps, token refresh, Bearer tokens on Feign calls (pure Dart: no server, works in Flutter apps) | yes | `spring_boot_dart`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
+| `spring_boot_starter_oauth2_client` | OAuth 2.0 and OpenID Connect clients: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant, token refresh, Bearer tokens on Feign calls (pure Dart: no server, works in Flutter apps) | yes | `spring_boot_dart`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_security` | Spring Security for the web starter: the filter chain, `HttpSecurity`, HTTP Basic, form login, OAuth 2.0 / OpenID Connect login (`oauth2Login`), JWT resource servers, CSRF, CORS, security headers | yes | `spring_boot_dart`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_web`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
-| `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets | yes | `flutter`, `flutter_localizations` (SDK), `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
+| `spring_boot_starter_flutter` | Flutter apps: `SpringApplicationWidget`, beans in widgets (no platform code) | yes | `flutter`, `flutter_localizations` (SDK), `spring_boot_dart`, `spring_boot_starter_logging` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
+| `spring_boot_starter_flutter_security` | Security of Flutter apps, a plugin with its own platform code: the app login (`OAuth2LoginService`), `PlatformSecretStore` (Keychain, Keystore, DPAPI, libsecret), `PlatformAuthorizationWindow` and `LoopbackAuthorizationWindow` (the system's login window), `SecretTemplate`, `PrincipalNotifier` and the widgets that follow the user | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_oauth2_client`, `spring_security_core` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
 | `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | `spring_boot_dart`, `spring_core_dart`, `spring_web_dart`, `spring_security_core` and the logging, scheduling, cache, Feign, WebSocket, web and security starters | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
-| `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter`, `spring_security_core`, the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
+| `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter_security` (which brings the Flutter starter, the OAuth2 client and `spring_security_core`), the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test`, `integration_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator`, `spring_security_core` (its `testing.dart`) |
 | `spring_core_dart_workspace` (root) | The pub workspace | no | — | `lints`, `melos`, `path`, `test`, `very_good_analysis`, `yaml` |
 
-**Three resolutions.** Everything except the Flutter packages is one pub
+**Four resolutions.** Everything except the Flutter packages is one pub
 workspace, with one `pubspec.lock` at the root.
-`spring_boot_starter_flutter` and the Flutter guide
-(`example/flutter_guide`) each resolve on their own, with their own
+`spring_boot_starter_flutter`, `spring_boot_starter_flutter_security` and
+the Flutter guide (`example/flutter_guide`) each resolve on their own, with their own
 `pubspec.lock`, and reach the repository's packages by path. The reason:
 `flutter_test` pins `test_api`, which would hold the workspace's `test`
 and `build_test` on an analyzer older than `build_runner` and
@@ -232,12 +238,13 @@ graph TD
   oauth2Client[spring_boot_starter_oauth2_client]
   securityStarter[spring_boot_starter_security]
   flutterStarter[spring_boot_starter_flutter]
+  flutterSecurity[spring_boot_starter_flutter_security]
   testStarter[spring_boot_starter_test]
   generator[spring_core_dart_generator]
   lsp[dart_spring_language_server]
 
   yaml([yaml])
-  flutterSdk([Flutter SDK: flutter, flutter_localizations])
+  flutterSdk([Flutter SDK: flutter, flutter_localizations, flutter_web_plugins])
   testApi([matcher, test_api])
   codegen([analyzer, build, code_builder, dart_style, glob, path, pub_semver, source_gen, yaml])
   analyzer([analyzer, yaml])
@@ -278,6 +285,11 @@ graph TD
   flutterStarter --> boot
   flutterStarter --> logging
   flutterStarter --> flutterSdk
+  flutterSecurity --> boot
+  flutterSecurity --> flutterStarter
+  flutterSecurity --> oauth2Client
+  flutterSecurity --> securityCore
+  flutterSecurity --> flutterSdk
   testStarter --> boot
   testStarter --> web
   testStarter --> testApi
@@ -303,6 +315,7 @@ spring_core_dart ─────────────── yaml
 │   │   ├── spring_security_core             (+ spring_boot_dart, ⚠️ pointycastle)
 │   │   │   └── spring_boot_starter_oauth2_client (+ Feign, spring_web_dart, ⚠️ pointycastle)
 │   │   └── spring_boot_starter_flutter      (+ spring_boot_dart, Flutter SDK)
+│   │       └── spring_boot_starter_flutter_security (+ the OAuth2 client, spring_security_core, flutter_web_plugins)
 │   ├── spring_boot_starter_test             (+ spring_web_dart, matcher, test_api)
 │   └── dart_spring_language_server          (+ spring_core_dart, analyzer, yaml)
 ├── spring_web_dart
@@ -318,7 +331,9 @@ web also export `spring_web_dart`; `spring_boot_starter_security`
 exports the web starter, `spring_security_core` and the OAuth2 client
 (for `oauth2Login()`, so a server lists the security starter alone);
 the OAuth2 client exports the Feign starter and `spring_security_core`;
-the test starter exports `spring_boot_dart` and `spring_web_dart`. The
+`spring_boot_starter_flutter_security` exports the Flutter starter, the
+OAuth2 client and `spring_security_core` (so an app with a login lists
+it alone); the test starter exports `spring_boot_dart` and `spring_web_dart`. The
 plan behind it: [roadmap/dependencies.md](../roadmap/dependencies.md).
 
 **The WebSocket starter's server side runs on the web starter without
@@ -349,6 +364,7 @@ package of the family. Packages of the repository are left out.
 | `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, scheduling, cache, Feign, WebSocket, web) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
 | `spring_security_core`, `spring_boot_starter_oauth2_client` or `spring_boot_starter_security` | the 6 above, plus ⚠️ `pointycastle` (third-party, [to be removed](#pointycastle-third-party-to-be-removed)) and its `convert` and `typed_data` (`dart.dev`): 9 |
 | `spring_boot_starter_flutter` | the 6 above, plus the Flutter SDK (`flutter`, `flutter_localizations`, `sky_engine`) and what the SDK pins: `characters`, `clock`, `intl`, `material_color_utilities`, `meta`, `vector_math` |
+| `spring_boot_starter_flutter_security` | those of the Flutter starter, plus `flutter_web_plugins` (Flutter SDK) and those of the security packages: ⚠️ `pointycastle`, `convert`, `typed_data` |
 
 All of them are Dart team packages, except `material_color_utilities`,
 which is part of the Flutter SDK, and ⚠️ `pointycastle`, the security
@@ -451,7 +467,8 @@ on `package:test`. That way it works both with `package:test` and with
 - **Lints.** `very_good_analysis` (an [exception](#2-exceptions)) for the
   workspace, with the rules switched off listed and explained in
   `analysis_options.yaml`; `lints` (`dart.dev`) for
-  `spring_boot_starter_flutter`, which resolves outside the workspace;
+  `spring_boot_starter_flutter` and `spring_boot_starter_flutter_security`,
+  which resolve outside the workspace;
   `flutter_lints` (`flutter.dev`, built on `lints`) for the Flutter
   examples.
 - **Language server** (`extensions/language_server`). Runtime: `analyzer`
@@ -463,8 +480,8 @@ on `package:test`. That way it works both with `package:test` and with
 
 ## 9. Every package
 
-Every package from outside the repository, in the three resolutions (the
-pub workspace and the two Flutter packages). Columns:
+Every package from outside the repository, in the four resolutions (the
+pub workspace and the three Flutter packages). Columns:
 
 - **Publisher:** the publisher on pub.dev. ⚠️ marks a package outside the
   rule, with the exception that allows it.
@@ -512,10 +529,11 @@ pub workspace and the two Flutter packages). Columns:
 | `ffi` | `dart.dev` | tests, melos | — | `cli_util` |
 | `file` | `tools.dart.dev` | codegen, tests, language server, melos | `meta`, `path` | `glob`, `melos`, `process` |
 | `fixnum` | `dart.dev` | codegen, tests | — | `built_value` |
-| `flutter` | Flutter SDK | app, tests | `characters`, `collection`, `material_color_utilities`, `meta`, `sky_engine`, `vector_math` | `flutter_localizations`, `flutter_test`, `leak_tracker_flutter_testing`, `neon_books_app`, `spring_boot_starter_flutter` |
+| `flutter` | Flutter SDK | app, tests | `characters`, `collection`, `material_color_utilities`, `meta`, `sky_engine`, `vector_math` | `flutter_localizations`, `flutter_test`, `flutter_web_plugins`, `leak_tracker_flutter_testing`, `neon_books_app`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_security` |
 | `flutter_lints` | `flutter.dev` | lints | `lints` | `neon_books_app` (dev) |
 | `flutter_localizations` | Flutter SDK | app | `flutter`, `intl`, `path` | `spring_boot_starter_flutter` |
-| `flutter_test` | Flutter SDK | tests | `clock`, `collection`, `fake_async`, `flutter`, `leak_tracker_flutter_testing`, `matcher`, `meta`, `path`, `stack_trace`, `stream_channel`, `test_api`, `vector_math` | `neon_books_app` (dev), `spring_boot_starter_flutter` (dev) |
+| `flutter_test` | Flutter SDK | tests | `clock`, `collection`, `fake_async`, `flutter`, `leak_tracker_flutter_testing`, `matcher`, `meta`, `path`, `stack_trace`, `stream_channel`, `test_api`, `vector_math` | `neon_books_app` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_flutter_security` (dev) |
+| `flutter_web_plugins` | Flutter SDK | app | `flutter` | `spring_boot_starter_flutter_security` (the plugin's web entry) |
 | `frontend_server_client` | `tools.dart.dev` | tests | `async`, `package_config`, `path` | `test_core` |
 | `glob` | `tools.dart.dev` | codegen, tests, language server, melos | `async`, `collection`, `file`, `path`, `string_scanner` | `analyzer`, `build`, `build_runner`, `build_test`, `coverage`, `melos`, `source_gen`, `spring_core_dart_generator`, `test_core` |
 | `graphs` | `tools.dart.dev` | codegen, tests, melos | `collection` | `build_runner`, `melos` |
@@ -529,7 +547,7 @@ pub workspace and the two Flutter packages). Columns:
 | `leak_tracker` | `tools.dart.dev` | tests | `clock`, `collection`, `meta`, `path`, `vm_service` | `leak_tracker_flutter_testing`, `leak_tracker_testing` |
 | `leak_tracker_flutter_testing` | `flutter.dev` | tests | `flutter`, `leak_tracker`, `leak_tracker_testing`, `matcher`, `meta` | `flutter_test` |
 | `leak_tracker_testing` | `tools.dart.dev` | tests | `leak_tracker`, `matcher`, `meta` | `leak_tracker_flutter_testing` |
-| `lints` | `dart.dev` | lints | — | `flutter_lints`, `spring_boot_starter_flutter` (dev), `spring_core_dart_workspace` (dev) |
+| `lints` | `dart.dev` | lints | — | `flutter_lints`, `spring_boot_starter_flutter` (dev), `spring_boot_starter_flutter_security` (dev), `spring_core_dart_workspace` (dev) |
 | `logging` | `dart.dev` | codegen, tests | — | `build`, `build_daemon`, `build_runner`, `build_test`, `coverage`, `webkit_inspection_protocol` |
 | `matcher` | `dart.dev` | codegen, tests | `async`, `meta`, `stack_trace`, `term_glyph`, `test_api` | `build_test`, `code_builder`, `flutter_test`, `leak_tracker_flutter_testing`, `leak_tracker_testing`, `spring_boot_starter_test`, `test` |
 | `material_color_utilities` | ⚠️ `material.io` — exception: part of the Flutter SDK | app, tests | `collection` | `flutter` |

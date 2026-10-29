@@ -4,9 +4,7 @@ import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show FeignException;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The beans of [BasketPage].
 typedef BasketPageBeans = (

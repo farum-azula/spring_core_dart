@@ -616,7 +616,7 @@ debug level, so that level must be on too, for example
 |---|---|
 | `none` | nothing (the default) |
 | `basic` | the method and URL of each request, the status and time of each response, failed connections (`<--- ERROR ...`), retries (`---> RETRYING ...`) and event-stream reconnects (`---> RECONNECTING ...`) |
-| `headers` | `basic` plus the request and response headers; `Authorization` is masked |
+| `headers` | `basic` plus the request and response headers; `Authorization` and `DPoP` are masked |
 | `full` | `headers` plus the bodies |
 
 As in Feign, failed connections and retries are not logged at `none`.
@@ -679,7 +679,7 @@ the responses.
   `produces`.
 - Spaces in query parameters are sent as `+` (form encoding); Feign sends
   `%20`.
-- `Authorization` is masked (`***`) in the `headers` and `full` logs.
+- `Authorization` and `DPoP` (a proof of possession) are masked (`***`) in the `headers` and `full` logs.
 - The logger is `feign.<Interface>` (`feign.CatalogClient`); Feign's
   `Slf4jLogger` logs under the interface's fully qualified class name.
 - Each retry starts from a new template; Feign runs the interceptors again

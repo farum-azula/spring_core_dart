@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/catalog/book_tile.dart';
 import 'package:neon_books_app/src/catalog/catalog.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The Catalog screen: a search field and the books.
 ///

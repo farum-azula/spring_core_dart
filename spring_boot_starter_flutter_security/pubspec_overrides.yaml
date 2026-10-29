@@ -1,0 +1,22 @@
+# Inside this repository: the family's packages from their folders.
+dependency_overrides:
+  spring_core_dart:
+    path: ../spring_core_dart
+  spring_boot_dart:
+    path: ../spring_boot_dart
+  spring_boot_starter_feign:
+    path: ../spring_boot_starter_feign
+  spring_boot_starter_flutter:
+    path: ../spring_boot_starter_flutter
+  spring_boot_starter_logging:
+    path: ../spring_boot_starter_logging
+  spring_boot_starter_oauth2_client:
+    path: ../spring_boot_starter_oauth2_client
+  spring_boot_starter_test:
+    path: ../spring_boot_starter_test
+  spring_core_dart_generator:
+    path: ../spring_core_dart_generator
+  spring_security_core:
+    path: ../spring_security_core
+  spring_web_dart:
+    path: ../spring_web_dart

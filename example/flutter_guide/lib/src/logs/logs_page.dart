@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The Logs screen: the app's log lines from the `LogBuffer` bean (the
 /// logging starter keeps the last `logging.buffer.capacity` records in

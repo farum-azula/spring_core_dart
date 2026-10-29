@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The basket's icon with the number of books: it reads `basket.count` in
 /// build, so a book added anywhere rebuilds it (and nothing around it),

@@ -2,8 +2,7 @@ import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/shop_client.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// One line of the basket.
 class BasketItem {

@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The language the user picked in Settings; `null` follows the device.
 /// The app's languages are those of `lib/resources/messages*.properties`

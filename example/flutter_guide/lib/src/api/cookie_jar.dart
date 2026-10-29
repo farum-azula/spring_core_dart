@@ -1,5 +1,5 @@
 import 'package:neon_books_app/main.spring.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The server's cookies, as a browser would keep them: `JSESSIONID` (the
 /// session, so the server knows who is logged in) and `XSRF-TOKEN` (the

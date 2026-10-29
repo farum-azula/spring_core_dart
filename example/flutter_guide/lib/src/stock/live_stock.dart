@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/stock_client.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The stock as the server reports it, live: a subscription to the
 /// server-sent events of `GET /api/stock/events` while the Live stock

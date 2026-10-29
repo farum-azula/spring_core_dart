@@ -196,9 +196,19 @@ void main() {
 
     test('root comes back to the web app with ADMIN from Keycloak', () async {
       final root = await logInAtKeycloak('root', ['USER', 'ADMIN']);
+      // What the web app's starter restores (its user endpoint).
       expect(jsonOf(await root.get('/api/me')), {
         'name': 'root', // preferred_username, not Keycloak's id
         'roles': ['ADMIN', 'USER'],
+        'authorities': [
+          'OIDC_USER',
+          'ROLE_ADMIN',
+          'ROLE_USER',
+          'SCOPE_email',
+          'SCOPE_openid',
+          'SCOPE_profile',
+        ],
+        'registrationId': 'keycloak',
       });
       expect((await root.get('/api/admin/logs')).response.statusCode, 200);
     });
@@ -250,6 +260,7 @@ void main() {
             json: {
               'name': 'root',
               'roles': ['ADMIN', 'USER'],
+              'authorities': ['ROLE_ADMIN', 'ROLE_USER'],
             },
           );
       await app.mockMvc

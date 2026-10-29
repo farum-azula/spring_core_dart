@@ -7,7 +7,7 @@ import 'package:neon_books_app/src/basket/basket_page.dart';
 import 'package:neon_books_app/src/catalog/catalog_page.dart';
 import 'package:neon_books_app/src/orders/orders_page.dart';
 import 'package:neon_books_app/src/stock/live_stock_page.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The app's sections.
 enum Section { catalog, basket, orders, stock, more }
