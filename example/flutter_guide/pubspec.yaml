@@ -10,8 +10,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # The app: SpringApplicationWidget, Spring widgets, themes, assets.
-  spring_boot_starter_flutter: ^0.4.2
+  # The app: SpringApplicationWidget, Spring widgets, themes, assets
+  # (spring_boot_starter_flutter), and its security (chapter 7): the
+  # Keycloak login of the app (OAuth2LoginService) in the system's login
+  # window, secrets in the Keychain / Keystore, SecurityContextHolder and
+  # @PreAuthorize, the widgets that follow the user. It brings and
+  # re-exports the Flutter starter, the OAuth2 client and
+  # spring_security_core.
+  spring_boot_starter_flutter_security: ^0.4.2
   # The server's REST API as @FeignClient interfaces (chapter 6).
   spring_boot_starter_feign: ^0.4.2
   # The support chat as a @WebSocketClient (chapter 6).
@@ -20,22 +26,25 @@ dependencies:
   spring_boot_starter_cache: ^0.4.2
   # @Scheduled catalog refresh (chapter 8).
   spring_boot_starter_scheduling: ^0.4.2
-  # Single sign-on with Keycloak (chapter 7): OAuth2LoginService, the
-  # tokens of the logged-in user (in the Flutter starter's secure storage).
-  spring_boot_starter_oauth2_client: ^0.4.2
-  # SecurityContextHolder and @PreAuthorize (chapter 7).
-  spring_security_core: ^0.4.2
 
 dev_dependencies:
   build_runner: ^2.17.0
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  # integration_test/: the token store on the real device's secure storage.
+  # integration_test/: the secret store, the DPoP key and the login window
+  # on the real device.
   integration_test:
     sdk: flutter
   spring_boot_starter_test: ^0.4.2
   spring_core_dart_generator: ^0.4.2
+  # integration_test/dpop_key_test.dart: the DPoP proofs' signatures
+  # checked by an ECDSA verifier that is not the code tested (it comes
+  # with the OAuth2 client anyway).
+  pointycastle: ^4.0.0
+  # test/security_test.dart: package:spring_security_core/testing.dart
+  # (withMockUser); the package itself comes with the security starter.
+  spring_security_core: ^0.4.2
 
 flutter:
   uses-material-design: true

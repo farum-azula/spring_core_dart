@@ -4,8 +4,7 @@ import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/api/admin_client.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The admin's actions. `@PreAuthorize` checks the role of the user in the
 /// `SecurityContextHolder` before each call (an `AccessDeniedException`

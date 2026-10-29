@@ -77,6 +77,12 @@ final class WebSocketHandshake {
 /// }
 /// ```
 ///
+/// For an OAuth 2.0 access token, the OAuth2 client's
+/// `OAuth2AccessTokenHeaders` writes the headers by the token's type:
+/// `Authorization: Bearer <token>`, or for a DPoP-bound token
+/// `Authorization: DPoP <token>` and a proof whose `htu` is the `http(s)`
+/// form of the `ws(s)` URL (the handshake is an HTTP `GET` of it).
+///
 /// Spring (Java): `WebSocketHttpHeaders` passed to
 /// `WebSocketClient.execute`, or a `StompSessionHandler` adding headers to
 /// the `CONNECT` frame.

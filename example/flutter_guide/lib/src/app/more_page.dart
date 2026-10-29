@@ -5,7 +5,7 @@ import 'package:neon_books_app/src/admin/admin_page.dart';
 import 'package:neon_books_app/src/logs/logs_page.dart';
 import 'package:neon_books_app/src/settings/settings_page.dart';
 import 'package:neon_books_app/src/support/support_page.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The other screens. The Admin entry is there for admins only; that is
 /// convenience, the server checks the role of every admin request.

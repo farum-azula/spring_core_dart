@@ -2,7 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
-    show DelegatingOAuth2TokenValidator, OAuth2Error, OAuth2TokenValidator;
+    show
+        ClientRegistrations,
+        DelegatingOAuth2TokenValidator,
+        OAuth2Error,
+        OAuth2TokenValidator;
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
@@ -536,6 +540,13 @@ abstract final class JwtDecoders {
   /// lifetime check, and, when [audiences] is not empty, name one of them
   /// in `aud`. The algorithms are those the keys allow.
   ///
+  /// The metadata is looked up where the OAuth2 client's
+  /// `ClientRegistrations.fromIssuerLocation` looks (the same code):
+  /// `<issuer>/.well-known/openid-configuration`, then
+  /// `/.well-known/openid-configuration<issuer path>` and
+  /// `/.well-known/oauth-authorization-server<issuer path>`; a location
+  /// [fetcher] cannot read moves to the next.
+  ///
   /// The metadata is fetched at the first token, not at startup, so the
   /// provider may start later. While it cannot be fetched, tokens fail
   /// with a [JwtException] (a 401) and the next token tries again.
@@ -567,47 +578,39 @@ final class _IssuerJwtDecoder implements JwtDecoder {
     return await delegate.decode(token);
   }
 
+  // The client's discovery (ClientRegistrations), so the resource server
+  // and the login look for the metadata in the same places and check the
+  // issuer the same way. A location the fetcher cannot read (an error
+  // answer, a 404 included, or no JSON object) moves to the next.
   Future<JwtDecoder> _discover() async {
-    final base = Uri.parse(issuer);
-    final path = base.path.endsWith('/')
-        ? base.path.substring(0, base.path.length - 1)
-        : base.path;
-    final candidates = [
-      base.replace(path: '$path/.well-known/openid-configuration'),
-      base.replace(path: '/.well-known/openid-configuration$path'),
-      base.replace(path: '/.well-known/oauth-authorization-server$path'),
-    ];
     Object? lastError;
-    for (final uri in candidates) {
-      try {
-        final metadata = jsonDecode(await fetcher(uri));
-        if (metadata is! Map<String, Object?>) {
-          continue;
-        }
-        if (metadata['issuer'] != issuer) {
-          throw JwtException(
-            'The issuer "${metadata['issuer']}" provided in the configuration '
-            'did not match the requested issuer "$issuer"',
-          );
-        }
-        final jwksUri = metadata['jwks_uri'];
-        if (jwksUri is! String) {
-          throw JwtException('The issuer metadata has no jwks_uri');
-        }
-        return NimbusJwtDecoder.withJwkSource(
-          RemoteJwkSource(Uri.parse(jwksUri), fetcher: fetcher),
-          validator: DelegatingOAuth2TokenValidator([
-            JwtTimestampValidator(),
-            JwtIssuerValidator(issuer),
-            if (audiences.isNotEmpty) JwtAudienceValidator(audiences),
-          ]),
+    final configuration =
+        await ClientRegistrations.configurationForIssuerLocation(
+          issuer,
+          fetch: (uri) async {
+            try {
+              final metadata = jsonDecode(await fetcher(uri));
+              return metadata is Map<String, Object?> ? metadata : null;
+            } on Object catch (e) {
+              lastError = e;
+              return null;
+            }
+          },
         );
-      } on JwtException {
-        rethrow;
-      } on Object catch (e) {
-        lastError = e;
-      }
+    if (configuration == null) {
+      throw JwtException('No metadata for issuer $issuer: $lastError');
     }
-    throw JwtException('No metadata for issuer $issuer: $lastError');
+    final jwksUri = configuration.metadata['jwks_uri'];
+    if (jwksUri is! String) {
+      throw JwtException('The issuer metadata has no jwks_uri');
+    }
+    return NimbusJwtDecoder.withJwkSource(
+      RemoteJwkSource(Uri.parse(jwksUri), fetcher: fetcher),
+      validator: DelegatingOAuth2TokenValidator([
+        JwtTimestampValidator(),
+        JwtIssuerValidator(issuer),
+        if (audiences.isNotEmpty) JwtAudienceValidator(audiences),
+      ]),
+    );
   }
 }

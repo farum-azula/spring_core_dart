@@ -5,9 +5,7 @@ import 'package:neon_books_app/src/admin/book_form.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/problems.dart';
 import 'package:neon_books_app/src/app/messages.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show FeignBadRequest, FeignException;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The beans of [AdminPage].
 typedef AdminPageBeans = (

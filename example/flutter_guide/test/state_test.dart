@@ -10,9 +10,7 @@ import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/basket/basket_badge.dart';
 import 'package:neon_books_app/src/catalog/book_tile.dart';
 import 'package:neon_books_app/src/catalog/catalog_page.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show HttpMethod;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import 'support/app.dart';

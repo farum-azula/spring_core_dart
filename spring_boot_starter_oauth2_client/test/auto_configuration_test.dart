@@ -1,7 +1,6 @@
 // The starter's beans: what comes with a registration, what backs off for
-// an application's bean, and how another starter's auto-configuration (the
-// Flutter starter's TokenStore and AuthorizationBrowser) replaces the
-// defaults.
+// an application's bean, and how another auto-configuration registered
+// before this one replaces a default.
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -16,70 +15,62 @@ const _registration = [
   'spring.security.oauth2.client.provider.partner.token-uri=https://p.test/t',
 ];
 
-final class _PlatformStore extends InMemoryTokenStore {}
+// What another auto-configuration that replaces a default looks like (the
+// Flutter security package's authorized client service, for one).
+final class _OwnClients implements OAuth2AuthorizedClientService {
+  _OwnClients(ClientRegistrationRepository repository)
+    : _delegate = InMemoryOAuth2AuthorizedClientService(repository);
 
-final class _PlatformBrowser implements AuthorizationBrowser {
+  final OAuth2AuthorizedClientService _delegate;
+
   @override
-  Future<Uri> authorize({
-    required Uri redirectUri,
-    required Uri Function(Uri redirectUri) authorizationUri,
-  }) async => redirectUri;
+  Future<OAuth2AuthorizedClient?> loadAuthorizedClient(
+    String clientRegistrationId,
+    String principalName,
+  ) => _delegate.loadAuthorizedClient(clientRegistrationId, principalName);
+
+  @override
+  Future<void> saveAuthorizedClient(
+    OAuth2AuthorizedClient authorizedClient,
+    Authentication principal,
+  ) => _delegate.saveAuthorizedClient(authorizedClient, principal);
+
+  @override
+  Future<void> removeAuthorizedClient(
+    String clientRegistrationId,
+    String principalName,
+  ) => _delegate.removeAuthorizedClient(clientRegistrationId, principalName);
 }
 
-// What the Flutter starter's module looks like: its own TokenStore and
-// AuthorizationBrowser, each only when the application has none.
-final _flutter = BeanModule('springBootStarterFlutterAutoConfiguration', [
-  BeanDefinition<TokenStore>(
-    name: 'platformTokenStore',
-    factoryMethodName: 'platformTokenStore',
-    types: const [TokenStore],
-    source: 'package:flutter#FlutterAutoConfiguration.platformTokenStore',
+final _replacing = BeanModule('zzzReplacingAutoConfiguration', [
+  BeanDefinition<OAuth2AuthorizedClientService>(
+    name: 'ownAuthorizedClientService',
+    factoryMethodName: 'ownAuthorizedClientService',
+    types: const [OAuth2AuthorizedClientService],
+    source: 'package:replacing#AutoConfiguration.ownAuthorizedClientService',
     conditions: const [
-      ConditionGroup('flutter.platformTokenStore', [
-        ConditionalOnMissingBean(TokenStore),
+      ConditionGroup('replacing.ownAuthorizedClientService', [
+        ConditionalOnMissingBean(OAuth2AuthorizedClientService),
       ]),
     ],
-    create: (_) => _PlatformStore(),
-  ),
-  BeanDefinition<AuthorizationBrowser>(
-    name: 'platformAuthorizationBrowser',
-    factoryMethodName: 'platformAuthorizationBrowser',
-    types: const [AuthorizationBrowser],
-    source: 'package:flutter#FlutterAutoConfiguration.browser',
-    conditions: const [
-      ConditionGroup('flutter.browser', [
-        ConditionalOnMissingBean(AuthorizationBrowser),
-      ]),
-    ],
-    create: (_) => _PlatformBrowser(),
+    create: (r) => _OwnClients(r.dependency<ClientRegistrationRepository>()),
   ),
 ]);
 
 void main() {
-  // As the generator passes the starter's module: with its `after`.
   final runner = const ApplicationContextRunner()
       .withAutoConfiguration(springBootAutoConfiguration)
       .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
       .withAutoConfiguration(springSecurityCoreAutoConfiguration)
-      .withAutoConfiguration(
-        springBootStarterOauth2ClientAutoConfiguration,
-        const AutoConfigurationModule(
-          after: ['springBootStarterFlutterAutoConfiguration'],
-        ),
-      )
+      .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
       .withBean<HttpTransport>(MockHttpTransport.new);
 
-  test('without registrations: only the token store and the browser', () {
+  test('without registrations: nothing', () {
     runner.run((context) {
       expect(context.startupFailure, isNull);
-      expect(context, hasSingleBean<TokenStore>());
-      expect(context.getBean<TokenStore>(), isA<InMemoryTokenStore>());
-      expect(
-        context.getBean<AuthorizationBrowser>(),
-        isA<LoopbackAuthorizationBrowser>(),
-      );
       expect(context, doesNotHaveBean<ClientRegistrationRepository>());
-      expect(context, doesNotHaveBean<OAuth2LoginService>());
+      expect(context, doesNotHaveBean<OAuth2AuthorizedClientService>());
+      expect(context, doesNotHaveBean<OAuth2AuthorizedClientManager>());
       expect(context, doesNotHaveBean<OAuth2AccessTokenInterceptor>());
     });
   });
@@ -94,13 +85,12 @@ void main() {
       );
       expect(
         context.getBean<OAuth2AuthorizedClientService>(),
-        isA<TokenStoreOAuth2AuthorizedClientService>(),
+        isA<InMemoryOAuth2AuthorizedClientService>(),
       );
       expect(
         context.getBean<OAuth2AuthorizedClientManager>(),
         isA<AuthorizedClientServiceOAuth2AuthorizedClientManager>(),
       );
-      expect(context, hasSingleBean<OAuth2LoginService>());
       expect(
         context.getBean<OidcIdTokenDecoder>(),
         isA<TokenEndpointOidcIdTokenDecoder>(),
@@ -152,66 +142,56 @@ void main() {
   });
 
   test("the application's beans win", () {
-    final store = InMemoryTokenStore();
+    final clients = _OwnClients(
+      InMemoryClientRegistrationRepository([
+        ClientRegistration.withRegistrationId('own')
+            .clientId('own')
+            .authorizationGrantType(AuthorizationGrantType.clientCredentials)
+            .tokenUri('https://own.test/token')
+            .build(),
+      ]),
+    );
     runner
         .withPropertyValues(_registration)
-        .withBean<TokenStore>(() => store)
-        .withBean<AuthorizationBrowser>(_PlatformBrowser.new)
+        .withBean<OAuth2AuthorizedClientService>(() => clients)
         .run((context) {
-          expect(context, hasSingleBean<TokenStore>());
-          expect(context.getBean<TokenStore>(), same(store));
+          expect(context, hasSingleBean<OAuth2AuthorizedClientService>());
           expect(
-            context.getBean<AuthorizationBrowser>(),
-            isA<_PlatformBrowser>(),
+            context.getBean<OAuth2AuthorizedClientService>(),
+            same(clients),
           );
         });
   });
 
-  test("another auto-configuration's TokenStore and browser win", () {
-    // Added last on purpose: the order comes from `after`.
-    runner
-        .withPropertyValues(_registration)
-        .withAutoConfiguration(_flutter)
-        .run((context) {
-          expect(context.startupFailure, isNull);
-          expect(context, hasSingleBean<TokenStore>());
-          expect(context.getBean<TokenStore>(), isA<_PlatformStore>());
-          expect(context, hasSingleBean<AuthorizationBrowser>());
-          expect(
-            context.getBean<AuthorizationBrowser>(),
-            isA<_PlatformBrowser>(),
-          );
-          final service =
-              context.getBean<OAuth2AuthorizedClientService>()
-                  as TokenStoreOAuth2AuthorizedClientService;
-          expect(service.tokenStore, isA<_PlatformStore>());
-        });
-  });
-
-  test('any module with `before` wins too; without it, it comes too late', () {
-    final platform = BeanModule('zzzPlatformAutoConfiguration', [
-      ..._flutter.definitions,
-    ]);
+  test('a module with `before` replaces a default; without it, too late', () {
     runner
         .withPropertyValues(_registration)
         .withAutoConfiguration(
-          platform,
+          _replacing,
           const AutoConfigurationModule(
             before: ['springBootStarterOauth2ClientAutoConfiguration'],
           ),
         )
         .run((context) {
-          expect(context.getBean<TokenStore>(), isA<_PlatformStore>());
+          expect(context.startupFailure, isNull);
+          expect(context, hasSingleBean<OAuth2AuthorizedClientService>());
+          expect(
+            context.getBean<OAuth2AuthorizedClientService>(),
+            isA<_OwnClients>(),
+          );
         });
     runner
         .withPropertyValues(_registration)
-        .withAutoConfiguration(platform)
-        .run(
-          (context) {
-            // Registered after the starter: the starter's default is taken.
-            expect(context.getBean<TokenStore>(), isNot(isA<_PlatformStore>()));
-          },
-        );
+        .withAutoConfiguration(_replacing)
+        .run((
+          context,
+        ) {
+          // Registered after the starter: the starter's default is taken.
+          expect(
+            context.getBean<OAuth2AuthorizedClientService>(),
+            isNot(isA<_OwnClients>()),
+          );
+        });
   });
 
   group('Feign', () {

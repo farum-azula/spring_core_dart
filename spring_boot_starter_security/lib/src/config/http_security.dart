@@ -1,5 +1,6 @@
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
+import 'package:spring_boot_starter_security/src/jwt/dpop.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
 import 'package:spring_boot_starter_security/src/oauth2/authorization_request_redirect.dart';
 import 'package:spring_boot_starter_security/src/oauth2/authorized_client_repository.dart';
@@ -85,6 +86,10 @@ abstract final class SecurityFilterOrder {
   /// [DefaultLogoutPageGeneratingFilter]: the logout confirmation page.
   static const logoutPage = 800;
 
+  /// [DPoPAuthenticationFilter]: DPoP-bound tokens, just before the
+  /// bearer tokens.
+  static const dPoP = 890;
+
   /// [BearerTokenAuthenticationFilter]: bearer-token logins.
   static const bearerToken = 900;
 
@@ -120,6 +125,7 @@ abstract final class SecurityFilterOrder {
     const (UsernamePasswordAuthenticationFilter) => formLogin,
     const (DefaultLoginPageGeneratingFilter) => loginPage,
     const (DefaultLogoutPageGeneratingFilter) => logoutPage,
+    const (DPoPAuthenticationFilter) => dPoP,
     const (BearerTokenAuthenticationFilter) => bearerToken,
     const (BasicAuthenticationFilter) => basic,
     const (SecurityContextHolderAwareRequestFilter) => servletApi,
@@ -312,6 +318,12 @@ final class HttpSecurity {
   /// otherwise, and when there is no `JwtDecoder`. Scopes become
   /// `SCOPE_x` authorities. Usually with a `stateless` session policy.
   ///
+  /// DPoP-bound tokens (RFC 9449, `Authorization: DPoP <token>` with a
+  /// `DPoP` proof header) are accepted too, with the same checks plus the
+  /// proof's ([DPoPAuthenticationProvider]); a DPoP-bound token sent as
+  /// `Bearer` is refused. A [DPoPProofJwtDecoderFactory] bean changes how
+  /// proofs are checked.
+  ///
   /// ```dart
   /// http.oauth2ResourceServer((s) => s.jwt());
   /// ```
@@ -341,6 +353,12 @@ final class HttpSecurity {
   /// page it wanted (or the default success URL). The tokens stay on the
   /// server: the browser only has the session cookie, which is what a
   /// Flutter web app needs (the server as its backend-for-frontend).
+  ///
+  /// A registration with `response-mode=form_post` (Sign in with Apple's)
+  /// gets the response as a form the provider's page posts to the
+  /// callback: that `POST`, and only it, is exempt from CSRF protection
+  /// (the session-bound `state` protects it), and it reaches the session
+  /// only with a `SameSite=None; Secure` session cookie.
   ///
   /// [build] throws a [StateError] when there is no
   /// `ClientRegistrationRepository` (no registration).
@@ -547,16 +565,31 @@ final class HttpSecurity {
     }
     final accessDenied = <(RequestMatcher, AccessDeniedHandler)>[];
     if (_csrf._enabled) {
+      // The provider's form post (response_mode=form_post) comes from its
+      // site without a CSRF token: the callback's state, bound to the
+      // session, protects it (RFC 6749 §10.12). Only POSTs to the
+      // callback path, and the callback refuses a POST for a login that
+      // did not ask for one.
+      final oauth2Callback = _mechanisms
+          .whereType<OAuth2LoginConfigurer>()
+          .firstOrNull
+          ?._redirection
+          ._baseUri;
+      final ignoring = [
+        ..._csrf._ignoring,
+        if (oauth2Callback != null)
+          PathPatternRequestMatcher(oauth2Callback, method: HttpMethod.post),
+      ];
       filters.add((
         CsrfFilter(
           csrfRepository,
           requestHandler:
               _csrf._handler ?? const XorCsrfTokenRequestAttributeHandler(),
-          requireCsrfProtectionMatcher: _csrf._ignoring.isEmpty
+          requireCsrfProtectionMatcher: ignoring.isEmpty
               ? const DefaultRequiresCsrfMatcher()
               : AndRequestMatcher([
                   const DefaultRequiresCsrfMatcher(),
-                  NegatedRequestMatcher(OrRequestMatcher(_csrf._ignoring)),
+                  NegatedRequestMatcher(OrRequestMatcher(ignoring)),
                 ]),
           accessDeniedHandler:
               _exceptions._accessDeniedHandler ??
@@ -706,14 +739,35 @@ final class HttpSecurity {
             server._accessDeniedHandler ??
                 const BearerTokenAccessDeniedHandler(),
           ));
-          filters.add((
-            BearerTokenAuthenticationFilter(
-              server._authenticationManager(this),
-              bearerTokenResolver: server._resolver,
-              authenticationEntryPoint: entryPoint,
-            ),
-            SecurityFilterOrder.bearerToken,
-          ));
+          final tokenManager = server._authenticationManager(this);
+          // DPoP-bound tokens (RFC 9449) next to Bearer ones, as Spring
+          // Security 6.5's DPoPAuthenticationConfigurer: the same token
+          // checks, plus the proof.
+          final dPoPFactory = _bean<DPoPProofJwtDecoderFactory>();
+          filters
+            ..add((
+              DPoPAuthenticationFilter(
+                ProviderManager([
+                  DPoPAuthenticationProvider(
+                    tokenManager,
+                    dPoPProofVerifierFactory: dPoPFactory,
+                  ),
+                ], eventPublisher: _bean<AuthenticationEventPublisher>()),
+                authenticationEntryPoint: DPoPAuthenticationEntryPoint(
+                  algorithms:
+                      dPoPFactory?.jwsAlgorithms ?? defaultDPoPAlgorithms,
+                ),
+              ),
+              SecurityFilterOrder.dPoP,
+            ))
+            ..add((
+              BearerTokenAuthenticationFilter(
+                tokenManager,
+                bearerTokenResolver: server._resolver,
+                authenticationEntryPoint: entryPoint,
+              ),
+              SecurityFilterOrder.bearerToken,
+            ));
       }
     }
 
@@ -1911,8 +1965,9 @@ final class OAuth2LoginConfigurer {
         _userInfo._authoritiesMapper ??
         http._bean<GrantedAuthoritiesMapper>() ??
         const NullAuthoritiesMapper();
-    // A server checks the signature: the app decoder of the OAuth2 client
-    // (which trusts TLS) is never taken from the beans.
+    // A server checks the signature: the OAuth2 client's default decoder
+    // (which trusts the token endpoint's TLS) is never taken from the
+    // beans.
     final beanDecoder = http._bean<OidcIdTokenDecoder>();
     final decoder =
         _idTokenDecoder ??

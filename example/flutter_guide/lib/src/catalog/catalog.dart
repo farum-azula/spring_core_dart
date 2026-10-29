@@ -1,7 +1,6 @@
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// What the Catalog screen shows: the query, the page, the books. A
 /// `@ChangeNotifierComponent`: every method notifies the widgets that

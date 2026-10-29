@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
+import 'package:spring_web_dart/testing.dart';
 import 'package:test/test.dart';
 
 import 'app/jwt/keys.dart';
@@ -317,6 +318,50 @@ void main() {
           '/.well-known/oauth-authorization-server/tenant',
         ], reason: issuer);
       }
+    });
+
+    test('404s lead to the OAuth 2.0 metadata (the transport fetcher, as '
+        "the client's discovery)", () async {
+      const issuer = 'https://issuer.example/tenant';
+      final transport = MockHttpTransport()
+        ..when(
+          HttpMethod.get,
+          '$issuer/.well-known/openid-configuration',
+        ).respond(404)
+        ..when(
+          HttpMethod.get,
+          'https://issuer.example/.well-known/openid-configuration/tenant',
+        ).respond(404)
+        ..when(
+          HttpMethod.get,
+          'https://issuer.example/.well-known/oauth-authorization-server/tenant',
+        ).respond(
+          200,
+          body: jsonEncode({
+            'issuer': issuer,
+            'jwks_uri': 'https://issuer.example/jwks',
+          }),
+        )
+        ..when(HttpMethod.get, 'https://issuer.example/jwks').respond(
+          200,
+          body: jsonEncode({
+            'keys': [keys.rsa.jwk],
+          }),
+        );
+      final decoder = JwtDecoders.fromIssuerLocation(
+        issuer,
+        fetcher: transportJwkFetcher(transport),
+      );
+      expect(
+        (await decoder.decode(keys.token(claims: {'iss': issuer}))).issuer,
+        issuer,
+      );
+      expect(transport.requests.map((r) => r.url.path), [
+        '/tenant/.well-known/openid-configuration',
+        '/.well-known/openid-configuration/tenant',
+        '/.well-known/oauth-authorization-server/tenant',
+        '/jwks',
+      ]);
     });
   });
 

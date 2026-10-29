@@ -1,4 +1,4 @@
-// The authorized clients: the TokenStore service, the manager (refresh
+// The authorized clients: the in-memory service, the manager (refresh
 // within the clock skew, single-flight, client credentials, removal on
 // invalid_grant) and the Feign interceptor.
 import 'dart:async';
@@ -9,10 +9,10 @@ import 'package:test/test.dart';
 import 'support/fake_provider.dart';
 
 void main() {
-  late LoginFixture fixture;
+  late ClientFixture fixture;
 
   setUp(() async {
-    fixture = await LoginFixture.create();
+    fixture = await ClientFixture.create();
   });
 
   OAuth2AuthorizeRequest request([String principal = 'user-1']) =>
@@ -20,19 +20,9 @@ void main() {
         'keycloak',
       ).principalName(principal).build();
 
-  group('TokenStoreOAuth2AuthorizedClientService', () {
-    test('a JSON entry per registration and principal', () async {
-      await fixture.service().login('keycloak');
-      final key = TokenStoreOAuth2AuthorizedClientService.keyOf(
-        'keycloak',
-        'user-1',
-      );
-      expect(key, 'oauth2.authorized-client.keycloak.user-1');
-      expect(await fixture.store.read(key), contains('"version":1'));
-      expect(
-        TokenStoreOAuth2AuthorizedClientService.keyOf('a.b', 'x y/z'),
-        'oauth2.authorized-client.a.b.x%20y%2Fz',
-      );
+  group('InMemoryOAuth2AuthorizedClientService', () {
+    test('a client per registration and principal', () async {
+      await fixture.signIn();
       final client = await fixture.clients.loadAuthorizedClient(
         'keycloak',
         'user-1',
@@ -42,36 +32,15 @@ void main() {
         await fixture.clients.loadAuthorizedClient('keycloak', 'user-2'),
         isNull,
       );
-    });
-
-    test('an entry under another key is not taken', () async {
-      await fixture.service().login('keycloak');
-      final stored = await fixture.store.read(
-        TokenStoreOAuth2AuthorizedClientService.keyOf('keycloak', 'user-1'),
-      );
-      final other = TokenStoreOAuth2AuthorizedClientService.keyOf(
-        'keycloak',
-        'mallory',
-      );
-      await fixture.store.write(other, stored!);
       expect(
-        await fixture.clients.loadAuthorizedClient('keycloak', 'mallory'),
+        await fixture.clients.loadAuthorizedClient('nope', 'user-1'),
         isNull,
       );
-      expect(await fixture.store.read(other), isNull, reason: 'removed');
-    });
-
-    test('a damaged entry is removed', () async {
-      final key = TokenStoreOAuth2AuthorizedClientService.keyOf(
-        'keycloak',
-        'user-1',
-      );
-      await fixture.store.write(key, '{"version":1}');
+      await fixture.clients.removeAuthorizedClient('keycloak', 'user-1');
       expect(
         await fixture.clients.loadAuthorizedClient('keycloak', 'user-1'),
         isNull,
       );
-      expect(await fixture.store.read(key), isNull);
     });
   });
 
@@ -84,7 +53,7 @@ void main() {
     });
 
     test('a fresh token is returned as it is', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       final before = fixture.provider.tokenRequests.length;
       final client = await fixture.manager.authorize(request());
       expect(client!.accessToken.tokenValue, startsWith('access-'));
@@ -92,7 +61,7 @@ void main() {
     });
 
     test('a token expiring within 60 seconds is refreshed', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       final first = await fixture.manager.authorize(request());
       fixture.provider.now = fixture.provider.now.add(
         const Duration(minutes: 4, seconds: 1),
@@ -114,7 +83,7 @@ void main() {
     });
 
     test('concurrent callers share one refresh (single-flight)', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       fixture.provider
         ..now = fixture.provider.now.add(const Duration(hours: 1))
         ..tokenDelay = const Duration(milliseconds: 20);
@@ -134,7 +103,7 @@ void main() {
     });
 
     test('a refused refresh (invalid_grant) removes the client', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       fixture.provider
         ..now = fixture.provider.now.add(const Duration(hours: 1))
         ..revokeEverything();
@@ -153,7 +122,7 @@ void main() {
     });
 
     test('an unreachable provider keeps the client', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       fixture.provider
         ..now = fixture.provider.now.add(const Duration(hours: 1))
         ..tokenUnreachable = true;
@@ -234,7 +203,7 @@ void main() {
     );
 
     test("adds the current user's token, replacing any", () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       final call = template();
       await interceptor.apply(call);
       final client = await fixture.clients.loadAuthorizedClient(
@@ -259,7 +228,7 @@ void main() {
         clientRegistrationId: ' ',
         securityContextHolderStrategy: fixture.strategy,
       );
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       await byName.apply(template('keycloak'));
       expect(
         byName.apply(template()),
@@ -268,7 +237,7 @@ void main() {
     });
 
     test('a 401 marks the token expired: the next call refreshes', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       final first = template();
       await interceptor.apply(first);
       final sent = first.headers['Authorization']!.substring(7);
@@ -299,7 +268,7 @@ void main() {
     });
 
     test('a 401 for a token it did not send changes nothing', () async {
-      await fixture.service().login('keycloak');
+      await fixture.signIn();
       await interceptor.invalidate('someone-elses-token');
       final before = fixture.provider.tokenRequests.length;
       await interceptor.apply(template());

@@ -8,6 +8,8 @@ import 'package:spring_boot_starter_oauth2_client/src/registration/client_regist
 import 'package:spring_boot_starter_oauth2_client/src/registration/common_oauth2_provider.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
+const _log = SpringLog('spring.security.oauth2.client.registration');
+
 const _registrationPrefix = 'spring.security.oauth2.client.registration';
 const _providerPrefix = 'spring.security.oauth2.client.provider';
 
@@ -24,8 +26,11 @@ const _providerPrefix = 'spring.security.oauth2.client.provider';
 /// | `redirect-uri` | a template, such as `neonbooks:/oauth2/callback` |
 /// | `scope` | a comma list or a YAML list |
 /// | `client-name` | shown to users |
+/// | `dpop` | `auto` (default), `true`, `false`: DPoP-bound tokens ([DPoPMode]; not in Spring Boot) |
+/// | `response-mode` | `query` (default), `form_post`: how the authorization response comes back ([ResponseMode]; not in Spring Boot) |
 ///
-/// Spring Boot (Java): `OAuth2ClientProperties.Registration`.
+/// Spring Boot (Java): `OAuth2ClientProperties.Registration`, plus `dpop`
+/// and `response-mode`.
 final class OAuth2ClientRegistrationProperties {
   /// The properties of one registration, as read.
   const OAuth2ClientRegistrationProperties({
@@ -37,6 +42,8 @@ final class OAuth2ClientRegistrationProperties {
     this.redirectUri,
     this.scope,
     this.clientName,
+    this.dpop,
+    this.responseMode,
   });
 
   /// `provider`.
@@ -62,6 +69,14 @@ final class OAuth2ClientRegistrationProperties {
 
   /// `client-name`.
   final String? clientName;
+
+  /// `dpop`: `auto`, `true` or `false`; `null` when not set (`auto`). Not
+  /// in Spring Boot.
+  final String? dpop;
+
+  /// `response-mode`: `query` or `form_post`; `null` when not set
+  /// (`query`, or the common provider's). Not in Spring Boot.
+  final String? responseMode;
 }
 
 /// The `spring.security.oauth2.client.provider.<id>.*` properties of one
@@ -177,6 +192,8 @@ final class OAuth2ClientProperties {
           redirectUri: text('$_registrationPrefix.$id.redirect-uri'),
           scope: scopes('$_registrationPrefix.$id.scope'),
           clientName: text('$_registrationPrefix.$id.client-name'),
+          dpop: text('$_registrationPrefix.$id.dpop'),
+          responseMode: text('$_registrationPrefix.$id.response-mode'),
         ),
     };
     final providers = {
@@ -268,7 +285,17 @@ final class OAuth2ClientProperties {
 /// the network (the result is a [ClientRegistrationSupplier] per id); and
 /// an `authorization_code` registration without a client secret and
 /// without `client-authentication-method` uses `none` (a public client)
-/// even when its common provider says `client_secret_basic`.
+/// even when its common provider says `client_secret_basic`; the
+/// registration's `dpop` property (not in Spring Boot) sets
+/// [ClientRegistration.dpop].
+///
+/// A registration whose issuer, authorization, token, JWK Set, user-info
+/// or redirect URI is plain `http://` on a host other than a loopback one
+/// (`localhost`, `127.0.0.1`, `[::1]`) is logged as a warning once, when
+/// it is built, and still works (a local test provider is fine). An app
+/// trusts an ID token because TLS brought it from the provider; over
+/// `http://` anyone on the way can read the tokens or change them. Not in
+/// Spring Boot.
 ///
 /// Spring Boot (Java): `OAuth2ClientPropertiesMapper`.
 final class OAuth2ClientPropertiesMapper {
@@ -283,12 +310,18 @@ final class OAuth2ClientPropertiesMapper {
   /// `null`.
   final HttpTransport? transport;
 
+  // The registrations already warned about (a supplier that failed is
+  // called again; the warning stays one).
+  final Set<String> _warned = {};
+
   /// A supplier per registration id. Registrations without an issuer are
   /// built now, so a missing endpoint fails the start; those with one are
   /// checked as far as possible now and built at first use.
   ///
   /// Throws a [StateError] for a missing client id or an unknown
-  /// provider, an [ArgumentError] for an incomplete registration.
+  /// provider, an [ArgumentError] for an incomplete registration or a
+  /// `dpop` other than `auto`, `true` and `false` or a `response-mode`
+  /// other than `query` and `form_post`.
   Map<String, ClientRegistrationSupplier> asClientRegistrations() {
     properties.validate();
     return {
@@ -301,6 +334,12 @@ final class OAuth2ClientPropertiesMapper {
     String registrationId,
     OAuth2ClientRegistrationProperties registration,
   ) {
+    if (registration.dpop case final dpop?) {
+      DPoPMode.parse(dpop); // fails at startup, not at the first use
+    }
+    if (registration.responseMode case final mode?) {
+      ResponseMode.parse(mode);
+    }
     final providerId = registration.provider ?? registrationId;
     final provider = properties.provider[providerId];
     final issuer = provider?.issuerUri;
@@ -358,7 +397,39 @@ final class OAuth2ClientPropertiesMapper {
     return builder;
   }
 
-  static ClientRegistration _build(
+  ClientRegistration _build(
+    ClientRegistrationBuilder builder,
+    OAuth2ClientRegistrationProperties registration,
+  ) {
+    final built = _builtFrom(builder, registration);
+    _warnAboutPlainHttp(built);
+    return built;
+  }
+
+  void _warnAboutPlainHttp(ClientRegistration registration) {
+    final provider = registration.providerDetails;
+    final insecure = [
+      for (final (name, uri) in [
+        ('issuer-uri', provider.issuerUri),
+        ('authorization-uri', provider.authorizationUri),
+        ('token-uri', provider.tokenUri),
+        ('jwk-set-uri', provider.jwkSetUri),
+        ('user-info-uri', provider.userInfoEndpoint.uri),
+        ('redirect-uri', registration.redirectUri),
+      ])
+        if (_isPlainHttpOutsideLoopback(uri)) '$name $uri',
+    ];
+    if (insecure.isEmpty || !_warned.add(registration.registrationId)) {
+      return;
+    }
+    _log.warning(
+      "Client registration '${registration.registrationId}' uses http:// "
+      'outside a loopback host (${insecure.join(', ')}): tokens and ID '
+      'tokens can be read or changed on the way; use https://',
+    );
+  }
+
+  static ClientRegistration _builtFrom(
     ClientRegistrationBuilder builder,
     OAuth2ClientRegistrationProperties registration,
   ) {
@@ -384,6 +455,27 @@ final class OAuth2ClientPropertiesMapper {
     if (registration.clientName case final name?) {
       builder.clientName(name);
     }
+    if (registration.dpop case final dpop?) {
+      builder.dpop(DPoPMode.parse(dpop));
+    }
+    if (registration.responseMode case final mode?) {
+      builder.responseMode(ResponseMode.parse(mode));
+    }
     return builder.build();
   }
+}
+
+// Whether [uri] is a plain `http://` URL on a host other than a loopback
+// one (`localhost`, `127.0.0.1`, `[::1]`): what the mapper warns about.
+// Templates (`{baseUrl}/...`), custom schemes and `https` are not.
+bool _isPlainHttpOutsideLoopback(String? uri) {
+  if (uri == null) {
+    return false;
+  }
+  final parsed = Uri.tryParse(uri.trim());
+  if (parsed == null || parsed.scheme.toLowerCase() != 'http') {
+    return false;
+  }
+  final host = parsed.host.toLowerCase();
+  return host != 'localhost' && host != '127.0.0.1' && host != '::1';
 }

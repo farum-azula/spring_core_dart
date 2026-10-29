@@ -9,6 +9,19 @@
 //
 //   (cd tool/security_reference && mvn -q -DskipTests package)
 //   dart test spring_boot_starter_security/test/differential_test.dart
+//
+// oauth2Login() too: a second Spring process (profile `oauth2`,
+// OAuth2LoginReference) and a Dart application with the same chain log in
+// at the same fake OpenID Connect provider (differential_provider.dart);
+// the same browser steps (the redirect to the provider, callbacks with
+// good, wrong and missing state, provider errors, replays, mix-ups, a
+// provider that misbehaves, the logout) must end the same way.
+//
+// And the DPoP resource server (RFC 9449): a third Spring process (profile
+// `dpop`, Spring Boot's resource server chain with `dPoP()`) and the
+// starter's default chain check tokens of the same JWK Set; the same
+// DPoP requests (the attacks of dpop_test.dart) must get the same status
+// and challenge.
 @Tags(['differential'])
 library;
 
@@ -17,10 +30,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:spring_boot_starter_security/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import 'app/jwt/keys.dart';
 import 'app/rules/rules.dart';
+import 'app/web/web.dart';
+import 'differential_provider.dart';
+import 'dpop_support.dart';
 import 'support.dart';
 
 /// [path] in this package (the tests also run from the workspace root).
@@ -589,6 +608,556 @@ Future<List<String>> _loginFlow(int port) async {
   return steps;
 }
 
+// oauth2Login(): the same chain on both sides, the same fake provider.
+
+/// The registration both applications have (Spring's is in its
+/// application-oauth2.properties); the issuer is the fake provider's.
+const _fake = 'spring.security.oauth2.client.registration.fake';
+
+List<String> _oauth2Properties(String issuer) => [
+  '$_fake.client-id=$differentialClientId',
+  '$_fake.client-secret=$differentialClientSecret',
+  '$_fake.scope=openid,profile',
+  'spring.security.oauth2.client.provider.fake.issuer-uri=$issuer',
+];
+
+/// The Dart twin of tool/security_reference's OAuth2LoginReference.
+final BeanModule _oauth2LoginBeans = BeanModule('oauth2LoginReference', [
+  BeanDefinition<SecurityFilterChain>(
+    name: 'oauth2FilterChain',
+    types: const [SecurityFilterChain],
+    source: 'differential_test#oauth2FilterChain',
+    create: (r) => r
+        .dependency<HttpSecurity>()
+        .authorizeHttpRequests(
+          (auth) => auth
+              .requestMatchers('/public/**')
+              .permitAll()
+              .anyRequest()
+              .authenticated(),
+        )
+        .oauth2Login()
+        .logout(
+          (logout) => logout.logoutSuccessHandler(
+            OidcClientInitiatedLogoutSuccessHandler(
+              r.dependency<ClientRegistrationRepository>(),
+              postLogoutRedirectUri: '{baseUrl}/public/hello',
+            ),
+          ),
+        )
+        .build(),
+  ),
+]);
+
+/// The values that differ on every run (or are secrets) are compared as
+/// `*`.
+const _randomParameters = {'state', 'nonce', 'code_challenge', 'id_token_hint'};
+
+/// A Location without its origin and session id, its parameters sorted,
+/// the random ones `*`, and URLs inside it without their origin (the
+/// ports differ).
+String _normalizedLocation(String? location) {
+  if (location == null) {
+    return '';
+  }
+  final uri = Uri.parse(location);
+  // Tomcat's session id in the URL (no cookie yet) differs on every run.
+  final path = uri.path.replaceFirst(RegExp(r';jsessionid=[^/]*$'), '');
+  if (!uri.hasQuery) {
+    return path;
+  }
+  final parameters = [
+    for (final part in uri.query.split('&'))
+      () {
+        final eq = part.indexOf('=');
+        if (eq < 0) {
+          return part;
+        }
+        final name = part.substring(0, eq);
+        final value = Uri.decodeQueryComponent(part.substring(eq + 1));
+        return _randomParameters.contains(name)
+            ? '$name=*'
+            : '$name=${value.replaceFirst(RegExp('^https?://[^/]+'), '')}';
+      }(),
+  ]..sort();
+  return '$path?${parameters.join('&')}';
+}
+
+/// Cookie names and flags; SameSite left out (Lax here, none in Spring
+/// Boot: the catalog's known difference).
+String _cookieFlags(Answer answer) {
+  final cookies = [
+    for (final cookie in answer.headers['set-cookie'] ?? const <String>[])
+      () {
+        final parts = cookie.split(';').map((p) => p.trim()).toList();
+        final flags = [
+          for (final p in parts.skip(1))
+            if (!p.toLowerCase().startsWith('samesite'))
+              p.split('=').first.toLowerCase(),
+        ]..sort();
+        return '${parts.first.split('=').first}[${flags.join(',')}]';
+      }(),
+  ]..sort();
+  return cookies.join(' ');
+}
+
+/// One run of a scenario against one application: its browsers and the
+/// steps they saw.
+final class _OAuth2Run {
+  _OAuth2Run(this.port, this.provider);
+
+  final int port;
+  final HttpOidcProvider provider;
+  final List<String> steps = [];
+
+  _Session browser() => _Session(port);
+
+  Future<Answer> step(String name, Future<Answer> pending) async {
+    final answer = await pending;
+    final location = _normalizedLocation(answer.header('location'));
+    steps.add(
+      '$name: ${answer.status} $location ${_cookieFlags(answer)}'.trim(),
+    );
+    return answer;
+  }
+
+  void note(String text) => steps.add(text);
+
+  /// `GET /oauth2/authorization/fake` in [browser]: the provider's URL.
+  Future<Uri> start(_Session browser) async => Uri.parse(
+    (await browser('GET', '/oauth2/authorization/fake')).header('location')!,
+  );
+
+  /// A whole login in [browser]; the callback it used.
+  Future<Uri> login(_Session browser) async {
+    final callback = provider.approve(await start(browser));
+    await browser('GET', _target(callback));
+    return callback;
+  }
+}
+
+String _target(Uri uri) => uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
+
+Uri _with(Uri uri, Map<String, String?> changes) => uri.replace(
+  queryParameters: {
+    for (final MapEntry(:key, :value) in {
+      ...uri.queryParameters,
+      ...changes,
+    }.entries)
+      key: ?value,
+  },
+);
+
+/// The browser steps sent to both applications, by scenario.
+final _oauth2Scenarios = <String, Future<void> Function(_OAuth2Run run)>{
+  // /api/principal answers text: Spring replays the saved request's own
+  // headers (Accept: text/html) when the browser comes back.
+  'login, the saved page, a replayed callback': (run) async {
+    final browser = run.browser();
+    await run.step('protected page', browser('GET', '/api/principal'));
+    final start = await run.step(
+      'authorization redirect',
+      browser('GET', '/oauth2/authorization/fake'),
+    );
+    final before = browser.cookies['JSESSIONID'];
+    final callback = run.provider.approve(
+      Uri.parse(start.header('location')!),
+    );
+    await run.step('callback', browser('GET', _target(callback)));
+    run.note('session id changed: ${browser.cookies['JSESSIONID'] != before}');
+    await run.step('saved page', browser('GET', '/api/principal?continue'));
+    await run.step('replayed callback', browser('GET', _target(callback)));
+    await run.step(
+      'after the replay',
+      browser('GET', '/api/me', accept: 'application/json'),
+    );
+  },
+  'protected page, json': (run) => run.step(
+    'protected page',
+    run.browser()('GET', '/api/me', accept: 'application/json'),
+  ),
+  'login page': (run) => run.step('login page', run.browser()('GET', '/login')),
+  'unknown registration': (run) => run.step(
+    'authorization redirect',
+    run.browser()('GET', '/oauth2/authorization/nope'),
+  ),
+  'wrong state': (run) async {
+    final browser = run.browser();
+    final callback = run.provider.approve(await run.start(browser));
+    await run.step(
+      'callback',
+      browser('GET', _target(_with(callback, {'state': 'forged'}))),
+    );
+  },
+  'missing state': (run) async {
+    final browser = run.browser();
+    final callback = run.provider.approve(await run.start(browser));
+    await run.step(
+      'callback',
+      browser('GET', _target(_with(callback, {'state': null}))),
+    );
+  },
+  'the callback in another browser (login CSRF)': (run) async {
+    final callback = run.provider.approve(await run.start(run.browser()));
+    await run.step('callback', run.browser()('GET', _target(callback)));
+  },
+  'a callback without a login': (run) => run.step(
+    'callback',
+    run.browser()('GET', '/login/oauth2/code/fake?code=x&state=y'),
+  ),
+  'provider error': (run) async {
+    final browser = run.browser();
+    final state = (await run.start(browser)).queryParameters['state']!;
+    await run.step(
+      'callback',
+      browser(
+        'GET',
+        '/login/oauth2/code/fake?error=access_denied&state=$state',
+      ),
+    );
+  },
+  'provider error without state': (run) async {
+    final browser = run.browser();
+    await run.start(browser);
+    await run.step(
+      'callback',
+      browser('GET', '/login/oauth2/code/fake?error=access_denied'),
+    );
+  },
+  'a used code in another login': (run) async {
+    final used = await run.login(run.browser());
+    final browser = run.browser();
+    final state = (await run.start(browser)).queryParameters['state']!;
+    await run.step(
+      'callback',
+      browser('GET', _target(_with(used, {'state': state}))),
+    );
+  },
+  "another login's unused code (code injection)": (run) async {
+    final stolen = run.provider.approve(await run.start(run.browser()));
+    final browser = run.browser();
+    final state = (await run.start(browser)).queryParameters['state']!;
+    await run.step(
+      'callback',
+      browser('GET', _target(_with(stolen, {'state': state}))),
+    );
+  },
+  'mix-up: another iss (RFC 9207)': (run) async {
+    final browser = run.browser();
+    final callback = run.provider.approve(await run.start(browser));
+    await run.step(
+      'callback',
+      browser(
+        'GET',
+        _target(_with(callback, {'iss': 'http://evil.example'})),
+      ),
+    );
+  },
+  'mix-up: the callback of another registration': (run) async {
+    final browser = run.browser();
+    final callback = run.provider.approve(await run.start(browser));
+    await run.step(
+      'callback',
+      browser(
+        'GET',
+        _target(callback.replace(path: '/login/oauth2/code/other')),
+      ),
+    );
+  },
+  'an ID token for another audience': (run) async {
+    run.provider.audience = 'another-client';
+    final browser = run.browser();
+    final callback = run.provider.approve(await run.start(browser));
+    await run.step('callback', browser('GET', _target(callback)));
+  },
+  'an ID token with another nonce': (run) async {
+    run.provider.forcedNonce = 'forged';
+    final browser = run.browser();
+    final callback = run.provider.approve(await run.start(browser));
+    await run.step('callback', browser('GET', _target(callback)));
+  },
+  'logout': (run) async {
+    final browser = run.browser();
+    await run.login(browser);
+    final page = await run.step('logout page', browser('GET', '/logout'));
+    await run.step('logout without csrf', browser('POST', '/logout', form: {}));
+    final session = browser.cookies['JSESSIONID'];
+    await run.step(
+      'logout',
+      browser('POST', '/logout', form: {'_csrf': _Session.csrf(page.body)}),
+    );
+    await run.step(
+      'old session after logout',
+      send(
+        run.port,
+        'GET',
+        '/api/me',
+        headers: [
+          ('Cookie', 'JSESSIONID=$session'),
+          ('Accept', 'application/json'),
+        ],
+      ),
+    );
+  },
+};
+
+// Why an oauth2Login() difference is on purpose (see the README's
+// differences).
+const _unknownRegistration =
+    'an unknown registration id: Spring answers 500, which Spring Boot '
+    're-dispatches to /error, where the anonymous browser is sent to the '
+    'login (a new session); here a 400 is answered';
+const _failureSession =
+    "Spring's failure handler keeps the exception in the session for its "
+    'login page and so creates one for a browser that had none; a failed '
+    'login creates no session here';
+const _issParameter =
+    'RFC 9207: the `iss` of the redirect back must be the issuer here when '
+    'the provider announces it '
+    '(authorization_response_iss_parameter_supported), against mix-up '
+    'attacks; Spring Security 7.1 ignores the parameter';
+const _otherRedirect =
+    'the redirect back must arrive at the redirect URI of the registration '
+    'that started the login here; Spring Security 7.1 takes the '
+    'registration from the saved request and accepts any '
+    '/login/oauth2/code/*';
+
+/// Differences of the oauth2Login() steps that are on purpose:
+/// `scenario/Spring's step` → (Dart's step, why).
+final _oauth2KnownDifferences = <String, (String, String)>{
+  'unknown registration/authorization redirect: 302 '
+      '/oauth2/authorization/fake JSESSIONID[httponly,path]': (
+    'authorization redirect: 400',
+    _unknownRegistration,
+  ),
+  for (final scenario in [
+    'the callback in another browser (login CSRF)',
+    'a callback without a login',
+  ])
+    '$scenario/callback: 302 /login?error JSESSIONID[httponly,path]': (
+      'callback: 302 /login?error',
+      _failureSession,
+    ),
+  'mix-up: another iss (RFC 9207)/callback: 302 / '
+      'JSESSIONID[httponly,path]': (
+    'callback: 302 /login?error',
+    _issParameter,
+  ),
+  'mix-up: the callback of another registration/callback: 302 / '
+      'JSESSIONID[httponly,path]': (
+    'callback: 302 /login?error',
+    _otherRedirect,
+  ),
+};
+
+// DPoP (RFC 9449): Spring Boot's resource server chain on both sides
+// (Spring's with `dPoP()`, DPoPResourceServerReference), the keys from the
+// fake provider's JWK Set.
+
+const _jwkSetUri = 'spring.security.oauth2.resourceserver.jwt.jwk-set-uri';
+
+final _client = ProofSigner.ec();
+final _otherKey = ProofSigner.ec();
+final String _bound = boundToken(_client);
+final String _unbound = testKeys.token();
+
+List<(String, String)> _dPoP(String token, String proof) => [
+  ('Authorization', 'DPoP $token'),
+  ('DPoP', proof),
+];
+
+/// The requests of a probe for the URL `http://localhost:<port>/api/me`;
+/// the last answer is compared.
+final _dPoPProbes = <String, List<List<(String, String)>> Function(String)>{
+  'a valid proof': (url) => [
+    _dPoP(_bound, _client.proof(url: url, accessToken: _bound)),
+  ],
+  'an unbound token as Bearer': (url) => [
+    [('Authorization', 'Bearer $_unbound')],
+  ],
+  'a replayed proof': (url) {
+    final proof = _client.proof(url: url, accessToken: _bound);
+    return [_dPoP(_bound, proof), _dPoP(_bound, proof)];
+  },
+  'a bound token as Bearer': (url) => [
+    [('Authorization', 'Bearer $_bound')],
+  ],
+  'a bound token as Bearer, with a proof': (url) => [
+    [
+      ('Authorization', 'Bearer $_bound'),
+      ('DPoP', _client.proof(url: url, accessToken: _bound)),
+    ],
+  ],
+  'the DPoP scheme without a proof': (url) => [
+    [('Authorization', 'DPoP $_bound')],
+  ],
+  'a proof without a token': (url) => [
+    [('DPoP', _client.proof(url: url))],
+  ],
+  'an unbound token with a proof': (url) => [
+    _dPoP(_unbound, _client.proof(url: url, accessToken: _unbound)),
+  ],
+  'a proof of another key': (url) => [
+    _dPoP(_bound, _otherKey.proof(url: url, accessToken: _bound)),
+  ],
+  "the client's jwk, signed by another key": (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(url: url, accessToken: _bound, signWith: _otherKey),
+    ),
+  ],
+  'another htm': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(method: 'POST', url: url, accessToken: _bound),
+    ),
+  ],
+  'htm in lower case': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(method: 'get', url: url, accessToken: _bound),
+    ),
+  ],
+  'another htu path': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(url: '${url}x', accessToken: _bound),
+    ),
+  ],
+  'htu with the host in capitals': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(
+        url: url.replaceFirst('localhost', 'LOCALHOST'),
+        accessToken: _bound,
+      ),
+    ),
+  ],
+  'htu with a query': (url) => [
+    _dPoP(_bound, _client.proof(url: '$url?x=1', accessToken: _bound)),
+  ],
+  'a stale iat': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(
+        url: url,
+        accessToken: _bound,
+        iat: TokenFactory.now() - 3600,
+      ),
+    ),
+  ],
+  'an iat in the future': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(
+        url: url,
+        accessToken: _bound,
+        iat: TokenFactory.now() + 3600,
+      ),
+    ),
+  ],
+  'no ath': (url) => [_dPoP(_bound, _client.proof(url: url))],
+  'a wrong ath': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(
+        url: url,
+        accessToken: _bound,
+        claims: {'ath': sha256Base64Url('another token')},
+      ),
+    ),
+  ],
+  'alg none': (url) => [
+    _dPoP(_bound, _client.proof(url: url, accessToken: _bound, alg: 'none')),
+  ],
+  'HS256': (url) => [
+    _dPoP(_bound, _client.proof(url: url, accessToken: _bound, alg: 'HS256')),
+  ],
+  'a private d in the jwk': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(
+        url: url,
+        accessToken: _bound,
+        header: {
+          'jwk': {..._client.publicJwk, 'd': _client.privateD},
+        },
+      ),
+    ),
+  ],
+  'typ JWT': (url) => [
+    _dPoP(
+      _bound,
+      _client.proof(url: url, accessToken: _bound, header: {'typ': 'JWT'}),
+    ),
+  ],
+  'two DPoP headers': (url) => [
+    [
+      ..._dPoP(_bound, _client.proof(url: url, accessToken: _bound)),
+      ('DPoP', _client.proof(url: url, accessToken: _bound)),
+    ],
+  ],
+  'no Authorization': (url) => [const []],
+};
+
+/// A challenge reduced to its scheme and error code (the descriptions and
+/// the algorithm lists are worded differently).
+String _challenge(String? header) {
+  if (header == null) {
+    return '';
+  }
+  final scheme = header.split(' ').first;
+  final error = RegExp('error="([^"]*)"').firstMatch(header)?[1];
+  return error == null ? scheme : '$scheme error=$error';
+}
+
+// Why a DPoP difference is on purpose (see the README's differences).
+const _htmCase =
+    'htm is compared case-sensitively here, as HTTP methods are; Spring '
+    'ignores its case';
+const _htuNormalized =
+    'htu is compared as RFC 9449 §4.3 says here: after RFC 3986 '
+    "normalization (the host's case does not matter) and without its query "
+    'and fragment; Spring compares the text';
+
+/// Differences of the DPoP probes that are on purpose: `probe/field`.
+final _dPoPKnownDifferences = <String, String>{
+  for (final field in ['status', 'www-authenticate']) ...{
+    'htm in lower case/$field': _htmCase,
+    'htu with the host in capitals/$field': _htuNormalized,
+    'htu with a query/$field': _htuNormalized,
+  },
+};
+
+/// The reference jar started with [arguments] on a free port, once it
+/// answers.
+Future<(Process, int)> _startReference(List<String> arguments) async {
+  final probe = await ServerSocket.bind('127.0.0.1', 0);
+  final port = probe.port;
+  await probe.close();
+  final process = await Process.start('java', [
+    '-jar',
+    _jar.path,
+    '--server.port=$port',
+    '--server.address=127.0.0.1',
+    ...arguments,
+  ]);
+  final output = StringBuffer();
+  process.stdout.transform(utf8.decoder).listen(output.write, onError: (_) {});
+  unawaited(process.stderr.drain<void>());
+  final deadline = DateTime.now().add(const Duration(seconds: 90));
+  while (DateTime.now().isBefore(deadline)) {
+    try {
+      await send(port, 'GET', '/public/hello');
+      return (process, port);
+    } on Object {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+  }
+  process.kill();
+  throw StateError('The Spring reference ($arguments) did not start:\n$output');
+}
+
 void main() {
   Process? spring;
   late int springPort;
@@ -707,6 +1276,208 @@ void main() {
         'login: 302 /error?continue': 'login: 302 /api/me?continue',
       };
       expect(fromDart, [for (final step in fromSpring) known[step] ?? step]);
+    });
+  });
+
+  group('oauth2Login()', () {
+    HttpOidcProvider? provider;
+    Process? springOAuth2;
+    late int springOAuth2Port;
+
+    setUpAll(() async {
+      if (!_jar.existsSync()) {
+        return; // the catalog's setUpAll already failed in CI
+      }
+      provider = await HttpOidcProvider.start();
+      (springOAuth2, springOAuth2Port) = await _startReference([
+        '--spring.profiles.active=oauth2',
+        '--${_oauth2Properties(provider!.issuer).last}',
+      ]);
+    });
+
+    tearDownAll(() async {
+      springOAuth2?.kill();
+      await provider?.close();
+    });
+
+    Future<void> withDartOAuth2(Future<void> Function(int port) body) =>
+        const ApplicationContextRunner()
+            .withUserConfiguration(securityWebBeans)
+            .withUserConfiguration(_oauth2LoginBeans)
+            .withAutoConfiguration(springBootAutoConfiguration)
+            .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
+            .withAutoConfiguration(springBootStarterWebAutoConfiguration)
+            .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+            .withAutoConfiguration(springSecurityCoreAutoConfiguration)
+            .withAutoConfiguration(
+              springBootStarterOauth2ClientAutoConfiguration,
+            )
+            .withAutoConfiguration(
+              springBootStarterSecurityAutoConfiguration,
+              const AutoConfigurationModule(
+                after: ['springBootStarterOauth2ClientAutoConfiguration'],
+              ),
+            )
+            .withAutoConfiguration(
+              springBootStarterSecurityOAuth2ClientAutoConfiguration,
+              const AutoConfigurationModule(
+                before: ['springBootStarterOauth2ClientAutoConfiguration'],
+              ),
+            )
+            .withPropertyValues([
+              'spring.test.web-environment=random-port',
+              'server.address=127.0.0.1',
+              'logging.level.root=warn',
+              ..._oauth2Properties(provider!.issuer),
+            ])
+            .runAsync((started) async {
+              final failure = started.startupFailure;
+              if (failure != null) {
+                fail('The application failed to start: $failure');
+              }
+              final server = (await started.context
+                  .getBean<WebServerStartStopLifecycle>()
+                  .started)!;
+              await body(server.port);
+            });
+
+    test('the login steps end like Spring Security', () async {
+      if (springOAuth2 == null) {
+        markTestSkipped('Build tool/security_reference first (mvn package)');
+        return;
+      }
+      await withDartOAuth2((dartPort) async {
+        final report = StringBuffer();
+        var unexpected = 0;
+        for (final MapEntry(key: name, value: scenario)
+            in _oauth2Scenarios.entries) {
+          Future<List<String>> run(int port) async {
+            final run = _OAuth2Run(port, provider!);
+            try {
+              await scenario(run);
+            } finally {
+              provider!.reset();
+            }
+            return run.steps;
+          }
+
+          final fromSpring = await run(springOAuth2Port);
+          final fromDart = await run(dartPort);
+          report.writeln(name);
+          for (var i = 0; i < fromSpring.length || i < fromDart.length; i++) {
+            final s = i < fromSpring.length ? fromSpring[i] : '(none)';
+            final d = i < fromDart.length ? fromDart[i] : '(none)';
+            if (s == d) {
+              report.writeln('  same   $s');
+              continue;
+            }
+            final known = _oauth2KnownDifferences['$name/$s'];
+            if (known != null && known.$1 == d) {
+              report.writeln(
+                '  known  Spring: $s\n         Dart:   $d\n'
+                '         why:    ${known.$2}',
+              );
+            } else {
+              unexpected++;
+              report.writeln('  DIFF   Spring: $s\n         Dart:   $d');
+            }
+          }
+        }
+        // The report of the comparison is this test's output.
+        // ignore: avoid_print
+        print(report);
+        expect(unexpected, 0, reason: 'unexplained differences (see above)');
+      });
+    });
+  });
+
+  group('DPoP resource server', () {
+    HttpOidcProvider? provider;
+    Process? springDPoP;
+    late int springDPoPPort;
+
+    setUpAll(() async {
+      if (!_jar.existsSync()) {
+        return; // the catalog's setUpAll already failed in CI
+      }
+      provider = await HttpOidcProvider.start();
+      (springDPoP, springDPoPPort) = await _startReference([
+        '--spring.profiles.active=dpop',
+        '--$_jwkSetUri=${provider!.issuer}/jwks',
+      ]);
+    });
+
+    tearDownAll(() async {
+      springDPoP?.kill();
+      await provider?.close();
+    });
+
+    test('the DPoP requests answer like Spring Security', () async {
+      if (springDPoP == null) {
+        markTestSkipped('Build tool/security_reference first (mvn package)');
+        return;
+      }
+      await securityRunner(null, [
+        'spring.test.web-environment=random-port',
+        'server.address=127.0.0.1',
+        '$_jwkSetUri=${provider!.issuer}/jwks',
+      ]).runAsync((started) async {
+        final failure = started.startupFailure;
+        if (failure != null) {
+          fail('The application failed to start: $failure');
+        }
+        final dartPort =
+            (await started.context
+                    .getBean<WebServerStartStopLifecycle>()
+                    .started)!
+                .port;
+        Future<Map<String, String>> answer(
+          int port,
+          List<List<(String, String)>> Function(String) probe,
+        ) async {
+          Answer? last;
+          for (final headers in probe('http://localhost:$port/api/me')) {
+            last = await send(
+              port,
+              'GET',
+              '/api/me',
+              headers: [('Accept', 'application/json'), ...headers],
+            );
+          }
+          return {
+            'status': '${last!.status}',
+            'www-authenticate': _challenge(last.header('www-authenticate')),
+          };
+        }
+
+        final report = StringBuffer();
+        var unexpected = 0;
+        for (final MapEntry(key: name, value: probe) in _dPoPProbes.entries) {
+          final s = await answer(springDPoPPort, probe);
+          final d = await answer(dartPort, probe);
+          for (final field in s.keys) {
+            final key = '$name/$field';
+            final known = _dPoPKnownDifferences[key];
+            if (s[field] == d[field]) {
+              report.writeln('same   $key: ${s[field]}');
+              continue;
+            }
+            report.writeln(
+              '${known == null ? 'DIFF ' : 'known'}  $key\n'
+              '       Spring: ${s[field]}\n'
+              '       Dart:   ${d[field]}'
+              "${known == null ? '' : '\n       why:    $known'}",
+            );
+            if (known == null) {
+              unexpected++;
+            }
+          }
+        }
+        // The report of the comparison is this test's output.
+        // ignore: avoid_print
+        print(report);
+        expect(unexpected, 0, reason: 'unexplained differences (see above)');
+      });
     });
   });
 }

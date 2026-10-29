@@ -366,6 +366,25 @@ void main() {
       );
     });
 
+    test('reading or removing without a session creates none', () async {
+      final (request, response) = await exchange(
+        newSessions(),
+        path: '/login/oauth2/code/keycloak?state=s&code=c',
+      );
+      const requests = HttpSessionOAuth2AuthorizationRequestRepository();
+      expect(requests.loadAuthorizationRequest(request), isNull);
+      await requests.saveAuthorizationRequest(null, request, response);
+      expect(requests.removeAuthorizationRequest(request, response), isNull);
+      const clients = HttpSessionOAuth2AuthorizedClientRepository();
+      expect(
+        await clients.loadAuthorizedClient('keycloak', null, request),
+        isNull,
+      );
+      await clients.removeAuthorizedClient('keycloak', null, request, response);
+      expect(request.getSession(create: false), isNull);
+      expect(response.headers['set-cookie'], isNull);
+    });
+
     test('an unknown registration names itself in the exception', () {
       expect(
         InvalidClientRegistrationIdException('x').toString(),
@@ -433,6 +452,19 @@ void main() {
 
     test('the default decoder checks signatures', () {
       expect(oidc.idTokenDecoder, isA<OidcIdTokenDecoderFactory>());
+    });
+
+    test('the login of the provider is authenticated', () async {
+      final login = await token();
+      final done = OAuth2LoginAuthenticationToken.authenticated(
+        login.clientRegistration,
+        login.authorizationExchange,
+        DefaultOAuth2User(const [], const {'sub': 'ada'}, 'sub'),
+        const [],
+        OAuth2AccessToken(TokenType.bearer, 'a'),
+      );
+      expect(login.isAuthenticated, isFalse);
+      expect(done.isAuthenticated, isTrue);
     });
 
     test('the login request shows no token', () async {
@@ -583,6 +615,26 @@ void main() {
         );
       },
     );
+
+    test('behind a context path: absolute URLs (any case) as they are, '
+        'paths under it', () async {
+      final broken = InMemoryClientRegistrationRepository.lazy({
+        'keycloak': () async => throw StateError('down'),
+      });
+      Future<String?> plain(String url) => logout(
+        broken,
+        ContextPathRequest(
+          MockServerHttpRequest(HttpMethod.post, '/shop/logout'),
+          '/shop',
+        ),
+        logoutSuccessUrl: url,
+      );
+      expect(
+        await plain('HTTPS://www.example.com/bye'),
+        'HTTPS://www.example.com/bye',
+      );
+      expect(await plain('/bye'), '/shop/bye');
+    });
 
     test('the context path of a request to its root', () async {
       final provider = FakeOidcProvider();

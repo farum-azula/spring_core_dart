@@ -1,6 +1,6 @@
 name: spring_boot_starter_oauth2_client
 description: >-
-  OAuth 2.0 and OpenID Connect clients for spring_boot_dart: registrations from spring.security.oauth2.client.*, PKCE logins of apps, token refresh, Bearer tokens on Feign calls.
+  OAuth 2.0 and OpenID Connect clients for spring_boot_dart: registrations from spring.security.oauth2.client.*, every grant, token refresh, Bearer tokens on Feign calls.
 version: 0.4.2
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_oauth2_client
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
@@ -17,9 +17,10 @@ resolution: workspace
 
 dependencies:
   # THIRD-PARTY, to be removed (docs/dependencies.md, "pointycastle"):
-  # Bouncy Castle's Dart port, SHA-256 of the PKCE code challenge and the
-  # OpenID Connect nonce. Used only by lib/src/core/sha256.dart. It comes
-  # with spring_security_core anyway.
+  # Bouncy Castle's Dart port, SHA-256 (PKCE, the OpenID Connect nonce,
+  # DPoP) and ES256 signing of the software DPoP key. Used only by
+  # lib/src/core/crypto_primitives.dart. It comes with spring_security_core
+  # anyway.
   pointycastle: ^4.0.0
   spring_boot_dart: ^0.4.2
   spring_boot_starter_feign: ^0.4.2

@@ -138,6 +138,34 @@ void main() {
       expect(nameOf(_NamedPrincipal('dave')), 'dave');
     });
 
+    test('a pre-authenticated token: trusted only when built as such', () {
+      final request = PreAuthenticatedAuthenticationToken('ada', 'header');
+      expect(request.isAuthenticated, isFalse);
+      expect(request.authorities, isEmpty);
+      final user = PreAuthenticatedAuthenticationToken.authenticated(
+        _NamedPrincipal('ada'),
+        'secret',
+        authorities(['ROLE_USER']),
+      );
+      expect(user.isAuthenticated, isTrue);
+      expect(user.name, 'ada');
+      expect(user.authorities.single.authority, 'ROLE_USER');
+      expect('$user', isNot(contains('secret')));
+      user.eraseCredentials();
+      expect(user.credentials, isNull);
+      expect(
+        isEqual(
+          user,
+          UsernamePasswordAuthenticationToken.authenticated(
+            _NamedPrincipal('ada'),
+            null,
+            authorities(['ROLE_USER']),
+          ),
+        ),
+        isFalse,
+      );
+    });
+
     test('an anonymous token needs a key and authorities, holds no '
         'credentials, and counts as authenticated', () {
       expect(

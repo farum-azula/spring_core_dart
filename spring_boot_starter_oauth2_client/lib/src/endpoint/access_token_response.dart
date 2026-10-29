@@ -34,7 +34,10 @@ final class OAuth2AccessTokenResponse {
   /// Reads a successful token response (RFC 6749 §5.1) of [json],
   /// received at [now] (the current time by default).
   ///
-  /// `access_token` and `token_type` (`Bearer`, any case) are required.
+  /// `access_token` and `token_type` (`Bearer` or `DPoP`, any case, as
+  /// Spring Security 6.5 reads them) are required; the token's
+  /// [OAuth2AccessToken.tokenType] is [TokenType.bearer] or
+  /// [TokenType.dpop].
   /// `expires_in` (a number, or a number in a string) sets the expiry;
   /// without it the token counts as expiring a second after it was issued,
   /// as in Spring. Without `scope`, [requestedScopes] are the token's
@@ -59,10 +62,11 @@ final class OAuth2AccessTokenResponse {
     if (value is! String || value.isEmpty) {
       invalid('no access_token');
     }
-    final type = json[OAuth2ParameterNames.tokenType];
-    if (type is! String || type.toLowerCase() != 'bearer') {
-      invalid('token_type must be Bearer');
-    }
+    final type = switch (json[OAuth2ParameterNames.tokenType]) {
+      final String name when name.toLowerCase() == 'bearer' => TokenType.bearer,
+      final String name when name.toLowerCase() == 'dpop' => TokenType.dpop,
+      _ => invalid('token_type must be Bearer or DPoP'),
+    };
     final expiresIn = switch (json[OAuth2ParameterNames.expiresIn]) {
       null => 0,
       final int seconds => seconds,
@@ -92,7 +96,7 @@ final class OAuth2AccessTokenResponse {
           };
     return OAuth2AccessTokenResponse(
       accessToken: OAuth2AccessToken(
-        TokenType.bearer,
+        type,
         value,
         issuedAt: issuedAt,
         expiresAt: expiresAt,
@@ -185,7 +189,7 @@ final class OAuth2AccessTokenResponse {
   @override
   String toString() =>
       'OAuth2AccessTokenResponse [accessToken=[PROTECTED], '
-      'expiresAt=${accessToken.expiresAt}, '
+      'tokenType=${accessToken.tokenType}, expiresAt=${accessToken.expiresAt}, '
       'refreshToken=${refreshToken == null ? 'none' : '[PROTECTED]'}]';
 }
 

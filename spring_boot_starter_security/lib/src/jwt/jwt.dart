@@ -75,6 +75,34 @@ final class Jwt {
   /// Throws a [FormatException] when the claim is not a number.
   DateTime? get issuedAt => getClaimAsInstant('iat');
 
+  /// The `cnf` claim (RFC 7800): the key the token is bound to, so that
+  /// only its holder can use it; `null` when absent or not a JSON object.
+  ///
+  /// A DPoP-bound token (RFC 9449) carries `{"jkt": "<thumbprint>"}`
+  /// here; see [jwkThumbprint].
+  Map<String, Object?>? get confirmation => switch (claims['cnf']) {
+    final Map<String, Object?> cnf => cnf,
+    _ => null,
+  };
+
+  /// The `jkt` member of the `cnf` claim: the RFC 7638 thumbprint of the
+  /// key a DPoP-bound token is bound to; `null` for a token that is not
+  /// DPoP-bound.
+  ///
+  /// The resource server accepts such a token only with the `DPoP`
+  /// scheme and a proof signed by that key, never as a `Bearer` token.
+  /// A `jkt` that is not a string gives `''`, which matches no key.
+  String? get jwkThumbprint {
+    final cnf = confirmation;
+    if (cnf == null || !cnf.containsKey('jkt')) {
+      return null;
+    }
+    return switch (cnf['jkt']) {
+      final String jkt => jkt,
+      _ => '',
+    };
+  }
+
   /// Whether the token has the claim [name], even with a `null` value.
   bool hasClaim(String name) => claims.containsKey(name);
 

@@ -2,8 +2,7 @@ import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/api/account_client.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Checks a user name and password with the server, like a Spring
 /// `AuthenticationProvider` that asks a remote system: the server's form
@@ -31,7 +30,8 @@ class ServerAuthenticationProvider implements AuthenticationProvider {
       if (_cookies['XSRF-TOKEN'] == null) {
         // The login is a POST, so it needs the CSRF token; any answer of
         // the server brings the XSRF-TOKEN cookie. (In a browser the
-        // cookie jar stays empty, the page has the cookie: one extra GET.)
+        // cookie jar stays empty, the page has the cookie and the
+        // starter's transport sends it: one extra GET.)
         await _probe();
       }
       await _account.login({'username': username, 'password': password});
@@ -42,18 +42,6 @@ class ServerAuthenticationProvider implements AuthenticationProvider {
       throw BadCredentialsException();
     } on FeignException catch (error) {
       throw AuthenticationServiceException('The server answered $error', error);
-    }
-  }
-
-  /// The user of the session the server already has (`GET /api/me`), or
-  /// `null` when it has none (401). The web app asks at startup: its page
-  /// comes back from the server's Keycloak login with a session cookie,
-  /// and a reload keeps the cookie (the browser holds it, not the app).
-  Future<Authentication?> current() async {
-    try {
-      return _authenticated(await _account.me());
-    } on FeignUnauthorized {
-      return null;
     }
   }
 

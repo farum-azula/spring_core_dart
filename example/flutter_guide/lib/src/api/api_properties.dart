@@ -1,4 +1,4 @@
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Where the server is: `api.*` of `lib/resources/application*.properties`,
 /// per platform profile (the Android emulator reaches the computer at

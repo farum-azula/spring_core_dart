@@ -1,0 +1,51 @@
+spring_boot_starter_flutter_security
+Copyright 2026 Farum Azula and the spring_core_dart Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party marks in the login buttons (lib/src/screens/brand_logos.dart)
+------------------------------------------------------------------------
+
+The logos are drawn as vector paths transcribed from the artwork their
+owners publish for sign-in buttons. They are trademarks of their owners,
+used as the owners' guidelines allow; an app that shows them must follow
+those guidelines too.
+
+- The Google "G": Google LLC. Source: signin-assets.zip of the "Sign in
+  with Google branding guidelines",
+  https://developers.google.com/identity/branding-guidelines
+- The Microsoft logo: Microsoft Corporation. Source:
+  ms-symbollockup_mssymbol_19.svg of the "Sign in with Microsoft branding
+  guidelines",
+  https://learn.microsoft.com/entra/identity-platform/howto-add-branding-in-apps
+- The GitHub mark (Invertocat): GitHub, Inc., used under its logo
+  guidelines, https://brand.github.com/foundations/logo. The path is the
+  mark-github-24 icon of Octicons, https://github.com/primer/octicons,
+  under this license:
+
+    MIT License
+
+    Copyright (c) 2026 GitHub Inc.
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+    LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The Apple logo is not included: Apple's Developer Artwork License for
+Sign in with Apple does not allow redistributing it. Apps pass their own
+copy to AppleLoginButton.

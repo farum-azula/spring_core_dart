@@ -1,18 +1,18 @@
+// The documentation has properties lines, which cannot be wrapped.
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_boot_starter_oauth2_client/src/authorization_browser.dart';
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client.dart';
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart';
+import 'package:spring_boot_starter_oauth2_client/src/endpoint/jwt_client_secret.dart';
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/token_response_clients.dart';
 import 'package:spring_boot_starter_oauth2_client/src/feign/oauth2_access_token_interceptor.dart';
-import 'package:spring_boot_starter_oauth2_client/src/login/oauth2_login_service.dart';
-import 'package:spring_boot_starter_oauth2_client/src/loopback_authorization_browser.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_decoder.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration_repository.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/oauth2_client_properties.dart';
-import 'package:spring_boot_starter_oauth2_client/src/token_store.dart';
 import 'package:spring_boot_starter_oauth2_client/src/user/oauth2_user.dart';
 import 'package:spring_boot_starter_oauth2_client/src/user/user_services.dart';
-import 'package:spring_security_core/spring_security_core.dart';
 
 const _source =
     'package:spring_boot_starter_oauth2_client#OAuth2ClientAutoConfiguration';
@@ -28,13 +28,13 @@ final class _OnClientsConfigured implements Condition {
       OAuth2ClientProperties.hasRegistrations(context.environment);
 }
 
-// The loopback browser needs dart:io (not in a web page).
-final class _OnLoopbackSupported implements Condition {
-  const _OnLoopbackSupported();
+// A registration with client-secret-jwt.* properties.
+final class _OnClientSecretJwt implements Condition {
+  const _OnClientSecretJwt();
 
   @override
   bool matches(ConditionContext context) =>
-      loopbackAuthorizationBrowserSupported;
+      JwtClientSecretResolver.registrationIds(context.environment).isNotEmpty;
 }
 
 const _clients = ConditionalOnBean(ClientRegistrationRepository);
@@ -48,36 +48,44 @@ const _feign = ConditionalOnBooleanProperty(
 /// `springBootStarterOauth2ClientAutoConfiguration`.
 ///
 /// Each is left out when the application (or an auto-configuration
-/// registered before this one, such as the Flutter starter's) declares a
-/// bean of its type:
-///
-/// - `tokenStore`, an [InMemoryTokenStore] (the Flutter starter declares
-///   the platform's secure storage instead);
-/// - `authorizationBrowser`, a [LoopbackAuthorizationBrowser], where
-///   `dart:io` exists;
-///
-/// and when a `spring.security.oauth2.client.registration.*` property is
-/// set (Spring Boot's `OAuth2ClientAutoConfiguration`):
+/// registered before this one) declares a bean of its type. When a
+/// `spring.security.oauth2.client.registration.*` property is set (Spring
+/// Boot's `OAuth2ClientAutoConfiguration`):
 ///
 /// - `clientRegistrationRepository`, an
 ///   [InMemoryClientRegistrationRepository] of the properties
 ///   ([OAuth2ClientPropertiesMapper]; providers with an `issuer-uri` are
 ///   discovered at their first use);
-/// - `authorizedClientService`, a
-///   [TokenStoreOAuth2AuthorizedClientService] on the `tokenStore`;
+/// - `authorizedClientService`, an
+///   [InMemoryOAuth2AuthorizedClientService];
+///
+/// with a `ClientRegistrationRepository` (Spring Security's
+/// `OAuth2AuthorizedClientManagerRegistrar` and the defaults of its
+/// login):
+///
+/// - `dPoPKey`, a [SoftwareDPoPKey] made for this run (in memory) that
+///   signs the DPoP proofs of the registrations that use DPoP (not in
+///   Spring). Tokens bound to it die with the process, the refresh token
+///   too, so an app that keeps its login across restarts must keep the
+///   key: `spring_boot_starter_flutter_security` registers its own;
+/// - `clientSecretResolver`, a [JwtClientSecretResolver], when a
+///   registration has `client-secret-jwt.*` properties (a client secret
+///   that is a JWT signed with the client's key, as Sign in with Apple
+///   wants; not in Spring);
 /// - `authorizationCodeTokenResponseClient`,
 ///   `refreshTokenTokenResponseClient` and
 ///   `clientCredentialsTokenResponseClient`, on the `httpTransport` bean
-///   (the Feign starter's);
-/// - `oidcIdTokenDecoder`, a [TokenEndpointOidcIdTokenDecoder];
+///   (the Feign starter's), with the `dPoPKey` and the
+///   `clientSecretResolver`;
+/// - `oidcIdTokenDecoder`, a [TokenEndpointOidcIdTokenDecoder], for the
+///   ID tokens the token endpoint returns (the security starter replaces
+///   it with one that checks signatures);
 /// - `oauth2UserService` ([DefaultOAuth2UserService]) and
-///   `oidcUserService` ([OidcUserService]);
+///   `oidcUserService` ([OidcUserService]), with the `dPoPKey`;
 /// - `authorizedClientManager`, an
 ///   [AuthorizedClientServiceOAuth2AuthorizedClientManager] for the
 ///   `authorization_code`, `refresh_token` and `client_credentials`
 ///   grants;
-/// - `oauth2LoginService`, the [OAuth2LoginService] of apps, with the
-///   `GrantedAuthoritiesMapper` bean when there is one;
 ///
 /// and with `spring.cloud.openfeign.oauth2.enabled=true` (Spring Cloud
 /// OpenFeign's `FeignAutoConfiguration.Oauth2FeignConfiguration`):
@@ -85,52 +93,20 @@ const _feign = ConditionalOnBooleanProperty(
 /// - `oauth2AccessTokenInterceptor`, the [OAuth2AccessTokenInterceptor]
 ///   of every Feign client, for the registration
 ///   `spring.cloud.openfeign.oauth2.client-registration-id` (else the
-///   Feign client's name);
+///   Feign client's name), with the `dPoPKey`;
 /// - `oauth2AccessTokenErrorDecoder`, the [OAuth2AccessTokenErrorDecoder]
 ///   that renews a token rejected with 401, unless the application has an
 ///   `ErrorDecoder`.
 ///
 /// ```properties
-/// spring.security.oauth2.client.registration.keycloak.client-id=neon-app
-/// spring.security.oauth2.client.registration.keycloak.scope=openid,profile
-/// spring.security.oauth2.client.registration.keycloak.redirect-uri=http://127.0.0.1/callback
-/// spring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon
+/// spring.security.oauth2.client.registration.partner.client-id=shop
+/// spring.security.oauth2.client.registration.partner.client-secret=${PARTNER_SECRET}
+/// spring.security.oauth2.client.registration.partner.authorization-grant-type=client_credentials
+/// spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
 /// spring.cloud.openfeign.oauth2.enabled=true
-/// spring.cloud.openfeign.oauth2.client-registration-id=keycloak
+/// spring.cloud.openfeign.oauth2.client-registration-id=partner
 /// ```
 final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
-  BeanDefinition<TokenStore>(
-    name: 'tokenStore',
-    // A @Bean method: its bean conditions are decided when it is read.
-    factoryMethodName: 'tokenStore',
-    types: const [TokenStore, InMemoryTokenStore],
-    source: _source,
-    conditions: const [
-      ConditionGroup('$_source.tokenStore', [
-        ConditionalOnMissingBean(TokenStore),
-      ]),
-    ],
-    create: (_) {
-      _log.debug(
-        'No TokenStore bean: the tokens of OAuth2 logins are kept in '
-        'memory and forgotten when the application stops',
-      );
-      return InMemoryTokenStore();
-    },
-  ),
-  BeanDefinition<AuthorizationBrowser>(
-    name: 'authorizationBrowser',
-    factoryMethodName: 'authorizationBrowser',
-    types: const [AuthorizationBrowser, LoopbackAuthorizationBrowser],
-    source: _source,
-    conditions: const [
-      ConditionGroup('$_source.authorizationBrowser', [
-        _OnLoopbackSupported(),
-        ConditionalOnMissingBean(AuthorizationBrowser),
-      ]),
-    ],
-    create: (_) => LoopbackAuthorizationBrowser(),
-  ),
   BeanDefinition<ClientRegistrationRepository>(
     name: 'clientRegistrationRepository',
     factoryMethodName: 'clientRegistrationRepository',
@@ -164,7 +140,7 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
     factoryMethodName: 'authorizedClientService',
     types: const [
       OAuth2AuthorizedClientService,
-      TokenStoreOAuth2AuthorizedClientService,
+      InMemoryOAuth2AuthorizedClientService,
     ],
     source: _source,
     conditions: const [
@@ -173,9 +149,38 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(OAuth2AuthorizedClientService),
       ]),
     ],
-    create: (r) => TokenStoreOAuth2AuthorizedClientService(
-      r.dependency<TokenStore>(),
+    create: (r) => InMemoryOAuth2AuthorizedClientService(
       r.dependency<ClientRegistrationRepository>(),
+    ),
+  ),
+  BeanDefinition<DPoPKey>(
+    name: 'dPoPKey',
+    factoryMethodName: 'dPoPKey',
+    types: const [DPoPKey],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.dPoPKey', [
+        _clients,
+        ConditionalOnMissingBean(DPoPKey),
+      ]),
+    ],
+    create: (_) => SoftwareDPoPKey.generate(),
+  ),
+  BeanDefinition<OAuth2ClientSecretResolver>(
+    name: 'clientSecretResolver',
+    factoryMethodName: 'clientSecretResolver',
+    types: const [OAuth2ClientSecretResolver, JwtClientSecretResolver],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.clientSecretResolver', [
+        _clients,
+        _OnClientSecretJwt(),
+        ConditionalOnMissingBean(OAuth2ClientSecretResolver),
+      ]),
+    ],
+    create: (r) => JwtClientSecretResolver.fromEnvironment(
+      r.dependency<Environment>(),
+      resourceLoader: r.optionalDependency<ResourceLoader>(),
     ),
   ),
   BeanDefinition<
@@ -194,6 +199,8 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => DefaultAuthorizationCodeTokenResponseClient(
       r.dependency<HttpTransport>(),
+      dPoPKey: r.optionalDependency<DPoPKey>(),
+      clientSecretResolver: r.optionalDependency<OAuth2ClientSecretResolver>(),
     ),
   ),
   BeanDefinition<
@@ -210,8 +217,11 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
         ),
       ]),
     ],
-    create: (r) =>
-        DefaultRefreshTokenTokenResponseClient(r.dependency<HttpTransport>()),
+    create: (r) => DefaultRefreshTokenTokenResponseClient(
+      r.dependency<HttpTransport>(),
+      dPoPKey: r.optionalDependency<DPoPKey>(),
+      clientSecretResolver: r.optionalDependency<OAuth2ClientSecretResolver>(),
+    ),
   ),
   BeanDefinition<
     OAuth2AccessTokenResponseClient<OAuth2ClientCredentialsGrantRequest>
@@ -229,6 +239,8 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => DefaultClientCredentialsTokenResponseClient(
       r.dependency<HttpTransport>(),
+      dPoPKey: r.optionalDependency<DPoPKey>(),
+      clientSecretResolver: r.optionalDependency<OAuth2ClientSecretResolver>(),
     ),
   ),
   BeanDefinition<OidcIdTokenDecoder>(
@@ -256,7 +268,10 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
         ),
       ]),
     ],
-    create: (r) => DefaultOAuth2UserService(r.dependency<HttpTransport>()),
+    create: (r) => DefaultOAuth2UserService(
+      r.dependency<HttpTransport>(),
+      dPoPKey: r.optionalDependency<DPoPKey>(),
+    ),
   ),
   BeanDefinition<OAuth2UserService<OidcUserRequest, OidcUser>>(
     name: 'oidcUserService',
@@ -268,7 +283,10 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(OAuth2UserService<OidcUserRequest, OidcUser>),
       ]),
     ],
-    create: (r) => OidcUserService(r.dependency<HttpTransport>()),
+    create: (r) => OidcUserService(
+      r.dependency<HttpTransport>(),
+      dPoPKey: r.optionalDependency<DPoPKey>(),
+    ),
   ),
   BeanDefinition<OAuth2AuthorizedClientManager>(
     name: 'authorizedClientManager',
@@ -309,42 +327,6 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
           .build(),
     ),
   ),
-  BeanDefinition<OAuth2LoginService>(
-    name: 'oauth2LoginService',
-    factoryMethodName: 'oauth2LoginService',
-    source: _source,
-    conditions: const [
-      ConditionGroup('$_source.oauth2LoginService', [
-        _clients,
-        ConditionalOnMissingBean(OAuth2LoginService),
-      ]),
-    ],
-    create: (r) => OAuth2LoginService(
-      clientRegistrationRepository: r
-          .dependency<ClientRegistrationRepository>(),
-      authorizedClientService: r.dependency<OAuth2AuthorizedClientService>(),
-      tokenStore: r.dependency<TokenStore>(),
-      accessTokenResponseClient: r
-          .dependency<
-            OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
-          >(),
-      userService: r
-          .dependency<OAuth2UserService<OAuth2UserRequest, OAuth2User>>(),
-      oidcUserService: r
-          .dependency<OAuth2UserService<OidcUserRequest, OidcUser>>(),
-      browser: r.optionalDependency<AuthorizationBrowser>(),
-      authorizedClientManager: r
-          .optionalDependency<OAuth2AuthorizedClientManager>(),
-      revocationClient: OAuth2TokenRevocationClient(
-        r.dependency<HttpTransport>(),
-      ),
-      idTokenDecoder: r.dependency<OidcIdTokenDecoder>(),
-      authoritiesMapper:
-          r.optionalDependency<GrantedAuthoritiesMapper>() ??
-          const NullAuthoritiesMapper(),
-      eventPublisher: r.dependency<ApplicationEventPublisher>(),
-    ),
-  ),
   BeanDefinition<OAuth2AccessTokenInterceptor>(
     name: 'oauth2AccessTokenInterceptor',
     factoryMethodName: 'oauth2AccessTokenInterceptor',
@@ -364,6 +346,7 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
       ),
       authorizedClientService: r
           .optionalDependency<OAuth2AuthorizedClientService>(),
+      dPoPKey: r.optionalDependency<DPoPKey>(),
     ),
   ),
   BeanDefinition<OAuth2AccessTokenErrorDecoder>(

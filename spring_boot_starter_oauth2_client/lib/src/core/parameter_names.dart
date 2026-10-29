@@ -63,6 +63,10 @@ abstract final class OAuth2ParameterNames {
   /// `iss` (RFC 9207: the issuer that sent the authorization response).
   static const issuer = 'iss';
 
+  /// `response_mode`: how the authorization response comes back
+  /// (`query`, `form_post`). Not in Spring's `OAuth2ParameterNames`.
+  static const responseMode = 'response_mode';
+
   /// `registration_id`, the attribute of an authorization request that
   /// names its registration.
   static const registrationId = 'registration_id';

@@ -147,9 +147,23 @@ targets:
         'spring_boot_starter_security',
         'example/server_guide',
         // Through spring_security_core: the OAuth2 client depends on it,
-        // the Flutter starter on the OAuth2 client.
+        // the Flutter security package on both (the Flutter starter on
+        // neither).
         'spring_boot_starter_oauth2_client',
+        'spring_boot_starter_flutter_security',
+      });
+    });
+
+    test('the Flutter starter reaches the Flutter security package', () {
+      expect(affected('spring_boot_starter_flutter/lib/x.dart'), {
         'spring_boot_starter_flutter',
+        'spring_boot_starter_flutter_security',
+      });
+      expect(affected('spring_boot_starter_oauth2_client/lib/x.dart'), {
+        'spring_boot_starter_oauth2_client',
+        'spring_boot_starter_security',
+        'spring_boot_starter_flutter_security',
+        'example/server_guide',
       });
     });
 
@@ -172,6 +186,12 @@ targets:
       );
       expect(
         familyAffected(affected('spring_boot_starter_flutter/lib/x.dart')),
+        isFalse,
+      );
+      expect(
+        familyAffected(
+          affected('spring_boot_starter_flutter_security/lib/x.dart'),
+        ),
         isFalse,
       );
       expect(familyAffected(affected('README.md')), isFalse);

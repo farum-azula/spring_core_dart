@@ -30,6 +30,7 @@ jobs:
       security: ${{ steps.affected.outputs.security }}
       flutter: ${{ steps.affected.outputs.flutter }}
       flutter_starter: ${{ steps.affected.outputs.flutter_starter }}
+      flutter_security: ${{ steps.affected.outputs.flutter_security }}
       flutter_guide: ${{ steps.affected.outputs.flutter_guide }}
       family: ${{ steps.affected.outputs.family }}
     steps:
@@ -370,11 +371,11 @@ jobs:
           # dart2js code expects the browser's `self` (timers of @Scheduled).
           node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 
-  # spring_boot_starter_flutter and the Flutter guide: outside the pub
-  # workspace (flutter_test pins versions that package:test of the workspace
-  # cannot use), so they get the Flutter SDK and their own resolution.
-  # Only when spring_boot_starter_flutter, the Flutter guide or the server
-  # guide it talks to is affected.
+  # spring_boot_starter_flutter, spring_boot_starter_flutter_security and
+  # the Flutter guide: outside the pub workspace (flutter_test pins versions
+  # that package:test of the workspace cannot use), so they get the Flutter
+  # SDK and their own resolution. Only when one of them, or the server guide
+  # the Flutter guide talks to, is affected.
   flutter:
     needs: changes
     if: needs.changes.outputs.flutter == 'true'
@@ -392,6 +393,7 @@ jobs:
           flutter --version
           dart pub get
           (cd spring_boot_starter_flutter && flutter pub get)
+          (cd spring_boot_starter_flutter_security && flutter pub get)
           (cd example/flutter_guide && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
@@ -400,9 +402,9 @@ jobs:
       - name: No known vulnerabilities in the dependencies (Flutter packages)
         run: dart run tool/check_vulnerabilities.dart --flutter
 
-      - name: Generated code is up to date (Flutter guide and starter)
+      - name: Generated code is up to date (Flutter guide and packages)
         run: |
-          for example in example/flutter_guide spring_boot_starter_flutter; do
+          for example in example/flutter_guide spring_boot_starter_flutter spring_boot_starter_flutter_security; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -414,12 +416,21 @@ jobs:
       - name: Analyze
         run: |
           (cd spring_boot_starter_flutter && flutter analyze --fatal-infos)
+          (cd spring_boot_starter_flutter_security && flutter analyze --fatal-infos)
           (cd example/flutter_guide && flutter analyze --fatal-infos)
 
       # The golden screenshots run in the `goldens` job (macOS).
       - name: Tests of spring_boot_starter_flutter
         if: needs.changes.outputs.flutter_starter == 'true'
         working-directory: spring_boot_starter_flutter
+        run: flutter test
+
+      # The Dart side of the plugin (channels mocked) and the widgets; the
+      # platform code runs in the Flutter guide's integration_test/ on a
+      # device.
+      - name: Tests of spring_boot_starter_flutter_security
+        if: needs.changes.outputs.flutter_security == 'true'
+        working-directory: spring_boot_starter_flutter_security
         run: flutter test
 
       # The app's tests, the end-to-end ones (tag e2e) against the server
@@ -439,6 +450,65 @@ jobs:
         if: needs.changes.outputs.flutter_guide == 'true'
         working-directory: example/flutter_guide
         run: flutter build web --release
+
+  # The secret stores of Windows (DPAPI) and Linux (libsecret) against the
+  # real systems (spring_boot_starter_flutter_security's
+  # test/desktop_secret_store_test.dart): dart:ffi from the test's process,
+  # no app built. Linux needs a Secret Service: GNOME Keyring, unlocked, in
+  # a D-Bus session of its own. With DESKTOP_SECRET_STORE_REQUIRED the test
+  # cannot skip.
+  desktop-secret-stores:
+    name: Secret stores on ${{ matrix.system }}
+    needs: changes
+    if: needs.changes.outputs.flutter_security == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: Windows
+            os: windows-latest
+          - system: Linux
+            os: ubuntu-26.04
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      DESKTOP_SECRET_STORE_REQUIRED: 'true'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: |
+          flutter --version
+          dart pub get
+          (cd spring_boot_starter_flutter_security && flutter pub get)
+
+      - name: GNOME Keyring and libsecret
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gnome-keyring libsecret-1-0 dbus-x11
+
+      - name: The DPAPI store
+        if: runner.os == 'Windows'
+        working-directory: spring_boot_starter_flutter_security
+        run: flutter test test/desktop_secret_store_test.dart
+
+      # The keyring daemon creates the login keyring with the password from
+      # stdin and unlocks it, for this session only.
+      - name: The libsecret store
+        if: runner.os == 'Linux'
+        working-directory: spring_boot_starter_flutter_security
+        run: |
+          dbus-run-session -- bash -c '
+            echo -n ci | gnome-keyring-daemon --unlock --components=secrets > /dev/null
+            flutter test test/desktop_secret_store_test.dart'
 
   # The golden screenshots of the Flutter guide (test/golden_test.dart):
   # made on macOS, so compared on macOS; Linux draws the letters

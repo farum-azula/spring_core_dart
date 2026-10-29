@@ -136,6 +136,13 @@ abstract final class OAuth2ErrorCodes {
 
   /// No registration has the requested id.
   static const clientRegistrationNotFound = 'client_registration_not_found';
+
+  /// The DPoP proof of the request was refused (RFC 9449 §5, §7.1).
+  static const invalidDPoPProof = 'invalid_dpop_proof';
+
+  /// The server wants a nonce of its own in the DPoP proof; it sends one
+  /// in the `DPoP-Nonce` header (RFC 9449 §8, §9). Not in Spring's list.
+  static const useDPoPNonce = 'use_dpop_nonce';
 }
 
 /// A failed OAuth 2.0 call: the provider refused a code or a refresh
@@ -227,7 +234,8 @@ class ClientAuthorizationRequiredException
 /// A refused OAuth 2.0 or OpenID Connect login, with the standard [error]
 /// code.
 ///
-/// The app login (`OAuth2LoginService.login`) and the user services throw
+/// The logins (the security starter's `oauth2Login()`, the app login of
+/// `spring_boot_starter_flutter_security`) and the user services throw
 /// it: a forged redirect (`invalid_state_parameter`), the user's "Cancel"
 /// (`access_denied`), an ID token for someone else (`invalid_id_token`),
 /// a replayed one (`invalid_nonce`). It is an [AuthenticationException],
@@ -235,9 +243,9 @@ class ClientAuthorizationRequiredException
 ///
 /// ```dart
 /// try {
-///   await login.login('keycloak');
+///   user = await oidcUserService.loadUser(request);
 /// } on OAuth2AuthenticationException catch (e) {
-///   showError('Login failed (${e.error.errorCode})');
+///   log.warning('Login refused (${e.error.errorCode})');
 /// }
 /// ```
 ///

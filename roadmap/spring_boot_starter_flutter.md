@@ -23,7 +23,7 @@ signals (reactive state) and a Rust bridge.
 | `hive`, `shared_preferences` wrappers (settings, storage) | `@ConfigurationProperties` saved in `shared_preferences`; SQLite through the Data starter |
 | `easy_localization` (texts) | `MessageSource` with `messages_{locale}.properties`, following the app's `Locale` |
 | `workmanager`, hand-made timers (background work) | `@Scheduled` and the `TaskExecutor` (worker isolates), following the app lifecycle |
-| `flutter_secure_storage`, `flutter_web_auth` (tokens, login) | a `TokenStore` bean on the Keychain / Keystore / DPAPI / libsecret and the system login browser, own platform code (done) |
+| `flutter_secure_storage`, `flutter_web_auth` (tokens, login) | a `SecretStore` bean on the Keychain / Keystore / DPAPI / libsecret and the system's login window, own platform code, in `spring_boot_starter_flutter_security` (done) |
 | `logger` | `SpringLog` (on by default), log files in the app's directory, the logs in the Actuator (planned) |
 | `mocktail` setups (tests) | `springBootTest` and `BeanOverride` under `flutter_test` (done) |
 
@@ -288,6 +288,181 @@ beans are stopped in the background and started again in the foreground:
 `@Scheduled` tasks pause, WebSocket connections close and reopen, caches
 flush.
 
+## Typed keys from the configuration (generated)
+
+Today the theme's own values are read by string keys:
+`SpringTheme.of(context).colors['surface']`, `theme.space('m')`,
+`theme.textStyle('code')`, the `tokens.*` (`brand.accent`), theme names
+(`active: ocean`). Renaming a key in `application.yml` breaks nothing at
+build time: the app compiles, and the widget fails (or silently falls
+back) at run time. The generator reads the same properties at build time
+(as it does for `spring.flutter.web.*`), so it can write typed names
+instead, and a renamed or removed key becomes a compile error.
+
+Only the Spring side is generated: what the app declares under
+`spring.flutter.theme.*` (its own colors, spacing, text styles, tokens,
+theme names). What Flutter computes from it (the Material 3 roles from
+the seed, the 15 `TextTheme` styles) stays where every Flutter developer
+knows it, `Theme.of(context).colorScheme` / `.textTheme`, already typed.
+
+```yaml
+spring:
+  flutter:
+    theme:
+      seed-color: deepPurple
+      colors:
+        error: '#B3261E'
+        surface-container-low: grey.shade100
+      spacing: { s: 8, m: 16 }
+      typography:
+        code: { font-family: JetBrains Mono, size: 13 }
+      tokens:
+        brand: { accent: '#FF6B00', hero-height: 240 }
+      themes:
+        ocean:
+          colors:
+            highlight: '#00BFA5'   # only in ocean
+```
+
+```dart
+// generated into main.spring.dart: a class per group, a final field per
+// declared key, filled once when a theme is built
+class ThemeColors {
+  final Color error;
+  final Color surfaceContainerLow;
+  /// Set in: ocean. Other themes: the Material default.
+  final Color highlight;
+}
+class ThemeSpacing { final double s, m; }
+class ThemeTextStyles { final TextStyle code; }
+class ThemeTokensBrand { final Color accent; final double heroHeight; }
+class AppThemes { final String light, dark, ocean; }
+```
+
+Short from any widget of the app (a `SpringApplicationWidget` below), one
+entry on the context as for the messages (`context.messages`): the
+groups of `spring.flutter.theme.*` under `context.theme`:
+
+```dart
+// generated: the active Spring theme's declared values
+class AppTheme {
+  final ThemeColors colors;
+  final ThemeSpacing spacing;
+  final ThemeTextStyles textStyles;
+  final ThemeTokens tokens;
+  final ThemeNames names;          // light, dark, ocean, ...
+}
+
+Widget build(BuildContext context) => Card(
+  color: context.theme.colors.surfaceContainerLow,
+  child: Padding(
+    padding: EdgeInsets.all(context.theme.spacing.m),
+    child: Text('isbn', style: context.theme.textStyles.code),
+  ),
+);
+
+context.theme.tokens.brand.accent;
+context.themes.activate(context.theme.names.ocean);
+Theme.of(context).colorScheme.primary;   // Flutter's, from the seed
+```
+
+- `context.theme` is a generated `BuildContext` extension getter that
+  reads the active theme and rebuilds the widget when it changes (dark
+  mode, a theme switched at run time), like `Theme.of(context)`;
+  `SpringTheme.of(context)` stays for code that has the theme already.
+  Flutter has no `context.theme` of its own; a clash with another
+  package's extension of that name is solved by hiding one import.
+- A key declared in the properties that is also a Material role
+  (`error`, `surface-container-low`) is in both places with the same
+  value.
+- Renaming a key in `application.yml` makes
+  `context.theme.colors.oldName` a compile error; a changed value needs no code change; a value whose
+  type changes (`hero-height: tall`) or differs between themes fails the
+  build with the property named; a name that is no Dart name, or two
+  keys that become the same name, too.
+- Values can still change at run time (a theme loaded from a server, a
+  profile): the generated getters fix the keys, not the values; a key a
+  run-time theme lacks falls back to the Material 3 default, as today.
+- The string API stays as it is (`colorOf('promo')`, `space('m')`,
+  `colors['...']`): for keys added at run time (a theme from a server,
+  values the app writes itself) and for code that picks a key
+  dynamically; the generated fields are the typed way for declared keys.
+- Material and Cupertino are untouched: the generated classes only read
+  the values `SpringThemeData` already holds; `ThemeData`,
+  `CupertinoThemeData` and the `widgets` app type are built from the
+  properties as before, and the `context.*` getters work with every app
+  type (`context.theme` reads the Spring theme, not `Theme.of`).
+- The same principle for the other maps keyed by strings in the
+  configuration, each checked at build time:
+  - message keys of `messages*.properties`: the same way as the theme,
+    see "Typed messages" below;
+  - asset paths of `@Value('asset:...')` (already checked against
+    `pubspec.yaml`) -> generated constants;
+  - routes, once the starter has navigation;
+  - `@ConfigurationProperties` maps whose keys the app fixes.
+  Spring has nothing like it (Java reads these by string too; Boot's
+  `spring-boot-configuration-processor` only writes metadata for editor
+  completion), so it is an addition, listed as such in the docs.
+
+### Typed messages
+
+The same for the message files: today `context.message('basket.total',
+args: [total])`; a renamed key or a forgotten argument shows up at run
+time (`NoSuchMessageException`, or `{0}` on screen).
+
+```properties
+# lib/resources/messages.properties
+basket.total=Total: {0}
+basket.empty=Your basket is empty
+order.shipped=Order {0} shipped on {1,date,short}
+# lib/resources/messages_ja.properties
+basket.total=合計：{0}
+basket.empty=カートは空です
+order.shipped=注文 {0} は {1,date,short} に発送されました
+```
+
+```dart
+// generated into main.spring.dart: a class per key prefix, a member per
+// key; keys without placeholders are getters, keys with placeholders are
+// methods with one parameter per placeholder, typed from its format
+class Messages {
+  final MessagesBasket basket;
+  final MessagesOrder order;
+}
+class MessagesBasket {
+  String total(Object p0);         // {0}
+  String get empty;
+}
+class MessagesOrder {
+  String shipped(Object p0, DateTime p1);   // {1,date,short} -> DateTime
+}
+
+// used as, in the current language, rebuilt when it changes
+Text(context.messages.basket.total(total));
+Text(context.messages.basket.empty);
+Text(context.messages.order.shipped(order.id, order.shippedAt));
+```
+
+- From the default file (`messages.properties`) and every locale file:
+  a key missing in one language, or with other placeholders there, is a
+  build warning naming the file; a key only in a locale file is one too.
+- Placeholders: the count and the types from the `MessageFormat`
+  formats (`{0}` -> `Object`, `{1,number}` -> `num`, `{1,date,...}` /
+  `{1,time,...}` -> `DateTime`, `{1,choice,...}` -> `num`); a key with a
+  wrong placeholder fails the build.
+- Names: the dots make the nesting (`basket.total` ->
+  `messages.basket.total`), dashes become camel case; a key that is no
+  Dart name, or a key that is both a leaf and a prefix (`basket` and
+  `basket.total`), fails the build with the key named.
+- `spring.messages.basename` (several bases, other folders) is read as
+  the runtime reads it; each base's keys go into the same `Messages`.
+- The string API stays as it is (`context.message('...', args: ...)`,
+  `MessageSource.getMessage`): for keys built at run time and messages
+  from elsewhere (a server, a database `MessageSource`).
+- A server (`spring_boot_dart` without Flutter) gets the same `Messages`
+  class over its `MessageSource`, for the messages it renders (errors,
+  mails), with the locale passed in (`messages.of(locale)`).
+
 ## Navigation
 
 Routes found by the generator, typed parameters with the same
@@ -337,10 +512,17 @@ command line and OS environment:
 
 ## Tokens and secrets of the user
 
+Moved (October 2026) to
+[`spring_boot_starter_flutter_security`](spring_boot_starter_flutter_security.md),
+with the renames there (`SecretStore`, `PlatformSecretStore`,
+`AuthorizationWindow`, `PlatformAuthorizationWindow`): the Flutter starter
+has no platform code again, and an app without a login carries none of
+it. What it was:
+
 Done (October 2026): the starter is a Flutter plugin with its own platform
-code (no community plugin). `SecureTokenStore` is the `TokenStore` bean of
-[the OAuth2 client](spring_boot_starter_oauth2_client.md), which keeps the
-login across restarts: the Keychain on iOS and macOS (generic passwords,
+code (no community plugin). `PlatformSecretStore` is the `SecretStore` bean of
+the app login ([spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md),
+section 3), which keeps the login across restarts: the Keychain on iOS and macOS (generic passwords,
 `AfterFirstUnlockThisDeviceOnly`, not synced; on macOS the data protection
 keychain for builds signed with a team, the login keychain for builds
 signed to run locally, which get `errSecMissingEntitlement`), an
@@ -348,7 +530,7 @@ AES-256-GCM key of the Android Keystore with the values in a private
 preferences file (undecryptable values deleted), DPAPI files on Windows
 and the Secret Service through libsecret on Linux (both `dart:ffi`, no
 native build; never a plain-file fallback). None on the web: the server
-logs in. `PlatformAuthorizationBrowser` is the `AuthorizationBrowser`
+logs in. `PlatformAuthorizationWindow` is the `AuthorizationWindow`
 bean on Android (Custom Tabs; the redirect caught by the starter's
 `RedirectReceiverActivity`, which an app that logs in declares with its
 scheme in its manifest, so apps without a login configure nothing), iOS

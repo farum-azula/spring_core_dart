@@ -2,7 +2,7 @@
 // the realm's roles as Spring Security roles, the user's access token on
 // the server calls.
 import 'package:neon_books_app/src/account/sso_properties.dart';
-import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 @Configuration()
 @Profile(['sso & !web'])
@@ -16,17 +16,21 @@ class KeycloakConfig {
   GrantedAuthoritiesMapper keycloakRoles() => const KeycloakRolesMapper();
 
   /// `Authorization: Bearer <access token>` on the Feign calls of a
-  /// Keycloak user, refreshed before it expires.
+  /// Keycloak user, refreshed before it expires; when Keycloak binds the
+  /// token to the app's key (DPoP), `Authorization: DPoP <access token>`
+  /// and a proof per call, signed by the [DPoPKey] bean.
   @Bean()
   KeycloakTokenInterceptor keycloakTokens(
     OAuth2AuthorizedClientManager manager,
     OAuth2AuthorizedClientService clients,
     SsoProperties sso,
+    DPoPKey? dPoPKey,
   ) => KeycloakTokenInterceptor(
     OAuth2AccessTokenInterceptor(
       manager,
       clientRegistrationId: sso.registrationId,
       authorizedClientService: clients,
+      dPoPKey: dPoPKey,
     ),
   );
 

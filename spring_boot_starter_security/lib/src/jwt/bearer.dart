@@ -445,7 +445,10 @@ final class BearerTokenAccessDeniedHandler implements AccessDeniedHandler {
 /// - a valid token: the request goes on as the token's user, for this
 ///   request only (no session);
 /// - a malformed or refused token: the [authenticationEntryPoint] answers,
-///   a 401 with `error="invalid_token"` by default, and the request stops.
+///   a 401 with `error="invalid_token"` by default, and the request stops;
+/// - a valid token bound to a DPoP key (a `cnf.jkt` claim): refused the
+///   same way, since such a token is only valid with the `DPoP` scheme
+///   and a proof (RFC 9449 §7.2; `DPoPAuthenticationFilter`).
 ///
 /// Spring (Java): `BearerTokenAuthenticationFilter`.
 final class BearerTokenAuthenticationFilter implements WebFilter {
@@ -497,6 +500,20 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
     } on AuthenticationException catch (e) {
       SecurityContextHolder.clearContext();
       await authenticationEntryPoint.commence(request, response, e);
+      return;
+    }
+    // RFC 9449 §7.2: a token bound to a DPoP key (cnf.jkt) is worthless
+    // without a proof of that key, so it is never accepted as Bearer.
+    if (result.principal case final Jwt jwt when jwt.jwkThumbprint != null) {
+      SecurityContextHolder.clearContext();
+      await authenticationEntryPoint.commence(
+        request,
+        response,
+        InvalidBearerTokenException(
+          'The access token is DPoP-bound; send it with the DPoP scheme '
+          'and a proof',
+        ),
+      );
       return;
     }
     final context = SecurityContextHolder.createEmptyContext()

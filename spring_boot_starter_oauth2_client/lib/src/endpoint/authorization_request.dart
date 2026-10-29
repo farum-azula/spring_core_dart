@@ -68,8 +68,9 @@ String expandRedirectUri(
 /// the holder of the matching verifier can exchange the code). The
 /// verifier and the nonce stay in [attributes], never sent.
 ///
-/// The app login builds and checks it for you; a server's `oauth2Login()`
-/// keeps it in the session between the redirect and the callback.
+/// A server's `oauth2Login()` (the security starter) builds it and keeps
+/// it in the session between the redirect and the callback; an app's
+/// login keeps it in memory while the login window is open.
 ///
 /// ```dart
 /// final request = OAuth2AuthorizationRequest.forRegistration(
@@ -104,8 +105,9 @@ final class OAuth2AuthorizationRequest {
 
   /// A request for [registration] coming back to [redirectUri] (already
   /// expanded), with a fresh `state` (32 random bytes), a PKCE verifier
-  /// (64 bytes) and `S256` challenge, and for the `openid` scope a fresh
-  /// `nonce` (32 bytes, its SHA-256 hash sent). [additionalParameters]
+  /// (64 bytes) and `S256` challenge, for the `openid` scope a fresh
+  /// `nonce` (32 bytes, its SHA-256 hash sent), and the registration's
+  /// `response_mode` when it is not `query`. [additionalParameters]
   /// go into the URI too (`prompt`, `login_hint`, ...); they cannot
   /// replace the parameters above.
   ///
@@ -135,6 +137,8 @@ final class OAuth2AuthorizationRequest {
       state: generateSecureKey(),
       additionalParameters: {
         ...additionalParameters,
+        if (registration.responseMode != ResponseMode.query)
+          OAuth2ParameterNames.responseMode: registration.responseMode.value,
         PkceParameterNames.codeChallenge: sha256Base64Url(codeVerifier),
         PkceParameterNames.codeChallengeMethod: 'S256',
         if (nonce != null) OidcParameterNames.nonce: sha256Base64Url(nonce),
@@ -184,6 +188,15 @@ final class OAuth2AuthorizationRequest {
   /// The raw nonce, from [attributes]; the ID token carries its hash.
   String? get nonce => attributes[OidcParameterNames.nonce] as String?;
 
+  /// The `response_mode` sent, from [additionalParameters]: whether the
+  /// response must come back as a form post ([ResponseMode.formPost]) or
+  /// in the redirect URI ([ResponseMode.query], also when none was sent).
+  ResponseMode get responseMode =>
+      additionalParameters[OAuth2ParameterNames.responseMode] ==
+          ResponseMode.formPost.value
+      ? ResponseMode.formPost
+      : ResponseMode.query;
+
   /// The full URI of the provider's page: [authorizationUri] with
   /// `response_type`, `client_id`, `scope`, `state`, `redirect_uri` and
   /// [additionalParameters]; a query already in [authorizationUri] (such
@@ -223,6 +236,7 @@ final class OAuth2AuthorizationResponse {
     this.errorDescription,
     this.errorUri,
     this.issuer,
+    this.additionalParameters = const {},
   });
 
   /// Reads the parameters of the URI the provider redirected to.
@@ -231,22 +245,52 @@ final class OAuth2AuthorizationResponse {
   /// default of the code flow). A parameter given twice counts as invalid
   /// (RFC 6749 §3.1): the response then has neither code nor state, and
   /// fails the checks.
-  factory OAuth2AuthorizationResponse.fromRedirect(Uri uri) {
-    final all = uri.queryParametersAll;
-    String? one(String name) => switch (all[name]) {
+  factory OAuth2AuthorizationResponse.fromRedirect(Uri uri) =>
+      OAuth2AuthorizationResponse.fromParameters(
+        uri.queryParametersAll,
+        // Without the query, not even an empty `?`.
+        redirectUri: uri.toString().split(RegExp('[?#]')).first,
+      );
+
+  /// Reads the response from its [parameters], wherever they came from:
+  /// the redirect's query, or the form the browser posted
+  /// (`response_mode=form_post`), to `redirectUri`.
+  ///
+  /// A parameter given twice counts as missing, as in
+  /// [OAuth2AuthorizationResponse.fromRedirect].
+  /// The parameters other than the standard ones, each given once, go to
+  /// [additionalParameters] (Sign in with Apple's `user`).
+  factory OAuth2AuthorizationResponse.fromParameters(
+    Map<String, List<String>> parameters, {
+    required String redirectUri,
+  }) {
+    String? one(String name) => switch (parameters[name]) {
       [final value] => value,
       _ => null,
     };
     return OAuth2AuthorizationResponse(
-      redirectUri: uri.replace(query: '').removeFragment().toString(),
+      redirectUri: redirectUri,
       code: one(OAuth2ParameterNames.code),
       state: one(OAuth2ParameterNames.state),
       error: one(OAuth2ParameterNames.error),
       errorDescription: one(OAuth2ParameterNames.errorDescription),
       errorUri: one(OAuth2ParameterNames.errorUri),
       issuer: one(OAuth2ParameterNames.issuer),
+      additionalParameters: {
+        for (final MapEntry(:key, :value) in parameters.entries)
+          if (!_standard.contains(key) && value.length == 1) key: value.single,
+      },
     );
   }
+
+  static const Set<String> _standard = {
+    OAuth2ParameterNames.code,
+    OAuth2ParameterNames.state,
+    OAuth2ParameterNames.error,
+    OAuth2ParameterNames.errorDescription,
+    OAuth2ParameterNames.errorUri,
+    OAuth2ParameterNames.issuer,
+  };
 
   /// Where the browser was sent, without the query.
   final String redirectUri;
@@ -268,6 +312,12 @@ final class OAuth2AuthorizationResponse {
 
   /// The `iss` parameter (RFC 9207): who sent the response.
   final String? issuer;
+
+  /// The other parameters of the response, such as the `user` (name and
+  /// e-mail, on the first login only) Sign in with Apple posts. Nothing
+  /// here is signed: show it, never decide who the user is by it. Not in
+  /// Spring.
+  final Map<String, String> additionalParameters;
 
   /// Whether the provider answered with an error.
   bool get statusError => error != null && error!.isNotEmpty;

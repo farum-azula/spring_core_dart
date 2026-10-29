@@ -47,6 +47,7 @@ export 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 export 'package:spring_boot_starter_security/src/config/http_security.dart';
 export 'package:spring_boot_starter_security/src/config/security_auto_configuration.dart';
 export 'package:spring_boot_starter_security/src/jwt/bearer.dart';
+export 'package:spring_boot_starter_security/src/jwt/dpop.dart';
 export 'package:spring_boot_starter_security/src/jwt/jose.dart'
     show
         EcVerificationKey,

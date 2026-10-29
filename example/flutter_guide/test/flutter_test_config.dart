@@ -44,6 +44,12 @@ Future<void> _loadMaterialFonts() async {
     'Roboto-Medium.ttf',
     'Roboto-Bold.ttf',
   ]);
+  // The brand buttons' fonts (Google Sans, Segoe UI) are their owners' and
+  // not in the repository; a device without them falls back to Roboto or
+  // the system font, while the test engine draws boxes. Roboto stands in.
+  for (final brand in ['Google Sans', 'Segoe UI']) {
+    await load(brand, ['Roboto-Medium.ttf', 'Roboto-Bold.ttf']);
+  }
   // The Japanese texts: only their glyphs, cut from Noto Sans JP
   // (test/fonts/); the app's theme falls back to it.
   final japanese = FontLoader('Noto Sans JP')

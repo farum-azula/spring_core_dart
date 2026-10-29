@@ -1,15 +1,8 @@
 import 'package:neon_books_app/main.spring.dart';
-import 'package:neon_books_app/src/account/server_authentication_provider.dart';
 import 'package:neon_books_app/src/account/sso_properties.dart';
 import 'package:neon_books_app/src/api/account_client.dart';
-import 'package:neon_books_app/src/api/api_properties.dart';
-import 'package:neon_books_app/src/api/browser_page.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
-    show OAuth2AuthenticationToken, OAuth2LoginService;
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Published after a login, a payload event (any object can be one).
 class LoggedIn {
@@ -37,43 +30,37 @@ class LoggedOut {
 /// authorities in the context):
 ///
 /// - [login]: a name and password, the server's form login (the default).
-/// - [signInWithKeycloak], native apps (the `sso` profile): the app logs
-///   in itself, `OAuth2LoginService` with the system browser; its tokens
-///   stay in the platform's secure storage, and the Feign calls carry the
-///   access token.
-/// - [signInWithKeycloak] on the web: the page goes to the server, which
-///   logs it in at Keycloak and sends it back with a session cookie; the
-///   app starts again and [restore] finds the user.
+/// - [signInWithKeycloak] with the `sso` profile, through the starter's
+///   `OAuth2LoginService`, the same call everywhere: a native app logs in
+///   itself in the system's login window, keeps its tokens in the
+///   platform's secure storage and sends the access token with its Feign
+///   calls; the web app leaves for the server, which logs it in at
+///   Keycloak and sends it back with a session cookie, and [restore]
+///   finds the user when it starts again.
+/// - [restore] at startup: a native app's stored Keycloak login, or, on
+///   the web, whoever holds the server's session (a form login too).
 @ChangeNotifierComponent()
 @BuildContextAccess(name: 'session')
 @Log(topic: 'neon.account')
 class Session {
   Session(
     this._authenticationManager,
-    this._server,
     this._account,
     this._cookies,
     this._events,
     this._sso,
-    this._api,
-    this._page,
-    this._appLogin,
+    this._login,
   );
 
   final AuthenticationManager _authenticationManager;
-  final ServerAuthenticationProvider _server;
   final AccountClient _account;
   final CookieJar _cookies;
   final ApplicationEventPublisher _events;
   final SsoProperties _sso;
-  final ApiProperties _api;
 
-  /// The browser page: only on the web (a `web` profile bean).
-  final BrowserPage? _page;
-
-  /// The app's own Keycloak login: only where a registration is
-  /// configured, the native apps with the `sso` profile.
-  final OAuth2LoginService? _appLogin;
+  /// The starter's login: on the web always (the server logs in), in the
+  /// native apps where a registration is configured (the `sso` profile).
+  final OAuth2LoginService? _login;
 
   Authentication? get _authentication {
     final authentication = SecurityContextHolder.getContext().authentication;
@@ -112,7 +99,7 @@ class Session {
   }
 
   /// "Sign in with Keycloak". A native app opens Keycloak's page in the
-  /// system browser and waits for the user (an
+  /// system's login window and waits for the user (an
   /// `AuthorizationCancelledException` when they close it, an
   /// `OAuth2AuthenticationException` when the login fails). The web app
   /// leaves for the server's login and starts again afterwards.
@@ -120,26 +107,21 @@ class Session {
     if (_restoring case final restoring?) {
       await restoring;
     }
-    if (_appLogin case final appLogin?) {
-      final result = await appLogin.login(_sso.registrationId);
+    final login =
+        _login ??
+        (throw StateError('No Keycloak login: run with the sso profile'));
+    final result = await login.login(_sso.registrationId);
+    if (result != null) {
       log.info('logged in with Keycloak', fields: {'user': result.name});
       _events.publishEvent(LoggedIn(result.name));
-    } else if (_page case final page?) {
-      page.open(
-        Uri.parse(
-          '${_api.baseUrl}/oauth2/authorization/${_sso.registrationId}',
-        ),
-      );
-    } else {
-      throw StateError('No Keycloak login: run with the sso profile');
     }
   }
 
   /// At startup: the user of an earlier login, if any. A native app with
   /// Keycloak reads its stored tokens (refreshing them if needed); a web
   /// app asks the server whose session its cookie is (after the server's
-  /// Keycloak login, or a page reload). Elsewhere nobody is logged in
-  /// after a start.
+  /// Keycloak login, a form login, or a page reload). Elsewhere nobody is
+  /// logged in after a start.
   @EventListener()
   Future<void> restore(ApplicationReadyEvent event) async {
     final restoring = _restoring = _restore();
@@ -158,16 +140,7 @@ class Session {
 
   Future<void> _restore() async {
     try {
-      Authentication? user;
-      if (_appLogin case final appLogin?) {
-        user = await appLogin.restore();
-      } else if (_page != null) {
-        user = await _server.current();
-        if (user != null) {
-          SecurityContextHolder.setContext(SecurityContextImpl(user));
-        }
-      }
-      if (user != null) {
+      if (await _login?.restore() case final user?) {
         log.info('logged in from before', fields: {'user': user.name});
         _events.publishEvent(LoggedIn(user.name));
       }
@@ -177,31 +150,31 @@ class Session {
     }
   }
 
-  /// Logs out: the server ends the session (and, after the web app's
-  /// Keycloak login, the page goes to Keycloak's logout, which comes back
-  /// to the app); a native app's Keycloak login revokes its tokens at
-  /// Keycloak, forgets them and ends Keycloak's session in the system
-  /// browser. Then the app forgets the user and the cookies.
-  Future<void> logout() async {
+  /// Logs out through the starter's login where there is one: a native
+  /// app's Keycloak login revokes its tokens at Keycloak and forgets them,
+  /// without a window; with [endSession] (switching accounts) it also
+  /// ends Keycloak's own session in the system's login window, which iOS
+  /// and macOS announce with their "wants to use ... to Sign In" prompt.
+  /// The web app posts the server's logout (after a Keycloak login the
+  /// page then goes on to Keycloak's logout, which comes back to the
+  /// app). A native app without Keycloak posts the server's logout
+  /// itself. Then the app forgets the user and the cookies.
+  Future<void> logout({bool endSession = false}) async {
     if (_restoring case final restoring?) {
       await restoring;
     }
     final authentication = _authentication;
-    final appLogin = _appLogin;
-    if (authentication is OAuth2AuthenticationToken && appLogin != null) {
+    if (_login case final login?) {
       final postLogout = _sso.postLogoutRedirectUri;
-      await appLogin.logout(
-        endSession: postLogout != null,
+      await login.logout(
+        endSession: endSession && postLogout != null,
         postLogoutRedirectUri: postLogout == null
             ? null
             : Uri.parse(postLogout),
       );
     } else {
       try {
-        final answer = await _account.logout();
-        if ((answer.body?.logoutUrl, _page) case (final url?, final page?)) {
-          page.open(Uri.parse(url));
-        }
+        await _account.logout();
       } on FeignException catch (error) {
         log.warning('logout failed on the server: $error');
       }

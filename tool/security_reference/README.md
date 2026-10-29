@@ -12,6 +12,21 @@ run() { java -Dloader.main=dev.farumazula.reference.$1 -cp target/security-refer
   org.springframework.boot.loader.launch.PropertiesLauncher "${@:2}"; }
 ```
 
+## The requests of the differential test
+
+`spring_boot_starter_security/test/differential_test.dart` starts the jar
+three times: as it is (the rules of `ReferenceApplication`), with the
+profile `oauth2` (`OAuth2LoginReference`: `oauth2Login()` with one
+registration, `fake`, from `application-oauth2.properties`, and the
+OpenID Connect logout) and with the profile `dpop`
+(`DPoPResourceServerReference`: Spring Boot's resource server chain with
+`dPoP()`). For the last two the test starts its fake OpenID Connect
+provider first and passes its address
+(`--spring.security.oauth2.client.provider.fake.issuer-uri=...`, which
+Spring discovers at startup, or
+`--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=...`). The Dart
+applications get the same requests.
+
 ## Password hashes, both ways
 
 Spring writes hashes with its encoders (Argon2, PBKDF2, scrypt with

@@ -5,9 +5,15 @@
 // test. Mutants that do not compile are skipped.
 //
 //   dart run tool/mutation_test.dart <package> <lib file>... [--max N] [--report file.md]
+//       [--test <test file>]...
 //
 //   dart run tool/mutation_test.dart spring_boot_starter_security \
 //       lib/src/web/firewall.dart lib/src/web/access.dart
+//
+// With --test, each mutant runs those test files first, and a mutant they
+// do not notice runs the whole suite before it counts as surviving: the
+// same score as without, in a fraction of the time when the files are the
+// right ones.
 //
 // The original file is restored after every mutant, also on Ctrl+C.
 import 'dart:async';
@@ -127,14 +133,16 @@ const _timeout = Duration(minutes: 5);
 /// checks what a mock cannot), stopping at the first failure; not the
 /// differential ones (they need the Spring application).
 Future<({int exitCode, String output, bool timedOut})> _runTests(
-  String package,
-) async {
+  String package, [
+  List<String> tests = const [],
+]) async {
   final process = await Process.start(Platform.resolvedExecutable, [
     'test',
     '--fail-fast',
     '--reporter=compact',
     '-x',
     'differential',
+    ...tests,
   ], workingDirectory: package);
   final output = StringBuffer();
   final done = Future.wait([
@@ -162,7 +170,7 @@ Future<void> main(List<String> args) async {
   if (args.length < 2) {
     stderr.writeln(
       'usage: dart run tool/mutation_test.dart <package> <lib file>... '
-      '[--max N] [--report file.md]',
+      '[--max N] [--report file.md] [--test <test file>]...',
     );
     exit(64);
   }
@@ -171,11 +179,14 @@ Future<void> main(List<String> args) async {
   final max = maxIndex < 0 ? 1 << 30 : int.parse(args[maxIndex + 1]);
   final reportIndex = args.indexOf('--report');
   final reportFile = reportIndex < 0 ? null : args[reportIndex + 1];
+  const options = {'--max', '--report', '--test'};
+  final tests = [
+    for (var i = 1; i < args.length - 1; i++)
+      if (args[i] == '--test') args[i + 1],
+  ];
   final files = [
     for (var i = 1; i < args.length; i++)
-      if (!args[i].startsWith('--') &&
-          (i == 0 || !const {'--max', '--report'}.contains(args[i - 1])))
-        args[i],
+      if (!args[i].startsWith('--') && !options.contains(args[i - 1])) args[i],
   ];
   final originals = <String, String>{};
   void restoreAll() {
@@ -219,7 +230,10 @@ Future<void> main(List<String> args) async {
       final lines = originals[mutant.file]!.split('\n');
       lines[mutant.line - 1] = mutant.mutated;
       _write(mutant.file, lines.join('\n'));
-      final result = await _runTests(package);
+      var result = await _runTests(package, tests);
+      if (tests.isNotEmpty && result.exitCode == 0 && !result.timedOut) {
+        result = await _runTests(package); // the whole suite decides
+      }
       _write(mutant.file, originals[mutant.file]!);
       final String outcome;
       if (result.timedOut) {

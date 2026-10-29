@@ -4,11 +4,13 @@ import 'package:spring_boot_starter_oauth2_client/src/registration/client_regist
 
 /// Finds the [ClientRegistration] of an id, such as `keycloak`.
 ///
-/// Everything that logs in or gets tokens starts here: the app login, the
-/// authorized client manager, the Feign interceptor and the server's
-/// `oauth2Login()`. The starter declares one built from the
-/// `spring.security.oauth2.client.*` properties; declare your own bean to
-/// keep registrations elsewhere (a database of tenants, for example).
+/// Everything that logs in or gets tokens starts here: the authorized
+/// client manager, the Feign interceptor and the logins (the security
+/// starter's `oauth2Login()`, the app login of
+/// `spring_boot_starter_flutter_security`). The starter declares one
+/// built from the `spring.security.oauth2.client.*` properties; declare
+/// your own bean to keep registrations elsewhere (a database of tenants,
+/// for example).
 ///
 /// ```dart
 /// final registration = await repository.findByRegistrationId('keycloak');

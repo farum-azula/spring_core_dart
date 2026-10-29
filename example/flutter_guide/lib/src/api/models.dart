@@ -1,4 +1,4 @@
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 // The JSON of the server's API (see "API" in the README). The app and the
 // server share no Dart package: these classes are the app's own view of
@@ -99,17 +99,6 @@ class Me {
 
   /// `USER`, `ADMIN` (a `ROLE_` prefix is accepted too).
   final List<String> roles;
-}
-
-/// The answer of `POST /api/logout` after a Keycloak login of the web
-/// app (the server's `sso` profile): `{"logoutUrl": "http://..."}`, where
-/// the page goes to end the Keycloak session too. Other logouts answer
-/// 204, without a body.
-@Introspected()
-class LoggedOutAnswer {
-  const LoggedOutAnswer({this.logoutUrl});
-
-  final String? logoutUrl;
 }
 
 /// One line of the server's basket.

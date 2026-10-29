@@ -48,10 +48,8 @@ abstract final class ClientRegistrations {
     String issuer, {
     HttpTransport? transport,
   }) {
-    final uri = _issuerUri(issuer);
-    return _resolve(issuer, transport, [
-      (fetch) => _oidc(fetch, issuer, _append(uri, _oidcMetadataPath)),
-    ]);
+    _issuerUri(issuer);
+    return _fromConfiguration(issuer, transport, openIdConnectOnly: true);
   }
 
   /// A builder filled from the metadata of [issuer], trying in order, as
@@ -75,12 +73,62 @@ abstract final class ClientRegistrations {
     String issuer, {
     HttpTransport? transport,
   }) {
+    _issuerUri(issuer);
+    return _fromConfiguration(issuer, transport, openIdConnectOnly: false);
+  }
+
+  /// The metadata document of [issuer], found where
+  /// [fromIssuerLocation] looks for it, or `null` when no location has
+  /// one.
+  ///
+  /// The discovery shared by the registrations and by the security
+  /// starter's resource server (`JwtDecoders.fromIssuerLocation`), so the
+  /// locations, their order and the issuer check are the same for both.
+  /// Most applications never call it: they set `issuer-uri`.
+  ///
+  /// [fetch] reads one location: the document as a JSON object, or `null`
+  /// to try the next one (a 4xx answer, for [fromIssuerLocation]); what it
+  /// throws stops the search. With [openIdConnectOnly] only
+  /// `<issuer>/.well-known/openid-configuration` is asked. The result
+  /// says whether the document came from an OpenID Connect location
+  /// (`openIdConnect`) or from the OAuth 2.0 one (RFC 8414).
+  ///
+  /// Throws an [ArgumentError] when [issuer] is not an absolute URI or
+  /// the document names another issuer: otherwise a provider could pass
+  /// its tokens off as another's.
+  ///
+  /// Spring (Java): `JwtDecoderProviderConfigurationUtils`
+  /// `.getConfigurationForIssuerLocation` (internal there; Spring's client
+  /// and resource server each have their own discovery).
+  static Future<({Map<String, Object?> metadata, bool openIdConnect})?>
+  configurationForIssuerLocation(
+    String issuer, {
+    required Future<Map<String, Object?>?> Function(Uri location) fetch,
+    bool openIdConnectOnly = false,
+  }) async {
     final uri = _issuerUri(issuer);
-    return _resolve(issuer, transport, [
-      (fetch) => _oidc(fetch, issuer, _append(uri, _oidcMetadataPath)),
-      (fetch) => _oidc(fetch, issuer, _prepend(uri, _oidcMetadataPath)),
-      (fetch) => _oauth(fetch, issuer, _prepend(uri, _oauthMetadataPath)),
-    ]);
+    final locations = [
+      (_append(uri, _oidcMetadataPath), true),
+      if (!openIdConnectOnly) ...[
+        (_prepend(uri, _oidcMetadataPath), true),
+        (_prepend(uri, _oauthMetadataPath), false),
+      ],
+    ];
+    for (final (location, openIdConnect) in locations) {
+      final metadata = await fetch(location);
+      if (metadata == null) {
+        continue;
+      }
+      final metadataIssuer = metadata['issuer'];
+      if (metadataIssuer != issuer) {
+        throw ArgumentError(
+          'The Issuer "$metadataIssuer" provided in the configuration '
+          'metadata did not match the requested issuer "$issuer"',
+        );
+      }
+      return (metadata: metadata, openIdConnect: openIdConnect);
+    }
+    return null;
   }
 
   static Uri _issuerUri(String issuer) {
@@ -95,83 +143,53 @@ abstract final class ClientRegistrations {
       ? uri.path.substring(0, uri.path.length - 1)
       : uri.path;
 
-  static Uri _append(Uri issuer, String suffix) => issuer
-      .replace(
-        path: '${_trimmedPath(issuer)}$suffix',
-        query: '',
-      )
-      .removeFragment();
+  // The issuer's scheme, user info, host and port with [path]; no query
+  // or fragment (not even an empty `?`).
+  static Uri _at(Uri issuer, String path) => Uri(
+    scheme: issuer.scheme,
+    userInfo: issuer.userInfo,
+    host: issuer.host,
+    port: issuer.hasPort ? issuer.port : null,
+    path: path,
+  );
 
-  static Uri _prepend(Uri issuer, String prefix) => issuer
-      .replace(
-        path: '$prefix${_trimmedPath(issuer)}',
-        query: '',
-      )
-      .removeFragment();
+  static Uri _append(Uri issuer, String suffix) =>
+      _at(issuer, '${_trimmedPath(issuer)}$suffix');
 
-  static Future<ClientRegistrationBuilder> _resolve(
+  static Uri _prepend(Uri issuer, String prefix) =>
+      _at(issuer, '$prefix${_trimmedPath(issuer)}');
+
+  static Future<ClientRegistrationBuilder> _fromConfiguration(
     String issuer,
-    HttpTransport? given,
-    List<
-      Future<ClientRegistrationBuilder?> Function(
-        Future<Map<String, Object?>?> Function(Uri) fetch,
-      )
-    >
-    attempts,
-  ) async {
+    HttpTransport? given, {
+    required bool openIdConnectOnly,
+  }) async {
     final transport = given ?? platformHttpTransport();
     try {
-      Future<Map<String, Object?>?> fetch(Uri uri) async {
-        final response = await transport.send(
-          HttpRequest(
-            method: HttpMethod.get,
-            url: uri,
-            headers: HttpHeaders({
-              HttpHeaders.acceptHeader: MediaType.applicationJson,
-            }),
-          ),
-        );
-        final status = response.statusCode;
-        if (status >= 400 && status < 500) {
-          return null; // try the next location
-        }
-        if (!response.isSuccess) {
-          throw ArgumentError(
-            'Unable to resolve Configuration with the provided Issuer of '
-            '"$issuer": HTTP $status at $uri',
-          );
-        }
-        if (response.bodyBytes.length > _maxMetadataBytes) {
-          throw ArgumentError(
-            'The configuration metadata of "$issuer" is too large',
-          );
-        }
-        final Object? json;
-        try {
-          json = jsonDecode(utf8.decode(response.bodyBytes));
-        } on FormatException {
-          throw ArgumentError(
-            'The configuration metadata of "$issuer" is not JSON',
-          );
-        }
-        if (json is! Map<String, Object?>) {
-          throw ArgumentError(
-            'The configuration metadata of "$issuer" is not a JSON object',
-          );
-        }
-        return json;
-      }
-
-      for (final attempt in attempts) {
-        final builder = await attempt(fetch);
-        if (builder != null) {
-          return builder;
-        }
-      }
-      throw ArgumentError(
-        'Unable to resolve Configuration with the provided Issuer of '
-        '"$issuer"',
+      final configuration = await configurationForIssuerLocation(
+        issuer,
+        fetch: (uri) => _fetch(transport, issuer, uri),
+        openIdConnectOnly: openIdConnectOnly,
       );
+      if (configuration == null) {
+        throw ArgumentError(
+          'Unable to resolve Configuration with the provided Issuer of '
+          '"$issuer"',
+        );
+      }
+      final (:metadata, :openIdConnect) = configuration;
+      final builder = _withProviderConfiguration(metadata, issuer);
+      if (openIdConnect) {
+        builder.jwkSetUri(_required(metadata, 'jwks_uri', issuer));
+      } else if (metadata['jwks_uri'] case final String jwks
+          when jwks.isNotEmpty) {
+        builder.jwkSetUri(jwks);
+      }
+      final userInfo = metadata['userinfo_endpoint'];
+      if (userInfo is String && userInfo.isNotEmpty) {
+        builder.userInfoUri(userInfo);
+      }
+      return builder;
     } finally {
       if (given == null) {
         transport.close();
@@ -179,58 +197,56 @@ abstract final class ClientRegistrations {
     }
   }
 
-  static Future<ClientRegistrationBuilder?> _oidc(
-    Future<Map<String, Object?>?> Function(Uri) fetch,
+  // One location's document; `null` for a 4xx (the next location).
+  static Future<Map<String, Object?>?> _fetch(
+    HttpTransport transport,
     String issuer,
-    Uri location,
+    Uri uri,
   ) async {
-    final metadata = await fetch(location);
-    if (metadata == null) {
-      return null;
+    final response = await transport.send(
+      HttpRequest(
+        method: HttpMethod.get,
+        url: uri,
+        headers: HttpHeaders({
+          HttpHeaders.acceptHeader: MediaType.applicationJson,
+        }),
+      ),
+    );
+    final status = response.statusCode;
+    if (status >= 400 && status < 500) {
+      return null; // try the next location
     }
-    final builder = _withProviderConfiguration(
-      metadata,
-      issuer,
-    ).jwkSetUri(_required(metadata, 'jwks_uri', issuer));
-    final userInfo = metadata['userinfo_endpoint'];
-    if (userInfo is String && userInfo.isNotEmpty) {
-      builder.userInfoUri(userInfo);
+    if (!response.isSuccess) {
+      throw ArgumentError(
+        'Unable to resolve Configuration with the provided Issuer of '
+        '"$issuer": HTTP $status at $uri',
+      );
     }
-    return builder;
-  }
-
-  static Future<ClientRegistrationBuilder?> _oauth(
-    Future<Map<String, Object?>?> Function(Uri) fetch,
-    String issuer,
-    Uri location,
-  ) async {
-    final metadata = await fetch(location);
-    if (metadata == null) {
-      return null;
+    if (response.bodyBytes.length > _maxMetadataBytes) {
+      throw ArgumentError(
+        'The configuration metadata of "$issuer" is too large',
+      );
     }
-    final builder = _withProviderConfiguration(metadata, issuer);
-    final jwks = metadata['jwks_uri'];
-    if (jwks is String && jwks.isNotEmpty) {
-      builder.jwkSetUri(jwks);
+    final Object? json;
+    try {
+      json = jsonDecode(utf8.decode(response.bodyBytes));
+    } on FormatException {
+      throw ArgumentError(
+        'The configuration metadata of "$issuer" is not JSON',
+      );
     }
-    final userInfo = metadata['userinfo_endpoint'];
-    if (userInfo is String && userInfo.isNotEmpty) {
-      builder.userInfoUri(userInfo);
+    if (json is! Map<String, Object?>) {
+      throw ArgumentError(
+        'The configuration metadata of "$issuer" is not a JSON object',
+      );
     }
-    return builder;
+    return json;
   }
 
   static ClientRegistrationBuilder _withProviderConfiguration(
     Map<String, Object?> metadata,
     String issuer,
   ) {
-    final metadataIssuer = metadata['issuer'];
-    if (metadataIssuer != issuer) {
-      throw ArgumentError(
-        'The Issuer "$metadataIssuer" provided in the configuration '
-        'metadata did not match the requested issuer "$issuer"',
-      );
-    }
     final host = Uri.parse(issuer).host;
     return ClientRegistration.withRegistrationId(host)
         .userNameAttributeName('sub')

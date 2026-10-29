@@ -9,6 +9,8 @@ dependency_overrides:
     path: ../../spring_boot_starter_feign
   spring_boot_starter_flutter:
     path: ../../spring_boot_starter_flutter
+  spring_boot_starter_flutter_security:
+    path: ../../spring_boot_starter_flutter_security
   spring_boot_starter_logging:
     path: ../../spring_boot_starter_logging
   spring_boot_starter_oauth2_client:

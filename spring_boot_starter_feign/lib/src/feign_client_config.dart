@@ -27,7 +27,7 @@ enum FeignLoggerLevel {
   basic,
 
   /// [basic] plus the headers of requests and responses, with
-  /// `Authorization` masked.
+  /// `Authorization` and `DPoP` (a proof of possession) masked.
   headers,
 
   /// [headers] plus the bodies.

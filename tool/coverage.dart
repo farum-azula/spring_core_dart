@@ -13,7 +13,7 @@ Future<void> main() async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final packages = [
     for (final package in family.family)
-      if (package != 'spring_boot_starter_flutter') package,
+      if (!package.startsWith('spring_boot_starter_flutter')) package,
   ];
   final merged = StringBuffer();
   for (final package in packages) {

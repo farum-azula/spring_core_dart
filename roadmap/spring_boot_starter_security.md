@@ -79,9 +79,11 @@ Done (October 2026), on [spring_boot_starter_oauth2_client](spring_boot_starter_
 
 Left:
 
-- The differential test of `oauth2Login()` against Spring Security
+- ~~The differential test of `oauth2Login()` against Spring Security
   (`tool/security_reference`) and mutation testing of the new code
-  ([security_verification.md](security_verification.md)).
+  ([security_verification.md](security_verification.md)).~~ Done
+  (October 2026); not measured yet: the `oauth2Login()` parts of
+  `http_security.dart`.
 - The example: `example/server_guide` logging in with Keycloak (part
   "Example" of the OAuth2 client's roadmap).
 - `oauth2Client()` (the authorization code grant without a login,
@@ -111,3 +113,38 @@ Left:
 - **Rules per WebSocket message** (Spring's
   `AuthorizationManager<Message<?>>`); the handshake already passes the
   chain, and the connection keeps its user (`test/websocket_test.dart`).
+- **DPoP-bound access tokens** (RFC 9449): the resource server's part is
+  done (October 2026, `lib/src/jwt/dpop.dart`, `test/dpop_test.dart`);
+  left: a shared `DPoPProofJtiCache` for several instances, `htu` behind
+  a TLS proxy (needs the forwarded headers above). The differential test
+  (against Spring Security 7.1 with `dPoP()`) and the mutation score
+  (97.1 %) of the DPoP code are done. The apps' part:
+  [spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md).
+- **From the comparison with Spring Security 7**
+  ([docs/security-spring-comparison.md](../docs/security-spring-comparison.md)),
+  not planned elsewhere yet:
+  - logins: `oneTimeTokenLogin()`, passkeys (`webAuthn()`), `x509()` (the
+    web starter already asks for client certificates), pre-authentication
+    (`RequestHeaderAuthenticationFilter`), switch user,
+    `passwordManagement()` (`/.well-known/change-password`); the web part
+    of multi-factor authentication (the login page asking for the missing
+    factor);
+  - sessions: concurrency control (`maximumSessions`, with the session
+    registry above), `invalidSessionUrl`, the `always` and `never`
+    creation policies;
+  - resource server: several issuers
+    (`JwtIssuerAuthenticationManagerResolver`), bearer tokens in a form
+    body, protected resource metadata (RFC 9728), `NimbusJwtEncoder`,
+    `spring.security.oauth2.resourceserver.jwt.public-key-location`;
+  - `@RegisteredOAuth2AuthorizedClient` controller parameters;
+  - exploits: `csrf.spa()`, DSL methods for Permissions-Policy,
+    Cross-Origin-*-Policy, CSP report-only and `Clear-Site-Data` on
+    logout, `redirectToHttps()`;
+  - rules: an IP address matcher (`hasIpAddress`), SpEL in request rules
+    (`WebExpressionAuthorizationManager`), `WebSecurityCustomizer` and
+    `Customizer<HttpSecurity>` beans, Boot's `PathRequest` (and
+    `EndpointRequest` once there is an actuator);
+  - observability of the filters and of authorization;
+  - tests: `oauth2Login()`, `oidcLogin()`, `oauth2Client()` and
+    `opaqueToken()` post-processors, `formLogin()` and `logout()` request
+    builders, `authenticated()` / `unauthenticated()` result matchers.

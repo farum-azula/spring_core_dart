@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/account/login_page.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The app bar's account button: "Log in", or the user's name with a menu
 /// to log out. A plain `StatelessWidget` reaching the bean through the

@@ -1,12 +1,13 @@
 // The documentation has properties lines, which cannot be wrapped.
 // ignore_for_file: lines_longer_than_80_chars
 
+import 'package:spring_boot_starter_oauth2_client/src/endpoint/jwt_client_secret.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 
 const _defaultRedirectUrl = '{baseUrl}/{action}/oauth2/code/{registrationId}';
 
 /// The well-known providers whose endpoints need no configuration:
-/// Google, GitHub, Facebook and Okta.
+/// Google, GitHub, Facebook, Okta, and Apple (not in Spring).
 ///
 /// A registration named after one (or with `provider=<name>`) gets its
 /// endpoints, scopes and user name attribute from here, so the
@@ -28,7 +29,8 @@ const _defaultRedirectUrl = '{baseUrl}/{action}/oauth2/code/{registrationId}';
 ///     .build();
 /// ```
 ///
-/// Spring (Java): `CommonOAuth2Provider`, with the same URIs.
+/// Spring (Java): `CommonOAuth2Provider`, with the same URIs. Spring has
+/// no `APPLE`: [apple] is this package's addition.
 enum CommonOAuth2Provider {
   /// Google: OpenID Connect, scopes `openid profile email`.
   google,
@@ -42,7 +44,20 @@ enum CommonOAuth2Provider {
 
   /// Okta: OpenID Connect, scopes `openid profile email`; the endpoints
   /// come from the issuer.
-  okta;
+  okta,
+
+  /// Sign in with Apple: OpenID Connect, scopes `openid name email`,
+  /// `client_secret_post`, the response as a form post
+  /// ([ResponseMode.formPost], which Apple requires for `name` and
+  /// `email`), no user-info endpoint (the ID token holds `sub` and the
+  /// e-mail; the name comes once, in the first login's `user`).
+  ///
+  /// A server's client secret is a JWT it signs itself with the key of
+  /// its Apple developer account (`client-secret-jwt.*`, see
+  /// [JwtClientSecret]); an app on iOS or macOS signs in with the
+  /// system's sheet instead (`spring_boot_starter_flutter_security`).
+  /// Not in Spring's `CommonOAuth2Provider`.
+  apple;
 
   /// A builder for the registration [registrationId] with this provider's
   /// endpoints, scopes, authentication method and the redirect URI
@@ -86,6 +101,16 @@ enum CommonOAuth2Provider {
             .scope(['openid', 'profile', 'email'])
             .userNameAttributeName('sub')
             .clientName('Okta'),
+      apple =>
+        builder(ClientAuthenticationMethod.clientSecretPost)
+            .scope(['openid', 'name', 'email'])
+            .authorizationUri('https://appleid.apple.com/auth/authorize')
+            .tokenUri('https://appleid.apple.com/auth/token')
+            .jwkSetUri('https://appleid.apple.com/auth/keys')
+            .issuerUri('https://appleid.apple.com')
+            .userNameAttributeName('sub')
+            .responseMode(ResponseMode.formPost)
+            .clientName('Apple'),
     };
   }
 

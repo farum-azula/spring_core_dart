@@ -19,6 +19,7 @@
 //   security         spring_boot_starter_security affected (compared with
 //                    Spring Security itself)
 //   flutter_starter  spring_boot_starter_flutter affected
+//   flutter_security spring_boot_starter_flutter_security affected
 //   flutter_guide    example/flutter_guide affected, or the server guide
 //                    its end-to-end tests run against (incl. goldens)
 //   flutter          any Flutter package
@@ -35,6 +36,7 @@ import 'version.dart' as version;
 /// Flutter packages outside the pub workspace.
 const flutterPackages = [
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_security',
   'example/flutter_guide',
 ];
 
@@ -102,6 +104,7 @@ Future<void> main(List<String> args) async {
     }
     bool has(String package) => affected.contains(package);
     final starter = has('spring_boot_starter_flutter');
+    final security = has('spring_boot_starter_flutter_security');
     final server = has('example/server_guide');
     // The app's end-to-end tests run against the server guide: a change of
     // the server tests the app too.
@@ -116,8 +119,9 @@ Future<void> main(List<String> args) async {
         'server_guide=$server',
         'security=${has('spring_boot_starter_security')}',
         'flutter_starter=$starter',
+        'flutter_security=$security',
         'flutter_guide=$app',
-        'flutter=${starter || app}',
+        'flutter=${starter || security || app}',
         'family=${familyAffected(affected)}',
         '',
       ].join('\n'),
@@ -128,9 +132,9 @@ Future<void> main(List<String> args) async {
 
 /// Whether [affected] holds a published Dart package of the family: the
 /// applications of tool/check_app_dependencies.dart use them all (by path).
+/// The Flutter packages are checked in the `flutter` job instead.
 bool familyAffected(Set<String> affected) => version.family.any(
-  (package) =>
-      package != 'spring_boot_starter_flutter' && affected.contains(package),
+  (package) => !flutterPackages.contains(package) && affected.contains(package),
 );
 
 /// The packages [changed] affects, given each package's local

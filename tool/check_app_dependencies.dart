@@ -162,11 +162,10 @@ class GreetingController {
     'spring_boot_starter_oauth2_client',
     feature: '''
 @Service()
-class Account {
-  Account(this.login);
-  final OAuth2LoginService? login;
-
-  bool get loggedIn => login?.isLoggedIn ?? false;
+class Partner {
+  Partner(this.authorizedClients);
+  // Only with a registration.
+  final OAuth2AuthorizedClientManager? authorizedClients;
 }
 ''',
     featureTest: '''
@@ -180,13 +179,16 @@ class Account {
       overrides: [BeanOverride<HttpTransport>(MockHttpTransport())],
     );
 
-    test('registrations, the login service and the token store', () async {
+    test('registrations, the authorized clients and their manager', () async {
       final github = await sso
           .getBean<ClientRegistrationRepository>()
           .findByRegistrationId('github');
       expect(github?.clientId, 'gh');
-      expect(sso.getBean<Account>().loggedIn, isFalse);
-      expect(sso, hasSingleBean<TokenStore>());
+      expect(sso.getBean<Partner>().authorizedClients, isNotNull);
+      expect(
+        sso.getBean<OAuth2AuthorizedClientService>(),
+        isA<InMemoryOAuth2AuthorizedClientService>(),
+      );
       expect(sha256Base64Url('x'), hasLength(43));
     });
   });
@@ -302,9 +304,11 @@ void _write(String directory, String repository, _Starter starter) {
     ..createSync(recursive: true)
     ..writeAsStringSync(text);
 
+  // The Flutter packages need the Flutter SDK, which a Dart application
+  // cannot resolve, even as an unused override.
   final overrides = [
     for (final package in family.family)
-      if (package != 'spring_boot_starter_flutter')
+      if (!package.startsWith('spring_boot_starter_flutter'))
         '  $package:\n    path: $repository/$package',
   ].join('\n');
   file('pubspec.yaml', '''

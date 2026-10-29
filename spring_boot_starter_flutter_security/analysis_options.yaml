@@ -1,0 +1,29 @@
+# The package resolves outside the pub workspace (with the Flutter
+# SDK), without the workspace's very_good_analysis: it keeps the Dart
+# team's lints and the workspace's earlier rules for now.
+include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    - "**/*.spring.dart"
+    - build/**
+    - android/**
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - always_use_package_imports
+    - unawaited_futures
+    - curly_braces_in_flow_control_structures
+    - public_member_api_docs
+
+# The width CI checks with `dart format --set-exit-if-changed .`. An editor set
+# to another line length (Zed: lsp.dart.settings.lineLength) formats differently.
+formatter:
+  page_width: 80
+  # A trailing comma keeps a list one item per line (several beans:
+  # `final (\n  basket,\n  session,\n) = beans;`); without one, what fits
+  # goes on one line. docs/style.md
+  trailing_commas: preserve

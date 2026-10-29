@@ -157,6 +157,13 @@ The strategy behind the holder can be replaced
 context back as soon as `body` returns, so for an `async` body at its
 first `await`.
 
+To hear about logins and logouts, wrap the strategy in a
+`ListeningSecurityContextHolderStrategy` with
+`SecurityContextChangedListener`s (Spring Security's names): each
+`setContext` and `clearContext` hands them a `SecurityContextChangedEvent`
+with the contexts before and after. `spring_boot_starter_flutter_security`
+does this so that widgets follow the logged-in user.
+
 ## Users and passwords
 
 | Type | What it is | Spring |
@@ -257,6 +264,18 @@ annotations.
 - **The context is kept per `Zone`**, not per thread.
 - **Multi-factor authorities**: Spring Security 7 adds `FACTOR_PASSWORD`
   to users who logged in with a password; not here yet.
+
+Not there yet (the full list:
+[docs/security-spring-comparison.md](../docs/security-spring-comparison.md)):
+
+- **JSR-250** (`@RolesAllowed`), annotation templates with parameters,
+  `@AuthorizeReturnObject` and `@HandleAuthorizationDenied`.
+- **Authorization events** (`AuthorizationDeniedEvent`): only the
+  authentication events are published.
+- **ACLs**: `hasPermission` needs your own `PermissionEvaluator`.
+- **Users in a database or LDAP** (`JdbcUserDetailsManager`, LDAP
+  providers): declare your own `UserDetailsService`.
+- **Compromised password checking** (`CompromisedPasswordChecker`).
 
 How the packages are shown to be safe: [docs/security.md](../docs/security.md) and
 [roadmap/security_verification.md](../roadmap/security_verification.md).

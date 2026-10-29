@@ -16,15 +16,16 @@ export 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
 export 'package:spring_security_core/spring_auto_configuration.dart';
 
 /// The beans of OAuth 2.0 and OpenID Connect clients: the registrations of
-/// `spring.security.oauth2.client.*`, the token store, the authorized
-/// clients and their manager, the user services, the app login and the
-/// Feign token interceptor (`oauth2ClientAutoConfiguration`).
+/// `spring.security.oauth2.client.*`, the authorized clients and their
+/// manager, the token endpoint clients, the user services and the Feign
+/// token interceptor (`oauth2ClientAutoConfiguration`).
 ///
-/// It comes after the Flutter starter's module (`after`), so the Flutter
-/// starter's `TokenStore` and `AuthorizationBrowser` replace the defaults
-/// here; any other auto-configuration that declares them does the same
-/// with `before: ['springBootStarterOauth2ClientAutoConfiguration']`.
-@AutoConfigurationModule(after: ['springBootStarterFlutterAutoConfiguration'])
+/// Another auto-configuration that replaces one of them (the security
+/// starter's signature-checking `OidcIdTokenDecoder`, the Flutter security
+/// package's `OAuth2AuthorizedClientService` on the platform's secure
+/// storage) is registered before this one, with
+/// `before: ['springBootStarterOauth2ClientAutoConfiguration']`.
+@AutoConfigurationModule()
 final BeanModule springBootStarterOauth2ClientAutoConfiguration = BeanModule(
   'springBootStarterOauth2ClientAutoConfiguration',
   [...oauth2ClientAutoConfiguration],

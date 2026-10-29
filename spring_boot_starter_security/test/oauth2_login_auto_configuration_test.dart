@@ -38,12 +38,7 @@ ApplicationContextRunner _runner(
     .withAutoConfiguration(springBootStarterWebAutoConfiguration)
     .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
     .withAutoConfiguration(springSecurityCoreAutoConfiguration)
-    .withAutoConfiguration(
-      springBootStarterOauth2ClientAutoConfiguration,
-      const AutoConfigurationModule(
-        after: ['springBootStarterFlutterAutoConfiguration'],
-      ),
-    )
+    .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
     .withAutoConfiguration(
       springBootStarterSecurityAutoConfiguration,
       const AutoConfigurationModule(

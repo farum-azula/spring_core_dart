@@ -1,5 +1,5 @@
 import 'package:neon_books_app/src/api/models.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Turns the Admin form's texts into a checked [NewBook], the Spring way:
 /// a `DataBinder` binds the texts onto a `NewBook` (converting the price;

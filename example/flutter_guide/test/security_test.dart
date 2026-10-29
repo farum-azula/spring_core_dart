@@ -9,10 +9,8 @@ import 'package:neon_books_app/src/api/cookie_jar.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show HttpMethod;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_security_core/testing.dart';
 
 import 'support/app.dart';

@@ -44,6 +44,7 @@ const repositoryOnly = {
   'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_security',
 };
 
 /// Packages outside the pub workspace, with their own resolution (Flutter:
@@ -51,6 +52,7 @@ const repositoryOnly = {
 /// `--flutter`. The Flutter SDK's packages count as the SDK.
 const flutterPackages = [
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_security',
   'example/flutter_guide',
 ];
 
@@ -106,18 +108,25 @@ const allowedPackages = {
   'material_color_utilities': AllowedPackage(
     'Part of the Flutter SDK (package:flutter depends on it, pinned by the '
     "SDK); published by Google's material.io.",
-    onlyIn: {'spring_boot_starter_flutter', 'neon_books_app'},
+    onlyIn: {
+      'spring_boot_starter_flutter',
+      'spring_boot_starter_flutter_security',
+      'neon_books_app',
+    },
   ),
   'pointycastle': AllowedPackage(
     "THIRD-PARTY, to be removed: Bouncy Castle's Dart port (verified "
     'publisher bouncycastle.org), the signatures of JWTs and the password '
-    'hashes of the security packages, the SHA-256 of PKCE in the OAuth2 '
-    'client; cryptography must not be written by hand (docs/security.md). '
-    'See docs/dependencies.md.',
+    'hashes of the security packages, the SHA-256 of PKCE and the ES256 '
+    'DPoP proofs of the OAuth2 client; cryptography must not be written by hand (docs/security.md). '
+    'The Flutter guide lists it as a dev dependency only: its '
+    'integration test checks the proofs of the platform DPoP keys with a '
+    'verifier that is not the code tested. See docs/dependencies.md.',
     onlyIn: {
       'spring_security_core',
       'spring_boot_starter_oauth2_client',
       'spring_boot_starter_security',
+      'neon_books_app',
     },
   ),
   'node_preamble': AllowedPackage(

@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/settings/settings_page.dart';
 import 'package:neon_books_app/src/settings/theme_preview.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 import 'support/app.dart';
 import 'support/fake_server.dart';

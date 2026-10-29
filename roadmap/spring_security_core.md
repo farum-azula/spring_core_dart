@@ -50,7 +50,25 @@ secrets, which never belong in an app (see
 - **BCrypt** (`{bcrypt}`, Spring's default): only when a vetted Dart
   implementation exists; never written here by hand.
 - **Multi-factor authentication** (Spring Security 7's `FACTOR_*`
-  authorities, `@EnableMultiFactorAuthentication`).
+  authorities, `@EnableMultiFactorAuthentication`), with what it needs:
+  `Authentication.Builder`, `hasAllAuthorities` /
+  `AllAuthoritiesAuthorizationManager`, `AuthorizationManagerFactory`.
+- **From the comparison with Spring Security 7**
+  ([docs/security-spring-comparison.md](../docs/security-spring-comparison.md)),
+  not planned elsewhere yet:
+  - method security: JSR-250 (`@RolesAllowed`, `@PermitAll`,
+    `@DenyAll`), annotation templates with parameters
+    (`AnnotationTemplateExpressionDefaults`), `@AuthorizeReturnObject`,
+    `@HandleAuthorizationDenied`;
+  - authorization events (`AuthorizationDeniedEvent`,
+    `AuthorizationEventPublisher`), for audit logs;
+  - domain object ACLs (`AclService`, `AclPermissionEvaluator`);
+  - compromised password checking (`CompromisedPasswordChecker`, Have I
+    Been Pwned);
+  - users in a database (`JdbcUserDetailsManager`) and the principal in
+    queries (`?#{principal}`), with a data starter; LDAP once a Dart team
+    LDAP client exists;
+  - localized messages; a test helper like `@WithUserDetails`.
 - **The editor:** the language server checks `@PreAuthorize` expressions
   like other SpEL (names of arguments, beans).
 - **Flutter:** the logged-in user as a listenable for widgets, logout

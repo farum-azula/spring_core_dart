@@ -123,6 +123,33 @@ void _validateExchange(
   }
 }
 
+// The token response's parameters, plus the authorization response's own
+// (Sign in with Apple's `user`, posted on the first login only) under
+// names the token response does not use. Not signed: the user service may
+// show them, never identify the user by them.
+Map<String, Object?> _userRequestParameters(
+  OAuth2LoginAuthenticationToken login,
+  OAuth2AccessTokenResponse tokens,
+) => {
+  for (final MapEntry(:key, :value)
+      in login
+          .authorizationExchange
+          .authorizationResponse
+          .additionalParameters
+          .entries)
+    if (!_tokenParameterNames.contains(key)) key: value,
+  ...tokens.additionalParameters,
+};
+
+const Set<String> _tokenParameterNames = {
+  OAuth2ParameterNames.accessToken,
+  OAuth2ParameterNames.tokenType,
+  OAuth2ParameterNames.expiresIn,
+  OAuth2ParameterNames.refreshToken,
+  OAuth2ParameterNames.scope,
+  OidcParameterNames.idToken,
+};
+
 Future<OAuth2AccessTokenResponse> _exchange(
   OAuth2LoginAuthenticationToken login,
   OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> client,
@@ -192,7 +219,7 @@ final class OAuth2LoginAuthenticationProvider
       OAuth2UserRequest(
         login.clientRegistration,
         tokens.accessToken,
-        additionalParameters: tokens.additionalParameters,
+        additionalParameters: _userRequestParameters(login, tokens),
       ),
     );
     return OAuth2LoginAuthenticationToken.authenticated(
@@ -283,7 +310,7 @@ final class OidcAuthorizationCodeAuthenticationProvider
         registration,
         tokens.accessToken,
         idToken,
-        additionalParameters: tokens.additionalParameters,
+        additionalParameters: _userRequestParameters(login, tokens),
       ),
     );
     return OAuth2LoginAuthenticationToken.authenticated(
@@ -303,12 +330,18 @@ final class OidcAuthorizationCodeAuthenticationProvider
 /// For a request [requiresAuthenticationMatcher] matches:
 ///
 /// 1. it must be an authorization response: `code` and `state`, or
-///    `error` and `state` (else `invalid_request`);
-/// 2. the authorization request saved when the login started is taken
-///    from the [authorizationRequestRepository], by its `state`, and
-///    removed: without one (no login started in this browser, a wrong or
-///    replayed `state`), the login fails with
-///    `authorization_request_not_found`;
+///    `error` and `state` (else `invalid_request`), in the query of a
+///    `GET`, or in the `application/x-www-form-urlencoded` body of a
+///    `POST` (`response_mode=form_post`, at most 64 KB, nothing of the
+///    response in its query);
+/// 2. the authorization request saved when the login started is found
+///    in the [authorizationRequestRepository] by its `state`: without
+///    one (no login started in this browser, a wrong or replayed
+///    `state`), the login fails with `authorization_request_not_found`;
+///    the response must come the way that request asked for, a form post
+///    for `response_mode=form_post`, a `GET` otherwise (else
+///    `invalid_request`, and the saved request stays for the real
+///    callback); then it is removed, so a callback is accepted once;
 /// 3. the callback must come to the redirect URI of that request (a
 ///    callback for another registration fails with
 ///    `invalid_redirect_uri_parameter`: no mixed-up providers);
@@ -327,8 +360,20 @@ final class OidcAuthorizationCodeAuthenticationProvider
 /// reaches the browser; the log has the error code, never the code or a
 /// token. `oauth2Login()` adds it.
 ///
+/// The provider's form post is a cross-site `POST`: it carries the
+/// session cookie only when that cookie is `SameSite=None; Secure`
+/// (`server.servlet.session.cookie.same-site=none`, over HTTPS), and the
+/// starter's default is `Lax`. Without the cookie no saved request is
+/// found and the login fails (closed), with a warning in the log. The
+/// CSRF filter lets these posts through (`oauth2Login()` exempts the
+/// callback's `POST`): the `state`, bound to the session, is their CSRF
+/// protection (RFC 6749 §10.12).
+///
 /// Spring (Java): `OAuth2LoginAuthenticationFilter`; step 3 is this
-/// package's (Spring trusts the registration id of the saved request).
+/// package's (Spring trusts the registration id of the saved request),
+/// and so is the check of the method against the `response_mode` (Spring
+/// reads the parameters of any method, sends no `response_mode`, and
+/// leaves CSRF and the cookie to the application).
 final class OAuth2LoginAuthenticationFilter implements WebFilter {
   /// A filter for the callbacks at `filterProcessesUrl`
   /// (`/login/oauth2/code/*` by default), any method.
@@ -437,8 +482,29 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
       throw OAuth2AuthenticationException(error, error.toString());
     }
 
-    final authorizationResponse = OAuth2AuthorizationResponse.fromRedirect(
-      request.uri,
+    final posted = request.method == HttpMethod.post;
+    var current = request;
+    Map<String, List<String>> parameters;
+    if (posted) {
+      final (read, form) = await readFormParameters(
+        request,
+        maxLength: 64 * 1024,
+      );
+      current = read;
+      final query = request.queryParameters;
+      if (form == null ||
+          query.containsKey(OAuth2ParameterNames.state) ||
+          query.containsKey(OAuth2ParameterNames.code) ||
+          query.containsKey(OAuth2ParameterNames.error)) {
+        fail(OAuth2ErrorCodes.invalidRequest);
+      }
+      parameters = form;
+    } else {
+      parameters = request.queryParameters;
+    }
+    final authorizationResponse = OAuth2AuthorizationResponse.fromParameters(
+      parameters,
+      redirectUri: request.uri.replace(query: '').removeFragment().toString(),
     );
     bool present(String? value) => value != null && value.isNotEmpty;
     if (!present(authorizationResponse.state) ||
@@ -446,8 +512,29 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
             present(authorizationResponse.error))) {
       fail(OAuth2ErrorCodes.invalidRequest);
     }
+    final saved = await authorizationRequestRepository.loadAuthorizationRequest(
+      current,
+    );
+    if (saved == null) {
+      if (posted && current.getSession(create: false) == null) {
+        _warnAboutCrossSiteCookie();
+      }
+      fail(authorizationRequestNotFoundErrorCode);
+    }
+    final formPost = saved.responseMode == ResponseMode.formPost;
+    if (formPost != posted) {
+      // Left saved: a forged callback of the wrong kind cannot end the
+      // login in progress.
+      fail(
+        OAuth2ErrorCodes.invalidRequest,
+        formPost
+            ? 'The login asked for response_mode=form_post: the response '
+                  'must be posted'
+            : 'The login asked for the response in the redirect URI',
+      );
+    }
     final authorizationRequest = await authorizationRequestRepository
-        .removeAuthorizationRequest(request, response);
+        .removeAuthorizationRequest(current, response);
     if (authorizationRequest == null) {
       fail(authorizationRequestNotFoundErrorCode);
     }
@@ -470,7 +557,7 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
         'login',
       );
     }
-    final details = WebAuthenticationDetails.of(request);
+    final details = WebAuthenticationDetails.of(current);
     final login = OAuth2LoginAuthenticationToken.unauthenticated(
       registration,
       OAuth2AuthorizationExchange(authorizationRequest, authorizationResponse),
@@ -499,9 +586,24 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
         idToken: user is OidcUser ? user.idToken : null,
       ),
       authentication,
-      request,
+      current,
       response,
     );
     return authentication;
+  }
+
+  static bool _warnedAboutCookie = false;
+
+  static void _warnAboutCrossSiteCookie() {
+    if (_warnedAboutCookie) {
+      return;
+    }
+    _warnedAboutCookie = true;
+    _log.warning(
+      'An OAuth 2.0 form post callback came without a session: the '
+      "provider's cross-site POST carries the session cookie only when it "
+      'is SameSite=None; Secure '
+      '(server.servlet.session.cookie.same-site=none, over HTTPS)',
+    );
   }
 }

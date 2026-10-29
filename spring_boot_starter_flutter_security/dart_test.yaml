@@ -1,0 +1,4 @@
+tags:
+  # test/spa_keycloak_e2e_test.dart: the spa login against a running
+  # Keycloak (example/keycloak); skipped without it.
+  e2e:

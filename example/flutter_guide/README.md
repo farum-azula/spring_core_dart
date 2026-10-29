@@ -13,8 +13,8 @@ and it uses everything the family offers a Flutter app:
 - themes and texts from configuration files instead of code;
 - the server's REST API and a WebSocket as Dart interfaces;
 - the logged-in user and role checks with Spring Security, and single
-  sign-on with Keycloak (the system browser on devices, the server on
-  the web);
+  sign-on with Keycloak (the system's login window on devices, the
+  server on the web);
 - caching, scheduled work, validation and logging;
 - tests that need no server, and screenshots compared in CI.
 
@@ -22,6 +22,7 @@ Read it chapter by chapter. Each chapter says what it shows, which files
 to open, what to try and which test proves it. The packages' READMEs
 have the details:
 [`spring_boot_starter_flutter`](../../spring_boot_starter_flutter/README.md),
+[`spring_boot_starter_flutter_security`](../../spring_boot_starter_flutter_security/README.md),
 [`spring_boot_starter_feign`](../../spring_boot_starter_feign/README.md),
 [`spring_boot_starter_websocket`](../../spring_boot_starter_websocket/README.md),
 [`spring_security_core`](../../spring_security_core/README.md),
@@ -389,7 +390,7 @@ abstract interface class CatalogClient {
 
 - **The session.** The server keeps the user in an HTTP session and
   protects `POST`, `PUT` and `DELETE` with a CSRF token in the
-  `XSRF-TOKEN` cookie. A browser would handle both; the app does it
+  `XSRF-TOKEN` cookie. A browser would handle both; a native app does it
   itself. `SessionTransport` (`lib/src/api/session_transport.dart`)
   wraps the network: it sends and stores the cookies of the `CookieJar`
   (`lib/src/api/cookie_jar.dart`) and copies the token into the
@@ -399,17 +400,18 @@ abstract interface class CatalogClient {
   Feign client uses. Only requests to the server (`api.base-url`) get
   the session: the Keycloak login of chapter 7 goes through the same
   bean, and the server's cookies are none of Keycloak's business.
-- **The session in a browser.** The browser keeps the cookies itself and
-  hides the session cookie (`HttpOnly`) from the app. The page
-  (localhost:5050) and the server (localhost:8080) are two origins of one
-  site, so `fetch` must be told to send cookies to the server:
-  `platformHttpTransport(credentials: FetchCredentials.include)` (the
-  server allows it, CORS with credentials). The CSRF cookie is no
-  `HttpOnly` and cookies ignore ports, so the page reads the server's
-  `XSRF-TOKEN` (`document.cookie`, through `BrowserPage`,
-  `lib/src/api/browser_page.dart`, a `web` profile bean on
-  `dart:js_interop`), and `BrowserSessionTransport` sends it as
-  `X-XSRF-TOKEN`. The form login works in a browser this way too.
+- **The session in a browser: the starter's.** The browser keeps the
+  cookies itself and hides the session cookie (`HttpOnly`) from the app,
+  so on the web the app declares no transport of its own (both beans of
+  `ApiConfig` are `@Profile('!web')`) and the starter's is used: the
+  browser's `fetch`, told to send the cookies to the server because it is
+  another origin than the page (`spring.flutter.security.web.server-url=${api.base-url}`
+  in `application-web.properties`; the server allows it, CORS with
+  credentials), and `CsrfCookieHttpTransport`, which copies the server's
+  `XSRF-TOKEN` cookie into the `X-XSRF-TOKEN` header of unsafe requests
+  to that server only (the page reads the cookie: it is no `HttpOnly`,
+  and cookies ignore ports). The form login works in a browser this way
+  too.
 - **The chat's handshake** carries the session cookie:
   `SupportHandshake` (`lib/src/api/support_handshake.dart`) is a
   `WebSocketHandshakeInterceptor` bean.
@@ -440,6 +442,13 @@ the Admin form).
 
 ## 7. Login & roles
 
+The app lists one package for all of it,
+[`spring_boot_starter_flutter_security`](../../spring_boot_starter_flutter_security/README.md):
+it brings and re-exports the Flutter starter, the OAuth2 client and
+`spring_security_core`, and adds the platform code of logins and secrets
+(an app without a login lists only the Flutter starter and carries none
+of it).
+
 - **Logging in.** The Login screen (`lib/src/account/login_page.dart`)
   calls `Session.login`. `Session` asks Spring Security's
   `AuthenticationManager`, which `spring_security_core` builds around the
@@ -462,6 +471,10 @@ the Admin form).
   `AccessDeniedException`; ordering without a login, an
   `AuthenticationCredentialsNotFoundException`.
 - The Admin entry of More appears for admins only (`session.isAdmin`).
+  `Session` tells the widgets itself (a `@ChangeNotifierComponent`),
+  because it also runs the logins; an app without such a bean gets the
+  same from the package's `PrincipalNotifier`: `context.principal`,
+  `PrincipalBuilder` and `PrincipalView(hasRole: 'ADMIN', ...)`.
 - **Logging out** (the account menu) posts `/api/logout`, clears the
   `SecurityContextHolder` and the cookies, and publishes `LoggedOut`: the
   chat closes its socket and the basket empties.
@@ -487,14 +500,15 @@ login happens depends on the platform, for the security of the tokens:
 
 | Platform | Who logs in | The tokens | The server knows the user by |
 |---|---|---|---|
-| iOS, Android, macOS | the app: `OAuth2LoginService`, a public client with PKCE, Keycloak's page in the system browser (`ASWebAuthenticationSession`, a Custom Tab), back to `books.neon.app:/oauth2/callback` | the platform's secure storage (Keychain, Keystore) | `Authorization: Bearer` |
-| Windows, Linux | the same, back to `http://127.0.0.1:<free port>/oauth2/callback` (a loopback server of the app) | DPAPI, libsecret | `Authorization: Bearer` |
-| Web | the server (`oauth2Login()`): the page goes to `<server>/oauth2/authorization/keycloak` and comes back | on the server only; the page holds the `HttpOnly` session cookie | the session |
+| iOS, Android, macOS | the app: `OAuth2LoginService` (`NativeOAuth2LoginService`), a public client with PKCE, Keycloak's page in the system's login window (`ASWebAuthenticationSession`'s Safari sheet, a Chrome Custom Tab), back to `books.neon.app:/oauth2/callback` | the platform's secure storage (Keychain, Keystore); the DPoP key in the Secure Enclave / Keychain or the Android Keystore | `Authorization: DPoP` and a proof (Keycloak announces DPoP), else `Bearer` |
+| Windows, Linux | the same, back to `http://127.0.0.1:<free port>/oauth2/callback` (a loopback server of the app) | DPAPI, libsecret (the DPoP key too) | `Authorization: DPoP` and a proof, else `Bearer` |
+| Web | the server (`oauth2Login()`): `OAuth2LoginService` (`ServerOAuth2LoginService`) sends the page to `<server>/oauth2/authorization/keycloak`, and it comes back | on the server only; the page holds the `HttpOnly` session cookie | the session |
 
 An app cannot keep a secret (anyone can read it out of the binary), so
 it logs in without one; PKCE makes a code caught by another app useless.
-The system browser, never a WebView, shows Keycloak's page: the app
-cannot read the password, and a login of the browser is reused. A web
+The system's login window, never a WebView, shows Keycloak's page: the
+app cannot read the password, and a login the system already has is
+reused. A web
 page has no safe place at all for tokens (any injected script reads
 them), so the server logs the web app in and keeps them. The reasons in
 full: [the roadmap](../../roadmap/spring_boot_starter_oauth2_client.md#which-flow-where-the-security-decision).
@@ -504,41 +518,62 @@ full: [the roadmap](../../roadmap/spring_boot_starter_oauth2_client.md#which-flo
   which the Login screen reads. The native apps' registration is
   `spring.security.oauth2.client.registration.keycloak.*` in a document
   of `application.properties` guarded by `on-profile=sso & !web` (the
-  web has none, so it gets no login service and no tokens); another
+  web has none: no tokens in the browser; its login service is the
+  server's, configured by `spring.flutter.security.web.*` in
+  `application-web.properties`); another
   document, `sso & (windows | linux)`, changes the redirect to the
   loopback. The issuer is `http://localhost:8180/realms/neon` everywhere:
   the server accepts only tokens of that issuer, so the Android emulator
   reaches Keycloak through `adb reverse tcp:8180 tcp:8180` rather than
   `10.0.2.2`.
-- **The login.** `Session.signInWithKeycloak`: on a native platform
-  `OAuth2LoginService.login('keycloak')` (from
-  `spring_boot_starter_oauth2_client`; the Flutter starter supplies the
-  secure storage and the system browser); on the web it navigates the
-  page (`BrowserPage.open`). The user is named by `preferred_username`
+- **The login.** `Session.signInWithKeycloak` calls
+  `OAuth2LoginService.login('keycloak')` of
+  `spring_boot_starter_flutter_security`, the same call on every
+  platform: a native app logs in itself, with its secure storage and
+  login window, on the registration of
+  `spring_boot_starter_oauth2_client`; the web app leaves for the
+  server's `/oauth2/authorization/keycloak` (the result is `null`, the
+  app starts again after the login). The user is named by `preferred_username`
   (`user-name-attribute`), and `KeycloakRolesMapper`
   (`lib/src/account/keycloak.dart`), a `GrantedAuthoritiesMapper` bean,
   turns the realm roles of the `roles` claim into `ROLE_USER` and
   `ROLE_ADMIN`.
 - **Tokens on the calls.** `KeycloakTokenInterceptor`, a
-  `RequestInterceptor` bean, puts `Authorization: Bearer` with a fresh
-  token (refreshed a minute before it expires) on every Feign call of a
-  Keycloak user. Not `spring.cloud.openfeign.oauth2.enabled`: its
+  `RequestInterceptor` bean, puts the token (refreshed a minute before
+  it expires) on every Feign call of a Keycloak user. Keycloak announces
+  DPoP in its metadata, and the registration's `dpop` is `auto` by
+  default, so the tokens are bound to the app's key (the `DPoPKey` bean
+  of `spring_boot_starter_flutter_security`: the Secure Enclave, the
+  Android Keystore, the `SecretStore` on desktops): each call carries
+  `Authorization: DPoP <token>` and a fresh proof, and a stolen token is
+  useless without the device. Not `spring.cloud.openfeign.oauth2.enabled`: its
   interceptor, as Spring Cloud OpenFeign's, fails every call made while
   nobody is logged in, and the catalog is public. The support chat's
-  handshake carries the token too (`SupportHandshake`). A 401 to a token
+  handshake carries the token too (`SupportHandshake`, with
+  `OAuth2AccessTokenHeaders`: a DPoP token gets a proof for `GET` of the
+  `http(s)` form of the `ws://` URL). A 401 to a token
   that looked valid marks it expired (`OAuth2AccessTokenErrorDecoder`).
-- **Restarts.** `Session.restore` runs at `ApplicationReadyEvent`: a
-  native app brings the user back from the stored tokens
-  (`OAuth2LoginService.restore`, offline too); the web app asks the
-  server `/api/me` with its cookie, which is how it finds the user after
-  Keycloak sent the page back.
-- **Logout.** A native app revokes its tokens at Keycloak, forgets them
-  and ends Keycloak's session in the system browser
-  (`logout(endSession: true)`, back to `books.neon.app:/oauth2/logout`).
-  The web app posts `/api/logout`; the server answers with Keycloak's
-  logout URL, and the page goes there and comes back logged out.
-- **Android** catches the redirect with the Flutter starter's
-  `RedirectReceiverActivity`, declared with the scheme `books.neon.app`
+  The logout deletes the DPoP key; the next login makes a new one.
+- **Restarts.** `Session.restore` runs at `ApplicationReadyEvent` and
+  calls `OAuth2LoginService.restore`: a native app brings the user back
+  from the stored tokens (offline too); the web app asks the server's
+  `/api/me` with its cookie (`spring.flutter.security.web.user-endpoint`),
+  which is how it finds the user after Keycloak sent the page back, or
+  after a reload. `/api/me` answers `name`, `authorities` and, after a
+  Keycloak login, `registrationId`: the starter's contract (a form login
+  of the server is restored the same way).
+- **Logout.** A native app revokes its tokens at Keycloak and forgets
+  them, without a window: Keycloak's session in the browser stays, so
+  the next login may not ask for the password. `Session.logout(endSession:
+  true)` also ends Keycloak's session in the login window (back to
+  `books.neon.app:/oauth2/logout`), which iOS and macOS announce with
+  their "wants to use localhost to Sign In" prompt.
+  The web app's `OAuth2LoginService.logout` posts `/api/logout` with the
+  CSRF token (`spring.flutter.security.web.logout-url`); the server
+  answers with Keycloak's logout URL (`{"logoutUrl": ...}`), and the page
+  goes there and comes back logged out.
+- **Android** catches the redirect with
+  `spring_boot_starter_flutter_security`'s `RedirectReceiverActivity`, declared with the scheme `books.neon.app`
   in `android/app/src/main/AndroidManifest.xml`. iOS and macOS need
   nothing: the login session waits for the redirect URI's scheme.
 
@@ -548,12 +583,59 @@ In a browser at `http://localhost:5050/`, the same button leaves for
 Keycloak and comes back logged in.
 
 Test: `test/sso_test.dart` (Keycloak played by the fake server, the
-system browser by a fake that logs in at once: the button, root's roles,
+login window by a fake that logs in at once: the button, root's roles,
 the Bearer token on calls and none on anonymous ones, no server cookie
 sent to Keycloak, a closed login page, a restart that restores the user,
-the logout's revocation and end of session; and the web: the navigation
-to the server, the user after the return, the CSRF header from the
-page's cookie, the logout URL).
+the logout's revocation and end of session; and the web, through the
+starter with a fake page: the navigation to the server, the user after
+the return (a Keycloak and a form login), the CSRF header from the
+page's cookie, the logout URL; and the optional spa profile below).
+
+#### The web app without a server login (spa mode)
+
+The web app above lets the server log in (server mode, the default and
+the stronger choice: no token in the browser). An app without a server
+of its own logs in from the browser instead
+(`spring.flutter.security.web.mode=spa`): a public client with PKCE, the
+page as the redirect URI, the tokens in the tab's memory, DPoP with a
+WebCrypto key the page cannot export. The optional `spa` profile shows it
+with the same code (`Session` calls the same `OAuth2LoginService`):
+
+```sh
+flutter run -d chrome --dart-define=SPRING_PROFILES_ACTIVE=sso,spa
+```
+
+- `lib/resources/application-spa.properties`: the mode, the registration
+  of Keycloak's public browser client `neon-web` (redirect URI
+  `{baseUrl}/`, the page; `dpop=auto`), the post-logout address, and the
+  page's Content Security Policy for a production host. The dev server
+  reads only the files the build sees (`application-web.properties` and
+  profiles named in files), so this run gets no CSP header; name the
+  profile in a file (`spring.profiles.active=sso,spa` in
+  `application-web.properties`) to have `flutter run` send it.
+- Keycloak's `neon-web` client allows the page's origin
+  (`http://localhost:5050`) on its token, user info and revocation
+  endpoints (CORS) and the page as redirect and post-logout URI; a
+  realm imported before it existed needs it added (import
+  `example/keycloak/neon-realm.json` again).
+
+Try: "Sign in with Keycloak", `ada` / `ada-secret` at Keycloak, back on
+the page logged in. Reload: a short trip to Keycloak (`prompt=none`,
+nothing shown) and the page is logged in again. "Log out": Keycloak's
+logout, back on the page; a reload stays logged out.
+
+What the profile does not do: the calls to the server guide stay
+anonymous. Sending the access token needs the token interceptor of
+`KeycloakConfig` on the web too (its profile is `sso & !web`), and the
+server's CORS must allow the `Authorization` and `DPoP` headers (the
+server guide allows the session's `X-XSRF-TOKEN`). The roles mapper of
+`KeycloakConfig` is native-only as well, so Admin stays hidden.
+
+Test: `test/sso_test.dart`, group "the web app in spa mode": the profile
+starts the spa login, "Sign in with Keycloak" leaves for Keycloak as
+`neon-web` with PKCE, back to the page, nothing in `localStorage`. The
+login against the real Keycloak:
+`spring_boot_starter_flutter_security/test/spa_keycloak_e2e_test.dart`.
 
 ## 8. Cache & scheduling
 
@@ -770,7 +852,7 @@ else `204`.
 | PUT | `/api/books/{isbn}/cover` | ADMIN | upload a cover (multipart `@RequestPart MultipartFile`) |
 | DELETE | `/api/books/{isbn}` | ADMIN | remove (method security `@PreAuthorize` on the service) |
 | GET | `/api/stock/events` | anyone | server-sent events `StockChanged {isbn, available}` (`EventStream` or `SseEmitter`), `Last-Event-ID` resume |
-| GET | `/api/me` | logged in | `{name, roles}` (any kind of login) |
+| GET | `/api/me` | logged in | `{name, roles, authorities, registrationId?}` (any kind of login) |
 | GET | `/api/basket` | logged in | the user's basket (kept in the `HttpSession`) |
 | PUT | `/api/basket/items/{isbn}` | logged in | set a quantity `{quantity}` |
 | POST | `/api/orders` | logged in | order the basket: 201 `Order`; publishes `OrderPlaced` |
@@ -792,7 +874,7 @@ works:
 | a catalog page | `{"items": [book...], "page", "size", "total"}` (`page` from 0; without `size`, the length of the page) |
 | a new book (`POST /api/books`) | `{"isbn", "title", "author", "price"}` |
 | a stock change (SSE data) | `{"isbn", "available"}` |
-| `/api/me` | `{"name", "roles": ["USER", "ADMIN"]}` (`ROLE_USER` works too) |
+| `/api/me` | `{"name", "roles": ["USER", "ADMIN"], "authorities": ["ROLE_USER", ...], "registrationId"}` (`ROLE_USER` works too in `roles`; the web login reads `name`, `authorities` and `registrationId`) |
 | `POST /api/logout` after a Keycloak login of the web app | `{"logoutUrl"}` |
 | the basket | `{"items": [{"isbn", "title", "quantity"}]}` |
 | a quantity (`PUT /api/basket/items/{isbn}`) | `{"quantity"}`, 0 removes the line |

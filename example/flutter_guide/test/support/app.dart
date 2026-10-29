@@ -2,9 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_security_core/spring_security_core.dart'
-    show SecurityContextHolder;
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 import 'fake_server.dart';
 
@@ -96,8 +94,9 @@ Future<void> openMore(
 Future<void> logIn(WidgetTester tester, String user, String password) async {
   await tester.tap(find.widgetWithText(TextButton, 'Log in'));
   await tester.pumpAndSettle();
-  await tester.enterText(find.byKey(const Key('login-username')), user);
-  await tester.enterText(find.byKey(const Key('login-password')), password);
+  // The starter's LoginForm: its fields by their labels.
+  await tester.enterText(find.widgetWithText(TextField, 'User name'), user);
+  await tester.enterText(find.widgetWithText(TextField, 'Password'), password);
   await tester.tap(find.widgetWithText(FilledButton, 'Log in'));
   await tester.pumpAndSettle();
 }

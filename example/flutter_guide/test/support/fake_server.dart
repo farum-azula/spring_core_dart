@@ -2,9 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:neon_books_app/main.spring.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
-import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 
 /// The books of the fake server.
 const books = [
@@ -46,6 +45,23 @@ class FakeServer {
   /// session transport (the bean `networkTransport`), and the sockets.
   List<BeanOverride<Object>> get overrides => [
     BeanOverride<HttpTransport>(http, name: 'networkTransport'),
+    BeanOverride<WebSocketTransport>(sockets),
+  ];
+
+  /// [overrides] for the web app (the `web` profile) on [page]: there the
+  /// starter's `httpTransport` sends the requests, the browser's `fetch`
+  /// with the CSRF token of the page's cookie; here the CSRF token goes on
+  /// to the fake network.
+  List<BeanOverride<Object>> webOverrides(BrowserPage page) => [
+    BeanOverride<HttpTransport>(
+      CsrfCookieHttpTransport(
+        http,
+        page: page,
+        server: Uri.parse('http://localhost:8080'),
+      ),
+      name: 'httpTransport',
+    ),
+    BeanOverride<BrowserPage>(page),
     BeanOverride<WebSocketTransport>(sockets),
   ];
 

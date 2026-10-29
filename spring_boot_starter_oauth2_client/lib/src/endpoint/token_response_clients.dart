@@ -1,12 +1,19 @@
 import 'dart:convert';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' show SpringLog;
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/parameter_names.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/tokens.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_nonces.dart';
+import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_proof_builder.dart';
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/access_token_response.dart';
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/authorization_request.dart';
+import 'package:spring_boot_starter_oauth2_client/src/endpoint/jwt_client_secret.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
+
+const _log = SpringLog('spring.security.oauth2.client.endpoint');
 
 /// What every request to the token endpoint has: the registration (the
 /// client and the provider) and the grant.
@@ -110,31 +117,55 @@ abstract interface class OAuth2AccessTokenResponseClient<
 }
 
 /// The base of the token response clients: the form, the client
-/// authentication and the answer, on the [HttpTransport].
+/// authentication, the DPoP proof and the answer, on the [HttpTransport].
 ///
 /// The client authenticates as its registration says:
 /// `client_secret_basic` puts `client_id:client_secret` in HTTP Basic,
 /// each form-urlencoded first (RFC 6749 §2.3.1, as Spring does);
 /// `client_secret_post` puts both in the form; `none` puts only the
-/// `client_id` in the form. Other methods fail.
+/// `client_id` in the form. Other methods fail. The secret is the
+/// registration's, or what the [clientSecretResolver] answers for it
+/// (Sign in with Apple's JWT, [JwtClientSecret]).
+///
+/// With a [dPoPKey] and a registration that uses DPoP
+/// ([ClientRegistration.usesDPoP]), and for the refresh of a DPoP token,
+/// each request carries a `DPoP` proof for `POST` to the token endpoint
+/// (RFC 9449 §5). When the provider answers `use_dpop_nonce` with a
+/// `DPoP-Nonce` header, the request is sent once more with that nonce;
+/// the last nonce of each provider goes into the next proof. The provider
+/// may still issue a `Bearer` token (RFC 9449 §5 allows it): it is kept as
+/// such. A `DPoP` token without a proof sent is refused
+/// (`invalid_token_response`): it could not be used.
 abstract class AbstractTokenResponseClient<
   T extends AbstractOAuth2AuthorizationGrantRequest
 >
     implements OAuth2AccessTokenResponseClient<T> {
   /// A client sending its requests through [transport]; `parameters`
   /// adds form parameters to each request (it cannot replace the
-  /// standard ones), `clock` gives the current time.
+  /// standard ones), `clock` gives the current time, [dPoPKey] signs the
+  /// DPoP proofs (none without it), [clientSecretResolver] gives secrets
+  /// that are not fixed.
   AbstractTokenResponseClient(
     this.transport, {
     this._parameters,
     DateTime Function()? clock,
+    this.dPoPKey,
+    this.clientSecretResolver,
   }) : _clock = clock ?? DateTime.now;
 
   /// The HTTP transport.
   final HttpTransport transport;
 
+  /// The key of the DPoP proofs, or `null` for `Bearer` tokens only.
+  final DPoPKey? dPoPKey;
+
+  /// Gives the client secret of a registration when it is not its fixed
+  /// one, or `null` for the fixed secrets only.
+  final OAuth2ClientSecretResolver? clientSecretResolver;
+
   final Map<String, String> Function(T request)? _parameters;
   final DateTime Function() _clock;
+  final DPoPNonces _nonces = DPoPNonces();
 
   /// The grant's own form parameters (`grant_type` and the rest).
   Map<String, String> grantParameters(T request);
@@ -154,28 +185,62 @@ abstract class AbstractTokenResponseClient<
         ),
       );
     }
-    final headers = HttpHeaders({
-      HttpHeaders.acceptHeader: '${MediaType.applicationJson};charset=UTF-8',
-      HttpHeaders.contentTypeHeader:
-          '${MediaType.applicationFormUrlencoded};charset=UTF-8',
-    });
+    final url = Uri.parse(tokenUri);
+    final key = dPoPKey;
+    final proofs = key != null && _dPoP(grantRequest, key)
+        ? DPoPProofBuilder(key, clock: _clock)
+        : null;
     final form = <String, String>{
       ...?_parameters?.call(grantRequest),
       ...grantParameters(grantRequest),
-      ...clientAuthentication(registration, headers),
     };
-    final HttpResponse response;
-    try {
-      response = await transport.send(
+    final secret = await _clientSecret(registration);
+    Future<HttpResponse> send(String? nonce) async {
+      final headers = HttpHeaders({
+        HttpHeaders.acceptHeader: '${MediaType.applicationJson};charset=UTF-8',
+        HttpHeaders.contentTypeHeader:
+            '${MediaType.applicationFormUrlencoded};charset=UTF-8',
+      });
+      final body = {
+        ...form,
+        ...clientAuthentication(registration, headers, clientSecret: secret),
+      };
+      if (proofs != null) {
+        headers.set(
+          dPoPHeader,
+          await proofs.build(method: 'POST', url: url, nonce: nonce),
+        );
+      }
+      final response = await transport.send(
         HttpRequest(
           method: HttpMethod.post,
-          url: Uri.parse(tokenUri),
+          url: url,
           headers: headers,
-          body: utf8.encode(formUrlEncodeAll(form)),
+          body: utf8.encode(formUrlEncodeAll(body)),
           // Credentials and codes never follow a redirect elsewhere.
           followRedirects: false,
         ),
       );
+      return response;
+    }
+
+    HttpResponse response;
+    try {
+      response = await send(_nonces.of(url));
+      if (proofs != null) {
+        // The nonce of this answer, never an older one: asked again, the
+        // request goes once more, not in a loop.
+        final nonce = _nonces.remember(url, response.headers);
+        if (nonce != null && tokenEndpointWantsNonce(response)) {
+          _log.debug(
+            "The token endpoint of registration '"
+            "${registration.registrationId}' asked for a DPoP nonce; sending "
+            'the request again with it',
+          );
+          response = await send(nonce);
+          _nonces.remember(url, response.headers);
+        }
+      }
     } on HttpTransportException catch (e) {
       throw OAuth2AuthorizationException(
         OAuth2Error(
@@ -187,28 +252,76 @@ abstract class AbstractTokenResponseClient<
         e,
       );
     }
-    return OAuth2AccessTokenResponse.fromHttpResponse(
+    final tokens = OAuth2AccessTokenResponse.fromHttpResponse(
       response,
       requestedScopes: requestedScopes(grantRequest),
       now: _clock(),
     );
+    if (proofs == null && tokens.accessToken.tokenType == TokenType.dpop) {
+      throw OAuth2AuthorizationException(
+        const OAuth2Error(
+          OAuth2ErrorCodes.invalidTokenResponse,
+          'An error occurred while attempting to retrieve the OAuth 2.0 '
+          'Access Token Response: a DPoP token was issued although no DPoP '
+          'proof was sent',
+        ),
+      );
+    }
+    return tokens;
   }
+
+  // The resolver's secret for the methods that send one. A resolver that
+  // has a secret for a registration sending none is a configuration
+  // mistake: refused, never silently sent without it.
+  Future<String?> _clientSecret(ClientRegistration registration) async {
+    final resolver = clientSecretResolver;
+    if (resolver == null) {
+      return null;
+    }
+    final method = registration.clientAuthenticationMethod;
+    if (method == ClientAuthenticationMethod.clientSecretBasic ||
+        method == ClientAuthenticationMethod.clientSecretPost) {
+      return await resolver.resolve(registration);
+    }
+    if (resolver is JwtClientSecretResolver &&
+        resolver.handles(registration.registrationId)) {
+      throw OAuth2AuthorizationException(
+        OAuth2Error(
+          OAuth2ErrorCodes.invalidClient,
+          'Client [${registration.registrationId}] has a client secret JWT '
+          'but uses [$method]: set its client-authentication-method to '
+          'client_secret_post (or client_secret_basic)',
+        ),
+      );
+    }
+    return null;
+  }
+
+  // DPoP when the registration uses it, and always to refresh a DPoP
+  // token: its refresh token is bound to the key too (RFC 9449 §5).
+  bool _dPoP(T request, DPoPKey key) =>
+      request.clientRegistration.usesDPoP(key) ||
+      (request is OAuth2RefreshTokenGrantRequest &&
+          request.accessToken.tokenType == TokenType.dpop);
 }
 
 /// Puts the client authentication of [registration] into [headers] (HTTP
-/// Basic) or returns it as form parameters.
+/// Basic) or returns it as form parameters; [clientSecret] replaces the
+/// registration's secret when given.
 ///
 /// Throws an [OAuth2AuthorizationException] for a method other than
 /// `client_secret_basic`, `client_secret_post` and `none`.
 Map<String, String> clientAuthentication(
   ClientRegistration registration,
-  HttpHeaders headers,
-) {
+  HttpHeaders headers, {
+  String? clientSecret,
+}) {
   final method = registration.clientAuthenticationMethod;
+  final secret = clientSecret ?? registration.clientSecret;
   if (method == ClientAuthenticationMethod.clientSecretBasic) {
     final credentials =
         '${formUrlEncode(registration.clientId)}:'
-        '${formUrlEncode(registration.clientSecret)}';
+        '${formUrlEncode(secret)}';
     headers.set(
       HttpHeaders.authorizationHeader,
       'Basic ${base64Encode(utf8.encode(credentials))}',
@@ -218,7 +331,7 @@ Map<String, String> clientAuthentication(
   if (method == ClientAuthenticationMethod.clientSecretPost) {
     return {
       OAuth2ParameterNames.clientId: registration.clientId,
-      OAuth2ParameterNames.clientSecret: registration.clientSecret,
+      OAuth2ParameterNames.clientSecret: secret,
     };
   }
   if (method == ClientAuthenticationMethod.none) {
@@ -236,7 +349,8 @@ Map<String, String> clientAuthentication(
 
 /// Exchanges an authorization code for tokens: `grant_type=
 /// authorization_code`, the `code`, the `redirect_uri` the authorization
-/// request actually used, and the PKCE `code_verifier`.
+/// request actually used (none when it had none, as a code of Sign in
+/// with Apple's sheet), and the PKCE `code_verifier`.
 ///
 /// Spring (Java): `RestClientAuthorizationCodeTokenResponseClient`
 /// (`DefaultAuthorizationCodeTokenResponseClient` before Spring Security
@@ -248,6 +362,8 @@ class DefaultAuthorizationCodeTokenResponseClient
     super.transport, {
     super.parameters,
     super.clock,
+    super.dPoPKey,
+    super.clientSecretResolver,
   });
 
   @override
@@ -264,11 +380,13 @@ class DefaultAuthorizationCodeTokenResponseClient
         ),
       );
     }
+    final redirectUri = exchange.authorizationRequest.redirectUri;
     return {
       OAuth2ParameterNames.grantType: request.grantType.value,
       OAuth2ParameterNames.code: code,
-      OAuth2ParameterNames.redirectUri:
-          exchange.authorizationRequest.redirectUri,
+      // RFC 6749 §4.1.3: required when the authorization request had one;
+      // a code of Sign in with Apple's sheet was issued without.
+      if (redirectUri.isNotEmpty) OAuth2ParameterNames.redirectUri: redirectUri,
       PkceParameterNames.codeVerifier:
           ?exchange.authorizationRequest.codeVerifier,
     };
@@ -292,6 +410,8 @@ class DefaultRefreshTokenTokenResponseClient
     super.transport, {
     super.parameters,
     super.clock,
+    super.dPoPKey,
+    super.clientSecretResolver,
   });
 
   @override
@@ -331,6 +451,8 @@ class DefaultClientCredentialsTokenResponseClient
     super.transport, {
     super.parameters,
     super.clock,
+    super.dPoPKey,
+    super.clientSecretResolver,
   });
 
   @override
@@ -345,91 +467,4 @@ class DefaultClientCredentialsTokenResponseClient
   @override
   Set<String> requestedScopes(OAuth2ClientCredentialsGrantRequest request) =>
       request.clientRegistration.scopes;
-}
-
-/// Revokes tokens at the provider (RFC 7009), so a token stolen after
-/// logout is worthless.
-///
-/// The app logout calls it for the refresh and the access token when the
-/// provider's metadata has a `revocation_endpoint`. The client
-/// authenticates as at the token endpoint. A refusal is reported as an
-/// [OAuth2AuthorizationException]; the logout goes on anyway.
-///
-/// ```dart
-/// await revocation.revoke(registration, authorizedClient.refreshToken!);
-/// ```
-///
-/// Spring Security has no such client (its servers forget tokens with the
-/// session).
-class OAuth2TokenRevocationClient {
-  /// A client sending through [transport].
-  OAuth2TokenRevocationClient(this.transport);
-
-  /// The HTTP transport.
-  final HttpTransport transport;
-
-  /// Revokes [token] at the `revocation_endpoint` of [registration]; does
-  /// nothing when the provider has none. Returns whether a request was
-  /// sent and accepted (HTTP 200).
-  ///
-  /// Throws an [OAuth2AuthorizationException] when the provider refused
-  /// or could not be reached.
-  Future<bool> revoke(
-    ClientRegistration registration,
-    AbstractOAuth2Token token,
-  ) async {
-    final endpoint = registration.providerDetails.revocationEndpoint;
-    if (endpoint == null) {
-      return false;
-    }
-    final headers = HttpHeaders({
-      HttpHeaders.contentTypeHeader:
-          '${MediaType.applicationFormUrlencoded};charset=UTF-8',
-    });
-    final form = {
-      OAuth2ParameterNames.token: token.tokenValue,
-      OAuth2ParameterNames.tokenTypeHint: token is OAuth2RefreshToken
-          ? OAuth2ParameterNames.refreshToken
-          : OAuth2ParameterNames.accessToken,
-      ...clientAuthentication(registration, headers),
-    };
-    final HttpResponse response;
-    try {
-      response = await transport.send(
-        HttpRequest(
-          method: HttpMethod.post,
-          url: Uri.parse(endpoint),
-          headers: headers,
-          body: utf8.encode(formUrlEncodeAll(form)),
-          // Credentials and codes never follow a redirect elsewhere.
-          followRedirects: false,
-        ),
-      );
-    } on HttpTransportException catch (e) {
-      throw OAuth2AuthorizationException(
-        OAuth2Error(
-          OAuth2ErrorCodes.serverError,
-          'The token could not be revoked: ${e.message}',
-        ),
-        null,
-        e,
-      );
-    }
-    if (response.isSuccess) {
-      return true;
-    }
-    Object? json;
-    try {
-      json = jsonDecode(utf8.decode(response.bodyBytes));
-    } on FormatException {
-      json = null;
-    }
-    throw OAuth2AuthorizationException(
-      oauth2ErrorOf(json) ??
-          OAuth2Error(
-            OAuth2ErrorCodes.serverError,
-            'The revocation endpoint answered HTTP ${response.statusCode}',
-          ),
-    );
-  }
 }

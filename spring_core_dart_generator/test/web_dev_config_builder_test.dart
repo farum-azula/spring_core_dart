@@ -262,6 +262,125 @@ spring:
     }
   });
 
+  group('the Content Security Policy', () {
+    // The header the generated file sends.
+    Map<String, String> headers(_Files files) {
+      final server = (loadYaml(files.content!) as YamlMap)['server'] as YamlMap;
+      return {
+        for (final header in (server['headers'] as YamlList? ?? YamlList()))
+          (header as YamlMap)['name'] as String: header['value'] as String,
+      };
+    }
+
+    test('the property becomes the header', () async {
+      final files = _Files();
+      final logs = await _build(files, {
+        'application-web.properties':
+            "spring.flutter.web.content-security-policy=default-src 'self'\n",
+      });
+      expect(logs.where((log) => log.startsWith('WARNING: ')), isEmpty);
+      expect(headers(files), {'Content-Security-Policy': "default-src 'self'"});
+    });
+
+    test('report-only sends the report-only header', () async {
+      final files = _Files();
+      await _build(files, {
+        'application-web.properties':
+            "spring.flutter.web.content-security-policy=default-src 'self'\n"
+            'spring.flutter.web.content-security-policy-report-only=true\n',
+      });
+      expect(headers(files), {
+        'Content-Security-Policy-Report-Only': "default-src 'self'",
+      });
+    });
+
+    test('spa mode gets a ready policy with the providers', () async {
+      final files = _Files();
+      final logs = await _build(files, {
+        'application-web.properties':
+            'spring.flutter.security.web.mode=spa\n'
+            // A property line: kept whole for readability.
+            // ignore: lines_longer_than_80_chars
+            'spring.security.oauth2.client.registration.keycloak.client-id=neon-web\n'
+            'spring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n'
+            'spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token\n'
+            'spring.security.oauth2.client.provider.partner.authorization-uri=https://login.partner.example/authorize\n',
+      });
+      expect(_severe(logs), isEmpty);
+      final policy = headers(files)['Content-Security-Policy']!;
+      expect(
+        policy,
+        WebDevServerSettings.spaContentSecurityPolicy([
+          'http://localhost:8180',
+          'https://id.partner.example',
+        ]),
+      );
+      final directives = {
+        for (final directive in policy.split('; '))
+          directive.split(' ').first: directive.split(' ').skip(1).toList(),
+      };
+      expect(directives['script-src'], [
+        "'self'",
+        "'wasm-unsafe-eval'",
+        'https://www.gstatic.com',
+      ]);
+      expect(directives['script-src'], isNot(contains("'unsafe-eval'")));
+      expect(directives['connect-src'], contains('http://localhost:8180'));
+      // The login page is navigated to, never fetched.
+      expect(
+        directives['connect-src'],
+        isNot(contains('https://login.partner.example')),
+      );
+      expect(directives['frame-ancestors'], ["'none'"]);
+      expect(directives['object-src'], ["'none'"]);
+    });
+
+    test("an app's own policy wins over spa mode's", () async {
+      final files = _Files();
+      await _build(files, {
+        'application-web.properties':
+            'spring.flutter.security.web.mode=spa\n'
+            'spring.flutter.web.port=5050\n'
+            // A property line: kept whole for readability.
+            // ignore: lines_longer_than_80_chars
+            "spring.flutter.web.headers.Content-Security-Policy=default-src 'self'\n",
+      });
+      expect(headers(files), {'Content-Security-Policy': "default-src 'self'"});
+    });
+
+    test('server mode gets none by itself', () async {
+      final files = _Files();
+      await _build(files, {
+        'application-web.properties':
+            'spring.flutter.security.web.mode=server\n',
+      });
+      expect(files.content, isNull);
+    });
+
+    test('the property and the header both set is an error', () async {
+      final files = _Files();
+      final logs = await _build(files, {
+        'application-web.properties':
+            "spring.flutter.web.content-security-policy=default-src 'self'\n"
+            // A property line: kept whole for readability.
+            // ignore: lines_longer_than_80_chars
+            "spring.flutter.web.headers.Content-Security-Policy=default-src 'none'\n",
+      });
+      expect(_severe(logs).single, contains('keep one of them'));
+      expect(files.content, isNull);
+    });
+
+    test('report-only must be a boolean', () async {
+      final files = _Files();
+      final logs = await _build(files, {
+        'application-web.properties':
+            "spring.flutter.web.content-security-policy=default-src 'self'\n"
+            'spring.flutter.web.content-security-policy-report-only=yes\n',
+      });
+      expect(_severe(logs).single, contains('is not true or false'));
+    });
+  });
+
   test('an unknown property is a warning', () async {
     final files = _Files();
     final logs = await _build(files, {
