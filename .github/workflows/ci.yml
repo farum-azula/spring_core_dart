@@ -510,9 +510,12 @@ jobs:
       # The Android build's own classpath (the Android and Kotlin Gradle
       # plugins and what they pull, constrained in the guide's
       # settings.gradle.kts and build.gradle.kts and the plugin's
-      # build.gradle.kts): the build machine's, not the APK's.
+      # build.gradle.kts): the build machine's, not the APK's. gradlew is
+      # not committed (Flutter's android/.gitignore): --config-only writes
+      # the wrapper without building.
       - name: No known vulnerabilities in the Android build's Gradle plugins
         run: |
+          (cd example/flutter_guide && flutter build apk --config-only)
           (cd example/flutter_guide/android && ./gradlew -q -I ../../../tool/gradle/build_classpath.init.gradle help) > "$RUNNER_TEMP/classpath.txt"
           dart run tool/check_vulnerabilities.dart --maven "$RUNNER_TEMP/classpath.txt"
 
