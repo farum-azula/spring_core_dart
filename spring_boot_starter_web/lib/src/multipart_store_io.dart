@@ -81,7 +81,22 @@ final class FileWriter {
     if (!parent.existsSync()) {
       await parent.create(recursive: true);
     }
-    return await parent.createTemp('spring_uploads_');
+    final directory = await parent.createTemp('spring_uploads_');
+    if (Platform.isWindows) {
+      return directory;
+    }
+    // createTemp is mkdtemp (rwx------) on macOS but a plain mkdir on
+    // Linux (rwxr-xr-x with the usual umask): the uploads would be
+    // readable by every user of the machine. dart:io has no chmod.
+    final chmod = await Process.run('chmod', ['700', directory.path]);
+    if (chmod.exitCode != 0 || directory.statSync().mode & 0x1FF != 0x1C0) {
+      await directory.delete(recursive: true);
+      throw FileSystemException(
+        'Cannot make the upload directory private (rwx------)',
+        directory.path,
+      );
+    }
+    return directory;
   }
 
   // A new empty file of random name in the private directory, made again

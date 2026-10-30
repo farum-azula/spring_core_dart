@@ -250,6 +250,7 @@ void main() {
     skip: Platform.isLinux ? skip : 'libsecret is Linux only',
   );
 
+  // Runs where `skip` is null: the CI job with the Secret Service has GIO.
   test("Linux: the default app id is the running GTK application's", () {
     // Flutter's runner is a GtkApplication with the APPLICATION_ID of
     // linux/CMakeLists.txt; a test process has none until it makes one.
@@ -278,7 +279,7 @@ void main() {
       'dev.farumazula.ci_app',
     );
     expect(LinuxSecretServiceStore().application, 'dev.farumazula.ci_app');
-  }, skip: Platform.isLinux ? null : 'GIO is Linux only');
+  }, skip: Platform.isLinux ? skip : 'GIO is Linux only');
 
   // Last: it locks the keyring, then unlocks it with the session's
   // password (DESKTOP_SECRET_STORE_PASSWORD, `ci` as in CI) by replacing

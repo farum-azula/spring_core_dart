@@ -22,6 +22,7 @@
 
 ### Changes
 
+- The private directory of the uploads' temporary files is `rwx------` on Linux too (dart:io's `createTemp` made it `rwxr-xr-x` there, readable by every user of the machine; on macOS it was already private). When it can't be made private, the upload fails.
 - `DispatcherHandler.corsConfigurationFor(request)` gives the CORS rules of the mapping that would take a request, in the dispatcher's order (Spring's `HandlerMappingIntrospector`): a WebSocket handshake gets the `corsConfigurationSource` bean's rules or none, never the `WebMvcConfigurer` mappings.
 - A port in use fails the start, as in Spring Boot: the application waits for the server to listen before the `ApplicationStartedEvent`, the runners and the `ApplicationReadyEvent`, `runAsync` throws the `PortInUseException`, and the program ends with a non-zero exit code.
 - Graceful shutdown lets running requests finish within `spring.lifecycle.timeout-per-shutdown-phase` before the beans are destroyed (the lifecycle processor now has that timeout too).
