@@ -21,20 +21,23 @@ struct DPoPKeyError: Error {
 }
 
 /// The app's DPoP key (RFC 9449): an EC P-256 key pair that signs proofs,
-/// whose private key never leaves the Secure Enclave or the Keychain.
+/// whose private key is never handed to the app's code.
 ///
 /// - With a Secure Enclave (iPhones, iPads, Macs with Apple silicon or a
 ///   T2 chip) the key is made inside it (`kSecAttrTokenIDSecureEnclave`)
-///   and only used there.
+///   and only used there: it never leaves the chip.
 /// - Without one (the iOS simulator, older Macs), or where it cannot be
 ///   used (a macOS build signed without the data protection keychain's
-///   entitlements: -34018), a software key of the Keychain; the system
-///   signs with it, the app never sees it.
+///   entitlements: -34018), a software key of the Keychain: the code here
+///   only holds a reference, but the Security framework loads the key
+///   into the app's process to sign with it.
 ///
 /// Both are permanent Keychain keys with the application tag
 /// `<bundle id>.spring_dpop_key`, usable after the first unlock, on this
-/// device only (never in iCloud Keychain or in a backup moved to another
-/// device). On macOS without the data protection keychain the software
+/// device only (never in iCloud Keychain, in the device's encrypted
+/// backups but restored only to the same device; deleting the app keeps
+/// them, so `InstallMarker` removes them at the first start after a
+/// reinstall). On macOS without the data protection keychain the software
 /// key goes to the login keychain, as the secret store's values do.
 final class DPoPKeyStore {
   private let tag = Data(((Bundle.main.bundleIdentifier ?? "app") + ".spring_dpop_key").utf8)

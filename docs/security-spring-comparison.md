@@ -69,7 +69,7 @@ Where each missing feature is planned:
 | Concurrency control (`maximumSessions`, `maxSessionsPreventsLogin`, `expiredUrl`) | missing | |
 | `SessionRegistry` (a user's sessions, ending them all) | missing | |
 | Invalid session detection (`invalidSessionUrl`) | missing | |
-| A limit on all sessions | done | not in Spring: `server.servlet.session.max-sessions` (10 000) |
+| A limit on all sessions | done | not in Spring: `server.servlet.session.max-sessions` (10 000); sessions without a login go first; when only logins are left, a login of the user holding the most sessions makes room (one account cannot lock the others out), and with one login per user a new session is refused with 503, as Tomcat's `maxActiveSessions` |
 | Shared session store (Spring Session) | missing | the sessions live in one process |
 
 ## Authorization
@@ -115,13 +115,14 @@ Where each missing feature is planned:
 | [Authorized clients](https://docs.spring.io/spring-security/reference/servlet/oauth2/client/authorized-clients.html): service, repository, manager | done | client: in memory, as in Spring Boot; in the app's secure storage with `spring_boot_starter_flutter_security`; no JDBC service |
 | Tokens on HTTP clients (`OAuth2ClientHttpRequestInterceptor` 6.4, HTTP service clients and `@ClientRegistrationId` 7.0) | partial | Feign: `OAuth2AccessTokenInterceptor` with Spring Cloud OpenFeign's properties; no per-client annotation |
 | Pushed Authorization Requests (RFC 9126) | missing | not in Spring's client either |
-| [Resource server, JWT](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html) | done | starter; custom `JwkSource` too |
+| [Resource server, JWT](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html) | done | starter; custom `JwkSource` too; `JwtTypeValidator.jwt()` among the default validators, as in 7.0 |
+| Certificate-bound access tokens (RFC 8705, `X509CertificateThumbprintValidator` among the default validators) | missing | such tokens are refused with either scheme (fail closed): the web starter does not hand the client certificate to the security filters |
 | `NimbusJwtEncoder` (minting JWTs) | missing | |
 | [Opaque token introspection](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/opaque-token.html) (`opaqueToken()`, RFC 7662) | missing | |
 | [Multi-tenancy](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/multitenancy.html) (`JwtIssuerAuthenticationManagerResolver`, several issuers) | missing | one issuer per chain; several chains by path work |
-| [Bearer tokens](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/bearer-tokens.html): header, custom header, query parameter | done | the query parameter off by default, as in Spring |
+| [Bearer tokens](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/bearer-tokens.html): header, custom header, query parameter | done | the query parameter off by default and read in `GET` requests only, as in Spring; only a token in the header exempts a request from CSRF (README "Differences") |
 | Bearer token in a form body (`allowFormEncodedBodyParameter`) | missing | |
-| [DPoP-bound access tokens](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/dpop-tokens.html) (RFC 9449, 6.5) | done | starter, on by itself with `jwt()`; `htu` normalized, bound tokens refused as `Bearer` (README "Differences"); the client's side (proofs on token requests, Feign calls and user info, `dpop` per registration, `auto` by default) in the OAuth2 client, an addition: Spring Security 7 has none; the apps' keys in the Secure Enclave / Keychain, the Android Keystore or the `SecretStore` (Flutter security package); the web's WebCrypto key next |
+| [DPoP-bound access tokens](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/dpop-tokens.html) (RFC 9449, 6.5) | done | starter, on by itself with `jwt()`; `htu` normalized, bound tokens refused as `Bearer`, DPoP requests exempt from CSRF as `Bearer` ones, the key's `cnf.jkt` checked before the `jti` is recorded, and the `jti` kept 5 s past the proof's window (README "Differences"); the client's side (proofs on token requests, Feign calls and user info, `dpop` per registration, `auto` by default) in the OAuth2 client, an addition: Spring Security 7 has none; the apps' keys in the Secure Enclave / Keychain, the Android Keystore or the `SecretStore` (Flutter security package); the web's WebCrypto key next |
 | [Protected resource metadata](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/protected-resource-metadata.html) (RFC 9728) | missing | |
 | [Authorization server](https://docs.spring.io/spring-security/reference/servlet/oauth2/authorization-server/index.html) (in Spring Security since 7.0), dynamic client registration | out of scope | use an identity provider (Keycloak, Auth0, ...) |
 
@@ -143,7 +144,7 @@ on the client's registrations, token clients and authorized clients; see
 
 | Feature | Status | Notes |
 |---|---|---|
-| [CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html): session and cookie repositories, XOR handler, ignoring matchers | done | starter |
+| [CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html): session and cookie repositories, XOR handler, ignoring matchers | done | starter; token requests exempt by their header only, and not at the logout and login URLs (README "Differences") |
 | `csrf.spa()` (7.0) | missing | `CookieCsrfTokenRepository` with the plain handler does it by hand |
 | [Headers](https://docs.spring.io/spring-security/reference/servlet/exploits/headers.html): cache control, `nosniff`, HSTS, frame options, X-XSS-Protection, CSP, Referrer-Policy | done | starter |
 | CSP report-only, Permissions-Policy, Cross-Origin-Opener/Embedder/Resource-Policy, `Clear-Site-Data` | partial | through `addHeaderWriter`; no DSL methods |
@@ -196,8 +197,8 @@ on the client's registrations, token clients and authorized clients; see
 
 ## Counts
 
-Of the 115 rows above: 41 done, 5 partial, 54 missing, 1 in progress,
-14 out of scope. Many missing rows are small (a DSL method, a test
+Of the 116 rows above: 43 done (one of them an addition), 5 partial,
+54 missing, 14 out of scope. Many missing rows are small (a DSL method, a test
 helper); the done rows carry the most used parts of Spring Security.
 
 The ones a Spring user meets most often, in order: remember-me;

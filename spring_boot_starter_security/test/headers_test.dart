@@ -259,14 +259,32 @@ void main() {
       return request;
     }
 
-    test('a request that is not cross-origin is not looked at', () async {
+    test('a request that is not cross-origin goes on with no CORS headers '
+        'but Vary, when a configuration applies, as in Spring', () async {
+      const vary = [
+        'Origin',
+        'Access-Control-Request-Method',
+        'Access-Control-Request-Headers',
+      ];
+      for (final request in [
+        MockServerHttpRequest(HttpMethod.get, '/api/x'),
+        // The same origin as the request (http://localhost).
+        MockServerHttpRequest(HttpMethod.post, '/api/x')
+          ..headers.set('Origin', 'http://localhost'),
+      ]) {
+        final result = await run((_) => config, request);
+        expect(result.reached, isTrue);
+        expect(result.asked, 1);
+        expect(result.response.headers['access-control-allow-origin'], isNull);
+        expect(result.response.headers.getAll('Vary'), vary);
+      }
+      // No configuration for the path: no Vary.
       final result = await run(
-        (_) => config,
+        (_) => null,
         MockServerHttpRequest(HttpMethod.get, '/api/x'),
       );
       expect(result.reached, isTrue);
-      expect(result.asked, 0);
-      expect(result.response.headers['access-control-allow-origin'], isNull);
+      expect(result.response.headers.getAll('Vary'), isEmpty);
     });
 
     test(
@@ -304,14 +322,76 @@ void main() {
       expect(result.response.headers['access-control-allow-origin'], isNull);
     });
 
-    test('without a configuration a pre-flight is refused, silently', () async {
+    test('without a configuration a pre-flight ends here: 200, no CORS '
+        "header and no Vary, as Spring's CorsFilter (the browser blocks the "
+        'request it announced)', () async {
       final result = await run(
         (_) => null,
         cross(method: HttpMethod.options, preFlightFor: 'POST'),
       );
       expect(result.reached, isFalse);
-      expect(result.response.statusCode, 403);
-      expect(result.response.headers['access-control-allow-origin'], isNull);
+      expect(result.response.statusCode, 200);
+      expect(
+        result.response.headers.names.where(
+          (name) => name.toLowerCase().startsWith('access-control-'),
+        ),
+        isEmpty,
+      );
+      expect(result.response.headers.getAll('Vary'), isEmpty);
+    });
+
+    test("a pre-flight from the server's own origin ends here too, as in "
+        'Spring', () async {
+      for (final source in [(_) => config, (_) => null]) {
+        final result = await run(
+          source,
+          cross(
+            method: HttpMethod.options,
+            origin: 'http://localhost',
+            preFlightFor: 'DELETE',
+          ),
+        );
+        expect(result.reached, isFalse);
+        expect(result.response.statusCode, 200);
+        expect(result.response.headers['access-control-allow-origin'], isNull);
+      }
+    });
+
+    test('an Origin, a requested method or a requested header outside '
+        'visible US-ASCII is refused with 403, even where * allows any, and '
+        'never echoed', () async {
+      final any = CorsConfiguration(
+        allowedOriginPatterns: ['https://*.example'],
+        allowedMethods: ['*'],
+        allowedHeaders: ['*'],
+      );
+      for (final (origin, method, headers) in [
+        ('https://\u00e9.example', null, null),
+        ('https://a b.example', null, null),
+        ('https://\u00e9.example', 'GET', null),
+        ('https://app.example', 'G\u00e9T', null),
+        ('https://app.example', 'GET', 'x-\u00e9'),
+      ]) {
+        final request = cross(
+          method: method == null ? HttpMethod.get : HttpMethod.options,
+          origin: origin,
+          preFlightFor: method,
+        );
+        if (headers != null) {
+          request.headers.set('Access-Control-Request-Headers', headers);
+        }
+        final result = await run((_) => any, request);
+        final reason = Uri.encodeComponent('$origin $method $headers');
+        expect(result.reached, isFalse, reason: reason);
+        expect(result.response.statusCode, 403, reason: reason);
+        expect(
+          result.response.headers.names.where(
+            (name) => name.toLowerCase().startsWith('access-control-'),
+          ),
+          isEmpty,
+          reason: reason,
+        );
+      }
     });
 
     test('without a configuration an actual request goes on, with no CORS '

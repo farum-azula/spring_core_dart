@@ -266,27 +266,37 @@ final class MultipartParser {
 
   /// The parts of [body], in order, read when the returned stream is
   /// listened to. A malformed body ends the stream with a
-  /// [MultipartException]; an error of [body] itself (a size limit) is
-  /// passed on as it is. The preamble before the first boundary and the
-  /// epilogue after the last are skipped.
+  /// [MultipartException]; an error of [body] itself (a size limit, a
+  /// client that went away) is passed on as it is. An error in the middle
+  /// of a part also ends that part's [MultipartPart.content] with the
+  /// error, so code reading the part never waits for bytes that cannot
+  /// come. Cancelling the subscription stops reading [body]. The preamble
+  /// before the first boundary and the epilogue after the last are
+  /// skipped.
   Stream<MultipartPart> bind(Stream<List<int>> body) {
+    final run = _ParserRun();
     final parts = StreamController<MultipartPart>();
-    parts.onListen = () => _run(body, parts);
+    parts
+      ..onListen = () {
+        run.reader = _ByteReader(body);
+        unawaited(_run(run, parts));
+      }
+      ..onCancel = run.partsCancelled;
     return parts.stream;
   }
 
   Future<void> _run(
-    Stream<List<int>> body,
+    _ParserRun run,
     StreamController<MultipartPart> parts,
   ) async {
-    final reader = _ByteReader(body);
+    final reader = run.reader;
     try {
       // The preamble up to the first boundary (it starts the body, or
       // follows a CRLF).
       if (!await reader.skipPast(_first)) {
         throw MultipartException('no boundary found');
       }
-      while (true) {
+      while (!run.stopped) {
         // After a boundary: "--" ends the body, CRLF starts a part.
         final after = await reader.take(2);
         if (after == null) {
@@ -313,20 +323,40 @@ final class MultipartParser {
         final headers = _parseHeaders(
           utf8.decode(headerBytes, allowMalformed: true),
         );
-        final content = StreamController<List<int>>();
+        final content = run.current = StreamController<List<int>>(
+          onCancel: run.partCancelled,
+        );
         parts.add(MultipartPart(headers, content.stream));
         final found = await reader.pipeUntil(_delimiter, content);
-        await content.close();
+        if (run.stopped) {
+          break;
+        }
         if (!found) {
           throw MultipartException('the body ends inside a part');
         }
+        run.current = null;
+        // Completes once the reader of the part took its last bytes: the
+        // next part comes after it.
+        await content.close();
       }
-      await reader.drain();
-      await parts.close();
+      if (run.stopped) {
+        await reader.cancel();
+      } else {
+        await reader.drain();
+      }
+      unawaited(parts.close());
     } on Object catch (error, stackTrace) {
-      // Errors of the body itself (a size limit) pass through as they are.
-      parts.addError(error, stackTrace);
-      await parts.close();
+      // Errors of the body itself (a size limit, a client gone) pass
+      // through as they are: to the part being read, whose reader would
+      // otherwise wait forever, and to the stream of parts.
+      if (run.current case final content? when !content.isClosed) {
+        content.addError(error, stackTrace);
+        unawaited(content.close());
+      }
+      if (!parts.isClosed) {
+        parts.addError(error, stackTrace);
+        unawaited(parts.close());
+      }
       await reader.cancel();
     }
   }
@@ -361,6 +391,36 @@ final class MultipartParser {
     }
     flush();
     return headers;
+  }
+}
+
+// The state of one [MultipartParser.bind]: once nobody listens to the
+// parts any more and nobody reads the current part, reading the body
+// stops (a consumer that gave up, for example at a size limit).
+final class _ParserRun {
+  late final _ByteReader reader;
+  StreamController<List<int>>? current;
+  var _partsCancelled = false;
+  bool stopped = false;
+
+  void partsCancelled() {
+    _partsCancelled = true;
+    if (current == null || !current!.hasListener) {
+      _stop();
+    }
+  }
+
+  void partCancelled() {
+    if (_partsCancelled) {
+      _stop();
+    }
+  }
+
+  void _stop() {
+    if (!stopped) {
+      stopped = true;
+      unawaited(reader.cancel());
+    }
   }
 }
 

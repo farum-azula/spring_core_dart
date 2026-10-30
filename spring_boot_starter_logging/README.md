@@ -184,6 +184,16 @@ with `spring.log` in it) turns on a `FileAppender`:
   `total-size-cap`.
 - `clean-history-on-start=true` deletes the rolled-over files when the
   application starts.
+- A file that cannot be written stops nothing else, as in Logback. One
+  that cannot be opened at the start (a read-only directory) is reported
+  on the console and the application starts without it. When writing
+  fails later (a full disk), the error is reported once, the lines are
+  dropped, and writing is tried again after a pause (20 ms, growing to
+  about 5 minutes with each failed try); once a line is written again,
+  one line says how many were lost (`FileAppender.isFailing` tells
+  meanwhile), and a later failure is reported again. A roll-over that
+  fails is reported once, and the lines go on into the current file until
+  a roll-over works, tried again a minute later.
 
 Relative locations are resolved against
 `LoggingSystem.instance.fileDirectory` when it is set, else against the

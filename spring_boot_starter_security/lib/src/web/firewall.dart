@@ -201,10 +201,13 @@ final class StrictHttpFirewall implements HttpFirewall {
     }
   }
 
-  // No `.` or `..` segment.
+  // No `.` or `..` segment, also with path parameters (`..;x`, which
+  // `allowSemicolon` lets through and a router strips to `..`).
   static bool _normalized(String path) {
     for (final segment in path.split('/')) {
-      if (segment == '.' || segment == '..') {
+      final semicolon = segment.indexOf(';');
+      final name = semicolon < 0 ? segment : segment.substring(0, semicolon);
+      if (name == '.' || name == '..') {
         return false;
       }
     }

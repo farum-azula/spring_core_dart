@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/request_mapping.dart';
 import 'package:spring_boot_starter_web/src/response_writer.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
@@ -213,6 +214,28 @@ final class DispatcherHandler implements HttpHandler {
           await writer.writeError(error, stackTrace, current, response);
         }
       });
+
+  /// The CORS rules of [request] as this dispatcher routes it, for a
+  /// filter that checks CORS before the handler is called (the security
+  /// starter's `CorsFilter`); `null` when none apply.
+  ///
+  /// The [handlerMappings] are asked in order, as for the request itself,
+  /// and the first that takes it decides:
+  ///
+  /// - [requestMapping], the controllers: the rules of the handler it
+  ///   would call ([RequestMappingHandlerMapping.corsConfigurationFor]);
+  /// - another mapping, such as the WebSocket endpoints: those of the
+  ///   `corsConfigurationSource` bean where it has some, else none. The
+  ///   `addCorsMappings` rules and `@CrossOrigin` are the controllers'; a
+  ///   WebSocket endpoint checks the origin of a handshake itself;
+  /// - no mapping (a 404): the `addCorsMappings` rules (or the bean's).
+  ///
+  /// A mapping that throws, such as the controllers' 405 for a known
+  /// path with another method, is passed over.
+  ///
+  /// Spring (Java): `HandlerMappingIntrospector.getCorsConfiguration`.
+  Future<CorsConfiguration?> corsConfigurationFor(ServerHttpRequest request) =>
+      dispatcherCorsConfiguration(handlerMappings, requestMapping, request);
 
   Future<void> _dispatch(
     ServerHttpRequest request,

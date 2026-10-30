@@ -191,13 +191,12 @@ class BookController {
 | `@ResponseStatus(HttpStatus.created, reason: ...)` | method, controller class | the same | The status of a normal answer. With `reason`, the result is ignored and the answer is an error with the reason as its detail. |
 | `@ExceptionHandler([types])` | method | the same | Handles exceptions thrown by the controller's methods (by every controller's, in an advice). The exception parameter's type picks them, or `types`, matched by exact runtime type. |
 | `@ControllerAdvice([name])`, `@RestControllerAdvice([name])` | class | the same | Exception handlers for every controller, tried in `@Order`. |
-| `@CrossOrigin(origins:, originPatterns:, methods:, allowedHeaders:, exposedHeaders:, allowCredentials:, maxAge:)` | class, method | the same | Lets web pages of other origins call the controller (CORS). `maxAge` is in seconds. |
+| `@CrossOrigin(origins:, originPatterns:, methods:, allowedHeaders:, exposedHeaders:, allowCredentials:, allowPrivateNetwork:, maxAge:)` | class, method | the same | Lets web pages of other origins call the controller (CORS). `maxAge` is in seconds. |
 
-`@CrossOrigin()` with no arguments allows every origin, the methods
-`GET`, `HEAD` and `POST`, every request header, no credentials, and a
-pre-flight cache of 30 minutes. This differs from Spring, where the
-default methods are the ones the handler is mapped to: here a `PUT` or
-`DELETE` method needs `methods: ['PUT', 'DELETE']`.
+`@CrossOrigin()` with no arguments allows every origin, the method the
+handler is mapped to (`DELETE` for a `@DeleteMapping`, `GET` alone for
+a `@GetMapping`), every request header, no credentials, and a
+pre-flight cache of 30 minutes, as in Spring.
 
 On a server, the mapping's `headers` are conditions the request must
 meet: `'Name'` (present), `'!Name'` (absent), `'Name=value'` and
@@ -446,6 +445,58 @@ Browsers send no custom headers with the WebSocket handshake, so
 `BrowserWebSocketTransport` fails when `headers` is not empty. On the
 web, pass a token as a query parameter or as a protocol instead.
 
+`sendMessage` does not wait: the message waits in memory until the
+network takes it. On `dart:io` (`IoWebSocketSession`, on both the client
+and the web starter's server) a session gives up when more than 512 KB
+wait or what was sent has not left within 10 seconds, as Spring's
+`ConcurrentWebSocketSessionDecorator` does: the connection is dropped
+and `closeStatus` is 4500 (`CloseStatus.sessionNotReliable`). So a loop
+that sends faster than the network takes ends in 4500. Where Spring's
+`sendMessage` blocks until the message is out, `await session.flush()`
+(`IoWebSocketSession`) waits for it: a sender that awaits it after each
+message goes at the network's pace. Set other limits with
+`IoWebSocketTransport(sendBufferSizeLimit:, sendTimeLimit:)`.
+
+```dart
+// A large export, sent as fast as the server reads it.
+final session = await IoWebSocketTransport().connect(url) as IoWebSocketSession;
+for (final chunk in export) {
+  session.sendMessage(chunk);
+  await session.flush(); // fails with a WebSocketException if the connection ends
+}
+```
+
+The connection goes on being read while messages wait to be sent, so two
+sides that both send more than the network holds do not wait for each
+other. A connection that breaks (reset by the other side) ends
+`messages`, with `closeStatus` 1006 (`CloseStatus.noCloseFrame`) and the
+error as the reason; over TLS, where the input often ends before the
+write fails, `messages` waits for the write (a second at most). After
+`close(status)`, `closeStatus` is that `status` unless the other side
+answered with its own close frame. A session listens to its connection
+from the start, paused until `messages` is listened to: a session closed
+before anyone listened still gives `messages` that end once the close
+is done (what arrived in between is dropped).
+
+A message from the server larger than 8 KB (text or binary, Tomcat's
+default for Spring's `StandardWebSocketClient`) is not read on `dart:io`:
+the session is closed with 1009 (message too big). The text limit counts
+UTF-8 bytes, where Tomcat counts characters. Raise the limits with
+`IoWebSocketTransport(maxTextMessageSize:, maxBinaryMessageSize:)` or
+`platformWebSocketTransport(maxTextMessageSize: ...)` (`-1`: no limit);
+the browser has no such limit. In Spring the limits are set in code, on
+the client's `WebSocketContainer`. A ping between the fragments of a
+message is answered at once (a pong there is taken) and the message
+arrives whole, on the client and the web starter's server; until its
+final fragment, a message takes the memory of its payload, however many
+fragments (empty ones too) it comes in. A plain `dart:io` `WebSocket`
+(and an `IoWebSocketSession` made from one) loses the fragments before a
+ping or a pong, and sends them back in the answer to a ping. The
+handshake fails when the server picks
+a subprotocol the client did not offer or any extension (none is
+offered, so messages are not compressed), as RFC 6455 asks, and a
+redirect is not followed, as in browsers.
+
 ## Server side
 
 The interfaces a web server and the application meet on. The web
@@ -459,6 +510,7 @@ or a library that plugs into the server.
 | `ServerHttpRequest` | `ServerHttpRequest` | `method`, `uri`, `path`, `headers`, `queryParameters`, `cookies`, `remoteAddress`, `isSecure`, `attributes`, `principal`; `body` (a stream, read once) with `readBodyBytes`, `readBodyText`, `contentType`; `isWebSocketUpgrade`, `upgradeToWebSocket`. |
 | `ServerHttpResponse` | `ServerHttpResponse` | `statusCode` and `headers` (until `isCommitted`), `addCookie(ResponseCookie(...))`, `add`, `write`, `flush`, `addStream`, `close`, `done` (closed, or the client went away); `send(status, text)`. |
 | `ServerHttpRequestDecorator`, `ServerHttpResponseDecorator` | the same | Forward everything to a delegate. Extend one and override a single member, for example in a filter that changes the path or the principal. |
+| `AllowedOrigins` | `CorsConfiguration`'s origin checks | The browser origins a server allows, checked as Spring checks `allowedOrigins` and `allowedOriginPatterns`: `checkOrigin(origin)` gives the `Access-Control-Allow-Origin` value or `null`. Origins are compared without case, patterns with case; patterns take `*` (`https://*.shop.example`) and a port list at the end (`http://localhost:[3000,3001]`, `[*]`: any port or none); values may list several, separated by commas, and a trailing `/` is ignored. The web starter's CORS and the WebSocket starter's handshake check both use it. A pattern's `*` matches any text, as Spring's `.*` (`*.shop.example` takes any scheme). One difference from Spring: an origin longer than `maxOriginLength` (1024) characters is never allowed. Patterns are matched in time that grows with the origin's length (no backtracking regular expression). |
 | `ResponseCookie` | `ResponseCookie` | A `Set-Cookie` value: `maxAge`, `domain`, `path`, `secure`, `httpOnly`, `sameSite`, `partitioned`. |
 | `Principal` | `java.security.Principal` | Who sent the request (`name`); set by an authentication filter. |
 | `HttpHandler`, `FunctionHttpHandler` | `HttpHandler` | Answers one request. The web starter's dispatcher is one. |
@@ -570,8 +622,6 @@ sockets.failNextConnect();                      // the next connect fails
   none (`defaultValue`), any other parameter is required. So
   `@RequestParam(name = "page", defaultValue = "0") int page` is
   `@RequestParam('page') int page = 0`.
-- **`@CrossOrigin()` without `methods`** allows `GET`, `HEAD` and
-  `POST`; Spring allows the methods the handler is mapped to.
 - **`HttpStatus` constants are `int`s** (an extension type), not enum
   values. They compare with status codes directly, `toString()` is the
   number (there is no `name()`), `100 Continue` is `HttpStatus.continue_`
@@ -616,4 +666,7 @@ sockets.failNextConnect();                      // the next connect fails
   where Spring calls a `WebSocketHandler`. `sendMessage` takes a
   `String` (text) or a `List<int>` (binary) instead of a `TextMessage` or
   `BinaryMessage`, and `closeStatus` tells how the session closed, which
-  Spring passes to `afterConnectionClosed`.
+  Spring passes to `afterConnectionClosed`. `sendMessage` does not block:
+  on `dart:io`, `IoWebSocketSession.flush()` waits until what was sent
+  has left. `IoWebSocketTransport` does not follow handshake redirects
+  (Tomcat's client follows them; browsers do not).

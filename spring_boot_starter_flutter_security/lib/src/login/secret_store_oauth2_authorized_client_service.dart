@@ -13,9 +13,12 @@ const _log = SpringLog('spring.security.oauth2.client');
 /// survive a restart, so `OAuth2LoginService.restore()` logs the user
 /// back in. The key is
 /// `oauth2.authorized-client.<registration>.<principal>` (both
-/// URI-encoded). A stored value that cannot be read (written by another
-/// version, damaged) is removed and counts as none: the user logs in
-/// again.
+/// URI-encoded, `.` as `%2E`, so two clients never share a key: `a.b` +
+/// `c` and `a` + `b.c` differ). A client stored by 0.4.x under the key
+/// of that version (where a `.` stayed as it was) is still read, and
+/// moved to the new key. A stored value that cannot be read (written by
+/// another version, damaged) is removed and counts as none: the user
+/// logs in again.
 ///
 /// The access token's type is kept: `Bearer`, or `DPoP` for a token bound
 /// to the app's DPoP key (a record without a type, written before DPoP,
@@ -61,10 +64,60 @@ final class SecretStoreOAuth2AuthorizedClientService
   /// key they are bound to.
   final DPoPKey? dPoPKey;
 
-  /// The key of the client of [principalName] for [clientRegistrationId].
+  /// The start of every key of a stored client (of 0.4.x too).
+  static const keyPrefix = 'oauth2.authorized-client.';
+
+  /// The key of the client of [principalName] for [clientRegistrationId]:
+  /// both URI-encoded, with `.` (the separator) as `%2E`.
   static String keyOf(String clientRegistrationId, String principalName) =>
-      'oauth2.authorized-client.${Uri.encodeComponent(clientRegistrationId)}'
+      '$keyPrefix${_part(clientRegistrationId)}'
+      '.${_part(principalName)}';
+
+  static String _part(String value) =>
+      Uri.encodeComponent(value).replaceAll('.', '%2E');
+
+  // The key of 0.4.x, where `a.b` + `c` and `a` + `b.c` met; read so a
+  // login of that version survives the update.
+  static String _legacyKeyOf(
+    String clientRegistrationId,
+    String principalName,
+  ) =>
+      '$keyPrefix${Uri.encodeComponent(clientRegistrationId)}'
       '.${Uri.encodeComponent(principalName)}';
+
+  // Whether the value under the 0.4.x key is this client's (the record
+  // names its registration and principal), not the other one's.
+  static bool _belongsTo(
+    String stored,
+    String clientRegistrationId,
+    String principalName,
+  ) {
+    try {
+      final json = jsonDecode(stored);
+      return json is Map<String, Object?> &&
+          json['registrationId'] == clientRegistrationId &&
+          json['principalName'] == principalName;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  // The 0.4.x key when it differs from the current one and holds this
+  // client's record.
+  Future<String?> _legacyRecord(
+    String clientRegistrationId,
+    String principalName,
+  ) async {
+    final legacy = _legacyKeyOf(clientRegistrationId, principalName);
+    if (legacy == keyOf(clientRegistrationId, principalName)) {
+      return null;
+    }
+    final stored = await secretStore.read(legacy);
+    return stored != null &&
+            _belongsTo(stored, clientRegistrationId, principalName)
+        ? stored
+        : null;
+  }
 
   @override
   Future<OAuth2AuthorizedClient?> loadAuthorizedClient(
@@ -72,9 +125,17 @@ final class SecretStoreOAuth2AuthorizedClientService
     String principalName,
   ) async {
     final key = keyOf(clientRegistrationId, principalName);
-    final stored = await secretStore.read(key);
+    var stored = await secretStore.read(key);
     if (stored == null) {
-      return null;
+      stored = await _legacyRecord(clientRegistrationId, principalName);
+      if (stored == null) {
+        return null;
+      }
+      // Moved to the key of this version.
+      await secretStore.write(key, stored);
+      await secretStore.delete(
+        _legacyKeyOf(clientRegistrationId, principalName),
+      );
     }
     final registration = await clientRegistrationRepository
         .findByRegistrationId(clientRegistrationId);
@@ -144,17 +205,29 @@ final class SecretStoreOAuth2AuthorizedClientService
         _log.debug('The DPoP key could not be loaded (${e.runtimeType})');
       }
     }
+    final registrationId = authorizedClient.clientRegistration.registrationId;
     await secretStore.write(
-      keyOf(authorizedClient.clientRegistration.registrationId, principal.name),
+      keyOf(registrationId, principal.name),
       jsonEncode(_encode(authorizedClient, principal.name, jkt)),
     );
+    // No older copy left under the 0.4.x key.
+    if (await _legacyRecord(registrationId, principal.name) != null) {
+      await secretStore.delete(_legacyKeyOf(registrationId, principal.name));
+    }
   }
 
   @override
   Future<void> removeAuthorizedClient(
     String clientRegistrationId,
     String principalName,
-  ) => secretStore.delete(keyOf(clientRegistrationId, principalName));
+  ) async {
+    await secretStore.delete(keyOf(clientRegistrationId, principalName));
+    if (await _legacyRecord(clientRegistrationId, principalName) != null) {
+      await secretStore.delete(
+        _legacyKeyOf(clientRegistrationId, principalName),
+      );
+    }
+  }
 
   static int? _millis(DateTime? time) => time?.millisecondsSinceEpoch;
 

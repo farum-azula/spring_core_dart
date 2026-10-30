@@ -1,3 +1,27 @@
+## Unreleased
+
+### Breaking
+
+- Access tokens must have the `typ` `JWT` (in any case) or none, as Spring Security 7's `JwtTypeValidator.jwt()`, in every default decoder and validator (`JwtValidators.createDefault`, `createDefaultWithIssuer`, the `spring.security.oauth2.resourceserver.jwt.*` decoder): `at+jwt`, `logout+jwt`, `secevent+jwt` and `dpop+jwt` tokens signed with the same keys are refused. For a provider that types its access tokens as RFC 9068 says, start the validator with `JwtTypeValidator(['at+jwt', 'JWT'], allowEmpty: true)`. The `oauth2Login()` ID token decoder checks the same.
+- A token bound to a client certificate (`cnf.x5t#S256`, RFC 8705) is refused with either scheme: the web starter does not hand client certificates to the security filters, so the binding cannot be checked (Spring refuses it without the certificate too).
+- `DefaultBearerTokenResolver` with `allowUriQueryParameter` reads `access_token` in `GET` requests only, as in Spring.
+- The CORS filter uses only the bean named `corsConfigurationSource`, as Spring Security does (another name is ignored; a bean of another type under that name stops the start), and `CorsFilter.configurationFor` returns a `FutureOr`. It applies that bean's rules alone where the bean has some: `@CrossOrigin` and the `WebMvcConfigurer` mappings no longer widen them. Elsewhere it applies the rules of the handler the router would call, chosen with its `consumes`, `produces` and `headers` too, as Spring's `HandlerMappingIntrospector` chooses it; a WebSocket handshake gets the bean's rules or none, no longer the `WebMvcConfigurer` mappings.
+- The CORS filter answers a pre-flight that has no configuration with a 200 without CORS headers (was a 403), as Spring's `CorsFilter`, and checks an actual request's own method: a `HEAD` or `DELETE` the rules do not list is a 403 before the security checks.
+- DPoP: a proof's `jti` is kept until `iat` + clock skew + 5 seconds, so a `DPoPProofJtiCache` gets an `expiresAt` 5 seconds later, and must refuse a recorded id until it drops it, whatever its expiry says.
+
+### Changes
+
+- With `oauth2ResourceServer()`, a request that carries a token in a header (`Authorization: Bearer`, or `DPoP` with a proof) is exempt from CSRF, as Spring's `registerDefaultCsrfOverride` (which exempts `Bearer` only): POST, PUT and DELETE API calls got a 403. A token in the `access_token` query never exempts a request, and the chain's logout and login URLs keep their CSRF check (Spring exempts them).
+- DPoP: the proof's key is compared with the token's `cnf.jkt` before its `jti` is recorded, so proofs of made-up keys cannot fill the replay cache; a token without `cnf.jkt` is refused before the proof is read.
+- DPoP: a proof can no longer be replayed at exactly `iat` + clock skew.
+- A DPoP-bound token sent as `Bearer` publishes one failure event, never a success first (`UnboundBearerTokenAuthenticationProvider`).
+- A failed fetch of the JWK Set or of the issuer's metadata is made again 30 seconds later at the earliest, never once per token.
+- The key cache's lifetime, the refetch pause and the DPoP replay cache's purges are measured on a monotonic clock, so a wall clock set back stretches none of them.
+- `JwtTypeValidator`, Spring's validator of the `typ` header.
+- `StrictHttpFirewall` refuses `.` and `..` segments with path parameters (`..;x`) also with `allowSemicolon`.
+- At each login the chain stores the user's name (Spring Session's `PRINCIPAL_NAME_INDEX_NAME`) and the name with the login's source in the session, so a full session store pushes out a login only for the user who holds the most sessions, and `ada` of the form login and `ada` of a provider count as two users; a request that cannot get a session (503) is not saved by the request cache.
+- `oauth2Login()`: a callback with another method than `GET` or a form `POST` (`HEAD`, `PUT`, ...) fails with `invalid_request` and leaves the login in progress alone.
+
 ## 0.4.3
 
 - `JwtDecoders.fromIssuerLocation` finds the issuer's metadata with the OAuth2 client's discovery (`ClientRegistrations.configurationForIssuerLocation`): the same locations and issuer check. A location the fetcher cannot read (a 404 of `transportJwkFetcher` included) now moves to the next, so the RFC 8414 metadata is found behind a missing OpenID Connect document. `oauth2Login()` is in the differential test against Spring Security 7.1.

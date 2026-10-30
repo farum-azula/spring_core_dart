@@ -287,18 +287,37 @@ final class ContextInitializer {
 /// Which bean is replaced:
 /// - with [type]: the bean called [name] if given, else the bean of that
 ///   type (the `@Primary` one when there are several);
-/// - with only [name]: the bean (or alias) of that name. It keeps the
-///   types it was registered under, except its own class, and gains the
-///   class of the value;
+/// - with only [name]: the bean (or alias) of that name. The value is
+///   registered under the field's type, as in Spring (unless it is
+///   `Object`), under the class of the value, and under more types. A
+///   value created with a constructor (`FakeGateway()`, also `new` or
+///   `const`, a named or private class's constructor, an import prefix,
+///   in parentheses or followed by a cascade `..`) adds that class and all
+///   its public supertypes, whatever the field's declared type, as the
+///   generator registers a bean of that class: a `SubGateway extends
+///   RealGateway` stays a `RealGateway` and keeps every interface of it,
+///   and a fake `HttpClient` stays an `HttpClient` (written through
+///   `dart:io`, which exports it). A type with a private class as a type
+///   argument cannot be written in the generated file and counts in its
+///   raw form only (`FakeRepo<_Draft>()` is a `Repo<dynamic>`, not a
+///   `Repo<_Draft>`). Any other value (a function or static method call
+///   such as `Fakes.gateway()`, which may return any subclass, a
+///   variable), a class that cannot be resolved, or another type that
+///   cannot be written there (a function or record type argument) adds
+///   the types the replaced bean was registered under instead, except its
+///   own class (unless the field has that type);
 /// - with neither: the bean of the field's declared type, which must be
 ///   written (`final Clock clock = ...`, not `final clock = ...`).
 ///
 /// Without such a bean, the value is added as a new bean. The field needs
 /// a value and belongs to the `@SpringBootTest()` class, not to a [Nested]
-/// one. The value is created once with the test class: when tests change
-/// its state, reset it in a [BeforeEach] method. Mocks of any library
-/// (such as `mocktail`) work as values; this package has no mocking
-/// library of its own.
+/// one; a nullable field (`final Clock? clock = ...`, also of a nullable
+/// type alias such as `typedef MaybeClock = Clock?;`) that is `null` when
+/// the tests are declared fails the test file with a `StateError`. The
+/// value is created once with the test class: when tests change its
+/// state, reset it in a [BeforeEach] method. Mocks of any library (such as
+/// `mocktail`) work as values; this package has no mocking library of its
+/// own.
 ///
 /// ```dart
 /// @SpringBootTest()
@@ -359,8 +378,11 @@ final class TestBean {
 /// }
 /// ```
 ///
-/// Spring (Java): `@DirtiesContext`. In a test written as a function, call
-/// `app.markDirty()` instead.
+/// Spring (Java): `@DirtiesContext`. On a class it means Spring's
+/// `classMode = AFTER_EACH_TEST_METHOD`, not Spring's default
+/// `AFTER_CLASS`: each test class has its own context, closed after its
+/// tests anyway. In a test written as a function, call `app.markDirty()`
+/// instead.
 final class DirtiesContext {
   /// Marks the test or the class.
   const DirtiesContext();

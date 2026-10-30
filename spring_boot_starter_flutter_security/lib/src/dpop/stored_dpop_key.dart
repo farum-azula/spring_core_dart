@@ -8,8 +8,9 @@ enum DPoPKeyStorage {
 
   /// The Keychain, as a software key (no Secure Enclave: the iOS
   /// simulator, Macs without one, a macOS build without the entitlements
-  /// of the data protection keychain). The system signs; the key never
-  /// reaches the app's memory.
+  /// of the data protection keychain). The app's code never handles it,
+  /// but the system's Security framework loads it into the app's process
+  /// to sign.
   keychain,
 
   /// The StrongBox of an Android phone: a separate secure chip.

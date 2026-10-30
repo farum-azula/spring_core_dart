@@ -301,6 +301,53 @@ h = = x
       );
     });
 
+    // Each expectation is what java.util.Properties.load (Java 21) reads
+    // from the same text (checked with a Java run).
+    test('whitespace is a space, a tab or a form feed only, as in Java', () {
+      expect(
+        PropertiesParser.parse('greeting=こんにちは\\\n　世界\n'),
+        {'greeting': 'こんにちは　世界'},
+      );
+      expect(PropertiesParser.parse('k=a\\\n\u000bb\n'), {'k': 'a\u000bb'});
+      expect(PropertiesParser.parse('　key=v\n'), {'　key': 'v'});
+      expect(PropertiesParser.parse(' k =v\n'), {' k ': 'v'});
+      expect(PropertiesParser.parse('a=1\n﻿b=2\n'), {
+        'a': '1',
+        '﻿b': '2',
+      });
+      // A byte order mark in the text is text too (Java keeps it; Dart's
+      // UTF-8 decoder drops a leading one when a resource is read).
+      expect(PropertiesParser.parse('﻿a=1\n'), {'﻿a': '1'});
+      expect(
+        PropertiesLoaderUtils.loadPropertiesSync(
+          ByteArrayResource(
+            Uint8List.fromList([0xef, 0xbb, 0xbf, ...utf8.encode('a=1\n')]),
+          ),
+        ),
+        {'a': '1'},
+      );
+      // Leading blanks before a comment still make it one.
+      expect(PropertiesParser.parse(' \t\f# c\n  ! d\na=1\n'), {'a': '1'});
+    });
+
+    test('a line holding only a backslash joins nothing, as in Java', () {
+      expect(PropertiesParser.parse('\\\n#c\nb=2\n'), {'b': '2'});
+      expect(PropertiesParser.parse('\\\n\nb=2\n'), {'b': '2'});
+      expect(PropertiesParser.parse('a=1\n  \\\n  x=1\n'), {
+        'a': '1',
+        'x': '1',
+      });
+      // At the end of the text it is an empty key.
+      expect(PropertiesParser.parse('a=1\n\\\n'), {'a': '1', '': ''});
+      expect(PropertiesParser.parse('a=1\n\\'), {'a': '1', '': ''});
+      // Continued into a comment or a blank line, a key keeps its value.
+      expect(PropertiesParser.parse('a=x\\\n#c\n'), {'a': 'x#c'});
+      expect(PropertiesParser.parse('a=x\\\n\nb=2\n'), {'a': 'x', 'b': '2'});
+      expect(PropertiesParser.parse('a=x\\\r\n  y\r\n'), {'a': 'xy'});
+      // As many such lines as there are, without recursion.
+      expect(PropertiesParser.parse('${'\\\n' * 100000}b=2\n'), {'b': '2'});
+    });
+
     test('loader utils', () async {
       final resource = ByteArrayResource.fromString('a=1');
       expect(PropertiesLoaderUtils.loadPropertiesSync(resource), {'a': '1'});

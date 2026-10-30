@@ -68,4 +68,27 @@ void main() {
       '/books/**',
     ]);
   });
+
+  // Review before 0.5.0: `/api/books/1111;v=1` did not match
+  // `/api/books/{isbn}` (Spring strips matrix parameters for matching).
+  test('matrix parameters are left out of matching', () {
+    final book = PathPattern.parse('/api/books/{isbn}');
+    expect(book.match('/api/books/1111;v=1')?.variables, {'isbn': '1111'});
+    expect(PathPattern.parse('/api/books').matches('/api;x=1/books'), isTrue);
+    // An encoded semicolon is part of the value.
+    expect(book.match('/api/books/a%3Bb')?.variables, {'isbn': 'a;b'});
+    expect(
+      PathPattern.parse('/files/{*rest}').match('/files/a;x/b')?.variables,
+      {'rest': '/a/b'},
+    );
+  });
+
+  // Second review before 0.5.0: an escape that is not UTF-8 threw a
+  // FormatException (a 500); it is matched as written.
+  test('an escape that is not UTF-8 is matched as written', () {
+    final file = PathPattern.parse('/files/{name}');
+    expect(file.match('/files/%FF')?.variables, {'name': '%FF'});
+    expect(file.match('/files/%C0%AF')?.variables, {'name': '%C0%AF'});
+    expect(file.match('/files/%G1')?.variables, {'name': '%G1'});
+  });
 }

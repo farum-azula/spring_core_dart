@@ -17,10 +17,11 @@ void main() {
       ),
     );
 
-    expect(() => secrets.write('pin', 'x'), refused);
-    expect(() => secrets.read<String>('pin'), refused);
-    expect(() => secrets.delete('pin'), refused);
-    expect(secrets.keys, refused);
-    expect(secrets.deleteAll, refused);
+    // In the Future each returns, never thrown by the call itself.
+    expect(secrets.write('pin', 'x'), refused);
+    expect(secrets.read<String>('pin'), refused);
+    expect(secrets.delete('pin'), refused);
+    expect(secrets.keys(), refused);
+    expect(secrets.deleteAll(), refused);
   });
 }

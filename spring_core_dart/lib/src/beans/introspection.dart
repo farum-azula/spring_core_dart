@@ -188,8 +188,11 @@ final class BeanMethod<T extends Object> {
   /// bind its arguments); empty in other descriptions.
   final List<BeanParameter> parameters;
 
-  /// The full result type, for a `Future<T>` the type `T`; written with
-  /// [parameters], else `null`.
+  /// The full result type, for a `Future<T>` the type `T` (what a request
+  /// handler's answer is converted from). Written by the generator for
+  /// every method of `BeanDefinition.annotatedMethods` that returns a
+  /// value, with or without parameters; `null` for a `void` method (see
+  /// [isVoid]) and in other descriptions.
   final TypeInfo<Object?>? returnTypeInfo;
 
   /// Whether the method returns a non-nullable `Future` (see

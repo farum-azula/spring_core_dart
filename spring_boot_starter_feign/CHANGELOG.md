@@ -1,3 +1,13 @@
+## Unreleased
+
+### Changes
+
+- The `headers` and `full` logs show the values of `Proxy-Authorization`, `Cookie` and `Set-Cookie` as `***` too, in requests and responses, next to `Authorization` and `DPoP`.
+- `spring.cloud.openfeign.client.config.<name>.sensitive-headers` names more headers to mask in the logs, such as `X-Api-Key` (this starter's addition; Feign's logger masks none).
+- `FeignException.toString()` shows a preview of the body as Feign's message does (the whole body under 400 bytes, else its first 200 characters and its size); `responseBody` keeps all of it.
+- A negative `Retry-After` (`-5`) leaves the error not retryable, as in Feign, and a huge one waits at most a year (both gave a zero delay).
+- A `@PathVariable` value `.` or `..` (or one with such a segment between slashes) throws an `ArgumentError`: Dart's `Uri` would drop it and call another path. Differs from Feign, which sends it as it is.
+
 ## 0.4.3
 
 - Flutter security (#15)

@@ -15,17 +15,54 @@ import io.flutter.plugin.common.MethodChannel
  * The login that runs: at most one, answered once. Used on the main
  * thread only (method calls and activity callbacks).
  *
- * It remembers the redirect URI of the login, so [RedirectReceiverActivity]
- * hands over only that redirect ([accepts]): an `https` redirect (an App
- * Link) shares its host with the app's site, whose other links must not
- * complete or cancel a login.
+ * It remembers the redirect URI and the `state` of the login, so
+ * [RedirectReceiverActivity] hands over only that redirect ([accepts]): an
+ * `https` redirect (an App Link) shares its host with the app's site,
+ * whose other links must not complete or cancel a login, and a link with
+ * the exact path but another `state` must not end it either.
+ *
+ * Each login has an id ([Logins]), which its window
+ * ([AuthorizationManagementActivity]) carries and gives back with its
+ * answer: only the running login can be answered, so the window of an
+ * earlier login (replaced, dropped, its activity destroyed late) never
+ * ends the one that runs now.
+ *
+ * Every login is answered: by the redirect, by the user coming back
+ * without one, or, when its window is destroyed without either (a
+ * `singleTask` main activity or a `CLEAR_TOP` intent clears it), by
+ * [AuthorizationManagementActivity.onDestroy] as cancelled. A login of an
+ * engine that went away ([detach]) or of a Dart isolate that a hot
+ * restart replaced ([start] with `replaceStale`) is dropped. A login
+ * whose process the system ended while the browser was open is lost
+ * with the process: the user comes back to the app logged out (the code
+ * that comes back is useless without the PKCE verifier, which was in the
+ * ended process) and logs in again.
  */
 internal object AuthorizationFlow {
-    private var pending: MethodChannel.Result? = null
-    private var pendingRedirect: String? = null
+    private val logins = Logins<MethodChannel.Result>()
 
-    fun start(activity: Activity, url: String, redirectUri: String, result: MethodChannel.Result) {
-        if (pending != null) {
+    /**
+     * Starts the login of [url] for [owner] (the plugin of one engine).
+     * With [replaceStale] (the first login of the root isolate), a login
+     * that [owner] still has running belongs to an isolate a hot restart
+     * replaced: it is answered as cancelled (nobody hears it), and the new
+     * login runs in its place. Its window, if still open, takes the new
+     * login (`singleTask`: the same activity gets the new page through
+     * `onNewIntent`) and opens the new page.
+     */
+    fun start(
+        activity: Activity,
+        url: String,
+        redirectUri: String,
+        result: MethodChannel.Result,
+        owner: Any? = null,
+        replaceStale: Boolean = false,
+    ) {
+        val stale = logins.running
+        if (stale != null && replaceStale && owner != null && stale.owner === owner) {
+            cancel(stale.id)
+        }
+        if (logins.running != null) {
             result.error("in_progress", "a login is already running", null)
             return
         }
@@ -69,39 +106,50 @@ internal object AuthorizationFlow {
             )
             return
         }
-        pending = result
-        pendingRedirect = redirectUri
+        val login = logins.begin(result, redirectUri, RedirectMatcher.stateOf(url), owner)
         try {
-            activity.startActivity(AuthorizationManagementActivity.startIntent(activity, Uri.parse(url)))
+            activity.startActivity(AuthorizationManagementActivity.startIntent(activity, Uri.parse(url), login))
         } catch (e: ActivityNotFoundException) {
-            fail("failed", "the login activity could not start: ${e.message}")
+            fail(login, "failed", "the login activity could not start: ${e.message}")
         }
     }
 
     /** Whether [link] is the redirect of the login that runs. */
     fun accepts(link: Uri): Boolean {
-        val expected = pendingRedirect ?: return false
-        return pending != null && RedirectMatcher.matches(expected, link.toString())
+        val login = logins.running ?: return false
+        return RedirectMatcher.matches(login.redirectUri, link.toString(), login.state)
     }
 
-    fun complete(redirect: Uri) {
-        pending?.success(redirect.toString())
-        clear()
+    /** The id of the login that runs, or [Logins.NO_LOGIN]. */
+    val runningLogin: Long
+        get() = logins.running?.id ?: Logins.NO_LOGIN
+
+    /** Whether a login waits for its answer. */
+    val running: Boolean
+        get() = logins.running != null
+
+    /**
+     * Drops the login of [owner], whose engine went away: its answer has
+     * nobody to reach, and the next engine must be able to log in.
+     */
+    fun detach(owner: Any) {
+        val login = logins.running ?: return
+        if (login.owner === owner) logins.end(login.id)
     }
 
-    fun cancel() {
-        pending?.error("cancelled", "the user closed the login page", null)
-        clear()
+    /** Completes the login [login] with [redirect]; nothing when it does not run. */
+    fun complete(login: Long, redirect: Uri) {
+        logins.end(login)?.success(redirect.toString())
     }
 
-    fun fail(code: String, message: String) {
-        pending?.error(code, message, null)
-        clear()
+    /** Answers the login [login] as cancelled; nothing when it does not run. */
+    fun cancel(login: Long) {
+        logins.end(login)?.error("cancelled", "the user closed the login page", null)
     }
 
-    private fun clear() {
-        pending = null
-        pendingRedirect = null
+    /** Fails the login [login]; nothing when it does not run. */
+    fun fail(login: Long, code: String, message: String) {
+        logins.end(login)?.error(code, message, null)
     }
 
     // Android 12+ opens an https link in an app only when the app's

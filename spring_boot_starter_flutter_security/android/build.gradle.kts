@@ -4,7 +4,8 @@ group = "dev.farumazula.spring_boot_starter_flutter_security"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    val kotlinVersion = "2.4.0"
+    // 2.4.20+: the build cache deserialization advisory of 2.4.0 is fixed.
+    val kotlinVersion = "2.4.21"
     repositories {
         google()
         mavenCentral()
@@ -13,6 +14,18 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:9.1.0")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        // The Android and Kotlin Gradle plugins pull older versions of
+        // these, with advisories (the build machine only, nothing of them
+        // reaches the APK); the fixed ones replace them.
+        constraints {
+            classpath("org.bouncycastle:bcprov-jdk18on:1.86")
+            classpath("org.bouncycastle:bcpkix-jdk18on:1.86")
+            classpath("org.bouncycastle:bcutil-jdk18on:1.86")
+            classpath("com.google.guava:guava:33.7.2-jre")
+            classpath("org.bitbucket.b_c:jose4j:0.9.7")
+            classpath("org.jdom:jdom2:2.0.6.1")
+            classpath("org.apache.commons:commons-lang3:3.21.0")
+        }
     }
 }
 

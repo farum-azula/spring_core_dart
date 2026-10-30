@@ -300,6 +300,35 @@ void main() {
     expect(form, isNotEmpty);
   });
 
+  // The callback's POST is exempt from CSRF and so read by the login
+  // filter itself: with its own limit, not the web starter's 1 MiB.
+  test('a posted body over 64 KB is a 413 and leaves the login '
+      'alone', () async {
+    final f = await _fixture();
+    final authorization = await f.client.startLogin('keycloak');
+    final (path, form) = f.post(authorization);
+    await expectLater(
+      f.client.post(path, {...form, 'user': 'x' * (64 * 1024)}),
+      throwsA(
+        isA<ResponseStatusException>().having(
+          (e) => e.statusCode,
+          'status',
+          413,
+        ),
+      ),
+    );
+    expect(f.provider.tokenRequests, isEmpty);
+    expect(await f.who(), isNull);
+    // Just under the limit is read; the real response still ends the
+    // login.
+    final reply = await f.client.post(path, {
+      ...form,
+      'user': 'x' * (60 * 1024),
+    });
+    expect(reply.status, 302, reason: '${f.failures.lastCode}');
+    expect(await f.who(), isNotNull);
+  });
+
   test('the CSRF exemption covers the callback POST only', () async {
     final f = await _fixture();
     final other = await f.client.post('/private', {'a': 'b'});

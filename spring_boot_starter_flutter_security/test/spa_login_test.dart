@@ -9,6 +9,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_flutter_security/src/web/web_crypto_dpop_key.dart'
+    show StoredKeyPair, storedKeyPairUsable;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
     show captureLogs;
 
@@ -577,6 +579,52 @@ void main() {
     });
   });
 
+  group('a stored WebCrypto key is checked before use', () {
+    // What the browser vault reads of a key pair from IndexedDB.
+    const p256 = {'name': 'ECDSA', 'namedCurve': 'P-256'};
+    StoredKeyPair pair({
+      bool privateExtractable = false,
+      String? privateType = 'private',
+      String? publicType = 'public',
+      Object? privateAlgorithm = p256,
+      Object? publicAlgorithm = p256,
+      List<String> privateUsages = const ['sign'],
+    }) => (
+      privateExtractable: privateExtractable,
+      privateType: privateType,
+      publicType: publicType,
+      privateAlgorithm: privateAlgorithm,
+      publicAlgorithm: publicAlgorithm,
+      privateUsages: privateUsages,
+    );
+
+    test('the vault\'s own key is used', () {
+      expect(storedKeyPairUsable(pair()), isTrue);
+    });
+
+    test('anything else is replaced', () {
+      for (final (reason, bad) in [
+        ('extractable', pair(privateExtractable: true)),
+        ('a public key as the private one', pair(privateType: 'public')),
+        ('a secret key', pair(privateType: 'secret')),
+        ('no public key', pair(publicType: null)),
+        (
+          'P-384',
+          pair(privateAlgorithm: {'name': 'ECDSA', 'namedCurve': 'P-384'}),
+        ),
+        (
+          'ECDH',
+          pair(privateAlgorithm: {'name': 'ECDH', 'namedCurve': 'P-256'}),
+        ),
+        ('RSA', pair(publicAlgorithm: {'name': 'RSASSA-PKCS1-v1_5'})),
+        ('no algorithm', pair(privateAlgorithm: null)),
+        ('cannot sign', pair(privateUsages: const ['deriveBits'])),
+      ]) {
+        expect(storedKeyPairUsable(bad), isFalse, reason: reason);
+      }
+    });
+  });
+
   group('DPoP with the WebCrypto key', () {
     test('the key loads at the first use, then signs the proofs', () async {
       fixture = await SpaFixture.create(dpop: DPoPMode.enabled);
@@ -614,6 +662,28 @@ void main() {
       expect(vault.loads, 1); // loaded once
       expect(key.toString(), contains(vault.key.thumbprint));
     });
+
+    test(
+      'every login binds a new key, never one found in the storage',
+      () async {
+        // A key already in the origin's IndexedDB: a script could have
+        // planted it, knowing its private key.
+        fixture = await SpaFixture.create(dpop: DPoPMode.enabled);
+        final vault = FakeVault();
+        final planted = vault.key.thumbprint;
+        fixture.dPoPKey = WebCryptoDPoPKey(vault: vault);
+
+        await fixture.service().login('keycloak');
+        final first = fixture.page.visited.last.queryParameters['dpop_jkt'];
+        expect(first, isNot(planted));
+        expect(first, vault.key.thumbprint);
+
+        await fixture.service().login('keycloak');
+        final second = fixture.page.visited.last.queryParameters['dpop_jkt'];
+        expect(second, isNot(first));
+        expect(vault.deletes, 2);
+      },
+    );
 
     test('a DER signature becomes raw R || S', () async {
       final vault = FakeVault(der: true);

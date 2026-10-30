@@ -35,8 +35,9 @@ const _log = SpringLog('spring.web.mvc');
 /// order 0, so it is the first handler mapping asked. Applications do not
 /// create it; they write controllers and configure it through
 /// `WebMvcConfigurer` beans. The security starter reads its CORS rules
-/// ([corsConfigurationFor]). Spring splits this work between
-/// `RequestMappingHandlerMapping` and `RequestMappingHandlerAdapter`.
+/// (through `DispatcherHandler.corsConfigurationFor`). Spring splits this
+/// work between `RequestMappingHandlerMapping` and
+/// `RequestMappingHandlerAdapter`.
 final class RequestMappingHandlerMapping
     implements HandlerMapping, Ordered, SmartInitializingSingleton {
   /// The router of the controller beans of [beanFactory]. Without a
@@ -48,6 +49,7 @@ final class RequestMappingHandlerMapping
     this.argumentResolvers = const [],
     this.interceptors = const [],
     this.corsSource,
+    this.corsConfigurationSource,
     this.validator,
     MultipartResolver? multipartResolver,
   }) : multipartResolver = multipartResolver ?? MultipartResolver();
@@ -71,10 +73,22 @@ final class RequestMappingHandlerMapping
   /// order.
   final List<InterceptorRegistration> interceptors;
 
-  /// The global CORS rules: a `CorsConfigurationSource` bean and the
-  /// mappings of `WebMvcConfigurer.addCorsMappings`, combined. `null`
-  /// when there are none.
+  /// The global CORS rules of `WebMvcConfigurer.addCorsMappings`,
+  /// combined with the `@CrossOrigin` of the handler, as Spring MVC's
+  /// global CORS configuration; `null` when there are none.
   final CorsConfigurationSource? corsSource;
+
+  /// The application's `CorsConfigurationSource` bean named
+  /// `corsConfigurationSource` (the starter passes no other: beans of the
+  /// type with other names are ignored, as by Spring Security), `null`
+  /// when there is none. Where it has a configuration for a request, that
+  /// configuration alone applies, neither [corsSource] nor `@CrossOrigin`:
+  /// as with Spring Security, whose `CorsFilter` applies the
+  /// `corsConfigurationSource` bean before Spring MVC, which then leaves
+  /// the request as the filter answered it. So CORS works the same with
+  /// and without the security starter. Elsewhere [corsSource] and
+  /// `@CrossOrigin` apply.
+  final CorsConfigurationSource? corsConfigurationSource;
 
   /// Checks `@Valid()` arguments; `null` when the application has no
   /// unique `Validator`, and then `@Valid()` checks nothing.
@@ -85,7 +99,9 @@ final class RequestMappingHandlerMapping
   final MultipartResolver multipartResolver;
 
   final _mappings = <_Mapping>[];
-  final _adviceHandlers = <ExceptionHandlerMethod>[];
+  final _advice = <_Advice>[];
+  // The controllers' definitions, for the selectors of narrowed advice.
+  final _controllers = <String, BeanDefinition<Object>>{};
   var _initialized = false;
 
   @override
@@ -120,6 +136,7 @@ final class RequestMappingHandlerMapping
         continue;
       }
       final definition = registry.getBeanDefinition(name);
+      _controllers[name] = definition;
       final typeName = _typeName(definition.beanType);
       final classMapping = definition.annotations
           .whereType<Mapping>()
@@ -165,22 +182,31 @@ final class RequestMappingHandlerMapping
     }
     final adviceNames = beanFactory
         .getBeanNamesForAnnotation<ControllerAdvice>();
-    final advice = <(int, String)>[];
+    final advice = <(int, int, String)>[];
     for (final name in adviceNames) {
       if (!registry.containsBeanDefinition(name)) {
         continue;
       }
       final definition = registry.getBeanDefinition(name);
-      advice.add((definition.order ?? Ordered.lowestPrecedence, name));
+      advice.add((
+        definition.order ?? Ordered.lowestPrecedence,
+        advice.length,
+        name,
+      ));
     }
-    advice.sort((a, b) => a.$1.compareTo(b.$1));
-    for (final (_, name) in advice) {
+    // By @Order; equal orders keep the registration order (a stable sort,
+    // as Spring's OrderComparator).
+    advice.sort(
+      (a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2),
+    );
+    for (final (_, _, name) in advice) {
       final definition = registry.getBeanDefinition(name);
+      final handlers = <ExceptionHandlerMethod>[];
       for (final method in definition.annotatedMethods) {
         if (method.annotations.whereType<ExceptionHandler>().isEmpty) {
           continue;
         }
-        _adviceHandlers.add(
+        handlers.add(
           _exceptionHandler(
             HandlerMethod(
               beanName: name,
@@ -193,6 +219,10 @@ final class RequestMappingHandlerMapping
           ),
         );
       }
+      final annotation = definition.annotations
+          .whereType<ControllerAdvice>()
+          .firstOrNull;
+      _advice.add(_Advice(name, annotation, handlers));
     }
     // Two methods for the same request.
     final seen = <String, _Mapping>{};
@@ -293,10 +323,10 @@ final class RequestMappingHandlerMapping
         'EventStream / Stream directly',
       );
     }
+    final cors = _crossOrigin(handler, mapping.method, problems);
     if (problems.length != before) {
       return null;
     }
-    final cors = _crossOrigin(handler);
     return _Mapping(
       this,
       handler,
@@ -313,7 +343,11 @@ final class RequestMappingHandlerMapping
   static bool _isStream(TypeInfo<Object?> type) =>
       type is GenericType<Object?> && type.isSubtypeOf<Stream<Object?>>();
 
-  CorsConfiguration? _crossOrigin(HandlerMethod handler) {
+  CorsConfiguration? _crossOrigin(
+    HandlerMethod handler,
+    HttpMethod method,
+    List<String> problems,
+  ) {
     final onClass = handler.classAnnotations
         .whereType<CrossOrigin>()
         .firstOrNull;
@@ -332,12 +366,46 @@ final class RequestMappingHandlerMapping
             allowedHeaders: annotation.allowedHeaders,
             exposedHeaders: annotation.exposedHeaders,
             allowCredentials: annotation.allowCredentials,
+            allowPrivateNetwork: annotation.allowPrivateNetwork,
             maxAge: annotation.maxAge == null
                 ? null
                 : Duration(seconds: annotation.maxAge!),
           );
-    final combined = (of(onClass) ?? CorsConfiguration()).combine(of(onMethod));
-    return combined.applyPermitDefaultValues();
+    final combined = (of(onClass) ?? CorsConfiguration()).combine(
+      of(onMethod),
+    );
+    if (combined.allowedMethods.isEmpty) {
+      // Spring's initCorsConfiguration: the methods the handler is mapped
+      // to (not GET, HEAD and POST).
+      combined.allowedMethods.add(method.value);
+    }
+    combined.applyPermitDefaultValues();
+    // Spring's validateAllowCredentials and validateAllowPrivateNetwork,
+    // at startup, on the origins as checked ('https://a.example, *' holds
+    // "*").
+    for (final (validate, attribute, why) in [
+      (
+        combined.validateAllowCredentials,
+        'allowCredentials',
+        'with credentials',
+      ),
+      (
+        combined.validateAllowPrivateNetwork,
+        'allowPrivateNetwork',
+        'to a private network',
+      ),
+    ]) {
+      try {
+        validate();
+      } on StateError {
+        problems.add(
+          '${handler.description}: @CrossOrigin($attribute: true) needs '
+          'origins or originPatterns (all origins, "*", cannot be allowed '
+          '$why)',
+        );
+      }
+    }
+    return combined;
   }
 
   List<MediaType> _mediaTypes(
@@ -805,9 +873,49 @@ final class RequestMappingHandlerMapping
     if (type is GenericType<Object?> && type.isSubtypeOf<Stream<Object?>>()) {
       return request.body;
     }
-    final Uint8List bytes;
+    // The media type is checked before the body is read, as Spring picks
+    // its converter first: a body nothing can read is a 415 at once.
+    final header = request.headers.contentType;
+    final contentType = request.contentType;
+    final raw = base == Uint8List || base == (List<int>) || base == String;
+    // A Content-Type that does not parse is a 415 whatever the parameter,
+    // as Spring's InvalidMediaTypeException.
+    if (contentType == null && header != null && header.trim().isNotEmpty) {
+      throw HttpMediaTypeNotSupportedException(
+        header,
+        raw ? const [] : const [MediaType.applicationJson],
+      );
+    }
+    final form =
+        contentType != null &&
+        contentType.subtype == 'x-www-form-urlencoded' &&
+        type is MapType<Object?, Object?>;
+    if (!raw && !form && contentType != null && !_isJson(contentType)) {
+      throw HttpMediaTypeNotSupportedException(
+        request.headers.contentType,
+        const [MediaType.applicationJson],
+      );
+    }
+    var bytes = Uint8List(0);
     try {
-      bytes = await request.readBodyBytes();
+      if (!raw && contentType == null) {
+        // No Content-Type: Spring reads it as application/octet-stream,
+        // which JSON does not read. A body in a POST, PUT or PATCH is a
+        // 415; no body, or one in another method, is a missing body.
+        if (await _hasBody(request) &&
+            const {
+              HttpMethod.post,
+              HttpMethod.put,
+              HttpMethod.patch,
+            }.contains(request.method)) {
+          throw HttpMediaTypeNotSupportedException(
+            MediaType.applicationOctetStream,
+            const [MediaType.applicationJson],
+          );
+        }
+      } else {
+        bytes = await request.readBodyBytes();
+      }
     } on PayloadTooLargeException catch (error) {
       throw PayloadTooLargeErrorException(error.maxLength);
     }
@@ -825,22 +933,23 @@ final class RequestMappingHandlerMapping
     } else if (base == String) {
       value = _decodeText(bytes, request);
     } else {
-      final contentType = request.contentType;
-      if (contentType != null &&
-          contentType.subtype == 'x-www-form-urlencoded' &&
-          type is MapType<Object?, Object?>) {
-        final form = Uri.splitQueryString(_decodeText(bytes, request));
+      if (form) {
+        final Map<String, String> fields;
+        try {
+          fields = Uri.splitQueryString(_decodeText(bytes, request));
+        } on Object catch (error) {
+          // A malformed %-escape, or one that is not UTF-8.
+          throw HttpMessageNotReadableException(
+            'Invalid form body: $error',
+            error,
+          );
+        }
         value = _convertMap(
           {
-            for (final entry in form.entries) entry.key: [entry.value],
+            for (final entry in fields.entries) entry.key: [entry.value],
           },
           type,
           parameter,
-        );
-      } else if (contentType != null && !_isJson(contentType)) {
-        throw HttpMediaTypeNotSupportedException(
-          request.headers.contentType,
-          const [MediaType.applicationJson],
         );
       } else {
         try {
@@ -860,6 +969,17 @@ final class RequestMappingHandlerMapping
       _validate(value, parameter);
     }
     return value;
+  }
+
+  // Whether the body has at least one byte; reads no more than its
+  // first chunk, as Spring's EmptyBodyCheckingHttpInputMessage peeks.
+  static Future<bool> _hasBody(ServerHttpRequest request) async {
+    await for (final chunk in request.body) {
+      if (chunk.isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static bool _isJson(MediaType type) =>
@@ -946,10 +1066,15 @@ final class RequestMappingHandlerMapping
   /// none handles it.
   ///
   /// The methods of the controller of [handler] (the handler that threw)
-  /// come first, then those of the `@ControllerAdvice` beans in `@Order`.
-  /// Among the methods that handle the error, one that lists its exact
-  /// runtime type in `@ExceptionHandler([...])` wins, else the one whose
-  /// exception parameter has the most specific type.
+  /// come first, then the `@ControllerAdvice` beans in `@Order`, as in
+  /// Spring's `ExceptionHandlerExceptionResolver`: the first advice bean
+  /// that applies to the controller and has a method for the error
+  /// answers it, even when a later bean has a more specific one. Within
+  /// one bean, a method that lists the error's exact runtime type in
+  /// `@ExceptionHandler([...])` wins, else the one whose exception
+  /// parameter has the most specific type. An advice narrowed with
+  /// `ControllerAdvice.of` applies only to the controllers it selects,
+  /// and not to errors without a [handler].
   ExceptionHandlerMethod? exceptionHandlerFor(
     Object error, {
     HandlerMethod? handler,
@@ -971,7 +1096,17 @@ final class RequestMappingHandlerMapping
         }
       }
     }
-    return ExceptionHandlerMethod._best(_adviceHandlers, error);
+    final controller = handler == null ? null : _controllers[handler.beanName];
+    for (final advice in _advice) {
+      if (!advice.appliesTo(handler == null ? null : controller)) {
+        continue;
+      }
+      if (ExceptionHandlerMethod._best(advice.handlers, error)
+          case final found?) {
+        return found;
+      }
+    }
+    return null;
   }
 
   /// Answers [error] with its `@ExceptionHandler` method (see
@@ -1020,6 +1155,29 @@ final class RequestMappingHandlerMapping
     if (!_initialized) {
       initialize();
     }
+    return switch (_lookup(request)) {
+      null => null,
+      _PreFlightLookup(:final mapping?) => _PreFlightHandler(
+        (request) => _corsConfig(mapping, request, validate: true),
+      ),
+      _PreFlightLookup() => _PreFlightHandler(
+        (request) => _globalCors(request, validate: true),
+      ),
+      _OptionsLookup(:final allowed) => _OptionsHandler(
+        allowed,
+        (request) => _globalCors(request, validate: true),
+      ),
+      _HandlerLookup(:final mapping, :final variables) => _Execution(
+        mapping,
+        variables,
+      ),
+    };
+  }
+
+  // The router's choice for [request], made as Spring's
+  // RequestMappingInfoHandlerMapping makes it: `null` for a path no
+  // handler maps; throws the 405, 415, 406 and 400 exceptions.
+  _Lookup? _lookup(ServerHttpRequest request) {
     final path = request.path;
     final matches = <(_Mapping, PathMatch)>[];
     for (final mapping in _mappings) {
@@ -1049,37 +1207,33 @@ final class RequestMappingHandlerMapping
           match,
     ];
     if (byMethod.isEmpty) {
+      if (preFlight) {
+        // No handler for the announced method: the global rules alone
+        // decide, and a refused pre-flight is a 403, as in Spring (never
+        // a 405).
+        return const _PreFlightLookup(null);
+      }
       final allowed = {for (final (m, _) in matches) m.method};
       if (allowed.contains(HttpMethod.get)) {
         allowed.add(HttpMethod.head);
       }
-      if (method == HttpMethod.options && !preFlight) {
-        return FunctionHttpHandler((request, response) async {
-          response
-            ..statusCode = 200
-            ..headers.set(
-              HttpHeaders.allowHeader,
-              {...allowed, HttpMethod.options}.map((m) => m.value).join(', '),
-            );
-          await response.close();
-        });
+      if (method == HttpMethod.options) {
+        return _OptionsLookup(allowed);
       }
       throw HttpRequestMethodNotSupportedException(method, allowed);
     }
     if (preFlight) {
-      final (mapping, _) = byMethod.first;
-      return FunctionHttpHandler((request, response) async {
-        final config = _corsConfig(mapping, request);
-        if (config == null ||
-            !processCors(config, request, response, preFlight: true)) {
-          await response.send(403, 'Invalid CORS request');
-          return;
-        }
-        response.statusCode = 200;
-        await response.close();
-      });
+      // The handler of the announced method; its consumes, produces and
+      // headers conditions match any pre-flight, as in Spring.
+      return _PreFlightLookup(byMethod.first.$1);
     }
-    final contentType = request.contentType;
+    // A request without a Content-Type is matched as
+    // application/octet-stream, as in Spring.
+    final contentType =
+        request.contentType ??
+        (request.headers.contentType == null
+            ? MediaType.parse(MediaType.applicationOctetStream)
+            : null);
     final byConsumes = [
       for (final match in byMethod)
         if (match.$1.consumes.isEmpty ||
@@ -1089,7 +1243,7 @@ final class RequestMappingHandlerMapping
     ];
     if (byConsumes.isEmpty) {
       throw HttpMediaTypeNotSupportedException(
-        request.headers.contentType,
+        request.headers.contentType ?? MediaType.applicationOctetStream,
         {for (final (m, _) in byMethod) ...m.consumes.map((c) => '$c')}
             .toList(),
       );
@@ -1121,53 +1275,140 @@ final class RequestMappingHandlerMapping
     }
     byHeaders.sort((a, b) => a.$1.compareTo(b.$1));
     final (mapping, match) = byHeaders.first;
-    return _Execution(mapping, match.variables);
+    return _HandlerLookup(mapping, match.variables);
   }
 
-  /// The CORS rules the router applies to [request]: the global rules
-  /// combined with the `@CrossOrigin` of the handler the request is
-  /// mapped to (for a pre-flight, the handler of the request it
-  /// announces). For a path no handler maps, the global rules alone;
-  /// `null` when there are none.
+  /// The CORS rules the router applies to [request]: those of the handler
+  /// the router would call, chosen as for the request itself (path,
+  /// method, `consumes`, `produces` and `headers`): the global rules
+  /// combined with its `@CrossOrigin`, or the configuration of the
+  /// [corsConfigurationSource] bean alone where it has one. For a
+  /// pre-flight, the handler of the method it announces. For a path no
+  /// handler maps, or a request the router refuses (405, 415, 406, 400),
+  /// and an `OPTIONS` request the router answers itself, the global rules
+  /// alone; `null` when there are none.
   ///
-  /// It lets a filter that runs before the router, such as the security
-  /// starter's CORS filter, answer pre-flights the way the router would.
-  /// Spring uses its `HandlerMappingIntrospector` for the same purpose.
+  /// It lets a filter that runs before the router check requests as the
+  /// router would: the router then leaves a request the filter answered
+  /// (with an `Access-Control-Allow-Origin`) as it is. The security
+  /// starter's CORS filter uses `DispatcherHandler.corsConfigurationFor`
+  /// instead, which also knows the requests another handler mapping
+  /// takes (the WebSocket handshakes). Spring uses its
+  /// `HandlerMappingIntrospector` for the same purpose.
   CorsConfiguration? corsConfigurationFor(ServerHttpRequest request) {
     if (!_initialized) {
       initialize();
     }
-    var method = request.method;
-    if (isPreFlightRequest(request)) {
-      final requested =
-          request.headers[HttpHeaders.accessControlRequestMethodHeader] ?? '';
-      method =
-          HttpMethod.values
-              .where((m) => m.value == requested.trim())
-              .firstOrNull ??
-          HttpMethod.options;
+    final _Lookup? lookup;
+    try {
+      lookup = _lookup(request);
+    } on ErrorResponseException {
+      // A request the router refuses: as for a path no handler maps
+      // (Spring's introspector goes on to the next handler mapping).
+      return _globalCors(request);
     }
-    final path = request.path;
-    final candidates = [
-      for (final mapping in _mappings)
-        if ((mapping.method == method ||
-                (method == HttpMethod.head &&
-                    mapping.method == HttpMethod.get)) &&
-            mapping.pattern.match(path) != null)
-          mapping,
-    ]..sort((a, b) => a.compareTo(b)); // the router's choice first
-    return candidates.isEmpty
-        ? corsSource?.getCorsConfiguration(request)
-        : _corsConfig(candidates.first, request);
+    return switch (lookup) {
+      _HandlerLookup(:final mapping) ||
+      _PreFlightLookup(:final mapping?) => _corsConfig(mapping, request),
+      _ => _globalCors(request),
+    };
   }
 
-  CorsConfiguration? _corsConfig(_Mapping mapping, ServerHttpRequest request) {
+  // DispatcherHandler.corsConfigurationFor, as Spring's
+  // HandlerMappingIntrospector.getCorsConfiguration: the first of
+  // [mappings] (the dispatcher's, in its order) that takes [request]
+  // decides. This router: its handler's rules. Another mapping (the
+  // WebSocket endpoints'): the bean's rules where it has some, else none;
+  // neither the global rules nor @CrossOrigin are for its requests (as
+  // Spring's WebSocketHandlerMapping has no global CORS configuration),
+  // and the dispatcher never brings them to this router. A mapping that
+  // throws (this router's 405, 415, 406, 400) is passed over, as the
+  // introspector ignores the exception. No mapping: the global rules, as
+  // for a path no handler maps.
+  Future<CorsConfiguration?> _dispatcherCors(
+    List<HandlerMapping> mappings,
+    ServerHttpRequest request,
+  ) async {
+    if (!_initialized) {
+      initialize();
+    }
+    for (final handlerMapping in mappings) {
+      if (identical(handlerMapping, this)) {
+        final _Lookup? lookup;
+        try {
+          lookup = _lookup(request);
+        } on ErrorResponseException {
+          continue;
+        }
+        switch (lookup) {
+          case null:
+            continue;
+          case _HandlerLookup(:final mapping) ||
+              _PreFlightLookup(:final mapping?):
+            return _corsConfig(mapping, request);
+          case _:
+            return _globalCors(request);
+        }
+      }
+      final HttpHandler? handler;
+      try {
+        handler = await handlerMapping.getHandler(request);
+      } on Object {
+        continue;
+      }
+      if (handler != null) {
+        return corsConfigurationSource?.getCorsConfiguration(request);
+      }
+    }
+    return _globalCors(request);
+  }
+
+  // The rules of [mapping]'s handler: the bean's alone where it has some,
+  // else the global rules combined with the handler's @CrossOrigin. With
+  // [validate], the latter are checked as Spring's AbstractHandlerMapping
+  // checks them for every request (a StateError, so a 500, for "*" with
+  // credentials or a private network).
+  CorsConfiguration? _corsConfig(
+    _Mapping mapping,
+    ServerHttpRequest request, {
+    bool validate = false,
+  }) {
+    if (corsConfigurationSource?.getCorsConfiguration(request)
+        case final bean?) {
+      return bean;
+    }
     final global = corsSource?.getCorsConfiguration(request);
     final local = mapping.cors;
-    if (global == null) {
-      return local;
+    final config = global == null
+        ? local
+        : local == null
+        ? global
+        : global.combine(local);
+    if (validate) {
+      config
+        ?..validateAllowCredentials()
+        ..validateAllowPrivateNetwork();
     }
-    return local == null ? global : global.combine(local);
+    return config;
+  }
+
+  // The rules for a request no handler of the router takes: the bean's
+  // where it has some, else the global rules.
+  CorsConfiguration? _globalCors(
+    ServerHttpRequest request, {
+    bool validate = false,
+  }) {
+    if (corsConfigurationSource?.getCorsConfiguration(request)
+        case final bean?) {
+      return bean;
+    }
+    final config = corsSource?.getCorsConfiguration(request);
+    if (validate) {
+      config
+        ?..validateAllowCredentials()
+        ..validateAllowPrivateNetwork();
+    }
+    return config;
   }
 
   static List<MediaType> _accept(ServerHttpRequest request) {
@@ -1181,6 +1422,44 @@ final class RequestMappingHandlerMapping
     }
   }
 }
+
+// A @ControllerAdvice bean: its exception handlers and the controllers
+// it applies to (Spring's ControllerAdviceBean and HandlerTypePredicate).
+final class _Advice {
+  _Advice(this.name, this.annotation, this.handlers);
+
+  final String name;
+  final ControllerAdvice? annotation;
+  final List<ExceptionHandlerMethod> handlers;
+
+  bool appliesTo(BeanDefinition<Object>? controller) {
+    final advice = annotation;
+    if (advice == null ||
+        (advice.basePackages.isEmpty &&
+            advice.assignableTypes.isEmpty &&
+            advice.annotations.isEmpty)) {
+      return true;
+    }
+    if (controller == null) {
+      return false;
+    }
+    final source = controller.source ?? '';
+    return advice.basePackages.any(source.startsWith) ||
+        advice.assignableTypes.any(controller.types.contains) ||
+        controller.annotations.any(
+          (a) => advice.annotations.contains(a.runtimeType),
+        );
+  }
+}
+
+/// `DispatcherHandler.corsConfigurationFor`: the CORS rules of [request]
+/// as the dispatcher asking [mappings] in order, among them [router],
+/// routes it. Internal: the library hides it.
+Future<CorsConfiguration?> dispatcherCorsConfiguration(
+  List<HandlerMapping> mappings,
+  RequestMappingHandlerMapping router,
+  ServerHttpRequest request,
+) => router._dispatcherCors(mappings, request);
 
 /// The value a parameter binder returns for an optional parameter that
 /// the request does not fill: a named parameter is then left out of the
@@ -1431,6 +1710,92 @@ final class _Mapping implements Comparable<_Mapping> {
       '${method.value} ${pattern.pattern} -> ${handler.description}';
 }
 
+// The router's choice for a request (_lookup).
+sealed class _Lookup {
+  const _Lookup();
+}
+
+// A request to a handler.
+final class _HandlerLookup extends _Lookup {
+  const _HandlerLookup(this.mapping, this.variables);
+
+  final _Mapping mapping;
+  final Map<String, String> variables;
+}
+
+// A pre-flight, with the handler of the method it announces (`null`: no
+// handler of the path maps it).
+final class _PreFlightLookup extends _Lookup {
+  const _PreFlightLookup(this.mapping);
+
+  final _Mapping? mapping;
+}
+
+// An OPTIONS request (not a pre-flight) to a path without an OPTIONS
+// handler: the router answers it with the methods [allowed].
+final class _OptionsLookup extends _Lookup {
+  const _OptionsLookup(this.allowed);
+
+  final Set<HttpMethod> allowed;
+}
+
+// Answers an OPTIONS request with `Allow`, as Spring's HttpOptionsHandler.
+// The CORS rules [configurationFor] finds (the global ones) apply first,
+// as Spring's CorsInterceptor applies them to that handler: a CORS request
+// is checked, with its method, OPTIONS, and the answer gets Vary.
+final class _OptionsHandler implements HttpHandler {
+  _OptionsHandler(this.allowed, this.configurationFor);
+
+  final Set<HttpMethod> allowed;
+  final CorsConfiguration? Function(ServerHttpRequest request) configurationFor;
+
+  @override
+  Future<void> handle(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) async {
+    final config = configurationFor(request);
+    if (config != null &&
+        !processCors(config, request, response, preFlight: false)) {
+      await response.send(403, 'Invalid CORS request');
+      return;
+    }
+    response
+      ..statusCode = 200
+      ..headers.set(
+        HttpHeaders.allowHeader,
+        {...allowed, HttpMethod.options}.map((m) => m.value).join(', '),
+      );
+    await response.close();
+  }
+}
+
+// Answers a pre-flight from the CORS rules [configurationFor] finds, as
+// Spring's PreFlightHandler: a 403 when they refuse it, else a 200 with
+// the CORS headers. Without rules, a 200 with none (and no Vary), as
+// Spring's DefaultCorsProcessor answers a null configuration: the browser
+// then blocks the request it announced.
+final class _PreFlightHandler implements HttpHandler {
+  _PreFlightHandler(this.configurationFor);
+
+  final CorsConfiguration? Function(ServerHttpRequest request) configurationFor;
+
+  @override
+  Future<void> handle(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) async {
+    final config = configurationFor(request);
+    if (config != null &&
+        !processCors(config, request, response, preFlight: true)) {
+      await response.send(403, 'Invalid CORS request');
+      return;
+    }
+    response.statusCode = 200;
+    await response.close();
+  }
+}
+
 final class _Execution implements HttpHandler {
   _Execution(this.mapping, this.variables);
 
@@ -1444,13 +1809,15 @@ final class _Execution implements HttpHandler {
   ) async {
     final owner = mapping.owner;
     final handler = mapping.handler;
-    if (isCorsRequest(request)) {
-      final config = owner._corsConfig(mapping, request);
-      if (config != null &&
-          !processCors(config, request, response, preFlight: false)) {
-        await response.send(403, 'Invalid CORS request');
-        return;
-      }
+    // Every request to a handler with CORS rules, as Spring's
+    // CorsInterceptor: a CORS request is checked (its origin and its
+    // method), and every answer gets Vary. A request a filter answered
+    // already (Access-Control-Allow-Origin set) is left as it is.
+    final cors = owner._corsConfig(mapping, request, validate: true);
+    if (cors != null &&
+        !processCors(cors, request, response, preFlight: false)) {
+      await response.send(403, 'Invalid CORS request');
+      return;
     }
     final target = request.method == HttpMethod.head
         ? HeadResponse(response)

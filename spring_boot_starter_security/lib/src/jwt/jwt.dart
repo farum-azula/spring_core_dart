@@ -103,6 +103,27 @@ final class Jwt {
     };
   }
 
+  /// The `x5t#S256` member of the `cnf` claim (RFC 8705): the SHA-256
+  /// thumbprint of the client certificate the token is bound to, so that
+  /// it is valid only over a TLS connection made with that certificate;
+  /// `null` for a token not bound to a certificate.
+  ///
+  /// The web starter does not hand the client's certificate to the
+  /// security filters, so the resource server cannot check the binding
+  /// and refuses such tokens, with either scheme (Spring Security refuses
+  /// them too when the request has no client certificate). A value that
+  /// is not a string gives `''`.
+  String? get x509Thumbprint {
+    final cnf = confirmation;
+    if (cnf == null || !cnf.containsKey('x5t#S256')) {
+      return null;
+    }
+    return switch (cnf['x5t#S256']) {
+      final String thumbprint => thumbprint,
+      _ => '',
+    };
+  }
+
   /// Whether the token has the claim [name], even with a `null` value.
   bool hasClaim(String name) => claims.containsKey(name);
 
@@ -288,18 +309,94 @@ final class JwtAudienceValidator implements OAuth2TokenValidator<Jwt> {
         ]);
 }
 
+/// The [OAuth2TokenValidator] of the token's kind: the `typ` header must
+/// be one of [validTypes], compared without regard to case.
+///
+/// An identity provider signs other JWTs with the same keys as its access
+/// tokens: logout tokens (`logout+jwt`), security event tokens
+/// (`secevent+jwt`), and clients sign DPoP proofs (`dpop+jwt`). Their
+/// `typ` keeps them from being taken for an access token (RFC 8725
+/// §3.11). [JwtTypeValidator.jwt], in every default decoder, accepts
+/// `JWT` or no `typ` at all, which is what most providers put on access
+/// tokens.
+///
+/// ```dart
+/// // A provider that types its access tokens as RFC 9068 says.
+/// @Bean()
+/// JwtDecoder jwtDecoder() => NimbusJwtDecoder.withJwkSetUri(
+///   Uri.parse('https://login.example.com/jwks'),
+///   validator: DelegatingOAuth2TokenValidator([
+///     JwtTypeValidator(['at+jwt', 'JWT'], allowEmpty: true),
+///     JwtTimestampValidator(),
+///     const JwtIssuerValidator('https://login.example.com'),
+///   ]),
+/// );
+/// ```
+///
+/// Spring (Java): `JwtTypeValidator`.
+final class JwtTypeValidator implements OAuth2TokenValidator<Jwt> {
+  /// A validator accepting the `typ` values [validTypes] and, with
+  /// [allowEmpty], a token without `typ` (or with an empty one).
+  ///
+  /// Throws an [ArgumentError] when [validTypes] is empty.
+  JwtTypeValidator(List<String> validTypes, {this.allowEmpty = false})
+    : validTypes = List.unmodifiable(validTypes) {
+    if (validTypes.isEmpty) {
+      throw ArgumentError('validTypes cannot be empty');
+    }
+  }
+
+  /// The default of the decoders: `JWT` (in any case) or no `typ`, as
+  /// Spring Security 7's `JwtTypeValidator.jwt()`. `at+jwt` is not
+  /// accepted by it, as in Spring.
+  factory JwtTypeValidator.jwt() => JwtTypeValidator(['JWT'], allowEmpty: true);
+
+  /// The accepted `typ` values; cannot be modified.
+  final List<String> validTypes;
+
+  /// Whether a token without `typ`, or with a blank one, passes.
+  final bool allowEmpty;
+
+  @override
+  OAuth2TokenValidatorResult validate(Jwt token) {
+    final type = token.headers['typ'];
+    if (allowEmpty && (type == null || (type is String && type.trim() == ''))) {
+      return OAuth2TokenValidatorResult.success;
+    }
+    if (type is String) {
+      final lower = type.toLowerCase();
+      if (validTypes.any((valid) => valid.toLowerCase() == lower)) {
+        return OAuth2TokenValidatorResult.success;
+      }
+    }
+    return OAuth2TokenValidatorResult.failure(
+      OAuth2Error(
+        _invalidToken,
+        'the given typ value needs to be one of $validTypes',
+        'https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.9',
+      ),
+    );
+  }
+}
+
 /// Ready-made sets of validators, to start from when adding your own.
 ///
 /// Spring (Java): `JwtValidators`.
 abstract final class JwtValidators {
-  /// The lifetime check alone: `exp` and `nbf` with 60 seconds of
-  /// skew.
+  /// The checks every token gets: its type ([JwtTypeValidator.jwt]:
+  /// `JWT` or no `typ`) and its lifetime (`exp` and `nbf` with 60 seconds
+  /// of skew).
   static OAuth2TokenValidator<Jwt> createDefault() =>
-      DelegatingOAuth2TokenValidator([JwtTimestampValidator()]);
+      DelegatingOAuth2TokenValidator([
+        JwtTypeValidator.jwt(),
+        JwtTimestampValidator(),
+      ]);
 
-  /// The lifetime check, and the `iss` claim must equal [issuer].
+  /// The checks of [createDefault], and the `iss` claim must equal
+  /// [issuer].
   static OAuth2TokenValidator<Jwt> createDefaultWithIssuer(String issuer) =>
       DelegatingOAuth2TokenValidator([
+        JwtTypeValidator.jwt(),
         JwtTimestampValidator(),
         JwtIssuerValidator(issuer),
       ]);

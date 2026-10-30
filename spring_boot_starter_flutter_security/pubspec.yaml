@@ -57,12 +57,14 @@ flutter:
       macos:
         pluginClass: SpringBootStarterFlutterSecurityPlugin
         sharedDarwinSource: true
+      # `dartFileName` (not the web's `fileName`): the library of the
+      # class, which the generated plugin registrant imports.
       windows:
         dartPluginClass: SpringBootStarterFlutterSecurityDesktop
-        fileName: src/plugin/desktop_plugin.dart
+        dartFileName: src/plugin/desktop_plugin.dart
       linux:
         dartPluginClass: SpringBootStarterFlutterSecurityDesktop
-        fileName: src/plugin/desktop_plugin.dart
+        dartFileName: src/plugin/desktop_plugin.dart
       web:
         pluginClass: SpringBootStarterFlutterSecurityWeb
         fileName: src/plugin/web_plugin.dart

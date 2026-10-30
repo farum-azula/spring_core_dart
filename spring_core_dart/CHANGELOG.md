@@ -1,3 +1,37 @@
+## Unreleased
+
+### Breaking
+
+- A required config location or import that finds nothing fails the start wherever it is written, as in Boot: a wildcard location without a match (`file:./config/*/`, `configtree:/etc/*/`, `file:./config/*/app.yml`), and an import in a profile-specific file or in a file it imports (0.4.3 loaded them).
+- Whether a location found anything is decided once the profile files are read, as Boot's `checkMandatoryLocations` decides it: a location whose `-{profile}` variant is found counts as found, and a `classpath:` directory counts only when a file is found in it (no longer because `lib/resources/` has it on disk).
+- A `configtree:` location must end with `/`, also an `optional:` one, as in Boot.
+- A file named at several places is read once, at the place Boot keeps: the later item of a list (`x,y,x` puts `x` above `y`), the command line's `spring.config.import` before `additional-location` before `location` (so `--spring.config.additional-location=file:./config/` wins over `./config/*/`); it is not read at the other places, so only the encoding hint written where it counts applies.
+- The `-{profile}` variants of an imported file win over the importing file's own profile files, in Boot's order (`x-dev.yml` beats `application-dev.yml` when `application.yml` imports `x.yml`).
+- A profile file may not set `spring.profiles.active`, `.default` or `.include`, in any of its documents and under any relaxed spelling (`spring.profiles.Active`), as in Boot; in files that a profile file or an on-profile document imports, the profile keys are ignored.
+- Profile group names are matched exactly, as Boot's map keys are (`spring.profiles.group.Prod` is no group of `prod`).
+- A bracketed list element other than `[0]`, `[1]`, ... (`spring.config.import[x]`, `[1]` without `[0]`) fails the start, as Boot's "left unbound"; `spring.config.activate.on-cloud-platform` and `spring.main.cloud-platform` ignore list forms.
+- A `;` group of locations is one location, also in a file's `spring.config.import` (`x.yaml;y.yaml` loads both): optional when its first entry is, found when any entry finds something.
+- Not-found errors name the location as written: the whole `;` group, a relative import as written, the extension hint kept.
+- `.properties` config files are read as Boot's `OriginTrackedPropertiesLoader` reads them: `#---` right after a `#` comment line is a comment, a line continued with `\` runs into a following `#---`, `key[]=a,b` sets `key[0]` and `key[1]`, and empty keys are skipped.
+- Brackets in a file location are removed from its path (`conf[x]/app.yml` reads `conf/app.yml`), and an unknown `[encoding=…]` charset fails the start, even for an `optional:` location.
+- `PropertiesParser` (`@PropertySource` files, message bundles) reads exactly as `java.util.Properties`: only a space, a tab or a form feed is whitespace, a line holding only `\` joins nothing, and a byte order mark is part of the first key.
+- Resource patterns are cleaned as Spring's `StringUtils.cleanPath` cleans them, the whole pattern: `\\` is one `/`, each other `\` a `/`, and `.` and `..` segments are resolved. So a `{name:regex}` must not use `\` (write `[0-9]`, not `\d`).
+- In a `file:` pattern only the directory before the first wildcard is percent-decoded, as in Spring: `file:mail/%2A.txt` is the one file named `*.txt`.
+- A `classpath:` path whose `..` climbs above `lib/resources/` finds nothing, as Java's class loader refuses such a name.
+
+### Changes
+
+- The config processing follows Boot's contributor tree: lists, nested and repeated imports, `;` groups, profile files and on-profile documents are read in Boot's order.
+- Spring Boot 4.1 file hints: `[encoding=…]` names a `.properties` file's charset (UTF-8, ISO-8859-1 and US-ASCII, by Java's names and aliases such as `latin1`; YAML stays UTF-8, as in Boot), and several hints go in any order (`x.conf[.properties][encoding=utf-8]`).
+- `ConfigDataEnvironment.fileHints(location)` reads a location's path, extension hint and encoding hint as the app does; `PropertySourceLoader.encodingFor` says whether a format uses the encoding hint.
+- Extensions and extension hints are matched without case (`x.YAML` reads `x.yaml`), as in Boot.
+- A wildcard file location with an extension hint (`file:./conf/*/app[.yml]`) finds its files (it read nothing).
+- A config file that is not valid in its encoding fails with a `ConfigDataLoadException` naming the file and the encoding (was a bare `FormatException`).
+- YAML nested too deeply to read fails with a `FormatException` instead of a stack overflow.
+- An `.xml` import fails with "XML properties files are not supported" (an `optional:` one is skipped); `application.xml` is not looked for.
+- `printLogHandler` colours its lines only when standard output is a terminal that shows ANSI colours (not in a file or a pipe, in Flutter or in a browser), as Spring Boot detects one; `printLogHandlerColours` turns the colours on or off.
+- `ClasspathResources.normalize` cleans a classpath path as Spring's `cleanPath` does (`null` when it climbs above the root).
+
 ## 0.4.3
 
 - Flutter security (#15)

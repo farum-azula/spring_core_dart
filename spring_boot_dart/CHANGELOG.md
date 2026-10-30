@@ -1,3 +1,11 @@
+## Unreleased
+
+### Changes
+
+- `AsyncStartup`: beans that finish starting after the refresh (the web starter's server, which binds its port asynchronously) are awaited before the `Started ...` line, the `ApplicationStartedEvent`, the runners and the `ApplicationReadyEvent`. A failure fails the start like a failed refresh (the report, `ApplicationFailedEvent`, the context closed, `runAsync` throws, a non-zero exit code), as a port in use does in Spring Boot.
+- `LifecycleAutoConfiguration` registers the `lifecycleProcessor` with `spring.lifecycle.timeout-per-shutdown-phase` (30 s by default, as in Boot) as its timeout per shutdown phase. The context waited 10 s whatever the property said, so beans were destroyed under running requests. Switch it off with `spring.autoconfigure.exclude=LifecycleAutoConfiguration`.
+- Hot reload: after a restart that failed, the next reload starts the application again (it stopped restarting), as DevTools restarts at the next change.
+
 ## 0.4.3
 
 - Flutter security (#15)

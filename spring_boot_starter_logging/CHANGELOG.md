@@ -1,3 +1,12 @@
+## Unreleased
+
+### Changes
+
+- A log file that cannot be written breaks nothing else, as in Logback: one that cannot be opened at the start (a read-only directory) is reported on the console and the application starts without it (it failed the start).
+- When writing fails later (a full disk), the error is reported once, the lines are dropped, and writing is tried again after a pause that grows from 20 ms to about 5 minutes; once a line is written again, one line says how many were lost (`FileAppender.isFailing` tells meanwhile).
+- A roll-over that fails is reported once and tried again a minute later, the lines going on into the current file; an old archive that cannot be deleted is kept, with a warning.
+- Errors of the file no longer escape as uncaught errors from `flush`, a roll-over or `close()`, and the previous log handler is always given back when logging shuts down.
+
 ## 0.4.3
 
 - Flutter security (#15)

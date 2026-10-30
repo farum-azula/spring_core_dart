@@ -2,8 +2,9 @@
 // checked through the real filter chain of the JWT test application, and
 // the attacks of docs/security.md as tests (a replayed proof, another key,
 // a wrong htm or htu, a stale or future iat, a missing or wrong ath, a
-// bound token sent as Bearer, alg none and HS256 proofs, a private key in
-// the proof, oversized and doubled proofs).
+// bound token sent as Bearer, a token bound to a client certificate, alg
+// none and HS256 proofs, a private key in the proof, oversized and doubled
+// proofs).
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
@@ -18,6 +19,13 @@ const _url = 'http://localhost/api/me';
 
 Future<void> _app(Future<void> Function(MockMvc mvc) body) =>
     withApp(jwtSecurityBeans, (mvc, _) => body(mvc));
+
+/// A [BadJwtException] of the decoder whose message starts with [claim].
+Matcher _failsWith(String claim) => isA<BadJwtException>().having(
+  (e) => e.message,
+  'message',
+  startsWith(claim),
+);
 
 /// Expects a 401 whose DPoP challenge names [error].
 Future<void> _refused(
@@ -56,6 +64,11 @@ final class _Beans implements BeanFactory {
         for (final bean in beans)
           if (bean is T) bean,
       ]);
+
+  // No bean is known by name (the chain looks for a bean named
+  // corsConfigurationSource).
+  @override
+  bool containsBean(String name) => false;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
@@ -424,6 +437,61 @@ void main() {
           headers: {'authorization': 'Bearer $token'},
         );
         expect(result.status, 401);
+      }),
+    );
+
+    // RFC 8705: the web starter hands no client certificate to the
+    // filters, so a token bound to one is refused with either scheme
+    // (Spring's X509CertificateThumbprintValidator without a certificate).
+    test(
+      'a token bound to a client certificate (cnf.x5t#S256) is refused, as '
+      'Bearer and with a valid DPoP proof',
+      () => _app((mvc) async {
+        final thumbprint = sha256Base64Url('the client certificate');
+        for (final value in [thumbprint, 42, null]) {
+          final certificateBound = testKeys.token(
+            claims: {
+              'cnf': {'x5t#S256': value},
+            },
+          );
+          final bearer = await mvc.get(
+            '/api/me',
+            headers: {'authorization': 'Bearer $certificateBound'},
+          );
+          expect(bearer.status, 401, reason: '$value');
+          expect(
+            bearer.header('www-authenticate'),
+            allOf(
+              startsWith('Bearer error="invalid_token"'),
+              contains('client certificate'),
+            ),
+            reason: '$value',
+          );
+        }
+        final bothBound = boundToken(
+          client,
+          claims: {
+            'cnf': {'jkt': client.thumbprint, 'x5t#S256': thumbprint},
+          },
+        );
+        await _refused(
+          mvc.get(
+            '/api/me',
+            headers: dPoPHeaders(
+              bothBound,
+              client.proof(accessToken: bothBound),
+            ),
+          ),
+          'invalid_token',
+          description: 'client certificate',
+        );
+        // A cnf with neither member binds nothing.
+        final unbound = testKeys.token(
+          claims: {'cnf': <String, Object?>{}},
+        );
+        await mvc
+            .get('/api/me', headers: {'authorization': 'Bearer $unbound'})
+            .andExpect(status: 200);
       }),
     );
 
@@ -803,6 +871,114 @@ void main() {
         }
       }),
     );
+
+    // Anyone with a valid token (their own) can sign proofs with keys they
+    // make up; each such key would have its own room in the store of used
+    // ids, and the store, once full, refuses every client's proofs.
+    test(
+      'proofs of keys the token is not bound to take no room in the store '
+      'of used ids',
+      () async {
+        final cache = InMemoryDPoPProofJtiCache(
+          maximumSize: 10,
+          maximumPerKey: 2,
+        );
+        final chain =
+            HttpSecurity(
+                  _Beans([
+                    DPoPProofJwtDecoderFactory(jtiCache: cache),
+                    NimbusJwtDecoder.withJwkSource(
+                      StaticJwkSource([
+                        testKeys.rsa.verificationKey,
+                        testKeys.ec.verificationKey,
+                      ]),
+                    ),
+                  ]),
+                )
+                .authorizeHttpRequests((a) => a.anyRequest().authenticated())
+                .oauth2ResourceServer((s) => s.jwt())
+                .build();
+        Future<int> send(String token, String proof) async =>
+            (await ChainClient(chain).get(
+              '/api/me',
+              accept: 'application/json',
+              headers: dPoPHeaders(token, proof),
+            )).status;
+        final bound = boundToken(client);
+        final unbound = testKeys.token();
+        for (var i = 0; i < 30; i++) {
+          final made = ProofSigner.ec();
+          expect(await send(bound, made.proof(accessToken: bound)), 401);
+          expect(await send(unbound, made.proof(accessToken: unbound)), 401);
+          // Bound to the made-up key, but not valid: no room either.
+          final forged = boundToken(made, claims: {'exp': 1});
+          expect(await send(forged, made.proof(accessToken: forged)), 401);
+        }
+        expect(cache.size, 0);
+        // The client's own proofs: recorded, at most two for its key.
+        for (final expected in [200, 200, 401]) {
+          expect(await send(bound, client.proof(accessToken: bound)), expected);
+        }
+        expect(cache.size, 2);
+      },
+    );
+
+    // The URL a proof is compared with comes from the request: the host
+    // from its Host header, which the client chooses. A proof made for
+    // another server therefore passes the htu check when the client names
+    // that server in Host; what stops a token of another server is the
+    // audience check (spring.security.oauth2.resourceserver.jwt.audiences).
+    test(
+      'htu: the host is the Host header; the audience check stops tokens '
+      'of other servers',
+      () async {
+        Future<Reply> send(SecurityFilterChain chain, String token) {
+          const other = 'http://api.other.example/api/me';
+          return ChainClient(chain).send(
+            HttpMethod.get,
+            other, // MockServerHttpRequest: the Host of the request
+            headers: dPoPHeaders(
+              token,
+              client.proof(accessToken: token, url: other),
+            ),
+          );
+        }
+
+        SecurityFilterChain chain({List<String> audiences = const []}) =>
+            HttpSecurity(
+                  _Beans([
+                    NimbusJwtDecoder.withJwkSource(
+                      StaticJwkSource([testKeys.rsa.verificationKey]),
+                      validator: DelegatingOAuth2TokenValidator([
+                        JwtTimestampValidator(),
+                        if (audiences.isNotEmpty)
+                          JwtAudienceValidator(audiences),
+                      ]),
+                    ),
+                  ]),
+                )
+                .authorizeHttpRequests((a) => a.anyRequest().authenticated())
+                .oauth2ResourceServer((s) => s.jwt())
+                .build();
+        final forOther = boundToken(
+          client,
+          claims: {'aud': 'https://api.other.example'},
+        );
+        // Without an audience check, the token and proof of the other
+        // server are accepted here.
+        expect((await send(chain(), forOther)).reached, isTrue);
+        // With it, the token is refused before its proof.
+        final checked = chain(audiences: ['https://api.shop.example']);
+        final refused = await send(checked, forOther);
+        expect(refused.status, 401);
+        expect(refused.header('www-authenticate'), contains('invalid_token'));
+        final forUs = boundToken(
+          client,
+          claims: {'aud': 'https://api.shop.example'},
+        );
+        expect((await send(checked, forUs)).reached, isTrue);
+      },
+    );
   });
 
   group('DPoPProofJwtDecoderFactory', () {
@@ -975,6 +1151,100 @@ void main() {
       expect(cache.size, 1);
     });
 
+    // The iat check accepts a proof up to iat + skew included, and the id
+    // was kept only until then: the purge at that moment dropped it, and
+    // the proof replayed at exactly iat + 30 s was accepted, twice.
+    test('a replay at exactly the end of the time window is refused', () async {
+      final iat = DateTime.fromMillisecondsSinceEpoch(
+        seconds(now) * 1000,
+        isUtc: true,
+      );
+      var time = iat;
+      final factory = DPoPProofJwtDecoderFactory(clock: () => time);
+      final proof = client.proof(accessToken: token, iat: seconds(iat));
+      Future<Jwt> decode() => factory
+          .createDecoder(context(proof, accessToken: token))
+          .decode(proof);
+      await decode();
+      // The last moment the iat check accepts, 30 s after the last purge.
+      time = iat.add(const Duration(seconds: 30));
+      for (var i = 0; i < 2; i++) {
+        await expectLater(decode(), throwsA(_failsWith('The jti claim')));
+      }
+      time = time.add(const Duration(microseconds: 1));
+      await expectLater(decode(), throwsA(_failsWith('The iat claim')));
+    });
+
+    // The iat check reads the clock a moment before the store does (90 to
+    // 600 µs measured): a replay checked just inside the window reached
+    // the store just after it, where the id counted as gone.
+    test('a replay is refused when the iat check and the store read the '
+        'clock apart', () async {
+      final iat = DateTime.fromMillisecondsSinceEpoch(
+        seconds(now) * 1000,
+        isUtc: true,
+      );
+      var time = iat;
+      final reads = <Duration>[];
+      // Each read 50 µs after the one before.
+      DateTime clock() {
+        final read = time;
+        reads.add(read.difference(iat));
+        time = time.add(const Duration(microseconds: 50));
+        return read;
+      }
+
+      final factory = DPoPProofJwtDecoderFactory(clock: clock);
+      final proof = client.proof(accessToken: token, iat: seconds(iat));
+      Future<Jwt> decode() => factory
+          .createDecoder(context(proof, accessToken: token))
+          .decode(proof);
+      await decode();
+      time = iat.add(const Duration(seconds: 30, microseconds: -20));
+      reads.clear();
+      await expectLater(decode(), throwsA(_failsWith('The jti claim')));
+      // The iat check inside the window, the store past it.
+      expect(reads, const [
+        Duration(seconds: 30, microseconds: -20),
+        Duration(seconds: 30, microseconds: 30),
+      ]);
+    });
+
+    // Ids are kept to iat + skew + 5 s, and a client key's share of the
+    // store frees up after that, as before.
+    test('ids are kept 5 seconds past the time window, then the key has '
+        'room again', () async {
+      final start = DateTime.fromMillisecondsSinceEpoch(
+        seconds(now) * 1000,
+        isUtc: true,
+      );
+      var time = start;
+      final cache = InMemoryDPoPProofJtiCache(
+        maximumPerKey: 2,
+        clock: () => time,
+      );
+      final factory = DPoPProofJwtDecoderFactory(
+        clock: () => time,
+        jtiCache: cache,
+      );
+      Future<Jwt> send() {
+        final proof = client.proof(accessToken: token, iat: seconds(time));
+        return factory
+            .createDecoder(context(proof, accessToken: token))
+            .decode(proof);
+      }
+
+      await send();
+      await send();
+      await expectLater(send(), throwsA(_failsWith('The jti claim')));
+      // Past the window of the first two (30 s): still kept, purged or not.
+      time = start.add(const Duration(seconds: 34));
+      await expectLater(send(), throwsA(_failsWith('The jti claim')));
+      time = start.add(const Duration(seconds: 35));
+      await send();
+      expect(cache.size, 1);
+    });
+
     test('custom validators replace the claim checks', () async {
       final factory = DPoPProofJwtDecoderFactory(
         clock: () => now,
@@ -1077,6 +1347,32 @@ void main() {
       );
     });
 
+    // An id counted as gone as soon as the clock reached its expiry, a
+    // purge or not: a proof whose iat check read the clock a moment
+    // earlier was accepted again.
+    test('a recorded id is refused past its expiry, until a purge drops '
+        'it', () {
+      final cache = InMemoryDPoPProofJtiCache(clock: () => now);
+      final start = now;
+      final expiry = now.add(const Duration(seconds: 1));
+      expect(cache.markUsed('a', expiry, jwkThumbprint: 'k'), isTrue);
+      now = expiry; // exactly
+      expect(cache.markUsed('a', expiry, jwkThumbprint: 'k'), isFalse);
+      now = start.add(const Duration(seconds: 9));
+      expect(cache.markUsed('a', expiry, jwkThumbprint: 'k'), isFalse);
+      expect(cache.size, 1);
+      now = start.add(const Duration(seconds: 10)); // the purge drops it
+      expect(
+        cache.markUsed(
+          'a',
+          now.add(const Duration(seconds: 1)),
+          jwkThumbprint: 'k',
+        ),
+        isTrue,
+      );
+      expect(cache.size, 1);
+    });
+
     test('full: new ids are refused until old ones expire', () {
       final cache = InMemoryDPoPProofJtiCache(maximumSize: 2, clock: () => now);
       final expiry = now.add(const Duration(minutes: 1));
@@ -1109,6 +1405,23 @@ void main() {
       now = now.add(const Duration(minutes: 1));
       final later = now.add(const Duration(seconds: 30));
       expect(cache.markUsed('d', later, jwkThumbprint: 'k1'), isTrue);
+    });
+
+    // The purge waited for the wall clock to pass the last purge again:
+    // set back 2 h, nothing was dropped for 2 h, and a client's proofs
+    // were refused once it had used its share.
+    test('a clock set back does not stop the purges', () {
+      final cache = InMemoryDPoPProofJtiCache(
+        maximumPerKey: 2,
+        clock: () => now,
+      );
+      const minute = Duration(minutes: 1);
+      expect(cache.markUsed('a', now.add(minute), jwkThumbprint: 'k'), isTrue);
+      now = now.subtract(const Duration(hours: 2));
+      expect(cache.markUsed('b', now.add(minute), jwkThumbprint: 'k'), isTrue);
+      now = now.add(minute * 2); // 'b' expired, 'a' not (by this clock)
+      expect(cache.markUsed('c', now.add(minute), jwkThumbprint: 'k'), isTrue);
+      expect(cache.size, 2);
     });
 
     test('sizes of 1 are allowed', () {

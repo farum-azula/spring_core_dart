@@ -27,20 +27,23 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// - A header the request already has is kept.
 ///
 /// On the web the package declares it as the `httpTransport` bean, around
-/// the browser's transport (which sends the cookies to a server on
-/// another origin, `FetchCredentials.include`), unless the application
-/// declares its own [HttpTransport]. An application with its own wraps it
-/// itself:
+/// the browser's transport (for a server on another origin a
+/// `ServerCredentialsHttpTransport`, which sends the cookies with the
+/// server's requests only), unless the application declares its own
+/// [HttpTransport]. An application with its own wraps it itself:
 ///
 /// ```dart
 /// @Bean()
-/// HttpTransport httpTransport(BrowserPage page) => CsrfCookieHttpTransport(
-///   MyLoggingTransport(
-///     platformHttpTransport(credentials: FetchCredentials.include),
-///   ),
-///   page: page,
-///   server: Uri.parse('https://api.neon.books'),
-/// );
+/// HttpTransport httpTransport(BrowserPage page) {
+///   final server = Uri.parse('https://api.neon.books');
+///   return CsrfCookieHttpTransport(
+///     MyLoggingTransport(
+///       ServerCredentialsHttpTransport.forPage(page: page, server: server),
+///     ),
+///     page: page,
+///     server: server,
+///   );
+/// }
 /// ```
 ///
 /// Spring has no client side for it: this is the browser's half of

@@ -139,7 +139,7 @@ Each parameter's annotation says where its argument goes in the request:
 
 | Parameter | Goes to |
 |---|---|
-| `@PathVariable() String isbn` | `{isbn}` in the path, URL-encoded; a `/` in the value stays a `/` (see `decode-slash`). `@PathVariable('id')` for another name |
+| `@PathVariable() String isbn` | `{isbn}` in the path, URL-encoded; a `/` in the value stays a `/` (see `decode-slash`). `@PathVariable('id')` for another name. A value `.` or `..` (or with such a segment between slashes) throws an `ArgumentError`, as it would change the path |
 | `@RequestParam('q') String query` | `?q=...`; `null` is left out, a `List` repeats the parameter |
 | `@RequestParam() Map<String, Object?> filters` | one query parameter per entry (`?author=...&year=...`); a `List` value repeats it, `null` is left out |
 | `@RequestHeader('X-Trace') String? trace` | a header; `null` is left out, a `List` gives several values |
@@ -385,11 +385,12 @@ spring.cloud.openfeign.client.decode-slash=false
 | `logger-level` | `none` | `none`, `basic`, `headers` or `full` (see [Logging](#logging)) |
 | `dismiss404` | `false` | a 404 gives `null` (nullable results) or a `ResponseEntity` instead of an exception; a `void` method still throws, as in Feign |
 | `default-request-headers.<Name>` | — | a header added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values |
-| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values |
+| `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values. The URL is in the logs and in exception messages, so send a secret API key as a header in `sensitive-headers` instead |
 | `retryer` | — | the client's `Retryer`: a bean name, or a class name matching exactly one bean (see [Per-client configuration](#per-client-configuration)) |
 | `error-decoder` | — | the client's `ErrorDecoder`, by bean name or class name |
 | `request-interceptors` | — | more `RequestInterceptor`s for the client: a list of bean names or class names, those under `default` first |
 | `follow-redirects` | `true` | whether redirects are followed; with `false`, a 3xx answer is an error status |
+| `sensitive-headers` | — | more headers whose values the `headers` and `full` logs show as `***`, such as `X-Api-Key`: a list, those under `default` first (see [Logging](#logging)) |
 | `spring.cloud.openfeign.client.decode-slash` | `true` | one setting for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: it is sent as `%2F`) |
 
 The `default-request-headers` and `default-query-parameters` of a client
@@ -616,10 +617,18 @@ debug level, so that level must be on too, for example
 |---|---|
 | `none` | nothing (the default) |
 | `basic` | the method and URL of each request, the status and time of each response, failed connections (`<--- ERROR ...`), retries (`---> RETRYING ...`) and event-stream reconnects (`---> RECONNECTING ...`) |
-| `headers` | `basic` plus the request and response headers; `Authorization` and `DPoP` are masked |
+| `headers` | `basic` plus the request and response headers; the values of `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP` and the `sensitive-headers` are shown as `***` |
 | `full` | `headers` plus the bodies |
 
 As in Feign, failed connections and retries are not logged at `none`.
+
+The URL is logged with its query, so a key sent as a query parameter
+shows; send secrets as headers and name the ones the starter does not
+mask already:
+
+```properties
+spring.cloud.openfeign.client.config.default.sensitive-headers=X-Api-Key,X-Partner-Token
+```
 
 ## Transport
 
@@ -679,7 +688,13 @@ the responses.
   `produces`.
 - Spaces in query parameters are sent as `+` (form encoding); Feign sends
   `%20`.
-- `Authorization` and `DPoP` (a proof of possession) are masked (`***`) in the `headers` and `full` logs.
+- The values of `Authorization`, `Proxy-Authorization`, `Cookie`,
+  `Set-Cookie`, `DPoP` (a proof of possession) and the headers of the
+  `sensitive-headers` property (an addition of this starter) are masked
+  (`***`) in the `headers` and `full` logs; Feign's logger masks none.
+- A `@PathVariable` value `.` or `..` throws an `ArgumentError`: Dart's
+  `Uri` removes such segments (`%2E%2E` too), so the call would go to
+  another path. Feign sends them as they are.
 - The logger is `feign.<Interface>` (`feign.CatalogClient`); Feign's
   `Slf4jLogger` logs under the interface's fully qualified class name.
 - Each retry starts from a new template; Feign runs the interceptors again

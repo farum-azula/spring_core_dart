@@ -23,7 +23,9 @@ const _log = SpringLog('spring.websocket.server');
 /// [WebSocketSessionRegistry].
 ///
 /// Every endpoint is checked at startup: two handlers on one path, an
-/// `@PathVariable` that is not in the path, a parameter of no known kind,
+/// `@PathVariable` that is not in the path or of a type the
+/// `ConversionService` cannot make from a String, a parameter of no known
+/// kind,
 /// several methods with the same annotation, an endpoint without any of
 /// `@OnOpen`, `@OnMessage` and `@OnClose`.
 ///
@@ -205,6 +207,12 @@ final class WebSocketHandlerMapping
     final protocol = offered
         .where((p) => route.protocols.contains(p))
         .firstOrNull;
+    if (route.handler case final _EndpointAdapter adapter) {
+      // Like a controller's path variable that does not convert: 400.
+      if (adapter.checkVariables(variables) case final problem?) {
+        return await response.send(400, problem);
+      }
+    }
     final attributes = <String, Object?>{};
     for (final interceptor in route.interceptors) {
       if (!await interceptor.beforeHandshake(request, response, attributes)) {
@@ -234,13 +242,24 @@ final class WebSocketHandlerMapping
       attributes: attributes,
     );
     sessions.register(route.path, session);
-    unawaited(_run(route, session));
+    unawaited(
+      _run(route, session).catchError((Object error, StackTrace stackTrace) {
+        _log.error(
+          'WebSocket session ${session.id} failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }),
+    );
   }
 
+  // The life of one connection. Nothing thrown here reaches the zone of
+  // the server (an uncaught error would end the process): the handler's
+  // errors go to its handleTransportError, anything else is logged, and
+  // the session always leaves the registry, with afterConnectionClosed
+  // called once when afterConnectionEstablished was.
   Future<void> _run(_Route route, ServerWebSocketSession session) async {
     final handler = route.handler;
-    // One message after the other, in order.
-    var last = Future<void>.value();
     Future<void> guarded(FutureOr<void> Function() body) async {
       try {
         await body();
@@ -249,26 +268,60 @@ final class WebSocketHandlerMapping
       }
     }
 
-    await guarded(() => handler.afterConnectionEstablished(session));
-    final closed = Completer<void>();
-    session.messages.listen(
-      (message) => last = last.then(
-        (_) => guarded(() => handler.handleMessage(session, message)),
-      ),
-      onError: (Object error, StackTrace stackTrace) =>
-          last = last.then((_) => _failed(handler, session, error, stackTrace)),
-      onDone: () => closed.complete(),
-      cancelOnError: false,
-    );
-    await closed.future;
-    await last;
-    sessions.unregister(route.path, session);
-    await guarded(
-      () => handler.afterConnectionClosed(
-        session,
-        session.closeStatus ?? CloseStatus.noStatusCode,
-      ),
-    );
+    var established = false;
+    try {
+      // One message after the other, in order. While a message is handled
+      // the connection is not read (the web starter's socket stops
+      // reading from the network), so a client sending faster than the
+      // handler works waits instead of filling the server's memory.
+      final closed = Completer<void>();
+      late final StreamSubscription<Object> subscription;
+      void handle(Future<void> Function() work) {
+        subscription.pause();
+        unawaited(work().whenComplete(subscription.resume));
+      }
+
+      // Listened to before afterConnectionEstablished, paused: its
+      // messages wait (unread) until it is done, and a session it closes
+      // (refusing the client, or after an error) still ends the stream
+      // here, with the close status.
+      subscription = session.messages.listen(
+        (message) => handle(
+          () => guarded(() => handler.handleMessage(session, message)),
+        ),
+        onError: (Object error, StackTrace stackTrace) =>
+            handle(() => _failed(handler, session, error, stackTrace)),
+        // Delivered after the last message has been handled.
+        onDone: closed.complete,
+        cancelOnError: false,
+      )..pause();
+      established = true;
+      await guarded(() => handler.afterConnectionEstablished(session));
+      subscription.resume();
+      await closed.future;
+      await subscription.cancel(); // done already
+    } on Object catch (error, stackTrace) {
+      _log.error(
+        'WebSocket session ${session.id} failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (session.isOpen) {
+        unawaited(
+          session.close(CloseStatus.serverError).catchError((Object _) {}),
+        );
+      }
+    } finally {
+      sessions.unregister(route.path, session);
+      if (established) {
+        await guarded(
+          () => handler.afterConnectionClosed(
+            session,
+            session.closeStatus ?? CloseStatus.noStatusCode,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _failed(
@@ -308,43 +361,43 @@ final class _Route {
   final List<String> protocols;
   final List<HandshakeInterceptor> interceptors;
 
-  // Like Spring's OriginHandshakeInterceptor: no Origin (not a browser)
-  // or the server's own origin is fine, others must be allowed.
+  // Checked as Spring's CorsConfiguration checks them, as the web
+  // starter's CORS does.
+  late final _origins = AllowedOrigins(
+    allowedOrigins: allowedOrigins,
+    allowedOriginPatterns: allowedOriginPatterns,
+  );
+
+  // Spring's OriginHandshakeInterceptor: no Origin (not a browser) or the
+  // server's own origin (WebUtils.isSameOrigin) is fine, others must be
+  // allowed (CorsConfiguration.checkOrigin).
   bool allowsOrigin(ServerHttpRequest request) {
     final origin = request.headers[HttpHeaders.originHeader];
-    if (origin == null || allowedOrigins.contains('*')) {
-      return true;
-    }
+    return origin == null ||
+        _isSameOrigin(origin, request) ||
+        _origins.checkOrigin(origin) != null;
+  }
+
+  // The same scheme, host and port (the scheme's default when there is
+  // none) as the request. A handshake is an HTTP request: its scheme is
+  // http or https.
+  static bool _isSameOrigin(String origin, ServerHttpRequest request) {
     final parsed = Uri.tryParse(origin);
+    final scheme = request.isSecure ? 'https' : 'http';
     final own = request.uri;
-    if (parsed != null &&
+    return parsed != null &&
+        parsed.scheme == scheme &&
         parsed.host == own.host &&
-        _port(parsed) == _port(own) &&
-        _secure(parsed) == request.isSecure) {
-      return true;
-    }
-    if (allowedOrigins.any((o) => o.toLowerCase() == origin.toLowerCase())) {
-      return true;
-    }
-    return allowedOriginPatterns.any((pattern) => _matches(pattern, origin));
+        _port(scheme, parsed) == _port(scheme, own);
   }
 
-  static bool _secure(Uri uri) => uri.scheme == 'https' || uri.scheme == 'wss';
-
-  static int _port(Uri uri) =>
-      uri.hasPort ? uri.port : (_secure(uri) ? 443 : 80);
-
-  static bool _matches(String pattern, String origin) {
-    final regex = StringBuffer('^');
-    for (final char in pattern.split('')) {
-      regex.write(char == '*' ? '.*' : RegExp.escape(char));
-    }
-    regex.write(r'$');
-    return RegExp(regex.toString(), caseSensitive: false).hasMatch(origin);
-  }
+  static int _port(String scheme, Uri uri) =>
+      uri.hasPort ? uri.port : (scheme == 'https' ? 443 : 80);
 }
 
 typedef _Binder = FutureOr<Object?> Function(_Call call);
+
+typedef _Convert = Object? Function(String text);
 
 final class _Call {
   _Call(this.session, {this.message, this.status, this.error});
@@ -372,6 +425,7 @@ final class _EndpointAdapter implements WebSocketHandler {
     this.onMessage,
     this.onClose,
     this.onError,
+    this.variables,
   );
 
   static _EndpointAdapter? compile(
@@ -383,6 +437,9 @@ final class _EndpointAdapter implements WebSocketHandler {
     List<String> problems,
   ) {
     final before = problems.length;
+    // The path variables that are not Strings: converted, and checked at
+    // the handshake.
+    final variables = <String, (_Convert, TypeInfo<Object?>)>{};
     _Handler? find<A>(String kind) {
       final found = [
         for (final method in methods)
@@ -408,7 +465,17 @@ final class _EndpointAdapter implements WebSocketHandler {
           if (!pattern.variableNames.contains(name)) {
             problems.add('$where: {$name} is not in "${pattern.pattern}"');
           }
-          binders.add((parameter, (call) => call.session.pathVariables[name]));
+          final convert = owner._pathVariable(type, where, problems);
+          if (convert != null) {
+            variables[name] = (convert, type);
+          }
+          binders.add((
+            parameter,
+            (call) => switch (call.session.pathVariables[name]) {
+              final text? when convert != null => convert(text),
+              final text => text,
+            },
+          ));
         } else if (type.type == ServerWebSocketSession ||
             type.type == WebSocketSession) {
           binders.add((parameter, (call) => call.session));
@@ -448,6 +515,7 @@ final class _EndpointAdapter implements WebSocketHandler {
       find<OnMessage>('OnMessage'),
       find<OnClose>('OnClose'),
       find<OnError>('OnError'),
+      variables,
     );
     if (adapter.onOpen == null &&
         adapter.onMessage == null &&
@@ -466,6 +534,25 @@ final class _EndpointAdapter implements WebSocketHandler {
   final _Handler? onMessage;
   final _Handler? onClose;
   final _Handler? onError;
+  final Map<String, (_Convert, TypeInfo<Object?>)> variables;
+
+  /// Why the path [values] of a handshake do not fit the parameters
+  /// (`{id}` is not a number for an `int`), or `null` when they do.
+  String? checkVariables(Map<String, String> values) {
+    for (final MapEntry(key: name, value: (convert, type))
+        in variables.entries) {
+      final text = values[name];
+      if (text == null) {
+        continue;
+      }
+      try {
+        convert(text);
+      } on Object catch (_) {
+        return 'The path variable {$name} is not a valid $type';
+      }
+    }
+    return null;
+  }
 
   Future<Object?> _invoke(_Handler handler, _Call call) async {
     final positional = <Object?>[];
@@ -550,6 +637,44 @@ final class _EndpointAdapter implements WebSocketHandler {
 }
 
 extension on WebSocketHandlerMapping {
+  // The ConversionService of `@Value`, as controllers convert their path
+  // variables: Boot's ApplicationConversionService in an application.
+  ConversionService get _conversion => switch (beanFactory) {
+    final ConfigurableBeanFactory factory => factory.conversionService,
+    _ => DefaultConversionService.sharedInstance,
+  };
+
+  // How a path variable becomes the parameter's [type]: `null` for a
+  // String (as it is); a problem when nothing converts a String to it.
+  _Convert? _pathVariable(
+    TypeInfo<Object?> type,
+    String where,
+    List<String> problems,
+  ) {
+    final target = type.type;
+    if (target == String || target == Object || type is DynamicType) {
+      return null;
+    }
+    if (type is EnumType<Enum>) {
+      // Spring's StringToEnumConverterFactory: the constant's name.
+      return (text) => type.values.firstWhere(
+        (value) => value.name == text.trim(),
+        orElse: () => throw FormatException('No ${type.type} named $text'),
+      );
+    }
+    if (!_conversion.canConvertType<String>(target)) {
+      problems.add(
+        '$where: a @PathVariable must be a String or a type the '
+        'ConversionService converts a String to (int, double, bool, an '
+        'enum, ...), not $type',
+      );
+      return null;
+    }
+    return (text) =>
+        _conversion.convertTo(text, target) ??
+        (throw FormatException('Not a $type', text));
+  }
+
   Object? _decode(Object message, TypeInfo<Object?> type, String where) {
     final base = type.capture(<T>() => _typeOf<T>());
     if (base == String) {

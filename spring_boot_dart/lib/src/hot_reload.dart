@@ -56,6 +56,9 @@ abstract final class SpringHotReload {
 
   static final _tracked =
       <(ConfigurableApplicationContext, SpringApplication Function())>[];
+  // Contexts closed by a restart whose new start failed: the next reload
+  // starts them again (with their arguments) instead of forgetting them.
+  static final _failed = Set<ConfigurableApplicationContext>.identity();
   static var _registered = false;
 
   /// Whether restarts on hot reload are possible in this program: true in
@@ -79,7 +82,7 @@ abstract final class SpringHotReload {
       return;
     }
     _tracked
-      ..removeWhere((entry) => !entry.$1.isActive)
+      ..removeWhere((entry) => !_isTracked(entry.$1))
       ..add((context, application));
     if (!_registered) {
       _registered = true;
@@ -99,24 +102,41 @@ abstract final class SpringHotReload {
   /// the new one starts, and the runners run again. Closed contexts and
   /// those with `spring.devtools.restart.enabled=false` are skipped. The
   /// extension [extensionName] calls this; a test can call it directly. A
-  /// failing restart throws.
+  /// failing restart throws; the application is then started again at
+  /// the next reload (once the code is fixed), as DevTools restarts at
+  /// the next change.
   static Future<int> reloadAll() async {
     var restarted = 0;
     for (var i = 0; i < _tracked.length; i++) {
       final (context, application) = _tracked[i];
-      if (!context.isActive || !_restartEnabled(context)) {
+      if (!_isTracked(context) || !_restartEnabled(context)) {
         continue;
       }
-      final next = await application().reloadAsync(context);
+      final ConfigurableApplicationContext next;
+      try {
+        next = await application().reloadAsync(context);
+      } on Object {
+        // The old context is closed (reloadAsync closed it before the new
+        // start failed): keep it, to start the application again from
+        // its arguments next time.
+        if (!context.isActive) {
+          _failed.add(context);
+        }
+        rethrow;
+      }
+      _failed.remove(context);
       if (!identical(next, context)) {
         restarted++;
         _tracked[i] = (next, application);
         _log.info('Restarted the application: its generated code changed');
       }
     }
-    _tracked.removeWhere((entry) => !entry.$1.isActive);
+    _tracked.removeWhere((entry) => !_isTracked(entry.$1));
     return restarted;
   }
+
+  static bool _isTracked(ConfigurableApplicationContext context) =>
+      context.isActive || _failed.contains(context);
 
   // Spring Boot DevTools' switch for restarts after code changes.
   static bool _restartEnabled(ConfigurableApplicationContext context) =>

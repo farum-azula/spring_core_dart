@@ -54,7 +54,10 @@ final class NullRequestCache implements RequestCache {
 /// body, not a favicon. The saved address gets a `continue` parameter
 /// (Spring's `matchingRequestParameterName`), so a saved request is used
 /// only by the redirect made for it. A path starting with `//`, which a
-/// browser would read as another host, is never saved.
+/// browser would read as another host, is never saved. Nor is a request
+/// that cannot get a session because the session limit is reached
+/// ([TooManyActiveSessionsException]): the client is still asked to log
+/// in, and lands on the default page afterwards.
 ///
 /// Spring (Java): `HttpSessionRequestCache`.
 final class HttpSessionRequestCache implements RequestCache {
@@ -119,7 +122,13 @@ final class HttpSessionRequestCache implements RequestCache {
     final query = uri.query;
     final saved =
         '$path?${query.isEmpty ? '' : '$query&'}$matchingRequestParameterName';
-    request.getSession()!.setAttribute(savedRequestKey, saved);
+    final HttpSession session;
+    try {
+      session = request.getSession()!;
+    } on TooManyActiveSessionsException {
+      return; // every session holds a login: nothing to come back to
+    }
+    session.setAttribute(savedRequestKey, saved);
   }
 
   @override

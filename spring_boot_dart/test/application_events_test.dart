@@ -47,6 +47,29 @@ class SyncRunner implements ApplicationRunner {
 
 class Broken {}
 
+/// A bean that finishes starting after the refresh, like a server binding
+/// its port.
+class LateStart implements AsyncStartup {
+  LateStart(this.events, {this.error});
+  final List<String> events;
+  final Error? error;
+
+  @override
+  Future<void> awaitStartup() async {
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    events.add('started late');
+    if (error case final error?) {
+      throw error;
+    }
+  }
+}
+
+BeanDefinition<Object> lateStart(LateStart bean) => BeanDefinition<LateStart>(
+  name: 'lateStart',
+  types: const [LateStart, AsyncStartup],
+  create: (_) => bean,
+);
+
 void main() {
   late List<String> events;
   late Audit audit;
@@ -192,4 +215,76 @@ void main() {
       ]);
     },
   );
+
+  // Review before 0.5.0: a port in use was reported after a successful
+  // start, with ApplicationReadyEvent and the runners first.
+  group('AsyncStartup beans', () {
+    test(
+      'are waited for before ApplicationStartedEvent and the runners',
+      () async {
+        final context = await app([
+          lateStart(LateStart(events)),
+          runner(SyncRunner(events)),
+        ]).runAsync(const [], systemEnvironment: const {});
+        addTearDown(context.close);
+        expect(events.sublist(events.indexOf('ContextRefreshedEvent')), [
+          'ContextRefreshedEvent',
+          'started late',
+          'ApplicationStartedEvent',
+          'runner',
+          'ApplicationReadyEvent',
+        ]);
+      },
+    );
+
+    test('a failure fails runAsync like a failed refresh', () async {
+      final application = app([
+        lateStart(LateStart(events, error: StateError('port in use'))),
+        runner(SyncRunner(events)),
+      ]);
+      ConfigurableApplicationContext? context;
+      application.addListener<ApplicationFailedEvent>(
+        (event) => context = event.applicationContext,
+      );
+      await expectLater(
+        application.runAsync(const [], systemEnvironment: const {}),
+        throwsA(isA<StateError>()),
+      );
+      expect(events, isNot(contains('ApplicationStartedEvent')));
+      expect(events, isNot(contains('runner')));
+      expect(events, isNot(contains('ApplicationReadyEvent')));
+      expect(events, containsAllInOrder(['ApplicationFailedEvent', 'report']));
+      expect(context?.isActive, isFalse);
+    });
+
+    test('run: the runners follow the start; a failure is thrown '
+        'uncaught', () async {
+      final ok = app([
+        lateStart(LateStart(events)),
+        runner(SyncRunner(events)),
+      ]).run(const [], systemEnvironment: const {});
+      addTearDown(ok.close);
+      expect(events, isNot(contains('runner')));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(events.sublist(events.length - 3), [
+        'ApplicationStartedEvent',
+        'runner',
+        'ApplicationReadyEvent',
+      ]);
+
+      events.clear();
+      final uncaught = Completer<Object>();
+      late ConfigurableApplicationContext failed;
+      runZonedGuarded(() {
+        failed = app([
+          lateStart(LateStart(events, error: StateError('port in use'))),
+          runner(SyncRunner(events)),
+        ]).run(const [], systemEnvironment: const {});
+      }, (error, _) => uncaught.complete(error));
+      expect(await uncaught.future, isA<StateError>());
+      expect(failed.isActive, isFalse);
+      expect(events, isNot(contains('runner')));
+      expect(events, contains('ApplicationFailedEvent'));
+    });
+  });
 }

@@ -212,7 +212,6 @@ void main() {
         .withBean<BrowserPage>(_FakePage.new);
 
     test('the server logs in: its login service, the CSRF transport', () {
-      on(TargetPlatform.fuchsia); // no secure storage, no window
       web.withPropertyValues(_registration).run((context) {
         expect(context.startupFailure, isNull);
         expect(context.getBeanNamesForType<OAuth2LoginService>(), [
@@ -238,6 +237,32 @@ void main() {
       });
     });
 
+    test('the profile decides for every bean: no platform bean next to the '
+        "web's", () {
+      // The VM of a test (any platform) with the web profile is a browser
+      // for every bean of the module, as a real browser is.
+      for (final platform in [
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+        TargetPlatform.macOS,
+        TargetPlatform.windows,
+      ]) {
+        on(platform);
+        web.withPropertyValues(_registration).run((context) {
+          expect(context.startupFailure, isNull);
+          expect(context.getBeanNamesForType<SecretStore>(), [
+            'inMemorySecretStore',
+          ]);
+          expect(context.getBeanNamesForType<AuthorizationWindow>(), isEmpty);
+          expect(context, doesNotHaveBean<AppleIdSignIn>());
+          expect(context, doesNotHaveBean<PlatformDPoPKey>());
+          expect(context.getBeanNamesForType<OAuth2LoginService>(), [
+            'serverOAuth2LoginService',
+          ]);
+        });
+      }
+    });
+
     test('without any registration too: they are the server\'s', () {
       web
           .withPropertyValues([
@@ -251,6 +276,46 @@ void main() {
               'http://localhost:8080',
             );
           });
+    });
+
+    test('a server on another origin gets the cookies, nothing else does', () {
+      web
+          .withPropertyValues([
+            'spring.flutter.security.web.server-url=http://localhost:8080',
+          ])
+          .run((context) {
+            final delegate = context
+                .getBean<CsrfCookieHttpTransport>()
+                .delegate;
+            expect(delegate, isA<ServerCredentialsHttpTransport>());
+            final routing = delegate as ServerCredentialsHttpTransport;
+            expect(routing.server.toString(), 'http://localhost:8080');
+            expect(
+              routing.transportFor(
+                HttpRequest(
+                  method: HttpMethod.get,
+                  url: Uri.parse('https://api.open-meteo.com/v1/forecast'),
+                ),
+              ),
+              same(routing.otherTransport),
+            );
+            expect(
+              routing.transportFor(
+                HttpRequest(
+                  method: HttpMethod.post,
+                  url: Uri.parse('http://localhost:8080/api/orders'),
+                ),
+              ),
+              same(routing.serverTransport),
+            );
+          });
+      // The page's own origin: one transport, the browser's default.
+      web.run((context) {
+        expect(
+          context.getBean<CsrfCookieHttpTransport>().delegate,
+          isNot(isA<ServerCredentialsHttpTransport>()),
+        );
+      });
     });
 
     test("the application's own transport wins; the login wraps it", () {

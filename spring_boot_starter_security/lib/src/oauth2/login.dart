@@ -97,6 +97,9 @@ void _validateExchange(
   final issuer = registration.providerDetails.issuerUri;
   final metadata = registration.providerDetails.configurationMetadata;
   if (response.issuer case final iss?) {
+    // Without issuer-uri there is nothing to compare with (RFC 9207 §2.4
+    // compares with the issuer the client knows); the callback path of
+    // each registration still keeps providers apart.
     if (issuer != null && iss != issuer) {
       fail(
         OAuth2ErrorCodes.invalidIssuer,
@@ -173,7 +176,11 @@ Future<OAuth2AccessTokenResponse> _exchange(
 ///
 /// The checks before the exchange: the `state` of the redirect is the
 /// saved one, the `iss` parameter (RFC 9207) is the registration's issuer
-/// when either says there is one, the provider sent no `error`. The code
+/// when either says there is one, the provider sent no `error`. A
+/// registration without `issuer-uri` (endpoints configured one by one)
+/// has no issuer to compare with: its `iss` is not checked, and the
+/// redirect URI of each registration keeps the providers apart (a
+/// callback for another registration fails). The code
 /// is exchanged with the PKCE verifier and the exact redirect URI of the
 /// authorization request. The user's authorities go through
 /// [authoritiesMapper]. A login that asked for the `openid` scope is left
@@ -332,8 +339,10 @@ final class OidcAuthorizationCodeAuthenticationProvider
 /// 1. it must be an authorization response: `code` and `state`, or
 ///    `error` and `state` (else `invalid_request`), in the query of a
 ///    `GET`, or in the `application/x-www-form-urlencoded` body of a
-///    `POST` (`response_mode=form_post`, at most 64 KB, nothing of the
-///    response in its query);
+///    `POST` (`response_mode=form_post`, at most 64 KB, a larger body
+///    is a 413, nothing of the response in its query); any other method
+///    (`HEAD`, `PUT`, ...) is an `invalid_request` that leaves the login
+///    in progress alone;
 /// 2. the authorization request saved when the login started is found
 ///    in the [authorizationRequestRepository] by its `state`: without
 ///    one (no login started in this browser, a wrong or replayed
@@ -371,9 +380,9 @@ final class OidcAuthorizationCodeAuthenticationProvider
 ///
 /// Spring (Java): `OAuth2LoginAuthenticationFilter`; step 3 is this
 /// package's (Spring trusts the registration id of the saved request),
-/// and so is the check of the method against the `response_mode` (Spring
-/// reads the parameters of any method, sends no `response_mode`, and
-/// leaves CSRF and the cookie to the application).
+/// and so are the checks of the method (Spring reads the parameters of
+/// any method, sends no `response_mode`, and leaves CSRF and the cookie
+/// to the application).
 final class OAuth2LoginAuthenticationFilter implements WebFilter {
   /// A filter for the callbacks at `filterProcessesUrl`
   /// (`/login/oauth2/code/*` by default), any method.
@@ -482,6 +491,15 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
       throw OAuth2AuthenticationException(error, error.toString());
     }
 
+    // The response comes with the provider's redirect (GET) or its form
+    // post: a HEAD, PUT, ... is no callback, and the login in progress
+    // stays for the real one.
+    if (request.method != HttpMethod.get && request.method != HttpMethod.post) {
+      fail(
+        OAuth2ErrorCodes.invalidRequest,
+        'The authorization response comes with a GET or a form POST',
+      );
+    }
     final posted = request.method == HttpMethod.post;
     var current = request;
     Map<String, List<String>> parameters;

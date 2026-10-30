@@ -273,7 +273,30 @@ Things to know, as the code behaves today:
   also found under another type (it implemented a second interface), that
   type no longer finds it. `BeanOverride.named(instance, name: ...)`, which
   `@TestBean(name: ...)` generates, keeps the original's types instead
-  (except its own class) and adds the class of the instance.
+  (except its own class) and adds `T` (unless it is `Object`) and the
+  class of the instance; for a `@TestBean(name: ...)` field, `T` is the
+  field's type, under which Spring registers the override too. Dart
+  cannot check that the instance has the original's types: a fake that
+  implements only some of the original's interfaces fails where another
+  one is injected. Give the fake's own types then,
+  `BeanOverride.named(fake, name: ..., types: [FakeGateway,
+  PaymentGateway])`, and it is registered under those (and `T`). A
+  `@TestBean(name: ...)` field whose value is created with a constructor
+  (`= FakeGateway()`, also a named or private class's constructor, with
+  an import prefix, in parentheses or followed by a cascade, whatever the
+  field's declared type) does that by itself: the generated override
+  lists that class and all its public supertypes, as the generator
+  registers a bean of that class (`types: [FakeGateway,
+  PaymentGateway]`; a `SubGateway extends RealGateway` keeps every type
+  of `RealGateway`; a fake `HttpClient` stays an `HttpClient`, written
+  through `dart:io`; a private class is left out, its runtime class is
+  added anyway). A type with a private class as a type argument cannot
+  be written in the generated file and is listed in its raw form only
+  (`FakeRepo<_Draft>()` gives `FakeRepo<dynamic>, Repo<dynamic>`). Any
+  other value (`= Fakes.gateway()`, a function or static method, which
+  may return any subclass), a class that cannot be resolved, or another
+  type that cannot be written in the generated file (a function or
+  record type argument) keeps the original's types.
 - **A misspelt `name:` does not fail.** When no bean has that name, the
   instance is added under it, next to the real bean, which stays. The
   usual symptom is the real bean still being used, or an error about two
@@ -571,6 +594,12 @@ the [testing guide](../docs/testing.md).
   `false` is the default, as in Boot.
 - **No context cache across test files:** each `springBootTest` starts its
   own context, shared by the tests of its `main` or `group`.
+- **`@DirtiesContext` on a class restarts the context after each of its
+  tests,** as Spring's `classMode = AFTER_EACH_TEST_METHOD`. Spring's
+  default for a class, `AFTER_CLASS`, closes the context once the class is
+  done so later classes get a new one; here each class has its own
+  context, closed after its tests anyway, so that default would change
+  nothing. There is no `classMode` or `methodMode`.
 - **`dynamicProperties` is a parameter**, not an annotated static method
   (test classes have `@DynamicPropertySource()`); there are no
   `DynamicPropertyRegistrar` beans.

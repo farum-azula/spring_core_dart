@@ -93,6 +93,23 @@ void main() {
       expect(() => resolver.resolve(_request('/?access_token=')), _invalid);
       expect(() => resolver.resolve(_request('/?access_token')), _invalid);
     });
+
+    // Any page can post a form to /logout?access_token=x: only GET reads
+    // the parameter, as Spring's DefaultBearerTokenResolver.
+    test('is read in GET requests only', () {
+      const resolver = DefaultBearerTokenResolver(allowUriQueryParameter: true);
+      final others = HttpMethod.values.where((m) => m != HttpMethod.get);
+      for (final method in others) {
+        final request = MockServerHttpRequest(
+          method,
+          '/logout?access_token=abc',
+        );
+        expect(resolver.resolve(request), isNull, reason: '$method');
+        // Not "two tokens" next to the header either: the query is ignored.
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer x');
+        expect(resolver.resolve(request), 'x', reason: '$method');
+      }
+    });
   });
 
   test('a token header of another name', () {

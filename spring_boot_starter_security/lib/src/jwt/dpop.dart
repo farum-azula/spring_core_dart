@@ -16,6 +16,7 @@ import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
+import 'package:spring_boot_starter_security/src/jwt/since.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
@@ -76,12 +77,14 @@ const Set<JwsAlgorithm> defaultDPoPAlgorithms = {
 /// `DPoPProofContext.withDPoPProof(proof).method(...).targetUri(...)`.
 final class DPoPProofContext {
   /// The context of [dPoPProof] sent with a [method] request to
-  /// [targetUri], with [accessToken] when the request carried one.
+  /// [targetUri], with [accessToken] when the request carried one and
+  /// that token's [jwkThumbprint].
   const DPoPProofContext(
     this.dPoPProof, {
     required this.method,
     required this.targetUri,
     this.accessToken,
+    this.jwkThumbprint,
   });
 
   /// The proof, as sent in the `DPoP` header; never log it.
@@ -98,6 +101,13 @@ final class DPoPProofContext {
   /// token endpoint); a credential, never log it.
   final String? accessToken;
 
+  /// The `cnf.jkt` claim of [accessToken]: the RFC 7638 thumbprint the
+  /// proof's key must have, or `null` to leave that check to the caller.
+  ///
+  /// The decoder compares it before it records the proof's `jti`, so
+  /// proofs signed with other keys never fill the store of used ids.
+  final String? jwkThumbprint;
+
   /// A description for logs, without the proof and the token.
   @override
   String toString() =>
@@ -107,8 +117,13 @@ final class DPoPProofContext {
 /// Remembers the ids (`jti`) of the DPoP proofs already used, so that a
 /// proof caught on the way cannot be sent again.
 ///
-/// Each id is kept until its proof's time window ends (`iat` plus the
-/// clock skew); after that the proof is too old to be accepted anyway.
+/// Each id is kept until the `expiresAt` the decoder gives: the end of its
+/// proof's time window (`iat` plus the clock skew) plus 5 seconds. The
+/// `iat` check reads the clock a moment before the store does; the margin
+/// covers that moment (and a pause of the isolate in between), so by
+/// `expiresAt` the proof is too old to pass the `iat` check: forgetting
+/// its id then lets nothing through. Until then a recorded id is refused,
+/// whatever the time.
 /// The default, [InMemoryDPoPProofJtiCache], keeps them in this process:
 /// enough for one server. Behind a load balancer with several instances
 /// (or isolates), a replayed proof could reach another one; implement
@@ -120,7 +135,9 @@ final class DPoPProofContext {
 abstract interface class DPoPProofJtiCache {
   /// Records [jti] of a proof signed by the key [jwkThumbprint] as used
   /// until [expiresAt]; `true` when it was not used before, `false` for a
-  /// replay.
+  /// replay. An id still recorded is a replay even when [expiresAt] has
+  /// passed: drop ids only after their [expiresAt] (as a TTL does), never
+  /// accept one because of it.
   ///
   /// [jti] is already hashed (base64url SHA-256), so its length is fixed.
   /// Return `false` as well when the id cannot be recorded (a full store,
@@ -137,12 +154,19 @@ abstract interface class DPoPProofJtiCache {
 /// The default [DPoPProofJtiCache]: the ids in a map of this process, at
 /// most [maximumSize] of them and [maximumPerKey] per client key.
 ///
-/// Expired ids are dropped every 10 seconds, and at once when the map is
-/// full. When it is still full of ids in their window, new proofs are
-/// refused (a 401) until room frees up, rather than forgetting ids early,
-/// which would let their proofs be replayed. The limit per key keeps one
-/// client from filling the map for everyone. Size it for the proofs one
-/// instance gets in a time window (twice the clock skew).
+/// An id stays in the map, refused, until a purge drops it: expired ids
+/// (past their `expiresAt`, 5 seconds after their proof's time window)
+/// are dropped every 10 seconds, and at once when the map is full. When it
+/// is still full of ids in their window, new proofs are refused (a 401)
+/// until room frees up, rather than forgetting ids early, which would let
+/// their proofs be replayed. The limit per key keeps one client key from
+/// filling the map for everyone: the decoder records only proofs signed
+/// with the key their access token is bound to, so a client cannot spread
+/// its proofs over keys it makes up. Size it for the proofs one instance
+/// gets while their ids are kept: the clock skew plus 5 seconds after
+/// their `iat` (up to twice the skew plus 5 seconds for a proof made
+/// ahead of the server's clock); 1 000 per key is about 28 proofs a
+/// second for one client with the default 30-second skew.
 ///
 /// Spring (Java): `DPoPProofReplayValidator.InMemoryCache`, with the same
 /// limits (100 000 entries, 1 000 per key).
@@ -172,7 +196,9 @@ final class InMemoryDPoPProofJtiCache implements DPoPProofJtiCache {
   final DateTime Function() _clock;
   final _entries = <String, (DateTime, String)>{};
   final _perKey = <String, int>{};
-  DateTime? _purgedAt;
+  // On a monotonic stopwatch too: with a wall clock set back, a full
+  // cache was never purged again for as long, refusing every proof.
+  Since? _purged;
 
   /// How many ids are held now, expired ones not yet dropped included.
   int get size => _entries.length;
@@ -184,25 +210,24 @@ final class InMemoryDPoPProofJtiCache implements DPoPProofJtiCache {
     required String jwkThumbprint,
   }) {
     final now = _clock().toUtc();
-    final seen = _entries[jti];
-    if (seen != null && seen.$1.isAfter(now)) {
-      return false;
-    }
-    final purgedAt = _purgedAt;
+    final purged = _purged;
     final full =
         _entries.length >= maximumSize ||
         (_perKey[jwkThumbprint] ?? 0) >= maximumPerKey;
-    if (purgedAt == null ||
-        now.difference(purgedAt) >= const Duration(seconds: 10) ||
-        (full &&
-            now.difference(purgedAt) >= const Duration(milliseconds: 50))) {
+    if (purged == null ||
+        purged.passed(const Duration(seconds: 10), now) ||
+        (full && purged.passed(const Duration(milliseconds: 50), now))) {
       _purge(now);
     }
-    if (_entries.length >= maximumSize ||
+    // A recorded id is refused whatever its expiry says: only a purge
+    // forgets it. An id taken as gone once `now` reached its expiry let a
+    // proof through again at exactly `iat` + skew, which the `iat` check,
+    // reading the clock a moment earlier, still accepts.
+    if (_entries.containsKey(jti) ||
+        _entries.length >= maximumSize ||
         (_perKey[jwkThumbprint] ?? 0) >= maximumPerKey) {
       return false;
     }
-    _remove(jti);
     _entries[jti] = (expiresAt.toUtc(), jwkThumbprint);
     _perKey.update(jwkThumbprint, (n) => n + 1, ifAbsent: () => 1);
     return true;
@@ -213,7 +238,7 @@ final class InMemoryDPoPProofJtiCache implements DPoPProofJtiCache {
       for (final MapEntry(:key, :value) in _entries.entries)
         if (!value.$1.isAfter(now)) key,
     ].forEach(_remove);
-    _purgedAt = now;
+    _purged = Since(now);
   }
 
   void _remove(String jti) {
@@ -249,11 +274,16 @@ final class InMemoryDPoPProofJtiCache implements DPoPProofJtiCache {
 ///    [defaultValidator]:
 ///    `htm`, `htu`, `iat` within [clockSkew], and `ath` when the request
 ///    has an access token).
-/// 5. The `jti` was not used before ([jtiCache]); it is recorded only now,
-///    for a proof that passed everything else.
+/// 5. The key is the one the access token is bound to: its thumbprint
+///    equals [DPoPProofContext.jwkThumbprint] (the token's `cnf.jkt`),
+///    when the context has one.
+/// 6. The `jti` was not used before ([jtiCache]); it is recorded only now,
+///    for a proof that passed everything else, so the ids kept per key
+///    ([InMemoryDPoPProofJtiCache.maximumPerKey]) are those of proofs of
+///    a key some valid token is bound to.
 ///
-/// Whether the key is the one the access token is bound to (`cnf.jkt`)
-/// is checked by the [DPoPAuthenticationProvider].
+/// The [DPoPAuthenticationProvider] sets the thumbprint from the token's
+/// `cnf.jkt`.
 ///
 /// The resource server makes one by itself; declare a bean of this type
 /// to change the clock skew, the algorithms or the `jti` store.
@@ -295,8 +325,10 @@ final class DPoPProofJwtDecoderFactory {
   /// The algorithms a proof may be signed with.
   final Set<JwsAlgorithm> jwsAlgorithms;
 
-  /// How far a proof's `iat` may be from this server's clock, either way;
-  /// also how long its `jti` is remembered after `iat`.
+  /// How far a proof's `iat` may be from this server's clock, either way.
+  /// Its `jti` is remembered until `iat` plus the skew plus 5 seconds: the
+  /// end of the window the `iat` check accepts, with a margin for the
+  /// moment between that check and the [jtiCache] reading the clock.
   final Duration clockSkew;
 
   /// Where the ids of used proofs are kept.
@@ -414,6 +446,15 @@ String? normalizedDPoPTarget(Uri uri) {
 
 const _privateJwkMembers = ['d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'k'];
 
+// How long past its proof's window (`iat` + skew) a `jti` is kept. The
+// `iat` check and the store read the clock apart (90 to 600 µs measured,
+// more behind a GC pause or a step of the wall clock): an id forgotten
+// at exactly `iat` + skew let a proof through again at the end of its
+// window. 5 seconds is thousands of times that gap and costs little room:
+// ids live the skew plus 5 seconds instead of the skew (Spring keeps them
+// to `iat` + skew and purges every 10 seconds).
+const _jtiMargin = Duration(seconds: 5);
+
 final class _DPoPProofJwtDecoder implements JwtDecoder {
   _DPoPProofJwtDecoder(this.factory, this.context, this.validator);
 
@@ -461,12 +502,22 @@ final class _DPoPProofJwtDecoder implements JwtDecoder {
         result.errors,
       );
     }
+    // Never throws: _publicKey took an EC key with crv, x and y or an RSA
+    // key with n and e, all strings.
+    final thumbprint = JwkThumbprint.of(jwk);
+    // The binding before the jti is recorded: a proof of another key
+    // (anyone with a valid token can make keys) takes no room in the store.
+    final expected = context.jwkThumbprint;
+    if (expected != null &&
+        !constantTimeEquals(utf8.encode(thumbprint), utf8.encode(expected))) {
+      throw BadJwtException('The jkt claim is not valid');
+    }
     final bool fresh;
     try {
       fresh = await factory.jtiCache.markUsed(
         sha256Base64Url(claims.jti),
-        claims.iat.add(factory.clockSkew),
-        jwkThumbprint: JwkThumbprint.of(jwk),
+        claims.iat.add(factory.clockSkew + _jtiMargin),
+        jwkThumbprint: thumbprint,
       );
     } on Object catch (e) {
       throw JwtException('The DPoP proof id could not be recorded', e);
@@ -580,12 +631,14 @@ final class DPoPAuthenticationToken extends AbstractAuthenticationToken {
 ///
 /// 1. checks the access token with [tokenAuthenticationManager], the one
 ///    `Bearer` tokens go through (signature, `iss`, `aud`, `exp`); a
-///    refused token fails as for `Bearer`, `invalid_token`;
-/// 2. checks the proof with a decoder of [dPoPProofVerifierFactory]
-///    (`typ`, algorithm, signature, `htm`, `htu`, `iat`, `ath`, `jti`);
-/// 3. compares the RFC 7638 thumbprint of the proof's key with the
-///    token's `cnf.jkt` claim; a token without it is not DPoP-bound and is
-///    refused.
+///    refused token fails as for `Bearer`, `invalid_token`, and so does a
+///    token also bound to a client certificate (`cnf.x5t#S256`, RFC
+///    8705), whose binding cannot be checked here;
+/// 2. requires the token's `cnf.jkt` claim: a token without it is not
+///    DPoP-bound and is refused before its proof is looked at;
+/// 3. checks the proof with a decoder of [dPoPProofVerifierFactory]
+///    (`typ`, algorithm, signature, `htm`, `htu`, `iat`, `ath`, the RFC
+///    7638 thumbprint of its key against `cnf.jkt`, then `jti`).
 ///
 /// A failure of 2 or 3 is an [OAuth2AuthenticationException] with
 /// `invalid_dpop_proof`. On success it returns what step 1 returned,
@@ -630,45 +683,44 @@ final class DPoPAuthenticationProvider implements AuthenticationProvider {
         ),
       );
     }
-    final decoder = dPoPProofVerifierFactory.createDecoder(
-      DPoPProofContext(
-        request.dPoPProof,
-        method: request.method,
-        targetUri: request.resourceUri,
-        accessToken: request.accessToken,
-      ),
-    );
-    final Jwt proof;
-    try {
-      proof = await decoder.decode(request.dPoPProof);
-    } on JwtException catch (e) {
+    // Bound to a client certificate too (RFC 8705): the web starter does
+    // not hand the certificate to the filters, so the binding cannot be
+    // checked (the same text in bearer.dart).
+    if (principal.x509Thumbprint != null) {
       throw OAuth2AuthenticationException(
-        OAuth2Error(invalidDPoPProof, e.message),
-        e.message,
-        e,
+        const OAuth2Error(
+          OAuth2ErrorCodes.invalidToken,
+          'The access token is bound to a client certificate (RFC 8705), '
+          'which this server cannot check',
+        ),
       );
     }
+    // An unbound token: refused before its proof is decoded, so the proof
+    // takes no room in the store of used ids.
     final jkt = principal.jwkThumbprint;
     if (jkt == null) {
       throw OAuth2AuthenticationException(
         const OAuth2Error(invalidDPoPProof, 'The jkt claim is required'),
       );
     }
-    final String thumbprint;
+    final decoder = dPoPProofVerifierFactory.createDecoder(
+      DPoPProofContext(
+        request.dPoPProof,
+        method: request.method,
+        targetUri: request.resourceUri,
+        accessToken: request.accessToken,
+        jwkThumbprint: jkt,
+      ),
+    );
+    // The decoder compares the proof's key with jkt (before it records
+    // the jti); its factory is final, so no decoder skips that.
     try {
-      thumbprint = JwkThumbprint.of(
-        proof.headers['jwk']! as Map<String, Object?>,
-      );
-    } on FormatException catch (e) {
+      await decoder.decode(request.dPoPProof);
+    } on JwtException catch (e) {
       throw OAuth2AuthenticationException(
-        const OAuth2Error(invalidDPoPProof, 'The jkt claim is not valid'),
-        null,
+        OAuth2Error(invalidDPoPProof, e.message),
+        e.message,
         e,
-      );
-    }
-    if (!constantTimeEquals(utf8.encode(thumbprint), utf8.encode(jkt))) {
-      throw OAuth2AuthenticationException(
-        const OAuth2Error(invalidDPoPProof, 'The jkt claim is not valid'),
       );
     }
     return result;

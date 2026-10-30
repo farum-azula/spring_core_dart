@@ -68,7 +68,41 @@ abstract interface class ResourcePatternResolver implements ResourceLoader {
 /// wildcards gives the resource of every root that has it.
 ///
 /// Matching files and directories are returned, sorted by path within a
-/// root; directories the pattern cannot match below are not walked.
+/// root; directories the pattern cannot match below are not walked. The
+/// pattern is cleaned first, as Spring cleans it: the directory before
+/// the first wildcard is normalized as a classpath location is
+/// (`classpath:./mail/../mail//*.txt` is `classpath:mail/*.txt`), and in
+/// the rest, as by Spring's `StringUtils.cleanPath`, `\\` (two
+/// backslashes) is read as one `/`, then each `\` left as `/`, and `.` and
+/// `..` segments are resolved (`classpath:mail\*.txt`,
+/// `classpath:mail/*/../*.txt` and `classpath:mail/*\\..\\*.txt` are
+/// `classpath:mail/*.txt`). As in Spring, a `{name:regex}` must not use
+/// `\`, which becomes `/` (`classpath:mail/{n:\w+}.txt` matches nothing):
+/// write character classes such as `[0-9]` or `[a-zA-Z0-9_]` instead.
+/// As in Spring, the wildcards of a `file:` pattern are those written:
+/// only the directory before the first one is percent-decoded
+/// (`file:my%20dir/*.txt` searches `my dir/`), so `file:mail/%2A.txt` is
+/// the one file named `*.txt`, and the rest matches a `%` as it is.
+///
+/// Kept differences from Spring 7:
+///
+/// - a `..` that climbs above the roots, or above the directory before
+///   the first wildcard, finds nothing (Spring's
+///   `classpath*:mail/../../*.txt` can reach files next to a classpath
+///   directory; here nothing outside the roots is found);
+/// - a `\` in the directory before the first wildcard of a `classpath*:`
+///   pattern is cleaned too (`classpath*:conf\sub/*.txt` finds
+///   `conf/sub/*.txt`, as `classpath:conf\sub/*.txt` does in both), where
+///   Spring hands the name to Java's class loader, which refuses it;
+/// - a `file:` pattern whose separators are `\` there is read the same
+///   way, so Windows paths work (`file:lib\resources\mail\*.txt`,
+///   `file:C:\config\*.properties`), where Spring on macOS and Linux
+///   finds nothing (`Invalid URI [file:]`: its root directory ends at the
+///   last `/`);
+/// - a `classpath:` pattern whose base directory no root has
+///   (`classpath:nodir/*.txt`) gives an empty list, where Spring throws a
+///   `FileNotFoundException` (`cannot be resolved to URL because it does
+///   not exist`).
 ///
 /// ```dart
 /// // A tool that adds every properties file of ./config/ to its
@@ -120,25 +154,34 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   @override
   List<Resource> getResources(String locationPattern) {
     if (locationPattern.startsWith(classpathAllUrlPrefix)) {
-      final path = _classpathPath(
-        locationPattern.substring(classpathAllUrlPrefix.length),
-      );
+      final path = locationPattern.substring(classpathAllUrlPrefix.length);
       if (!pathMatcher.isPattern(path)) {
+        final normalized = _classpathDirectory(path);
+        if (normalized == null) {
+          return const []; // climbs above the roots: nothing there
+        }
         return [
           for (final root in _roots())
-            if (root.resolve(path) case final resource when resource.exists())
+            if (root.resolve(normalized) case final resource
+                when resource.exists())
               resource,
         ];
       }
-      return [for (final root in _roots()) ..._matches(root, path)];
+      final pattern = _classpathPattern(path);
+      if (pattern == null) {
+        return const []; // climbs above the roots: nothing there
+      }
+      return [for (final root in _roots()) ..._matches(root, pattern)];
     }
     final isFile = locationPattern.startsWith(ResourceLoader.filePrefix);
     // Plain locations are classpath locations, as in DefaultResourceLoader.
     final isClasspath =
         locationPattern.startsWith(ClasspathResources.prefix) ||
         !RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(locationPattern);
+    // As in Spring, the wildcards are looked for in the location as
+    // written: `file:mail/%2A.txt` is the file named `*.txt`, no pattern.
     final path = isFile
-        ? FileSystemResource.fromFileUrl(locationPattern).path
+        ? locationPattern.substring(ResourceLoader.filePrefix.length)
         : locationPattern.startsWith(ClasspathResources.prefix)
         ? locationPattern.substring(ClasspathResources.prefix.length)
         : locationPattern;
@@ -147,32 +190,158 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
       return resource.exists() ? [resource] : const [];
     }
     if (isClasspath) {
-      final pattern = _classpathPath(path);
-      final base = _rootDirectory(pattern);
+      final pattern = _classpathPattern(path);
+      if (pattern == null) {
+        return const []; // climbs above the roots: nothing there
+      }
       for (final root in _roots()) {
-        if (root.hasDirectory(base)) {
+        if (root.hasDirectory(pattern.base)) {
           return _matches(root, pattern);
         }
       }
       return const [];
     }
     // Walk the directory before the first wildcard segment and match the
-    // remaining pattern against paths relative to it.
-    final root = _rootDirectory(path);
-    final directory = root.isEmpty ? '.' : root;
-    if (!FileAccess.isDirectory(directory)) {
+    // rest, cleaned as Spring's StringUtils.cleanPath cleans it, against
+    // paths relative to it. As in Spring, only that directory is
+    // percent-decoded (its URL's file): `file:my%20dir/*.txt` walks
+    // `my dir/`, while the rest is matched as written.
+    final raw = _filePath(locationPattern);
+    final root = _rootDirectory(raw);
+    final directory = FileSystemResource(_decoded(root)).path;
+    final pattern = _subPattern(raw.substring(root.length));
+    if (pattern == null || !FileAccess.isDirectory(directory)) {
       return const [];
     }
     final prefix = directory.endsWith('/') ? directory : '$directory/';
     return [
-      for (final relative in _walk(directory, path.substring(root.length)))
+      for (final relative in _walk(directory, pattern))
         FileSystemResource('$prefix$relative'),
     ];
   }
 
-  // A classpath path without leading slashes.
-  static String _classpathPath(String path) =>
-      path.replaceFirst(RegExp('^/+'), '');
+  // The path of a `file:` [url] as FileSystemResource.fromFileUrl reads it
+  // (an empty or `localhost` host dropped), `\` read as `/` as Spring's
+  // cleanPath reads it ([_slashes]; `file:C:\config\*.properties`), not
+  // cleaned and not percent-decoded yet ([_decoded]).
+  static String _filePath(String url) {
+    var rest = url.substring(ResourceLoader.filePrefix.length);
+    if (rest.startsWith('///')) {
+      rest = rest.substring(2);
+    } else if (rest.startsWith('//localhost/')) {
+      rest = rest.substring('//localhost'.length);
+    }
+    return _slashes(rest);
+  }
+
+  // [path] percent-decoded, as the file of a `file:` URL is; a `%` that
+  // starts no valid escape is a literal `%` (`file:100%.txt`).
+  static String _decoded(String path) {
+    if (!path.contains('%')) {
+      return path;
+    }
+    try {
+      return Uri.decodeComponent(path);
+    } on ArgumentError {
+      return path;
+    }
+  }
+
+  // [path] with `\` read as `/`, in the two steps of Spring's
+  // StringUtils.cleanPath: each `\\` (two backslashes) becomes one `/`,
+  // then each `\` left does. So `*\\..\\*.txt` is `*/../*.txt`, whose
+  // `..` removes the `*` directory (`*.txt`), not `*//..//*.txt`, whose
+  // `..` removes an empty segment.
+  static String _slashes(String path) => path.contains(r'\')
+      ? path.replaceAll(r'\\', '/').replaceAll(r'\', '/')
+      : path;
+
+  // A classpath pattern split as Spring's determineRootDir splits it: the
+  // directory before the first segment with wildcards ([_classpathDirectory])
+  // and the rest, cleaned as Spring 7 cleans it ([_subPattern]):
+  // `classpath:mail\*.txt` is `classpath:mail/*.txt` and
+  // `classpath:mail/{n:\w+}.txt` matches nothing, as in Spring. `null` when
+  // a `..` climbs above the roots or above that directory: nothing there.
+  _ClasspathPattern? _classpathPattern(String path) {
+    final directory = _rootDirectory(path);
+    final base = _classpathDirectory(directory);
+    final rest = _subPattern(path.substring(directory.length));
+    return base == null || rest == null ? null : (base: base, rest: rest);
+  }
+
+  // A classpath directory as the roots' paths are written: no leading
+  // slash, `\` read as `/`, `.`, `..` and empty segments resolved
+  // (`./emb/`, `sub/../emb/` and `emb//` are `emb/`), a trailing slash
+  // kept, `''` for the root itself. `null` when `..` climbs above the
+  // roots.
+  static String? _classpathDirectory(String directory) =>
+      switch (ClasspathResources.normalize(directory)) {
+        null => null,
+        '.' || '' => '',
+        final cleaned when directory.endsWith('/') && !cleaned.endsWith('/') =>
+          '$cleaned/',
+        final cleaned => cleaned,
+      };
+
+  // The part of a pattern after its root directory, cleaned as Spring 7
+  // cleans it (`StringUtils.cleanPath(subPattern)` in
+  // doFindPathMatchingFileResources): `\` read as `/`, `.` segments
+  // dropped, a `..` removing the segment before it (`*/../*.txt` is
+  // `*.txt`). `null` when a `..` is left over: it climbs above the root
+  // directory, where no walked path is.
+  static String? _subPattern(String pattern) {
+    final cleaned = _cleanPath(pattern);
+    return cleaned == '..' || cleaned.startsWith('../') ? null : cleaned;
+  }
+
+  // [path] cleaned like Spring's StringUtils.cleanPath: `\` read as `/`
+  // ([_slashes]: `\\` first), `.` segments dropped and a `..` removing
+  // the segment before it (`**/./a/../*.txt` is `**/*.txt`); leading `..`
+  // segments, empty segments and a trailing `/` kept. As in Spring, text
+  // up to a first `:` with no `/` before it is a prefix left as it is.
+  static String _cleanPath(String path) {
+    if (path.isEmpty) {
+      return path;
+    }
+    final normalized = _slashes(path);
+    if (!normalized.contains('.')) {
+      return normalized;
+    }
+    var rest = normalized;
+    var prefix = '';
+    final colon = rest.indexOf(':');
+    if (colon != -1 && !rest.substring(0, colon).contains('/')) {
+      prefix = rest.substring(0, colon + 1);
+      rest = rest.substring(colon + 1);
+    }
+    if (rest.startsWith('/')) {
+      prefix = '$prefix/';
+      rest = rest.substring(1);
+    }
+    final segments = rest.isEmpty ? const <String>[] : rest.split('/');
+    final kept = <String>[];
+    var tops = 0;
+    for (final segment in segments.reversed) {
+      if (segment == '.') {
+        continue;
+      }
+      if (segment == '..') {
+        tops++;
+      } else if (tops > 0) {
+        tops--;
+      } else {
+        kept.add(segment);
+      }
+    }
+    if (kept.length == segments.length) {
+      return normalized;
+    }
+    final result = [for (var i = 0; i < tops; i++) '..', ...kept.reversed];
+    if (result.length == 1 && result.single.isEmpty && !prefix.endsWith('/')) {
+      result.insert(0, '.');
+    }
+    return '$prefix${result.join('/')}';
+  }
 
   // The classpath roots, in lookup order.
   List<_ClasspathRoot> _roots() => [
@@ -182,13 +351,10 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
   ];
 
   // The resources of [root] matching [pattern], sorted by path.
-  List<Resource> _matches(_ClasspathRoot root, String pattern) {
-    final base = _rootDirectory(pattern);
-    return [
-      for (final path in root.paths(this, base, pattern.substring(base.length)))
-        root.resolve(path),
-    ];
-  }
+  List<Resource> _matches(_ClasspathRoot root, _ClasspathPattern pattern) => [
+    for (final path in root.paths(this, pattern.base, pattern.rest))
+      root.resolve(path),
+  ];
 
   // Paths below [directory], relative to it, that match [pattern]: files
   // and directories, sorted. A directory is only entered when the pattern
@@ -234,6 +400,10 @@ class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
     return path.substring(0, end);
   }
 }
+
+// A classpath pattern: the directory before the first segment with
+// wildcards (`mail/`, `''` for the root) and the rest, each cleaned.
+typedef _ClasspathPattern = ({String base, String rest});
 
 // One classpath root: a directory, or the embedded resources together
 // with `lib/resources/`.

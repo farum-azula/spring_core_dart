@@ -5,6 +5,7 @@ import 'package:spring_boot_starter_flutter_security/src/dpop/platform_dpop_key.
 import 'package:spring_boot_starter_flutter_security/src/login/apple_id_sign_in.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_token_revocation_client.dart';
+import 'package:spring_boot_starter_flutter_security/src/login/secret_store_oauth2_authorized_client_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
@@ -473,8 +474,11 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
       ...info,
       IdTokenClaimNames.sub: identity.subject,
     });
-    final nameKey = user is DefaultOidcUser
-        ? user.nameAttributeKey
+    // The attribute that named the user, when the new user still has it.
+    final named = _Session._nameKeyOf(user);
+    final nameKey =
+        named != null && {...userInfo.claims, ...identity.claims}[named] != null
+        ? named
         : IdTokenClaimNames.sub;
     return DefaultOidcUser(
       [
@@ -528,15 +532,28 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
       ),
       authentication,
     );
+    final session = _Session.of(authentication);
+    if (!session.restorable) {
+      // An application's user service whose user's name is in none of
+      // its attributes: the login works, restore() cannot rebuild them.
+      _log.warning(
+        "The user of registration '$registrationId' is named by none of "
+        'their attributes; restore() will not bring them back (their '
+        'tokens are removed then)',
+      );
+    }
     try {
-      await _writeSession(_Session.of(authentication));
+      await _writeSession(session);
     } on JsonUnsupportedObjectError {
       // A user service of the application put values JSON cannot hold
       // into the user: the login works, restore() will not bring it back.
+      // The record without them still names the login, so restore() and
+      // logout() find its tokens and remove them.
       _log.warning(
         "The user of registration '$registrationId' cannot be stored; "
         'restore() will not bring them back',
       );
+      await _writeSession(session.withoutUser());
     }
     _authenticated(authentication);
     _log.debug(
@@ -606,16 +623,34 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
     return response;
   }
 
-  /// Brings back the user of the stored tokens, as at the end of their
-  /// last [login], and returns their authentication; `null` when nobody
-  /// is stored.
+  /// Brings back the user of the stored tokens and returns their
+  /// authentication; `null` when nobody is stored.
   ///
-  /// Call it once at startup. An access token that expires soon is
-  /// refreshed; when the provider refuses the refresh token
-  /// (`invalid_grant`: revoked, expired, the user removed), the tokens
-  /// are forgotten and the result is `null`. When the provider cannot be
-  /// reached, the user is restored all the same (an app starts offline),
-  /// and the tokens are refreshed at their next use. Publishes an
+  /// Call it once at startup. The user comes back from the login record
+  /// written at the end of the last [login]: the ID token and user info
+  /// (OpenID Connect) or the attributes (OAuth 2.0), as a
+  /// `DefaultOidcUser` or `DefaultOAuth2User`, with the authorities the
+  /// user service gave them then (the roles an application's own
+  /// `OAuth2UserService` added included; any authority comes back as one
+  /// of that name), mapped again by the [authoritiesMapper]. The user
+  /// service is not called again, as a Spring session keeps the
+  /// authentication of its login: that would need the provider's user
+  /// info endpoint at every start (no offline start) and run the
+  /// application's service, which may call its own server. What follows
+  /// the tokens: the `SCOPE_` authorities are those of the current access
+  /// token, and a refreshed ID token replaces the stored one. An app that
+  /// needs roles decided anew logs the user in again.
+  ///
+  /// An access token that expires soon is refreshed; when the provider
+  /// refuses the refresh token (`invalid_grant`: revoked, expired, the
+  /// user removed), the tokens are forgotten and the result is `null`.
+  /// When the provider cannot be reached, the user is restored all the
+  /// same (an app starts offline), and the tokens are refreshed at their
+  /// next use. A login record of a registration that no longer exists
+  /// is removed with its tokens, and so is one that cannot be read
+  /// (damaged, of another version) or cannot rebuild its user (an
+  /// application's user named by none of their attributes; logged as a
+  /// warning at the login and here). Publishes an
   /// `AuthenticationSuccessEvent`, as Spring's remember-me login does.
   ///
   /// Throws a [StateError] while a login or logout runs.
@@ -643,6 +678,12 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
     }
     if (reachable) {
       if (registration == null) {
+        // The registration was removed from the configuration: its
+        // tokens can never be used again.
+        await authorizedClientService.removeAuthorizedClient(
+          session.registrationId,
+          session.principalName,
+        );
         await _forget(session);
         return null;
       }
@@ -697,7 +738,18 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
     final OAuth2AuthenticationToken authentication;
     try {
       authentication = restored.authentication(authoritiesMapper);
-    } on Object {
+    } on Object catch (e) {
+      // The record names a login but cannot rebuild its user (a user
+      // named by no attribute, a damaged ID token): its tokens can never
+      // be used again.
+      _log.warning(
+        "The stored login of registration '${session.registrationId}' "
+        'cannot be restored (${e.runtimeType}); removing it and its tokens',
+      );
+      await authorizedClientService.removeAuthorizedClient(
+        session.registrationId,
+        session.principalName,
+      );
       await _forget(session);
       return null;
     }
@@ -721,7 +773,11 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
   /// provider.
   ///
   /// Revocation and the provider's logout page are best effort: the local
-  /// logout happens whatever they answer.
+  /// logout happens whatever they answer. When the [secretStore] cannot
+  /// forget the tokens or the login record, the user is logged out of
+  /// the running app all the same (the context cleared, the event
+  /// published) and the store's error is rethrown: the stored login may
+  /// come back at the next [restore], so tell the user.
   ///
   /// Throws a [StateError] while a login or restore runs.
   @override
@@ -729,39 +785,67 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
       _exclusive(() => _logout(endSession, postLogoutRedirectUri));
 
   Future<void> _logout(bool endSession, Uri? postLogoutRedirectUri) async {
-    final session = await _readSession();
     final authentication = _authentication;
+    _Session? session;
     ClientRegistration? registration;
     OAuth2AuthorizedClient? client;
-    if (session != null) {
-      try {
-        registration = await clientRegistrationRepository.findByRegistrationId(
-          session.registrationId,
-        );
-        if (registration != null) {
-          client = await authorizedClientService.loadAuthorizedClient(
-            session.registrationId,
-            session.principalName,
-          );
+    try {
+      session = await _readSession();
+      if (session != null) {
+        try {
+          registration = await clientRegistrationRepository
+              .findByRegistrationId(session.registrationId);
+          if (registration != null) {
+            client = await authorizedClientService.loadAuthorizedClient(
+              session.registrationId,
+              session.principalName,
+            );
+          }
+        } on Object catch (e) {
+          _log.debug('No revocation at logout (${e.runtimeType})');
         }
-      } on Object catch (e) {
-        _log.debug('No revocation at logout (${e.runtimeType})');
+        if (registration != null && client != null) {
+          await _revoke(registration, client);
+        }
+        // Each step runs even when one before failed; the first error is
+        // rethrown once the user is logged out of the app.
+        Object? failure;
+        StackTrace? failureTrace;
+        Future<void> attempt(Future<void> Function() step) async {
+          try {
+            await step();
+          } on Object catch (e, trace) {
+            failure ??= e;
+            failureTrace ??= trace;
+          }
+        }
+
+        final stored = session;
+        await attempt(
+          () => authorizedClientService.removeAuthorizedClient(
+            stored.registrationId,
+            stored.principalName,
+          ),
+        );
+        await attempt(() => secretStore.delete(sessionKey));
+        await _rotateDPoPKey();
+        if (failure case final error?) {
+          _log.warning(
+            'The stored login could not be removed at logout '
+            '(${error.runtimeType}); it may come back at the next restore',
+          );
+          Error.throwWithStackTrace(error, failureTrace!);
+        }
       }
-      if (registration != null && client != null) {
-        await _revoke(registration, client);
+    } finally {
+      // Logged out of the running app whatever the store did: failing
+      // open (still logged in after a logout) is worse.
+      _authentication = null;
+      securityContextHolderStrategy.clearContext();
+      _changes.add(null);
+      if (authentication != null) {
+        eventPublisher?.publishEvent(LogoutSuccessEvent(authentication));
       }
-      await authorizedClientService.removeAuthorizedClient(
-        session.registrationId,
-        session.principalName,
-      );
-      await secretStore.delete(sessionKey);
-      await _rotateDPoPKey();
-    }
-    _authentication = null;
-    securityContextHolderStrategy.clearContext();
-    _changes.add(null);
-    if (authentication != null) {
-      eventPublisher?.publishEvent(LogoutSuccessEvent(authentication));
     }
     final idToken = client?.idToken?.tokenValue ?? session?.idToken;
     if (endSession && registration != null && idToken != null) {
@@ -816,12 +900,15 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
     if (endpoint == null || window == null) {
       return;
     }
-    final state = generateSecureKey();
     final target =
         postLogoutRedirectUri ??
         Uri.parse(expandRedirectUri(registration, baseUrl: baseUrl));
     try {
-      final back = await window.authorize(
+      // No `state`: nothing is decided on the way back (the local logout
+      // is done), and a window waits for a request's `state` only when
+      // the page carries one, so a provider that does not send it back
+      // after a logout never keeps the window waiting.
+      await window.authorize(
         redirectUri: target,
         authorizationUri: (redirectUri) {
           final base = Uri.parse(endpoint);
@@ -831,16 +918,10 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
               OidcParameterNames.idTokenHint: idToken,
               OAuth2ParameterNames.clientId: registration.clientId,
               OidcParameterNames.postLogoutRedirectUri: '$redirectUri',
-              OAuth2ParameterNames.state: state,
             },
           );
         },
       );
-      final returned = back.queryParameters[OAuth2ParameterNames.state];
-      if (returned != null &&
-          !constantTimeEquals(utf8.encode(returned), utf8.encode(state))) {
-        _log.warning('The provider logout came back with another state');
-      }
     } on Object catch (e) {
       _log.warning('The provider logout did not complete (${e.runtimeType})');
     }
@@ -886,9 +967,47 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
       return _Session.decode(stored);
     } on Object {
       // Never log the value: it holds an ID token.
-      _log.warning('Removing an unreadable login record');
+      _log.warning('Removing an unreadable login record and its tokens');
+      await _removeTokensOf(stored);
       await secretStore.delete(sessionKey);
       return null;
+    }
+  }
+
+  // The tokens of an unreadable login record: those of the registration
+  // and user it still names (a record of another version), else every
+  // stored client of the store, which no login record can lead to any
+  // more. Best effort: the record goes anyway.
+  Future<void> _removeTokensOf(String record) async {
+    Object? json;
+    try {
+      json = jsonDecode(record);
+    } on FormatException {
+      json = null;
+    }
+    try {
+      if (json case {
+        'registrationId': final String registrationId,
+        'principalName': final String principalName,
+      }) {
+        await authorizedClientService.removeAuthorizedClient(
+          registrationId,
+          principalName,
+        );
+        return;
+      }
+      for (final key in await secretStore.keys()) {
+        if (key.startsWith(
+          SecretStoreOAuth2AuthorizedClientService.keyPrefix,
+        )) {
+          await secretStore.delete(key);
+        }
+      }
+    } on Object catch (e) {
+      _log.warning(
+        'The tokens of the unreadable login record could not be removed '
+        '(${e.runtimeType})',
+      );
     }
   }
 
@@ -898,7 +1017,8 @@ class NativeOAuth2LoginService implements OAuth2LoginService {
 
 // What restore() needs to show the user without the network: the
 // registration, the name, the ID token and user info (OpenID Connect) or
-// the attributes (OAuth 2.0), and the scopes of the access token.
+// the attributes (OAuth 2.0), the scopes of the access token, and the
+// user's authorities as the user service gave them.
 final class _Session {
   _Session({
     required this.registrationId,
@@ -908,11 +1028,13 @@ final class _Session {
     this.idToken,
     this.userInfo,
     this.attributes,
+    this.authorities,
+    this.restorable = true,
   });
 
   factory _Session.of(OAuth2AuthenticationToken authentication) {
     final user = authentication.principal;
-    final nameKey = user is DefaultOAuth2User ? user.nameAttributeKey : 'sub';
+    final nameKey = _nameKeyOf(user);
     final scopes = {
       for (final authority in user.authorities)
         if (authority.authority case final name? when name.startsWith('SCOPE_'))
@@ -921,12 +1043,45 @@ final class _Session {
     return _Session(
       registrationId: authentication.authorizedClientRegistrationId,
       principalName: authentication.name,
-      nameAttributeKey: nameKey,
+      nameAttributeKey: nameKey ?? IdTokenClaimNames.sub,
+      restorable: nameKey != null,
       scopes: scopes,
       idToken: user is OidcUser ? user.idToken.tokenValue : null,
       userInfo: user is OidcUser ? user.userInfo?.claims : null,
       attributes: user is OidcUser ? null : user.attributes,
+      // Before the mapper, as the login maps them: restore maps again.
+      // An authority without a name cannot be checked, nor stored.
+      authorities: [
+        for (final authority in user.authorities)
+          if (authority.authority case final name? when name.isNotEmpty)
+            (name: name, user: authority is OAuth2UserAuthority),
+      ],
     );
+  }
+
+  // The attribute that names [user] as restore() rebuilds them (the ID
+  // token's claims over the user info, or the attributes): the
+  // `DefaultOAuth2User`'s own, else for a user of an application's own
+  // class `sub` or the first attribute holding the name; `null` when
+  // none does.
+  static String? _nameKeyOf(OAuth2User user) {
+    if (user is DefaultOAuth2User) {
+      return user.nameAttributeKey;
+    }
+    final attributes = user is OidcUser
+        ? {...?user.userInfo?.claims, ...user.idToken.claims}
+        : user.attributes;
+    bool names(String key) =>
+        attributes[key] != null && '${attributes[key]}' == user.name;
+    if (names(IdTokenClaimNames.sub)) {
+      return IdTokenClaimNames.sub;
+    }
+    for (final key in attributes.keys) {
+      if (names(key)) {
+        return key;
+      }
+    }
+    return null;
   }
 
   factory _Session.decode(String stored) {
@@ -942,6 +1097,19 @@ final class _Session {
       idToken: json['idToken'] as String?,
       userInfo: json['userInfo'] as Map<String, Object?>?,
       attributes: json['attributes'] as Map<String, Object?>?,
+      // Absent in the records of 0.4.x: the authorities are rebuilt as
+      // the default user services give them.
+      authorities: switch (json['authorities']) {
+        null => null,
+        final List<Object?> list => [
+          for (final entry in list.cast<Map<String, Object?>>())
+            (
+              name: entry['authority']! as String,
+              user: entry['user'] == true,
+            ),
+        ],
+        _ => throw const FormatException('bad authorities'),
+      },
     );
   }
 
@@ -953,6 +1121,26 @@ final class _Session {
   final Map<String, Object?>? userInfo;
   final Map<String, Object?>? attributes;
 
+  // The user's authorities in order: `user` marks the OAuth2UserAuthority
+  // / OidcUserAuthority (rebuilt with the attributes or the ID token).
+  final List<({String name, bool user})>? authorities;
+
+  // Whether [authentication] can rebuild the user (known at the login
+  // only; a stored record finds out at restore).
+  final bool restorable;
+
+  // This record without what describes the user beyond the ID token (for
+  // a user JSON cannot hold): it still names the login and its tokens.
+  _Session withoutUser() => _Session(
+    registrationId: registrationId,
+    principalName: principalName,
+    nameAttributeKey: nameAttributeKey,
+    scopes: scopes,
+    idToken: idToken,
+    authorities: authorities,
+    restorable: false,
+  );
+
   Map<String, Object?> encode() => {
     'version': 1,
     'registrationId': registrationId,
@@ -962,6 +1150,11 @@ final class _Session {
     'idToken': ?idToken,
     'userInfo': ?userInfo,
     'attributes': ?attributes,
+    if (authorities case final list?)
+      'authorities': [
+        for (final authority in list)
+          {'authority': authority.name, if (authority.user) 'user': true},
+      ],
   };
 
   // This record with the scopes of [accessToken] and the (refreshed) ID
@@ -982,28 +1175,58 @@ final class _Session {
       idToken: freshValue ?? idToken,
       userInfo: userInfo,
       attributes: attributes,
+      authorities: authorities,
     );
   }
 
-  // The user as the login built it (the authorities are rebuilt the same
-  // way, then mapped again).
+  // The user as the login built it: the stored authorities (the `SCOPE_`
+  // ones those of the current access token), then mapped again.
   OAuth2AuthenticationToken authentication(GrantedAuthoritiesMapper mapper) {
     final scopeAuthorities = [
       for (final scope in scopes) SimpleGrantedAuthority('SCOPE_$scope'),
     ];
+    List<GrantedAuthority> rebuild(GrantedAuthority Function(String) userOf) {
+      final stored = authorities;
+      if (stored == null) {
+        // A record of 0.4.x: as the default user services build them.
+        return [userOf(''), ...scopeAuthorities];
+      }
+      // The `SCOPE_` ones go where the first was; none when the user
+      // service gave none.
+      final rebuilt = <GrantedAuthority>[];
+      var scopesPlaced = false;
+      for (final authority in stored) {
+        if (authority.user) {
+          rebuilt.add(userOf(authority.name));
+        } else if (!authority.name.startsWith('SCOPE_')) {
+          rebuilt.add(SimpleGrantedAuthority(authority.name));
+        } else if (!scopesPlaced) {
+          scopesPlaced = true;
+          rebuilt.addAll(scopeAuthorities);
+        }
+      }
+      return rebuilt;
+    }
+
     final OAuth2User user;
     if (idToken case final raw?) {
       final token = OidcIdToken.parse(raw);
       final info = userInfo == null ? null : OidcUserInfo(userInfo!);
       user = DefaultOidcUser(
-        [
-          OidcUserAuthority(
-            token,
-            userInfo: info,
-            userNameAttributeName: nameAttributeKey,
-          ),
-          ...scopeAuthorities,
-        ],
+        rebuild(
+          (name) => name.isEmpty
+              ? OidcUserAuthority(
+                  token,
+                  userInfo: info,
+                  userNameAttributeName: nameAttributeKey,
+                )
+              : OidcUserAuthority(
+                  token,
+                  userInfo: info,
+                  authority: name,
+                  userNameAttributeName: nameAttributeKey,
+                ),
+        ),
         token,
         userInfo: info,
         nameAttributeKey: nameAttributeKey,
@@ -1011,10 +1234,18 @@ final class _Session {
     } else {
       final values = attributes ?? (throw const FormatException('no user'));
       user = DefaultOAuth2User(
-        [
-          OAuth2UserAuthority(values, userNameAttributeName: nameAttributeKey),
-          ...scopeAuthorities,
-        ],
+        rebuild(
+          (name) => name.isEmpty
+              ? OAuth2UserAuthority(
+                  values,
+                  userNameAttributeName: nameAttributeKey,
+                )
+              : OAuth2UserAuthority(
+                  values,
+                  authority: name,
+                  userNameAttributeName: nameAttributeKey,
+                ),
+        ),
         values,
         nameAttributeKey,
       );

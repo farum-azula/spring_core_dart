@@ -252,13 +252,19 @@ final class ResponseEntityBuilder {
   }
 
   /// Sets the `ETag` header, a version tag of the body for caching; [tag]
-  /// is put in quotes unless it already is (`W/"..."` included).
+  /// is put in quotes unless it already is (`W/"..."` included). The web
+  /// server answers a `GET` or `HEAD` whose `If-None-Match` has the tag
+  /// with a 304 and no body, when the status is 200 (Spring's
+  /// `HttpEntityMethodProcessor`).
   ResponseEntityBuilder eTag(String tag) {
     _headers.eTag = tag;
     return this;
   }
 
-  /// Sets the `Last-Modified` header, written as an HTTP date in UTC.
+  /// Sets the `Last-Modified` header, written as an HTTP date in UTC. The
+  /// web server answers a `GET` or `HEAD` with an `If-Modified-Since` at
+  /// or after it (and no `If-None-Match`) with a 304, and one with an
+  /// `If-Unmodified-Since` before it with a 412, when the status is 200.
   ResponseEntityBuilder lastModified(DateTime date) {
     _headers.lastModified = date;
     return this;

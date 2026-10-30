@@ -167,6 +167,11 @@ targets:
       });
     });
 
+    test('the ZAP rules reach the server guide they scan', () {
+      expect(affected('.zap/rules.tsv'), {'example/server_guide'});
+      expect(affected('.zap/seed_hook.py'), {'example/server_guide'});
+    });
+
     test('a core change reaches everything', () {
       expect(affected('spring_core_dart/lib/x.dart'), packages.toSet());
     });

@@ -29,6 +29,17 @@ abstract interface class AuthorizationWindow {
   /// authorization URI is built by [authorizationUri] from the redirect
   /// URI actually used; that URI must also go into the token request.
   ///
+  /// When the authorization URI carries a `state`, a window that can
+  /// tell requests apart waits for the redirect with that `state` (the
+  /// provider sends it back, errors included): the loopback server and
+  /// Android's redirect activity ignore other requests on the redirect
+  /// URI and keep waiting, so another site cannot end a running login
+  /// there. `ASWebAuthenticationSession` (iOS, macOS) cannot: it ends at
+  /// the first navigation to the redirect URI, whatever its `state`, and
+  /// the call completes with it. A redirect with another `state` never
+  /// logs anyone in: `OAuth2LoginService` refuses it
+  /// (`invalid_state_parameter`), and the user starts the login again.
+  ///
   /// Throws an [AuthorizationCancelledException] when the user closed the
   /// page without finishing.
   Future<Uri> authorize({

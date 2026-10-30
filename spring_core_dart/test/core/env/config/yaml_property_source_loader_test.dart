@@ -155,4 +155,21 @@ a: 2
       {'a.b[0]': 1, 'a.b[1]': 2},
     );
   });
+
+  // The seventh review: a YAML nested thousands of levels deep overflowed
+  // the stack, and the StackOverflowError crashed the start (and the web
+  // dev config builder) instead of naming the file.
+  test('nesting too deep to read is a FormatException', () {
+    final deep = 'a: ${'[' * 20000}${']' * 20000}\n';
+    expect(
+      () => loader.load('application.yml', deep),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('nested too deeply'),
+        ),
+      ),
+    );
+  });
 }

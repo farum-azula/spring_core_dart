@@ -35,8 +35,13 @@ const webEnvironmentProperty = 'spring.test.web-environment';
 /// The socket is bound asynchronously, so `start` returns before the
 /// server listens; [started] completes when it does. The port is then
 /// published as the `local.server.port` property and in a
-/// [WebServerInitializedEvent]. A failure to start, such as a port in
-/// use, is logged as a startup report and closes the context.
+/// [WebServerInitializedEvent]. `SpringApplication` waits for it
+/// ([AsyncStartup]): a failure to start, such as a port in use, fails the
+/// start as in Spring Boot, with the startup report, no
+/// `ApplicationReadyEvent`, no runners, and the error thrown by
+/// `runAsync` (the program ends with a non-zero exit code). In a context
+/// started without `SpringApplication`, the failure is logged as a
+/// startup report and closes the context.
 ///
 /// In a Flutter app the context pauses in the background: the server
 /// stops (freeing the port) and starts again when the app comes back.
@@ -52,7 +57,7 @@ const webEnvironmentProperty = 'spring.test.web-environment';
 /// the graceful shutdown, `WebServerGracefulShutdownLifecycle`.
 final class WebServerStartStopLifecycle
     with SmartLifecycle
-    implements ApplicationContextAware {
+    implements ApplicationContextAware, AsyncStartup {
   /// A lifecycle that starts a server of [factory] for [handler], when
   /// [environment] says a server should run.
   WebServerStartStopLifecycle(
@@ -82,6 +87,9 @@ final class WebServerStartStopLifecycle
   WebServer? _server;
   var _running = false;
   Completer<WebServer?> _started = Completer<WebServer?>();
+  // Whether [awaitStartup] handed the current start's failure to its
+  // caller (SpringApplication), which then reports it.
+  var _claimed = false;
 
   @override
   void setApplicationContext(ApplicationContext context) => _context = context;
@@ -105,6 +113,15 @@ final class WebServerStartStopLifecycle
   /// error when the server could not start. Each start gives a new
   /// future.
   Future<WebServer?> get started => _started.future;
+
+  /// The current start, for `SpringApplication`: completes once the
+  /// server listens (or when no server runs), fails when it cannot start.
+  /// The caller reports the failure and closes the context.
+  @override
+  Future<void> awaitStartup() {
+    _claimed = true;
+    return _started.future.then((_) {});
+  }
 
   /// Whether a server should run: not when
   /// `spring.main.web-application-type=none`, and in a test only for
@@ -130,6 +147,7 @@ final class WebServerStartStopLifecycle
     _running = true;
     if (_started.isCompleted) {
       _started = Completer<WebServer?>();
+      _claimed = false;
     }
     if (!isEnabled) {
       _started.complete(null);
@@ -167,12 +185,17 @@ final class WebServerStartStopLifecycle
         onError: (Object error, StackTrace stackTrace) {
           _running = false;
           _server = null;
-          _report(error, stackTrace);
+          final claimed = _claimed;
           if (!started.isCompleted) {
             started.completeError(error, stackTrace);
             // Nobody may listen (a plain run): no unhandled error then.
             started.future.ignore();
           }
+          if (claimed) {
+            // SpringApplication reports it and closes the context.
+            return;
+          }
+          _report(error, stackTrace);
           final context = _context;
           if (context is ConfigurableApplicationContext && context.isActive) {
             unawaited(context.closeAsync());

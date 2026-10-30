@@ -97,10 +97,12 @@ final class OidcIdTokenDecoderFactory implements OidcIdTokenDecoder {
     if (cached != null && cached.$1 == key) {
       return cached.$2;
     }
-    final validator = JwtTimestampValidator(
-      clockSkew: clockSkew,
-      clock: _clock,
-    );
+    // The type (`JWT` or none, as Spring 7.1 checks ID tokens) and the
+    // lifetime; the claims are checked by the OIDC validator after.
+    final validator = DelegatingOAuth2TokenValidator<Jwt>([
+      JwtTypeValidator.jwt(),
+      JwtTimestampValidator(clockSkew: clockSkew, clock: _clock),
+    ]);
     final JwtDecoder decoder;
     if (algorithm.isMac) {
       if (secret.isEmpty) {

@@ -38,6 +38,24 @@ ServerProperties serverProperties(Environment environment) =>
           : null,
     );
 
+// The CorsConfigurationSource bean named corsConfigurationSource, the one
+// Spring Security's CorsConfigurer takes (CORS_CONFIGURATION_SOURCE_BEAN_NAME),
+// so that CORS works the same with and without the security starter;
+// beans of the type with other names are left alone (Spring MVC itself
+// reads none), and several never fail the start. A bean of that name of
+// another type is not CORS rules: ignored here (the security starter
+// fails the start on it, as Spring Security).
+CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
+  const name = 'corsConfigurationSource';
+  if (!r.containsBean(name)) {
+    return null;
+  }
+  return switch (r.optionalResource<Object>(name)) {
+    final CorsConfigurationSource source => source,
+    _ => null,
+  };
+}
+
 /// The bean definitions the web starter adds to every application that
 /// lists it: the server, the request pipeline and their helpers.
 ///
@@ -54,7 +72,8 @@ ServerProperties serverProperties(Environment environment) =>
 ///   (`spring.servlet.multipart.*`), unless the application declares one;
 /// - `requestMappingHandlerMapping` — the controllers, with the
 ///   `WebMvcConfigurer` beans' interceptors, CORS mappings and argument
-///   resolvers, and a `CorsConfigurationSource` bean;
+///   resolvers, and the `CorsConfigurationSource` bean named
+///   `corsConfigurationSource`;
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
 ///   `request.getSession()` (`server.servlet.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
@@ -144,19 +163,14 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
           ..addCorsMappings(cors)
           ..addArgumentResolvers(resolvers);
       }
-      final globalCors = r.optionalDependency<CorsConfigurationSource>();
-      final registryCors = cors.isEmpty ? null : cors.toSource();
       return RequestMappingHandlerMapping(
         beanFactory: r.dependency<ListableBeanFactory>(),
         writer: r.dependency<ResponseWriter>(),
         environment: r.dependency<Environment>(),
         argumentResolvers: resolvers,
         interceptors: interceptors.registrations,
-        corsSource: globalCors == null
-            ? registryCors
-            : registryCors == null
-            ? globalCors
-            : _CompositeCors(globalCors, registryCors),
+        corsSource: cors.isEmpty ? null : cors.toSource(),
+        corsConfigurationSource: _corsConfigurationSource(r),
         validator: r.provider<Validator>().getIfUnique(),
         multipartResolver: r.dependency<MultipartResolver>(),
       );
@@ -224,6 +238,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       SmartLifecycle,
       Lifecycle,
       ApplicationContextAware,
+      AsyncStartup,
     ],
     source: _source,
     create: (r) {
@@ -247,17 +262,3 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     create: (_) => const PortInUseFailureAnalyzer(),
   ),
 ];
-
-final class _CompositeCors implements CorsConfigurationSource {
-  _CompositeCors(this.first, this.second);
-
-  final CorsConfigurationSource first;
-  final CorsConfigurationSource second;
-
-  @override
-  CorsConfiguration? getCorsConfiguration(ServerHttpRequest request) {
-    final a = first.getCorsConfiguration(request);
-    final b = second.getCorsConfiguration(request);
-    return a == null ? b : a.combine(b);
-  }
-}

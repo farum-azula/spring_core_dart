@@ -224,6 +224,91 @@ void main() {
     });
   });
 
+  group('ServerCredentialsHttpTransport', () {
+    late MockHttpTransport toServer;
+    late MockHttpTransport toOthers;
+    late ServerCredentialsHttpTransport transport;
+    final created = <FetchCredentials>[];
+
+    setUp(() {
+      created.clear();
+      toServer = MockHttpTransport();
+      toOthers = MockHttpTransport();
+      for (final network in [toServer, toOthers]) {
+        network
+          ..when(HttpMethod.get, '/api/books').respond(200)
+          ..when(HttpMethod.get, '/v1/forecast').respond(200);
+      }
+      transport = ServerCredentialsHttpTransport.forPage(
+        page: FakePage('http://localhost:5050/'),
+        server: Uri.parse('http://localhost:8080'),
+        create: (credentials) {
+          created.add(credentials);
+          return credentials == FetchCredentials.include ? toServer : toOthers;
+        },
+      );
+    });
+
+    Future<void> get(String url) => transport.send(
+      HttpRequest(method: HttpMethod.get, url: Uri.parse(url)),
+    );
+
+    test('one fetch with the cookies, one without', () {
+      expect(created, [FetchCredentials.include, FetchCredentials.sameOrigin]);
+    });
+
+    test("the cookies go to the server's origin only", () async {
+      await get('http://localhost:8080/api/books');
+      await get('HTTP://LOCALHOST:8080/api/books');
+      await transport.stream(
+        HttpRequest(
+          method: HttpMethod.get,
+          url: Uri.parse('http://localhost:8080/api/books'),
+        ),
+      );
+      expect(toServer.requests, hasLength(3));
+      expect(toOthers.requests, isEmpty);
+
+      // A public API (Access-Control-Allow-Origin: *), the provider,
+      // another port or scheme of the server's host: no cookies.
+      for (final url in [
+        'https://api.open-meteo.com/v1/forecast',
+        'http://localhost:8180/api/books',
+        'https://localhost:8080/api/books',
+      ]) {
+        await get(url);
+      }
+      expect(toOthers.requests, hasLength(3));
+      expect(toServer.requests, hasLength(3));
+    });
+
+    test("relative URLs are the page's origin", () async {
+      await get('/api/books');
+      expect(toOthers.requests, hasLength(1));
+      final samePage = ServerCredentialsHttpTransport(
+        serverTransport: toServer,
+        otherTransport: toOthers,
+        page: FakePage('http://localhost:8080/'),
+        server: Uri.parse('http://localhost:8080'),
+      );
+      await samePage.send(
+        HttpRequest(method: HttpMethod.get, url: Uri.parse('/api/books')),
+      );
+      expect(toServer.requests, hasLength(1));
+    });
+
+    test('close closes both', () {
+      final closed = <String>[];
+      ServerCredentialsHttpTransport(
+        serverTransport: _Closing(() => closed.add('server')),
+        otherTransport: _Closing(() => closed.add('other')),
+        page: FakePage(),
+        server: Uri.parse('http://localhost:8080'),
+      ).close();
+      expect(closed, ['server', 'other']);
+    });
+  });
+
   group('ServerOAuth2LoginService', () {
     late MockHttpTransport server;
     late FakePage page;
@@ -520,4 +605,19 @@ void main() {
       await first;
     });
   });
+}
+
+final class _Closing implements HttpTransport {
+  _Closing(this.onClose);
+  final void Function() onClose;
+
+  @override
+  void close() => onClose();
+
+  @override
+  Future<HttpResponse> send(HttpRequest request) => throw UnimplementedError();
+
+  @override
+  Future<StreamedHttpResponse> stream(HttpRequest request) =>
+      throw UnimplementedError();
 }

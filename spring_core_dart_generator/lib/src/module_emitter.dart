@@ -35,6 +35,19 @@ Reference _spring(String name) => refer(name, _springUrl);
 /// expressions are written as they are.
 Expression _str(String value) => literalString(value, raw: true);
 
+/// [value] (a user string: a bean name, a logger topic) for a generated
+/// `///` comment: on one line, as a line break would end the comment and
+/// turn the rest into code; control characters are written as escapes.
+String _docText(String value) => value.replaceAllMapped(
+  RegExp(r'[\x00-\x1f\x7f\u0085\u2028\u2029]'),
+  (match) => switch (match[0]!) {
+    '\n' => r'\n',
+    '\r' => r'\r',
+    '\t' => r'\t',
+    final char => '\\u{${char.codeUnitAt(0).toRadixString(16)}}',
+  },
+);
+
 /// Writes the source of a `*.spring.dart` library from a scanned
 /// [ModuleModel].
 ///
@@ -308,7 +321,8 @@ class ModuleEmitter {
           Method(
             (m) => m
               ..docs.add(
-                '/// Beans found by `@ComponentScan` in `$scannedDirectory`.',
+                '/// Beans found by `@ComponentScan` in '
+                '`${_docText(scannedDirectory)}`.',
               )
               ..type = MethodType.getter
               ..returns = _spring('BeanModule')
@@ -319,7 +333,10 @@ class ModuleEmitter {
         )
         ..body.addAll(extra)
         ..body.addAll([?buildContextAccess])
-        ..body.addAll([for (final log in module.loggers) _logExtension(log)]),
+        ..body.addAll([
+          for (final (log, name) in _logExtensionNames(module.loggers))
+            _logExtension(log, name),
+        ]),
     );
     final emitter = DartEmitter(
       allocator: Allocator.simplePrefixing(),
@@ -2940,6 +2957,7 @@ class ModuleEmitter {
           type.element.library.uri,
           element,
           name: type.element.name,
+          declaration: type.element,
         )
         ..isNullable = type.nullabilitySuffix == NullabilitySuffix.question
         ..types.addAll([
@@ -2975,14 +2993,22 @@ class ModuleEmitter {
   // `package:` and `dart:` URIs are kept, `asset:` URIs under `lib/` become
   // `package:` URIs and other files of the same package (e.g. `test/`)
   // become relative paths. Anything else cannot be imported.
-  String? _importUrl(Uri uri, Element element, {String? name}) {
+  String? _importUrl(
+    Uri uri,
+    Element element, {
+    String? name,
+    Element? declaration,
+  }) {
     switch (uri.scheme) {
       case 'dart' when uri.path == 'core':
         return null;
       // `HttpClient` is declared in `dart:_http`, which cannot be imported:
-      // use the public library the user's code imports it from (`dart:io`).
+      // use the public library that exports it (`dart:io`), which the
+      // user's code or the declaring library imports.
       case 'dart' when uri.path.startsWith('_'):
-        final public = name == null ? null : publicSdkLibrary(name, element);
+        final public = name == null
+            ? null
+            : publicSdkLibrary(name, element, declaration: declaration);
         if (public != null) {
           return public.path == 'core' ? null : public.toString();
         }
@@ -3038,14 +3064,34 @@ class ModuleEmitter {
       'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
   static const _flutterWidgetsUrl = 'package:flutter/widgets.dart';
 
+  // The extension name of each `@Log` class: `$CheckoutLog`. Classes of
+  // different libraries may share a simple name; the later ones (in scan
+  // order) get a number, `$CheckoutLog2`, so the extensions do not clash.
+  static List<(LogModel, String)> _logExtensionNames(List<LogModel> loggers) {
+    final counts = <String, int>{};
+    return [
+      for (final log in loggers)
+        (
+          log,
+          () {
+            final name = '\$${log.element.name}Log';
+            final count = counts[name] = (counts[name] ?? 0) + 1;
+            return count == 1 ? name : '$name$count';
+          }(),
+        ),
+    ];
+  }
+
   // `extension $CheckoutLog on Checkout { SpringLog get log => ...; }` for
   // a `@Log` class (the raw type: a generic class's instances all match).
-  Extension _logExtension(LogModel log) {
+  Extension _logExtension(LogModel log, String extensionName) {
     final name = log.element.name!;
     return Extension(
       (e) => e
-        ..docs.add("/// `@Log` of [$name]: the logger '${log.topic}'.")
-        ..name = '\$${name}Log'
+        ..docs.add(
+          "/// `@Log` of [$name]: the logger '${_docText(log.topic)}'.",
+        )
+        ..name = extensionName
         ..on = refer(
           name,
           _importUrl(log.element.library.uri, log.element, name: name),
@@ -3079,7 +3125,7 @@ class ModuleEmitter {
         for (final access in _module.buildContextAccess)
           Method(
             (m) => m
-              ..docs.add("/// The bean '${access.bean.name}'.")
+              ..docs.add("/// The bean '${_docText(access.bean.name)}'.")
               ..type = MethodType.getter
               ..returns = _anyType(access.type, access.bean.element)
               ..name = access.getter

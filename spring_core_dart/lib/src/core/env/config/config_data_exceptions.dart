@@ -55,9 +55,11 @@ final class ConfigDataResourceNotFoundException implements Exception {
 /// It applies to directories named in `spring.config.location`,
 /// `spring.config.additional-location` or `spring.config.import`. An
 /// existing directory without config files is fine, but a wildcard
-/// location (`file:./config/*/`) needs at least one subdirectory. Prefix
-/// the location with `optional:` when it may be missing. Applications
-/// meet it as a failed start; a missing single file gives
+/// location needs at least one subdirectory (`file:./config/*/`,
+/// `configtree:/etc/config/*/`), or one match when it names a file
+/// (`file:./config/*/app.yml`), as in Boot. Prefix the location with
+/// `optional:` when it may be missing. Applications meet it as a failed
+/// start; a missing single file gives
 /// [ConfigDataResourceNotFoundException] instead.
 ///
 /// ```dart
@@ -87,8 +89,9 @@ final class ConfigDataLocationNotFoundException implements Exception {
   final String location;
 
   /// Why it counts as not found when the directory exists, such as
-  /// `contains no subdirectories` for a wildcard location; `null` for a
-  /// directory that does not exist.
+  /// `contains no subdirectories` for a wildcard directory location;
+  /// `null` for a directory that does not exist and for a wildcard
+  /// location that finds nothing (Boot's "cannot be found").
   final String? reason;
 
   @override

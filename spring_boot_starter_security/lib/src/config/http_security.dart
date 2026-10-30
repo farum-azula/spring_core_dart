@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_security/src/jwt/dpop.dart';
@@ -221,6 +223,58 @@ final class HttpSecurity {
   T? _bean<T extends Object>() =>
       beanFactory?.getBeanProvider<T>().getIfUnique();
 
+  // Where the CorsFilter takes its rules: the source given; else the
+  // dispatcher's rules (Spring's HandlerMappingIntrospector), which are
+  // those of the corsConfigurationSource bean alone where it has some, as
+  // Spring Security applies that bean; without the web starter's router,
+  // the bean. The dispatcher runs this chain, so it is looked up at the
+  // first request.
+  FutureOr<CorsConfiguration?> Function(ServerHttpRequest)
+  _corsConfigurationFor() {
+    if (_cors._source case final source?) {
+      return source.getCorsConfiguration;
+    }
+    final bean = _corsConfigurationSourceBean();
+    final router = _bean<RequestMappingHandlerMapping>();
+    if (router == null) {
+      return bean?.getCorsConfiguration ?? (_) => null;
+    }
+    final factory = beanFactory;
+    DispatcherHandler? dispatcher;
+    var looked = false;
+    return (request) {
+      if (!looked) {
+        looked = true;
+        dispatcher = factory
+            ?.getBeanProvider<DispatcherHandler>()
+            .getIfUnique();
+      }
+      return dispatcher?.corsConfigurationFor(request) ??
+          router.corsConfigurationFor(request);
+    };
+  }
+
+  // Spring Security's CorsConfigurer: the bean named corsConfigurationSource
+  // (CORS_CONFIGURATION_SOURCE_BEAN_NAME), whatever other beans of the type
+  // exist; a bean of that name of another type fails, as there. A null
+  // bean counts as none.
+  CorsConfigurationSource? _corsConfigurationSourceBean() {
+    const name = 'corsConfigurationSource';
+    final factory = beanFactory;
+    if (factory == null || !factory.containsBean(name)) {
+      return null;
+    }
+    return switch (factory.getBeanByName(name)) {
+      final CorsConfigurationSource source => source,
+      NullBean() => null,
+      final other => throw BeanNotOfRequiredTypeException(
+        name,
+        CorsConfigurationSource,
+        other.runtimeType,
+      ),
+    };
+  }
+
   List<T> _beans<T extends Object>() {
     final factory = beanFactory;
     return factory == null
@@ -324,6 +378,16 @@ final class HttpSecurity {
   /// `Bearer` is refused. A [DPoPProofJwtDecoderFactory] bean changes how
   /// proofs are checked.
   ///
+  /// Requests that carry a token in the header (`Authorization: Bearer`,
+  /// or `DPoP` with a `DPoP` proof) need no CSRF token: a browser never
+  /// adds these headers by itself, and the token logs the request in or
+  /// it is refused (Spring's `registerDefaultCsrfOverride`; Spring
+  /// exempts `Bearer` tokens only, so its CSRF check refuses a `POST` with
+  /// a DPoP token). A token in the `access_token` query parameter never
+  /// exempts a request, and the chain's logout and login URLs keep their
+  /// CSRF check even with a token header (Spring exempts them): their
+  /// filters act on the browser's session before any token is looked at.
+  ///
   /// ```dart
   /// http.oauth2ResourceServer((s) => s.jwt());
   /// ```
@@ -386,9 +450,13 @@ final class HttpSecurity {
     return this;
   }
 
-  /// Configures CORS, which is on by default with the router's
-  /// configuration (the `CorsConfigurationSource` bean and
-  /// `@CrossOrigin`).
+  /// Configures CORS, which is on by default with the router's rules:
+  /// those of the `CorsConfigurationSource` bean named
+  /// `corsConfigurationSource` where it has some (alone, as Spring
+  /// Security applies that bean; beans of the type with other names are
+  /// ignored), else the `WebMvcConfigurer` mappings and `@CrossOrigin` of
+  /// the handler the request goes to. A request another handler mapping
+  /// takes, such as a WebSocket handshake, gets only the bean's rules.
   HttpSecurity cors([Customizer<CorsConfigurer>? customizer]) {
     customizer?.call(_cors);
     return this;
@@ -550,16 +618,8 @@ final class HttpSecurity {
       ));
     }
     if (_cors._enabled) {
-      final source = _cors._source;
-      final mapping = _bean<RequestMappingHandlerMapping>();
       filters.add((
-        CorsFilter(
-          source != null
-              ? source.getCorsConfiguration
-              : mapping != null
-              ? mapping.corsConfigurationFor
-              : (_) => null,
-        ),
+        CorsFilter(_corsConfigurationFor()),
         SecurityFilterOrder.cors,
       ));
     }
@@ -575,10 +635,48 @@ final class HttpSecurity {
           .firstOrNull
           ?._redirection
           ._baseUri;
+      // Requests with a token in a header: a browser never sends one by
+      // itself, and a page of another origin can set Authorization or
+      // DPoP only where CORS lets its origin send them with credentials
+      // (and then read the CSRF token anyway); the token filters log such
+      // a request in or refuse it. Spring's
+      // OAuth2ResourceServerConfigurer.registerDefaultCsrfOverride, for
+      // DPoP too, with two limits. Only the header counts, never the
+      // access_token query parameter: any page can post a form to a URL
+      // that carries one. And the chain's logout and login URLs keep
+      // their check: their filters act on the session before the token
+      // filters run, so there the token would decide nothing.
+      final resourceServer = _mechanisms
+          .whereType<OAuth2ResourceServerConfigurer>()
+          .firstOrNull;
+      final form = _mechanisms.whereType<FormLoginConfigurer>().firstOrNull;
+      final sessionEndpoints = <RequestMatcher>[
+        if (_logout._enabled)
+          PathPatternRequestMatcher(_logout._url, method: HttpMethod.post),
+        if (form != null)
+          PathPatternRequestMatcher(
+            form._processingUrl ?? form._loginPage ?? '/login',
+            method: HttpMethod.post,
+          ),
+      ];
       final ignoring = [
         ..._csrf._ignoring,
         if (oauth2Callback != null)
           PathPatternRequestMatcher(oauth2Callback, method: HttpMethod.post),
+        if (resourceServer != null)
+          AndRequestMatcher([
+            OrRequestMatcher([
+              _BearerTokenRequestMatcher(
+                DefaultBearerTokenResolver(
+                  bearerTokenHeaderName:
+                      resourceServer._resolver.bearerTokenHeaderName,
+                ),
+              ),
+              const _DPoPRequestMatcher(),
+            ]),
+            if (sessionEndpoints.isNotEmpty)
+              NegatedRequestMatcher(OrRequestMatcher(sessionEndpoints)),
+          ]),
       ];
       filters.add((
         CsrfFilter(
@@ -735,11 +833,15 @@ final class HttpSecurity {
               server._entryPoint ?? const BearerTokenAuthenticationEntryPoint();
           entryPoints.add((_apiMatcher, entryPoint));
           accessDenied.add((
-            const _BearerTokenRequestMatcher(),
+            _BearerTokenRequestMatcher(server._resolver),
             server._accessDeniedHandler ??
                 const BearerTokenAccessDeniedHandler(),
           ));
+          // The token checks alone, publishing nothing: each request gets
+          // one event, from the manager of its filter, after every check
+          // (the binding of a DPoP-bound token, a DPoP proof).
           final tokenManager = server._authenticationManager(this);
+          final events = _bean<AuthenticationEventPublisher>();
           // DPoP-bound tokens (RFC 9449) next to Bearer ones, as Spring
           // Security 6.5's DPoPAuthenticationConfigurer: the same token
           // checks, plus the proof.
@@ -752,7 +854,7 @@ final class HttpSecurity {
                     tokenManager,
                     dPoPProofVerifierFactory: dPoPFactory,
                   ),
-                ], eventPublisher: _bean<AuthenticationEventPublisher>()),
+                ], eventPublisher: events),
                 authenticationEntryPoint: DPoPAuthenticationEntryPoint(
                   algorithms:
                       dPoPFactory?.jwsAlgorithms ?? defaultDPoPAlgorithms,
@@ -762,7 +864,9 @@ final class HttpSecurity {
             ))
             ..add((
               BearerTokenAuthenticationFilter(
-                tokenManager,
+                ProviderManager([
+                  UnboundBearerTokenAuthenticationProvider(tokenManager),
+                ], eventPublisher: events),
                 bearerTokenResolver: server._resolver,
                 authenticationEntryPoint: entryPoint,
               ),
@@ -942,14 +1046,38 @@ const _xhrMatcher = RequestHeaderRequestMatcher(
   'XMLHttpRequest',
 );
 
+// A request whose token [resolver] finds (Spring's
+// BearerTokenRequestMatcher). A malformed or repeated token does not
+// count. For the CSRF exemption, a resolver of the header alone.
 final class _BearerTokenRequestMatcher extends SimpleRequestMatcher {
-  const _BearerTokenRequestMatcher();
+  const _BearerTokenRequestMatcher(this.resolver);
+
+  final DefaultBearerTokenResolver resolver;
 
   @override
-  bool matches(ServerHttpRequest request) =>
-      (request.headers[HttpHeaders.authorizationHeader] ?? '')
-          .toLowerCase()
-          .startsWith('bearer ');
+  bool matches(ServerHttpRequest request) {
+    try {
+      return resolver.resolve(request) != null;
+    } on AuthenticationException {
+      return false;
+    }
+  }
+}
+
+// A request the DPoP filter takes and either logs in or refuses: one
+// `Authorization: DPoP ...` header and a `DPoP` proof header.
+final class _DPoPRequestMatcher extends SimpleRequestMatcher {
+  const _DPoPRequestMatcher();
+
+  @override
+  bool matches(ServerHttpRequest request) {
+    final authorization = request.headers.getAll(
+      HttpHeaders.authorizationHeader,
+    );
+    return authorization.length == 1 &&
+        authorization.single.toLowerCase().startsWith('dpop ') &&
+        request.headers.getAll(dPoPHeaderName).isNotEmpty;
+  }
 }
 
 extension<T> on T {
@@ -1302,7 +1430,8 @@ final class OAuth2ResourceServerConfigurer {
   }
 
   /// Sets how the token is found in the request, for example to also read
-  /// the `access_token` query parameter.
+  /// the `access_token` query parameter of `GET` requests (server-sent
+  /// events from a browser, which cannot set headers).
   OAuth2ResourceServerConfigurer bearerTokenResolver(
     DefaultBearerTokenResolver resolver,
   ) {
@@ -1327,6 +1456,7 @@ final class OAuth2ResourceServerConfigurer {
           'spring.security.oauth2.resourceserver.jwt.issuer-uri or '
           'jwk-set-uri, or call jwt((jwt) => jwt.decoder(...))',
         ));
+    // No events here: the filters' managers publish them.
     return ProviderManager([
       JwtAuthenticationProvider(
         decoder,
@@ -1335,7 +1465,7 @@ final class OAuth2ResourceServerConfigurer {
             http._bean<JwtAuthenticationConverter>() ??
             const JwtAuthenticationConverter(),
       ),
-    ], eventPublisher: http._bean<AuthenticationEventPublisher>());
+    ]);
   }
 }
 
@@ -1367,7 +1497,9 @@ final class JwtConfigurer {
   }
 
   /// Checks bearer tokens with [manager] alone; the decoder and converter
-  /// are then not used.
+  /// are then not used. The chain publishes the authentication events
+  /// (one per request, after the DPoP checks): give a manager that
+  /// publishes none itself.
   JwtConfigurer authenticationManager(AuthenticationManager manager) {
     _manager = manager;
     return this;
@@ -1440,9 +1572,11 @@ final class CorsConfigurer {
   /// the access rules, which usually refuse them.
   void disable() => _enabled = false;
 
-  /// Takes the CORS rules from [source] instead of the router's
-  /// configuration (the `CorsConfigurationSource` bean and
-  /// `@CrossOrigin`).
+  /// Takes the CORS rules from [source] instead of the router's rules
+  /// (the `CorsConfigurationSource` bean, the `WebMvcConfigurer` mappings
+  /// and `@CrossOrigin`). The router still checks a request [source] has
+  /// no rules for with its own, and leaves one the filter allowed as it
+  /// is, as in Spring.
   CorsConfigurer configurationSource(CorsConfigurationSource source) {
     _source = source;
     return this;

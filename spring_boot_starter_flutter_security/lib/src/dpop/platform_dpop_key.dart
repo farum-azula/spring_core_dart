@@ -27,8 +27,9 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 ///   on this device only). Where there is no Secure Enclave (the iOS
 ///   simulator, Macs without one) or it cannot be used (a macOS build
 ///   without the data protection keychain's entitlements), a software
-///   key of the Keychain with the same tag; the system signs, the key
-///   never reaches the app.
+///   key of the Keychain with the same tag: the app's code never handles
+///   it, but the system's Security framework loads it into the app's
+///   process to sign, so it is as safe as the app's memory.
 /// - **Android:** an EC P-256 key of the Android Keystore
 ///   (`PURPOSE_SIGN`, SHA-256), in the StrongBox chip when the phone has
 ///   one, else in the trusted execution environment.
@@ -41,11 +42,17 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// [storage] tells which, after the first proof.
 ///
 /// The key is made at its first use, not at startup. When it disappears
-/// (the Keystore wiped, the app reinstalled, the device restored from a
-/// backup: the key is never in a backup), the next proof makes a new key;
-/// the stored tokens are bound to the old one, so they are dropped
-/// (`SecretStoreOAuth2AuthorizedClientService` checks the key's
-/// thumbprint) and the user logs in again.
+/// (the Keystore wiped, the app reinstalled on Android, the app restored
+/// on another device: the key never leaves the device), the next proof
+/// makes a new key; the stored tokens are bound to the old one, so they
+/// are dropped (`SecretStoreOAuth2AuthorizedClientService` checks the
+/// key's thumbprint) and the user logs in again. A Keychain key outlives
+/// the app on iOS (deleting the app keeps it) and is in the device's
+/// encrypted backups (restored only to the same device); the package
+/// removes it, with the secret store's values, at the first start after
+/// a reinstall (the install id in the app's container is gone while the
+/// Keychain kept its items), so a reinstalled app starts logged out
+/// (not one deleted under 0.4.x, which kept no id).
 ///
 /// `OAuth2LoginService.logout()` deletes the key ([delete]), so the next
 /// login gets a new one: RFC 9449 lets a key live across logins, but a

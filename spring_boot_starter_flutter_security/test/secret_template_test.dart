@@ -100,6 +100,19 @@ void main() {
     expect(() => secrets.write('', 'x'), throwsArgumentError);
   });
 
+  test('errors come in the Future, never thrown by the call', () async {
+    // Each call returns before failing, so `.catchError` and
+    // `try { await ... }` see every error alike.
+    final empty = secrets.write('', 'x');
+    final deleted = secrets.delete('');
+    final read = secrets.read<String>('');
+    final unwritable = secrets.write('pin', Object());
+    await expectLater(empty, throwsArgumentError);
+    await expectLater(deleted, throwsArgumentError);
+    await expectLater(read, throwsArgumentError);
+    await expectLater(unwritable, throwsA(isA<JsonMappingException>()));
+  });
+
   test('a value that does not fit is an error without the secret', () async {
     await store.write('app.pin', '{"hash":"s3cr3t","attempts":"many"}');
 

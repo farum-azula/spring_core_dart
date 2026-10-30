@@ -36,7 +36,8 @@ class WebConfig with WebMvcConfigurer {
   void addCorsMappings(CorsRegistry registry) => registry
       .addMapping('/api/**')
       .allowedOrigins(['https://shop.example'])
-      .allowedMethods(['GET', 'POST']);
+      .allowedMethods(['GET', 'POST'])
+      .allowCredentials(true);
 
   @override
   void addInterceptors(InterceptorRegistry registry) =>

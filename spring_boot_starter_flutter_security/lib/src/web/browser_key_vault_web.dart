@@ -43,6 +43,9 @@ extension type _SubtleCrypto._(JSObject _) implements JSObject {
 
 extension type _CryptoKey._(JSObject _) implements JSObject {
   external bool get extractable;
+  external String get type;
+  external JSObject get algorithm;
+  external JSArray<JSString> get usages;
 }
 
 extension type _CryptoKeyPair._(JSObject _) implements JSObject {
@@ -124,10 +127,14 @@ final class _WebCryptoVault implements BrowserKeyVault {
     }
     try {
       final stored = await _get(database, name);
-      if (stored != null &&
-          stored.privateKey != null &&
-          stored.publicKey != null) {
-        return await _pair(subtle, stored);
+      if (stored != null) {
+        if (_usable(stored)) {
+          return await _pair(subtle, stored);
+        }
+        _log.info(
+          'The stored DPoP key is not a non-extractable ECDSA P-256 signing '
+          'key: replacing it with a new one',
+        );
       }
       final pair = await _generate(subtle);
       await _put(database, name, pair);
@@ -153,6 +160,32 @@ final class _WebCryptoVault implements BrowserKeyVault {
       await done;
     } finally {
       database.close();
+    }
+  }
+
+  // Whether the stored value is a key pair this vault would have made:
+  // checked again at each load, as anything of the origin can write to
+  // its IndexedDB.
+  static bool _usable(_CryptoKeyPair stored) {
+    try {
+      final private = stored.privateKey;
+      final public = stored.publicKey;
+      if (private == null || public == null) {
+        return false;
+      }
+      return storedKeyPairUsable((
+        privateExtractable: private.extractable,
+        privateType: private.type,
+        publicType: public.type,
+        privateAlgorithm: private.algorithm.dartify(),
+        publicAlgorithm: public.algorithm.dartify(),
+        privateUsages: [
+          for (final usage in private.usages.toDart) usage.toDart,
+        ],
+      ));
+    } on Object {
+      // Not CryptoKey objects at all.
+      return false;
     }
   }
 

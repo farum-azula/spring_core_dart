@@ -348,6 +348,8 @@ final catalog = <Probe>[
       ('Access-Control-Request-Method', 'GET'),
     ],
   ),
+  // Under the bean's paths its rules alone apply, @CrossOrigin(app.example)
+  // of the handler neither (the ninth review).
   const Probe(
     'preflight @CrossOrigin',
     'OPTIONS',
@@ -355,6 +357,26 @@ final catalog = <Probe>[
     headers: [
       ('Origin', 'https://app.example'),
       ('Access-Control-Request-Method', 'GET'),
+    ],
+  ),
+  // No CORS rules for these paths: Spring's CorsFilter ends every
+  // pre-flight, here with a 200 and no CORS header (the eighth review).
+  const Probe(
+    'preflight no rules',
+    'OPTIONS',
+    '/public/hello',
+    headers: [
+      ('Origin', 'https://evil.example'),
+      ('Access-Control-Request-Method', 'GET'),
+    ],
+  ),
+  const Probe(
+    'preflight no rules protected',
+    'OPTIONS',
+    '/',
+    headers: [
+      ('Origin', 'https://evil.example'),
+      ('Access-Control-Request-Method', 'DELETE'),
     ],
   ),
   Probe(
@@ -368,6 +390,60 @@ final catalog = <Probe>[
     'GET',
     '/api/me',
     headers: [('Origin', 'https://trusted.example')],
+  ),
+  Probe(
+    'cors actual @CrossOrigin',
+    'GET',
+    '/api/cors',
+    headers: [('Origin', 'https://app.example'), _ada],
+  ),
+  const Probe(
+    'preflight @CrossOrigin headers',
+    'OPTIONS',
+    '/api/cors',
+    headers: [
+      ('Origin', 'https://trusted.example'),
+      ('Access-Control-Request-Method', 'GET'),
+      ('Access-Control-Request-Headers', 'authorization'),
+    ],
+  ),
+  // The method of an actual request is checked too: the bean allows GET
+  // and POST (the ninth review).
+  Probe(
+    'cors HEAD',
+    'HEAD',
+    '/api/me',
+    headers: [('Origin', 'https://trusted.example'), _ada],
+  ),
+  Probe(
+    'cors HEAD @CrossOrigin',
+    'HEAD',
+    '/api/cors',
+    headers: [('Origin', 'https://trusted.example'), _ada],
+  ),
+  const Probe(
+    'cors HEAD anonymous',
+    'HEAD',
+    '/api/cors',
+    headers: [('Origin', 'https://trusted.example')],
+  ),
+  Probe(
+    'cors OPTIONS',
+    'OPTIONS',
+    '/api/cors',
+    headers: [('Origin', 'https://trusted.example'), _ada],
+  ),
+  const Probe(
+    'cors OPTIONS anonymous',
+    'OPTIONS',
+    '/api/cors',
+    headers: [('Origin', 'https://trusted.example')],
+  ),
+  Probe(
+    'cors PUT',
+    'PUT',
+    '/api/data',
+    headers: [('Origin', 'https://trusted.example'), _ada],
   ),
   // Methods.
   const Probe('post public without csrf', 'POST', '/public/hello'),
@@ -390,10 +466,6 @@ const _normalized =
     'dart:io normalizes `..` and `%2e%2e` before the application (RFC 3986): '
     'the rules see /api/admin, as the router does, and deny ada (403). '
     "Spring's firewall refuses the raw path (400, then 401 through /error)";
-const _crossOrigin =
-    "with a CorsConfigurationSource bean, Spring's CorsFilter reads only that "
-    "bean and refuses pre-flights allowed by @CrossOrigin; here the router's "
-    'whole CORS configuration answers them';
 const _failedBasicSession =
     'a failed Basic login creates no session here; Spring creates one '
     'through the /error dispatch';
@@ -442,12 +514,6 @@ final knownDifferences = <String, String>{
     ])
       '$name/$field': _normalized,
   },
-  for (final field in [
-    'status',
-    'access-control-allow-origin',
-    'access-control-allow-credentials',
-  ])
-    'preflight @CrossOrigin/$field': _crossOrigin,
   for (final name in [
     'wrong password',
     'unknown user',
@@ -1098,7 +1164,49 @@ final _dPoPProbes = <String, List<List<(String, String)>> Function(String)>{
     ],
   ],
   'no Authorization': (url) => [const []],
+  // The type of the access token (Spring 7's JwtTypeValidator.jwt()):
+  // JWT in any case or none; other JWTs of the issuer are refused.
+  'typ logout+jwt as Bearer': (url) => [
+    [('Authorization', 'Bearer ${_typed('logout+jwt')}')],
+  ],
+  'typ secevent+jwt as Bearer': (url) => [
+    [('Authorization', 'Bearer ${_typed('secevent+jwt')}')],
+  ],
+  'typ dpop+jwt as Bearer': (url) => [
+    [('Authorization', 'Bearer ${_typed('dpop+jwt')}')],
+  ],
+  'typ at+jwt as Bearer': (url) => [
+    [('Authorization', 'Bearer ${_typed('at+jwt')}')],
+  ],
+  'typ jwt in lower case as Bearer': (url) => [
+    [('Authorization', 'Bearer ${_typed('jwt')}')],
+  ],
+  'no typ as Bearer': (url) => [
+    [('Authorization', 'Bearer ${_typed(null)}')],
+  ],
+  // Bound to a client certificate (RFC 8705), sent without one.
+  'a certificate-bound token as Bearer': (url) => [
+    [('Authorization', 'Bearer $_certificateBound')],
+  ],
+  'a certificate-bound DPoP token with a valid proof': (url) {
+    final token = boundToken(
+      _client,
+      claims: {
+        'cnf': {'jkt': _client.thumbprint, 'x5t#S256': _x5t},
+      },
+    );
+    return [_dPoP(token, _client.proof(url: url, accessToken: token))];
+  },
 };
+
+String _typed(String? type) => testKeys.token(header: {'typ': type});
+
+final String _x5t = sha256Base64Url('a client certificate');
+final String _certificateBound = testKeys.token(
+  claims: {
+    'cnf': {'x5t#S256': _x5t},
+  },
+);
 
 /// A challenge reduced to its scheme and error code (the descriptions and
 /// the algorithm lists are worded differently).
@@ -1477,6 +1585,122 @@ void main() {
         // ignore: avoid_print
         print(report);
         expect(unexpected, 0, reason: 'unexplained differences (see above)');
+      });
+    });
+
+    // Both chains keep CSRF protection on (Spring Boot's default):
+    // Spring's registerDefaultCsrfOverride exempts requests with a Bearer
+    // token, not those with a DPoP one; the starter exempts both.
+    test('token requests that change state, with CSRF on', () async {
+      if (springDPoP == null) {
+        markTestSkipped('Build tool/security_reference first (mvn package)');
+        return;
+      }
+      await securityRunner(null, [
+        'spring.test.web-environment=random-port',
+        'server.address=127.0.0.1',
+        '$_jwkSetUri=${provider!.issuer}/jwks',
+      ]).runAsync((started) async {
+        final failure = started.startupFailure;
+        if (failure != null) {
+          fail('The application failed to start: $failure');
+        }
+        final dartPort =
+            (await started.context
+                    .getBean<WebServerStartStopLifecycle>()
+                    .started)!
+                .port;
+        Future<int> status(
+          int port,
+          String method,
+          List<(String, String)> Function(String url) headers, {
+          String path = '/api/data',
+        }) async => (await send(
+          port,
+          method,
+          path,
+          headers: [
+            ('Accept', 'application/json'),
+            ('Content-Type', 'text/plain'),
+            ...headers('http://localhost:$port$path'),
+          ],
+          body: 'order',
+        )).status;
+
+        final probes =
+            <String, (String, List<(String, String)> Function(String), String)>{
+              'POST with a Bearer token': (
+                'POST',
+                (_) => [('Authorization', 'Bearer $_unbound')],
+                '/api/data',
+              ),
+              'PUT with a Bearer token': (
+                'PUT',
+                (_) => [('Authorization', 'Bearer $_unbound')],
+                '/api/data',
+              ),
+              'POST with a DPoP token': (
+                'POST',
+                (url) => _dPoP(
+                  _bound,
+                  _client.proof(method: 'POST', url: url, accessToken: _bound),
+                ),
+                '/api/data',
+              ),
+              'POST /logout with a Bearer token': (
+                'POST',
+                (_) => [('Authorization', 'Bearer $_unbound')],
+                '/logout',
+              ),
+            };
+        const known = {
+          'POST with a DPoP token':
+              'Spring exempts Bearer tokens from CSRF, not DPoP ones (its '
+              '403 goes through /error as an anonymous 401); the starter '
+              'exempts both: a browser never sends either header by itself',
+          'POST /logout with a Bearer token':
+              'Spring exempts the token request from CSRF and its logout '
+              'filter, which runs before the token is checked, answers; '
+              'the starter keeps the CSRF check at the logout and login '
+              'URLs, where a token would decide nothing',
+        };
+        final report = StringBuffer();
+        var unexpected = 0;
+        for (final MapEntry(key: name, value: (method, headers, path))
+            in probes.entries) {
+          final s = await status(springDPoPPort, method, headers, path: path);
+          final d = await status(dartPort, method, headers, path: path);
+          if (s == d) {
+            report.writeln('same   $name: $s');
+            continue;
+          }
+          final why = known[name];
+          report.writeln(
+            '${why == null ? 'DIFF ' : 'known'}  $name\n'
+            '       Spring: $s\n'
+            '       Dart:   $d'
+            "${why == null ? '' : '\n       why:    $why'}",
+          );
+          if (why == null) {
+            unexpected++;
+          }
+        }
+        // The report of the comparison is this test's output.
+        // ignore: avoid_print
+        print(report);
+        expect(unexpected, 0, reason: 'unexplained differences (see above)');
+        // The starter's own answer to the DPoP POST: accepted.
+        expect(
+          await status(
+            dartPort,
+            'POST',
+            (url) => _dPoP(
+              _bound,
+              _client.proof(method: 'POST', url: url, accessToken: _bound),
+            ),
+          ),
+          200,
+        );
       });
     });
   });

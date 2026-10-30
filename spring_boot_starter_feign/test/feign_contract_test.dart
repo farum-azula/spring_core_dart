@@ -222,6 +222,54 @@ void main() {
     });
   });
 
+  group('dot segments in path variables', () {
+    test('"." and ".." are refused: they would change the path', () async {
+      server.when(HttpMethod.get, '/files/...').respond(200, body: 'ok');
+      await runner.runAsync((context) async {
+        final client = context.getBean<ContractClient>();
+        for (final value in [
+          '..',
+          '.',
+          'docs/../admin',
+          '../../admin',
+          './a',
+        ]) {
+          await expectLater(
+            client.file(value),
+            throwsA(
+              isA<ArgumentError>().having(
+                (e) => e.message,
+                'message',
+                contains('must not be "." or ".."'),
+              ),
+            ),
+            reason: value,
+          );
+        }
+        expect(server.requests, isEmpty);
+        await client.file('...'); // an ordinary name
+        expect('${server.lastRequest.url}', 'https://api.neon.test/files/...');
+      });
+    });
+
+    test('with decode-slash=false, "../a" is one encoded segment', () async {
+      server.when(HttpMethod.get, '/files/..%2Fa').respond(200, body: 'ok');
+      await runner
+          .withPropertyValues([
+            'spring.cloud.openfeign.client.decode-slash=false',
+          ])
+          .runAsync((context) async {
+            final client = context.getBean<ContractClient>();
+            await client.file('../a');
+            expect(
+              '${server.lastRequest.url}',
+              'https://api.neon.test/files/..%2Fa',
+            );
+            await expectLater(client.file('..'), throwsArgumentError);
+          });
+    });
+  });
+
   group('@FeignClient attributes', () {
     test('dismiss404: null for nullable results, void still throws', () async {
       server
@@ -431,6 +479,81 @@ void main() {
         isA<FeignServiceUnavailable>(),
       );
     });
+
+    test('negative or signed seconds: not retryable, like Feign', () {
+      for (final value in ['-5', '+5', '-1', '1e3', '0x10']) {
+        expect(
+          const DefaultErrorDecoder().decode('X#y()', unavailable(value)),
+          isA<FeignServiceUnavailable>(),
+          reason: value,
+        );
+      }
+    });
+
+    test('"120.0" like Feign; a huge number waits a year, never 0', () {
+      Duration wait(String value) {
+        final error = const DefaultErrorDecoder().decode(
+          'X#y()',
+          unavailable(value),
+        );
+        return (error as RetryableException).retryAfter!.difference(
+          DateTime.now(),
+        );
+      }
+
+      expect(wait('120.0').inSeconds, inInclusiveRange(118, 120));
+      expect(wait('0').inSeconds, lessThanOrEqualTo(0));
+      for (final huge in [
+        '9223372036854775807',
+        '99999999999999999999999999',
+        '31536000000',
+      ]) {
+        expect(wait(huge).inDays, inInclusiveRange(364, 365), reason: huge);
+      }
+      // The retryer then waits its maxPeriod, not 0.
+      final error = const DefaultErrorDecoder().decode(
+        'X#y()',
+        unavailable('99999999999999999999999999'),
+      ) as RetryableException;
+      expect(
+        const DefaultRetryer().nextDelay(1, error),
+        const DefaultRetryer().maxPeriod,
+      );
+    });
+  });
+
+  group('FeignException.toString', () {
+    FeignException error(String body) => FeignException.errorStatus(
+      'X#y()',
+      HttpResponse(
+        500,
+        body: utf8.encode(body),
+        request: HttpRequest(
+          method: HttpMethod.get,
+          url: Uri.parse('https://api.neon.test/books'),
+        ),
+      ),
+    );
+
+    test('a short body whole', () {
+      final short = 'é' * 199; // 398 bytes
+      expect('${error(short)}', endsWith(': $short'));
+    });
+
+    test("a long body as Feign's preview: 200 characters and the size", () {
+      final body = '${'a' * 200}${'b' * 4800}';
+      final exception = error(body);
+      expect(
+        '$exception',
+        'FeignInternalServerError: [500 Internal Server Error] during [GET] '
+            'to [https://api.neon.test/books] [X#y()]: ${'a' * 200}... '
+            '(5000 bytes)',
+      );
+      expect(exception.responseBody, body);
+      // 200 characters, not 200 bytes; a character is not cut in two.
+      final emoji = error('😀' * 150);
+      expect('$emoji', endsWith(': ${'😀' * 150}... (600 bytes)'));
+    });
   });
 
   group('logging', () {
@@ -502,5 +625,56 @@ void main() {
         expect(request, isNot(contains('secret')));
       },
     );
+
+    test('headers: cookies, proxy credentials and sensitive-headers masked, '
+        'in responses too', () async {
+      server
+          .when(HttpMethod.get, '/headers')
+          .respond(
+            200,
+            body: 'ok',
+            headers: {
+              'Set-Cookie': 'SESSION=cookie-secret',
+              'X-Request-Id': 'r-1',
+            },
+          );
+      await runner
+          .withPropertyValues([
+            'spring.cloud.openfeign.client.config.contract-v2.logger-level=headers',
+            'spring.cloud.openfeign.client.config.default.sensitive-headers=X-Api-Key',
+            'spring.cloud.openfeign.client.config.contract-v2.sensitive-headers[0]=x-partner-token',
+          ])
+          .runAsync((context) async {
+            await context.getBean<ContractClient>().headers({
+              'Cookie': 'SESSION=cookie-secret',
+              'Proxy-Authorization': 'Basic proxy-secret',
+              'X-API-KEY': 'key-secret',
+              'X-Partner-Token': 'partner-secret',
+              'X-Tag': 'visible',
+            });
+          });
+      final request = logs.firstWhere((l) => l.startsWith('---> GET'));
+      final response = logs.firstWhere((l) => l.startsWith('<--- 200'));
+      expect(request, contains('X-Tag: visible'));
+      expect(request, contains('Cookie: ***'));
+      expect(request, contains('Proxy-Authorization: ***'));
+      expect(
+        request,
+        contains(RegExp(r'X-API-KEY: \*\*\*', caseSensitive: false)),
+      );
+      expect(
+        request,
+        contains(RegExp(r'X-Partner-Token: \*\*\*', caseSensitive: false)),
+      );
+      expect(
+        response,
+        contains(RegExp(r'set-cookie: \*\*\*', caseSensitive: false)),
+      );
+      expect(
+        response,
+        contains(RegExp('x-request-id: r-1', caseSensitive: false)),
+      );
+      expect('$request$response', isNot(contains('secret')));
+    });
   });
 }

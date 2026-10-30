@@ -15,7 +15,9 @@ const _source =
 /// - `webSocketTransport`: `platformWebSocketTransport()` (`dart:io` on
 ///   the VM and in Flutter, the browser's `WebSocket` on the web), unless
 ///   the application declares its own [WebSocketTransport], as a test
-///   does with a mock server.
+///   does with a mock server. On `dart:io` its sessions receive messages
+///   of at most `spring.websocket.client.max-text-message-size` and
+///   `max-binary-message-size` (8 KB each, `-1` for no limit).
 /// - `webSocketClientFactory`: creates the `@WebSocketClient`
 ///   implementations with the `ObjectMapper`, the transport and every
 ///   [WebSocketHandshakeInterceptor] bean, and closes their connections
@@ -35,7 +37,19 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
     conditions: const [
       ConditionGroup(_source, [ConditionalOnMissingBean(WebSocketTransport)]),
     ],
-    create: (r) => platformWebSocketTransport(),
+    create: (r) {
+      final environment = r.dependency<Environment>();
+      int? size(String key) =>
+          switch (environment.getProperty('spring.websocket.client.$key')) {
+            null => null,
+            final value when value.trim() == '-1' => -1,
+            final value => DataSize.parse(value.trim()).toBytes(),
+          };
+      return platformWebSocketTransport(
+        maxTextMessageSize: size('max-text-message-size'),
+        maxBinaryMessageSize: size('max-binary-message-size'),
+      );
+    },
   ),
   BeanDefinition<WebSocketClientFactory>(
     name: 'webSocketClientFactory',

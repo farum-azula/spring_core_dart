@@ -18,8 +18,11 @@
 /// | `{*rest}` | the rest of the path, captured with its leading `/` (end only) |
 ///
 /// Paths are compared segment by segment, each percent-decoded, and
-/// captured values are decoded. A trailing slash matters: `/books/` does
-/// not match `/books`, as in Spring 6. When several patterns match, the
+/// captured values are decoded. Matrix parameters are left out of the
+/// comparison, as in Spring: `/books/1111;v=1` matches `/books/{isbn}`
+/// with `isbn` `1111` (an encoded `%3B` stays part of the value). A
+/// trailing slash matters: `/books/` does not match `/books`, as in
+/// Spring 6. When several patterns match, the
 /// more specific one should win; sorting patterns ([compareTo]) puts it
 /// first.
 ///
@@ -119,7 +122,9 @@ final class PathPattern implements Comparable<PathPattern> {
     if (rawSegments.length == 1 && rawSegments.single.isEmpty) {
       rawSegments.clear();
     }
-    final segments = [for (final s in rawSegments) _decode(s)];
+    // Matrix parameters (`/books/1111;v=1`) are not part of the value a
+    // segment is matched by, as in Spring.
+    final segments = [for (final s in rawSegments) _decode(_withoutMatrix(s))];
     final variables = <String, String>{};
     for (var i = 0; i < _segments.length; i++) {
       final segment = _segments[i];
@@ -196,10 +201,20 @@ final class PathPattern implements Comparable<PathPattern> {
   @override
   String toString() => pattern;
 
+  static String _withoutMatrix(String segment) {
+    final semicolon = segment.indexOf(';');
+    return semicolon < 0 ? segment : segment.substring(0, semicolon);
+  }
+
+  // A malformed escape (ArgumentError) or one that is not UTF-8
+  // (FormatException) is matched as written; the web starter's server
+  // answers such paths with 400 before they are routed.
   static String _decode(String segment) {
     try {
       return Uri.decodeComponent(segment);
     } on ArgumentError {
+      return segment;
+    } on FormatException {
       return segment;
     }
   }

@@ -348,6 +348,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
           Uri.parse(jwkSetUri),
           jwsAlgorithms: properties.jwsAlgorithms,
           validator: DelegatingOAuth2TokenValidator([
+            JwtTypeValidator.jwt(),
             JwtTimestampValidator(),
             if (issuer != null) JwtIssuerValidator(issuer),
             if (audiences.isNotEmpty) JwtAudienceValidator(audiences),

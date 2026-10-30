@@ -1,3 +1,13 @@
+## Unreleased
+
+### Breaking
+
+- `BeanOverride.named` (a `@TestBean(name: ...)` field) also registers the fake under its type argument, the field's type (unless it is `Object`), as Spring registers the override.
+
+### Changes
+
+- `BeanOverride.named(types: [...])` registers the fake under its own types instead of the replaced bean's, for a fake that implements only some of the original's interfaces; the generator fills them in for a `@TestBean(name: ...)` field whose value is created with a constructor.
+
 ## 0.4.3
 
 - Flutter security (#15)

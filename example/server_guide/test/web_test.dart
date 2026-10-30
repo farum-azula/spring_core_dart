@@ -97,6 +97,8 @@ void main() {
         (c) => c.name == 'neon-recent',
       );
       expect(cookie.value, dune);
+      expect(cookie.httpOnly, isTrue);
+      expect(cookie.sameSite, 'Lax');
       final recent = await app.mockMvc
           .perform(
             MockRequestBuilder(HttpMethod.get, '/api/books/recent')
@@ -358,7 +360,7 @@ void main() {
       final result = await app.mockMvc.get('/api/books').andReturn();
       expect(
         result.response.headers['Server-Timing'],
-        matches(r'^app;dur=[\d.]+;desc="BookController.search"$'),
+        matches(r'^app;dur=[\d.]+$'),
       );
     });
 

@@ -1,12 +1,11 @@
 // Build-time check of `@Value('asset:...')` (spring_boot_starter_flutter):
 // the asset must exist and be declared under `flutter: assets:` in the
 // app's pubspec.yaml, otherwise the app would only fail when it reads it.
-import 'dart:io';
-
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:yaml/yaml.dart';
 
 /// Checks that every Flutter asset injected with a literal
@@ -29,11 +28,16 @@ import 'package:yaml/yaml.dart';
 /// which are known only at run time, and other packages' assets
 /// (`packages/...`). A directory entry (`- assets/sounds/`) declares the
 /// files directly in it, not those of its subdirectories, as in Flutter.
+///
+/// A file the build does not see (`assets/` is a build input by default,
+/// `images/` is not) is looked up in the package's directory, found by
+/// [packageDirectories] ([PackageDirectories.current] unless given).
 Future<void> checkAssetValues(
   BuildStep buildStep,
   ModuleModel module,
-  void Function(void Function() action) collectErrors,
-) async {
+  void Function(void Function() action) collectErrors, {
+  PackageDirectories? packageDirectories,
+}) async {
   final values = [
     for (final bean in module.beans)
       for (final point in bean.dependencies)
@@ -54,7 +58,12 @@ Future<void> checkAssetValues(
   final declared = await _declaredAssets(buildStep, package);
   final existing = <String, bool>{};
   for (final (element, source, key) in values) {
-    final exists = existing[key] ??= await _exists(buildStep, package, key);
+    final exists = existing[key] ??= await _exists(
+      buildStep,
+      packageDirectories ?? PackageDirectories.current,
+      package,
+      key,
+    );
     collectErrors(() {
       final what = "@Value('asset:$key') in $source";
       if (!exists) {
@@ -154,30 +163,28 @@ bool _isDeclared(String key, List<String> declared) {
 ///
 /// It asks the build first: files under `assets/`, `lib/` and the other
 /// input directories are build inputs, so adding one reruns the check.
-/// Otherwise it looks on disk, for a directory the build does not see;
-/// that only works for the package the build runs in.
-Future<bool> _exists(BuildStep buildStep, String package, String key) async {
+/// Otherwise it looks on disk in the package's directory (found through
+/// [directories], also in a workspace build), for a directory the build
+/// does not see, such as `images/`.
+Future<bool> _exists(
+  BuildStep buildStep,
+  PackageDirectories directories,
+  String package,
+  String key,
+) async {
+  final AssetId id;
   try {
-    if (await buildStep.canRead(AssetId(package, key))) {
+    id = AssetId(package, key);
+  } on Object {
+    // Not a valid asset id (e.g. outside the package).
+    return false;
+  }
+  try {
+    if (await buildStep.canRead(id)) {
       return true;
     }
   } on Object {
-    // Not a valid asset id for the build (e.g. outside the package).
+    // Not readable through the build.
   }
-  // The disk check only works for the package the build runs in (the
-  // current directory).
-  return _isCurrentPackage(package) && File(key).existsSync();
-}
-
-bool _isCurrentPackage(String package) {
-  final pubspec = File('pubspec.yaml');
-  if (!pubspec.existsSync()) {
-    return false;
-  }
-  try {
-    final yaml = loadYaml(pubspec.readAsStringSync());
-    return yaml is Map && yaml['name'] == package;
-  } on Object {
-    return false;
-  }
+  return directories.file(id)?.existsSync() ?? false;
 }

@@ -187,6 +187,16 @@ A list always comes whole from the highest source that has it. A
 command-line `--shop.hosts[0]=local` replaces the file's list; it does not
 merge with it.
 
+The list keys that decide which files are read (`spring.config.import`,
+`.location`, `.additional-location`, `.name`, `spring.profiles.active`,
+`.include`, `.default`, `spring.config.activate.on-profile`) are bound as
+Spring Boot binds them: where a source has no plain value, its
+bracketed elements must be `[0]`, `[1]`... without a gap, or the start
+fails ("left unbound": `spring.config.import[x]`, `[1]` without `[0]`,
+`[0].a`). `spring.config.activate.on-cloud-platform` and
+`spring.main.cloud-platform` take one value; their list form
+(`on-cloud-platform[0]`) is ignored, as in Spring Boot.
+
 A YAML list has no value under the plain key: `shop.currencies` itself is
 not set, only `shop.currencies[0]` and `shop.currencies[1]` are. Code that
 reads one value by key (`@Value(r'${shop.currencies}')`,
@@ -317,11 +327,23 @@ shop.url=https://neon.books
 </td></tr>
 </table>
 
+As in Spring Boot, a `.properties` separator is the whole line: `#---` or
+`!---` at the start of the line (no spaces before it), exactly three
+hyphens, nothing after them but spaces, tabs or form feeds. It does not
+count on the line right after a comment with the same prefix (`# prod`
+then `#---` are two comments: leave a blank line, or use `!---`), nor
+where the line before continues (`a=base\` then `#---` sets `a` to
+`base#---`). Spring Boot also joins a document whose first line is a
+comment to the document before it, so put a comment below the
+`on-profile` line, not right after the separator; here the two documents
+stay apart (see the [differences](#differences-from-spring-boot)).
+
 ### Comments
 
 `#` starts a comment in both formats, with one difference. In
-`.properties`, a comment must start its line (`!` works too), and a `#`
-later in the line is part of the value. In YAML, a `#` after a space
+`.properties`, a comment is a line whose first character is `#` (`!`
+works too), spaces, tabs and form feeds before it allowed; a `#` later
+in the line is part of the value. In YAML, a `#` after a space
 starts a comment anywhere, so a value that starts with `#` must be quoted.
 
 <table>
@@ -361,11 +383,18 @@ shop.welcome=Welcome to NEON Books, \
 # those characters.
 shop.greeting=Grüße
 shop.key\=with\:colon=yes
+
+# A key ending in [] is a list, comma-separated (shop.hosts[0], [1]).
+shop.hosts[]=a.neon.books, b.neon.books
 ```
 
 `.properties` files are read as UTF-8, so `Grüße` can be written as is.
 Spring reads them as ISO-8859-1 (see the
-[differences](#differences-from-spring-boot)). When a key appears twice,
+[differences](#differences-from-spring-boot)); a file that is not valid
+UTF-8 fails the start with a `ConfigDataLoadException` naming it. A file
+in another encoding can say so where it is named, as in Spring Boot 4.1:
+`spring.config.import=classpath:legacy.properties[encoding=iso-8859-1]`
+(see [Location syntax](#location-syntax)). When a key appears twice,
 the last value counts. Trailing spaces of a value are kept.
 
 ### Only in YAML
@@ -435,7 +464,7 @@ cannot set them.
 |---|---|---|---|
 | `spring.config.name` | comma list | `application` | The base names of the files. `application,shop` reads `application*.*` and `shop*.*`; a later name wins |
 | `spring.config.location` | locations | the two groups above | Replaces the default locations. `,` separates groups; `;` joins locations into one group |
-| `spring.config.additional-location` | locations | — | Groups searched after the locations, so they win over them |
+| `spring.config.additional-location` | locations | — | Groups searched after the locations, so they win over them, also where a location is named in both: `file:./config/` puts `./config/application.properties` above `./config/*/` |
 | `spring.config.on-not-found` | `fail` / `ignore` | `fail` | `ignore` makes every location optional |
 
 ```bash
@@ -454,17 +483,74 @@ The same forms work in the keys above and in [imports](#5-imports).
 | `classpath:config/` | A directory of `lib/resources/`; every file name and extension in it is searched |
 | `file:./config/app.yml` | One file; the start fails when it is missing |
 | `optional:file:./local.yml` | One file that may be missing |
-| `file:./config/*/` | Each subdirectory, in alphabetical order; only for file locations, with one `*` at the end |
+| `file:./config/*/` | Each subdirectory, in alphabetical order; only for file locations, with one `*` as the last directory (`file:./config/*/app.yml` reads that file in each) |
 | `file:./conf[.yml]` | A file without the extension, read as YAML |
-| `configtree:/run/secrets/` | A config tree, as Kubernetes mounts secrets: each file is one property named by its path (`db/password` is `db.password`), its content the value |
+| `file:./legacy.properties[encoding=iso-8859-1]` | A file in that encoding (`.properties` only; YAML is always UTF-8) |
+| `file:./legacy.conf[.properties][encoding=latin1]` | Both hints, in any order |
+| `configtree:/run/secrets/` | A config tree, as Kubernetes mounts secrets: each file is one property named by its path (`db/password` is `db.password`), its content the value. It must end with `/`; `configtree:/run/*/` reads each subdirectory |
 | `https://cfg.example.com/app.yml` | A file over HTTP; only with asynchronous starts (`runAsync`, Flutter) |
 | `package:shop/defaults.yml` | A file of a Dart package |
 | `asset:config/app.yml` | A Flutter asset (`spring_boot_starter_flutter`) |
 | a plain path | A file, as with `file:` |
 
-A required file that does not exist fails the start. Profile variants of
-a file are always optional. A location without a known extension must end
-with `/` (a directory) or carry an extension hint (`[.yml]`).
+A directory location ends with `/`, also on Windows (Spring Boot also
+takes the platform's separator there, `\`). A file named by several
+locations is read once, where it wins (see [Imports](#5-imports)).
+
+A required file that does not exist fails the start, and so does a
+required location that finds nothing: a directory that does not exist,
+or a wildcard location with no subdirectory, or no file of that name in
+any. That holds wherever the location is written: an import in a profile
+file (`application-dev.yml`), in a document limited to a profile, or in a
+file one of them imports is as required as any other, as in Spring Boot.
+Only the profile variants searched by name (`application-dev.yml` for
+`application.yml`, `local-dev.yml` for an imported `local.yml`) are
+always optional.
+
+As in Spring Boot, whether a location found anything is decided once the
+profile files are read, and its profile variants count:
+`file:./config/*/app.yml` with only `config/eu/app-dev.yml` loads that file
+when `dev` is active, and fails otherwise. A `classpath:` directory counts
+only when a file is found in it, as Boot cannot see classpath
+directories. A missing single file still fails at once, even when its
+profile variant exists.
+
+In `spring.config.location`, `spring.config.additional-location` and
+every `spring.config.import` value (on the command line or in a config
+file, each comma-separated or list item), a group joined with `;` is one
+location, as in Boot: it is optional when its first entry is `optional:`,
+and found when any of its entries finds something. So
+`file:./;file:./conf/` does not fail when `./conf/` is missing, and
+`optional:nodir/;extra.yml` reads `extra.yml`. A required entry that is a
+missing file still fails at once, unless the group is optional. A
+location that is not found is reported as written, as in Boot: the whole
+group, a relative import as it is (not resolved against the importing
+file), its extension hint kept (`Config data location 'conf/;local/'
+cannot be found`, `... via location 'local[.yml]' cannot be found`), so
+`optional:` put before that text makes it optional.
+
+A location without a known extension must end with `/` (a directory) or
+carry an extension hint (`[.yml]`). As in Spring Boot, an extension or a
+hint is matched without case, and the loader's spelling names the file:
+`x.YAML` reads `x.yaml` (on a case-sensitive file system or the
+classpath, a file spelled `x.YAML` is not found that way; name it with a
+hint, `x.YAML[.yaml]`), and `x.conf[.YML]` reads `x.conf` as YAML.
+
+A file location takes Spring Boot 4.1's file hints: `[.ext]` (with its
+dot) names the format, `[encoding=...]` the charset, several in any
+order, the last of a kind winning (`x.conf[.properties][encoding=utf-8]`,
+`x.conf[encoding=utf-8][.yml]`). As in Boot, every bracketed part is
+taken out of a file location, wherever it is and whatever it holds
+(`conf[x]/app.yml[foo]` reads `conf/app.yml`), while in a directory
+location (ending with `/`) brackets are part of the path. The encoding
+applies to `.properties` files and to their profile variants (YAML is
+read as UTF-8 whatever it says, as Boot's YAML loader ignores it). The
+charsets are UTF-8, ISO-8859-1 and US-ASCII, by Java's names and aliases
+without case (`utf8`, `latin1`, `l1`, `8859_1`, `ascii`, `us`...; not
+`Latin-1`, which Java does not know either). Any other charset fails the
+start with a `ConfigDataLoadException` naming it, even for an
+`optional:` location or a YAML file, as an unknown charset fails Boot.
+`ConfigDataEnvironment.fileHints` reads a location that way.
 
 ---
 
@@ -487,7 +573,7 @@ file, so its values win. These keys decide which profiles are active:
 | `spring.profiles.active` | comma list or YAML list | The active profiles. The first source that has the key wins, so the command line beats a file |
 | `spring.profiles.include` | comma list or YAML list | Profiles added to the active ones, from every source |
 | `spring.profiles.default` | comma list | The profiles used while none is active; `default` when not set |
-| `spring.profiles.group.<name>` | comma list | Activating `<name>` activates these too; groups can contain groups |
+| `spring.profiles.group.<name>` | comma list | Activating `<name>` activates these too; groups can contain groups. `<name>` is matched exactly, as in Spring Boot: `group.Prod` or `group.my-prod` is no group of `prod` or `myprod` |
 | `spring.profiles.validate` | bool | `true` (the default) checks the names: letters, digits and `-_.+@`, starting and ending with a letter or digit |
 
 <table>
@@ -524,10 +610,26 @@ SPRING_PROFILES_ACTIVE=prod dart run bin/main.dart
 flutter run --dart-define=SPRING_PROFILES_ACTIVE=prod
 ```
 
-`spring.profiles.active`, `.default`, `.include` and `.group.*` may not
-appear in a profile file or in a document limited to a profile; the start
-fails, as in Spring Boot. The pre-2.4 key `spring.profiles` is rejected
-too.
+The profiles are decided before the profile files are read, as in Spring
+Boot, so those files cannot change them:
+
+- A profile file (`application-dev.yml`, or `local-dev.yml` for an
+  imported `local.yml`) may not set `spring.profiles.active`, `.default`
+  or `.include`, in any of its documents; the start fails, as in Spring
+  Boot. Its `spring.profiles.group.*` is ignored.
+- A document limited to a profile, in a file read before the profiles are
+  decided (`application.yml` and what it imports), may set none of the
+  four keys; the start fails when the document applies (see
+  [Differences](#differences-from-spring-boot)).
+- In a file read after the profiles are decided, one that a profile file
+  or a document limited to a profile imports, the four keys are ignored,
+  as in Spring Boot.
+
+The pre-2.4 key `spring.profiles` is rejected everywhere. These keys are
+found under any spelling relaxed names allow, as in Spring Boot:
+`spring.profiles.Active`, `spring.profiles.ACTIVE` or
+`spring.profiles.de-fault` in a profile file fail the start too
+(`SPRING_PROFILES_ACTIVE` is that key only in environment variables).
 
 In Flutter apps, the platform is a profile as well: `android`, `ios`,
 `web`, `macos`, `windows` or `linux`, plus `mobile` (Android, iOS) or
@@ -609,8 +711,10 @@ add a file the operator provides, such as local overrides or mounted
 secrets.
 
 An imported file overrides the file that imports it, and gets its own
-`-{profile}` variants. Relative locations are relative to the importing
-file.
+`-{profile}` variants, which win over the profile files of the file that
+imports it, as in Spring Boot: when `application.properties` imports
+`x.properties`, `x-dev.properties` wins over `application-dev.properties`.
+Relative locations are relative to the importing file.
 
 <table>
 <tr><th>YAML</th><th>.properties</th></tr>
@@ -639,9 +743,22 @@ spring.config.import=classpath:themes/ocean.yml,optional:file:./local.yml,config
 - Given on the command line or as `SPRING_CONFIG_IMPORT`, imports form a
   group above every location.
 - `${...}` in an import is resolved against the command line, the
-  environment and the files read so far. An `optional:` import whose
-  placeholder cannot be resolved is skipped.
-- A file is read once, so import cycles do no harm.
+  environment and the active documents read so far, at the moment the
+  importing document's imports are read (for a document with
+  `on-profile`, after the profiles are decided; Spring Boot resolves it
+  earlier, see [differences](#differences-from-spring-boot)). An
+  `optional:` import whose placeholder cannot be resolved is skipped.
+- A file is read once, so import cycles do no harm. Named at several
+  places, it counts at the one Spring Boot keeps, the one that wins: the
+  later item of a list (`x.properties,y.properties,x.properties` puts `x`
+  above `y`, in `spring.config.location` and
+  `spring.config.additional-location` too), the command line's
+  `spring.config.import` before `additional-location` before the
+  locations (so `--spring.config.additional-location=file:./config/`
+  puts `./config/application.properties` above `./config/*/`), and
+  within a `;` group the first of two identical entries. The encoding
+  hint written at that place is the one that applies; the file is not
+  read at the other places.
 - Not supported: `env:` imports.
 
 ---
@@ -862,7 +979,10 @@ highest:
 5. OS environment variables (not read by Flutter apps unless switched on)
 6. `${random.*}`
 7. Config files, in this order:
-   - an imported file above the file that imports it;
+   - an imported file above the file that imports it, and its profile
+     variants above those of the file that imports it;
+   - a file named at several places counts once, at the strongest
+     place (see [Imports](#5-imports));
    - `spring.config.import` given on the command line or in the
      environment, then `additional-location`, then the locations, with
      `file:./` above `classpath:/`;
@@ -1621,10 +1741,25 @@ keeps its entries only 30 seconds.
 |---|---|---|---|
 | `spring.cache.type` | `generic` / `simple` / `none` | `generic` with `Cache` beans, else `simple` | `simple` keeps entries in memory; `generic` uses the application's `Cache` beans; `none` caches nothing, so the methods always run (`NoOpCacheManager`) |
 | `spring.cache.cache-names` | list | — (caches are created on demand) | A fixed set of caches; an annotation that names another cache then fails |
-| `spring.cache.simple.time-to-live` | duration | none | An entry expires this long after it was written |
-| `spring.cache.simple.max-size` | int | none | The most entries per cache; when full, the least recently used entry goes |
-| `spring.cache.simple.caches.<name>.time-to-live` | duration | the global one | The same, for one cache |
-| `spring.cache.simple.caches.<name>.max-size` | int | the global one | The same, for one cache |
+| `spring.cache.simple.time-to-live` | duration, `0` or more | none | An entry expires this long after it was written, measured on a monotonic clock as Caffeine's ticker (setting the system clock moves no expiry). `0` keeps nothing; a negative value fails the start (an `ArgumentError` naming the property), as Caffeine's `expireAfterWrite` refuses one |
+| `spring.cache.simple.max-size` | int, `0` or more | none | The most entries per cache; when full, the least recently used entry goes. `0` keeps nothing; a negative value fails the start (an `ArgumentError` naming the property) |
+| `spring.cache.simple.caches.<name>.time-to-live` | duration, `0` or more | the global one | The same, for one cache; a negative value fails the start too |
+| `spring.cache.simple.caches.<name>.max-size` | int, `0` or more | the global one | The same, for one cache; a negative value fails the start too |
+
+A cache name with dots goes in brackets, as in any Spring Boot map:
+`spring.cache.simple.caches[books.byIsbn].max-size=2` (YAML key
+`"[books.byIsbn]":`); the plain form
+`spring.cache.simple.caches.books.byIsbn.max-size` is read too (the end
+of the key that is `max-size` or `time-to-live`, in any relaxed form, is
+the property). Every per-cache value is checked at the start.
+
+As environment variables, the forms Spring Boot binds work:
+`SPRING_CACHE_SIMPLE_CACHES_BOOKS_MAX_SIZE=5` or
+`SPRING_CACHE_SIMPLE_CACHES_BOOKS_MAXSIZE=5`, and `_TIME_TO_LIVE=30s` or
+`_TIMETOLIVE=30s`, for the cache `books`. Variables give lower-case
+names, so a cache name with capitals or dashes needs a config file; a
+`_` inside the name is read as a dot (`..._BOOKS_BYISBN_MAX_SIZE` is the
+cache `books.byisbn`, which Boot does not bind).
 
 The `spring.cache.simple.*` keys are this starter's own; Spring Boot's
 simple cache has no settings. Not supported: Caffeine, Redis and the
@@ -1794,6 +1929,14 @@ The keys under `spring.websocket.client.config.<client>.`:
 
 An invalid `reconnect.*` value fails the start. Not supported: heartbeats,
 STOMP and SockJS.
+
+Two keys apply to every client, through the default `webSocketTransport`
+bean (on `dart:io`; the browser has no such limits):
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.websocket.client.max-text-message-size` | data size, or `-1` | `8KB` | The largest text message a client reads, in UTF-8 bytes (Tomcat counts characters); a larger one closes the connection with 1009 (message too big). Tomcat's default for Spring's `StandardWebSocketClient`; this starter's own key (Spring sets the limit in code, on the client's `WebSocketContainer`) |
+| `spring.websocket.client.max-binary-message-size` | data size, or `-1` | `8KB` | The same for binary messages |
 
 ---
 
@@ -2619,13 +2762,60 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 `flutter run -d chrome` and `-d web-server` serve the web version on a
 random port unless configured. These keys set the dev server instead:
 `spring_core_dart_generator` writes them into `web_dev_config.yaml`,
-which `flutter run` reads on the web (Flutter 3.38 and later). They are
-read at build time, as the app reads its config in a browser:
-`application.*`, then `application-web.*`, plus the files of the
-profiles `spring.profiles.active` names there; environment variables and
-`--dart-define` values do not count. A `--web-port` or `--web-hostname`
-flag still wins. The app itself does not read these keys, and
-`flutter build web` does not use them. See
+which `flutter run` reads on the web (Flutter 3.38 and later). The
+generator runs this step for every package that depends on it, pure Dart
+servers included, so it never fails a build, and says nothing, unless the
+app evidently uses the file: a config file it can read without loading
+the config (any `.properties`, `.yml` or `.yaml` file of
+`lib/resources/`, in any document, for any profile, or a file an import
+names with a file hint, such as `classpath:dev.conf[.yaml]` or
+`classpath:web.properties[encoding=iso-8859-1]` (a file that is not UTF-8
+is read only that way), its placeholders resolved with their defaults or
+the files' values) sets a `spring.flutter.web.*` key or
+`spring.flutter.security.web.mode`. An import whose name only the running
+app knows (`classpath:${ENV}.conf[.yaml]`, `ENV` without a default) cannot
+be followed there, so keys that only its file sets do not count. Without
+such a key, the config is not loaded: nothing is written, a file
+generated before is deleted, and imports, placeholders or a file that
+does not parse are left to the app's start.
+The one exception: while a generated `web_dev_config.yaml` exists, a
+config file the app reads that does not parse fails the build and keeps
+that file, as it may hold the keys.
+
+With such a key, the config is read at build time, as the app reads it
+in a browser: `application.*`, then `application-web.*`, plus the
+files of the profiles `spring.profiles.active` names there and the files
+that `spring.config.import` names (relative or `classpath:` ones, from
+`lib/resources/`); environment variables and `--dart-define` values do
+not count. A placeholder only they can resolve is unknown at build time,
+and never a build error: a profile name with one in
+`spring.profiles.active`, `.include`, `.default` or `.group.*` is left
+out, whatever else the name holds (`dev,${ENV}-eu` is read as `dev`),
+in any form the app reads the key in (`spring.profiles.group[prod]`,
+`spring.profiles.group[my.prod]`, `spring.profiles[active]`),
+`spring.profiles.validate` or `spring.main.cloud-platform` with one is
+read as unset, an import location with one is not read (the other entries
+of its `;` group are), and a document whose
+`spring.config.activate.on-profile` or `.on-cloud-platform` has one is
+skipped, each with a warning that names it (give it a default,
+`${APP_PROFILE:dev}`, to have the build use that). Where a key may be is
+still checked: `spring.profiles.active` in `application-web.yaml`, or
+`spring.profiles.include` in a document limited to a profile, fails the
+build whatever its value, as it fails the app's start. A placeholder in
+`spring.flutter.security.web.mode`, as in the keys below, must resolve at
+build time, or the build fails. A browser has no file system: a
+`file:`, `configtree:` or `package:` import (or an absolute path), with a
+wildcard or not, is never read from the build machine's disk, and is
+skipped, `optional:` or not; when these keys give a file to
+write, a warning names the first required one as written (the web version
+would fail to start with it, as the app's start reports). An import the
+build cannot read (`asset:`, `http:`, `https:`, or a `classpath:` file
+missing from `lib/resources/`) is skipped silently, even a required one,
+as it may exist at run time. An invalid value, or a config file the app
+reads that does not parse, fails the build, and the generated file is
+left as it is. A `--web-port` or `--web-hostname` flag still wins. The
+app itself does not read these keys, and `flutter build web` does not use
+them. See
 [The web version's port](../spring_boot_starter_flutter/README.md#the-web-versions-port).
 
 <table>
@@ -2672,6 +2862,7 @@ spring.flutter.web.proxy[0].target=http://localhost:8080
 | `spring.flutter.web.proxy[n].replace` | string | the path unchanged | The forwarded path: the matched part replaced, `$1` for the first group |
 | `spring.flutter.web.content-security-policy` | string, not empty | none; in spa mode a ready policy (below) | The page's Content Security Policy, sent as the `Content-Security-Policy` header. Setting it and `headers.Content-Security-Policy` both fails the build |
 | `spring.flutter.web.content-security-policy-report-only` | `true` / `false` | `false` | Send the policy as `Content-Security-Policy-Report-Only`: violations are reported in the console, nothing is blocked (for development) |
+| `spring.flutter.web.content-security-policy-connect-src` | list of origins (`https://api.neon.books`, `wss://...`) | none | Origins added to the `connect-src` of spa mode's ready policy (below): the APIs the app calls, a provider's endpoints on other hosts. Setting it with an own policy fails the build; without spa mode it is ignored (a warning) |
 
 The proxy list comes whole from the most specific file that has one, as
 lists do in Spring Boot. Forwarding `/api/` to the server is the simplest
@@ -2693,8 +2884,7 @@ from a place the app never meant) is refused. The generator sends
 `flutter run`, so development runs under the policy production sends.
 An app whose browser logs in by itself
 (`spring.flutter.security.web.mode=spa`) and sets no policy gets this
-one, with the origins of its `spring.security.oauth2.client.provider.*`
-URIs (issuer, token, user info, keys) in `connect-src`:
+one, with the origins its login fetches from in `connect-src`:
 
 ```text
 default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com;
@@ -2710,9 +2900,35 @@ the WebAssembly of CanvasKit and Skwasm (no `eval` of JavaScript);
 `https://www.gstatic.com` serves CanvasKit (not needed for builds with
 `--no-web-resources-cdn`); `https://fonts.gstatic.com` the fallback
 fonts (fetched, so in `connect-src` too); `'unsafe-inline'` styles, as
-the engine writes a `<style>` element; `blob:` workers for Skwasm. Set
-the whole policy yourself to add the APIs the app calls (`connect-src`,
-with `ws:` / `wss:` origins for sockets).
+the engine writes a `<style>` element; `blob:` workers for Skwasm.
+
+`<the providers>` are the origins known at build time: those of the
+`spring.security.oauth2.client.provider.*` URIs (issuer, token, user
+info, keys); the built-in endpoints of a Google, GitHub, Facebook or
+Apple registration that has no provider section of its own (Google's
+`https://www.googleapis.com`), except those its provider section
+replaces; and, for an `issuer-uri` of Google or Microsoft, the hosts
+their discovery documents name besides the issuer
+(`https://oauth2.googleapis.com`, `https://openidconnect.googleapis.com`,
+`https://www.googleapis.com`; `https://graph.microsoft.com`). The
+authorization endpoint is not in the list: the page goes there, it does
+not fetch it. Any other issuer's discovery document is read at run time,
+so an endpoint it names on another host is not known to the build: list
+that host in `spring.flutter.web.content-security-policy-connect-src`,
+with the APIs the app calls (`ws:` / `wss:` origins for sockets); they
+are added after the providers:
+
+```yaml
+# application-web.yaml
+spring:
+  flutter:
+    web:
+      content-security-policy-connect-src:
+        - https://api.neon.books
+        - wss://api.neon.books
+```
+
+Or set the whole policy yourself:
 
 ```properties
 # application-web.properties
@@ -2738,8 +2954,9 @@ it gets in the way.
 
 ### The web login
 
-`spring_boot_starter_flutter_security` reads these keys in a browser
-only (the `web` platform profile). In `server` mode (the default) the
+`spring_boot_starter_flutter_security` reads the `web.*` keys in a
+browser only (the `web` platform profile); the first two keys of the
+table are for apps. In `server` mode (the default) the
 app's server logs the user in (`oauth2Login()`), the page holds only its
 session cookie, and `OAuth2LoginService` sends the page to the server's
 login, asks the server who is logged in and posts its logout. See
@@ -2780,7 +2997,8 @@ spring.flutter.security.web.logout-url=/api/logout
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.security.ephemeral-session` | `true` / `false` | `false` | iOS, Android, macOS: the login window keeps no cookies of the system's browser: no system prompt before the window (iOS, macOS), but no single sign-on (every login asks for the password) |
+| `spring.flutter.security.ephemeral-session` | `true` / `false` | `false` | Apps on iOS and macOS: the login window (`ASWebAuthenticationSession`) keeps no cookies of Safari: no system prompt before the window, but no single sign-on (every login asks for the password). Android ignores it (a Custom Tab always shares the browser's cookies) |
+| `spring.flutter.security.application-id` | text | the app's own id | Apps on Windows and Linux: the name the app's secrets are kept under, apart from other apps' (Windows: the folder under `%LOCALAPPDATA%\spring_secret_store`, `\` separates folders; Linux: the Secret Service items' `application` attribute). By default the runner's version resource (`<CompanyName>\<ProductName>`, Windows) or GTK application id (Linux), else the executable's name; a blank value is the default. Other platforms ignore it |
 | `spring.flutter.security.web.mode` | `server` / `spa` | `server` | Who logs in: the app's server (backend-for-frontend), or the browser by itself (`spa`: a public client with PKCE, tokens in the tab's memory, DPoP with a non-extractable WebCrypto key; without a registration the app stops at startup) |
 | `spring.flutter.security.web.silent-restore` | `true` / `false` | `true` | Spa mode: after a reload or in a new tab, `restore()` sends the page to the provider with `prompt=none` when someone logged in in this browser before, and comes back logged in (or with `login_required`: nobody) |
 | `spring.flutter.security.web.server-url` | absolute `http(s)` URL, no query | the page's origin | The app's server, with its context path if any. On another origin than the page, `fetch` is asked to send the cookies there (`FetchCredentials.include`), and the server must allow it (CORS with credentials) |
@@ -2814,8 +3032,16 @@ server:
   servlet:
     context-path: /shop
   max-http-request-body-size: 10MB
+  connection-timeout: 60s
   compression:
     enabled: true
+    mime-types: text/html,application/json
+    min-response-size: 2KB
+  websocket:
+    max-text-message-size: 64KB
+    max-binary-message-size: 1MB
+    send-buffer-size-limit: 512KB
+    send-time-limit: 10s
   ssl:
     certificate: /etc/shop/cert.pem
     certificate-private-key: /etc/shop/key.pem
@@ -2835,6 +3061,7 @@ spring:
       enabled: true
       max-file-size: 5MB
       max-request-size: 20MB
+      max-part-count: 100
       file-size-threshold: 64KB
       location: /var/tmp/shop-uploads
 ```
@@ -2847,7 +3074,14 @@ server.address=0.0.0.0
 server.shutdown=graceful
 server.servlet.context-path=/shop
 server.max-http-request-body-size=10MB
+server.connection-timeout=60s
 server.compression.enabled=true
+server.compression.mime-types=text/html,application/json
+server.compression.min-response-size=2KB
+server.websocket.max-text-message-size=64KB
+server.websocket.max-binary-message-size=1MB
+server.websocket.send-buffer-size-limit=512KB
+server.websocket.send-time-limit=10s
 server.ssl.certificate=/etc/shop/cert.pem
 server.ssl.certificate-private-key=/etc/shop/key.pem
 server.ssl.key-password=s3cret
@@ -2859,6 +3093,7 @@ spring.mvc.sse.heartbeat-interval=15s
 spring.servlet.multipart.enabled=true
 spring.servlet.multipart.max-file-size=5MB
 spring.servlet.multipart.max-request-size=20MB
+spring.servlet.multipart.max-part-count=100
 spring.servlet.multipart.file-size-threshold=64KB
 spring.servlet.multipart.location=/var/tmp/shop-uploads
 ```
@@ -2871,10 +3106,17 @@ spring.servlet.multipart.location=/var/tmp/shop-uploads
 | `server.port` | int | `8080` | The port. `0` picks a free one; the real port is then in `local.server.port` |
 | `server.address` | IP address or host name | all interfaces; **`127.0.0.1` in Flutter apps** | The address to listen on. `localhost` is `127.0.0.1`; a host name is looked up. Flutter apps default to `127.0.0.1` so they open no port to the network by accident |
 | `server.shutdown` | `graceful` / `immediate` | `graceful` | `graceful` accepts no new connections and lets running requests finish. Open event streams and WebSockets are closed at once (code 1001) |
-| `spring.lifecycle.timeout-per-shutdown-phase` | duration | `30s` | How long a graceful shutdown waits for running requests (read by the web server only) |
+| `spring.lifecycle.timeout-per-shutdown-phase` | duration | `30s` | How long a graceful shutdown waits for running requests. As in Spring Boot, it is also the timeout per phase of the context's `lifecycleProcessor` (`spring_boot_dart`'s `LifecycleAutoConfiguration`), so the beans are destroyed only after the requests finished |
 | `server.servlet.context-path` | path | — | A prefix of every mapping, such as `/shop`. A missing leading `/` is added and a trailing one dropped; other paths answer 404. The old key `server.context-path` is read when this one is not set |
-| `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is answered with 413; `-1` means no limit. This starter's own key. Uploads (`multipart/*`) have the `spring.servlet.multipart.*` limits instead |
-| `server.compression.enabled` | bool (only `true` turns it on) | `false` | gzip for clients that accept it (`dart:io`'s `autoCompress`) |
+| `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is answered with 413, whatever its `Content-Type`; `-1` means no limit. This starter's own key. Only the multipart resolver reads uploads with `spring.servlet.multipart.max-request-size` instead |
+| `server.connection-timeout` | duration; `0` or less (`-1`) for none | `60s` | How long a request body may send nothing while it is read: then the answer is 408 and the connection closes. Also how long an idle keep-alive connection stays open. `0` or a negative value means no limit, as in Tomcat. Tomcat's `connectionTimeout` (Spring Boot 2.0 had this key; Boot 4 has `server.tomcat.connection-timeout`) |
+| `server.compression.enabled` | bool (only `true` turns it on) | `false` | gzip of the responses of `mime-types`, from `min-response-size` on (or of unknown length), for clients that send `Accept-Encoding: gzip`; never partial content, nor an answer with a strong `ETag` (as Tomcat). Every answer it would compress gets `Vary: Accept-Encoding`, for clients without gzip too |
+| `server.compression.mime-types` | comma-separated media types (`text/*` allowed) | `text/html`, `text/xml`, `text/plain`, `text/css`, `text/javascript`, `application/javascript`, `application/json`, `application/xml` | The media types compressed, as in Spring Boot; add `text/event-stream` to compress event streams |
+| `server.compression.min-response-size` | data size | `2KB` | The smallest `Content-Length` compressed |
+| `server.websocket.max-text-message-size` | data size, or `-1` | `8KB` | The largest text message a WebSocket session reads, in UTF-8 bytes (Tomcat counts characters); a larger one closes the session with 1009. Tomcat's default in Spring; this starter's own key (Spring sets it on the container) |
+| `server.websocket.max-binary-message-size` | data size, or `-1` | `8KB` | The same for binary messages |
+| `server.websocket.send-buffer-size-limit` | data size, or `-1` | `512KB` | How much a WebSocket session may keep waiting to be sent to a client that reads slowly or not at all (pongs included); past it the connection is dropped and the session's close status is 4500 (`sessionNotReliable`). Spring's `sendBufferSizeLimit` of `ConcurrentWebSocketSessionDecorator`, set in code there; this starter's own key |
+| `server.websocket.send-time-limit` | duration, or `-1` | `10s` | How long what a session sent may take to leave; past it the connection is dropped the same way. Spring's `sendTimeLimit` |
 | `server.ssl.enabled` | bool | `true` | `false` ignores the other `server.ssl.*` keys |
 | `server.ssl.certificate` | file path (PEM) | — | The certificate chain; TLS is on when it is set |
 | `server.ssl.certificate-private-key` | file path (PEM) | — | The private key; required with `certificate` |
@@ -2887,8 +3129,9 @@ spring.servlet.multipart.location=/var/tmp/shop-uploads
 | `spring.servlet.multipart.enabled` | bool | `true` | `false`: `multipart/*` requests are not parsed, and `@RequestPart` parameters answer 400 |
 | `spring.servlet.multipart.max-file-size` | data size, or `-1` | `1MB` | The largest file (or other part) of an upload; above it the answer is 413 (`MaxUploadSizeExceededException`). `-1` means no limit |
 | `spring.servlet.multipart.max-request-size` | data size, or `-1` | `10MB` | The largest multipart request as a whole; above it the answer is 413. `-1` means no limit |
+| `spring.servlet.multipart.max-part-count` | int, or `-1` | `50` | The most parts (files and fields) of a multipart request; above it the answer is 413. This starter's own key: Spring Boot sets the same limit on Tomcat with `server.tomcat.max-part-count` (50) |
 | `spring.servlet.multipart.file-size-threshold` | data size | `0B` | Files above this size are written to a temporary file; smaller ones stay in memory. With `0B` every file goes to a temporary file (in memory where there is no `dart:io`). Temporary files are deleted after the request |
-| `spring.servlet.multipart.location` | directory path | the system's temporary directory | Where uploads' temporary files are written |
+| `spring.servlet.multipart.location` | directory path | the system's temporary directory | Where the private directory (`0700`) of the uploads' temporary files is made; the files have random names and are deleted when the request ends or fails |
 | `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`). In tests only `random-port` (port `0`) and `defined-port` start a server |
 | `local.server.port` | int, **written by the server** | — | The port the server listens on, set once it listens (also in `WebServerInitializedEvent`). Read it; do not set it |
 
@@ -2904,13 +3147,14 @@ Not supported:
 - `server.http2.*`: `dart:io` speaks HTTP/1.1;
 - `server.forward-headers-strategy` and
   `server.max-http-request-header-size`;
-- `server.compression.mime-types` and `min-response-size`;
 - key stores and SSL bundles (`server.ssl.key-store`, `server.ssl.bundle`);
 - `server.error.*` and `spring.mvc.problemdetails.enabled`: errors are
-  always `ProblemDetail`s;
+  `ProblemDetail`s (except the plain-text answers Spring gives too: a
+  refused CORS request or WebSocket handshake);
 - `spring.web.cors.*`;
 - `spring.web.resources.*`: there are no static files yet;
-- the `server.tomcat.*`, `jetty`, `undertow` and `netty` keys.
+- the `server.tomcat.*`, `jetty`, `undertow` and `netty` keys; there is
+  no connection limit (Tomcat's `max-connections`).
 
 ---
 
@@ -3107,15 +3351,110 @@ Two limits of SpEL expressions are compile-time defines (`-D` or
 
 - `.properties` files are read as UTF-8; Spring Boot reads ISO-8859-1. For
   Spring Boot's behaviour use
-  `PropertiesPropertySourceLoader(encoding: latin1)`.
+  `PropertiesPropertySourceLoader(encoding: latin1)`, or name the encoding
+  of one file where it is named (`x.properties[encoding=iso-8859-1]`). So
+  a `.properties` file saved as ISO-8859-1 with a non-ASCII character
+  fails the start here (`ConfigDataLoadException`, naming the file and the
+  encoding), which Spring Boot reads; a UTF-8 one is read right here and
+  as `Ã¼`-style text by Spring Boot. Bytes that are not valid in the
+  encoding fail the start (also with `[encoding=utf-8]` or `us-ascii`),
+  where Spring Boot reads each as `�`. YAML is UTF-8 in both (Spring Boot
+  also reads a UTF-16 file with a byte order mark).
+- An encoding hint names UTF-8, ISO-8859-1 or US-ASCII; Spring Boot takes
+  any charset of Java (`UTF-16`, `windows-1252`...), which fails the start
+  here, also in a YAML location's hint (which Boot ignores).
+- XML properties files are not read: Spring Boot reads `application.xml`
+  next to `application.properties` and imports `x.xml`
+  (`java.util.Properties.loadFromXML`). Here `application.xml` is not
+  looked for, `spring.config.import=x.xml` fails the start ("XML
+  properties files are not supported") and an `optional:` one is skipped;
+  write the file as `.properties` or YAML.
+- YAML nesting: Spring Boot (SnakeYAML) refuses a file nested more than
+  50 collections deep ("Nesting Depth exceeded max 50"); here such a file
+  is read, up to some thousands of levels (3,000 on the Dart VM; the limit
+  depends on the platform's stack), and a deeper one fails the start with
+  a `ConfigDataLoadException` naming the file ("nested too deeply").
+- A `.properties` file with tens of thousands of lines holding only `\`
+  is read here; Spring Boot's loader overflows the stack on it
+  (`StackOverflowError`).
+- Two `.properties` documents stay apart where Spring Boot silently
+  changes them. A comment right after a separator (before the document's
+  first key, blank lines between or not) makes Spring Boot add the new
+  document to the one before it: `#---`, `# the dev part`,
+  `spring.config.activate.on-profile=dev` limits the whole file to `dev`
+  there. And after spaces behind a separator's hyphens (`#--- `), Spring
+  Boot reads the next line wrong: a key with spaces before it is dropped,
+  a separator there is a comment. Both are read as written here; write
+  such comments below the guard line, and no spaces after `#---`, for a
+  file that reads the same in both.
 - `spring.main.register-shutdown-hook` is `false` by default, because
   listening for signals keeps a Dart program alive.
 - No `env:` imports, no `classpath*:` config locations and no classpath
   wildcards.
+- In a `;` group of locations (`spring.config.location`,
+  `.additional-location`, `spring.config.import`), spaces around an entry
+  are trimmed and empty entries are skipped. Spring Boot keeps the spaces
+  as part of the location (`a.yml; b.yml` names ` b.yml`, which it then
+  does not find) and reads an empty entry as the importing file's
+  directory (`b.yml;` also reads that directory's `application.*`), or
+  fails on it in `spring.config.location`.
+- Each entry of a `;` group is read by its own prefix, so a `configtree:`
+  entry is a config tree wherever it stands. Spring Boot picks the
+  resolver of the whole group from its first entry:
+  `x.yml;configtree:/run/secrets/` reads the tree entry as a plain
+  directory (looking for `application.*` in it, so the secrets are not
+  read), and `configtree:/run/secrets/;x.yml` fails ("Config tree location
+  '/run/secrets/;x.yml' must end with '/'").
+- A relative import in a file found through a wildcard location
+  (`file:./config/*/`) is relative to that file's directory. Spring Boot
+  resolves it against the wildcard pattern instead (`config/*/x.yml`):
+  it reads `x.yml` from every subdirectory, not only the importing
+  file's, and fails the start on a path with a directory (`sub/x.yml`,
+  "must end with '*/'").
+- `configtree:` reads directories of the file system only, and its values
+  are strings (Boot's can also be bound as a `Resource`). A `configtree:`
+  location that is a file, not a directory, counts as missing, so
+  `optional:` skips it; Boot fails on it even with `optional:`.
+- `spring.profiles.active`, `.default` and `.group.*` in a document
+  limited to a profile fail the start when the document applies, and are
+  ignored when it does not, as Spring Boot's documentation describes.
+  Spring Boot 4.1.2 reads them from such documents (and from documents of
+  another cloud platform), applied or not; only `spring.profiles.include`
+  fails there (`InactiveConfigDataAccessException`), also in a document
+  that does not apply.
+- Placeholders in a document's `spring.config.activate.on-profile` and
+  `spring.config.import`: Spring Boot resolves them once, when its first
+  pass reaches the document, and fails the start
+  (`InactiveConfigDataAccessException`) when a key comes from a document
+  inactive at that point. Here `on-profile` is resolved once the profiles
+  are decided, and again after each document activated; the imports when
+  they are read (after the profiles are decided for an `on-profile`
+  document); documents not active are ignored. So
+  `on-profile=${P:dev}`, with `P=prod` set in a file the same file
+  imports and `prod` active, applies here; Spring Boot read `dev` there
+  and does not apply it.
+- A profile group written as a list is not checked for elements that do
+  not bind: `spring.profiles.group.dev[1]=x` without `[0]`, a gap
+  (`[0]` and `[2]`) or `[0].a`. Spring Boot fails the start on such a
+  list ("were left unbound"), even when the group is not active; here
+  the list is read up to the first missing index (`dev[0]=x` and
+  `dev[2]=y` add only `x`) and `[0].a` is ignored.
+- Profile expressions (`on-profile`, `@Profile`) are stricter than
+  Spring 7.0.10's `Profiles.of`: forms it accepts, such as `(dev`, `a)`,
+  `a &`, `& a`, `(a)(b)` or `a b`, fail here ("Malformed profile
+  expression"). An expression both accept matches the same profiles.
+- The profile keys ignored in files read after the profiles are decided
+  stay readable with `getProperty`, as in Spring Boot, except in one case:
+  `spring.profiles.active` is hidden while no profile is active, and
+  `spring.profiles.default` while the default profile is `default`.
+  `StandardEnvironment` would read them as profiles then; Spring Boot's
+  environment never does.
 - These keys are this project's own: `spring.messages.default-locale`,
   `spring.cache.simple.*`, every `spring.websocket.client.*` and
   `spring.flutter.*` key, the Feign `event-stream.*` keys,
-  `server.max-http-request-body-size` and
+  `server.max-http-request-body-size`, `server.connection-timeout` (a
+  Spring Boot 2.0 key), `server.websocket.*`,
+  `spring.servlet.multipart.max-part-count` and
   `spring.mvc.sse.heartbeat-interval`.
 - The web server (`spring_boot_starter_web`) reads only the `server.*` and
   `spring.servlet.multipart.*` keys of
@@ -3123,10 +3462,9 @@ Two limits of SpEL expressions are compile-time defines (`-D` or
   though there is no servlet container. There is no HTTP/2, no forwarded
   headers, no key stores, no `server.error.*` and no server-specific keys
   such as `server.tomcat.*`. `server.ssl.*` takes PEM file paths. Errors
-  are always `ProblemDetail`s.
+  are `ProblemDetail`s, except the plain-text answers Spring gives too
+  (a refused CORS request, a refused WebSocket handshake).
 - `spring.main.web-application-type` knows only `none` (no server).
-  `spring.lifecycle.timeout-per-shutdown-phase` applies to the web
-  server's graceful shutdown only.
 - Not read: `allow-circular-references`, `keep-alive`,
   `spring.task.execution.*`, `spring.task.scheduling.pool.*`,
   `spring.aop.*`, `management.*`, `info.*`, `logging.config`,

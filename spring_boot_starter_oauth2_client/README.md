@@ -121,7 +121,12 @@ spring.security.oauth2.client.registration.github.client-id=Iv1.8a61f9b3a7aba766
 the provider while the application starts), so an application, and an
 app above all, starts while the provider cannot be reached. The
 provider's metadata must name exactly the configured issuer, or the
-registration is refused. The security starter's resource server
+registration is refused. A failed discovery is tried again 10 seconds
+later at the earliest; until then every use gets its error at once, so a
+provider that is down never gets one request per login started. The 10
+seconds are measured on a monotonic clock: a device clock set back (by
+hand, or a time server) does not make them last hours. The
+security starter's resource server
 (`JwtDecoders.fromIssuerLocation`) finds the metadata with the same code
 (`ClientRegistrations.configurationForIssuerLocation`), so the places
 asked and the issuer check are the same for both.
@@ -191,7 +196,12 @@ identity token, which comes from the operating system and not from the
 token endpoint, with `JwkSetOidcIdTokenDecoder`: the signature with the
 registration's JWK Set (RS256 by default, ES256 on request; `alg: none`,
 HS*, keys inside the token and weak RSA keys refused; an unknown `kid`
-fetches the keys again, at most once a minute), then the claims.
+fetches the keys again, at most once a minute, measured on a monotonic
+clock), the `typ` header (`JWT`
+in any case, blank or none, as the security starter's
+`OidcIdTokenDecoderFactory` and Spring Security 7.1's
+`JwtTypeValidator.jwt()`: a `logout+jwt`, `at+jwt` or `secevent+jwt`
+token signed with the same keys is refused), then the claims.
 
 ## Tokens on Feign calls
 
@@ -383,7 +393,8 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
   client service, the manager, the token clients and the user services
   return `Future`s.
 - Issuer discovery happens at the first use of a registration, not at
-  startup; a failure is retried at the next use. Its metadata lookup is
+  startup; a failure is retried at a use 10 seconds later or more. Its
+  metadata lookup is
   public (`ClientRegistrations.configurationForIssuerLocation`; Spring's
   `JwtDecoderProviderConfigurationUtils` is internal), and the security
   starter's resource server uses it too.
@@ -393,7 +404,7 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
   without `client-authentication-method` is a public client (`none`),
   even for a common provider that says `client_secret_basic`.
 - PKCE is on for every `authorization_code` registration, confidential
-  clients included (Spring: public clients, or by customizer).
+  clients included, as in Spring Security 7.1.
 - The token response clients run on the `HttpTransport` of
   `spring_web_dart`: `DefaultAuthorizationCodeTokenResponseClient`,
   `DefaultRefreshTokenTokenResponseClient`,

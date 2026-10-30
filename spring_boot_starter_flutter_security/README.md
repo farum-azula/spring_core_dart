@@ -170,13 +170,23 @@ says why; a closed page is an `AuthorizationCancelledException`.
 `restore()` at startup brings the user back from the stored tokens and
 refreshes them when they expire within a minute; a refresh token the
 provider refuses (`invalid_grant`) logs the user out, an unreachable
-provider does not (an app starts offline). `logout()` revokes the
+provider does not (an app starts offline). The user comes back with the
+authorities of their login, those an application's own
+`OAuth2UserService` added included (kept in the login record; the user
+service is not called again, as a Spring session keeps the
+authentication of its login; the `SCOPE_` ones follow the current access
+token). A login record of a registration removed from the configuration
+is removed with its tokens. `logout()` revokes the
 refresh and access tokens (`OAuth2TokenRevocationClient`, RFC 7009, when
 the provider has a `revocation_endpoint`), forgets them, clears the
 context and publishes a `LogoutSuccessEvent`, all without a window. The
 user stays logged in at the provider in the system's browser, so the
 next login may need no password; that is the usual logout of a mobile
-app. `logout(endSession: true)` also ends the provider's session in the
+app. When the secure storage cannot delete the stored login, `logout()`
+still logs the user out of the running app (the context cleared, the
+event published) and then throws the storage's error, so the app can
+tell the user the device still holds the login.
+`logout(endSession: true)` also ends the provider's session in the
 login window (OpenID Connect RP-initiated logout, with the ID token as
 `id_token_hint`): for "switch account"; iOS and macOS announce that
 window with their own "... wants to use ... to Sign In" prompt, whose
@@ -344,17 +354,21 @@ was missing; the app logs out locally all the same.
 
 **Cookies and the CSRF token.** In a browser the package declares the
 `httpTransport` bean (the Feign starter's backs off): the browser's
-`fetch`, asked to send the cookies when the server is on another origin
-than the page (`FetchCredentials.include`; same origin needs nothing),
-wrapped in `CsrfCookieHttpTransport`, which copies the server's
+`fetch`, wrapped in `CsrfCookieHttpTransport`, which copies the server's
 `XSRF-TOKEN` cookie into the `X-XSRF-TOKEN` header of `POST`, `PUT`,
 `PATCH` and `DELETE` requests to that server, never to another origin.
-The login service sends its own requests through it too. An application
-that declares its own `HttpTransport` keeps it (as in Spring Boot, the
-auto-configuration backs off); it then passes
-`credentials: FetchCredentials.include` itself and wraps its transport
-in `CsrfCookieHttpTransport` for its Feign calls (the login service
-wraps it for its own requests anyway).
+With the server on the page's origin, `fetch` sends the cookies there by
+itself and to no other origin. With the server on another origin,
+`ServerCredentialsHttpTransport` decides per request: the requests to
+the server's origin go with the cookies (`FetchCredentials.include`),
+every other request (a public API, the provider) without them, so an API
+answering `Access-Control-Allow-Origin: *` keeps working and never sees
+the user's cookies. The login service sends its own requests through it
+too. An application that declares its own `HttpTransport` keeps it (as
+in Spring Boot, the auto-configuration backs off); it then builds the
+same with `ServerCredentialsHttpTransport.forPage(page: page, server:
+server)` and wraps it in `CsrfCookieHttpTransport` for its Feign calls
+(the login service wraps its transport for its own requests anyway).
 
 **The server's side** (`spring_boot_starter_security`), as in the
 [server guide](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide)'s
@@ -504,8 +518,16 @@ refresh token logs a warning, once per registration.
 provider's discovery offers ES256) or `dpop=true`, the tokens are bound
 to `WebCryptoDPoPKey`, the app's `DPoPKey` in spa mode: an ECDSA P-256
 key made by the browser's WebCrypto with `extractable: false`. Its
-`CryptoKey` handles are kept in the origin's IndexedDB (the browser
-stores the handle, not the key's bytes), so a reload uses the same key;
+`CryptoKey` objects are kept in the origin's IndexedDB, so a reload uses
+the same key (a stored key is used only while it still is a
+non-extractable P-256 signing key; anything else there is replaced).
+Every login, the silent one too, makes a new key before it leaves for
+the provider: a login's tokens are never bound to a key found in the
+storage, which a script that once ran in the page could have put there
+knowing its private key (WebCrypto imports a known key as
+non-extractable too). No script can export the key, but the browser itself writes it to its
+profile on disk (most browsers without encrypting it), where whoever can
+read the user's files finds it, as they find the browser's cookies;
 signing is `crypto.subtle.sign({name: 'ECDSA', hash: 'SHA-256'})`, whose
 result is already the raw `R || S` JOSE wants; the public key is
 `exportKey('jwk')`. No script, the app's own included, can export the
@@ -555,9 +577,14 @@ Skwasm compile their WebAssembly; `https://www.gstatic.com` serves
 CanvasKit unless the app is built with `--no-web-resources-cdn`;
 `https://fonts.gstatic.com` serves Flutter's fallback fonts;
 `'unsafe-inline'` styles because Flutter's engine writes a `<style>`
-element (a nonce would need a server that makes one per answer). Add the
-APIs the app calls to `connect-src` (and `ws:`/`wss:` origins for
-sockets). Build for production with `flutter build web --csp` (no
+element (a nonce would need a server that makes one per answer).
+`<the providers>` are the hosts the login fetches from that the build
+knows: those of the `provider.*` URIs, the built-in endpoints of Google,
+GitHub, Facebook and Apple, and the hosts Google's and Microsoft's
+discovery documents name. List the APIs the app calls, and the endpoints
+another provider's discovery names on other hosts, in
+`spring.flutter.web.content-security-policy-connect-src` (`ws:`/`wss:`
+origins for sockets). Build for production with `flutter build web --csp` (no
 dynamically generated code) and send the same policy from the web server
 or CDN as the `Content-Security-Policy` header of `index.html`
 (`add_header` in nginx, `Header set` in Apache, the host's header rules
@@ -589,12 +616,24 @@ plugin), and makes them beans:
   bean on Android, iOS and macOS: opens the provider's login page in the
   system's login window (a Safari sheet on iOS and macOS, a Chrome tab on
   Android) and waits for the redirect back. It is no browser of the app:
-  the system shows the page, the app gets only the redirect.
+  the system shows the page, the app gets only the redirect. On iOS and
+  macOS the sheet closes at the first navigation to the redirect URI,
+  whatever its `state`; a redirect with another `state` logs nobody in
+  (the login refuses it, `invalid_state_parameter`), and the user starts
+  again.
 - **`LoopbackAuthorizationWindow`**, the app's `AuthorizationWindow`
   bean on Windows and Linux: opens the page in the default browser and
   answers the redirect on a one-shot server on `127.0.0.1` (a page
   saying the window can be closed, nothing of the request echoed; five
-  minutes without a redirect cancel the login).
+  minutes without a redirect cancel the login). Only the request that
+  carries the login's `state` ends the wait: another site sending the
+  browser to the redirect path gets a 400 and the login goes on. A
+  registration whose redirect names `localhost` (or `[::1]`) keeps that
+  host, for providers that want it exact; `localhost` listens on
+  127.0.0.1 and, where there is IPv6, on ::1 with the same port (the
+  browser may resolve it to either), and an explicit port another
+  program holds on ::1 fails the login instead of letting that program
+  get the redirect.
 
 `OAuth2LoginService` uses them by itself. An app declares its own
 `SecretStore` or `AuthorizationWindow` bean only to replace them. The
@@ -606,8 +645,8 @@ app's own secrets go to the same store through `SecretTemplate`
 | iOS | Keychain: generic passwords, this device only, after the first unlock, not synced | `ASWebAuthenticationSession` |
 | macOS | Keychain (see below) | `ASWebAuthenticationSession` |
 | Android | AES-256-GCM key in the Android Keystore (never leaves it), the encrypted values in a private preferences file | Custom Tab (the default browser without Custom Tabs) |
-| Windows | DPAPI (current user), one file per key in `%LOCALAPPDATA%\<app>\spring_secret_store` | the default browser, the redirect on a loopback server |
-| Linux | the Secret Service (GNOME Keyring, KWallet) through `libsecret` | the default browser, the redirect on a loopback server |
+| Windows | DPAPI (current user), one file per key in `%LOCALAPPDATA%\spring_secret_store\<app id>` | the default browser, the redirect on a loopback server |
+| Linux | the Secret Service (GNOME Keyring, KWallet) through `libsecret`, items of the app id | the default browser, the redirect on a loopback server |
 | Web | none | none: the server logs in |
 
 **Android: declare the redirect.** The provider sends the browser to the
@@ -665,7 +704,62 @@ release builds with your team.
 (the `libsecret-1-0` package on Debian and Ubuntu, `libsecret` on Fedora
 and Arch) and needs a running Secret Service (GNOME Keyring, KWallet,
 KeePassXC). Without them every call throws a `PlatformSecretStoreException`;
-the tokens are never written to a plain file.
+the tokens are never written to a plain file. While the keyring is
+locked, a call that needs a value fails with `libsecret_locked` rather
+than reading as "no value": the app must not replace a value it cannot
+see (a new DPoP key would orphan the stored tokens). Unlock the keyring
+and call again. Call by call:
+
+| Call on a locked keyring | Result |
+|---|---|
+| `read` of a key that has a value | the unlock prompt; dismissed, `libsecret_locked` |
+| `read` of a key without a value | `null` (the Secret Service searches a locked keyring too: the key is missing) |
+| `write` | the unlock prompt; dismissed, `libsecret_locked` |
+| `delete`, `deleteAll` | `libsecret_locked` when there is a value to delete (no prompt: libsecret deletes unlocked items only); nothing to delete, done |
+| `keys()` | the keys (names, never values) |
+| any call, until the record of the 0.4.x move was checked in this run (the package's store, which knows the 0.4.x name) | `libsecret_locked`: the record is in the keyring too |
+
+**Windows and Linux: what keeps apps apart.** DPAPI and the Secret
+Service encrypt for the user, not the app: any program running as the
+same user can read the values (on Android and iOS the system keeps each
+app's apart; on macOS the Keychain does). Between this package's apps
+the values are kept apart by an app id:
+`spring.flutter.security.application-id` when set, else the app's own
+(on Windows `<CompanyName>\<ProductName>` of the runner's `Runner.rc`,
+as Flutter's `path_provider` names the app's folders; on Linux the
+`APPLICATION_ID` of `linux/CMakeLists.txt`, the runner's GTK
+application id), else the executable's name; a blank id is the default.
+Set it when two of your apps could have the same, or keep the generated
+values unique (`flutter create --org`). On Windows the files are in
+`%LOCALAPPDATA%\spring_secret_store\<app id>`: not in
+`%LOCALAPPDATA%\<CompanyName>\<ProductName>`, which is the app's cache
+folder (`getApplicationCacheDirectory()`) that an app may empty, and not
+in the roaming `%APPDATA%`, so the tokens and the DPoP key stay on this
+computer. 0.4.x used the executable's name (Windows:
+`%LOCALAPPDATA%\<executable>\spring_secret_store`): its values are moved
+to the app id once, at the first call after the update (a value already
+there wins), the move is recorded (Windows: a file `migrated-from-0.4` in
+the new folder; Linux: a keyring item of its own), and the old place is
+never searched again. So an update keeps the user logged in, and another
+app with the same executable name, still on 0.4.x, no longer mixes its
+values in (it loses the ones moved: its user logs in again). The move
+never fails a call. On Windows a file another process or isolate has
+open cannot be read, deleted or replaced, and an old folder may be
+read-only: such a file is tried again for up to about a second at that
+first call, then left with a warning, and the record names it. Each
+later start tries each file the record names once, without waiting, and
+reads nothing else of the old folder: a value whose copy failed is
+copied then (it reads as missing until then), an old file already copied
+is only deleted, never copied again. A value deleted through the store
+(`delete`, `deleteAll`: a logout) never comes back: a copy still pending
+for it is cancelled, its old file only deleted. Keys longer
+than 64 bytes are stored on Windows under their SHA-256 (paths stay
+short), and each file is written under a unique temporary name and
+renamed into place.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `spring.flutter.security.application-id` | the app's own id (above) | The name of the app's values on Windows (the folder under `%LOCALAPPDATA%\spring_secret_store`; `\` separates folders) and Linux (the items' `application` attribute); blank is the default; other platforms ignore it |
 
 **Web: the server logs in.** A browser has no secure storage, and any
 script injected into the page reads what the app holds. So a Flutter web
@@ -746,9 +840,20 @@ Check the verification on a device:
 after changing the file.
 
 The plugin hands over only the redirect of the login that runs: the same
-scheme, host, port and exact path as the redirect URI (the query, with
-`code` and `state`, is checked in Dart). Any other link of the domain that
-reaches the activity is dropped and the login goes on. Before opening the
+scheme, host, port and exact path as the redirect URI, carrying exactly
+the `state` the login sent (the rest of the query is checked in Dart).
+A link of the domain on another path, or on the exact path with another
+or no `state` (a page of another site sending the browser there), opens
+the activity, which finishes without a word; the login goes on waiting
+for its own redirect. If the login's window is gone (a `singleTask` main
+activity or a `CLEAR_TOP` intent cleared it), the login ends as
+cancelled instead of waiting; a hot restart
+cancels a login the old code left running, and the new login takes its
+window if still open (each login has an id: a window's answer reaches
+only its own login); and if the system ends the
+app's process while the browser is open, the login is lost with it: the
+user comes back to a new start of the app, logged out, and logs in
+again. Before opening the
 page it checks (Android 12+) that the host is verified or chosen by the
 user for the app, else the login fails at once with an
 `AuthorizationWindowException` (`redirect_not_verified`) instead of the
@@ -877,7 +982,9 @@ App ID with Sign in with Apple enabled. `login('apple')`:
    login's); its `sub` equal to the sheet's user. The token comes from
    the operating system, not from a TLS connection the app opened, so
    unlike an ID token of the token endpoint it is verified like a
-   server does (`JwkSetOidcIdTokenDecoder` of the OAuth2 client);
+   server does (`JwkSetOidcIdTokenDecoder` of the OAuth2 client: the
+   signature, the `typ` header, `JWT` or none, as on a server, then the
+   claims);
 3. exchanges the authorization code (valid five minutes, once) at the
    registration's token endpoint, as a public client, with no
    `redirect_uri` and no PKCE (the sheet sent none). Apple takes a code
@@ -933,7 +1040,7 @@ interceptor use it. It is made at the first proof, not at startup.
 | Platform | Where the key lives | Who signs |
 |---|---|---|
 | iOS, macOS | the Secure Enclave (EC P-256, permanent, tagged `<bundle id>.spring_dpop_key`, after the first unlock, this device only) | the Secure Enclave |
-| iOS, macOS without a usable Secure Enclave | a software key of the Keychain with the same tag and protection | the system |
+| iOS, macOS without a usable Secure Enclave | a software key of the Keychain with the same tag and protection | the system's Security framework, in the app's process (the app's code never handles the key, but it is in the app's memory while signing) |
 | Android | the Android Keystore (EC P-256, `PURPOSE_SIGN`, SHA-256), in StrongBox when the phone has it, else the trusted execution environment | the Keystore |
 | Windows, Linux | a key made in Dart, kept as a private JWK in the `SecretStore` (`oauth2.dpop-key`: DPAPI, the Secret Service) | the app (`SecretStoreDPoPKey`) |
 | Web | none here: a page in server mode holds no tokens | — |
@@ -951,9 +1058,33 @@ Enclave. `PlatformDPoPKey.storage` says where the key ended up
 into the raw `R || S` that JOSE wants. No key material, proof or token
 is ever logged.
 
-**When the key is lost.** The key is never in a backup and never leaves
-the device: an app restored on another phone, reinstalled, or a Keystore
-wiped by the system has none. The next proof makes a new key; the stored
+**When the key is lost.** The key never leaves the device: an app
+restored on another phone, an Android app reinstalled, or a Keystore
+wiped by the system has none. On iOS and macOS the key and the secret
+store's values are Keychain items, which outlive the app (iOS keeps them
+when the app is deleted) and are in the device's encrypted backups
+(restored only to the same device). So that a reinstalled app does not
+log the last user in again, the package gives each installation an id,
+kept in a file of the app's container (`Library/Application
+Support/<bundle id>/spring_boot_starter_flutter_security/install-id`,
+deleted with the app, kept by an update) and in the Keychain: at the
+first start after a reinstall (an id in the Keychain, no file) it
+removes the secret store's values and the key before the first Keychain
+call, once per process whatever the number of engines. An update never
+loses them, and neither does an app that clears its preferences
+(`SharedPreferences.clear()`: the id is not in UserDefaults); an app
+that deletes its whole Application Support folder does, as a reinstall.
+The first start after 0.4.x, which kept no id, removes nothing: so an
+app deleted under 0.4.x and installed again with this version still
+finds the old login (the next reinstall does not). On macOS deleting an
+app keeps both its data (its container, or its Application Support
+folder) and its Keychain items, so a reinstalled app keeps the last
+login there; only an uninstaller that removes the app's data (and not
+its Keychain items) makes the next start remove them too. An update
+that turns the App Sandbox on or off moves Application Support (into
+the app's container, or out of it), so its next start reads as a
+reinstall and the stored login goes. The next
+proof makes a new key; the stored
 tokens carry the thumbprint of the old one
 (`SecretStoreOAuth2AuthorizedClientService` keeps the token type and,
 for DPoP tokens, the key's RFC 7638 thumbprint), so they are dropped
@@ -1058,7 +1189,8 @@ The limits:
   encrypt it and keep only its encryption key here.
 - **No web.** A browser has no secure storage (memory, `localStorage`
   and IndexedDB are readable by any script of the page), so on the web
-  every call of the template throws an `UnsupportedError`; it never falls
+  every call of the template fails with an `UnsupportedError` (in the
+  returned `Future`, as every error of the template); it never falls
   back to memory or `localStorage`. There the server keeps secrets.
 
 ## Widgets that follow the user
@@ -1347,8 +1479,18 @@ Run on devices (`example/flutter_guide/integration_test/dpop_key_test.dart`,
 each proof checked against its public key with pointycastle): macOS (a
 debug build: the Keychain key), the iOS 27 simulator (its emulated
 Secure Enclave), an Android 17 emulator (the Keystore without secure
-hardware). Not yet on a phone with StrongBox. On Windows and Linux the
-stores and the key kept in them are tested against the real systems by
+hardware). Not yet on a phone with StrongBox. Two device runs need the
+host: on an Android emulator a login whose window's task is removed ends
+as cancelled and the next login runs
+(`example/flutter_guide/integration_test/remove_login_task.sh`), and on
+the iOS simulator an update and cleared preferences keep the stored
+values and DPoP key while a reinstall removes them
+(`example/flutter_guide/integration_test/reinstall_test.sh`). The
+login after a hot restart, while the replaced login's window is still
+open, runs on the emulator and the simulator without the host
+(`integration_test/authorization_window_test.dart`). On Windows
+and Linux the stores and the key kept in them are tested against the
+real systems by
 `test/desktop_secret_store_test.dart`, which CI runs on GitHub's Windows
 runner (DPAPI) and Linux runner (GNOME Keyring through libsecret).
 

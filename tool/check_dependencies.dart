@@ -62,6 +62,10 @@ const repositoryOnlyExceptions = {
   'yaml':
       "application.yml config files out of the box, like Spring Boot's "
       "SnakeYAML; the Dart team's YAML parser (spring_core_dart).",
+  'clock':
+      'The fakeable current time (tools.dart.dev, no dependencies): the '
+      "scheduling starter's TaskScheduler reads clock.now(), which "
+      'fake_async and Flutter widget tests move with their fake timers.',
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
@@ -182,8 +186,13 @@ Future<void> _check(String directory, {required bool standalone}) async {
   // packages under an allowed exception are skipped.
   final reached = <String, List<String>>{};
   // Exceptions only for the Flutter packages are reported by those runs.
+  // By package name (the guide's folder is not its name).
   final flutterNames = {
-    for (final path in flutterPackages) path.split('/').last,
+    for (final path in flutterPackages)
+      RegExp(
+        r'^name:\s*(\S+)',
+        multiLine: true,
+      ).firstMatch(File('$path/pubspec.yaml').readAsStringSync())!.group(1)!,
   };
   final unusedExceptions = {
     for (final MapEntry(:key, :value) in allowedPackages.entries)

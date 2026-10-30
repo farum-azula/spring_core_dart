@@ -18,6 +18,10 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// `GET` and `HEAD`. [applyPermitDefaultValues] fills the empty lists
 /// with permissive defaults.
 ///
+/// Every cross-origin request is checked: its origin, and its method (the
+/// method a pre-flight announces, or the actual request's own), so an
+/// allowed origin cannot send a `DELETE` the rules do not list.
+///
 /// ```dart
 /// // The shop's pages may read and write the API with their cookies.
 /// final config = CorsConfiguration(
@@ -38,7 +42,8 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// ```
 final class CorsConfiguration {
   /// A configuration with the given lists (copied, so they can grow
-  /// later); [allowCredentials] and [maxAge] are unset by default.
+  /// later); [allowCredentials], [allowPrivateNetwork] and [maxAge] are
+  /// unset by default.
   CorsConfiguration({
     List<String> allowedOrigins = const [],
     List<String> allowedOriginPatterns = const [],
@@ -46,6 +51,7 @@ final class CorsConfiguration {
     List<String> allowedHeaders = const [],
     List<String> exposedHeaders = const [],
     this.allowCredentials,
+    this.allowPrivateNetwork,
     this.maxAge,
   }) : allowedOrigins = [...allowedOrigins],
        allowedOriginPatterns = [...allowedOriginPatterns],
@@ -53,37 +59,57 @@ final class CorsConfiguration {
        allowedHeaders = [...allowedHeaders],
        exposedHeaders = [...exposedHeaders];
 
-  /// The rules of a `@CrossOrigin` annotation, with the defaults of
-  /// [applyPermitDefaultValues] for what it leaves out: every origin,
-  /// `GET`, `HEAD` and `POST`, every header, 30 minutes. (Spring defaults
-  /// the methods to those of the handler instead.) The [maxAge] of the
-  /// annotation is in seconds.
-  factory CorsConfiguration.fromAnnotation(CrossOrigin annotation) =>
-      CorsConfiguration(
-        allowedOrigins: annotation.origins,
-        allowedOriginPatterns: annotation.originPatterns,
-        allowedMethods: annotation.methods,
-        allowedHeaders: annotation.allowedHeaders,
-        exposedHeaders: annotation.exposedHeaders,
-        allowCredentials: annotation.allowCredentials,
-        maxAge: annotation.maxAge == null
-            ? null
-            : Duration(seconds: annotation.maxAge!),
-      ).applyPermitDefaultValues();
+  /// The rules of a `@CrossOrigin` annotation. Without `methods`, the
+  /// methods the handler is mapped to are allowed ([mappedMethods], as
+  /// the router passes them), as in Spring; what is still left out gets
+  /// the defaults of [applyPermitDefaultValues]: every origin, `GET`,
+  /// `HEAD` and `POST` (when [mappedMethods] is empty too), every header,
+  /// 30 minutes. The [maxAge] of the annotation is in seconds.
+  factory CorsConfiguration.fromAnnotation(
+    CrossOrigin annotation, {
+    List<String> mappedMethods = const [],
+  }) {
+    final config = CorsConfiguration(
+      allowedOrigins: annotation.origins,
+      allowedOriginPatterns: annotation.originPatterns,
+      allowedMethods: annotation.methods,
+      allowedHeaders: annotation.allowedHeaders,
+      exposedHeaders: annotation.exposedHeaders,
+      allowCredentials: annotation.allowCredentials,
+      allowPrivateNetwork: annotation.allowPrivateNetwork,
+      maxAge: annotation.maxAge == null
+          ? null
+          : Duration(seconds: annotation.maxAge!),
+    );
+    if (config.allowedMethods.isEmpty) {
+      config.allowedMethods.addAll(mappedMethods);
+    }
+    return config.applyPermitDefaultValues();
+  }
 
   /// Origins allowed to call, compared without case
   /// (`https://shop.example`); `*` allows any origin, but not together
-  /// with [allowCredentials].
+  /// with [allowCredentials]. As in Spring, a value may list several,
+  /// separated by commas (`'https://a.example, https://b.example'`), and
+  /// a trailing `/` is ignored. [checkOrigin] reads them as
+  /// [AllowedOrigins] does; the list keeps the values as given.
   final List<String> allowedOrigins;
 
-  /// Origins allowed by pattern, for families of origins: `*` matches any
-  /// text and `[*]` any port number (`https://*.example`,
-  /// `http://localhost:[*]`). The matched origin itself is echoed back,
-  /// so patterns work with [allowCredentials].
+  /// Origins allowed by pattern, for families of origins, compared with
+  /// case: `*` matches any text, as Spring's `.*` (`https://*.example`,
+  /// `*.example`), and a port list at the end the ports listed or, with
+  /// `[*]`, any port or none (`http://localhost:[3000,3001]`,
+  /// `http://localhost:[*]`). Commas and a trailing `/` as in
+  /// [allowedOrigins]. The matched origin itself is echoed back, so
+  /// patterns work with [allowCredentials]. See [AllowedOrigins], and its
+  /// one difference from Spring (an origin longer than 1024 characters is
+  /// never allowed).
   final List<String> allowedOriginPatterns;
 
-  /// Methods a pre-flight may ask for (`GET`, `DELETE`, ...); `*` allows
-  /// any. Empty allows `GET` and `HEAD`.
+  /// Methods allowed (`GET`, `DELETE`, ...), compared with case: the one
+  /// a pre-flight asks for, and an actual cross-origin request's own (a
+  /// `HEAD` too: allow it with `GET` where needed). `*` allows any. Empty
+  /// allows `GET` and `HEAD`.
   final List<String> allowedMethods;
 
   /// Request headers a pre-flight may ask for (`Authorization`, ...),
@@ -99,6 +125,17 @@ final class CorsConfiguration {
   /// `null` and `false` both mean no.
   bool? allowCredentials;
 
+  /// Whether a page of a public site may call this server on a private
+  /// network (a server on `localhost` or the office network): to a
+  /// pre-flight with `Access-Control-Request-Private-Network: true`
+  /// (Chrome's Private Network Access) the answer then adds
+  /// `Access-Control-Allow-Private-Network: true`. `null` and `false` both
+  /// mean no. Like [allowCredentials], it cannot be used with `*` in
+  /// [allowedOrigins]: list the origins or use [allowedOriginPatterns].
+  ///
+  /// Spring (Java): `setAllowPrivateNetwork`.
+  bool? allowPrivateNetwork;
+
   /// How long the browser may cache a pre-flight answer
   /// (`Access-Control-Max-Age`); `null` sends no such header.
   Duration? maxAge;
@@ -111,90 +148,180 @@ final class CorsConfiguration {
   /// cross-origin API.
   CorsConfiguration applyPermitDefaultValues() {
     if (allowedOrigins.isEmpty && allowedOriginPatterns.isEmpty) {
-      allowedOrigins.add('*');
+      allowedOrigins.addAll(_permitAll);
+      _defaults.add(_origins);
     }
     if (allowedMethods.isEmpty) {
-      allowedMethods.addAll(['GET', 'HEAD', 'POST']);
+      allowedMethods.addAll(_permitMethods);
+      _defaults.add(_methods);
     }
     if (allowedHeaders.isEmpty) {
-      allowedHeaders.add('*');
+      allowedHeaders.addAll(_permitAll);
+      _defaults.add(_headers);
     }
     maxAge ??= const Duration(minutes: 30);
     return this;
+  }
+
+  static const _permitAll = ['*'];
+  static const _permitMethods = ['GET', 'HEAD', 'POST'];
+  static const _origins = 'origins';
+  static const _methods = 'methods';
+  static const _headers = 'headers';
+
+  // The lists [applyPermitDefaultValues] filled (Spring's
+  // DEFAULT_PERMIT_ALL and DEFAULT_PERMIT_METHODS markers): in [combine]
+  // they give way to the other side's values.
+  final _defaults = <String>{};
+
+  bool _isDefault(String rule) {
+    final (list, expected) = switch (rule) {
+      _origins => (allowedOrigins, _permitAll),
+      _methods => (allowedMethods, _permitMethods),
+      _ => (allowedHeaders, _permitAll),
+    };
+    return _defaults.contains(rule) &&
+        list.length == expected.length &&
+        list.indexed.every((e) => e.$2 == expected[e.$1]);
   }
 
   /// A new configuration with the rules of this one and of [other], the
   /// more specific one: a method's `@CrossOrigin` over the class's, a
   /// handler's over the global configuration.
   ///
-  /// The lists are merged (a `*` in either makes the result `*`);
-  /// [other]'s [allowCredentials] and [maxAge] win when set. A `null`
-  /// [other] returns this configuration itself.
+  /// As in Spring, a list that only holds the defaults of
+  /// [applyPermitDefaultValues] gives way to the other side's list, so an
+  /// `@CrossOrigin()` without `origins` keeps the global origins instead
+  /// of widening them to `*`. Other lists are merged (a `*` in either
+  /// makes the result `*`); an empty list takes the other's.
+  /// [other]'s [allowCredentials], [allowPrivateNetwork] and [maxAge] win
+  /// when set. A `null` [other] returns this configuration itself.
   CorsConfiguration combine(CorsConfiguration? other) {
     if (other == null) {
       return this;
     }
-    List<String> merge(List<String> a, List<String> b) {
+    final defaults = <String>{};
+    List<String> merge(List<String> a, List<String> b, [String? rule]) {
+      final aDefault = rule != null && _isDefault(rule);
+      final bDefault = rule != null && other._isDefault(rule);
+      if (b.isEmpty || (bDefault && a.isNotEmpty && !aDefault)) {
+        if (aDefault) {
+          defaults.add(rule);
+        }
+        return a;
+      }
+      if (a.isEmpty || aDefault) {
+        if (bDefault) {
+          defaults.add(rule);
+        }
+        return b;
+      }
       if (a.contains('*') || b.contains('*')) {
         return ['*'];
       }
       return {...a, ...b}.toList();
     }
 
-    return CorsConfiguration(
-      allowedOrigins: merge(allowedOrigins, other.allowedOrigins),
-      allowedOriginPatterns: merge(
-        allowedOriginPatterns,
-        other.allowedOriginPatterns,
-      ),
-      allowedMethods: merge(allowedMethods, other.allowedMethods),
-      allowedHeaders: merge(allowedHeaders, other.allowedHeaders),
+    final patterns = merge(allowedOriginPatterns, other.allowedOriginPatterns);
+    var origins = merge(allowedOrigins, other.allowedOrigins, _origins);
+    if (defaults.contains(_origins) && patterns.isNotEmpty) {
+      // Default origins next to patterns: the patterns alone, as Spring.
+      origins = const [];
+      defaults.remove(_origins);
+    }
+    final combined = CorsConfiguration(
+      allowedOrigins: origins,
+      allowedOriginPatterns: patterns,
+      allowedMethods: merge(allowedMethods, other.allowedMethods, _methods),
+      allowedHeaders: merge(allowedHeaders, other.allowedHeaders, _headers),
       exposedHeaders: merge(exposedHeaders, other.exposedHeaders),
       allowCredentials: other.allowCredentials ?? allowCredentials,
+      allowPrivateNetwork: other.allowPrivateNetwork ?? allowPrivateNetwork,
       maxAge: other.maxAge ?? maxAge,
     );
+    combined._defaults.addAll(defaults);
+    return combined;
   }
 
   /// The `Access-Control-Allow-Origin` value to answer a request from
-  /// [origin]: `*` when any origin is allowed, the origin itself when it
-  /// is listed or matches a pattern, `null` when it is not allowed (or
-  /// blank).
+  /// [origin]: `*` when any origin is allowed, the origin itself (as
+  /// sent) when it is listed or matches a pattern, `null` when it is not
+  /// allowed (or blank). The check is [AllowedOrigins.checkOrigin], as
+  /// Spring's `CorsConfiguration.checkOrigin`.
   ///
   /// Throws a [StateError] when [allowedOrigins] has `*` and
-  /// [allowCredentials] is true: browsers refuse that combination, so
-  /// list the origins or use [allowedOriginPatterns].
+  /// [allowCredentials] or [allowPrivateNetwork] is true: browsers refuse
+  /// the first combination, and the second would open a private network
+  /// to every site, so list the origins or use [allowedOriginPatterns].
   String? checkOrigin(String origin) {
-    final trimmed = origin.trim();
-    if (trimmed.isEmpty) {
-      return null;
+    final allowed = _allowed.checkOrigin(
+      origin,
+      allowCredentials: allowCredentials ?? false,
+    );
+    if (allowed == '*') {
+      validateAllowPrivateNetwork();
     }
-    if (allowedOrigins.contains('*')) {
-      if (allowCredentials ?? false) {
-        throw StateError(
-          'When allowCredentials is true, allowedOrigins cannot contain "*" '
-          '(the Access-Control-Allow-Origin header cannot be "*" then); list '
-          'the origins or use allowedOriginPatterns.',
-        );
-      }
-      return '*';
-    }
-    for (final allowed in allowedOrigins) {
-      if (allowed.toLowerCase() == trimmed.toLowerCase()) {
-        return trimmed;
-      }
-    }
-    for (final pattern in allowedOriginPatterns) {
-      if (_originPattern(pattern).hasMatch(trimmed)) {
-        return trimmed;
-      }
-    }
-    return null;
+    return allowed;
   }
 
-  /// The `Access-Control-Allow-Methods` list for a pre-flight that asks
-  /// for [method], or `null` when that method is not allowed. With `*` the
-  /// list is [method] alone; empty [allowedMethods] allow `GET` and
-  /// `HEAD`.
+  /// Throws a [StateError] when [allowCredentials] is true and
+  /// [allowedOrigins] holds `*` (in any of its comma-separated values):
+  /// the `Access-Control-Allow-Origin` header cannot be `*` then. The
+  /// router checks a handler's configuration at startup, and every
+  /// configuration it applies before it handles the request, as Spring.
+  ///
+  /// Spring (Java): `validateAllowCredentials`.
+  void validateAllowCredentials() {
+    if ((allowCredentials ?? false) && _allowed.allowsAnyOrigin) {
+      throw StateError(
+        'When allowCredentials is true, allowedOrigins cannot contain "*" '
+        '(the Access-Control-Allow-Origin header cannot be "*" then); list '
+        'the origins or use allowedOriginPatterns.',
+      );
+    }
+  }
+
+  /// Throws a [StateError] when [allowPrivateNetwork] is true and
+  /// [allowedOrigins] holds `*`: any site could then reach the private
+  /// network. Checked like [validateAllowCredentials].
+  ///
+  /// Spring (Java): `validateAllowPrivateNetwork`.
+  void validateAllowPrivateNetwork() {
+    if ((allowPrivateNetwork ?? false) && _allowed.allowsAnyOrigin) {
+      throw StateError(
+        'When allowPrivateNetwork is true, allowedOrigins cannot contain "*" '
+        '(every site could reach the private network); list the origins or '
+        'use allowedOriginPatterns.',
+      );
+    }
+  }
+
+  // The origins of the lists as they are now: rebuilt when they changed.
+  AllowedOrigins get _allowed {
+    final cached = _cachedOrigins;
+    if (cached != null &&
+        _same(cached.$1, allowedOrigins) &&
+        _same(cached.$2, allowedOriginPatterns)) {
+      return cached.$3;
+    }
+    final origins = AllowedOrigins(
+      allowedOrigins: allowedOrigins,
+      allowedOriginPatterns: allowedOriginPatterns,
+    );
+    _cachedOrigins = ([...allowedOrigins], [...allowedOriginPatterns], origins);
+    return origins;
+  }
+
+  (List<String>, List<String>, AllowedOrigins)? _cachedOrigins;
+
+  static bool _same(List<String> a, List<String> b) =>
+      a.length == b.length && a.indexed.every((e) => e.$2 == b[e.$1]);
+
+  /// The `Access-Control-Allow-Methods` list for [method] (the method a
+  /// pre-flight asks for, or an actual request's own), or `null` when
+  /// that method is not allowed: then the request gets a 403. With `*`
+  /// the list is [method] alone; empty [allowedMethods] allow `GET` and
+  /// `HEAD`. Spring's `checkHttpMethod`.
   List<String>? checkMethod(String method) {
     final methods = allowedMethods.isEmpty
         ? const ['GET', 'HEAD']
@@ -223,36 +350,25 @@ final class CorsConfiguration {
     }
     return requested;
   }
-
-  static RegExp _originPattern(String pattern) {
-    final out = StringBuffer('^');
-    for (var i = 0; i < pattern.length; i++) {
-      final char = pattern[i];
-      if (pattern.startsWith('[*]', i)) {
-        out.write(r'\d+');
-        i += 2;
-      } else if (char == '*') {
-        out.write('.*');
-      } else {
-        out.write(RegExp.escape(char));
-      }
-    }
-    out.write(r'$');
-    return RegExp(out.toString(), caseSensitive: false);
-  }
 }
 
 /// Finds the [CorsConfiguration] that applies to a request.
 ///
-/// Declare a bean of this type to set CORS rules for the whole
-/// application, without annotating every controller. The router combines
-/// what it returns with the `@CrossOrigin` of the handler, and the
-/// security starter's `cors()` uses the same bean. Most applications use
+/// Declare a bean of this type named `corsConfigurationSource` to set CORS
+/// rules for the whole application, without annotating every controller.
+/// Where it returns a configuration for a request, that configuration
+/// alone applies: the security starter's CORS filter applies it, as Spring
+/// Security applies its `corsConfigurationSource` bean, and the router the
+/// same way (Spring MVC leaves a request the filter answered as it is), so
+/// neither the handler's `@CrossOrigin` nor the `WebMvcConfigurer`
+/// mappings widen it. Where it returns `null`, those apply. As in Spring
+/// Security, the name counts: beans of this type with other names are
+/// ignored (several never fail the start). Most applications use
 /// [UrlBasedCorsConfigurationSource] rather than implementing this.
 ///
 /// ```dart
 /// // The allowed origins are the tenants' sites, which change at runtime.
-/// @Component()
+/// @Component('corsConfigurationSource')
 /// final class TenantCors implements CorsConfigurationSource {
 ///   TenantCors(this.tenants);
 ///   final TenantService tenants;
@@ -266,7 +382,7 @@ final class CorsConfiguration {
 ///
 /// Spring (Java):
 /// ```java
-/// @Component
+/// @Component("corsConfigurationSource")
 /// class TenantCors implements CorsConfigurationSource {
 ///   public CorsConfiguration getCorsConfiguration(
 ///       HttpServletRequest request) { ... }
@@ -341,8 +457,10 @@ final class UrlBasedCorsConfigurationSource implements CorsConfigurationSource {
 /// each [addMapping] enables CORS for a path pattern, and its
 /// [CorsRegistration] narrows the rules. The starter creates the registry,
 /// hands it to every `WebMvcConfigurer` bean, and turns it into a source.
-/// When there is also a `CorsConfigurationSource` bean, both apply: for a
-/// path they both cover, their rules are combined.
+/// Its rules are combined with the `@CrossOrigin` of the handler, as
+/// Spring MVC combines its global CORS configuration. When there is also
+/// a `CorsConfigurationSource` bean named `corsConfigurationSource`, the
+/// bean's rules alone apply to the requests it has a configuration for.
 ///
 /// ```dart
 /// @Configuration()
@@ -447,8 +565,8 @@ final class CorsRegistration {
     return this;
   }
 
-  /// Adds methods a pre-flight may ask for (`PUT`, `DELETE`, or `*`).
-  /// Without any, `GET`, `HEAD` and `POST` are allowed.
+  /// Adds methods allowed (`PUT`, `DELETE`, or `*`), for pre-flights and
+  /// actual requests. Without any, `GET`, `HEAD` and `POST` are allowed.
   CorsRegistration allowedMethods(List<String> methods) {
     _config.allowedMethods.addAll(methods);
     return this;
@@ -476,6 +594,15 @@ final class CorsRegistration {
     return this;
   }
 
+  /// Whether pages of public sites may call this server on a private
+  /// network (Chrome's Private Network Access); see
+  /// [CorsConfiguration.allowPrivateNetwork]. Not allowed by default; with
+  /// `true`, list the origins or use patterns instead of `*`.
+  CorsRegistration allowPrivateNetwork(bool allow) {
+    _config.allowPrivateNetwork = allow;
+    return this;
+  }
+
   /// How long the browser may cache a pre-flight answer; 30 minutes by
   /// default.
   CorsRegistration maxAge(Duration maxAge) {
@@ -488,8 +615,9 @@ final class CorsRegistration {
 /// `Origin` header whose scheme, host or port differs from the request's
 /// own (an `Origin` that does not parse counts as another origin).
 ///
-/// The router checks CORS rules only for such requests; a filter that
-/// handles CORS itself can use it the same way.
+/// [processCors] checks only such requests against the CORS rules (other
+/// requests just get `Vary`); a filter that handles CORS itself can use
+/// it the same way.
 bool isCorsRequest(ServerHttpRequest request) {
   final origin = request.headers[HttpHeaders.originHeader];
   if (origin == null) {
@@ -523,21 +651,43 @@ int _port(Uri uri) => uri.hasPort
         _ => 80,
       };
 
-/// Checks a cross-origin [request] against [config] and writes the CORS
-/// headers into [response]; returns `false` when the request is not
-/// allowed, and the caller then answers 403.
+/// Checks [request] against [config] and writes the CORS headers into
+/// [response]; returns `false` when the request is not allowed, and the
+/// caller then answers 403.
 ///
-/// [preFlight] says whether the request is a pre-flight: then the
-/// requested method and headers are checked too, and the answer gets
-/// `Access-Control-Allow-Methods`, `-Allow-Headers` and `-Max-Age`.
-/// Otherwise the answer gets `Access-Control-Expose-Headers`. `Vary`
-/// always lists the CORS request headers, so caches keep answers to
-/// different origins apart. When the response already has an
-/// `Access-Control-Allow-Origin` (a filter handled CORS), nothing else is
-/// written and the result is `true`.
+/// Call it for every request [config] applies to, a CORS request or not,
+/// as Spring calls its `DefaultCorsProcessor`: the answer always gets
+/// `Vary: Origin, Access-Control-Request-Method,
+/// Access-Control-Request-Headers` (each name only once, with the values
+/// already there), so a cache does not give the answer to one origin, or
+/// to a request without `Origin`, to another. A request that is not a
+/// CORS request ([isCorsRequest] false) is then allowed with nothing else
+/// written.
 ///
-/// The router calls it; a filter that answers requests itself can too.
-/// Spring's counterpart is `DefaultCorsProcessor`.
+/// A CORS request is checked as Spring's `DefaultCorsProcessor` checks
+/// it: its origin, then its method ([CorsConfiguration.checkMethod]):
+/// [preFlight] says whether the request is a pre-flight, whose announced
+/// method (`Access-Control-Request-Method`) and headers are checked, and
+/// whose answer gets `Access-Control-Allow-Methods`, `-Allow-Headers` and
+/// `-Max-Age`; otherwise the request's own method is checked, so a
+/// `DELETE` (or a `HEAD`, an `OPTIONS`) the rules do not allow is refused
+/// even from an allowed origin. Both get `Access-Control-Expose-Headers`,
+/// `-Allow-Credentials`, and, when [CorsConfiguration.allowPrivateNetwork]
+/// is on and the request has `Access-Control-Request-Private-Network:
+/// true`, `Access-Control-Allow-Private-Network: true`. When the response
+/// already has an `Access-Control-Allow-Origin` (a filter handled CORS),
+/// nothing else is written and the result is `true`.
+///
+/// An `Origin` with a character other than visible US-ASCII (a space, a
+/// control character, a letter beyond ASCII) is refused, as Spring
+/// refuses an `Origin` it cannot parse, and so is a pre-flight that asks
+/// for such a method or request header: no browser sends one, and the
+/// answer could not echo it in a header.
+///
+/// The router calls it for every request to a handler with CORS rules,
+/// and the security starter's CORS filter for every request with CORS
+/// rules; a filter that answers requests itself can too. Spring's
+/// counterpart is `DefaultCorsProcessor.processRequest`.
 bool processCors(
   CorsConfiguration config,
   ServerHttpRequest request,
@@ -545,32 +695,40 @@ bool processCors(
   required bool preFlight,
 }) {
   final headers = response.headers;
-  for (final vary in [
+  addVary(headers, const [
     HttpHeaders.originHeader,
     HttpHeaders.accessControlRequestMethodHeader,
     HttpHeaders.accessControlRequestHeadersHeader,
-  ]) {
-    if (!headers.getAll(HttpHeaders.varyHeader).contains(vary)) {
-      headers.add(HttpHeaders.varyHeader, vary);
-    }
+  ]);
+  final origin = request.headers[HttpHeaders.originHeader];
+  if (origin != null && !_isVisibleAscii(origin)) {
+    return false; // malformed: Spring's "Reject: origin is malformed"
+  }
+  if (!isCorsRequest(request)) {
+    return true;
   }
   if (headers.contains(HttpHeaders.accessControlAllowOriginHeader)) {
     return true; // handled already (a filter)
   }
-  final origin = request.headers[HttpHeaders.originHeader]!;
-  final allowOrigin = config.checkOrigin(origin);
+  final allowOrigin = config.checkOrigin(origin!);
   if (allowOrigin == null) {
     return false;
   }
-  List<String>? allowMethods;
+  // Spring's getMethodToUse: the announced method of a pre-flight, the
+  // request's own otherwise.
+  final method = preFlight
+      ? (request.headers[HttpHeaders.accessControlRequestMethodHeader] ?? '')
+            .trim()
+      : request.method.value;
+  if (!_isVisibleAscii(method)) {
+    return false;
+  }
+  final allowMethods = config.checkMethod(method);
+  if (allowMethods == null) {
+    return false;
+  }
   List<String>? allowHeaders;
   if (preFlight) {
-    final requested =
-        request.headers[HttpHeaders.accessControlRequestMethodHeader] ?? '';
-    allowMethods = config.checkMethod(requested.trim());
-    if (allowMethods == null) {
-      return false;
-    }
     final requestedHeaders = [
       for (final value in request.headers.getAll(
         HttpHeaders.accessControlRequestHeadersHeader,
@@ -578,6 +736,9 @@ bool processCors(
         for (final header in value.split(','))
           if (header.trim().isNotEmpty) header.trim(),
     ];
+    if (!requestedHeaders.every(_isVisibleAscii)) {
+      return false;
+    }
     allowHeaders = config.checkHeaders(requestedHeaders);
     if (allowHeaders == null) {
       return false;
@@ -587,7 +748,7 @@ bool processCors(
   if (preFlight) {
     headers.set(
       HttpHeaders.accessControlAllowMethodsHeader,
-      allowMethods!.join(','),
+      allowMethods.join(','),
     );
     if (allowHeaders!.isNotEmpty) {
       headers.set(
@@ -595,10 +756,8 @@ bool processCors(
         allowHeaders.join(', '),
       );
     }
-    if (config.maxAge case final maxAge?) {
-      headers.set(HttpHeaders.accessControlMaxAgeHeader, '${maxAge.inSeconds}');
-    }
-  } else if (config.exposedHeaders.isNotEmpty) {
+  }
+  if (config.exposedHeaders.isNotEmpty) {
     headers.set(
       HttpHeaders.accessControlExposeHeadersHeader,
       config.exposedHeaders.join(', '),
@@ -607,5 +766,49 @@ bool processCors(
   if (config.allowCredentials ?? false) {
     headers.set(HttpHeaders.accessControlAllowCredentialsHeader, 'true');
   }
+  if ((config.allowPrivateNetwork ?? false) &&
+      (request.headers[_requestPrivateNetwork] ?? '').toLowerCase() == 'true') {
+    headers.set(_allowPrivateNetwork, 'true');
+  }
+  if (config.maxAge case final maxAge? when preFlight) {
+    headers.set(HttpHeaders.accessControlMaxAgeHeader, '${maxAge.inSeconds}');
+  }
   return true;
+}
+
+// Chrome's Private Network Access headers, as Spring's
+// DefaultCorsProcessor names them.
+const _requestPrivateNetwork = 'Access-Control-Request-Private-Network';
+const _allowPrivateNetwork = 'Access-Control-Allow-Private-Network';
+
+// Whether [value] has only visible US-ASCII characters (`!` to `~`).
+bool _isVisibleAscii(String value) =>
+    value.codeUnits.every((unit) => unit > 0x20 && unit < 0x7F);
+
+/// Adds the names of [values] (each a name or a comma-separated list) to
+/// the `Vary` header of [headers], each unless it is there already, in
+/// any of its values or case, or `Vary` is `*`.
+///
+/// How the CORS processing adds its names, and how a handler's own
+/// `Vary` (a `ResponseEntity`'s, an `ErrorResponse`'s) joins the names
+/// already there, as Spring's `HttpEntityMethodProcessor` merges them.
+/// Not exported: `package:spring_boot_starter_web/spring_boot_starter_web.dart`
+/// hides it.
+void addVary(HttpHeaders headers, Iterable<String> values) {
+  final present = {
+    for (final value in headers.getAll(HttpHeaders.varyHeader))
+      for (final name in value.split(','))
+        if (name.trim().isNotEmpty) name.trim().toLowerCase(),
+  };
+  if (present.contains('*')) {
+    return;
+  }
+  for (final value in values) {
+    for (final name in value.split(',')) {
+      final trimmed = name.trim();
+      if (trimmed.isNotEmpty && present.add(trimmed.toLowerCase())) {
+        headers.add(HttpHeaders.varyHeader, trimmed);
+      }
+    }
+  }
 }

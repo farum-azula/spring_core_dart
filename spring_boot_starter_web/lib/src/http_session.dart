@@ -183,9 +183,11 @@ abstract class StoredHttpSession implements HttpSession {
 /// ```
 ///
 /// Spring Boot leaves `same-site` unset and has no session limit (the
-/// container has its own): here the cookie is `SameSite=Lax` and, when
-/// the limit is reached, the sessions unused for the longest time are
-/// dropped, so clients cannot fill the memory by opening sessions.
+/// container has its own: Tomcat refuses new sessions above
+/// `maxActiveSessions`, unlimited by default): here the cookie is
+/// `SameSite=Lax` and the number of sessions is limited, so clients
+/// cannot fill the memory by opening sessions. Which session goes when
+/// the limit is reached: [InMemoryHttpSessionRepository].
 final class HttpSessionProperties {
   /// Settings with the defaults of the table above; a `null` [cookiePath]
   /// means `/`.
@@ -274,7 +276,9 @@ final class HttpSessionProperties {
   final String? sameSite;
 
   /// How many sessions are kept at most; 10000 by default, `-1` for no
-  /// limit. Above it, the least recently used session is dropped.
+  /// limit. Above it, a new session pushes out one that holds no login,
+  /// else a login of the user who holds the most sessions, or is refused
+  /// (see [InMemoryHttpSessionRepository]).
   final int maxSessions;
 }
 
@@ -295,9 +299,35 @@ String newSessionId() {
 /// sessions are lost when the process stops and are not shared between
 /// instances; declare another repository bean when that matters. Expired
 /// sessions are removed when found, and all of them at most once a
-/// minute when a session is created. When [maxSessions] is reached, a new
-/// session pushes out the one unused for the longest time, with a
-/// warning in the log.
+/// minute when a session is created.
+///
+/// When [maxSessions] is reached, a new session needs room, and anyone
+/// can ask for one with a request. So that anonymous requests cannot push
+/// logged-in users out, and one user cannot lock the others out by
+/// logging in again and again, the room is taken in this order:
+///
+/// 1. an expired session;
+/// 2. the oldest session its client never came back with (a client that
+///    keeps no cookies, a login page opened and left);
+/// 3. the least recently used session that holds no login;
+/// 4. only logins are left (sessions with the attribute [loginAttribute],
+///    where the security starter keeps the user): the least recently used
+///    login of the user who holds the most sessions, when that user holds
+///    two or more. Users are told apart by [principalNameAttribute], which
+///    the security starter sets at each login; a login without it counts
+///    as a user of its own;
+/// 5. none: when every login left belongs to another user, the new
+///    session is refused with a [TooManyActiveSessionsException] (a 503),
+///    as Tomcat refuses sessions above its limit.
+///
+/// So an anonymous flood never pushes out a user's last session, and at
+/// most one session of the user with the most whenever only logins are
+/// left (the next new sessions then take each other's place, step 2).
+/// Steps 2 to 5 log a warning, at most once a minute. A flood of new
+/// sessions can still push out sessions of the second and third kind
+/// (someone who opened the login page and has not posted it yet), and as
+/// many accounts as the limit can still fill it: limit the request rate
+/// and the sign-ups in front of the application for that.
 ///
 /// ```dart
 /// // A test that controls time, to check that sessions expire.
@@ -320,6 +350,35 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
+  /// The session attribute that marks a session as logged in:
+  /// `SPRING_SECURITY_CONTEXT`, where the security starter (as Spring
+  /// Security) keeps the user. Such a session is pushed out to make room
+  /// for a new one only when nothing else is left, and only if its user
+  /// holds another session (see [principalNameAttribute]). Spring Session
+  /// reads the same attribute to find a session's user.
+  static const loginAttribute = 'SPRING_SECURITY_CONTEXT';
+
+  /// The session attribute that names the user of a login, a `String`:
+  /// Spring Session's `FindByIndexNameSessionRepository
+  /// .PRINCIPAL_NAME_INDEX_NAME`. The security starter sets it next to
+  /// [loginAttribute] at each login (the user's name), so that a full
+  /// repository can push out a session of the user who holds the most;
+  /// code that logs users in by itself can set it too. It counts only
+  /// together with [loginAttribute].
+  static const principalNameAttribute =
+      'org.springframework.session.FindByIndexNameSessionRepository'
+      '.PRINCIPAL_NAME_INDEX_NAME';
+
+  /// The session attribute that tells users apart when the repository is
+  /// full, a `String`; when absent, [principalNameAttribute] is used. The
+  /// security starter sets it to the user's name together with where the
+  /// login came from (an OAuth2 registration, or the application's own
+  /// users), so that two login sources whose names coincide (`ada` of the
+  /// form login and `ada` of an identity provider) count as two users: one
+  /// cannot push the other out of their last session.
+  static const principalKeyAttribute =
+      'dev.farumazula.spring.session.PRINCIPAL_KEY';
+
   /// The inactivity timeout of new sessions; 30 minutes by default.
   final Duration timeout;
 
@@ -328,8 +387,19 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
 
   final DateTime Function() _clock;
 
-  // Insertion order is kept least-recently-used first (see _touch).
   final _sessions = <String, _MemorySession>{};
+
+  // The sessions again, by what they may be pushed out for, each in the
+  // order of its last use (the least recently used first): those whose
+  // client never came back with them, those it did that hold no login,
+  // and those that hold one.
+  final _unreturned = <String, _MemorySession>{};
+  final _returned = <String, _MemorySession>{};
+  final _loggedIn = <String, _MemorySession>{};
+
+  // The logins again, by the name of their user (principalNameAttribute),
+  // each in the order of last use.
+  final _byUser = <String, Map<String, _MemorySession>>{};
 
   /// How many sessions are kept, including expired ones not yet removed.
   int get size => _sessions.length;
@@ -339,15 +409,11 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
     final now = _clock();
     _purge(now);
     if (maxSessions >= 0 && _sessions.length >= maxSessions) {
-      final oldest = _sessions.keys.first;
-      _sessions.remove(oldest)?._invalidated = true;
-      _log.warning(
-        'Session limit $maxSessions reached: dropped the least recently '
-        'used session',
-      );
+      _makeRoom(now);
     }
     final session = _MemorySession(this, newSessionId(), now, timeout);
     _sessions[session.id] = session;
+    _place(session);
     return session;
   }
 
@@ -359,27 +425,150 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
     }
     final now = _clock();
     if (session.isExpired(now)) {
-      _sessions.remove(id);
-      session._invalidated = true;
+      _drop(session);
       return null;
     }
-    // Most recently used last.
-    _sessions
-      ..remove(id)
-      ..[id] = session;
+    // The client came back with it; most recently used last.
+    session._returned = true;
+    _place(session);
     return session;
   }
 
   @override
   void changeSessionId(StoredHttpSession session) {
     final memory = session as _MemorySession;
+    _unplace(memory);
     _sessions.remove(memory.id);
     memory._id = newSessionId();
     _sessions[memory.id] = memory;
+    _place(memory);
   }
 
   @override
-  void deleteById(String id) => _sessions.remove(id)?._invalidated = true;
+  void deleteById(String id) {
+    final session = _sessions[id];
+    if (session != null) {
+      _drop(session);
+    }
+  }
+
+  // Frees one place for a new session (the order of the class comment),
+  // or refuses it.
+  void _makeRoom(DateTime now) {
+    // Each group is in the order of last use, so its first session is the
+    // first to expire (sessions with the same timeout).
+    for (final group in [_unreturned, _returned, _loggedIn]) {
+      final first = group.values.firstOrNull;
+      if (first != null && first.isExpired(now)) {
+        _drop(first);
+        return;
+      }
+    }
+    for (final (group, kind) in [
+      (_unreturned, 'a session its client never came back with'),
+      (_returned, 'the least recently used session without a login'),
+    ]) {
+      final first = group.values.firstOrNull;
+      if (first != null) {
+        _drop(first);
+        _warn(now, 'Session limit $maxSessions reached: dropped $kind');
+        return;
+      }
+    }
+    // Only logins: the user holding the most sessions (two at least)
+    // gives up their least recently used one; among several such users,
+    // the one whose session is the least recently used.
+    final most = _byUser.values.fold(0, (m, s) => max(m, s.length));
+    if (most >= 2) {
+      final victim = _loggedIn.values.firstWhere(
+        (session) => _byUser[session._user]?.length == most,
+      );
+      _drop(victim);
+      _warn(
+        now,
+        'Session limit $maxSessions reached with logins only: dropped the '
+        'least recently used session of the user holding the most',
+      );
+      return;
+    }
+    _warn(
+      now,
+      'Session limit $maxSessions reached and every session holds the login '
+      'of another user: refused a new session (raise '
+      'server.servlet.session.max-sessions)',
+    );
+    throw TooManyActiveSessionsException(maxSessions);
+  }
+
+  DateTime? _lastWarning;
+  void _warn(DateTime now, String message) {
+    final last = _lastWarning;
+    if (last == null || now.difference(last) >= const Duration(minutes: 1)) {
+      _lastWarning = now;
+      _log.warning(message);
+    }
+  }
+
+  Map<String, _MemorySession> _groupOf(_MemorySession session) =>
+      session._attributes.containsKey(loginAttribute)
+      ? _loggedIn
+      : session._returned
+      ? _returned
+      : _unreturned;
+
+  // The user of a login, or null for a session without a login or
+  // without a name.
+  static String? _userOf(_MemorySession session) =>
+      session._attributes.containsKey(loginAttribute)
+      ? switch (session._attributes[principalKeyAttribute] ??
+            session._attributes[principalNameAttribute]) {
+          final String name when name.isNotEmpty => name,
+          _ => null,
+        }
+      : null;
+
+  // Puts [session] last (most recently used) in the group it belongs to.
+  void _place(_MemorySession session) {
+    _unplace(session);
+    _groupOf(session)[session.id] = session;
+    final user = session._user = _userOf(session);
+    if (user != null) {
+      (_byUser[user] ??= {})[session.id] = session;
+    }
+  }
+
+  void _unplace(_MemorySession session) {
+    _unreturned.remove(session.id);
+    _returned.remove(session.id);
+    _loggedIn.remove(session.id);
+    final user = session._user;
+    if (user != null) {
+      final sessions = _byUser[user];
+      sessions?.remove(session.id);
+      if (sessions != null && sessions.isEmpty) {
+        _byUser.remove(user);
+      }
+      session._user = null;
+    }
+  }
+
+  // A login, or the name of its user, was stored in [session] or removed
+  // from it: it may belong to another group, or another user, now.
+  void _regroup(_MemorySession session) {
+    if (identical(_sessions[session.id], session) &&
+        (!identical(_groupOf(session)[session.id], session) ||
+            session._user != _userOf(session))) {
+      _place(session);
+    }
+  }
+
+  void _drop(_MemorySession session) {
+    _unplace(session);
+    if (identical(_sessions[session.id], session)) {
+      _sessions.remove(session.id);
+    }
+    session._invalidated = true;
+  }
 
   // Drops expired sessions (at most every minute).
   DateTime? _lastPurge;
@@ -389,14 +578,30 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
       return;
     }
     _lastPurge = now;
-    _sessions.removeWhere((_, session) {
-      final expired = session.isExpired(now);
-      if (expired) {
-        session._invalidated = true;
-      }
-      return expired;
-    });
+    [
+      for (final session in _sessions.values)
+        if (session.isExpired(now)) session,
+    ].forEach(_drop);
   }
+}
+
+/// Thrown when a new session is refused: the session limit
+/// (`server.servlet.session.max-sessions`) is reached and every session
+/// kept holds the login of a different user (see
+/// [InMemoryHttpSessionRepository]).
+///
+/// The request gets a 503 Service Unavailable. Raise the limit when
+/// logged-in users alone fill it.
+///
+/// Tomcat (Java): `TooManyActiveSessionsException`, thrown above the
+/// `maxActiveSessions` of its session manager.
+final class TooManyActiveSessionsException extends ResponseStatusException {
+  /// The refusal of a new session above [maxActiveSessions].
+  TooManyActiveSessionsException(this.maxActiveSessions)
+    : super(HttpStatus.serviceUnavailable, 'Too many active sessions');
+
+  /// The session limit that was reached.
+  final int maxActiveSessions;
 }
 
 final class _MemorySession extends StoredHttpSession {
@@ -411,6 +616,12 @@ final class _MemorySession extends StoredHttpSession {
   String _id;
   final _attributes = <String, Object?>{};
   bool _invalidated = false;
+
+  // Whether a later request came with the session's id.
+  bool _returned = false;
+
+  // The user it is filed under in the repository's _byUser, if any.
+  String? _user;
 
   @override
   String get id => _id;
@@ -444,13 +655,26 @@ final class _MemorySession extends StoredHttpSession {
     } else {
       _attributes[name] = value;
     }
+    if (_groups(name)) {
+      _repository._regroup(this);
+    }
   }
 
   @override
   void removeAttribute(String name) {
     _check();
     _attributes.remove(name);
+    if (_groups(name)) {
+      _repository._regroup(this);
+    }
   }
+
+  // Whether the attribute [name] decides where the repository files the
+  // session.
+  static bool _groups(String name) =>
+      name == InMemoryHttpSessionRepository.loginAttribute ||
+      name == InMemoryHttpSessionRepository.principalNameAttribute ||
+      name == InMemoryHttpSessionRepository.principalKeyAttribute;
 
   @override
   Iterable<String> get attributeNames {

@@ -22,10 +22,18 @@ const _log = SpringLog('spring.security.oauth2.client.dpop');
 /// runs in the page (nothing in a browser stops that), but it cannot
 /// carry the key, or the tokens, away.
 ///
-/// The key pair is kept in the origin's IndexedDB as `CryptoKey` objects
-/// (the browser stores the handle, never the key's bytes), so the page
-/// uses the same key after a reload. Where IndexedDB is refused (some
-/// private windows), the key lives as long as the page.
+/// The key pair is kept in the origin's IndexedDB as `CryptoKey` objects,
+/// so the page uses the same key after a reload (`SpaOAuth2LoginService`
+/// replaces it at every login: a login's tokens are bound to a key made
+/// for it). Non-extractable means no
+/// script can export the private key: the browser itself writes the key
+/// to its profile on disk (unencrypted by the browser, in most of them),
+/// where whoever can read the user's files (malware, another account
+/// with access, a stolen unencrypted disk) can find it, as they can the
+/// browser's cookies. A key read back from IndexedDB is used only when
+/// it still is a non-extractable ECDSA P-256 signing key; any other
+/// stored value is replaced by a new key. Where IndexedDB is refused
+/// (some private windows), the key lives as long as the page.
 ///
 /// WebCrypto exists only in a secure context (`https:`, or
 /// `http://localhost` in development): elsewhere [load] fails, and a
@@ -169,4 +177,33 @@ abstract interface class BrowserKeyPair {
   /// The ECDSA SHA-256 signature of [input]: raw `R || S` (or DER, which
   /// [WebCryptoDPoPKey] converts).
   Future<Uint8List> sign(Uint8List input);
+}
+
+/// What a [BrowserKeyVault] reads of a stored key pair's `CryptoKey`s
+/// before it uses them: see [storedKeyPairUsable].
+typedef StoredKeyPair = ({
+  bool privateExtractable,
+  String? privateType,
+  String? publicType,
+  Object? privateAlgorithm,
+  Object? publicAlgorithm,
+  List<String> privateUsages,
+});
+
+/// Whether a key pair read back from the browser's storage may sign DPoP
+/// proofs: a private key that cannot be exported, of type `private`, an
+/// ECDSA P-256 key that may `sign`, and its `public` P-256 key. Anything
+/// else (a key another version or another script of the origin stored,
+/// an extractable one) is replaced by a new key.
+bool storedKeyPairUsable(StoredKeyPair pair) {
+  bool p256(Object? algorithm) =>
+      algorithm is Map &&
+      algorithm['name'] == 'ECDSA' &&
+      algorithm['namedCurve'] == 'P-256';
+  return !pair.privateExtractable &&
+      pair.privateType == 'private' &&
+      pair.publicType == 'public' &&
+      p256(pair.privateAlgorithm) &&
+      p256(pair.publicAlgorithm) &&
+      pair.privateUsages.contains('sign');
 }

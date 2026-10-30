@@ -25,6 +25,9 @@ class BookController {
   /// The cookie keeping the books a browser looked at last.
   static const recentCookie = 'neon-recent';
 
+  // The characters of an isbn (`978-0-441-17271-9`).
+  static final _isbnText = RegExp(r'^[0-9Xx-]{1,20}$');
+
   /// `GET /api/books?q=dune&page=0`: both parameters are optional.
   @GetMapping()
   BookPage search({
@@ -52,12 +55,23 @@ class BookController {
     ServerHttpResponse response,
   ) {
     final book = catalog.get(isbn);
+    // Only what can be an isbn is kept (the cookie comes from the client):
+    // a cookie value cannot carry `;`, `,` or spaces, which ResponseCookie
+    // refuses, so a crafted cookie cannot add attributes.
     final seen = [
       isbn,
       ...?request.cookies[recentCookie]?.split('.').where((s) => s != isbn),
-    ].take(recentLimit);
+    ].where(_isbnText.hasMatch).take(recentLimit);
+    // Read by this server only: hidden from the page's scripts, and not
+    // sent with other sites' requests.
     response.addCookie(
-      ResponseCookie(recentCookie, seen.join('.'), path: '/api/books'),
+      ResponseCookie(
+        recentCookie,
+        seen.join('.'),
+        path: '/api/books',
+        httpOnly: true,
+        sameSite: 'Lax',
+      ),
     );
     return book;
   }

@@ -270,7 +270,9 @@ void main() {
     );
 
     test(
-      '@CrossOrigin of a handler answers its pre-flights',
+      "under the CorsConfigurationSource bean's paths its rules alone "
+      'apply: the @CrossOrigin of a handler does not widen them, as in '
+      'Spring (the ninth review)',
       () => app((mvc) async {
         final result = await mvc.perform(
           request(
@@ -279,11 +281,14 @@ void main() {
             headers: preflight('https://app.example'),
           ),
         );
-        expect(result.status, 200);
-        expect(
-          result.header('access-control-allow-origin'),
-          'https://app.example',
+        expect(result.status, 403);
+        expect(result.header('access-control-allow-origin'), isNull);
+        final actual = await mvc.get(
+          '/api/cors',
+          headers: {'origin': 'https://app.example', ...ada},
         );
+        expect(actual.status, 403);
+        expect(actual.header('access-control-allow-origin'), isNull);
       }),
     );
 
@@ -335,6 +340,142 @@ void main() {
           isTrue,
         );
       }),
+    );
+
+    // Anonymous requests start sessions (the login page's CSRF token, the
+    // saved request of a protected page), and the number of sessions is
+    // limited: they must never push the logged-in users out.
+    Future<Browser> loggedIn(MockMvc mvc, String user) async {
+      final browser = Browser(mvc);
+      final page = await browser.get('/login');
+      final login = await browser.send(
+        HttpMethod.post,
+        '/login',
+        form: {
+          'username': user,
+          'password': '$user-pw',
+          '_csrf': Browser.csrfField(page.response.bodyText),
+        },
+      );
+      expect(login.status, 302);
+      return browser;
+    }
+
+    Future<void> stillLoggedIn(List<Browser> users) async {
+      for (final user in users) {
+        final me = await user.get('/api/me', accept: 'application/json');
+        expect(me.status, 200, reason: 'a logged-in session was dropped');
+      }
+    }
+
+    test(
+      'anonymous requests ten times over the session limit leave every '
+      'login in place',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['server.servlet.session.max-sessions=20'],
+        (mvc, _) async {
+          final users = [
+            for (var i = 0; i < 6; i++)
+              await loggedIn(mvc, i.isEven ? 'ada' : 'root'),
+          ];
+          await stillLoggedIn(users);
+          var started = 0;
+          for (var i = 0; i < 70; i++) {
+            // A client without cookies: the login page, a protected page.
+            for (final (path, expected) in [
+              ('/login', 200),
+              ('/api/me', 302),
+            ]) {
+              final result = await mvc.get(
+                path,
+                headers: {'accept': 'text/html'},
+              );
+              expect(result.status, expected, reason: path);
+              started += result.response.cookies
+                  .where((c) => c.name == 'JSESSIONID')
+                  .length;
+            }
+            // A client that keeps its cookie and comes back with it.
+            final returning = Browser(mvc);
+            await returning.get('/login');
+            await returning.get('/login');
+            started++;
+          }
+          expect(started, greaterThanOrEqualTo(200));
+          await stillLoggedIn(users);
+        },
+      ),
+    );
+
+    test(
+      'only logins of different users left at the limit: a new session is '
+      'refused with 503, the protected page still sends to the login',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['server.servlet.session.max-sessions=2'],
+        (mvc, _) async {
+          final users = [
+            await loggedIn(mvc, 'ada'),
+            await loggedIn(mvc, 'root'),
+          ];
+          for (var i = 0; i < 50; i++) {
+            final page = await mvc.get(
+              '/login',
+              headers: {'accept': 'text/html'},
+            );
+            expect(page.status, 503);
+            expect(page.response.cookies, isEmpty);
+          }
+          // The request cache does without a session.
+          final protected = await mvc.get(
+            '/api/me',
+            headers: {'accept': 'text/html'},
+          );
+          expect(protected.status, 302);
+          expect(protected.header('location'), '/login');
+          expect(protected.response.cookies, isEmpty);
+          await stillLoggedIn(users);
+        },
+      ),
+    );
+
+    test(
+      'one account logged in up to the limit cannot lock the others out: '
+      'a new login takes the place of its least recently used session',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['server.servlet.session.max-sessions=3'],
+        (mvc, _) async {
+          final ada = [for (var i = 0; i < 3; i++) await loggedIn(mvc, 'ada')];
+          await stillLoggedIn(ada.sublist(1)); // ada[0]: least recently used
+          final root = await loggedIn(mvc, 'root');
+          await stillLoggedIn([root, ...ada.sublist(1)]);
+          final pushedOut = await ada[0].get(
+            '/api/me',
+            accept: 'application/json',
+          );
+          expect(pushedOut.status, 401);
+          // An anonymous flood now: it costs ada (who holds the most) one
+          // more session at most, root nothing.
+          for (var i = 0; i < 50; i++) {
+            final page = await mvc.get(
+              '/login',
+              headers: {'accept': 'text/html'},
+            );
+            expect(page.status, 200);
+          }
+          await stillLoggedIn([root]);
+          var adaLeft = 0;
+          for (final session in ada.sublist(1)) {
+            final me = await session.get('/api/me', accept: 'application/json');
+            if (me.status == 200) {
+              adaLeft++;
+            }
+          }
+          expect(adaLeft, 1);
+        },
+      ),
     );
   });
 

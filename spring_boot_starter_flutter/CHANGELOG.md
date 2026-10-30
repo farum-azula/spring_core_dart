@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- `SpringApplicationWidget` closes the application context when a check fails after the start, and a hot reload's restart that fails closes both contexts, so runners and scheduled tasks no longer run behind the failure screen, and each retry no longer leaves another context running.
+
 ## 0.4.3
 
 - Flutter security (#15)

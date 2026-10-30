@@ -26,8 +26,11 @@ enum FeignLoggerLevel {
   /// response, failed connections and retries.
   basic,
 
-  /// [basic] plus the headers of requests and responses, with
-  /// `Authorization` and `DPoP` (a proof of possession) masked.
+  /// [basic] plus the headers of requests and responses, with the values
+  /// of credentials shown as `***`: `Authorization`,
+  /// `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP` (a proof of
+  /// possession) and those of the `sensitive-headers` property
+  /// ([FeignClientConfig.sensitiveHeaders]).
   headers,
 
   /// [headers] plus the bodies.
@@ -66,6 +69,7 @@ enum FeignLoggerLevel {
 /// spring.cloud.openfeign.client.config.catalog.error-decoder=catalogErrors
 /// spring.cloud.openfeign.client.config.catalog.request-interceptors[0]=audit
 /// spring.cloud.openfeign.client.config.catalog.follow-redirects=false
+/// spring.cloud.openfeign.client.config.catalog.sensitive-headers=X-Api-Key
 /// spring.cloud.openfeign.client.config.orders.event-stream.reconnect-delay=1s
 /// spring.cloud.openfeign.client.decode-slash=false
 /// ```
@@ -80,7 +84,8 @@ enum FeignLoggerLevel {
 /// `AuditInterceptor`) matching the type of exactly one bean.
 ///
 /// The `event-stream.*` keys (reconnection of `EventStream<T>` methods)
-/// are additions of this starter: Spring Cloud OpenFeign cannot stream.
+/// and `sensitive-headers` are additions of this starter: Spring Cloud
+/// OpenFeign cannot stream, and its logger masks no header.
 /// Spring's counterpart is `FeignClientProperties`.
 final class FeignClientConfig {
   /// Settings with these values; the defaults are those of a client
@@ -100,6 +105,7 @@ final class FeignClientConfig {
     this.retryer,
     this.errorDecoder,
     this.requestInterceptors = const [],
+    this.sensitiveHeaders = const [],
   });
 
   /// The base URL of the client (`url`), used when `@FeignClient` has
@@ -142,6 +148,12 @@ final class FeignClientConfig {
   /// as a language or an API key. A comma-separated value or a list gives
   /// several. The client's entries add to those of `default`, and win for
   /// the same name.
+  ///
+  /// The URL with its query is in the log lines (`logger-level` `basic`
+  /// and up) and in the messages of `FeignException`s and
+  /// `RetryableException`s, so an API key sent here shows there: prefer a
+  /// header named in [sensitiveHeaders] (through `default-request-headers`)
+  /// for a secret.
   final Map<String, List<String>> defaultQueryParameters;
 
   /// Whether the transport follows redirects (`follow-redirects`); `true`
@@ -182,6 +194,23 @@ final class FeignClientConfig {
   /// under `default`, then those of the client. They run after the
   /// interceptors the client has anyway.
   final List<String> requestInterceptors;
+
+  /// More headers whose values the `headers` and `full` logs show as `***`
+  /// (`sensitive-headers`, names in any case), such as an API key header:
+  /// those listed under `default`, then those of the client. The headers
+  /// of [alwaysSensitiveHeaders] always are.
+  final List<String> sensitiveHeaders;
+
+  /// The headers whose values the logs always show as `***`, in lower
+  /// case: `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`
+  /// and `DPoP`.
+  static const alwaysSensitiveHeaders = {
+    'authorization',
+    'proxy-authorization',
+    'cookie',
+    'set-cookie',
+    'dpop',
+  };
 
   static const _prefix = 'spring.cloud.openfeign.client.config.';
 
@@ -267,6 +296,10 @@ final class FeignClientConfig {
       requestInterceptors: [
         ..._list(environment, '${_prefix}default.request-interceptors'),
         ..._list(environment, '$_prefix$name.request-interceptors'),
+      ],
+      sensitiveHeaders: [
+        ..._list(environment, '${_prefix}default.sensitive-headers'),
+        ..._list(environment, '$_prefix$name.sensitive-headers'),
       ],
     );
   }

@@ -108,6 +108,57 @@ void main() {
       );
     });
 
+    // Before: every token made a new request while the endpoint was down.
+    test('is fetched again 30 seconds later at the earliest, not with '
+        'every token', () async {
+      var now = DateTime(2026);
+      var requests = 0;
+      var down = true;
+      final source = RemoteJwkSource(
+        Uri.parse('https://issuer.example/jwks'),
+        clock: () => now,
+        fetcher: (_) async {
+          requests++;
+          if (down) {
+            throw StateError('connection refused');
+          }
+          return jsonEncode({
+            'keys': [keys.rsa.jwk],
+          });
+        },
+      );
+      final decoder = NimbusJwtDecoder.withJwkSource(source);
+      for (var i = 0; i < 50; i++) {
+        await expectLater(
+          decoder.decode(keys.token(kid: 'made-up-$i')),
+          _jwtException('connection refused'),
+        );
+      }
+      expect(requests, 1);
+      down = false;
+      now = now.add(const Duration(seconds: 29));
+      await expectLater(source.keys(), _jwtException('connection refused'));
+      expect(requests, 1);
+      now = now.add(const Duration(seconds: 1));
+      await decoder.decode(keys.token());
+      expect(requests, 2);
+      // Keys known, then the endpoint down and the keys old: one attempt
+      // per interval, the old keys meanwhile.
+      down = true;
+      now = now.add(const Duration(minutes: 10));
+      for (var i = 0; i < 50; i++) {
+        await decoder.decode(keys.token());
+        await expectLater(
+          decoder.decode(keys.token(kid: 'made-up-$i')),
+          throwsA(isA<BadJwtException>()),
+        );
+      }
+      expect(requests, 3);
+      now = now.add(const Duration(seconds: 30));
+      await decoder.decode(keys.token());
+      expect(requests, 4);
+    });
+
     test('a document that is not JSON fails the same way', () async {
       final source = RemoteJwkSource(
         Uri.parse('https://issuer.example/jwks'),
@@ -251,11 +302,15 @@ void main() {
       },
     );
 
-    test('is tried again with the next token', () async {
+    test('is tried again 30 seconds later, not with every token', () async {
       var up = false;
+      var requests = 0;
+      var now = DateTime(2026);
       final decoder = JwtDecoders.fromIssuerLocation(
         'https://issuer.example',
+        clock: () => now,
         fetcher: (uri) async {
+          requests++;
           if (!up) {
             throw StateError('down');
           }
@@ -271,8 +326,26 @@ void main() {
       );
       final token = keys.token(claims: {'iss': 'https://issuer.example'});
       await expectLater(decoder.decode(token), throwsA(isA<JwtException>()));
+      final lookup = requests; // the metadata locations tried
+      expect(lookup, greaterThan(0));
       up = true;
+      // Many tokens while the provider was down a moment ago: no request.
+      for (var i = 0; i < 50; i++) {
+        await expectLater(
+          decoder.decode(token),
+          throwsA(
+            isA<JwtException>().having(
+              (e) => e.message,
+              'message',
+              contains('down'),
+            ),
+          ),
+        );
+      }
+      expect(requests, lookup);
+      now = now.add(const Duration(seconds: 30));
       expect((await decoder.decode(token)).subject, isNotNull);
+      expect(requests, lookup + 2); // the metadata, then the keys
     });
 
     test('audiences set: a token for another audience is refused', () async {

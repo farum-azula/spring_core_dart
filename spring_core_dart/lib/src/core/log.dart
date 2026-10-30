@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:spring_core_dart/src/core/log_console_stub.dart'
+    if (dart.library.io) 'package:spring_core_dart/src/core/log_console_io.dart';
+
 /// How important a log message is, from [trace] (most detail) to [error];
 /// [off] silences a logger.
 ///
@@ -471,27 +474,53 @@ final class SpringLogHold {
 }
 
 /// The [SpringLog.handler] used until a logging backend replaces it:
-/// prints each record as one line, in colour like Spring Boot's console.
+/// prints each record as one line, `[logger] LEVEL: message`.
 ///
-/// The logger name is cyan and the level coloured by level (error red,
-/// warning yellow, the others green); the error follows the message, the
-/// stack trace is not printed. For plain text, set
-/// `SpringLog.handler = print;` (a record prints as its `toString`).
+/// The error follows the message; the stack trace is not printed. In a
+/// terminal ([printLogHandlerColours]) the logger name is cyan and the
+/// level coloured by level (error red, warning yellow, the others green),
+/// as Spring Boot's console colours its lines when it detects one. Written
+/// to a file or a pipe, in Flutter (the device log) and on the web (the
+/// browser's console) the line is plain text.
 void printLogHandler(SpringLogRecord record) {
+  final error = record.error;
+  final name = record.level.name.toUpperCase();
+  final message = '${record.message}${error == null ? '' : ': $error'}';
+  if (!printLogHandlerColours) {
+    // Printing is the point of this handler.
+    // ignore: avoid_print
+    print('[${record.loggerName}] $name: $message');
+    return;
+  }
   final level = switch (record.level) {
     SpringLogLevel.error => '31',
     SpringLogLevel.warning => '33',
     _ => '32',
   };
-  final error = record.error;
   // Printing is the point of this handler.
   // ignore: avoid_print
   print(
     '[\x1B[36m${record.loggerName}\x1B[0;39m] '
-    '\x1B[${level}m${record.level.name.toUpperCase()}\x1B[0;39m: '
-    '${record.message}${error == null ? '' : ': $error'}',
+    '\x1B[${level}m$name\x1B[0;39m: $message',
   );
 }
+
+/// Whether [printLogHandler] colours its lines with ANSI escape codes.
+///
+/// By default `true` only when standard output is a terminal that shows
+/// them (checked once, on first use): not when the output goes to a file
+/// or a pipe, not in Flutter (whose `print` goes to the device log), not
+/// on the web. Set it to force colours on or off, for example for a
+/// terminal that is not recognised or in a test of the output.
+///
+/// ```dart
+/// // CI logs show escape codes as text: plain lines.
+/// printLogHandlerColours = false;
+/// ```
+///
+/// Spring Boot (Java): `spring.output.ansi.enabled` (`detect` by default,
+/// `always`, `never`), or `AnsiOutput.setEnabled(...)` in code.
+bool printLogHandlerColours = consoleSupportsAnsi;
 
 /// Reads a level name as written in configuration (`logging.level.*`):
 /// `trace`, `debug`, `info`, `warn` or `warning`, `error` (also `fatal`)

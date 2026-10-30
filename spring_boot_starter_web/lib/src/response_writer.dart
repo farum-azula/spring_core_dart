@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/cors.dart' show addVary;
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/sse_emitter.dart';
 import 'package:spring_boot_starter_web/src/web_exceptions.dart';
+import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.web.mvc');
@@ -25,7 +27,7 @@ const _log = SpringLog('spring.web.mvc');
 /// | Result | Response |
 /// |---|---|
 /// | `null`, `void` | the status (200, or `@ResponseStatus`), no body |
-/// | `ResponseEntity<T>` | its status, headers and body |
+/// | `ResponseEntity<T>` | its status and headers, the body as if alone |
 /// | `ProblemDetail`, an `ErrorResponse` | `application/problem+json` |
 /// | `String` | `text/plain` (or the mapping's `produces`) |
 /// | `Uint8List` | `application/octet-stream` |
@@ -34,6 +36,10 @@ const _log = SpringLog('spring.web.mvc');
 /// | `Resource`, `ResponseEntity<Resource>` | the content, with `Range` (206/416), `Last-Modified` (304) |
 /// | `SseEmitter` | `text/event-stream`, events as they are sent |
 /// | anything else | JSON through the `ObjectMapper` |
+///
+/// The headers of a `ResponseEntity` or an `ErrorResponse` replace those
+/// of the same name, except `Vary`: its names join those already there
+/// (the CORS processing's), as in Spring.
 ///
 /// The starter declares it as the `responseWriter` bean, with the
 /// application's `ObjectMapper` and `MessageSource`. Applications return
@@ -52,7 +58,12 @@ final class ResponseWriter {
     this.messageSource,
     this.asyncTimeout,
     this.sseHeartbeat,
-  });
+    DateTime Function()? clock,
+  }) : clock = clock ?? DateTime.now;
+
+  /// Gives the current time, for the rate of the warnings of [writeError];
+  /// tests replace it.
+  final DateTime Function() clock;
 
   /// Writes objects as JSON, and the data of server-sent events.
   final ObjectMapper mapper;
@@ -100,13 +111,40 @@ final class ResponseWriter {
         return await response.close();
       case final ResponseEntity<Object?> entity:
         response.statusCode = entity.statusCode;
-        entity.headers.forEach((name, values) {
-          response.headers.remove(name);
-          for (final value in values) {
-            response.headers.add(name, value);
-          }
-        });
-        return await _writeBody(entity.body, request, response, produces);
+        _copyHeaders(entity.headers, response);
+        // The body goes the way it would alone, with the entity's status
+        // and headers (Spring's ResponseEntity<SseEmitter> and
+        // ResponseEntity<Flux<T>>).
+        return await switch (entity.body) {
+          final SseEmitter emitter => _writeEmitter(
+            emitter,
+            request,
+            response,
+            status: entity.statusCode,
+          ),
+          final EventStream<Object?> stream => _writeStream(
+            stream.events,
+            request,
+            response,
+            produces,
+            status: entity.statusCode,
+          ),
+          final Stream<Object?> stream when stream is! Stream<List<int>> =>
+            _writeStream(
+              stream,
+              request,
+              response,
+              produces,
+              status: entity.statusCode,
+            ),
+          final body => _writeEntityBody(
+            entity,
+            body,
+            request,
+            response,
+            produces,
+          ),
+        };
       case final ProblemDetail problem:
         if (status != null) {
           problem.status = status.value;
@@ -137,6 +175,29 @@ final class ResponseWriter {
         response.statusCode = status?.value ?? 200;
         return await _writeBody(result, request, response, produces);
     }
+  }
+
+  // The body of a ResponseEntity, after the request's conditions are
+  // checked against its ETag and Last-Modified as Spring's
+  // HttpEntityMethodProcessor checks them: only for a 200 to a GET or HEAD
+  // (not for a body written as it comes, as Spring's
+  // StreamingResponseBodyReturnValueHandler).
+  Future<void> _writeEntityBody(
+    ResponseEntity<Object?> entity,
+    Object? body,
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+    List<MediaType> produces,
+  ) async {
+    if (entity.statusCode == HttpStatus.ok &&
+        (request.method == HttpMethod.get ||
+            request.method == HttpMethod.head) &&
+        body is! StreamingResponseBody &&
+        body is! Stream<List<int>> &&
+        _checkNotModified(request, response)) {
+      return await response.close();
+    }
+    return await _writeBody(body, request, response, produces);
   }
 
   Future<void> _writeBody(
@@ -279,12 +340,7 @@ final class ResponseWriter {
     ServerHttpRequest request,
     ServerHttpResponse response,
   ) {
-    error.headers.forEach((name, values) {
-      response.headers.remove(name);
-      for (final value in values) {
-        response.headers.add(name, value);
-      }
-    });
+    _copyHeaders(error.headers, response);
     final problem = error.body..status = error.statusCode;
     if (error is MethodArgumentNotValidException) {
       problem.setProperty('errors', [
@@ -300,6 +356,198 @@ final class ResponseWriter {
     }
     return writeProblem(problem, request, response);
   }
+
+  // Spring's ServletWebRequest.checkNotModified for a GET or HEAD with a
+  // status of 200, against the ETag and Last-Modified already on
+  // [response]; true when the answer is then complete without a body,
+  // its status set:
+  // - If-Unmodified-Since before Last-Modified (whole seconds): 412,
+  //   without ETag and Last-Modified; at or after it, the full answer,
+  //   whatever the other headers say (as Spring).
+  // - If-None-Match with the ETag (compared weakly; a list, several
+  //   headers): 304; `*` does not match a GET, as in Spring.
+  // - Without If-None-Match, If-Modified-Since at or after Last-Modified:
+  //   304.
+  // The other headers stay (Cache-Control, Vary, CORS); the ETag is
+  // quoted, a Last-Modified that is not an HTTP date removed.
+  static bool _checkNotModified(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) {
+    final headers = response.headers;
+    final eTag = headers.eTag;
+    final lastModified = headers.lastModified?.millisecondsSinceEpoch ?? -1;
+    // HTTP dates have whole seconds.
+    final seconds = lastModified ~/ 1000 * 1000;
+    // If-Match counts only for other methods than GET and HEAD.
+    if (lastModified >= 0) {
+      if (_dateHeader(request, HttpHeaders.ifUnmodifiedSinceHeader)
+          case final since?) {
+        if (since < seconds) {
+          response.statusCode = HttpStatus.preconditionFailed;
+          headers
+            ..remove(HttpHeaders.etagHeader)
+            ..remove(HttpHeaders.lastModifiedHeader);
+          return true;
+        }
+        _cachingHeaders(headers, eTag, lastModified);
+        return false;
+      }
+    }
+    var notModified = false;
+    final noneMatch = request.headers.getAll(HttpHeaders.ifNoneMatchHeader);
+    if (noneMatch.isNotEmpty) {
+      notModified = _matchesETag(noneMatch, eTag);
+    } else if (lastModified >= 0) {
+      if (_dateHeader(request, HttpHeaders.ifModifiedSinceHeader)
+          case final since?) {
+        notModified = since >= seconds;
+      }
+    }
+    if (notModified) {
+      response.statusCode = HttpStatus.notModified;
+    }
+    _cachingHeaders(headers, eTag, lastModified);
+    return notModified;
+  }
+
+  // The ETag and Last-Modified as Spring's addCachingResponseHeaders puts
+  // them back: the tag quoted, the date as an HTTP date (none when it is
+  // not one, or not after 1970).
+  static void _cachingHeaders(
+    HttpHeaders headers,
+    String? eTag,
+    int lastModified,
+  ) {
+    if (lastModified > 0) {
+      final date = HttpHeaders.formatDate(
+        DateTime.fromMillisecondsSinceEpoch(lastModified, isUtc: true),
+      );
+      final present = headers.getAll(HttpHeaders.lastModifiedHeader);
+      if (present.length != 1 || present.single != date) {
+        headers.set(HttpHeaders.lastModifiedHeader, date);
+      }
+    } else {
+      headers.remove(HttpHeaders.lastModifiedHeader);
+    }
+    if (eTag == null || eTag.isEmpty) {
+      headers.remove(HttpHeaders.etagHeader);
+    } else if (_quoteETag(eTag) != eTag) {
+      headers.set(HttpHeaders.etagHeader, _quoteETag(eTag));
+    }
+  }
+
+  // Spring's ETag.quoteETagIfNecessary.
+  static String _quoteETag(String tag) {
+    if (tag.startsWith('W/"')) {
+      if (tag.length > 3 && tag.endsWith('"')) {
+        return tag;
+      }
+    } else if (tag.startsWith('"')) {
+      if (tag.length > 1 && tag.endsWith('"')) {
+        return tag;
+      }
+    }
+    return '"$tag"';
+  }
+
+  // Whether a tag of the If-None-Match [values] is [eTag], compared weakly
+  // (Spring's ETag.create, ETag.parse and compare).
+  static bool _matchesETag(List<String> values, String? eTag) {
+    if (eTag == null || eTag.isEmpty) {
+      return false;
+    }
+    var tag = eTag.startsWith('W/') ? eTag.substring(2) : eTag;
+    if (tag.length > 2 && tag.startsWith('"') && tag.endsWith('"')) {
+      tag = tag.substring(1, tag.length - 1);
+    }
+    return tag.isNotEmpty &&
+        values.any((value) => _parseETags(value).contains(tag));
+  }
+
+  // Spring's ETag.parse: the tags of a value, without quotes nor `W/`
+  // (`*` for the wildcard); what is not a tag is skipped.
+  static List<String> _parseETags(String source) {
+    final tags = <String>[];
+    const before = 0;
+    const inQuotes = 1;
+    const after = 2;
+    var state = before;
+    var start = -1;
+    for (var i = 0; i < source.length; i++) {
+      final c = source[i];
+      if (state == inQuotes) {
+        if (c == '"') {
+          final tag = source.substring(start, i);
+          if (tag.trim().isNotEmpty) {
+            tags.add(tag);
+          }
+          state = after;
+        }
+        continue;
+      }
+      if (c == ' ' || c == '\t') {
+        continue;
+      }
+      if (c == ',') {
+        state = before;
+        continue;
+      }
+      if (state == before) {
+        if (c == '*') {
+          tags.add('*');
+          state = after;
+        } else if (c == '"') {
+          state = inQuotes;
+          start = i + 1;
+        } else if (c == 'W' &&
+            source.length > i + 2 &&
+            source[i + 1] == '/' &&
+            source[i + 2] == '"') {
+          state = inQuotes;
+          i += 2;
+          start = i + 1;
+        }
+      }
+    }
+    return tags;
+  }
+
+  // A date header of [request] in milliseconds, as Spring reads it: an
+  // HTTP date, or one followed by `; length=...` (old Internet Explorer);
+  // `null` when absent or not a date.
+  static int? _dateHeader(ServerHttpRequest request, String name) {
+    final value = request.headers[name];
+    if (value == null) {
+      return null;
+    }
+    var date = HttpHeaders.parseDate(value);
+    final separator = value.indexOf(';');
+    if (date == null && separator >= 0) {
+      date = HttpHeaders.parseDate(value.substring(0, separator));
+    }
+    return date?.millisecondsSinceEpoch;
+  }
+
+  // A handler's headers (of a ResponseEntity or an ErrorResponse) replace
+  // those of the same name on the response, except Vary: its names join
+  // those already there (the CORS processing's), as Spring's
+  // HttpEntityMethodProcessor merges them.
+  static void _copyHeaders(HttpHeaders headers, ServerHttpResponse response) {
+    headers.forEach((name, values) {
+      if (_same(name, HttpHeaders.varyHeader) &&
+          response.headers.contains(HttpHeaders.varyHeader)) {
+        addVary(response.headers, values);
+        return;
+      }
+      response.headers.remove(name);
+      for (final value in values) {
+        response.headers.add(name, value);
+      }
+    });
+  }
+
+  static bool _same(String a, String b) => a.toLowerCase() == b.toLowerCase();
 
   String? _message(ObjectError error) {
     final source = messageSource;
@@ -321,12 +569,18 @@ final class ResponseWriter {
   /// Writes the default answer to an exception that no
   /// `@ExceptionHandler` handled.
   ///
-  /// An [ErrorResponse] (such as a `ResponseStatusException`) answers with
-  /// its own status and problem; it is logged as an error from status
-  /// 500 on, else at debug level. A request body above the size limit is
-  /// a 413. Anything else is a 500 without details for the client, and
-  /// the exception is logged under `spring.web.mvc`. When the response is
-  /// already committed, the error is only logged and the response closed.
+  /// An [ErrorResponse] (such as a `ResponseStatusException`, or the 503
+  /// of a refused session) answers with its own status and problem; from
+  /// status 500 on it is logged as a warning without a stack trace, at
+  /// most once per [warningInterval] for the same type and status (the
+  /// others at debug level), below 500 at debug level. A request body
+  /// above the size limit is a 413. Anything else is an unexpected error:
+  /// a 500 without details for the client, and the exception logged as an
+  /// error with its stack trace under `spring.web.mvc`. When the response
+  /// is already committed, the error is only logged, the request marked
+  /// with [responseFailedAttribute] and the response closed: the server
+  /// then drops the connection instead of finishing the response, as
+  /// Tomcat does.
   Future<void> writeError(
     Object error,
     StackTrace stackTrace,
@@ -340,16 +594,13 @@ final class ResponseWriter {
         error: error,
         stackTrace: stackTrace,
       );
+      request.attributes[responseFailedAttribute] = error;
       return await response.close().catchError((_) {});
     }
     switch (error) {
       case final ErrorResponse errorResponse:
         if (errorResponse.statusCode >= 500) {
-          _log.error(
-            'Request ${request.method.value} ${request.path} failed',
-            error: error,
-            stackTrace: stackTrace,
-          );
+          _warnRateLimited(errorResponse, request);
         } else {
           _log.debug('Resolved [$error]');
         }
@@ -372,6 +623,39 @@ final class ResponseWriter {
           response,
         );
     }
+  }
+
+  // When each kind of 5xx answer (its type and status) was last logged,
+  // and how many were left out since.
+  final _lastWarnings = <String, (DateTime, int)>{};
+
+  /// How often one kind of 5xx error answer is logged as a warning.
+  static const warningInterval = Duration(seconds: 10);
+
+  // A 5xx answer an exception asked for (a ResponseStatusException, a
+  // refused session): logged as a warning without a stack trace, as
+  // Spring logs resolved exceptions, and at most once per
+  // [warningInterval] for the same kind, so a flood of refused requests
+  // does not flood the log. The ones left out are counted in the next
+  // line (and logged at debug level).
+  void _warnRateLimited(ErrorResponse error, ServerHttpRequest request) {
+    final key = '${error.runtimeType} ${error.statusCode}';
+    final now = clock();
+    final (last, skipped) = _lastWarnings[key] ?? (null, 0);
+    if (last != null && now.difference(last) < warningInterval) {
+      _lastWarnings[key] = (last, skipped + 1);
+      _log.debug(
+        'Request ${request.method.value} ${request.path} answered with '
+        '$error',
+      );
+      return;
+    }
+    _lastWarnings[key] = (now, 0);
+    _log.warning(
+      'Request ${request.method.value} ${request.path} answered with $error'
+      '${skipped == 0 ? '' : ' ($skipped more of these not logged since '
+                'the last warning)'}',
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -582,30 +866,37 @@ final class ResponseWriter {
   // The headers go out with the first body bytes (`dart:io` sends none
   // before), so the stream starts with a comment line, which clients
   // ignore: the client sees the response before the first event.
-  Future<void> _startEvents(ServerHttpResponse response) async {
+  Future<void> _startEvents(
+    ServerHttpResponse response, {
+    int status = 200,
+  }) async {
     response
-      ..statusCode = 200
+      ..statusCode = status
       ..headers.contentType = '${MediaType.textEventStream};charset=UTF-8'
       ..headers.set(HttpHeaders.cacheControlHeader, 'no-cache')
       ..write(':\n\n');
     await response.flush();
   }
 
+  // Back pressure: the source is paused while an item is being written
+  // and flushed, so a client that reads slowly (or not at all) slows the
+  // source down instead of filling the server's memory.
   Future<void> _writeStream(
     Stream<Object?> stream,
     ServerHttpRequest request,
     ServerHttpResponse response,
-    List<MediaType> produces,
-  ) async {
+    List<MediaType> produces, {
+    int status = 200,
+  }) async {
     final ndjson = produces.any(
       (p) => p.type == 'application' && p.subtype == 'x-ndjson',
     );
     if (ndjson) {
       response
-        ..statusCode = 200
+        ..statusCode = status
         ..headers.contentType = MediaType.applicationNdjson;
     } else {
-      await _startEvents(response);
+      await _startEvents(response, status: status);
     }
     final finished = Completer<void>();
     final out = _SerialWriter(response);
@@ -632,7 +923,8 @@ final class ResponseWriter {
               : ServerSentEvent<Object?>(item);
           text = event.encode(_eventData);
         }
-        unawaited(out.write(text));
+        subscription.pause();
+        unawaited(out.write(text).whenComplete(subscription.resume));
       },
       onError: (Object error, StackTrace stackTrace) {
         _log.warning(
@@ -646,10 +938,13 @@ final class ResponseWriter {
     );
     final interval = sseHeartbeat;
     if (!ndjson && interval != null && interval > Duration.zero) {
-      heartbeat = Timer.periodic(
-        interval,
-        (_) => unawaited(out.write(':\n\n')),
-      );
+      heartbeat = Timer.periodic(interval, (_) {
+        // A stream still writing is not idle: no comment piles up behind
+        // a client that does not read.
+        if (out.isIdle) {
+          unawaited(out.write(':\n\n'));
+        }
+      });
     }
     unawaited(response.done.then((_) => end()));
     await finished.future;
@@ -660,15 +955,16 @@ final class ResponseWriter {
   Future<void> _writeEmitter(
     SseEmitter emitter,
     ServerHttpRequest request,
-    ServerHttpResponse response,
-  ) async {
+    ServerHttpResponse response, {
+    int status = 200,
+  }) async {
     final handler = _EmitterHandler(this, response);
-    await _startEvents(response);
+    await _startEvents(response, status: status);
     final interval = sseHeartbeat;
     Timer? heartbeat;
     if (interval != null && interval > Duration.zero) {
       heartbeat = Timer.periodic(interval, (_) {
-        if (!handler.isDone) {
+        if (!handler.isDone && handler.out.isIdle) {
           unawaited(handler.comment());
         }
       });
@@ -686,26 +982,45 @@ final class ResponseWriter {
 final class _SerialWriter {
   _SerialWriter(this.response);
 
+  /// The most writes an `SseEmitter` may have waiting for a client that
+  /// does not read; past it the emitter fails ([_EmitterHandler.send]).
+  static const maxPending = 1000;
+
   final ServerHttpResponse response;
   Future<void> _last = Future.value();
   Future<void> Function()? onFailure;
   var _failed = false;
+  var _pending = 0;
 
   /// Completes when everything written so far is flushed (or dropped).
   Future<void> get idle => _last;
 
-  Future<void> write(String text) => _last = _last.then((_) async {
-    if (_failed) {
-      return;
-    }
-    try {
-      response.write(text);
-      await response.flush();
-    } on Object {
-      _failed = true;
-      await onFailure?.call();
-    }
-  });
+  /// Whether no write is waiting or in progress.
+  bool get isIdle => _pending == 0;
+
+  /// The writes waiting or in progress.
+  int get pending => _pending;
+
+  /// Drops every later write, as after a failed one.
+  void fail() => _failed = true;
+
+  Future<void> write(String text) {
+    _pending++;
+    return _last = _last.then((_) async {
+      try {
+        if (_failed) {
+          return;
+        }
+        response.write(text);
+        await response.flush();
+      } on Object {
+        _failed = true;
+        await onFailure?.call();
+      } finally {
+        _pending--;
+      }
+    });
+  }
 }
 
 final class _EmitterHandler implements SseEmitterHandler {
@@ -736,6 +1051,16 @@ final class _EmitterHandler implements SseEmitterHandler {
   Future<void> send(ServerSentEvent<Object?> event) async {
     if (isDone) {
       throw StateError('The client went away');
+    }
+    if (out.pending >= _SerialWriter.maxPending) {
+      // A client that reads nothing while sends are not awaited: give up
+      // instead of queueing without bound.
+      out.fail();
+      _finish();
+      throw StateError(
+        'The client does not read the event stream: '
+        '${_SerialWriter.maxPending} events are waiting',
+      );
     }
     await out.write(event.encode(writer._eventData));
   }

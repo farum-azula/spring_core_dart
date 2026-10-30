@@ -346,7 +346,7 @@ Which bean is replaced, and what the generator writes for it:
 
 | Given | Replaces | Generated |
 |---|---|---|
-| `name` only | the bean (or alias) with that name. It keeps the types it was registered under, except its own class, and gains the class of the value | `BeanOverride.named(value, name: ...)` |
+| `name` only | the bean (or alias) with that name. The value is registered under the field's type, as in Spring (unless it is `Object`), under its runtime class, and under more types. A value created with a constructor (`FakeGateway()`, also `new` or `const`, a named constructor, a private class, an import prefix, in parentheses or followed by a cascade `..`) adds that class and all its public supertypes, as the generator registers a bean of that class, whatever the field's declared type (`types: [FakeGateway, PaymentGateway]`; a `SubGateway extends RealGateway` also stays a `RealGateway` with every interface of it; a fake `HttpClient` stays an `HttpClient`, written through `dart:io`; a private class is not written, its runtime class is added anyway). A type with a private class as a type argument cannot be written in the generated file and counts in its raw form only (`FakeRepo<_Draft>()` gives `types: [FakeRepo<dynamic>, Repo<dynamic>]`). The generator reads them from the resolved test file. Any other value (a function or static method call such as `Fakes.gateway()`, which may return any subclass, a variable), a class that cannot be resolved, or another type that cannot be written in the generated file (a function or record type argument) adds the types the replaced bean was registered under instead, except its own class (unless the field has that type); a fake that implements only some of those types fails where another is injected (create it with a constructor, or write the override with `BeanOverride.named(value, name: ..., types: [...])`, the fake's own types). | `BeanOverride.named(value, name: ...)` (`types: [...]` for a value created with a constructor), in a function that keeps the field's type as its type argument |
 | `type` (with or without `name`) | the bean called `name` if given; else the only bean of `type`, or the `@Primary` one among several. The value is registered under `type` only | `BeanOverride<Type>(value)` |
 | neither | the only (or `@Primary`) bean of the field's declared type. The type must be written (`final Clock clock = ...`), or the build fails | `BeanOverride<Clock>(value)` |
 
@@ -554,6 +554,11 @@ On a `@Nested` field it applies to every test of the group. As a
 function: `app.markDirty()` in the test, or `setUp(app.markDirty)` for
 every test.
 
+On a class it restarts the context after each test, which Spring writes
+`@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)`. Spring's default
+for a class (`AFTER_CLASS`: a new context for the next class) is what
+every class gets here anyway, as each class starts its own context.
+
 ## 11. Groups: `@Nested`
 
 A field with `@Nested()` holds a class of tests that run as a `group`
@@ -755,7 +760,9 @@ void runSpringTests() {
       args: ['--shop.name=Night Books'],
       profiles: ['dev', 'test'],
       systemEnvironment: {'SHOP_MAX_BASKET_SIZE': '25'},
-      overrides: [_sbt.BeanOverride.named($instance.gateway, name: 'sandbox')],
+      overrides: [
+        _$named(_sbt.BeanOverride.named($instance.gateway, name: 'sandbox')),
+      ],
     );
     _sbt.setUp(() {
       $instance.properties = $app.getBean();
@@ -768,25 +775,67 @@ void runSpringTests() {
     _sbt.test('checkout pays through the fake', () => $instance.pays());
   });
 }
+
+// The override of a @TestBean field, typed by the field: in the overrides
+// list, BeanOverride.named (or BeanOverride) alone infers Object.
+_sbt.BeanOverride<Object> _$named<T extends Object>(
+  _sbt.BeanOverride<T> override,
+) => override;
 ```
 
-- **The test file is read as written**, not resolved. The generated file
-  imports what the test file imports (same prefixes, `show` and `hide`)
-  plus the test file itself; relative imports, conditional ones included,
+- **The test file is read as written**: it is resolved only for the
+  class of a `@TestBean(name:)` value created with a call, and for the
+  nullability of a `@TestBean` field whose type the text does not tell
+  (below). The
+  generated file imports what the test file imports (same prefixes,
+  `show` and `hide`) plus the test file itself; relative imports, conditional ones included,
   are re-pointed from `test/spring/`. So every type and constant in the
   annotations means the same there. A static constant of the class used in
   a member's annotation (`@Tag(slow)`) is written `ShopTest.slow`, and a
   private name fails the build, since another library cannot reach it.
   Annotations are recognised by name (`@Test`, also `@spring.Test` with a
-  prefix). The generated names start with `$` (`$instance`, `$app`), so
-  they never hide one of the test file's.
+  prefix). The generated names start with `$` (`$instance`, `$app`) or
+  are private to the generated file (`_$named`), so they never hide one
+  of the test file's.
 - **Bean types are not repeated**: `$instance.checkout = $app.getBean();`
   takes `Checkout` from the field. A nullable field uses `findBean()`, a
   `List` field `getBeans()`, a `@Value` field `value(...)`.
-- **`@TestBean(name:)`** becomes `BeanOverride.named`. The replacement
-  keeps the types of the bean it replaces except its own class, and adds
-  the fake's class: a `FakeGateway` field replaces the `PaymentGateway`
-  called `sandbox`, and `getBean<SandboxGateway>()` then finds nothing.
+- **`@TestBean(name:)`** becomes `BeanOverride.named`, passed through
+  `_$named`: in the `overrides:` list, `BeanOverride.named` alone would
+  get `Object` as its type argument, while through `_$named` it gets the
+  field's type, which the replacement is registered under (as in Spring;
+  not `Object`). A value created with a constructor (`= FakeGateway()`,
+  `= f.FakeGateway.sandbox()`, `= _Fake()`, `= (FakeGateway()..reset())`,
+  whatever the field's declared type) generates a `types:` list: that
+  class and all its public supertypes, read from the resolved test file,
+  as the generator registers a bean of that class (a supertype of an
+  internal SDK library is written through the public one that exports
+  it, `HttpClient` through `dart:io`; a private class is left out, its
+  runtime class is added anyway; a type with a private class as a type
+  argument is written in its raw form, `Repo<dynamic>` for
+  `Repo<_Draft>`). Only a test file with such a value, or with a
+  `@TestBean` field of an inferred type or of a named type without `?`
+  that the file does not declare as a class (it may be a type alias), is
+  resolved; the builder reads the others as syntax.
+  Any other value (`= Fakes.gateway()`, a function's or static method's,
+  which may return any subclass), a class that cannot be resolved or
+  another type that cannot be written in the generated file gets no
+  list: the replacement keeps the types of the bean it replaces except
+  its own class (unless the field has that type), and adds the fake's
+  class (a `FakeGateway` field replacing the `SandboxGateway` called
+  `sandbox`: `getBean<SandboxGateway>()` then finds nothing). The fake
+  must implement every other type of that bean then (Dart cannot check
+  it at run time). A nullable `@TestBean`
+  field is passed as `value ?? throw StateError(...)`: `null` fails the
+  test file. That includes a field of a nullable type alias
+  (`typedef MaybeMailer = Mailer?;`, from any library), read from the
+  resolved file; without `name:` or `type:` such a field's override is
+  `_$named(BeanOverride(...))`, typed by the value (`Mailer`), as the
+  alias cannot be written without its `?`. A field of an inferred type
+  (`final mailer = Fakes.maybeMailer();`) needs `name:` or `type:`,
+  nullable or not (with one, an inferred nullable type is read from the
+  resolved file and checked the same way); without either the build fails
+  with "@TestBean field 'mailer' needs the type of the bean it replaces".
 - **The application** is the package's `@SpringBootApplication` entry
   point in `bin/` or `lib/`, through its generated `springApplication`.
 - **Order**: `@BeforeAll` and `@AfterAll` are declared before

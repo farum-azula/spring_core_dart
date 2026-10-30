@@ -73,9 +73,11 @@ This is the contract between this server and the Flutter app.
   client gets plain statuses, not redirects. Logout is `POST /api/logout`,
   answered `204`. The session is kept in a cookie.
 - **CSRF:** the token travels in a cookie the app can read (`XSRF-TOKEN`,
-  from `CookieCsrfTokenRepository.withHttpOnlyFalse()`), and the app sends
-  it back in the `X-XSRF-TOKEN` header on POST, PUT and DELETE, as in
-  Spring's recipe for single-page apps.
+  from `CookieCsrfTokenRepository.withHttpOnlyFalse(sameSite: 'Lax')`),
+  and the app sends it back in the `X-XSRF-TOKEN` header on POST, PUT and
+  DELETE, as in Spring's recipe for single-page apps.
+- **No saved request** (`NullRequestCache`): an API has no page to
+  return to after a login, so anonymous requests start no session.
 - **CORS** comes from properties, for the Flutter web build.
 - **Single sign-on** (the `sso` profile, [chapter 4](#single-sign-on-with-keycloak)):
   no form login; the users are Keycloak's (the same `ada` and `root`).

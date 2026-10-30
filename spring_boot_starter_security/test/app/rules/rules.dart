@@ -37,7 +37,7 @@ class RulesSecurityConfig {
   ]);
 
   @Bean()
-  CorsConfigurationSource cors() =>
+  CorsConfigurationSource corsConfigurationSource() =>
       UrlBasedCorsConfigurationSource()..registerCorsConfiguration(
         '/api/**',
         CorsConfiguration(

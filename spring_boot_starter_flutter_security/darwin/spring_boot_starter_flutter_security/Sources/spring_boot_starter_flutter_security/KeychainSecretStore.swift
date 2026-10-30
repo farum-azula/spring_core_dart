@@ -22,7 +22,12 @@ struct KeychainError: Error {
 /// app falls back to the login keychain (file-based; items are bound to
 /// the app's code signature, and accessibility attributes do not apply).
 final class KeychainSecretStore {
-  private let service = (Bundle.main.bundleIdentifier ?? "app") + ".spring_secret_store"
+  private let service: String
+
+  /// The store of the service `<bundle id>.<suffix>`.
+  init(serviceSuffix: String = "spring_secret_store") {
+    service = (Bundle.main.bundleIdentifier ?? "app") + "." + serviceSuffix
+  }
 
   #if os(macOS)
     // Decided once: a search finds nothing without the entitlement (no
@@ -76,6 +81,11 @@ final class KeychainSecretStore {
     if status == errSecItemNotFound {
       let item = query.merging(attributes) { _, new in new }
       status = SecItemAdd(item as CFDictionary, nil)
+      if status == errSecDuplicateItem {
+        // Added in between by another writer (another process of the
+        // app): this value replaces it.
+        status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+      }
     }
     guard status == errSecSuccess else { throw KeychainError("write", status) }
   }

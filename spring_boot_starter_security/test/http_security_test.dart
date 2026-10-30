@@ -1134,10 +1134,12 @@ void main() {
           },
         );
 
-    test('with no configuration a preflight is refused', () async {
+    test('with no configuration a preflight ends at the filter with a 200 '
+        'and no CORS header, as in Spring', () async {
       final reply = await preflight(rules());
-      expect(reply.status, 403);
+      expect(reply.status, 200);
       expect(reply.reached, isFalse);
+      expect(reply.header('access-control-allow-origin'), isNull);
     });
 
     test('the configuration source is the one given', () async {

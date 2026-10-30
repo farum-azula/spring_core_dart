@@ -182,6 +182,73 @@ void main() {
       }
     });
 
+    // An identity provider signs other JWTs with the keys of its access
+    // tokens, and a client signs DPoP proofs: their typ tells them apart
+    // (RFC 8725 §3.11; Spring Security 7's JwtTypeValidator.jwt()).
+    test('a JWT of another typ is no access token', () async {
+      for (final type in [
+        'logout+jwt',
+        'secevent+jwt',
+        'dpop+jwt',
+        'at+jwt', // RFC 9068: refused by default, as in Spring
+        'JWS',
+        '',
+      ]) {
+        await expectLater(
+          decoder().decode(keys.token(header: {'typ': type})),
+          type.isEmpty ? completes : _rejected,
+          reason: type,
+        );
+      }
+      await expectLater(
+        decoder().decode(keys.token(header: {'typ': 42})),
+        _rejected,
+      );
+      for (final type in ['JWT', 'jwt', 'Jwt', null]) {
+        await decoder().decode(keys.token(header: {'typ': type}));
+      }
+      // The issuer's decoder too.
+      final issuer = JwtDecoders.fromIssuerLocation(
+        'https://issuer.example',
+        fetcher: (uri) async => uri.path.endsWith('jwks')
+            ? jsonEncode({
+                'keys': [keys.rsa.jwk],
+              })
+            : jsonEncode({
+                'issuer': 'https://issuer.example',
+                'jwks_uri': 'https://issuer.example/jwks',
+              }),
+      );
+      const claims = {'iss': 'https://issuer.example'};
+      await issuer.decode(keys.token(claims: claims));
+      await expectLater(
+        issuer.decode(
+          keys.token(claims: claims, header: {'typ': 'logout+jwt'}),
+        ),
+        _rejected,
+      );
+    });
+
+    test('JwtTypeValidator: the types given, case-insensitive; empty only '
+        'when allowed', () {
+      OAuth2TokenValidatorResult check(
+        JwtTypeValidator validator,
+        Object? type,
+      ) => validator.validate(
+        Jwt('t', headers: {'alg': 'RS256', 'typ': type}, claims: const {}),
+      );
+      final rfc9068 = JwtTypeValidator(['at+jwt']);
+      expect(check(rfc9068, 'AT+JWT').hasErrors, isFalse);
+      expect(check(rfc9068, 'JWT').hasErrors, isTrue);
+      expect(check(rfc9068, null).hasErrors, isTrue);
+      expect(check(rfc9068, ' ').hasErrors, isTrue);
+      final error = check(JwtTypeValidator.jwt(), 'logout+jwt').errors.single;
+      expect(error.errorCode, 'invalid_token');
+      expect(error.description, 'the given typ value needs to be one of [JWT]');
+      expect(check(JwtTypeValidator.jwt(), ' ').hasErrors, isFalse);
+      expect(() => JwtTypeValidator(const []), throwsArgumentError);
+    });
+
     test('a token signed by another key', () async {
       final other = TokenFactory(
         RsaTestKey.generate(kid: keys.rsa.kid),
@@ -382,6 +449,82 @@ void main() {
         expect(fetches, 2);
       },
     );
+
+    // Measured on the wall clock alone: set back 2 h, the keys stayed
+    // "fresh" and no fetch was allowed for 2 h (a rotated key refused).
+    test('a clock set back neither keeps the keys fresh nor holds off a '
+        'fetch; real time ends both', () async {
+      var now = DateTime(2026);
+      var fetches = 0;
+      var current = [keys.rsa.jwk];
+      final source = RemoteJwkSource(
+        Uri.parse('https://issuer.example/jwks'),
+        fetcher: (_) async {
+          fetches++;
+          return jsonEncode({'keys': current});
+        },
+        clock: () => now,
+      );
+      final decoder = NimbusJwtDecoder.withJwkSource(source);
+      await decoder.decode(keys.token());
+      final rotated = RsaTestKey.generate(kid: 'rsa-2');
+      current = [keys.rsa.jwk, rotated.jwk];
+      now = now.subtract(const Duration(hours: 2));
+      await decoder.decode(TokenFactory(rotated, keys.ec, keys.secret).token());
+      expect(fetches, 2);
+      await expectLater(decoder.decode(keys.token(kid: 'made-up')), _rejected);
+      expect(fetches, 2, reason: 'still at most every 30 s');
+
+      // A clock that stands still: the keys still age.
+      fetches = 0;
+      final frozen = RemoteJwkSource(
+        Uri.parse('https://issuer.example/jwks'),
+        fetcher: (_) async {
+          fetches++;
+          return jsonEncode({'keys': current});
+        },
+        cacheLifespan: const Duration(milliseconds: 50),
+        refreshInterval: const Duration(milliseconds: 10),
+        clock: () => DateTime(2026),
+      );
+      await frozen.keys();
+      await frozen.keys();
+      expect(fetches, 1);
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await frozen.keys();
+      expect(fetches, 2);
+    });
+
+    // The pause after a failed discovery, on the wall clock alone: set
+    // back 2 h, every token failed for 2 h.
+    test('a clock set back does not stretch the pause after a failed '
+        'discovery', () async {
+      var now = DateTime(2026);
+      var down = true;
+      final decoder = JwtDecoders.fromIssuerLocation(
+        'https://issuer.example',
+        clock: () => now,
+        fetcher: (uri) async {
+          if (down) {
+            throw const SocketException('down');
+          }
+          return uri.path.endsWith('jwks')
+              ? jsonEncode({
+                  'keys': [keys.rsa.jwk],
+                })
+              : jsonEncode({
+                  'issuer': 'https://issuer.example',
+                  'jwks_uri': 'https://issuer.example/jwks',
+                });
+        },
+      );
+      final token = keys.token(claims: {'iss': 'https://issuer.example'});
+      await expectLater(decoder.decode(token), throwsA(isA<JwtException>()));
+      down = false;
+      await expectLater(decoder.decode(token), throwsA(isA<JwtException>()));
+      now = now.subtract(const Duration(hours: 2));
+      expect((await decoder.decode(token)).subject, isNotNull);
+    });
 
     test('the issuer being down keeps the keys fetched before', () async {
       var now = DateTime(2026);

@@ -1,3 +1,15 @@
+## Unreleased
+
+### Breaking
+
+- `JwkSetOidcIdTokenDecoder` (the app-side ID token decoder, used for Sign in with Apple) refuses an ID token whose `typ` header is not `JWT` (in any case), blank or missing, as Spring Security 7.1 checks ID tokens: a `logout+jwt`, `at+jwt` or `secevent+jwt` token signed with the same keys is no ID token.
+
+### Changes
+
+- `JwkSetOidcIdTokenDecoder` leaves out RSA keys whose exponent is 1, even or over 64 bits.
+- `InMemoryClientRegistrationRepository` calls a failed supplier (a discovery of an `issuer-uri`) again only `retryAfterFailure` later (10 seconds by default); calls in between get its error at once, so a provider that is down never gets one request per login started. `clock` lets tests move time.
+- That pause and the JWK Set's refetch interval are measured on a monotonic clock, so a device clock set back does not make them last hours.
+
 ## 0.4.3
 
 - A registration whose issuer, authorization, token, JWK Set, user-info or redirect URI uses plain `http://` on a host other than `localhost`, `127.0.0.1` or `[::1]` is logged as a warning, once per registration (it still works). `ClientRegistrations.configurationForIssuerLocation`: the metadata lookup of the issuer discovery (the three locations, the issuer check), public so the security starter's resource server uses the same code. The discovery URLs no longer end in an empty `?`.

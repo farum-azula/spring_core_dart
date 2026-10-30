@@ -1,6 +1,8 @@
 // Test classes (@SpringBootTest): what <name>.test.spring.dart declares
 // for each annotation, and the build errors. Running the generated tests
 // is covered by example/server_guide/test/*_class_test.dart.
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/test_builder.dart';
@@ -62,6 +64,49 @@ Future<String> _error(
   return result.errors.join('\n');
 }
 
+// The application's generated file, as far as generated tests use it.
+const _appSpring = '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+
+SpringApplication get springApplication => throw UnimplementedError();
+void runApplication(List<String> args) {}
+''';
+
+/// The compile errors of the test file and its generated file among
+/// [files] (paths in the package to content), with the real
+/// `spring_boot_starter_test` and a stub of the application's generated
+/// file.
+Future<List<String>> _compileErrors(Map<String, String> files) =>
+    resolveSources<List<String>>(
+      {
+        'pkg|bin/app.spring.dart': _appSpring,
+        for (final MapEntry(:key, :value) in files.entries) 'pkg|$key': value,
+      },
+      (resolver) async {
+        final messages = <String>[];
+        for (final path in [
+          'test/shop_test.dart',
+          'test/spring/shop.test.spring.dart',
+        ]) {
+          final library = await resolver.libraryFor(AssetId('pkg', path));
+          final errors = await library.session.getErrors(
+            library.firstFragment.source.fullName,
+          );
+          if (errors case ErrorsResult(:final diagnostics)) {
+            messages.addAll([
+              for (final diagnostic in diagnostics)
+                if (diagnostic.severity == Severity.error)
+                  '$path: ${diagnostic.message}',
+            ]);
+          }
+        }
+        return messages;
+      },
+      rootPackage: 'pkg',
+      resolverFor: 'pkg|test/spring/shop.test.spring.dart',
+      readAllSourcesFromFilesystem: true,
+    );
+
 // One line, without the formatter's line breaks and trailing commas.
 String _squash(String source) => source
     .replaceAll(RegExp(r'\s+'), ' ')
@@ -82,6 +127,11 @@ Matcher _has(String expected) => predicate<String>(
   (source) => _squash(_plainNames(source)).contains(_squash(expected)),
   'contains $expected',
 );
+
+// A `@TestBean(name: ...)` override as generated: `BeanOverride.named`
+// wrapped in the function that types it by its field.
+String _named(String arguments) =>
+    '_\$named(_sbt.BeanOverride.named($arguments))';
 
 void main() {
   test('a file without @SpringBootTest classes gets no output', () async {
@@ -274,10 +324,336 @@ class ShopTest {
     expect(
       source,
       _has(
-        'overrides: [ _sbt.BeanOverride.named(instance.gateway, name: '
-        "'sandbox'), "
-        '_sbt.BeanOverride<Clock>(instance.clock), '
+        'overrides: [ ${_named("instance.gateway, name: 'sandbox'")}, '
+        '_sbt.BeanOverride<Clock>((instance.clock ?? (throw StateError( '
+        "'@TestBean field ShopTest.clock is null: it needs a value')))), "
         '_sbt.BeanOverride<PaymentGateway>(instance.other), ]',
+      ),
+    );
+    // Typed by the field: in the overrides list, BeanOverride.named alone
+    // inferred Object, and the override lost the field's type.
+    expect(
+      source,
+      _has(
+        r'_sbt.BeanOverride<Object> _$named<T extends Object>( '
+        '_sbt.BeanOverride<T> override) => override;',
+      ),
+    );
+  });
+
+  group('@TestBean(name:) created with a constructor', () {
+    const gateways = '''
+abstract class PaymentGateway {}
+abstract class Auditable<T> {}
+class Payment {}
+class RealGateway implements PaymentGateway, Auditable<Payment> {
+  const RealGateway();
+}
+class PlainFake implements PaymentGateway {}
+abstract interface class Repo<T> {}
+''';
+    const testClass = '''
+import 'dart:io';
+
+import 'package:pkg/gateways.dart';
+import 'package:pkg/gateways.dart' as g;
+
+class FakeGateway implements PaymentGateway {
+  FakeGateway();
+  FakeGateway.sandbox();
+}
+class SubGateway extends RealGateway {}
+class _PrivateFake implements PaymentGateway {}
+// A dart:core supertype: the generated file imported dart:core with a
+// prefix only, and lost the implicit import (dynamic, StateError).
+class RecordingGateway implements PaymentGateway, Sink<String> {
+  @override
+  void add(String data) {}
+  @override
+  void close() {}
+}
+// A type argument of dart:_http: the whole list was dropped.
+class HttpSinkGateway implements PaymentGateway, Sink<HttpClientRequest> {
+  @override
+  void add(HttpClientRequest data) {}
+  @override
+  void close() {}
+}
+class _Draft {}
+class FakeRepo<T> implements Repo<T> {
+  const FakeRepo();
+}
+PaymentGateway makeGateway() => FakeGateway();
+abstract final class Fakes {
+  // Any subclass: the class is not known, the replaced bean's types stay.
+  static PaymentGateway gateway() => SubGateway();
+}
+
+@SpringBootTest()
+class ShopTest {
+  @TestBean(name: 'fake')
+  final PaymentGateway fake = FakeGateway();
+
+  // Extends the real class: still an Auditable<Payment>.
+  @TestBean(name: 'sub')
+  final PaymentGateway? sub = SubGateway();
+
+  @TestBean(name: 'named')
+  final PaymentGateway viaNamed = FakeGateway.sandbox();
+
+  // The field's declared type does not matter.
+  @TestBean(name: 'own')
+  final FakeGateway concrete = FakeGateway();
+
+  @TestBean(name: 'dotted')
+  final FakeGateway dotted = .sandbox();
+
+  @TestBean(name: 'inferred')
+  final inferred = const RealGateway();
+
+  // Its public supertypes; the runtime class is added by BeanOverride.
+  @TestBean(name: 'private')
+  final PaymentGateway hidden = _PrivateFake();
+
+  @TestBean(name: 'prefixed')
+  final g.PaymentGateway prefixed = g.PlainFake();
+
+  @TestBean(name: 'cascade')
+  final PaymentGateway cascade = (PlainFake()..hashCode);
+
+  @TestBean(name: 'core')
+  final PaymentGateway core = RecordingGateway();
+
+  @TestBean(name: 'nullableCore')
+  final PaymentGateway? nullableCore = RecordingGateway();
+
+  @TestBean(name: 'httpSink')
+  final PaymentGateway httpSink = HttpSinkGateway();
+
+  // A private type argument: its class and supertype only in raw form,
+  // not the replaced bean's types.
+  @TestBean(name: 'drafts')
+  final Repo<Object> drafts = const FakeRepo<_Draft>();
+
+  @TestBean(name: 'factory')
+  final PaymentGateway made = makeGateway();
+
+  @TestBean(name: 'static')
+  final PaymentGateway viaStatic = Fakes.gateway();
+
+  @TestBean()
+  final PaymentGateway? byType = FakeGateway();
+}
+''';
+    const files = {'bin/app.dart': _app, 'lib/gateways.dart': gateways};
+
+    test("is registered under its class's types, as the generator registers "
+        "beans; other values keep the replaced bean's", () async {
+      final source = _squash(
+        await _generated(testClass, files: files),
+      );
+      String nullable(String field) =>
+          "'@TestBean field ShopTest.$field is null: it needs a value'";
+      const fake = 'types: [_t0.FakeGateway, _t1.PaymentGateway]';
+      const plain = 'types: [_t1.PlainFake, _t1.PaymentGateway]';
+      const real =
+          '_t1.RealGateway, _t1.PaymentGateway, _t1.Auditable<_t1.Payment>, '
+          '_t1.Auditable<dynamic>';
+      const core =
+          'types: [_t0.RecordingGateway, _t1.PaymentGateway, '
+          '_t2.Sink<_t2.String>, _t2.Sink<dynamic>]';
+      const httpSink =
+          'types: [_t0.HttpSinkGateway, _t1.PaymentGateway, '
+          '_t2.Sink<_t3.HttpClientRequest>, _t2.Sink<dynamic>]';
+      expect(
+        source,
+        _has(
+          'overrides: [ '
+          '${_named("instance.fake, name: 'fake', $fake")}, '
+          '${_named("(instance.sub ?? (throw StateError(${nullable('sub')}))), "
+          "name: 'sub', types: [_t0.SubGateway, $real]")}, '
+          '${_named("instance.viaNamed, name: 'named', $fake")}, '
+          '${_named("instance.concrete, name: 'own', $fake")}, '
+          '${_named("instance.dotted, name: 'dotted', $fake")}, '
+          '${_named("instance.inferred, name: 'inferred', types: [$real]")}, '
+          '${_named("instance.hidden, name: 'private', "
+          "types: [_t1.PaymentGateway]")}, '
+          '${_named("instance.prefixed, name: 'prefixed', $plain")}, '
+          '${_named("instance.cascade, name: 'cascade', $plain")}, '
+          '${_named("instance.core, name: 'core', $core")}, '
+          '${_named("(instance.nullableCore ?? "
+          "(throw StateError(${nullable('nullableCore')}))), "
+          "name: 'nullableCore', $core")}, '
+          '${_named("instance.httpSink, name: 'httpSink', $httpSink")}, '
+          '${_named("instance.drafts, name: 'drafts', "
+          "types: [_t0.FakeRepo<dynamic>, _t1.Repo<dynamic>]")}, '
+          '${_named("instance.made, name: 'factory'")}, '
+          '${_named("instance.viaStatic, name: 'static'")}, '
+          '_sbt.BeanOverride<PaymentGateway>((instance.byType ?? '
+          "(throw StateError(${nullable('byType')})))), ]",
+        ),
+      );
+      // dart:_http's types through dart:io, the library that exports them.
+      expect(source, _has("import 'dart:io' as _t3;"));
+      expect(source, isNot(contains('dart:_')));
+      expect(source, isNot(contains('_Draft')));
+      expect(source, _has("import '../shop_test.dart' as _t0;"));
+      expect(source, _has("import 'package:pkg/gateways.dart' as _t1;"));
+      // The implicit import of dart:core kept next to the prefixed one.
+      expect(source, _has("import 'dart:core' as _t2; import 'dart:core';"));
+      expect(source, isNot(contains('_PrivateFake')));
+    });
+
+    // A nullable field generated BeanOverride<T>(T?): no compile; types
+    // not written right, or a prefixed dart:core alone, do not compile
+    // either.
+    test('the generated file compiles', () async {
+      final source = await _generated(testClass, files: files);
+      final errors = await _compileErrors({
+        ...files,
+        'test/shop_test.dart':
+            '$_imports\n$testClass\nvoid main() => runSpringTests();\n',
+        'test/spring/shop.test.spring.dart': source,
+      });
+      expect(errors, isEmpty, reason: source);
+    });
+
+    test("a value whose class cannot be resolved keeps the replaced bean's "
+        'types', () async {
+      final source = _squash(
+        await _generated('''
+@SpringBootTest()
+class ShopTest {
+  @TestBean(name: 'sandbox')
+  final PaymentGateway gateway = Unknown();
+}
+''', files: files),
+      );
+      expect(
+        source,
+        _has(
+          'overrides: [ ${_named("instance.gateway, name: 'sandbox'")}, ]',
+        ),
+      );
+    });
+  });
+
+  // The nullability came from the source text (`endsWith('?')`): a field
+  // of a nullable type alias generated `BeanOverride<MaybeMailer>(...)`
+  // (`T extends Object`) and `BeanOverride.named(field, ...)` with a
+  // nullable value, which do not compile.
+  group('@TestBean of a nullable type alias', () {
+    const mail = '''
+abstract class Mailer {}
+typedef MaybeMailer = Mailer?;
+typedef StillMaybe = MaybeMailer;
+typedef SureMailer = Mailer;
+Mailer? maybeMailer() => null;
+''';
+    const testClass = '''
+import 'package:pkg/mail.dart';
+
+class FakeMailer implements Mailer {}
+typedef LocalMaybe = FakeMailer?;
+Mailer? localMaybe() => FakeMailer();
+
+@SpringBootTest()
+class ShopTest {
+  @TestBean()
+  final MaybeMailer imported = FakeMailer();
+
+  @TestBean()
+  final StillMaybe twice = FakeMailer();
+
+  @TestBean()
+  final LocalMaybe local = FakeMailer();
+
+  @TestBean(name: 'named')
+  final MaybeMailer named = FakeMailer();
+
+  @TestBean(name: 'call')
+  final MaybeMailer call = maybeMailer();
+
+  @TestBean(name: 'inferred')
+  final inferred = localMaybe();
+
+  @TestBean(type: Mailer)
+  final MaybeMailer typed = FakeMailer();
+
+  @TestBean()
+  final SureMailer sure = FakeMailer();
+}
+''';
+    const files = {'bin/app.dart': _app, 'lib/mail.dart': mail};
+
+    test('is checked for null and typed by its value', () async {
+      final source = _squash(await _generated(testClass, files: files));
+      String checked(String field) =>
+          '(instance.$field ?? (throw StateError( '
+          "'@TestBean field ShopTest.$field is null: it needs a value')))";
+      expect(
+        source,
+        _has(
+          'overrides: [ '
+          '_\$named(_sbt.BeanOverride(${checked('imported')})), '
+          '_\$named(_sbt.BeanOverride(${checked('twice')})), '
+          '_\$named(_sbt.BeanOverride(${checked('local')})), '
+          '${_named("${checked('named')}, name: 'named', "
+          "types: [_t0.FakeMailer, _t1.Mailer]")}, '
+          '${_named("${checked('call')}, name: 'call'")}, '
+          '${_named("${checked('inferred')}, name: 'inferred'")}, '
+          '_sbt.BeanOverride<Mailer>(${checked('typed')}), '
+          '_sbt.BeanOverride<SureMailer>(instance.sure), ]',
+        ),
+      );
+    });
+
+    test('the generated file compiles', () async {
+      final source = await _generated(testClass, files: files);
+      final errors = await _compileErrors({
+        ...files,
+        'test/shop_test.dart':
+            '$_imports\n$testClass\nvoid main() => runSpringTests();\n',
+        'test/spring/shop.test.spring.dart': source,
+      });
+      expect(errors, isEmpty, reason: source);
+    });
+  });
+
+  test('@TestBean(name:) keeps the replaced types without a constructor '
+      'call of a class that resolves', () async {
+    final source = _squash(
+      await _generated('''
+@SpringBootTest()
+class ShopTest {
+  @TestBean(name: 'own')
+  final FakeGateway concrete = FakeGateway();
+
+  @TestBean(name: 'private')
+  final _Fake hidden = _Fake();
+
+  @TestBean(name: 'function')
+  final void Function() callback = noop;
+
+  @TestBean(name: 'factory')
+  final PaymentGateway made = makeGateway();
+
+  @TestBean(name: 'literal')
+  final Object? none = null;
+}
+'''),
+    );
+    expect(
+      source,
+      _has(
+        'overrides: [ '
+        '${_named("instance.concrete, name: 'own'")}, '
+        '${_named("instance.hidden, name: 'private'")}, '
+        '${_named("instance.callback, name: 'function'")}, '
+        '${_named("instance.made, name: 'factory'")}, '
+        '${_named("(instance.none ?? (throw StateError( "
+        "'@TestBean field ShopTest.none is null: it needs a value'))), "
+        "name: 'literal'")}, ]',
       ),
     );
   });
@@ -549,6 +925,9 @@ class BTest {}
           "@TestBean field 'gateway' needs a value",
       '@TestBean()\n  final gateway = FakeGateway();':
           "@TestBean field 'gateway' needs the type of the bean it replaces",
+      // Nullable or not (docs/testing.md says so).
+      '@TestBean()\n  final maybe = null as PaymentGateway?;':
+          "@TestBean field 'maybe' needs the type of the bean it replaces",
       '@BeforeAll()\n  void start() {}':
           '@BeforeAll method start must be static',
       '@AfterAll()\n  void stop() {}': '@AfterAll method stop must be static',

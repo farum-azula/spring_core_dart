@@ -140,6 +140,43 @@ void main() {
         headers: {'Origin': 'http://localhost'},
       );
       expect(handshake!.client, isNotNull);
+      // A trailing slash is ignored, as Spring's CorsConfiguration does.
+      handshake = await _connect(
+        mapping,
+        '/ws/rooms/a',
+        headers: {'Origin': 'https://chat.example/'},
+      );
+      expect(handshake!.client, isNotNull);
+    }),
+  );
+
+  test(
+    'session ids are random UUIDs, as in Spring',
+    () => withMapping((mapping, context) async {
+      final first = (await _connect(mapping, '/ws/rooms/a'))!.client!;
+      final second = (await _connect(mapping, '/ws/rooms/a'))!.client!;
+      final ids = [
+        for (final session
+            in context.getBean<WebSocketSessionRegistry>().sessions(
+              '/ws/rooms/{room}',
+            ))
+          session.id,
+      ];
+      expect(ids, hasLength(2));
+      expect(ids.toSet(), hasLength(2));
+      for (final id in ids) {
+        expect(
+          id,
+          matches(
+            RegExp(
+              '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-'
+              r'[0-9a-f]{12}$',
+            ),
+          ),
+        );
+      }
+      await first.close();
+      await second.close();
     }),
   );
 

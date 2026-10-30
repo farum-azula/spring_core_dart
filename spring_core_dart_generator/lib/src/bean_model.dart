@@ -7,6 +7,7 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
@@ -2539,26 +2540,36 @@ class ModuleModel {
   bool markScanned(String classSource) => _sources.add(classSource);
 }
 
-/// The public `dart:` library, among those [context]'s library imports,
-/// that exports [name]; `null` when none does.
+/// The public `dart:` library that exports [name], found among the
+/// libraries that [context]'s library imports, then among those that the
+/// library of [declaration] (the declaration called [name]) imports;
+/// `null` when none does.
 ///
 /// Generated code cannot import an internal SDK library such as
 /// `dart:_http`, so a type declared there is imported through the public
-/// library that exports it (`dart:io`).
-Uri? publicSdkLibrary(String name, Element context) {
-  final library = context.library;
-  if (library == null) {
-    return null;
-  }
-  final candidates = [
-    for (final fragment in library.fragments) ...fragment.importedLibraries,
-  ];
-  for (final candidate in candidates) {
-    final uri = candidate.uri;
-    if (uri.scheme == 'dart' &&
-        !uri.path.startsWith('_') &&
-        candidate.exportNamespace.get2(name) != null) {
-      return uri;
+/// library that exports it (`dart:io`). The user's file usually imports
+/// that library itself; `dart:_http` imports `dart:io` too, which finds it
+/// for a supertype the user's file never names (`HttpServer` of a class
+/// implementing it, declared in another package).
+Uri? publicSdkLibrary(String name, Element context, {Element? declaration}) {
+  for (final library in [context.library, declaration?.library]) {
+    if (library == null) {
+      continue;
+    }
+    for (final fragment in library.fragments) {
+      for (final candidate in fragment.importedLibraries) {
+        final uri = candidate.uri;
+        if (uri.scheme == 'dart' &&
+            !uri.path.startsWith('_') &&
+            switch (candidate.exportNamespace.get2(name)) {
+              null => false,
+              final exported =>
+                declaration == null ||
+                    exported.library?.uri == declaration.library?.uri,
+            }) {
+          return uri;
+        }
+      }
     }
   }
   return null;
@@ -2570,6 +2581,82 @@ bool isInternalSdkType(InterfaceType type) {
   final uri = type.element.library.uri;
   return uri.scheme == 'dart' && uri.path.startsWith('_');
 }
+
+/// Whether generated code can import the class of [type]: one that is not
+/// declared in an internal SDK library, or that a public SDK library
+/// exports ([publicSdkLibrary]: `HttpClient` of `dart:_http` is imported
+/// through `dart:io`). `EfficientLengthIterable` of `dart:_internal`,
+/// which no public library exports, cannot be imported.
+bool isImportableType(InterfaceType type) =>
+    !isInternalSdkType(type) ||
+    switch (type.element.name) {
+      null => false,
+      final name =>
+        publicSdkLibrary(name, type.element, declaration: type.element) != null,
+    };
+
+/// The types a bean of [type] can be looked up by: [type] itself and every
+/// public supertype but `Object` (a private type cannot be written in
+/// generated code). A supertype declared in an internal SDK library counts
+/// when a public one exports it (`HttpServer` of `dart:_http`, written
+/// through `dart:io`); one that no public library exports
+/// (`EfficientLengthIterable` of `dart:_internal`) is left out: generated
+/// code cannot import it.
+///
+/// A generic type is also exposed in its raw form, instantiated to bounds
+/// (`Store<User>` also as `Store<dynamic>`, what a raw `Store` means in
+/// Dart): `List<Store>` gets every store, like a raw type in Spring. So
+/// is a supertype whose type arguments cannot be written (a private class
+/// of the user's file, `Repo<_Draft>` also as `Repo<dynamic>`): only its
+/// raw form is exposed.
+///
+/// The bean scanner registers beans under these types; the test builder
+/// registers a `@TestBean(name: ...)` fake under those of its class.
+List<InterfaceType> exposedBeanTypes(InterfaceType type) {
+  final supertypes = [
+    for (final supertype in type.allSupertypes)
+      if (!supertype.isDartCoreObject &&
+          supertype.element.isPublic &&
+          isImportableType(supertype))
+        supertype,
+  ];
+  final types = [
+    type,
+    for (final supertype in supertypes)
+      if (_isPublicType(supertype)) supertype,
+  ];
+  final seen = {for (final t in types) (t.element, t.getDisplayString())};
+  return [
+    ...types,
+    for (final t in [type, ...supertypes])
+      if (t.typeArguments.isNotEmpty)
+        if (t.element.library.typeSystem.instantiateInterfaceToBounds(
+              element: t.element,
+              nullabilitySuffix: NullabilitySuffix.none,
+            )
+            case final raw
+            when isWritableType(raw) &&
+                seen.add((raw.element, raw.getDisplayString())))
+          raw,
+  ];
+}
+
+// Public and importable, including all class type arguments.
+bool _isPublicType(InterfaceType type) =>
+    type.element.isPublic &&
+    isImportableType(type) &&
+    type.typeArguments.every((t) => t is! InterfaceType || _isPublicType(t));
+
+/// Whether generated code can write [type] as it is: a public class type
+/// that can be imported ([isImportableType]) whose type arguments are
+/// writable too, `dynamic` or `void`.
+bool isWritableType(DartType type) =>
+    type is DynamicType ||
+    type is VoidType ||
+    (type is InterfaceType &&
+        type.element.isPublic &&
+        isImportableType(type) &&
+        type.typeArguments.every(isWritableType));
 
 /// A method of a bean that carries an annotation marked
 /// `@BeanMethodAnnotation()`, such as `@Scheduled`.

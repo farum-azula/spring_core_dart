@@ -233,11 +233,12 @@ void main() {
     test('a provider that cannot be discovered is listed by its id', () async {
       final provider = FakeOidcProvider();
       var down = true;
+      var now = DateTime(2026);
       final registrations = InMemoryClientRegistrationRepository.lazy({
         'keycloak': () async => down
             ? throw StateError('down')
             : await provider.registration(clientName: 'Keycloak'),
-      });
+      }, clock: () => now);
       final client = ChainClient(oauth2Http(provider, registrations).build());
       expect(
         (await client.get('/login')).body,
@@ -248,6 +249,9 @@ void main() {
         '/oauth2/authorization/keycloak',
       );
       down = false;
+      // A failed discovery is tried again after 10 seconds, not at once.
+      expect((await client.get('/login')).body, contains('>keycloak</a>'));
+      now = now.add(const Duration(seconds: 10));
       expect((await client.get('/login')).body, contains('>Keycloak</a>'));
     });
   });

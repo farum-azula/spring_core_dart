@@ -525,6 +525,74 @@ void main() {
       expect(f.provider.tokenRequests, isEmpty);
     });
 
+    // RFC 9207 compares `iss` with the issuer the client knows; a
+    // registration of endpoints without issuer-uri knows none. Its
+    // callback path still keeps it apart from the other registrations.
+    test('a registration without issuer-uri does not check iss; its '
+        'callback path keeps the providers apart', () async {
+      final provider = FakeOidcProvider()..issParameter = 'https://evil.test';
+      final registration = provider.oauth2Registration();
+      expect(registration.providerDetails.issuerUri, isNull);
+      final other = await provider.registration();
+      final f = await _fixture(
+        provider: provider,
+        registrations: [registration, other],
+      );
+      final reply = await f.client.loginWith(provider, 'github');
+      expect(reply.status, 302, reason: '${f.failures.lastCode}');
+      expect(f.failures.errors, isEmpty);
+      // The same `iss` for the registration with an issuer: refused.
+      final g = await _fixture(provider: provider, registrations: [other]);
+      await g.client.loginWith(provider, 'keycloak');
+      expect(g.failures.lastCode, 'invalid_issuer');
+      // A github login's response sent to keycloak's callback: refused.
+      final h = await _fixture(
+        provider: provider,
+        registrations: [registration, other],
+      );
+      final callback = provider.approve(await h.client.startLogin('github'));
+      await h.client.get('/login/oauth2/code/keycloak?${callback.query}');
+      expect(h.failures.lastCode, 'invalid_redirect_uri_parameter');
+    });
+
+    for (final (method, csrf) in [
+      (HttpMethod.head, true),
+      (HttpMethod.put, false),
+      (HttpMethod.delete, false),
+      (HttpMethod.patch, false),
+    ]) {
+      test('a callback as ${method.value} is refused and leaves the login '
+          'alone', () async {
+        final f = await _fixture(
+          configure: csrf ? null : (http) => http.csrf((c) => c.disable()),
+        );
+        final callback = f.provider.approve(
+          await f.client.startLogin('keycloak'),
+        );
+        await f.client.send(method, '${callback.path}?${callback.query}');
+        expect(f.failures.lastCode, 'invalid_request');
+        expect(f.provider.tokenRequests, isEmpty);
+        expect(await f.who(), isNull);
+        final reply = await f.client.callback(callback);
+        expect(reply.status, 302);
+        expect(await f.who(), isNotNull);
+      });
+    }
+
+    test('a callback as PUT with CSRF on gets the CSRF 403', () async {
+      final f = await _fixture();
+      final callback = f.provider.approve(
+        await f.client.startLogin('keycloak'),
+      );
+      final put = await f.client.send(
+        HttpMethod.put,
+        '${callback.path}?${callback.query}',
+      );
+      expect(put.status, 403);
+      expect(f.provider.tokenRequests, isEmpty);
+      expect((await f.client.callback(callback)).status, 302);
+    });
+
     test('no iss parameter from a provider that announces it', () async {
       final provider = FakeOidcProvider()
         ..advertiseIss = true
@@ -605,6 +673,17 @@ void main() {
         ),
         'invalid_id_token',
       );
+    });
+
+    test('an ID token of another type (logout, security event, access, '
+        'DPoP proof) is refused, as by Spring 7.1', () async {
+      for (final type in ['logout+jwt', 'secevent+jwt', 'at+jwt', 'dpop+jwt']) {
+        expect(
+          await loginWith((p) => p.idTokenType = type),
+          'invalid_id_token',
+          reason: type,
+        );
+      }
     });
 
     test('alg: none', () async {
@@ -949,6 +1028,54 @@ void main() {
         throwsA(isA<OAuth2AuthenticationException>()),
         reason: 'the client secret is too short for HS256',
       );
+    });
+
+    // The app's decoder (Sign in with Apple) accepted any typ: a logout
+    // token signed by the provider's keys passed as an ID token there.
+    test("the app's JwkSetOidcIdTokenDecoder accepts the same typ values as "
+        'the factory', () async {
+      final provider = FakeOidcProvider();
+      final registration = await provider.registration();
+      final server = OidcIdTokenDecoderFactory(
+        fetcher: transportJwkFetcher(provider.transport),
+      );
+      final app = JwkSetOidcIdTokenDecoder(provider.transport);
+      Future<bool> accepts(OidcIdTokenDecoder decoder, String token) async {
+        try {
+          await decoder.decode(registration, token);
+          return true;
+        } on OAuth2AuthenticationException {
+          return false;
+        }
+      }
+
+      final now = seconds(DateTime.now());
+      const accepted = {null, 'JWT', 'jwt', 'Jwt', '', '  '};
+      for (final typ in <Object?>[
+        ...accepted,
+        'application/jwt',
+        'logout+jwt',
+        'secevent+jwt',
+        'at+jwt',
+        'dpop+jwt',
+        'JOSE',
+        'id_token+jwt',
+        ' JWT ',
+        42,
+      ]) {
+        final token = testKeys.token(
+          header: {'typ': typ},
+          claims: {
+            'iss': provider.issuer,
+            'aud': clientId,
+            'iat': now,
+            'exp': now + 60,
+          },
+        );
+        final expected = accepted.contains(typ);
+        expect(await accepts(server, token), expected, reason: 'server, $typ');
+        expect(await accepts(app, token), expected, reason: 'app, $typ');
+      }
     });
 
     test('the decoder of a registration is made once', () async {

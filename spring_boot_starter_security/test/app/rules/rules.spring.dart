@@ -165,9 +165,12 @@ class _$RulesSecurityConfig$UsersProxy
       ) as _i6.UserDetails);
 }
 
-class _$RulesSecurityConfig$CorsProxy
+class _$RulesSecurityConfig$CorsConfigurationSourceProxy
     implements _i7.CorsConfigurationSource, _i2.Advised {
-  _$RulesSecurityConfig$CorsProxy(this._target, this._invoker);
+  _$RulesSecurityConfig$CorsConfigurationSourceProxy(
+    this._target,
+    this._invoker,
+  );
 
   final _i7.UrlBasedCorsConfigurationSource _target;
 
@@ -247,11 +250,13 @@ class _$RulesSecurityConfigConfiguration extends _i8.RulesSecurityConfig {
   _i5.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
 
   @override
-  _i7.CorsConfigurationSource cors() =>
-      (this._$beanFactory.getBeanByName(r'cors')
+  _i7.CorsConfigurationSource corsConfigurationSource() =>
+      (this._$beanFactory.getBeanByName(r'corsConfigurationSource')
           as _i7.CorsConfigurationSource);
 
-  _i7.CorsConfigurationSource _$cors(_i2.DependencyResolver r) => super.cors();
+  _i7.CorsConfigurationSource _$corsConfigurationSource(
+    _i2.DependencyResolver r,
+  ) => super.corsConfigurationSource();
 }
 
 /// Beans found by `@ComponentScan` in `test/app/rules`.
@@ -432,14 +437,14 @@ _i2.BeanModule get $rulesSecurityBeans =>
         ),
       ),
       _i2.BeanDefinition<_i7.UrlBasedCorsConfigurationSource>(
-        name: r'cors',
-        source: r'asset:spring_boot_starter_security/test/app/rules/rules.dart#RulesSecurityConfig.cors',
+        name: r'corsConfigurationSource',
+        source: r'asset:spring_boot_starter_security/test/app/rules/rules.dart#RulesSecurityConfig.corsConfigurationSource',
         types: const [
           _i7.UrlBasedCorsConfigurationSource,
           _i7.CorsConfigurationSource,
         ],
         factoryBeanName: r'rulesSecurityConfig',
-        factoryMethodName: r'cors',
+        factoryMethodName: r'corsConfigurationSource',
         dependencies: const [
           _i2.Dependency(
             _i8.RulesSecurityConfig,
@@ -448,8 +453,9 @@ _i2.BeanModule get $rulesSecurityBeans =>
         ],
         create: (r) =>
             ((r.dependency<_i8.RulesSecurityConfig>(
-                  qualifier: r'rulesSecurityConfig',
-                ) as _$RulesSecurityConfigConfiguration)._$cors(r)
+                      qualifier: r'rulesSecurityConfig',
+                    ) as _$RulesSecurityConfigConfiguration)
+                    ._$corsConfigurationSource(r)
                 as _i7.UrlBasedCorsConfigurationSource),
         annotations: const [_i2.Bean()],
         aopProxy: _i2.AopProxyFactory(
@@ -468,10 +474,11 @@ _i2.BeanModule get $rulesSecurityBeans =>
               ],
             ),
           ],
-          create: (target, invoker) => _$RulesSecurityConfig$CorsProxy(
-            (target as _i7.UrlBasedCorsConfigurationSource),
-            invoker,
-          ),
+          create: (target, invoker) =>
+              _$RulesSecurityConfig$CorsConfigurationSourceProxy(
+                (target as _i7.UrlBasedCorsConfigurationSource),
+                invoker,
+              ),
         ),
       ),
     ]);

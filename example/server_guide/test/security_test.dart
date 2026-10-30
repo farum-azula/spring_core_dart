@@ -47,6 +47,20 @@ void main() {
         (c) => c.name == 'XSRF-TOKEN',
       );
       expect(cookie.httpOnly, isFalse); // the app's code reads it
+      expect(cookie.sameSite, 'Lax');
+    });
+
+    test('anonymous requests start no session (no saved request)', () async {
+      for (final path in ['/api/me', '/api/orders', '/api/books']) {
+        final result = await app.mockMvc
+            .get(path, headers: {'Accept': 'text/html'})
+            .andReturn();
+        expect(
+          result.response.cookies.where((c) => c.name == 'JSESSIONID'),
+          isEmpty,
+          reason: path,
+        );
+      }
     });
 
     test('POST /api/login: 204 and a session; /api/me; logout', () async {
@@ -202,7 +216,8 @@ void main() {
               'X-Content-Type-Options': 'nosniff',
               'X-Frame-Options': 'DENY',
               'Content-Security-Policy':
-                  "default-src 'none'; img-src 'self'; frame-ancestors 'none'",
+                  "default-src 'none'; img-src 'self'; frame-ancestors "
+                  "'none'; form-action 'self'; base-uri 'none'",
             },
           );
     });

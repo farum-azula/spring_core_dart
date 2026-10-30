@@ -556,8 +556,10 @@ void main() {
   });
 
   group('InMemoryClientRegistrationRepository', () {
-    test('a failed supplier is tried again; a success is kept', () async {
+    test('a failed supplier is tried again after 10 seconds, not on every '
+        'call; a success is kept', () async {
       var calls = 0;
+      var now = DateTime(2026);
       final registration = CommonOAuth2Provider.github
           .getBuilder('github')
           .clientId('c')
@@ -570,11 +572,23 @@ void main() {
           }
           return registration;
         },
-      });
+      }, clock: () => now);
+      // The provider down: one discovery, then its error for every call
+      // (anyone can start a login: no discovery per request).
+      for (var i = 0; i < 50; i++) {
+        await expectLater(
+          repository.findByRegistrationId('github'),
+          throwsA(isA<HttpTransportException>()),
+        );
+      }
+      expect(calls, 1);
+      now = now.add(const Duration(seconds: 9));
       await expectLater(
         repository.findByRegistrationId('github'),
         throwsA(isA<HttpTransportException>()),
       );
+      expect(calls, 1);
+      now = now.add(const Duration(seconds: 1));
       expect(
         await repository.findByRegistrationId('github'),
         same(registration),
@@ -586,6 +600,56 @@ void main() {
       expect(calls, 2);
       expect(await repository.findByRegistrationId('nope'), isNull);
       expect(repository.registrationIds, ['github']);
+    });
+
+    // The pause was measured on the wall clock alone: set back 2 h after a
+    // failure, the cached error was served for 2 h (no login).
+    test('a clock set back does not stretch the pause after a failure; real '
+        'time ends it', () async {
+      var now = DateTime(2026, 10, 30, 12);
+      var calls = 0;
+      final registration = CommonOAuth2Provider.github
+          .getBuilder('github')
+          .clientId('c')
+          .build();
+      Future<ClientRegistration> supplier() async {
+        if (++calls == 1) {
+          throw HttpTransportException('offline');
+        }
+        return registration;
+      }
+
+      final repository = InMemoryClientRegistrationRepository.lazy({
+        'github': supplier,
+      }, clock: () => now);
+      await expectLater(
+        repository.findByRegistrationId('github'),
+        throwsA(isA<HttpTransportException>()),
+      );
+      now = now.subtract(const Duration(hours: 2));
+      expect(
+        await repository.findByRegistrationId('github'),
+        same(registration),
+      );
+      expect(calls, 2);
+
+      // A clock that stands still: the pause still ends.
+      calls = 0;
+      final frozen = InMemoryClientRegistrationRepository.lazy(
+        {'github': supplier},
+        retryAfterFailure: const Duration(milliseconds: 50),
+        clock: () => DateTime(2026),
+      );
+      for (var i = 0; i < 2; i++) {
+        await expectLater(
+          frozen.findByRegistrationId('github'),
+          throwsA(isA<HttpTransportException>()),
+        );
+      }
+      expect(calls, 1);
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(await frozen.findByRegistrationId('github'), same(registration));
+      expect(calls, 2);
     });
 
     test('duplicate ids are refused', () {

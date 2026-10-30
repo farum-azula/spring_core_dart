@@ -146,9 +146,23 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
   HTTPS, HSTS are sent by default. `headers((h) => ...)` changes them:
   `contentSecurityPolicy(...)`, `referrerPolicy(...)`,
   `frameOptions(XFrameOptionsMode.sameOrigin)`, `addHeaderWriter(...)`.
-- **CORS** is on, with the router's configuration (the
-  `CorsConfigurationSource` bean and `@CrossOrigin`), pre-flight requests
-  included; `cors((c) => c.configurationSource(...))` takes other rules.
+- **CORS** is on, with the router's rules, pre-flight requests included:
+  those of the `CorsConfigurationSource` bean named
+  `corsConfigurationSource` alone where it has some (as Spring Security
+  applies that bean; a bean of the type with another name, such as
+  `apiCors`, is ignored, several never fail the start, and a bean of that
+  name of another type does, as in Spring), else the `WebMvcConfigurer`
+  mappings and the `@CrossOrigin` of the handler the router would call
+  (chosen with its `consumes`, `produces` and `headers` too). The handler
+  mappings are asked in order, as for the request itself, as Spring's
+  `HandlerMappingIntrospector` asks them: a request another mapping
+  takes, such as a WebSocket handshake, gets only the bean's rules, never
+  the `addCorsMappings` ones (the endpoint's `allowedOrigins` decide). The
+  router leaves a request the filter allowed as it is, so CORS works the
+  same with and without this starter. A request's origin and method are
+  checked (a `HEAD` or `DELETE` the rules do not list is a 403, before
+  the security checks);
+  `cors((c) => c.configurationSource(...))` takes other rules.
 - **Your own filters:** `addFilterBefore`, `addFilterAfter` and
   `addFilterAt` place a `WebFilter` relative to a built-in filter class
   (`addFilterAfter(MyFilter(), CsrfFilter)`).
@@ -237,7 +251,26 @@ http.csrf(c -> c
 cookies, can turn it off: `csrf((c) => c.disable())`. A browser does not
 send those headers by itself, so another site cannot forge such a
 request. `csrf((c) => c.ignoringRequestMatchers('/webhooks/**'))` exempts
-single paths, such as a webhook a third party posts to.
+single paths, such as a webhook a third party posts to. With
+`oauth2ResourceServer()`, requests that carry a token in the header
+(`Authorization: Bearer`, or `DPoP` with a proof) are exempt by
+themselves, as in Spring, while the browser's session requests of the
+same chain keep their CSRF check. A page of another origin can add
+such a header only where the CORS configuration lets its origin send
+it with credentials, and such an origin can read the CSRF token anyway.
+The exempt request goes on to the token filters, which log it in with
+the token or refuse it with `401`, whatever cookies come with it. Two
+limits keep that true:
+
+- only the header counts: a token in the `access_token` query string
+  never exempts a request, since any page can post a form to such a URL
+  (the parameter is read in `GET` requests only, see below);
+- the chain's logout URL and form login URL keep their CSRF check even
+  with a token header: their filters act on the browser's session
+  before any token is looked at (Spring exempts them). A filter of your
+  own added before the token filters (`addFilterBefore(...,
+  BearerTokenAuthenticationFilter)`) sees such a request before its
+  token is checked too: it must not act on the session for it.
 
 ## JWT resource servers
 
@@ -283,15 +316,34 @@ Bearer error="invalid_token"`:
 3. The signature is checked with the key of the token's `kid`. Keys named
    in the token itself (`jku`, `jwk`, `x5u`) are ignored: a token cannot
    bring its own key.
-4. `exp` and `nbf` are checked with 60 seconds of clock skew, then the
+4. `typ` is `JWT` (in any case) or absent, as in Spring Security 7: the
+   provider's other JWTs, signed with the same keys, are no access
+   tokens (logout tokens `logout+jwt`, security events `secevent+jwt`,
+   and DPoP proofs `dpop+jwt`). `at+jwt` (RFC 9068) is refused too, as
+   in Spring; for a provider that types its access tokens so, declare a
+   `JwtDecoder` bean whose validator starts with
+   `JwtTypeValidator(['at+jwt', 'JWT'], allowEmpty: true)`.
+5. `exp` and `nbf` are checked with 60 seconds of clock skew, then the
    issuer and the audiences as configured.
+6. A token bound to a client certificate (`cnf.x5t#S256`, RFC 8705) is
+   refused, with either scheme: it is valid only over a TLS connection
+   made with that certificate, and the web starter does not hand client
+   certificates to the security filters, so the binding cannot be
+   checked (Spring refuses such a token too when the request has no
+   client certificate).
 
 The provider's keys are cached for 5 minutes. A token with an unknown
 `kid` fetches them again, at most once every 30 seconds, so made-up ids
-cannot flood the provider. A valid token without the rights a rule needs
+cannot flood the provider. A failed fetch counts too, and so does a
+failed lookup of the issuer's metadata (`issuer-uri` alone): while the
+provider is down, tokens fail with a `401` (or keep the keys fetched
+before) and the provider gets one attempt every 30 seconds, never one
+per token. A valid token without the rights a rule needs
 gets `403` with `error="insufficient_scope"`. Bearer tokens in the query
 string (`access_token=`) are ignored unless the
-`DefaultBearerTokenResolver` allows them.
+`DefaultBearerTokenResolver` allows them (`allowUriQueryParameter`, for
+server-sent events from a browser), and then only in `GET` requests, as
+in Spring; such a token never exempts a request from CSRF.
 
 Scopes become `SCOPE_x` authorities, so a rule reads
 `hasAuthority('SCOPE_orders.read')`. `@AuthenticationPrincipal() Jwt jwt`
@@ -326,19 +378,22 @@ What is checked; any failure is a `401` with
 
 1. Exactly one `DPoP` header, at most 8 KiB (`invalid_request`
    otherwise).
-2. The access token, as a `Bearer` token is (`invalid_token`).
+2. The access token, as a `Bearer` token is (`invalid_token`); it must
+   have a `cnf.jkt` claim (`invalid_dpop_proof` otherwise, before the
+   proof is read).
 3. The proof (`invalid_dpop_proof`): `typ` is `dpop+jwt`; `alg` is RS*,
    PS* or ES*, never `none` or HS*; the signature verifies with the
    public key of its own `jwk` header, an EC key on its curve or an RSA
    key of 2 048 to 8 192 bits, without private members (`d`, ...);
    `htm` is the request's method (case-sensitive); `htu` its URL; `iat`
    is within 30 seconds of the server's clock; `ath` is the hash of the access token;
-   its `jti` was not used before.
-4. The thumbprint of the proof's key equals the token's `cnf.jkt`
-   (`invalid_dpop_proof`; a token without `cnf.jkt` is refused too).
+   the thumbprint of its key equals the token's `cnf.jkt`.
+4. Its `jti` was not used before; it is recorded only now, for a proof
+   that passed everything else.
 
 A token with `cnf.jkt` sent as `Bearer` is refused (`invalid_token`),
-with or without a `DPoP` header. A `DPoP` header next to an unbound
+with or without a `DPoP` header, and so is a token also bound to a
+client certificate (`cnf.x5t#S256`), even with a valid proof. A `DPoP` header next to an unbound
 `Bearer` token is ignored, as in Spring. On success the request has the
 same `JwtAuthenticationToken` as with a `Bearer` token: rules, scopes,
 `@AuthenticationPrincipal() Jwt` and `@PreAuthorize` work unchanged, and
@@ -352,11 +407,24 @@ terminates TLS, the server sees `http`, and proofs for `https://...` are
 refused until the web starter reads forwarded headers: pass the scheme
 through, or terminate TLS in the application (`server.ssl.*`).
 
-The ids of used proofs are kept in memory for the time window, at most
-100 000 and 1 000 per client key, as in Spring; when full, new proofs
-are refused until old ids expire (never forgotten early). With several instances behind a load balancer, a proof
-could be replayed on another one: give them a shared store. A
-`DPoPProofJwtDecoderFactory` bean replaces the default:
+The ids of used proofs are kept in memory until 5 seconds after the time
+window (`iat` + 30 s + 5 s: the `iat` check reads the clock a moment
+before the store does, and an id dropped at the very end of the window
+would let the proof through once more), at most 100 000 and 1 000 per
+client key, as in Spring; a recorded id is refused until a purge drops
+it, and when full, new proofs are refused until old ids expire (never
+forgotten early). Only proofs
+signed with the key their token is bound to are recorded, so the limit
+per key holds per bound key: a client with one valid token cannot fill
+the store with proofs of keys it makes up. A client that gets many
+tokens, each bound to another key, could still fill it (1 000 per key)
+and have new proofs refused for everyone while those ids are kept (up
+to twice the 30-second skew plus 5 seconds); the identity provider's
+limits on token requests, or a shared store with its own quotas, are the
+defence there. With several instances behind a load balancer, a proof
+could be replayed on another one: give them a shared store, which keeps
+each id until the `expiresAt` it is given (a TTL) and refuses it until
+then. A `DPoPProofJwtDecoderFactory` bean replaces the default:
 
 ```dart
 @Bean()
@@ -749,7 +817,21 @@ So that one request cannot make the server do unbounded work:
   the form with the web starter's 1 MiB limit, and the login filter uses
   those fields;
 - sessions are limited by `server.servlet.session.max-sessions` (10 000
-  by default; the least recently used are dropped);
+  by default). A new session takes the place of an expired one, then of
+  one its client never came back with, then of the least recently used
+  one without a login. When only logins are left, it takes the place of
+  the least recently used login of the user who holds the most
+  sessions, if that user holds two or more (the chain stores the user's
+  name in the session under Spring Session's `PRINCIPAL_NAME_INDEX_NAME`,
+  and for this limit the name with where the login came from: an
+  OAuth2 registration's `ada` and the application's own `ada` are two
+  users): one account logged in again and again
+  cannot lock the others out, and anonymous requests (a login page, a
+  saved request) never push out a user's last session. When every login
+  left belongs to another user, a new session is refused with `503`,
+  and the saved request is skipped;
+- a failed call to the identity provider (its metadata, its JWK Set) is
+  made again 30 seconds later at the earliest, never once per request;
 - password hashing runs only for requests that carry credentials.
 
 ## Behaviour to know
@@ -780,13 +862,36 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
 - **dart:io normalizes paths** (`..`, `%2e%2e`, `\`) before the
   application (RFC 3986). The rules see the normalized path, as the router
   does; Spring's firewall refuses the raw path instead.
-- **CORS is on by default**, with the router's configuration (the
-  `CorsConfigurationSource` bean and `@CrossOrigin`, also for
-  pre-flights). Spring needs `.cors()` and, with a
-  `CorsConfigurationSource` bean, ignores `@CrossOrigin` in pre-flights.
+- **CORS is on by default**, with the router's rules; Spring needs
+  `.cors()`. With a `CorsConfigurationSource` bean named
+  `corsConfigurationSource` both apply only the bean's rules where it has
+  some, `@CrossOrigin` included (the
+  differential test: a pre-flight and a `GET` to `/api/cors` from its
+  `@CrossOrigin` origin are a 403 in both). Where the bean has none,
+  Spring's `CorsFilter` still ends every pre-flight, with a 200 without
+  CORS headers, so the browser blocks a call that `@CrossOrigin` allows;
+  here the pre-flight is answered from the handler's rules, as the
+  actual request is in both.
 - **The session cookie** is `SameSite=Lax` by default
   (`server.servlet.session.cookie.same-site`), and sessions are limited
-  (`server.servlet.session.max-sessions`, 10 000).
+  (`server.servlet.session.max-sessions`, 10 000; a login is pushed out
+  only for a user who holds the most sessions, see the size limits
+  above). Spring Boot has no limit of its own; Tomcat's
+  `maxActiveSessions` (unlimited by default) refuses every new session
+  above it.
+- **CSRF and token requests:** only a token in the header
+  (`Authorization: Bearer`, or `DPoP` with a proof) exempts a request
+  from CSRF. Spring exempts whatever its `BearerTokenResolver` finds,
+  which with `allowFormEncodedBodyParameter` includes a token in a
+  form a cross-site page can post. The chain's logout and login URLs
+  keep their CSRF check with a token header; Spring exempts them, and
+  its logout filter then logs the session out before the token is
+  looked at (the differential test: `POST /logout` with a `Bearer`
+  token, `403` here, Spring's logout redirect there).
+- **Certificate-bound tokens** (`cnf.x5t#S256`, RFC 8705) are always
+  refused. Spring checks them against the request's client
+  certificate; the web starter does not hand client certificates to the
+  security filters yet.
 - **Errors are `ProblemDetail`** (`application/problem+json`), never the
   exception's message.
 - **Two `Authorization` headers** are refused (Spring reads the first).
@@ -796,7 +901,7 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   `stateless` only, not `always` and `never`.
 - **`oauth2Login()`** also checks that the callback came to the redirect
   URI of its own login (no mixed-up registrations), and the RFC 9207 `iss`
-  parameter; PKCE is used for confidential clients too. The OAuth2
+  parameter (PKCE for every client, as Spring Security 7.1). The OAuth2
   client's `TokenEndpointOidcIdTokenDecoder` (it trusts the token
   endpoint's TLS) is never taken for it: ID token signatures are always checked. The login
   page never shows why a login failed. With both OAuth2 clients and a
@@ -804,8 +909,12 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   has `oauth2Login()` only). The callback reads the response from the
   query of a `GET`, or from the form of a `POST` for a registration with
   `response-mode=form_post` (Spring sends no `response_mode` and reads
-  the parameters of any method); the callback's `POST` is exempt from
-  CSRF by itself, the `state` protecting it. The `apple` common provider
+  the parameters of any method; here a `HEAD`, `PUT`, ... callback fails
+  with `invalid_request` and leaves the login in progress alone); the
+  callback's `POST` is exempt from CSRF by itself, the `state`
+  protecting it. A registration without `issuer-uri` cannot check the
+  `iss` parameter (nothing to compare with); its callback path keeps it
+  apart from the other registrations. The `apple` common provider
   and the JWT client secret (`client-secret-jwt.*`) are additions.
   Compared with Spring
   Security 7.1 by the differential test (the same browser steps against
@@ -820,14 +929,25 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   creates no session (Spring keeps the exception in a new one).
 
 - **DPoP** (RFC 9449; compared with Spring Security 7.1 by the
-  differential test, 24 requests: the valid proof and the attacks of
-  `test/dpop_test.dart`): DPoP-bound tokens are accepted by default
+  differential test, 32 requests: the valid proof and the attacks of
+  `test/dpop_test.dart`, tokens of other types and certificate-bound
+  tokens, all answered as Spring does; and 4 state-changing token
+  requests with CSRF on): DPoP-bound tokens are accepted by default
   (Spring 7.1 needs `oauth2ResourceServer(o -> o.dPoP(...))`); `htu` is
   compared as RFC 9449 §4.3 says, after RFC 3986 normalization and
   without its query (Spring compares the text: a host in capitals or a
   query fails there); `htm` is case-sensitive, as HTTP methods are
   (Spring ignores case). A DPoP-bound token sent as `Bearer` is refused,
-  as in Spring (RFC 9449 §7.2); the challenges' error codes are Spring's.
+  as in Spring (RFC 9449 §7.2), with one failure event (Spring publishes
+  a success first); the challenges' error codes are Spring's. Requests
+  with `Authorization: DPoP` and a `DPoP` proof need no CSRF token, as
+  `Bearer` ones (Spring's `registerDefaultCsrfOverride` exempts `Bearer`
+  only, so with CSRF on its chain answers a DPoP `POST` with `403`): a
+  browser never sends either header by itself, and the token decides.
+  The proof's key is compared with `cnf.jkt` before its `jti` is
+  recorded (Spring records the `jti` first), and the `jti` is kept until
+  `iat` + skew + 5 seconds (Spring: `iat` + skew, so a purge at that
+  moment could let the proof through once more).
   The used proof ids go to a
   `DPoPProofJtiCache` (Spring: a `Cache`), and the proof's checks are
   changed with a `DPoPProofJwtDecoderFactory` bean (Spring has no
@@ -848,7 +968,8 @@ planned in [roadmap/spring_boot_starter_security.md](../roadmap/spring_boot_star
   OIDC back-channel logout (`oidcLogout()`), opaque tokens
   (`opaqueToken()`), several issuers in one chain
   (`JwtIssuerAuthenticationManagerResolver`), bearer tokens in a form
-  body, `jwt.public-key-location`.
+  body, certificate-bound access tokens over mTLS (RFC 8705; refused
+  until then), `jwt.public-key-location`.
 - **SAML 2.0** (`saml2Login()`): left out on purpose, it needs an XML
   signature stack.
 - **Other:** `csrf.spa()`, `redirectToHttps()`, `hasIpAddress`,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 /// Adds one or more security headers to every response of a chain.
@@ -248,19 +250,33 @@ final class _CacheHeaderResponse extends ServerHttpResponseDecorator {
 ///
 /// Before a cross-origin request, a browser sends a pre-flight `OPTIONS`
 /// request without credentials; the rules would refuse it. This filter
-/// answers pre-flights itself from the CORS configuration, so they never
-/// reach the rules. An actual cross-origin request gets its CORS headers
-/// here and then goes on to be authenticated as usual.
+/// answers every pre-flight itself from the CORS configuration, so they
+/// never reach the rules. An actual cross-origin request gets its CORS
+/// headers here and then goes on to be authenticated as usual.
 ///
-/// - A pre-flight that the configuration allows: `200`.
-/// - A CORS request the configuration refuses: `403`.
-/// - A pre-flight with no configuration for its path: `403`, with no CORS
-///   headers, so the browser blocks the request.
-/// - Any other request: unchanged.
+/// - A pre-flight that the configuration allows: `200`, with the CORS
+///   headers.
+/// - A CORS request the configuration refuses: `403` (see `processCors`):
+///   an origin it does not allow, or a method it does not allow (the
+///   method a pre-flight announces, or an actual request's own).
+/// - A pre-flight with no configuration for its path: `200` with no CORS
+///   headers (and no `Vary`), as in Spring, so the browser blocks the
+///   request it announced.
+/// - Any other request: passed on; with a configuration for its path, its
+///   answer gets `Vary: Origin, Access-Control-Request-Method,
+///   Access-Control-Request-Headers`, as in Spring (see `processCors`).
 ///
-/// By default the configuration is the router's, the
-/// `CorsConfigurationSource` bean and `@CrossOrigin`, so CORS works the
-/// same with and without security. Change it with `HttpSecurity.cors`.
+/// By default the configuration is the dispatcher's
+/// (`DispatcherHandler.corsConfigurationFor`): the rules of the handler
+/// the request goes to, the handler mappings asked in order as for the
+/// request itself and the router choosing as it does (path, method,
+/// `consumes`, `produces`, `headers`), or those of the
+/// `CorsConfigurationSource` bean named `corsConfigurationSource` alone
+/// where it has some. A request another mapping takes, such as a
+/// WebSocket handshake, gets only the bean's rules (the endpoint checks
+/// the origin itself), never the `addCorsMappings` rules. The router
+/// leaves a request this filter allowed as it is, so CORS works the same
+/// with and without security. Change it with `HttpSecurity.cors`.
 ///
 /// Spring (Java): `CorsFilter`. Spring adds it only with `.cors()`.
 final class CorsFilter implements WebFilter {
@@ -268,7 +284,8 @@ final class CorsFilter implements WebFilter {
   const CorsFilter(this.configurationFor);
 
   /// The CORS rules for a request, or `null` when its path has none.
-  final CorsConfiguration? Function(ServerHttpRequest request) configurationFor;
+  final FutureOr<CorsConfiguration?> Function(ServerHttpRequest request)
+  configurationFor;
 
   @override
   Future<void> doFilter(
@@ -276,21 +293,13 @@ final class CorsFilter implements WebFilter {
     ServerHttpResponse response,
     WebFilterChain chain,
   ) async {
-    if (!isCorsRequest(request)) {
-      return await chain.doFilter(request, response);
-    }
+    // Spring's CorsFilter: no configuration lets every request through
+    // untouched; processCors only adds Vary to a request that is not a
+    // CORS request; and every pre-flight ends here.
+    final config = await configurationFor(request);
     final preFlight = isPreFlightRequest(request);
-    final config = configurationFor(request);
-    if (config == null) {
-      if (preFlight) {
-        // Nothing allows it: the browser gets no CORS headers and blocks.
-        response.statusCode = HttpStatus.forbidden;
-        await response.close();
-        return;
-      }
-      return await chain.doFilter(request, response);
-    }
-    if (!processCors(config, request, response, preFlight: preFlight)) {
+    if (config != null &&
+        !processCors(config, request, response, preFlight: preFlight)) {
       await response.send(HttpStatus.forbidden, 'Invalid CORS request');
       return;
     }

@@ -52,9 +52,17 @@ class RestController extends Controller {
 /// problem. A controller's own handlers are tried first; the advice
 /// handlers are used for what they leave, and also for errors raised
 /// before any controller method runs (such as a path that no controller
-/// maps). Among all advice beans, the handler for the most specific
-/// exception type wins; between equal ones, the bean with the lower
-/// `@Order` comes first.
+/// maps). The advice beans are tried in `@Order`, as in Spring: the
+/// first bean with a handler for the error answers it, with its handler
+/// for the most specific exception type.
+///
+/// An advice applies to every controller unless it is narrowed with
+/// [ControllerAdvice.of]: [basePackages] (library URI prefixes, such as `package:shop/admin/`),
+/// [assignableTypes] (controllers of these types or their subtypes) or
+/// [annotations] (controllers carrying one of these annotations). A
+/// controller matching any of them is advised. A narrowed advice does not
+/// answer errors raised before a controller method was chosen (a 404, a
+/// 405), as in Spring.
 ///
 /// ```dart
 /// @ControllerAdvice()
@@ -78,9 +86,41 @@ class RestController extends Controller {
 /// }
 /// ```
 class ControllerAdvice extends Component {
-  /// Marks a controller advice; [name] is the bean name, by default the
-  /// class name with a lower-case first letter.
-  const ControllerAdvice([super.name]);
+  /// Marks a controller advice for every controller; [name] is the bean
+  /// name, by default the class name with a lower-case first letter.
+  const ControllerAdvice([super.name])
+    : basePackages = const [],
+      assignableTypes = const [],
+      annotations = const [];
+
+  /// Marks a controller advice for the controllers that match
+  /// [basePackages], [assignableTypes] or [annotations] (any of them).
+  ///
+  /// ```dart
+  /// // Only the admin controllers answer errors this way.
+  /// @ControllerAdvice.of(basePackages: ['package:shop/admin/'])
+  /// class AdminErrors { ... }
+  /// ```
+  const ControllerAdvice.of({
+    String? name,
+    this.basePackages = const [],
+    this.assignableTypes = const [],
+    this.annotations = const [],
+  }) : super(name);
+
+  /// The controllers advised by where they are declared: prefixes of
+  /// their library URI, such as `package:shop/admin/` (Spring's
+  /// `basePackages`, with Dart library URIs instead of Java packages).
+  final List<String> basePackages;
+
+  /// The controllers advised by type: those of these types, or of a type
+  /// that implements or extends one of them (Spring's `assignableTypes`).
+  final List<Type> assignableTypes;
+
+  /// The controllers advised by annotation: those whose class carries an
+  /// annotation of one of these types, such as `RestController` (Spring's
+  /// `annotations`; the annotation's exact type, not one it extends).
+  final List<Type> annotations;
 }
 
 /// Marks a [ControllerAdvice] for a REST API, whose handlers write their
@@ -93,9 +133,17 @@ class ControllerAdvice extends Component {
 /// Spring (Java): `@RestControllerAdvice`, which is `@ControllerAdvice`
 /// plus `@ResponseBody`.
 class RestControllerAdvice extends ControllerAdvice {
-  /// Marks a REST controller advice; [name] is the bean name, by default
-  /// the class name with a lower-case first letter.
+  /// Marks a REST controller advice for every controller; [name] is the
+  /// bean name, by default the class name with a lower-case first letter.
   const RestControllerAdvice([super.name]);
+
+  /// Marks a REST controller advice narrowed as [ControllerAdvice.of].
+  const RestControllerAdvice.of({
+    super.name,
+    super.basePackages,
+    super.assignableTypes,
+    super.annotations,
+  }) : super.of();
 }
 
 /// Sets the HTTP status of the response of a controller method or an
@@ -110,9 +158,10 @@ class RestControllerAdvice extends ControllerAdvice {
 /// result is ignored and the answer is an error: a `ProblemDetail` with
 /// the status and the reason as its detail.
 ///
-/// Unlike Spring, it is read on methods only: an exception class carrying
-/// it is not mapped to the status. Throw a `ResponseStatusException`, or
-/// write an `@ExceptionHandler`, instead.
+/// It is read on the handler method, or on the controller class for all
+/// of its methods (a method's own annotation wins). Unlike Spring, an
+/// exception class carrying it is not mapped to the status: throw a
+/// `ResponseStatusException`, or write an `@ExceptionHandler`, instead.
 ///
 /// ```dart
 /// // POST /books answers 201 with the created book.
@@ -210,13 +259,15 @@ class ExceptionHandler {
 /// asks with an `OPTIONS` "pre-flight" request. This annotation makes the
 /// server answer both. Put it on the controller class for all its
 /// methods, or on a method; when both carry it, their lists are merged
-/// and the method's [allowCredentials] and [maxAge] win. A global
-/// configuration for many paths is a `CorsConfigurationSource` bean
-/// instead (see `spring_boot_starter_web`).
+/// and the method's [allowCredentials], [allowPrivateNetwork] and
+/// [maxAge] win. A global configuration for many paths is a
+/// `CorsConfigurationSource` bean named `corsConfigurationSource` instead
+/// (see `spring_boot_starter_web`).
 ///
 /// Every attribute has a default, so `@CrossOrigin()` alone allows every
-/// origin, the methods `GET`, `HEAD` and `POST`, every request header, no
-/// credentials, and a pre-flight cache of 30 minutes.
+/// origin, the method the handler is mapped to (`DELETE` for a
+/// `@DeleteMapping`), every request header, no credentials, and a
+/// pre-flight cache of 30 minutes, as in Spring.
 ///
 /// ```dart
 /// // Only the shop's pages may call this API from a browser.
@@ -241,17 +292,22 @@ class CrossOrigin {
     this.exposedHeaders = const [],
     this.methods = const [],
     this.allowCredentials,
+    this.allowPrivateNetwork,
     this.maxAge,
   });
 
-  /// The origins allowed to call, exactly as a browser sends them
-  /// (`https://shop.example`), or `*` for any. Empty, with no
-  /// [originPatterns] either: any origin. `*` cannot be combined with
-  /// [allowCredentials]; use [originPatterns] then.
+  /// The origins allowed to call, as a browser sends them
+  /// (`https://shop.example`, compared without case), or `*` for any.
+  /// Empty, with no [originPatterns] either: any origin. `*` cannot be
+  /// combined with [allowCredentials]; use [originPatterns] then. Checked
+  /// as Spring does, by `AllowedOrigins`: a value may list several,
+  /// separated by commas, and a trailing `/` is ignored.
   final List<String> origins;
 
-  /// Origin patterns, where `*` matches any text and `[*]` any port
-  /// (`https://*.example`, `http://localhost:[*]`).
+  /// Origin patterns: `*` matches any text, as Spring's `.*`
+  /// (`https://*.example`), and a port list at the end the ports listed
+  /// or, with `[*]`, any port or none (`http://localhost:[3000,3001]`,
+  /// `http://localhost:[*]`). See `AllowedOrigins`.
   final List<String> originPatterns;
 
   /// The request headers a page may send (default: all).
@@ -261,13 +317,23 @@ class CrossOrigin {
   /// script may read (default: none).
   final List<String> exposedHeaders;
 
-  /// The HTTP methods allowed (`'PUT'`, `'DELETE'`); default `GET`,
-  /// `HEAD` and `POST`, whatever the method's own mapping is.
+  /// The HTTP methods allowed (`'PUT'`, `'DELETE'`), for pre-flights and
+  /// actual cross-origin requests; default: the method the handler is
+  /// mapped to (`GET` for a `@GetMapping`, so not `HEAD`), as in Spring.
   final List<String> methods;
 
   /// Whether the browser may send cookies and other credentials, and let
   /// the page read the answer (default: no).
   final bool? allowCredentials;
+
+  /// Whether pages of public sites may call this server on a private
+  /// network, such as `localhost` or an office network (Chrome's Private
+  /// Network Access: a pre-flight with
+  /// `Access-Control-Request-Private-Network: true` gets
+  /// `Access-Control-Allow-Private-Network: true`); default: no. With
+  /// `true`, list [origins] or use [originPatterns]: all origins cannot be
+  /// allowed then (the startup fails).
+  final bool? allowPrivateNetwork;
 
   /// How long the browser may reuse a pre-flight answer, in seconds
   /// (default 1800, 30 minutes).
