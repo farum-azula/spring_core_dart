@@ -10,10 +10,12 @@ import 'package:analyzer/dart/ast/ast.dart'
         FunctionDeclarationStatement,
         FunctionExpression,
         Identifier,
+        InstanceCreationExpression,
         IntegerLiteral,
         ListLiteral,
         MapLiteralEntry,
         MethodDeclaration,
+        NamedArgument,
         NullLiteral,
         ParenthesizedExpression,
         PrefixExpression,
@@ -36,6 +38,7 @@ import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
 
+part 'advisor_pointcuts.dart';
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
 part 'field_initializers.dart';
@@ -653,12 +656,23 @@ class BeanScanner {
             }
           }
         }
-        if (_component.hasAnnotationOf(element) &&
-            (_advisor.isAssignableFrom(element) ||
-                _beanMethods(element.thisType).any(
-                  (entry) => _advisor.isAssignableFromType(entry.$1.returnType),
-                ))) {
-          into.advisors = true;
+        if (_component.hasAnnotationOf(element)) {
+          if (_advisor.isAssignableFrom(element)) {
+            into.advisors = true;
+          }
+          for (final (method, _) in _beanMethods(element.thisType)) {
+            if (!_advisor.isAssignableFromType(method.returnType)) {
+              continue;
+            }
+            switch (_advisorPointcutOf(method)) {
+              case AdvisorPointcut(:final expression?):
+                into.expressions.add(expression);
+              case AdvisorPointcut(:final annotations):
+                into.advisedAnnotations.addAll(annotations);
+              case null:
+                into.advisors = true;
+            }
+          }
         }
       } on InvalidGenerationSource {
         into.unknown = true;
@@ -1705,6 +1719,7 @@ class BeanScanner {
         final ClassElement element => _aspectModel(element),
         _ => null,
       },
+      advisorPointcut: _advisorPointcutOf(method),
       // The proxy class is named after owner and method, because two
       // `@Bean` methods may return the same type.
       proxy:

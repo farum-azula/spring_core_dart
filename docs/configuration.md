@@ -3428,7 +3428,7 @@ targets:
 | Option | Values | Default | Meaning |
 |---|---|---|---|
 | `aop_proxies` | `all`, `interfaces`, `none` | `all` | Which beans get AOP proxy classes: every bean that can be proxied, only beans with an abstract supertype (proxied through that type), or none |
-| `aop_prune` | bool | `true` | With `all`, the `@SpringBootApplication` output leaves out the proxy classes of beans that no pointcut can match |
+| `aop_prune` | bool | `true` | With `all`, the `@SpringBootApplication` output and the `@ComponentScan` modules of an application package (`publish_to: none`) leave out the proxy classes of beans that no advice can match |
 
 Two limits of SpEL expressions are compile-time defines (`-D` or
 `--dart-define`), not properties: `spring.context.expression.maxLength`

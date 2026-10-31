@@ -1312,6 +1312,21 @@ class AspectModel {
   final List<IntroductionModel> introductions;
 }
 
+/// What an advisor bean's pointcut matches, as the build reads it from the
+/// `@Bean` method's body: an AspectJ-style [expression]
+/// (`ExpressionPointcut('within(*Controller)')`), or the [annotations] of
+/// an annotation-driven pointcut (`library#Name`).
+class AdvisorPointcut {
+  /// A pointcut of [expression] or of [annotations].
+  AdvisorPointcut({this.expression, this.annotations = const {}});
+
+  /// The pointcut expression, matched like an aspect's.
+  final String? expression;
+
+  /// The annotations it matches.
+  final Set<String> annotations;
+}
+
 /// What the build knows about the advice of an application's other
 /// modules, so it can tell which beans no pointcut can match and skip
 /// their proxy classes.
@@ -1351,6 +1366,10 @@ class ForeignAdvice {
   /// classes) declare them in a `static const annotationTypes` list: a
   /// bean keeps its proxy only when it carries one of them.
   final advisedAnnotations = <String>{};
+
+  /// The pointcut expressions of the advisor beans of the other modules
+  /// whose `@Bean` methods the build could read; matched like aspects.
+  final expressions = <String>[];
 
   /// Whether an annotation-driven advisor does not declare its
   /// annotations: then any annotation from outside `spring_core_dart` and
@@ -1856,6 +1875,7 @@ class BeanModel {
     this.annotations = const [],
     this.aspect,
     this.proxy,
+    this.advisorPointcut,
     this.scopedProxy,
     this.valueType,
     this.nullable = false,
@@ -1977,6 +1997,11 @@ class BeanModel {
   /// proxied (proxies off, an aspect, a configuration class, an
   /// infrastructure bean).
   final ProxyModel? proxy;
+
+  /// For an advisor declared by a `@Bean` method: what its pointcut
+  /// matches, when the build can read it from the method's body; `null`
+  /// when it cannot (then nothing is pruned).
+  final AdvisorPointcut? advisorPointcut;
 
   /// For `@Scope(proxyMode: ...)`: the proxy class handed to
   /// `BeanDefinition.scopedProxy`, which finds the current instance of the

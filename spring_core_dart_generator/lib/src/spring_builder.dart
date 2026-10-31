@@ -339,15 +339,26 @@ class SpringBuilder implements Builder {
     );
     scanner.throwErrors();
 
-    // Any module may import this one, so its beans may be advised by
-    // aspects the build cannot see: no proxy is pruned (only the
-    // @SpringBootApplication output, which knows every module, prunes).
+    // In a library package any module may import this one, so its beans
+    // may be advised by aspects the build cannot see: no proxy is pruned.
+    // In an application (`publish_to: none`) nothing outside imports it:
+    // it is pruned knowing the advice of the package's other libraries and
+    // of the auto-configurations, as the @SpringBootApplication output.
     final dependencies = await _dependencies(buildStep);
     final glue = await driverGlueFor(buildStep, dependencies);
+    final prune = pruneProxies && await _isApplication(buildStep);
     return ModuleEmitter(
       output,
       dependencies: dependencies,
-      pruneProxies: false,
+      pruneProxies: prune,
+      foreignAdvice: prune
+          ? await _foreignAdvice(
+              buildStep,
+              scanner,
+              await _otherLibraries(buildStep, assets),
+              includeOwn: true,
+            )
+          : null,
     ).emit(
       moduleName: variableName,
       variableName: '\$$variableName',
@@ -781,7 +792,14 @@ class SpringBuilder implements Builder {
     final resolver = buildStep.resolver;
     for (final asset in nested) {
       if (await resolver.isLibrary(asset)) {
-        scanner.collectAdvice(await resolver.libraryFor(asset), foreign);
+        final library = await resolver.libraryFor(asset);
+        // The bodies of their `@Bean` methods, to read the pointcuts of
+        // advisor beans.
+        await scanner.resolveBeanMethods(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
+        scanner.collectAdvice(library, foreign);
       }
     }
     final root = buildStep.inputId.package;
@@ -1168,6 +1186,41 @@ class SpringBuilder implements Builder {
   /// type through the public library of one of these packages, when the
   /// scanned library imports it that way, rather than through its `src/`
   /// file.
+  // Whether the package is an application: `publish_to: none` in its
+  // pubspec (nothing outside it imports its modules).
+  static Future<bool> _isApplication(BuildStep buildStep) async {
+    final pubspec = AssetId(buildStep.inputId.package, 'pubspec.yaml');
+    if (!await buildStep.canRead(pubspec)) {
+      return false;
+    }
+    try {
+      final yaml = loadYaml(await buildStep.readAsString(pubspec));
+      return yaml is Map && '${yaml['publish_to']}' == 'none';
+    } on YamlException {
+      return false;
+    }
+  }
+
+  // The Dart files of the package's lib/ and bin/ outside [scanned] (the
+  // module's own), generated files excluded: where other aspects and
+  // advisors of the application live.
+  static Future<List<AssetId>> _otherLibraries(
+    BuildStep buildStep,
+    Iterable<AssetId> scanned,
+  ) async {
+    final own = scanned.toSet();
+    return [
+      for (final directory in const ['lib', 'bin'])
+        ...await buildStep
+            .findAssets(Glob('$directory/**.dart'))
+            .where(
+              (asset) =>
+                  !asset.path.endsWith('.spring.dart') && !own.contains(asset),
+            )
+            .toList(),
+    ];
+  }
+
   static Future<Set<String>?> _dependencies(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
     final pubspec = AssetId(package, 'pubspec.yaml');

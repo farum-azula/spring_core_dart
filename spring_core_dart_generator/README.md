@@ -318,7 +318,7 @@ targets:
 | Option | Values | Default |
 |---|---|---|
 | `aop_proxies` | `all`: a proxy class for every bean whose class or one of its interfaces can be implemented (and subclass proxies for the classes that can only be extended); `interfaces`: proxies only through a bean's abstract supertypes, so a bean without one gets no proxy; `none`: no proxies, so AOP cannot advise the beans of the module | `all` |
-| `aop_prune` | `true`: with `aop_proxies: all`, the `@SpringBootApplication` output (which knows every module of the application) generates no proxy class for a bean that no pointcut of the application can match. Its signatures stay, so an advisor that matches it anyway fails the startup with the reason. `@ComponentScan` modules are never pruned, since any module may import them. `false`: every bean keeps its proxy class | `true` |
+| `aop_prune` | `true`: with `aop_proxies: all`, the `@SpringBootApplication` output (which knows every module of the application), and the `@ComponentScan` modules of an application package (`publish_to: none`: nothing outside imports them), generate no proxy class for a bean that no advice of the application can match; only the reason is generated (`AopProxyFactory.pruned`), so advice registered at run time without the build seeing it is not applied to such a bean. The `@ComponentScan` modules of a library package are never pruned, since any module may import them. `false`: every bean keeps its proxy class | `true` |
 
 Any other value of either option fails the build with an
 `ArgumentError`.
@@ -327,13 +327,20 @@ The options only change how much code is generated: a bean without
 matching advice is never wrapped at runtime either way. Public fields are
 proxied as implicit getters and setters.
 
-Pruning reads the aspects of the nested `@ComponentScan` modules too
-(`@Aspect` classes and aspects returned by `@Bean` methods). Nothing is
-pruned when no module has advice, when a module declares an advisor bean,
-or when an auto-configuration declares aspects or an advisor bean whose
-pointcut is not an `AnnotationPointcut`. A bean whose class or members
-carry an annotation from outside `spring_core_dart` (or `@Validated`)
-keeps its proxy, because those starters' advisors match by annotation.
+Pruning reads the advice of the application's other modules too
+(`@Aspect` classes, aspects returned by `@Bean` methods, and advisor beans
+whose `@Bean` method builds `DefaultPointcutAdvisor(ExpressionPointcut(
+'<a constant expression>'), ...)`, `AnnotationMatchingPointcut<A>()` or a
+pointcut declaring its annotations), and the advisors of the
+auto-configurations: a starter's annotation pointcut declares the
+annotations it matches in a `static const annotationTypes` list
+(`@Transactional`, `@Cacheable`, method security, `@Validated`), and only
+the beans carrying one keep their proxy. Nothing is pruned when a module
+declares an advisor bean whose pointcut the build cannot read (an
+expression from a variable, a hand-written pointcut), or when an
+auto-configuration declares aspects or an advisor the build cannot read.
+Annotations of the SDK (`@override`) and of `package:meta` never keep a
+proxy.
 
 ### Scan options
 

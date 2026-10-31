@@ -103,8 +103,10 @@ const allowedPackages = {
     'The SQLite driver (the owner allowed database drivers): only a dev '
     'dependency of spring_boot_starter_data, to test the driver glue the '
     'generator writes into applications that list sqlite3 themselves; the '
-    "starter's runtime never depends on it.",
-    onlyIn: {'spring_boot_starter_data'},
+    "starter's runtime never depends on it. Also a dev dependency of the "
+    'workspace root: `dart test` from the root builds only the native '
+    "assets of the root's dependencies.",
+    onlyIn: {'spring_boot_starter_data', 'spring_core_dart_workspace'},
   ),
   'very_good_analysis': AllowedPackage(
     "Lint rules of analysis_options.yaml (Very Good Ventures'), the "

@@ -118,7 +118,8 @@ class ModuleEmitter {
   ///
   /// [dependencies] are the packages the output may import from (see the
   /// field). [pruneProxies] and [foreignAdvice] turn on proxy pruning; the
-  /// `@ComponentScan` output passes `pruneProxies: false`.
+  /// `@ComponentScan` output of a library package passes
+  /// `pruneProxies: false` (any module may import it).
   ///
   /// ```dart
   /// final emitter = ModuleEmitter(input.changeExtension('.spring.dart'));

@@ -33,8 +33,12 @@ import 'package:spring_core_dart_generator/src/bean_model.dart';
 ///   option `aop_prune: false` keeps every proxy.
 ///
 /// Pruning needs certainty. It is off, and every bean keeps its proxy,
-/// without [foreign], when a module declares an advisor bean, or when a
-/// pointcut refers to one the build cannot follow. A bean keeps its proxy
+/// without [foreign], when a module declares an advisor bean whose pointcut
+/// the build cannot read from its `@Bean` method (an
+/// `ExpressionPointcut('...')` with a constant expression, an
+/// `AnnotationMatchingPointcut<A>` or a pointcut declaring its
+/// `annotationTypes` can be read), or when a pointcut refers to one the
+/// build cannot follow. A bean keeps its proxy
 /// when its class or a member carries an annotation an annotation-driven
 /// advisor of a starter matches (`@Transactional`, `@Cacheable`,
 /// `@Validated`: the pointcut, or the advisor, declares them in a
@@ -146,12 +150,35 @@ void analyzeAop(
     }
   }
   _applyIntroductions(module, [for (final (_, aspect) in aspects) aspect]);
+  // Advisor beans whose `@Bean` method the build could read count like
+  // aspects: an expression is matched against the beans, annotations keep
+  // the beans carrying them. One the build cannot read may match anything.
+  final advisors = module.beans.where(_isAdvisor).toList();
+  final unknownAdvisor = advisors.any((bean) => bean.advisorPointcut == null);
+  for (final (owner, expression) in [
+    for (final bean in advisors)
+      if (bean.advisorPointcut?.expression case final expression?)
+        (bean.name, expression),
+    for (final expression in foreign?.expressions ?? const <String>[])
+      ('advisor', expression),
+  ]) {
+    try {
+      expressions.add(ExpressionPointcut(expression, owner: owner));
+    } on FormatException {
+      complete = false;
+    }
+  }
+  for (final bean in advisors) {
+    foreign?.advisedAnnotations.addAll(
+      bean.advisorPointcut?.annotations ?? const {},
+    );
+  }
   if (!prune ||
       foreign == null ||
       foreign.unknown ||
       foreign.advisors ||
       !complete ||
-      module.beans.any((bean) => _isAdvisor(bean))) {
+      unknownAdvisor) {
     return;
   }
   for (final bean in module.beans) {
@@ -251,7 +278,22 @@ bool _isAdvisor(BeanModel bean) => bean.exposedTypes.any(
 // a bean keeps its proxy when it carries one of the annotations they
 // declare, or, when one of them declares none, any annotation from
 // outside `spring_core_dart` and the SDK.
-bool _mayBeAdvisedElsewhere(ProxyModel proxy, ForeignAdvice foreign) => [
+bool _mayBeAdvisedElsewhere(ProxyModel proxy, ForeignAdvice foreign) {
+  // `@Validated` on a `@ConfigurationProperties` class validates the bound
+  // properties once, at startup; method validation leaves such classes out
+  // (Spring Boot's `MethodValidationExcludeFilter`), so it advises nothing.
+  final configurationProperties = proxy.classAnnotations.any(
+    (a) => a.type?.element?.name == 'ConfigurationProperties',
+  );
+  return _annotationsOf(proxy).any(
+    (annotation) =>
+        !(configurationProperties &&
+            annotation.type?.element?.name == 'Validated') &&
+        _mayBeAdvice(annotation, foreign),
+  );
+}
+
+List<DartObject> _annotationsOf(ProxyModel proxy) => [
   ...proxy.classAnnotations,
   for (final member in proxy.members) ...[
     ...member.mergedAnnotations,
@@ -260,7 +302,7 @@ bool _mayBeAdvisedElsewhere(ProxyModel proxy, ForeignAdvice foreign) => [
   ],
   for (final member in proxy.members)
     for (final parameter in member.parameters) ...parameter.annotations,
-].any((annotation) => _mayBeAdvice(annotation, foreign));
+];
 
 bool _mayBeAdvice(DartObject annotation, ForeignAdvice foreign) {
   final element = annotation.type?.element;

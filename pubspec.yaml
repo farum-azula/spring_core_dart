@@ -29,6 +29,10 @@ dev_dependencies:
   melos: ^8.9.0
   # tool/ and its tests (tool/test/).
   path: ^1.9.0
+  # SQLite for the data starter's tests run from the root: `dart test` there
+  # builds the native assets of the root's dependencies only (from the
+  # package's directory, of the package's).
+  sqlite3: ^3.8.0
   test: ^1.33.0
   very_good_analysis: ^11.0.0
   yaml: ^3.1.0
