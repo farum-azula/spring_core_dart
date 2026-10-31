@@ -1,7 +1,7 @@
 name: spring_boot_starter_oauth2_client
 description: >-
   OAuth 2.0 and OpenID Connect clients for spring_boot_dart: registrations from spring.security.oauth2.client.*, every grant, token refresh, Bearer tokens on Feign calls.
-version: 0.4.3
+version: 0.5.0
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_oauth2_client
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
 topics:
@@ -26,15 +26,15 @@ dependencies:
   # lib/src/core/crypto_primitives.dart. It comes with spring_security_core
   # anyway.
   pointycastle: ^4.0.0
-  spring_boot_dart: ^0.4.3
-  spring_boot_starter_feign: ^0.4.3
+  spring_boot_dart: ^0.5.0
+  spring_boot_starter_feign: ^0.5.0
   # Like every Spring Boot starter: logging comes with it.
-  spring_boot_starter_logging: ^0.4.3
-  spring_security_core: ^0.4.3
-  spring_web_dart: ^0.4.3
+  spring_boot_starter_logging: ^0.5.0
+  spring_security_core: ^0.5.0
+  spring_web_dart: ^0.5.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_boot_starter_test: ^0.4.3
-  spring_core_dart_generator: ^0.4.3
+  spring_boot_starter_test: ^0.5.0
+  spring_core_dart_generator: ^0.5.0
   test: ^1.33.0

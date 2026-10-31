@@ -14,11 +14,11 @@ the file the generator writes, and the errors it reports.
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.4.3
+  spring_core_dart: ^0.5.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.3
+  spring_core_dart_generator: ^0.5.0
 ```
 
 Mark the scan root. Every class in this file's directory and below (here

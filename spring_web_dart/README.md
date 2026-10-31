@@ -37,7 +37,7 @@ generation by itself.
 
 ```yaml
 dependencies:
-  spring_web_dart: ^0.4.3
+  spring_web_dart: ^0.5.0
 ```
 
 *In the guides:* [server, 3. Web](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide#3-web), [app, 6. Server access](https://github.com/farum-azula/spring_core_dart/tree/main/example/flutter_guide#6-server-access).

@@ -23,7 +23,7 @@ dart test --exclude-tags integration # without the tests that open real sockets
 
 ```yaml
 dev_dependencies:
-  spring_boot_starter_test: ^0.4.3
+  spring_boot_starter_test: ^0.5.0
   test: ^1.25.0          # or flutter_test
 ```
 

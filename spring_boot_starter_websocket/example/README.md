@@ -16,11 +16,11 @@ the first message that comes back.
 
 ```yaml
 dependencies:
-  spring_boot_starter_websocket: ^0.4.3
+  spring_boot_starter_websocket: ^0.5.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.4.3   # required: writes the client implementations
+  spring_core_dart_generator: ^0.5.0   # required: writes the client implementations
 ```
 
 From the package directory, generate the code, then run the example:
