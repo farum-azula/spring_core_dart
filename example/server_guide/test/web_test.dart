@@ -264,12 +264,23 @@ void main() {
       final directory = io.Directory(
         app.getBean<BookController>().covers.getObject().directory,
       ).absolute;
-      List<String> filesAround() => [
-        for (final entity in directory.parent.parent.listSync(
-          recursive: true,
-          followLinks: false,
-        ))
-          if (entity is io.File && entity.path.contains('escape')) entity.path,
+      // A real book, a file name that climbs: stored under the ISBN (and
+      // removed after, so the packaged cover is served again).
+      final stored = io.File('${directory.path}/9780345539434.png');
+      if (stored.existsSync()) {
+        stored.deleteSync(); // left by an interrupted run
+      }
+      addTearDown(() {
+        if (stored.existsSync()) {
+          stored.deleteSync();
+        }
+      });
+      // Where `../`, `../../` and `../../../escape.png` would land, and
+      // the directory itself: only the cover's own file may appear.
+      final before = directory.listSync().map((e) => e.path).toSet();
+      final escapes = [
+        for (var up = directory, i = 0; i < 4; up = up.parent, i++)
+          io.File('${up.path}/escape.png'),
       ];
 
       for (final isbn in [
@@ -309,14 +320,6 @@ void main() {
         expect(written.response.statusCode, isNot(204), reason: isbn);
       }
 
-      // A real book, a file name that climbs: stored under the ISBN (and
-      // removed after, so the packaged cover is served again).
-      final stored = io.File('${directory.path}/9780345539434.png');
-      addTearDown(() {
-        if (stored.existsSync()) {
-          stored.deleteSync();
-        }
-      });
       final upload = await app.mockMvc
           .perform(
             asAdmin(HttpMethod.put, '/api/books/9780345539434/cover')
@@ -335,7 +338,11 @@ void main() {
           .andReturn();
       expect(upload.response.statusCode, 204);
       expect(stored.readAsStringSync(), 'escape');
-      expect(filesAround(), isEmpty);
+      expect(escapes.where((f) => f.existsSync()), isEmpty);
+      expect(
+        directory.listSync().map((e) => e.path).toSet().difference(before),
+        {stored.path},
+      );
     });
   });
 
