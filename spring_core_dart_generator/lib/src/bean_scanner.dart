@@ -80,6 +80,13 @@ final TypeChecker _objectFactory = _spring('ObjectFactory');
 final TypeChecker _provider = _spring('Provider');
 final TypeChecker _resource = _spring('Resource');
 final TypeChecker _introspected = _spring('Introspected');
+
+// spring_boot_starter_data's marker of repositories, matched by URL so the
+// generator does not depend on the starter.
+const TypeChecker _dataRepository = TypeChecker.fromUrl(
+  'package:spring_boot_starter_data/src/repository/repository.dart'
+  '#DataRepository',
+);
 final TypeChecker _aspectAnnotation = _spring('Aspect');
 final TypeChecker _constraint = _spring('Constraint');
 final TypeChecker _valid = _spring('Valid');
@@ -549,6 +556,17 @@ class BeanScanner {
         }
         if (_interfaceProxyPrimary(element) case final primary?) {
           _scanInterfaceProxy(element, primary: primary);
+          return;
+        }
+        // spring_boot_starter_data: an interface extending DataRepository
+        // is a repository, annotated or not (Spring Data's way); a generic
+        // one is a base of others, never a bean (@NoRepositoryBean).
+        if (element.isAbstract &&
+            _dataRepository.isAssignableFrom(element) &&
+            !_dataRepository.isExactly(element)) {
+          if (element.typeParameters.isEmpty) {
+            _scanInterfaceProxy(element, primary: false);
+          }
           return;
         }
         final annotation = _component.firstAnnotationOf(element);
@@ -4659,12 +4677,21 @@ class BeanScanner {
       signatures: signatures,
       methods: methods,
       annotations: _userAnnotations(element),
+      supertypeArguments: {
+        for (final supertype in element.allSupertypes)
+          if (supertype.typeArguments.isNotEmpty &&
+              !supertype.element.library.isInSdk)
+            supertype.element.name!: supertype.typeArguments,
+      },
     );
+    final explicitName = ConstantReader(
+      _component.firstAnnotationOf(element),
+    ).peek('name')?.stringValue;
     module.beans.add(
       BeanModel(
         element: element,
         source: source,
-        name: _decapitalize(name),
+        name: explicitName ?? _decapitalize(name),
         type: type,
         exposedTypes: _exposedTypes(type),
         creation: InterfaceProxyCreation(model),

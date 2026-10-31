@@ -143,8 +143,10 @@ final class InterfaceMetadata<T extends Object> {
     required this.typeName,
     required List<ProxyMethod> methods,
     List<Object> annotations = const [],
+    Map<String, List<TypeInfo<Object?>>> supertypeArguments = const {},
   }) : methods = List.unmodifiable(methods),
-       annotations = List.unmodifiable(annotations);
+       annotations = List.unmodifiable(annotations),
+       supertypeArguments = Map.unmodifiable(supertypeArguments);
 
   /// The interface name, e.g. `CatalogClient`.
   final String typeName;
@@ -154,6 +156,18 @@ final class InterfaceMetadata<T extends Object> {
 
   /// The const annotations on the interface.
   final List<Object> annotations;
+
+  /// The type arguments of each generic supertype of the interface, by the
+  /// supertype's name: for `BookRepository extends CrudRepository<Book,
+  /// int>`, `{'CrudRepository': [Book, int], 'DataRepository': [Book,
+  /// int]}`. A handler reads the types it works with here (each
+  /// [TypeInfo.capture]s its type), since there is no reflection.
+  final Map<String, List<TypeInfo<Object?>>> supertypeArguments;
+
+  /// The type arguments of the supertype named [supertype], or `null` when
+  /// the interface does not implement it.
+  List<TypeInfo<Object?>>? typeArgumentsOf(String supertype) =>
+      supertypeArguments[supertype];
 
   /// The interface type.
   Type get type => T;

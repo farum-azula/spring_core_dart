@@ -36,7 +36,33 @@ the application adds the driver it wants, the generator sees it.
   PostgREST (HTTP: Flutter apps never hold
   database credentials; the user's token and row-level security decide),
   and in memory for tests. A repository chooses its store and database:
-  `@Repository(dataSource: 'analytics')`, `@Repository(store: 'supabase')`.
+  `@UseDataSource('analytics')`, `@UseStore('supabase')`.
+
+## Decisions made while building it (step 1)
+
+- **No annotation needed on a repository**, as in Spring Data: an
+  interface extending `DataRepository<T, ID>` (directly or through
+  `CrudRepository` and the others) gets a generated implementation and is
+  a bean. `@Repository('name')` only names the bean. A generic interface
+  is a base for others, never a bean (Spring's `@NoRepositoryBean`).
+- **Names that differ from Spring**, because Dart has one namespace per
+  import and the core already has these names: the marker is
+  `DataRepository` (`@Repository` is the stereotype annotation), a sort
+  step is `SortOrder` (`@Order` orders beans), the database and store of a
+  repository are `@UseDataSource('analytics')` and `@UseStore('supabase')`
+  (Dart cannot mix an optional positional `name` with named parameters on
+  `@Repository`).
+- **No overloading in Dart:** `findAll()`, `findAllSorted(Sort)` and
+  `findAllPaged(Pageable)` instead of Spring's three `findAll`.
+- **How it works:** the generator reuses the `@InterfaceProxy` machinery
+  (Feign's): `_$BookRepositoryImpl` forwards each call to the starter's
+  handler; `InterfaceMetadata.supertypeArguments` gives it `Book` and
+  `int` as `TypeInfo`s. `@Table` extends `@Introspected`, so the entity's
+  properties and constructor are described at build time. Derived queries
+  are parsed and checked when the repository is created: a wrong property
+  stops the application at startup with the reason and a suggestion
+  (`did you mean 'title'?`). Checking them in the build itself is a later
+  step.
 
 ## Order of work
 
@@ -81,6 +107,14 @@ the application adds the driver it wants, the generator sees it.
    ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)):
    a store for these repositories, its Auth as a login of the security
    starters.
+
+Later (the owner, October 2026): `BigDecimal` in `spring_core_dart` (an
+unscaled `BigInt` and a scale, `RoundingMode`; no third-party package,
+the repository's rule) for money: `NUMERIC` in PostgreSQL, `TEXT` in
+SQLite, a string in JSON, `@DecimalMin` / `@Digits`; and custom
+converters (Spring Data's `@ReadingConverter` / `@WritingConverter`) so
+an application can map its own types. Until then: money as an `int` in
+minor units, never a `double`.
 
 Later, not in 0.6.0 (the owner): MongoDB (`@Document`, `MongoTemplate`,
 `MongoRepository`, `@Version` and `findAndModify` instead of pessimistic
@@ -255,7 +289,7 @@ abstract interface class OrderRepository extends CrudRepository<Order, int> {
 }
 
 // The second database.
-@Repository(dataSource: 'analytics')
+@UseDataSource('analytics')
 abstract interface class SaleStatsRepository
     extends CrudRepository<SaleStat, int> {}
 ```
@@ -309,7 +343,7 @@ class Pricing {
 
   @Transactional(readOnly: true)
   Future<Page<Book>> catalog(int page) =>
-      books.findAll(PageRequest.of(page, 20, Sort.by(['title'])));
+      books.findAllPaged(PageRequest.of(page, 20, Sort.by(['title'])));
 
   /// A step that must commit on its own (an audit line), whatever
   /// happens to the caller's transaction.
@@ -347,7 +381,7 @@ abstract interface class LocalBooks extends ListCrudRepository<Book, int> {
 // Supabase over PostgREST, with the user's token; row-level security
 // decides. @Version works (a conditional PATCH); @Lock and
 // @Transactional here are build errors.
-@Repository(store: 'supabase')
+@UseStore('supabase')
 abstract interface class RemoteBooks extends ListCrudRepository<Book, int> {
   Future<Page<Book>> findByAuthorId(int authorId, Pageable page);
 }

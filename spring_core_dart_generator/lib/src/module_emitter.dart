@@ -1752,6 +1752,14 @@ class ModuleEmitter {
               _constant(annotation, element),
           ]),
         'methods': literalList([for (final m in model.methods) method(m)]),
+        if (model.supertypeArguments.isNotEmpty)
+          'supertypeArguments': literalMap({
+            for (final MapEntry(:key, :value)
+                in model.supertypeArguments.entries)
+              _str(key): literalList([
+                for (final argument in value) _typeInfo(argument, element).$1,
+              ]),
+          }),
       },
       [interfaceType],
     );

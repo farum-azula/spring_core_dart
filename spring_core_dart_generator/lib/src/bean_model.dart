@@ -2836,6 +2836,7 @@ class InterfaceProxyModel {
     required this.signatures,
     required this.methods,
     required this.annotations,
+    this.supertypeArguments = const {},
   });
 
   /// The name of the generated class, e.g. `_$CatalogClientImpl`.
@@ -2854,6 +2855,11 @@ class InterfaceProxyModel {
   /// The user annotations on the interface, which the handler reads
   /// (`@FeignClient('catalog')`).
   final List<DartObject> annotations;
+
+  /// The type arguments of the interface's generic supertypes, by name
+  /// (`{'CrudRepository': [Book, int]}`), written into
+  /// `InterfaceMetadata.supertypeArguments`.
+  final Map<String, List<DartType>> supertypeArguments;
 }
 
 /// A method of an [InterfaceProxyModel], written as the metadata the
