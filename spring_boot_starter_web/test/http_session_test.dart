@@ -91,45 +91,30 @@ void main() {
       expect(() => session.getAttribute('a'), throwsStateError);
     });
 
-    test('the limit drops the least recently used session', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 2);
+    test('at the limit an expired session is removed for the new one', () {
+      var now = DateTime(2026);
+      final repository = InMemoryHttpSessionRepository(
+        maxSessions: 2,
+        clock: () => now,
+      );
       final a = repository.createSession();
+      now = now.add(const Duration(minutes: 20));
       final b = repository.createSession();
-      repository.findById(a.id); // a used last
+      // a expires at minute 30; the purge is not due before minute 21 + 1
+      // after the one at minute 20, so only the limit finds it.
+      now = now.add(const Duration(minutes: 10, seconds: 10));
       final c = repository.createSession();
+      expect(a.isInvalidated, isTrue);
       expect(repository.size, 2);
-      expect(repository.findById(b.id), isNull);
-      expect(repository.findById(a.id), same(a));
+      expect(repository.findById(b.id), same(b));
       expect(repository.findById(c.id), same(c));
     });
 
-    test('the limit first drops a session its client never came back '
-        'with', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 3);
+    test('at the limit with live sessions only a new session is refused '
+        '(503) and every live session is kept', () {
+      final repository = InMemoryHttpSessionRepository(maxSessions: 2);
       final a = repository.createSession();
       final b = repository.createSession();
-      final c = repository.createSession();
-      repository
-        ..findById(a.id)
-        ..findById(c.id); // a and c came back; b, newer than a, did not
-      final d = repository.createSession();
-      expect(repository.findById(b.id), isNull);
-      expect(b.isInvalidated, isTrue);
-      // New sessions push out each other, not the returned ones.
-      final e = repository.createSession();
-      expect(d.isInvalidated, isTrue);
-      expect(repository.findById(a.id), same(a));
-      expect(repository.findById(c.id), same(c));
-      expect(repository.findById(e.id), same(e));
-    });
-
-    test('a session holding a login is never pushed out: a new session '
-        'is refused with 503 instead', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 2);
-      const login = InMemoryHttpSessionRepository.loginAttribute;
-      expect(login, 'SPRING_SECURITY_CONTEXT');
-      final a = repository.createSession()..setAttribute(login, 'ada');
-      final b = repository.createSession()..setAttribute(login, 'bob');
       for (var i = 0; i < 20; i++) {
         expect(
           repository.createSession,
@@ -142,200 +127,59 @@ void main() {
       }
       expect(repository.size, 2);
       expect(repository.findById(a.id), same(a));
-      // A logout (the login removed): b may go again.
-      b.removeAttribute(login);
+      expect(repository.findById(b.id), same(b));
+      // A session that ends makes room again.
+      a.invalidate();
       final c = repository.createSession();
-      expect(b.isInvalidated, isTrue);
-      expect(repository.findById(a.id), same(a));
+      expect(repository.findById(b.id), same(b));
       expect(repository.findById(c.id), same(c));
     });
 
-    test('the login keeps its place across a new id', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 2);
+    test('a session keeps its place across a new id', () {
+      final repository = InMemoryHttpSessionRepository(maxSessions: 1);
       final a = repository.createSession();
       repository.changeSessionId(a);
-      a.setAttribute(InMemoryHttpSessionRepository.loginAttribute, 'ada');
-      final b = repository.createSession();
-      final c = repository.createSession();
-      expect(b.isInvalidated, isTrue);
+      expect(repository.size, 1);
       expect(repository.findById(a.id), same(a));
-      expect(repository.findById(c.id), same(c));
+      expect(
+        repository.createSession,
+        throwsA(isA<TooManyActiveSessionsException>()),
+      );
     });
 
-    test('an expired session goes first, a logged-in one included', () {
+    test('without a limit (-1) nothing is refused', () {
+      final repository = InMemoryHttpSessionRepository(maxSessions: -1);
+      for (var i = 0; i < 50; i++) {
+        repository.createSession();
+      }
+      expect(repository.size, 50);
+    });
+
+    test('the refusal is logged as a warning at most once a minute', () {
       var now = DateTime(2026);
       final repository = InMemoryHttpSessionRepository(
-        maxSessions: 3,
+        maxSessions: 1,
         clock: () => now,
+      )..createSession();
+      final messages = <String>[];
+      final stop = SpringLog.listen((record) {
+        if (record.loggerName == 'spring.web.session') {
+          messages.add(record.message);
+        }
+      });
+      addTearDown(stop);
+      void refuse() => expect(
+        repository.createSession,
+        throwsA(isA<TooManyActiveSessionsException>()),
       );
-      final a = repository.createSession()
-        ..setAttribute(InMemoryHttpSessionRepository.loginAttribute, 'ada');
-      now = now.add(const Duration(minutes: 20));
-      final b = repository.createSession();
-      now = now.add(const Duration(minutes: 9, seconds: 30));
-      final c = repository.createSession(); // purges: nothing expired yet
-      // a expires at minute 30; the next purge is not due before 30:30.
-      now = now.add(const Duration(seconds: 40));
-      final d = repository.createSession();
-      expect(a.isInvalidated, isTrue);
-      for (final kept in [b, c, d]) {
-        expect(repository.findById(kept.id), same(kept));
-      }
-    });
-
-    // A login as the security starter stores it: the user's name next to
-    // the context.
-    StoredHttpSession loginOf(
-      InMemoryHttpSessionRepository repository,
-      String user,
-    ) => repository.createSession()
-      ..setAttribute(InMemoryHttpSessionRepository.principalNameAttribute, user)
-      ..setAttribute(InMemoryHttpSessionRepository.loginAttribute, user);
-
-    test('one user cannot lock the others out: with logins only, the user '
-        'holding the most gives up their least recently used session', () {
-      expect(
-        InMemoryHttpSessionRepository.principalNameAttribute,
-        'org.springframework.session.FindByIndexNameSessionRepository'
-        '.PRINCIPAL_NAME_INDEX_NAME',
-      );
-      final repository = InMemoryHttpSessionRepository(maxSessions: 3);
-      final ada1 = loginOf(repository, 'ada');
-      final ada2 = loginOf(repository, 'ada');
-      final ada3 = loginOf(repository, 'ada');
-      repository.findById(ada1.id); // ada2 is the least recently used now
-      // root's login starts with a new session: one of ada's makes room.
-      final root = loginOf(repository, 'root');
-      expect(ada2.isInvalidated, isTrue);
-      for (final kept in [ada1, ada3, root]) {
-        expect(repository.findById(kept.id), same(kept));
-      }
-      // ada logs in again: her own oldest session goes, root's stays.
-      final ada4 = loginOf(repository, 'ada');
-      expect(ada1.isInvalidated, isTrue);
-      for (final kept in [ada3, root, ada4]) {
-        expect(repository.findById(kept.id), same(kept));
-      }
-    });
-
-    test('the same name from two login sources counts as two users', () {
-      // The security starter keys a login by its source and name: an
-      // identity provider's `ada` cannot push the form login's `ada` out
-      // of her last session.
-      StoredHttpSession keyed(
-        InMemoryHttpSessionRepository repository,
-        String key,
-      ) => loginOf(
-        repository,
-        'ada',
-      )..setAttribute(InMemoryHttpSessionRepository.principalKeyAttribute, key);
-      final repository = InMemoryHttpSessionRepository(maxSessions: 3);
-      final local = keyed(repository, 'local\u0000ada');
-      final idp1 = keyed(repository, 'oauth2/keycloak\u0000ada');
-      final idp2 = keyed(repository, 'oauth2/keycloak\u0000ada');
-      // The provider's ada logs in once more: her own oldest goes.
-      final idp3 = keyed(repository, 'oauth2/keycloak\u0000ada');
-      expect(idp1.isInvalidated, isTrue);
-      for (final kept in [local, idp2, idp3]) {
-        expect(repository.findById(kept.id), same(kept));
-      }
-    });
-
-    test('among users holding as many, the least recently used session '
-        'goes', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 4);
-      final ada1 = loginOf(repository, 'ada');
-      final bob1 = loginOf(repository, 'bob');
-      final ada2 = loginOf(repository, 'ada');
-      final bob2 = loginOf(repository, 'bob');
-      repository
-        ..findById(ada1.id) // bob1 is the least recently used now
-        ..createSession();
-      expect(bob1.isInvalidated, isTrue);
-      for (final kept in [ada1, ada2, bob2]) {
-        expect(repository.findById(kept.id), same(kept));
-      }
-    });
-
-    test('every login of another user: a new session is refused (503), '
-        'a login without a name counting as a user of its own', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 4);
-      final logins = [
-        loginOf(repository, 'ada'),
-        loginOf(repository, 'bob'),
-        loginOf(repository, 'carol'),
-        // Logged in by code that names no user.
-        repository.createSession()
-          ..setAttribute(InMemoryHttpSessionRepository.loginAttribute, 'x'),
-      ];
-      for (var i = 0; i < 20; i++) {
-        expect(
-          repository.createSession,
-          throwsA(isA<TooManyActiveSessionsException>()),
-        );
-      }
-      for (final kept in logins) {
-        expect(repository.findById(kept.id), same(kept));
-      }
-    });
-
-    test('an anonymous flood at the limit costs the user holding the most '
-        'one session, and nobody else anything', () {
-      final repository = InMemoryHttpSessionRepository(maxSessions: 3);
-      final ada1 = loginOf(repository, 'ada');
-      final ada2 = loginOf(repository, 'ada');
-      final root = loginOf(repository, 'root');
-      for (var i = 0; i < 100; i++) {
-        repository.createSession();
-      }
-      expect(ada1.isInvalidated, isTrue);
-      expect(repository.findById(ada2.id), same(ada2));
-      expect(repository.findById(root.id), same(root));
-      expect(repository.size, 3);
-      // Each user has one session left: the next ones push out each other.
-      for (var i = 0; i < 100; i++) {
-        repository.createSession();
-      }
-      expect(repository.findById(ada2.id), same(ada2));
-      expect(repository.findById(root.id), same(root));
-    });
-
-    test("a session counts for its user only while it holds the user's "
-        'login, across a new id too', () {
-      const name = InMemoryHttpSessionRepository.principalNameAttribute;
-      final repository = InMemoryHttpSessionRepository(maxSessions: 3);
-      final ada1 = loginOf(repository, 'ada');
-      final ada2 = loginOf(repository, 'ada');
-      repository.changeSessionId(ada2);
-      final bob = loginOf(repository, 'bob');
-      // ada1 is the least recently used login of the user holding the
-      // most, ada2 counted under its new id.
-      repository.createSession();
-      expect(ada1.isInvalidated, isTrue);
-      expect(repository.findById(ada2.id), same(ada2));
-      // A name without a login protects nothing.
-      final named = repository.createSession()..setAttribute(name, 'bob');
-      repository.createSession();
-      expect(named.isInvalidated, isTrue);
-      // A login that ended counts for nobody: it goes like any session
-      // without a login.
-      ada2.removeAttribute(InMemoryHttpSessionRepository.loginAttribute);
-      final returning = repository.createSession();
-      expect(repository.findById(ada2.id), same(ada2));
-      repository
-        ..findById(returning.id) // returned, after ada2
-        ..createSession();
-      expect(ada2.isInvalidated, isTrue);
-      expect(repository.findById(bob.id), same(bob));
-      // Another name: bob's session now counts for root.
-      bob.setAttribute(name, 'root');
-      final root = loginOf(repository, 'root');
-      final carol = loginOf(repository, 'carol');
-      expect(repository.size, 3);
-      repository.createSession();
-      expect(bob.isInvalidated, isTrue);
-      expect(repository.findById(root.id), same(root));
-      expect(repository.findById(carol.id), same(carol));
+      refuse();
+      refuse();
+      now = now.add(const Duration(seconds: 30));
+      refuse();
+      expect(messages, hasLength(1));
+      now = now.add(const Duration(seconds: 31));
+      refuse();
+      expect(messages, hasLength(2));
     });
 
     test('ids are random and long', () {

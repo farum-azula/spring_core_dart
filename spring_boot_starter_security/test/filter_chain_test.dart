@@ -60,28 +60,6 @@ void main() {
       expect(loaded, isNot(same(e.stored)));
     });
 
-    test('keys a login by its source and name for the session limit', () async {
-      Future<Object?> keyOf(Authentication authentication) async {
-        final e = await _Exchange.start();
-        repository.saveContext(
-          SecurityContextImpl(authentication),
-          e.request,
-          e.response,
-        );
-        return e.request
-            .getSession(create: false)
-            ?.getAttribute(InMemoryHttpSessionRepository.principalKeyAttribute);
-      }
-
-      final fromProvider = OAuth2AuthenticationToken(
-        DefaultOAuth2User(const [], {'sub': 'ada'}, 'sub'),
-        const [],
-        'keycloak',
-      );
-      expect(await keyOf(_ada), 'local\u0000ada');
-      expect(await keyOf(fromProvider), 'oauth2/keycloak\u0000ada');
-    });
-
     for (final (name, authentication) in <(String, Authentication?)>[
       ('anonymous', _anonymous),
       ('no', null),

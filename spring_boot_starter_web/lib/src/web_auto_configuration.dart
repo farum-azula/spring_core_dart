@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
+import 'package:spring_boot_starter_web/src/forwarded_headers.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/http_session.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
@@ -77,6 +78,12 @@ CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
 ///   `request.getSession()` (`server.servlet.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
+/// - `forwardedHeaderFilter`, with `server.forward-headers-strategy` set
+///   to `native` or `framework` — [ForwardedHeaderFilter], first of all
+///   filters: behind a reverse proxy, the scheme, host, port and client
+///   address the proxy forwards, from the proxies of
+///   `server.forward-headers.trusted-proxies` only (loopback and private
+///   networks by default).
 /// - `dispatcherHandler` — the [HttpHandler]: the [WebFilter] beans, then
 ///   the [HandlerMapping] beans;
 /// - `webServerStartStopLifecycle` — starts and stops the server with the
@@ -207,6 +214,28 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       );
     },
   ),
+  BeanDefinition<ForwardedHeaderFilter>(
+    name: 'forwardedHeaderFilter',
+    types: const [ForwardedHeaderFilter, WebFilter, Ordered],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.forwardedHeaderFilter', [_OnForwardHeaders()]),
+    ],
+    create: (r) {
+      final text = r
+          .dependency<Environment>()
+          .getProperty('server.forward-headers.trusted-proxies')
+          ?.trim();
+      return ForwardedHeaderFilter(
+        trustedProxies: text == null || text.isEmpty
+            ? null
+            : [
+                for (final part in text.split(','))
+                  if (part.trim().isNotEmpty) part.trim(),
+              ],
+      );
+    },
+  ),
   BeanDefinition<HttpSessionFilter>(
     name: 'httpSessionFilter',
     types: const [HttpSessionFilter, WebFilter, Ordered],
@@ -262,3 +291,25 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
     create: (_) => const PortInUseFailureAnalyzer(),
   ),
 ];
+
+// server.forward-headers-strategy=native or framework; another value
+// than those and `none` stops the start.
+final class _OnForwardHeaders implements Condition {
+  const _OnForwardHeaders();
+
+  @override
+  bool matches(ConditionContext context) {
+    final value = context.environment
+        .getProperty('server.forward-headers-strategy')
+        ?.trim()
+        .toLowerCase();
+    return switch (value) {
+      null || '' || 'none' => false,
+      'native' || 'framework' => true,
+      _ => throw ArgumentError(
+        'server.forward-headers-strategy must be none, native or framework: '
+        '$value',
+      ),
+    };
+  }
+}

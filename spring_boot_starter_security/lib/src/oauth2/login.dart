@@ -369,14 +369,16 @@ final class OidcAuthorizationCodeAuthenticationProvider
 /// reaches the browser; the log has the error code, never the code or a
 /// token. `oauth2Login()` adds it.
 ///
-/// The provider's form post is a cross-site `POST`: it carries the
-/// session cookie only when that cookie is `SameSite=None; Secure`
-/// (`server.servlet.session.cookie.same-site=none`, over HTTPS), and the
-/// starter's default is `Lax`. Without the cookie no saved request is
-/// found and the login fails (closed), with a warning in the log. The
-/// CSRF filter lets these posts through (`oauth2Login()` exempts the
-/// callback's `POST`): the `state`, bound to the session, is their CSRF
-/// protection (RFC 6749 §10.12).
+/// The provider's form post is a cross-site `POST`: it carries only
+/// `SameSite=None; Secure` cookies, which the default
+/// [CookieOAuth2AuthorizationRequestRepository] sets for a form post
+/// login over HTTPS (a session repository needs
+/// `server.servlet.session.cookie.same-site=none`). Without the cookie
+/// no saved request is found and the login fails (closed), with a
+/// warning in the log. The CSRF filter lets these posts through
+/// (`oauth2Login()` exempts the callback's `POST`): the `state`, bound
+/// to the browser that started the login, is their CSRF protection
+/// (RFC 6749 §10.12).
 ///
 /// Spring (Java): `OAuth2LoginAuthenticationFilter`; step 3 is this
 /// package's (Spring trusts the registration id of the saved request),
@@ -392,7 +394,7 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
     this.authenticationManager, {
     String filterProcessesUrl = defaultFilterProcessesUri,
     this.authorizationRequestRepository =
-        const HttpSessionOAuth2AuthorizationRequestRepository(),
+        const CookieOAuth2AuthorizationRequestRepository(),
     this.successHandler = const SavedRequestAwareAuthenticationSuccessHandler(),
     this.failureHandler = const SimpleUrlAuthenticationFailureHandler(
       '/login?error',
@@ -534,7 +536,7 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
       current,
     );
     if (saved == null) {
-      if (posted && current.getSession(create: false) == null) {
+      if (posted) {
         _warnAboutCrossSiteCookie();
       }
       fail(authorizationRequestNotFoundErrorCode);
@@ -618,10 +620,11 @@ final class OAuth2LoginAuthenticationFilter implements WebFilter {
     }
     _warnedAboutCookie = true;
     _log.warning(
-      'An OAuth 2.0 form post callback came without a session: the '
-      "provider's cross-site POST carries the session cookie only when it "
-      'is SameSite=None; Secure '
-      '(server.servlet.session.cookie.same-site=none, over HTTPS)',
+      'An OAuth 2.0 form post callback found no authorization request: '
+      "the provider's cross-site POST carries only SameSite=None; Secure "
+      'cookies, so response_mode=form_post works over HTTPS only (with '
+      'the session repository of the authorization requests: '
+      'server.servlet.session.cookie.same-site=none)',
     );
   }
 }

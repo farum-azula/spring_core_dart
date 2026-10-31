@@ -233,6 +233,8 @@ enum ClientAuth {
 /// | `server.compression.enabled` | `false`; `true` gzips the responses of `mime-types` from `min-response-size` on, for clients that accept gzip |
 /// | `server.compression.mime-types` | Spring Boot's: `text/html`, `text/xml`, `text/plain`, `text/css`, `text/javascript`, `application/javascript`, `application/json`, `application/xml` |
 /// | `server.compression.min-response-size` | `2KB` |
+/// | `server.forward-headers-strategy` | `none`; `native` or `framework` applies the headers of trusted proxies (`ForwardedHeaderFilter`) |
+/// | `server.forward-headers.trusted-proxies` | loopback and private networks (addresses and CIDR ranges) |
 /// | `server.connection-timeout` | `60s` (`-1`, `0` or less: none): a request body that sends nothing for this long is a 408; also how long an idle connection stays open |
 /// | `server.websocket.max-text-message-size`, `server.websocket.max-binary-message-size` | `8KB` each (`-1`: no limit); a larger message closes the session with 1009 |
 /// | `server.websocket.send-buffer-size-limit` | `512KB` (`-1`: no limit): more waiting to be sent drops the connection (4500) |

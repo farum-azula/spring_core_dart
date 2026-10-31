@@ -6,6 +6,7 @@
 
 ### Changes
 
+- `client-secret-jwt.*` set by environment variables (`..._REGISTRATION_APPLE_CLIENTSECRETJWT_ISSUER`, also `..._CLIENT_SECRET_JWT_...`) was not found: the starter looked for the registrations by the exact key `client-secret-jwt`, so the `clientSecretResolver` bean was missing and Sign in with Apple sent an empty `client_secret`. The keys are now compared without dashes, dots and case, as relaxed binding does.
 - `JwkSetOidcIdTokenDecoder` leaves out RSA keys whose exponent is 1, even or over 64 bits.
 - `InMemoryClientRegistrationRepository` calls a failed supplier (a discovery of an `issuer-uri`) again only `retryAfterFailure` later (10 seconds by default); calls in between get its error at once, so a provider that is down never gets one request per login started. `clock` lets tests move time.
 - That pause and the JWK Set's refetch interval are measured on a monotonic clock, so a device clock set back does not make them last hours.

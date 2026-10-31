@@ -198,15 +198,33 @@ void main() {
       );
     });
 
+    test(
+      'no session before the login: the request is a signed cookie',
+      () async {
+        final f = await _fixture();
+        final authorization = await f.client.startLogin('keycloak');
+        expect(f.client.cookies['JSESSIONID'], isNull);
+        expect(f.client.cookies['OAUTH2_AUTHORIZATION_REQUEST'], isNotNull);
+        expect(f.client.storedSessions, 0);
+        await f.client.callback(f.provider.approve(authorization));
+        final after = f.client.cookies['JSESSIONID'];
+        expect(after, isNotNull, reason: 'the login starts the session');
+        expect(f.client.storedSessions, 1);
+        expect(f.client.cookies['OAUTH2_AUTHORIZATION_REQUEST'], isNull);
+        expect(await f.who(), isNotNull);
+      },
+    );
+
     test('the session gets a new id at login (fixation)', () async {
       final f = await _fixture();
+      // The application started a session before (a cart, a language).
+      final before = await f.client.startSession();
       final authorization = await f.client.startLogin('keycloak');
-      final before = f.client.cookies['JSESSIONID'];
-      expect(before, isNotNull, reason: 'the request is kept in the session');
+      expect(f.client.cookies['JSESSIONID'], before);
       await f.client.callback(f.provider.approve(authorization));
       final after = f.client.cookies['JSESSIONID'];
       expect(after, isNot(before));
-      expect(await f.client.sessions.repository.findById(before!), isNull);
+      expect(await f.client.sessions.repository.findById(before), isNull);
 
       // The planted id is worthless.
       final attacker = ChainClient(

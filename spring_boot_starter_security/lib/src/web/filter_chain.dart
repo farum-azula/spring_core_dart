@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
-    show OAuth2AuthenticationToken;
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/firewall.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
@@ -222,9 +220,36 @@ final class FilterChainProxy implements WebFilter, Ordered {
           HttpStatus.forbidden,
           'Access Denied',
         );
+      } on PasswordChecksBusyException catch (e) {
+        // The credentials were not checked: no failed login, no event; the
+        // client may try again in a moment.
+        _warnBusy(e);
+        response.headers.set('Retry-After', '1');
+        await writeSecurityProblem(
+          request,
+          response,
+          HttpStatus.serviceUnavailable,
+          'Too many logins at once, try again in a moment',
+        );
       }
     });
   }
+}
+
+DateTime? _lastBusyWarning;
+
+// At most once a minute: a flood would fill the log otherwise.
+void _warnBusy(PasswordChecksBusyException e) {
+  final now = DateTime.now();
+  final last = _lastBusyWarning;
+  if (last != null && now.difference(last) < const Duration(minutes: 1)) {
+    return;
+  }
+  _lastBusyWarning = now;
+  _log.warning(
+    'Logins refused with 503: ${e.maxConcurrent} password checks running '
+    'and ${e.maxQueued} waiting (a flood of logins? limit them in front)',
+  );
 }
 
 final class _VirtualChain implements WebFilterChain {
@@ -290,12 +315,12 @@ abstract interface class SecurityContextRepository {
 /// context. It is the default, behind the request attribute, unless the
 /// session creation policy is `stateless`.
 ///
-/// The user's name is stored too, under Spring Session's
-/// `PRINCIPAL_NAME_INDEX_NAME`
-/// ([InMemoryHttpSessionRepository.principalNameAttribute]): when the
-/// session limit is reached with logins only, the web starter pushes out
-/// a session of the user who holds the most, so that one account cannot
-/// lock the others out.
+/// Only a login creates the session: nothing else of the chain keeps
+/// state in it before (the CSRF token, the page to come back to and the
+/// OAuth 2.0 authorization request are signed cookies by default), so
+/// clients that are not logged in cannot fill the session store. When the
+/// store is full, the login is refused with a 503
+/// ([TooManyActiveSessionsException]).
 ///
 /// Spring (Java): `HttpSessionSecurityContextRepository`.
 final class HttpSessionSecurityContextRepository
@@ -329,35 +354,16 @@ final class HttpSessionSecurityContextRepository
   ) {
     final authentication = context.authentication;
     if (authentication == null || trustResolver.isAnonymous(authentication)) {
-      request.getSession(create: false)
-        ?..removeAttribute(springSecurityContextKey)
-        ..removeAttribute(_principalName)
-        ..removeAttribute(_principalKey);
+      request
+          .getSession(create: false)
+          ?.removeAttribute(springSecurityContextKey);
       return;
     }
-    request.getSession()!
-      ..setAttribute(_principalName, authentication.name)
-      ..setAttribute(_principalKey, _keyOf(authentication))
-      ..setAttribute(
-        springSecurityContextKey,
-        SecurityContextImpl(authentication),
-      );
+    request.getSession()!.setAttribute(
+      springSecurityContextKey,
+      SecurityContextImpl(authentication),
+    );
   }
-
-  static const String _principalName =
-      InMemoryHttpSessionRepository.principalNameAttribute;
-  static const String _principalKey =
-      InMemoryHttpSessionRepository.principalKeyAttribute;
-
-  // The user's name and where the login came from: names of different
-  // sources (an identity provider's `ada`, the application's own `ada`)
-  // are different users for the session limit.
-  static String _keyOf(Authentication authentication) =>
-      switch (authentication) {
-        OAuth2AuthenticationToken(:final authorizedClientRegistrationId) =>
-          'oauth2/$authorizedClientRegistrationId\u0000${authentication.name}',
-        _ => 'local\u0000${authentication.name}',
-      };
 
   @override
   bool containsContext(ServerHttpRequest request) =>

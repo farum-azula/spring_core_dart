@@ -66,10 +66,9 @@ Where each missing feature is planned:
 |---|---|---|
 | [Session fixation protection](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html) | done | a new session id at login (`changeSessionId`; `migrateSession` and `newSession` are not offered) |
 | `SessionCreationPolicy` | partial | `ifRequired` and `stateless`; not `always` and `never` |
-| Concurrency control (`maximumSessions`, `maxSessionsPreventsLogin`, `expiredUrl`) | missing | |
-| `SessionRegistry` (a user's sessions, ending them all) | missing | |
+| Concurrency control (`maximumSessions`, `maxSessionsPreventsLogin`, `SessionRegistry`) | done (no `expiredUrl`) | 10 sessions per user by default (Spring: no limit); the registry keeps ids and asks the session repository which live, and ends a session by removing it (Spring marks it expired for `ConcurrentSessionFilter`, which has no counterpart here: the old browser is simply logged out) |
 | Invalid session detection (`invalidSessionUrl`) | missing | |
-| A limit on all sessions | done | not in Spring: `server.servlet.session.max-sessions` (10 000); sessions without a login go first; when only logins are left, a login of the user holding the most sessions makes room (one account cannot lock the others out), and with one login per user a new session is refused with 503, as Tomcat's `maxActiveSessions` |
+| A limit on all sessions | done | `server.servlet.session.max-sessions` (10 000), as WebFlux's `InMemoryWebSessionStore`: expired sessions are removed, then a new one is refused with 503. Only a login makes a session (the CSRF token, the saved request and the OAuth 2.0 authorization request are signed cookies), so requests without a login cannot fill it |
 | Shared session store (Spring Session) | missing | the sessions live in one process |
 
 ## Authorization

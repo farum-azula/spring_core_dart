@@ -988,9 +988,29 @@ const _otherRedirect =
     'registration from the saved request and accepts any '
     '/login/oauth2/code/*';
 
+const _noSession =
+    'no session before a login: the authorization request and the page to '
+    'come back to are signed cookies (their flags are in '
+    'web_attacks_test.dart), the CSRF token a cookie; the login still '
+    'starts a session with a new id';
+
+// The cookies the starter sets where Spring Security uses the session.
+final _signedCookies = RegExp(
+  r' ?(REDIRECT_URI|OAUTH2_AUTHORIZATION_REQUEST|XSRF-TOKEN)\[[^\]]*\]',
+);
+
+/// [step] without the cookies of [_signedCookies].
+String _withoutSignedCookies(String step) =>
+    step.replaceAll(_signedCookies, '').trimRight();
+
 /// Differences of the oauth2Login() steps that are on purpose:
 /// `scenario/Spring's step` → (Dart's step, why).
 final _oauth2KnownDifferences = <String, (String, String)>{
+  'login, the saved page, a replayed callback/protected page: 302 '
+      '/oauth2/authorization/fake JSESSIONID[httponly,path]': (
+    'protected page: 302 /oauth2/authorization/fake',
+    _noSession,
+  ),
   'unknown registration/authorization redirect: 302 '
       '/oauth2/authorization/fake JSESSIONID[httponly,path]': (
     'authorization redirect: 400',
@@ -1479,8 +1499,11 @@ void main() {
               report.writeln('  same   $s');
               continue;
             }
-            final known = _oauth2KnownDifferences['$name/$s'];
-            if (known != null && known.$1 == d) {
+            final plain = _withoutSignedCookies(d);
+            final known = plain == s && plain != d
+                ? (plain, _noSession)
+                : _oauth2KnownDifferences['$name/$s'];
+            if (known != null && known.$1 == plain) {
               report.writeln(
                 '  known  Spring: $s\n         Dart:   $d\n'
                 '         why:    ${known.$2}',

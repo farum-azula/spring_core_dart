@@ -729,11 +729,46 @@ visitors out. So:
 - then the hard security run on a Docker network
   (`roadmap/security_verification.md`, section 7).
 
+Done (October 2026), the sessions: `CookieSigner` (HMAC-SHA-256,
+`spring.security.cookie.secret` or a random key of the process),
+`CookieRequestCache`, `CookieOAuth2AuthorizationRequestRepository` and
+`CookieCsrfTokenRepository` are the defaults of chains with sessions;
+`InMemoryHttpSessionRepository` removes expired sessions at the limit,
+then refuses (503); the eviction order and the principal attributes are
+gone. One account holds at most 10 sessions (Spring's
+`maximumSessions`, `SessionRegistry`; the oldest ends at a new login).
+Path traversal around the covers of the server guide has a test.
+
+The Docker run (October 2026, first pass; the stand and report are kept
+outside the repository): F1, password checks without a bound (a flood of
+wrong passwords took every core and growing memory) — fixed with
+`PasswordCheckLimiter` (half the processors, a bounded queue, 503 above
+it). Open: F2, the web starter ignores `X-Forwarded-Proto` / `-For`
+behind a proxy (Spring Boot's `server.forward-headers-strategy`), so a
+TLS proxy's requests look insecure and cookies miss `Secure`; the
+Flutter guide's web build should use `--no-web-resources-cdn`; the docs
+should say several instances need sticky routing and one cookie
+secret. Then fixed: F2, `server.forward-headers-strategy` with
+`ForwardedHeaderFilter` (trusted proxies only); F3, `client-secret-jwt.*`
+from environment variables was ignored (the registrations were looked up
+by the exact key), so Sign in with Apple sent an empty client secret.
+Google and Apple logins checked on the stand against a mock OpenID
+Connect server (form post over TLS, the ES256 client secret).
+
 ## After 0.5.0
 
 Low items of the reviews before 0.5.0, left for patch releases by the
 release rule (nothing High, Medium or security-relevant):
 
+- Flutter themes: the docs say `..._SEED_COLOR` works from environment
+  variables and dart-defines; only `..._SEEDCOLOR` does (keys split at
+  `_`), the same in Spring Boot: correct the docs.
+- Jackson: the unknown `spring.jackson.*` warning misses keys set by
+  environment variables (values are read all the same).
+- Generator: the CSP origins of the OAuth2 providers miss provider URIs
+  set only in the build environment or a dart-define.
+- A registration needing a client secret (`client_secret_basic`/`_post`)
+  without one sends an empty secret; warn at startup.
 - Web: an empty body with a compressible type is gzipped (a 412 or an
   empty `ResponseEntity` with `application/json` becomes a 20-byte gzip
   stream; Tomcat sends `Content-Length: 0`, no encoding) — in `close()`,

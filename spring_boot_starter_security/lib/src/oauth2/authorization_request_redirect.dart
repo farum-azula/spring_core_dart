@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
+import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
@@ -48,10 +49,11 @@ Map<String, List<String>> authorizationResponseParameters(
 /// the redirect to the provider and the provider's redirect back.
 ///
 /// The request holds what the callback must check (`state`, the PKCE
-/// verifier, the `nonce`), so it must stay on the server, bound to the
-/// browser that started the login. The default,
-/// [HttpSessionOAuth2AuthorizationRequestRepository], keeps it in the
-/// HTTP session.
+/// verifier, the `nonce`), bound to the browser that started the login.
+/// The default, [CookieOAuth2AuthorizationRequestRepository], keeps it in
+/// a signed cookie, so that starting a login creates no session;
+/// [HttpSessionOAuth2AuthorizationRequestRepository], Spring's default,
+/// keeps it in the HTTP session.
 ///
 /// Spring (Java): `AuthorizationRequestRepository<OAuth2AuthorizationRequest>`.
 abstract interface class OAuth2AuthorizationRequestRepository {
@@ -156,6 +158,207 @@ final class HttpSessionOAuth2AuthorizationRequestRepository
           ?.removeAttribute(authorizationRequestAttributeName);
     }
     return saved;
+  }
+}
+
+/// The default [OAuth2AuthorizationRequestRepository]: the authorization
+/// request in a cookie of the browser, signed by the [CookieSigner], so
+/// that starting a login creates no session on the server.
+///
+/// The cookie [cookieName] is `HttpOnly`, valid for [maxAge] (10 minutes
+/// by default), `SameSite=Lax`, `Secure` over HTTPS. A login with
+/// `response_mode=form_post` gets `SameSite=None; Secure` over HTTPS,
+/// since the provider's cross-site POST carries no other cookie (over
+/// plain HTTP such a login cannot work). Starting a login replaces the
+/// cookie of a login started before in the same browser, as Spring keeps
+/// one request per session.
+///
+/// Reading it, the signature is checked before anything else: a cookie
+/// the client made, changed, copied from another cookie or kept past its
+/// expiry is ignored, as are values of the wrong type. The callback finds
+/// the request only with its exact `state` (compared in constant time);
+/// it then removes the cookie, and the provider accepts its code once,
+/// with the PKCE verifier only this request has. A callback with another
+/// `state` leaves the cookie alone, so a forged callback cannot break a
+/// login in progress.
+///
+/// Only `String` [OAuth2AuthorizationRequest.attributes] can be kept;
+/// saving others throws an [ArgumentError].
+///
+/// Spring (Java): no equivalent (Spring Security keeps the request in
+/// the session; the cookie repositories of tutorials are unsigned).
+final class CookieOAuth2AuthorizationRequestRepository
+    implements OAuth2AuthorizationRequestRepository {
+  /// A repository whose cookie [signer] signs (by default
+  /// [CookieSigner.shared]), with the `Path` [cookiePath] (`/` when
+  /// `null`).
+  const CookieOAuth2AuthorizationRequestRepository({
+    this.signer,
+    this.cookiePath,
+    this.maxAge = const Duration(minutes: 10),
+  });
+
+  /// Signs and checks the cookie; [CookieSigner.shared] when `null`.
+  final CookieSigner? signer;
+
+  CookieSigner get _signer => signer ?? CookieSigner.shared;
+
+  /// The cookie's `Path`; `/` when `null`.
+  final String? cookiePath;
+
+  /// How long a login may take at the provider.
+  final Duration maxAge;
+
+  /// The cookie's name.
+  static const cookieName = 'OAUTH2_AUTHORIZATION_REQUEST';
+
+  @override
+  OAuth2AuthorizationRequest? loadAuthorizationRequest(
+    ServerHttpRequest request,
+  ) {
+    final state = switch (authorizationResponseParameters(
+      request,
+    )[OAuth2ParameterNames.state]) {
+      [final value] when value.isNotEmpty => value,
+      _ => null,
+    };
+    if (state == null) {
+      return null;
+    }
+    final saved = _decode(
+      _signer.open(cookieName, request.cookies[cookieName]),
+    );
+    if (saved == null ||
+        !constantTimeEquals(utf8.encode(saved.state), utf8.encode(state))) {
+      return null;
+    }
+    return saved;
+  }
+
+  @override
+  void saveAuthorizationRequest(
+    OAuth2AuthorizationRequest? authorizationRequest,
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) {
+    if (authorizationRequest == null) {
+      if (request.cookies.containsKey(cookieName)) {
+        response.addCookie(_cookie(request, '', remove: true));
+      }
+      return;
+    }
+    if (authorizationRequest.state.isEmpty) {
+      throw ArgumentError('authorizationRequest.state cannot be empty');
+    }
+    final value = _signer.sign(
+      cookieName,
+      _encode(authorizationRequest),
+      maxAge,
+    );
+    if (value.length > CookieSigner.maxLength) {
+      throw ArgumentError(
+        'The authorization request is too large for a cookie '
+        '(${value.length} characters)',
+      );
+    }
+    response.addCookie(
+      _cookie(
+        request,
+        value,
+        formPost: authorizationRequest.responseMode == ResponseMode.formPost,
+      ),
+    );
+  }
+
+  @override
+  OAuth2AuthorizationRequest? removeAuthorizationRequest(
+    ServerHttpRequest request,
+    ServerHttpResponse response,
+  ) {
+    final saved = loadAuthorizationRequest(request);
+    if (saved != null) {
+      response.addCookie(_cookie(request, '', remove: true));
+    }
+    return saved;
+  }
+
+  ResponseCookie _cookie(
+    ServerHttpRequest request,
+    String value, {
+    bool remove = false,
+    bool formPost = false,
+  }) {
+    final crossSite = formPost && request.isSecure;
+    return ResponseCookie(
+      cookieName,
+      value,
+      path: cookiePath ?? '/',
+      httpOnly: true,
+      secure: request.isSecure,
+      sameSite: crossSite ? 'None' : 'Lax',
+      maxAge: remove ? Duration.zero : maxAge,
+    );
+  }
+
+  static String _encode(OAuth2AuthorizationRequest request) {
+    final attributes = <String, String>{};
+    for (final MapEntry(:key, :value) in request.attributes.entries) {
+      if (value is! String) {
+        throw ArgumentError(
+          'Only String attributes of an authorization request can be kept '
+          'in a cookie: $key',
+        );
+      }
+      attributes[key] = value;
+    }
+    return jsonEncode({
+      'authorizationUri': request.authorizationUri,
+      'clientId': request.clientId,
+      'redirectUri': request.redirectUri,
+      'state': request.state,
+      'scopes': request.scopes.toList(),
+      'additionalParameters': request.additionalParameters,
+      'attributes': attributes,
+    });
+  }
+
+  // Only what _encode writes, every type checked; anything else is null.
+  static OAuth2AuthorizationRequest? _decode(String? text) {
+    if (text == null) {
+      return null;
+    }
+    final Object? json;
+    try {
+      json = jsonDecode(text);
+    } on FormatException {
+      return null;
+    }
+    if (json
+        case {
+          'authorizationUri': final String authorizationUri,
+          'clientId': final String clientId,
+          'redirectUri': final String redirectUri,
+          'state': final String state,
+          'scopes': final List<Object?> scopes,
+          'additionalParameters':
+              final Map<String, Object?> additionalParameters,
+          'attributes': final Map<String, Object?> attributes,
+        }
+        when state.isNotEmpty &&
+            scopes.every((s) => s is String) &&
+            additionalParameters.values.every((v) => v is String) &&
+            attributes.values.every((v) => v is String)) {
+      return OAuth2AuthorizationRequest(
+        authorizationUri: authorizationUri,
+        clientId: clientId,
+        redirectUri: redirectUri,
+        state: state,
+        scopes: scopes.cast<String>().toSet(),
+        additionalParameters: additionalParameters.cast<String, String>(),
+        attributes: attributes.cast<String, String>(),
+      );
+    }
+    return null;
   }
 }
 
@@ -298,12 +501,13 @@ final class DefaultOAuth2AuthorizationRequestResolver
 ///
 /// For a request the [authorizationRequestResolver] recognises
 /// (`/oauth2/authorization/keycloak` by default), it saves the new
-/// authorization request in the [authorizationRequestRepository] (the
-/// session) and answers `302` to the provider's authorization endpoint
-/// with `response_type=code`, the client id, the scopes, the `state`, the
-/// redirect URI, the PKCE challenge and the `nonce` hash. A registration
-/// that does not exist gets a 400; a registration that cannot be resolved
-/// (the provider's discovery failed) a 500. Other requests pass.
+/// authorization request in the [authorizationRequestRepository] (a
+/// signed cookie by default) and answers `302` to the provider's
+/// authorization endpoint with `response_type=code`, the client id, the
+/// scopes, the `state`, the redirect URI, the PKCE challenge and the
+/// `nonce` hash. A registration that does not exist gets a 400; a
+/// registration that cannot be resolved (the provider's discovery
+/// failed) a 500. Other requests pass.
 ///
 /// `oauth2Login()` adds it.
 ///
@@ -314,7 +518,7 @@ final class OAuth2AuthorizationRequestRedirectFilter implements WebFilter {
   OAuth2AuthorizationRequestRedirectFilter(
     this.authorizationRequestResolver, {
     this.authorizationRequestRepository =
-        const HttpSessionOAuth2AuthorizationRequestRepository(),
+        const CookieOAuth2AuthorizationRequestRepository(),
   });
 
   /// Recognises the requests that start a login and builds their

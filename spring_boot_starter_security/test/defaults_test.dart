@@ -85,11 +85,13 @@ void main() {
       final protected = await browser.get('/api/me');
       expect(protected.status, 302);
       expect(protected.header('location'), '/login');
-      final before = browser.cookies['JSESSIONID'];
-      expect(before, isNotNull);
+      // No session before a login: the page is kept in a signed cookie.
+      expect(browser.cookies['JSESSIONID'], isNull);
+      expect(browser.cookies['REDIRECT_URI'], isNotNull);
       // 2. The login page and its token.
       final page = await browser.get('/login');
       final token = Browser.csrfField(page.response.bodyText);
+      expect(browser.cookies['JSESSIONID'], isNull);
       // 3. Without the token the login is refused.
       final noToken = await browser.send(
         HttpMethod.post,
@@ -105,7 +107,7 @@ void main() {
       );
       expect(wrong.status, 302);
       expect(wrong.header('location'), '/login?error');
-      // 5. The right one: a new session id, back to the saved page.
+      // 5. The right one: the session starts here, back to the saved page.
       final login = await browser.send(
         HttpMethod.post,
         '/login',
@@ -114,14 +116,18 @@ void main() {
       expect(login.status, 302);
       expect(login.header('location'), '/api/me?continue');
       final after = browser.cookies['JSESSIONID'];
-      expect(after, isNot(before), reason: 'session fixation protection');
+      expect(after, isNotNull);
+      expect(browser.cookies['REDIRECT_URI'], isNull, reason: 'used up');
       await browser
           .get('/api/me?continue', accept: 'application/json')
           .then((r) => expect(r.status, 200));
-      // 6. The old id does not carry the login.
+      // 6. Another session id does not carry the login.
       final stale = await mvc.get(
         '/api/me',
-        headers: {'cookie': 'JSESSIONID=$before', 'accept': 'application/json'},
+        headers: {
+          'cookie': 'JSESSIONID=${after}x',
+          'accept': 'application/json',
+        },
       );
       expect(stale.status, 401);
       // 7. Logout: GET shows a confirmation page, POST logs out.

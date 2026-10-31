@@ -10,12 +10,14 @@ import 'package:spring_boot_starter_security/src/oauth2/login.dart';
 import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
 import 'package:spring_boot_starter_security/src/web/access.dart';
 import 'package:spring_boot_starter_security/src/web/authentication.dart';
+import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 import 'package:spring_boot_starter_security/src/web/csrf.dart';
 import 'package:spring_boot_starter_security/src/web/entry_points.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 import 'package:spring_boot_starter_security/src/web/headers.dart';
 import 'package:spring_boot_starter_security/src/web/request_cache.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
+import 'package:spring_boot_starter_security/src/web/session_registry.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 const _log = SpringLog('spring.security.config');
@@ -185,11 +187,24 @@ abstract final class SecurityFilterOrder {
 /// ```
 final class HttpSecurity {
   /// A builder taking the application's optional beans from
-  /// [beanFactory]; [contextPath] is `server.servlet.context-path`.
+  /// [beanFactory]; [contextPath] is `server.servlet.context-path`;
+  /// [maximumSessions] and [maxSessionsPreventsLogin] are the defaults of
+  /// [SessionManagementConfigurer.maximumSessions] and
+  /// [SessionManagementConfigurer.maxSessionsPreventsLogin] (the
+  /// `spring.security.session.*` properties).
   ///
   /// The starter creates it for each `SecurityFilterChain` bean method;
   /// create one yourself only in tests.
-  HttpSecurity(this.beanFactory, {this.contextPath = ''});
+  HttpSecurity(
+    this.beanFactory, {
+    this.contextPath = '',
+    int maximumSessions = SessionManagementConfigurer.defaultMaximumSessions,
+    bool maxSessionsPreventsLogin = false,
+  }) {
+    _session
+      ..maximumSessions(maximumSessions)
+      ..maxSessionsPreventsLogin(maxSessionsPreventsLogin);
+  }
 
   /// Where the optional beans come from: users, password encoder, JWT
   /// decoder, CORS configuration, role hierarchy, event publishers. A type
@@ -222,6 +237,13 @@ final class HttpSecurity {
   // Spring, instead of being replaced by a default.
   T? _bean<T extends Object>() =>
       beanFactory?.getBeanProvider<T>().getIfUnique();
+
+  // Signs the cookies kept instead of a session: the application's bean
+  // (made from spring.security.cookie.secret), else the process's key.
+  late final CookieSigner _cookieSigner =
+      _bean<CookieSigner>() ?? CookieSigner.shared;
+
+  String get _cookiePath => contextPath.isEmpty ? '/' : contextPath;
 
   // Where the CorsFilter takes its rules: the source given; else the
   // dispatcher's rules (Spring's HandlerMappingIntrospector), which are
@@ -470,8 +492,8 @@ final class HttpSecurity {
     return this;
   }
 
-  /// Configures how logins use the session: the creation policy and the
-  /// session fixation protection.
+  /// Configures how logins use the session: the creation policy, the
+  /// session fixation protection and the most sessions per user.
   HttpSecurity sessionManagement(
     Customizer<SessionManagementConfigurer> customizer,
   ) {
@@ -593,15 +615,40 @@ final class HttpSecurity {
                 RequestAttributeSecurityContextRepository(),
                 HttpSessionSecurityContextRepository(),
               ]));
+    // Nothing of the chain makes a session before a login: the page to
+    // come back to and the CSRF token are cookies.
     final requestCache =
         _requestCache._cache ??
-        (stateless ? const NullRequestCache() : HttpSessionRequestCache());
+        (stateless
+            ? const NullRequestCache()
+            : CookieRequestCache(
+                signer: _cookieSigner,
+                cookiePath: _cookiePath,
+              ));
     final eventPublisher = _bean<ApplicationEventPublisher>();
     final csrfRepository =
-        _csrf._repository ?? const HttpSessionCsrfTokenRepository();
+        _csrf._repository ??
+        CookieCsrfTokenRepository(cookiePath: _cookiePath, sameSite: 'Lax');
+    // The most sessions per user, counted in the registry over the
+    // session repository (none without the web starter's repository).
+    final repositoryBean = _bean<HttpSessionRepository>();
+    final registry = stateless || _session._maximumSessions < 0
+        ? null
+        : _session._registry ??
+              _bean<SessionRegistry>() ??
+              (repositoryBean == null
+                  ? null
+                  : SessionRegistryImpl.of(repositoryBean));
     final sessionStrategy = CompositeSessionAuthenticationStrategy([
+      if (registry != null)
+        ConcurrentSessionControlAuthenticationStrategy(
+          registry,
+          maximumSessions: _session._maximumSessions,
+          exceptionIfMaximumExceeded: _session._preventsLogin,
+        ),
       if (!stateless && _session._fixation)
         const ChangeSessionIdAuthenticationStrategy(),
+      if (registry != null) RegisterSessionAuthenticationStrategy(registry),
       if (_csrf._enabled) CsrfAuthenticationStrategy(csrfRepository),
     ]);
 
@@ -627,9 +674,9 @@ final class HttpSecurity {
     if (_csrf._enabled) {
       // The provider's form post (response_mode=form_post) comes from its
       // site without a CSRF token: the callback's state, bound to the
-      // session, protects it (RFC 6749 §10.12). Only POSTs to the
-      // callback path, and the callback refuses a POST for a login that
-      // did not ask for one.
+      // browser by its signed cookie, protects it (RFC 6749 §10.12). Only
+      // POSTs to the callback path, and the callback refuses a POST for a
+      // login that did not ask for one.
       final oauth2Callback = _mechanisms
           .whereType<OAuth2LoginConfigurer>()
           .firstOrNull
@@ -973,6 +1020,7 @@ final class HttpSecurity {
         DaoAuthenticationProvider(
           users,
           passwordEncoder: _bean<PasswordEncoder>(),
+          passwordCheckLimiter: _bean<PasswordCheckLimiter>(),
         ),
       ], eventPublisher: publisher);
     }
@@ -990,6 +1038,7 @@ final class HttpSecurity {
         DaoAuthenticationProvider(
           service,
           passwordEncoder: _bean<PasswordEncoder>(),
+          passwordCheckLimiter: _bean<PasswordCheckLimiter>(),
           userDetailsPasswordService:
               _bean<UserDetailsPasswordService>() ??
               (service is UserDetailsPasswordService
@@ -1702,14 +1751,59 @@ final class HeadersConfigurer {
 /// http.sessionManagement(
 ///   (s) => s.sessionCreationPolicy(SessionCreationPolicy.stateless),
 /// );
+/// // One session per user: a new login refused while the other lives.
+/// http.sessionManagement(
+///   (s) => s.maximumSessions(1).maxSessionsPreventsLogin(true),
+/// );
 /// ```
 ///
-/// Spring (Java): `SessionManagementConfigurer`.
+/// Spring (Java): `SessionManagementConfigurer`, with its
+/// `ConcurrencyControlConfigurer` (`maximumSessions`) folded in.
 final class SessionManagementConfigurer {
   SessionManagementConfigurer._();
 
   SessionCreationPolicy _policy = SessionCreationPolicy.ifRequired;
   bool _fixation = true;
+  int _maximumSessions = defaultMaximumSessions;
+  bool _preventsLogin = false;
+  SessionRegistry? _registry;
+
+  /// The most sessions per user when [maximumSessions] is not called.
+  static const defaultMaximumSessions = 10;
+
+  /// Allows each user at most [maximum] sessions (`-1`: no limit), 10 by
+  /// default (`spring.security.session.maximum-sessions`): a new login
+  /// ends the user's least recently used session, or is refused with
+  /// [maxSessionsPreventsLogin]. So one account cannot fill the session
+  /// store (`server.servlet.session.max-sessions`) by logging in again
+  /// and again. Only chains that keep logins in sessions (form login,
+  /// `oauth2Login()`) use it.
+  ///
+  /// Spring has no limit by default; `maximumSessions(n)` there sets one.
+  SessionManagementConfigurer maximumSessions(int maximum) {
+    if (maximum == 0 || maximum < -1) {
+      throw ArgumentError.value(maximum, 'maximum', 'Must be -1 or positive');
+    }
+    _maximumSessions = maximum;
+    return this;
+  }
+
+  /// Whether a login above [maximumSessions] is refused (it fails as a
+  /// bad login, with a [SessionAuthenticationException]) instead of
+  /// ending the user's least recently used session; `false` by default
+  /// (`spring.security.session.max-sessions-prevents-login`).
+  SessionManagementConfigurer maxSessionsPreventsLogin(bool preventsLogin) {
+    _preventsLogin = preventsLogin;
+    return this;
+  }
+
+  /// Where the sessions of each user are counted; by default the
+  /// application's `SessionRegistry` bean, else a [SessionRegistryImpl]
+  /// over the web starter's session repository.
+  SessionManagementConfigurer sessionRegistry(SessionRegistry registry) {
+    _registry = registry;
+    return this;
+  }
 
   /// Sets whether logins are kept in the session;
   /// [SessionCreationPolicy.ifRequired] by default.
@@ -2118,7 +2212,10 @@ final class OAuth2LoginConfigurer {
         );
     final requestRepository =
         _authorization._repository ??
-        const HttpSessionOAuth2AuthorizationRequestRepository();
+        CookieOAuth2AuthorizationRequestRepository(
+          signer: http._cookieSigner,
+          cookiePath: http._cookiePath,
+        );
     final baseUri = _authorization._baseUri;
     final resolver =
         _authorization._resolver ??

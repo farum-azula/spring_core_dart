@@ -691,24 +691,14 @@ server.servlet.session.max-sessions=50000       # 10000 by default; -1: no limit
 | `server.servlet.session.cookie.same-site` | `lax` |
 | `server.servlet.session.max-sessions` | `10000` (`-1`: no limit) |
 
-Anyone can open a session with a request, so their number is limited
-(`max-sessions`). At the limit, a new session takes the place of an
-expired one, then of the oldest one its client never came back with,
-then of the least recently used one without a login. When only
-sessions that hold a login are left (the security starter's
-`SPRING_SECURITY_CONTEXT`), it takes the place of the least recently
-used login of the user who holds the most sessions, if that user holds
-two or more: one account logging in again and again cannot lock the
-others out, and nobody loses their last session. Users are told apart
-by `InMemoryHttpSessionRepository.principalKeyAttribute` when set
-(the security starter sets it to the user's name with the login's
-source, so that the same name from two login sources counts as two
-users), else by the name in
-`InMemoryHttpSessionRepository.principalNameAttribute` (Spring Session's
-`PRINCIPAL_NAME_INDEX_NAME`), which the security starter sets at each
-login too. When every login left belongs to another user, the new
-session is refused with a `TooManyActiveSessionsException`, a `503`, as
-Tomcat refuses sessions above its `maxActiveSessions`.
+The number of sessions is limited (`max-sessions`). At the limit, a new
+session first removes every expired one; when the store is still full,
+the new session is refused with a `TooManyActiveSessionsException`, a
+`503`, and a warning is logged (at most once a minute). A live session
+is never removed to make room. As in WebFlux's `InMemoryWebSessionStore`
+(`maxSessions`, expired ones removed, then refused). The security starter
+creates a session only at a login, so anonymous requests cannot fill the
+store; raise the limit when logged-in users alone fill it.
 
 Sessions live in memory by default (`InMemoryHttpSessionRepository`):
 they are lost when the process stops and are not shared between
@@ -1039,6 +1029,34 @@ server.ssl.certificate-private-key=/etc/shop/key.pem
 Every property, with YAML next to it, is in the
 [configuration reference](../docs/configuration.md#18-reference-web-server).
 
+### Behind a reverse proxy
+
+A proxy that terminates TLS (nginx, Traefik, a cloud load balancer)
+passes plain HTTP: without help the server takes every request for
+`http://`, so cookies miss `Secure`, redirect URIs are `http://` and the
+client's address is the proxy's. As in Spring Boot, set:
+
+```properties
+server.forward-headers-strategy=native   # or framework; none by default
+# Whose headers are believed: loopback and private networks by default.
+server.forward-headers.trusted-proxies=10.0.0.0/8,192.168.1.10
+```
+
+`ForwardedHeaderFilter` then applies `Forwarded` (RFC 7239), or
+`X-Forwarded-Proto`, `-Host`, `-Port` and `-For`, before every other
+filter, and only when the request comes from a trusted proxy: a client
+that reaches the server directly cannot claim to be on HTTPS or to come
+from another address. The client's address is the first one from the
+right of `X-Forwarded-For` that is not a trusted proxy. The proxy must
+set these headers itself (replacing what a client sent). Spring's
+`ForwardedHeaderFilter` believes every peer; here, as Tomcat's
+`RemoteIpValve`, only trusted ones. `X-Forwarded-Prefix` is not read.
+
+With several instances behind the proxy, route each client to the same
+instance (a sticky cookie): sessions live in the memory of one process.
+The cookies kept before a login are signed: give every instance the
+same `spring.security.cookie.secret`.
+
 - **Start and stop.** The `webServerStartStopLifecycle` bean starts the
   server when the context is ready and stops it when the context
   closes. It is a `SmartLifecycle` in the same phase as Spring Boot's
@@ -1352,8 +1370,8 @@ the bean as the context holds it, so AOP advice on a controller
 - **No `HttpSession` parameter:** a handler gets the session with
   `request.getSession()`. The session cookie is `SameSite=Lax` and the
   number of sessions is limited (`server.servlet.session.max-sessions`;
-  a login is pushed out only for a user who holds the most sessions,
-  else a new session is refused with `503`).
+  at the limit, expired ones are removed, then a new session is refused
+  with `503`).
 - **Multipart without a servlet container:** the
   `spring.servlet.multipart.*` keys keep Boot's names, but the temporary
   files are this starter's own (`file-size-threshold` is `0B`: every

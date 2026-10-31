@@ -48,6 +48,7 @@ export 'package:spring_web_dart/spring_web_dart.dart';
 export 'src/cors.dart' hide addVary;
 export 'src/dispatcher.dart';
 export 'src/form_parameters.dart';
+export 'src/forwarded_headers.dart';
 export 'src/handler_method.dart';
 export 'src/http_session.dart';
 export 'src/multipart_resolver.dart';

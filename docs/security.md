@@ -100,18 +100,21 @@ describes how the tests show it.
   look at paths must refuse `\` itself.
 - TLS. Terminate it in front of the application (a reverse proxy) or with
   the web starter's `server.ssl.*`; the packages see whether a request was
-  secure.
+  secure. Behind a proxy set `server.forward-headers-strategy=native`:
+  the proxy's `X-Forwarded-Proto` / `Forwarded` is believed from trusted
+  proxies only (`server.forward-headers.trusted-proxies`, private
+  networks by default). Several instances need sticky routing (sessions
+  live in one process) and the same `spring.security.cookie.secret`.
 - The application's own business logic, and the data it chooses to
   return to an authorized user.
 - Rate limiting and lockout after failed logins. Put them in front (the
   proxy) or in a listener of the authentication failure events (one
-  event per request); the packages do not count attempts. Without a
-  limit in front, a flood of new sessions can still push out sessions
-  that hold no login yet (a login page just opened), and, when only
-  logins are left, one session of the user who holds the most (never a
-  user's last one). As many accounts as the session limit, each logged
-  in once, still fill it: new sessions are then refused (503) until
-  logins end or expire; limit sign-ups and logins in front.
+  event per request); the packages do not count attempts. Requests
+  without a login make no session, so they cannot fill the session
+  store, and one account holds at most 10 sessions; logins of many
+  accounts can still fill it (a thousand accounts for the default
+  limit), and new logins are then refused (503) until sessions end or
+  expire. Limit sign-ups and logins in front.
 - The `iss` parameter (RFC 9207) of a registration without
   `issuer-uri` (its endpoints configured one by one): there is no
   issuer to compare it with. The redirect URI of each registration still
@@ -177,18 +180,21 @@ describes how the tests show it.
      read the form, with the web starter's 1 MiB limit, and the login
      filter uses those fields;
    - the number of sessions: `server.servlet.session.max-sessions`
-     (10 000 by default). A new session takes the place of an expired
-     one, then of the oldest one its client never came back with, then
-     of the least recently used one without a login. When only logins
-     are left, it takes the place of the least recently used login of
-     the user who holds the most sessions, if that user holds two or
-     more (users told apart by the name the chain stores in the session
-     at login, with the login's source: the same name from an identity
-     provider and from the application's own users is two users), so
-     one account cannot lock the others out and nobody
-     loses their last session; when every login left is another user's,
-     the new session is refused (503), as Tomcat refuses sessions above
-     its limit;
+     (10 000 by default). Only a login makes a session: before it, the
+     CSRF token, the page to come back to and the OAuth 2.0
+     authorization request are cookies signed by the server
+     (`CookieSigner`), read only when the signature, the cookie's name
+     and the expiry are right. When the store is full, expired sessions
+     are removed; if none is, the login is refused (503), and no live
+     session is ever removed, as WebFlux's `InMemoryWebSessionStore`;
+   - the password checks: at most half the processors hash at once,
+     eight times that wait, and another login gets a 503 at once
+     (`spring.security.password-checks.*`), so a flood of wrong
+     passwords takes half the CPU and a bounded memory;
+   - the sessions of one user: 10 by default
+     (`sessionManagement((s) => s.maximumSessions(n))`); a new login
+     ends the user's least recently used one, so one account logging in
+     again and again cannot fill the store;
    - the calls to the identity provider: a failed lookup of its metadata
      or its JWK Set is made again 30 seconds later at the earliest (the
      OAuth2 client's discovery: 10 seconds), never once per request;

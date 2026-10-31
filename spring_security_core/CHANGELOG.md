@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changes
+
+- `PasswordCheckLimiter`: the password checks of `DaoAuthenticationProvider` run at most half the processors at once (`spring.security.password-checks.max-concurrent`) with eight times that waiting (`spring.security.password-checks.max-queued`); another one fails at once with `PasswordChecksBusyException`, without hashing. Each check had an isolate of its own without a bound, so a flood of logins with wrong passwords took every core of the machine and more memory with each request. The auto-configured manager uses the `passwordCheckLimiter` bean; providers made in code use `PasswordCheckLimiter.shared` unless given one. Not in Spring.
+
 ## 0.4.3
 
 - `PreAuthenticatedAuthenticationToken` (Spring's, of `spring-security-web`): a login another system has checked, such as the server of a Flutter web app (`spring_boot_starter_flutter_security`).

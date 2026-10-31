@@ -138,9 +138,10 @@ internet; nothing aimed outside it).
   expired ones go, then new ones are refused; a flood can't log anyone
   out) under load, not only in unit tests.
 - **Output:** each finding confirmed with a probe, fixed with a
-  regression test, listed in `roadmap/fix_plan.md`; the stand kept as
-  scripts (a compose file and the attack runs) so it can be run again
-  before each release.
+  regression test, listed in `roadmap/fix_plan.md` (without the attack's
+  details until the fix is out). The stand (a compose file, the attack
+  runs), the plan and the reports are kept outside this repository,
+  privately, so they can be run again before each release.
 
 ## How the owner can judge it
 

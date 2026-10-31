@@ -226,10 +226,11 @@ void main() {
   });
 
   group('sessionManagement', () {
+    // The chain starts no session before a login: the application does
+    // (a cart, a language), and the login must not keep its id.
     Future<(String?, String?, ChainClient)> ids(HttpSecurity http) async {
       final client = ChainClient(http.formLogin().build());
-      await client.get('/login');
-      final before = client.cookies['JSESSIONID'];
+      final before = await client.startSession();
       final reply = await client.login('ada', 'ada-pw');
       expect(reply.status, 302);
       return (before, client.cookies['JSESSIONID'], client);
@@ -258,11 +259,20 @@ void main() {
           (s) => s.sessionCreationPolicy(SessionCreationPolicy.stateless),
         ),
       );
-      expect(before, isNotNull, reason: 'the CSRF token made one');
       expect(after, before);
       final next = await client.get('/private');
       expect(next.reached, isFalse, reason: 'the login was not kept');
       expect(next.status, 302);
+    });
+
+    test('a login without a session starts one', () async {
+      final client = ChainClient(rules().formLogin().build());
+      await client.get('/login');
+      expect(client.cookies['JSESSIONID'], isNull);
+      expect(client.storedSessions, 0);
+      expect((await client.login('ada', 'ada-pw')).status, 302);
+      expect(client.cookies['JSESSIONID'], isNotNull);
+      expect(client.storedSessions, 1);
     });
 
     test('by default the login is kept in the session', () async {

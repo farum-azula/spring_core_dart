@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_security_core/src/authentication/authentication_manager.dart';
 import 'package:spring_security_core/src/authentication/events.dart';
+import 'package:spring_security_core/src/authentication/password_checks.dart';
 import 'package:spring_security_core/src/authorization/authorization_manager.dart';
 import 'package:spring_security_core/src/crypto/password_encoder.dart';
 import 'package:spring_security_core/src/method/expression_handler.dart';
@@ -81,12 +82,44 @@ final class _OnAuthenticationSources implements Condition {
 ///   `PasswordEncoder` bean (the delegating encoder without one), storing
 ///   upgraded hashes through a `UserDetailsPasswordService` bean or the
 ///   user service itself when it is one.
+/// - **A `PasswordCheckLimiter`**: the password checks running at once
+///   (`spring.security.password-checks.max-concurrent`, half the
+///   processors by default) and waiting
+///   (`spring.security.password-checks.max-queued`, eight times that);
+///   above them a login is refused at once (503 from the security
+///   starter). Not in Spring Boot.
 ///
 /// Spring (Java): parts of `@EnableMethodSecurity` and
 /// `AuthenticationConfiguration`. Spring needs `@EnableMethodSecurity`;
 /// here the dependency is enough, so an annotation is never silently
 /// ignored.
 final securityCoreAutoConfiguration = <BeanDefinition<Object>>[
+  BeanDefinition<PasswordCheckLimiter>(
+    name: 'passwordCheckLimiter',
+    factoryMethodName: 'passwordCheckLimiter',
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.passwordCheckLimiter', [
+        ConditionalOnMissingBean(PasswordCheckLimiter),
+      ]),
+    ],
+    create: (r) {
+      final environment = r.dependency<Environment>();
+      int? number(String key) {
+        final text = environment.getProperty(key)?.trim();
+        if (text == null || text.isEmpty) {
+          return null;
+        }
+        return int.tryParse(text) ??
+            (throw ArgumentError('$key must be a whole number: $text'));
+      }
+
+      return PasswordCheckLimiter(
+        maxConcurrent: number('spring.security.password-checks.max-concurrent'),
+        maxQueued: number('spring.security.password-checks.max-queued'),
+      );
+    },
+  ),
   BeanDefinition<MethodSecurityExpressionHandler>(
     name: 'methodSecurityExpressionHandler',
     factoryMethodName: 'methodSecurityExpressionHandler',
@@ -181,6 +214,7 @@ final securityCoreAutoConfiguration = <BeanDefinition<Object>>[
           DaoAuthenticationProvider(
             users,
             passwordEncoder: r.optionalDependency<PasswordEncoder>(),
+            passwordCheckLimiter: r.optionalDependency<PasswordCheckLimiter>(),
             userDetailsPasswordService:
                 r.optionalDependency<UserDetailsPasswordService>() ??
                 (users is UserDetailsPasswordService

@@ -572,16 +572,20 @@ response split between the query and the body.
 
 - **CSRF:** `oauth2Login()` exempts the callback's `POST` from the CSRF
   filter (the provider's page has no CSRF token of this site); the
-  `state`, bound to the session, is that callback's CSRF protection
-  (RFC 6749 §10.12). Other `POST`s keep it.
-- **The session cookie:** the provider's post is a cross-site `POST`. A
-  `SameSite=Lax` cookie (the web starter's default) is not sent with it,
-  so no saved request is found and the login fails, closed, with a
-  warning in the log. A server with form post logins sets
-  `server.servlet.session.cookie.same-site=none`, which browsers accept
-  only with `Secure`, that is over HTTPS (`server.servlet.session.cookie.secure=true`,
-  or behind a TLS proxy). The CSRF protection of the other requests does
-  not rest on `SameSite`.
+  `state`, bound to the browser by the signed authorization request
+  cookie, is that callback's CSRF protection (RFC 6749 §10.12). Other
+  `POST`s keep it.
+- **The cookie:** the provider's post is a cross-site `POST`, which
+  carries only `SameSite=None; Secure` cookies. For a form post login
+  the authorization request cookie is made so over HTTPS (directly, or
+  behind a TLS proxy the server trusts); over plain HTTP no saved
+  request is found and the login fails, closed, with a warning in the
+  log. The page to come back to (a `Lax` cookie) is not sent with the
+  post: after a form post login the user lands on the default page.
+  With `HttpSessionOAuth2AuthorizationRequestRepository` instead, the
+  session cookie needs `server.servlet.session.cookie.same-site=none`
+  over HTTPS. The CSRF protection of the other requests does not rest
+  on `SameSite`.
 - **Apple's `user`:** the first login's name and e-mail (JSON) reach the
   user service as `userRequest.additionalParameters['user']`, next to the
   token response; parameters named like the token response's
@@ -647,8 +651,7 @@ spring.security.oauth2.client.registration.apple.client-authentication-method=cl
 spring.security.oauth2.client.registration.apple.client-secret-jwt.issuer=ABCDE12345
 spring.security.oauth2.client.registration.apple.client-secret-jwt.key-id=XYZ987KEY1
 spring.security.oauth2.client.registration.apple.client-secret-jwt.private-key-location=file:/run/secrets/AuthKey_XYZ987KEY1.p8
-server.servlet.session.cookie.same-site=none
-server.servlet.session.cookie.secure=true
+# Over HTTPS only: Apple posts the response back (response_mode=form_post).
 ```
 
 The `apple` registration (`CommonOAuth2Provider.apple`, an addition:
@@ -816,23 +819,48 @@ So that one request cannot make the server do unbounded work:
   token comes as a form field, though, the CSRF filter has already read
   the form with the web starter's 1 MiB limit, and the login filter uses
   those fields;
+- only a login makes a session. Before it, what the chain must
+  remember is in cookies signed by the server: the CSRF token
+  (`XSRF-TOKEN`), the page to come back to (`REDIRECT_URI`,
+  `CookieRequestCache`) and the OAuth 2.0 authorization request
+  (`OAUTH2_AUTHORIZATION_REQUEST`,
+  `CookieOAuth2AuthorizationRequestRepository`). A cookie is read only
+  when its signature, name and expiry are right, and the page to come
+  back to only when it is a path of this site. Clients that are not
+  logged in therefore fill no memory. Set
+  `spring.security.cookie.secret` (32 characters or more) to the same
+  value on every instance behind a proxy; without it, a random key of
+  the process signs the cookies. Spring's session versions
+  (`HttpSessionRequestCache`, `HttpSessionCsrfTokenRepository`,
+  `HttpSessionOAuth2AuthorizationRequestRepository`) can still be set;
 - sessions are limited by `server.servlet.session.max-sessions` (10 000
-  by default). A new session takes the place of an expired one, then of
-  one its client never came back with, then of the least recently used
-  one without a login. When only logins are left, it takes the place of
-  the least recently used login of the user who holds the most
-  sessions, if that user holds two or more (the chain stores the user's
-  name in the session under Spring Session's `PRINCIPAL_NAME_INDEX_NAME`,
-  and for this limit the name with where the login came from: an
-  OAuth2 registration's `ada` and the application's own `ada` are two
-  users): one account logged in again and again
-  cannot lock the others out, and anonymous requests (a login page, a
-  saved request) never push out a user's last session. When every login
-  left belongs to another user, a new session is refused with `503`,
-  and the saved request is skipped;
+  by default). When the store is full, expired sessions are removed;
+  if none is, the login is refused with `503`. No live session is
+  removed to make room;
+- each user holds at most 10 sessions: a new login ends the user's
+  least recently used session, or is refused with
+  `maxSessionsPreventsLogin(true)`. So filling the store takes as many
+  accounts as a tenth of the limit. Set it in a chain
+  (`sessionManagement((s) => s.maximumSessions(n))`, `-1` for none,
+  Spring's default) or for every chain with sessions in the properties
+  (not in Spring Boot):
+
+  ```properties
+  spring.security.session.maximum-sessions=3
+  spring.security.session.max-sessions-prevents-login=false
+  ```
+
+  Chains without sessions (`stateless`, bearer tokens, HTTP Basic)
+  ignore them;
 - a failed call to the identity provider (its metadata, its JWK Set) is
   made again 30 seconds later at the earliest, never once per request;
-- password hashing runs only for requests that carry credentials.
+- password hashing runs only for requests that carry credentials, and
+  at most half the processors hash at once
+  (`spring.security.password-checks.max-concurrent`), with eight times
+  that waiting (`spring.security.password-checks.max-queued`): above
+  that a login gets `503` with `Retry-After: 1` at once, so a flood of
+  wrong passwords takes half the CPU at most and the rest of the
+  application keeps its speed (limit logins in front all the same).
 
 ## Behaviour to know
 
@@ -872,13 +900,14 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   CORS headers, so the browser blocks a call that `@CrossOrigin` allows;
   here the pre-flight is answered from the handler's rules, as the
   actual request is in both.
-- **The session cookie** is `SameSite=Lax` by default
+- **Sessions:** only a login makes one; Spring Security keeps the CSRF
+  token, the saved request and the OAuth 2.0 authorization request in
+  the session, here they are signed cookies (see the size limits
+  above). The session cookie is `SameSite=Lax` by default
   (`server.servlet.session.cookie.same-site`), and sessions are limited
-  (`server.servlet.session.max-sessions`, 10 000; a login is pushed out
-  only for a user who holds the most sessions, see the size limits
-  above). Spring Boot has no limit of its own; Tomcat's
-  `maxActiveSessions` (unlimited by default) refuses every new session
-  above it.
+  (`server.servlet.session.max-sessions`, 10 000; at the limit a new
+  login is refused with 503, as WebFlux's `InMemoryWebSessionStore`).
+  Spring Boot on Tomcat has no limit of its own.
 - **CSRF and token requests:** only a token in the header
   (`Authorization: Bearer`, or `DPoP` with a proof) exempts a request
   from CSRF. Spring exempts whatever its `BearerTokenResolver` finds,
