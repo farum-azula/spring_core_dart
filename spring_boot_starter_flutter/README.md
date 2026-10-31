@@ -24,7 +24,7 @@ The rest comes with it:
 - The platform is a *profile*: a file such as
   `application-ios.properties`, or a bean marked `@Profile(['android'])`,
   is used on that platform only.
-- When the app goes to the background, scheduled tasks and WebSocket
+- When the app goes to the background, `@Scheduled` tasks and WebSocket
   connections stop; they start again when it comes back.
 - A hot reload that changed beans restarts the context with the new code.
 
@@ -855,6 +855,19 @@ them running in the background:
 spring.flutter.lifecycle.pause-in-background=false
 ```
 
+`@Scheduled` tasks are scheduled afresh when the app comes back, so the
+runs missed in the background are not made up. Tasks a bean starts
+itself with the `TaskScheduler` (`scheduleAtFixedRate`,
+`scheduleWithFixedDelay`, ...) are not paused: they keep running while
+the system lets the app run, and when it suspended the app, they catch
+up on its return as Spring's scheduler does. A fixed-rate task then
+starts every run missed meanwhile at once (a 1-second rate after a
+minute away: about 60 runs back to back); a fixed-delay one runs once
+and goes on. So give polls and UI ticks a fixed delay, or cancel them
+when their screen goes away (or on `ContextPausedEvent`). The same holds
+for `@Scheduled(fixedRate: ...)` with `pause-in-background=false`, and
+for a browser tab whose timers are throttled while hidden.
+
 ## Platform profiles
 
 A profile is a name that switches configuration files and beans on. The
@@ -1009,8 +1022,12 @@ as the app reads its config in a browser: `application.*`, then
 `application-web.*` (the `web` platform profile), and the files of the
 profiles `spring.profiles.active` names there. Environment variables and
 `--dart-define` values do not count, because the file is written at
-build time. A `--web-port` or `--web-hostname` flag still wins over the
-file.
+build time: a placeholder only they resolve (`${APP_PROFILE}` without a
+default) leaves out the profile name it is in (`dev,${ENV}-eu` is read as
+`dev`), the import location it is in, or the document whose
+`spring.config.activate.*` guard has it, with a warning (in a
+`spring.flutter.*` value it fails the build). A `--web-port` or
+`--web-hostname` flag still wins over the file.
 
 | Property | Default | Description |
 |---|---|---|

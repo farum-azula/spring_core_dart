@@ -91,16 +91,95 @@ void main() {
       expect(() => session.getAttribute('a'), throwsStateError);
     });
 
-    test('the limit drops the least recently used session', () {
+    test('at the limit an expired session is removed for the new one', () {
+      var now = DateTime(2026);
+      final repository = InMemoryHttpSessionRepository(
+        maxSessions: 2,
+        clock: () => now,
+      );
+      final a = repository.createSession();
+      now = now.add(const Duration(minutes: 20));
+      final b = repository.createSession();
+      // a expires at minute 30; the purge is not due before minute 21 + 1
+      // after the one at minute 20, so only the limit finds it.
+      now = now.add(const Duration(minutes: 10, seconds: 10));
+      final c = repository.createSession();
+      expect(a.isInvalidated, isTrue);
+      expect(repository.size, 2);
+      expect(repository.findById(b.id), same(b));
+      expect(repository.findById(c.id), same(c));
+    });
+
+    test('at the limit with live sessions only a new session is refused '
+        '(503) and every live session is kept', () {
       final repository = InMemoryHttpSessionRepository(maxSessions: 2);
       final a = repository.createSession();
       final b = repository.createSession();
-      repository.findById(a.id); // a used last
-      final c = repository.createSession();
+      for (var i = 0; i < 20; i++) {
+        expect(
+          repository.createSession,
+          throwsA(
+            isA<TooManyActiveSessionsException>()
+                .having((e) => e.statusCode, 'status', 503)
+                .having((e) => e.maxActiveSessions, 'limit', 2),
+          ),
+        );
+      }
       expect(repository.size, 2);
-      expect(repository.findById(b.id), isNull);
       expect(repository.findById(a.id), same(a));
+      expect(repository.findById(b.id), same(b));
+      // A session that ends makes room again.
+      a.invalidate();
+      final c = repository.createSession();
+      expect(repository.findById(b.id), same(b));
       expect(repository.findById(c.id), same(c));
+    });
+
+    test('a session keeps its place across a new id', () {
+      final repository = InMemoryHttpSessionRepository(maxSessions: 1);
+      final a = repository.createSession();
+      repository.changeSessionId(a);
+      expect(repository.size, 1);
+      expect(repository.findById(a.id), same(a));
+      expect(
+        repository.createSession,
+        throwsA(isA<TooManyActiveSessionsException>()),
+      );
+    });
+
+    test('without a limit (-1) nothing is refused', () {
+      final repository = InMemoryHttpSessionRepository(maxSessions: -1);
+      for (var i = 0; i < 50; i++) {
+        repository.createSession();
+      }
+      expect(repository.size, 50);
+    });
+
+    test('the refusal is logged as a warning at most once a minute', () {
+      var now = DateTime(2026);
+      final repository = InMemoryHttpSessionRepository(
+        maxSessions: 1,
+        clock: () => now,
+      )..createSession();
+      final messages = <String>[];
+      final stop = SpringLog.listen((record) {
+        if (record.loggerName == 'spring.web.session') {
+          messages.add(record.message);
+        }
+      });
+      addTearDown(stop);
+      void refuse() => expect(
+        repository.createSession,
+        throwsA(isA<TooManyActiveSessionsException>()),
+      );
+      refuse();
+      refuse();
+      now = now.add(const Duration(seconds: 30));
+      refuse();
+      expect(messages, hasLength(1));
+      now = now.add(const Duration(seconds: 31));
+      refuse();
+      expect(messages, hasLength(2));
     });
 
     test('ids are random and long', () {

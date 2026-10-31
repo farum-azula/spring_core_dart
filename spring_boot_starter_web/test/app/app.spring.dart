@@ -10,22 +10,22 @@
 import 'dart:async' as _i3;
 import 'dart:typed_data' as _i11;
 
-import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i18;
-import 'package:spring_boot_starter_web/src/handler_method.dart' as _i24;
+import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i20;
+import 'package:spring_boot_starter_web/src/handler_method.dart' as _i26;
 import 'package:spring_boot_starter_web/src/response_writer.dart' as _i15;
 import 'package:spring_boot_starter_web/src/sse_emitter.dart' as _i7;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart'
-    as _i23;
+    as _i25;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i22;
+    as _i24;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_web_dart/src/annotations.dart' as _i20;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i21;
+import 'package:spring_web_dart/src/annotations.dart' as _i22;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i23;
 import 'package:spring_web_dart/src/multipart/multipart.dart' as _i14;
 import 'package:spring_web_dart/src/problem_detail.dart' as _i8;
 import 'package:spring_web_dart/src/response_entity.dart' as _i5;
 import 'package:spring_web_dart/src/server/server_http_request.dart' as _i9;
-import 'package:spring_web_dart/src/server/server_http_response.dart' as _i19;
+import 'package:spring_web_dart/src/server/server_http_response.dart' as _i21;
 import 'package:spring_web_dart/src/sse/event_stream.dart' as _i6;
 
 import 'book_controller.dart' as _i1;
@@ -33,8 +33,10 @@ import 'book_service.dart' as _i10;
 import 'echo_endpoint.dart' as _i12;
 import 'files_controller.dart' as _i13;
 import 'models.dart' as _i4;
-import 'session_controller.dart' as _i16;
-import 'web_config.dart' as _i17;
+import 'plain_controller.dart' as _i16;
+import 'review_controller.dart' as _i17;
+import 'session_controller.dart' as _i18;
+import 'web_config.dart' as _i19;
 
 class _$BookControllerProxy implements _i1.BookController, _i2.Advised {
   _$BookControllerProxy(this._target, this._invoker);
@@ -623,10 +625,284 @@ class _$FilesControllerProxy implements _i13.FilesController, _i2.Advised {
   ) as _i15.StreamingResponseBody);
 }
 
-class _$SessionControllerProxy implements _i16.SessionController, _i2.Advised {
+class _$PlainControllerProxy implements _i16.PlainController, _i2.Advised {
+  _$PlainControllerProxy(this._target, this._invoker);
+
+  final _i16.PlainController _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i5.ResponseEntity<String> badHeader() => (this._invoker.invoke(
+    this,
+    this._target,
+    0,
+    const [],
+    (args) => this._target.badHeader(),
+  ) as _i5.ResponseEntity<String>);
+
+  @override
+  String text(String body) => (this._invoker.invoke(this, this._target, 1, [
+    body,
+  ], (args) => this._target.text((args[0] as String))) as String);
+}
+
+class _$ReviewControllerProxy implements _i17.ReviewController, _i2.Advised {
+  _$ReviewControllerProxy(this._target, this._invoker);
+
+  final _i17.ReviewController _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  String cors() => (this._invoker.invoke(
+    this,
+    this._target,
+    0,
+    const [],
+    (args) => this._target.cors(),
+  ) as String);
+
+  @override
+  String format() => (this._invoker.invoke(
+    this,
+    this._target,
+    1,
+    const [],
+    (args) => this._target.format(),
+  ) as String);
+
+  @override
+  String argument() => (this._invoker.invoke(
+    this,
+    this._target,
+    2,
+    const [],
+    (args) => this._target.argument(),
+  ) as String);
+
+  @override
+  String unsupported() => (this._invoker.invoke(
+    this,
+    this._target,
+    3,
+    const [],
+    (args) => this._target.unsupported(),
+  ) as String);
+
+  @override
+  _i5.ResponseEntity<_i6.EventStream<String>> entityEvents() =>
+      (this._invoker.invoke(
+        this,
+        this._target,
+        4,
+        const [],
+        (args) => this._target.entityEvents(),
+      ) as _i5.ResponseEntity<_i6.EventStream<String>>);
+
+  @override
+  _i5.ResponseEntity<_i7.SseEmitter> entityEmitter() => (this._invoker.invoke(
+    this,
+    this._target,
+    5,
+    const [],
+    (args) => this._target.entityEmitter(),
+  ) as _i5.ResponseEntity<_i7.SseEmitter>);
+}
+
+class _$ReviewFirstErrorsProxy implements _i17.ReviewFirstErrors, _i2.Advised {
+  _$ReviewFirstErrorsProxy(this._target, this._invoker);
+
+  final _i17.ReviewFirstErrors _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i5.ResponseEntity<String> any(Exception error) => (this._invoker.invoke(
+    this,
+    this._target,
+    0,
+    [error],
+    (args) => this._target.any((args[0] as Exception)),
+  ) as _i5.ResponseEntity<String>);
+}
+
+class _$ReviewSecondErrorsProxy
+    implements _i17.ReviewSecondErrors, _i2.Advised {
+  _$ReviewSecondErrorsProxy(this._target, this._invoker);
+
+  final _i17.ReviewSecondErrors _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i5.ResponseEntity<String> format(FormatException error) =>
+      (this._invoker.invoke(
+        this,
+        this._target,
+        0,
+        [error],
+        (args) => this._target.format((args[0] as FormatException)),
+      ) as _i5.ResponseEntity<String>);
+
+  @override
+  _i5.ResponseEntity<String> argument(ArgumentError error) =>
+      (this._invoker.invoke(
+        this,
+        this._target,
+        1,
+        [error],
+        (args) => this._target.argument((args[0] as ArgumentError)),
+      ) as _i5.ResponseEntity<String>);
+}
+
+class _$ReviewThirdErrorsProxy implements _i17.ReviewThirdErrors, _i2.Advised {
+  _$ReviewThirdErrorsProxy(this._target, this._invoker);
+
+  final _i17.ReviewThirdErrors _target;
+
+  final _i2.ProxyInvoker _invoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+
+  @override
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.addAdvisor(advisor);
+
+  @override
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      this._invoker.removeAdvisor(advisor);
+
+  @override
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.addAdvice(advice);
+
+  @override
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      this._invoker.removeAdvice(advice);
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  _i5.ResponseEntity<String> unsupported(UnsupportedError error) =>
+      (this._invoker.invoke(
+        this,
+        this._target,
+        0,
+        [error],
+        (args) => this._target.unsupported((args[0] as UnsupportedError)),
+      ) as _i5.ResponseEntity<String>);
+}
+
+class _$SessionControllerProxy implements _i18.SessionController, _i2.Advised {
   _$SessionControllerProxy(this._target, this._invoker);
 
-  final _i16.SessionController _target;
+  final _i18.SessionController _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -689,10 +965,10 @@ class _$SessionControllerProxy implements _i16.SessionController, _i2.Advised {
 }
 
 class _$TraceFilterProxy
-    implements _i17.TraceFilter, _i18.WebFilter, _i2.Advised {
+    implements _i19.TraceFilter, _i20.WebFilter, _i2.Advised {
   _$TraceFilterProxy(this._target, this._invoker);
 
-  final _i17.TraceFilter _target;
+  final _i19.TraceFilter _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -724,8 +1000,8 @@ class _$TraceFilterProxy
   @override
   _i3.Future<void> doFilter(
     _i9.ServerHttpRequest request,
-    _i19.ServerHttpResponse response,
-    _i18.WebFilterChain chain,
+    _i21.ServerHttpResponse response,
+    _i20.WebFilterChain chain,
   ) => this._invoker.invokeAsync<void>(
     this,
     this._target,
@@ -733,8 +1009,8 @@ class _$TraceFilterProxy
     [request, response, chain],
     (args) => this._target.doFilter(
       (args[0] as _i9.ServerHttpRequest),
-      (args[1] as _i19.ServerHttpResponse),
-      (args[2] as _i18.WebFilterChain),
+      (args[1] as _i21.ServerHttpResponse),
+      (args[2] as _i20.WebFilterChain),
     ),
   );
 }
@@ -759,13 +1035,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.PathVariable()],
+              annotations: const [_i22.PathVariable()],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i4.Book>(),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.find, arguments),
-          annotations: const [_i20.GetMapping(r'/{isbn}')],
+          annotations: const [_i22.GetMapping(r'/{isbn}')],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'search',
@@ -775,13 +1051,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'query',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.RequestParam(r'q')],
+              annotations: const [_i22.RequestParam(r'q')],
             ),
             _i2.BeanParameter(
               r'page',
               type: const _i2.ClassType<int>(),
               symbol: #page,
-              annotations: const [_i20.RequestParam(r'page')],
+              annotations: const [_i22.RequestParam(r'page')],
             ),
             _i2.BeanParameter(
               r'genre',
@@ -790,7 +1066,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 nullable: true,
               ),
               symbol: #genre,
-              annotations: const [_i20.RequestParam(r'genre')],
+              annotations: const [_i22.RequestParam(r'genre')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<_i4.Book>(
@@ -800,7 +1076,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           invoke: (bean, arguments) => Function.apply(bean.search, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.search, positional, named),
-          annotations: const [_i20.GetMapping()],
+          annotations: const [_i22.GetMapping()],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'form',
@@ -810,18 +1086,18 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'title',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.RequestParam(r'title')],
+              annotations: const [_i22.RequestParam(r'title')],
             ),
             _i2.BeanParameter(
               r'count',
               type: const _i2.ClassType<int>(),
               isRequired: true,
-              annotations: const [_i20.RequestParam(r'count')],
+              annotations: const [_i22.RequestParam(r'count')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.form, arguments),
-          annotations: const [_i20.PostMapping(r'/form')],
+          annotations: const [_i22.PostMapping(r'/form')],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'sample',
@@ -830,38 +1106,38 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'size',
               type: const _i2.ClassType<int>(),
               symbol: #size,
-              annotations: const [_i20.RequestParam(r'size')],
+              annotations: const [_i22.RequestParam(r'size')],
             ),
             _i2.BeanParameter(
               r'sort',
               type: const _i2.ClassType<String>(),
               symbol: #sort,
-              annotations: const [_i20.RequestParam()],
+              annotations: const [_i22.RequestParam()],
             ),
             _i2.BeanParameter(
               r'tag',
               type: const _i2.ClassType<String>(nullable: true),
               symbol: #tag,
-              annotations: const [_i20.RequestParam(r'tag')],
+              annotations: const [_i22.RequestParam(r'tag')],
             ),
             _i2.BeanParameter(
               r'limit',
               type: const _i2.ClassType<int>(nullable: true),
               symbol: #limit,
-              annotations: const [_i20.RequestParam(r'limit')],
+              annotations: const [_i22.RequestParam(r'limit')],
             ),
             _i2.BeanParameter(
               r'lang',
               type: const _i2.ClassType<String>(nullable: true),
               symbol: #lang,
-              annotations: const [_i20.RequestHeader(r'X-Lang')],
+              annotations: const [_i22.RequestHeader(r'X-Lang')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.sample, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.sample, positional, named),
-          annotations: const [_i20.GetMapping(r'/sample/defaults')],
+          annotations: const [_i22.GetMapping(r'/sample/defaults')],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'create',
@@ -871,7 +1147,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'book',
               type: const _i2.ClassType<_i4.NewBook>(),
               isRequired: true,
-              annotations: const [_i20.RequestBody(), _i2.Valid()],
+              annotations: const [_i22.RequestBody(), _i2.Valid()],
             ),
           ],
           returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<_i4.Book>>([
@@ -879,7 +1155,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ]),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.create, arguments),
-          annotations: const [_i20.PostMapping()],
+          annotations: const [_i22.PostMapping()],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'delete',
@@ -889,14 +1165,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.PathVariable()],
+              annotations: const [_i22.PathVariable()],
             ),
           ],
           isVoid: true,
           invoke: (bean, arguments) => Function.apply(bean.delete, arguments),
           annotations: const [
-            _i20.DeleteMapping(r'/{isbn}'),
-            _i21.ResponseStatus(204),
+            _i22.DeleteMapping(r'/{isbn}'),
+            _i23.ResponseStatus(204),
           ],
         ),
         _i2.BeanMethod<_i1.BookController>(
@@ -905,14 +1181,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             _i2.ClassType<_i4.Book>(),
           ]),
           invoke: (bean, arguments) => Function.apply(bean.changes, arguments),
-          annotations: const [_i20.GetMapping(r'/changes')],
+          annotations: const [_i22.GetMapping(r'/changes')],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'notifications',
           returnTypeInfo: const _i2.ClassType<_i7.SseEmitter>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.notifications, arguments),
-          annotations: const [_i20.GetMapping(r'/notifications')],
+          annotations: const [_i22.GetMapping(r'/notifications')],
         ),
         _i2.BeanMethod<_i1.BookController>(
           r'notFound',
@@ -935,14 +1211,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           returnTypeInfo: const _i2.ClassType<_i8.ProblemDetail>(),
           invoke: (bean, arguments) => Function.apply(bean.notFound, arguments),
           annotations: const [
-            _i21.ExceptionHandler(),
-            _i21.ResponseStatus(404),
+            _i23.ExceptionHandler(),
+            _i23.ResponseStatus(404),
           ],
         ),
       ],
       annotations: const [
-        _i21.RestController(),
-        _i20.RequestMapping(r'/api/books'),
+        _i23.RestController(),
+        _i22.RequestMapping(r'/api/books'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -955,14 +1231,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i20.PathVariable()],
+              [_i22.PathVariable()],
             ],
-            annotations: [_i20.GetMapping(r'/{isbn}')],
+            annotations: [_i22.GetMapping(r'/{isbn}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -975,16 +1251,16 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int', r'Genre'],
             parameterNames: [r'query', r'page', r'genre'],
             parameterAnnotations: [
-              [_i20.RequestParam(r'q')],
-              [_i20.RequestParam(r'page')],
-              [_i20.RequestParam(r'genre')],
+              [_i22.RequestParam(r'q')],
+              [_i22.RequestParam(r'page')],
+              [_i22.RequestParam(r'genre')],
             ],
-            annotations: [_i20.GetMapping()],
+            annotations: [_i22.GetMapping()],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -997,15 +1273,15 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'title', r'count'],
             parameterAnnotations: [
-              [_i20.RequestParam(r'title')],
-              [_i20.RequestParam(r'count')],
+              [_i22.RequestParam(r'title')],
+              [_i22.RequestParam(r'count')],
             ],
-            annotations: [_i20.PostMapping(r'/form')],
+            annotations: [_i22.PostMapping(r'/form')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1018,18 +1294,18 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'int', r'String', r'String', r'int', r'String'],
             parameterNames: [r'size', r'sort', r'tag', r'limit', r'lang'],
             parameterAnnotations: [
-              [_i20.RequestParam(r'size')],
-              [_i20.RequestParam()],
-              [_i20.RequestParam(r'tag')],
-              [_i20.RequestParam(r'limit')],
-              [_i20.RequestHeader(r'X-Lang')],
+              [_i22.RequestParam(r'size')],
+              [_i22.RequestParam()],
+              [_i22.RequestParam(r'tag')],
+              [_i22.RequestParam(r'limit')],
+              [_i22.RequestHeader(r'X-Lang')],
             ],
-            annotations: [_i20.GetMapping(r'/sample/defaults')],
+            annotations: [_i22.GetMapping(r'/sample/defaults')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1042,14 +1318,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
             parameterAnnotations: [
-              [_i20.RequestBody(), _i2.Valid()],
+              [_i22.RequestBody(), _i2.Valid()],
             ],
-            annotations: [_i20.PostMapping()],
+            annotations: [_i22.PostMapping()],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1062,17 +1338,17 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i20.PathVariable()],
+              [_i22.PathVariable()],
             ],
             annotations: [
-              _i20.DeleteMapping(r'/{isbn}'),
-              _i21.ResponseStatus(204),
+              _i22.DeleteMapping(r'/{isbn}'),
+              _i23.ResponseStatus(204),
             ],
             annotationTypes: [r'DeleteMapping', r'ResponseStatus'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1082,12 +1358,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'BookController',
             declaringTypes: [r'BookController'],
             returnType: r'EventStream',
-            annotations: [_i20.GetMapping(r'/changes')],
+            annotations: [_i22.GetMapping(r'/changes')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1097,12 +1373,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'BookController',
             declaringTypes: [r'BookController'],
             returnType: r'SseEmitter',
-            annotations: [_i20.GetMapping(r'/notifications')],
+            annotations: [_i22.GetMapping(r'/notifications')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1114,12 +1390,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'ProblemDetail',
             parameterTypes: [r'BookNotFoundException', r'ServerHttpRequest'],
             parameterNames: [r'e', r'request'],
-            annotations: [_i21.ExceptionHandler(), _i21.ResponseStatus(404)],
+            annotations: [_i23.ExceptionHandler(), _i23.ResponseStatus(404)],
             annotationTypes: [r'ExceptionHandler', r'ResponseStatus'],
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1132,8 +1408,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'BookService',
             targetTypes: [r'BookController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/api/books'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/books'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1152,21 +1428,21 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           r'text',
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.text, arguments),
-          annotations: const [_i20.GetMapping(r'/text')],
+          annotations: const [_i22.GetMapping(r'/text')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'slow',
           returnTypeInfo: const _i2.ClassType<String>(),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.slow, arguments),
-          annotations: const [_i20.GetMapping(r'/slow')],
+          annotations: const [_i22.GetMapping(r'/slow')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'bytes',
           returnTypeInfo: const _i2.ClassType<_i11.Uint8List>(),
           invoke: (bean, arguments) => Function.apply(bean.bytes, arguments),
           annotations: const [
-            _i20.GetMapping.of(
+            _i22.GetMapping.of(
               path: r'/bytes',
               produces: r'application/octet-stream',
             ),
@@ -1180,13 +1456,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'name',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.RequestHeader(r'X-Name')],
+              annotations: const [_i22.RequestHeader(r'X-Name')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) =>
               Function.apply(bean.echoHeader, arguments),
-          annotations: const [_i20.GetMapping(r'/echo-header')],
+          annotations: const [_i22.GetMapping(r'/echo-header')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'cookie',
@@ -1196,12 +1472,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'session',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.CookieValue(r'session')],
+              annotations: const [_i22.CookieValue(r'session')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.cookie, arguments),
-          annotations: const [_i20.GetMapping(r'/cookie')],
+          annotations: const [_i22.GetMapping(r'/cookie')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'ids',
@@ -1211,12 +1487,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'ids',
               type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
-              annotations: const [_i20.RequestParam(r'id')],
+              annotations: const [_i22.RequestParam(r'id')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<int>(_i2.ClassType<int>()),
           invoke: (bean, arguments) => Function.apply(bean.ids, arguments),
-          annotations: const [_i20.GetMapping(r'/ids')],
+          annotations: const [_i22.GetMapping(r'/ids')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'file',
@@ -1226,12 +1502,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'path',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.PathVariable()],
+              annotations: const [_i22.PathVariable()],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.file, arguments),
-          annotations: const [_i20.GetMapping(r'/files/{*path}')],
+          annotations: const [_i22.GetMapping(r'/files/{*path}')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'jsonOnly',
@@ -1244,7 +1520,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 _i2.DynamicType(),
               ),
               isRequired: true,
-              annotations: const [_i20.RequestBody()],
+              annotations: const [_i22.RequestBody()],
             ),
           ],
           returnTypeInfo: const _i2.MapType<String, dynamic>(
@@ -1253,7 +1529,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ),
           invoke: (bean, arguments) => Function.apply(bean.jsonOnly, arguments),
           annotations: const [
-            _i20.PostMapping.of(
+            _i22.PostMapping.of(
               path: r'/json-only',
               consumes: r'application/json',
             ),
@@ -1263,13 +1539,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           r'state',
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.state, arguments),
-          annotations: const [_i20.GetMapping(r'/state')],
+          annotations: const [_i22.GetMapping(r'/state')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'boom',
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.boom, arguments),
-          annotations: const [_i20.GetMapping(r'/boom')],
+          annotations: const [_i22.GetMapping(r'/boom')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'request',
@@ -1283,7 +1559,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ],
           returnTypeInfo: const _i2.ClassType<String>(),
           invoke: (bean, arguments) => Function.apply(bean.request, arguments),
-          annotations: const [_i20.GetMapping(r'/request')],
+          annotations: const [_i22.GetMapping(r'/request')],
         ),
         _i2.BeanMethod<_i1.MiscController>(
           r'ndjson',
@@ -1292,14 +1568,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ]),
           invoke: (bean, arguments) => Function.apply(bean.ndjson, arguments),
           annotations: const [
-            _i20.GetMapping.of(
+            _i22.GetMapping.of(
               path: r'/ndjson',
               produces: r'application/x-ndjson',
             ),
           ],
         ),
       ],
-      annotations: const [_i21.RestController(), _i20.RequestMapping(r'/misc')],
+      annotations: const [_i23.RestController(), _i22.RequestMapping(r'/misc')],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1308,12 +1584,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'MiscController',
             declaringTypes: [r'MiscController'],
             returnType: r'String',
-            annotations: [_i20.GetMapping(r'/text')],
+            annotations: [_i22.GetMapping(r'/text')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1323,12 +1599,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'MiscController',
             declaringTypes: [r'MiscController'],
             returnType: r'Future',
-            annotations: [_i20.GetMapping(r'/slow')],
+            annotations: [_i22.GetMapping(r'/slow')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1339,7 +1615,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             declaringTypes: [r'MiscController'],
             returnType: r'Uint8List',
             annotations: [
-              _i20.GetMapping.of(
+              _i22.GetMapping.of(
                 path: r'/bytes',
                 produces: r'application/octet-stream',
               ),
@@ -1347,8 +1623,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1361,14 +1637,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'name'],
             parameterAnnotations: [
-              [_i20.RequestHeader(r'X-Name')],
+              [_i22.RequestHeader(r'X-Name')],
             ],
-            annotations: [_i20.GetMapping(r'/echo-header')],
+            annotations: [_i22.GetMapping(r'/echo-header')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1381,14 +1657,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'session'],
             parameterAnnotations: [
-              [_i20.CookieValue(r'session')],
+              [_i22.CookieValue(r'session')],
             ],
-            annotations: [_i20.GetMapping(r'/cookie')],
+            annotations: [_i22.GetMapping(r'/cookie')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1401,14 +1677,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'ids'],
             parameterAnnotations: [
-              [_i20.RequestParam(r'id')],
+              [_i22.RequestParam(r'id')],
             ],
-            annotations: [_i20.GetMapping(r'/ids')],
+            annotations: [_i22.GetMapping(r'/ids')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1421,14 +1697,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'path'],
             parameterAnnotations: [
-              [_i20.PathVariable()],
+              [_i22.PathVariable()],
             ],
-            annotations: [_i20.GetMapping(r'/files/{*path}')],
+            annotations: [_i22.GetMapping(r'/files/{*path}')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1441,10 +1717,10 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'Map'],
             parameterNames: [r'body'],
             parameterAnnotations: [
-              [_i20.RequestBody()],
+              [_i22.RequestBody()],
             ],
             annotations: [
-              _i20.PostMapping.of(
+              _i22.PostMapping.of(
                 path: r'/json-only',
                 consumes: r'application/json',
               ),
@@ -1452,8 +1728,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1463,12 +1739,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'MiscController',
             declaringTypes: [r'MiscController'],
             returnType: r'String',
-            annotations: [_i20.GetMapping(r'/state')],
+            annotations: [_i22.GetMapping(r'/state')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1478,12 +1754,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'MiscController',
             declaringTypes: [r'MiscController'],
             returnType: r'String',
-            annotations: [_i20.GetMapping(r'/boom')],
+            annotations: [_i22.GetMapping(r'/boom')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1495,12 +1771,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'String',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i20.GetMapping(r'/request')],
+            annotations: [_i22.GetMapping(r'/request')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1511,7 +1787,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             declaringTypes: [r'MiscController'],
             returnType: r'Stream',
             annotations: [
-              _i20.GetMapping.of(
+              _i22.GetMapping.of(
                 path: r'/ndjson',
                 produces: r'application/x-ndjson',
               ),
@@ -1519,8 +1795,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'MiscController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/misc'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/misc'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1550,10 +1826,10 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 _i2.ClassType<_i8.ProblemDetail>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.conflict, arguments),
-          annotations: const [_i21.ExceptionHandler()],
+          annotations: const [_i23.ExceptionHandler()],
         ),
       ],
-      annotations: const [_i21.RestControllerAdvice()],
+      annotations: const [_i23.RestControllerAdvice()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1564,10 +1840,10 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'ResponseEntity',
             parameterTypes: [r'StateError'],
             parameterNames: [r'error'],
-            annotations: [_i21.ExceptionHandler()],
+            annotations: [_i23.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
             targetTypes: [r'ApiErrors'],
-            targetAnnotations: [_i21.RestControllerAdvice()],
+            targetAnnotations: [_i23.RestControllerAdvice()],
             targetAnnotationTypes: [r'RestControllerAdvice'],
           ),
         ],
@@ -1671,7 +1947,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'name',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.PathVariable()],
+              annotations: const [_i22.PathVariable()],
             ),
             _i2.BeanParameter(
               r'text',
@@ -1686,10 +1962,10 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ],
           returnTypeInfo: const _i2.ClassType<_i12.Shout>(),
           invoke: (bean, arguments) => Function.apply(bean.echo, arguments),
-          annotations: const [_i22.OnMessage()],
+          annotations: const [_i24.OnMessage()],
         ),
       ],
-      annotations: const [_i23.WebSocketEndpoint(r'/ws/echo/{name}')],
+      annotations: const [_i25.WebSocketEndpoint(r'/ws/echo/{name}')],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1701,14 +1977,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String', r'String', r'Principal'],
             parameterNames: [r'name', r'text', r'user'],
             parameterAnnotations: [
-              [_i20.PathVariable()],
+              [_i22.PathVariable()],
               [],
               [],
             ],
-            annotations: [_i22.OnMessage()],
+            annotations: [_i24.OnMessage()],
             annotationTypes: [r'OnMessage'],
             targetTypes: [r'EchoEndpoint'],
-            targetAnnotations: [_i23.WebSocketEndpoint(r'/ws/echo/{name}')],
+            targetAnnotations: [_i25.WebSocketEndpoint(r'/ws/echo/{name}')],
             targetAnnotationTypes: [r'WebSocketEndpoint'],
           ),
         ],
@@ -1730,20 +2006,20 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'file',
               type: const _i2.ClassType<_i14.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i20.RequestPart(r'file')],
+              annotations: const [_i22.RequestPart(r'file')],
             ),
             _i2.BeanParameter(
               r'note',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.RequestParam(r'note')],
+              annotations: const [_i22.RequestParam(r'note')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i13.Upload>(),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.upload, arguments),
           annotations: const [
-            _i20.PostMapping.of(
+            _i22.PostMapping.of(
               path: r'/upload',
               consumes: r'multipart/form-data',
             ),
@@ -1759,13 +2035,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 _i2.ClassType<_i14.MultipartFile>(),
               ),
               isRequired: true,
-              annotations: const [_i20.RequestPart(r'files')],
+              annotations: const [_i22.RequestPart(r'files')],
             ),
           ],
           returnTypeInfo: const _i2.ListType<String>(_i2.ClassType<String>()),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.many, arguments),
-          annotations: const [_i20.PostMapping(r'/many')],
+          annotations: const [_i22.PostMapping(r'/many')],
         ),
         _i2.BeanMethod<_i13.FilesController>(
           r'book',
@@ -1775,20 +2051,20 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'book',
               type: const _i2.ClassType<_i4.NewBook>(),
               isRequired: true,
-              annotations: const [_i20.RequestPart(r'book'), _i2.Valid()],
+              annotations: const [_i22.RequestPart(r'book'), _i2.Valid()],
             ),
             _i2.BeanParameter(
               r'cover',
               type: const _i2.ClassType<_i14.MultipartFile>(nullable: true),
               symbol: #cover,
-              annotations: const [_i20.RequestPart(r'cover')],
+              annotations: const [_i22.RequestPart(r'cover')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i13.Stored>(),
           invoke: (bean, arguments) => Function.apply(bean.book, arguments),
           invokeNamed: (bean, positional, named) =>
               Function.apply(bean.book, positional, named),
-          annotations: const [_i20.PostMapping(r'/book')],
+          annotations: const [_i22.PostMapping(r'/book')],
         ),
         _i2.BeanMethod<_i13.FilesController>(
           r'save',
@@ -1798,13 +2074,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'file',
               type: const _i2.ClassType<_i14.MultipartFile>(),
               isRequired: true,
-              annotations: const [_i20.RequestPart(r'file')],
+              annotations: const [_i22.RequestPart(r'file')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<int>(),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.save, arguments),
-          annotations: const [_i20.PostMapping(r'/save')],
+          annotations: const [_i22.PostMapping(r'/save')],
         ),
         _i2.BeanMethod<_i13.FilesController>(
           r'report',
@@ -1813,7 +2089,7 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
                 _i2.ClassType<_i2.Resource>(),
               ]),
           invoke: (bean, arguments) => Function.apply(bean.report, arguments),
-          annotations: const [_i20.GetMapping(r'/report')],
+          annotations: const [_i22.GetMapping(r'/report')],
         ),
         _i2.BeanMethod<_i13.FilesController>(
           r'file',
@@ -1823,12 +2099,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
               r'path',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i20.RequestParam(r'path')],
+              annotations: const [_i22.RequestParam(r'path')],
             ),
           ],
           returnTypeInfo: const _i2.ClassType<_i2.Resource>(),
           invoke: (bean, arguments) => Function.apply(bean.file, arguments),
-          annotations: const [_i20.GetMapping(r'/file')],
+          annotations: const [_i22.GetMapping(r'/file')],
         ),
         _i2.BeanMethod<_i13.FilesController>(
           r'stream',
@@ -1836,20 +2112,20 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             _i2.ClassType<_i11.Uint8List>(),
           ]),
           invoke: (bean, arguments) => Function.apply(bean.stream, arguments),
-          annotations: const [_i20.GetMapping(r'/stream')],
+          annotations: const [_i22.GetMapping(r'/stream')],
         ),
         _i2.BeanMethod<_i13.FilesController>(
           r'export',
           returnTypeInfo: const _i2.ClassType<_i15.StreamingResponseBody>(),
           invoke: (bean, arguments) => Function.apply(bean.export, arguments),
           annotations: const [
-            _i20.GetMapping.of(path: r'/export', produces: r'text/csv'),
+            _i22.GetMapping.of(path: r'/export', produces: r'text/csv'),
           ],
         ),
       ],
       annotations: const [
-        _i21.RestController(),
-        _i20.RequestMapping(r'/files'),
+        _i23.RestController(),
+        _i22.RequestMapping(r'/files'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -1862,11 +2138,11 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'MultipartFile', r'String'],
             parameterNames: [r'file', r'note'],
             parameterAnnotations: [
-              [_i20.RequestPart(r'file')],
-              [_i20.RequestParam(r'note')],
+              [_i22.RequestPart(r'file')],
+              [_i22.RequestParam(r'note')],
             ],
             annotations: [
-              _i20.PostMapping.of(
+              _i22.PostMapping.of(
                 path: r'/upload',
                 consumes: r'multipart/form-data',
               ),
@@ -1874,8 +2150,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1888,14 +2164,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'files'],
             parameterAnnotations: [
-              [_i20.RequestPart(r'files')],
+              [_i22.RequestPart(r'files')],
             ],
-            annotations: [_i20.PostMapping(r'/many')],
+            annotations: [_i22.PostMapping(r'/many')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1908,15 +2184,15 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'NewBook', r'MultipartFile'],
             parameterNames: [r'book', r'cover'],
             parameterAnnotations: [
-              [_i20.RequestPart(r'book'), _i2.Valid()],
-              [_i20.RequestPart(r'cover')],
+              [_i22.RequestPart(r'book'), _i2.Valid()],
+              [_i22.RequestPart(r'cover')],
             ],
-            annotations: [_i20.PostMapping(r'/book')],
+            annotations: [_i22.PostMapping(r'/book')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1929,14 +2205,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'MultipartFile'],
             parameterNames: [r'file'],
             parameterAnnotations: [
-              [_i20.RequestPart(r'file')],
+              [_i22.RequestPart(r'file')],
             ],
-            annotations: [_i20.PostMapping(r'/save')],
+            annotations: [_i22.PostMapping(r'/save')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1946,12 +2222,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'FilesController',
             declaringTypes: [r'FilesController'],
             returnType: r'ResponseEntity',
-            annotations: [_i20.GetMapping(r'/report')],
+            annotations: [_i22.GetMapping(r'/report')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1964,14 +2240,14 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'path'],
             parameterAnnotations: [
-              [_i20.RequestParam(r'path')],
+              [_i22.RequestParam(r'path')],
             ],
-            annotations: [_i20.GetMapping(r'/file')],
+            annotations: [_i22.GetMapping(r'/file')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1981,12 +2257,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             targetType: r'FilesController',
             declaringTypes: [r'FilesController'],
             returnType: r'Stream',
-            annotations: [_i20.GetMapping(r'/stream')],
+            annotations: [_i22.GetMapping(r'/stream')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -1997,13 +2273,13 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             declaringTypes: [r'FilesController'],
             returnType: r'StreamingResponseBody',
             annotations: [
-              _i20.GetMapping.of(path: r'/export', produces: r'text/csv'),
+              _i22.GetMapping.of(path: r'/export', produces: r'text/csv'),
             ],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'FilesController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/files'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/files'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -2012,13 +2288,490 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             _$FilesControllerProxy((target as _i13.FilesController), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i16.SessionController>(
+    _i2.BeanDefinition<_i16.PlainController>(
+      name: r'plainController',
+      source: r'asset:spring_boot_starter_web/test/app/plain_controller.dart#PlainController',
+      types: const [_i16.PlainController],
+      create: (r) => _i16.PlainController(),
+      annotatedMethods: [
+        _i2.BeanMethod<_i16.PlainController>(
+          r'badHeader',
+          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: (bean, arguments) =>
+              Function.apply(bean.badHeader, arguments),
+          annotations: const [_i22.GetMapping(r'/bad-header')],
+        ),
+        _i2.BeanMethod<_i16.PlainController>(
+          r'text',
+          parameterTypes: const [String],
+          parameters: [
+            _i2.BeanParameter(
+              r'body',
+              type: const _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: const [_i22.RequestBody()],
+            ),
+          ],
+          returnTypeInfo: const _i2.ClassType<String>(),
+          invoke: (bean, arguments) => Function.apply(bean.text, arguments),
+          annotations: const [_i22.PostMapping(r'/text')],
+        ),
+      ],
+      annotations: const [
+        _i23.RestController(),
+        _i22.RequestMapping(r'/plain'),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'badHeader',
+            declaringType: r'PlainController',
+            targetType: r'PlainController',
+            declaringTypes: [r'PlainController'],
+            returnType: r'ResponseEntity',
+            annotations: [_i22.GetMapping(r'/bad-header')],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'PlainController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/plain'),
+            ],
+            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
+          ),
+          _i2.MethodSignature(
+            name: r'text',
+            declaringType: r'PlainController',
+            targetType: r'PlainController',
+            declaringTypes: [r'PlainController'],
+            returnType: r'String',
+            parameterTypes: [r'String'],
+            parameterNames: [r'body'],
+            parameterAnnotations: [
+              [_i22.RequestBody()],
+            ],
+            annotations: [_i22.PostMapping(r'/text')],
+            annotationTypes: [r'PostMapping'],
+            targetTypes: [r'PlainController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/plain'),
+            ],
+            targetAnnotationTypes: [r'RestController', r'RequestMapping'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$PlainControllerProxy((target as _i16.PlainController), invoker),
+      ),
+    ),
+    _i2.BeanDefinition<_i17.ReviewController>(
+      name: r'reviewController',
+      source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewController',
+      types: const [_i17.ReviewController],
+      create: (r) => _i17.ReviewController(),
+      annotatedMethods: [
+        _i2.BeanMethod<_i17.ReviewController>(
+          r'cors',
+          returnTypeInfo: const _i2.ClassType<String>(),
+          invoke: (bean, arguments) => Function.apply(bean.cors, arguments),
+          annotations: const [
+            _i23.CrossOrigin(methods: [r'PUT']),
+            _i22.PutMapping(r'/cors'),
+          ],
+        ),
+        _i2.BeanMethod<_i17.ReviewController>(
+          r'format',
+          returnTypeInfo: const _i2.ClassType<String>(),
+          invoke: (bean, arguments) => Function.apply(bean.format, arguments),
+          annotations: const [_i22.GetMapping(r'/format')],
+        ),
+        _i2.BeanMethod<_i17.ReviewController>(
+          r'argument',
+          returnTypeInfo: const _i2.ClassType<String>(),
+          invoke: (bean, arguments) => Function.apply(bean.argument, arguments),
+          annotations: const [_i22.GetMapping(r'/argument')],
+        ),
+        _i2.BeanMethod<_i17.ReviewController>(
+          r'unsupported',
+          returnTypeInfo: const _i2.ClassType<String>(),
+          invoke: (bean, arguments) =>
+              Function.apply(bean.unsupported, arguments),
+          annotations: const [_i22.GetMapping(r'/unsupported')],
+        ),
+        _i2.BeanMethod<_i17.ReviewController>(
+          r'entityEvents',
+          returnTypeInfo:
+              const _i2.GenericType<
+                _i5.ResponseEntity<_i6.EventStream<String>>
+              >([
+                _i2.GenericType<_i6.EventStream<String>>([
+                  _i2.ClassType<String>(),
+                ]),
+              ]),
+          invoke: (bean, arguments) =>
+              Function.apply(bean.entityEvents, arguments),
+          annotations: const [_i22.GetMapping(r'/entity-events')],
+        ),
+        _i2.BeanMethod<_i17.ReviewController>(
+          r'entityEmitter',
+          returnTypeInfo:
+              const _i2.GenericType<_i5.ResponseEntity<_i7.SseEmitter>>([
+                _i2.ClassType<_i7.SseEmitter>(),
+              ]),
+          invoke: (bean, arguments) =>
+              Function.apply(bean.entityEmitter, arguments),
+          annotations: const [_i22.GetMapping(r'/entity-emitter')],
+        ),
+      ],
+      annotations: const [
+        _i23.RestController(),
+        _i22.RequestMapping(r'/api/review'),
+        _i17.ReviewApi(),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'cors',
+            declaringType: r'ReviewController',
+            targetType: r'ReviewController',
+            declaringTypes: [r'ReviewController'],
+            returnType: r'String',
+            annotations: [
+              _i23.CrossOrigin(methods: [r'PUT']),
+              _i22.PutMapping(r'/cors'),
+            ],
+            annotationTypes: [r'CrossOrigin', r'PutMapping'],
+            targetTypes: [r'ReviewController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/review'),
+              _i17.ReviewApi(),
+            ],
+            targetAnnotationTypes: [
+              r'RestController',
+              r'RequestMapping',
+              r'ReviewApi',
+            ],
+          ),
+          _i2.MethodSignature(
+            name: r'format',
+            declaringType: r'ReviewController',
+            targetType: r'ReviewController',
+            declaringTypes: [r'ReviewController'],
+            returnType: r'String',
+            annotations: [_i22.GetMapping(r'/format')],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'ReviewController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/review'),
+              _i17.ReviewApi(),
+            ],
+            targetAnnotationTypes: [
+              r'RestController',
+              r'RequestMapping',
+              r'ReviewApi',
+            ],
+          ),
+          _i2.MethodSignature(
+            name: r'argument',
+            declaringType: r'ReviewController',
+            targetType: r'ReviewController',
+            declaringTypes: [r'ReviewController'],
+            returnType: r'String',
+            annotations: [_i22.GetMapping(r'/argument')],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'ReviewController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/review'),
+              _i17.ReviewApi(),
+            ],
+            targetAnnotationTypes: [
+              r'RestController',
+              r'RequestMapping',
+              r'ReviewApi',
+            ],
+          ),
+          _i2.MethodSignature(
+            name: r'unsupported',
+            declaringType: r'ReviewController',
+            targetType: r'ReviewController',
+            declaringTypes: [r'ReviewController'],
+            returnType: r'String',
+            annotations: [_i22.GetMapping(r'/unsupported')],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'ReviewController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/review'),
+              _i17.ReviewApi(),
+            ],
+            targetAnnotationTypes: [
+              r'RestController',
+              r'RequestMapping',
+              r'ReviewApi',
+            ],
+          ),
+          _i2.MethodSignature(
+            name: r'entityEvents',
+            declaringType: r'ReviewController',
+            targetType: r'ReviewController',
+            declaringTypes: [r'ReviewController'],
+            returnType: r'ResponseEntity',
+            annotations: [_i22.GetMapping(r'/entity-events')],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'ReviewController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/review'),
+              _i17.ReviewApi(),
+            ],
+            targetAnnotationTypes: [
+              r'RestController',
+              r'RequestMapping',
+              r'ReviewApi',
+            ],
+          ),
+          _i2.MethodSignature(
+            name: r'entityEmitter',
+            declaringType: r'ReviewController',
+            targetType: r'ReviewController',
+            declaringTypes: [r'ReviewController'],
+            returnType: r'ResponseEntity',
+            annotations: [_i22.GetMapping(r'/entity-emitter')],
+            annotationTypes: [r'GetMapping'],
+            targetTypes: [r'ReviewController'],
+            targetAnnotations: [
+              _i23.RestController(),
+              _i22.RequestMapping(r'/api/review'),
+              _i17.ReviewApi(),
+            ],
+            targetAnnotationTypes: [
+              r'RestController',
+              r'RequestMapping',
+              r'ReviewApi',
+            ],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$ReviewControllerProxy((target as _i17.ReviewController), invoker),
+      ),
+    ),
+    _i2.BeanDefinition<_i17.ReviewFirstErrors>(
+      name: r'reviewFirstErrors',
+      source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewFirstErrors',
+      types: const [_i17.ReviewFirstErrors],
+      order: 1,
+      create: (r) => _i17.ReviewFirstErrors(),
+      annotatedMethods: [
+        _i2.BeanMethod<_i17.ReviewFirstErrors>(
+          r'any',
+          parameterTypes: const [Exception],
+          parameters: [
+            _i2.BeanParameter(
+              r'error',
+              type: const _i2.ClassType<Exception>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: (bean, arguments) => Function.apply(bean.any, arguments),
+          annotations: const [_i23.ExceptionHandler()],
+        ),
+      ],
+      annotations: const [
+        _i23.RestControllerAdvice.of(assignableTypes: [_i17.ReviewController]),
+        _i2.Order(1),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'any',
+            declaringType: r'ReviewFirstErrors',
+            targetType: r'ReviewFirstErrors',
+            declaringTypes: [r'ReviewFirstErrors'],
+            returnType: r'ResponseEntity',
+            parameterTypes: [r'Exception'],
+            parameterNames: [r'error'],
+            annotations: [_i23.ExceptionHandler()],
+            annotationTypes: [r'ExceptionHandler'],
+            targetTypes: [r'ReviewFirstErrors'],
+            targetAnnotations: [
+              _i23.RestControllerAdvice.of(
+                assignableTypes: [_i17.ReviewController],
+              ),
+            ],
+            targetAnnotationTypes: [r'RestControllerAdvice'],
+          ),
+        ],
+        create: (target, invoker) => _$ReviewFirstErrorsProxy(
+          (target as _i17.ReviewFirstErrors),
+          invoker,
+        ),
+      ),
+    ),
+    _i2.BeanDefinition<_i17.ReviewSecondErrors>(
+      name: r'reviewSecondErrors',
+      source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewSecondErrors',
+      types: const [_i17.ReviewSecondErrors],
+      order: 2,
+      create: (r) => _i17.ReviewSecondErrors(),
+      annotatedMethods: [
+        _i2.BeanMethod<_i17.ReviewSecondErrors>(
+          r'format',
+          parameterTypes: const [FormatException],
+          parameters: [
+            _i2.BeanParameter(
+              r'error',
+              type: const _i2.ClassType<FormatException>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: (bean, arguments) => Function.apply(bean.format, arguments),
+          annotations: const [_i23.ExceptionHandler()],
+        ),
+        _i2.BeanMethod<_i17.ReviewSecondErrors>(
+          r'argument',
+          parameterTypes: const [ArgumentError],
+          parameters: [
+            _i2.BeanParameter(
+              r'error',
+              type: const _i2.ClassType<ArgumentError>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: (bean, arguments) => Function.apply(bean.argument, arguments),
+          annotations: const [_i23.ExceptionHandler()],
+        ),
+      ],
+      annotations: const [
+        _i23.RestControllerAdvice.of(
+          basePackages: [
+            r'asset:spring_boot_starter_web/test/app/review_controller',
+          ],
+        ),
+        _i2.Order(2),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'format',
+            declaringType: r'ReviewSecondErrors',
+            targetType: r'ReviewSecondErrors',
+            declaringTypes: [r'ReviewSecondErrors'],
+            returnType: r'ResponseEntity',
+            parameterTypes: [r'FormatException'],
+            parameterNames: [r'error'],
+            annotations: [_i23.ExceptionHandler()],
+            annotationTypes: [r'ExceptionHandler'],
+            targetTypes: [r'ReviewSecondErrors'],
+            targetAnnotations: [
+              _i23.RestControllerAdvice.of(
+                basePackages: [
+                  r'asset:spring_boot_starter_web/test/app/review_controller',
+                ],
+              ),
+            ],
+            targetAnnotationTypes: [r'RestControllerAdvice'],
+          ),
+          _i2.MethodSignature(
+            name: r'argument',
+            declaringType: r'ReviewSecondErrors',
+            targetType: r'ReviewSecondErrors',
+            declaringTypes: [r'ReviewSecondErrors'],
+            returnType: r'ResponseEntity',
+            parameterTypes: [r'ArgumentError'],
+            parameterNames: [r'error'],
+            annotations: [_i23.ExceptionHandler()],
+            annotationTypes: [r'ExceptionHandler'],
+            targetTypes: [r'ReviewSecondErrors'],
+            targetAnnotations: [
+              _i23.RestControllerAdvice.of(
+                basePackages: [
+                  r'asset:spring_boot_starter_web/test/app/review_controller',
+                ],
+              ),
+            ],
+            targetAnnotationTypes: [r'RestControllerAdvice'],
+          ),
+        ],
+        create: (target, invoker) => _$ReviewSecondErrorsProxy(
+          (target as _i17.ReviewSecondErrors),
+          invoker,
+        ),
+      ),
+    ),
+    _i2.BeanDefinition<_i17.ReviewThirdErrors>(
+      name: r'reviewThirdErrors',
+      source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewThirdErrors',
+      types: const [_i17.ReviewThirdErrors],
+      order: 3,
+      create: (r) => _i17.ReviewThirdErrors(),
+      annotatedMethods: [
+        _i2.BeanMethod<_i17.ReviewThirdErrors>(
+          r'unsupported',
+          parameterTypes: const [UnsupportedError],
+          parameters: [
+            _i2.BeanParameter(
+              r'error',
+              type: const _i2.ClassType<UnsupportedError>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: const _i2.GenericType<_i5.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: (bean, arguments) =>
+              Function.apply(bean.unsupported, arguments),
+          annotations: const [_i23.ExceptionHandler()],
+        ),
+      ],
+      annotations: const [
+        _i23.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
+        _i2.Order(3),
+      ],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature(
+            name: r'unsupported',
+            declaringType: r'ReviewThirdErrors',
+            targetType: r'ReviewThirdErrors',
+            declaringTypes: [r'ReviewThirdErrors'],
+            returnType: r'ResponseEntity',
+            parameterTypes: [r'UnsupportedError'],
+            parameterNames: [r'error'],
+            annotations: [_i23.ExceptionHandler()],
+            annotationTypes: [r'ExceptionHandler'],
+            targetTypes: [r'ReviewThirdErrors'],
+            targetAnnotations: [
+              _i23.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
+            ],
+            targetAnnotationTypes: [r'RestControllerAdvice'],
+          ),
+        ],
+        create: (target, invoker) => _$ReviewThirdErrorsProxy(
+          (target as _i17.ReviewThirdErrors),
+          invoker,
+        ),
+      ),
+    ),
+    _i2.BeanDefinition<_i18.SessionController>(
       name: r'sessionController',
       source: r'asset:spring_boot_starter_web/test/app/session_controller.dart#SessionController',
-      types: const [_i16.SessionController],
-      create: (r) => _i16.SessionController(),
+      types: const [_i18.SessionController],
+      create: (r) => _i18.SessionController(),
       annotatedMethods: [
-        _i2.BeanMethod<_i16.SessionController>(
+        _i2.BeanMethod<_i18.SessionController>(
           r'count',
           parameterTypes: const [_i9.ServerHttpRequest],
           parameters: [
@@ -2030,9 +2783,9 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ],
           returnTypeInfo: const _i2.ClassType<int>(),
           invoke: (bean, arguments) => Function.apply(bean.count, arguments),
-          annotations: const [_i20.GetMapping(r'/count')],
+          annotations: const [_i22.GetMapping(r'/count')],
         ),
-        _i2.BeanMethod<_i16.SessionController>(
+        _i2.BeanMethod<_i18.SessionController>(
           r'peek',
           parameterTypes: const [_i9.ServerHttpRequest],
           parameters: [
@@ -2044,9 +2797,9 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ],
           returnTypeInfo: const _i2.ClassType<bool>(),
           invoke: (bean, arguments) => Function.apply(bean.peek, arguments),
-          annotations: const [_i20.GetMapping(r'/peek')],
+          annotations: const [_i22.GetMapping(r'/peek')],
         ),
-        _i2.BeanMethod<_i16.SessionController>(
+        _i2.BeanMethod<_i18.SessionController>(
           r'rotate',
           parameterTypes: const [_i9.ServerHttpRequest],
           parameters: [
@@ -2059,9 +2812,9 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           returnTypeInfo: const _i2.ClassType<String>(),
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.rotate, arguments),
-          annotations: const [_i20.PostMapping(r'/rotate')],
+          annotations: const [_i22.PostMapping(r'/rotate')],
         ),
-        _i2.BeanMethod<_i16.SessionController>(
+        _i2.BeanMethod<_i18.SessionController>(
           r'invalidate',
           parameterTypes: const [_i9.ServerHttpRequest],
           parameters: [
@@ -2074,12 +2827,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           isVoid: true,
           invoke: (bean, arguments) =>
               Function.apply(bean.invalidate, arguments),
-          annotations: const [_i20.PostMapping(r'/invalidate')],
+          annotations: const [_i22.PostMapping(r'/invalidate')],
         ),
       ],
       annotations: const [
-        _i21.RestController(),
-        _i20.RequestMapping(r'/session'),
+        _i23.RestController(),
+        _i22.RequestMapping(r'/session'),
       ],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -2091,12 +2844,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'int',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i20.GetMapping(r'/count')],
+            annotations: [_i22.GetMapping(r'/count')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'SessionController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/session'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/session'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -2108,12 +2861,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'bool',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i20.GetMapping(r'/peek')],
+            annotations: [_i22.GetMapping(r'/peek')],
             annotationTypes: [r'GetMapping'],
             targetTypes: [r'SessionController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/session'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/session'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -2125,12 +2878,12 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i20.PostMapping(r'/rotate')],
+            annotations: [_i22.PostMapping(r'/rotate')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'SessionController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/session'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/session'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
@@ -2142,29 +2895,29 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             returnType: r'void',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i20.PostMapping(r'/invalidate')],
+            annotations: [_i22.PostMapping(r'/invalidate')],
             annotationTypes: [r'PostMapping'],
             targetTypes: [r'SessionController'],
             targetAnnotations: [
-              _i21.RestController(),
-              _i20.RequestMapping(r'/session'),
+              _i23.RestController(),
+              _i22.RequestMapping(r'/session'),
             ],
             targetAnnotationTypes: [r'RestController', r'RequestMapping'],
           ),
         ],
         create: (target, invoker) => _$SessionControllerProxy(
-          (target as _i16.SessionController),
+          (target as _i18.SessionController),
           invoker,
         ),
       ),
     ),
-    _i2.BeanDefinition<_i17.TraceFilter>(
+    _i2.BeanDefinition<_i19.TraceFilter>(
       name: r'traceFilter',
       source:
           r'asset:spring_boot_starter_web/test/app/web_config.dart#TraceFilter',
-      types: const [_i17.TraceFilter, _i18.WebFilter],
+      types: const [_i19.TraceFilter, _i20.WebFilter],
       order: 1,
-      create: (r) => _i17.TraceFilter(),
+      create: (r) => _i19.TraceFilter(),
       annotations: const [_i2.Component(), _i2.Order(1)],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
@@ -2186,15 +2939,15 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
           ),
         ],
         create: (target, invoker) =>
-            _$TraceFilterProxy((target as _i17.TraceFilter), invoker),
+            _$TraceFilterProxy((target as _i19.TraceFilter), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i17.WebConfig>(
+    _i2.BeanDefinition<_i19.WebConfig>(
       name: r'webConfig',
       source:
           r'asset:spring_boot_starter_web/test/app/web_config.dart#WebConfig',
-      types: const [_i17.WebConfig, _i24.WebMvcConfigurer],
-      create: (r) => _i17.WebConfig(),
+      types: const [_i19.WebConfig, _i26.WebMvcConfigurer],
+      create: (r) => _i19.WebConfig(),
       annotations: const [_i2.Configuration()],
     ),
   ],

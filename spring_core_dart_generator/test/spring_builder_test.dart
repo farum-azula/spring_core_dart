@@ -178,6 +178,59 @@ class C {
       );
     });
 
+    // A supertype declared in dart:_http, which dart:io exports, used to
+    // be left out: `ServerUser(HttpServer)` failed at start. It is written
+    // through dart:io, also from a library that does not import dart:io
+    // (found through the import of dart:_http itself).
+    test('supertypes from dart:_http, written through dart:io', () async {
+      final files = {
+        'lib/src/base.dart': """
+import 'dart:io';
+abstract class BaseServer implements HttpServer {}
+""",
+        'lib/src/s.dart': """
+import 'base.dart';
+@Component()
+class LoggingServer extends BaseServer {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+@Component()
+class ServerUser {
+  ServerUser(this.server);
+  final BaseServer server;
+}
+abstract interface class Repo<T> {}
+class _Draft {}
+@Component()
+class DraftRepo implements Repo<_Draft> {}
+""",
+      };
+      expect(
+        await _compileErrors(files, proxyMode: ProxyMode.none),
+        isEmpty,
+      );
+      final result = await _build({
+        'lib/src/beans.dart': _scan,
+        for (final MapEntry(:key, :value) in files.entries)
+          key: '$_header$value',
+      });
+      expect(result.errors, isEmpty);
+      final source = result.readerWriter.testing.readString(
+        result.outputs.single,
+      );
+      expect(source, contains("import 'dart:io' as"));
+      expect(source, isNot(contains('dart:_')));
+      final output = _normalize(source);
+      expect(output, contains('HttpServer,Stream<HttpRequest>'));
+      expect(
+        output,
+        _has('types: const [LoggingServer, BaseServer, HttpServer,'),
+      );
+      // A supertype with a private type argument: its raw form only.
+      expect(output, _has('types: const [DraftRepo, Repo<dynamic>]'));
+    });
+
     test('Future<T>? members of proxied beans', () async {
       expect(
         await _compileErrors({

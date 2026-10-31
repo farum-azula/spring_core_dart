@@ -41,6 +41,7 @@ library;
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_security_core/src/authentication/authentication_manager.dart';
 export 'package:spring_security_core/src/authentication/events.dart';
+export 'package:spring_security_core/src/authentication/password_checks.dart';
 export 'package:spring_security_core/src/authorization/authorization_manager.dart';
 export 'package:spring_security_core/src/context/listening_security_context.dart';
 export 'package:spring_security_core/src/context/security_context.dart';

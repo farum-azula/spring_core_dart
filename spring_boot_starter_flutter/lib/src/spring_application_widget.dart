@@ -136,11 +136,12 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
   }
 
   Future<void> _start() async {
+    ConfigurableApplicationContext? started;
     try {
       // `asset:` resources: exists() needs the asset manifest.
       await AssetProtocolResolver.loadRootManifest();
       final application = widget.application();
-      final context = await application.runAsync(
+      final context = started = await application.runAsync(
         widget.args,
         systemEnvironment: _scanOsEnvironment(application) ? null : const {},
         additionalProfiles: platformProfiles(),
@@ -154,9 +155,37 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       }
       setState(() => _context = context);
     } catch (error) {
+      // The application started, then a check of the widget failed: its
+      // runners and scheduled tasks must not go on behind the failure
+      // screen (and a hot reload's retry starts a new one).
+      if (started != null) {
+        await _closeQuietly(started);
+      }
       if (mounted) {
         setState(() => _error = error);
       }
+    }
+  }
+
+  static Future<void> _closeQuietly(
+    ConfigurableApplicationContext context,
+  ) async {
+    if (!context.isActive) {
+      return;
+    }
+    try {
+      await context.closeAsync();
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'spring_boot_starter_flutter',
+          context: ErrorDescription(
+            'while closing the application context after a failed start',
+          ),
+        ),
+      );
     }
   }
 
@@ -208,18 +237,30 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
     if (!_restartEnabled(running)) {
       return;
     }
+    ConfigurableApplicationContext? restarted;
     try {
       final context = widget.application().reload(
         running,
         runners: widget.rerunRunnersOnReload,
       );
       if (!identical(context, running)) {
+        restarted = context;
         SpringWidgetBindings.check(context);
         _checkApp(context);
         _paused = false;
         setState(() => _context = context);
       }
     } catch (error) {
+      // The new context started, then a check failed: it is closed, and
+      // so is the old one (reload closes it first; not when the reload
+      // failed before), so the next reload's retry (_start) runs the
+      // only context.
+      if (restarted != null) {
+        unawaited(_closeQuietly(restarted));
+      }
+      if (running.isActive) {
+        unawaited(_closeQuietly(running));
+      }
       setState(() {
         _context = null;
         _error = error;

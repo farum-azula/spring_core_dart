@@ -38,7 +38,8 @@ What comes next, in order:
    the verification plan of [security_verification.md](security_verification.md):
    it must be shown to be safe, not assumed.~~ Done, with the evidence of
    [docs/security.md](../docs/security.md); what is left (BCrypt, multi-factor,
-   session registry, opaque tokens, the ZAP scan) is in the two files.
+   session registry, opaque tokens) is in the two files; the ZAP scan runs
+   in CI (October 2026).
 3. ~~**Documentation comments, first after the 0.4.x release**
    ([documentation.md](documentation.md)): every `///` of every package
    rewritten to say what the thing is, why it exists and when you need it,
@@ -50,7 +51,7 @@ What comes next, in order:
    Keycloak in the examples; the differential test against Spring and
    mutation testing are done too (October 2026); what is left is in the
    file.
-5. **Flutter security, next (from 30 October 2026)** ([spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md)):
+5. ~~**Flutter security**~~ Done (October 2026) ([spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md)):
    ~~the SSO's platform code out of `spring_boot_starter_flutter` into
    `spring_boot_starter_flutter_security` (apps without a login carry
    none of it), the app login out of the OAuth2 client (which is now
@@ -61,37 +62,67 @@ What comes next, in order:
    2026), ~~DPoP's native
    keys in the apps~~ (done, October 2026), ~~the web login without a
    server (`spa` mode, the WebCrypto key)~~ (done, October 2026), the
-   SSO's hardening (done, October 2026, except runs on devices: the
-   Windows and Linux stores' first CI run, cancelling on iOS, https
-   redirects).
-6. **Typed keys from the configuration** (the section in
+   SSO's hardening (done, October 2026; the Windows and Linux stores
+   run in CI; left for devices: cancelling on iOS, https redirects).
+6. **The review before 0.5.0** ([review_0_5.md](review_0_5.md)), after the
+   security patch (0.4.3): every package checked for bugs and differences
+   against Spring 7 / Boot 4 / Security 7 like the October 2026 reviews
+   (the new OAuth2 client, `oauth2Login()`, DPoP and the Flutter security
+   package first), a security review of everything since 0.4.2, the
+   dependencies' known vulnerabilities (Dart, Gradle, Swift), the threat
+   model and ASVS checklist extended, the ZAP scan; then **0.5.0**, the
+   minor release.
+7. **The edge starter, a 0.5.x patch** ([serverless.md](serverless.md)):
+   Spring Boot for Dart applications compiled to JavaScript behind a
+   fetch handler, first on Supabase Edge Functions (Supabase's
+   environment and Auth JWTs, deploys from GitHub Actions on every
+   push), then Deno Deploy, Cloudflare Workers, Vercel and Netlify Edge.
+   Designed first, on its own: what the other starters do where they
+   cannot work fully (timers, in-memory caches and sessions, files,
+   isolates) without starters knowing any platform (the open section of
+   [serverless.md](serverless.md)).
+8. **The web server after Netty, not Tomcat** (the owner's decision,
+   October 2026; for 0.6.0, since defaults change): Dart's server runs on
+   one event loop, as Netty does, so its limits and defaults follow
+   Spring Boot on Reactor Netty — only the server's behaviour; no
+   WebFlux, no reactive API (handlers stay as they are). Go through what
+   the reviews made "as Tomcat": the WebSocket message limits (Tomcat's
+   8 KB vs Netty's 64 KB frame payload), the send-buffer limits (Netty's
+   write-buffer water marks), compression and its `Vary` rules, the
+   connection and idle timeouts (`server.netty.connection-timeout`,
+   `server.netty.idle-timeout`), the request line and header limits
+   (`server.netty.max-initial-line-length`, 8 KB of headers),
+   `server.netty.max-keep-alive-requests`, header validation, bodiless
+   answers, graceful shutdown. Boot's `server.netty.*` keys where Boot
+   has them; each moved default in the CHANGELOG as breaking.
+9. **Typed keys from the configuration** (the section in
    [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#typed-keys-from-the-configuration-generated)):
    the generator writes getters for the theme's colors, spacing, text
    styles, tokens and theme names (`context.theme.colors.surfaceContainerLow`)
    and for the messages (`context.messages.basket.total(sum)`); then
    assets and routes. A renamed key fails the build, not the app.
-7. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
+10. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
    `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
    `@HttpExchange` later.
-8. **Logging like Spring's** (the logging section of
+11. **Logging like Spring's** (the logging section of
    [spring_core_dart.md](spring_core_dart.md#logging-like-springs)): the
    root level INFO without the logging starter too, as in Spring; the
    framework's own debug and trace lines for its main steps (beans
    created, config files loaded, requests mapped and completed, the
    security chain's decisions), with Spring's texts; the `web` log group;
    `--debug` and `--trace` as in Boot.
-9. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
+12. **Spring AI** ([spring_ai.md](spring_ai.md)): chat and embedding models
    of the providers (Anthropic, OpenAI, Gemini, Ollama, ...) behind one
    `ChatClient`, all in one package (`spring_boot_starter_ai`).
-10. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
+13. **MVC beyond REST** ([spring_boot_starter_web.md](spring_boot_starter_web.md),
    *MVC: views and static resources*): first find out whether it is worth
    it. Browser SSO on the server, `oauth2Login()` with OpenID Connect, is
    done without it
    ([spring_boot_starter_security](spring_boot_starter_security.md#sso-oauth2login-with-openid-connect)):
    Flutter web uses the server as its backend-for-frontend.
-11. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
+14. Later: [MCP](spring_ai_mcp.md) in the AI starter, the
    actuator, data, the rest of the table.
-12. Under question, far off: **the starters on the generator** —
+15. Under question, far off: **the starters on the generator** —
    `@AutoConfiguration` classes with `@Bean` methods instead of the
    hand-written `BeanDefinition`s of their auto-configurations. For now
    hand-written stays: it reads better for this code and needs no
@@ -107,12 +138,14 @@ What comes next, in order:
 | [spring_boot_actuator.md](spring_boot_actuator.md) | `spring_boot_actuator` | planned on the web starter: beans, env, conditions, loggers, logs, health — over HTTP, in the editor extensions, in apps |
 | [spring_security_core.md](spring_security_core.md) | `spring_security_core` | done: security context, users, password encoders, method security; next: BCrypt, multi-factor |
 | [spring_boot_starter_security.md](spring_boot_starter_security.md) | `spring_boot_starter_security` | done: filter chain, Basic, form login, OAuth 2.0 / OpenID Connect login (`oauth2Login`), sessions, CSRF, CORS, headers, JWT resource server; next: remember-me, session registry, opaque tokens |
-| [security_verification.md](security_verification.md) | security packages | done except the ZAP scan and coverage in CI: threat model, attack catalog as tests, differential tests against Spring Security, fuzzing, test vectors, mutation testing, ASVS checklist |
+| [security_verification.md](security_verification.md) | security packages | done except coverage in CI: threat model, attack catalog as tests, differential tests against Spring Security, fuzzing, test vectors, mutation testing, ASVS checklist, the ZAP baseline scan in CI |
 | [spring_ai.md](spring_ai.md) | `spring_boot_starter_ai` | planned: `ChatClient`, the model providers in one package, streaming, tool calling, structured output, chat memory, embeddings |
 | [spring_ai_mcp.md](spring_ai_mcp.md) | `spring_boot_starter_ai` | MCP, later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on Feign (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
-| [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data_*` | planned: entities, repositories, `@Transactional` |
+| [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | planned for 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), several databases, Redis (own client: sessions, cache, repositories), Supabase over PostgREST, `@Transactional`, `@Version`, `@Lock`, SpEL in `@Query` |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
+| [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
+| [serverless.md](serverless.md) | `spring_boot_starter_edge` (name to settle) | planned, a 0.5.x patch: Spring Boot for Dart applications on Supabase Edge Functions, Deno Deploy, Cloudflare Workers; deploys from GitHub Actions |
 | [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient`, `RestTemplate` (no package of its own), later `@HttpExchange` |
 | [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | next steps: files and forms, `FallbackFactory`, circuit breaker |
 | [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |

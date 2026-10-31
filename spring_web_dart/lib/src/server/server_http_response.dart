@@ -93,8 +93,15 @@ abstract interface class ServerHttpResponse {
 ///
 /// // At logout: the same cookie with a zero age deletes it.
 /// response.addCookie(
-///     const ResponseCookie('session', '', maxAge: Duration.zero, path: '/'));
+///     ResponseCookie('session', '', maxAge: Duration.zero, path: '/'));
 /// ```
+///
+/// The name, value, domain and path are checked as Spring's
+/// `ResponseCookie` checks them (RFC 6265): a character that would end
+/// the value or start another attribute (`;`, `,`, a space, a quote, a
+/// control character, non-ASCII) is an [ArgumentError], so text from a
+/// request can never add attributes such as `; Domain=evil.example`.
+/// Encode such values first (`Uri.encodeComponent`).
 ///
 /// Spring (Java):
 /// ```java
@@ -105,7 +112,12 @@ abstract interface class ServerHttpResponse {
 final class ResponseCookie {
   /// A cookie [name]=[value]. Without attributes it lasts for the browser
   /// session and is sent back to the path that set it.
-  const ResponseCookie(
+  ///
+  /// Throws an [ArgumentError] when [name] is not an RFC 2616 token, when
+  /// [value] has a character a cookie value cannot have (outside a pair
+  /// of double quotes around it all), or when [domain] or [path] has an
+  /// invalid character; the same checks as Spring's `Rfc6265Utils`.
+  ResponseCookie(
     this.name,
     this.value, {
     this.maxAge,
@@ -115,7 +127,116 @@ final class ResponseCookie {
     this.httpOnly = false,
     this.sameSite,
     this.partitioned = false,
-  });
+  }) {
+    _checkName(name);
+    _checkValue(value);
+    _checkDomain(domain);
+    _checkPath(path);
+  }
+
+  static const _separators = r'()<>@,;:\"/[]?={} ';
+  static const _domainChars =
+      '0123456789.-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  static void _checkName(String name) {
+    if (name.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'A cookie needs a name');
+    }
+    for (final c in name.codeUnits) {
+      if (c <= 0x1F || c == 0x7F) {
+        throw ArgumentError.value(
+          name,
+          'name',
+          'RFC2616 token cannot have control chars',
+        );
+      }
+      if (_separators.codeUnits.contains(c)) {
+        throw ArgumentError.value(
+          name,
+          'name',
+          'RFC2616 token cannot have separator chars such as '
+              "'${String.fromCharCode(c)}'",
+        );
+      }
+      if (c >= 0x80) {
+        throw ArgumentError.value(
+          name,
+          'name',
+          'RFC2616 token can only have US-ASCII',
+        );
+      }
+    }
+  }
+
+  // The value is not echoed in the message: it may be a secret.
+  static void _checkValue(String value) {
+    var start = 0;
+    var end = value.length;
+    if (end > 1 && value.startsWith('"') && value.endsWith('"')) {
+      start = 1;
+      end--;
+    }
+    for (var i = start; i < end; i++) {
+      final c = value.codeUnitAt(i);
+      if (c < 0x21 || c == 0x22 || c == 0x2C || c == 0x3B || c == 0x5C) {
+        throw ArgumentError(
+          'RFC2616 cookie value cannot have the character 0x'
+              '${c.toRadixString(16)} (at $i)',
+          'value',
+        );
+      }
+      if (c >= 0x7F) {
+        throw ArgumentError(
+          'RFC2616 cookie value can only have US-ASCII chars (0x'
+              '${c.toRadixString(16)} at $i)',
+          'value',
+        );
+      }
+    }
+  }
+
+  static void _checkDomain(String? domain) {
+    if (domain == null || domain.isEmpty) {
+      return;
+    }
+    final first = domain[0];
+    final last = domain[domain.length - 1];
+    if (first == '-' || last == '.' || last == '-') {
+      throw ArgumentError.value(
+        domain,
+        'domain',
+        'Invalid first/last char in cookie domain',
+      );
+    }
+    String? previous;
+    for (final char in domain.split('')) {
+      if (!_domainChars.contains(char) ||
+          (previous == '.' && (char == '.' || char == '-')) ||
+          (previous == '-' && char == '.')) {
+        throw ArgumentError.value(
+          domain,
+          'domain',
+          "invalid cookie domain char '$char'",
+        );
+      }
+      previous = char;
+    }
+  }
+
+  static void _checkPath(String? path) {
+    if (path == null) {
+      return;
+    }
+    for (final c in path.codeUnits) {
+      if (c < 0x20 || c > 0x7E || c == 0x3B) {
+        throw ArgumentError.value(
+          path,
+          'path',
+          'Invalid cookie path char 0x${c.toRadixString(16)}',
+        );
+      }
+    }
+  }
 
   /// The name the browser stores the cookie under.
   final String name;

@@ -266,7 +266,7 @@ Future<void> main(List<String> args) async {
     stdout.writeln('== ${starter.package}: ${directory.path}');
     final steps = [
       ['dart', 'pub', 'get'],
-      ['dart', 'run', 'build_runner', 'build', '--delete-conflicting-outputs'],
+      ['dart', 'run', 'build_runner', 'build'],
       ['dart', 'analyze', '--fatal-infos', '--fatal-warnings'],
       ['dart', 'test'],
     ];

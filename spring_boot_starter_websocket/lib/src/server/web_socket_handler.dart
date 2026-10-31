@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -10,10 +11,11 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 ///
 /// Endpoint methods and `WebSocketHandler`s receive it for each connection,
 /// and [WebSocketSessionRegistry] lists the open ones. Besides what every
-/// [WebSocketSession] does (send, close, the incoming messages), it has an
-/// [id], the handshake's [handshakeHeaders], [principal] and
-/// [pathVariables], [attributes] to keep per-connection state, and
-/// [sendJson].
+/// [WebSocketSession] does (send, close), it has an [id], the handshake's
+/// [handshakeHeaders], [principal] and [pathVariables], [attributes] to
+/// keep per-connection state, and [sendJson]. Its incoming messages go to
+/// the handler (`handleMessage`, an endpoint's `@OnMessage` method): the
+/// server reads [messages] itself.
 ///
 /// ```dart
 /// // Greets the user and remembers the room for later messages.
@@ -26,8 +28,9 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 ///
 /// Spring (Java): the server-side `WebSocketSession`.
 abstract interface class ServerWebSocketSession implements WebSocketSession {
-  /// An id of the connection, unique in this process; useful in logs and
-  /// as a map key.
+  /// A random id of the connection, in the form of a UUID
+  /// (`8f1e0c2a-...`); useful in logs and as a map key, and not guessable
+  /// from another session's id.
   String get id;
 
   /// The headers of the handshake request, read-only.
@@ -49,6 +52,14 @@ abstract interface class ServerWebSocketSession implements WebSocketSession {
   /// Sends [value] as a JSON text message, written by the application's
   /// `ObjectMapper`.
   void sendJson(Object? value);
+
+  /// The incoming messages, which the server reads itself, one after the
+  /// other, to call the handler: a `WebSocketHandler`'s `handleMessage`,
+  /// an endpoint's `@OnMessage` method. Receive them there: the stream is
+  /// already listened to, and listening to it again throws a
+  /// `StateError` ("Stream has already been listened to").
+  @override
+  Stream<Object> get messages;
 }
 
 /// The object that handles the connections of a server path: it is told
@@ -58,14 +69,18 @@ abstract interface class ServerWebSocketSession implements WebSocketSession {
 /// a [WebSocketConfigurer]; extend [AbstractWebSocketHandler] or
 /// [TextWebSocketHandler] rather than implementing every method.
 /// `@WebSocketEndpoint` is the shorter way for most endpoints. The
-/// messages of one connection are handled one after the other; an error
-/// thrown by a method goes to [handleTransportError], and the connection
-/// stays open unless the handler closes it.
+/// messages of one connection are handled one after the other, and the
+/// connection is not read until the `Future` of [handleMessage] completes
+/// (a fast client waits for a slow handler); an error thrown by a method
+/// goes to [handleTransportError], and the connection stays open unless
+/// the handler closes it.
 ///
 /// Spring (Java): `WebSocketHandler`. Unlike Spring, an error a handler
 /// throws does not close the connection by itself.
 abstract interface class WebSocketHandler {
-  /// Called when a connection has opened, before its first message.
+  /// Called when a connection has opened, before its first message (the
+  /// messages wait until it completes). It may close [session] to turn
+  /// the client away: [afterConnectionClosed] then gets the status.
   FutureOr<void> afterConnectionEstablished(ServerWebSocketSession session);
 
   /// Called with each message of [session], a `String` (text) or a
@@ -260,10 +275,12 @@ final class WebSocketHandlerRegistration {
   /// The path patterns it answers.
   final List<String> paths;
 
-  /// The browser origins allowed besides the server's own (`*`: any).
+  /// The browser origins allowed besides the server's own (`*`: any),
+  /// compared without case.
   final allowedOrigins = <String>[];
 
-  /// Origin patterns allowed, where `*` stands for any text.
+  /// Origin patterns allowed, compared with case: `*` matches any part of
+  /// an origin, `[*]` at the end any port or none.
   final allowedOriginPatterns = <String>[];
 
   /// The subprotocols spoken; the first one the client offers is chosen.
@@ -272,15 +289,23 @@ final class WebSocketHandlerRegistration {
   /// Called around each handshake, in this order.
   final interceptors = <HandshakeInterceptor>[];
 
-  /// Allows browsers from [origins], such as `https://shop.example`, or
-  /// any with `*`. Adds to the origins set before.
+  /// Allows browsers from [origins], such as `https://shop.example`
+  /// (compared without case), or any with `*`. As in Spring, a value may
+  /// list several, separated by commas
+  /// (`'https://a.example, https://b.example'`), and a trailing `/` is
+  /// ignored. Adds to the origins set before.
   WebSocketHandlerRegistration setAllowedOrigins(List<String> origins) {
     allowedOrigins.addAll(origins);
     return this;
   }
 
-  /// Allows browsers from origins matching [patterns], such as
-  /// `https://*.example`. Adds to the patterns set before.
+  /// Allows browsers from origins matching [patterns], checked as
+  /// Spring's `CorsConfiguration` does (see `AllowedOrigins`): `*`
+  /// matches any text, as Spring's `.*` (`https://*.example`), and a port
+  /// list at the end the ports listed (`http://localhost:[3000,3001]`) or,
+  /// with `[*]`, any port or none (`http://localhost:[*]`). Patterns are
+  /// compared with case; commas and a trailing `/` as in
+  /// [setAllowedOrigins]. Adds to the patterns set before.
   WebSocketHandlerRegistration setAllowedOriginPatterns(List<String> patterns) {
     allowedOriginPatterns.addAll(patterns);
     return this;
@@ -376,12 +401,29 @@ final class DefaultServerWebSocketSession implements ServerWebSocketSession {
     required this.mapper,
     required this.pathVariables,
     Map<String, Object?>? attributes,
-  }) : id = '${++_ids}',
+  }) : id = _randomId(),
        handshakeHeaders = HttpHeaders.readOnly(request.headers.copy()),
        principal = request.principal,
        attributes = attributes ?? {};
 
-  static var _ids = 0;
+  static final _random = Random.secure();
+
+  // A random (version 4) UUID, as Spring's session ids
+  // (`AlternativeJdkIdGenerator`).
+  static String _randomId() {
+    final bytes = [for (var i = 0; i < 16; i++) _random.nextInt(256)];
+    bytes[6] = (bytes[6] & 0x0F) | 0x40;
+    bytes[8] = (bytes[8] & 0x3F) | 0x80;
+    final hex = [for (final b in bytes) b.toRadixString(16).padLeft(2, '0')]
+        .join();
+    return [
+      hex.substring(0, 8),
+      hex.substring(8, 12),
+      hex.substring(12, 16),
+      hex.substring(16, 20),
+      hex.substring(20),
+    ].join('-');
+  }
 
   /// The underlying connection.
   final WebSocketSession delegate;

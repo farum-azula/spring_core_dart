@@ -97,7 +97,9 @@ final class WebSocketInvocationHandler implements InvocationHandler {
     }
     final url = Uri.tryParse(resolved);
     if (url == null || (url.scheme != 'ws' && url.scheme != 'wss')) {
-      problems.add('the URL "$resolved" must start with ws:// or wss://');
+      // A token in the query or a password must not reach the log.
+      final shown = url == null ? redactText(resolved) : '${redactUrl(url)}';
+      problems.add('the URL "$shown" must start with ws:// or wss://');
       return null;
     }
     return url;

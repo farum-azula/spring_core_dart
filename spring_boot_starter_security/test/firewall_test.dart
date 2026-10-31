@@ -92,6 +92,15 @@ void main() {
         () => relaxed.check(_RawPathRequest('/api%2Fx')),
         throwsA(isA<RequestRejectedException>()),
       );
+      // Path parameters do not hide a `.` / `..` segment.
+      for (final path in ['/files/..;x/etc', '/files/.;x/a', '/a/..;/b']) {
+        expect(
+          () => relaxed.check(_RawPathRequest(path)),
+          throwsA(isA<RequestRejectedException>()),
+          reason: path,
+        );
+      }
+      relaxed.check(_RawPathRequest('/files/..x;y/a')); // a name, not `..`
     });
 
     test('allowUrlEncodedSlash, allowBackSlash, allowUrlEncodedPercent', () {

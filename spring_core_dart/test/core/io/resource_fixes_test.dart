@@ -95,6 +95,32 @@ void main() {
         [FileSystemResource(file.path)],
       );
     });
+
+    // Spring looks for wildcards in the location as written and decodes
+    // only the root directory (its URL's file): an escaped `*` expanded to
+    // every name here.
+    test('file: wildcards are looked for before percent-decoding', () {
+      write('mail/a.txt', 'a');
+      write('mail/b.txt', 'b');
+      final resolver = PathMatchingResourcePatternResolver();
+      final base = temp.path.replaceAll(r'\', '/');
+      expect(resolver.getResources('file:$base/mail/%2A.txt'), isEmpty);
+      expect(resolver.getResources('file:$base/mail/a%3F.txt'), isEmpty);
+      write('mail/a%41.txt', 'escaped');
+      expect(
+        [
+          for (final r in resolver.getResources('file:$base/mail/*%41.txt'))
+            r.filename,
+        ],
+        ['a%41.txt'],
+      );
+      if (!Platform.isWindows) {
+        final literal = write('mail/*.txt', 'literal');
+        expect(resolver.getResources('file:$base/mail/%2A.txt'), [
+          FileSystemResource(literal.path),
+        ]);
+      }
+    });
   });
 
   test('FileSystemResource directories exist but are not readable', () {

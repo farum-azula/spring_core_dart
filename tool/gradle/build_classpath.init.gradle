@@ -1,0 +1,29 @@
+// Prints every module of the Android build's own classpath, one
+// `group:name:version` per line: the settings' (the Android and Kotlin
+// Gradle plugins the app's settings.gradle.kts declares) and each
+// project's buildscript (the plugins' build.gradle.kts). Only the app's
+// own build: the Flutter SDK's Gradle plugin is an included build that
+// Gradle's embedded Kotlin DSL compiles, with Gradle's own versions. For
+// tool/check_vulnerabilities.dart --maven; the APK's own dependencies
+// (androidx.browser) are not in it.
+//
+//   cd example/flutter_guide/android
+//   ./gradlew -q -I ../../../tool/gradle/build_classpath.init.gradle help > /tmp/classpath.txt
+def printClasspath(configuration) {
+  configuration.resolvedConfiguration.resolvedArtifacts.each {
+    def id = it.moduleVersion.id
+    println "CLASSPATH ${id.group}:${id.name}:${id.version}"
+  }
+}
+
+gradle.settingsEvaluated { settings ->
+  if (settings.gradle.parent != null) return
+  printClasspath(settings.buildscript.configurations.getByName('classpath'))
+}
+
+gradle.projectsEvaluated { gradle ->
+  if (gradle.parent != null) return
+  gradle.rootProject.allprojects { project ->
+    printClasspath(project.buildscript.configurations.getByName('classpath'))
+  }
+}

@@ -1461,14 +1461,8 @@ class BeanScanner {
   }
 
   // A public class type (with writable type arguments), `dynamic` or
-  // `void`.
-  bool _isWritableType(DartType type) =>
-      type is DynamicType ||
-      type is VoidType ||
-      (type is InterfaceType &&
-          type.element.isPublic &&
-          !isInternalSdkType(type) &&
-          type.typeArguments.every(_isWritableType));
+  // `void` (see [isWritableType]).
+  bool _isWritableType(DartType type) => isWritableType(type);
 
   // Whether [type] is declared in `package:spring_core_dart`.
   static bool _isSpringType(InterfaceType type) =>
@@ -4070,38 +4064,9 @@ class BeanScanner {
   // Types
   // ---------------------------------------------------------------------
 
-  // The types a bean can be looked up by: its own type and every public
-  // supertype (a private type cannot be written in generated code).
-  // Supertypes from internal SDK libraries (`EfficientLengthIterable` of
-  // `dart:_internal`) are left out: generated code cannot import them.
-  //
-  // A generic type is also exposed in its raw form, instantiated to bounds
-  // (`Store<User>` also as `Store<dynamic>`, what a raw `Store` means in
-  // Dart): `List<Store>` gets every store, like a raw type in Spring.
-  List<InterfaceType> _exposedTypes(InterfaceType type) {
-    final types = [
-      type,
-      for (final supertype in type.allSupertypes)
-        if (!supertype.isDartCoreObject &&
-            _isPublicType(supertype) &&
-            !isInternalSdkType(supertype))
-          supertype,
-    ];
-    final seen = {for (final t in types) (t.element, t.getDisplayString())};
-    return [
-      ...types,
-      for (final t in types)
-        if (t.typeArguments.isNotEmpty)
-          if (t.element.library.typeSystem.instantiateInterfaceToBounds(
-                element: t.element,
-                nullabilitySuffix: NullabilitySuffix.none,
-              )
-              case final raw
-              when _isWritableType(raw) &&
-                  seen.add((raw.element, raw.getDisplayString())))
-            raw,
-    ];
-  }
+  // The types a bean can be looked up by (see [exposedBeanTypes]).
+  List<InterfaceType> _exposedTypes(InterfaceType type) =>
+      exposedBeanTypes(type);
 
   // For a `FactoryBean<T>`, the exposed types of the product `T`; `null`
   // for other beans.
@@ -4117,11 +4082,6 @@ class BeanScanner {
     }
     return null;
   }
-
-  // Public, including all class type arguments.
-  bool _isPublicType(InterfaceType type) =>
-      type.element.isPublic &&
-      type.typeArguments.every((t) => t is! InterfaceType || _isPublicType(t));
 
   // ---------------------------------------------------------------------
   // Declaration annotations

@@ -1,6 +1,8 @@
 package dev.farumazula.spring_boot_starter_flutter_security
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -55,5 +57,58 @@ class RedirectMatcherTest {
         assertFalse(RedirectMatcher.isAppRedirect("http://books.neon.example/oauth2/callback"))
         assertFalse(RedirectMatcher.isAppRedirect("https:/oauth2/callback"))
         assertFalse(RedirectMatcher.isAppRedirect("::"))
+    }
+
+    @Test
+    fun anOpaqueRedirectIsRefusedBeforeTheLoginStarts() {
+        // No link can ever match it: the login would wait for nothing.
+        assertFalse(RedirectMatcher.isAppRedirect("books.neon.app:callback"))
+        assertFalse(RedirectMatcher.isAppRedirect("books.neon.app:opaque?x=1"))
+        assertFalse(RedirectMatcher.matches("books.neon.app:callback", "books.neon.app:callback"))
+    }
+
+    @Test
+    fun anAuthorityThatIsNoValidHostMatchesOnlyItself() {
+        // java.net.URI keeps such an authority without a host: two of them
+        // must not count as the same (null) host.
+        val invalid = "books.neon.app://bad_host/oauth2/callback"
+        assertTrue(RedirectMatcher.matches(invalid, "$invalid?code=c"))
+        assertTrue(RedirectMatcher.matches(invalid, "books.neon.app://BAD_HOST/oauth2/callback"))
+        assertFalse(RedirectMatcher.matches(invalid, "books.neon.app://evil_host/oauth2/callback"))
+        assertFalse(RedirectMatcher.matches(invalid, "books.neon.app:/oauth2/callback"))
+        assertFalse(RedirectMatcher.matches(invalid, "books.neon.app://evil.example/oauth2/callback"))
+        // No authority matches only no authority.
+        assertFalse(RedirectMatcher.matches(scheme, "books.neon.app://evil.example/oauth2/callback"))
+        assertFalse(RedirectMatcher.matches(scheme, "books.neon.app://bad_host/oauth2/callback"))
+    }
+
+    @Test
+    fun onlyTheStateOfTheLoginEndsIt() {
+        val state = "f2Qw-9_aZ"
+        assertTrue(RedirectMatcher.matches(appLink, "$appLink?code=c&state=$state", state))
+        assertTrue(RedirectMatcher.matches(appLink, "$appLink?error=access_denied&state=$state", state))
+        assertTrue(RedirectMatcher.matches(scheme, "$scheme?state=f2Qw%2D9_aZ&code=c", state))
+        // A forged redirect to the exact path: ignored, the login waits.
+        assertFalse(RedirectMatcher.matches(appLink, "$appLink?code=c&state=other", state))
+        assertFalse(RedirectMatcher.matches(appLink, "$appLink?error=access_denied", state))
+        assertFalse(RedirectMatcher.matches(appLink, "$appLink?code=c&state=$state&state=x", state))
+        assertFalse(RedirectMatcher.matches(appLink, "$appLink?code=c&state=${state}x", state))
+        assertFalse(RedirectMatcher.matches(appLink, "$appLink?code=c&state=%zz", state))
+        assertFalse(RedirectMatcher.matches(appLink, appLink, state))
+        // Without a state to expect (a logout page), the path decides.
+        assertTrue(RedirectMatcher.matches(appLink, appLink, null))
+    }
+
+    @Test
+    fun theStateIsReadFromTheAuthorizationUri() {
+        assertEquals(
+            "s 1",
+            RedirectMatcher.stateOf("https://id.neon.books/auth?client_id=a&state=s%201&nonce=n"),
+        )
+        assertEquals("s+1", RedirectMatcher.stateOf("https://id.neon.books/auth?state=s%2B1"))
+        assertNull(RedirectMatcher.stateOf("https://id.neon.books/logout?id_token_hint=t"))
+        assertNull(RedirectMatcher.stateOf("https://id.neon.books/auth?state=a&state=b"))
+        assertNull(RedirectMatcher.stateOf("https://id.neon.books/auth?state=%zz"))
+        assertNull(RedirectMatcher.stateOf("not a uri at all"))
     }
 }

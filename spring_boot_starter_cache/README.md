@@ -228,7 +228,13 @@ Without any setup the starter creates the `cacheManager` bean, an
 - entries are lost when the app stops, and when the context restarts
   (also on a hot reload that changes beans): the cache starts empty;
 - nothing expires and there is no size limit unless you set them (below);
-  expired entries are dropped when they are read;
+  the time to live is measured on a monotonic clock, as Caffeine's
+  ticker, so setting the device's or server's clock neither keeps
+  entries longer nor drops them early;
+  expired entries are dropped when they are read, and writes sweep out
+  the others now and then (after a burst of writes, the writes a time to
+  live or two later do; a cache no longer written keeps them until they
+  are read);
 - `null` results are stored too: a stored `null` is a hit, as in Spring;
 - one app, one isolate: the cache is not shared between processes,
   isolates or devices.
@@ -245,10 +251,27 @@ application declares no `CacheManager` of its own:
 |---|---|---|
 | `spring.cache.type` | `generic` with `Cache` beans, else `simple` | `generic`: a `SimpleCacheManager` of the `Cache` beans (at least one needed); `simple`: caches in memory; `none`: cache nothing (the annotations stay, the methods always run). Another value fails the start |
 | `spring.cache.cache-names` | — | a fixed set of caches, such as `books,authors` or a YAML list; an annotation naming another cache then fails. Without it (or empty), caches are created on first use |
-| `spring.cache.simple.time-to-live` | none | how long entries live: `10m`, `30s`, `PT1H`, or milliseconds |
-| `spring.cache.simple.max-size` | none | the most entries per cache; the least recently used go first |
-| `spring.cache.simple.caches.<name>.time-to-live` | — | the same for one cache |
-| `spring.cache.simple.caches.<name>.max-size` | — | the same for one cache |
+| `spring.cache.simple.time-to-live` | none | how long entries live: `10m`, `30s`, `PT1H`, or milliseconds. `0` or more: `0` keeps nothing (as Caffeine's `expireAfterWrite(Duration.ZERO)`); a negative value fails the start with an error naming the property, as Caffeine refuses one |
+| `spring.cache.simple.max-size` | none | the most entries per cache; the least recently used go first. `0` or more: `0` keeps nothing (as Caffeine's `maximumSize(0)`); a negative value fails the start with an error naming the property |
+| `spring.cache.simple.caches.<name>.time-to-live` | — | the same for one cache (also checked at the start) |
+| `spring.cache.simple.caches.<name>.max-size` | — | the same for one cache (also checked at the start) |
+
+A cache name with dots goes in brackets, as in any Spring Boot map
+(`spring.cache.simple.caches[books.byIsbn].max-size=2`; in YAML the key
+`"[books.byIsbn]":`); written plainly
+(`spring.cache.simple.caches.books.byIsbn.max-size`) it works too: the
+property is the end of the key (`max-size`, `time-to-live`, or a relaxed
+form: `maxSize`, `max_size`, `MAXSIZE`), the rest the cache name. Every
+per-cache value is checked at the start, whether the cache exists yet or
+not.
+
+In environment variables, as in Spring Boot:
+`SPRING_CACHE_SIMPLE_CACHES_BOOKS_MAX_SIZE=5` or `..._BOOKS_MAXSIZE=5`,
+`SPRING_CACHE_SIMPLE_CACHES_PRICES_TIME_TO_LIVE=30s` or
+`..._PRICES_TIMETOLIVE=30s`. The cache name comes out in lower case, so a
+name with capitals or dashes cannot be set this way (in Boot neither); a
+`_` inside it is a dot here (`..._BOOKS_BYISBN_MAX_SIZE` sets the cache
+`books.byisbn`; Boot binds nothing for it).
 
 ```properties
 # lib/resources/application.properties
@@ -605,6 +628,62 @@ final app = springBootTest(
 Or keep it on and check the cache through the `CacheManager` bean:
 `app.getBean<CacheManager>().getCache('books')!.get('978-0')`.
 
+### Time to live in tests
+
+The time to live runs on a monotonic stopwatch, in real time. A `clock`
+given to `InMemoryCache` or `InMemoryCacheManager` moves expiry forward
+but no longer holds entries alive (since 0.5.0): an entry expires once
+its time to live has passed on the stopwatch **or** on the clock. With a
+fixed clock and a time to live of 1 second, 0.4.3 still returned an
+entry 1.2 seconds later; now it is gone. So, to test expiry:
+
+- **Move a clock, don't wait.** A clock you move by hand needs nothing
+  else:
+
+  ```dart
+  var now = DateTime.utc(2026);
+  final cache = InMemoryCache('books',
+      spec: const CacheSpec(timeToLive: Duration(minutes: 10)),
+      clock: () => now);
+  cache.put('978-0', book);
+  now = now.add(const Duration(minutes: 9));
+  expect(cache.get('978-0')?.value, book);
+  now = now.add(const Duration(minutes: 1)); // the whole time to live
+  expect(cache.get('978-0'), isNull);
+  ```
+
+- **`fake_async` alone expires nothing.** `async.elapse` moves fake time,
+  not the stopwatch: a cache without a clock keeps its entries however
+  far you elapse. Give it a clock that follows fake time,
+  `() => clock.now()` (package `clock`, which `fakeAsync` fakes) or
+  `async.getClock(start).now`, and write and read inside the same
+  `fakeAsync`. Write the closure: the tear-off `clock.now` keeps the
+  clock of the zone it was taken in, the real one outside `fakeAsync`.
+
+  ```dart
+  fakeAsync((async) {
+    final cache = InMemoryCache('books',
+        spec: const CacheSpec(timeToLive: Duration(minutes: 10)),
+        clock: () => clock.now());
+    cache.put('978-0', book);
+    async.elapse(const Duration(minutes: 9));
+    expect(cache.get('978-0')?.value, book);
+    async.elapse(const Duration(minutes: 1));
+    expect(cache.get('978-0'), isNull);
+  });
+  ```
+
+- **Choose a long time to live.** Real time expires entries too, whatever
+  the clock, so a time to live of a second can expire an entry the test
+  still expects on a slow machine. Give minutes and move the clock past
+  them. A clock set back before the write also counts as expired (it
+  tells nothing then), so don't start a fake clock earlier than the
+  writes it reads.
+- **In an application test**, the `cacheManager` the starter makes from
+  the properties has no clock: declare your own `InMemoryCacheManager`
+  bean with the specs and a `clock` (it replaces the starter's), then
+  move that clock.
+
 ## Differences from Spring
 
 - No `@EnableCaching`: adding the starter turns caching on;
@@ -645,7 +724,8 @@ Or keep it on and check the cache through the `CacheManager` bean:
   (asynchronous) or `getNativeCache`.
 - `invalidate()` returns `true` for a cache that had nothing left to
   remove in two cases: `CacheDefaults` always returns `true`, and
-  `InMemoryCache` counts entries that have expired but were not read yet.
+  `InMemoryCache` counts entries that have expired but were neither read
+  nor swept out yet.
 - `CachingConfigurer` methods are called once; they must not be `@Bean`
   methods (no `@Configuration` proxies in Dart). `CacheErrorHandler`
   methods receive the stack trace next to the error.

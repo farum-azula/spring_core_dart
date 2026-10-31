@@ -70,10 +70,10 @@ Where the tests are: `core` is `spring_security_core/test/`, `starter` is
 | Requirement | Status | Shown by |
 |---|---|---|
 | 13.1.1 one parser for URIs | done | the rules and the router use the same `PathPattern` on the same path; ambiguous paths are refused, also when a server hands them over unnormalized; `starter/web_attacks_test.dart`, `starter/firewall_test.dart`, `starter/server_test.dart`, `starter/differential_test.dart` |
-| 13.1.3 no secrets in URLs | done | bearer tokens in query strings are off by default (`DefaultBearerTokenResolver`); `starter/bearer_test.dart` ("is ignored by default") |
+| 13.1.3 no secrets in URLs | done | bearer tokens in query strings are off by default (`DefaultBearerTokenResolver`), and when allowed read in `GET` requests only; `starter/bearer_test.dart` ("is ignored by default", "is read in GET requests only") |
 | 13.1.4 decisions at the URI and at the resource level | done | request rules and method security together; `starter/rules_test.dart` ("method security on a service") |
 | 13.2.1 methods allowed per user and action | done | `requestMatchersFor(method, ...)`; the firewall refuses TRACE and unknown methods |
-| 13.2.3 CSRF for cookie-based REST | done | as 4.2.2 |
+| 13.2.3 CSRF for cookie-based REST | done | as 4.2.2; requests with a `Bearer` or `DPoP` token in the header need none, while a chain's cookie requests keep the check, a forged token header never rides the session, a token in the query string never exempts a request, and the logout and login URLs keep the check with a token header: `starter/token_requests_test.dart` |
 | 13.2.6 headers and payload trustworthy | done | bearer tokens are verified; TLS is the deployment's (`server.ssl.*` or a proxy) |
 
 ## V14 Configuration

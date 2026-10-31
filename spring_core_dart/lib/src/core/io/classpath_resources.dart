@@ -42,7 +42,10 @@ final class EmbeddedResource {
 /// without regenerating) is read from `lib/resources/<path>` on disk.
 /// Directories added with [addDirectory] come first, like
 /// `src/test/resources` before `src/main/resources` on a test classpath: a
-/// file there shadows the embedded file with the same path.
+/// file there shadows the embedded file with the same path. A path whose
+/// `..` segments climb above `lib/resources/` (`classpath:../../secret`)
+/// finds nothing, as Java's class loader refuses such a name: [resolve]
+/// gives a resource that does not exist.
 ///
 /// Applications only write locations (`classpath:templates/mail.txt`);
 /// resource loaders call this class. Code calls it directly in tests, to
@@ -120,8 +123,8 @@ abstract final class ClasspathResources {
       });
     }
     for (final MapEntry(:key, :value) in resources.entries) {
-      final path = _normalize(key);
-      if (_embedded.containsKey(path)) {
+      final path = normalize(key);
+      if (path == null || _embedded.containsKey(path)) {
         continue;
       }
       _embedded[path] = value;
@@ -136,11 +139,19 @@ abstract final class ClasspathResources {
 
   /// The resource for `classpath:<path>` or a plain [path]: a file of an
   /// added directory when it exists there, otherwise the embedded file,
-  /// otherwise the file under [directory] (which may not exist).
+  /// otherwise the file under [directory] (which may not exist). A path
+  /// that climbs above the root with `..` gives a resource that does not
+  /// exist and cannot be read; so does `createRelative` of an embedded
+  /// file. A file read from disk is a [FileSystemResource], whose
+  /// `createRelative` is a file's.
   static Resource resolve(String path) {
-    final normalized = _normalize(
-      path.startsWith(prefix) ? path.substring(prefix.length) : path,
-    );
+    final relative = path.startsWith(prefix)
+        ? path.substring(prefix.length)
+        : path;
+    final normalized = normalize(relative);
+    if (normalized == null) {
+      return _OutsideClasspathResource(_clean(relative));
+    }
     for (final directory in _directories) {
       final file = FileSystemResource('$directory/$normalized');
       if (file.exists()) {
@@ -151,13 +162,17 @@ abstract final class ClasspathResources {
   }
 
   /// The resource for [path], ignoring the added [directories]: the
-  /// embedded file, or else the file under [directory].
+  /// embedded file, or else the file under [directory]; nothing for a
+  /// path that climbs above the root, as in [resolve].
   ///
   /// ```dart
   /// ClasspathResources.resolveEmbedded('application.yml');
   /// ```
   static Resource resolveEmbedded(String path) {
-    final normalized = _normalize(path);
+    final normalized = normalize(path);
+    if (normalized == null) {
+      return _OutsideClasspathResource(_clean(path));
+    }
     final embedded = _embedded[normalized];
     if (embedded != null) {
       return _EmbeddedClasspathResource(normalized, embedded.bytes);
@@ -165,9 +180,61 @@ abstract final class ClasspathResources {
     return FileSystemResource('$directory/$normalized');
   }
 
-  // `/config/./app.properties` → `config/app.properties`.
-  static String _normalize(String path) =>
-      FileSystemResource(path).path.replaceFirst(RegExp('^/'), '');
+  /// [path] relative to `lib/resources/` (without `classpath:`): a
+  /// leading `/` removed, `\` read as `/`, `.` and empty segments dropped,
+  /// `..` resolved (`/config/./app.properties` gives
+  /// `config/app.properties`). `null` when `..` climbs above the root:
+  /// nothing there is on the classpath.
+  ///
+  /// Spring (Java): `StringUtils.cleanPath`, after which the class loader
+  /// refuses a name that starts with `../`.
+  static String? normalize(String path) {
+    final cleaned = _clean(path);
+    return cleaned == '..' || cleaned.startsWith('../') ? null : cleaned;
+  }
+
+  // `/a/../../b` → `../b`: normalized, leading `..` segments kept.
+  static String _clean(String path) => FileSystemResource(
+    path.replaceAll(r'\', '/').replaceFirst(RegExp('^/+'), ''),
+  ).path;
+}
+
+// What a path that climbs above `lib/resources/` resolves to: nothing, as
+// Java's class loader refuses `../` names.
+final class _OutsideClasspathResource extends AbstractResource {
+  const _OutsideClasspathResource(this.path);
+
+  final String path;
+
+  @override
+  String get description => 'class path resource [$path]';
+
+  @override
+  bool exists() => false;
+
+  @override
+  String get filename => path.substring(path.lastIndexOf('/') + 1);
+
+  @override
+  bool get supportsSyncRead => true;
+
+  @override
+  Future<Uint8List> readAsBytes() => Future.error(_cannotOpen());
+
+  @override
+  Uint8List readAsBytesSync() => throw _cannotOpen();
+
+  @override
+  Resource createRelative(String relativePath) {
+    final slash = path.lastIndexOf('/');
+    return ClasspathResources.resolve(
+      '${path.substring(0, slash + 1)}$relativePath',
+    );
+  }
+
+  StateError _cannotOpen() => StateError(
+    '$description cannot be opened: the path leaves lib/resources/',
+  );
 }
 
 // An embedded file, with a file name and relative resources like Spring's

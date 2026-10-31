@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/cors.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
+import 'package:spring_boot_starter_web/src/forwarded_headers.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/http_session.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
@@ -38,6 +39,24 @@ ServerProperties serverProperties(Environment environment) =>
           : null,
     );
 
+// The CorsConfigurationSource bean named corsConfigurationSource, the one
+// Spring Security's CorsConfigurer takes (CORS_CONFIGURATION_SOURCE_BEAN_NAME),
+// so that CORS works the same with and without the security starter;
+// beans of the type with other names are left alone (Spring MVC itself
+// reads none), and several never fail the start. A bean of that name of
+// another type is not CORS rules: ignored here (the security starter
+// fails the start on it, as Spring Security).
+CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
+  const name = 'corsConfigurationSource';
+  if (!r.containsBean(name)) {
+    return null;
+  }
+  return switch (r.optionalResource<Object>(name)) {
+    final CorsConfigurationSource source => source,
+    _ => null,
+  };
+}
+
 /// The bean definitions the web starter adds to every application that
 /// lists it: the server, the request pipeline and their helpers.
 ///
@@ -54,10 +73,17 @@ ServerProperties serverProperties(Environment environment) =>
 ///   (`spring.servlet.multipart.*`), unless the application declares one;
 /// - `requestMappingHandlerMapping` — the controllers, with the
 ///   `WebMvcConfigurer` beans' interceptors, CORS mappings and argument
-///   resolvers, and a `CorsConfigurationSource` bean;
+///   resolvers, and the `CorsConfigurationSource` bean named
+///   `corsConfigurationSource`;
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
 ///   `request.getSession()` (`server.servlet.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
+/// - `forwardedHeaderFilter`, with `server.forward-headers-strategy` set
+///   to `native` or `framework` — [ForwardedHeaderFilter], first of all
+///   filters: behind a reverse proxy, the scheme, host, port and client
+///   address the proxy forwards, from the proxies of
+///   `server.forward-headers.trusted-proxies` only (loopback and private
+///   networks by default).
 /// - `dispatcherHandler` — the [HttpHandler]: the [WebFilter] beans, then
 ///   the [HandlerMapping] beans;
 /// - `webServerStartStopLifecycle` — starts and stops the server with the
@@ -144,19 +170,14 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
           ..addCorsMappings(cors)
           ..addArgumentResolvers(resolvers);
       }
-      final globalCors = r.optionalDependency<CorsConfigurationSource>();
-      final registryCors = cors.isEmpty ? null : cors.toSource();
       return RequestMappingHandlerMapping(
         beanFactory: r.dependency<ListableBeanFactory>(),
         writer: r.dependency<ResponseWriter>(),
         environment: r.dependency<Environment>(),
         argumentResolvers: resolvers,
         interceptors: interceptors.registrations,
-        corsSource: globalCors == null
-            ? registryCors
-            : registryCors == null
-            ? globalCors
-            : _CompositeCors(globalCors, registryCors),
+        corsSource: cors.isEmpty ? null : cors.toSource(),
+        corsConfigurationSource: _corsConfigurationSource(r),
         validator: r.provider<Validator>().getIfUnique(),
         multipartResolver: r.dependency<MultipartResolver>(),
       );
@@ -193,6 +214,28 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       );
     },
   ),
+  BeanDefinition<ForwardedHeaderFilter>(
+    name: 'forwardedHeaderFilter',
+    types: const [ForwardedHeaderFilter, WebFilter, Ordered],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.forwardedHeaderFilter', [_OnForwardHeaders()]),
+    ],
+    create: (r) {
+      final text = r
+          .dependency<Environment>()
+          .getProperty('server.forward-headers.trusted-proxies')
+          ?.trim();
+      return ForwardedHeaderFilter(
+        trustedProxies: text == null || text.isEmpty
+            ? null
+            : [
+                for (final part in text.split(','))
+                  if (part.trim().isNotEmpty) part.trim(),
+              ],
+      );
+    },
+  ),
   BeanDefinition<HttpSessionFilter>(
     name: 'httpSessionFilter',
     types: const [HttpSessionFilter, WebFilter, Ordered],
@@ -224,6 +267,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       SmartLifecycle,
       Lifecycle,
       ApplicationContextAware,
+      AsyncStartup,
     ],
     source: _source,
     create: (r) {
@@ -248,16 +292,24 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
   ),
 ];
 
-final class _CompositeCors implements CorsConfigurationSource {
-  _CompositeCors(this.first, this.second);
-
-  final CorsConfigurationSource first;
-  final CorsConfigurationSource second;
+// server.forward-headers-strategy=native or framework; another value
+// than those and `none` stops the start.
+final class _OnForwardHeaders implements Condition {
+  const _OnForwardHeaders();
 
   @override
-  CorsConfiguration? getCorsConfiguration(ServerHttpRequest request) {
-    final a = first.getCorsConfiguration(request);
-    final b = second.getCorsConfiguration(request);
-    return a == null ? b : a.combine(b);
+  bool matches(ConditionContext context) {
+    final value = context.environment
+        .getProperty('server.forward-headers-strategy')
+        ?.trim()
+        .toLowerCase();
+    return switch (value) {
+      null || '' || 'none' => false,
+      'native' || 'framework' => true,
+      _ => throw ArgumentError(
+        'server.forward-headers-strategy must be none, native or framework: '
+        '$value',
+      ),
+    };
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:spring_core_dart/core.dart';
 import 'package:test/test.dart';
@@ -169,27 +170,51 @@ void main() {
     expect(parseSpringLogLevel(null), isNull);
   });
 
-  test('printLogHandler prints in colour: the logger cyan, the level by '
-      'level', () {
-    const log = SpringLog('test.log.print');
-    final printed = <String>[];
-    SpringLog.handler = printLogHandler;
-    SpringLog.level = SpringLogLevel.info;
-    runZoned(
-      () {
-        log
-          ..info('ready')
-          ..warning('slow')
-          ..error('down', error: 'eof');
-      },
-      zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => printed.add(line),
-      ),
-    );
-    expect(printed, [
-      '[\x1B[36mtest.log.print\x1B[0;39m] \x1B[32mINFO\x1B[0;39m: ready',
-      '[\x1B[36mtest.log.print\x1B[0;39m] \x1B[33mWARNING\x1B[0;39m: slow',
-      '[\x1B[36mtest.log.print\x1B[0;39m] \x1B[31mERROR\x1B[0;39m: down: eof',
-    ]);
+  group('printLogHandler', () {
+    final saved = printLogHandlerColours;
+    tearDown(() => printLogHandlerColours = saved);
+
+    // The lines printLogHandler prints for three records.
+    List<String> printed() {
+      const log = SpringLog('test.log.print');
+      final printed = <String>[];
+      SpringLog.handler = printLogHandler;
+      SpringLog.level = SpringLogLevel.info;
+      runZoned(
+        () {
+          log
+            ..info('ready')
+            ..warning('slow')
+            ..error('down', error: 'eof');
+        },
+        zoneSpecification: ZoneSpecification(
+          print: (self, parent, zone, line) => printed.add(line),
+        ),
+      );
+      return printed;
+    }
+
+    test('in colour: the logger cyan, the level by level', () {
+      printLogHandlerColours = true;
+      expect(printed(), [
+        '[\x1B[36mtest.log.print\x1B[0;39m] \x1B[32mINFO\x1B[0;39m: ready',
+        '[\x1B[36mtest.log.print\x1B[0;39m] \x1B[33mWARNING\x1B[0;39m: slow',
+        '[\x1B[36mtest.log.print\x1B[0;39m] \x1B[31mERROR\x1B[0;39m: down: eof',
+      ]);
+    });
+
+    test('plain text without colours', () {
+      printLogHandlerColours = false;
+      expect(printed(), [
+        '[test.log.print] INFO: ready',
+        '[test.log.print] WARNING: slow',
+        '[test.log.print] ERROR: down: eof',
+      ]);
+    });
+
+    test('by default colours only when standard output is a terminal that '
+        'shows them', () {
+      expect(saved, stdout.hasTerminal && stdout.supportsAnsiEscapes);
+    });
   });
 }

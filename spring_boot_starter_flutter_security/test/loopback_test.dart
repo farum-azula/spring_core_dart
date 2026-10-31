@@ -85,6 +85,152 @@ void main() {
     expect(redirect, endsWith('/callback'));
   });
 
+  test('only the redirect with the login\'s state ends the wait', () async {
+    final answers = <int>[];
+    final window = LoopbackAuthorizationWindow(
+      openBrowser: (uri) async {
+        final redirect = Uri.parse(uri.queryParameters['redirect_uri']!);
+        // Another site sends the browser to the exact path: with another
+        // state, without one, with two, and a malformed query.
+        for (final forged in [
+          redirect.replace(queryParameters: {'code': 'x', 'state': 'forged'}),
+          redirect.replace(queryParameters: {'error': 'access_denied'}),
+          redirect.replace(query: 'code=x&state=s1&state=forged'),
+          redirect.replace(query: 'code=x&state=%zz'),
+        ]) {
+          answers.add((await get(forged)).$1);
+        }
+        answers.add(
+          (await get(
+            redirect.replace(queryParameters: {'code': 'c', 'state': 's1'}),
+          )).$1,
+        );
+      },
+    );
+    final redirected = await window.authorize(
+      redirectUri: Uri.parse('http://127.0.0.1/cb'),
+      authorizationUri: (redirect) =>
+          Uri.parse('https://sso.test/auth').replace(
+            queryParameters: {'redirect_uri': '$redirect', 'state': 's1'},
+          ),
+    );
+    expect(answers, [400, 400, 400, 400, 200]);
+    expect(redirected.queryParameters, {'code': 'c', 'state': 's1'});
+  });
+
+  test("a forged redirect does not end the login's wait", () async {
+    final fixture = await LoginFixture.create();
+    final window = LoopbackAuthorizationWindow(
+      openBrowser: (uri) async {
+        final redirect = Uri.parse(uri.queryParameters['redirect_uri']!);
+        await get(redirect.replace(queryParameters: {'error': 'x'}));
+        await get(fixture.provider.approve(uri));
+      },
+    );
+    final authentication = await fixture
+        .service(window: window)
+        .login('keycloak');
+    expect(authentication.name, 'user-1');
+  });
+
+  test('an explicit localhost stays localhost', () async {
+    late Uri used;
+    final window = LoopbackAuthorizationWindow(
+      openBrowser: (uri) async {
+        used = Uri.parse(uri.queryParameters['redirect_uri']!);
+        await get(
+          used.replace(
+            host: '127.0.0.1',
+            queryParameters: {'code': 'c', 'state': 's'},
+          ),
+        );
+      },
+    );
+    final redirected = await window.authorize(
+      redirectUri: Uri.parse('http://localhost/cb'),
+      authorizationUri: (redirect) => Uri.parse(
+        'https://sso.test/auth',
+      ).replace(queryParameters: {'redirect_uri': '$redirect', 'state': 's'}),
+    );
+    expect(used.host, 'localhost');
+    expect(used.port, isNot(0));
+    expect(redirected.host, 'localhost');
+    expect(redirected.queryParameters['code'], 'c');
+  });
+
+  Future<bool> hasIPv6() async {
+    try {
+      await (await ServerSocket.bind(InternetAddress.loopbackIPv6, 0)).close();
+      return true;
+    } on SocketException {
+      return false;
+    }
+  }
+
+  test('localhost listens on ::1 too, on the same port', () async {
+    if (!await hasIPv6()) {
+      markTestSkipped('no IPv6 loopback here');
+      return;
+    }
+    late Uri used;
+    final window = LoopbackAuthorizationWindow(
+      openBrowser: (uri) async {
+        used = Uri.parse(uri.queryParameters['redirect_uri']!);
+        // A browser that resolved localhost to ::1.
+        await get(
+          used.replace(
+            host: '::1',
+            queryParameters: {'code': 'c6', 'state': 's'},
+          ),
+        );
+      },
+    );
+    final redirected = await window.authorize(
+      redirectUri: Uri.parse('http://localhost/cb'),
+      authorizationUri: (redirect) => Uri.parse(
+        'https://sso.test/auth',
+      ).replace(queryParameters: {'redirect_uri': '$redirect', 'state': 's'}),
+    );
+    expect(redirected.queryParameters['code'], 'c6');
+  });
+
+  test('an explicit localhost port held on ::1 by another program fails '
+      'the login', () async {
+    if (!await hasIPv6()) {
+      markTestSkipped('no IPv6 loopback here');
+      return;
+    }
+    // Another program on [::1]:port, port free on 127.0.0.1: a browser
+    // resolving localhost to ::1 would hand it the redirect.
+    final other = await ServerSocket.bind(
+      InternetAddress.loopbackIPv6,
+      0,
+      v6Only: true,
+    );
+    addTearDown(other.close);
+    final port = other.port;
+    var opened = false;
+    final window = LoopbackAuthorizationWindow(
+      openBrowser: (_) async => opened = true,
+    );
+    await expectLater(
+      window.authorize(
+        redirectUri: Uri.parse('http://localhost:$port/cb'),
+        authorizationUri: (redirect) => Uri.parse('https://sso.test/auth'),
+      ),
+      throwsA(
+        isA<SocketException>().having(
+          (e) => e.message,
+          'message',
+          contains('taken on ::1'),
+        ),
+      ),
+    );
+    expect(opened, isFalse);
+    // 127.0.0.1 was given back.
+    await (await ServerSocket.bind(InternetAddress.loopbackIPv4, port)).close();
+  });
+
   test('no redirect in time is a cancelled login', () async {
     final window = LoopbackAuthorizationWindow(
       openBrowser: (_) async {},

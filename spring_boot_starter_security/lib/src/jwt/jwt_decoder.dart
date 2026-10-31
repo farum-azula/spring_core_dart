@@ -9,6 +9,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
         OAuth2TokenValidator;
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
+import 'package:spring_boot_starter_security/src/jwt/since.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 const _log = SpringLog('spring.security.oauth2.jwt');
@@ -250,16 +251,23 @@ JwkFetcher transportJwkFetcher(HttpTransport transport) => (uri) async {
 /// - A token with an unknown `kid` fetches the set again, at most once
 ///   per [refreshInterval] (30 seconds), so tokens with made-up ids cannot
 ///   flood the provider with requests.
+/// - A failed fetch counts too: the next one is made [refreshInterval]
+///   later at the earliest, whatever the tokens, so a provider that is
+///   down gets no request per token.
 /// - When the provider cannot be reached, the keys fetched last keep
-///   working (with a warning in the log). Before the first successful
-///   fetch, every token fails with a [JwtException] (a 401).
+///   working (with a warning in the log, once per attempt). Before the
+///   first successful fetch, every token fails with a [JwtException] (a
+///   401).
 /// - Concurrent requests share one fetch.
 ///
 /// Spring (Java): Nimbus' `RemoteJWKSet`, behind Spring's
 /// `NimbusJwtDecoder`.
 final class RemoteJwkSource implements JwkSource {
   /// A source for the JWK Set at [uri], fetched with [fetcher]
-  /// ([defaultJwkFetcher] when omitted); [clock] lets tests move time.
+  /// ([defaultJwkFetcher] when omitted). [cacheLifespan] and
+  /// [refreshInterval] are measured on a monotonic stopwatch, so a wall
+  /// clock set back stretches neither; [clock] lets tests move time (a
+  /// clock that goes back past a fetch ends them too).
   RemoteJwkSource(
     this.uri, {
     JwkFetcher? fetcher,
@@ -276,13 +284,20 @@ final class RemoteJwkSource implements JwkSource {
   /// default.
   final Duration cacheLifespan;
 
-  /// The shortest time between two fetches; 30 seconds by default.
+  /// The shortest time between two fetches, successful or not; 30
+  /// seconds by default.
   final Duration refreshInterval;
 
   final JwkFetcher _fetch;
   final DateTime Function() _clock;
   List<VerificationKey>? _cached;
-  DateTime? _fetchedAt;
+  // Measured on a monotonic stopwatch too: a wall clock set back would
+  // keep the keys "fresh" and hold off the next fetch as long (a rotated
+  // key refused for hours).
+  Since? _fetched;
+  // The last fetch, successful or not, and why it failed.
+  Since? _attempted;
+  Object? _failure;
   Future<List<VerificationKey>>? _inFlight;
 
   @override
@@ -292,18 +307,26 @@ final class RemoteJwkSource implements JwkSource {
   }) async {
     final now = _clock();
     final cached = _cached;
-    final fetchedAt = _fetchedAt;
+    final fetched = _fetched;
     final fresh =
         cached != null &&
-        fetchedAt != null &&
-        now.difference(fetchedAt) < cacheLifespan;
+        fetched != null &&
+        !fetched.passed(cacheLifespan, now);
+    final attempted = _attempted;
     final mayRefetch =
-        fetchedAt == null || now.difference(fetchedAt) >= refreshInterval;
+        attempted == null || attempted.passed(refreshInterval, now);
     if (fresh && !(refresh && mayRefetch)) {
       return cached;
     }
-    if (cached != null && !mayRefetch) {
-      return cached;
+    if (!mayRefetch && _inFlight == null) {
+      if (cached != null) {
+        return cached;
+      }
+      // The last fetch failed a moment ago: not again before the interval.
+      throw JwtException(
+        "Couldn't retrieve remote JWK set: $_failure",
+        _failure,
+      );
     }
     try {
       return await (_inFlight ??= _load().whenComplete(() => _inFlight = null));
@@ -317,9 +340,17 @@ final class RemoteJwkSource implements JwkSource {
   }
 
   Future<List<VerificationKey>> _load() async {
-    final keys = parseJwkSet(await _fetch(uri));
+    _attempted = Since(_clock());
+    final List<VerificationKey> keys;
+    try {
+      keys = parseJwkSet(await _fetch(uri));
+    } on Object catch (e) {
+      _failure = e;
+      rethrow;
+    }
     _cached = keys;
-    _fetchedAt = _clock();
+    _fetched = Since(_clock());
+    _failure = null;
     return keys;
   }
 }
@@ -336,8 +367,10 @@ final class RemoteJwkSource implements JwkSource {
 /// 3. The signature is checked with the key of its `kid`, or with every
 ///    fitting key when there is none. Keys named in the token (`jku`,
 ///    `jwk`, `x5u`) are ignored: a token cannot bring its own key.
-/// 4. The claims pass the [validator]: by default `exp` and `nbf` with 60
-///    seconds of skew.
+/// 4. The token passes the [validator]: by default its type (`typ` is
+///    `JWT` or absent, so a logout token or a DPoP proof signed with the
+///    same key is no access token) and `exp` and `nbf` with 60 seconds of
+///    skew.
 ///
 /// A failure of steps 1 to 4 throws a [BadJwtException] (401
 /// `invalid_token`). Build one with a factory: from the provider's JWK Set
@@ -377,8 +410,9 @@ final class NimbusJwtDecoder implements JwtDecoder {
   /// [fetcher] and cached.
   ///
   /// [jwsAlgorithms] defaults to RS256 alone, Spring Boot's
-  /// `jws-algorithms` default. Without a [validator] only the lifetime is
-  /// checked: add the issuer and audience checks yourself. Throws an
+  /// `jws-algorithms` default. Without a [validator] only the type and the
+  /// lifetime are checked ([JwtValidators.createDefault]): add the issuer
+  /// and audience checks yourself. Throws an
   /// [ArgumentError] for an empty set or an HMAC algorithm.
   factory NimbusJwtDecoder.withJwkSetUri(
     Uri jwkSetUri, {
@@ -536,9 +570,10 @@ abstract final class JwtDecoders {
   ///
   /// The issuer's OpenID Connect (or OAuth 2.0 authorization server)
   /// metadata gives the JWK Set URL; the `issuer` named there must equal
-  /// [issuer]. Tokens must carry `iss` equal to [issuer], pass the
-  /// lifetime check, and, when [audiences] is not empty, name one of them
-  /// in `aud`. The algorithms are those the keys allow.
+  /// [issuer]. Tokens must carry `iss` equal to [issuer], pass the type
+  /// and lifetime checks ([JwtValidators.createDefault]), and, when
+  /// [audiences] is not empty, name one of them in `aud`. The algorithms
+  /// are those the keys allow.
   ///
   /// The metadata is looked up where the OAuth2 client's
   /// `ClientRegistrations.fromIssuerLocation` looks (the same code):
@@ -549,32 +584,68 @@ abstract final class JwtDecoders {
   ///
   /// The metadata is fetched at the first token, not at startup, so the
   /// provider may start later. While it cannot be fetched, tokens fail
-  /// with a [JwtException] (a 401) and the next token tries again.
+  /// with a [JwtException] (a 401); a failed lookup is made again
+  /// [retryInterval] (30 seconds) later at the earliest, so a provider
+  /// that is down gets no requests per token. The pause is measured on a
+  /// monotonic stopwatch, so a wall clock set back never stretches it;
+  /// [clock] lets tests move time.
   static JwtDecoder fromIssuerLocation(
     String issuer, {
     JwkFetcher? fetcher,
     List<String> audiences = const [],
-  }) => _IssuerJwtDecoder(issuer, fetcher ?? defaultJwkFetcher, audiences);
+    Duration retryInterval = const Duration(seconds: 30),
+    DateTime Function()? clock,
+  }) => _IssuerJwtDecoder(
+    issuer,
+    fetcher ?? defaultJwkFetcher,
+    audiences,
+    retryInterval,
+    clock ?? DateTime.now,
+  );
 }
 
 final class _IssuerJwtDecoder implements JwtDecoder {
-  _IssuerJwtDecoder(this.issuer, this.fetcher, this.audiences);
+  _IssuerJwtDecoder(
+    this.issuer,
+    this.fetcher,
+    this.audiences,
+    this.retryInterval,
+    this.clock,
+  );
 
   final String issuer;
   final JwkFetcher fetcher;
   final List<String> audiences;
+  final Duration retryInterval;
+  final DateTime Function() clock;
   Future<JwtDecoder>? _delegate;
+  // The last failed lookup: when (on a monotonic stopwatch too, so a
+  // wall clock set back does not stretch the pause), and why.
+  (Since, Object)? _failure;
 
   @override
   Future<Jwt> decode(String token) async {
+    final failure = _failure;
+    if (_delegate == null &&
+        failure != null &&
+        !failure.$1.passed(retryInterval, clock())) {
+      throw JwtException(
+        'Unable to resolve the issuer $issuer: ${failure.$2}',
+        failure.$2,
+      );
+    }
     final pending = _delegate ??= _discover();
     final JwtDecoder delegate;
     try {
       delegate = await pending;
     } on Object catch (e) {
-      _delegate = null; // try again with the next token
+      if (identical(_delegate, pending)) {
+        _delegate = null; // tried again after the retry interval
+        _failure = (Since(clock()), e);
+      }
       throw JwtException('Unable to resolve the issuer $issuer: $e', e);
     }
+    _failure = null;
     return await delegate.decode(token);
   }
 
@@ -605,8 +676,9 @@ final class _IssuerJwtDecoder implements JwtDecoder {
       throw JwtException('The issuer metadata has no jwks_uri');
     }
     return NimbusJwtDecoder.withJwkSource(
-      RemoteJwkSource(Uri.parse(jwksUri), fetcher: fetcher),
+      RemoteJwkSource(Uri.parse(jwksUri), fetcher: fetcher, clock: clock),
       validator: DelegatingOAuth2TokenValidator([
+        JwtTypeValidator.jwt(),
         JwtTimestampValidator(),
         JwtIssuerValidator(issuer),
         if (audiences.isNotEmpty) JwtAudienceValidator(audiences),

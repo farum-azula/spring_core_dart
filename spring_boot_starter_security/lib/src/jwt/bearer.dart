@@ -254,15 +254,79 @@ final class JwtAuthenticationProvider implements AuthenticationProvider {
   }
 }
 
+/// The [AuthenticationProvider] of `Bearer` tokens in the resource
+/// server's chain: [tokenAuthenticationManager] checks the token, and a
+/// token bound to a key or a certificate is refused.
+///
+/// A DPoP-bound token (a `cnf.jkt` claim) is worthless without a proof of
+/// its key (RFC 9449 §7.2), so it is accepted only with the `DPoP` scheme
+/// (`DPoPAuthenticationProvider`). A token bound to a client certificate
+/// (`cnf.x5t#S256`, RFC 8705) is valid only over a TLS connection made
+/// with that certificate, which the web starter does not hand to the
+/// security filters, so it is always refused (fail closed). The refusal
+/// is an [InvalidBearerTokenException] (401 `invalid_token`) thrown
+/// inside the provider, so the [ProviderManager] around it publishes one
+/// event per request, a failure, never a success for a token then
+/// refused. `oauth2ResourceServer((s) => s.jwt())` sets it up.
+///
+/// Spring (Java): none; Spring's `BearerTokenAuthenticationFilter`
+/// refuses a DPoP-bound token itself, after its manager has published a
+/// success, and its decoders' `X509CertificateThumbprintValidator`
+/// refuses a certificate-bound token sent without the certificate.
+final class UnboundBearerTokenAuthenticationProvider
+    implements AuthenticationProvider {
+  /// A provider checking tokens with [tokenAuthenticationManager], usually
+  /// a [ProviderManager] over a [JwtAuthenticationProvider] that publishes
+  /// no events.
+  const UnboundBearerTokenAuthenticationProvider(
+    this.tokenAuthenticationManager,
+  );
+
+  /// Checks the token: signature, issuer, audience, lifetime.
+  final AuthenticationManager tokenAuthenticationManager;
+
+  @override
+  bool supports(Authentication authentication) =>
+      authentication is BearerTokenAuthenticationToken;
+
+  @override
+  Future<Authentication?> authenticate(Authentication authentication) async {
+    final result = await tokenAuthenticationManager.authenticate(
+      authentication,
+    );
+    if (result.principal case final Jwt jwt) {
+      if (jwt.jwkThumbprint != null) {
+        throw InvalidBearerTokenException(_boundTokenAsBearer);
+      }
+      if (jwt.x509Thumbprint != null) {
+        throw InvalidBearerTokenException(_certificateBound);
+      }
+    }
+    return result;
+  }
+}
+
+const _boundTokenAsBearer =
+    'The access token is DPoP-bound; send it with the DPoP scheme and a proof';
+
+// RFC 8705: the web starter does not hand the client's certificate to the
+// filters, so the binding cannot be checked (the same text in dpop.dart).
+const _certificateBound =
+    'The access token is bound to a client certificate (RFC 8705), which '
+    'this server cannot check';
+
 /// Finds the bearer token of a request: the header
 /// `Authorization: Bearer <token>`, in the syntax of RFC 6750.
 ///
 /// The `access_token` query parameter counts only with
 /// [allowUriQueryParameter], off by default because URLs end up in logs
-/// and browser histories. A form field is never read. A header of another
-/// scheme gives no token. A malformed `Bearer` header, more than one
-/// header, a token both in the header and the query, or an empty query
-/// value fails with an [InvalidBearerTokenException] (401).
+/// and browser histories, and then only in a `GET` request, as in Spring:
+/// any page can send a form or a link with that parameter, so it must
+/// never make a request that changes something look like a token request.
+/// A form field is never read. A header of another scheme gives no token.
+/// A malformed `Bearer` header, more than one header, a token both in the
+/// header and the query, or an empty query value fails with an
+/// [InvalidBearerTokenException] (401).
 ///
 /// ```dart
 /// // Server-sent events from a browser cannot set headers.
@@ -281,8 +345,8 @@ final class DefaultBearerTokenResolver {
     this.bearerTokenHeaderName = HttpHeaders.authorizationHeader,
   });
 
-  /// Whether the `access_token` query parameter counts; `false` by
-  /// default.
+  /// Whether the `access_token` query parameter of a `GET` request counts;
+  /// `false` by default. Other methods never read it.
   final bool allowUriQueryParameter;
 
   /// The header carrying the token, `Authorization` by default.
@@ -313,7 +377,9 @@ final class DefaultBearerTokenResolver {
       }
       fromHeader = match.namedGroup('token');
     }
-    final fromQuery = allowUriQueryParameter
+    // GET only (Spring's DefaultBearerTokenResolver too): a page of any
+    // origin can post a form to a URL with ?access_token=.
+    final fromQuery = allowUriQueryParameter && request.method == HttpMethod.get
         ? request.uri.queryParametersAll['access_token']
         : null;
     if (fromQuery != null && fromQuery.length > 1) {
@@ -448,7 +514,10 @@ final class BearerTokenAccessDeniedHandler implements AccessDeniedHandler {
 ///   a 401 with `error="invalid_token"` by default, and the request stops;
 /// - a valid token bound to a DPoP key (a `cnf.jkt` claim): refused the
 ///   same way, since such a token is only valid with the `DPoP` scheme
-///   and a proof (RFC 9449 §7.2; `DPoPAuthenticationFilter`).
+///   and a proof (RFC 9449 §7.2; `DPoPAuthenticationFilter`);
+/// - a valid token bound to a client certificate (`cnf.x5t#S256`, RFC
+///   8705): refused the same way, since the binding cannot be checked
+///   here.
 ///
 /// Spring (Java): `BearerTokenAuthenticationFilter`.
 final class BearerTokenAuthenticationFilter implements WebFilter {
@@ -503,15 +572,19 @@ final class BearerTokenAuthenticationFilter implements WebFilter {
       return;
     }
     // RFC 9449 §7.2: a token bound to a DPoP key (cnf.jkt) is worthless
-    // without a proof of that key, so it is never accepted as Bearer.
-    if (result.principal case final Jwt jwt when jwt.jwkThumbprint != null) {
+    // without a proof of that key, so it is never accepted as Bearer; a
+    // token bound to a client certificate (cnf.x5t#S256, RFC 8705) cannot
+    // be checked here. The chain's manager refuses both already
+    // (UnboundBearerTokenAuthenticationProvider); this is for a filter
+    // built with another manager.
+    if (result.principal case final Jwt jwt
+        when jwt.jwkThumbprint != null || jwt.x509Thumbprint != null) {
       SecurityContextHolder.clearContext();
       await authenticationEntryPoint.commence(
         request,
         response,
         InvalidBearerTokenException(
-          'The access token is DPoP-bound; send it with the DPoP scheme '
-          'and a proof',
+          jwt.jwkThumbprint != null ? _boundTokenAsBearer : _certificateBound,
         ),
       );
       return;

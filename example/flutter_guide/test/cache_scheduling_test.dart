@@ -7,6 +7,8 @@ import 'package:neon_books_app/main.spring.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
     show HttpMethod;
+import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
+    show CronExpression, CronTrigger, TimerTaskScheduler;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import 'support/app.dart';
@@ -101,4 +103,54 @@ void main() {
       await stopApp(tester);
     },
   );
+
+  // The scheduler reads the current time of package:clock, which a widget
+  // test fakes along with its timers: each pumped minute is a minute of
+  // the schedule, also for runs that take time.
+  testWidgets('tester.pump keeps the pace of fixed rate, fixed delay and '
+      'cron', (tester) async {
+    final scheduler = TimerTaskScheduler();
+    addTearDown(scheduler.shutdown);
+    final start = scheduler.now();
+    final runs = <String, List<Duration>>{};
+    void Function() instant(String name) =>
+        () => (runs[name] ??= []).add(scheduler.now().difference(start));
+    Future<void> Function() slow(String name) => () {
+      instant(name)();
+      return Future<void>.delayed(const Duration(seconds: 30));
+    };
+    const minute = Duration(minutes: 1);
+    final cron = CronTrigger(CronExpression.parse('0 * * * * *'));
+    scheduler
+      ..scheduleAtFixedRate(instant('rate'), minute)
+      ..scheduleAtFixedRate(slow('rate, 30 s runs'), minute)
+      ..scheduleWithFixedDelay(instant('delay'), minute)
+      ..scheduleWithFixedDelay(slow('delay, 30 s runs'), minute)
+      ..schedule(instant('cron'), cron)
+      ..schedule(slow('cron, 30 s runs'), cron);
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(minute);
+    }
+    List<Duration> every(Duration step) => [
+      for (var t = Duration.zero; t <= minute * 10; t += step) t,
+    ];
+    expect(runs['rate'], every(minute));
+    expect(runs['rate, 30 s runs'], every(minute));
+    expect(runs['delay'], every(minute));
+    expect(runs['delay, 30 s runs'], every(const Duration(seconds: 90)));
+    // At each whole minute, ten of them (waits are whole milliseconds,
+    // rounded up: under a millisecond late, without adding up).
+    final firstCron = start
+        .add(minute)
+        .copyWith(second: 0, millisecond: 0, microsecond: 0);
+    for (final name in ['cron', 'cron, 30 s runs']) {
+      expect(runs[name], hasLength(10), reason: name);
+      for (final (i, run) in runs[name]!.indexed) {
+        final late = start.add(run).difference(firstCron.add(minute * i));
+        expect(late.inMicroseconds, inInclusiveRange(0, 999), reason: name);
+      }
+    }
+    scheduler.shutdown();
+    await tester.pump(minute); // the runs going on end
+  });
 }

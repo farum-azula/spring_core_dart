@@ -117,7 +117,12 @@ abstract interface class WebSocketSession {
   /// Sends [message] as a text frame when it is a `String`, or as a binary
   /// frame when it is a `List<int>`. Throws a [WebSocketException] when
   /// the session is no longer open, and an [ArgumentError] for any other
-  /// type. It does not wait for the frame to leave.
+  /// type. It does not wait for the frame to leave: the message waits in
+  /// memory until the network takes it. On `dart:io` a session whose
+  /// other side takes nothing gives up past its limits (512 KB waiting,
+  /// or 10 seconds) and drops the connection, and
+  /// `IoWebSocketSession.flush` waits until what was sent has left; see
+  /// `IoWebSocketSession`.
   void sendMessage(Object message);
 
   /// Closes the connection, sending [status] ([CloseStatus.normal] by
@@ -140,23 +145,37 @@ abstract interface class WebSocketSession {
 /// neither `dart:io` nor `dart:js_interop` it throws an
 /// [UnsupportedError]: pass your own [WebSocketTransport] there.
 ///
+/// [maxTextMessageSize] and [maxBinaryMessageSize] bound the messages a
+/// session receives on `dart:io` (8 KB each when `null`, `-1` for no
+/// limit; see `IoWebSocketTransport`). The browser assembles messages
+/// itself and has no such limit, so it ignores them.
+///
 /// ```dart
-/// final transport = platformWebSocketTransport();
+/// final transport = platformWebSocketTransport(
+///   maxTextMessageSize: 1024 * 1024, // the server sends large JSON
+/// );
 /// ```
 ///
 /// Spring (Java): picking a `WebSocketClient` implementation by hand
 /// (`StandardWebSocketClient`, `ReactorNettyWebSocketClient`).
-WebSocketTransport platformWebSocketTransport() =>
-    platform.createWebSocketTransport();
+WebSocketTransport platformWebSocketTransport({
+  int? maxTextMessageSize,
+  int? maxBinaryMessageSize,
+}) => platform.createWebSocketTransport(
+  maxTextMessageSize: maxTextMessageSize,
+  maxBinaryMessageSize: maxBinaryMessageSize,
+);
 
 /// Thrown when a WebSocket connection cannot be opened or used: the server
 /// is unreachable, refuses the handshake, does not answer in time, the
 /// connection breaks, or a message is sent on a closed session.
 ///
-/// Transports throw it from `connect`, and sessions from `sendMessage`.
-/// On `dart:io` a connection that breaks also ends its message stream
-/// with one. The WebSocket starter reconnects after such failures, so you
-/// meet it mostly when you use a transport directly.
+/// Transports throw it from `connect`, and sessions from `sendMessage`
+/// (on `dart:io`, also from `IoWebSocketSession.flush`). A connection
+/// that breaks ends its message stream without one: its `closeStatus`
+/// tells why (1006, `CloseStatus.noCloseFrame`, on `dart:io`). The
+/// WebSocket starter reconnects after such failures, so you meet it
+/// mostly when you use a transport directly.
 ///
 /// ```dart
 /// try {
@@ -271,7 +290,9 @@ final class CloseStatus {
   static const tlsHandshakeFailure = CloseStatus(1015);
 
   /// 4500: a code Spring added for a session that can no longer be relied
-  /// on, for example because a send timed out.
+  /// on, for example because a send timed out. An `IoWebSocketSession`
+  /// reports it when it drops a connection whose other side takes
+  /// nothing; it is never sent.
   static const sessionNotReliable = CloseStatus(4500);
 
   /// The numeric close code, such as 1000 for a normal close.

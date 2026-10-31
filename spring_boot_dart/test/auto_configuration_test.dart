@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_dart/spring_auto_configuration.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:test/test.dart';
@@ -147,6 +149,74 @@ void main() {
     final context = run([], ['--spring.messages.basename=i18n.messages']);
     expect(context.getMessage('hello', args: ['Ada']), 'Hello Ada');
     context.close();
+  });
+
+  // Review before 0.5.0: only the web server read
+  // spring.lifecycle.timeout-per-shutdown-phase; the context's processor
+  // kept Spring Framework's 10 s and destroyed beans under running
+  // requests. Boot's LifecycleAutoConfiguration applies the property.
+  group('LifecycleAutoConfiguration', () {
+    test('the lifecycle processor has the timeout of the property, 30 s by '
+        'default', () {
+      var context = run([], []);
+      expect(
+        context.getBean<LifecycleProcessor>(),
+        isA<DefaultLifecycleProcessor>().having(
+          (p) => p.timeoutPerShutdownPhase,
+          'timeoutPerShutdownPhase',
+          const Duration(seconds: 30),
+        ),
+      );
+      context.close();
+      context = run([], ['--spring.lifecycle.timeout-per-shutdown-phase=45s']);
+      expect(
+        (context.getBean<LifecycleProcessor>() as DefaultLifecycleProcessor)
+            .timeoutPerShutdownPhase,
+        const Duration(seconds: 45),
+      );
+      context.close();
+    });
+
+    test('a lifecycleProcessor bean of the application wins', () {
+      late DefaultLifecycleProcessor own;
+      final context = run(
+        [
+          BeanModule('app', [
+            BeanDefinition<LifecycleProcessor>(
+              name: 'lifecycleProcessor',
+              create: (r) => own = DefaultLifecycleProcessor(
+                r.dependency<ConfigurableListableBeanFactory>(),
+                timeoutPerShutdownPhase: const Duration(seconds: 3),
+              ),
+            ),
+          ]),
+        ],
+        ['--spring.lifecycle.timeout-per-shutdown-phase=45s'],
+      );
+      expect(context.getBean<LifecycleProcessor>(), same(own));
+      context.close();
+    });
+
+    test('the processor waits that long for a slow stop', () async {
+      final stopped = Completer<void>();
+      final context = run(
+        [
+          BeanModule('app', [
+            BeanDefinition<_SlowStop>(
+              name: 'slowStop',
+              types: const [_SlowStop, SmartLifecycle, Lifecycle],
+              create: (_) => _SlowStop(stopped),
+            ),
+          ]),
+        ],
+        ['--spring.lifecycle.timeout-per-shutdown-phase=300ms'],
+      );
+      final watch = Stopwatch()..start();
+      await context.closeAsync();
+      // Gave up after 300 ms, not Spring Framework's 10 s.
+      expect(watch.elapsed, lessThan(const Duration(seconds: 5)));
+      expect(stopped.isCompleted, isFalse);
+    });
   });
 
   group('ValidationAutoConfiguration', () {
@@ -471,4 +541,26 @@ void main() {
       custom.close();
     });
   });
+}
+
+// A lifecycle bean whose stop never calls back.
+final class _SlowStop with SmartLifecycle {
+  _SlowStop(this.stopped);
+
+  final Completer<void> stopped;
+  var _running = false;
+
+  @override
+  bool get isRunning => _running;
+
+  @override
+  void start() => _running = true;
+
+  @override
+  void stop() => _running = false;
+
+  @override
+  void stopWithCallback(void Function() callback) {
+    // Never calls back: the processor's timeout ends the wait.
+  }
 }

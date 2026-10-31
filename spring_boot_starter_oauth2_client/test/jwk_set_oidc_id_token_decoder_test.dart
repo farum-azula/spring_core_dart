@@ -284,6 +284,53 @@ void main() {
       );
     });
 
+    // It accepted any typ: a logout token (or an access token) the
+    // provider signed with the same keys passed as an ID token, while the
+    // server's OidcIdTokenDecoderFactory (JwtTypeValidator.jwt(), as in
+    // Spring Security 7.1) refuses it.
+    test('the typ must be JWT (any case), blank or missing, as on a '
+        'server', () async {
+      for (final typ in <Object?>[null, 'JWT', 'jwt', 'Jwt', '', '  ']) {
+        final token = key.sign({
+          'alg': 'RS256',
+          'kid': 'apple-1',
+          'typ': ?typ,
+        }, claims());
+        expect(
+          (await decoder().decode(registration, token)).subject,
+          '000123.abc',
+          reason: '$typ',
+        );
+      }
+      for (final typ in <Object?>[
+        'logout+jwt',
+        'at+jwt',
+        'secevent+jwt',
+        'dpop+jwt',
+        'application/jwt',
+        'JOSE',
+        'id_token+jwt',
+        ' JWT ',
+        42,
+      ]) {
+        await expectLater(
+          decoder().decode(
+            registration,
+            key.sign({'alg': 'RS256', 'kid': 'apple-1', 'typ': typ}, claims()),
+          ),
+          throwsA(
+            isA<OAuth2AuthenticationException>().having(
+              (e) => e.error.description,
+              'description',
+              'An error occurred while attempting to decode the Jwt: the '
+                  'given typ value needs to be one of [JWT]',
+            ),
+          ),
+          reason: '$typ',
+        );
+      }
+    });
+
     test('keys inside the token are never used', () async {
       final attacker = _RsaKey(2048, 'apple-1');
       for (final extra in [
@@ -339,6 +386,31 @@ void main() {
       expect(transport.requests.length, fetches);
     });
 
+    // The minute between fetches was measured on the wall clock alone:
+    // set back 2 h, the keys of a rotation were not fetched for 2 h.
+    test('a clock set back does not hold off the keys of a rotation', () async {
+      final shared = decoder();
+      await shared.decode(
+        registration,
+        key.sign({'alg': 'RS256', 'kid': 'apple-1'}, claims()),
+      );
+      expect(transport.requests, hasLength(1));
+      published = [key.jwk, rotated.jwk];
+      now = now.subtract(const Duration(hours: 2));
+      final token = rotated.sign({'alg': 'RS256', 'kid': 'apple-2'}, claims());
+      expect((await shared.decode(registration, token)).subject, isNotNull);
+      expect(transport.requests, hasLength(2));
+      // Still at most once a minute after that.
+      await expectLater(
+        shared.decode(
+          registration,
+          rotated.sign({'alg': 'RS256', 'kid': 'unknown'}, claims()),
+        ),
+        refused(),
+      );
+      expect(transport.requests, hasLength(2));
+    });
+
     test('a weak RSA key in the set is never used', () async {
       final weak = _RsaKey(1024, 'weak');
       published = [weak.jwk];
@@ -349,6 +421,64 @@ void main() {
         ),
         refused(),
       );
+    });
+
+    // With e = 1, s^e mod n is s: the padded hash itself "verifies", so
+    // anyone forges a token for a key published with it.
+    test('an RSA key with an exponent of 1, an even or a huge one is never '
+        'used', () async {
+      final modulus = key.publicKey.modulus!;
+      final length = (modulus.bitLength + 7) ~/ 8;
+      Map<String, Object?> jwk(BigInt e, String kid) => {
+        ...key.jwk,
+        'kid': kid,
+        'e': _b64(_bytes(e, (e.bitLength + 7) ~/ 8)),
+      };
+      final input =
+          '${_b64(utf8.encode(jsonEncode({'alg': 'RS256', 'kid': 'e1'})))}.'
+          '${_b64(utf8.encode(jsonEncode({...claims(), 'sub': 'victim'})))}';
+      // EMSA-PKCS1-v1_5 of the input: 00 01 FF.. 00 DigestInfo(SHA-256).
+      final digestInfo = [
+        ...[0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01],
+        ...[0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20],
+        ...SHA256Digest().process(Uint8List.fromList(ascii.encode(input))),
+      ];
+      final padded = [
+        0x00,
+        0x01,
+        ...List.filled(length - digestInfo.length - 3, 0xff),
+        0x00,
+        ...digestInfo,
+      ];
+      expect(
+        primitives.rsaPkcs1Sha256Verify(
+          modulus,
+          BigInt.one,
+          Uint8List.fromList(ascii.encode(input)),
+          Uint8List.fromList(padded),
+        ),
+        isTrue,
+        reason: 'the forgery works on the primitive itself',
+      );
+      published = [jwk(BigInt.one, 'e1')];
+      await expectLater(
+        decoder().decode(registration, '$input.${_b64(padded)}'),
+        refused(),
+      );
+      for (final (e, kid) in [
+        (BigInt.from(65538), 'even'),
+        ((BigInt.one << 64) + BigInt.one, 'huge'),
+      ]) {
+        published = [jwk(e, kid)];
+        await expectLater(
+          decoder().decode(
+            registration,
+            key.sign({'alg': 'RS256', 'kid': kid}, claims()),
+          ),
+          refused(),
+          reason: kid,
+        );
+      }
     });
 
     test('ES256 only when allowed; a DER signature is refused', () async {

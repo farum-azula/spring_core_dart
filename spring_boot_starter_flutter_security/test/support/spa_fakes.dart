@@ -51,9 +51,12 @@ final class FakeVault implements BrowserKeyVault {
   FakeVault({this.der = false});
 
   final bool der;
-  final SoftwareDPoPKey key = SoftwareDPoPKey.generate();
+
+  /// The stored key; a new one after [delete].
+  SoftwareDPoPKey key = SoftwareDPoPKey.generate();
   int loads = 0;
-  bool deleted = false;
+  int deletes = 0;
+  bool get deleted => deletes > 0;
 
   @override
   Future<BrowserKeyPair> loadOrCreate(String name) async {
@@ -62,7 +65,10 @@ final class FakeVault implements BrowserKeyVault {
   }
 
   @override
-  Future<void> delete(String name) async => deleted = true;
+  Future<void> delete(String name) async {
+    deletes++;
+    key = SoftwareDPoPKey.generate();
+  }
 }
 
 final class _Pair implements BrowserKeyPair {

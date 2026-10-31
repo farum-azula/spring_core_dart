@@ -460,6 +460,68 @@ void main() {
         });
   });
 
+  test('tokens in the query reach neither the logs nor the errors', () async {
+    final logs = <String>[];
+    addTearDown(
+      SpringLog.listen(
+        (record) => logs.add('${record.message} ${record.error ?? ''}'),
+      ),
+    );
+    SpringLog.setLevel('websocket', SpringLogLevel.debug);
+    addTearDown(() => SpringLog.setLevel('websocket', null));
+    bool redacted(Object? error) =>
+        !'$error'.contains('k-secret') && !'$error'.contains('token=t');
+    // What IoWebSocketTransport throws for a refused handshake.
+    sockets.failNextConnect(
+      WebSocketException(
+        'cannot connect: WebSocketException: Connection to '
+        "'http://chat.test:80/ws?key=k-secret&token=t1#' was not upgraded "
+        'to websocket, HTTP status code: 401',
+        url: Uri.parse('ws://chat.test/ws?key=k-secret&token=t1'),
+      ),
+    );
+    await runner
+        .withBean<WebSocketHandshakeInterceptor>(TokenInterceptor.new)
+        .withPropertyValues([
+          'chat.url=ws://chat.test/ws?key=k-secret',
+        ])
+        .runAsync((context) async {
+          final chat = context.getBean<ChatSocket>();
+          final failure = await chat
+              .sendText('x')
+              .then<Object?>(
+                (_) => null,
+                onError: (Object error) => error,
+              );
+          expect(failure, isA<WebSocketException>());
+          expect(
+            '$failure',
+            'WebSocketException: cannot connect: WebSocketException: '
+                "Connection to 'http://chat.test:80/ws?key=***&token=***#' "
+                'was not upgraded to websocket, HTTP status code: 401 '
+                '(ws://chat.test/ws?key=***&token=***)',
+          );
+
+          final errors = <Object>[];
+          chat.raw().listen(null, onError: errors.add);
+          final server = await sockets.nextConnection;
+          expect(server.uri.queryParameters['token'], 't2'); // still sent
+          await server.closeFromServer(const CloseStatus(4000, 'bye'));
+          await pump();
+          expect(errors.single, isA<WebSocketException>());
+          expect(redacted(errors.single), isTrue, reason: '${errors.single}');
+          expect('${errors.single}', endsWith('(ws://chat.test/ws?key=***)'));
+        });
+    expect(
+      logs,
+      containsAll([
+        startsWith('connected to ws://chat.test/ws?key=***&token=***'),
+        contains('HTTP status code: 401 (ws://chat.test/ws?key=***&token=***)'),
+      ]),
+    );
+    expect(logs.where((line) => !redacted(line)), isEmpty);
+  });
+
   test('closing the context closes the connection', () async {
     late MockWebSocket server;
     await runner.runAsync((context) async {
@@ -488,6 +550,24 @@ void main() {
           );
           expect(failure, contains('BrokenSocket.two: a @SendMessage method'));
           expect(failure, contains('BrokenSocket.other: mark it @OnMessage'));
+        });
+  });
+
+  test('a URL of another scheme is reported without its secrets', () {
+    const ApplicationContextRunner()
+        .withUserConfiguration(appModule)
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withBean<WebSocketTransport>(() => MockWebSocketTransport())
+        .withPropertyValues([
+          'chat.url=http://ann:pw@chat.test/ws?token=s3cret',
+        ])
+        .run((context) {
+          final failure = '${context.startupFailure}';
+          expect(failure, contains('must start with ws:// or wss://'));
+          expect(failure, contains('http://***@chat.test/ws?token=***'));
+          expect(failure, isNot(contains('s3cret')));
+          expect(failure, isNot(contains('pw')));
         });
   });
 

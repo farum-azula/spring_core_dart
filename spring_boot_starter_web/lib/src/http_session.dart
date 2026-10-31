@@ -86,8 +86,7 @@ abstract interface class HttpSession {
   /// has no session.
   void invalidate();
 
-  /// Whether the session has ended: invalidated, expired, or dropped
-  /// because the session limit was reached.
+  /// Whether the session has ended: invalidated or expired.
   bool get isInvalidated;
 }
 
@@ -183,9 +182,11 @@ abstract class StoredHttpSession implements HttpSession {
 /// ```
 ///
 /// Spring Boot leaves `same-site` unset and has no session limit (the
-/// container has its own): here the cookie is `SameSite=Lax` and, when
-/// the limit is reached, the sessions unused for the longest time are
-/// dropped, so clients cannot fill the memory by opening sessions.
+/// container has its own: Tomcat refuses new sessions above
+/// `maxActiveSessions`, unlimited by default): here the cookie is
+/// `SameSite=Lax` and the number of sessions is limited, so clients
+/// cannot fill the memory by opening sessions. What happens at the limit:
+/// [InMemoryHttpSessionRepository].
 final class HttpSessionProperties {
   /// Settings with the defaults of the table above; a `null` [cookiePath]
   /// means `/`.
@@ -274,7 +275,9 @@ final class HttpSessionProperties {
   final String? sameSite;
 
   /// How many sessions are kept at most; 10000 by default, `-1` for no
-  /// limit. Above it, the least recently used session is dropped.
+  /// limit. Above it, a new session pushes out one that holds no login,
+  /// else a login of the user who holds the most sessions, or is refused
+  /// (see [InMemoryHttpSessionRepository]).
   final int maxSessions;
 }
 
@@ -295,9 +298,16 @@ String newSessionId() {
 /// sessions are lost when the process stops and are not shared between
 /// instances; declare another repository bean when that matters. Expired
 /// sessions are removed when found, and all of them at most once a
-/// minute when a session is created. When [maxSessions] is reached, a new
-/// session pushes out the one unused for the longest time, with a
-/// warning in the log.
+/// minute when a session is created.
+///
+/// At most [maxSessions] sessions are kept (`-1`: no limit). When the
+/// limit is reached, creating a session first removes every expired
+/// session; if the store is still full, the new session is refused with a
+/// [TooManyActiveSessionsException] (a 503) and a warning is logged, at
+/// most once a minute. A live session is never removed to make room. The
+/// security starter creates a session only at a login, so anonymous
+/// requests cannot fill the store; raise the limit when logged-in users
+/// alone fill it.
 ///
 /// ```dart
 /// // A test that controls time, to check that sessions expire.
@@ -310,6 +320,9 @@ String newSessionId() {
 /// now = now.add(const Duration(minutes: 6));
 /// assert(repository.findById(session.id) == null);
 /// ```
+///
+/// Spring (Java): WebFlux's `InMemoryWebSessionStore` (`maxSessions`,
+/// expired ones removed, then refused).
 final class InMemoryHttpSessionRepository implements HttpSessionRepository {
   /// A repository whose new sessions time out after [timeout], keeping at
   /// most [maxSessions] (`-1`: no limit). [clock] gives the current time;
@@ -328,7 +341,6 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
 
   final DateTime Function() _clock;
 
-  // Insertion order is kept least-recently-used first (see _touch).
   final _sessions = <String, _MemorySession>{};
 
   /// How many sessions are kept, including expired ones not yet removed.
@@ -339,12 +351,15 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
     final now = _clock();
     _purge(now);
     if (maxSessions >= 0 && _sessions.length >= maxSessions) {
-      final oldest = _sessions.keys.first;
-      _sessions.remove(oldest)?._invalidated = true;
-      _log.warning(
-        'Session limit $maxSessions reached: dropped the least recently '
-        'used session',
-      );
+      _dropExpired(now);
+      if (_sessions.length >= maxSessions) {
+        _warn(
+          now,
+          'Session limit $maxSessions reached: refused a new session '
+          '(raise server.servlet.session.max-sessions)',
+        );
+        throw TooManyActiveSessionsException(maxSessions);
+      }
     }
     final session = _MemorySession(this, newSessionId(), now, timeout);
     _sessions[session.id] = session;
@@ -357,16 +372,10 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
     if (session == null) {
       return null;
     }
-    final now = _clock();
-    if (session.isExpired(now)) {
-      _sessions.remove(id);
-      session._invalidated = true;
+    if (session.isExpired(_clock())) {
+      _drop(session);
       return null;
     }
-    // Most recently used last.
-    _sessions
-      ..remove(id)
-      ..[id] = session;
     return session;
   }
 
@@ -379,7 +388,35 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
   }
 
   @override
-  void deleteById(String id) => _sessions.remove(id)?._invalidated = true;
+  void deleteById(String id) {
+    final session = _sessions[id];
+    if (session != null) {
+      _drop(session);
+    }
+  }
+
+  DateTime? _lastWarning;
+  void _warn(DateTime now, String message) {
+    final last = _lastWarning;
+    if (last == null || now.difference(last) >= const Duration(minutes: 1)) {
+      _lastWarning = now;
+      _log.warning(message);
+    }
+  }
+
+  void _drop(_MemorySession session) {
+    if (identical(_sessions[session.id], session)) {
+      _sessions.remove(session.id);
+    }
+    session._invalidated = true;
+  }
+
+  void _dropExpired(DateTime now) {
+    [
+      for (final session in _sessions.values)
+        if (session.isExpired(now)) session,
+    ].forEach(_drop);
+  }
 
   // Drops expired sessions (at most every minute).
   DateTime? _lastPurge;
@@ -389,14 +426,26 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
       return;
     }
     _lastPurge = now;
-    _sessions.removeWhere((_, session) {
-      final expired = session.isExpired(now);
-      if (expired) {
-        session._invalidated = true;
-      }
-      return expired;
-    });
+    _dropExpired(now);
   }
+}
+
+/// Thrown when a new session is refused: the session limit
+/// (`server.servlet.session.max-sessions`) is reached and no session
+/// kept has expired (see [InMemoryHttpSessionRepository]).
+///
+/// The request gets a 503 Service Unavailable. Raise the limit when
+/// logged-in users alone fill it.
+///
+/// Tomcat (Java): `TooManyActiveSessionsException`, thrown above the
+/// `maxActiveSessions` of its session manager.
+final class TooManyActiveSessionsException extends ResponseStatusException {
+  /// The refusal of a new session above [maxActiveSessions].
+  TooManyActiveSessionsException(this.maxActiveSessions)
+    : super(HttpStatus.serviceUnavailable, 'Too many active sessions');
+
+  /// The session limit that was reached.
+  final int maxActiveSessions;
 }
 
 final class _MemorySession extends StoredHttpSession {

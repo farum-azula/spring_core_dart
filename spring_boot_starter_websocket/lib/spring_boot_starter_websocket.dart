@@ -48,6 +48,6 @@ export 'src/server/web_socket_handler_mapping.dart';
 export 'src/web_socket_client.dart';
 export 'src/web_socket_client_config.dart';
 export 'src/web_socket_client_factory.dart';
-export 'src/web_socket_connection_manager.dart';
+export 'src/web_socket_connection_manager.dart' hide redactText, redactUrl;
 export 'src/web_socket_handshake.dart';
 export 'src/web_socket_invocation_handler.dart';

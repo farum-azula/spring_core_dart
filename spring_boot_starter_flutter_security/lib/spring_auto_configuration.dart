@@ -20,6 +20,7 @@ import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_tem
 import 'package:spring_boot_starter_flutter_security/src/web/browser_page.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/csrf_cookie_http_transport.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/flutter_web_security_properties.dart';
+import 'package:spring_boot_starter_flutter_security/src/web/server_credentials_http_transport.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/server_oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/spa_browser_page.dart';
 import 'package:spring_boot_starter_flutter_security/src/web/spa_oauth2_login_service.dart';
@@ -42,12 +43,21 @@ const _source =
     'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart';
 const _log = SpringLog('spring.security.oauth2.client');
 
+// Every bean of this module decides "a browser" the same way: the `web`
+// platform profile, which the Flutter starter activates in a browser (and
+// tests may activate on the VM). The platform beans below also need the
+// platform itself, so with the profile on the VM none of them exists next
+// to the web's.
+bool _onWeb(ConditionContext context) =>
+    context.environment.activeProfiles.contains('web');
+
 // The platform has a secure storage (not the web).
 final class _OnSecureStorage implements Condition {
   const _OnSecureStorage();
 
   @override
-  bool matches(ConditionContext context) => PlatformSecretStore.isSupported;
+  bool matches(ConditionContext context) =>
+      !_onWeb(context) && PlatformSecretStore.isSupported;
 }
 
 // The platform has a place for a DPoP key that survives a restart (not
@@ -56,7 +66,8 @@ final class _OnPlatformDPoPKey implements Condition {
   const _OnPlatformDPoPKey();
 
   @override
-  bool matches(ConditionContext context) => PlatformDPoPKey.isSupported;
+  bool matches(ConditionContext context) =>
+      !_onWeb(context) && PlatformDPoPKey.isSupported;
 }
 
 // The platform has its own login window (Android, iOS, macOS).
@@ -65,7 +76,7 @@ final class _OnPlatformWindow implements Condition {
 
   @override
   bool matches(ConditionContext context) =>
-      PlatformAuthorizationWindow.isSupported;
+      !_onWeb(context) && PlatformAuthorizationWindow.isSupported;
 }
 
 // Sign in with Apple's sheet: iOS and macOS.
@@ -73,7 +84,8 @@ final class _OnAppleIdSheet implements Condition {
   const _OnAppleIdSheet();
 
   @override
-  bool matches(ConditionContext context) => PlatformAppleIdSignIn.isSupported;
+  bool matches(ConditionContext context) =>
+      !_onWeb(context) && PlatformAppleIdSignIn.isSupported;
 }
 
 // The login window of Windows and Linux.
@@ -82,17 +94,15 @@ final class _OnLoopbackWindow implements Condition {
 
   @override
   bool matches(ConditionContext context) =>
-      LoopbackAuthorizationWindow.isSupported;
+      !_onWeb(context) && LoopbackAuthorizationWindow.isSupported;
 }
 
-// A browser: the `web` platform profile, which the Flutter starter
-// activates in a browser (and tests may activate on the VM).
+// A browser: the `web` platform profile.
 final class _OnWeb implements Condition {
   const _OnWeb();
 
   @override
-  bool matches(ConditionContext context) =>
-      context.environment.activeProfiles.contains('web');
+  bool matches(ConditionContext context) => _onWeb(context);
 }
 
 // Not a browser.
@@ -201,9 +211,11 @@ final class _OnClientRegistrations implements Condition {
 /// - `httpTransport`, the Feign clients' transport: a
 ///   [CsrfCookieHttpTransport] (the CSRF token of the `XSRF-TOKEN`
 ///   cookie on unsafe requests to the server) around the browser's
-///   `fetch`, which sends the cookies to the server when it is on another
-///   origin (`FetchCredentials.include`); it comes before the Feign
-///   starter's, which then backs off;
+///   `fetch`; when the server is on another origin, a
+///   [ServerCredentialsHttpTransport] sends the cookies with the requests
+///   to the server only (`FetchCredentials.include`), every other request
+///   without them; it comes before the Feign starter's, which then backs
+///   off;
 /// - `serverOAuth2LoginService`, the [ServerOAuth2LoginService] of the
 ///   app;
 ///
@@ -249,7 +261,17 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
           ConditionalOnMissingBean(SecretStore),
         ]),
       ],
-      create: (_) => PlatformSecretStore(),
+      // spring.flutter.security.application-id: the name of the app's
+      // values on Windows and Linux (the app's own id by default).
+      create: (r) => PlatformSecretStore(
+        applicationId: switch (r
+            .dependency<Environment>()
+            .getProperty('spring.flutter.security.application-id')
+            ?.trim()) {
+          null || '' => null,
+          final id => id,
+        },
+      ),
     ),
     BeanDefinition<InMemorySecretStore>(
       name: 'inMemorySecretStore',
@@ -527,17 +549,23 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
         final properties = r.dependency<FlutterWebSecurityProperties>();
         final page = r.dependency<BrowserPage>();
         final location = page.location;
+        final server = properties.server(location);
+        final connectTimeout = FeignClientConfig.connectTimeout(
+          r.dependency<Environment>(),
+        );
         return CsrfCookieHttpTransport(
-          platformHttpTransport(
-            connectTimeout: FeignClientConfig.connectTimeout(
-              r.dependency<Environment>(),
-            ),
-            // fetch sends cookies to the page's own origin by itself; a
-            // server on another origin needs them asked for.
-            credentials: properties.credentials(location),
-          ),
+          // fetch sends cookies to the page's own origin by itself; a
+          // server on another origin needs them asked for, for its
+          // requests only (never to another API).
+          properties.credentials(location) == FetchCredentials.include
+              ? ServerCredentialsHttpTransport.forPage(
+                  page: page,
+                  server: server,
+                  connectTimeout: connectTimeout,
+                )
+              : platformHttpTransport(connectTimeout: connectTimeout),
           page: page,
-          server: properties.server(location),
+          server: server,
         );
       },
       destroyMethod: (transport) => transport.close(),

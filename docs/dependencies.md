@@ -62,10 +62,13 @@ an application's `dependencies` (`spring_core_dart`, `spring_boot_dart`,
 logging, scheduling, cache, Feign, WebSocket, web, OAuth2 client,
 security, Flutter, Flutter security)
 depend only on packages of this repository. Not even other Dart team
-packages are allowed there. Three exceptions:
+packages are allowed there. Four exceptions:
 
 - the Dart team's `yaml`, which parses `application.yml` (Spring Boot uses
   SnakeYAML for this);
+- the Dart team's `clock` (no dependencies) for the scheduling starter,
+  whose scheduler reads the current time from it: `fake_async` and
+  Flutter widget tests fake that time along with their timers;
 - the Flutter SDK, for `spring_boot_starter_flutter` and
   `spring_boot_starter_flutter_security`;
 - ⚠️ `pointycastle`, a **third-party** package, for the two security
@@ -192,7 +195,7 @@ in its `pubspec.yaml`.
 | `spring_boot_dart` | Spring Boot: `@SpringBootApplication`, auto-configuration | yes | `spring_core_dart` | `build_runner`, `spring_core_dart_generator`, `test` |
 | `spring_web_dart` | Spring Web: `@GetMapping`, `ResponseEntity`, server-sent events, HTTP and WebSocket client transports | yes | `spring_core_dart` | `test` |
 | `spring_boot_starter_logging` | Logging: console, files, `logging.*` properties (the base starter) | yes | `spring_boot_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
-| `spring_boot_starter_scheduling` | `@Scheduled`, `TaskScheduler` | yes | `spring_boot_dart`, `spring_boot_starter_logging` | same as logging |
+| `spring_boot_starter_scheduling` | `@Scheduled`, `TaskScheduler` | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `clock` | same as logging, plus `fake_async` |
 | `spring_boot_starter_cache` | `@Cacheable`, `@CachePut`, `@CacheEvict`, `CacheManager` | yes | `spring_boot_dart`, `spring_boot_starter_logging` | same as logging |
 | `spring_boot_starter_feign` | `@FeignClient` HTTP clients | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_websocket` | `@WebSocketClient` clients; `@WebSocketEndpoint` server endpoints (served by the web starter) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
@@ -244,6 +247,7 @@ graph TD
   lsp[dart_spring_language_server]
 
   yaml([yaml])
+  clock([clock])
   flutterSdk([Flutter SDK: flutter, flutter_localizations, flutter_web_plugins])
   testApi([matcher, test_api])
   codegen([analyzer, build, code_builder, dart_style, glob, path, pub_semver, source_gen, yaml])
@@ -256,6 +260,7 @@ graph TD
   logging --> boot
   scheduling --> boot
   scheduling --> logging
+  scheduling --> clock
   cache --> boot
   cache --> logging
   feign --> boot
@@ -306,7 +311,7 @@ The same as text:
 spring_core_dart ─────────────── yaml
 ├── spring_boot_dart
 │   ├── spring_boot_starter_logging
-│   │   ├── spring_boot_starter_scheduling   (+ spring_boot_dart)
+│   │   ├── spring_boot_starter_scheduling   (+ spring_boot_dart, clock)
 │   │   ├── spring_boot_starter_cache        (+ spring_boot_dart)
 │   │   ├── spring_boot_starter_feign        (+ spring_boot_dart, spring_web_dart)
 │   │   ├── spring_boot_starter_websocket    (+ spring_boot_dart, spring_web_dart)
@@ -361,7 +366,8 @@ package of the family. Packages of the repository are left out.
 
 | The application lists | External packages at run time |
 |---|---|
-| `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, scheduling, cache, Feign, WebSocket, web) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
+| `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, cache, Feign, WebSocket, web) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
+| `spring_boot_starter_scheduling` | the 6 above, plus `clock` (no dependencies): 7 |
 | `spring_security_core`, `spring_boot_starter_oauth2_client` or `spring_boot_starter_security` | the 6 above, plus ⚠️ `pointycastle` (third-party, [to be removed](#pointycastle-third-party-to-be-removed)) and its `convert` and `typed_data` (`dart.dev`): 9 |
 | `spring_boot_starter_flutter` | the 6 above, plus the Flutter SDK (`flutter`, `flutter_localizations`, `sky_engine`) and what the SDK pins: `characters`, `clock`, `intl`, `material_color_utilities`, `meta`, `vector_math` |
 | `spring_boot_starter_flutter_security` | those of the Flutter starter, plus `flutter_web_plugins` (Flutter SDK) and those of the security packages: ⚠️ `pointycastle`, `convert`, `typed_data` |
@@ -380,6 +386,8 @@ yaml                       tools.dart.dev
 │   └── term_glyph         tools.dart.dev
 └── string_scanner         tools.dart.dev
     └── source_span
+
+clock                      tools.dart.dev
 
 pointycastle               ⚠️ bouncycastle.org: third-party, to be removed
 ├── collection
@@ -516,7 +524,7 @@ pub workspace and the three Flutter packages). Columns:
 | `cli_config` | `tools.dart.dev` | tests | `args`, `yaml` | `coverage` |
 | `cli_launcher` | ⚠️ `gabriel.terwesten.net` — only through `melos` | melos only | `path`, `yaml` | `melos` |
 | `cli_util` | `tools.dart.dev` | tests, melos | `ffi`, `meta`, `path` | `coverage`, `melos` |
-| `clock` | `tools.dart.dev` | app, tests | — | `fake_async`, `flutter_test`, `intl`, `leak_tracker` |
+| `clock` | `tools.dart.dev` | app, tests | — | `fake_async`, `flutter_test`, `intl`, `leak_tracker`, `spring_boot_starter_scheduling` |
 | `code_builder` | `tools.dart.dev` | codegen | `built_collection`, `built_value`, `collection`, `matcher`, `meta` | `spring_core_dart_generator` |
 | `collection` | `dart.dev` | app, codegen, tests, language server, melos | — | `analyzer`, `async`, `build_runner`, `built_value`, `code_builder`, `dart_style`, `fake_async`, `flutter`, `flutter_test`, `glob`, `graphs`, `http_parser`, `leak_tracker`, `material_color_utilities`, `melos`, `petitparser`, `pointycastle`, `pub_semver`, `pubspec_parse`, `shelf`, `source_span`, `test`, `test_api`, `test_core`, `typed_data`, `xml`, `yaml`, `yaml_edit` |
 | `conventional_commit` | ⚠️ `invertase.io` — only through `melos` | melos only | — | `melos` |
@@ -525,7 +533,7 @@ pub workspace and the three Flutter packages). Columns:
 | `crypto` | `dart.dev` | codegen, tests, language server, melos | `typed_data` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `melos`, `web_socket_channel` |
 | `csslib` | `tools.dart.dev` | tests | `source_span` | `html` |
 | `dart_style` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `collection`, `package_config`, `path`, `pub_semver`, `source_span`, `yaml` | `build_runner`, `source_gen`, `spring_core_dart_generator` |
-| `fake_async` | `dart.dev` | tests | `clock`, `collection` | `flutter_test` |
+| `fake_async` | `dart.dev` | tests | `clock`, `collection` | `flutter_test`, `spring_boot_starter_scheduling` (dev) |
 | `ffi` | `dart.dev` | tests, melos | — | `cli_util` |
 | `file` | `tools.dart.dev` | codegen, tests, language server, melos | `meta`, `path` | `glob`, `melos`, `process` |
 | `fixnum` | `dart.dev` | codegen, tests | — | `built_value` |

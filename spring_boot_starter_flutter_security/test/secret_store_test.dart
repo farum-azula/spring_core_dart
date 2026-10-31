@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_flutter_security/src/secret_store/linux_secret_service_store.dart';
 
 const _secretStore = MethodChannel(
   'spring_boot_starter_flutter_security/secret_store',
@@ -138,6 +139,23 @@ void main() {
       expect(PlatformSecretStore.isSupported, isFalse);
       expect(PlatformSecretStore.new, throwsUnsupportedError);
     });
+
+    test("a blank application id is none: the app's own", () {
+      // As the property: `spring.flutter.security.application-id=` set
+      // empty must not name every app's values ''.
+      expect(PlatformSecretStore(applicationId: '').applicationId, isNull);
+      expect(PlatformSecretStore(applicationId: ' \t').applicationId, isNull);
+      expect(PlatformSecretStore(applicationId: 'neon').applicationId, 'neon');
+      // The Linux store (no libsecret call here): the default id, and no
+      // 0.4.x name to move from.
+      final linux = LinuxSecretServiceStore(
+        application: '  ',
+        legacyApplication: '',
+      );
+      expect(linux.application, LinuxSecretServiceStore.defaultApplication());
+      expect(linux.application, isNotEmpty);
+      expect(linux.legacyApplication, isNull);
+    });
   });
 
   group('PlatformAuthorizationWindow', () {
@@ -146,6 +164,9 @@ void main() {
       'redirect_uri': '$redirect',
       'state': 's1',
     });
+
+    // Each test starts as a fresh isolate does (after a hot restart too).
+    setUp(PlatformAuthorizationWindow.debugResetIsolate);
 
     test('sends the URIs and returns the redirect', () async {
       final calls = mockChannel(
@@ -165,7 +186,69 @@ void main() {
         'url': 'https://id.neon.books/auth?redirect_uri=neonbooks%3A%2Foauth2%2Fcallback&state=s1',
         'redirectUri': 'neonbooks:/oauth2/callback',
         'preferEphemeralSession': false,
+        'replaceStale': true,
       });
+    });
+
+    test('only the first call of an isolate replaces a stale login', () async {
+      // The platform still runs a login of the isolate a hot restart
+      // replaced: the first call says so, later ones never cancel a login.
+      final calls = mockChannel(_window, (_) async => 'neonbooks:/x');
+      const window = PlatformAuthorizationWindow();
+      for (var i = 0; i < 3; i++) {
+        await window.authorize(
+          redirectUri: redirectUri,
+          authorizationUri: authorizationUri,
+        );
+      }
+      expect(
+        calls.map((call) => (call.arguments as Map)['replaceStale']),
+        [true, false, false],
+      );
+      PlatformAuthorizationWindow.debugResetIsolate(); // a hot restart
+      await window.authorize(
+        redirectUri: redirectUri,
+        authorizationUri: authorizationUri,
+      );
+      expect((calls.last.arguments as Map)['replaceStale'], isTrue);
+    });
+
+    test('a background isolate never replaces the login of the app', () async {
+      // An isolate with BackgroundIsolateBinaryMessenger shares the engine:
+      // its first login must not cancel the root isolate's.
+      final calls = mockChannel(_window, (_) async => 'neonbooks:/x');
+      PlatformAuthorizationWindow.debugRootIsolate = false;
+      addTearDown(() => PlatformAuthorizationWindow.debugRootIsolate = null);
+      await const PlatformAuthorizationWindow().authorize(
+        redirectUri: redirectUri,
+        authorizationUri: authorizationUri,
+      );
+      expect((calls.single.arguments as Map)['replaceStale'], isFalse);
+    });
+
+    test('a window closed without an answer frees the next login', () async {
+      // Android answers `cancelled` when the window is destroyed (a
+      // singleTask main activity, CLEAR_TOP) or the engine detaches.
+      mockChannel(
+        _window,
+        (_) async => throw PlatformException(code: 'cancelled'),
+      );
+      const window = PlatformAuthorizationWindow();
+      await expectLater(
+        window.authorize(
+          redirectUri: redirectUri,
+          authorizationUri: authorizationUri,
+        ),
+        throwsA(isA<AuthorizationCancelledException>()),
+      );
+      mockChannel(_window, (_) async => 'neonbooks:/oauth2/callback?code=c');
+      expect(
+        (await window.authorize(
+          redirectUri: redirectUri,
+          authorizationUri: authorizationUri,
+        )).queryParameters['code'],
+        'c',
+      );
     });
 
     test('passes the ephemeral session option', () async {

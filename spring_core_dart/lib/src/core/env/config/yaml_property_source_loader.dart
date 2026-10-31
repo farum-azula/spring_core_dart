@@ -70,14 +70,23 @@ final class YamlPropertySourceLoader extends PropertySourceLoader {
 
   /// Parses [content] into one source per non-empty document. Throws a
   /// [FormatException] (a `YamlException` with the line and column) for
-  /// invalid YAML or a duplicate key.
+  /// invalid YAML or a duplicate key, and for nesting too deep to read
+  /// (thousands of levels, which overflow the stack; SnakeYAML stops at 50).
   @override
   List<AbstractPropertySource<Object>> load(String name, String content) {
-    final documents = <Map<String, Object>>[
-      for (final document in loadYamlDocuments(content))
-        if (_plain(document.contents) case final value? when value != '')
-          flatten(value),
-    ];
+    final List<Map<String, Object>> documents;
+    try {
+      documents = [
+        for (final document in loadYamlDocuments(content))
+          if (_plain(document.contents) case final value? when value != '')
+            flatten(value),
+      ];
+    } on StackOverflowError {
+      throw const FormatException(
+        'The YAML is nested too deeply to be read (the parser ran out of '
+        'stack)',
+      );
+    }
     return [
       for (var i = 0; i < documents.length; i++)
         MapPropertySource(

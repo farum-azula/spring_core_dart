@@ -95,8 +95,8 @@ method once.
 
 | Attribute | Meaning | Example |
 |---|---|---|
-| `fixedRate` | start a run every period, measured between starts | `fixedRate: Duration(minutes: 5)` |
-| `fixedDelay` | wait this long after each run completes | `fixedDelay: Duration(seconds: 30)` |
+| `fixedRate` | start a run every period, measured between starts; runs missed during a long run or a pause of the process start back to back ([below](#fixed-rate-after-a-pause-of-the-process)) | `fixedRate: Duration(minutes: 5)` |
+| `fixedDelay` | wait this long after each run completes; the one for polls and UI ticks | `fixedDelay: Duration(seconds: 30)` |
 | `initialDelay` | wait before the first run (not with `cron`); alone, one run after it (Spring 6.1) | `initialDelay: Duration(seconds: 10)` |
 | `cron` | run at cron times (see below); `-` switches the task off | `cron: '0 */15 * * * *'` |
 | `zone` | the time zone of `cron`: leave it out for local time, or `'UTC'` (also `'Z'`, `'GMT'`) | `zone: 'UTC'` |
@@ -158,9 +158,10 @@ second minute hour day-of-month month day-of-week
 - As in Spring, a day must match both day fields (Unix cron matches
   either), and ranges cannot wrap around: `FRI-MON` is an error, write
   `FRI-SUN,MON`.
-- Local time follows the wall clock. A time inside the hour skipped when
-  clocks go forward runs at the first valid time after it; a time inside
-  the hour repeated when clocks go back runs once.
+- Local time follows the wall clock, as in Spring. A time inside the hour
+  skipped when clocks go forward does not exist and is skipped (a daily
+  `0 30 2 * * *` does not run that day); a time inside the hour repeated
+  when clocks go back runs twice, before and after the change.
 
 To check an expression in code, for example one a user typed:
 
@@ -243,7 +244,7 @@ task.cancel();                  // the screen closed
 | Method | Runs the task |
 |---|---|
 | `scheduleAt(task, time)` | once at `time`, or right away when it has passed |
-| `scheduleAtFixedRate(task, period, initialDelay:)` | every `period`, measured between starts |
+| `scheduleAtFixedRate(task, period, initialDelay:)` | every `period`, measured between starts; after a pause of the process, every missed run at once ([below](#fixed-rate-after-a-pause-of-the-process)) |
 | `scheduleWithFixedDelay(task, delay, initialDelay:)` | again and again, `delay` after each run has finished |
 | `schedule(task, trigger)` | at the times a `Trigger` gives: `PeriodicTrigger`, `CronTrigger`, `OneShotTrigger` or your own |
 
@@ -269,10 +270,47 @@ same time:
 
 - `fixedDelay`: the pause starts when the run, its `Future` included,
   completes.
-- `fixedRate`: when a run takes longer than the period, the next run
-  starts right after it, once; missed runs are not caught up.
+- `fixedRate`: each run is due a period after the one before was due.
+  When a run takes longer than the period (or starts late: an isolate
+  busy with other work), the runs that came due meanwhile start one
+  after the other right after it, until the rate is caught up, as with
+  Spring's scheduler (a 300 ms rate whose first run takes a second
+  starts at 0, then 1000, 1000 and 1000 ms, then 1200, 1500, ...).
 - `cron`: the next time is computed after the run, so times missed
   during a long run are skipped.
+
+### Fixed rate after a pause of the process
+
+A fixed-rate task catches up after any pause, not only a long run. When
+a process that was stopped (`SIGSTOP`), an app the system suspended in
+the background (iOS, Android), or a browser tab whose timers were
+throttled while hidden runs again, every run that came due meanwhile
+starts at once, one after the other: a 100 ms rate after 5 seconds
+stopped runs about 50 times in the same millisecond. Spring's
+`ThreadPoolTaskScheduler` does the same (it is `ScheduledThreadPoolExecutor`
+underneath), and so does this scheduler, on purpose. The pause counts as
+far as the system's monotonic clock counts it: time a device slept
+usually does not. A `fixedDelay` task runs once after the pause and
+keeps its delay; cron runs once too (missed times are skipped).
+
+That suits work that must happen once per period. For a poll or a UI
+tick, where only the latest run matters, use `fixedDelay` /
+`scheduleWithFixedDelay`:
+
+```dart
+// A countdown on screen: back from the background it ticks once.
+final tick = scheduler.scheduleWithFixedDelay(
+  refreshCountdown,
+  const Duration(seconds: 1),
+);
+```
+
+In a Flutter app the starter stops `@Scheduled` tasks while the app is in
+the background and schedules them afresh when it comes back, so they do
+not catch up (unless `spring.flutter.lifecycle.pause-in-background=false`).
+Tasks started with a `TaskScheduler` keep their schedule in the
+background: cancel them when their screen goes away, or give them a fixed
+delay.
 
 ## `TaskExecutor` and `@Async` listeners
 
@@ -334,12 +372,60 @@ final app = springBootTest(
 test('refresh', () => app.getBean<Reports>().refreshCache());
 ```
 
-Or replace the scheduler, through `BeanOverride`, with one on a clock the
-test controls: `TimerTaskScheduler(now: ..., createTimer: ...)` takes the
-current time and the timers from a fake clock, so a 5-minute schedule
-runs without waiting 5 minutes.
-`ScheduledAnnotationBeanPostProcessor.scheduledTasks` lists what is
-scheduled.
+Or let the test move time. Flutter widget tests (`tester.pump`) and
+`fake_async` fake the timers and the current time of `package:clock`,
+which the scheduler reads by default: a 5-minute schedule runs without
+waiting 5 minutes, exactly as real time would run it: a cron runs at
+each of its times, and each pumped minute runs a 1-minute `fixedRate`
+task once, also when its runs await something for 30 seconds or when the
+test fixes the date with `withClock(Clock.fixed(...))` (cron times follow
+the clock, which a fixed one holds). With timers of its
+own, a test passes the current time and the timers of its fake clock:
+`TimerTaskScheduler(now: ..., createTimer: ...)`, registered through
+`BeanOverride`. `ScheduledAnnotationBeanPostProcessor.scheduledTasks`
+lists what is scheduled.
+
+## The wall clock
+
+`fixedRate` and `fixedDelay` never read the wall clock: as Spring's
+executor counts on a monotonic clock, each task keeps a timeline of its
+own that its timers move. A timer armed for a wait moves it by that wait
+when it fires, or by the real time it took (a monotonic `Stopwatch`) when
+that is longer: a real timer that fires late, behind an isolate busy
+with other work, counts late. Under a clock of its own (`withClock` of
+`package:clock`, as `fake_async` and widget tests set, or the `now` given
+to `TimerTaskScheduler`), the real time counted is at most what that
+clock moved, so fake timers move the timeline by exactly their wait,
+however long the test takes in real time. A `fixedRate` run is due a
+period after the one before was due, and the runs that came due during a
+long run start one after the other when it ends; a `fixedDelay` waits
+its delay from the end of each run. So setting the wall clock (by hand,
+or a time server) moves none of their runs, and neither does a clock of
+its own that stands still (`Clock.fixed`), runs slow or fast, or jumps
+while real timers wait.
+
+Counting no more than that clock moved keeps a clock faster than the
+timers from running a task twice, and tests from depending on the
+machine's speed. It has two limits, both under a clock of its own:
+
+- On real timers, a timer counts late only as far as that clock moved.
+  Under `Clock.fixed` (or a slower clock) the runs an isolate missed
+  while blocked are skipped, not caught up, and each run comes as late
+  after the one before as its timer fired (a fraction of a millisecond).
+- On fake timers (`fake_async`, widget tests), the timeline moves by the
+  timers' waits alone, never by how far the clock went past them. A clock
+  moved without firing the timers, such as `fake_async`'s
+  `elapseBlocking` standing for a blocked isolate, makes the run that was
+  due come when the timers next fire, skips the others missed meanwhile,
+  and shifts every later run by the delay. With a 60-second rate,
+  `elapseBlocking(Duration(seconds: 130))` 30 seconds in gives runs at
+  0, 160, 220, 280 s...; Spring would run at 160, 160, 180, 240 s....
+  Timers fired by `elapse` or `tester.pump` keep the exact pace.
+
+A cron or `scheduleAt` time is a wall clock time: the scheduler computes
+the wait from the wall clock, and the timers wait it. When the wall
+clock is set back during the wait, the run comes early by the wall
+clock, once; the next time is planned from the wall clock again.
 
 ## Hot reload
 
@@ -355,10 +441,13 @@ code.
 - Durations are `Duration`s instead of numbers plus `timeUnit`.
 - `TaskScheduler.schedule(task, Instant)` is `scheduleAt(task, DateTime)`
   (Dart has no overloads).
-- `fixedRate` tasks never overlap and do not catch up missed runs: when a
-  run takes longer than the period, the next one starts right after it,
-  once. Spring's single-threaded scheduler runs the missed executions back
-  to back.
+- A `PeriodicTrigger` given to `schedule(task, trigger)` runs as
+  `scheduleAtFixedRate` or `scheduleWithFixedDelay` do, on the task's
+  timeline; Spring plans it with the wall clock.
+- A cron or `scheduleAt` wait longer than a day ends within a day of the
+  wall clock passing its time (set forward, or a computer that slept),
+  as the wait is made of timers of at most a day (JavaScript's timers
+  cannot wait 25 days); Spring waits the whole delay computed at the start.
 - A method returning a `Future` is awaited before its run counts as
   finished, with `fixedRate` and `cron` too, so a slow run delays the next
   one instead of overlapping it. Spring does not wait for a returned

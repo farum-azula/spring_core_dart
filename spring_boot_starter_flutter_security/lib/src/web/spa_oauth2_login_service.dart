@@ -61,10 +61,12 @@ const _log = SpringLog('spring.security.oauth2.client.login');
 ///
 /// **DPoP.** When a registration uses DPoP (`dpop=auto` or `true`), the
 /// `DPoPKey` (a [WebCryptoDPoPKey] in the browser) is loaded before the
-/// login,
-/// its thumbprint sent as `dpop_jkt` (the code is bound to the key, RFC
-/// 9449 §10), and the token requests and API calls carry proofs signed by
-/// the non-extractable key.
+/// login, its thumbprint sent as `dpop_jkt` (the code is bound to the
+/// key, RFC 9449 §10), and the token requests and API calls carry proofs
+/// signed by the non-extractable key. Every login (the silent one too)
+/// makes a new [WebCryptoDPoPKey] first, so its tokens are never bound to
+/// a key found in the origin's storage, which a script of the origin
+/// could have planted there knowing its private key.
 ///
 /// **The provider** must accept a public client (no secret) with PKCE
 /// whose redirect URI is the app's page, and allow the page's origin on
@@ -427,7 +429,7 @@ class SpaOAuth2LoginService implements OAuth2LoginService {
     required bool silent,
   }) async {
     final parameters = {...additionalParameters};
-    if (await _dPoPKeyFor(registration) case final key?) {
+    if (await _dPoPKeyFor(registration, fresh: true) case final key?) {
       // RFC 9449 §10: the code is bound to the key that will redeem it.
       parameters['dpop_jkt'] = JwkThumbprint.of(key.publicJwk);
     }
@@ -450,11 +452,23 @@ class SpaOAuth2LoginService implements OAuth2LoginService {
     page.navigate(request.authorizationRequestUri);
   }
 
-  // The DPoP key when the registration uses DPoP, loaded.
-  Future<DPoPKey?> _dPoPKeyFor(ClientRegistration registration) async {
+  // The DPoP key when the registration uses DPoP, loaded. [fresh] (a
+  // login leaving for the provider, silent or not) replaces the stored
+  // WebCrypto key with a new one first: the tokens of a login are bound
+  // to a key made for it, never to a key found in the origin's storage,
+  // which a script of the origin could have put there knowing its
+  // private key (WebCrypto imports a known key as non-extractable too).
+  // Tokens of other tabs keep working: their pages hold the old key.
+  Future<DPoPKey?> _dPoPKeyFor(
+    ClientRegistration registration, {
+    bool fresh = false,
+  }) async {
     final key = dPoPKey;
     if (key == null || !registration.usesDPoP(key)) {
       return null;
+    }
+    if (fresh && key is WebCryptoDPoPKey) {
+      await key.delete();
     }
     if (key is LoadableDPoPKey) {
       await key.load();

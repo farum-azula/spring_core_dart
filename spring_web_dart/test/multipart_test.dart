@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -91,6 +92,67 @@ void main() {
       _parse(utf8.encode('--b\r\nbroken header\r\n\r\nx\r\n--b--'), 'b'),
       throwsA(isA<MultipartException>()),
     );
+  });
+
+  // Review before 0.5.0: a body error in the middle of a part (a size
+  // limit, a client gone) left the part's stream open: its reader waited
+  // forever.
+  test('a body error inside a part ends the part with the error', () async {
+    final body = StreamController<List<int>>();
+    final first = Completer<MultipartPart>();
+    MultipartParser('b')
+        .bind(body.stream)
+        .listen(first.complete, onError: (Object _) {});
+    body.add(
+      utf8.encode(
+        '--b\r\nContent-Disposition: form-data; name="f"; '
+        'filename="a.bin"\r\n\r\npartial content',
+      ),
+    );
+    final part = await first.future;
+    final read = part.content.drain<void>();
+    body.addError(const FormatException('connection closed'));
+    await expectLater(
+      read.timeout(const Duration(seconds: 5)),
+      throwsA(isA<FormatException>()),
+    );
+    await body.close();
+  });
+
+  test('the error reaches the parts too and reading stops', () async {
+    var cancelled = false;
+    final body = StreamController<List<int>>(
+      onCancel: () => cancelled = true,
+    );
+    final received = <Object>[];
+    final done = Completer<void>();
+    MultipartParser('b')
+        .bind(body.stream)
+        .listen(
+          (part) => part.content.listen(null, onError: received.add),
+          onError: received.add,
+          onDone: done.complete,
+        );
+    body
+      ..add(
+        utf8.encode('--b\r\nContent-Disposition: form-data; name="a"\r\n\r\nx'),
+      )
+      ..addError(StateError('limit'));
+    await done.future.timeout(const Duration(seconds: 5));
+    expect(received, [isA<StateError>(), isA<StateError>()]);
+    expect(cancelled, isTrue);
+  });
+
+  test('cancelling the parts stops reading the body', () async {
+    var cancelled = false;
+    final body = StreamController<List<int>>(
+      onCancel: () => cancelled = true,
+    );
+    final subscription = MultipartParser('b').bind(body.stream).listen(null);
+    body.add(utf8.encode('--b\r\n'));
+    await Future<void>.delayed(Duration.zero);
+    await subscription.cancel();
+    expect(cancelled, isTrue);
   });
 
   test('the boundary of a Content-Type', () {

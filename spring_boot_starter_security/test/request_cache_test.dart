@@ -108,7 +108,7 @@ void main() {
     test('never start a session', () async {
       final e = await _Exchange.start('/page');
       expect(cache.getRedirectUrl(e.request), isNull);
-      cache.removeRequest(e.request);
+      cache.removeRequest(e.request, e.response);
       expect(e.hasSession, isFalse);
       expect(e.response.cookies, isEmpty);
     });
@@ -117,7 +117,7 @@ void main() {
       final e = await _Exchange.start('/page');
       cache.saveRequest(e.request, e.response);
       expect(cache.getRedirectUrl(e.request), '/page?continue');
-      cache.removeRequest(e.request);
+      cache.removeRequest(e.request, e.response);
       expect(cache.getRedirectUrl(e.request), isNull);
     });
   });

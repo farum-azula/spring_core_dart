@@ -230,7 +230,15 @@ enum ClientAuth {
 /// | `server.servlet.context-path` | none: a prefix of every mapping |
 /// | `server.max-http-request-body-size` | `10MB` (`-1`: no limit) |
 /// | `server.http2.enabled` | ignored (`dart:io` speaks HTTP/1.1) |
-/// | `server.compression.enabled` | `false`: gzip for clients that accept it |
+/// | `server.compression.enabled` | `false`; `true` gzips the responses of `mime-types` from `min-response-size` on, for clients that accept gzip |
+/// | `server.compression.mime-types` | Spring Boot's: `text/html`, `text/xml`, `text/plain`, `text/css`, `text/javascript`, `application/javascript`, `application/json`, `application/xml` |
+/// | `server.compression.min-response-size` | `2KB` |
+/// | `server.forward-headers-strategy` | `none`; `native` or `framework` applies the headers of trusted proxies (`ForwardedHeaderFilter`) |
+/// | `server.forward-headers.trusted-proxies` | loopback and private networks (addresses and CIDR ranges) |
+/// | `server.connection-timeout` | `60s` (`-1`, `0` or less: none): a request body that sends nothing for this long is a 408; also how long an idle connection stays open |
+/// | `server.websocket.max-text-message-size`, `server.websocket.max-binary-message-size` | `8KB` each (`-1`: no limit); a larger message closes the session with 1009 |
+/// | `server.websocket.send-buffer-size-limit` | `512KB` (`-1`: no limit): more waiting to be sent drops the connection (4500) |
+/// | `server.websocket.send-time-limit` | `10s` (`-1`: no limit): what was sent and has not left by then drops the connection (4500) |
 final class ServerProperties {
   /// Settings with the defaults of the table above.
   const ServerProperties({
@@ -241,6 +249,13 @@ final class ServerProperties {
     this.contextPath = '',
     this.maxRequestBodySize = 10 * 1024 * 1024,
     this.compression = false,
+    this.compressionMimeTypes = defaultCompressionMimeTypes,
+    this.compressionMinResponseSize = 2048,
+    this.webSocketMaxTextMessageSize = 8192,
+    this.webSocketMaxBinaryMessageSize = 8192,
+    this.webSocketSendBufferSizeLimit = 512 * 1024,
+    this.webSocketSendTimeLimit = const Duration(seconds: 10),
+    this.connectionTimeout = const Duration(seconds: 60),
   });
 
   /// Reads `server.*` from [environment]. [defaultAddress] applies when
@@ -251,9 +266,11 @@ final class ServerProperties {
   /// `server.ssl.enabled` is not `false`. The legacy
   /// `server.context-path` is read when `server.servlet.context-path` is
   /// not set; a context path gets a leading `/` and loses a trailing
-  /// one. Throws an [ArgumentError] for a port that is not a number, an
-  /// unknown `server.shutdown` or `server.ssl.client-auth`, or a
-  /// certificate without its private key.
+  /// one. Durations are written as `10s`, `500ms` (a bare number is
+  /// milliseconds) or `PT10S`. Throws an
+  /// [ArgumentError] for a port that is not a number, an unknown
+  /// `server.shutdown` or `server.ssl.client-auth`, or a certificate
+  /// without its private key.
   factory ServerProperties.of(
     PropertyResolver environment, {
     String? defaultAddress,
@@ -317,21 +334,77 @@ final class ServerProperties {
         contextPath = contextPath.substring(0, contextPath.length - 1);
       }
     }
-    final maxBody = switch (text('server.max-http-request-body-size')) {
-      null => 10 * 1024 * 1024,
+    int size(String name, int fallback) => switch (text(name)) {
+      null => fallback,
       '-1' => -1,
       final value => DataSize.parse(value).toBytes(),
     };
+    Duration? duration(String name, Duration fallback) => switch (text(name)) {
+      null => fallback,
+      '-1' => null,
+      final value => DurationStyle.parse(value),
+    };
+    final mimeTypes = text('server.compression.mime-types');
     return ServerProperties(
       port: port,
       address: text('server.address') ?? defaultAddress,
       shutdown: shutdown,
       ssl: ssl,
       contextPath: contextPath ?? '',
-      maxRequestBodySize: maxBody,
+      maxRequestBodySize: size(
+        'server.max-http-request-body-size',
+        10 * 1024 * 1024,
+      ),
       compression: text('server.compression.enabled')?.toLowerCase() == 'true',
+      compressionMimeTypes: mimeTypes == null
+          ? defaultCompressionMimeTypes
+          : [
+              for (final type in mimeTypes.split(','))
+                if (type.trim().isNotEmpty) type.trim().toLowerCase(),
+            ],
+      compressionMinResponseSize: size(
+        'server.compression.min-response-size',
+        2048,
+      ),
+      webSocketMaxTextMessageSize: size(
+        'server.websocket.max-text-message-size',
+        8192,
+      ),
+      webSocketMaxBinaryMessageSize: size(
+        'server.websocket.max-binary-message-size',
+        8192,
+      ),
+      webSocketSendBufferSizeLimit: size(
+        'server.websocket.send-buffer-size-limit',
+        512 * 1024,
+      ),
+      webSocketSendTimeLimit: duration(
+        'server.websocket.send-time-limit',
+        const Duration(seconds: 10),
+      ),
+      // As Tomcat, whose connectionTimeout is a timeout only above 0.
+      connectionTimeout: switch (duration(
+        'server.connection-timeout',
+        const Duration(seconds: 60),
+      )) {
+        final timeout? when timeout > Duration.zero => timeout,
+        _ => null,
+      },
     );
   }
+
+  /// The media types compressed by default (`server.compression.mime-types`),
+  /// Spring Boot's list.
+  static const defaultCompressionMimeTypes = [
+    'text/html',
+    'text/xml',
+    'text/plain',
+    'text/css',
+    'text/javascript',
+    'application/javascript',
+    'application/json',
+    'application/xml',
+  ];
 
   /// The port to listen on; 8080 by default, `0` for a free port chosen
   /// by the system (read it from [WebServer.port] or the
@@ -354,17 +427,72 @@ final class ServerProperties {
   final String contextPath;
 
   /// The largest request body accepted, in bytes; 10 MB by default, `-1`
-  /// for no limit. A larger body is a 413. Multipart uploads have their
-  /// own limits instead.
+  /// for no limit. A larger body is a 413, whatever its `Content-Type`.
+  /// Only the multipart resolver reads uploads with its own limit
+  /// (`spring.servlet.multipart.max-request-size`), through
+  /// [maxRequestBodySizeAttribute].
   final int maxRequestBodySize;
 
-  /// Whether responses are gzip-compressed for clients that accept it;
-  /// `false` by default.
+  /// Whether responses are gzip-compressed for clients that accept it
+  /// (`Accept-Encoding: gzip`); `false` by default. Only responses of
+  /// [compressionMimeTypes] and of at least [compressionMinResponseSize]
+  /// bytes (or of unknown length) are compressed, never partial content
+  /// or a response that already has a `Content-Encoding`.
   final bool compression;
 
+  /// The media types compressed when [compression] is on, without
+  /// parameters (`text/*` matches every text type);
+  /// [defaultCompressionMimeTypes] by default. Event streams are not in
+  /// it, as in Spring Boot; add `text/event-stream` to compress them too.
+  final List<String> compressionMimeTypes;
+
+  /// The smallest `Content-Length` compressed, in bytes; 2 KB by default.
+  final int compressionMinResponseSize;
+
+  /// The largest text message a WebSocket session accepts, in bytes; 8 KB
+  /// by default (Tomcat's default in Spring), `-1` for no limit. A larger
+  /// message is not read: the session is closed with 1009 (message too
+  /// big). This starter's own key; Spring sets it on the container
+  /// (`ServletServerContainerFactoryBean`).
+  final int webSocketMaxTextMessageSize;
+
+  /// The largest binary message a WebSocket session accepts, in bytes; as
+  /// [webSocketMaxTextMessageSize].
+  final int webSocketMaxBinaryMessageSize;
+
+  /// How many bytes a WebSocket session may keep waiting to be sent, for
+  /// a client that reads slowly or not at all; 512 KB by default, `-1`
+  /// for no limit. Past it the connection is dropped and the session's
+  /// close status is 4500 (`CloseStatus.sessionNotReliable`), as Spring's
+  /// `ConcurrentWebSocketSessionDecorator` does with its
+  /// `sendBufferSizeLimit`. This starter's own key
+  /// (`server.websocket.send-buffer-size-limit`); Spring sets it in code.
+  final int webSocketSendBufferSizeLimit;
+
+  /// How long what a WebSocket session sent may take to leave; 10 seconds
+  /// by default, `null` for no limit. Past it the connection is dropped,
+  /// as for [webSocketSendBufferSizeLimit] (Spring's `sendTimeLimit`).
+  final Duration? webSocketSendTimeLimit;
+
+  /// How long a request body may send nothing before the request is
+  /// answered with 408 (Request Timeout) and the connection closed; also
+  /// how long an idle keep-alive connection stays open. 60 seconds by
+  /// default, Tomcat's `connectionTimeout`; `null`, zero or a negative
+  /// duration for no limit, as Tomcat takes `-1` and `0`
+  /// (`server.connection-timeout`, the key Spring Boot 2.0 had).
+  final Duration? connectionTimeout;
+
+  /// [connectionTimeout] as the server applies it: `null` (no limit) for
+  /// zero or a negative duration.
+  Duration? get effectiveConnectionTimeout => switch (connectionTimeout) {
+    final timeout? when timeout > Duration.zero => timeout,
+    _ => null,
+  };
+
   /// A copy with the given settings changed and the others kept. A
-  /// `null` argument keeps the old value, so [address] and [ssl] cannot
-  /// be reset to `null` this way.
+  /// `null` argument keeps the old value, so [address], [ssl],
+  /// [webSocketSendTimeLimit] and [connectionTimeout] cannot be reset to
+  /// `null` this way.
   ServerProperties copyWith({
     int? port,
     String? address,
@@ -373,6 +501,13 @@ final class ServerProperties {
     String? contextPath,
     int? maxRequestBodySize,
     bool? compression,
+    List<String>? compressionMimeTypes,
+    int? compressionMinResponseSize,
+    int? webSocketMaxTextMessageSize,
+    int? webSocketMaxBinaryMessageSize,
+    int? webSocketSendBufferSizeLimit,
+    Duration? webSocketSendTimeLimit,
+    Duration? connectionTimeout,
   }) => ServerProperties(
     port: port ?? this.port,
     address: address ?? this.address,
@@ -381,8 +516,50 @@ final class ServerProperties {
     contextPath: contextPath ?? this.contextPath,
     maxRequestBodySize: maxRequestBodySize ?? this.maxRequestBodySize,
     compression: compression ?? this.compression,
+    compressionMimeTypes: compressionMimeTypes ?? this.compressionMimeTypes,
+    compressionMinResponseSize:
+        compressionMinResponseSize ?? this.compressionMinResponseSize,
+    webSocketMaxTextMessageSize:
+        webSocketMaxTextMessageSize ?? this.webSocketMaxTextMessageSize,
+    webSocketMaxBinaryMessageSize:
+        webSocketMaxBinaryMessageSize ?? this.webSocketMaxBinaryMessageSize,
+    webSocketSendBufferSizeLimit:
+        webSocketSendBufferSizeLimit ?? this.webSocketSendBufferSizeLimit,
+    webSocketSendTimeLimit:
+        webSocketSendTimeLimit ?? this.webSocketSendTimeLimit,
+    connectionTimeout: connectionTimeout ?? this.connectionTimeout,
   );
 }
+
+/// The name of a request attribute that replaces
+/// `server.max-http-request-body-size` for one request: an `int`, the
+/// largest body in bytes, `-1` for no limit. Set it before the body is
+/// read.
+///
+/// The multipart resolver sets it to `spring.servlet.multipart.max-request-size`,
+/// so uploads have their own limit while every other reader of a
+/// `multipart/*` body keeps the server's. A handler that streams a large
+/// body of its own can do the same:
+///
+/// ```dart
+/// // Disk images up to 4 GB, read as a stream.
+/// request.attributes[maxRequestBodySizeAttribute] = 4 << 30;
+/// await request.body.pipe(file.openWrite());
+/// ```
+const maxRequestBodySizeAttribute = 'spring.web.maxRequestBodySize';
+
+/// The name of a request attribute the dispatcher sets (to the error)
+/// when a request fails after its response was committed: the status and
+/// headers, perhaps part of the body, are already out, so no error
+/// answer can follow.
+///
+/// A [WebServer] that finds it set once the handler returns drops the
+/// connection instead of finishing the response, as Tomcat does, so the
+/// client sees that the response broke off (a chunked body without its
+/// final chunk, a body shorter than its `Content-Length`) and does not
+/// take half a response for a whole one. The `dart:io` server does so; a
+/// server of your own should too.
+const responseFailedAttribute = 'spring.web.responseFailed';
 
 /// Thrown when the server cannot start, for example because the address
 /// cannot be bound or the certificate cannot be read.

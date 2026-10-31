@@ -7,6 +7,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_logging/src/appenders.dart';
 import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 
+const _log = SpringLog('spring_boot_starter_logging');
+
 /// A log file: each record is formatted with a [LogPattern] and appended
 /// to the file [path], which is rolled over when it grows too large.
 ///
@@ -36,6 +38,17 @@ import 'package:spring_boot_starter_logging/src/log_pattern.dart';
 /// );
 /// ```
 ///
+/// A file that cannot be written breaks nothing else, as in Logback: the
+/// error is reported once as an error of the `spring_boot_starter_logging`
+/// logger (on the console), the lines are dropped meanwhile, and the file
+/// is opened and written again after a pause that grows from 20 ms to
+/// about 5 minutes with each failed try (on a full disk the file opens,
+/// but the write fails). When a write works again, one line reports how
+/// many lines were lost; a later failure is reported again. A roll-over
+/// that fails (a read-only directory) is reported once too; the lines go
+/// on into the current file, past [maxFileSize], and the roll-over is tried
+/// again a minute later.
+///
 /// Spring (Java): Logback's `RollingFileAppender` with a size-based policy,
 /// which Spring Boot sets up from the same properties. Here files roll over
 /// by size only, into numbered files that are not compressed.
@@ -46,8 +59,10 @@ class FileAppender extends LogAppender {
   /// ([LogPattern.defaultFilePattern], without colours). The limits
   /// default to 10 MB per file, 7 rolled-over files and no total limit.
   /// [cleanHistoryOnStart] deletes the rolled-over files (`<path>.1`,
-  /// `<path>.2`, ...) first. Throws an [ArgumentError] for a negative
-  /// limit, and a [FileSystemException] when the file cannot be opened.
+  /// `<path>.2`, ...) first; one that cannot be deleted is reported and
+  /// kept. Throws an [ArgumentError] for a negative limit, and a
+  /// [FileSystemException] when the file cannot be opened (the logging
+  /// system then reports it and goes on without the file).
   FileAppender(
     this.path, {
     LogPattern? pattern,
@@ -71,7 +86,15 @@ class FileAppender extends LogAppender {
         if (!archive.existsSync()) {
           break;
         }
-        archive.deleteSync();
+        try {
+          archive.deleteSync();
+        } on FileSystemException catch (error) {
+          _log.warning(
+            'Cannot delete the old log file ${archive.path}: '
+            '${_describe(error)}',
+          );
+          break;
+        }
       }
     }
     _open();
@@ -111,6 +134,30 @@ class FileAppender extends LogAppender {
   int _size = 0;
   final _pending = <List<int>>[];
   bool _flushScheduled = false;
+  bool _closed = false;
+
+  // While the file cannot be written: when to try to open it again, the
+  // pause after that, and the lines dropped meanwhile (Logback's
+  // ResilientFileOutputStream: 20 ms, times 4, up to 327.68 s). Set from
+  // the first failed write until a write works again: on a full disk the
+  // file opens but the next write fails, so opening it again is no
+  // recovery (Logback's postSuccessfulWrite).
+  DateTime? _retryAt;
+  Duration _retryPause = _firstRetryPause;
+  int _lost = 0;
+  static const _firstRetryPause = Duration(milliseconds: 20);
+  static const _maxRetryPause = Duration(milliseconds: 327680);
+
+  // After a failed roll-over: not before this time again (Logback checks
+  // the size once a minute at most).
+  DateTime? _rollOverAfter;
+  bool _rollOverReported = false;
+  static const _rollOverPause = Duration(minutes: 1);
+
+  /// Whether the file cannot be written now: from a failed write until a
+  /// write works again (tried on the next lines after a pause), the lines
+  /// are dropped.
+  bool get isFailing => _retryAt != null;
 
   void _open() {
     final file = File(path);
@@ -120,7 +167,12 @@ class FileAppender extends LogAppender {
 
   @override
   void write(SpringLogRecord record) {
-    if (_file == null) {
+    if (_closed) {
+      return;
+    }
+    final retryAt = _retryAt;
+    if (retryAt != null && DateTime.now().isBefore(retryAt)) {
+      _lost++;
       return;
     }
     _pending.add(_encode('${pattern.formatLine(record)}\n'));
@@ -147,46 +199,83 @@ class FileAppender extends LogAppender {
 
   /// Writes the lines waiting for the end of the microtask now, rolling
   /// the file over when needed. Useful before reading the file, such as
-  /// in a test or before sharing it.
+  /// in a test or before sharing it. Never throws: a file that cannot be
+  /// written is reported (see the class).
   void flush() {
     _flushScheduled = false;
-    final file = _file;
-    if (file == null || _pending.isEmpty) {
+    if (_pending.isEmpty) {
       return;
     }
     final lines = [..._pending];
     _pending.clear();
-    var current = file;
-    final chunk = BytesBuilder(copy: false);
-    for (final line in lines) {
-      if (maxFileSize > 0 && _size > 0 && _size + line.length > maxFileSize) {
-        current.writeFromSync(chunk.takeBytes());
-        current = _rollOver();
-      }
-      chunk.add(line);
-      _size += line.length;
+    if (_file == null && !_reopen()) {
+      _lost += lines.length;
+      return;
     }
-    current.writeFromSync(chunk.takeBytes());
+    var written = 0;
+    var inChunk = 0;
+    try {
+      final chunk = BytesBuilder(copy: false);
+      for (final line in lines) {
+        if (_rollOverDue(line.length)) {
+          _file!.writeFromSync(chunk.takeBytes());
+          written += inChunk;
+          inChunk = 0;
+          _rollOver();
+        }
+        chunk.add(line);
+        _size += line.length;
+        inChunk++;
+      }
+      _file!.writeFromSync(chunk.takeBytes());
+    } on Object catch (error) {
+      _failed(error, lost: lines.length - written);
+      return;
+    }
+    _recovered();
   }
 
-  RandomAccessFile _rollOver() {
+  bool _rollOverDue(int length) {
+    if (maxFileSize <= 0 || _size == 0 || _size + length <= maxFileSize) {
+      return false;
+    }
+    final after = _rollOverAfter;
+    return after == null || !DateTime.now().isBefore(after);
+  }
+
+  // Throws only when the log file itself cannot be opened again.
+  void _rollOver() {
     _file!.closeSync();
-    if (maxHistory > 0) {
-      final oldest = File('$path.$maxHistory');
-      if (oldest.existsSync()) {
-        oldest.deleteSync();
+    _file = null;
+    try {
+      if (maxHistory > 0) {
+        final oldest = File('$path.$maxHistory');
+        if (oldest.existsSync()) {
+          oldest.deleteSync();
+        }
+      }
+      for (var i = _lastArchive(); i >= 1; i--) {
+        final archive = File('$path.$i');
+        if (archive.existsSync()) {
+          archive.renameSync('$path.${i + 1}');
+        }
+      }
+      File(path).renameSync('$path.1');
+      _rollOverAfter = null;
+      _rollOverReported = false; // a later failure is reported again
+      _capTotalSize();
+    } on FileSystemException catch (error) {
+      // Logback: "RolloverFailure occurred. Deferring roll-over."
+      _rollOverAfter = DateTime.now().add(_rollOverPause);
+      if (!_rollOverReported) {
+        _rollOverReported = true;
+        _log.error(
+          'Cannot roll over the log file $path (it grows past its maximum '
+          'size until a roll-over works): ${_describe(error)}',
+        );
       }
     }
-    for (var i = _lastArchive(); i >= 1; i--) {
-      final archive = File('$path.$i');
-      if (archive.existsSync()) {
-        archive.renameSync('$path.${i + 1}');
-      }
-    }
-    File(path).renameSync('$path.1');
-    _capTotalSize();
     _open();
-    return _file!;
   }
 
   // The index of the oldest archive kept: maxHistory - 1 before a rollover
@@ -222,14 +311,83 @@ class FileAppender extends LogAppender {
     }
   }
 
+  // The file failed: drop it, retry later, after a longer pause each time.
+  // Only the first failure since the last write that worked is reported.
+  void _failed(Object error, {required int lost}) {
+    _lost += lost;
+    try {
+      _file?.closeSync();
+    } on Object catch (_) {
+      // Already broken.
+    }
+    _file = null;
+    final first = _retryAt == null;
+    _retryAt = DateTime.now().add(_retryPause);
+    final doubled = _retryPause * 4;
+    _retryPause = doubled > _maxRetryPause ? _maxRetryPause : doubled;
+    if (first) {
+      _log.error(
+        'Cannot write the log file $path (its lines are dropped until it '
+        'can be written again): ${_describe(error)}',
+      );
+    }
+  }
+
+  // Opens the file again after a failure, when the pause is over. The
+  // failure lasts until a write works ([_recovered]).
+  bool _reopen() {
+    final retryAt = _retryAt;
+    if (_closed || retryAt == null || DateTime.now().isBefore(retryAt)) {
+      return false;
+    }
+    try {
+      File(path).parent.createSync(recursive: true);
+      _open();
+    } on Object catch (error) {
+      _failed(error, lost: 0);
+      return false;
+    }
+    return true;
+  }
+
+  // A write worked: after a failure, the pause starts again from 20 ms
+  // and one line says how many lines were lost.
+  void _recovered() {
+    if (_retryAt == null) {
+      return;
+    }
+    final lost = _lost;
+    _retryAt = null;
+    _retryPause = _firstRetryPause;
+    _lost = 0;
+    _log.info(
+      'The log file $path is written again; lines lost meanwhile: $lost',
+    );
+  }
+
+  static String _describe(Object error) => switch (error) {
+    FileSystemException(:final message, :final osError?) =>
+      '$message (${osError.message})',
+    FileSystemException(:final message) => message,
+    _ => '$error',
+  };
+
   /// Writes the waiting lines and closes the file; records that arrive
   /// later are dropped. The logging system calls it when the application
-  /// context closes or the file settings change.
+  /// context closes or the file settings change. Never throws, also when
+  /// the file cannot be written.
   @override
   void close() {
     flush();
-    _file?.closeSync();
+    _closed = true;
+    _pending.clear();
+    final file = _file;
     _file = null;
+    try {
+      file?.closeSync();
+    } on Object catch (_) {
+      // Nothing more can be written to it anyway.
+    }
   }
 
   @override

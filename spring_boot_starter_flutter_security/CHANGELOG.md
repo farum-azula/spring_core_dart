@@ -1,3 +1,31 @@
+## Unreleased
+
+### Breaking
+
+- Linux: while the keyring is locked, a call that needs a value throws a `PlatformSecretStoreException` (`libsecret_locked`) instead of reading as "no value" or doing nothing: `read` of a stored key and `write` when the unlock prompt is dismissed, `delete` and `deleteAll` when there is a value to delete (a logout kept the tokens).
+- Windows and Linux: the app's values are kept under an application id, `spring.flutter.security.application-id` when set, else the app's own (`<CompanyName>\<ProductName>` of `Runner.rc` on Windows, the GTK `APPLICATION_ID` on Linux), else the executable's name (a blank id counts as unset); on Windows in `%LOCALAPPDATA%\spring_secret_store\<app id>`. The values 0.4.x kept under the executable's name (on Windows in `%LOCALAPPDATA%\<executable>\spring_secret_store`) are moved there once, at the first call after the update, and the old place is never searched again, so another app of the same executable name no longer mixes its values in.
+- iOS: a reinstalled app starts logged out. Keychain items outlive the app, so at the first start after a reinstall (found by an install id kept in a file of the app's container) the secret store's values and the DPoP key are removed; an update or cleared preferences keep them.
+
+### Changes
+
+- The plugin declares `dartFileName` for its desktop class (APK, iOS and macOS builds of an app using the plugin failed).
+- Web server mode with the server on another origin: `ServerCredentialsHttpTransport` sends the cookies only with the requests to the server's origin, so a public API answering `Access-Control-Allow-Origin: *` keeps working and never sees them; an app with its own transport builds one with `ServerCredentialsHttpTransport.forPage(page: ..., server: ...)`.
+- Android: a login whose window is destroyed (a `singleTask` main activity, a `CLEAR_TOP` intent) ends as cancelled instead of staying busy until the app restarts; a hot restart cancels a login the old code left running, and a window's answer reaches only its own login.
+- Android's redirect activity and the Windows and Linux loopback server end the login only for the redirect carrying its `state`: another site sending the browser to the redirect URI no longer ends a running login (the loopback answers 400 and keeps waiting).
+- Android's redirect matcher no longer takes an opaque redirect URI (`books.neon.app:callback`, which no link can match) or an authority that is no valid host as a match.
+- `restore()` brings the user back with the authorities of their login, those an application's own `OAuth2UserService` added included (kept in the login record); the `SCOPE_` ones follow the current access token.
+- A login record of a registration removed from the configuration, or one that cannot be read, is removed with its tokens.
+- `logout()` clears the context and publishes the `LogoutSuccessEvent` even when the store cannot delete the stored login, then throws the store's error.
+- The stored tokens of two registrations can no longer share a key (`a.b` + `c` and `a` + `b.c`); tokens stored by 0.4.x are read and moved to the new key.
+- The loopback window keeps a redirect URI's `localhost` (or `[::1]`) for providers that want it exact, listening on 127.0.0.1 and ::1 with the same port.
+- spa mode: every login, the silent one too, makes a new WebCrypto DPoP key, and a key read back from IndexedDB is used only while it still is a non-extractable P-256 signing key.
+- Windows: keys longer than 64 bytes are stored under their SHA-256, each file is written under a unique temporary name, and the 0.4.x move never fails a call: a file in use or read-only is tried again at later starts, and a value deleted meanwhile never comes back.
+- `SecretTemplate` gives its errors in the returned `Future` (it threw some synchronously).
+- Every bean decides "a browser" the same way (the `web` profile), so no platform bean exists next to the web's.
+- The iOS and macOS privacy manifest states that the plugin uses no "required reason" API (the install id is a file, not `UserDefaults`), and a test fails when the Swift code starts using one.
+- The Android build uses Kotlin 2.4.21 and fixed versions of BouncyCastle, Guava, jose4j, jdom2 and commons-lang3 for the Gradle plugins (advisories on the build machine only; nothing of them is in the APK).
+- The docs say what each platform's store protects from: DPAPI and the Secret Service separate users, not apps; Keychain items survive the app's deletion and are in encrypted backups; a software Keychain DPoP key is in the app's memory while it signs.
+
 ## 0.4.3
 
 - The Windows (DPAPI) and Linux (libsecret) secret stores are tested against the real systems (`test/desktop_secret_store_test.dart`, CI's "Secret stores on Windows and Linux" jobs): reading, writing, `keys()`, `deleteAll()`, apps kept apart, the DPoP key kept across restarts.

@@ -4,6 +4,8 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
+    show captureLogs;
 
 import 'support/fake_provider.dart';
 
@@ -16,6 +18,7 @@ Matcher failsWith(String code) => throwsA(
 );
 
 void main() {
+  final logs = captureLogs();
   late LoginFixture fixture;
   late NativeOAuth2LoginService login;
 
@@ -102,6 +105,9 @@ void main() {
         throwsA(isA<AuthorizationCancelledException>()),
       );
       expect(login.isLoggedIn, isFalse);
+      // Not left busy: the next login runs.
+      fixture.window.cancel = false;
+      expect((await login.login('keycloak')).name, 'user-1');
     });
 
     test('an unknown registration fails', () {
@@ -455,17 +461,249 @@ void main() {
       expect(await fixture.service().restore(), isNull);
     });
 
-    test('a damaged record is removed', () async {
+    test("keeps the roles the app's own user service added", () async {
+      // An application's OidcUserService: the provider's user plus a role
+      // of the app's own (from its server, a claim, a table).
+      final librarians = OAuth2UserService<OidcUserRequest, OidcUser>.from((
+        request,
+      ) async {
+        final user = await OidcUserService(
+          fixture.provider.transport,
+        ).loadUser(request);
+        return DefaultOidcUser(
+          [...user.authorities, SimpleGrantedAuthority('ROLE_LIBRARIAN')],
+          user.idToken,
+          userInfo: user.userInfo,
+        );
+      });
+      final loggedIn = await fixture
+          .service(oidcUserService: librarians)
+          .login('keycloak');
+      final expected = {
+        'OIDC_USER',
+        'SCOPE_openid',
+        'SCOPE_profile',
+        'SCOPE_email',
+        'ROLE_LIBRARIAN',
+      };
+      expect(
+        AuthorityUtils.authorityListToSet(loggedIn.authorities),
+        expected,
+      );
+
+      // Restarted, offline: the user service is not asked again.
+      fixture.provider.tokenUnreachable = true;
+      final restored = await fixture
+          .service(mapper: const _AdminMapper())
+          .restore();
+      expect(AuthorityUtils.authorityListToSet(restored!.authorities), {
+        ...expected,
+        'ROLE_ADMIN', // mapped again
+      });
+      final user = restored.principal as OidcUser;
+      expect(
+        AuthorityUtils.authorityListToSet(user.authorities),
+        expected,
+      );
+      expect(
+        user.authorities.whereType<OidcUserAuthority>().single.idToken.subject,
+        'user-1',
+      );
+    });
+
+    test('a service without SCOPE_ authorities gets none back', () async {
+      final rolesOnly = OAuth2UserService<OidcUserRequest, OidcUser>.from((
+        request,
+      ) async {
+        final user = await OidcUserService(
+          fixture.provider.transport,
+        ).loadUser(request);
+        return DefaultOidcUser(
+          [
+            OidcUserAuthority(
+              user.idToken,
+              userInfo: user.userInfo,
+              authority: 'READER',
+            ),
+            SimpleGrantedAuthority('ROLE_USER'),
+          ],
+          user.idToken,
+          userInfo: user.userInfo,
+        );
+      });
+      await fixture.service(oidcUserService: rolesOnly).login('keycloak');
+      // An hour later: the token is refreshed (its scopes known again).
+      fixture.provider.now = fixture.provider.now.add(const Duration(hours: 1));
+      final restored = await fixture.service().restore();
+      expect(
+        restored!.authorities.map((a) => a.authority),
+        ['READER', 'ROLE_USER'],
+      );
+      expect(restored.authorities.first, isA<OidcUserAuthority>());
+    });
+
+    test('a record of 0.4.x (no authorities) reads as before', () async {
+      await login.login('keycloak');
+      final record = jsonDecode(
+        (await fixture.store.read(
+          NativeOAuth2LoginService.sessionKey,
+        ))!,
+      ) as Map<String, Object?>;
+      expect(record['authorities'], isNotNull);
+      record.remove('authorities');
+      await fixture.store.write(
+        NativeOAuth2LoginService.sessionKey,
+        jsonEncode(record),
+      );
+      fixture.provider.tokenUnreachable = true;
+      final restored = await fixture.service().restore();
+      expect(AuthorityUtils.authorityListToSet(restored!.authorities), {
+        'OIDC_USER',
+        'SCOPE_openid',
+        'SCOPE_profile',
+        'SCOPE_email',
+      });
+    });
+
+    test('a removed registration takes its tokens along', () async {
+      await login.login('keycloak');
+      expect(
+        await fixture.store.read(
+          SecretStoreOAuth2AuthorizedClientService.keyOf('keycloak', 'user-1'),
+        ),
+        isNotNull,
+      );
+      // The next version of the app has no `keycloak` registration.
+      final empty = NativeOAuth2LoginService(
+        clientRegistrationRepository: _NoRegistrations(),
+        authorizedClientService: fixture.clients,
+        secretStore: fixture.store,
+        accessTokenResponseClient: DefaultAuthorizationCodeTokenResponseClient(
+          fixture.provider.transport,
+        ),
+        userService: DefaultOAuth2UserService(fixture.provider.transport),
+        oidcUserService: OidcUserService(fixture.provider.transport),
+      );
+      expect(await empty.restore(), isNull);
+      expect(await fixture.store.keys(), isEmpty);
+    });
+
+    test('a damaged record is removed with the tokens of its login', () async {
+      await login.login('keycloak');
+      await fixture.store.write('app.pin', '1234'); // the app's own secret
       await fixture.store.write(
         NativeOAuth2LoginService.sessionKey,
         '{not json',
       );
-      expect(await login.restore(), isNull);
+      expect(await fixture.service().restore(), isNull);
+      // No record leads to the tokens any more: they go, the app's own
+      // secrets stay.
+      expect(await fixture.store.keys(), {'app.pin'});
       expect(
-        await fixture.store.read(NativeOAuth2LoginService.sessionKey),
-        isNull,
+        logs.atLevel(SpringLogLevel.warning).map((r) => r.message),
+        contains('Removing an unreadable login record and its tokens'),
       );
     });
+
+    test('a record of another version: the tokens it names go', () async {
+      await login.login('keycloak');
+      final other = SecretStoreOAuth2AuthorizedClientService.keyOf(
+        'drive',
+        'user-1',
+      );
+      await fixture.store.write(other, '{}');
+      final record = jsonDecode(
+        (await fixture.store.read(
+          NativeOAuth2LoginService.sessionKey,
+        ))!,
+      ) as Map<String, Object?>;
+      record['version'] = 2;
+      await fixture.store.write(
+        NativeOAuth2LoginService.sessionKey,
+        jsonEncode(record),
+      );
+      expect(await fixture.service().restore(), isNull);
+      // Those of the login the record names; another client stays.
+      expect(await fixture.store.keys(), {other});
+    });
+
+    test("a user of the app's own class, named by another attribute than "
+        'sub, comes back', () async {
+      // An OAuth 2.0 login whose user service builds the app's own user,
+      // named by the e-mail: 0.5.0 before the fix stored `sub` as the
+      // name attribute, and every restore failed.
+      final oauth = await LoginFixture.create(scopes: {'profile'});
+      final byEmail = OAuth2UserService<OAuth2UserRequest, OAuth2User>.from(
+        (request) async => _AppUser(
+          await DefaultOAuth2UserService(
+            oauth.provider.transport,
+          ).loadUser(request),
+          (attributes) => '${attributes['email']}',
+        ),
+      );
+      final loggedIn = await oauth
+          .service(userService: byEmail)
+          .login('keycloak');
+      expect(loggedIn.name, 'ada@example.com');
+      oauth.provider.tokenUnreachable = true;
+      final restored = await oauth.service().restore();
+      expect(restored?.name, 'ada@example.com');
+      expect(restored!.principal.attributes['sub'], 'user-1');
+      expect(logs.atLevel(SpringLogLevel.warning), isEmpty);
+    });
+
+    test('a user named by none of their attributes: warned at the login, '
+        'the tokens removed at the restore', () async {
+      final oauth = await LoginFixture.create(scopes: {'profile'});
+      final computed = OAuth2UserService<OAuth2UserRequest, OAuth2User>.from(
+        (request) async => _AppUser(
+          await DefaultOAuth2UserService(
+            oauth.provider.transport,
+          ).loadUser(request),
+          (attributes) => 'reader-${attributes['sub']}',
+        ),
+      );
+      final loggedIn = await oauth
+          .service(userService: computed)
+          .login('keycloak');
+      expect(loggedIn.name, 'reader-user-1');
+      expect(
+        logs.atLevel(SpringLogLevel.warning).single.message,
+        contains('named by none of their attributes'),
+      );
+      expect(await oauth.store.keys(), hasLength(2)); // record and tokens
+
+      expect(await oauth.service().restore(), isNull);
+      // Not left behind to fail at every start.
+      expect(await oauth.store.keys(), isEmpty);
+      expect(
+        logs.atLevel(SpringLogLevel.warning).last.message,
+        contains('cannot be restored'),
+      );
+    });
+
+    test(
+      'a user JSON cannot hold: the record still leads to the tokens',
+      () async {
+        final oauth = await LoginFixture.create(scopes: {'profile'});
+        final odd = OAuth2UserService<OAuth2UserRequest, OAuth2User>.from(
+          (request) async {
+            final user = await DefaultOAuth2UserService(
+              oauth.provider.transport,
+            ).loadUser(request);
+            return DefaultOAuth2User(user.authorities, {
+              ...user.attributes,
+              'since': DateTime.utc(2026), // no JSON
+            }, 'sub');
+          },
+        );
+        await oauth.service(userService: odd).login('keycloak');
+        expect(await oauth.store.keys(), hasLength(2));
+        // logout() finds the login, and removes its tokens.
+        await oauth.service().logout();
+        expect(await oauth.store.keys(), isEmpty);
+      },
+    );
 
     test('nothing stored, nobody restored', () async {
       expect(await login.restore(), isNull);
@@ -532,6 +770,32 @@ void main() {
       );
     });
 
+    test('a store that cannot forget: logged out all the same, the error '
+        'rethrown', () async {
+      final authentication = await login.login('keycloak');
+      fixture.events.clear();
+      final failing = fixture.service(
+        secretStore: _UndeletableStore(fixture.store),
+      );
+      // Restored into the service that cannot delete.
+      fixture.provider.tokenUnreachable = true;
+      await failing.restore();
+      fixture.events.clear();
+
+      await expectLater(failing.logout(), throwsA(isA<StateError>()));
+      expect(failing.isLoggedIn, isFalse);
+      expect(fixture.strategy.getContext().authentication, isNull);
+      final event = fixture.events.single as LogoutSuccessEvent;
+      expect(event.authentication.name, authentication.name);
+      // The tokens went; the record could not.
+      expect(
+        await fixture.clients.loadAuthorizedClient('keycloak', 'user-1'),
+        isNull,
+      );
+      // And the service is not stuck: another logout runs.
+      await expectLater(failing.logout(), throwsA(isA<StateError>()));
+    });
+
     test('without a revocation endpoint nothing is revoked', () async {
       fixture = await LoginFixture.create(
         provider: FakeProvider()..revocation = false,
@@ -569,4 +833,58 @@ final class _AdminMapper implements GrantedAuthoritiesMapper {
   List<GrantedAuthority> mapAuthorities(
     Iterable<GrantedAuthority> authorities,
   ) => [...authorities, SimpleGrantedAuthority('ROLE_ADMIN')];
+}
+
+final class _NoRegistrations implements ClientRegistrationRepository {
+  @override
+  Future<ClientRegistration?> findByRegistrationId(
+    String registrationId,
+  ) async => null;
+}
+
+/// A store whose deletes fail, as a Keychain that is locked.
+final class _UndeletableStore implements SecretStore {
+  _UndeletableStore(this.inner);
+  final SecretStore inner;
+
+  @override
+  Future<String?> read(String key) => inner.read(key);
+
+  @override
+  Future<void> write(String key, String value) => inner.write(key, value);
+
+  @override
+  Future<void> delete(String key) async =>
+      throw StateError('the keychain is locked');
+
+  @override
+  Future<Set<String>> keys() => inner.keys();
+
+  @override
+  Future<void> deleteAll() async => throw StateError('the keychain is locked');
+}
+
+/// A user of the application's own class (not a `DefaultOAuth2User`),
+/// named by [_nameOf] its attributes.
+final class _AppUser implements OAuth2User {
+  _AppUser(OAuth2User user, this._nameOf)
+    : attributes = user.attributes,
+      authorities = user.authorities;
+
+  final String Function(Map<String, Object?> attributes) _nameOf;
+
+  @override
+  final Map<String, Object?> attributes;
+
+  @override
+  final List<GrantedAuthority> authorities;
+
+  @override
+  String get name => _nameOf(attributes);
+
+  @override
+  T? getAttribute<T>(String name) => switch (attributes[name]) {
+    final T value => value,
+    _ => null,
+  };
 }

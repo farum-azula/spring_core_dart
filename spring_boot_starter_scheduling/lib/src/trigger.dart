@@ -156,9 +156,14 @@ final class CronTrigger implements Trigger {
 /// methods use it; create one yourself only to pass it to
 /// `TaskScheduler.schedule`.
 ///
-/// A fixed-rate run never overlaps the previous one: when a run takes
-/// longer than [period], the next one starts as soon as it completes, once,
-/// and the rate continues from there; missed runs are not caught up.
+/// A fixed-rate run never overlaps the previous one. Each run is due
+/// [period] after the one before was due, as in Spring: when a run takes
+/// longer than [period], the runs that came due meanwhile start one after
+/// the other as soon as it completes, until the rate is caught up.
+///
+/// A `TimerTaskScheduler` applies these rules on a timeline its timers
+/// move, as Spring's `scheduleAtFixedRate` and `scheduleWithFixedDelay`
+/// count on a monotonic clock: setting the wall clock moves no run.
 ///
 /// ```dart
 /// // A poll that keeps 30 s between the end of one and the next start.
@@ -221,8 +226,9 @@ final class PeriodicTrigger implements Trigger {
     if (!fixedRate) {
       return (completion ?? context.now).add(period);
     }
-    final next = scheduled.add(period);
-    return completion != null && next.isBefore(completion) ? completion : next;
+    // Before the completion when the run took longer than the period: the
+    // scheduler starts it right away (Spring's PeriodicTrigger as well).
+    return scheduled.add(period);
   }
 
   @override

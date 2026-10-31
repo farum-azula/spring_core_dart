@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:spring_boot_starter_oauth2_client/src/core/crypto_primitives.dart';
 import 'package:spring_boot_starter_oauth2_client/src/core/oauth2_error.dart';
+import 'package:spring_boot_starter_oauth2_client/src/core/since.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_decoder.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_validator.dart';
@@ -23,8 +24,14 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// cached, fetched once more for an unknown `kid`, at most once a
 /// minute), with an algorithm of [algorithms] (RS256 by default; ES256
 /// can be added). `alg: none`, HS*, keys sent inside the token (`jwk`,
-/// `jku`, `x5u`, `x5c`), `crit` headers, RSA keys under 2 048 bits and EC
-/// points off their curve are refused. Then [OidcIdTokenValidator]
+/// `jku`, `x5u`, `x5c`), `crit` headers, RSA keys under 2 048 bits or
+/// with an exponent of 1 (or even, or over 64 bits) and EC points off
+/// their curve are refused. The `typ` header must be `JWT` (in any case)
+/// or missing (or blank), as Spring Security 7.1's
+/// `JwtTypeValidator.jwt()` checks ID tokens on a server: a logout token
+/// (`logout+jwt`), an access token (`at+jwt`) or a security event token
+/// (`secevent+jwt`) signed by the same keys is not an ID token. Then
+/// [OidcIdTokenValidator]
 /// checks the issuer, the audience, `azp`, the expiry and the issue time.
 /// The `nonce` is the caller's to check
 /// ([OidcIdTokenValidator.validateNonce]).
@@ -142,6 +149,17 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
     if (!candidates.any((key) => key.verify(alg, input, signature))) {
       fail('Signed JWT rejected: Invalid signature');
     }
+    // After the signature, as the server's JwtTypeValidator.jwt() runs
+    // (this package cannot use it: the security starter depends on it).
+    final typ = header['typ'];
+    if (!(typ == null ||
+        (typ is String &&
+            (typ.trim().isEmpty || typ.toLowerCase() == 'jwt')))) {
+      fail(
+        'An error occurred while attempting to decode the Jwt: the given '
+        'typ value needs to be one of [JWT]',
+      );
+    }
     final result = OidcIdTokenValidator(
       registration,
       clockSkew: clockSkew,
@@ -161,9 +179,10 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
   ) async {
     final now = _clock();
     var set = _keys[jwkSetUri];
-    if (set == null ||
-        (refetch && now.difference(set.fetchedAt) >= _refetchInterval)) {
-      set = _KeySet(await _fetch(jwkSetUri), now);
+    // At most once a minute, on a monotonic stopwatch: a wall clock set
+    // back must not hold the keys of a rotation off for as long.
+    if (set == null || (refetch && set.fetched.passed(_refetchInterval, now))) {
+      set = _KeySet(await _fetch(jwkSetUri), Since(now));
       _keys[jwkSetUri] = set;
     }
     return [
@@ -224,14 +243,15 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
 }
 
 final class _KeySet {
-  _KeySet(this.keys, this.fetchedAt);
+  _KeySet(this.keys, this.fetched);
 
   final List<_Key> keys;
-  final DateTime fetchedAt;
+  final Since fetched;
 }
 
-// A public signing key of the JWK Set: RSA (2 048 bits or more) or EC on
-// P-256. Anything else is left out.
+// A public signing key of the JWK Set: RSA (2 048 bits or more, an odd
+// exponent above 1 of at most 64 bits) or EC on P-256. Anything else is
+// left out.
 final class _Key {
   _Key._(this.kid, this.alg, {this.n, this.e, this.x, this.y});
 
@@ -260,7 +280,15 @@ final class _Key {
       case 'RSA':
         final n = number('n');
         final e = number('e');
-        if (n == null || e == null || n.bitLength < 2048) {
+        // An exponent of 1 makes every "signature" its own message: never
+        // a key. Odd and at most 64 bits, as the security starter's DPoP
+        // keys (65537 in practice).
+        if (n == null ||
+            e == null ||
+            n.bitLength < 2048 ||
+            e <= BigInt.one ||
+            e.isEven ||
+            e.bitLength > 64) {
           return null;
         }
         return _Key._(kid as String?, alg as String?, n: n, e: e);

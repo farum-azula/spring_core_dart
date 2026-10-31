@@ -268,7 +268,7 @@ final class SavedRequestAwareAuthenticationSuccessHandler
     final saved = alwaysUseDefaultTargetUrl
         ? null
         : await requestCache.getRedirectUrl(request);
-    await requestCache.removeRequest(request);
+    await requestCache.removeRequest(request, response);
     await sendRedirect(
       response,
       saved ?? _redirectUrl(contextPath, defaultTargetUrl),

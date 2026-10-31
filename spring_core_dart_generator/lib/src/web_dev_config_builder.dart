@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:typed_data';
 
-import 'package:build/build.dart';
+import 'package:build/build.dart' hide Resource;
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_builder.dart';
 
 /// Writes the Flutter web dev server's `web_dev_config.yaml` from the
@@ -14,11 +15,60 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 /// a server's CORS list, the redirect back after an SSO login. Since
 /// Flutter 3.38 the dev server reads `web_dev_config.yaml` in the project
 /// directory (command-line flags still win), and nothing else configures
-/// it. This builder writes that file from the application's own config,
-/// read as the app reads it in a browser: `application.*`, then
-/// `application-web.*` (the `web` platform profile) and the files of the
-/// profiles `spring.profiles.active` names there, names matched the
-/// relaxed way.
+/// it. This builder writes that file from the application's own config.
+///
+/// It runs for every package that depends on the generator, pure Dart
+/// servers too, so it never fails a build, and says nothing, unless the
+/// app evidently uses the dev server's file: a config file it can read
+/// without loading the config (any `.properties`, `.yml` or `.yaml` file
+/// of `lib/resources/`, in any document, for any profile, and a file an
+/// import names with a file hint, such as `classpath:dev.conf[.yaml]` or
+/// `classpath:web.properties[encoding=iso-8859-1]` (a file that is not
+/// UTF-8 is read only that way), its placeholders resolved with their
+/// defaults or the files' values)
+/// sets a `spring.flutter.web.*` key or `spring.flutter.security.web.mode`.
+/// An import whose name has a placeholder only the running app resolves
+/// (`classpath:${ENV}.conf[.yaml]`) cannot be followed there, so keys only
+/// that file sets do not count. Without such a key, the config is not
+/// loaded at all: nothing is written, a file the builder generated before
+/// is deleted, and nothing the config holds (an import, a placeholder, a
+/// file that does not parse) is the builder's business; the app's own
+/// start reports what is wrong. The one
+/// exception is a config file that does not parse while a generated
+/// `web_dev_config.yaml` exists: it may be the file with the keys, so the
+/// config is loaded, and when the app reads that file the build fails and
+/// the generated file is kept.
+///
+/// An app with such a key has its config read as the app reads it in a
+/// browser: `application.*`, then `application-web.*` (the `web` platform
+/// profile), the files of the profiles `spring.profiles.active` names
+/// there and the files `spring.config.import` names (a `classpath:` one
+/// from `lib/resources/`), names matched the relaxed way. Environment
+/// variables and `--dart-define` values do not count, so a placeholder
+/// only they can resolve is unknown at build time: a profile name with one
+/// in `spring.profiles.active`, `.include`, `.default` or `.group.*` is
+/// left out, whatever else the name holds (`dev,${ENV}-eu` is read as
+/// `dev`), in any form the app reads the key in
+/// (`spring.profiles.group[my.prod]`, `spring.profiles[active]`),
+/// `spring.profiles.validate` or `spring.main.cloud-platform` with
+/// one is read as unset, an import location with one is not read (the
+/// other entries of its `;` group are), and a document whose
+/// `spring.config.activate.on-profile` or `.on-cloud-platform` has one is
+/// skipped; each with a warning that names it, never a build error (a
+/// default, `${APP_PROFILE:dev}`, is used). Where a key may be is still
+/// checked: `spring.profiles.active` in `application-web.yaml` fails the
+/// build whatever its value, as it fails the app's start. A placeholder in
+/// `spring.flutter.security.web.mode`, as in a `spring.flutter.web.*`
+/// value, must resolve at build time. A browser has no file system:
+/// a `file:`, `configtree:` or `package:` import (or a plain absolute
+/// path), with a wildcard or not, is not read from the build machine's
+/// disk but skipped, `optional:` or not; when the properties give a file
+/// to write, a warning names the first required one as written (the web
+/// version would fail to start with it, as the app's own start reports).
+/// An import the build cannot read (`asset:`, `http:`, `https:`, or a
+/// `classpath:` file missing from `lib/resources/`, which another package
+/// may provide) is skipped silently, even a required one: it may exist at
+/// run time.
 ///
 /// ```yaml
 /// # lib/resources/application-web.yaml
@@ -50,8 +100,9 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 /// itself (`spring.flutter.security.web.mode=spa`) gets a ready policy
 /// when it sets none ([WebDevServerSettings.spaContentSecurityPolicy]):
 /// its scripts and Flutter's only, no `eval`, connections to its own
-/// origin, Flutter's CDN and the providers of its
-/// `spring.security.oauth2.client.provider.*` URIs, no framing.
+/// origin, Flutter's CDN, the endpoints its login fetches that are known
+/// at build time and the origins of
+/// `spring.flutter.web.content-security-policy-connect-src`, no framing.
 ///
 /// The file is not a declared build output: `build_runner` would overwrite
 /// a hand-written file of that name, and delete one it once generated when
@@ -64,7 +115,12 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 /// - no properties and a generated file: the file is deleted;
 /// - no properties and a hand-written file: nothing happens;
 /// - invalid properties: a build error names the property, the file is
-///   left as it is.
+///   left as it is;
+/// - a config file the app reads that does not parse, with a property set
+///   in another file or a generated file: a build error, the file is left
+///   as it is (without either, nothing happens);
+/// - a required import a browser cannot read: as if it were not there
+///   (above), with a warning when the file is written.
 ///
 /// build_runner re-runs the step when a file of `lib/resources/` changes,
 /// not when `web_dev_config.yaml` does (it is no build source): after
@@ -114,20 +170,32 @@ final class WebDevConfigBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
-    final resources = await SpringBuilder.resources(buildStep);
+    // The main builder warns about a file too large to embed; the app
+    // does not read it, nor does this builder.
+    final resources = await SpringBuilder.resources(buildStep, warn: false);
     final texts = {
       for (final MapEntry(:key, value: (:text, base64: _)) in resources.entries)
         key: ?text,
     };
+    // Files that are not UTF-8: read only through an import that names
+    // their encoding (`classpath:dev.properties[encoding=iso-8859-1]`).
+    final binary = {
+      for (final MapEntry(:key, value: (:text, :base64)) in resources.entries)
+        if (text == null && base64 != null) key: base64Decode(base64),
+    };
+    final existing = await _files.read(buildStep, package);
+    final generated = existing != null && existing.startsWith(marker);
     final WebDevServerSettings? settings;
     try {
-      settings = WebDevServerSettings.read(texts);
+      settings = WebDevServerSettings.read(
+        texts,
+        generated: generated,
+        binary: binary,
+      );
     } on WebDevConfigException catch (e) {
       log.severe('$e\n$fileName is left as it is.');
       return;
     }
-    final existing = await _files.read(buildStep, package);
-    final generated = existing != null && existing.startsWith(marker);
     if (settings == null) {
       if (generated) {
         await _files.delete(buildStep, package);
@@ -167,51 +235,14 @@ abstract interface class WebDevConfigFiles {
   Future<void> delete(BuildStep buildStep, String package);
 }
 
-// The file in the package's directory on disk.
+// The file in the package's directory on disk (see [PackageDirectories]:
+// the package's own directory, also in a workspace build).
 final class _DiskFiles implements WebDevConfigFiles {
   const _DiskFiles();
 
-  static final _directories = <String, Uri?>{};
-
-  // build_runner gives builders `asset:` package roots, so the directory
-  // comes from the nearest `.dart_tool/package_config.json` above the
-  // working directory: the package's own, or its workspace's when the
-  // build runs from a pub workspace (`build_runner build --workspace`).
-  static Uri? _directory(String package) =>
-      _directories.putIfAbsent(package, () {
-        var directory = io.Directory.current.absolute;
-        while (true) {
-          final config = io.File.fromUri(
-            directory.uri.resolve('.dart_tool/package_config.json'),
-          );
-          if (config.existsSync()) {
-            try {
-              final json = jsonDecode(config.readAsStringSync()) as Map;
-              for (final entry in json['packages'] as List) {
-                if (entry is Map && entry['name'] == package) {
-                  final root = config.uri.resolve(entry['rootUri'] as String);
-                  return root.path.endsWith('/') ? root : Uri.parse('$root/');
-                }
-              }
-            } on Object {
-              // Unreadable: the package's directory is unknown.
-            }
-            return null;
-          }
-          final parent = directory.parent;
-          if (parent.path == directory.path) {
-            return null;
-          }
-          directory = parent;
-        }
-      });
-
-  static io.File? _file(String package) {
-    final directory = _directory(package);
-    return directory == null || !directory.isScheme('file')
-        ? null
-        : io.File.fromUri(directory.resolve(WebDevConfigBuilder.fileName));
-  }
+  static io.File? _file(String package) => PackageDirectories.current.file(
+    AssetId(package, WebDevConfigBuilder.fileName),
+  );
 
   @override
   Future<String?> read(BuildStep buildStep, String package) async {
@@ -284,8 +315,21 @@ final class WebDevServerSettings {
   /// The Content Security Policy of an app whose browser logs in by itself
   /// (`spring.flutter.security.web.mode=spa`) and sets no
   /// `spring.flutter.web.content-security-policy`: what Flutter's web
-  /// engine needs and nothing more, plus [connectOrigins] (the providers'
-  /// origins) for `fetch`.
+  /// engine needs and nothing more, plus [connectOrigins] for `fetch`.
+  ///
+  /// The builder passes as [connectOrigins] the origins the login fetches
+  /// from that are known at build time: those of the
+  /// `spring.security.oauth2.client.provider.*` URIs (issuer, token, user
+  /// info, keys), the built-in endpoints of a registration of a common
+  /// provider without its own provider section
+  /// ([commonProviderEndpoints], Google's `https://www.googleapis.com`),
+  /// the endpoints Google's and Microsoft's discovery documents name on
+  /// other origins (`https://oauth2.googleapis.com`,
+  /// `https://graph.microsoft.com`), and the origins listed in
+  /// `spring.flutter.web.content-security-policy-connect-src`. What
+  /// another issuer's discovery document names on another origin is only
+  /// known at run time: list it in that property, with the APIs the app
+  /// calls.
   ///
   /// - scripts: the app's own and CanvasKit from Flutter's CDN
   ///   (`https://www.gstatic.com`; builds with `--no-web-resources-cdn`
@@ -322,6 +366,39 @@ final class WebDevServerSettings {
     ].join('; ');
   }
 
+  /// The endpoints the browser fetches for the common providers of
+  /// `spring_boot_starter_oauth2_client` (its `CommonOAuth2Provider`), by
+  /// provider id, each keyed by its provider property in the relaxed form
+  /// (`tokenuri` for `token-uri`).
+  ///
+  /// A registration named after one (or with `provider=<id>`) uses those
+  /// its provider section does not set, and none when the section has an
+  /// `issuer-uri` (the endpoints are discovered). Token, keys and user
+  /// info only: the authorization endpoint is navigated to, never
+  /// fetched. Okta has no fixed address (its issuer is configured). A copy
+  /// of the client's table, as the generator does not depend on the
+  /// client; a test of the client compares the two.
+  static const Map<String, Map<String, String>> commonProviderEndpoints = {
+    'google': {
+      'tokenuri': 'https://www.googleapis.com/oauth2/v4/token',
+      'jwkseturi': 'https://www.googleapis.com/oauth2/v3/certs',
+      'userinfouri': 'https://www.googleapis.com/oauth2/v3/userinfo',
+    },
+    'github': {
+      'tokenuri': 'https://github.com/login/oauth/access_token',
+      'userinfouri': 'https://api.github.com/user',
+    },
+    'facebook': {
+      'tokenuri': 'https://graph.facebook.com/v2.8/oauth/access_token',
+      'userinfouri': 'https://graph.facebook.com/me?fields=id,name,email',
+    },
+    'okta': <String, String>{},
+    'apple': {
+      'tokenuri': 'https://appleid.apple.com/auth/token',
+      'jwkseturi': 'https://appleid.apple.com/auth/keys',
+    },
+  };
+
   /// `spring.flutter.web.host`: the address to listen on (`localhost`,
   /// `0.0.0.0`).
   final String? host;
@@ -348,55 +425,90 @@ final class WebDevServerSettings {
   final List<WebDevProxyRule> proxy;
 
   /// The settings of the config [files] of `lib/resources/` (path below
-  /// that directory to content), read for the `web` profile; `null` when
-  /// no `spring.flutter.web.*` property is set and the browser does not
-  /// log in by itself (`spring.flutter.security.web.mode=spa`).
+  /// that directory to content; the files that are not UTF-8 as [binary],
+  /// read only through an import that names their encoding, such as
+  /// `classpath:dev.properties[encoding=iso-8859-1]`), read for the `web`
+  /// profile; `null` when
+  /// there is nothing to write: no `spring.flutter.web.*` property is set
+  /// and the browser does not log in by itself
+  /// (`spring.flutter.security.web.mode=spa`).
   ///
-  /// Throws [WebDevConfigException] for an invalid value.
-  static WebDevServerSettings? read(Map<String, String> files) {
-    // Reuses the scan behind the --dart-define keys: no config file
-    // mentions the properties, so the files need not be loaded at all.
-    final keys = DartDefineKeys();
-    files.forEach(keys.addConfigFile);
-    if (!keys.keys.any(
-      (key) =>
-          key.startsWith('SPRING_FLUTTER_WEB_') ||
-          key == 'SPRING_FLUTTER_SECURITY_WEB_MODE',
-    )) {
+  /// The files are only read as the app reads them when the app evidently
+  /// uses the dev server's file: a config file read without loading them
+  /// (any `.properties`, `.yml` or `.yaml` file of `lib/resources/`, and a
+  /// file an import names with a file hint, `[.yaml]` or
+  /// `[encoding=iso-8859-1]`) sets one of those keys.
+  /// Otherwise the result is `null`, without a word, whatever the files
+  /// hold: the builder runs for every package that depends on the
+  /// generator, pure Dart servers too. [generated] tells that the package
+  /// has a `web_dev_config.yaml` this builder wrote: then a config file
+  /// that does not parse may be the one with the keys, so the files are
+  /// read to report it, if the app reads it (and only that).
+  ///
+  /// A placeholder that only the running app can resolve (an environment
+  /// variable, a `--dart-define`) in the keys that decide which files are
+  /// read is unknown at build time: the files are read without what has
+  /// one (a profile name, a `spring.profiles.validate` or
+  /// `spring.main.cloud-platform` value, an import location; a document
+  /// whose `spring.config.activate.*` guard has one is skipped), with a
+  /// warning.
+  ///
+  /// Throws [WebDevConfigException] for an invalid value and for a config
+  /// file that does not parse or cannot be read.
+  static WebDevServerSettings? read(
+    Map<String, String> files, {
+    bool generated = false,
+    Map<String, Uint8List> binary = const {},
+  }) {
+    final config = _StaticConfig(files, binary);
+    if (!config.setsWebKeys && !(generated && config.unparsed.isNotEmpty)) {
       return null;
     }
-    return _Reader(_environment(files)).read();
+    final reading = _BrowserReading(files, binary, config);
+    final StandardEnvironment environment;
+    try {
+      environment = reading.read();
+    } on WebDevConfigException {
+      if (config.setsWebKeys || reading.unparsed) {
+        rethrow;
+      }
+      log.fine(
+        'The config files of lib/resources/ set no '
+        '${WebDevConfigBuilder.prefix}.* property that can be read without '
+        'loading them, and cannot be loaded at build time: '
+        '${WebDevConfigBuilder.fileName} is not written.',
+      );
+      return null;
+    }
+    if (!config.setsWebKeys) {
+      // Read only for the file that does not parse, which the app does
+      // not read: nothing to write.
+      return null;
+    }
+    reading.warnings.forEach(log.warning);
+    final settings = _Reader(environment).read();
+    // Only an app with something to write hears of a required import a
+    // browser cannot read.
+    final unreadable = reading.unreadable;
+    if (settings != null && unreadable != null) {
+      log.warning(_notInBrowser(unreadable));
+    }
+    return settings;
   }
 
-  // The environment of the app in a browser: the config files with the
-  // `web` profile, no environment variables (the build must not depend on
-  // them), missing imports ignored (they may exist at run time only).
-  static StandardEnvironment _environment(Map<String, String> files) {
-    final environment = StandardEnvironment(systemEnvironment: const {});
-    environment.propertySources.addLast(
-      const MapPropertySource(
-        ConfigDataEnvironment.defaultPropertiesSourceName,
-        {ConfigDataEnvironment.onNotFoundProperty: 'ignore'},
-      ),
-    );
-    try {
-      ConfigDataEnvironment(
-        environment,
-        resourceLoader: DefaultResourceLoader(
-          protocolResolvers: [InMemoryProtocolResolver('memory:', files)],
-        ),
-        defaultLocations: const ['optional:memory:/;optional:memory:/config/'],
-        additionalProfiles: const ['web'],
-      ).processAndApplySync();
-    } on Exception catch (e) {
-      throw WebDevConfigException(
-        'The config files of lib/resources/ cannot be read for the '
-        '${WebDevConfigBuilder.prefix}.* properties: $e',
-      );
-    }
-    ConfigurationPropertySources.attach(environment);
-    return environment;
-  }
+  // The warning for a required location of the file system or of a
+  // package ([_BrowserResources]), which the app in a browser never
+  // finds: the app's own start reports it there, the dev server's file is
+  // right without it. [location] is written as in the config file, so
+  // `optional:` before it makes it optional.
+  static String _notInBrowser(String location) =>
+      "spring.config.import: '$location' is read from the file system (or "
+      "a package's files), which an app in a browser does not have: the web "
+      'version would fail to start with it. Make the import optional '
+      "('optional:$location') to read it on the other platforms only, or "
+      'put the properties into a file of lib/resources/ and import that '
+      'with classpath:. ${WebDevConfigBuilder.fileName} is written without '
+      'it.';
 
   static String _quoted(String value) => jsonEncode(value);
 
@@ -443,6 +555,855 @@ final class WebDevServerSettings {
       out.writeln('  base-href: ${_quoted(baseHref!)}');
     }
     return out.toString();
+  }
+}
+
+// What a location of the config finds when the app runs in a browser, as
+// far as the build knows it:
+// - `memory:` (the default locations), `classpath:` and plain paths: the
+//   build's own files of lib/resources/, as the app reads its embedded
+//   ones, not a lib/resources/ on disk below the working directory
+//   (another package's in a workspace build);
+// - `file:` and `package:` (also a plain absolute path and a
+//   `configtree:` directory, which are read through `file:`, wildcards
+//   included): nothing, as a browser has no file system and no package
+//   files; an optional one is skipped, a required one is not found
+//   (_BrowserReading then loads the files again with every location
+//   optional, and a warning names it when there is a file to write);
+// - a missing file of lib/resources/ and any other location (`asset:`,
+//   `http:`): an empty file, so even a required one is skipped. It may
+//   exist at run time only, and the build must not depend on what it
+//   cannot read.
+final class _BrowserResources implements ProtocolResolver {
+  _BrowserResources(Map<String, String> files, this._binary)
+    : _resolvers = [
+        InMemoryProtocolResolver('memory:', files),
+        InMemoryProtocolResolver(ClasspathResources.prefix, files),
+      ];
+
+  final List<InMemoryProtocolResolver> _resolvers;
+
+  // The files that are not UTF-8, by path below lib/resources/.
+  final Map<String, Uint8List> _binary;
+
+  static final _scheme = RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:');
+
+  @override
+  Resource resolve(String location, ResourceLoader resourceLoader) {
+    for (final prefix in ['memory:', ClasspathResources.prefix]) {
+      if (location.startsWith(prefix)) {
+        // InMemoryProtocolResolver's path cleaning.
+        final path = FileSystemResource(
+          location.substring(prefix.length),
+        ).path.replaceFirst(RegExp('^/'), '');
+        if (_binary[path] case final bytes?) {
+          return ByteArrayResource(
+            bytes,
+            description: 'resource [$prefix$path]',
+          );
+        }
+      }
+    }
+    for (final resolver in _resolvers) {
+      if (resolver.resolve(location, resourceLoader) case final resource?) {
+        return resource.exists() ? resource : _empty(resource.description);
+      }
+    }
+    if (location.startsWith(ResourceLoader.filePrefix) ||
+        location.startsWith(DefaultResourceLoader.packagePrefix)) {
+      return DescriptiveResource(
+        'resource [$location] (not readable in a browser)',
+      );
+    }
+    if (_scheme.hasMatch(location)) {
+      return _empty('resource [$location]');
+    }
+    return resolve('${ClasspathResources.prefix}$location', resourceLoader);
+  }
+
+  static Resource _empty(String description) =>
+      ByteArrayResource.fromString('', description: description);
+
+  // Whether a location (a `;` group as written) has an entry of the file
+  // system or of a package: what a browser can never read. Any other
+  // location that is not found (a `classpath:` directory without config
+  // files) may be provided at run time and is skipped silently.
+  static bool notInBrowser(String location) {
+    for (var entry in location.split(';')) {
+      entry = entry.trim();
+      if (entry.startsWith(ConfigDataEnvironment.optionalPrefix)) {
+        entry = entry.substring(ConfigDataEnvironment.optionalPrefix.length);
+      }
+      if (entry.startsWith(ResourceLoader.filePrefix) ||
+          entry.startsWith(DefaultResourceLoader.packagePrefix) ||
+          entry.startsWith(ConfigDataEnvironment.configTreePrefix) ||
+          entry.startsWith('/') ||
+          entry.startsWith(r'\') ||
+          RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(entry)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+// ` (in lib/resources/application-web.yaml)` for the property source of
+// a config file of lib/resources/ (named `Config resource
+// 'memory:/application-web.yaml'`, or `'classpath:...'` when imported).
+String _sourceOrigin(String sourceName) {
+  final match = RegExp(
+    "'(?:memory|classpath):/?([^']+)'",
+  ).firstMatch(sourceName);
+  return match == null ? '' : ' (in lib/resources/${match[1]})';
+}
+
+// What the config files of lib/resources/ say without being loaded as the
+// app loads them: whether any of them sets a spring.flutter.web.* key or
+// spring.flutter.security.web.mode (in any document, for any profile),
+// which files do not parse, and every key with its first value (the keys
+// a placeholder may find at build time). Every .properties, .yml and
+// .yaml file counts, as an import may name any of them, and so does a
+// file an import names with file hints (`classpath:dev.conf[.yaml]`,
+// `classpath:web.properties[encoding=iso-8859-1]`), read in that format
+// and encoding (a file that is not UTF-8 only that way). A placeholder in
+// such an import is resolved with its default or a value of the files
+// (`classpath:${ENV:dev}.conf[.yaml]`); one only the running app knows
+// leaves the import unscanned.
+final class _StaticConfig {
+  _StaticConfig(this._files, this._binary) {
+    final pending = <_Hinted>[
+      for (final path in _files.keys.toList()..sort())
+        if (_loaderOf(_extension(path)) case final loader?)
+          (path, loader, null),
+    ];
+    final seen = <String>{};
+    while (pending.isNotEmpty) {
+      while (pending.isNotEmpty) {
+        final (path, loader, encoding) = pending.removeAt(0);
+        if (seen.add(
+          '${loader.fileExtensions.first}:${encoding?.name}:$path',
+        )) {
+          pending.addAll(_scan(path, loader, encoding));
+        }
+      }
+      // The imports with placeholders, once every file found so far has
+      // given its values; a file they find may give more.
+      final resolver = valuesResolver(values);
+      for (final (importing, location) in _withPlaceholders.toList()) {
+        final String resolved;
+        try {
+          resolved = resolver.resolveRequiredPlaceholders(location);
+        } on Exception {
+          continue; // unknown at build time, for now
+        }
+        _withPlaceholders.remove((importing, location));
+        if (_hinted(importing, resolved) case final file?) {
+          pending.add(file);
+        }
+      }
+    }
+  }
+
+  // The hinted imports with a placeholder not resolved yet: the importing
+  // file and the location.
+  final _withPlaceholders = <(String, String)>{};
+
+  // A resolver of placeholders over [values] (key to value), names
+  // relaxed.
+  static PropertyResolver valuesResolver(Map<String, Object> values) {
+    final source = MapPropertySource('lib/resources', values);
+    return PropertySourcesPropertyResolver(
+      MutablePropertySources([
+        ConfigurationPropertySourcesPropertySource(
+          ConfigurationPropertySources.attachedPropertySourceName,
+          [source],
+        ),
+        source,
+      ]),
+    );
+  }
+
+  final Map<String, String> _files;
+
+  // The files that are not UTF-8.
+  final Map<String, Uint8List> _binary;
+
+  // Whether a file sets a key the builder writes.
+  bool setsWebKeys = false;
+
+  // The files that do not parse.
+  final unparsed = <String>[];
+
+  // Every key of every file, with the value of the first file that has
+  // it.
+  final values = <String, Object>{};
+
+  static const List<PropertySourceLoader> _loaders = [
+    PropertiesPropertySourceLoader(),
+    YamlPropertySourceLoader(),
+  ];
+
+  static final _web = ConfigurationPropertyName.of(WebDevConfigBuilder.prefix);
+  static final _spaMode = ConfigurationPropertyName.of(
+    'spring.flutter.security.web.mode',
+  );
+  static final _import = ConfigurationPropertyName.of(
+    ConfigDataEnvironment.importProperty,
+  );
+
+  static PropertySourceLoader? _loaderOf(String extension) => _loaders
+      .where((loader) => loader.fileExtensions.contains(extension))
+      .firstOrNull;
+
+  // The loader of an extension hint, matched without case as the config
+  // loader does (`[.YAML]`).
+  static PropertySourceLoader? _loaderOfHint(String extension) =>
+      _loaderOf(extension.toLowerCase());
+
+  static String _extension(String path) {
+    final name = path.substring(path.lastIndexOf('/') + 1);
+    final dot = name.lastIndexOf('.');
+    return dot == -1 ? '' : name.substring(dot + 1);
+  }
+
+  // The text of the file at [path] as [loader] reads it, decoded with the
+  // encoding an import names ([encoding], else UTF-8); `null` when there
+  // is no such file, or it does not decode (then it is [unparsed], as the
+  // app fails on it).
+  String? _text(String path, PropertySourceLoader loader, Encoding? encoding) {
+    final text = _files[path];
+    if (encoding == null) {
+      return text;
+    }
+    final bytes = _binary[path] ?? (text == null ? null : utf8.encode(text));
+    if (bytes == null) {
+      return null;
+    }
+    try {
+      return loader.encodingFor(encoding).decode(bytes);
+    } on FormatException {
+      unparsed.add(path);
+      return null;
+    }
+  }
+
+  // Reads the file at [path] with [loader] (decoded with [encoding] when
+  // an import names one); returns the files its imports name with a file
+  // hint.
+  List<_Hinted> _scan(
+    String path,
+    PropertySourceLoader loader,
+    Encoding? encoding,
+  ) {
+    final text = _text(path, loader, encoding);
+    if (text == null) {
+      return const [];
+    }
+    final List<AbstractPropertySource<Object>> sources;
+    try {
+      sources = loader.load(path, text);
+    } on FormatException {
+      unparsed.add(path);
+      return const [];
+    }
+    final hinted = <_Hinted>[];
+    for (final source in sources) {
+      if (source is! EnumerablePropertySource<Object>) {
+        continue;
+      }
+      final imports = <String>[];
+      for (final MapEntry(key: name, value: keys)
+          in ConfigurationPropertySources.propertyNames(source).entries) {
+        if (_web.isAncestorOf(name) || name == _spaMode) {
+          setsWebKeys = true;
+        }
+        for (final key in keys) {
+          if (source.getProperty(key) case final value?) {
+            values.putIfAbsent(key, () => value);
+            if (name == _import ||
+                name.isNumericIndex(name.numberOfElements - 1) &&
+                    name.parent == _import) {
+              imports.add('$value');
+            }
+          }
+        }
+      }
+      for (final value in imports) {
+        for (final location in value.split(RegExp('[,;]'))) {
+          if (location.contains(r'${')) {
+            _withPlaceholders.add((path, location));
+          } else if (_hinted(path, location) case final file?) {
+            hinted.add(file);
+          }
+        }
+      }
+    }
+    return hinted;
+  }
+
+  // The file of lib/resources/ that the import [location] of the file at
+  // [importing] names with a file hint (relative, or `classpath:`), as the
+  // app reads its file hints (ConfigDataEnvironment.fileHints, on the
+  // location joined to the importing file's directory, so brackets in that
+  // directory's path are taken out too): with the loader of the extension
+  // hint or of the file's extension, and the encoding of an encoding hint;
+  // `null` for any other location (its placeholders already resolved),
+  // and for a charset the app cannot read (its start reports that).
+  static _Hinted? _hinted(String importing, String location) {
+    var value = location.trim();
+    if (value.startsWith(ConfigDataEnvironment.optionalPrefix)) {
+      value = value.substring(ConfigDataEnvironment.optionalPrefix.length);
+    }
+    if (!value.contains('[') || value.endsWith('/')) {
+      return null; // no hint: every config file is read anyway
+    }
+    final relative =
+        !value.startsWith(ClasspathResources.prefix) &&
+        !RegExp('^[a-zA-Z][a-zA-Z0-9+.-]+:').hasMatch(value) &&
+        !value.startsWith('/') &&
+        !value.startsWith(r'\');
+    if (!relative && !value.startsWith(ClasspathResources.prefix)) {
+      return null;
+    }
+    final ({String path, String? extension, Encoding? encoding}) hints;
+    try {
+      hints = ConfigDataEnvironment.fileHints(
+        relative
+            ? '${importing.substring(0, importing.lastIndexOf('/') + 1)}$value'
+            : value,
+      );
+    } on ConfigDataLoadException {
+      return null;
+    }
+    var file = hints.path;
+    final PropertySourceLoader? loader;
+    if (hints.extension case final extension?) {
+      loader = _loaderOfHint(extension);
+    } else {
+      // The loader's spelling names the file, as for the app (`x.YAML`
+      // reads `x.yaml`).
+      final extension = _extension(file);
+      loader = _loaderOfHint(extension);
+      if (loader != null) {
+        final spelling = extension.toLowerCase();
+        file = '${file.substring(0, file.length - extension.length)}$spelling';
+      }
+    }
+    if (loader == null) {
+      return null;
+    }
+    if (!relative) {
+      file = file.substring(ClasspathResources.prefix.length);
+    }
+    return switch (ClasspathResources.normalize(file)) {
+      final path? when !path.endsWith('/') => (path, loader, hints.encoding),
+      _ => null,
+    };
+  }
+}
+
+// A config file to scan: its path below lib/resources/, its loader, the
+// encoding an import names.
+typedef _Hinted = (String, PropertySourceLoader, Encoding?);
+
+// One reading of the config files as the app in a browser reads them: the
+// `web` profile, no environment variables (the build must not depend on
+// them), [_BrowserResources] deciding what each location finds, and
+// [_BuildTimeLoader] taking out of each document the placeholders only the
+// running app can resolve.
+final class _BrowserReading {
+  _BrowserReading(this._files, this._binary, this._config);
+
+  final Map<String, String> _files;
+  final Map<String, Uint8List> _binary;
+  final _StaticConfig _config;
+
+  // Placeholders some config file sets, but only in a document that is not
+  // read: unknown at build time as well (found when a read fails on
+  // them).
+  final _unresolvable = <String>{};
+
+  // The resolver of placeholders over every key of every config file,
+  // without [_unresolvable].
+  late PropertyResolver _known;
+
+  /// Whether a config file that the app reads does not parse.
+  bool unparsed = false;
+
+  /// The first required location a browser cannot read
+  /// ([_BrowserResources.notInBrowser]), skipped as if optional.
+  String? unreadable;
+
+  /// The warnings about placeholders unknown at build time.
+  final warnings = <String>{};
+
+  static const _ignoreNotFoundSource = 'webDevConfigIgnoreNotFound';
+
+  /// The environment the config files are read into; throws
+  /// [WebDevConfigException] when they cannot be.
+  StandardEnvironment read() {
+    var ignoreNotFound = false;
+    while (true) {
+      unparsed = false;
+      warnings.clear();
+      _known = _resolverWithout(_unresolvable);
+      try {
+        return _load(ignoreNotFound: ignoreNotFound);
+      } on PlaceholderResolutionException catch (e) {
+        if (!_unresolvable.add(e.placeholder)) {
+          throw _cannotRead(e);
+        }
+      } on ConfigDataResourceNotFoundException catch (e) {
+        if (!_retryWithout(e.location)) {
+          ignoreNotFound = _notFound(e, e.location, ignoreNotFound);
+        }
+      } on ConfigDataLocationNotFoundException catch (e) {
+        if (!_retryWithout(e.location)) {
+          ignoreNotFound = _notFound(e, e.location, ignoreNotFound);
+        }
+      } on ConfigDataLoadException catch (e) {
+        if (!_retryWithout(e.location)) {
+          throw _cannotRead(e);
+        }
+      } on Exception catch (e) {
+        throw _cannotRead(e);
+      } on StateError catch (e) {
+        // An invalid profile name (Boot's IllegalStateException).
+        throw _cannotRead(e);
+      } on ArgumentError catch (e) {
+        // A malformed profile expression in an on-profile guard
+        // (`a & | b`, Boot's IllegalArgumentException), a profile name the
+        // environment refuses (`!x` with spring.profiles.validate=false).
+        throw _cannotRead(e);
+      }
+    }
+  }
+
+  // A required location that is not found: the app in a browser does not
+  // find it either, so every location is read as optional from now on.
+  bool _notFound(Object e, String location, bool ignoreNotFound) {
+    if (ignoreNotFound) {
+      throw _cannotRead(e);
+    }
+    if (_BrowserResources.notInBrowser(location)) {
+      unreadable = location;
+    }
+    return true;
+  }
+
+  static WebDevConfigException _cannotRead(Object e) => WebDevConfigException(
+    'The config files of lib/resources/ cannot be read for the '
+    '${WebDevConfigBuilder.prefix}.* properties: $e',
+  );
+
+  // A location with a placeholder that was not resolved (lenient, as an
+  // import's is): its placeholders are unknown at build time; whether
+  // that is news, so reading again changes something.
+  bool _retryWithout(String location) {
+    var added = false;
+    for (final (start, end) in _placeholders(location)) {
+      final name = _key(location.substring(start + 2, end - 1));
+      if (name != null && _unresolvable.add(name)) {
+        added = true;
+      }
+    }
+    return added;
+  }
+
+  // The config files loaded into a new environment. A required location
+  // that is not found throws, unless [ignoreNotFound] makes every
+  // location optional (`spring.config.on-not-found=ignore`, a source
+  // removed again afterwards).
+  StandardEnvironment _load({required bool ignoreNotFound}) {
+    final environment = StandardEnvironment(systemEnvironment: const {});
+    if (ignoreNotFound) {
+      environment.propertySources.addFirst(
+        const MapPropertySource(_ignoreNotFoundSource, {
+          ConfigDataEnvironment.onNotFoundProperty: 'ignore',
+        }),
+      );
+    }
+    ConfigDataEnvironment(
+      environment,
+      resourceLoader: DefaultResourceLoader(
+        protocolResolvers: [_BrowserResources(_files, _binary)],
+      ),
+      loaders: [
+        for (final loader in _StaticConfig._loaders)
+          _BuildTimeLoader(loader, this),
+      ],
+      defaultLocations: const ['optional:memory:/;optional:memory:/config/'],
+      additionalProfiles: const ['web'],
+    ).processAndApplySync();
+    environment.propertySources.remove(_ignoreNotFoundSource);
+    ConfigurationPropertySources.attach(environment);
+    return environment;
+  }
+
+  PropertyResolver _resolverWithout(Set<String> names) {
+    final hidden = {
+      for (final name in names) ?ConfigurationPropertyName.ofIfValid(name),
+    };
+    return _StaticConfig.valuesResolver({
+      for (final MapEntry(:key, :value) in _config.values.entries)
+        if (!hidden.contains(ConfigurationPropertyName.adapt(key, '.')) &&
+            !names.contains(key))
+          key: value,
+    });
+  }
+
+  // The keys that decide which files and documents are read, as found in
+  // a document: what an unknown placeholder in each makes of it.
+  static final _groups = ConfigurationPropertyName.of('spring.profiles.group');
+  static final Map<ConfigurationPropertyName, _Decisive> _decisive = {
+    for (final name in [
+      StandardEnvironment.activeProfilesPropertyName,
+      StandardEnvironment.defaultProfilesPropertyName,
+      ConfigDataEnvironment.includeProfilesProperty,
+    ])
+      ConfigurationPropertyName.of(name): _Decisive.profiles,
+    for (final name in [
+      ConfigDataEnvironment.validateProfilesProperty,
+      CloudPlatform.propertyName,
+    ])
+      ConfigurationPropertyName.of(name): _Decisive.value,
+    ConfigurationPropertyName.of(ConfigDataEnvironment.importProperty):
+        _Decisive.import,
+    ConfigurationPropertyName.of(ConfigDataEnvironment.onProfileProperty):
+        _Decisive.guard,
+    ConfigurationPropertyName.of(ConfigDataEnvironment.onCloudPlatformProperty):
+        _Decisive.guard,
+  };
+
+  // What [name] decides, in any form the app reads it in: a group's name
+  // dotted or in brackets (`spring.profiles.group.prod`,
+  // `spring.profiles.group[my.prod]`), any element in brackets
+  // (`spring.profiles[active]` is `spring.profiles.active`, as in Boot),
+  // a list item by its index (`spring.profiles.active[0]`).
+  static _Decisive? _decisiveOf(ConfigurationPropertyName name) {
+    if (name.isEmpty) {
+      return null;
+    }
+    if (_groups.isAncestorOf(name)) {
+      return _Decisive.profiles;
+    }
+    return _decisive[_isListItem(name) ? name.parent : name];
+  }
+
+  // Whether the last element of [name] is a list index (`[0]`), not a map
+  // key in brackets (`[prod]`).
+  static bool _isListItem(ConfigurationPropertyName name) =>
+      name.isNumericIndex(name.numberOfElements - 1);
+
+  /// [source], a document as loaded, as far as the build can know it: the
+  /// keys that decide which files and documents are read (profiles, cloud
+  /// platform, imports) without what has a placeholder only the running
+  /// app can resolve, an import with one left out; a document that never
+  /// applies (skipped) when its `spring.config.activate.*` guard has one.
+  /// Each is warned about.
+  ///
+  /// A key left without a value stays in the document, and a skipped
+  /// document stays loaded, so the checks of where a key may be (a profile
+  /// file or an on-profile document may not set the profiles) still see
+  /// it, whatever its value.
+  AbstractPropertySource<Object> atBuildTime(
+    AbstractPropertySource<Object> source,
+  ) {
+    if (source is! EnumerablePropertySource<Object>) {
+      return source;
+    }
+    Map<String, Object?>? changed;
+    for (final MapEntry(key: name, value: keys)
+        in ConfigurationPropertySources.propertyNames(source).entries) {
+      final decisive = _decisiveOf(name);
+      if (decisive == null) {
+        continue;
+      }
+      for (final key in keys) {
+        final value = source.getProperty(key);
+        if (value is! String || !value.contains(r'${')) {
+          continue;
+        }
+        final unknown = _unknown(value);
+        if (unknown.isEmpty) {
+          continue;
+        }
+        // What is left of the value, and what is left out.
+        final (String kept, List<String> dropped) = switch (decisive) {
+          _Decisive.guard => ('', const []),
+          _Decisive.import => _withoutImports(value),
+          _Decisive.profiles => _withoutProfiles(value),
+          _Decisive.value => ('', [value]),
+        };
+        warnings.add(
+          _warning(key, source.name, value, unknown, decisive, dropped, kept),
+        );
+        if (decisive == _Decisive.guard) {
+          return _neverActive(source);
+        }
+        // A list item keeps its place (an empty one), so the items after
+        // it are still read.
+        (changed ??= {})[key] = kept.isEmpty && !_isListItem(name)
+            ? null
+            : kept;
+      }
+    }
+    return changed == null ? source : _BuildTimeSource(source, changed);
+  }
+
+  // [source], whose guard has a placeholder unknown at build time, as a
+  // document that never applies: its guards replaced by an on-profile
+  // expression no profiles match. Not dropped, so the checks the app makes
+  // of every document still see its keys (the legacy `spring.profiles`;
+  // `spring.profiles.active` in any document of a profile file).
+  static AbstractPropertySource<Object> _neverActive(
+    EnumerablePropertySource<Object> source,
+  ) {
+    final changed = <String, Object?>{
+      for (final MapEntry(key: name, value: keys)
+          in ConfigurationPropertySources.propertyNames(source).entries)
+        if (_decisiveOf(name) == _Decisive.guard)
+          for (final key in keys) key: null,
+    };
+    changed[ConfigDataEnvironment.onProfileProperty] = 'web & !web';
+    return _BuildTimeSource(source, changed);
+  }
+
+  // The names of the placeholders of [text] (outside nested ones) that do
+  // not resolve at build time: each the innermost name that fails.
+  List<String> _unknown(String text) => [
+    for (final (start, end) in _placeholders(text))
+      ?_failing(text.substring(start, end)),
+  ];
+
+  String? _failing(String placeholder) {
+    try {
+      _known.resolveRequiredPlaceholders(placeholder);
+      return null;
+    } on PlaceholderResolutionException catch (e) {
+      return e.placeholder;
+    }
+  }
+
+  // A comma list of profiles without the names that have a placeholder
+  // that does not resolve at build time, whatever else the name holds
+  // (`dev,${ENV}-eu` is `dev`); with the names left out.
+  (String, List<String>) _withoutProfiles(String value) {
+    final kept = <String>[];
+    final dropped = <String>[];
+    for (final item in _topLevelSplit(value, ',')) {
+      if (_unknown(item).isEmpty) {
+        kept.add(item);
+      } else {
+        dropped.add(item.trim());
+      }
+    }
+    return (kept.join(','), dropped);
+  }
+
+  // An import value without the locations that have a placeholder that
+  // does not resolve at build time (a `;` group keeps its `optional:`);
+  // with the locations left out, as written.
+  (String, List<String>) _withoutImports(String value) {
+    final dropped = <String>[];
+    final kept = [
+      for (final item in _topLevelSplit(value, ','))
+        if (_withoutUnknownEntries(item, dropped) case final group
+            when group.isNotEmpty)
+          group,
+    ];
+    return (kept.join(','), dropped);
+  }
+
+  String _withoutUnknownEntries(String group, List<String> dropped) {
+    final entries = _topLevelSplit(group, ';');
+    final optional = entries.first.trim().startsWith(
+      ConfigDataEnvironment.optionalPrefix,
+    );
+    final kept = <String>[];
+    for (final entry in entries) {
+      if (_unknown(entry).isEmpty) {
+        kept.add(entry.trim());
+      } else {
+        dropped.add(entry.trim());
+      }
+    }
+    if (kept.isEmpty) {
+      return '';
+    }
+    if (optional &&
+        !kept.first.startsWith(ConfigDataEnvironment.optionalPrefix)) {
+      kept[0] = '${ConfigDataEnvironment.optionalPrefix}${kept.first}';
+    }
+    return kept.join(';');
+  }
+
+  // [text] split at [separator] outside `${...}` placeholders, so a
+  // default with a comma (`${A:a,b}`) stays in one part.
+  static List<String> _topLevelSplit(String text, String separator) {
+    final spans = _placeholders(text);
+    final parts = <String>[];
+    var last = 0;
+    var span = 0;
+    for (
+      var i = text.indexOf(separator);
+      i != -1;
+      i = text.indexOf(separator, i + separator.length)
+    ) {
+      while (span < spans.length && spans[span].$2 <= i) {
+        span++;
+      }
+      if (span < spans.length && spans[span].$1 <= i) {
+        continue; // inside a placeholder
+      }
+      parts.add(text.substring(last, i));
+      last = i + separator.length;
+    }
+    return parts..add(text.substring(last));
+  }
+
+  static String _warning(
+    String key,
+    String sourceName,
+    String value,
+    List<String> unknown,
+    _Decisive decisive,
+    List<String> dropped,
+    String kept,
+  ) {
+    final names = unknown.toSet().map((name) => '\${$name}').join(', ');
+    final quoted = dropped.map((item) => "'$item'").join(', ');
+    final consequence = switch (decisive) {
+      _Decisive.guard => 'the document is skipped',
+      _Decisive.import when kept.isEmpty =>
+        dropped.length == 1
+            ? 'the import is not read'
+            : 'the imports $quoted are not read',
+      _Decisive.import =>
+        dropped.length == 1
+            ? '$quoted is not read (the rest of the value is)'
+            : '$quoted are not read (the rest of the value is)',
+      _Decisive.profiles =>
+        dropped.length == 1
+            ? 'the profile $quoted is left out'
+            : 'the profiles $quoted are left out',
+      _Decisive.value => 'it is read as if it were not set',
+    };
+    final origin = _sourceOrigin(sourceName);
+    return "$key$origin: '$value' cannot be resolved at build time: only the "
+        'running app knows $names (an environment variable or a '
+        '--dart-define, which ${WebDevConfigBuilder.fileName} cannot depend '
+        'on), so $consequence. Give it a default in the config files '
+        "('\${${unknown.first}:...}') to have "
+        '${WebDevConfigBuilder.fileName} use that.';
+  }
+
+  // The `${...}` placeholders of [text] outside nested ones, as (start,
+  // end) offsets; an unclosed one ends the search. An escaped one
+  // (`\${X}`, the literal text `${X}`) is none.
+  static List<(int, int)> _placeholders(String text) {
+    final spans = <(int, int)>[];
+    var index = text.indexOf(r'${');
+    while (index != -1) {
+      if (index > 0 && text[index - 1] == r'\') {
+        index = text.indexOf(r'${', index + 2);
+        continue;
+      }
+      var depth = 0;
+      var end = -1;
+      for (var i = index; i < text.length; i++) {
+        if (text.startsWith(r'${', i)) {
+          depth++;
+          i++;
+        } else if (text[i] == '}' && --depth == 0) {
+          end = i + 1;
+          break;
+        }
+      }
+      if (end == -1) {
+        break;
+      }
+      spans.add((index, end));
+      index = text.indexOf(r'${', end);
+    }
+    return spans;
+  }
+
+  // The key of a placeholder's content (before its default), `null` when
+  // it is itself made of placeholders.
+  static String? _key(String content) {
+    final colon = content.indexOf(':');
+    final key = (colon == -1 ? content : content.substring(0, colon)).trim();
+    return key.isEmpty || key.contains(r'${') ? null : key;
+  }
+}
+
+// What an unknown placeholder in a key that decides what is read makes of
+// it ([_BrowserReading.atBuildTime]).
+enum _Decisive {
+  // spring.profiles.active, .default, .include, .group.*: each profile
+  // name with one is left out (the property without a value when none is
+  // left).
+  profiles,
+  // spring.profiles.validate, spring.main.cloud-platform: the property is
+  // read without a value.
+  value,
+  // spring.config.import: the location is not read.
+  import,
+  // spring.config.activate.*: the document is skipped.
+  guard,
+}
+
+// A document with some of its keys changed ([_BrowserReading.atBuildTime]):
+// a `null` value leaves the key without a value but still in the document
+// (in its names, `containsProperty` true), as a map entry with a `null`
+// value is in Spring's MapPropertySource.
+final class _BuildTimeSource extends EnumerablePropertySource<Object> {
+  _BuildTimeSource(this._source, this._changed)
+    : super(_source.name, _source.source);
+
+  final EnumerablePropertySource<Object> _source;
+  final Map<String, Object?> _changed;
+
+  @override
+  Object? getProperty(String name) =>
+      _changed.containsKey(name) ? _changed[name] : _source.getProperty(name);
+
+  @override
+  bool containsProperty(String name) => _source.containsProperty(name);
+
+  @override
+  List<String> get propertyNames => _source.propertyNames;
+}
+
+// A config file format, read for the dev server's file: [_delegate]'s
+// documents as far as the build can know them
+// ([_BrowserReading.atBuildTime]); a file that does not parse is noted.
+final class _BuildTimeLoader extends PropertySourceLoader {
+  _BuildTimeLoader(this._delegate, this._reading);
+
+  final PropertySourceLoader _delegate;
+  final _BrowserReading _reading;
+
+  @override
+  List<String> get fileExtensions => _delegate.fileExtensions;
+
+  @override
+  Encoding get encoding => _delegate.encoding;
+
+  @override
+  Encoding encodingFor(Encoding hint) => _delegate.encodingFor(hint);
+
+  @override
+  List<AbstractPropertySource<Object>> load(String name, String content) {
+    final List<AbstractPropertySource<Object>> sources;
+    try {
+      sources = _delegate.load(name, content);
+    } on FormatException {
+      _reading.unparsed = true;
+      rethrow;
+    }
+    return [for (final source in sources) _reading.atBuildTime(source)];
   }
 }
 
@@ -543,10 +1504,8 @@ final class _Reader {
   }
 
   // ` (in lib/resources/application-web.yaml)` for a config file source.
-  static String _origin(AbstractPropertySource<Object> source) {
-    final match = RegExp("memory:/([^']+)").firstMatch(source.name);
-    return match == null ? '' : ' (in lib/resources/${match[1]})';
-  }
+  static String _origin(AbstractPropertySource<Object> source) =>
+      _sourceOrigin(source.name);
 
   String? _host() {
     final host = _string('host');
@@ -609,17 +1568,19 @@ final class _Reader {
   }
 
   // Whether the browser logs in by itself:
-  // spring.flutter.security.web.mode=spa.
+  // spring.flutter.security.web.mode=spa. A placeholder in it is resolved
+  // at build time, as in the spring.flutter.web.* values: one only the
+  // running app can resolve fails the build.
   bool _spaMode() {
-    try {
-      return _environment
-              .getProperty('spring.flutter.security.web.mode')
-              ?.trim()
-              .toLowerCase() ==
-          'spa';
-    } on Exception {
-      return false;
+    const property = 'spring.flutter.security.web.mode';
+    final name = ConfigurationPropertyName.of(property);
+    for (final (source, _) in _sources) {
+      if (ConfigurationPropertySources.getProperty(source, name)
+          case final value?) {
+        return _resolve(property, value, source).toLowerCase() == 'spa';
+      }
     }
+    return false;
   }
 
   // [headers] with the Content Security Policy: the property's, else the
@@ -658,10 +1619,32 @@ final class _Reader {
         "give the policy, such as default-src 'self'.",
       );
     }
+    final connectSrc = _connectSrc();
+    if (connectSrc != null && (policy != null || existing.isNotEmpty)) {
+      final own = policy != null
+          ? 'content-security-policy'
+          : 'headers.${existing.first}';
+      throw WebDevConfigException(
+        '${WebDevConfigBuilder.prefix}.content-security-policy-connect-src '
+        'adds origins to the ready policy of spa mode, but the app sets its '
+        'own (${WebDevConfigBuilder.prefix}.$own): put the origins into that '
+        "policy's connect-src and remove the property.",
+      );
+    }
+    if (connectSrc != null && !spa) {
+      log.warning(
+        '${WebDevConfigBuilder.prefix}.content-security-policy-connect-src '
+        'is ignored: it adds origins to the ready policy of spa mode '
+        '(spring.flutter.security.web.mode=spa) only.',
+      );
+    }
     final value =
         policy ??
         (spa && existing.isEmpty
-            ? WebDevServerSettings.spaContentSecurityPolicy(_providerOrigins())
+            ? WebDevServerSettings.spaContentSecurityPolicy({
+                ..._providerOrigins(),
+                ...?connectSrc,
+              })
             : null);
     if (value == null) {
       return headers;
@@ -669,46 +1652,176 @@ final class _Reader {
     return {...headers, reportOnlyValue ? reportOnly : enforced: value};
   }
 
-  // The origins of the spring.security.oauth2.client.provider.<id> URIs
-  // the browser fetches (issuer, token, user info, keys), sorted.
+  // spring.flutter.web.content-security-policy-connect-src: a list (YAML,
+  // or comma-separated) from the first source that has it, as Spring Boot
+  // binds lists; `null` when not set.
+  List<String>? _connectSrc() {
+    const field = 'contentsecuritypolicyconnectsrc';
+    const property =
+        '${WebDevConfigBuilder.prefix}.content-security-policy-connect-src';
+    for (final (source, names) in _sources) {
+      final values = <int, String>{};
+      for (final MapEntry(key: name, value: key) in names.entries) {
+        if (_field(name) != field) {
+          continue;
+        }
+        final value = source.getProperty(key);
+        if (value == null) {
+          continue;
+        }
+        final text = _resolve(key, value, source);
+        if (name.numberOfElements == 4) {
+          final parts = text.split(',');
+          for (var i = 0; i < parts.length; i++) {
+            values[i] = parts[i].trim();
+          }
+        } else if (name.numberOfElements == 5 && name.isNumericIndex(4)) {
+          values[int.parse(name.getElement(4))] = text;
+        }
+      }
+      if (values.isEmpty) {
+        continue;
+      }
+      final origins = [
+        for (final i in values.keys.toList()..sort())
+          if (values[i]!.isNotEmpty) values[i]!,
+      ];
+      for (final origin in origins) {
+        if (!_sourceExpression.hasMatch(origin)) {
+          throw WebDevConfigException(
+            "$property${_origin(source)}: '$origin' is not an origin to "
+            'connect to, such as https://api.example.com or '
+            'wss://api.example.com.',
+          );
+        }
+      }
+      return origins;
+    }
+    return null;
+  }
+
+  // A host source of a Content Security Policy with its scheme
+  // (`https://api.example.com`, `https://*.example.com:8443/v1/`), nothing
+  // that could end the directive or add another.
+  static final _sourceExpression = RegExp(
+    r"^[a-zA-Z][a-zA-Z0-9+.-]*://[^\s;,'\x22]+$",
+  );
+
+  // The origins the browser fetches for the OAuth2 client's
+  // registrations, sorted: those of every
+  // spring.security.oauth2.client.provider.<id> URI it reads (issuer, token,
+  // user info, keys), the built-in endpoints of a registration of a common
+  // provider (Google, GitHub, Facebook, Apple) that its provider section
+  // does not replace, and the endpoints the discovery documents of
+  // well-known issuers name on other origins. The authorization endpoint
+  // is navigated to, never fetched.
   Set<String> _providerOrigins() {
-    final pattern = RegExp(
-      r'^spring\.security\.oauth2\.client\.provider\.[^.]+\.'
-      r'(issueruri|tokenuri|userinfouri|jwkseturi)$',
-    );
+    final properties = _oauth2ClientProperties();
     final origins = <String>{};
+    void add(String? value) {
+      final uri = value == null ? null : Uri.tryParse(value.trim());
+      if (uri != null &&
+          (uri.isScheme('http') || uri.isScheme('https')) &&
+          uri.host.isNotEmpty) {
+        origins.add(uri.origin);
+      }
+    }
+
+    // provider id → its URIs (`issueruri`, `tokenuri`, ...).
+    final providers = <String, Map<String, String>>{};
+    // registration id → its `provider`, or `null`.
+    final registrations = <String, String?>{};
+    for (final MapEntry(key: name, :value) in properties.entries) {
+      if (_providerUri.firstMatch(name) case final match?) {
+        (providers[match[1]!] ??= {})[match[2]!] = value;
+        add(value);
+      } else if (_registrationProperty.firstMatch(name) case final match?) {
+        registrations.putIfAbsent(match[1]!, () => null);
+        if (match[2] == 'provider') {
+          registrations[match[1]!] = value;
+        }
+      }
+    }
+    for (final MapEntry(key: id, value: providerId) in registrations.entries) {
+      final provider = _relaxed(providerId ?? id);
+      final own = providers[provider] ?? const {};
+      if (own.containsKey('issueruri')) {
+        continue; // discovered: below
+      }
+      final common =
+          WebDevServerSettings.commonProviderEndpoints[provider] ?? const {};
+      for (final MapEntry(key: uri, :value) in common.entries) {
+        if (!own.containsKey(uri)) {
+          add(value);
+        }
+      }
+    }
+    for (final provider in providers.values) {
+      final issuer = Uri.tryParse(provider['issueruri']?.trim() ?? '');
+      if (issuer != null &&
+          issuer.isScheme('https') &&
+          issuer.host.isNotEmpty) {
+        origins.addAll(_discoveredOrigins[issuer.origin] ?? const []);
+      }
+    }
+    return {...origins.toList()..sort()};
+  }
+
+  // The spring.security.oauth2.client.* properties of the config files,
+  // their names in the relaxed form (lower case, no `-` or `_`), the
+  // values resolved; the first source wins. A value that cannot be
+  // resolved at build time is left out.
+  Map<String, String> _oauth2ClientProperties() {
+    final properties = <String, String>{};
     for (final source in _environment.propertySources) {
       if (source is! EnumerablePropertySource<Object> ||
           source is ConfigurationPropertySourcesPropertySource) {
         continue;
       }
       for (final name in source.propertyNames) {
-        final relaxed = name
-            .toLowerCase()
-            .replaceAll('-', '')
-            .replaceAll(
-              '_',
-              '',
-            );
-        if (!pattern.hasMatch(relaxed)) {
+        final relaxed = _relaxed(name);
+        if (!relaxed.startsWith(_oauth2Client) ||
+            properties.containsKey(relaxed)) {
           continue;
         }
-        final String? value;
         try {
-          value = _environment.getProperty(name);
+          if (_environment.getProperty(name) case final value?) {
+            properties[relaxed] = value;
+          }
         } on Exception {
           continue; // not resolvable at build time
         }
-        final uri = value == null ? null : Uri.tryParse(value.trim());
-        if (uri != null &&
-            (uri.isScheme('http') || uri.isScheme('https')) &&
-            uri.host.isNotEmpty) {
-          origins.add(uri.origin);
-        }
       }
     }
-    return {...origins.toList()..sort()};
+    return properties;
   }
+
+  static String _relaxed(String name) =>
+      name.toLowerCase().replaceAll('-', '').replaceAll('_', '');
+
+  static const _oauth2Client = 'spring.security.oauth2.client.';
+
+  static final _providerUri = RegExp(
+    r'^spring\.security\.oauth2\.client\.provider\.([^.]+)\.'
+    r'(issueruri|tokenuri|userinfouri|jwkseturi)$',
+  );
+
+  static final _registrationProperty = RegExp(
+    r'^spring\.security\.oauth2\.client\.registration\.([^.]+)\.([^.]+)$',
+  );
+
+  // The origins other than the issuer's that the discovery documents of
+  // well-known issuers name for the token, keys, user info and revocation
+  // endpoints. Any other issuer's are not known at build time:
+  // content-security-policy-connect-src adds them.
+  static const _discoveredOrigins = {
+    'https://accounts.google.com': [
+      'https://oauth2.googleapis.com',
+      'https://openidconnect.googleapis.com',
+      'https://www.googleapis.com',
+    ],
+    'https://login.microsoftonline.com': ['https://graph.microsoft.com'],
+  };
 
   // A list comes whole from the first source that has it, as Spring Boot
   // binds lists.
@@ -810,8 +1923,9 @@ final class _Reader {
             '${WebDevConfigBuilder.prefix}.* property and is ignored; the '
             'properties are host, port, base-href, https.cert-path, '
             'https.cert-key-path, headers.<Name>, '
-            'content-security-policy, content-security-policy-report-only '
-            'and proxy[n].target/prefix/regex/replace.',
+            'content-security-policy, content-security-policy-report-only, '
+            'content-security-policy-connect-src and '
+            'proxy[n].target/prefix/regex/replace.',
           );
         }
       }
@@ -826,6 +1940,8 @@ final class _Reader {
       'basehref' ||
       'contentsecuritypolicy' ||
       'contentsecuritypolicyreportonly' => elements == 4,
+      'contentsecuritypolicyconnectsrc' =>
+        elements == 4 || elements == 5 && name.isNumericIndex(4),
       'https' =>
         elements == 5 &&
             const {'certpath', 'certkeypath'}.contains(

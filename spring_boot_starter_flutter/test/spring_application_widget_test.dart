@@ -112,6 +112,44 @@ void main() {
     expect(find.textContaining('no clock'), findsOneWidget);
   });
 
+  testWidgets('a check failing after the start closes the context', (
+    tester,
+  ) async {
+    final contexts = <ApplicationContext>[];
+    await tester.pumpWidget(
+      SpringApplicationWidget(
+        application: () => app(
+          definitions: [_tracker(contexts)],
+          resources: {'application.properties': 'spring.flutter.app.type=nope'},
+        ),
+        failure: (_, error) =>
+            Text('failed: $error', textDirection: TextDirection.ltr),
+        home: const Greeting(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('spring.flutter.app.type'), findsOneWidget);
+    expect(contexts, hasLength(1));
+    // Its runners and scheduled tasks do not go on behind the screen.
+    expect(
+      (contexts.single as ConfigurableApplicationContext).isActive,
+      isFalse,
+    );
+
+    // Each hot reload's retry fails the same way: none is left running.
+    for (var i = 0; i < 2; i++) {
+      unawaited(tester.binding.reassembleApplication());
+      await tester.pumpAndSettle();
+    }
+    expect(contexts, hasLength(3));
+    expect(
+      contexts.whereType<ConfigurableApplicationContext>().where(
+        (c) => c.isActive,
+      ),
+      isEmpty,
+    );
+  });
+
   testWidgets('the default failure screen shows the error', (tester) async {
     await tester.pumpWidget(
       SpringApplicationWidget(
@@ -324,6 +362,55 @@ void main() {
       expect((before as ConfigurableApplicationContext).isActive, isTrue);
     });
 
+    testWidgets('a restart failing its check leaves no context running', (
+      tester,
+    ) async {
+      final contexts = <ApplicationContext>[];
+      var fingerprint = 'one';
+      var type = 'widgets';
+      await tester.pumpWidget(
+        SpringApplicationWidget(
+          application: () => app(
+            fingerprint: fingerprint,
+            definitions: [_tracker(contexts)],
+            resources: {
+              'application.properties': 'spring.flutter.app.type=$type',
+            },
+          ),
+          failure: (_, error) =>
+              Text('failed: $error', textDirection: TextDirection.ltr),
+          home: const Greeting(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Hello'), findsOneWidget);
+
+      fingerprint = 'two';
+      type = 'nope';
+      unawaited(tester.binding.reassembleApplication());
+      await tester.pumpAndSettle();
+      expect(find.textContaining('failed:'), findsOneWidget);
+      expect(contexts, hasLength(2));
+      expect(
+        contexts.whereType<ConfigurableApplicationContext>().where(
+          (c) => c.isActive,
+        ),
+        isEmpty,
+      );
+
+      // Fixed: the retry starts the only context.
+      type = 'widgets';
+      unawaited(tester.binding.reassembleApplication());
+      await tester.pumpAndSettle();
+      expect(find.text('Hello'), findsOneWidget);
+      expect(
+        contexts.whereType<ConfigurableApplicationContext>().where(
+          (c) => c.isActive,
+        ),
+        hasLength(1),
+      );
+    });
+
     testWidgets('after a failed start, tries again', (tester) async {
       var fail = true;
       await tester.pumpWidget(
@@ -426,3 +513,21 @@ class _StatefulState extends State<_Stateful> {
     ),
   );
 }
+
+/// Records every context the application starts.
+class _ContextTracker implements ApplicationContextAware {
+  _ContextTracker(this.contexts);
+  final List<ApplicationContext> contexts;
+
+  @override
+  void setApplicationContext(ApplicationContext applicationContext) =>
+      contexts.add(applicationContext);
+}
+
+/// An eager bean that adds each started context to [contexts].
+BeanDefinition<_ContextTracker> _tracker(List<ApplicationContext> contexts) =>
+    BeanDefinition<_ContextTracker>(
+      name: 'contextTracker',
+      types: const [_ContextTracker],
+      create: (_) => _ContextTracker(contexts),
+    );

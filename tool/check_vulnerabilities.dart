@@ -4,9 +4,15 @@
 // advisory fails the check. Most important for the third-party
 // `pointycastle` of the security packages (docs/dependencies.md).
 //
+// With `--maven <file>` it checks the Maven modules listed in the file
+// too (`group:name:version`, one per line after `CLASSPATH `, as
+// tool/gradle/build_classpath.init.gradle prints the Android build's
+// classpath: the Android and Kotlin Gradle plugins and what they pull).
+//
 //   dart pub get
 //   dart run tool/check_vulnerabilities.dart            # the pub workspace
 //   dart run tool/check_vulnerabilities.dart --flutter  # the Flutter packages too
+//   dart run tool/check_vulnerabilities.dart --maven /tmp/classpath.txt
 import 'dart:convert';
 import 'dart:io';
 
@@ -30,12 +36,35 @@ Map<String, String> hostedPackages(String path) {
   };
 }
 
+/// The Maven modules in [text]: each line `CLASSPATH group:name:version`
+/// (or `group:name:version` alone), as `(name, version)` pairs, once each.
+Set<(String, String)> mavenModules(String text) => {
+  for (final line in const LineSplitter().convert(text))
+    if (RegExp(
+          r'^(?:CLASSPATH )?([\w.-]+:[\w.-]+):([\w.+-]+)$',
+        ).firstMatch(line.trim())
+        case final match?)
+      (match[1]!, match[2]!),
+};
+
 Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final locks = [
     'pubspec.lock',
     if (args.contains('--flutter')) ..._flutterLocks,
   ];
+  final mavenFile = switch (args.indexOf('--maven')) {
+    -1 => null,
+    final i when i + 1 < args.length => args[i + 1],
+    _ => throw ArgumentError('--maven needs a file'),
+  };
+  final maven = mavenFile == null
+      ? <(String, String)>{}
+      : mavenModules(File(mavenFile).readAsStringSync());
+  if (mavenFile != null && maven.isEmpty) {
+    stderr.writeln('$mavenFile lists no Maven module.');
+    exit(1);
+  }
   final packages = <String, String>{};
   for (final lock in locks) {
     if (!File(lock).existsSync()) {
@@ -46,7 +75,13 @@ Future<void> main(List<String> args) async {
       packages['$key@$value'] = key;
     }
   }
-  final entries = packages.entries.toList();
+  // name@version → (ecosystem, name).
+  final entries = [
+    for (final MapEntry(:key, :value) in packages.entries)
+      MapEntry(key, ('Pub', value)),
+    for (final (name, version) in maven)
+      MapEntry('$name@$version', ('Maven', name)),
+  ];
   final client = HttpClient();
   final found = <String>[];
   try {
@@ -57,10 +92,10 @@ Future<void> main(List<String> args) async {
     request.write(
       jsonEncode({
         'queries': [
-          for (final MapEntry(:key, :value) in entries)
+          for (final MapEntry(:key, value: (ecosystem, name)) in entries)
             {
-              'package': {'name': value, 'ecosystem': 'Pub'},
-              'version': key.substring(value.length + 1),
+              'package': {'name': name, 'ecosystem': ecosystem},
+              'version': key.substring(name.length + 1),
             },
         ],
       }),
@@ -90,6 +125,6 @@ Future<void> main(List<String> args) async {
   }
   stdout.writeln(
     'No known vulnerabilities in ${entries.length} packages '
-    '(${locks.join(', ')}).',
+    '(${[...locks, ?mavenFile].join(', ')}).',
   );
 }

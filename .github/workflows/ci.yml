@@ -196,10 +196,7 @@ jobs:
         run: |
           for directory in $DIRECTORIES; do
             echo "::group::$directory"
-            case $directory in
-              example/*) (cd $directory && dart run build_runner build --delete-conflicting-outputs) ;;
-              *) (cd $directory && dart run build_runner build) ;;
-            esac
+            (cd $directory && dart run build_runner build)
             echo "::endgroup::"
             git diff --exit-code -- $directory
             test -z "$(git status --porcelain -- $directory)"
@@ -329,6 +326,114 @@ jobs:
           SECURITY_REFERENCE_REQUIRED: 'true' # no skipping without the jar
         run: dart test --tags differential --reporter expanded
 
+  # OWASP ZAP's baseline scan of the server guide as the starter secures it
+  # (roadmap/security_verification.md, section 6): the passive rules on
+  # every endpoint (seeded by .zap/seed_hook.py: a JSON API has no links to
+  # spider), logged in as `ada`: with the form login (dev), and with the
+  # `sso` profile through the login of the Keycloak of example/keycloak.
+  # Rules are accepted only in .zap/rules.tsv, with a reason; any other
+  # warning fails.
+  zap:
+    name: OWASP ZAP baseline (${{ matrix.name }})
+    needs: changes
+    if: needs.changes.outputs.security == 'true' || needs.changes.outputs.server_guide == 'true'
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: dev
+            profiles: dev
+          - name: sso
+            profiles: dev,sso
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: dart pub get
+
+      # The realm `neon` of example/keycloak (public development values).
+      - name: Keycloak
+        if: matrix.name == 'sso'
+        run: |
+          docker run -d --name keycloak --network host \
+            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+            -v "$PWD/example/keycloak/neon-realm.json:/opt/keycloak/data/import/neon-realm.json:ro" \
+            quay.io/keycloak/keycloak:26.8 start-dev --import-realm --http-port=8180
+          timeout 180 bash -c 'until curl -fs localhost:8180/realms/neon/.well-known/openid-configuration >/dev/null; do sleep 2; done'
+
+      - name: Start the server guide
+        working-directory: example/server_guide
+        run: |
+          dart run bin/main.dart --spring.profiles.active=${{ matrix.profiles }} \
+            --spring.output.ansi.enabled=never > "$RUNNER_TEMP/server.log" 2>&1 &
+          timeout 120 bash -c 'until curl -fs localhost:8080/api/books >/dev/null; do sleep 1; done'
+
+      # The form login (dev): a session for the protected endpoints, with
+      # the public development password of example/server_guide.
+      - name: Log in as ada
+        if: matrix.name == 'dev'
+        run: |
+          jar=$(mktemp)
+          curl -fsS -c "$jar" -b "$jar" -o /dev/null localhost:8080/api/books
+          xsrf=$(awk '$6 == "XSRF-TOKEN" { print $7 }' "$jar")
+          curl -fsS -c "$jar" -b "$jar" -o /dev/null -X POST -H "X-XSRF-TOKEN: $xsrf" \
+            -d 'username=ada&password=ada-secret' localhost:8080/api/login
+          curl -fsS -b "$jar" -o /dev/null localhost:8080/api/me
+          echo "ZAP_COOKIE=$(awk '$6 == "JSESSIONID" || $6 == "XSRF-TOKEN" { printf "%s=%s; ", $6, $7 }' "$jar")" >> "$GITHUB_ENV"
+
+      # The single sign-on (sso): oauth2Login() through Keycloak's login
+      # form, as a browser posts it, with the public development password
+      # of example/keycloak. Keycloak answers the form with a redirect to
+      # the server's callback, which logs the session in; its own redirect
+      # (to the Flutter web app, not running here) is not followed.
+      - name: Log in as ada at Keycloak
+        if: matrix.name == 'sso'
+        run: |
+          jar=$(mktemp)
+          form=$(curl -fsS -c "$jar" -b "$jar" -L localhost:8080/oauth2/authorization/keycloak)
+          action=$(printf '%s' "$form" | grep -o 'action="[^"]*"' | head -n 1 \
+            | sed -e 's/^action="//' -e 's/"$//' -e 's/&amp;/\&/g')
+          callback=$(curl -fsS -c "$jar" -b "$jar" -o /dev/null -w '%{redirect_url}' \
+            --data-urlencode username=ada --data-urlencode password=ada-secret "$action")
+          curl -fsS -c "$jar" -b "$jar" -o /dev/null "$callback"
+          curl -fsS -c "$jar" -b "$jar" -o /dev/null localhost:8080/api/me
+          echo "ZAP_COOKIE=$(awk '$6 == "JSESSIONID" || $6 == "XSRF-TOKEN" { printf "%s=%s; ", $6, $7 }' "$jar")" >> "$GITHUB_ENV"
+
+      # Without -I: a warning fails as a failure does. ZAP's image is
+      # pinned, so a new rule arrives with a deliberate upgrade, not on its
+      # own.
+      - name: ZAP baseline
+        run: |
+          mkdir -p "$RUNNER_TEMP/zap" && cp .zap/rules.tsv .zap/seed_hook.py "$RUNNER_TEMP/zap"
+          chmod -R a+rwX "$RUNNER_TEMP/zap"
+          docker run --rm --network host -e ZAP_COOKIE -v "$RUNNER_TEMP/zap:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:2.17.0 zap-baseline.py \
+            -t http://localhost:8080 -c rules.tsv --hook=/zap/wrk/seed_hook.py \
+            -z '-config connection.timeoutInSecs=15' \
+            -r report.html -J report.json -w report.md
+
+      - name: ZAP report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: zap-${{ matrix.name }}
+          path: ${{ runner.temp }}/zap/report.*
+
+      - name: Server log
+        if: failure()
+        run: cat "$RUNNER_TEMP/server.log"
+
   # SpEL and the JSON mapper run on the web too, where an integral double is
   # an `int` at run time: their tests also run compiled to JavaScript, on
   # node. And the server guide runs, also minified.
@@ -401,6 +506,18 @@ jobs:
 
       - name: No known vulnerabilities in the dependencies (Flutter packages)
         run: dart run tool/check_vulnerabilities.dart --flutter
+
+      # The Android build's own classpath (the Android and Kotlin Gradle
+      # plugins and what they pull, constrained in the guide's
+      # settings.gradle.kts and build.gradle.kts and the plugin's
+      # build.gradle.kts): the build machine's, not the APK's. gradlew is
+      # not committed (Flutter's android/.gitignore): --config-only writes
+      # the wrapper without building.
+      - name: No known vulnerabilities in the Android build's Gradle plugins
+        run: |
+          (cd example/flutter_guide && flutter build apk --config-only)
+          (cd example/flutter_guide/android && ./gradlew -q -I ../../../tool/gradle/build_classpath.init.gradle help) > "$RUNNER_TEMP/classpath.txt"
+          dart run tool/check_vulnerabilities.dart --maven "$RUNNER_TEMP/classpath.txt"
 
       - name: Generated code is up to date (Flutter guide and packages)
         run: |
@@ -493,7 +610,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends gnome-keyring libsecret-1-0 dbus-x11
+          sudo apt-get install -y --no-install-recommends gnome-keyring libsecret-1-0 dbus-x11 libglib2.0-bin
 
       - name: The DPAPI store
         if: runner.os == 'Windows'

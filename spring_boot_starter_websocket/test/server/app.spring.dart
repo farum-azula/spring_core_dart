@@ -7,6 +7,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'dart:async' as _i9;
+
 import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart'
     as _i6;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart'
@@ -508,6 +510,14 @@ _i2.BeanModule get $wsServerBeans => _i2.BeanModule(
             _i2.ClassType<String>(),
           ),
           get: (bean) => bean.pathVariables,
+        ),
+        _i2.BeanProperty<_i3.ServerWebSocketSession>(
+          r'messages',
+          type: _i9.Stream<Object>,
+          typeInfo: const _i2.GenericType<_i9.Stream<Object>>([
+            _i2.DynamicType(),
+          ]),
+          get: (bean) => bean.messages,
         ),
       ],
       methods: [

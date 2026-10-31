@@ -95,6 +95,11 @@ final class _Beans implements BeanFactory {
         failing.contains(T),
       );
 
+  // No bean is known by name (the chain looks for a bean named
+  // corsConfigurationSource).
+  @override
+  bool containsBean(String name) => false;
+
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

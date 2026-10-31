@@ -1,3 +1,17 @@
+## Unreleased
+
+### Breaking
+
+- A negative `spring.cache.simple.max-size` or `time-to-live`, also a per-cache one, fails the start with an error naming the property, as Caffeine refuses them (a negative size hung the isolate); `0` is allowed and keeps nothing.
+- The time to live is measured on a monotonic stopwatch, as Caffeine's ticker: `InMemoryCache(clock:)` and `InMemoryCacheManager(clock:)` have no clock by default, an injected clock no longer holds entries alive (real time expires them too), and a clock set back before a write expires the entry. Tests with a fixed clock and a short time to live change (see "Time to live in tests" in the README).
+- Boot's bracket form for a cache name with dots applies (`spring.cache.simple.caches[books.byIsbn].max-size`), and every per-cache value is checked at the start, whether its cache exists yet or not.
+
+### Changes
+
+- Per-cache settings bind from any relaxed form and from environment variables, as in Boot: `SPRING_CACHE_SIMPLE_CACHES_BOOKS_MAX_SIZE=5`.
+- Writes sweep out expired entries now and then, also after a burst of writes, so a cache with only a time to live no longer keeps them until they are read.
+- A full cache drops its least recently used entry in constant time (it took longer the larger `max-size` was).
+
 ## 0.4.3
 
 - Flutter security (#15)

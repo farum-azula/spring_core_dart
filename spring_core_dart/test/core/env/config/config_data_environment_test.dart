@@ -689,7 +689,8 @@ a=2
     });
 
     test('imported files get their profile variants, above the plain '
-        'subtree of imports', () {
+        "subtree of imports and, as in Boot, above the importing file's "
+        'own variant', () {
       write(
         'application.properties',
         'spring.profiles.active=dev\n'
@@ -703,7 +704,11 @@ a=2
       write('application-dev.properties', 'name=app-dev');
       final e = env();
       config(e).processAndApplySync();
-      expect(e.getProperty('name'), 'app-dev');
+      // Checked with Spring Boot 4.1.2: the variant of an import moves up
+      // in front of the variants of the location that read the importing
+      // file (ConfigDataEnvironmentContributor.moveProfileSpecific), one
+      // level per importing file.
+      expect(e.getProperty('name'), 'extra-dev');
       expect(e.getProperty('extra'), 'dev');
       expect(e.getProperty('more'), 'dev');
       expect(
@@ -713,15 +718,15 @@ a=2
               source.name.substring("Config resource 'file:$root/".length),
         ],
         [
-          "application-dev.properties'",
           "extra-dev.properties'",
+          "application-dev.properties'",
           "more-dev.properties'",
           "more.properties'",
           "extra.properties'",
           "application.properties'",
         ],
       );
-      // An import of a profile-specific file may not set profiles.
+      // The profile variant of an import may not set profiles.
       write('extra-dev.properties', 'spring.profiles.active=x');
       expect(
         () => config(env()).processAndApplySync(),

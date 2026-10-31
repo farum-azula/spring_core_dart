@@ -1,7 +1,7 @@
 // The parts that fetch over HTTP, against a JWK Set served on the
 // loopback interface: the default fetcher (statuses, the size limit) and the
 // decoder the auto-configuration builds from `jwk-set-uri` (audiences,
-// issuer, expiry, algorithms of the properties).
+// issuer, expiry, the token's type, algorithms of the properties).
 @Tags(['integration'])
 library;
 
@@ -154,6 +154,30 @@ void main() {
         ),
         refused,
       );
+    });
+
+    // Spring Security 7's default validators include JwtTypeValidator.jwt().
+    test('only access tokens: JWTs of another typ are refused', () async {
+      final strict = await decoder(['$_jwt.issuer-uri=https://issuer.example']);
+      const claims = {'iss': 'https://issuer.example'};
+      for (final type in ['logout+jwt', 'secevent+jwt', 'dpop+jwt', 'at+jwt']) {
+        await expectLater(
+          strict.decode(factory.token(claims: claims, header: {'typ': type})),
+          throwsA(
+            isA<JwtValidationException>().having(
+              (e) => e.message,
+              'message',
+              contains('typ'),
+            ),
+          ),
+          reason: type,
+        );
+      }
+      for (final type in ['JWT', 'jwt', null]) {
+        await strict.decode(
+          factory.token(claims: claims, header: {'typ': type}),
+        );
+      }
     });
 
     test('only the algorithms of the properties', () async {

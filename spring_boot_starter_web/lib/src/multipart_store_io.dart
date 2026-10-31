@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 /// Where the content of one uploaded file waits while the request is
@@ -31,7 +33,15 @@ abstract interface class StoredFile {
 }
 
 /// Stores one uploaded file as its bytes arrive: in memory up to
-/// [threshold] bytes, then in a temporary file in [location].
+/// [threshold] bytes, then in a temporary file.
+///
+/// Temporary files go to a directory of this process that only its user
+/// can open (`0700`, made with `mkdtemp`) inside [location], or inside the
+/// system's temporary directory; each has a random name and is created
+/// exclusively, so another user can neither read an upload nor plant a
+/// file or a link under its name. When that directory disappears (the
+/// system cleans its temporary directory: macOS after some days unused,
+/// `systemd-tmpfiles`), a new one is made for the next file.
 final class FileWriter {
   /// A writer that keeps up to [threshold] bytes in memory.
   FileWriter({required this.threshold, this.location});
@@ -39,9 +49,85 @@ final class FileWriter {
   /// The most bytes kept in memory; past it, everything goes to a file.
   final int threshold;
 
-  /// The directory of the temporary files, created when missing; `null`
-  /// for the system's temporary directory.
+  /// The directory in which the private directory of the temporary files
+  /// is made, created when missing; `null` for the system's temporary
+  /// directory.
   final String? location;
+
+  // The private directory per location, made once per process.
+  static final _directories = <String, Future<Directory>>{};
+  static final _random = Random.secure();
+
+  static Future<Directory> _privateDirectory(String? location) {
+    final key = location ?? '';
+    if (_directories[key] case final existing?) {
+      return existing;
+    }
+    final created = _directories[key] = _create(location);
+    // A failure is not kept: the next upload tries again.
+    unawaited(
+      created.then<void>(
+        (_) {},
+        onError: (Object _) => _directories.remove(key),
+      ),
+    );
+    return created;
+  }
+
+  static Future<Directory> _create(String? location) async {
+    final parent = location == null
+        ? Directory.systemTemp
+        : Directory(location);
+    if (!parent.existsSync()) {
+      await parent.create(recursive: true);
+    }
+    final directory = await parent.createTemp('spring_uploads_');
+    if (Platform.isWindows) {
+      return directory;
+    }
+    // createTemp is mkdtemp (rwx------) on macOS but a plain mkdir on
+    // Linux (rwxr-xr-x with the usual umask): the uploads would be
+    // readable by every user of the machine. dart:io has no chmod.
+    final chmod = await Process.run('chmod', ['700', directory.path]);
+    if (chmod.exitCode != 0 || directory.statSync().mode & 0x1FF != 0x1C0) {
+      await directory.delete(recursive: true);
+      throw FileSystemException(
+        'Cannot make the upload directory private (rwx------)',
+        directory.path,
+      );
+    }
+    return directory;
+  }
+
+  // A new empty file of random name in the private directory, made again
+  // when it was removed since.
+  static Future<File> _createFile(String? location) async {
+    final directory = await _privateDirectory(location);
+    try {
+      return await _newFile(directory);
+    } on FileSystemException {
+      if (directory.existsSync()) {
+        rethrow;
+      }
+      final key = location ?? '';
+      if (identical(await _directories[key], directory)) {
+        _directories.remove(key)?.ignore();
+      }
+      return await _newFile(await _privateDirectory(location));
+    }
+  }
+
+  static Future<File> _newFile(Directory directory) => File(
+    '${directory.path}${Platform.pathSeparator}${_randomName()}',
+  ).create(exclusive: true);
+
+  static String _randomName() {
+    final out = StringBuffer('upload_');
+    for (var i = 0; i < 16; i++) {
+      out.write(_random.nextInt(256).toRadixString(16).padLeft(2, '0'));
+    }
+    return '$out.tmp';
+  }
 
   final _memory = BytesBuilder(copy: false);
   File? _file;
@@ -57,17 +143,7 @@ final class FileWriter {
       return;
     }
     if (_sink == null) {
-      final directory = location == null
-          ? Directory.systemTemp
-          : Directory(location!);
-      if (!directory.existsSync()) {
-        directory.createSync(recursive: true);
-      }
-      final file = File(
-        '${directory.path}${Platform.pathSeparator}'
-        'upload_${DateTime.now().microsecondsSinceEpoch}_'
-        '${identityHashCode(this)}.tmp',
-      );
+      final file = await _createFile(location);
       _file = file;
       final sink = file.openWrite();
       _sink = sink;

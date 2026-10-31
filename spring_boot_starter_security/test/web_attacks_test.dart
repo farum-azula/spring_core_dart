@@ -177,6 +177,11 @@ void main() {
       () => app((mvc) async {
         final browser = Browser(mvc);
         final first = (await browser.get('/form')).response.bodyText;
+        // The token lives in the XSRF-TOKEN cookie (no session before a
+        // login): the page carries a masked copy, the browser sends the
+        // cookie back.
+        expect(browser.cookies['XSRF-TOKEN'], isNotNull);
+        expect(browser.cookies['JSESSIONID'], isNull);
         final second = (await browser.get('/form')).response.bodyText;
         expect(first, isNot(second), reason: 'masked (BREACH)');
         final token = first.substring(first.indexOf('=') + 1);
@@ -190,11 +195,20 @@ void main() {
         final header = await browser.send(
           HttpMethod.post,
           '/form',
-          headers: {'X-CSRF-TOKEN': second.substring(second.indexOf('=') + 1)},
+          headers: {'X-XSRF-TOKEN': second.substring(second.indexOf('=') + 1)},
           form: {'text': 'again'},
         );
         expect(header.response.bodyText, 'submitted again');
-        // A token of another session is worthless.
+        // A request without the cookie: the token alone is worthless.
+        final cookie = browser.cookies.remove('XSRF-TOKEN');
+        final noCookie = await browser.send(
+          HttpMethod.post,
+          '/form',
+          form: {'text': 'x', '_csrf': token},
+        );
+        expect(noCookie.status, 403);
+        browser.cookies['XSRF-TOKEN'] = cookie!;
+        // A token of another browser (another cookie) is worthless.
         final other = Browser(mvc);
         await other.get('/form');
         final foreign = await other.send(
@@ -270,7 +284,9 @@ void main() {
     );
 
     test(
-      '@CrossOrigin of a handler answers its pre-flights',
+      "under the CorsConfigurationSource bean's paths its rules alone "
+      'apply: the @CrossOrigin of a handler does not widen them, as in '
+      'Spring (the ninth review)',
       () => app((mvc) async {
         final result = await mvc.perform(
           request(
@@ -279,11 +295,14 @@ void main() {
             headers: preflight('https://app.example'),
           ),
         );
-        expect(result.status, 200);
-        expect(
-          result.header('access-control-allow-origin'),
-          'https://app.example',
+        expect(result.status, 403);
+        expect(result.header('access-control-allow-origin'), isNull);
+        final actual = await mvc.get(
+          '/api/cors',
+          headers: {'origin': 'https://app.example', ...ada},
         );
+        expect(actual.status, 403);
+        expect(actual.header('access-control-allow-origin'), isNull);
       }),
     );
 
@@ -317,30 +336,363 @@ void main() {
       }),
     );
 
+    // The login page and a protected page set no session: the CSRF token
+    // and the page to come back to are signed or random cookies. The
+    // session starts at a login.
     test(
-      'the session cookie: HttpOnly, SameSite=Lax, Secure over HTTPS',
+      'the cookies: HttpOnly, SameSite=Lax, Secure over HTTPS; the session '
+      'only after a login',
       () => app((mvc) async {
-        final http = await mvc.get('/form');
-        final cookie = http.response.cookies.singleWhere(
-          (c) => c.name == 'JSESSIONID',
-        );
-        expect(cookie.httpOnly, isTrue);
-        expect(cookie.sameSite, 'Lax');
-        expect(cookie.secure, isFalse);
-        final https = await mvc.get('https://localhost/form');
-        expect(
-          https.response.cookies
-              .singleWhere((c) => c.name == 'JSESSIONID')
-              .secure,
-          isTrue,
-        );
+        void expectFlags(MvcResult result, String name, {required bool https}) {
+          final cookie = result.response.cookies.singleWhere(
+            (c) => c.name == name,
+          );
+          expect(cookie.httpOnly, isTrue, reason: name);
+          expect(cookie.sameSite, 'Lax', reason: name);
+          expect(cookie.secure, https, reason: name);
+          expect(cookie.path, '/', reason: name);
+        }
+
+        for (final (origin, https) in [
+          ('http://localhost', false),
+          ('https://localhost', true),
+        ]) {
+          final browser = Browser(mvc);
+          final protected = await browser.get('$origin/api/me');
+          expect(protected.status, 302);
+          expectFlags(protected, 'REDIRECT_URI', https: https);
+          final page = await browser.get('$origin/login');
+          expectFlags(page, 'XSRF-TOKEN', https: https);
+          expect(
+            [
+              ...protected.response.cookies,
+              ...page.response.cookies,
+            ].where((c) => c.name == 'JSESSIONID'),
+            isEmpty,
+            reason: 'no session before a login',
+          );
+          final login = await browser.send(
+            HttpMethod.post,
+            '$origin/login',
+            form: {
+              'username': 'ada',
+              'password': 'ada-pw',
+              '_csrf': Browser.csrfField(page.response.bodyText),
+            },
+          );
+          expect(login.status, 302);
+          expectFlags(login, 'JSESSIONID', https: https);
+          // The saved page is used up.
+          expect(
+            login.response.cookies
+                .singleWhere((c) => c.name == 'REDIRECT_URI')
+                .maxAge,
+            Duration.zero,
+          );
+        }
       }),
     );
+
+    // Only a login starts a session, and the number of sessions is
+    // limited: anonymous requests cannot fill the store.
+    Future<Browser> loggedIn(MockMvc mvc, String user) async {
+      final browser = Browser(mvc);
+      final page = await browser.get('/login');
+      final login = await browser.send(
+        HttpMethod.post,
+        '/login',
+        form: {
+          'username': user,
+          'password': '$user-pw',
+          '_csrf': Browser.csrfField(page.response.bodyText),
+        },
+      );
+      expect(login.status, 302);
+      return browser;
+    }
+
+    Future<void> stillLoggedIn(List<Browser> users) async {
+      for (final user in users) {
+        final me = await user.get('/api/me', accept: 'application/json');
+        expect(me.status, 200, reason: 'a logged-in session was dropped');
+      }
+    }
+
+    int stored(ApplicationContext context) =>
+        (context.getBean<HttpSessionRepository>()
+                as InMemoryHttpSessionRepository)
+            .size;
+
+    test(
+      'anonymous requests ten times over the session limit start no '
+      'session and leave every login in place',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['server.servlet.session.max-sessions=20'],
+        (mvc, context) async {
+          final users = [
+            for (var i = 0; i < 6; i++)
+              await loggedIn(mvc, i.isEven ? 'ada' : 'root'),
+          ];
+          await stillLoggedIn(users);
+          expect(stored(context), 6);
+          for (var i = 0; i < 70; i++) {
+            // A client without cookies: the login page, a protected page.
+            for (final (path, expected) in [
+              ('/login', 200),
+              ('/api/me', 302),
+            ]) {
+              final result = await mvc.get(
+                path,
+                headers: {'accept': 'text/html'},
+              );
+              expect(result.status, expected, reason: path);
+              expect(
+                result.response.cookies.where((c) => c.name == 'JSESSIONID'),
+                isEmpty,
+                reason: path,
+              );
+            }
+            // A client that keeps its cookies and comes back with them.
+            final returning = Browser(mvc);
+            await returning.get('/api/me');
+            await returning.get('/login');
+            await returning.get('/login');
+          }
+          expect(stored(context), 6, reason: 'no anonymous session');
+          await stillLoggedIn(users);
+        },
+      ),
+    );
+
+    test(
+      'only logins left at the limit: a new login is refused with 503, '
+      'the logins stay and the pages still work',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['server.servlet.session.max-sessions=2'],
+        (mvc, context) async {
+          final users = [
+            await loggedIn(mvc, 'ada'),
+            await loggedIn(mvc, 'root'),
+          ];
+          // Anonymous requests need no session: the pages work.
+          for (var i = 0; i < 50; i++) {
+            final page = await mvc.get(
+              '/login',
+              headers: {'accept': 'text/html'},
+            );
+            expect(page.status, 200);
+            expect(page.response.cookies.map((c) => c.name), ['XSRF-TOKEN']);
+          }
+          final protected = await mvc.get(
+            '/api/me',
+            headers: {'accept': 'text/html'},
+          );
+          expect(protected.status, 302);
+          expect(protected.header('location'), '/login');
+          // A third login finds no room, whoever it is (even the same
+          // account): refused, nobody is pushed out.
+          for (final user in ['ada', 'root']) {
+            final browser = Browser(mvc);
+            final page = await browser.get('/login');
+            final refused = await browser.send(
+              HttpMethod.post,
+              '/login',
+              form: {
+                'username': user,
+                'password': '$user-pw',
+                '_csrf': Browser.csrfField(page.response.bodyText),
+              },
+            );
+            expect(refused.status, 503, reason: user);
+            expect(
+              refused.response.cookies.where((c) => c.name == 'JSESSIONID'),
+              isEmpty,
+            );
+            final me = await browser.get('/api/me', accept: 'application/json');
+            expect(me.status, 401, reason: 'not logged in');
+          }
+          expect(stored(context), 2);
+          await stillLoggedIn(users);
+        },
+      ),
+    );
+
+    test(
+      'at the limit, expired sessions make room for a new login; no live '
+      'one is pushed out',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: [
+          'server.servlet.session.max-sessions=2',
+          'server.servlet.session.timeout=2s',
+        ],
+        (mvc, context) async {
+          final first = await loggedIn(mvc, 'ada');
+          final second = await loggedIn(mvc, 'root');
+          expect(stored(context), 2);
+          // Full, nothing expired yet: refused, both stay.
+          final browser = Browser(mvc);
+          final page = await browser.get('/login');
+          final refused = await browser.send(
+            HttpMethod.post,
+            '/login',
+            form: {
+              'username': 'ada',
+              'password': 'ada-pw',
+              '_csrf': Browser.csrfField(page.response.bodyText),
+            },
+          );
+          expect(refused.status, 503);
+          await stillLoggedIn([first, second]);
+          // Nobody comes back for the whole timeout: both expire.
+          await Future<void>.delayed(const Duration(milliseconds: 2200));
+          final third = await loggedIn(mvc, 'ada');
+          await stillLoggedIn([third]);
+          // ada's expired session went at her login (the per-user count
+          // asks the store); root's at the next purge or at the limit.
+          expect(stored(context), lessThanOrEqualTo(2));
+        },
+      ),
+    );
+
+    test(
+      'one account logging in again and again keeps at most 10 sessions: '
+      'its least recently used one ends, other users are untouched',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['server.servlet.session.max-sessions=30'],
+        (mvc, context) async {
+          final root = await loggedIn(mvc, 'root');
+          final ada = [for (var i = 0; i < 11; i++) await loggedIn(mvc, 'ada')];
+          expect(stored(context), 11, reason: "root's and 10 of ada");
+          final oldest = await ada.first.get(
+            '/api/me',
+            accept: 'application/json',
+          );
+          expect(oldest.status, isNot(200), reason: 'the oldest one ended');
+          await stillLoggedIn([root, ...ada.skip(1)]);
+        },
+      ),
+    );
+
+    test(
+      'spring.security.session.maximum-sessions sets the limit per user',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: ['spring.security.session.maximum-sessions=2'],
+        (mvc, context) async {
+          final first = await loggedIn(mvc, 'ada');
+          final second = await loggedIn(mvc, 'ada');
+          final third = await loggedIn(mvc, 'ada');
+          final oldest = await first.get(
+            '/api/me',
+            accept: 'application/json',
+          );
+          expect(oldest.status, isNot(200));
+          await stillLoggedIn([second, third]);
+          expect(stored(context), 2);
+        },
+      ),
+    );
+
+    test(
+      'spring.security.session.max-sessions-prevents-login refuses the '
+      'login above the limit, the session in use stays',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: [
+          'spring.security.session.maximum-sessions=1',
+          'spring.security.session.max-sessions-prevents-login=true',
+        ],
+        (mvc, context) async {
+          final first = await loggedIn(mvc, 'ada');
+          final browser = Browser(mvc);
+          final page = await browser.get('/login');
+          final refused = await browser.send(
+            HttpMethod.post,
+            '/login',
+            form: {
+              'username': 'ada',
+              'password': 'ada-pw',
+              '_csrf': Browser.csrfField(page.response.bodyText),
+            },
+          );
+          expect(refused.status, 302);
+          expect(
+            refused.response.headers['location'],
+            endsWith('/login?error'),
+          );
+          final me = await browser.get('/api/me', accept: 'application/json');
+          expect(me.status, isNot(200));
+          await stillLoggedIn([first]);
+          expect(stored(context), 1);
+        },
+      ),
+    );
+
+    test('a wrong spring.security.session.* value stops the start', () async {
+      for (final property in [
+        'spring.security.session.maximum-sessions=0',
+        'spring.security.session.maximum-sessions=-5',
+        'spring.security.session.maximum-sessions=many',
+        'spring.security.session.max-sessions-prevents-login=maybe',
+      ]) {
+        final failure = await securityRunner(rulesSecurityBeans, [
+          property,
+        ]).runAsync((started) async => started.startupFailure);
+        expect(failure, isNotNull, reason: property);
+      }
+    });
   });
 
   group('Basic credentials', () {
     Future<int> status(MockMvc mvc, String header) async =>
         (await mvc.get('/api/me', headers: {'authorization': header})).status;
+
+    test(
+      'a flood of password checks above the bound is refused at once with '
+      '503 and Retry-After, never as a failed login; then logins work again',
+      () => withApp(
+        rulesSecurityBeans,
+        properties: [
+          'spring.security.password-checks.max-concurrent=1',
+          'spring.security.password-checks.max-queued=1',
+        ],
+        (mvc, context) async {
+          final wrong = 'Basic ${base64.encode(utf8.encode('ada:wrong'))}';
+          final results = await Future.wait([
+            for (var i = 0; i < 8; i++)
+              mvc.get('/api/me', headers: {'authorization': wrong}),
+          ]);
+          final statuses = [for (final r in results) r.status];
+          expect(statuses.where((s) => s == 503), isNotEmpty);
+          expect(statuses.toSet(), {401, 503});
+          final busy = results.firstWhere((r) => r.status == 503);
+          expect(busy.response.headers['retry-after'], '1');
+          expect(busy.response.headers['www-authenticate'], isNull);
+          final right = 'Basic ${base64.encode(utf8.encode('ada:ada-pw'))}';
+          expect(await status(mvc, right), 200);
+        },
+      ),
+    );
+
+    test(
+      'a wrong spring.security.password-checks.* value stops the start',
+      () async {
+        for (final property in [
+          'spring.security.password-checks.max-concurrent=0',
+          'spring.security.password-checks.max-queued=-1',
+          'spring.security.password-checks.max-concurrent=many',
+        ]) {
+          final failure = await securityRunner(rulesSecurityBeans, [
+            property,
+          ]).runAsync((started) async => started.startupFailure);
+          expect(failure, isNotNull, reason: property);
+        }
+      },
+    );
 
     test(
       'malformed headers are bad credentials, never a login',

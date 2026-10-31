@@ -6,8 +6,10 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
 
 import 'package:neon_books_server/src/catalog/book.dart';
+import 'package:neon_books_server/src/catalog/book_controller.dart';
 import 'package:neon_books_server/src/catalog/catalog_service.dart';
 import 'package:spring_boot_starter_security/testing.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -97,6 +99,8 @@ void main() {
         (c) => c.name == 'neon-recent',
       );
       expect(cookie.value, dune);
+      expect(cookie.httpOnly, isTrue);
+      expect(cookie.sameSite, 'Lax');
       final recent = await app.mockMvc
           .perform(
             MockRequestBuilder(HttpMethod.get, '/api/books/recent')
@@ -252,6 +256,94 @@ void main() {
       expect(served.response.bodyBytes, png);
       expect(served.response.headers['Last-Modified'], isNotNull); // a file
     });
+
+    // The file of a cover is `<directory>/<isbn>.<png|jpg>`: the ISBN of a
+    // book in the catalog (13 digits), the extension from the content
+    // type; the client's file name is never part of a path.
+    test('no way out of the covers directory', () async {
+      final directory = io.Directory(
+        app.getBean<BookController>().covers.getObject().directory,
+      ).absolute;
+      // A real book, a file name that climbs: stored under the ISBN (and
+      // removed after, so the packaged cover is served again).
+      final stored = io.File('${directory.path}/9780345539434.png');
+      if (stored.existsSync()) {
+        stored.deleteSync(); // left by an interrupted run
+      }
+      addTearDown(() {
+        if (stored.existsSync()) {
+          stored.deleteSync();
+        }
+      });
+      // Where `../`, `../../` and `../../../escape.png` would land, and
+      // the directory itself: only the cover's own file may appear.
+      final before = directory.listSync().map((e) => e.path).toSet();
+      final escapes = [
+        for (var up = directory, i = 0; i < 4; up = up.parent, i++)
+          io.File('${up.path}/escape.png'),
+      ];
+
+      for (final isbn in [
+        '..%2F..%2Fpubspec.yaml',
+        '..%252F..%252Fpubspec.yaml',
+        '%2e%2e%2f%2e%2e%2fpubspec.yaml',
+        '....%2F%2F....%2F%2Fpubspec.yaml',
+        '..%5C..%5Cpubspec.yaml',
+        '%2e%2e',
+        '..',
+      ]) {
+        final read = await app.mockMvc
+            .get('/api/books/$isbn/cover')
+            .andReturn();
+        expect(read.response.statusCode, isNot(200), reason: isbn);
+        expect(
+          utf8.decode(read.response.bodyBytes, allowMalformed: true),
+          isNot(contains('neon_books_server')),
+          reason: isbn,
+        );
+        final written = await app.mockMvc
+            .perform(
+              asAdmin(HttpMethod.put, '/api/books/$isbn/cover')
+                ..headers[HttpHeaders.contentTypeHeader] =
+                    'multipart/form-data; boundary=neon'
+                ..content(
+                  utf8.encode(
+                    '--neon\r\n'
+                    'Content-Disposition: form-data; name="file"; '
+                    'filename="escape.png"\r\n'
+                    'Content-Type: image/png\r\n\r\n'
+                    'escape\r\n--neon--\r\n',
+                  ),
+                ),
+            )
+            .andReturn();
+        expect(written.response.statusCode, isNot(204), reason: isbn);
+      }
+
+      final upload = await app.mockMvc
+          .perform(
+            asAdmin(HttpMethod.put, '/api/books/9780345539434/cover')
+              ..headers[HttpHeaders.contentTypeHeader] =
+                  'multipart/form-data; boundary=neon'
+              ..content(
+                utf8.encode(
+                  '--neon\r\n'
+                  'Content-Disposition: form-data; name="file"; '
+                  'filename="../../../escape.png"\r\n'
+                  'Content-Type: image/png\r\n\r\n'
+                  'escape\r\n--neon--\r\n',
+                ),
+              ),
+          )
+          .andReturn();
+      expect(upload.response.statusCode, 204);
+      expect(stored.readAsStringSync(), 'escape');
+      expect(escapes.where((f) => f.existsSync()), isEmpty);
+      expect(
+        directory.listSync().map((e) => e.path).toSet().difference(before),
+        {stored.path},
+      );
+    });
   });
 
   group('server-sent events', () {
@@ -358,7 +450,7 @@ void main() {
       final result = await app.mockMvc.get('/api/books').andReturn();
       expect(
         result.response.headers['Server-Timing'],
-        matches(r'^app;dur=[\d.]+;desc="BookController.search"$'),
+        matches(r'^app;dur=[\d.]+$'),
       );
     });
 

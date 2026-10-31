@@ -108,7 +108,10 @@ with `package:test`; the test's `main` calls it. See
 `flutter run` reads on the web (Flutter 3.38 and later), from the
 `spring.flutter.web.*` properties of `lib/resources/` (see
 [Flutter](#flutter-spring_boot_starter_flutter) below). Without those
-properties it writes nothing.
+properties it does not load the config, and writes and reports nothing,
+whatever the config files hold (imports, placeholders an environment
+variable sets, a file that does not parse): a pure Dart package builds as
+if it were not there.
 
 A short example of the main builder's output (simplified; the real file
 uses import prefixes such as `_i1.`):
@@ -234,11 +237,50 @@ one of `ChangeNotifier`'s members itself.
 `spring.flutter.web.*` properties (host, port, base-href, HTTPS
 certificate, headers, proxy rules) into `web_dev_config.yaml` in the
 package directory, so `flutter run -d chrome` serves the app on a fixed
-port without flags. The config files are read as the app reads them in a
-browser: `application.*`, then `application-web.*` and the profiles that
-`spring.profiles.active` names in them; environment variables and
-`--dart-define` values do not count. An invalid value fails the build
-with the property's name.
+port without flags. It runs for every package that depends on the
+generator, pure Dart servers included, so it never fails a build, and
+says nothing, unless the app evidently uses the file: a config file it
+can read without loading the config (any `.properties`, `.yml` or `.yaml`
+file of `lib/resources/`, in any document, for any profile, or a file an
+import names with a file hint, `[.yaml]` or `[encoding=iso-8859-1]` (a
+file that is not UTF-8 is read only that way), its placeholders resolved
+with their defaults or the files' values) sets a `spring.flutter.web.*`
+key or
+`spring.flutter.security.web.mode`. An import whose name only the running
+app knows (`classpath:${ENV}.conf[.yaml]`) cannot be followed there, so
+keys that only its file sets do not count. Without one, the config is not
+loaded: nothing is written, a file generated before is deleted, and
+imports, placeholders or a file that does not parse are left to the app's
+start (except that while a generated file exists, a config file the app
+reads that does not parse fails the build and keeps it). With one, the
+config files are read as the app reads them in a browser:
+`application.*`, then `application-web.*`, the profiles that
+`spring.profiles.active` names in them and the files that
+`spring.config.import` names (relative or `classpath:` ones, from
+`lib/resources/`); environment variables and `--dart-define` values do
+not count. A placeholder only they can resolve is unknown at build time,
+never a build error: a profile name with one in `spring.profiles.active`,
+`.include`, `.default` or `.group.*` is left out, whatever else the name
+holds (`dev,${ENV}-eu` is read as `dev`; a key in any form the app
+reads, such as `spring.profiles.group[prod]` or `spring.profiles[active]`),
+`spring.profiles.validate` or `spring.main.cloud-platform` with one is
+read as unset, an import
+location with one is not read (the other entries of its `;` group are),
+and a document whose `spring.config.activate.*` guard has one is skipped,
+each with a warning naming it. Where a key may be is still checked:
+`spring.profiles.active` in `application-web.yaml` fails the build
+whatever its value, as it fails the app's start. A placeholder in
+`spring.flutter.security.web.mode`, as in a `spring.flutter.web.*` value,
+must resolve at build time. A `file:`, `configtree:` or `package:` import
+(or an absolute path), with a wildcard or not, is not read from the build
+machine's disk, as a browser has none: it is skipped, `optional:` or not;
+when the properties give a file to write, a warning names the first
+required one as written (the web version would fail to start with it).
+An import the build cannot read (`asset:`, `http:`, `https:`, or a
+`classpath:` file missing from `lib/resources/`) is skipped silently, even
+a required one, as it may exist at run time. An invalid value, or a
+config file the app reads that does not parse, fails the build with the
+error; the generated file is then left as it is.
 
 ```yaml
 # lib/resources/application-web.yaml
@@ -378,7 +420,9 @@ because your own lint set may differ.
 An error in the sources never removes or changes an existing
 `*.spring.dart`. Otherwise `build_runner watch` would delete and
 regenerate it on every keystroke, and every file that imports it would
-turn red while you type.
+turn red while you type. The existing file is read from the directory of
+its own package, also when `build_runner build --workspace` builds every
+package of a pub workspace from one directory.
 
 - While a scanned library has syntax errors, the builder skips
   generation, writes the existing file again unchanged and logs one

@@ -19,7 +19,8 @@
 ///   a response (`ResponseStatusException`, ...), multipart bodies and
 ///   uploaded files, path patterns;
 /// - the server's request and response (`ServerHttpRequest`,
-///   `ServerHttpResponse`);
+///   `ServerHttpResponse`), and the origins a server allows
+///   (`AllowedOrigins`, shared by CORS and WebSocket handshakes);
 /// - the client transports that send HTTP and WebSocket traffic
 ///   (`HttpTransport`, `WebSocketTransport`; `platformHttpTransport()`
 ///   picks the right one for the VM, Flutter or the browser);
@@ -73,6 +74,8 @@ export 'package:spring_web_dart/src/multipart/multipart.dart';
 export 'package:spring_web_dart/src/path_pattern.dart';
 export 'package:spring_web_dart/src/problem_detail.dart';
 export 'package:spring_web_dart/src/response_entity.dart';
+export 'package:spring_web_dart/src/server/allowed_origins.dart'
+    hide matchesOriginPattern;
 export 'package:spring_web_dart/src/server/http_handler.dart';
 export 'package:spring_web_dart/src/server/server_http_request.dart';
 export 'package:spring_web_dart/src/server/server_http_response.dart';

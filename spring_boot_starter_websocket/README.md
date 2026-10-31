@@ -123,8 +123,10 @@ stomp.connectAsync(url, new StompSessionHandlerAdapter() { ... });
 This starter follows the style of `@FeignClient` instead: the socket is an
 interface with typed streams, created and configured by the container.
 `@WebSocketClient`, `@OnMessage`, `@SendMessage`,
-`WebSocketHandshakeInterceptor` and the `spring.websocket.client.config.*`
-properties are this project's own; Spring has nothing with these names.
+`WebSocketHandshakeInterceptor`, the `spring.websocket.client.config.*`
+properties and `spring.websocket.client.max-text-message-size` /
+`max-binary-message-size` are this project's own; Spring has nothing with
+these names.
 STOMP is not supported yet. The connection is kept by a
 `WebSocketConnectionManager`, as in Spring, but unlike Spring's it
 reconnects (`reconnect.*`, named after Spring 7's `RetryPolicy`).
@@ -154,8 +156,9 @@ returned, rather than failing the returned `Future`.
 - **On demand.** It opens on the first listener of an `@OnMessage`
   stream, on the first message sent, or on `connect()`.
 - **Reconnection while someone listens.** A connection that was lost
-  (closed with no code, 1001, 1005, 1006 or 1011–1014), or an attempt
-  that failed, is opened again after a wait. The first wait is
+  (closed with no code, 1001, 1005, 1006 or 1011–1014, or dropped by the
+  client with 4500, see [Transport](#transport)), or an attempt that
+  failed, is opened again after a wait. The first wait is
   `reconnect.delay`; each further one is multiplied by
   `reconnect.multiplier`, up to `reconnect.max-delay`, give or take
   `reconnect.jitter`. Listeners stay subscribed meanwhile.
@@ -245,7 +248,10 @@ An interceptor that throws fails that connection attempt.
 **Flutter web and browsers** cannot send headers with a WebSocket
 handshake; a header there fails with a `WebSocketException`. Put tokens
 in the URL (`queryParameter`) or in a subprotocol (`handshake.protocols`)
-instead.
+instead. The client's log lines and the messages of the exceptions it
+passes on show every query value and user information as `***`
+(`ws://chat.test/ws?token=***`); the original error stays in the
+exception's `cause`.
 
 ## Transport
 
@@ -254,6 +260,33 @@ The `webSocketTransport` bean opens the connections. By default it is
 VM and in Flutter mobile and desktop, `BrowserWebSocketTransport` on the
 web. Declare your own `WebSocketTransport` bean to replace it, as tests do
 with a mock.
+
+On `dart:io`, what a client sends waits in memory while the server does
+not take it. As Spring's `ConcurrentWebSocketSessionDecorator` does, the
+connection is dropped (4500) when more than 512 KB wait or what was sent
+has not left within 10 seconds; the client then reconnects as after any
+broken connection, such as a server that resets it (1006). Declare an
+`IoWebSocketTransport(sendBufferSizeLimit: ..., sendTimeLimit: ...)`
+bean for other limits. A `@SendMessage` method completes when the
+message is queued, not when it has left.
+
+A message from the server larger than 8 KB (text or binary, Tomcat's
+default in Spring) is not read: the connection is closed with 1009
+(message too big), and the streams end with a `WebSocketException`. The
+text limit counts UTF-8 bytes, where Tomcat counts characters. Raise the
+limits with these properties (`-1`: no limit; the browser has none),
+this starter's own keys, since Spring sets the limits in code, on the
+client's `WebSocketContainer` (`setDefaultMaxTextMessageBufferSize`):
+
+```properties
+spring.websocket.client.max-text-message-size=1MB
+spring.websocket.client.max-binary-message-size=-1
+```
+
+No extension is offered (no permessage-deflate). A handshake answer that
+picks a subprotocol the client did not offer, or any extension, fails
+the connection (RFC 6455), and redirects are not followed, as in
+browsers.
 
 ## Server endpoints
 
@@ -318,7 +351,7 @@ The methods take what they need, in any order:
 | Parameter | Value |
 |---|---|
 | `ServerWebSocketSession` (or `WebSocketSession`) | the connection |
-| `@PathVariable() String room` | a `{room}` of the path (`@PathVariable('id')` for another name) |
+| `@PathVariable() String room` | a `{room}` of the path (`@PathVariable('id')` for another name); an `int`, `double`, `bool`, enum, ... is converted by the `ConversionService`, as on controllers, and a value that does not convert answers the handshake with 400 |
 | `Principal?` | the user of the handshake (`null` when anonymous) |
 | the message, in `@OnMessage` | `String` (text), `Uint8List` (binary), or any other type, read as JSON through the `ObjectMapper` |
 | `CloseStatus`, in `@OnClose` | why the connection closed |
@@ -330,21 +363,47 @@ The methods take what they need, in any order:
   use; on a `@WebSocketEndpoint` class it marks the method that handles
   each message.
 - The messages of one connection are handled one after the other, in
-  order.
+  order. While one is handled the connection is not read, so a client
+  that sends faster than the handler works is held back by the network
+  instead of filling the server's memory. A message larger than the web
+  starter's `server.websocket.max-text-message-size` or
+  `max-binary-message-size` (8 KB by default, as Tomcat's) closes the
+  connection with 1009 (message too big).
+- What is sent to a client that reads slowly or not at all waits in
+  memory up to the web starter's `server.websocket.send-buffer-size-limit`
+  (512 KB) and `send-time-limit` (10 s); past either, the connection is
+  dropped and `@OnClose` gets 4500 (`CloseStatus.sessionNotReliable`),
+  as with Spring's `ConcurrentWebSocketSessionDecorator`. A client that
+  goes away meanwhile (a reset) gets the session closed with 1006
+  (`CloseStatus.noCloseFrame`) and the error as the reason, over TLS
+  too; after `session.close(status)`, `@OnClose` gets that `status`.
+  Either way the session leaves `WebSocketSessionRegistry`.
 - An exception goes to the `@OnError` method, and the connection stays
   open. Without an `@OnError` method, it is logged and the connection is
-  closed with 1011 (server error).
+  closed with 1011 (server error). This holds for `@OnOpen` too, and
+  `@OnOpen` (or `afterConnectionEstablished`) may close the session
+  itself to turn a client away: `@OnClose` then gets the status, once,
+  and the session leaves `WebSocketSessionRegistry`. Messages the
+  client sent before it saw the close may still reach `@OnMessage`;
+  check `session.isOpen` there. Anything else that fails
+  for a connection is logged to `spring.websocket.server` and closes it
+  with 1011; it never ends the process.
 - The path is a path pattern, as on controllers (`{room}`, `{*rest}`). A
-  request to it that is not a WebSocket handshake gets a 400.
+  request to it that is not a WebSocket handshake gets a 400 in plain
+  text, as from Spring's handshake handler; the web starter's server
+  answers a repeated or malformed `Sec-WebSocket-Key` with a 400 problem
+  and another `Sec-WebSocket-Version` with a 426.
+- Each session has a random id in the form of a UUID
+  (`session.id`), as in Spring.
 - `protocols: ['chat.v2']` lists the subprotocols the endpoint speaks.
   The first one the client offers (`Sec-WebSocket-Protocol`) that is in
   the list is chosen; a client offering none of them still connects,
   without a protocol.
 - Checked at startup: two handlers for one path, a `@PathVariable` that is
-  not in the path, a parameter of none of the kinds above, several
-  methods with the same annotation, or an endpoint without any of
-  `@OnOpen`, `@OnMessage` and `@OnClose` stops the application with the
-  list of problems.
+  not in the path or of a type nothing converts a String to, a parameter
+  of none of the kinds above, several methods with the same annotation,
+  or an endpoint without any of `@OnOpen`, `@OnMessage` and `@OnClose`
+  stops the application with the list of problems.
 
 **This differs from Spring.** Spring has no annotated endpoint of its
 own: it registers a `WebSocketHandler` (below), or Jakarta's
@@ -397,7 +456,7 @@ final class TokenInterceptor with HandshakeInterceptor {
 | `AbstractWebSocketHandler`, `TextWebSocketHandler` | the same | text and binary messages in separate methods; a binary message closes a `TextWebSocketHandler`'s connection (1003) |
 | `WebSocketConfigurer`, `WebSocketHandlerRegistry` | the same | `addHandler(handler, paths)`, then `setAllowedOrigins`, `setAllowedOriginPatterns`, `setSupportedProtocols`, `addInterceptors` |
 | `HandshakeInterceptor` | the same | `beforeHandshake(request, response, attributes)`: `false` refuses (403, unless it answered itself); `afterHandshake(request, error)` |
-| `ServerWebSocketSession` | server-side `WebSocketSession` | `id`, `handshakeHeaders`, `attributes`, `principal`, `pathVariables`, `sendMessage`, `sendJson`, `close`, `messages` |
+| `ServerWebSocketSession` | server-side `WebSocketSession` | `id`, `handshakeHeaders`, `attributes`, `principal`, `pathVariables`, `sendMessage`, `sendJson`, `close`; its incoming messages go to `handleMessage` (the server reads its `messages` stream itself, which can be listened to only once) |
 | `WebSocketSessionRegistry` | (none) | the open sessions: `sessions([pattern])`, `broadcast(pattern, message)` (`null`: every endpoint) |
 | `WebSocketHandlerMapping` | `WebSocketHandlerMapping` | maps the handshakes; the web starter's dispatcher asks it after the controllers |
 
@@ -418,13 +477,46 @@ Differences from Spring:
 ### Origins
 
 Browsers send an `Origin` header, and a page from another site must not
-be able to open a connection with the user's cookies. As in Spring, a
-browser connecting from the server's own origin is accepted; one from
-another origin only when it is in `allowedOrigins` (`'*'` for any,
-compared in any case) or matches `allowedOriginPatterns`
-(`'https://*.example'`). Others get a 403. A client that sends no
-`Origin` (not a browser: an app, a server) is accepted; authenticate
-those with a filter or a `HandshakeInterceptor`.
+be able to open a connection with the user's cookies. As in Spring's
+`OriginHandshakeInterceptor`, a browser connecting from the server's
+own origin (the same scheme, host and port, a missing port being the
+scheme's default) is accepted; one from another origin only when
+Spring's `CorsConfiguration` rules allow it. Others get a 403. The rules
+are those of the web starter's CORS (`AllowedOrigins` of
+`spring_web_dart` decides for both):
+
+- `allowedOrigins` / `setAllowedOrigins` are whole origins, compared
+  without case (`'https://chat.example'`); `'*'` allows any.
+- `allowedOriginPatterns` / `setAllowedOriginPatterns` are compared with
+  case: `*` matches any text, as Spring's `.*`
+  (`'https://*.chat.example'` takes `https://eu.chat.example`, not
+  `https://chat.example`; `'*.chat.example'` takes any scheme), and a
+  port list at the end takes the ports listed
+  (`'http://localhost:[3000,3001]'`) or, with `[*]`, any port or none
+  (`'http://localhost:[*]'` takes `http://localhost` too).
+- A value may list several, separated by commas
+  (`'https://a.example, https://b.example'`), and a trailing `/` is
+  ignored, in the values and in the `Origin` header.
+
+Differences from Spring, none for what browsers send: an `Origin`
+longer than 1024 characters gets a 403 whatever the rules (a real one is
+under 300, and the match takes time that grows with the length); the
+server's own origin is
+recognized whatever the case of its host (Spring compares hosts with
+case; browsers send them in lower case); an `Origin` that is not a URL
+(`http://localhost:3000.evil.example`) gets a 403 (Spring fails the
+handshake with a 500). A client
+that sends no `Origin` (not a browser: an app, a server) is accepted;
+authenticate those with a filter or a `HandshakeInterceptor`.
+
+The endpoint's origins alone decide: the web starter's `addCorsMappings`
+rules and `@CrossOrigin` are the controllers', and do not apply to a
+handshake, with or without the security starter (its CORS filter asks
+the handler mappings in order, as Spring's `HandlerMappingIntrospector`,
+and sees that this starter's mapping takes the handshake). Only a
+`CorsConfigurationSource` bean named `corsConfigurationSource` with rules
+for the endpoint's path is checked too, by the security starter's
+filter, as Spring Security checks it.
 
 ### Broadcasting
 

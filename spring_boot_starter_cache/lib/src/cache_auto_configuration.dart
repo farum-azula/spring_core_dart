@@ -24,11 +24,20 @@ const _source = 'package:spring_boot_starter_cache#CacheAutoConfiguration';
 ///   or a YAML list); an annotation naming another cache then fails. When
 ///   missing or empty, caches are created on demand.
 /// - `spring.cache.simple.time-to-live`: how long entries live (`10m`,
-///   `30s`, `PT1H`, or milliseconds); none by default.
+///   `30s`, `PT1H`, or milliseconds); none by default, `0` keeps nothing.
 /// - `spring.cache.simple.max-size`: the most entries per cache; no limit
-///   by default.
+///   by default, `0` keeps nothing.
 /// - `spring.cache.simple.caches.<name>.time-to-live` / `.max-size`: the
-///   same for one cache; what it leaves out comes from the two above.
+///   same for one cache; what it leaves out comes from the two above. A
+///   name with dots goes in brackets, as in any Spring Boot map
+///   (`caches[books.byIsbn].max-size`); the plain form is read too. The
+///   property may take any relaxed form, the environment variables'
+///   included: `SPRING_CACHE_SIMPLE_CACHES_BOOKS_MAX_SIZE` (or
+///   `_MAXSIZE`, `_TIME_TO_LIVE`, `_TIMETOLIVE`) sets the cache `books`.
+///
+/// A negative size or time to live throws an `ArgumentError` naming the
+/// property, as Caffeine refuses them; the per-cache ones are checked
+/// here too, before their caches exist.
 ///
 /// Each of [customizers] then gets the new manager, in order.
 ///
@@ -98,27 +107,156 @@ CacheManager _cacheManager(Environment environment, List<Cache> caches) {
     for (final name in names ?? const <String>[])
       if (name.trim().isNotEmpty) name.trim(),
   ];
+  // Caffeine refuses a negative maximumSize or expireAfterWrite; 0 keeps
+  // nothing in both.
+  int? maxSize(String key, int? value) {
+    if (value != null && value < 0) {
+      throw ArgumentError.value(
+        value,
+        key,
+        'must not be negative (0 keeps no entry)',
+      );
+    }
+    return value;
+  }
+
+  Duration? timeToLive(String key, Duration? value) {
+    if (value != null && value.isNegative) {
+      throw ArgumentError.value(
+        '$value',
+        key,
+        'must not be negative (0 keeps no entry)',
+      );
+    }
+    return value;
+  }
+
   CacheSpec spec(String prefix) => CacheSpec(
-    timeToLive: environment.getPropertyAs<Duration>('$prefix.time-to-live'),
-    maxSize: environment.getPropertyAs<int>('$prefix.max-size'),
+    timeToLive: timeToLive(
+      '$prefix.time-to-live',
+      environment.getPropertyAs<Duration>('$prefix.time-to-live'),
+    ),
+    maxSize: maxSize(
+      '$prefix.max-size',
+      environment.getPropertyAs<int>('$prefix.max-size'),
+    ),
   );
+  final defaults = spec('spring.cache.simple');
+  // Bound and checked now, so a wrong value fails the start instead of
+  // the first use of the cache; `null` for an environment without
+  // property sources to list.
+  final perCache = environment is ConfigurableEnvironment
+      ? _perCacheSpecs(environment, maxSize, timeToLive)
+      : null;
+  CacheSpec? specFor(String name) {
+    final prefix = 'spring.cache.simple.caches.$name';
+    final own = perCache != null
+        ? perCache[name]
+        : environment.containsProperty('$prefix.time-to-live') ||
+              environment.containsProperty('$prefix.max-size')
+        ? spec(prefix)
+        : null;
+    if (own == null) {
+      return null;
+    }
+    return CacheSpec(
+      timeToLive: own.timeToLive ?? defaults.timeToLive,
+      maxSize: own.maxSize ?? defaults.maxSize,
+    );
+  }
+
   return InMemoryCacheManager(
     cacheNames: cacheNames.isEmpty ? null : cacheNames,
-    defaultSpec: spec('spring.cache.simple'),
-    specFor: (name) {
-      final prefix = 'spring.cache.simple.caches.$name';
-      if (environment.containsProperty('$prefix.time-to-live') ||
-          environment.containsProperty('$prefix.max-size')) {
-        final defaults = spec('spring.cache.simple');
-        final own = spec(prefix);
-        return CacheSpec(
-          timeToLive: own.timeToLive ?? defaults.timeToLive,
-          maxSize: own.maxSize ?? defaults.maxSize,
-        );
-      }
-      return null;
-    },
+    defaultSpec: defaults,
+    specFor: specFor,
   );
+}
+
+// The properties of a cache's limits, by the relaxed form they are
+// compared in: lower case, without `-`, `_` and the `.` an environment
+// variable's `_` becomes.
+const _perCacheProperties = {
+  'maxsize': 'max-size',
+  'timetolive': 'time-to-live',
+};
+
+// The limits of `spring.cache.simple.caches.<name>.*`, bound as Spring
+// Boot binds a map: a cache name with dots in brackets
+// (`caches[books.byIsbn].max-size`, in YAML `"[books.byIsbn]":`), or
+// written plainly (`caches.prices.eu.max-size`). The property is the
+// longest end of the key that is `max-size` or `time-to-live` in a relaxed
+// form (`maxSize`, `max_size`, `MAXSIZE`, or `max.size`: the variable
+// SPRING_CACHE_SIMPLE_CACHES_BOOKS_MAX_SIZE binds as `books` /
+// `max.size`, which the last element alone read as a cache `books.max`
+// with a property `size`, ignored); the cache name is all before it. A key
+// ending in no such property is ignored, as Boot ignores unknown ones.
+// Each value is converted and checked by [maxSize] and [timeToLive], with
+// the property as written (an environment variable's as `max-size` /
+// `time-to-live`). Of two forms of one property, the first bound wins:
+// the binder lists the sources from the highest precedence down.
+Map<String, CacheSpec> _perCacheSpecs(
+  ConfigurableEnvironment environment,
+  int? Function(String key, int? value) maxSize,
+  Duration? Function(String key, Duration? value) timeToLive,
+) {
+  const prefix = 'spring.cache.simple.caches';
+  final bound = Binder.get(environment)
+      .bind(
+        prefix,
+        const MapType<String, Map<String, String>>(
+          ClassType<String>(),
+          MapType<String, String>(ClassType<String>(), ClassType<String>()),
+        ),
+      )
+      .orElse(const {});
+  final values = <String, Map<String, (String, String)>>{};
+  for (final MapEntry(key: first, value: properties) in bound.entries) {
+    for (final MapEntry(key: rest, :value) in properties.entries) {
+      if (value.trim().isEmpty) {
+        continue;
+      }
+      final elements = rest.split('.');
+      for (var start = 0; start < elements.length; start++) {
+        final canonical = elements
+            .skip(start)
+            .join()
+            .toLowerCase()
+            .replaceAll(RegExp('[-_]'), '');
+        final dashed = _perCacheProperties[canonical];
+        if (dashed == null) {
+          continue;
+        }
+        final name = [first, ...elements.take(start)].join('.');
+        final key = [
+          if (first.contains('.')) '$prefix[$first]' else '$prefix.$first',
+          ...elements.take(start),
+          if (start == elements.length - 1) elements.last else dashed,
+        ].join('.');
+        (values[name] ??= {}).putIfAbsent(canonical, () => (key, value));
+        break;
+      }
+    }
+  }
+  final conversion = environment.conversionService;
+  return {
+    for (final MapEntry(key: name, value: properties) in values.entries)
+      name: CacheSpec(
+        timeToLive: switch (properties['timetolive']) {
+          (final key, final value) => timeToLive(
+            key,
+            conversion.convert<Duration>(value),
+          ),
+          null => null,
+        },
+        maxSize: switch (properties['maxsize']) {
+          (final key, final value) => maxSize(
+            key,
+            conversion.convert<int>(value),
+          ),
+          null => null,
+        },
+      ),
+  };
 }
 
 /// The bean definitions the starter adds to every application.

@@ -283,4 +283,66 @@ void main() {
     expect(const GetMapping('/a').headers, isEmpty);
     expect(const GetMapping('/a').produces, isNull);
   });
+
+  // Review before 0.5.0: ResponseCookie was not validated, so a value
+  // from a request could add attributes (`x; Domain=evil.example`).
+  group('ResponseCookie validation', () {
+    test('valid cookies are written as given', () {
+      expect(
+        ResponseCookie(
+          'session',
+          'abc-123_X.Y',
+          path: '/api',
+          domain: '.shop.example',
+        ).toString(),
+        'session=abc-123_X.Y; Domain=.shop.example; Path=/api',
+      );
+      expect(ResponseCookie('q', '"quoted"').toString(), 'q="quoted"');
+      expect(ResponseCookie('empty', '').toString(), 'empty=');
+    });
+
+    test('attribute injection through the value is refused', () {
+      for (final value in [
+        'x; Domain=evil.example',
+        'a,b',
+        'a b',
+        'a"b',
+        r'a\b',
+        'caf\u00e9',
+        'line\r\nSet-Cookie: x=1',
+      ]) {
+        expect(
+          () => ResponseCookie('n', value),
+          throwsArgumentError,
+          reason: value,
+        );
+      }
+    });
+
+    test('invalid names, domains and paths are refused', () {
+      for (final name in ['', 'a b', 'a;b', 'a=b', 'na\u00efve', 'a\tb']) {
+        expect(() => ResponseCookie(name, 'v'), throwsArgumentError);
+      }
+      for (final domain in [
+        '-shop.example',
+        'shop.example.',
+        'shop..example',
+        'shop.example; Secure',
+        'sh_op.example',
+      ]) {
+        expect(
+          () => ResponseCookie('n', 'v', domain: domain),
+          throwsArgumentError,
+          reason: domain,
+        );
+      }
+      for (final path in ['/a;b', '/a\nb', '/caf\u00e9']) {
+        expect(
+          () => ResponseCookie('n', 'v', path: path),
+          throwsArgumentError,
+          reason: path,
+        );
+      }
+    });
+  });
 }

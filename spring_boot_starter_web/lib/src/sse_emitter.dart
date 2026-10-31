@@ -43,7 +43,8 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 class SseEmitter {
   /// An emitter that ends after [timeout], counted from when the response
   /// starts; without one, after `spring.mvc.async.request-timeout`, or
-  /// never when that is not set.
+  /// never when that is not set (unlike Spring on Tomcat, where the
+  /// container's 30 seconds then apply).
   SseEmitter({this.timeout});
 
   /// How long the stream stays open; `null` for the configured default.
@@ -69,6 +70,12 @@ class SseEmitter {
   /// Throws a [StateError] once the emitter has ended. When the write
   /// fails (the client went away), the emitter ends, the [onError] and
   /// [onCompletion] callbacks run, and the error is rethrown.
+  ///
+  /// The returned `Future` completes once the event is written to the
+  /// client: await it to send at the client's pace. Sends that are not
+  /// awaited queue up; when 1000 of them wait for a client that reads
+  /// nothing, the next one fails with a [StateError] and the emitter
+  /// ends, so a stalled client cannot fill the server's memory.
   Future<void> send(Object? data) async {
     if (_complete) {
       throw StateError('The SseEmitter has already completed');

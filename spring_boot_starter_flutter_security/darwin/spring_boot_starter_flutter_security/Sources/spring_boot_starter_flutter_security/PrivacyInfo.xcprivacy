@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The plugin collects nothing and tracks nobody. It calls none of Apple's
+  "required reason" APIs: the install marker (InstallMarker.swift) is a
+  file of the app's container read and written whole, not UserDefaults;
+  no file timestamps, disk space, boot time or keyboards are read.
+  test/privacy_manifest_test.dart fails when the Swift code starts using
+  one of them without declaring it here.
+-->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTrackingDomains</key>

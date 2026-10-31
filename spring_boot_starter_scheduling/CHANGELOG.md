@@ -1,3 +1,17 @@
+## Unreleased
+
+### Breaking
+
+- Cron and daylight saving time, as in Spring: a time inside the hour skipped when clocks go forward does not exist and is skipped (a daily `0 30 2 * * *` does not run that day; it was moved to 03:30), and a time inside the hour repeated when clocks go back runs twice.
+- A fixed-rate task catches up, as Spring's `ThreadPoolTaskScheduler`: the runs that came due during a long run, or while the process was paused, start one after the other until the rate is caught up (it ran once right after). `PeriodicTrigger(fixedRate: true).nextExecution` can then be before the completion. Use `fixedDelay` for polls and UI ticks.
+- `fixedRate` and `fixedDelay` run on a timeline their timers move, as Spring's executor counts on a monotonic clock, never on the wall clock: setting the clock moves none of their runs.
+
+### Changes
+
+- In browsers and on JavaScript, a wait longer than 24.8 days no longer fires at once and repeats: no single timer waits more than a day, and a cron or `scheduleAt` wait checks the wall clock at each step.
+- `TimerTaskScheduler` reads the current time from `package:clock` by default, so `fake_async` and Flutter widget tests (`tester.pump`) run schedules as real time would: a cron at each of its times, one fixed-rate run per period, also under `withClock(Clock.fixed(...))`.
+- Fixed rate no longer runs twice after the wall clock jumps forward, and no longer slows down or drifts under a clock of its own that stands still or runs fast.
+
 ## 0.4.3
 
 - Flutter security (#15)

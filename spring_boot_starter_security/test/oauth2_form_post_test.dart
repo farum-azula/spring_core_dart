@@ -104,10 +104,7 @@ void main() {
     final authorization = await f.client.startLogin('keycloak');
     final (path, form) = f.post(authorization);
 
-    // With the session, whatever the state: nothing to warn about.
-    await f.client.post(path, {...form, 'state': 'forged'});
-    expect(f.failures.lastCode, 'authorization_request_not_found');
-    // A GET (the query is the response) without a session either.
+    // A GET (the query is the response) finding nothing: no warning.
     await f.client.send(
       HttpMethod.get,
       Uri(path: path, queryParameters: form).toString(),
@@ -115,7 +112,13 @@ void main() {
     );
     expect(f.failures.lastCode, 'authorization_request_not_found');
     expect(warnings, isEmpty);
+    // A post that finds its authorization request (the cookie): no warning.
+    final ok = await f.client.post(path, form);
+    expect(ok.status, 302);
+    expect(f.failures.errors, hasLength(1), reason: 'only the GET failed');
+    expect(warnings, isEmpty);
 
+    // A post that finds none (the browser sent no cookie): the warning.
     await f.client.send(
       HttpMethod.post,
       path,
@@ -134,7 +137,11 @@ void main() {
     expect(warning.message, isNot(contains(code)));
     expect(warning.message, isNot(contains(state)));
 
-    // Once only.
+    // Once only, for any post that finds none.
+    final again = await f.client.startLogin('keycloak');
+    final (againPath, againForm) = f.post(again);
+    await f.client.post(againPath, {...againForm, 'state': 'forged'});
+    expect(f.failures.lastCode, 'authorization_request_not_found');
     await f.client.send(
       HttpMethod.post,
       path,
@@ -298,6 +305,35 @@ void main() {
     );
     expect(f.failures.lastCode, 'invalid_request');
     expect(form, isNotEmpty);
+  });
+
+  // The callback's POST is exempt from CSRF and so read by the login
+  // filter itself: with its own limit, not the web starter's 1 MiB.
+  test('a posted body over 64 KB is a 413 and leaves the login '
+      'alone', () async {
+    final f = await _fixture();
+    final authorization = await f.client.startLogin('keycloak');
+    final (path, form) = f.post(authorization);
+    await expectLater(
+      f.client.post(path, {...form, 'user': 'x' * (64 * 1024)}),
+      throwsA(
+        isA<ResponseStatusException>().having(
+          (e) => e.statusCode,
+          'status',
+          413,
+        ),
+      ),
+    );
+    expect(f.provider.tokenRequests, isEmpty);
+    expect(await f.who(), isNull);
+    // Just under the limit is read; the real response still ends the
+    // login.
+    final reply = await f.client.post(path, {
+      ...form,
+      'user': 'x' * (60 * 1024),
+    });
+    expect(reply.status, 302, reason: '${f.failures.lastCode}');
+    expect(await f.who(), isNotNull);
   });
 
   test('the CSRF exemption covers the callback POST only', () async {

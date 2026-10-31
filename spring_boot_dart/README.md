@@ -89,6 +89,13 @@ goes through these steps:
 6. **The runners:** `ApplicationRunner` and `CommandLineRunner` beans run
    one after another.
 
+Beans that finish starting only after the refresh (an `AsyncStartup`,
+such as the web starter's server, which binds its port asynchronously)
+are waited for before step 5's `Started ...` line, the
+`ApplicationStartedEvent` and the runners: a server that cannot start
+(a port in use) fails the start as in Spring Boot, with no runner and no
+`ApplicationReadyEvent`.
+
 Application events are published along the way (see
 [Application events](#application-events)).
 
@@ -122,7 +129,8 @@ class Warmup implements ApplicationRunner { ... }       // starts after Migratio
 gets them parsed (`--mode=batch` options and plain values).
 
 `runApplication` returns once the synchronous part of the start is done;
-the runners then go on one after another. `await runApplicationAsync(args)`
+the runners then go on one after another (after the web server
+listens, when there is one). `await runApplicationAsync(args)`
 completes after the last runner, as Spring Boot's `run` does.
 
 ## Shutdown and exit codes
@@ -545,8 +553,8 @@ Excluding a class removes its beans, its imported registrars and
 selectors, and its conditional `@PropertySource`s; configuration classes
 it `@Import`s stay. Excluding a module removes all of it. Excluding a type that is no auto-configuration stops
 the start; an unknown name is ignored. The built-in ones are
-`MessageSourceAutoConfiguration`, `JacksonAutoConfiguration` and
-`ValidationAutoConfiguration`:
+`MessageSourceAutoConfiguration`, `JacksonAutoConfiguration`,
+`ValidationAutoConfiguration` and `LifecycleAutoConfiguration`:
 
 ```properties
 spring.autoconfigure.exclude=JacksonAutoConfiguration
@@ -555,8 +563,11 @@ spring.autoconfigure.exclude=JacksonAutoConfiguration
 ### What `spring_boot_dart` configures itself
 
 `spring_boot_dart` is a starter too (`springBootAutoConfiguration`): the
-`ObjectMapper` and validation beans above, and
-`MessageSourceAutoConfiguration`. That one registers a `messageSource`
+`ObjectMapper` and validation beans above, the `lifecycleProcessor`
+whose timeout per shutdown phase is
+`spring.lifecycle.timeout-per-shutdown-phase` (30 s by default, as in
+Boot's `LifecycleAutoConfiguration`; without it the context waits 10 s,
+Spring Framework's default), and `MessageSourceAutoConfiguration`. That one registers a `messageSource`
 for `classpath:<spring.messages.basename>` (`messages` by default) when
 the context, not counting a parent, has no bean named `messageSource`.
 It reads `spring.messages.encoding`, `use-code-as-default-message`,
@@ -938,7 +949,9 @@ calls the service extension `ext.spring_boot.reload`
 - the generated code changed (beans, annotations, `lib/resources/`; for
   example a new `@GetMapping` or another `server.port`): the context is
   closed and starts again with the same arguments, so the web server
-  stops and listens again.
+  stops and listens again. If that start fails (a bug in the new code),
+  the extension answers with the error, and the next reload starts the
+  application again, as DevTools restarts at the next change.
 
 The `dart run: <file>` tasks of the Flutter tools Zed extension do this
 on save: they run the program with the VM service on, reload it when a
@@ -970,7 +983,7 @@ starter does this for you and starts the application from a widget.
 |---|---|---|
 | Constructor binding passes `null` for a missing property without `@DefaultValue` | A missing non-nullable scalar stops the start; a missing collection is empty and a missing nested object is created with its own defaults (what Boot does with an empty `@DefaultValue`) | Dart's non-nullable types |
 | `@ConstructorBinding` picks one of several constructors | Constructor binding only for a class whose only public generative constructor has parameters | Not implemented yet |
-| `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1) | Dart files are UTF-8 |
+| `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1, or name one file's encoding where it is named, `classpath:legacy.properties[encoding=iso-8859-1]`, as in Boot 4.1) | Dart files are UTF-8 |
 | YAML 1.1 (SnakeYAML) | YAML 1.2 (`package:yaml`): `on`, `off`, `yes`, `no` stay strings (converting them to `bool` still works), `0777` is 777 | The Dart team's YAML parser |
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged only at INFO (visible with `spring_boot_starter_logging` or `logging.level.root=info`) | Dart has no process start time; no logging backend by default |

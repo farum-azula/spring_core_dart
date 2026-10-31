@@ -9,10 +9,11 @@ import android.os.Bundle
  * answers the login.
  *
  * Only the redirect of the login that runs is handed over (the same
- * scheme, host, port and path as its redirect URI, [AuthorizationFlow.accepts]);
- * any other link that reaches it (another page of the app's site, a stale
- * redirect, a link without a login running) is dropped, and the login in
- * progress goes on.
+ * scheme, authority and path as its redirect URI, with the login's
+ * `state`, [AuthorizationFlow.accepts]); any other link that reaches it
+ * (another page of the app's site, the exact path with another `state`,
+ * a stale redirect, a link without a login running) is ignored: the
+ * activity finishes, and the login in progress goes on waiting.
  *
  * The plugin's manifest declares it without an intent filter, so apps
  * that never log in are not affected. An app that logs in declares it
@@ -52,7 +53,9 @@ class RedirectReceiverActivity : Activity() {
         super.onCreate(savedInstanceState)
         val link = intent.data
         if (link != null && AuthorizationFlow.accepts(link)) {
-            startActivity(AuthorizationManagementActivity.responseIntent(this, link))
+            startActivity(
+                AuthorizationManagementActivity.responseIntent(this, link, AuthorizationFlow.runningLogin),
+            )
         }
         finish()
     }

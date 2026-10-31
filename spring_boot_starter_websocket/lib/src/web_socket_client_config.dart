@@ -159,11 +159,12 @@ final class WebSocketClientConfig {
 ///
 /// Reconnection happens only while someone listens to the client's
 /// messages, and only after a close that may be temporary (no code, 1001,
-/// 1005, 1006, 1011 to 1014). Each wait is [delay] times [multiplier] for
-/// every earlier failure, at most [maxDelay], give or take [jitter]; a
-/// connection that proves stable starts the count again. It is set by
-/// `spring.websocket.client.config.<name>.reconnect.*`, with the names of
-/// Spring Framework 7's `RetryPolicy`.
+/// 1005, 1006, 1011 to 1014, or 4500: a connection the client dropped
+/// because the server took nothing of what it sent). Each wait is [delay]
+/// times [multiplier] for every earlier failure, at most [maxDelay], give
+/// or take [jitter]; a connection that proves stable starts the count
+/// again. It is set by `spring.websocket.client.config.<name>.reconnect.*`,
+/// with the names of Spring Framework 7's `RetryPolicy`.
 ///
 /// ```properties
 /// # Every reconnect property of the chat client; the last line would

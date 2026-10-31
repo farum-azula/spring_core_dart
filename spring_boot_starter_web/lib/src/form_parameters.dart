@@ -21,8 +21,9 @@ const formParametersAttribute = 'spring.web.formParameters';
 ///
 /// For a request of another content type, the result is [request] itself
 /// and `null`. The body is read up to [maxLength] bytes (1 MiB by
-/// default); a larger form is a 413 `ResponseStatusException`. Text that
-/// does not decode is kept as it is.
+/// default); a larger form is a 413 `ResponseStatusException`. A form
+/// that is not UTF-8, or has a malformed `%` escape (`title=%FF`,
+/// `title=%G1`), is a 400 `ResponseStatusException`, as Tomcat answers.
 ///
 /// ```dart
 /// // A filter checks a form field and passes on the replaying request,
@@ -57,20 +58,31 @@ Future<(ServerHttpRequest, Map<String, List<String>>?)> readFormParameters(
     );
   }
   final fields = <String, List<String>>{};
-  final text = utf8.decode(bytes, allowMalformed: true);
+  Never invalid() => throw ResponseStatusException(
+    HttpStatus.badRequest,
+    'The form is not valid UTF-8 or has a malformed %-escape',
+  );
+  final String text;
+  try {
+    text = utf8.decode(bytes);
+  } on FormatException {
+    invalid();
+  }
+  String decode(String part) {
+    try {
+      return Uri.decodeQueryComponent(part);
+    } on ArgumentError {
+      invalid();
+    } on FormatException {
+      invalid();
+    }
+  }
+
   for (final pair in text.split('&')) {
     if (pair.isEmpty) {
       continue;
     }
     final separator = pair.indexOf('=');
-    String decode(String part) {
-      try {
-        return Uri.decodeQueryComponent(part);
-      } on ArgumentError {
-        return part;
-      }
-    }
-
     final name = decode(separator < 0 ? pair : pair.substring(0, separator));
     final value = separator < 0 ? '' : decode(pair.substring(separator + 1));
     (fields[name] ??= []).add(value);

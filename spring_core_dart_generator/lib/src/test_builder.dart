@@ -1,14 +1,18 @@
-import 'dart:io' as io;
-
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/source/line_info.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
+import 'package:spring_core_dart_generator/src/bean_model.dart'
+    show exposedBeanTypes, publicSdkLibrary;
+import 'package:spring_core_dart_generator/src/package_directory.dart';
 
 /// The builder that turns the `@SpringBootTest` classes of a test file into
 /// `package:test` tests.
@@ -32,14 +36,27 @@ import 'package:path/path.dart' as p;
 /// points at the member. When the test file does not import its generated
 /// file, a warning says which import to add.
 ///
-/// The test file is read as syntax, not resolved, so the builder stays
-/// fast. To make every type and constant written in the test class mean
-/// the same in the generated code, the generated file imports what the
-/// test file imports (with the same prefixes and combinators) and the test
-/// file itself. Bean types are not written out:
-/// `instance.checkout = app.getBean();` takes its type from the field.
-/// While the test file has syntax errors, the existing generated file is
-/// kept so the test's import of it keeps working.
+/// The test file is read as syntax, so the builder stays fast. To make
+/// every type and constant written in the test class mean the same in the
+/// generated code, the generated file imports what the test file imports
+/// (with the same prefixes and combinators) and the test file itself. Bean
+/// types are not written out: `instance.checkout = app.getBean();` takes
+/// its type from the field. A test file with `@TestBean` fields is
+/// resolved as well when the syntax does not tell enough:
+///
+/// - a `@TestBean(name: ...)` field without `type:` whose value is a call
+///   (`= FakeGateway()`, `= Fakes.gateway()`): when the value is a
+///   constructor call, the fake is registered under the types of its
+///   class, written with imports of their own;
+/// - a field whose type is inferred, or named without `?` and not
+///   declared in the test file as a class, mixin, enum or extension type:
+///   it may be a nullable type alias (`typedef MaybeMailer = Mailer?;`),
+///   whose value the override checks for `null` like that of a `Mailer?`
+///   field.
+///
+/// While the test file has syntax errors, the existing generated file (in
+/// the directory of the test's package, also in a workspace build) is kept
+/// so the test's import of it keeps working.
 ///
 /// ```dart
 /// // test/checkout_test.dart
@@ -72,8 +89,13 @@ import 'package:path/path.dart' as p;
 /// Spring (Java): JUnit's `SpringExtension` does this at runtime with
 /// reflection; Dart has none, so it is generated.
 class SpringTestBuilder implements Builder {
-  /// Creates the builder; it has no options.
-  SpringTestBuilder();
+  /// Creates the builder; it has no build options. [packageDirectories] finds
+  /// the existing generated file on disk ([PackageDirectories.current]
+  /// unless given; tests pass directories of their own).
+  SpringTestBuilder({PackageDirectories? packageDirectories})
+    : _packageDirectories = packageDirectories ?? PackageDirectories.current;
+
+  final PackageDirectories _packageDirectories;
 
   @override
   Map<String, List<String>> get buildExtensions => const {
@@ -100,13 +122,15 @@ class SpringTestBuilder implements Builder {
         .where((e) => e.diagnosticCode.severity == DiagnosticSeverity.ERROR)
         .toList();
     if (syntaxErrors.isNotEmpty) {
-      final existing = io.File(output.path);
+      // The output's own package directory: in a workspace build the
+      // working directory may be another package's.
+      final existing = await _packageDirectories.read(output);
       log.warning(
         '${input.path} has syntax errors; ${output.path} is kept as it is '
         'until it parses again:\n${syntaxErrors.first.message}',
       );
-      if (existing.existsSync()) {
-        await buildStep.writeAsString(output, existing.readAsStringSync());
+      if (existing != null) {
+        await buildStep.writeAsString(output, existing);
       }
       return;
     }
@@ -133,15 +157,101 @@ class SpringTestBuilder implements Builder {
         'void main() => runSpringTests();',
       );
     }
+    final fakes = TestEmitter.fakesToResolve(file);
+    final fields = TestEmitter.nullabilityToResolve(file);
+    final resolved = fakes.isEmpty && fields.isEmpty
+        ? null
+        : await _resolve(buildStep, fakes, fields);
     final source = TestEmitter(
       file: file,
       output: output,
       package: input.package,
       applications: applications,
+      fakeTypes: resolved?.fakeTypes ?? const {},
+      nullableFields: resolved?.nullable ?? const {},
     ).emit();
     await buildStep.writeAsString(output, source);
   }
+
+  // What only the resolved test file tells, by `Class.field`:
+  // - the types of the values of [fakes] (`@TestBean(name: ...)` fields
+  //   whose value is a call, as (class, field)): for a constructor call,
+  //   its class and that class's supertypes, as the generator registers a
+  //   bean of that class. Any other value (a function or static method,
+  //   which may return any subclass) and a class that cannot be resolved
+  //   are left out;
+  // - whether the types of [fields] (`@TestBean` fields whose syntax does
+  //   not tell, as (class, field)) are nullable, through type aliases
+  //   (`typedef MaybeMailer = Mailer?;`). One that cannot be resolved is
+  //   left out.
+  // Only such a test file is resolved; the builder reads the others as
+  // syntax, which is faster.
+  static Future<
+    ({Map<String, List<InterfaceType>> fakeTypes, Map<String, bool> nullable})
+  >
+  _resolve(
+    BuildStep buildStep,
+    List<(String, String)> fakes,
+    List<(String, String)> fields,
+  ) async {
+    final resolver = buildStep.resolver;
+    final LibraryElement library;
+    try {
+      library = await resolver.libraryFor(
+        buildStep.inputId,
+        allowSyntaxErrors: true,
+      );
+    } on Exception catch (e) {
+      log.fine('${buildStep.inputId.path} cannot be resolved: $e');
+      return (
+        fakeTypes: const <String, List<InterfaceType>>{},
+        nullable: const <String, bool>{},
+      );
+    }
+    final nullable = <String, bool>{
+      for (final (owner, name) in fields)
+        if (library.getClass(owner)?.getField(name)?.type case final type?
+            when type is! InvalidType)
+          '$owner.$name': library.typeSystem.isPotentiallyNullable(type),
+    };
+    final types = <String, List<InterfaceType>>{};
+    for (final (owner, name) in fakes) {
+      final field = library.getClass(owner)?.getField(name);
+      if (field == null) {
+        continue;
+      }
+      final node = await resolver.astNodeFor(
+        field.firstFragment,
+        resolve: true,
+      );
+      if (node case VariableDeclaration(:final initializer)) {
+        if (_constructedType(initializer) case final type?) {
+          types['$owner.$name'] = exposedBeanTypes(type);
+        }
+      }
+    }
+    return (fakeTypes: types, nullable: nullable);
+  }
+
+  // The class whose constructor creates [value] (resolved; in parentheses
+  // or with a cascade too), or `null` for any other value.
+  static InterfaceType? _constructedType(Expression? value) =>
+      switch (_unwrapped(value)) {
+        InstanceCreationExpression(staticType: final InterfaceType type) ||
+        DotShorthandConstructorInvocation(
+          staticType: final InterfaceType type,
+        ) => type,
+        _ => null,
+      };
 }
+
+// [value] without the parentheses and cascades around it: `FakeGateway()`
+// for `(FakeGateway()..reset())`.
+Expression? _unwrapped(Expression? value) => switch (value) {
+  ParenthesizedExpression(:final expression) => _unwrapped(expression),
+  CascadeExpression(:final target) => _unwrapped(target),
+  _ => value,
+};
 
 // Whether [source] declares a top-level function annotated with
 // `@SpringBootApplication` (read as syntax: comments and strings that
@@ -178,8 +288,9 @@ AssetId springTestOutput(AssetId input) {
 /// A build error in a `@SpringBootTest` class, located at the member that
 /// causes it.
 ///
-/// The test builder works on syntax only, so it cannot use the analyzer's
-/// element-based errors. It throws this exception instead, and
+/// The test builder reads the test file as syntax (it resolves it only
+/// for the classes of `@TestBean(name: ...)` fakes), so it cannot use the
+/// analyzer's element-based errors. It throws this exception instead, and
 /// `build_runner` prints it as `path:line:column: message`.
 final class TestClassException implements Exception {
   /// The error [message] at [location] (`path:line:column`).
@@ -196,8 +307,8 @@ final class TestClassException implements Exception {
   String toString() => '$location: $message';
 }
 
-/// A parsed (not resolved) test file, with the queries the test builder
-/// needs: its imports, its `@SpringBootTest` classes, and error locations.
+/// A parsed test file, with the queries the test builder needs: its
+/// imports, its `@SpringBootTest` classes, and error locations.
 final class TestFile {
   /// Wraps [unit], the parsed syntax of the file at [path].
   ///
@@ -243,6 +354,21 @@ final class TestFile {
     }
     return null;
   }
+
+  /// Whether this file declares a class, mixin, enum or extension type
+  /// called [name] (a type that is never nullable; not a type alias).
+  bool declaresType(String name) => unit.declarations.any(
+    (declaration) => switch (declaration) {
+      ClassDeclaration(:final namePart) ||
+      EnumDeclaration(:final namePart) ||
+      ExtensionTypeDeclaration(
+        :final namePart,
+      ) => namePart.typeName.lexeme == name,
+      ClassTypeAlias(name: final token) ||
+      MixinDeclaration(name: final token) => token.lexeme == name,
+      _ => false,
+    },
+  );
 
   /// The import directives, as written; the generated file repeats them.
   List<ImportDirective> get imports => [
@@ -354,12 +480,80 @@ final class TestEmitter {
   /// An emitter for [file], written to [output] in [package], whose
   /// `@SpringBootApplication` entry points are [applications] (paths in
   /// the package).
+  ///
+  /// [fakeTypes] are the types of the values of `@TestBean(name: ...)`
+  /// fields created with a constructor call, by `Class.field`
+  /// ([fakesToResolve]): the value's class first, then its supertypes. A
+  /// `@TestBean(name: ...)` field without an entry keeps the types of the
+  /// bean it replaces.
+  ///
+  /// [nullableFields] tells, by `Class.field`, whether the type of a
+  /// `@TestBean` field of [nullabilityToResolve] is nullable; a field
+  /// without an entry is nullable when its declared type ends with `?`.
   TestEmitter({
     required this.file,
     required this.output,
     required this.package,
     required this.applications,
+    this.fakeTypes = const {},
+    this.nullableFields = const {},
   });
+
+  /// The `@TestBean(name: ...)` fields without `type:` (as (class,
+  /// field)) of [file] whose value is a call, which only the resolved file
+  /// tells a constructor's from a function's (`FakeGateway()`,
+  /// `f.FakeGateway.sandbox()`, `_Fake()..reset()`, `Fakes.gateway()`):
+  /// the builder resolves the test file for their [fakeTypes]. Classes
+  /// that cannot be generated are skipped here; [emit] reports them.
+  static List<(String, String)> fakesToResolve(TestFile file) => [
+    for (final testClass in file.testClasses)
+      ...?_testBeans(file, testClass)
+          ?.where((f) => f.mayCreateFake)
+          .map(
+            (f) => (f.owner.namePart.typeName.lexeme, f.name),
+          ),
+  ];
+
+  /// The `@TestBean` fields (as (class, field)) of [file] whose
+  /// nullability their syntax does not tell: an inferred type, or a named
+  /// type without `?` that is not a class, mixin, enum or extension type of
+  /// [file], as it may be a nullable type alias (`typedef MaybeMailer =
+  /// Mailer?;`, also from another library). The builder resolves the test
+  /// file for their [nullableFields]. Classes that cannot be generated are
+  /// skipped here; [emit] reports them.
+  static List<(String, String)> nullabilityToResolve(TestFile file) => [
+    for (final testClass in file.testClasses)
+      ...?_testBeans(file, testClass)
+          ?.where(
+            (f) => switch (f.declarations.type) {
+              null => true,
+              NamedType(question: null, importPrefix: null, :final name) =>
+                !file.declaresType(name.lexeme),
+              NamedType(question: null) => true,
+              _ => false,
+            },
+          )
+          .map((f) => (f.owner.namePart.typeName.lexeme, f.name)),
+  ];
+
+  static List<_Field>? _testBeans(TestFile file, ClassDeclaration testClass) {
+    try {
+      return _Members.of(file, testClass, outer: true).testBeans;
+    } on TestClassException {
+      return null;
+    }
+  }
+
+  /// The types of the fakes of [fakesToResolve] created with a
+  /// constructor of a class that could be resolved, by `Class.field`.
+  final Map<String, List<InterfaceType>> fakeTypes;
+
+  /// Whether the types of the fields of [nullabilityToResolve] that could
+  /// be resolved are nullable, by `Class.field`.
+  final Map<String, bool> nullableFields;
+
+  // The libraries of [fakeTypes] written here → their import prefix.
+  final Map<String, String> _typeImports = {};
 
   /// The test file whose classes are generated.
   final TestFile file;
@@ -379,6 +573,19 @@ final class TestEmitter {
   final Map<String, String> _applicationPrefixes = {};
 
   final StringBuffer _body = StringBuffer();
+
+  // The generated function that types an override by its value: written
+  // in the `List<BeanOverride<Object>>` of `overrides:`,
+  // `BeanOverride.named(field, ...)` (a `@TestBean(name: ...)` field) or
+  // `BeanOverride(field)` (a field whose type is a nullable type alias,
+  // which cannot be written without its `?`) alone gets `Object` as its
+  // type argument (downward inference), and the override would not
+  // register the fake under the field's type. Called around it, the type
+  // argument is inferred from the value: the field's type, without `?`.
+  static const _named = r'_$named';
+
+  // Whether the generated file needs [_named].
+  bool _usesNamed = false;
 
   /// Generates every test class of [file] and returns the formatted
   /// source of the generated library.
@@ -417,6 +624,14 @@ final class TestEmitter {
         in _applicationPrefixes.entries) {
       out.writeln("import '${_applicationImport(entry)}' as $prefix;");
     }
+    for (final MapEntry(key: uri, value: prefix) in _typeImports.entries) {
+      out.writeln("import '$uri' as $prefix;");
+      if (uri == 'dart:core') {
+        // A prefixed import of dart:core removes the implicit one, which
+        // the generated code needs (StateError, dynamic).
+        out.writeln("import 'dart:core';");
+      }
+    }
     out
       ..writeln()
       ..writeln(
@@ -426,6 +641,19 @@ final class TestEmitter {
       ..writeln('void runSpringTests() {')
       ..write(_body)
       ..writeln('}');
+    if (_usesNamed) {
+      out
+        ..writeln()
+        ..writeln(
+          '// The override of a @TestBean field, typed by the field: in the '
+          'overrides',
+        )
+        ..writeln(
+          '// list, BeanOverride.named (or BeanOverride) alone infers Object.',
+        )
+        ..write('_sbt.BeanOverride<Object> $_named<T extends Object>')
+        ..writeln('(_sbt.BeanOverride<T> override) => override;');
+    }
     return DartFormatter(languageVersion: DartFormatter.latestLanguageVersion)
         .format(out.toString());
   }
@@ -670,7 +898,20 @@ final class TestEmitter {
 
   String _override(_Field bean) {
     final testBean = annotation(bean.metadata, 'TestBean')!;
-    final value = '$_instance.${bean.name}';
+    final owner = bean.owner.namePart.typeName.lexeme;
+    // A nullable field: the override takes the value itself (a null one
+    // fails the test file with this message). Resolved when the syntax
+    // does not tell (a nullable type alias).
+    final nullable =
+        nullableFields['$owner.${bean.name}'] ??
+        bean.type?.endsWith('?') ??
+        false;
+    final message = _literal(
+      '@TestBean field $owner.${bean.name} is null: it needs a value',
+    );
+    final value = nullable
+        ? '($_instance.${bean.name} ?? (throw StateError($message)))'
+        : '$_instance.${bean.name}';
     final scope = _Scope.of(file, bean.owner);
     final name = _code(namedNode(testBean, 'name'), scope: scope);
     final type = _code(namedNode(testBean, 'type'), scope: scope);
@@ -678,10 +919,27 @@ final class TestEmitter {
       final named = name == null ? '' : ', name: $name';
       return '_sbt.BeanOverride<$type>($value$named)';
     }
-    if (name != null) {
-      return '_sbt.BeanOverride.named($value, name: $name)';
-    }
     final declared = bean.type;
+    if (name != null) {
+      // A value created with a constructor (`= FakeGateway()`, whatever
+      // the field's declared type): the fake is registered under the types
+      // of its class, read from the resolved test file, not under the
+      // replaced bean's, which it may not implement. Otherwise (a function
+      // or static method call, a variable, a literal, a class that cannot
+      // be resolved or a type that cannot be written here) the replaced
+      // bean's types are kept. Either way BeanOverride.named adds its type
+      // argument, the field's type: [_named] keeps the overrides list from
+      // inferring Object for it.
+      final types = bean.mayCreateFake
+          ? _typeList(fakeTypes['$owner.${bean.name}'])
+          : null;
+      _usesNamed = true;
+      if (types == null) {
+        return '$_named(_sbt.BeanOverride.named($value, name: $name))';
+      }
+      return '$_named(_sbt.BeanOverride.named($value, name: $name, '
+          'types: [$types]))';
+    }
     if (declared == null) {
       throw file.error(
         bean.node,
@@ -690,10 +948,123 @@ final class TestEmitter {
         '@TestBean(type: PaymentGateway), or @TestBean(name: ...).',
       );
     }
-    final nonNullable = declared.endsWith('?')
-        ? declared.substring(0, declared.length - 1)
-        : declared;
-    return '_sbt.BeanOverride<$nonNullable>($value)';
+    if (declared.endsWith('?')) {
+      return '_sbt.BeanOverride<${declared.substring(0, declared.length - 1)}>'
+          '($value)';
+    }
+    if (nullable) {
+      // A nullable type alias (`MaybeMailer` for `Mailer?`): its
+      // non-nullable form has no name to write, so the type argument is
+      // inferred from the value, which is not null.
+      _usesNamed = true;
+      return '$_named(_sbt.BeanOverride($value))';
+    }
+    return '_sbt.BeanOverride<$declared>($value)';
+  }
+
+  // [types] (a fake's class first, then its supertypes) as the elements
+  // of a `types:` list. A type whose class or a type argument is private
+  // is left out: only its own library can look a bean up by it (the
+  // fake's own class is added by its runtime type anyway, and a generic
+  // one by its raw form, `Repo<dynamic>` for `Repo<_Draft>`). `null` when
+  // [types] is `null` or one of the others cannot be written in the
+  // generated file, which would lose it.
+  String? _typeList(List<InterfaceType>? types) {
+    if (types == null) {
+      return null;
+    }
+    final written = <String>[];
+    for (final type in types) {
+      if (_hasPrivateClass(type)) {
+        continue;
+      }
+      final source = _typeSource(type);
+      if (source == null) {
+        return null;
+      }
+      written.add(source);
+    }
+    return written.isEmpty ? null : written.join(', ');
+  }
+
+  // Whether [type] or one of its type arguments (at any depth) is a
+  // private class.
+  static bool _hasPrivateClass(DartType type) =>
+      type is InterfaceType &&
+      (type.element.isPrivate || type.typeArguments.any(_hasPrivateClass));
+
+  // [type] as source in the generated file, its libraries imported with
+  // prefixes of their own; `null` for a type that cannot be written (a
+  // function, record or private type, a file of another package outside
+  // lib/, or a class of an internal SDK library that no public one
+  // exports).
+  String? _typeSource(DartType type) {
+    final nullable = type.nullabilitySuffix == NullabilitySuffix.question
+        ? '?'
+        : '';
+    switch (type) {
+      case DynamicType():
+        return 'dynamic';
+      case VoidType():
+        return 'void';
+      case NeverType():
+        return 'Never$nullable';
+      case InterfaceType(:final element) when element.isPublic:
+        final prefix = _typeImport(element);
+        final arguments = [
+          for (final argument in type.typeArguments) _typeSource(argument),
+        ];
+        if (prefix == null || arguments.contains(null)) {
+          return null;
+        }
+        final written = arguments.isEmpty ? '' : '<${arguments.join(', ')}>';
+        return '$prefix.${element.name}$written$nullable';
+      default:
+        return null;
+    }
+  }
+
+  // The prefix of the import of the library of [element] in the generated
+  // file. A class of an internal SDK library is imported through the
+  // public one that exports it (`HttpClient` of `dart:_http` through
+  // `dart:io`), as the generator writes it.
+  String? _typeImport(InterfaceElement element) {
+    final uri = element.library.uri;
+    final String import;
+    switch (uri.scheme) {
+      case 'dart' when uri.path.startsWith('_'):
+        final public = publicSdkLibrary(
+          element.name!,
+          element,
+          declaration: element,
+        );
+        if (public == null) {
+          return null;
+        }
+        import = '$public';
+      case 'dart':
+      case 'package':
+        import = '$uri';
+      // A file of this package outside lib/ (the test file itself).
+      case 'asset' when uri.pathSegments.firstOrNull == package:
+        import = _relative(uri.pathSegments.skip(1).join('/'));
+      default:
+        return null;
+    }
+    return _typeImports[import] ??= _freshPrefix('_t${_typeImports.length}');
+  }
+
+  // [prefix], or one with more underscores when the test file already
+  // imports with it.
+  String _freshPrefix(String prefix) {
+    final used = {
+      for (final directive in file.imports) ?directive.prefix?.name,
+    };
+    var candidate = prefix;
+    while (used.contains(candidate)) {
+      candidate = '_$candidate';
+    }
+    return candidate;
   }
 
   // Injection, lifecycle and tests of a class (the test class or a
@@ -718,6 +1089,10 @@ final class TestEmitter {
       _body.writeln('_sbt.setUp(() {${inject.join()}});');
     }
     if (annotation(metadata, 'DirtiesContext') != null) {
+      // On a class or @Nested field: a new context after each test, as
+      // Spring's classMode AFTER_EACH_TEST_METHOD. Spring's default for a
+      // class, AFTER_CLASS, would change nothing: the class's context is
+      // closed after its tests anyway (no context cache across classes).
       _body.writeln('_sbt.setUp($_app.markDirty);');
     }
     for (final method in members.beforeEach) {
@@ -1072,6 +1447,25 @@ final class _Field extends _Member {
     final NamedType named => named.name.lexeme,
     _ => null,
   };
+
+  /// Whether this is a `@TestBean(name: ...)` field without `type:` whose
+  /// value is a call, parentheses and cascades aside: `FakeGateway()`,
+  /// `f.FakeGateway.sandbox()`, `_Fake()..reset()`, but also
+  /// `Fakes.gateway()`. Only the resolved test file tells a constructor
+  /// call (the fake gets the types of its class) from a function's; a
+  /// literal, a variable or a function expression is neither.
+  bool get mayCreateFake {
+    final testBean = annotation(metadata, 'TestBean');
+    if (testBean == null ||
+        namedNode(testBean, 'name') == null ||
+        namedNode(testBean, 'type') != null) {
+      return false;
+    }
+    return switch (_unwrapped(variable.initializer)) {
+      InstanceCreationExpression() || InvocationExpression() => true,
+      _ => false,
+    };
+  }
 
   /// The type arguments as written: `[String, PaymentGateway]` for
   /// `Map<String, PaymentGateway>`.

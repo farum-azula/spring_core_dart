@@ -132,24 +132,35 @@ class SecurityConfig {
       )
       .csrf(
         (csrf) => csrf
+            // SameSite=Lax like the session cookie: other sites' requests
+            // do not carry it.
             .csrfTokenRepository(
-              const CookieCsrfTokenRepository.withHttpOnlyFalse(),
+              const CookieCsrfTokenRepository.withHttpOnlyFalse(
+                sameSite: 'Lax',
+              ),
             )
             // The raw token of the cookie, as the app sends it (Spring's
             // default handler expects a masked one, as pages render it).
             .csrfTokenRequestHandler(const CsrfTokenRequestAttributeHandler()),
       )
       .addFilterAfter(CsrfCookieFilter(), CsrfFilter)
+      // An API has no page to come back to after a login: no saved
+      // request, so anonymous requests start no session.
+      .requestCache((cache) => cache.requestCache(const NullRequestCache()))
       // A request without a login gets a 401 (no redirect to a login page).
       .exceptionHandling(
         (exceptions) =>
             exceptions.authenticationEntryPoint(const HttpStatusEntryPoint()),
       )
       // On top of the default security headers (nosniff, frame options,
-      // no caching, ...): JSON and images only, never framed.
+      // no caching, ...): JSON and images only, never framed; the login
+      // and logout pages' forms post here only, and no <base> moves
+      // their links (form-action and base-uri have no default-src
+      // fallback).
       .headers(
         (headers) => headers.contentSecurityPolicy(
-          "default-src 'none'; img-src 'self'; frame-ancestors 'none'",
+          "default-src 'none'; img-src 'self'; frame-ancestors 'none'; "
+          "form-action 'self'; base-uri 'none'",
         ),
       );
 

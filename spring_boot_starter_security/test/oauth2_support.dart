@@ -86,6 +86,9 @@ final class FakeOidcProvider {
   String? kid;
   bool unsigned = false;
 
+  /// The ID token's `typ` header; `null` keeps the factory's (`JWT`).
+  String? idTokenType;
+
   // What the provider saw.
   final List<Map<String, String>> tokenRequests = [];
   int jwkFetches = 0;
@@ -147,7 +150,12 @@ final class FakeOidcProvider {
     if (unsigned) {
       token = '${b64Json({'alg': 'none'})}.${b64Json(claims)}.';
     } else {
-      token = signer.token(alg: alg, claims: claims, kid: kid);
+      token = signer.token(
+        alg: alg,
+        claims: claims,
+        kid: kid,
+        header: {'typ': ?idTokenType},
+      );
     }
     return lastIdToken = token;
   }

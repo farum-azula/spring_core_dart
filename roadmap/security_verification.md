@@ -17,7 +17,7 @@ comparisons with Spring Security itself.
 | 3. Differential tests against Spring Security | done: `tool/security_reference` (Spring Boot 4.1, Spring Security 7.1), `spring_boot_starter_security/test/differential_test.dart`, CI job "Security compared with Spring Security"; password hashes both ways; `oauth2Login()` and the DPoP resource server (October 2026: profiles `oauth2` and `dpop` of the reference, a fake OpenID Connect provider both use, `test/differential_provider.dart`) |
 | 4. Generated inputs | done: `spring_boot_starter_security/test/fuzz_test.dart` (seeded) |
 | 5. Mutation testing and coverage | done: `tool/mutation_test.dart`; the scores are in [docs/security.md](../docs/security.md#how-it-is-shown). Coverage is measured, not yet reported by CI. The SSO and DPoP code (October 2026): `dpop.dart`, `lib/src/oauth2/`, the client's ID token validator, DPoP proof builder and authorization response ([docs/security-mutation.md](../docs/security-mutation.md)); **later:** the `oauth2Login()` parts of `http_security.dart`, the app login's checks (`flutter test`) |
-| 6. Scanners and reviews | ASVS checklist done ([docs/security-asvs.md](../docs/security-asvs.md)); the ZAP scan and an external review are open |
+| 6. Scanners and reviews | ASVS checklist done ([docs/security-asvs.md](../docs/security-asvs.md)); the ZAP baseline scan done (October 2026): CI job "OWASP ZAP baseline" on the server guide, logged in with the form login (dev) and through Keycloak's login (`sso`), rules in `.zap/`; an external review is open |
 
 ## 1. Threat model and rules (before any code)
 
@@ -84,13 +84,64 @@ This catches behaviour nobody thought of writing a test for.
 ## 6. Scanners and reviews
 
 - **OWASP ZAP baseline scan** in CI against the example application
-  secured by the starter; findings fail the build.
+  secured by the starter; findings fail the build. Done (October 2026):
+  the job `zap` of `.github/workflows/ci.yml` starts the server guide
+  (dev, logged in as `ada` with the form login; and `dev,sso`, logged
+  in as `ada` through the login form of the Keycloak of
+  example/keycloak), seeds every endpoint (`.zap/seed_hook.py`: a JSON
+  API has no links to spider) and runs `zap-baseline.py` with a pinned
+  image, without `-I`: a warning fails like a failure. Accepted rules
+  are in `.zap/rules.tsv`, each with its reason; the `XSRF-TOKEN`
+  cookie without `HttpOnly` (scripts must read it) is accepted for that
+  cookie only, in the hook. The first scan found three issues of the
+  example, fixed before the job went in: the CSP without `form-action`
+  and `base-uri`, the `XSRF-TOKEN` and `neon-recent` cookies without
+  `SameSite` (and `neon-recent` without `HttpOnly`), the handler names
+  in `Server-Timing`.
 - **Checklist:** OWASP ASVS level 2 chapters V2 (authentication), V3
   (sessions), V4 (access control), V13 (API), V14 (configuration), each
   item marked with the test that covers it.
 - **Reviews:** a dedicated security review pass on every change of these
   packages (adversarial: try to break the change), and an external audit
   before 1.0.
+
+## 7. A hard security run on a Docker network (before the 0.5.0 release)
+
+The owner's request (October 2026), after the ten review rounds: one run
+only about security, with the attacking tools security testers use, on
+our own applications in an isolated Docker network (no route to the
+internet; nothing aimed outside it).
+
+- **The stand:** about five backends on our stack, each using several of
+  our servers and features differently — form login with sessions; a
+  resource server with JWT and DPoP; `oauth2Login()` with the Keycloak of
+  example/keycloak; WebSocket and SSE; multipart and files; one backend
+  in several instances behind a proxy — and frontends that talk to
+  several backends at once: Flutter web in `server` and `spa` mode, the
+  native apps' flows driven by scripts.
+- **Nothing goes where it shouldn't:** all outgoing traffic of every
+  container through one observing proxy that records every request; the
+  run fails on any request to an origin that shouldn't get it, a cookie
+  or token sent to the wrong host, credentials to a third-party API,
+  more calls to a provider's metadata than expected.
+- **The attacks:** an active ZAP scan (CI runs the passive baseline
+  only); injections (SQL where a backend has a database, SpEL, header,
+  path, log and template injection, JSON and YAML payloads); fuzzing of
+  paths, parameters, headers and bodies; brute force on the logins and
+  token endpoints (lockout, rate limits, timing); floods of sessions,
+  WebSocket connections and messages, multipart parts, large and slow
+  bodies; JWT and OAuth attacks (`alg`, `typ`, `kid`, keys in the token,
+  replayed and foreign DPoP proofs, `state` / `nonce` / PKCE, redirect
+  and mix-up); CORS and CSRF from a hostile origin; TLS and headers.
+- **Sessions especially:** the owner doubts the in-memory sessions; prove
+  what the new rule promises (no session before a login; at the limit
+  expired ones go, then new ones are refused; a flood can't log anyone
+  out) under load, not only in unit tests.
+- **Output:** each finding confirmed with a probe, fixed with a
+  regression test, listed in `roadmap/fix_plan.md` (without the attack's
+  details until the fix is out). The stand (a compose file, the attack
+  runs), the plan and the reports are kept outside this repository,
+  privately, so they can be run again before each release.
 
 ## How the owner can judge it
 

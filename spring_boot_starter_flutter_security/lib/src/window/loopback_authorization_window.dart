@@ -13,19 +13,29 @@ typedef SystemBrowserOpener = Future<void> Function(Uri uri);
 /// redirect back, which it receives on a one-shot server on `127.0.0.1`
 /// (OAuth 2.0 for Native Apps, RFC 8252 §7.3).
 ///
-/// For each login it binds `127.0.0.1` on a free port, makes the redirect
-/// URI `http://127.0.0.1:<port><path of the configured redirect URI>`,
-/// opens the provider's page, and answers the first `GET` on that path
-/// with a page saying the window can be closed; then it stops listening.
-/// Other paths (the browser's `favicon.ico`) get a 404. Nothing of the
-/// request is echoed in the page. After [timeout] (5 minutes) without a
-/// redirect, the login fails with an [AuthorizationCancelledException].
+/// For each login it binds the loopback address on a free port, makes the
+/// redirect URI `http://127.0.0.1:<port><path>` (the path of the
+/// configured redirect URI), opens the provider's page, and answers the
+/// first `GET` on that
+/// path that carries the login's `state` with a page saying the window
+/// can be closed; then it stops listening. A request on the path with
+/// another or no `state` (another site sending the browser there to end
+/// the login) gets a 400 and the window keeps waiting; other paths (the
+/// browser's `favicon.ico`) get a 404. Nothing of the request is echoed
+/// in the page. After [timeout] (5 minutes) without a redirect, the login
+/// fails with an [AuthorizationCancelledException].
 ///
 /// The provider must accept a loopback redirect with any port (RFC 8252
 /// §7.3; Keycloak: a redirect URI `http://127.0.0.1/*`, Google: desktop
-/// clients). A redirect URI with an explicit port
-/// (`http://127.0.0.1:8400/callback`) keeps that port, for providers that
-/// want it exact.
+/// clients). A redirect URI naming the host `localhost` or `[::1]` keeps
+/// it, and one with an explicit port (`http://127.0.0.1:8400/callback`)
+/// keeps that port, for providers that want them exact; any other host
+/// becomes 127.0.0.1. `localhost` listens on 127.0.0.1 and, where the
+/// system has IPv6, on ::1 with the same port (the browser may resolve
+/// it to either): a free port is one free on both, and an explicit port
+/// another program holds on ::1 fails the login with a
+/// `SocketException` rather than letting the redirect reach that
+/// program.
 ///
 /// The package's auto-configuration makes it the app's
 /// [AuthorizationWindow] bean on Windows and Linux ([isSupported]);

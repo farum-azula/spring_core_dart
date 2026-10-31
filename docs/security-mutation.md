@@ -23,7 +23,7 @@ dart run tool/mutation_test.dart spring_boot_starter_security \
 |---|---|---|---|
 | `spring_security_core` | 264 | 259 | 98.1 % |
 | `spring_boot_starter_security` | 356 | 351 | 98.6 % |
-| `spring_boot_starter_security`, DPoP (`lib/src/jwt/dpop.dart`) | 70 | 68 | 97.1 % |
+| `spring_boot_starter_security`, DPoP (`lib/src/jwt/dpop.dart`) | 72 | 70 | 97.2 % |
 | `spring_boot_starter_security`, `oauth2Login()` (`lib/src/oauth2/`) | 61 | 56 | 91.8 % (the 5 changes not noticed are in the table below) |
 | `spring_boot_starter_oauth2_client`: the ID token validator, the DPoP proof builder, the authorization request and response | 35 | 35 | 100 % |
 
@@ -66,8 +66,8 @@ The DPoP and `oauth2Login()` changes nothing notices:
 
 | Where | Change | Why nothing changes |
 |---|---|---|
-| `dpop.dart:225` | `left <= 0` → `< 0` | A key's count of 0 is kept instead of removed: it reads as no entry (`?? 0`). |
-| `dpop.dart:408` | `parsed.hasPort && parsed.port != defaultPort` → `\|\|` | Dart's `Uri` drops a default port, so `hasPort` already means another port. |
+| `dpop.dart:236` | `left <= 0` → `< 0` | A key's count of 0 is kept instead of removed: it reads as no entry (`?? 0`). |
+| `dpop.dart:424` | `parsed.hasPort && parsed.port != defaultPort` → `\|\|` | Dart's `Uri` drops a default port, so `hasPort` already means another port. |
 | `authorization_request_redirect.dart:155` | `getSession(create: false)` → `true` | Reached only when a saved request was found, so there is a session. |
 | `login.dart:567` | `result.principal == null \|\| result.accessToken == null` → `&&` | The token's constructors set both or neither. |
 | `oidc_logout.dart:155` | `full.length > path.length` → `>=` | With equal lengths the context path is the empty text either way. |

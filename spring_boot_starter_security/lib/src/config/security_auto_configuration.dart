@@ -18,6 +18,7 @@ import 'package:spring_boot_starter_security/src/jwt/jwt_decoder.dart';
 import 'package:spring_boot_starter_security/src/oauth2/authorized_client_repository.dart';
 import 'package:spring_boot_starter_security/src/oauth2/oidc_id_token_decoder_factory.dart';
 import 'package:spring_boot_starter_security/src/web/arguments.dart';
+import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 import 'package:spring_boot_starter_security/src/web/firewall.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
@@ -48,6 +49,15 @@ const _log = SpringLog('spring.security.autoconfigure');
 /// | `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | `scope`, else `scp` |
 /// | `spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter` | a space |
 /// | `spring.security.oauth2.resourceserver.jwt.principal-claim-name` | `sub` |
+/// | `spring.security.session.maximum-sessions` | `10` (`-1`: no limit) |
+/// | `spring.security.session.max-sessions-prevents-login` | `false` |
+/// | `spring.security.cookie.secret` | a random key of the process |
+///
+/// The `spring.security.session.*` properties (not in Spring Boot, where
+/// `maximumSessions` is set in code only) apply to the chains that keep
+/// logins in sessions (form login, `oauth2Login()`); `stateless` chains,
+/// bearer tokens and HTTP Basic make no sessions. A chain's own
+/// `sessionManagement((s) => s.maximumSessions(...))` wins.
 ///
 /// ```properties
 /// # A development user instead of the generated password.
@@ -115,6 +125,40 @@ final class SecurityProperties {
   int get filterOrder =>
       int.tryParse(_text('spring.security.filter.order') ?? '') ??
       FilterChainProxy.defaultFilterOrder;
+
+  /// `spring.security.session.maximum-sessions`: the most sessions per
+  /// user of the chains with sessions, 10 by default, `-1` for no limit.
+  ///
+  /// Throws an [ArgumentError] for `0`, a value below `-1` or text that
+  /// is not a number.
+  int get maximumSessions {
+    final text = _text('spring.security.session.maximum-sessions');
+    if (text == null) {
+      return SessionManagementConfigurer.defaultMaximumSessions;
+    }
+    final value = int.tryParse(text);
+    if (value == null || value == 0 || value < -1) {
+      throw ArgumentError(
+        'spring.security.session.maximum-sessions must be -1 or positive: '
+        '$text',
+      );
+    }
+    return value;
+  }
+
+  /// `spring.security.session.max-sessions-prevents-login`: whether a
+  /// login above [maximumSessions] is refused instead of ending the
+  /// user's least recently used session; `false` by default.
+  bool get maxSessionsPreventsLogin => switch (_text(
+    'spring.security.session.max-sessions-prevents-login',
+  )?.toLowerCase()) {
+    null || 'false' => false,
+    'true' => true,
+    final other => throw ArgumentError(
+      'spring.security.session.max-sessions-prevents-login must be true '
+      'or false: $other',
+    ),
+  };
 
   /// `spring.security.oauth2.resourceserver.jwt.issuer-uri`: the identity
   /// provider whose tokens are accepted, or `null`.
@@ -302,6 +346,11 @@ String _generatedPassword() {
 ///   `PasswordEncoder` bean the password is stored as `{noop}` unless it
 ///   already starts with an `{id}`; with one, it is stored as given, so it
 ///   must already be encoded (and a generated password cannot log in).
+/// - `cookieSigner`, when `spring.security.cookie.secret` is set (at
+///   least 32 characters; the same on every instance behind a proxy): it
+///   signs the cookies kept instead of a session before a login (the
+///   page to come back to, the OAuth 2.0 authorization request). Without
+///   it, a random key of the process signs them.
 /// - `jwtDecoder`, when `issuer-uri` or `jwk-set-uri` is set and the
 ///   application declares none.
 /// - `jwtAuthenticationConverter`: the authorities and the name of JWT
@@ -323,9 +372,29 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
     name: 'httpSecurity',
     scope: ScopeType.prototype,
     source: _source,
-    create: (r) => HttpSecurity(
-      r.dependency<BeanFactory>(),
-      contextPath: ServerProperties.of(r.dependency<Environment>()).contextPath,
+    create: (r) {
+      final environment = r.dependency<Environment>();
+      final properties = SecurityProperties.of(environment);
+      return HttpSecurity(
+        r.dependency<BeanFactory>(),
+        contextPath: ServerProperties.of(environment).contextPath,
+        maximumSessions: properties.maximumSessions,
+        maxSessionsPreventsLogin: properties.maxSessionsPreventsLogin,
+      );
+    },
+  ),
+  BeanDefinition<CookieSigner>(
+    name: 'cookieSigner',
+    factoryMethodName: 'cookieSigner',
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.cookieSigner', [
+        ConditionalOnProperty('spring.security.cookie.secret'),
+        ConditionalOnMissingBean(CookieSigner),
+      ]),
+    ],
+    create: (r) => CookieSigner.fromSecret(
+      r.dependency<Environment>().getProperty('spring.security.cookie.secret')!,
     ),
   ),
   BeanDefinition<JwtDecoder>(
@@ -348,6 +417,7 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
           Uri.parse(jwkSetUri),
           jwsAlgorithms: properties.jwsAlgorithms,
           validator: DelegatingOAuth2TokenValidator([
+            JwtTypeValidator.jwt(),
             JwtTimestampValidator(),
             if (issuer != null) JwtIssuerValidator(issuer),
             if (audiences.isNotEmpty) JwtAudienceValidator(audiences),

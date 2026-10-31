@@ -4,6 +4,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_security_core/src/authentication/events.dart';
 import 'package:spring_security_core/src/authentication/offload_stub.dart'
     if (dart.library.isolate) 'package:spring_security_core/src/authentication/offload_io.dart';
+import 'package:spring_security_core/src/authentication/password_checks.dart';
 import 'package:spring_security_core/src/core/authentication.dart';
 import 'package:spring_security_core/src/core/exceptions.dart';
 import 'package:spring_security_core/src/crypto/password_encoder.dart';
@@ -286,6 +287,7 @@ final class DaoAuthenticationProvider implements AuthenticationProvider {
     this.postAuthenticationChecks = const CredentialsExpiryChecker(),
     this.hideUserNotFoundExceptions = true,
     this.offloadPasswordChecks = true,
+    this.passwordCheckLimiter,
   }) : passwordEncoder =
            passwordEncoder ??
            PasswordEncoderFactories.createDelegatingPasswordEncoder();
@@ -323,6 +325,12 @@ final class DaoAuthenticationProvider implements AuthenticationProvider {
   /// event loop either way. Set it to `false` in tests that use a fast
   /// encoder.
   final bool offloadPasswordChecks;
+
+  /// Bounds the password checks running and waiting at once;
+  /// [PasswordCheckLimiter.shared] when `null`. Above its bound a login
+  /// fails at once with a [PasswordChecksBusyException] (a 503 from the
+  /// security starter), so a flood of logins cannot take every core.
+  final PasswordCheckLimiter? passwordCheckLimiter;
 
   static const _userNotFoundPassword = 'userNotFoundPassword';
   String? _userNotFoundEncodedPassword;
@@ -412,5 +420,7 @@ final class DaoAuthenticationProvider implements AuthenticationProvider {
   }
 
   Future<T> _run<T>(T Function() work) =>
-      offloadPasswordChecks ? offload(work) : Future.sync(work);
+      (passwordCheckLimiter ?? PasswordCheckLimiter.shared).run(
+        () => offloadPasswordChecks ? offload(work) : Future.sync(work),
+      );
 }

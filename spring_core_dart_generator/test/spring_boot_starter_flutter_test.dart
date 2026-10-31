@@ -315,6 +315,20 @@ class Basket {}
       expect(output, isNot(contains('SpringStatelessWidget')));
     });
 
+    test(
+      'a bean name with a line break stays inside the doc comment',
+      () async {
+        // `_generate` checks that the output compiles: an unescaped line
+        // break would turn the rest of the name into code.
+        final output = await _generate(r'''
+@Component('basket\nvoid broken() {}')
+@BuildContextAccess(name: 'basket')
+class Basket {}
+''');
+        expect(output, _has(r"/// The bean 'basket\nvoid broken() {}'."));
+      },
+    );
+
     test('an invalid getter name fails the build', () async {
       expect(
         await _errors('''

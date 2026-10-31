@@ -153,11 +153,11 @@ extension _BeanTypeInference on BeanScanner {
   }
 
   // A public class type, with concrete type arguments, that generated code
-  // can import (not from an internal SDK library).
+  // can import (see [isImportableType]).
   static bool _isNameable(DartType type) => switch (type) {
     InterfaceType() =>
       type.element.isPublic &&
-          !isInternalSdkType(type) &&
+          isImportableType(type) &&
           type.typeArguments.every(_isConcreteArgument),
     _ => false,
   };

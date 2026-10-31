@@ -70,8 +70,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// `timeUnit`; there is no `@EnableScheduling`, the dependency is enough.
 /// A returned `Future` is awaited with every kind of schedule, so a slow
 /// run delays the next one; Spring does not wait for a returned
-/// `CompletableFuture`. A `fixedRate` run that takes longer than the
-/// period is followed by one run right after it, not by every missed one.
+/// `CompletableFuture`.
 ///
 /// The `*String` attributes, [cron], [zone] and [scheduler] resolve
 /// `${...}` placeholders; the durations take Spring Boot's formats (`10s`,
@@ -119,8 +118,19 @@ class Scheduled {
   /// Starts a run every period, measured between starts, such as a cache
   /// refresh every 5 minutes. Must be positive.
   ///
-  /// Runs never overlap: when a run takes longer than the period, the next
-  /// one starts right after it, once, without catching up the missed runs.
+  /// Runs never overlap: when a run takes longer than the period, the runs
+  /// that came due meanwhile start one after the other right after it,
+  /// until the rate is caught up, as with Spring's scheduler.
+  ///
+  /// The same after the process was paused: stopped (`SIGSTOP`), a hidden
+  /// browser tab whose timers were throttled, a mobile app the system
+  /// suspended (with `spring.flutter.lifecycle.pause-in-background=false`;
+  /// by default a Flutter app stops `@Scheduled` tasks in the background
+  /// and starts them afresh). When it runs again, every run missed
+  /// meanwhile starts at once, back to back: a 1-second rate after a
+  /// minute suspended runs about 60 times. Use [fixedDelay] for a poll or
+  /// a UI tick, where only the latest run matters: it runs once and goes
+  /// on.
   final Duration? fixedRate;
 
   /// Waits this long after each run completes, its `Future` included,

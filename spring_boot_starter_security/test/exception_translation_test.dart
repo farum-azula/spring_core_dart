@@ -65,7 +65,7 @@ final class _Saves implements RequestCache {
   String? getRedirectUrl(ServerHttpRequest request) => null;
 
   @override
-  void removeRequest(ServerHttpRequest request) {}
+  void removeRequest(ServerHttpRequest request, ServerHttpResponse response) {}
 }
 
 Authentication get _ada =>

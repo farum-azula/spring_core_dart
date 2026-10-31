@@ -33,9 +33,10 @@ final class WebSocketConnectionManager {
 
   /// The close codes after which the connection is opened again, as the
   /// cause may be temporary: none, going away (1001), no status (1005),
-  /// lost (1006), and the server's failures (1011 to 1014). Any other code
-  /// ends the message streams: 1000 normally, others with a
-  /// `WebSocketException`.
+  /// lost (1006), the server's failures (1011 to 1014), and a connection
+  /// this side dropped because the server took nothing of what was sent
+  /// (4500, `CloseStatus.sessionNotReliable`). Any other code ends the
+  /// message streams: 1000 normally, others with a `WebSocketException`.
   static final Set<int?> retryableCloseCodes = {
     null,
     CloseStatus.goingAway.code,
@@ -45,6 +46,7 @@ final class WebSocketConnectionManager {
     CloseStatus.serviceRestarted.code,
     CloseStatus.serviceOverload.code,
     1014, // bad gateway
+    CloseStatus.sessionNotReliable.code,
   };
 
   /// The name of the `@WebSocketClient`.
@@ -125,7 +127,10 @@ final class WebSocketConnectionManager {
     _pending = null;
     if (pending != null && !pending.isCompleted) {
       pending.completeError(
-        WebSocketException('no listener is left to reconnect for', url: url),
+        WebSocketException(
+          'no listener is left to reconnect for',
+          url: redactUrl(url),
+        ),
       );
     }
   }
@@ -137,7 +142,11 @@ final class WebSocketConnectionManager {
   /// goes on reconnecting for its listeners.
   Future<void> sendMessage(Object message) async {
     final connection = await _awaitConnection();
-    connection.sendMessage(message);
+    try {
+      connection.sendMessage(message);
+    } on WebSocketException catch (error) {
+      throw _redactedException(error);
+    }
   }
 
   /// Opens the connection now, if it is not open, instead of on first
@@ -176,13 +185,13 @@ final class WebSocketConnectionManager {
   /// client again opens a new connection.
   Future<void> close() async {
     final connection = _connection;
-    _reset(WebSocketException('closed by the client', url: url));
+    _reset(WebSocketException('closed by the client', url: redactUrl(url)));
     for (final listener in [..._listeners]) {
       unawaited(listener.close());
     }
     _listeners.clear();
     if (connection != null) {
-      _log.debug('closing $url', fields: {'client': clientName});
+      _log.debug('closing ${redactUrl(url)}', fields: {'client': clientName});
       await connection.close();
     }
   }
@@ -270,7 +279,10 @@ final class WebSocketConnectionManager {
       unawaited(connection.close());
       return;
     }
-    _log.debug('connected to ${handshake.url}', fields: {'client': clientName});
+    _log.debug(
+      'connected to ${redactUrl(handshake.url)}',
+      fields: {'client': clientName},
+    );
     // The retries count on until the connection proves stable (a message,
     // or open for the longest reconnect delay): a server that accepts and
     // closes at once still reaches max-retries.
@@ -290,7 +302,10 @@ final class WebSocketConnectionManager {
         }
       },
       onError: (Object error, StackTrace stackTrace) {
-        _log.debug('connection error: $error', fields: {'client': clientName});
+        _log.debug(
+          'connection error: ${redactText('$error')}',
+          fields: {'client': clientName},
+        );
       },
       onDone: () => _closed(connection),
     );
@@ -300,8 +315,12 @@ final class WebSocketConnectionManager {
   }
 
   // A connection attempt failed.
-  void _failed(Object error, StackTrace stackTrace) {
-    _log.debug('connection failed: $error', fields: {'client': clientName});
+  void _failed(Object failure, StackTrace stackTrace) {
+    final error = _redacted(failure);
+    _log.debug(
+      'connection failed: ${redactText('$error')}',
+      fields: {'client': clientName},
+    );
     _failWaiters(error, stackTrace);
     if (_listeners.isNotEmpty && _schedule()) {
       return;
@@ -328,8 +347,10 @@ final class WebSocketConnectionManager {
     final code = status?.code;
     final reason = status?.reason;
     final why = reason == null || reason.isEmpty ? '' : ' $reason';
+    // By the server, or by this side's session (a message too big, a
+    // server that reads nothing), or the connection broke.
     _log.debug(
-      'closed by the server ($code$why)',
+      'connection closed ($code$why)',
       fields: {'client': clientName},
     );
     if (_listeners.isNotEmpty && retryableCloseCodes.contains(code)) {
@@ -347,9 +368,9 @@ final class WebSocketConnectionManager {
     } else {
       _end(
         WebSocketException(
-          'closed by the server with code $code'
+          'the connection closed with code $code'
           '${reason == null || reason.isEmpty ? '' : ': $reason'}',
-          url: url,
+          url: redactUrl(url),
         ),
       );
     }
@@ -390,3 +411,62 @@ final class WebSocketConnectionManager {
     _listeners.clear();
   }
 }
+
+// The transport's exceptions carry the address, with a token an
+// interceptor put in the query, in their text: redacted before they reach
+// the application's streams and logs. The cause stays as it was.
+Object _redacted(Object error) =>
+    error is WebSocketException ? _redactedException(error) : error;
+
+WebSocketException _redactedException(WebSocketException error) =>
+    WebSocketException(
+      redactText(error.message),
+      url: switch (error.url) {
+        final url? => redactUrl(url),
+        null => null,
+      },
+      cause: error.cause,
+      isTimeout: error.isTimeout,
+    );
+
+/// [url] as it may be logged or shown in an error: every query value and
+/// the user information replaced by `***` (`ws://chat.test/ws?token=***`),
+/// as browsers' WebSocket clients pass tokens in the query. Internal to
+/// the starter (not exported).
+Uri redactUrl(Uri url) {
+  if (!url.hasQuery && url.userInfo.isEmpty) {
+    return url;
+  }
+  return url.replace(
+    userInfo: url.userInfo.isEmpty ? null : '***',
+    query: url.hasQuery ? _redactQuery(url.query) : null,
+  );
+}
+
+/// [text] with the query values and user information of the URLs in it
+/// replaced by `***`, as [redactUrl] does; for error texts that quote an
+/// address, such as `dart:io`'s "Connection to 'http://...' was not
+/// upgraded". Internal to the starter (not exported).
+String redactText(String text) => text
+    .replaceAllMapped(
+      _urlQuery,
+      (match) => '${match[1]}?${_redactQuery(match[2]!)}',
+    )
+    .replaceAllMapped(_userInfo, (match) => '${match[1]}***@');
+
+// The query ends at a space, a quote, `#`, or a closing `)` / `>` / `]`
+// around the address.
+final _urlQuery = RegExp(
+  r"""([a-zA-Z][\w+.-]*://[^\s'"?#]*)\?([^\s'"#)>\]]*)""",
+);
+final _userInfo = RegExp(r"""([a-zA-Z][\w+.-]*://)[^\s'"/?#@]+@""");
+
+String _redactQuery(String query) => [
+  for (final part in query.split('&'))
+    if (part.isEmpty)
+      part
+    else if (part.indexOf('=') case final eq when eq > 0)
+      '${part.substring(0, eq)}=***'
+    else
+      '***',
+].join('&');

@@ -43,9 +43,10 @@ import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_sto
 ///   only its encryption key here.
 /// - **No web.** A browser has no secure storage: everything a page keeps
 ///   (memory, `localStorage`, IndexedDB) is readable by any script of the
-///   page. On the web every method throws an [UnsupportedError] instead
-///   of keeping the secret somewhere unsafe; there the server keeps
-///   secrets.
+///   page. On the web every method fails with an [UnsupportedError]
+///   instead of keeping the secret somewhere unsafe; there the server
+///   keeps secrets. Errors always come in the returned `Future`, never
+///   from the call itself.
 ///
 /// Spring has no such type for apps; it is shaped like Spring Vault's
 /// `VaultTemplate` (secrets by path) and Spring Data Redis'
@@ -102,11 +103,13 @@ class SecretTemplate {
 
   /// Writes [value] as JSON under [key], replacing what was there.
   ///
-  /// Throws a [JsonMappingException] when [value] cannot be written as
-  /// JSON, an [UnsupportedError] on the web.
-  Future<void> write(String key, Object value) {
+  /// Fails with a [JsonMappingException] when [value] cannot be written
+  /// as JSON, an [ArgumentError] for an empty [key], an
+  /// [UnsupportedError] on the web (always in the returned `Future`,
+  /// never thrown by the call itself).
+  Future<void> write(String key, Object value) async {
     final stored = _key(key);
-    return secretStore.write(stored, objectMapper.writeValueAsString(value));
+    await secretStore.write(stored, objectMapper.writeValueAsString(value));
   }
 
   /// The object stored under [key], or `null` when there is none.
@@ -133,13 +136,16 @@ class SecretTemplate {
 
   /// Removes the secret of [key]; nothing happens when there is none.
   ///
-  /// Throws an [UnsupportedError] on the web.
-  Future<void> delete(String key) => secretStore.delete(_key(key));
+  /// Fails with an [ArgumentError] for an empty [key], an
+  /// [UnsupportedError] on the web.
+  Future<void> delete(String key) async {
+    await secretStore.delete(_key(key));
+  }
 
   /// The keys of this template's namespace that have a value, without
   /// the namespace (`pin`, not `app.pin`).
   ///
-  /// Throws an [UnsupportedError] on the web.
+  /// Fails with an [UnsupportedError] on the web.
   Future<Set<String>> keys() async {
     _checkPlatform();
     return {
@@ -151,7 +157,7 @@ class SecretTemplate {
   /// Removes every secret of this template's namespace; the login's
   /// tokens and other namespaces stay.
   ///
-  /// Throws an [UnsupportedError] on the web.
+  /// Fails with an [UnsupportedError] on the web.
   Future<void> deleteAll() async {
     _checkPlatform();
     for (final key in await secretStore.keys()) {

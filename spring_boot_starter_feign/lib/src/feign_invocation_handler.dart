@@ -368,16 +368,9 @@ final class FeignInvocationHandler implements InvocationHandler {
     }
     final lines = ['---> ${request.method.value} ${request.url}'];
     if (config.loggerLevel.index >= FeignLoggerLevel.headers.index) {
-      request.headers.forEach((name, values) {
-        // Credentials: the token, and the DPoP proof that goes with it.
-        final masked = const {
-          'authorization',
-          'dpop',
-        }.contains(name.toLowerCase());
-        for (final value in values) {
-          lines.add('$name: ${masked ? '***' : value}');
-        }
-      });
+      request.headers.forEach(
+        (name, values) => _logHeader(lines, name, values),
+      );
     }
     final body = request.body;
     if (config.loggerLevel == FeignLoggerLevel.full && body != null) {
@@ -387,6 +380,20 @@ final class FeignInvocationHandler implements InvocationHandler {
       lines.add('---> END HTTP (${body?.length ?? 0}-byte body)');
     }
     _log.debug(lines.join('\n'), fields: {'client': client.name});
+  }
+
+  // Credentials (tokens, cookies, the DPoP proof, the configured ones)
+  // as `***`.
+  late final Set<String> _sensitiveHeaders = {
+    ...FeignClientConfig.alwaysSensitiveHeaders,
+    for (final name in config.sensitiveHeaders) name.trim().toLowerCase(),
+  };
+
+  void _logHeader(List<String> lines, String name, List<String> values) {
+    final masked = _sensitiveHeaders.contains(name.toLowerCase());
+    for (final value in values) {
+      lines.add('$name: ${masked ? '***' : value}');
+    }
   }
 
   void _logResponse(HttpResponse response, Duration elapsed) {
@@ -400,11 +407,9 @@ final class FeignInvocationHandler implements InvocationHandler {
           '(${elapsed.inMilliseconds} ms)',
     ];
     if (config.loggerLevel.index >= FeignLoggerLevel.headers.index) {
-      response.headers.forEach((name, values) {
-        for (final value in values) {
-          lines.add('$name: $value');
-        }
-      });
+      response.headers.forEach(
+        (name, values) => _logHeader(lines, name, values),
+      );
     }
     if (config.loggerLevel == FeignLoggerLevel.full) {
       lines.add(response.bodyText);
@@ -784,7 +789,9 @@ final class _Plan {
   /// defaults are not in it yet: [applyDefaults] adds them after the
   /// interceptors. A `null` argument for a non-nullable parameter throws
   /// an [ArgumentError]; for a nullable one, the query parameter, header
-  /// or cookie is left out and a path variable becomes an empty string.
+  /// or cookie is left out and a path variable becomes an empty string. A
+  /// path variable `.` or `..` (or with such a segment between slashes)
+  /// throws an [ArgumentError] too.
   RequestTemplate template(List<Object?> arguments, _Multipart? multipart) {
     final decodeSlash = handler.config.decodeSlash;
     var expanded = path;
@@ -802,10 +809,19 @@ final class _Plan {
         _joined(value, parameters[binding.index].type, '@PathVariable "$name"'),
       );
       // Spring Cloud OpenFeign's decode-slash: "a/b" stays a path.
-      expanded = expanded.replaceAll(
-        '{$name}',
-        decodeSlash ? encoded.replaceAll('%2F', '/') : encoded,
-      );
+      final segment = decodeSlash ? encoded.replaceAll('%2F', '/') : encoded;
+      // `.` and `..` would move the call to another path: Dart's Uri
+      // removes dot segments, `%2E` included, before the request is sent.
+      if (segment.split('/').any((part) => part == '.' || part == '..')) {
+        throw ArgumentError.value(
+          value,
+          parameters[binding.index].name,
+          'The @PathVariable "$name" of $methodKey must not be "." or ".." '
+          '(nor contain such a segment): it would change the path of the '
+          'URL',
+        );
+      }
+      expanded = expanded.replaceAll('{$name}', segment);
     }
     var url = Uri.parse(_join(handler._baseUrl, expanded));
     // A query written in the mapping path stays as written; the

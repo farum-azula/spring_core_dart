@@ -50,6 +50,9 @@ class SpringBootStarterFlutterSecurityPlugin : FlutterPlugin, ActivityAware {
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // A login of this engine has nobody left to answer; the next
+        // engine must not find it running.
+        AuthorizationFlow.detach(this)
         secretStoreChannel?.setMethodCallHandler(null)
         windowChannel?.setMethodCallHandler(null)
         dPoPKeyChannel?.setMethodCallHandler(null)
@@ -182,6 +185,10 @@ class SpringBootStarterFlutterSecurityPlugin : FlutterPlugin, ActivityAware {
             result.error("no_activity", "the app has no activity to start the login from", null)
             return
         }
-        AuthorizationFlow.start(current, url, redirectUri, result)
+        // The first login of the engine's root isolate: a login still
+        // running for this engine belongs to the isolate a hot restart
+        // replaced (a background isolate never sends it).
+        val replaceStale = call.argument<Boolean>("replaceStale") ?: false
+        AuthorizationFlow.start(current, url, redirectUri, result, owner = this, replaceStale = replaceStale)
     }
 }

@@ -729,21 +729,58 @@ Boot: `,` separates groups and `;` joins locations into one group.
 
 - An `optional:` location may be missing. A non-optional file or directory
   that does not exist fails the start, unless
+  `spring.config.on-not-found=ignore`; an import in a profile-specific
+  file or document is no exception (as in Boot). Only the
+  `-{profile}` variants searched by name may always be missing.
+- A file named at several places is read once, at the place that wins,
+  as in Boot: the later item of a list (`x,y,x` puts `x` above `y`), the
+  command line's `spring.config.import` before `additional-location`
+  before `location` (`--spring.config.additional-location=file:./config/`
+  puts `./config/application.properties` above `./config/*/`), the first
+  of two identical entries of a `;` group; that place's encoding hint
+  applies (the file is not read at the other places).
+- A directory location must end in `/` (also on Windows, where Boot also
+  takes `\`), a `configtree:` one too. A
+  non-optional wildcard location needs at least one subdirectory
+  (`file:./config/*/`, `configtree:/etc/*/`), or a match when it names a
+  file (`file:./config/*/app.yml`), unless
   `spring.config.on-not-found=ignore`.
-- A directory location must end in `/`. A non-optional wildcard location
-  (`file:./config/*/`) needs at least one subdirectory.
+- As in Boot, whether a location found anything is decided once the
+  profile files are read, and its `-{profile}` variants count
+  (`file:./config/*/app.yml` with only `app-dev.yml` loads when `dev` is
+  active). A `classpath:` directory counts only when a file is found in
+  it. A `;` group is one location, in `spring.config.import` too (in a
+  file or not): optional when its first entry is, found when any entry
+  finds something. A location that is not found is reported as written:
+  the whole group, a relative import as it is, an extension hint kept.
 - A file without a usable extension gets an extension hint:
-  `file:./conf[.yml]`.
+  `file:./conf[.yml]`. As in Boot, extensions and hints are matched
+  without case, and the loader's spelling names the file (`x.YAML` reads
+  `x.yaml`).
+- Spring Boot 4.1's file hints: `[encoding=iso-8859-1]` names a
+  `.properties` file's charset (YAML stays UTF-8, as in Boot), several
+  hints in any order (`x.conf[.properties][encoding=utf-8]`). Every
+  bracketed part leaves a file location's path (`conf[x]/app.yml` reads
+  `conf/app.yml`), not a directory's. The charsets are UTF-8, ISO-8859-1
+  and US-ASCII, by Java's names and aliases (`utf8`, `latin1`, `ascii`);
+  another fails the start, even when optional.
+  `ConfigDataEnvironment.fileHints(location)` reads a location so.
 
-**Several documents in one file.** `#---` in `.properties` and `---` in
-YAML start a new document. A document applies only when its
+**Several documents in one file.** `#---` (or `!---`) in `.properties` and
+`---` in YAML start a new document. As in Boot, a `.properties` separator
+must start its line, with exactly three hyphens, not right after a comment
+of the same prefix nor on a continued line (`a=base\` then `#---` sets
+`a` to `base#---`). A document applies only when its
 `spring.config.activate.on-profile` matches, or its
 `spring.config.activate.on-cloud-platform` matches the `CloudPlatform`
 detected from environment variables (as Boot does) or set with
 `spring.main.cloud-platform`.
 
 **Imports.** `spring.config.import` loads more files or directories,
-relative to the importing file, with their `-{profile}` variants. It can
+relative to the importing file, with their `-{profile}` variants (which,
+as in Boot, win over the importing file's own profile files:
+`x-dev.properties` over `application-dev.properties` when
+`application.properties` imports `x.properties`). It can
 also come from the command line or `SPRING_CONFIG_IMPORT`, above every
 location. `configtree:` imports read a directory with one file per
 property, as Kubernetes mounts secrets: `configtree:/etc/config/`,
@@ -760,7 +797,15 @@ environment first, then the files. An unresolvable placeholder in an
 - `spring.profiles.default` (from a file, the command line or the
   environment) selects the profile files while no profile is active;
 - `spring.profiles.include` and `spring.profiles.group.*` add profiles.
-  Groups are expanded depth-first, a group's members right after it.
+  Groups are expanded depth-first, a group's members right after it; a
+  group's name is matched exactly, as Boot's map keys are
+  (`spring.profiles.group.Prod` is no group of `prod`);
+- the profiles are decided before the profile files are read: a
+  `-{profile}` file may not set the active, default or included profiles
+  (its groups are ignored), an on-profile document read before them may
+  set none of the four keys, and in a file a profile file or an
+  on-profile document imports they are ignored. The keys are found under
+  any relaxed spelling (`spring.profiles.Active`), as in Boot.
 
 A `defaultProperties` source stays below the config files and the
 `@PropertySource` files.
@@ -768,12 +813,19 @@ A `defaultProperties` source stays below the config files and the
 **Lists.** Binding follows Boot's binder: indexed keys
 (`spring.profiles.include[0]`, `SPRING_PROFILES_ACTIVE_0_`) form a list,
 and a list comes whole from the highest source that has it, so
-`--spring.profiles.active[0]=dev` replaces a file's list.
+`--spring.profiles.active[0]=dev` replaces a file's list. A bracketed
+element that is not one of `[0]`, `[1]`... (`spring.config.import[x]`,
+`[1]` without `[0]`) fails the start, as Boot's "left unbound";
+`spring.config.activate.on-cloud-platform` and
+`spring.main.cloud-platform` take one value (a list form is ignored).
 
 **Encoding.** `.properties` files are read as UTF-8. Spring reads
 ISO-8859-1; for that use `PropertiesPropertySourceLoader(encoding: latin1)`
-in `ConfigDataEnvironment(loaders: ...)`, or
-`@PropertySource(encoding: 'ISO-8859-1')`.
+in `ConfigDataEnvironment(loaders: ...)`, an encoding hint for one config
+file (`classpath:legacy.properties[encoding=iso-8859-1]`), or
+`@PropertySource(encoding: 'ISO-8859-1')`. A config file that is not
+valid in its encoding fails with a `ConfigDataLoadException` naming the
+file and the encoding.
 
 **YAML** is flattened like Boot's `YamlPropertySourceLoader`:
 `app.hosts[0]`, `app.servers[0].name`, empty values and `~` as `''`.
@@ -815,7 +867,10 @@ class MailConfig {}
   importer's conditions.
 - A pattern (`file:config/*.properties`, `classpath*:`) loads every match;
   no match is fine (Spring 6.1).
-- As in Spring it reads `.properties`. For YAML, pass a
+- As in Spring it reads `.properties`, exactly as `java.util.Properties`
+  reads them (`PropertiesParser`), as UTF-8 unless `encoding:` says
+  otherwise. Dart's UTF-8 decoder drops a leading byte order mark, which
+  Java keeps (its first key then starts with `U+FEFF`). For YAML, pass a
   `PropertySourceFactory` that uses `YamlPropertySourceLoader`.
 - Resources that can only be read asynchronously (Flutter assets behind a
   `ProtocolResolver`) work with `refreshAsync()` / `runAsync`, which read
@@ -1159,6 +1214,38 @@ every root (added directories, then the embedded resources). Matching
 directories are returned too, and directories the pattern cannot match
 are not walked. A `FileSystemResource` of a directory exists but is not
 readable, as in Spring.
+
+Patterns are cleaned as Spring's `StringUtils.cleanPath` cleans them:
+`\\` (two backslashes) is read as one `/`, then each `\` left as `/`, and
+`.` and `..` segments are resolved (`classpath*:mail\*.txt`,
+`classpath*:mail/*/../*.txt` and `classpath*:mail/*\\..\\*.txt` are
+`classpath*:mail/*.txt`). So a `{name:regex}` must not use `\`, which
+becomes `/` (`classpath:mail/{n:\w+}.txt` matches nothing, in Spring
+too): write character classes such as `[0-9]` or `[a-zA-Z0-9_]` instead.
+As in Spring, a `file:` pattern's wildcards are those written: only the
+directory before the first wildcard is percent-decoded
+(`file:my%20dir/*.txt` searches `my dir/`), so `file:mail/%2A.txt` is
+the one file named `*.txt` and the rest of a pattern matches `%` as it
+is. Kept differences from Spring 7:
+
+- a `..` that climbs above a classpath root finds nothing (Spring's
+  `classpath*:mail/../../*.txt` can reach files next to a classpath
+  directory);
+- a `\` in the directory before the first wildcard of a `classpath*:`
+  pattern is cleaned too (`classpath*:conf\sub/*.txt` finds
+  `conf/sub/*.txt`, as `classpath:conf\sub/*.txt` does in both), where
+  Spring hands the name to Java's class loader, which refuses it, and
+  finds nothing;
+- a `file:` pattern whose separators are `\` there is read the same way,
+  so Windows paths work: `file:lib\resources\mail\*.txt` and
+  `file:C:\config\*.properties` find their files, where Spring on
+  macOS and Linux finds nothing (`Invalid URI [file:]`, as its root
+  directory ends at the last `/`);
+- a `classpath:` pattern whose base directory no root has
+  (`classpath:nodir/*.txt`) gives an empty list, where Spring throws a
+  `FileNotFoundException` (`class path resource [nodir/] cannot be
+  resolved to URL because it does not exist`); `classpath*:` gives an
+  empty list in both.
 
 **Why `lib/resources/`**, and not `bin/` or the project root: `lib/` is
 the only part of a Dart package that other packages can use. A starter
@@ -2176,11 +2263,24 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 | Jackson reads and writes any enum | An enum that no `@Introspected` class uses has no values known at runtime: `readValue<Color>` fails with a message; pass `EnumType<Color>(Color.values)` or call `introspector.registerEnum(...)` | No reflection |
 | Jackson reads `Range<Integer>` of `class Range<T extends Number>` | A generic class with bounded type parameters is described raw (`Range<num>`): writing works, reading it with type arguments fails with a message (register a `JsonDeserializer`) | Dart cannot build `Range<X>` for a type parameter `X` without that bound |
 | SpEL `1 instanceof T(Long)` is `false` (an `Integer`) | `true`: `T(Long)`, `T(Integer)`, `T(Short)` and `T(Byte)` are all Dart's `int` | Dart has one integer type |
-| Boot reads `.properties` config files as ISO-8859-1 | UTF-8, unless the loader says otherwise (`PropertiesPropertySourceLoader(encoding: latin1)`) | Dart files are UTF-8 |
+| Boot reads `.properties` config files as ISO-8859-1 | UTF-8, unless the loader or the location says otherwise (`PropertiesPropertySourceLoader(encoding: latin1)`, `x.properties[encoding=iso-8859-1]`) | Dart files are UTF-8 |
+| An encoding hint names any charset of Java; bytes invalid in it are read as `�` | UTF-8, ISO-8859-1 and US-ASCII (Java's names and aliases); another fails the start, also in a YAML location's hint (which Boot ignores), and so do invalid bytes | `dart:convert` decodes these three |
+| `application.xml` and `spring.config.import=x.xml` are read (`Properties.loadFromXML`) | Not read: `application.xml` is not looked for, an `.xml` import fails the start ("XML properties files are not supported"), an `optional:` one is skipped | No XML parser in the core; `.properties` and YAML cover it |
+| SnakeYAML refuses YAML nested more than 50 collections deep | Read up to some thousands of levels (3,000 on the VM), deeper fails with a `ConfigDataLoadException` | Dart's `package:yaml` has no such limit; only the stack stops it |
+| A `.properties` file with tens of thousands of `\`-only lines overflows the stack (`StackOverflowError`) | Read | Continued lines are joined in a loop |
+| A `.properties` comment right after `#---` (before the document's first key) joins the new document to the one before; after `#--- ` (trailing spaces) the next line is misread (a key with leading spaces dropped) | Both documents read as written | Boot's loader silently changes the file there |
 | SnakeYAML reads YAML 1.1: `yes` / `no` / `on` / `off` are booleans (a `String` property gets `true` / `false`), `017` is octal (15), `1_000` is 1000 | YAML 1.2 (core schema): those stay the strings `yes`, `on`, ... (a `bool` property still converts them), `017` is 17, `0o17` is octal, `1_000` is a string. Quote such values to read the same in both | Dart's `package:yaml` implements YAML 1.2 |
 | `ConversionService.canConvert(Class, Class)` | `canConvertType<S>(Type target)`; `canConvert(Object? source, Type target)` checks a value | Dart cannot pass a source type and test subtypes on a `Type` value |
 | `ChronoUnit` (all `java.time` units) | `ChronoUnit` with `nanos` … `days` (no months or years), for `DurationStyle.parse(unit:)` | A Dart `Duration` has no calendar units |
-| `configtree:` reads any file system | File system paths only (not `classpath:` or assets); values are strings | Config trees are mounted volumes |
+| A relative import in a file found through a wildcard location (`file:./config/*/`) is resolved against the pattern (`config/*/x.yml`): read from every subdirectory, and a path with a directory fails ("must end with '*/'") | Relative to the importing file's own directory | Boot's quirk reads other directories' files |
+| `configtree:` reads any file system; a location that is a file fails, even an `optional:` one | File system paths only (not `classpath:` or assets); values are strings; a location that is a file counts as missing (`optional:` skips it) | Config trees are mounted volumes |
+| In a `;` group of locations, spaces around an entry are part of the location (`a.yml; b.yml` names ` b.yml`), and an empty entry is the importing file's directory (`b.yml;` also reads its `application.*`; `spring.config.location` fails on one) | Spaces are trimmed and empty entries skipped | A stray space or `;` should not change what is read |
+| The first entry of a `;` group picks the resolver of the whole group: `x.yml;configtree:/run/secrets/` reads the tree entry as a plain directory (its `application.*`), `configtree:/run/secrets/;x.yml` fails (a config tree location not ending in `/`) | Each entry is read by its own prefix: both read `x.yml` and the tree | Each entry of a group is a location of its own |
+| Boot 4.1.2 reads `spring.profiles.active`, `.default` and `.group.*` from on-profile documents (and documents of another cloud platform), applied or not; only `spring.profiles.include` fails there | Such a document fails when it applies and is ignored when it does not | What Boot's documentation describes |
+| Profile keys of files read after the profiles are decided are ignored but stay readable with `getProperty` | The same, except that `spring.profiles.active` is hidden while no profile is active, and `spring.profiles.default` while the default profile is `default` | `StandardEnvironment` would read them as profiles then; Boot's environment never does |
+| Placeholders in a document's `on-profile` and `spring.config.import` are resolved once, when the first pass reaches the document; a key from a document inactive at that point fails the start (`InactiveConfigDataAccessException`) | `on-profile` is resolved once the profiles are decided and again after each document activated, imports when they are read (after the profiles for an `on-profile` document); inactive documents are ignored. `on-profile=${P:dev}` with `P=prod` from a file the same file imports and `prod` active applies here, not in Boot | Deferred: Boot's result depends on when its first pass reaches the document |
+| A profile group list with elements that do not bind (`spring.profiles.group.dev[1]=x` without `[0]`, a gap, `[0].a`) fails the start, even when the group is not active | Not checked: read up to the first missing index (`[0]=x`, `[2]=y` add only `x`), `[0].a` ignored | Deferred |
+| Spring 7.0.10's `Profiles.of` accepts unbalanced or incomplete expressions such as `(dev`, `a)`, `a &`, `& a`, `(a)(b)`, `a b` | Refused ("Malformed profile expression"), in `on-profile` and `@Profile`; an expression both accept matches the same profiles | A malformed guard is more likely a mistake than intended |
 | `ReloadableResourceBundleMessageSource` reload checks every resource's timestamp | File resources by modification time; others are read again; preloaded (async-only) resources change only through `preload()` | Not every resource has a timestamp or synchronous reads |
 
 ## Roadmap

@@ -35,7 +35,8 @@ String defaultBeanName(String type) {
 /// injects it gets [instance]. The replacement keeps the original's name,
 /// aliases, qualifiers, order and `@Primary` / `@Fallback` flags, so
 /// `@Qualifier` injection points still find it. It is registered under
-/// [T] only (use [BeanOverride.named] to keep the original's types).
+/// [T] only (use [BeanOverride.named] to keep the original's types, or to
+/// give the fake's).
 ///
 /// Which bean: the one called [name] (or whose alias it is) when given;
 /// else the only bean of [T]; among several, the single `@Primary` one,
@@ -65,36 +66,62 @@ String defaultBeanName(String type) {
 final class BeanOverride<T extends Object> {
   /// Replaces the bean of type [T], or the bean called [name], with
   /// [instance].
-  const BeanOverride(this.instance, {this.name}) : _keepTypes = false;
+  const BeanOverride(this.instance, {this.name})
+    : _keepTypes = false,
+      types = null;
 
   /// Replaces the bean called [name] with [instance], whatever the bean's
   /// type; this is what a `@TestBean(name: ...)` field generates.
   ///
-  /// The replacement keeps the types the bean was registered under except
-  /// its own class, and adds the class of [instance]. So a fake of another
-  /// class takes its place: injection points of the interface get the fake,
-  /// and a lookup of the real class finds nothing. Without such a bean,
-  /// [instance] is registered under [name] with its runtime type.
+  /// With [types], the replacement is registered under those types, the
+  /// fake's own (its class and the interfaces it should be found as), and
+  /// its runtime class: as in Spring, where the fake's class decides what
+  /// it is injected as. Without them it keeps the types the bean was
+  /// registered under except its own class, and adds the class of
+  /// [instance]. Dart cannot check at run time that the fake is of those
+  /// types, so a fake that implements only some of the bean's interfaces
+  /// fails where one of the others is injected; give [types] then. Either
+  /// way it is also registered under [T] (unless that is `Object`), which
+  /// [instance] is: the field's type for a `@TestBean` field, under which
+  /// Spring registers the override. A lookup of the real class finds
+  /// nothing, unless [T] is that class. Without such a bean, [instance] is
+  /// registered under [name] with [types], [T] and its runtime type.
   ///
   /// ```dart
-  /// // The 'sandbox' PaymentGateway becomes the fake.
-  /// BeanOverride.named(FakeGateway(), name: 'sandbox')
+  /// // The 'sandbox' PaymentGateway becomes the fake. The real one was
+  /// // also an Auditable, which the fake is not.
+  /// BeanOverride.named(
+  ///   FakeGateway(),
+  ///   name: 'sandbox',
+  ///   types: [FakeGateway, PaymentGateway],
+  /// )
   /// ```
-  const BeanOverride.named(this.instance, {required String this.name})
-    : _keepTypes = true;
+  const BeanOverride.named(
+    this.instance, {
+    required String this.name,
+    this.types,
+  }) : _keepTypes = true;
 
   final bool _keepTypes;
 
-  // The types of a [named] override: those of the replaced bean but its own
-  // class (the fake is another class; a lookup of the real class must not
-  // return it), plus the fake's class.
-  static List<Type> _namedTypes(
-    BeanDefinition<Object>? original,
-    Object instance,
-  ) => {
-    if (original != null)
+  /// The types a [BeanOverride.named] registers [instance] under, besides
+  /// [T] and its runtime class; `null` keeps the replaced bean's (see
+  /// there).
+  final List<Type>? types;
+
+  // The types of a [named] override: the fake's own when given; else
+  // those of the replaced bean but its own class (the fake is another
+  // class; a lookup of the real class must not return it). Plus [T],
+  // which the fake is (the field's type of a `@TestBean`, under which
+  // Spring registers it; not `Object`, which every bean is), and the
+  // fake's class.
+  List<Type> _namedTypes(BeanDefinition<Object>? original) => {
+    if (types case final types?)
+      ...types
+    else if (original != null)
       for (final type in original.types)
         if (type != original.beanType) type,
+    if (T != Object) T,
     instance.runtimeType,
   }.toList();
 
@@ -167,7 +194,7 @@ final class BeanOverride<T extends Object> {
     registry.registerBeanDefinition(
       BeanDefinition<T>(
         name: target,
-        types: _keepTypes ? _namedTypes(original, instance) : [T],
+        types: _keepTypes ? _namedTypes(original) : [T],
         create: (_) => instance,
         primary: original?.primary ?? false,
         fallback: original?.fallback ?? false,

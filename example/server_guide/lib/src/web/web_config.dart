@@ -12,7 +12,8 @@ class WebConfig with WebMvcConfigurer {
 }
 
 /// Tells clients how long the handler took (`Server-Timing: app;dur=1.2`,
-/// shown by browsers' developer tools).
+/// shown by browsers' developer tools). Only the time: the handler's name
+/// would tell anyone how the server is built.
 final class ServerTimingInterceptor with HandlerInterceptor {
   static const _start = 'neon.start';
 
@@ -39,7 +40,7 @@ final class ServerTimingInterceptor with HandlerInterceptor {
     final millis = watch.elapsedMicroseconds / 1000;
     response.headers.set(
       'Server-Timing',
-      'app;dur=${millis.toStringAsFixed(1)};desc="${handler.description}"',
+      'app;dur=${millis.toStringAsFixed(1)}',
     );
   }
 }

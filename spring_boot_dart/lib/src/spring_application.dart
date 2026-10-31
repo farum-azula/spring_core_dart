@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/src/annotations.dart';
+import 'package:spring_boot_dart/src/async_startup.dart';
 import 'package:spring_boot_dart/src/auto_configuration_sorter.dart';
 import 'package:spring_boot_dart/src/banner.dart';
 import 'package:spring_boot_dart/src/binder.dart';
@@ -482,7 +483,7 @@ class SpringApplication {
     final environment = run.releasingLogsOnError(
       () => _environment(args, systemEnvironment, properties),
     );
-    final (context, arguments) = _guard(run, () {
+    final (context, arguments, startup) = _guard(run, () {
       _postProcessEnvironment(environment, before: true);
       ConfigDataEnvironment(
         environment,
@@ -499,6 +500,34 @@ class SpringApplication {
         launchProfiles,
       ));
     });
+    if (startup != null) {
+      // A bean still starting (the web server binding its port): run()
+      // cannot wait, so the rest follows once it has started. A failure
+      // is a failed start, rethrown uncaught (it ends the program with a
+      // non-zero exit code, as a failed refresh does in Spring Boot).
+      unawaited(
+        startup.then(
+          (_) => _started(run, context, arguments, watch, runners: runners),
+          onError: (Object error, StackTrace stackTrace) {
+            _startupFailed(run, context, error, stackTrace);
+            Error.throwWithStackTrace(error, stackTrace);
+          },
+        ),
+      );
+      return context;
+    }
+    _started(run, context, arguments, watch, runners: runners);
+    return context;
+  }
+
+  // ApplicationStartedEvent, the runners, ApplicationReadyEvent.
+  void _started(
+    _RunListeners run,
+    ConfigurableApplicationContext context,
+    ApplicationArguments arguments,
+    Stopwatch watch, {
+    required bool runners,
+  }) {
     final FutureOr<void> called;
     try {
       run.started(context, watch.elapsed);
@@ -523,7 +552,23 @@ class SpringApplication {
     } else {
       _ready(run, context, watch);
     }
-    return context;
+  }
+
+  // A bean of [AsyncStartup] failed to start after the refresh: reported
+  // like a failed refresh, and the context is closed.
+  void _startupFailed(
+    _RunListeners run,
+    ConfigurableApplicationContext context,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    _logConditionReport(context, crash: true);
+    _report(run, error, context: context, stackTrace: stackTrace);
+    // No outer catch reports it again.
+    _reported.remove(error);
+    if (context.isActive) {
+      context.close();
+    }
   }
 
   // ApplicationReadyEvent, unless the context was closed meanwhile; a
@@ -874,7 +919,9 @@ class SpringApplication {
   // Creates and refreshes the context and prints the startup line; the
   // runners are called by the caller afterwards (Spring Boot: logStarted,
   // then callRunners).
-  (ConfigurableApplicationContext, ApplicationArguments) _start(
+  // When a bean of [AsyncStartup] is still starting, the startup line
+  // waits for it and the third value is its future.
+  (ConfigurableApplicationContext, ApplicationArguments, Future<void>?) _start(
     _RunListeners run,
     List<String> args,
     StandardEnvironment environment,
@@ -896,8 +943,28 @@ class SpringApplication {
     run.deferredLogs.switchOver();
     _logConditionReport(context);
     _registerShutdownHook(environment, context);
+    final startup = _asyncStartups(context);
+    if (startup != null) {
+      return (
+        context,
+        prepared.arguments,
+        startup.then((_) => _logStarted(prepared, watch)),
+      );
+    }
     _logStarted(prepared, watch);
-    return (context, prepared.arguments);
+    return (context, prepared.arguments, null);
+  }
+
+  // The starts still in progress after the refresh ([AsyncStartup]
+  // singletons), as one future; `null` when there are none.
+  static Future<void>? _asyncStartups(ConfigurableApplicationContext context) {
+    final factory = context.beanFactory;
+    final pending = <Future<void>>[
+      for (final name in factory.singletonNames)
+        if (factory.getSingleton(name) case final AsyncStartup bean)
+          bean.awaitStartup(),
+    ];
+    return pending.isEmpty ? null : Future.wait(pending, eagerError: true);
   }
 
   // Like [_start] with `refreshAsync()`: asynchronous init callbacks are
@@ -913,6 +980,9 @@ class SpringApplication {
     final context = prepared.context;
     try {
       await context.refreshAsync();
+      // Beans that finish starting after the refresh (the web server
+      // binding its port): their failure is a failed start.
+      await _asyncStartups(context);
     } catch (error, stackTrace) {
       _logConditionReport(context, crash: true);
       _report(run, error, context: context, stackTrace: stackTrace);

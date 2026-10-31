@@ -89,7 +89,8 @@ Map<String, Object?> p256PublicJwk(List<int> publicKey) {
 /// The DPoP key of Android, iOS and macOS: made and used by the plugin's
 /// platform code through [dPoPKeyChannel], in the Secure Enclave or the
 /// Keychain, or in the Android Keystore. The private key never reaches
-/// Dart.
+/// Dart (a software Keychain key is loaded by the system's Security
+/// framework into the app's process to sign, outside Dart's heap).
 final class MethodChannelDPoPKey implements StoredDPoPKey {
   /// Kept outside the program, so tokens bound to it survive a restart.
   @override

@@ -359,6 +359,37 @@ void main() {
           });
     });
 
+    test('environment variables set it too, in both forms', () async {
+      const r = 'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_APPLE';
+      // Spring Boot's form (dashes dropped) and the one with the dashes as
+      // underscores, which getProperty reads too.
+      for (final (section, keyId, key) in [
+        ('CLIENTSECRETJWT', 'KEYID', 'PRIVATEKEY'),
+        ('CLIENT_SECRET_JWT', 'KEY_ID', 'PRIVATE_KEY'),
+      ]) {
+        final environment = StandardEnvironment()
+          ..propertySources.addFirst(
+            SystemEnvironmentPropertySource('test-variables', {
+              '${r}_${section}_ISSUER': 'DEF123GHIJ',
+              '${r}_${section}_$keyId': 'ABC123DEFG',
+              '${r}_${section}_$key': _pem,
+            }),
+          );
+        ConfigurationPropertySources.attach(environment);
+        expect(
+          JwtClientSecretResolver.registrationIds(environment),
+          {'apple'},
+          reason: section,
+        );
+        final secret = await JwtClientSecretResolver.fromEnvironment(
+          environment,
+        ).resolve(_apple());
+        expect(secret, isNotNull, reason: section);
+        expect(_verifiesWithTestKey(secret!), isTrue, reason: section);
+        expect(_json(secret.split('.')[1])['iss'], 'DEF123GHIJ');
+      }
+    });
+
     test('without client-secret-jwt properties: no resolver', () async {
       await const ApplicationContextRunner()
           .withAutoConfiguration(springBootAutoConfiguration)

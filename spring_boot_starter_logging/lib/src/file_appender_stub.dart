@@ -53,6 +53,9 @@ class FileAppender extends LogAppender {
   @override
   void write(SpringLogRecord record) {}
 
+  /// Always `false`: there is no file here.
+  bool get isFailing => false;
+
   /// Does nothing: nothing is ever buffered here.
   void flush() {}
 }

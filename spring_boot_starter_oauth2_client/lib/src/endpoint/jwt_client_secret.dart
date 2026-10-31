@@ -322,9 +322,20 @@ final class JwtClientSecretResolver implements OAuth2ClientSecretResolver {
           ),
         )
         .orElse(const {});
+    // The keys as the sources hold them: `apple.client-secret-jwt.issuer`
+    // from a file, `apple.clientsecretjwt.issuer` or
+    // `apple.client.secret.jwt.issuer` from environment variables
+    // (`..._APPLE_CLIENTSECRETJWT_ISSUER`, `..._APPLE_CLIENT_SECRET_JWT_ISSUER`):
+    // compared without dashes, dots and case, as relaxed binding does.
     return {
       for (final key in entries.keys)
-        if (key.split('.') case [final id, 'client-secret-jwt', _, ...]) id,
+        if (key.split('.') case [final id, ...final rest]
+            when rest
+                .join()
+                .replaceAll('-', '')
+                .toLowerCase()
+                .startsWith('clientsecretjwt'))
+          id,
     };
   }
 

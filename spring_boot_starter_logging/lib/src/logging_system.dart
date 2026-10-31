@@ -141,7 +141,8 @@ final class LoggingSystem {
   String? fileDirectory;
 
   /// The log file set up from `logging.file.*`; `null` when no file is
-  /// configured, on the web, or when `logging.pattern.file` is empty.
+  /// configured, on the web, when `logging.pattern.file` is empty, or when
+  /// the file cannot be opened.
   FileAppender? get file => _file;
 
   /// Whether [console] receives records. The starter sets it from
@@ -170,11 +171,15 @@ final class LoggingSystem {
 
   /// Stops sending records to [appender], an appender added with
   /// [addAppender], and closes it. Returns `false`, and does nothing, when
-  /// it was not added.
+  /// it was not added. An error closing it is logged, not thrown.
   bool removeAppender(LogAppender appender) {
     final removed = _appenders.remove(appender);
     if (removed) {
-      appender.close();
+      try {
+        appender.close();
+      } on Object catch (error) {
+        _log.warning('Cannot close the log appender $appender: $error');
+      }
     }
     return removed;
   }
@@ -205,15 +210,17 @@ final class LoggingSystem {
   /// other code has replaced the handler in between, that handler stays.
   void uninstall() {
     _uninstallPending = false;
-    _closeFile();
-    final previous = _previous;
-    if (previous == null) {
-      return;
+    try {
+      _closeFile();
+    } finally {
+      final previous = _previous;
+      if (previous != null) {
+        if (SpringLog.handler == _dispatch) {
+          SpringLog.handler = previous;
+        }
+        _previous = null;
+      }
     }
-    if (SpringLog.handler == _dispatch) {
-      SpringLog.handler = previous;
-    }
-    _previous = null;
   }
 
   bool _uninstallPending = false;
@@ -256,7 +263,9 @@ final class LoggingSystem {
   /// Throws a [FormatException] for a value it cannot read: a pattern, a
   /// level, a number, a size, a charset, an on/off value or
   /// `spring.output.ansi.enabled`. In an application that fails the
-  /// start.
+  /// start. A log file that cannot be opened (a read-only directory) does
+  /// not: the error is logged and the application runs without the file,
+  /// as with Logback.
   void configure(PropertyResolver environment) {
     if (_uninstallPending) {
       uninstall();
@@ -412,24 +421,45 @@ final class LoggingSystem {
     if (filePattern.trim().isEmpty) {
       return;
     }
-    _file = FileAppender(
-      path,
-      pattern: LogPattern(filePattern, variables: variables, lookup: lookup),
-      encoding: _charset(environment, 'logging.charset.file') ?? utf8,
-      maxFileSize: parseDataSize(
-        environment.getProperty('$policy.max-file-size') ?? '10MB',
-      ),
-      maxHistory: _int(environment, '$policy.max-history') ?? 7,
-      totalSizeCap: parseDataSize(
-        environment.getProperty('$policy.total-size-cap') ?? '0B',
-      ),
-      cleanHistoryOnStart: _flag(
-        environment,
-        '$policy.clean-history-on-start',
-        defaultValue: false,
-      ),
-      threshold: _threshold(environment, 'logging.threshold.file'),
+    final pattern = LogPattern(
+      filePattern,
+      variables: variables,
+      lookup: lookup,
     );
+    final encoding = _charset(environment, 'logging.charset.file') ?? utf8;
+    final maxFileSize = parseDataSize(
+      environment.getProperty('$policy.max-file-size') ?? '10MB',
+    );
+    final maxHistory = _int(environment, '$policy.max-history') ?? 7;
+    final totalSizeCap = parseDataSize(
+      environment.getProperty('$policy.total-size-cap') ?? '0B',
+    );
+    final cleanHistoryOnStart = _flag(
+      environment,
+      '$policy.clean-history-on-start',
+      defaultValue: false,
+    );
+    final threshold = _threshold(environment, 'logging.threshold.file');
+    try {
+      _file = FileAppender(
+        path,
+        pattern: pattern,
+        encoding: encoding,
+        maxFileSize: maxFileSize,
+        maxHistory: maxHistory,
+        totalSizeCap: totalSizeCap,
+        cleanHistoryOnStart: cleanHistoryOnStart,
+        threshold: threshold,
+      );
+    } on Exception catch (error) {
+      // The file system's error (the values were read above). Logback
+      // reports that its file appender did not start, and the
+      // application starts without the file.
+      _log.error(
+        'Cannot open the log file $path (logging goes on without it): '
+        '$error',
+      );
+    }
   }
 
   String _resolve(String location) {
@@ -463,7 +493,11 @@ final class LoggingSystem {
   void _closeFile() {
     final file = _file;
     _file = null;
-    file?.close();
+    try {
+      file?.close();
+    } on Object catch (error) {
+      _log.warning('Cannot close the log file ${file?.path}: $error');
+    }
   }
 
   static SpringLogLevel _threshold(PropertyResolver environment, String key) {

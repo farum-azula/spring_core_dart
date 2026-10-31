@@ -66,11 +66,13 @@
 /// LocalDateTime next = everyQuarter.next(LocalDateTime.of(2026, 1, 1, 10, 7));
 /// ```
 ///
-/// Local time and daylight saving time: [next] works on the wall clock. A
-/// time inside the hour skipped in spring is moved forward by the
-/// [DateTime] constructor (02:30 becomes 03:30); a time inside the hour
-/// repeated in autumn matches once. `#k` in the day of week takes 1 to 5;
-/// Spring also accepts larger ordinals, which never match.
+/// Local time and daylight saving time, as in Spring: [next] gives the
+/// first moment the wall clock shows a matching time. A time inside the
+/// hour skipped when clocks go forward does not exist and is skipped (a
+/// daily `0 30 2 * * *` does not run that day); a time inside the hour
+/// repeated when clocks go back matches twice, once before and once after
+/// the change. `#k` in the day of week takes 1 to 5; Spring also accepts
+/// larger ordinals, which never match.
 final class CronExpression {
   CronExpression._(
     this.expression,
@@ -193,14 +195,55 @@ final class CronExpression {
   ///     .next(DateTime(2026, 3, 1, 12)); // 2026-03-02 12:00:00
   /// ```
   DateTime? next(DateTime after) {
+    // Whole seconds, strictly after `after`, in wall-clock order.
+    final first = _search(
+      after,
+      DateTime.utc(
+        after.year,
+        after.month,
+        after.day,
+        after.hour,
+        after.minute,
+        after.second + 1,
+      ),
+    );
+    if (after.isUtc) {
+      return first;
+    }
+    // Clocks going back soon: the wall clock shows again times that the
+    // search above has passed (the second 02:30 after the first one).
+    // Those come after the change; search again from it, as Spring does.
+    final back = _clocksGoBackAfter(after);
+    if (back == null || (first != null && first.isBefore(back))) {
+      return first;
+    }
+    final repeated = _search(
+      back.subtract(const Duration(microseconds: 1)),
+      DateTime.utc(
+        back.year,
+        back.month,
+        back.day,
+        back.hour,
+        back.minute,
+        back.second,
+      ),
+    );
+    if (first == null || (repeated != null && repeated.isBefore(first))) {
+      return repeated;
+    }
+    return first;
+  }
+
+  /// The first time after [after] that matches, searching the wall-clock
+  /// fields upwards from those of [from] (inclusive; read as UTC fields).
+  DateTime? _search(DateTime after, DateTime from) {
     final utc = after.isUtc;
-    // Wall-clock fields; whole seconds, strictly after `after`.
-    var year = after.year;
-    var month = after.month;
-    var day = after.day;
-    var hour = after.hour;
-    var minute = after.minute;
-    var second = after.second + 1;
+    var year = from.year;
+    var month = from.month;
+    var day = from.day;
+    var hour = from.hour;
+    var minute = from.minute;
+    var second = from.second;
     final lastYear = year + 400; // the calendar repeats every 400 years
 
     while (year <= lastYear) {
@@ -284,14 +327,87 @@ final class CronExpression {
       }
       final result = utc
           ? DateTime.utc(year, month, day, hour, minute, second)
-          : DateTime(year, month, day, hour, minute, second);
-      if (result.isAfter(after)) {
+          : _localAfter(after, year, month, day, hour, minute, second);
+      if (result != null && result.isAfter(after)) {
         return result;
       }
-      // Only possible around a DST change: keep searching.
+      // Only around a daylight saving change: the wall-clock time does not
+      // exist (clocks went forward over it) or came before `after`.
       second++;
     }
     return null;
+  }
+
+  /// The earliest local time after [after] at which the wall clock shows
+  /// the given fields; `null` when there is none.
+  ///
+  /// Usually there is exactly one. In the hour skipped when clocks go
+  /// forward there is none, and the time is skipped (Spring too: no run on
+  /// that day, where [DateTime.new] would move it forward). In the hour
+  /// repeated when clocks go back there are two.
+  static DateTime? _localAfter(
+    DateTime after,
+    int year,
+    int month,
+    int day,
+    int hour,
+    int minute,
+    int second,
+  ) {
+    final guess = DateTime(year, month, day, hour, minute, second);
+    final wall = DateTime.utc(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+    ).microsecondsSinceEpoch;
+    DateTime? best;
+    for (final offset in {
+      guess.timeZoneOffset,
+      guess.subtract(_maxClockChange).timeZoneOffset,
+      guess.add(_maxClockChange).timeZoneOffset,
+    }) {
+      final candidate = DateTime.fromMicrosecondsSinceEpoch(
+        wall - offset.inMicroseconds,
+      );
+      if (candidate.year == year &&
+          candidate.month == month &&
+          candidate.day == day &&
+          candidate.hour == hour &&
+          candidate.minute == minute &&
+          candidate.second == second &&
+          candidate.isAfter(after) &&
+          (best == null || candidate.isBefore(best))) {
+        best = candidate;
+      }
+    }
+    return best;
+  }
+
+  /// The moment the clocks go back within [_maxClockChange] after [after]
+  /// (the local time's offset gets smaller), or `null`.
+  static DateTime? _clocksGoBackAfter(DateTime after) {
+    final offset = after.timeZoneOffset;
+    if (after.add(_maxClockChange).timeZoneOffset >= offset) {
+      return null;
+    }
+    // Changes happen at whole seconds; find the first second after it.
+    var low = (after.microsecondsSinceEpoch / Duration.microsecondsPerSecond)
+        .floor();
+    var high = low + _maxClockChange.inSeconds + 1;
+    DateTime at(int seconds) =>
+        DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+    while (high - low > 1) {
+      final middle = low + (high - low) ~/ 2;
+      if (at(middle).timeZoneOffset < offset) {
+        high = middle;
+      } else {
+        low = middle;
+      }
+    }
+    return at(high);
   }
 
   @override
@@ -304,6 +420,10 @@ final class CronExpression {
   @override
   String toString() => expression;
 }
+
+/// More than any daylight saving change (two hours at most, Antarctica's
+/// Troll station).
+const _maxClockChange = Duration(hours: 3);
 
 const _monthNames = {
   'JAN': 1,

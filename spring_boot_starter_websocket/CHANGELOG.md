@@ -1,3 +1,23 @@
+## Unreleased
+
+### Breaking
+
+- On `dart:io`, `@WebSocketClient` connections do not read a server message over 8 KB (text or binary): the connection closes with 1009 and the streams end with a `WebSocketException`, as with Tomcat's default for Spring's `StandardWebSocketClient`. Raise the limits with `spring.websocket.client.max-text-message-size` and `max-binary-message-size` (`-1`: no limit).
+- Endpoint origin patterns (`allowedOriginPatterns`, `setAllowedOriginPatterns`) are compared with case (origins without), checked by `AllowedOrigins` as Spring's `CorsConfiguration` checks them.
+- The server's own origin needs the same scheme too, as Spring's `OriginHandshakeInterceptor`: `Origin: wss://host` is not an `https` server's own origin.
+
+### Changes
+
+- On `dart:io` a client connection whose server takes nothing is dropped (4500) when more than 512 KB wait to be sent or what was sent has not left within 10 seconds, and reconnects as after any lost connection (4500 counts as temporary); declare an `IoWebSocketTransport(sendBufferSizeLimit: ..., sendTimeLimit: ...)` bean for other limits.
+- The client's log lines and the exceptions it passes on show query values and user information as `***` (`ws://chat.test/ws?token=***`); the original error stays the exception's `cause`.
+- Server endpoints: the connection is not read while a message is handled, so a client that sends faster than the handler works waits instead of filling the server's memory.
+- A session closed in `afterConnectionEstablished` or `@OnOpen` (or an `@OnOpen` that throws) no longer crashes the server process: anything that fails for a connection is logged and closes it with 1011, `afterConnectionClosed` / `@OnClose` runs once, and the session leaves `WebSocketSessionRegistry`.
+- A client that resets the connection ends the session with 1006 and the error as the reason, over TLS too; after `session.close(status)`, `@OnClose` gets that status.
+- An endpoint's `@PathVariable` may be an `int`, `double`, `bool`, enum, ..., converted by the `ConversionService` as on controllers: a value that does not convert answers the handshake with 400 (it failed every connection), and a type nothing converts a `String` to stops the start.
+- Session ids are random UUIDs, as Spring's (they were sequential).
+- Origins take Spring's port lists (`http://localhost:[3000,3001]`, `[*]`: any port or none), comma-separated values and a trailing `/`; `*` matches any text, as Spring's `.*`. An `Origin` longer than 1024 characters, or one that is not a URL, gets a 403.
+- `ServerWebSocketSession.messages` is read by the server itself (listening to it again throws); receive messages in `handleMessage` or the `@OnMessage` method.
+
 ## 0.4.3
 
 - Flutter security (#15)

@@ -16,8 +16,12 @@ public final class SpringBootStarterFlutterSecurityPlugin: NSObject, FlutterPlug
   private let dPoPKey = DPoPKeyStore()
   private let window = WebAuthenticationWindow()
   private let appleIdSignIn = AppleIdSignIn()
-  // Keychain calls may block: they run here, one after the other.
-  private let keychainQueue = DispatchQueue(label: "spring_boot_starter_flutter_security.keychain")
+  private let installMarker = InstallMarker.shared
+  // Keychain calls may block: they run here, one after the other, for
+  // every engine of the process (two engines starting together never
+  // race on the install marker, a new item or the DPoP key's creation).
+  private static let keychainQueue = DispatchQueue(label: "spring_boot_starter_flutter_security.keychain")
+  private var keychainQueue: DispatchQueue { Self.keychainQueue }
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     #if os(iOS)
@@ -26,6 +30,8 @@ public final class SpringBootStarterFlutterSecurityPlugin: NSObject, FlutterPlug
       let messenger = registrar.messenger
     #endif
     let instance = SpringBootStarterFlutterSecurityPlugin()
+    // Published so iOS calls detachFromEngine(for:) when the engine goes.
+    registrar.publish(instance)
     FlutterMethodChannel(name: "spring_boot_starter_flutter_security/secret_store", binaryMessenger: messenger)
       .setMethodCallHandler { call, result in instance.handleSecretStore(call, result: result) }
     FlutterMethodChannel(name: "spring_boot_starter_flutter_security/dpop_key", binaryMessenger: messenger)
@@ -37,6 +43,15 @@ public final class SpringBootStarterFlutterSecurityPlugin: NSObject, FlutterPlug
       name: "spring_boot_starter_flutter_security/native_sign_in", binaryMessenger: messenger
     ).setMethodCallHandler { call, result in instance.handleNativeSignIn(call, result: result) }
   }
+
+  #if os(iOS)
+    // The engine went away: a login it started has nobody to answer.
+    // (macOS has no such call: the window cancels its login when it is
+    // released with the plugin.)
+    public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+      window.cancel()
+    }
+  #endif
 
   // Sign in with Apple's sheet. The answer holds credentials: never
   // logged, never put into an error.
@@ -74,7 +89,10 @@ public final class SpringBootStarterFlutterSecurityPlugin: NSObject, FlutterPlug
       return
     }
     let store = secretStore
+    let dPoP = dPoPKey
+    let marker = installMarker
     keychainQueue.async {
+      marker.check(store: store, dPoPKey: dPoP)
       let answer: Any?
       do {
         switch method {
@@ -114,7 +132,10 @@ public final class SpringBootStarterFlutterSecurityPlugin: NSObject, FlutterPlug
       return
     }
     let key = dPoPKey
+    let store = secretStore
+    let marker = installMarker
     keychainQueue.async {
+      marker.check(store: store, dPoPKey: key)
       let answer: Any?
       do {
         switch method {
@@ -149,6 +170,11 @@ public final class SpringBootStarterFlutterSecurityPlugin: NSObject, FlutterPlug
       return
     }
     let ephemeral = arguments?["preferEphemeralSession"] as? Bool ?? false
-    window.authorize(url: url, redirect: redirect, ephemeral: ephemeral, result: result)
+    // The first login of the engine's root isolate: a login still running
+    // belongs to the isolate a hot restart replaced (a background isolate
+    // never sends it).
+    let replaceStale = arguments?["replaceStale"] as? Bool ?? false
+    window.authorize(
+      url: url, redirect: redirect, ephemeral: ephemeral, replaceStale: replaceStale, result: result)
   }
 }

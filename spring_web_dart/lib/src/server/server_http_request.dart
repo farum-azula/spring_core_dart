@@ -89,8 +89,9 @@ abstract interface class ServerHttpRequest {
   /// The body as a stream of bytes. It can be listened to only once: a
   /// second read throws a `StateError`. On the web starter's server a body
   /// above `server.max-http-request-body-size` ends with a
-  /// [PayloadTooLargeException] (multipart uploads have their own limits,
-  /// `spring.servlet.multipart.*`). For small bodies,
+  /// [PayloadTooLargeException], whatever its `Content-Type` (the
+  /// starter's multipart resolver reads uploads with their own limit,
+  /// `spring.servlet.multipart.max-request-size`). For small bodies,
   /// [ServerHttpRequestBody.readBodyBytes] and
   /// [ServerHttpRequestBody.readBodyText] are simpler.
   Stream<Uint8List> get body;
@@ -104,7 +105,11 @@ abstract interface class ServerHttpRequest {
   /// [protocol] is the sub-protocol the server picked among those the
   /// client listed in `Sec-WebSocket-Protocol`, or `null` for none. Throws
   /// a `StateError` when the request is not a handshake
-  /// ([isWebSocketUpgrade] is false). After the upgrade the HTTP response
+  /// ([isWebSocketUpgrade] is false), and an `ErrorResponseException`
+  /// when the server refuses the handshake's details (the web starter's
+  /// server: a 400 for a missing, repeated or malformed
+  /// `Sec-WebSocket-Key`, a 426 for a `Sec-WebSocket-Version` other than
+  /// 13). After the upgrade the HTTP response
   /// must not be used any more. The WebSocket starter calls this for its
   /// endpoints; applications rarely do.
   Future<WebSocketSession> upgradeToWebSocket({String? protocol});

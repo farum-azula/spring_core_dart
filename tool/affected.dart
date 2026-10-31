@@ -60,6 +60,9 @@ const _testedBy = {
       'spring_boot_starter_flutter',
   'extensions/zed/dart_spring/snippets/properties.json':
       'spring_boot_starter_flutter',
+  // The rules and the seeding hook of the ZAP baseline scan of the server
+  // guide (the CI job "OWASP ZAP baseline").
+  '.zap/': 'example/server_guide',
 };
 
 /// Changed paths that affect no package.

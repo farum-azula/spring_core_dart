@@ -144,6 +144,38 @@ void main() {
       },
     );
 
+    // Review before 0.5.0: after one failed restart the closed context was
+    // forgotten, and no later reload started the application again.
+    test('a failed restart is retried at the next reload', () async {
+      SpringApplication broken() => SpringApplication(
+        [
+          BeanModule('application', [
+            BeanDefinition<Greeter>(
+              name: 'greeter',
+              create: (_) => throw StateError('a bug in the new code'),
+            ),
+          ]),
+        ],
+        fingerprint: 'broken',
+        out: (_) {},
+      );
+      var current = app('v1');
+      final context = current.run(
+        ['--name=Ada'],
+        systemEnvironment: const {},
+        hotReload: () => current,
+      );
+
+      current = broken();
+      await expectLater(SpringHotReload.reloadAll(), throwsA(anything));
+      expect(context.isActive, isFalse);
+
+      // Fixed: the next reload starts it again, with the same arguments.
+      current = app('v2', greeting: 'hi');
+      expect(await SpringHotReload.reloadAll(), 1);
+      expect(await SpringHotReload.reloadAll(), 0);
+    });
+
     test('spring.devtools.restart.enabled=false keeps the context', () async {
       var current = app('v1');
       final context = current.run(

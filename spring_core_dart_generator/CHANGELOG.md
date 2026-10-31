@@ -1,3 +1,26 @@
+## Unreleased
+
+### Breaking
+
+- The `web_dev_config.yaml` builder never fails or warns in an app whose config files set no `spring.flutter.web.*` key and no `spring.flutter.security.web.mode`: it loads no config, writes nothing and deletes a file it generated before, so a pure Dart server builds as if the builder were not there.
+- With such a key, an import a browser cannot read is skipped instead of failing the build: `file:`, `configtree:` and `package:` imports (or absolute paths), with a wildcard or not, are not read from the build machine's disk (a warning names the first required one when the file is written), and `asset:`, `http(s):` and `classpath:` files missing from `lib/resources/` are skipped silently.
+- A placeholder that only the environment can resolve is never a build error: a profile name holding one is left out (`dev,${ENV}-eu` is read as `dev`), in every form of the profile keys (`spring.profiles.group[prod]`, `spring.profiles[active]`); `spring.profiles.validate` or `spring.main.cloud-platform` with one is read as unset; an import location with one is not read; a document whose `spring.config.activate.*` guard has one is skipped; each with a warning.
+- A placeholder in `spring.flutter.security.web.mode` must resolve at build time, as one in a `spring.flutter.web.*` value (it was silently ignored).
+- A config file the app reads that does not parse fails the build and keeps the generated file (a YAML syntax error deleted it).
+- Generated `@TestBean(name: ...)` overrides are wrapped in `_$named(...)`, so they are registered under the field's type too; a fake created with a constructor (`= FakeGateway()`, also a named, private or prefixed class's constructor, in parentheses or with a cascade) is registered under that class and all its public supertypes, whatever the field's declared type.
+- A generic bean whose supertype has a private type argument is also exposed in raw form (`Repo<_Draft>` as `Repo<dynamic>`), so a raw injection point finds it and can become ambiguous, as in Spring.
+
+### Changes
+
+- `build_runner build --workspace`: the existing output kept on an error, and the Flutter assets that `@Value('asset:...')` checks, are read from each package's own directory, so a failed build never writes another package's generated file.
+- Two `@Log` classes with the same name in different libraries no longer break the build (the later extension is `$CheckoutLog2`).
+- Bean names, logger topics and scanned directories are escaped in generated doc comments, so a line break in them cannot turn into code.
+- A bean or a `@TestBean` fake of a `dart:io` type (`HttpClient`, `HttpServer`) keeps that interface, imported through `dart:io`.
+- Nullable `@TestBean` fields compile, also of a nullable type alias (`typedef MaybeMailer = Mailer?;`) or with an inferred type; a `null` value fails the test file with a `StateError`.
+- The web dev config builder reads imports as the app does, Boot 4.1 file hints included (`classpath:dev.conf[.yaml]`, `[encoding=iso-8859-1]`, a hinted file in a bracketed directory), and still checks where a key may be (`spring.profiles.active` in `application-web.yaml` fails the build whatever its value).
+- spa mode's ready Content-Security-Policy lists in `connect-src` the built-in endpoints of Google, GitHub, Facebook and Apple and the hosts Google's and Microsoft's discovery documents name (the browser blocked Google's token request); the new `spring.flutter.web.content-security-policy-connect-src` adds the APIs the app calls and other providers' hosts.
+- `SpringBuilder.resources(warn: false)` leaves out the warning about files too large to embed, so builders that read `lib/resources/` after the main one do not repeat it.
+
 ## 0.4.3
 
 - `web_dev_config.yaml`: `spring.flutter.web.content-security-policy` adds the page's Content Security Policy to the dev server's answers (`content-security-policy-report-only=true`: the report-only header); with `spring.flutter.security.web.mode=spa` and no policy set, a ready one (`WebDevServerSettings.spaContentSecurityPolicy`: the app's and Flutter's scripts, `'wasm-unsafe-eval'` and no `eval`, connections to the origin, Flutter's CDN and the origins of the `spring.security.oauth2.client.provider.*` URIs, `frame-ancestors 'none'`). The property and a `headers.Content-Security-Policy` both set fail the build.

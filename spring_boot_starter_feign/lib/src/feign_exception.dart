@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 /// The error a Feign client method throws when its call fails.
@@ -126,6 +128,10 @@ class FeignException implements Exception {
     };
   }
 
+  /// The class, the [message] and a preview of the [responseBody], as
+  /// Feign's message has: the whole body under 400 bytes, else its first
+  /// 200 characters and its size (`... (5120 bytes)`). [responseBody]
+  /// keeps all of it.
   @override
   String toString() {
     final body = responseBody;
@@ -133,7 +139,18 @@ class FeignException implements Exception {
     // getClass().getName().
     // ignore: no_runtimetype_tostring
     return '$runtimeType: $message'
-        '${body == null || body.isEmpty ? '' : ': $body'}';
+        '${body == null || body.isEmpty ? '' : ': ${_preview(body)}'}';
+  }
+
+  // Feign's FeignExceptionMessageBuilder: MAX_BODY_BYTES_LENGTH 400,
+  // MAX_BODY_CHARS_LENGTH 200.
+  static String _preview(String body) {
+    // At most 4 bytes a character: short bodies need no encoding.
+    final bytes = body.length < 100 ? 0 : utf8.encode(body).length;
+    if (bytes < 400) {
+      return body;
+    }
+    return '${String.fromCharCodes(body.runes.take(200))}... ($bytes bytes)';
   }
 }
 
@@ -583,9 +600,10 @@ abstract interface class ErrorDecoder {
 /// It throws the exception of [FeignException.errorStatus] for the
 /// status, such as [FeignNotFound]; a response with a `Retry-After` header
 /// (seconds or an HTTP date) becomes a [RetryableException] instead, so a
-/// `Retryer` can wait and try again. A decoder of your own can hand the
-/// cases it does not handle to it. Feign's counterpart is
-/// `ErrorDecoder.Default`.
+/// `Retryer` can wait and try again. A value that is neither, such as
+/// `-5`, leaves the error not retryable, as in Feign. A decoder of your
+/// own can hand the cases it does not handle to it. Feign's counterpart
+/// is `ErrorDecoder.Default`.
 class DefaultErrorDecoder implements ErrorDecoder {
   /// The default decoder; it has no state.
   const DefaultErrorDecoder();
@@ -612,10 +630,17 @@ class DefaultErrorDecoder implements ErrorDecoder {
 
   // `Retry-After: 120` or `Retry-After: Wed, 21 Oct 2015 07:28:00 GMT`
   // (RFC 1123, like Feign's RetryAfterDecoder); null when unreadable.
+  // Seconds are digits only, as in Feign (`120.0` too): `-5` or `+5` is
+  // not retryable, and a huge number waits [_maxRetryAfter], not an
+  // overflowed (past) time.
   static DateTime? _retryAfter(String value) {
-    final seconds = int.tryParse(value);
-    if (seconds != null) {
-      return DateTime.now().add(Duration(seconds: seconds));
+    if (_seconds.firstMatch(value) case final match?) {
+      final digits = match[1]!;
+      final seconds = digits.length > 12 ? null : int.parse(digits);
+      final delay = seconds == null || seconds > _maxRetryAfter.inSeconds
+          ? _maxRetryAfter
+          : Duration(seconds: seconds);
+      return DateTime.now().add(delay);
     }
     final match = _httpDate.firstMatch(value);
     if (match == null) {
@@ -634,6 +659,12 @@ class DefaultErrorDecoder implements ErrorDecoder {
       int.parse(match[6]!),
     );
   }
+
+  static final _seconds = RegExp(r'^(\d+)(?:\.0*)?$');
+
+  // The longest wait a Retry-After in seconds gives; the Retryer waits
+  // its `maxPeriod` at most anyway.
+  static const _maxRetryAfter = Duration(days: 365);
 
   static final _httpDate = RegExp(
     r'^(?:[A-Za-z]{3}, )?(\d{1,2}) ([A-Za-z]{3}) (\d{4}) '

@@ -137,6 +137,21 @@ final class ChainClient {
     return Reply(response, application.reached, application.seen);
   }
 
+  /// How many sessions the store keeps.
+  int get storedSessions =>
+      (sessions.repository as InMemoryHttpSessionRepository).size;
+
+  /// Makes the application start a session for this client (the chain
+  /// itself starts none before a login); returns the session id.
+  Future<String> startSession() async {
+    final (request, response) = await exchange(sessions, cookies: cookies);
+    final id = request.getSession()!.id;
+    for (final cookie in response.cookies) {
+      cookies[cookie.name] = cookie.value;
+    }
+    return id;
+  }
+
   /// GET [path] accepting [accept].
   Future<Reply> get(
     String path, {

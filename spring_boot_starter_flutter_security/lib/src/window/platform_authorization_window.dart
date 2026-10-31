@@ -6,10 +6,15 @@ import 'package:spring_boot_starter_flutter_security/src/window/loopback_authori
 /// The channel of the plugin's login window on Android, iOS and macOS.
 ///
 /// One method, `authorize`, with the arguments `url` (the provider's
-/// authorization URI), `redirectUri` and `preferEphemeralSession`; it
-/// returns the URI the provider redirected to, as a string. Error codes:
-/// `cancelled`, `in_progress`, `unsupported`, `redirect_not_configured`,
-/// `no_browser`, `no_activity`, `failed`.
+/// authorization URI), `redirectUri`, `preferEphemeralSession` and
+/// `replaceStale` (`true` on the first call of the engine's root isolate:
+/// a login the platform still runs for this engine belongs to the isolate
+/// a hot restart replaced, and is cancelled; never from a background
+/// isolate, whose first login must not end the app's); it returns the URI
+/// the provider
+/// redirected to, as a string. Error codes: `cancelled`, `in_progress`,
+/// `unsupported`, `redirect_not_configured`, `no_browser`, `no_activity`,
+/// `failed`.
 const authorizationWindowChannel = MethodChannel(
   'spring_boot_starter_flutter_security/authorization_window',
 );
@@ -43,7 +48,15 @@ const authorizationWindowChannel = MethodChannel(
 ///
 /// One login runs at a time: a second call while one runs throws a
 /// [StateError]. The user closing the page throws an
-/// [AuthorizationCancelledException].
+/// [AuthorizationCancelledException], and so does a window the system
+/// closed without an answer (on Android a `singleTask` main activity or a
+/// `CLEAR_TOP` intent removes it). A hot restart cancels a login left
+/// running by the replaced code at the next call (of the root isolate: a
+/// background isolate's first login never cancels the app's). On Android
+/// a login is
+/// lost when the system ends the app's process while the browser is
+/// open: the user comes back to a new start of the app, logged out, and
+/// logs in again.
 ///
 /// ```dart
 /// // What OAuth2LoginService does with it (and then it checks `state`
@@ -71,6 +84,19 @@ class PlatformAuthorizationWindow implements AuthorizationWindow {
   /// The login window of the current platform.
   const PlatformAuthorizationWindow({this.preferEphemeralSession = false});
 
+  /// Forgets that this isolate called the platform, as a hot restart
+  /// does; for tests.
+  @visibleForTesting
+  static void debugResetIsolate() {
+    _calledInThisIsolate = false;
+    _running = false;
+  }
+
+  /// Whether this is the engine's root isolate (`null`: asks Flutter,
+  /// [RootIsolateToken.instance]); for tests.
+  @visibleForTesting
+  static bool? debugRootIsolate;
+
   /// Whether the login page opens in a private session that shares no
   /// cookies with Safari (iOS and macOS only).
   ///
@@ -91,6 +117,17 @@ class PlatformAuthorizationWindow implements AuthorizationWindow {
       }.contains(defaultTargetPlatform);
 
   static bool _running = false;
+
+  // Whether this Dart isolate has called the platform yet: a hot restart
+  // starts a new isolate (statics start again), while the platform side
+  // keeps a login the replaced isolate started.
+  static bool _calledInThisIsolate = false;
+
+  // A hot restart replaces the root isolate (and ends the isolates it
+  // spawned); a background isolate (BackgroundIsolateBinaryMessenger)
+  // shares the engine with a root isolate that may be logging in.
+  static bool get _rootIsolate =>
+      debugRootIsolate ?? RootIsolateToken.instance != null;
 
   /// Opens the authorization URI that [authorizationUri] builds for
   /// [redirectUri] and completes with the URI the provider redirected to.
@@ -116,6 +153,8 @@ class PlatformAuthorizationWindow implements AuthorizationWindow {
       throw StateError('A login is already running: one at a time');
     }
     _running = true;
+    final replaceStale = !_calledInThisIsolate && _rootIsolate;
+    _calledInThisIsolate = true;
     try {
       final String? result;
       try {
@@ -125,6 +164,7 @@ class PlatformAuthorizationWindow implements AuthorizationWindow {
             'url': '${authorizationUri(redirectUri)}',
             'redirectUri': '$redirectUri',
             'preferEphemeralSession': preferEphemeralSession,
+            'replaceStale': replaceStale,
           },
         );
       } on PlatformException catch (e) {

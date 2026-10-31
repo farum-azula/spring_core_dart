@@ -220,9 +220,36 @@ final class FilterChainProxy implements WebFilter, Ordered {
           HttpStatus.forbidden,
           'Access Denied',
         );
+      } on PasswordChecksBusyException catch (e) {
+        // The credentials were not checked: no failed login, no event; the
+        // client may try again in a moment.
+        _warnBusy(e);
+        response.headers.set('Retry-After', '1');
+        await writeSecurityProblem(
+          request,
+          response,
+          HttpStatus.serviceUnavailable,
+          'Too many logins at once, try again in a moment',
+        );
       }
     });
   }
+}
+
+DateTime? _lastBusyWarning;
+
+// At most once a minute: a flood would fill the log otherwise.
+void _warnBusy(PasswordChecksBusyException e) {
+  final now = DateTime.now();
+  final last = _lastBusyWarning;
+  if (last != null && now.difference(last) < const Duration(minutes: 1)) {
+    return;
+  }
+  _lastBusyWarning = now;
+  _log.warning(
+    'Logins refused with 503: ${e.maxConcurrent} password checks running '
+    'and ${e.maxQueued} waiting (a flood of logins? limit them in front)',
+  );
 }
 
 final class _VirtualChain implements WebFilterChain {
@@ -287,6 +314,13 @@ abstract interface class SecurityContextRepository {
 /// gives a copy, so two requests of one session never change each other's
 /// context. It is the default, behind the request attribute, unless the
 /// session creation policy is `stateless`.
+///
+/// Only a login creates the session: nothing else of the chain keeps
+/// state in it before (the CSRF token, the page to come back to and the
+/// OAuth 2.0 authorization request are signed cookies by default), so
+/// clients that are not logged in cannot fill the session store. When the
+/// store is full, the login is refused with a 503
+/// ([TooManyActiveSessionsException]).
 ///
 /// Spring (Java): `HttpSessionSecurityContextRepository`.
 final class HttpSessionSecurityContextRepository

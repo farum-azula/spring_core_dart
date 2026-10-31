@@ -23,4 +23,5 @@
 library;
 
 export 'package:spring_web_dart/src/client/io_transport.dart';
-export 'package:spring_web_dart/src/websocket/io_web_socket_transport.dart';
+export 'package:spring_web_dart/src/websocket/io_web_socket_transport.dart'
+    hide heldIncomingMessage;

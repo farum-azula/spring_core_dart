@@ -44,6 +44,137 @@ void main() {
     expect(app.getBean<FakeMailer>(), same(fake));
   });
 
+  group("BeanOverride.named with the fake's types", () {
+    // The real mailer is also an Auditable; the fake is not.
+    final module = BeanModule('audited', [
+      BeanDefinition<AuditedMailer>(
+        name: 'auditedMailer',
+        types: const [AuditedMailer, Mailer, Auditable],
+        create: (_) => AuditedMailer(),
+      ),
+    ]);
+    final runner = const ApplicationContextRunner().withUserConfiguration(
+      module,
+    );
+
+    test('registers it under those types only', () {
+      final fake = FakeMailer();
+      runner
+          .withInitializer(
+            ApplicationContextInitializer.of(
+              (context) => context.addBeanFactoryPostProcessor(
+                BeanOverrideProcessor([
+                  BeanOverride.named(
+                    fake,
+                    name: 'auditedMailer',
+                    types: const [FakeMailer, Mailer],
+                  ),
+                ]),
+              ),
+            ),
+          )
+          .run((context) {
+            expect(context.startupFailure, isNull);
+            expect(context.getBean<Mailer>(), same(fake));
+            expect(context.getBeanNamesForType<Auditable>(), isEmpty);
+            expect(context.getBeanNamesForType<AuditedMailer>(), isEmpty);
+            expect(context.getBeanNamesForType<FakeMailer>(), [
+              'auditedMailer',
+            ]);
+          });
+    });
+
+    test("without types it keeps the bean's interfaces, the fake's or not", () {
+      runner
+          .withInitializer(
+            ApplicationContextInitializer.of(
+              (context) => context.addBeanFactoryPostProcessor(
+                BeanOverrideProcessor([
+                  BeanOverride.named(FakeMailer(), name: 'auditedMailer'),
+                ]),
+              ),
+            ),
+          )
+          .run((context) {
+            expect(context.getBeanNamesForType<Auditable>(), [
+              'auditedMailer',
+            ]);
+            expect(() => context.getBean<Auditable>(), throwsA(anything));
+          });
+    });
+  });
+
+  // `@Bean Mailer mailer() => smtp ? SmtpMailer() : LogMailer();` is
+  // registered under its declared type only, which is also its bean type.
+  // Without the fake's types (a `@TestBean(name:)` field whose value is no
+  // constructor call) the override dropped that type, and nothing could
+  // inject the fake as a Mailer. Spring registers a @TestBean override
+  // under the field's type, the T the generated code infers.
+  group("BeanOverride.named adds T, the field's type", () {
+    final module = BeanModule('declared', [
+      BeanDefinition<Mailer>(
+        name: 'mailer',
+        types: const [Mailer],
+        create: (_) => SmtpMailer(),
+      ),
+    ]);
+
+    void run(
+      BeanOverride<Object> override,
+      void Function(AssertableApplicationContext context) check,
+    ) => const ApplicationContextRunner()
+        .withUserConfiguration(module)
+        .withInitializer(
+          ApplicationContextInitializer.of(
+            (context) => context.addBeanFactoryPostProcessor(
+              BeanOverrideProcessor([override]),
+            ),
+          ),
+        )
+        .run((context) {
+          expect(context.startupFailure, isNull);
+          check(context);
+        });
+
+    test('replacing a bean registered under its declared type only', () {
+      final fake = FakeMailer();
+      run(
+        BeanOverride<Mailer>.named(fake, name: 'mailer'),
+        (context) => expect(context.getBean<Mailer>(), same(fake)),
+      );
+    });
+
+    test("with the fake's types too", () {
+      final fake = FakeMailer();
+      run(
+        BeanOverride<Mailer>.named(
+          fake,
+          name: 'mailer',
+          types: const [FakeMailer],
+        ),
+        (context) {
+          expect(context.getBean<Mailer>(), same(fake));
+          expect(context.getBean<FakeMailer>(), same(fake));
+        },
+      );
+    });
+
+    test('also when T is the real class, which the fake extends', () {
+      final fake = _FakeSmtpMailer();
+      run(
+        BeanOverride<SmtpMailer>.named(fake, name: 'mailer'),
+        (context) => expect(context.getBean<SmtpMailer>(), same(fake)),
+      );
+    });
+
+    test('but not Object, which every bean is', () {
+      run(BeanOverride<Object>.named(FakeMailer(), name: 'mailer'), (context) {
+        expect(context.getBeanNamesForType<Mailer>(), isEmpty);
+        expect(context.getBeanNamesForType<FakeMailer>(), ['mailer']);
+      });
+    });
+  });
+
   group('BeanOverride.named without such a bean', () {
     final added = springBootTest(
       SpringApplication([appModule()]),
@@ -56,3 +187,17 @@ void main() {
     });
   });
 }
+
+abstract interface class Auditable {
+  List<String> get audit;
+}
+
+class AuditedMailer implements Mailer, Auditable {
+  @override
+  String get kind => 'audited';
+
+  @override
+  List<String> get audit => const [];
+}
+
+class _FakeSmtpMailer extends SmtpMailer {}
