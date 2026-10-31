@@ -146,6 +146,9 @@ targets:
         'spring_boot_starter_web',
         'spring_boot_starter_security',
         'example/server_guide',
+        // Its test applications are generated: repositories, transactions,
+        // the SQLite driver glue.
+        'spring_boot_starter_data',
         // Through spring_security_core: the OAuth2 client depends on it,
         // the Flutter security package on both (the Flutter starter on
         // neither).
