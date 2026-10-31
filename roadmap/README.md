@@ -80,7 +80,7 @@ What comes next, in order:
    `JdbcTemplate` / `JdbcClient`, Redis with our own client (shared
    sessions, cache, `RedisTemplate`), containers in tests
    ([spring_boot_starter_test.md](spring_boot_starter_test.md)).
-8. **The Supabase starter** ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)),
+8. **The Supabase starter**, after the 0.6.0 release ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)),
    on the data starter: its tables through the repositories (PostgreSQL
    directly on a server, PostgREST in apps), its Auth as a login of the
    security starters, one session (ours).
@@ -159,7 +159,7 @@ What comes next, in order:
 | [spring_ai_mcp.md](spring_ai_mcp.md) | `spring_boot_starter_ai` | MCP, later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on Feign (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
 | [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | planned for 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), several databases, Redis (own client: sessions, cache, repositories), `@Transactional`, `@Version`, `@Lock`, SpEL in `@Query` |
-| [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the data starter: Supabase's official packages; its database as a store of the repositories, its Auth as a login of the security starters (one session, ours), later Storage, Realtime, Edge Functions |
+| [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the 0.6.0 release (the data starter ships without it): Supabase's official packages; its database as a store of the repositories, its Auth as a login of the security starters (one session, ours), later Storage, Realtime, Edge Functions |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
 | [serverless.md](serverless.md) | `spring_boot_starter_edge` (name to settle) | planned after the data and Supabase starters: Spring Boot for Dart applications on Supabase Edge Functions, Deno Deploy, Cloudflare Workers; deploys from GitHub Actions |

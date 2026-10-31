@@ -27,19 +27,22 @@ import 'package:spring_core_dart_generator/src/bean_model.dart';
 /// - With [prune] and [foreign] (the advice of the application's other
 ///   modules), it skips the proxy class of every bean that no pointcut of
 ///   the application can match. `aop_proxies: all` keeps its meaning but
-///   not its weight. The bean keeps its signatures
-///   (`AopProxyFactory.unavailable`), so an advisor from elsewhere that
-///   matches it after all fails the startup with the reason instead of
-///   being skipped silently.
+///   not its weight. Nothing is generated for such a bean's members
+///   (`AopProxyFactory.pruned`, with the reason): advice registered at run
+///   time without the build seeing it is not applied to it; the build
+///   option `aop_prune: false` keeps every proxy.
 ///
 /// Pruning needs certainty. It is off, and every bean keeps its proxy,
-/// without [foreign], when no module has advice, when a module declares an
-/// advisor bean, or when a pointcut refers to one the build cannot follow.
-/// A bean always keeps its proxy when its class or a member carries an
-/// annotation from outside `package:spring_core_dart` (annotation-driven
-/// advisors of starters, like `@Cacheable`) or `@Validated`, when it is a
-/// subclass proxy (the proxy is the bean itself), when it has an
-/// introduction, and when a pointcut might match it.
+/// without [foreign], when a module declares an advisor bean, or when a
+/// pointcut refers to one the build cannot follow. A bean keeps its proxy
+/// when its class or a member carries an annotation an annotation-driven
+/// advisor of a starter matches (`@Transactional`, `@Cacheable`,
+/// `@Validated`: the pointcut, or the advisor, declares them in a
+/// `static const annotationTypes` list; when one declares none, any
+/// annotation from outside `package:spring_core_dart` and the SDK keeps
+/// it), when it is a subclass proxy (the proxy is the bean itself), when
+/// it has an introduction, and when a pointcut might match it. Annotations
+/// of the SDK (`@override`) and of `package:meta` never keep a proxy.
 ///
 /// ```dart
 /// // In the @SpringBootApplication output: prune, knowing the advice of
@@ -147,7 +150,6 @@ void analyzeAop(
       foreign == null ||
       foreign.unknown ||
       foreign.advisors ||
-      expressions.isEmpty ||
       !complete ||
       module.beans.any((bean) => _isAdvisor(bean))) {
     return;
@@ -159,7 +161,7 @@ void analyzeAop(
         proxy.subclass != null ||
         proxy.introductions.isNotEmpty ||
         bean.aspect != null ||
-        _mayBeAdvisedElsewhere(proxy)) {
+        _mayBeAdvisedElsewhere(proxy, foreign)) {
       continue;
     }
     final names = [...bean.aliases, ...bean.qualifiers];
@@ -170,6 +172,7 @@ void analyzeAop(
       );
     });
     if (!matched) {
+      proxy.pruned = true;
       proxy.unavailableReason =
           'the build found no pointcut of the application that matches '
           '${proxy.targetType.element.name}, so it generated no proxy class '
@@ -244,8 +247,11 @@ bool _isAdvisor(BeanModel bean) => bean.exposedTypes.any(
       type.element.library.uri.path.startsWith('spring_core_dart/'),
 );
 
-// Advisors of starters match by annotation (`@Cacheable`, `@Validated`).
-bool _mayBeAdvisedElsewhere(ProxyModel proxy) => [
+// Advisors of starters match by annotation (`@Cacheable`, `@Validated`):
+// a bean keeps its proxy when it carries one of the annotations they
+// declare, or, when one of them declares none, any annotation from
+// outside `spring_core_dart` and the SDK.
+bool _mayBeAdvisedElsewhere(ProxyModel proxy, ForeignAdvice foreign) => [
   ...proxy.classAnnotations,
   for (final member in proxy.members) ...[
     ...member.mergedAnnotations,
@@ -254,15 +260,38 @@ bool _mayBeAdvisedElsewhere(ProxyModel proxy) => [
   ],
   for (final member in proxy.members)
     for (final parameter in member.parameters) ...parameter.annotations,
-].any(_isForeignAnnotation);
+].any((annotation) => _mayBeAdvice(annotation, foreign));
 
-bool _isForeignAnnotation(DartObject annotation) {
+bool _mayBeAdvice(DartObject annotation, ForeignAdvice foreign) {
   final element = annotation.type?.element;
   if (element == null) {
     return true;
   }
-  return element.name == 'Validated' ||
-      !element.library!.uri.toString().startsWith('package:spring_core_dart/');
+  if (element.name == 'Validated') {
+    return true;
+  }
+  final library = element.library!;
+  final uri = library.uri.toString();
+  // `@override`, `@Deprecated`, `@pragma`, `package:meta`'s markers and
+  // the core's own annotations advise nothing.
+  if (library.isInSdk ||
+      uri.startsWith('package:meta/') ||
+      uri.startsWith('package:spring_core_dart/')) {
+    return false;
+  }
+  if (foreign.undeclaredAnnotations) {
+    return true;
+  }
+  // The annotation or a supertype of it (`class AdminOnly extends
+  // PreAuthorize`): the pointcuts test with `is`.
+  final type = annotation.type;
+  return [
+    if (type is InterfaceType) ...[type, ...type.element.allSupertypes],
+  ].any(
+    (t) => foreign.advisedAnnotations.contains(
+      '${t.element.library.uri}#${t.element.name}',
+    ),
+  );
 }
 
 // What the runtime's `MethodSignature` of [member] is, for matching only.

@@ -17,6 +17,7 @@ import 'package:spring_core_dart_generator/src/asset_check.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/driver_glue.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
@@ -341,15 +342,19 @@ class SpringBuilder implements Builder {
     // Any module may import this one, so its beans may be advised by
     // aspects the build cannot see: no proxy is pruned (only the
     // @SpringBootApplication output, which knows every module, prunes).
+    final dependencies = await _dependencies(buildStep);
+    final glue = await driverGlueFor(buildStep, dependencies);
     return ModuleEmitter(
       output,
-      dependencies: await _dependencies(buildStep),
+      dependencies: dependencies,
       pruneProxies: false,
     ).emit(
       moduleName: variableName,
       variableName: '\$$variableName',
       scannedDirectory: directory,
       module: module,
+      extra: [for (final output in glue) output.code],
+      extraDefinitions: [for (final output in glue) output.definition],
       resources: await SpringBuilder.resources(buildStep),
     );
   }
@@ -514,16 +519,21 @@ class SpringBuilder implements Builder {
       includeOwn: example,
     );
     final springApplication = refer('springApplication');
+    final dependencies = await _dependencies(buildStep);
+    final glue = await driverGlueFor(buildStep, dependencies);
     final emitter = ModuleEmitter(
       output,
-      dependencies: await _dependencies(buildStep),
+      dependencies: dependencies,
       pruneProxies: pruneProxies,
       foreignAdvice: pruneProxies
           ? await _foreignAdvice(
               buildStep,
               scanner,
               nested,
-              includeOwn: example,
+              // The package's own advisors too, whatever the entry point (a
+              // starter's test applications use its auto-configuration):
+              // knowing one more advisor only keeps more proxies.
+              includeOwn: true,
             )
           : null,
     );
@@ -539,7 +549,9 @@ class SpringBuilder implements Builder {
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
       resources: resources,
+      extraDefinitions: [for (final output in glue) output.definition],
       extra: [
+        for (final output in glue) output.code,
         Method(
           (m) => m
             ..docs.add(
@@ -813,6 +825,10 @@ class SpringBuilder implements Builder {
       }
       if (advisors.mentioned && !advisors.annotationDriven) {
         foreign.advisors = true;
+      }
+      foreign.advisedAnnotations.addAll(advisors.annotations);
+      if (advisors.undeclared) {
+        foreign.undeclaredAnnotations = true;
       }
     }
     return foreign;
@@ -1258,6 +1274,10 @@ class SpringBuilder implements Builder {
           library,
           (fragment) => resolver.astNodeFor(fragment, resolve: true),
         );
+        await scanner.resolveFieldInitializers(
+          library,
+          (fragment) => resolver.astNodeFor(fragment, resolve: true),
+        );
         scanner.scanLibrary(library);
       }
     }
@@ -1348,10 +1368,55 @@ class _AdvisorCreations extends RecursiveAstVisitor<void> {
           : type.lookUpGetter('pointcut', type.element.library)?.returnType;
       if (!_matchesByForeignAnnotation(pointcut)) {
         _annotationDriven = false;
+      } else if (!_declaredAnnotations(pointcut, annotations) &&
+          !_declaredAnnotations(type, annotations)) {
+        undeclared = true;
       }
     }
     super.visitInstanceCreationExpression(node);
   }
+
+  /// The annotations the annotation-driven advisors match, by
+  /// `library#Name` (see [ForeignAdvice.advisedAnnotations]).
+  final annotations = <String>{};
+
+  /// Whether one of them does not declare its annotations.
+  bool undeclared = false;
+
+  // Adds to [into] the annotations [type] declares it matches: the `A` of
+  // `AnnotationMatchingPointcut<A>`, or the `static const annotationTypes`
+  // list of the pointcut's (or advisor's) class. False when it declares
+  // none.
+  static bool _declaredAnnotations(DartType? type, Set<String> into) {
+    if (type is! InterfaceType) {
+      return false;
+    }
+    if (_annotationMatchingPointcutChecker.isExactlyType(type)) {
+      final annotation = type.typeArguments.single;
+      if (annotation is InterfaceType) {
+        into.add(_qualified(annotation));
+        return true;
+      }
+      return false;
+    }
+    final field = type.element.getField('annotationTypes');
+    if (field == null || !field.isStatic || !field.isConst) {
+      return false;
+    }
+    final values = field.computeConstantValue()?.toListValue();
+    if (values == null) {
+      return false;
+    }
+    for (final value in values) {
+      if (value.toTypeValue() case final InterfaceType annotation) {
+        into.add(_qualified(annotation));
+      }
+    }
+    return true;
+  }
+
+  static String _qualified(InterfaceType type) =>
+      '${type.element.library.uri}#${type.element.name}';
 
   static bool _matchesByForeignAnnotation(DartType? pointcut) {
     if (pointcut is! InterfaceType ||

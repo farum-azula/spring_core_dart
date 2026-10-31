@@ -9,7 +9,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// the property in snake case (`createdAt` → `created_at`) unless
 /// [Column] says otherwise; [Transient] properties are not stored. Children
 /// of the aggregate are [MappedCollection]s; other aggregates are
-/// referenced by id with [AggregateReference].
+/// referenced by id with [AggregateReference] or [Reference]; [Unique] and
+/// [UniqueConstraint] ask for unique values.
 ///
 /// A class used only as a child of an aggregate takes `@Table` too, for its
 /// table's name.
@@ -184,6 +185,152 @@ final class AggregateReference<T, ID> {
   String toString() => 'AggregateReference<$T>($id)';
 }
 
+/// References another aggregate by its id, from a plain property: the
+/// column holds the id of an aggregate of type [target].
+///
+/// ```dart
+/// @Reference(Author)
+/// int authorId; // a foreign key to authors(id)
+/// ```
+///
+/// It is the other way, next to `AggregateReference<Author, int>`, to
+/// reference an aggregate: the property keeps its own type (the id's), so
+/// derived queries (`findByAuthorId(int id)`) and `@Query` work on it like
+/// on any column. The type of the property must be the type of [target]'s
+/// `@Id` (nullability aside), or the mapping fails at startup naming both
+/// types.
+///
+/// Every reference gets a foreign key in a schema the starter creates
+/// (`REFERENCES "authors"("id")`) and an index on its column; [OnDelete]
+/// chooses what happens to the referencing rows when the aggregate they
+/// reference is deleted.
+///
+/// A property whose type is an entity (`Author author;`) without
+/// [MappedCollection] is a mapping error: in Spring Data JDBC it would be a
+/// child of the aggregate, so the starter never guesses which of the two is
+/// meant.
+///
+/// Spring (Java): none; Spring Data JDBC only has `AggregateReference`.
+/// JPA's `@ManyToOne` is the closest, without the object graph.
+class Reference {
+  /// The property holds the id of an aggregate of type [target].
+  const Reference(this.target);
+
+  /// The class of the referenced aggregate (marked [Table], with an
+  /// `@Id`).
+  final Type target;
+}
+
+/// What the database does to the rows that reference an aggregate when it
+/// is deleted: the choices of [OnDelete].
+///
+/// Spring (Java): `org.hibernate.annotations.OnDeleteAction`, and the
+/// `ON DELETE` actions of SQL.
+enum OnDeleteAction {
+  /// The delete fails when referencing rows exist (checked at the end of
+  /// the statement). The default, also for a reference without [OnDelete].
+  noAction,
+
+  /// Like [noAction], but checked at once, row by row: a delete of rows
+  /// that reference each other (a self-reference) may fail where
+  /// [noAction] passes.
+  restrict,
+
+  /// The referencing aggregates are deleted too (and what references
+  /// them, recursively).
+  cascade,
+
+  /// The referencing property is set to null; it must be nullable.
+  setNull,
+
+  /// The referencing property is set to its default value: the constant
+  /// initializer of its field (`int? publisherId = 1`) or the constant
+  /// default of its constructor parameter, which a generated schema writes
+  /// as the column's `DEFAULT`. A property without a default stops the
+  /// start; the aggregate the default references must exist when the
+  /// delete happens (else the delete fails as for [noAction]).
+  setDefault,
+}
+
+/// Chooses what happens to the aggregates referencing the one that is
+/// deleted: on a property that is an `AggregateReference` or marked
+/// [Reference].
+///
+/// Without it a reference is [OnDeleteAction.noAction]: deleting a
+/// referenced aggregate fails while others reference it.
+///
+/// ```dart
+/// @Reference(Author)
+/// @OnDelete(OnDeleteAction.cascade)
+/// int authorId; // deleting an author deletes its books
+/// ```
+///
+/// The database does it, not the repository: a cascade or a `setNull` goes
+/// through no `delete` or `save` of the repository, so a `@Version` is not
+/// checked and auditing does not touch the affected rows (Hibernate's
+/// `@OnDelete` has the same limit). The in-memory store does the same, to
+/// behave as the database does.
+///
+/// [OnDeleteAction.setNull] needs a nullable property, or the mapping fails
+/// at startup. With `spring.data.jdbc.schema=validate` an explicit
+/// `@OnDelete` that the database's foreign key does not match is an error.
+///
+/// Spring (Java): `org.hibernate.annotations.OnDelete`.
+class OnDelete {
+  /// The referencing rows follow [action] when the referenced one is
+  /// deleted.
+  const OnDelete(this.action);
+
+  /// The action.
+  final OnDeleteAction action;
+}
+
+/// Marks a property whose values must be unique in its table (`NULL`s
+/// excepted: as in SQL, several rows may hold null).
+///
+/// The schema the starter creates gets a `UNIQUE` constraint
+/// (`uq_<table>_<column>`); a repository save that breaks it throws a
+/// `DuplicateKeyException`, from the database and from the in-memory store
+/// alike. For a constraint on several properties use [UniqueConstraint]
+/// on the class.
+///
+/// Dart cannot add a named `unique:` to `@Column('x')` (a positional
+/// parameter cannot be mixed with named ones), so uniqueness is an
+/// annotation of its own.
+///
+/// Spring (Java): `jakarta.persistence.Column(unique = true)`.
+class Unique {
+  /// Marks a unique property.
+  const Unique();
+}
+
+/// A unique constraint over several properties of a class marked [Table]:
+/// no two rows may hold the same values in all of them (a row with a null
+/// among them never conflicts). Repeatable.
+///
+/// ```dart
+/// @Table('books')
+/// @UniqueConstraint(['author', 'title'], name: 'uq_books_author_title')
+/// class Book { ... }
+/// ```
+///
+/// [properties] are Dart property names, checked at startup. Without
+/// [name] the constraint is `uq_<table>_<columns>`.
+///
+/// Spring (Java): `jakarta.persistence.UniqueConstraint` (in
+/// `@Table(uniqueConstraints: ...)`, with column names).
+class UniqueConstraint {
+  /// A constraint over [properties], named [name] (or by default).
+  const UniqueConstraint(this.properties, {this.name});
+
+  /// The names of the properties, as written in the class.
+  final List<String> properties;
+
+  /// The name of the constraint in the database; null for
+  /// `uq_<table>_<columns>`.
+  final String? name;
+}
+
 /// The statement of a repository method, instead of a query derived from
 /// its name.
 ///
@@ -196,10 +343,30 @@ final class AggregateReference<T, ID> {
 /// A method returning a `Page` gives the count's statement in
 /// [countQuery]. A change (`update`, `delete`, `insert`) needs [Modifying].
 ///
+/// The rows become what the method returns by its type: the entity (the
+/// columns of its table; its children are loaded too), a class of the
+/// application (a DTO, `@Introspected`: the columns by name, `author_name`
+/// into `authorName`), one column (`int`, `String`...), or the whole result
+/// with [rowMapper] or [resultSetExtractor], static methods (or top-level
+/// functions) given as constants:
+///
+/// ```dart
+/// @Query('select a.id, a.name, b.title from authors a '
+///     'join books b on b.author_id = a.id',
+///     resultSetExtractor: AuthorWithBooks.extract)
+/// Future<List<AuthorWithBooks>> authorsWithBooks();
+/// ```
+///
 /// Spring (Java): `org.springframework.data.jdbc.repository.query.Query`.
 class Query {
   /// The method runs [value].
-  const Query(this.value, {this.countQuery, this.name});
+  const Query(
+    this.value, {
+    this.countQuery,
+    this.name,
+    this.rowMapper,
+    this.resultSetExtractor,
+  });
 
   /// The SQL of the method.
   final String value;
@@ -210,6 +377,22 @@ class Query {
   /// The name of a named query in the properties instead of [value];
   /// reserved, not used in this version.
   final String? name;
+
+  /// Maps each row of the result: a `T Function(JdbcRow row)` (a static
+  /// method or a top-level function). The method returns a `List`, `Set`,
+  /// `Stream`, `Page` or `Slice` of `T`, or one `T`. Not together with
+  /// [resultSetExtractor].
+  ///
+  /// Spring (Java): `@Query(rowMapperClass = ...)`.
+  final Function? rowMapper;
+
+  /// Turns the whole result into what the method returns: a
+  /// `R Function(JdbcResult result)` (a static method or a top-level
+  /// function), for results that span rows (one to many). Not together with
+  /// [rowMapper]; the method has no `Pageable`.
+  ///
+  /// Spring (Java): `@Query(resultSetExtractorClass = ...)`.
+  final Function? resultSetExtractor;
 }
 
 /// Marks a [Query] that changes data (`update`, `delete`, `insert`): the

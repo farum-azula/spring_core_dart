@@ -1356,6 +1356,8 @@ _i2.BeanModule get $securityTestBeans => _i2.BeanModule(
           r'open',
           type: bool,
           typeInfo: const _i2.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: true,
           get: (bean) => bean.open,
           set: (bean, value) => bean.open = (value as bool),
         ),

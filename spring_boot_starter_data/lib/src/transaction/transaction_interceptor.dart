@@ -24,6 +24,10 @@ final class TransactionAnnotationPointcut implements AnnotationPointcut {
   /// The pointcut; it has no settings.
   const TransactionAnnotationPointcut();
 
+  /// The annotations this pointcut matches; the generator reads them to
+  /// give a proxy class only to the beans that carry one.
+  static const List<Type> annotationTypes = [Transactional];
+
   /// The `@Transactional` that applies to [signature]: the one on the
   /// method (or on the method it overrides), else the nearest one on its
   /// class or a superclass; null when there is none, for a getter or a

@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 import 'package:spring_boot_starter_data/src/annotations.dart';
+import 'package:spring_boot_starter_data/src/jdbc/data_source_properties.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_store.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_transaction_manager.dart';
@@ -72,7 +73,13 @@ final class InMemoryDataSources {
 final class DataSourceTransactionManagerRegistrar
     implements BeanDefinitionRegistryPostProcessor {
   /// A registrar; it has no settings.
-  DataSourceTransactionManagerRegistrar();
+  DataSourceTransactionManagerRegistrar([this.environment]);
+
+  /// Where the SQL data sources are configured
+  /// (`spring.datasources.<name>.url`); a name both configured there and
+  /// used by a memory repository
+  /// stops the start.
+  final Environment? environment;
 
   /// The bean name of the manager of the data source [dataSource].
   static String beanNameOf(String dataSource) =>
@@ -91,6 +98,20 @@ final class DataSourceTransactionManagerRegistrar
       if (store == 'memory' && dataSource != null) {
         names.add(dataSource);
       }
+    }
+    final sql = {
+      if (environment case final environment?)
+        ...DataSourceProperties.namedDataSources(environment),
+    };
+    final conflicts = names.intersection(sql);
+    if (conflicts.isNotEmpty) {
+      throw StateError(
+        'Data source ${conflicts.map((n) => "'$n'").join(', ')} is configured '
+        'as a SQL database (spring.datasources.<name>.url) and also used by '
+        "a repository marked @UseStore('memory') @UseDataSource(...): drop "
+        "@UseStore('memory') to keep it in the database, or use another "
+        'name for the in-memory store',
+      );
     }
     for (final dataSource in names) {
       final beanName = beanNameOf(dataSource);

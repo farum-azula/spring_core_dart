@@ -194,6 +194,10 @@ final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
   ]) : advice = MethodValidationInterceptor(validator),
        excludeFilters = List.unmodifiable(excludeFilters);
 
+  /// The annotation this advisor matches; the generator reads it to give
+  /// a proxy class only to the beans that carry it.
+  static const List<Type> annotationTypes = [Validated];
+
   @override
   final MethodValidationInterceptor advice;
 

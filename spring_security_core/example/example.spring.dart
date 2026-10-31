@@ -9,19 +9,18 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i9;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
 import 'package:spring_boot_dart/src/runners.dart' as _i6;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i11;
+    as _i10;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i12;
+    as _i11;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
 import 'package:spring_security_core/src/authentication/authentication_manager.dart'
     as _i7;
-import 'package:spring_security_core/src/method/annotations.dart' as _i8;
-import 'package:spring_security_core/src/userdetails/user_details.dart' as _i5;
+import 'package:spring_security_core/src/method/annotations.dart' as _i5;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
     as _i4;
 
@@ -98,160 +97,6 @@ class _$OrderServiceProxy extends _i1.OrderService implements _i2.Advised {
   }
 }
 
-class _$UserSetup$UsersProxy
-    implements
-        _i4.UserDetailsManager,
-        _i4.UserDetailsService,
-        _i4.UserDetailsPasswordService,
-        _i2.Advised {
-  _$UserSetup$UsersProxy(this._target, this._invoker);
-
-  final _i4.InMemoryUserDetailsManager _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void createUser(_i5.UserDetails user) {
-    this._invoker.invoke(this, this._target, 0, [user], (args) {
-      this._target.createUser((args[0] as _i5.UserDetails));
-      return null;
-    });
-  }
-
-  @override
-  void updateUser(_i5.UserDetails user) {
-    this._invoker.invoke(this, this._target, 1, [user], (args) {
-      this._target.updateUser((args[0] as _i5.UserDetails));
-      return null;
-    });
-  }
-
-  @override
-  void deleteUser(String username) {
-    this._invoker.invoke(this, this._target, 2, [username], (args) {
-      this._target.deleteUser((args[0] as String));
-      return null;
-    });
-  }
-
-  @override
-  bool userExists(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    [username],
-    (args) => this._target.userExists((args[0] as String)),
-  ) as bool);
-
-  @override
-  _i5.UserDetails loadUserByUsername(String username) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [username],
-    (args) => this._target.loadUserByUsername((args[0] as String)),
-  ) as _i5.UserDetails);
-
-  @override
-  _i5.UserDetails updatePassword(_i5.UserDetails user, String newPassword) =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        5,
-        [user, newPassword],
-        (args) => this._target.updatePassword(
-          (args[0] as _i5.UserDetails),
-          (args[1] as String),
-        ),
-      ) as _i5.UserDetails);
-}
-
-class _$SecurityTourProxy
-    implements _i1.SecurityTour, _i6.CommandLineRunner, _i2.Advised {
-  _$SecurityTourProxy(this._target, this._invoker);
-
-  final _i1.SecurityTour _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    0,
-    [args],
-    (args) => this._target.run((args[0] as List<String>)),
-  );
-
-  @override
-  _i7.AuthenticationManager get manager => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.manager,
-  ) as _i7.AuthenticationManager);
-
-  @override
-  _i1.OrderService get orders => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.orders,
-  ) as _i1.OrderService);
-}
-
 /// `UserSetup` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
 class _$UserSetupConfiguration extends _i1.UserSetup {
@@ -290,7 +135,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.cancel, arguments),
           annotations: const [
-            _i8.PreAuthorize(
+            _i5.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == authentication.name",
             ),
           ],
@@ -309,7 +154,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.find, arguments),
           annotations: const [
-            _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
+            _i5.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
         _i2.BeanMethod<_i1.OrderService>(
@@ -320,7 +165,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: (bean, arguments) => Function.apply(bean.all, arguments),
           annotations: const [
-            _i8.PostFilter(
+            _i5.PostFilter(
               "hasRole('ADMIN') or filterObject.owner == authentication.name",
             ),
           ],
@@ -338,7 +183,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'Order'],
             parameterNames: [r'order'],
             annotations: [
-              _i8.PreAuthorize(
+              _i5.PreAuthorize(
                 "hasRole('ADMIN') or #order.owner == authentication.name",
               ),
             ],
@@ -356,7 +201,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
+              _i5.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
             targetTypes: [r'OrderService'],
@@ -370,7 +215,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'OrderService'],
             returnType: r'Future',
             annotations: [
-              _i8.PostFilter(
+              _i5.PostFilter(
                 "hasRole('ADMIN') or filterObject.owner == authentication.name",
               ),
             ],
@@ -412,103 +257,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
               ) as _$UserSetupConfiguration)._$users(r)
               as _i4.InMemoryUserDetailsManager),
       annotations: const [_i2.Bean()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'createUser',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'void',
-            parameterTypes: [r'UserDetails'],
-            parameterNames: [r'user'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'updateUser',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'void',
-            parameterTypes: [r'UserDetails'],
-            parameterNames: [r'user'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'deleteUser',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'void',
-            parameterTypes: [r'String'],
-            parameterNames: [r'username'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'userExists',
-            declaringType: r'UserDetailsManager',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsManager'],
-            returnType: r'bool',
-            parameterTypes: [r'String'],
-            parameterNames: [r'username'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'loadUserByUsername',
-            declaringType: r'UserDetailsService',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsService'],
-            returnType: r'UserDetails',
-            parameterTypes: [r'String'],
-            parameterNames: [r'username'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'updatePassword',
-            declaringType: r'UserDetailsPasswordService',
-            targetType: r'InMemoryUserDetailsManager',
-            declaringTypes: [r'UserDetailsPasswordService'],
-            returnType: r'UserDetails',
-            parameterTypes: [r'UserDetails', r'String'],
-            parameterNames: [r'user', r'newPassword'],
-            targetTypes: [
-              r'InMemoryUserDetailsManager',
-              r'UserDetailsManager',
-              r'UserDetailsService',
-              r'UserDetailsPasswordService',
-            ],
-          ),
-        ],
-        create: (target, invoker) => _$UserSetup$UsersProxy(
-          (target as _i4.InMemoryUserDetailsManager),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches InMemoryUserDetailsManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
     _i2.BeanDefinition<_i1.SecurityTour>(
@@ -527,54 +277,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'run',
-            declaringType: r'CommandLineRunner',
-            targetType: r'SecurityTour',
-            declaringTypes: [r'SecurityTour', r'CommandLineRunner'],
-            returnType: r'Future',
-            parameterTypes: [r'List'],
-            parameterNames: [r'args'],
-            targetTypes: [r'SecurityTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'manager',
-            declaringType: r'SecurityTour',
-            targetType: r'SecurityTour',
-            declaringTypes: [r'SecurityTour'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'AuthenticationManager',
-            targetTypes: [r'SecurityTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'orders',
-            declaringType: r'SecurityTour',
-            targetType: r'SecurityTour',
-            declaringTypes: [r'SecurityTour'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'OrderService',
-            targetTypes: [r'SecurityTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$SecurityTourProxy((target as _i1.SecurityTour), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches SecurityTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
   ],
@@ -624,13 +328,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i9.SpringApplication get springApplication => _i9.SpringApplication(
+_i8.SpringApplication get springApplication => _i8.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i10.springBootAutoConfiguration,
-    _i11.springBootStarterCacheAutoConfiguration,
-    _i12.springBootStarterLoggingAutoConfiguration,
-    _i13.springSecurityCoreAutoConfiguration,
+    _i9.springBootAutoConfiguration,
+    _i10.springBootStarterCacheAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
+    _i12.springSecurityCoreAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -678,32 +382,32 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4ac35935',
+  fingerprint: 'ae297cec',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i9.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i8.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i9.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i8.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i9.ConfigurableApplicationContext reloadApplication(
-  _i9.ConfigurableApplicationContext running, {
+_i8.ConfigurableApplicationContext reloadApplication(
+  _i8.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i9.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i9.ConfigurableApplicationContext running, {
+Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i8.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 

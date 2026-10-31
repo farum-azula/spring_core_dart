@@ -7,387 +7,31 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i4;
+import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i10;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i10;
+    as _i12;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i8;
 import 'package:spring_boot_starter_data/src/transaction/abstract_platform_transaction_manager.dart'
-    as _i7;
-import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart'
-    as _i1;
-import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
     as _i5;
+import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart'
+    as _i6;
+import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
+    as _i7;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
+    as _i13;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:sqlite3/sqlite3.dart' as _i9;
 
-import '../support/recording_transaction_manager.dart' as _i3;
-import 'transaction_app.dart' as _i6;
+import '../support/recording_transaction_manager.dart' as _i4;
+import 'transaction_app.dart' as _i1;
 
-class _$Managers$TransactionManagerProxy
-    implements
-        _i1.PlatformTransactionManager,
-        _i1.TransactionManagerHooks,
-        _i2.Advised {
-  _$Managers$TransactionManagerProxy(this._target, this._invoker);
-
-  final _i3.RecordingTransactionManager _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<_i1.TransactionStatus> getTransaction([
-    _i5.TransactionDefinition? definition,
-  ]) => this._invoker.invokeAsync<_i1.TransactionStatus>(
-    this,
-    this._target,
-    0,
-    [definition],
-    (args) =>
-        this._target.getTransaction((args[0] as _i5.TransactionDefinition?)),
-  );
-
-  @override
-  _i4.Future<void> commit(_i1.TransactionStatus status) =>
-      this._invoker.invokeAsync<void>(this, this._target, 1, [
-        status,
-      ], (args) => this._target.commit((args[0] as _i1.TransactionStatus)));
-
-  @override
-  _i4.Future<void> rollback(_i1.TransactionStatus status) =>
-      this._invoker.invokeAsync<void>(this, this._target, 2, [
-        status,
-      ], (args) => this._target.rollback((args[0] as _i1.TransactionStatus)));
-
-  @override
-  Object doGetTransaction() => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (args) => this._target.doGetTransaction(),
-  ) as Object);
-
-  @override
-  bool isExistingTransaction(Object transaction) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [transaction],
-    (args) => this._target.isExistingTransaction((args[0] as Object)),
-  ) as bool);
-
-  @override
-  _i4.Future<void> doBegin(
-    Object transaction,
-    _i5.TransactionDefinition definition,
-  ) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    5,
-    [transaction, definition],
-    (args) => this._target.doBegin(
-      (args[0] as Object),
-      (args[1] as _i5.TransactionDefinition),
-    ),
-  );
-
-  @override
-  _i4.Future<void> doCommit(Object transaction) =>
-      this._invoker.invokeAsync<void>(this, this._target, 6, [
-        transaction,
-      ], (args) => this._target.doCommit((args[0] as Object)));
-
-  @override
-  _i4.Future<void> doRollback(Object transaction) =>
-      this._invoker.invokeAsync<void>(this, this._target, 7, [
-        transaction,
-      ], (args) => this._target.doRollback((args[0] as Object)));
-
-  @override
-  void doSetRollbackOnly(Object transaction) {
-    this._invoker.invoke(this, this._target, 8, [transaction], (args) {
-      this._target.doSetRollbackOnly((args[0] as Object));
-      return null;
-    });
-  }
-
-  @override
-  bool isRollbackOnly(Object transaction) => (this._invoker.invoke(
-    this,
-    this._target,
-    9,
-    [transaction],
-    (args) => this._target.isRollbackOnly((args[0] as Object)),
-  ) as bool);
-
-  @override
-  _i4.Future<void> doCleanupAfterCompletion(Object transaction) =>
-      this._invoker.invokeAsync<void>(this, this._target, 10, [
-        transaction,
-      ], (args) => this._target.doCleanupAfterCompletion((args[0] as Object)));
-
-  @override
-  _i4.Future<Object> createSavepoint(Object transaction) =>
-      this._invoker.invokeAsync<Object>(this, this._target, 11, [
-        transaction,
-      ], (args) => this._target.createSavepoint((args[0] as Object)));
-
-  @override
-  _i4.Future<void> rollbackToSavepoint(Object transaction, Object savepoint) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        12,
-        [transaction, savepoint],
-        (args) => this._target.rollbackToSavepoint(
-          (args[0] as Object),
-          (args[1] as Object),
-        ),
-      );
-
-  @override
-  _i4.Future<void> releaseSavepoint(Object transaction, Object savepoint) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        13,
-        [transaction, savepoint],
-        (args) => this._target.releaseSavepoint(
-          (args[0] as Object),
-          (args[1] as Object),
-        ),
-      );
-
-  @override
-  Object get resourceKey => (this._invoker.invoke(
-    this,
-    this._target,
-    14,
-    const [],
-    (_) => this._target.resourceKey,
-  ) as Object);
-
-  @override
-  bool get supportsSavepoints => (this._invoker.invoke(
-    this,
-    this._target,
-    15,
-    const [],
-    (_) => this._target.supportsSavepoints,
-  ) as bool);
-}
-
-class _$Managers$ArchiveTransactionManagerProxy
-    implements
-        _i1.PlatformTransactionManager,
-        _i1.TransactionManagerHooks,
-        _i2.Advised {
-  _$Managers$ArchiveTransactionManagerProxy(this._target, this._invoker);
-
-  final _i3.RecordingTransactionManager _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<_i1.TransactionStatus> getTransaction([
-    _i5.TransactionDefinition? definition,
-  ]) => this._invoker.invokeAsync<_i1.TransactionStatus>(
-    this,
-    this._target,
-    0,
-    [definition],
-    (args) =>
-        this._target.getTransaction((args[0] as _i5.TransactionDefinition?)),
-  );
-
-  @override
-  _i4.Future<void> commit(_i1.TransactionStatus status) =>
-      this._invoker.invokeAsync<void>(this, this._target, 1, [
-        status,
-      ], (args) => this._target.commit((args[0] as _i1.TransactionStatus)));
-
-  @override
-  _i4.Future<void> rollback(_i1.TransactionStatus status) =>
-      this._invoker.invokeAsync<void>(this, this._target, 2, [
-        status,
-      ], (args) => this._target.rollback((args[0] as _i1.TransactionStatus)));
-
-  @override
-  Object doGetTransaction() => (this._invoker.invoke(
-    this,
-    this._target,
-    3,
-    const [],
-    (args) => this._target.doGetTransaction(),
-  ) as Object);
-
-  @override
-  bool isExistingTransaction(Object transaction) => (this._invoker.invoke(
-    this,
-    this._target,
-    4,
-    [transaction],
-    (args) => this._target.isExistingTransaction((args[0] as Object)),
-  ) as bool);
-
-  @override
-  _i4.Future<void> doBegin(
-    Object transaction,
-    _i5.TransactionDefinition definition,
-  ) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    5,
-    [transaction, definition],
-    (args) => this._target.doBegin(
-      (args[0] as Object),
-      (args[1] as _i5.TransactionDefinition),
-    ),
-  );
-
-  @override
-  _i4.Future<void> doCommit(Object transaction) =>
-      this._invoker.invokeAsync<void>(this, this._target, 6, [
-        transaction,
-      ], (args) => this._target.doCommit((args[0] as Object)));
-
-  @override
-  _i4.Future<void> doRollback(Object transaction) =>
-      this._invoker.invokeAsync<void>(this, this._target, 7, [
-        transaction,
-      ], (args) => this._target.doRollback((args[0] as Object)));
-
-  @override
-  void doSetRollbackOnly(Object transaction) {
-    this._invoker.invoke(this, this._target, 8, [transaction], (args) {
-      this._target.doSetRollbackOnly((args[0] as Object));
-      return null;
-    });
-  }
-
-  @override
-  bool isRollbackOnly(Object transaction) => (this._invoker.invoke(
-    this,
-    this._target,
-    9,
-    [transaction],
-    (args) => this._target.isRollbackOnly((args[0] as Object)),
-  ) as bool);
-
-  @override
-  _i4.Future<void> doCleanupAfterCompletion(Object transaction) =>
-      this._invoker.invokeAsync<void>(this, this._target, 10, [
-        transaction,
-      ], (args) => this._target.doCleanupAfterCompletion((args[0] as Object)));
-
-  @override
-  _i4.Future<Object> createSavepoint(Object transaction) =>
-      this._invoker.invokeAsync<Object>(this, this._target, 11, [
-        transaction,
-      ], (args) => this._target.createSavepoint((args[0] as Object)));
-
-  @override
-  _i4.Future<void> rollbackToSavepoint(Object transaction, Object savepoint) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        12,
-        [transaction, savepoint],
-        (args) => this._target.rollbackToSavepoint(
-          (args[0] as Object),
-          (args[1] as Object),
-        ),
-      );
-
-  @override
-  _i4.Future<void> releaseSavepoint(Object transaction, Object savepoint) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        13,
-        [transaction, savepoint],
-        (args) => this._target.releaseSavepoint(
-          (args[0] as Object),
-          (args[1] as Object),
-        ),
-      );
-
-  @override
-  Object get resourceKey => (this._invoker.invoke(
-    this,
-    this._target,
-    14,
-    const [],
-    (_) => this._target.resourceKey,
-  ) as Object);
-
-  @override
-  bool get supportsSavepoints => (this._invoker.invoke(
-    this,
-    this._target,
-    15,
-    const [],
-    (_) => this._target.supportsSavepoints,
-  ) as bool);
-}
-
-class _$ShopProxy implements _i6.Shop, _i2.Advised {
+class _$ShopProxy implements _i1.Shop, _i2.Advised {
   _$ShopProxy(this._target, this._invoker);
 
-  final _i6.Shop _target;
+  final _i1.Shop _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -417,7 +61,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i4.Future<int?> transactionId() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> transactionId() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     0,
@@ -426,7 +70,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> plain() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> plain() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     1,
@@ -435,7 +79,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<void> fail(Object error) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> fail(Object error) => this._invoker.invokeAsync<void>(
     this,
     this._target,
     2,
@@ -444,7 +88,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<void> failLater(Object error) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> failLater(Object error) => this._invoker.invokeAsync<void>(
     this,
     this._target,
     3,
@@ -453,19 +97,19 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<void> failOutOfStock(Object error) =>
+  _i3.Future<void> failOutOfStock(Object error) =>
       this._invoker.invokeAsync<void>(this, this._target, 4, [
         error,
       ], (args) => this._target.failOutOfStock((args[0] as Object)));
 
   @override
-  _i4.Future<void> failWithRules(Object error) =>
+  _i3.Future<void> failWithRules(Object error) =>
       this._invoker.invokeAsync<void>(this, this._target, 5, [
         error,
       ], (args) => this._target.failWithRules((args[0] as Object)));
 
   @override
-  _i4.Future<int?> archived() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> archived() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     6,
@@ -474,7 +118,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> archivedByName() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> archivedByName() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     7,
@@ -483,7 +127,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> fresh() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> fresh() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     8,
@@ -492,7 +136,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> mandatory() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> mandatory() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     9,
@@ -501,7 +145,7 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<String> settings() => this._invoker.invokeAsync<String>(
+  _i3.Future<String> settings() => this._invoker.invokeAsync<String>(
     this,
     this._target,
     10,
@@ -510,13 +154,13 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<List<int?>> callsLedger(_i6.Ledger ledger) =>
+  _i3.Future<List<int?>> callsLedger(_i1.Ledger ledger) =>
       this._invoker.invokeAsync<List<int?>>(this, this._target, 11, [
         ledger,
-      ], (args) => this._target.callsLedger((args[0] as _i6.Ledger)));
+      ], (args) => this._target.callsLedger((args[0] as _i1.Ledger)));
 
   @override
-  _i4.Future<int?> callsItself() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> callsItself() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     12,
@@ -525,8 +169,8 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
   );
 
   @override
-  _i4.Future<_i4.Completer<Object?>> forgets() =>
-      this._invoker.invokeAsync<_i4.Completer<Object?>>(
+  _i3.Future<_i3.Completer<Object?>> forgets() =>
+      this._invoker.invokeAsync<_i3.Completer<Object?>>(
         this,
         this._target,
         13,
@@ -535,28 +179,28 @@ class _$ShopProxy implements _i6.Shop, _i2.Advised {
       );
 
   @override
-  _i3.RecordingTransactionManager get manager => (this._invoker.invoke(
+  _i4.RecordingTransactionManager get manager => (this._invoker.invoke(
     this,
     this._target,
     14,
     const [],
     (_) => this._target.manager,
-  ) as _i3.RecordingTransactionManager);
+  ) as _i4.RecordingTransactionManager);
 
   @override
-  _i3.RecordingTransactionManager get archive => (this._invoker.invoke(
+  _i4.RecordingTransactionManager get archive => (this._invoker.invoke(
     this,
     this._target,
     15,
     const [],
     (_) => this._target.archive,
-  ) as _i3.RecordingTransactionManager);
+  ) as _i4.RecordingTransactionManager);
 }
 
-class _$LedgerProxy implements _i6.Ledger, _i2.Advised {
+class _$LedgerProxy implements _i1.Ledger, _i2.Advised {
   _$LedgerProxy(this._target, this._invoker);
 
-  final _i6.Ledger _target;
+  final _i1.Ledger _target;
 
   final _i2.ProxyInvoker _invoker;
 
@@ -586,7 +230,7 @@ class _$LedgerProxy implements _i6.Ledger, _i2.Advised {
   String toString() => _target.toString();
 
   @override
-  _i4.Future<int?> a() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> a() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     0,
@@ -595,7 +239,7 @@ class _$LedgerProxy implements _i6.Ledger, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> b() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> b() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     1,
@@ -604,7 +248,7 @@ class _$LedgerProxy implements _i6.Ledger, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> fresh() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> fresh() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     2,
@@ -613,7 +257,7 @@ class _$LedgerProxy implements _i6.Ledger, _i2.Advised {
   );
 
   @override
-  _i4.Future<int?> supports() => this._invoker.invokeAsync<int?>(
+  _i3.Future<int?> supports() => this._invoker.invokeAsync<int?>(
     this,
     this._target,
     3,
@@ -622,37 +266,37 @@ class _$LedgerProxy implements _i6.Ledger, _i2.Advised {
   );
 
   @override
-  _i3.RecordingTransactionManager get manager => (this._invoker.invoke(
+  _i4.RecordingTransactionManager get manager => (this._invoker.invoke(
     this,
     this._target,
     4,
     const [],
     (_) => this._target.manager,
-  ) as _i3.RecordingTransactionManager);
+  ) as _i4.RecordingTransactionManager);
 }
 
 /// `Managers` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$ManagersConfiguration extends _i6.Managers {
+class _$ManagersConfiguration extends _i1.Managers {
   _$ManagersConfiguration(this._$beanFactory);
 
   final _i2.BeanFactory _$beanFactory;
 
   @override
-  _i3.RecordingTransactionManager transactionManager() =>
+  _i4.RecordingTransactionManager transactionManager() =>
       (this._$beanFactory.getBeanByName(r'transactionManager')
-          as _i3.RecordingTransactionManager);
+          as _i4.RecordingTransactionManager);
 
-  _i3.RecordingTransactionManager _$transactionManager(
+  _i4.RecordingTransactionManager _$transactionManager(
     _i2.DependencyResolver r,
   ) => super.transactionManager();
 
   @override
-  _i3.RecordingTransactionManager archiveTransactionManager() =>
+  _i4.RecordingTransactionManager archiveTransactionManager() =>
       (this._$beanFactory.getBeanByName(r'archiveTransactionManager')
-          as _i3.RecordingTransactionManager);
+          as _i4.RecordingTransactionManager);
 
-  _i3.RecordingTransactionManager _$archiveTransactionManager(
+  _i4.RecordingTransactionManager _$archiveTransactionManager(
     _i2.DependencyResolver r,
   ) => super.archiveTransactionManager();
 }
@@ -661,612 +305,74 @@ class _$ManagersConfiguration extends _i6.Managers {
 _i2.BeanModule get $application => _i2.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i6.Managers>(
+    _i2.BeanDefinition<_i1.Managers>(
       name: r'managers',
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Managers',
-      types: const [_i6.Managers],
+      types: const [_i1.Managers],
       create: (r) => _$ManagersConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
-    _i2.BeanDefinition<_i3.RecordingTransactionManager>(
+    _i2.BeanDefinition<_i4.RecordingTransactionManager>(
       name: r'transactionManager',
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Managers.transactionManager',
       types: const [
-        _i3.RecordingTransactionManager,
-        _i7.AbstractPlatformTransactionManager,
-        _i1.PlatformTransactionManager,
-        _i1.TransactionManagerHooks,
+        _i4.RecordingTransactionManager,
+        _i5.AbstractPlatformTransactionManager,
+        _i6.PlatformTransactionManager,
+        _i6.TransactionManagerHooks,
       ],
       primary: true,
       factoryBeanName: r'managers',
       factoryMethodName: r'transactionManager',
       dependencies: const [
-        _i2.Dependency(_i6.Managers, qualifier: r'managers'),
+        _i2.Dependency(_i1.Managers, qualifier: r'managers'),
       ],
-      create: (r) => (r.dependency<_i6.Managers>(
+      create: (r) => (r.dependency<_i1.Managers>(
         qualifier: r'managers',
       ) as _$ManagersConfiguration)._$transactionManager(r),
       annotations: const [_i2.Bean(), _i2.Primary()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'getTransaction',
-            declaringType: r'PlatformTransactionManager',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'PlatformTransactionManager'],
-            returnType: r'Future',
-            parameterTypes: [r'TransactionDefinition'],
-            parameterNames: [r'definition'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'commit',
-            declaringType: r'PlatformTransactionManager',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'PlatformTransactionManager'],
-            returnType: r'Future',
-            parameterTypes: [r'TransactionStatus'],
-            parameterNames: [r'status'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'rollback',
-            declaringType: r'PlatformTransactionManager',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'PlatformTransactionManager'],
-            returnType: r'Future',
-            parameterTypes: [r'TransactionStatus'],
-            parameterNames: [r'status'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'doGetTransaction',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Object',
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'isExistingTransaction',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'bool',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doBegin',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object', r'TransactionDefinition'],
-            parameterNames: [r'transaction', r'definition'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doCommit',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doRollback',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doSetRollbackOnly',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'void',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'isRollbackOnly',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'bool',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doCleanupAfterCompletion',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'createSavepoint',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'rollbackToSavepoint',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object', r'Object'],
-            parameterNames: [r'transaction', r'savepoint'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'releaseSavepoint',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object', r'Object'],
-            parameterNames: [r'transaction', r'savepoint'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'resourceKey',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Object',
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'supportsSavepoints',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'bool',
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-        ],
-        create: (target, invoker) => _$Managers$TransactionManagerProxy(
-          (target as _i3.RecordingTransactionManager),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches RecordingTransactionManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i3.RecordingTransactionManager>(
+    _i2.BeanDefinition<_i4.RecordingTransactionManager>(
       name: r'archiveTransactionManager',
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Managers.archiveTransactionManager',
       types: const [
-        _i3.RecordingTransactionManager,
-        _i7.AbstractPlatformTransactionManager,
-        _i1.PlatformTransactionManager,
-        _i1.TransactionManagerHooks,
+        _i4.RecordingTransactionManager,
+        _i5.AbstractPlatformTransactionManager,
+        _i6.PlatformTransactionManager,
+        _i6.TransactionManagerHooks,
       ],
       factoryBeanName: r'managers',
       factoryMethodName: r'archiveTransactionManager',
       qualifiers: const {r'archive'},
       dependencies: const [
-        _i2.Dependency(_i6.Managers, qualifier: r'managers'),
+        _i2.Dependency(_i1.Managers, qualifier: r'managers'),
       ],
-      create: (r) => (r.dependency<_i6.Managers>(
+      create: (r) => (r.dependency<_i1.Managers>(
         qualifier: r'managers',
       ) as _$ManagersConfiguration)._$archiveTransactionManager(r),
       annotations: const [_i2.Bean(), _i2.Qualifier(r'archive')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'getTransaction',
-            declaringType: r'PlatformTransactionManager',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'PlatformTransactionManager'],
-            returnType: r'Future',
-            parameterTypes: [r'TransactionDefinition'],
-            parameterNames: [r'definition'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'commit',
-            declaringType: r'PlatformTransactionManager',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'PlatformTransactionManager'],
-            returnType: r'Future',
-            parameterTypes: [r'TransactionStatus'],
-            parameterNames: [r'status'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'rollback',
-            declaringType: r'PlatformTransactionManager',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'PlatformTransactionManager'],
-            returnType: r'Future',
-            parameterTypes: [r'TransactionStatus'],
-            parameterNames: [r'status'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'doGetTransaction',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Object',
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'isExistingTransaction',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'bool',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doBegin',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object', r'TransactionDefinition'],
-            parameterNames: [r'transaction', r'definition'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doCommit',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doRollback',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doSetRollbackOnly',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'void',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'isRollbackOnly',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'bool',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'doCleanupAfterCompletion',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'createSavepoint',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object'],
-            parameterNames: [r'transaction'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'rollbackToSavepoint',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object', r'Object'],
-            parameterNames: [r'transaction', r'savepoint'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'releaseSavepoint',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            returnType: r'Future',
-            parameterTypes: [r'Object', r'Object'],
-            parameterNames: [r'transaction', r'savepoint'],
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-          _i2.MethodSignature(
-            name: r'resourceKey',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Object',
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypes: [
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature(
-            name: r'supportsSavepoints',
-            declaringType: r'TransactionManagerHooks',
-            targetType: r'RecordingTransactionManager',
-            declaringTypes: [r'TransactionManagerHooks'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'bool',
-            targetTypes: [
-              r'RecordingTransactionManager',
-              r'AbstractPlatformTransactionManager',
-              r'PlatformTransactionManager',
-              r'TransactionManagerHooks',
-            ],
-          ),
-        ],
-        create: (target, invoker) => _$Managers$ArchiveTransactionManagerProxy(
-          (target as _i3.RecordingTransactionManager),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches RecordingTransactionManager, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i2.BeanDefinition<_i6.Shop>(
+    _i2.BeanDefinition<_i1.Shop>(
       name: r'shop',
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Shop',
-      types: const [_i6.Shop],
+      types: const [_i1.Shop],
       dependencies: const [
-        _i2.Dependency(_i3.RecordingTransactionManager, name: r'manager'),
+        _i2.Dependency(_i4.RecordingTransactionManager, name: r'manager'),
         _i2.Dependency(
-          _i3.RecordingTransactionManager,
+          _i4.RecordingTransactionManager,
           qualifier: r'archive',
           name: r'archive',
         ),
       ],
-      create: (r) => _i6.Shop(
-        r.dependency<_i3.RecordingTransactionManager>(name: r'manager'),
-        r.dependency<_i3.RecordingTransactionManager>(
+      create: (r) => _i1.Shop(
+        r.dependency<_i4.RecordingTransactionManager>(name: r'manager'),
+        r.dependency<_i4.RecordingTransactionManager>(
           qualifier: r'archive',
           name: r'archive',
         ),
@@ -1280,7 +386,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Shop',
             declaringTypes: [r'Shop'],
             returnType: r'Future',
-            annotations: [_i5.Transactional()],
+            annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
             targetAnnotations: [_i2.Service()],
@@ -1304,7 +410,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
-            annotations: [_i5.Transactional()],
+            annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
             targetAnnotations: [_i2.Service()],
@@ -1318,7 +424,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
-            annotations: [_i5.Transactional()],
+            annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
             targetAnnotations: [_i2.Service()],
@@ -1333,7 +439,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
             annotations: [
-              _i5.Transactional(noRollbackFor: [_i6.OutOfStock]),
+              _i7.Transactional(noRollbackFor: [_i1.OutOfStock]),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
@@ -1349,9 +455,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
             annotations: [
-              _i5.Transactional(
-                rollbackFor: [_i6.Counterfeit],
-                noRollbackFor: [_i6.OutOfStock],
+              _i7.Transactional(
+                rollbackFor: [_i1.Counterfeit],
+                noRollbackFor: [_i1.OutOfStock],
               ),
             ],
             annotationTypes: [r'Transactional'],
@@ -1365,7 +471,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Shop',
             declaringTypes: [r'Shop'],
             returnType: r'Future',
-            annotations: [_i5.Transactional(transactionManager: r'archive')],
+            annotations: [_i7.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
             targetAnnotations: [_i2.Service()],
@@ -1378,7 +484,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Shop'],
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(
+              _i7.Transactional(
                 transactionManager: r'archiveTransactionManager',
               ),
             ],
@@ -1394,7 +500,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Shop'],
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.requiresNew),
+              _i7.Transactional(propagation: _i7.Propagation.requiresNew),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
@@ -1408,7 +514,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Shop'],
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.mandatory),
+              _i7.Transactional(propagation: _i7.Propagation.mandatory),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
@@ -1422,8 +528,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Shop'],
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(
-                isolation: _i5.Isolation.serializable,
+              _i7.Transactional(
+                isolation: _i7.Isolation.serializable,
                 timeout: Duration(seconds: 5),
                 readOnly: true,
               ),
@@ -1441,7 +547,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Ledger'],
             parameterNames: [r'ledger'],
-            annotations: [_i5.Transactional()],
+            annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
             targetAnnotations: [_i2.Service()],
@@ -1463,7 +569,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetType: r'Shop',
             declaringTypes: [r'Shop'],
             returnType: r'Future',
-            annotations: [_i5.Transactional()],
+            annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Shop'],
             targetAnnotations: [_i2.Service()],
@@ -1492,20 +598,20 @@ _i2.BeanModule get $application => _i2.BeanModule(
             targetAnnotationTypes: [r'Service'],
           ),
         ],
-        create: (target, invoker) => _$ShopProxy((target as _i6.Shop), invoker),
+        create: (target, invoker) => _$ShopProxy((target as _i1.Shop), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i6.Ledger>(
+    _i2.BeanDefinition<_i1.Ledger>(
       name: r'ledger',
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Ledger',
-      types: const [_i6.Ledger],
+      types: const [_i1.Ledger],
       dependencies: const [
-        _i2.Dependency(_i3.RecordingTransactionManager, name: r'manager'),
+        _i2.Dependency(_i4.RecordingTransactionManager, name: r'manager'),
       ],
-      create: (r) => _i6.Ledger(
-        r.dependency<_i3.RecordingTransactionManager>(name: r'manager'),
+      create: (r) => _i1.Ledger(
+        r.dependency<_i4.RecordingTransactionManager>(name: r'manager'),
       ),
-      annotations: const [_i2.Service(), _i5.Transactional()],
+      annotations: const [_i2.Service(), _i7.Transactional()],
       aopProxy: _i2.AopProxyFactory(
         signatures: const [
           _i2.MethodSignature(
@@ -1515,7 +621,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Ledger'],
             returnType: r'Future',
             targetTypes: [r'Ledger'],
-            targetAnnotations: [_i2.Service(), _i5.Transactional()],
+            targetAnnotations: [_i2.Service(), _i7.Transactional()],
             targetAnnotationTypes: [r'Service', r'Transactional'],
           ),
           _i2.MethodSignature(
@@ -1525,7 +631,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Ledger'],
             returnType: r'Future',
             targetTypes: [r'Ledger'],
-            targetAnnotations: [_i2.Service(), _i5.Transactional()],
+            targetAnnotations: [_i2.Service(), _i7.Transactional()],
             targetAnnotationTypes: [r'Service', r'Transactional'],
           ),
           _i2.MethodSignature(
@@ -1535,11 +641,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Ledger'],
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.requiresNew),
+              _i7.Transactional(propagation: _i7.Propagation.requiresNew),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Ledger'],
-            targetAnnotations: [_i2.Service(), _i5.Transactional()],
+            targetAnnotations: [_i2.Service(), _i7.Transactional()],
             targetAnnotationTypes: [r'Service', r'Transactional'],
           ),
           _i2.MethodSignature(
@@ -1549,11 +655,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Ledger'],
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.supports),
+              _i7.Transactional(propagation: _i7.Propagation.supports),
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Ledger'],
-            targetAnnotations: [_i2.Service(), _i5.Transactional()],
+            targetAnnotations: [_i2.Service(), _i7.Transactional()],
             targetAnnotationTypes: [r'Service', r'Transactional'],
           ),
           _i2.MethodSignature(
@@ -1564,29 +670,152 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'RecordingTransactionManager',
             targetTypes: [r'Ledger'],
-            targetAnnotations: [_i2.Service(), _i5.Transactional()],
+            targetAnnotations: [_i2.Service(), _i7.Transactional()],
             targetAnnotationTypes: [r'Service', r'Transactional'],
           ),
         ],
         create: (target, invoker) =>
-            _$LedgerProxy((target as _i6.Ledger), invoker),
+            _$LedgerProxy((target as _i1.Ledger), invoker),
       ),
+    ),
+    _i2.BeanDefinition<_i8.JdbcDriver>(
+      name: r'sqlite3JdbcDriver',
+      source: r'package:spring_boot_starter_data#sqlite3',
+      types: const [_i8.JdbcDriver],
+      conditions: [_i8.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      create: (r) => _$sqlite3JdbcDriver(),
     ),
   ],
   typeTests: {
-    _i6.OutOfStock: (value) => value is _i6.OutOfStock,
-    _i6.Counterfeit: (value) => value is _i6.Counterfeit,
+    _i1.OutOfStock: (value) => value is _i1.OutOfStock,
+    _i1.Counterfeit: (value) => value is _i1.Counterfeit,
   },
 );
 
+final class _$Sqlite3Binding implements _i8.SqliteBinding {
+  const _$Sqlite3Binding();
+
+  @override
+  _i8.SqliteDatabase open(
+    String filename, {
+    _i8.SqliteOpenMode mode = _i8.SqliteOpenMode.readWriteCreate,
+    bool uri = false,
+  }) => _$sqlite3Guard(
+    () => _$Sqlite3Database(
+      _i9.sqlite3.open(
+        filename,
+        mode: _i9.OpenMode.values.byName(mode.name),
+        uri: uri,
+      ),
+    ),
+  );
+}
+
+final class _$Sqlite3Database implements _i8.SqliteDatabase {
+  _$Sqlite3Database(this._database);
+
+  final _i9.Database _database;
+
+  @override
+  void execute(String sql, [List<Object?> parameters = const []]) =>
+      _$sqlite3Guard(() => _database.execute(sql, parameters));
+
+  @override
+  ({List<String> columns, List<List<Object?>> rows}) select(
+    String sql, [
+    List<Object?> parameters = const [],
+  ]) => _$sqlite3Guard(() {
+    final result = _database.select(sql, parameters);
+    return (columns: result.columnNames, rows: result.rows);
+  });
+
+  @override
+  _i8.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+      _$sqlite3Guard(() {
+        final statement = _database.prepare(sql);
+        try {
+          return _$Sqlite3Cursor(statement, statement.selectCursor(parameters));
+        } on Object {
+          statement.close();
+          rethrow;
+        }
+      });
+
+  @override
+  void createFunction(
+    String name,
+    int argumentCount,
+    Object? Function(List<Object?> arguments) function,
+  ) => _$sqlite3Guard(
+    () => _database.createFunction(
+      functionName: name,
+      function: function,
+      argumentCount: _i9.AllowedArgumentCount(argumentCount),
+      deterministic: true,
+    ),
+  );
+
+  @override
+  int get updatedRows => _database.updatedRows;
+
+  @override
+  int get lastInsertRowId => _database.lastInsertRowId;
+
+  @override
+  bool get autocommit => _database.autocommit;
+
+  @override
+  void close() => _$sqlite3Guard(_database.close);
+}
+
+final class _$Sqlite3Cursor implements _i8.SqliteCursor {
+  _$Sqlite3Cursor(this._statement, this._cursor);
+
+  final _i9.PreparedStatement _statement;
+  final _i9.IteratingCursor _cursor;
+
+  @override
+  List<String> get columns => _cursor.columnNames;
+
+  @override
+  List<Object?>? next() => _$sqlite3Guard(
+    () => _cursor.moveNext()
+        ? [
+            for (var i = 0; i < _cursor.columnNames.length; i++)
+              _cursor.current.columnAt(i),
+          ]
+        : null,
+  );
+
+  @override
+  void close() => _statement.close();
+}
+
+// SqliteException as the SqlError the driver understands: its message (never
+// the statement's values) and its result codes.
+T _$sqlite3Guard<T>(T Function() action) {
+  try {
+    return action();
+  } on _i9.SqliteException catch (e) {
+    throw _i8.SqlError(
+      e.message,
+      vendorCode: e.resultCode,
+      extendedCode: e.extendedResultCode,
+    );
+  }
+}
+
+_i8.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i8.SqliteJdbcDriver(const _$Sqlite3Binding());
+
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i8.SpringApplication get springApplication => _i8.SpringApplication(
+_i10.SpringApplication get springApplication => _i10.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.springBootAutoConfiguration,
-    _i10.springBootStarterCacheAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
+    _i11.springBootAutoConfiguration,
+    _i12.springBootStarterCacheAutoConfiguration,
+    _i13.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -1634,31 +863,31 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2635aaa5',
+  fingerprint: '3d9ac2d5',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i8.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i10.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i8.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i10.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i8.ConfigurableApplicationContext reloadApplication(
-  _i8.ConfigurableApplicationContext running, {
+_i10.ConfigurableApplicationContext reloadApplication(
+  _i10.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i8.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i8.ConfigurableApplicationContext running, {
+Future<_i10.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i10.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

@@ -45,8 +45,9 @@ The differences are listed where they apply and again at the
 17. [Reference: Flutter](#17-reference-flutter)
 18. [Reference: web server](#18-reference-web-server)
 19. [Reference: OAuth2 clients](#19-reference-oauth2-clients)
-20. [Tests](#20-tests)
-21. [Code generation options (`build.yaml`)](#21-code-generation-options)
+20. [Reference: SQL databases](#20-reference-sql-databases)
+21. [Tests](#21-tests)
+22. [Code generation options (`build.yaml`)](#22-code-generation-options)
 22. [Differences from Spring Boot](#differences-from-spring-boot)
 
 ---
@@ -3281,7 +3282,93 @@ sharing sessions, is shared (the client's README, *DPoP*).
 
 ---
 
-## 20. Tests
+## 20. Reference: SQL databases
+
+`spring_boot_starter_data` opens the database of `spring.datasource.url`
+with the driver the application lists (`sqlite3` for `sqlite:` URLs),
+runs its migrations at startup, before any repository or `JdbcTemplate`
+can use it, and checks the schema against the entities. Without a URL the
+repositories keep their data in memory.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  datasource:
+    url: sqlite:file:shop.db
+    pool:
+      max-size: 4
+      connection-timeout: 10s
+    sqlite:
+      busy-timeout: 2000
+  datasources:
+    stats:
+      url: sqlite:file:stats.db
+  sql:
+    migration:
+      enabled: true
+  data:
+    jdbc:
+      schema: validate
+      show-sql: true
+      slow-query-threshold: 500ms
+```
+
+</td><td>
+
+```properties
+spring.datasource.url=sqlite:file:shop.db
+spring.datasource.pool.max-size=4
+spring.datasource.pool.connection-timeout=10s
+spring.datasource.sqlite.busy-timeout=2000
+spring.datasources.stats.url=sqlite:file:stats.db
+spring.sql.migration.enabled=true
+spring.data.jdbc.schema=validate
+spring.data.jdbc.show-sql=true
+spring.data.jdbc.slow-query-threshold=500ms
+```
+
+</td></tr>
+</table>
+
+| Key | Default | Meaning |
+|---|---|---|
+| `spring.datasource.url` | | `sqlite:file:books.db`, `sqlite::memory:` (one connection: `pool.max-size=1`); a leading `jdbc:` is dropped; a scheme no listed driver handles stops the start, naming the package to add |
+| `spring.datasource.username`, `.password` | | when the URL does not carry them; never logged |
+| `spring.datasource.driver` | | the driver's name (`sqlite3`) when two handle the scheme |
+| `spring.datasource.pool.max-size` | `10` | most connections at once |
+| `spring.datasource.pool.min-idle` | `0` | connections kept open when idle |
+| `spring.datasource.pool.connection-timeout` | `30s` | the longest wait for a connection, then `CannotGetJdbcConnectionException` |
+| `spring.datasource.pool.idle-timeout` | `10m` | an idle connection above `min-idle` older than this is closed |
+| `spring.datasource.pool.max-lifetime` | `30m` | a connection older than this is closed when released |
+| `spring.datasource.pool.validation` | `true` | check a connection that waited, before handing it out |
+| `spring.datasource.sqlite.busy-timeout` | `5000` | milliseconds a connection waits for SQLite's lock |
+| `spring.datasource.sqlite.base-directory` | working directory | where relative `sqlite:file:` names are looked for |
+| `spring.datasources.<name>.*` | | the same keys for a named database (beans qualified `<name>`, `@UseDataSource('<name>')`), also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
+| `spring.sql.init.mode` | `embedded` | `schema.sql` / `data.sql`: `embedded` (in-memory databases only), `always`, `never` |
+| `spring.sql.init.schema-locations`, `data-locations`, `platform`, `continue-on-error`, `separator`, `encoding` | Boot's | as in Spring Boot |
+| `spring.sql.migration.enabled` | `true` | run `lib/resources/db/migration/V<version>__<name>.sql` and `R__<name>.sql` (no files: nothing) |
+| `spring.sql.migration.locations` | `classpath:db/migration` | `{vendor}` is the database (`sqlite`) |
+| `spring.sql.migration.table` | `schema_history` | the history table |
+| `spring.sql.migration.validate-on-migrate` | `true` | an applied file that changed, or went missing, stops the start |
+| `spring.sql.migration.baseline-on-migrate`, `baseline-version`, `baseline-description` | `false`, `1` | start the history on an existing database |
+| `spring.sql.migration.target` | `latest` | migrate up to this version |
+| `spring.sql.migration.out-of-order`, `ignore-migration-patterns` | `false`, `*:future` | as Flyway |
+| `spring.sql.migration.placeholders.<name>`, `placeholder-replacement`, `placeholder-prefix`, `placeholder-suffix` | `true`, `${`, `}` | `${name}` in the files |
+| `spring.sql.migration.group` | `false` | all pending migrations in one transaction |
+| `spring.sql.migration.connect-retries`, `connect-retries-interval`, `lock-timeout` | `0`, `10s`, `1m` | wait for the database, and for another instance migrating it |
+| `spring.data.jdbc.schema` | `validate` | `none`, `validate` (tables and columns of the entities must exist and fit), `create`, `create-drop` (from the entities; not with migrations or scripts) |
+| `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info |
+| `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
+| `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
+
+Spring Boot's `spring.flyway.*` names are not used: the migrations are
+this project's own runner (Flyway's file naming, `spring.sql.migration.*`).
+
+## 21. Tests
 
 `spring_boot_starter_test` starts the application in a test with its own
 configuration, so a test can use other values than the application ships
@@ -3322,7 +3409,7 @@ final app = springBootTest(
 
 ---
 
-## 21. Code generation options
+## 22. Code generation options
 
 The generator (`spring_core_dart_generator`) is configured in the
 package's `build.yaml`, not in property files. Its options only change

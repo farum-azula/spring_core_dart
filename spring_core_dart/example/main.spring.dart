@@ -10,315 +10,48 @@
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i5;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i4;
 import 'package:spring_boot_dart/src/runners.dart' as _i3;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-import 'main.dart' as _i1;
-
-class _$EnglishGreeterProxy
-    implements _i1.EnglishGreeter, _i1.Greeter, _i2.Advised {
-  _$EnglishGreeterProxy(this._target, this._invoker);
-
-  final _i1.EnglishGreeter _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String greet(String name) => (this._invoker.invoke(this, this._target, 0, [
-    name,
-  ], (args) => this._target.greet((args[0] as String))) as String);
-
-  @override
-  String get punctuation => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.punctuation,
-  ) as String);
-}
-
-class _$RegistrationProxy implements _i1.Registration, _i2.Advised {
-  _$RegistrationProxy(this._target, this._invoker);
-
-  final _i1.Registration _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  String register(String name) => (this._invoker.invoke(this, this._target, 0, [
-    name,
-  ], (args) => this._target.register((args[0] as String))) as String);
-
-  @override
-  _i1.Greeter get greeter => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.greeter,
-  ) as _i1.Greeter);
-
-  @override
-  _i2.ApplicationEventPublisher get events => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.events,
-  ) as _i2.ApplicationEventPublisher);
-}
-
-class _$WelcomeMailProxy implements _i1.WelcomeMail, _i2.Advised {
-  _$WelcomeMailProxy(this._target, this._invoker);
-
-  final _i1.WelcomeMail _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void onRegistered(_i1.UserRegistered event) {
-    this._invoker.invoke(this, this._target, 0, [event], (args) {
-      this._target.onRegistered((args[0] as _i1.UserRegistered));
-      return null;
-    });
-  }
-}
-
-class _$TourProxy implements _i1.Tour, _i3.CommandLineRunner, _i2.Advised {
-  _$TourProxy(this._target, this._invoker);
-
-  final _i1.Tour _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  void run(List<String> args) {
-    this._invoker.invoke(this, this._target, 0, [args], (args) {
-      this._target.run((args[0] as List<String>));
-      return null;
-    });
-  }
-
-  @override
-  _i1.Registration get registration => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.registration,
-  ) as _i1.Registration);
-
-  @override
-  int get answer => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.answer,
-  ) as int);
-}
+import 'main.dart' as _i2;
 
 /// Beans found by `@ComponentScan` in `example/`.
-_i2.BeanModule get $application => _i2.BeanModule(r'application', [
-  _i2.BeanDefinition<_i1.EnglishGreeter>(
+_i1.BeanModule get $application => _i1.BeanModule(r'application', [
+  _i1.BeanDefinition<_i2.EnglishGreeter>(
     name: r'englishGreeter',
     source: r'asset:spring_core_dart/example/main.dart#EnglishGreeter',
-    types: const [_i1.EnglishGreeter, _i1.Greeter],
-    dependencies: const [_i2.Dependency.value(r'${greeting.punctuation:!}')],
+    types: const [_i2.EnglishGreeter, _i2.Greeter],
+    dependencies: const [_i1.Dependency.value(r'${greeting.punctuation:!}')],
     create: (r) =>
-        _i1.EnglishGreeter(r.value<String>(r'${greeting.punctuation:!}')),
-    annotations: const [_i2.Component()],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'greet',
-          declaringType: r'Greeter',
-          targetType: r'EnglishGreeter',
-          declaringTypes: [r'EnglishGreeter', r'Greeter'],
-          returnType: r'String',
-          parameterTypes: [r'String'],
-          parameterNames: [r'name'],
-          targetTypes: [r'EnglishGreeter', r'Greeter'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
-        ),
-        _i2.MethodSignature(
-          name: r'punctuation',
-          declaringType: r'EnglishGreeter',
-          targetType: r'EnglishGreeter',
-          declaringTypes: [r'EnglishGreeter'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'String',
-          targetTypes: [r'EnglishGreeter', r'Greeter'],
-          targetAnnotations: [_i2.Component()],
-          targetAnnotationTypes: [r'Component'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$EnglishGreeterProxy((target as _i1.EnglishGreeter), invoker),
+        _i2.EnglishGreeter(r.value<String>(r'${greeting.punctuation:!}')),
+    annotations: const [_i1.Component()],
+    aopProxy: _i1.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches EnglishGreeter, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
-  _i2.BeanDefinition<_i1.Registration>(
+  _i1.BeanDefinition<_i2.Registration>(
     name: r'registration',
     source: r'asset:spring_core_dart/example/main.dart#Registration',
-    types: const [_i1.Registration],
+    types: const [_i2.Registration],
     dependencies: const [
-      _i2.Dependency(_i1.Greeter, name: r'greeter'),
-      _i2.Dependency(_i2.ApplicationEventPublisher, name: r'events'),
+      _i1.Dependency(_i2.Greeter, name: r'greeter'),
+      _i1.Dependency(_i1.ApplicationEventPublisher, name: r'events'),
     ],
-    create: (r) => _i1.Registration(
-      r.dependency<_i1.Greeter>(name: r'greeter'),
-      r.dependency<_i2.ApplicationEventPublisher>(name: r'events'),
+    create: (r) => _i2.Registration(
+      r.dependency<_i2.Greeter>(name: r'greeter'),
+      r.dependency<_i1.ApplicationEventPublisher>(name: r'events'),
     ),
-    annotations: const [_i2.Service()],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'register',
-          declaringType: r'Registration',
-          targetType: r'Registration',
-          declaringTypes: [r'Registration'],
-          returnType: r'String',
-          parameterTypes: [r'String'],
-          parameterNames: [r'name'],
-          targetTypes: [r'Registration'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-        _i2.MethodSignature(
-          name: r'greeter',
-          declaringType: r'Registration',
-          targetType: r'Registration',
-          declaringTypes: [r'Registration'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'Greeter',
-          targetTypes: [r'Registration'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-        _i2.MethodSignature(
-          name: r'events',
-          declaringType: r'Registration',
-          targetType: r'Registration',
-          declaringTypes: [r'Registration'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'ApplicationEventPublisher',
-          targetTypes: [r'Registration'],
-          targetAnnotations: [_i2.Service()],
-          targetAnnotationTypes: [r'Service'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$RegistrationProxy((target as _i1.Registration), invoker),
+    annotations: const [_i1.Service()],
+    aopProxy: _i1.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches Registration, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
-  _i2.BeanDefinition<_i1.WelcomeMail>(
+  _i1.BeanDefinition<_i2.WelcomeMail>(
     name: r'welcomeMail',
     source: r'asset:spring_core_dart/example/main.dart#WelcomeMail',
-    types: const [_i1.WelcomeMail],
-    create: (r) => _i1.WelcomeMail(),
+    types: const [_i2.WelcomeMail],
+    create: (r) => _i2.WelcomeMail(),
     eventListeners: [
-      _i2.EventListenerMethod.of<_i1.WelcomeMail, _i1.UserRegistered>(
+      _i1.EventListenerMethod.of<_i2.WelcomeMail, _i2.UserRegistered>(
         r'WelcomeMail.onRegistered',
         (bean, event) {
           bean.onRegistered(event);
@@ -327,94 +60,31 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       ),
     ],
     annotations: const [
-      _i2.Component(),
-      _i2.Log(topic: r'tour'),
+      _i1.Component(),
+      _i1.Log(topic: r'tour'),
     ],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'onRegistered',
-          declaringType: r'WelcomeMail',
-          targetType: r'WelcomeMail',
-          declaringTypes: [r'WelcomeMail'],
-          returnType: r'void',
-          parameterTypes: [r'UserRegistered'],
-          parameterNames: [r'event'],
-          targetTypes: [r'WelcomeMail'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'tour'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$WelcomeMailProxy((target as _i1.WelcomeMail), invoker),
+    aopProxy: _i1.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches WelcomeMail, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
-  _i2.BeanDefinition<_i1.Tour>(
+  _i1.BeanDefinition<_i2.Tour>(
     name: r'tour',
     source: r'asset:spring_core_dart/example/main.dart#Tour',
-    types: const [_i1.Tour, _i3.CommandLineRunner],
+    types: const [_i2.Tour, _i3.CommandLineRunner],
     dependencies: const [
-      _i2.Dependency(_i1.Registration, name: r'registration'),
-      _i2.Dependency.value(r'#{2 * 21}'),
+      _i1.Dependency(_i2.Registration, name: r'registration'),
+      _i1.Dependency.value(r'#{2 * 21}'),
     ],
-    create: (r) => _i1.Tour(
-      r.dependency<_i1.Registration>(name: r'registration'),
+    create: (r) => _i2.Tour(
+      r.dependency<_i2.Registration>(name: r'registration'),
       r.value<int>(r'#{2 * 21}'),
     ),
     annotations: const [
-      _i2.Component(),
-      _i2.Log(topic: r'tour'),
+      _i1.Component(),
+      _i1.Log(topic: r'tour'),
     ],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'run',
-          declaringType: r'CommandLineRunner',
-          targetType: r'Tour',
-          declaringTypes: [r'Tour', r'CommandLineRunner'],
-          returnType: r'void',
-          parameterTypes: [r'List'],
-          parameterNames: [r'args'],
-          targetTypes: [r'Tour', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'tour'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-        _i2.MethodSignature(
-          name: r'registration',
-          declaringType: r'Tour',
-          targetType: r'Tour',
-          declaringTypes: [r'Tour'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'Registration',
-          targetTypes: [r'Tour', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'tour'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-        _i2.MethodSignature(
-          name: r'answer',
-          declaringType: r'Tour',
-          targetType: r'Tour',
-          declaringTypes: [r'Tour'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'int',
-          targetTypes: [r'Tour', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'tour'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-      ],
-      create: (target, invoker) => _$TourProxy((target as _i1.Tour), invoker),
+    aopProxy: _i1.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches Tour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
 ]);
@@ -478,7 +148,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4d3d3e41',
+  fingerprint: '1ceed52a',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -508,11 +178,11 @@ Future<_i4.ConfigurableApplicationContext> reloadApplicationAsync(
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// `@Log` of [WelcomeMail]: the logger 'tour'.
-extension $WelcomeMailLog on _i1.WelcomeMail {
-  _i2.SpringLog get log => const _i2.SpringLog(r'tour');
+extension $WelcomeMailLog on _i2.WelcomeMail {
+  _i1.SpringLog get log => const _i1.SpringLog(r'tour');
 }
 
 /// `@Log` of [Tour]: the logger 'tour'.
-extension $TourLog on _i1.Tour {
-  _i2.SpringLog get log => const _i2.SpringLog(r'tour');
+extension $TourLog on _i2.Tour {
+  _i1.SpringLog get log => const _i1.SpringLog(r'tour');
 }

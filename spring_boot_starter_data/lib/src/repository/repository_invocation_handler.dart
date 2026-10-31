@@ -10,8 +10,11 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree_parser.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
+import 'package:spring_boot_starter_data/src/repository/query/result_shaper.dart';
+import 'package:spring_boot_starter_data/src/repository/query/string_based_jdbc_query.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
@@ -103,10 +106,15 @@ final class RepositoryInvocationHandler implements InvocationHandler {
     this.transactionManager,
     this.auditing,
     this.isNewStrategy = const IsNewStrategy(),
+    this.environment,
+    this.beanFactory,
+    this.introspector,
     List<String> problems = const [],
   }) : typeName = metadata.typeName,
        _log = SpringLog('spring.data.repository.${metadata.typeName}'),
-       _shaper = entityType.capture<_Shaper>(<E>() => _TypedShaper<E>()) {
+       _shaper = entityType.capture<ResultShaper>(
+         <E>() => TypedResultShaper<E>(),
+       ) {
     final found = [...problems];
     if (entity.idProperty == null) {
       found.add(
@@ -155,8 +163,19 @@ final class RepositoryInvocationHandler implements InvocationHandler {
   /// Tells a new entity from one to update.
   final IsNewStrategy isNewStrategy;
 
+  /// Resolves the `${property}` placeholders of a `@Query` and answers
+  /// `@environment` in its SpEL; null for neither.
+  final Environment? environment;
+
+  /// Gives the SpEL of a `@Query` its `@bean` references; null for none.
+  final BeanFactory? beanFactory;
+
+  /// Lets SpEL read the properties of `@Introspected` arguments and maps
+  /// the DTOs of a `@Query`; null for the store's.
+  final BeanIntrospector? introspector;
+
   final SpringLog _log;
-  final _Shaper _shaper;
+  final ResultShaper _shaper;
   final _plans = Map<ProxyMethod, _Plan>.identity();
 
   static List<String> _names(ProxyMethod method) => [
@@ -186,15 +205,35 @@ final class RepositoryInvocationHandler implements InvocationHandler {
     List<String> problems,
   ) {
     final where = '$typeName.${method.name}';
-    final before = problems.length;
-    if (method.annotation<Query>() != null) {
+    if (method.annotation<Query>() case final query?) {
+      if (store case final JdbcDataStore jdbc) {
+        final compiled = StringBasedJdbcQuery.compile(
+          typeName: typeName,
+          method: method,
+          query: query,
+          entity: entity,
+          store: jdbc,
+          inTransaction: (body) => _inTransaction<Object?>(body),
+          translateError: _translate,
+          problems: problems,
+          environment: environment,
+          beanFactory: beanFactory,
+          introspector: introspector,
+        );
+        if (compiled == null) {
+          return null;
+        }
+        return compiled.isStream
+            ? compiled.call
+            : (a) => _guarded<Object?>(
+                () => Future<Object?>.sync(() => compiled.call(a)),
+              );
+      }
       problems.add(
         '$where: @Query needs a SQL store: set spring.datasource.url and '
         'add a driver (coming in a later version); the ${store.name} store '
         'runs derived queries only',
       );
-    }
-    if (problems.length > before) {
       return null;
     }
     final crud = _crud(method);
@@ -534,7 +573,7 @@ final class _DerivedQuery {
 
   DataStore get _store => handler.store;
   PersistentEntity<Object> get _entity => handler.entity;
-  _Shaper get _shaper => handler._shaper;
+  ResultShaper get _shaper => handler._shaper;
 
   Object? call(List<Object?> arguments) {
     if (isStream) {
@@ -670,46 +709,3 @@ final class _DerivedQuery {
 }
 
 enum _Shape { list, set, page, slice, stream, single }
-
-// Creates the collections of the result with the entity as the real type
-// argument: a `Future<List<Book>>` method must not get a `List<Object>`.
-abstract interface class _Shaper {
-  Object list(Iterable<Object?> items);
-  Object set(Iterable<Object?> items);
-  Object stream(Future<Object?> Function() items);
-  Object page(List<Object> content, Pageable pageable, int total);
-  Object slice(List<Object> content, Pageable pageable, bool hasNext);
-}
-
-final class _TypedShaper<E> implements _Shaper {
-  @override
-  Object list(Iterable<Object?> items) => <E>[
-    for (final item in items) item as E,
-  ];
-
-  @override
-  Object set(Iterable<Object?> items) => <E>{
-    for (final item in items) item as E,
-  };
-
-  @override
-  Object stream(Future<Object?> Function() items) => _stream(items);
-
-  Stream<E> _stream(Future<Object?> Function() items) async* {
-    for (final item in (await items())! as Iterable<Object?>) {
-      yield item as E;
-    }
-  }
-
-  @override
-  Object page(List<Object> content, Pageable pageable, int total) =>
-      PageImpl<E>(<E>[for (final item in content) item as E], pageable, total);
-
-  @override
-  Object slice(List<Object> content, Pageable pageable, bool hasNext) =>
-      SliceImpl<E>(
-        <E>[for (final item in content) item as E],
-        pageable,
-        hasNext,
-      );
-}

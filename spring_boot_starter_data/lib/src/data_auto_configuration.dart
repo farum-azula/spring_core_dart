@@ -1,5 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 
+import 'package:spring_boot_starter_data/src/data_source_auto_configuration.dart';
+import 'package:spring_boot_starter_data/src/jdbc/sql_logging.dart';
 import 'package:spring_boot_starter_data/src/mapping/auditing.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
@@ -246,7 +248,8 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
       BeanFactoryPostProcessor,
     ],
     source: _source,
-    create: (_) => DataSourceTransactionManagerRegistrar(),
+    create: (r) =>
+        DataSourceTransactionManagerRegistrar(r.dependency<Environment>()),
   ),
   BeanDefinition<AuditingHandler>(
     name: 'auditingHandler',
@@ -273,13 +276,29 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(RepositoryFactory),
       ]),
     ],
-    create: (r) => RepositoryFactory(
-      mappingContext: r.dependency<RelationalMappingContext>(),
-      converter: r.dependency<EntityConverter>(),
-      stores: r.optionalDependencyList<DataStore>() ?? const [],
-      dataSources: r.dependency<InMemoryDataSources>(),
-      auditing: r.optionalDependency<AuditingHandler>(),
-    ),
+    create: (r) {
+      final beans =
+          r.dependency<BeanFactory>() as ConfigurableListableBeanFactory;
+      final jdbc = dataSourcesByName(
+        beans,
+        RepositoryFactory.primaryDataSource,
+      );
+      return RepositoryFactory(
+        mappingContext: r.dependency<RelationalMappingContext>(),
+        converter: r.dependency<EntityConverter>(),
+        stores: r.optionalDependencyList<DataStore>() ?? const [],
+        dataSources: r.dependency<InMemoryDataSources>(),
+        auditing: r.optionalDependency<AuditingHandler>(),
+        jdbcDataSources: jdbc,
+        defaultStore: jdbc.containsKey(RepositoryFactory.primaryDataSource)
+            ? 'jdbc'
+            : 'memory',
+        jdbcLogSettings:
+            r.optionalDependency<JdbcLogSettings>() ?? const JdbcLogSettings(),
+        environment: r.dependency<Environment>(),
+        beanFactory: beans,
+      );
+    },
   ),
   BeanDefinition<TransactionInterceptor>(
     name: 'transactionInterceptor',

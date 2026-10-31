@@ -72,7 +72,7 @@ dev_dependencies:
 Configuration and data for the tests go to `test/resources/`. During the
 tests it comes first on the classpath, before `lib/resources/`, and it is
 never shipped with the application (see
-[Configuration, section 20](configuration.md#20-tests)):
+[Configuration, section 21](configuration.md#21-tests)):
 
 ```
 test/

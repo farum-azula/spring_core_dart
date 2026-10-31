@@ -174,14 +174,14 @@ void main() {
 
     test('class not described', () {
       expect(
-        () => context.getRequiredPersistentEntity<Author>(),
-        failsWith('Author is not described'),
+        () => context.getRequiredPersistentEntity<Unmapped>(),
+        failsWith('Unmapped is not described'),
       );
       expect(
-        () => context.getRequiredPersistentEntityOfType(Author),
-        failsWith('Author is not described'),
+        () => context.getRequiredPersistentEntityOfType(Unmapped),
+        failsWith('Unmapped is not described'),
       );
-      expect(() => context.entityOf(Author()), failsWith('Author'));
+      expect(() => context.entityOf(Unmapped()), failsWith('Unmapped'));
     });
 
     test('more than one @Id', () {

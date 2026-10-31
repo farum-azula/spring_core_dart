@@ -303,7 +303,7 @@ void main() {
         () => factory.create(
           repository(const [], annotations: const [UseStore('jdbc')]),
         ),
-        invalid(["@UseStore('jdbc')", 'not available']),
+        invalid(["@UseStore('jdbc')", 'not configured']),
       );
     }),
   );

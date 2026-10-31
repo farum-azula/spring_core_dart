@@ -148,6 +148,20 @@ void main() {
     expect(output, _has('Future<List<Book>> findByTitle(String title)'));
   });
 
+  test('the types of repository signatures are not introspected', () {
+    // Book has no @Table here: being returned by a repository describes
+    // nothing (only a Feign client's bodies are described that way).
+    expect(output, isNot(contains('BeanIntrospection<Book>')));
+  });
+
+  test('a repository method has no call (no implementation to call)', () {
+    final impl = raw.substring(
+      raw.indexOf(r'class _$BookRepositoryImpl'),
+      raw.indexOf(r'class _$AuthorRepositoryImpl'),
+    );
+    expect(impl, isNot(contains('call:')));
+  });
+
   test('the metadata carries the type arguments of the supertypes', () {
     expect(
       output,

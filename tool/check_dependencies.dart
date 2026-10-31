@@ -99,6 +99,13 @@ final class AllowedPackage {
 /// ),
 /// ```
 const allowedPackages = {
+  'sqlite3': AllowedPackage(
+    'The SQLite driver (the owner allowed database drivers): only a dev '
+    "dependency of spring_boot_starter_data, to test the driver glue the "
+    'generator writes into applications that list sqlite3 themselves; the '
+    "starter's runtime never depends on it.",
+    onlyIn: {'spring_boot_starter_data'},
+  ),
   'very_good_analysis': AllowedPackage(
     "Lint rules of analysis_options.yaml (Very Good Ventures'), the "
     'quality gate of CI; only rules, no code, and only a dev dependency of '

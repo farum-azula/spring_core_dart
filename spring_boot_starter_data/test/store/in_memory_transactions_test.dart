@@ -1094,4 +1094,165 @@ void main() {
       });
     });
   });
+
+  group('references and unique keys', () {
+    test('a reference holds the row it points to: a delete of it waits', () {
+      return run(() async {
+        final [writer, ...] = await addAuthors(1);
+        final inserted = Gate();
+        final release = Gate();
+        final holder = inTx((_) async {
+          await store.insert(
+            books,
+            Book(title: 'b', year: 1, author: author(writer.id!)),
+          );
+          inserted.open();
+          await release.wait;
+        });
+        await inserted.wait;
+        final deleter = settle(
+          inTx((_) => store.deleteById(authors, writer.id!)),
+        );
+        await waiting(1);
+        // The reference is committed: the delete sees it and is refused.
+        release.open();
+        await holder;
+        expect(await deleter, isA<DataIntegrityViolationException>());
+        expect(await authorName(writer.id!), 'a1');
+        expect(store.waitingCount, 0);
+      });
+    });
+
+    test('...and goes through when the reference is rolled back', () {
+      return run(() async {
+        final [writer, ...] = await addAuthors(1);
+        final inserted = Gate();
+        final release = Gate();
+        final holder = settle(
+          inTx<void>((_) async {
+            await store.insert(
+              books,
+              Book(title: 'b', year: 1, author: author(writer.id!)),
+            );
+            inserted.open();
+            await release.wait;
+          }, rollback: true),
+        );
+        await inserted.wait;
+        final deleter = settle(
+          inTx((_) => store.deleteById(authors, writer.id!)),
+        );
+        await waiting(1);
+        release.open();
+        await holder;
+        expect(await deleter, isTrue);
+        expect(await store.count(authors), 0);
+      });
+    });
+
+    test('a reference waits for the delete of its target, then fails', () {
+      return run(() async {
+        final [writer, ...] = await addAuthors(1);
+        final deleted = Gate();
+        final release = Gate();
+        // The author is deleted but not committed: a book that references
+        // it still finds it (read committed) and waits for the delete.
+        final deleting = inTx((_) async {
+          await store.deleteById(authors, writer.id!);
+          deleted.open();
+          await release.wait;
+        });
+        await deleted.wait;
+        final inserting = settle(
+          inTx<Book>(
+            (_) => store.insert(
+              books,
+              Book(title: 'b', year: 1, author: author(writer.id!)),
+            ),
+          ),
+        );
+        await waiting(1);
+        release.open();
+        await deleting;
+        // It read the row again after the delete: it is gone.
+        expect(await inserting, isA<DataIntegrityViolationException>());
+        expect(await bookCount(), 0);
+      });
+    });
+
+    test('equal unique values: the second inserter waits, then fails', () {
+      return run(() async {
+        final inserted = Gate();
+        final release = Gate();
+        final first = inTx((_) async {
+          await store.insert(authors, Author(name: 'a', isni: '0001'));
+          inserted.open();
+          await release.wait;
+        });
+        await inserted.wait;
+        final second = settle(
+          inTx((_) => store.insert(authors, Author(name: 'b', isni: '0001'))),
+        );
+        await waiting(1);
+        release.open();
+        await first;
+        expect(await second, isA<DuplicateKeyException>());
+        expect(await store.count(authors), 1);
+      });
+    });
+
+    test('...and succeeds when the first one is rolled back', () {
+      return run(() async {
+        final inserted = Gate();
+        final release = Gate();
+        final first = inTx((_) async {
+          await store.insert(authors, Author(name: 'a', isni: '0001'));
+          inserted.open();
+          await release.wait;
+        }, rollback: true);
+        await inserted.wait;
+        final second = settle(
+          inTx((_) => store.insert(authors, Author(name: 'b', isni: '0001'))),
+        );
+        await waiting(1);
+        release.open();
+        await first;
+        expect(await second, isA<Author>());
+        expect(await store.count(authors), 1);
+      });
+    });
+
+    test('a failed statement undoes its writes, the transaction goes on', () {
+      return run(() async {
+        await inTx((_) async {
+          await store.insert(authors, Author(name: 'a', isni: '0001'));
+          await expectLater(
+            store.insert(authors, Author(name: 'b', isni: '0001')),
+            throwsA(isA<DuplicateKeyException>()),
+          );
+          // The transaction goes on, with what the first statement wrote.
+          await store.insert(authors, Author(name: 'c', isni: '0002'));
+          expect(await store.count(authors), 2);
+        });
+        expect(await store.count(authors), 2);
+      });
+    });
+
+    test('a delete that fails midway undoes the cascades it made', () {
+      return run(() async {
+        final [writer, ...] = await addAuthors(1);
+        await store.insert(
+          books,
+          Book(title: 'b', year: 1, author: author(writer.id!)),
+        );
+        // The author has a book (noAction): nothing changes.
+        await expectLater(
+          inTx((_) => store.deleteById(authors, writer.id!)),
+          throwsA(isA<DataIntegrityViolationException>()),
+        );
+        expect(await store.count(authors), 1);
+        expect(await bookCount(), 1);
+      });
+    });
+  });
 }

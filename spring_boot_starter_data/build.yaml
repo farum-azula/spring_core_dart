@@ -9,5 +9,8 @@ targets:
           - example/**
           - test/transaction/app/**
           - test/integration/app/**
+          - test/sqlite/app/**
+          - test/autoconfig/app/**
+          - test/repository/jdbc/app/**
       spring_core_dart_generator:spring_test:
         enabled: false

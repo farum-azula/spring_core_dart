@@ -21,7 +21,9 @@ final class PersistentEntity<T extends Object> {
     required this.tableName,
     required List<PersistentProperty> properties,
     this.schema,
+    List<PersistentUniqueConstraint> uniqueConstraints = const [],
   }) : properties = List.unmodifiable(properties),
+       uniqueConstraints = List.unmodifiable(uniqueConstraints),
        _byName = {for (final p in properties) p.name: p};
 
   /// The description of the class, to create instances and reach
@@ -38,6 +40,10 @@ final class PersistentEntity<T extends Object> {
   /// order.
   final List<PersistentProperty> properties;
 
+  /// The unique constraints the class asks for: one for each [Unique]
+  /// property and each [UniqueConstraint] of the class.
+  final List<PersistentUniqueConstraint> uniqueConstraints;
+
   final Map<String, PersistentProperty> _byName;
 
   /// The entity's class.
@@ -53,6 +59,11 @@ final class PersistentEntity<T extends Object> {
   /// The `@Version` property, or null.
   PersistentProperty? get versionProperty =>
       properties.where((p) => p.isVersion).firstOrNull;
+
+  /// The properties that reference another aggregate (an
+  /// `AggregateReference` or a [Reference]), in declaration order.
+  Iterable<PersistentProperty> get references =>
+      properties.where((p) => p.isReference);
 
   /// Whether the class has a `@Version` property.
   bool get hasVersion => versionProperty != null;
@@ -84,6 +95,13 @@ final class PersistentProperty {
     this.mappedCollection,
     this.childEntity,
     this.referencedType,
+    this.referencedEntityType,
+    this.referencedEntity,
+    this.onDelete = OnDeleteAction.noAction,
+    this.hasExplicitOnDelete = false,
+    this.isUnique = false,
+    this.hasDefaultValue = false,
+    this.defaultValue,
   });
 
   /// The Dart property name.
@@ -120,6 +138,41 @@ final class PersistentProperty {
   /// For an [AggregateReference], the id's type; null otherwise.
   final TypeInfo<Object?>? referencedType;
 
+  /// For a reference to another aggregate (an `AggregateReference` or a
+  /// [Reference]), the referenced aggregate's class; null otherwise.
+  final Type? referencedEntityType;
+
+  /// For a reference, the referenced aggregate's entity (the table and the
+  /// id column the foreign key points to). Resolved on first use, so that
+  /// aggregates may reference each other; null for a property that is no
+  /// reference.
+  final PersistentEntity<Object> Function()? referencedEntity;
+
+  /// What happens to this property's row when the aggregate it references
+  /// is deleted: [OnDelete]'s action, [OnDeleteAction.noAction] without
+  /// it.
+  final OnDeleteAction onDelete;
+
+  /// Whether the property carries an [OnDelete] annotation (and so the
+  /// schema validation insists the database matches it).
+  final bool hasExplicitOnDelete;
+
+  /// Whether the property is marked [Unique].
+  final bool isUnique;
+
+  /// Whether the property has a default value: a constant initializer of
+  /// its field (`bool inStock = true`), else a constant default of the
+  /// constructor parameter of the same name (`this.inStock = true`). A
+  /// generated schema writes it as the column's `DEFAULT`, and
+  /// `@OnDelete(OnDeleteAction.setDefault)` sets it.
+  final bool hasDefaultValue;
+
+  /// The default value (see [hasDefaultValue]), as the property holds it.
+  final Object? defaultValue;
+
+  /// Whether it references another aggregate by id, in either form.
+  bool get isReference => referencedEntityType != null;
+
   /// Whether it holds children of the aggregate.
   bool get isMappedCollection => mappedCollection != null;
 
@@ -139,6 +192,31 @@ final class PersistentProperty {
 
   @override
   String toString() => 'PersistentProperty($name -> $columnName)';
+}
+
+/// A unique constraint of a [PersistentEntity]: no two rows hold the same
+/// values in [properties] (a row with a null among them never conflicts).
+///
+/// Spring (Java): `jakarta.persistence.UniqueConstraint`.
+final class PersistentUniqueConstraint {
+  /// A constraint named [name] over [properties].
+  PersistentUniqueConstraint({
+    required this.name,
+    required List<PersistentProperty> properties,
+  }) : properties = List.unmodifiable(properties);
+
+  /// The constraint's name in the database: the annotation's, else
+  /// `uq_<table>_<columns>`.
+  final String name;
+
+  /// The properties it covers, in the order given.
+  final List<PersistentProperty> properties;
+
+  /// The names of the columns, in the order given.
+  List<String> get columnNames => [for (final p in properties) p.columnName];
+
+  @override
+  String toString() => 'UNIQUE $name (${columnNames.join(', ')})';
 }
 
 /// What auditing sets on a property.

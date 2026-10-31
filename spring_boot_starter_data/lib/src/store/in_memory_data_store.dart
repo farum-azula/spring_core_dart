@@ -43,6 +43,30 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 /// `OptimisticLockingFailureException` when it differs or the aggregate is
 /// gone; `deleteById` with a version checks it too.
 ///
+/// **References and unique keys** behave as SQLite does with
+/// `PRAGMA foreign_keys = ON` (the driver turns it on), so a test that
+/// passes here does not fail in production: an insert or update of an
+/// aggregate (or of one of its children) that references an aggregate that
+/// does not exist throws a `DataIntegrityViolationException` (a null
+/// reference is never checked; a row may reference itself); deleting an
+/// aggregate that others reference follows the `@OnDelete` of the
+/// reference: `noAction` (the default) fails at the end of the statement
+/// when referencing rows remain, `restrict` fails at once, row by row (so a
+/// delete of rows that reference each other may fail where `noAction`
+/// passes), `cascade` deletes the referencing aggregates (or child rows) too,
+/// recursively, `setNull`, `setDefault` (the property's default value)
+/// sets their reference to null. A violated `@Unique` or `@UniqueConstraint`
+/// is a `DuplicateKeyException`; rows with a null among the columns never
+/// conflict. All of it runs inside the store's transactions (a rollback
+/// undoes the cascades) and takes row locks: a reference locks the
+/// referenced row shared, a unique value locks its value exclusively, so
+/// concurrent transactions wait for each other as in PostgreSQL. A
+/// statement is all or nothing. Like the database, a cascade or a `setNull`
+/// does not go through the repository: no `@Version` check, no auditing on
+/// the affected rows. The store knows the aggregates that reference others
+/// from the ones it has written: an aggregate never saved has no rows to
+/// cascade to. A reference must point to an aggregate root.
+///
 /// **Predicates** follow SQL: a comparison with null is false (`isNull`
 /// and `isNotNull` aside), `simpleProperty` with a null argument means
 /// `isNull` and `negatingSimpleProperty` `isNotNull`; `ignoreCase` lower
@@ -141,6 +165,8 @@ final class InMemoryDataStore implements DataStore {
   static const _log = SpringLog('spring.data.memory.InMemoryDataStore');
 
   final _tables = <String, _Table>{};
+  final _entities = <String, PersistentEntity<Object>>{};
+  List<_Node>? _nodeList;
   final _locks = RowLockManager();
   var _transactionCount = 0;
 
@@ -373,7 +399,7 @@ final class InMemoryDataStore implements DataStore {
   ) async {
     final bound = _enter(operation, write: true);
     if (bound != null) {
-      return await body(bound);
+      return await _atomic(bound, () => body(bound));
     }
     final tx = _newTransaction(name: 'auto-commit');
     try {
@@ -383,6 +409,33 @@ final class InMemoryDataStore implements DataStore {
     } on Object {
       _finish(tx, InMemoryTransactionState.rolledBack);
       rethrow;
+    }
+  }
+
+  // Runs a statement of [tx] so that it is all or nothing: its writes are
+  // undone when it fails (the locks it took stay, as in a database).
+  Future<R> _atomic<R>(
+    InMemoryTransaction tx,
+    Future<R> Function() body,
+  ) async {
+    if (tx.journal != null) {
+      return await body();
+    }
+    final journal = tx.journal = [];
+    try {
+      return await body();
+    } on Object {
+      for (final entry in journal.reversed) {
+        final written = tx.writes[entry.table] ??= {};
+        if (entry.existed) {
+          written[entry.id] = entry.previous;
+        } else {
+          written.remove(entry.id);
+        }
+      }
+      rethrow;
+    } finally {
+      tx.journal = null;
     }
   }
 
@@ -462,7 +515,9 @@ final class InMemoryDataStore implements DataStore {
         version,
       );
     }
+    _register(entity);
     _put(tx, entity, id, stored);
+    await _checkWrite(tx, entity, stored);
     _log.debug('$name: insert into ${entity.tableName}');
     _trace('insert', entity, stored.values);
     return await _withIdAndVersion(
@@ -517,7 +572,9 @@ final class InMemoryDataStore implements DataStore {
         version,
       );
     }
+    _register(entity);
     _put(tx, entity, id, stored);
+    await _checkWrite(tx, entity, stored);
     _log.debug('$name: update ${entity.tableName}');
     _trace('update', entity, stored.values);
     return await _withIdAndVersion(
@@ -599,7 +656,7 @@ final class InMemoryDataStore implements DataStore {
       check(existing);
     }
     if (existing != null) {
-      _put(tx, entity, columnId, null);
+      await _removeRows(tx, entity, [existing]);
     }
     _log.debug(
       '$name: delete from ${entity.tableName}, ${existing == null ? 0 : 1} '
@@ -646,9 +703,7 @@ final class InMemoryDataStore implements DataStore {
         }
       }
       if (!waited) {
-        for (final stored in matches) {
-          _put(tx, entity, stored.values[idColumn], null);
-        }
+        await _removeRows(tx, entity, matches);
         _log.debug(
           '$name: delete from ${entity.tableName} where '
           '${criteria ?? 'all'}, ${matches.length} row(s)',
@@ -893,6 +948,329 @@ final class InMemoryDataStore implements DataStore {
   _Table _table(PersistentEntity<Object> entity) =>
       _tables.putIfAbsent(_tableKey(entity), _Table.new);
 
+  // ------------------------------------------- references and constraints
+
+  // Remembers that [entity] was written: its rows may reference others.
+  void _register(PersistentEntity<Object> entity) {
+    final key = _tableKey(entity);
+    if (!_entities.containsKey(key)) {
+      _entities[key] = entity;
+      _nodeList = null;
+    }
+  }
+
+  // Every table the written aggregates have: the roots and their children.
+  List<_Node> get _nodes => _nodeList ??= [
+    for (final root in _entities.values) ..._nodesOf(root, root, const []),
+  ];
+
+  List<_Node> _nodesOf(
+    PersistentEntity<Object> root,
+    PersistentEntity<Object> entity,
+    List<PersistentProperty> path,
+  ) => [
+    _Node(_tableKey(entity), entity, root, path),
+    for (final p in entity.properties)
+      if (p.isMappedCollection) ..._nodesOf(root, p.childEntity!, [...path, p]),
+  ];
+
+  // The rows of [node]'s table as [tx] sees them, each with its root.
+  Iterable<(StoredAggregate root, StoredAggregate row)> _nodeRows(
+    _Node node,
+    InMemoryTransaction? tx,
+  ) sync* {
+    for (final root in _rows(node.root, tx)) {
+      for (final row in _descend(root, node.path, 0)) {
+        yield (root, row);
+      }
+    }
+  }
+
+  Iterable<StoredAggregate> _descend(
+    StoredAggregate aggregate,
+    List<PersistentProperty> path,
+    int depth,
+  ) sync* {
+    if (depth == path.length) {
+      yield aggregate;
+      return;
+    }
+    for (final child
+        in aggregate.children[path[depth].name] ?? const <StoredChild>[]) {
+      yield* _descend(child.stored, path, depth + 1);
+    }
+  }
+
+  // [aggregate] with [edit] applied to the rows of [path]'s table: [edit]
+  // returns the row to keep (the same one to leave it), or null to remove
+  // it. The aggregate itself when nothing changed.
+  StoredAggregate _rewrite(
+    StoredAggregate aggregate,
+    List<PersistentProperty> path,
+    int depth,
+    StoredAggregate? Function(StoredAggregate row) edit,
+  ) {
+    if (depth == path.length) {
+      return edit(aggregate) ?? aggregate;
+    }
+    final property = path[depth];
+    final children = aggregate.children[property.name];
+    if (children == null) {
+      return aggregate;
+    }
+    var changed = false;
+    final kept = <StoredChild>[];
+    for (final child in children) {
+      final next = depth + 1 == path.length
+          ? edit(child.stored)
+          : _rewrite(child.stored, path, depth + 1, edit);
+      if (!identical(next, child.stored)) {
+        changed = true;
+      }
+      if (next != null) {
+        kept.add(next == child.stored ? child : StoredChild(child.key, next));
+      }
+    }
+    return changed
+        ? StoredAggregate(aggregate.values, {
+            ...aggregate.children,
+            property.name: kept,
+          })
+        : aggregate;
+  }
+
+  // The nodes' references to [entity].
+  List<(_Node, PersistentProperty)> _referencesTo(
+    PersistentEntity<Object> entity,
+  ) => [
+    for (final node in _nodes)
+      for (final p in node.entity.references)
+        if (p.referencedEntityType == entity.type) (node, p),
+  ];
+
+  // The root rows that hold a row of [node] whose [property] is [value].
+  List<StoredAggregate> _referencing(
+    InMemoryTransaction? tx,
+    _Node node,
+    PersistentProperty property,
+    Object? value,
+  ) => [
+    for (final root in _rows(node.root, tx))
+      if (_descend(root, node.path, 0).any(
+        (row) => _equals(row.values[property.columnName], value),
+      ))
+        root,
+  ];
+
+  // The checks that follow a write of [aggregate]: its references exist, its
+  // unique values are unique. They come after the write, so that a row may
+  // reference itself, as in SQL.
+  Future<void> _checkWrite(
+    InMemoryTransaction tx,
+    PersistentEntity<Object> entity,
+    StoredAggregate aggregate,
+  ) async {
+    for (final p in entity.references) {
+      final value = aggregate.values[p.columnName];
+      if (value == null) {
+        continue;
+      }
+      final target = p.referencedEntity!();
+      await _lock(tx, _key(target, value), exclusive: false);
+      if (_get(tx, target, value) == null) {
+        throw DataIntegrityViolationException(
+          'FOREIGN KEY constraint failed: ${entity.tableName}.'
+          '${p.columnName} references ${target.tableName}, which has no '
+          'such row',
+          constraint: 'fk_${entity.tableName}_${p.columnName}',
+        );
+      }
+    }
+    for (final constraint in entity.uniqueConstraints) {
+      final values = [
+        for (final p in constraint.properties) aggregate.values[p.columnName],
+      ];
+      if (values.contains(null)) {
+        continue;
+      }
+      final key = _tableKey(entity);
+      await _lock(
+        tx,
+        ('unique:$key:${constraint.name}', _tupleKey(values)),
+        exclusive: true,
+      );
+      final clash = [
+        for (final node in _nodes)
+          if (node.tableKey == key)
+            for (final (_, row) in _nodeRows(node, tx))
+              if (!identical(row, aggregate) &&
+                  constraint.properties.every(
+                    (p) => _equals(
+                      row.values[p.columnName],
+                      aggregate.values[p.columnName],
+                    ),
+                  ))
+                row,
+      ];
+      if (clash.isNotEmpty) {
+        final columns = [
+          for (final p in constraint.properties)
+            '${entity.tableName}.${p.columnName}',
+        ];
+        throw DuplicateKeyException(
+          'UNIQUE constraint failed: ${columns.join(', ')}',
+          constraint: constraint.name,
+        );
+      }
+    }
+    for (final p in entity.properties) {
+      if (!p.isMappedCollection) {
+        continue;
+      }
+      for (final child in aggregate.children[p.name] ?? const <StoredChild>[]) {
+        await _checkWrite(tx, p.childEntity!, child.stored);
+      }
+    }
+  }
+
+  static String _tupleKey(List<Object?> values) => [
+    for (final v in values) '${v.runtimeType}:$v',
+  ].join('\u0000');
+
+  // Removes [rows] of [entity] (one statement) and does what the
+  // references to them ask. The delete of an aggregate that others
+  // reference follows the `@OnDelete` of each reference: see the class
+  // comment.
+  Future<void> _removeRows(
+    InMemoryTransaction tx,
+    PersistentEntity<Object> entity,
+    List<StoredAggregate> rows,
+  ) async {
+    final deferred = <(_Node, PersistentProperty, Object?)>[];
+    await _removeRowsIn(tx, entity, rows, deferred);
+    // `noAction` is checked when the statement ends, `restrict` at once.
+    for (final (node, property, id) in deferred) {
+      if (_referencing(tx, node, property, id).isNotEmpty) {
+        throw _stillReferenced(entity, node, property);
+      }
+    }
+  }
+
+  Future<void> _removeRowsIn(
+    InMemoryTransaction tx,
+    PersistentEntity<Object> entity,
+    List<StoredAggregate> rows,
+    List<(_Node, PersistentProperty, Object?)> deferred,
+  ) async {
+    final idColumn = _requireId(entity).columnName;
+    for (final stored in rows) {
+      final id = stored.values[idColumn];
+      _put(tx, entity, id, null);
+      for (final (node, property) in _referencesTo(entity)) {
+        await _followDelete(tx, entity, id, node, property, deferred);
+      }
+    }
+  }
+
+  // What the reference [property] of [node] does when the row [id] of
+  // [entity] is gone.
+  Future<void> _followDelete(
+    InMemoryTransaction tx,
+    PersistentEntity<Object> entity,
+    Object? id,
+    _Node node,
+    PersistentProperty property,
+    List<(_Node, PersistentProperty, Object?)> deferred,
+  ) async {
+    final action = property.onDelete;
+    if (_referencing(tx, node, property, id).isEmpty) {
+      return;
+    }
+    if (action == OnDeleteAction.restrict) {
+      throw _stillReferenced(entity, node, property);
+    }
+    if (action == OnDeleteAction.noAction) {
+      deferred.add((node, property, id));
+      return;
+    }
+    // The aggregates to change are locked; after a wait they are looked for
+    // again, as they may have changed meanwhile.
+    List<StoredAggregate> affected;
+    while (true) {
+      affected = _referencing(tx, node, property, id);
+      final rootId = _requireId(node.root).columnName;
+      var waited = false;
+      for (final root in affected) {
+        final key = _key(node.root, root.values[rootId]);
+        if (!_locks.tryAcquire(tx, key, exclusive: true)) {
+          await _lock(tx, key, exclusive: true);
+          waited = true;
+          break;
+        }
+      }
+      if (!waited) {
+        break;
+      }
+    }
+    if (affected.isEmpty) {
+      return;
+    }
+    final rootEntity = node.root;
+    final rootId = _requireId(rootEntity).columnName;
+    if (action == OnDeleteAction.cascade && node.path.isEmpty) {
+      await _removeRowsIn(tx, rootEntity, affected, deferred);
+      return;
+    }
+    final column = property.columnName;
+    // setDefault: the property's default (as its column holds it); null
+    // without one, as SQLite without a DEFAULT clause.
+    final replacement =
+        action == OnDeleteAction.setDefault && property.hasDefaultValue
+        ? converter.toColumnValue(property.defaultValue)
+        : null;
+    if (action == OnDeleteAction.setDefault &&
+        replacement != null &&
+        (_equals(replacement, id) || _get(tx, entity, replacement) == null)) {
+      throw _stillReferenced(entity, node, property);
+    }
+    if (action != OnDeleteAction.cascade &&
+        replacement == null &&
+        !property.isNullable) {
+      throw DataIntegrityViolationException(
+        'NOT NULL constraint failed: ${node.entity.tableName}.$column '
+        'cannot be set to null when ${entity.tableName} is deleted '
+        '($action)',
+        constraint: 'fk_${node.entity.tableName}_$column',
+      );
+    }
+    for (final root in affected) {
+      final next = _rewrite(
+        root,
+        node.path,
+        0,
+        (row) => !_equals(row.values[column], id)
+            ? row
+            : action == OnDeleteAction.cascade
+            ? null
+            : StoredAggregate({
+                ...row.values,
+                column: replacement,
+              }, row.children),
+      );
+      _put(tx, rootEntity, root.values[rootId], next);
+    }
+  }
+
+  DataIntegrityViolationException _stillReferenced(
+    PersistentEntity<Object> entity,
+    _Node node,
+    PersistentProperty property,
+  ) => DataIntegrityViolationException(
+    'FOREIGN KEY constraint failed: ${node.entity.tableName}.'
+    '${property.columnName} still references ${entity.tableName}',
+    constraint: 'fk_${node.entity.tableName}_${property.columnName}',
+  );
+
   // The row with [id] as [tx] sees it: its own write, else the committed
   // row.
   StoredAggregate? _get(
@@ -914,7 +1292,15 @@ final class InMemoryDataStore implements DataStore {
     Object? id,
     StoredAggregate? stored,
   ) {
-    (tx.writes[_tableKey(entity)] ??= {})[id] = stored;
+    final key = _tableKey(entity);
+    final written = tx.writes[key] ??= {};
+    tx.journal?.add((
+      table: key,
+      id: id,
+      existed: written.containsKey(id),
+      previous: written[id],
+    ));
+    written[id] = stored;
   }
 
   // The rows of the table as [tx] sees them (the committed ones without
@@ -1377,4 +1763,15 @@ final class InMemoryDataStore implements DataStore {
 final class _Table {
   final rows = <Object?, StoredAggregate>{};
   int nextId = 1;
+}
+
+// A table of the written aggregates: a root's, or one of its children's
+// (reached from the root by the mapped properties of [path]).
+final class _Node {
+  _Node(this.tableKey, this.entity, this.root, this.path);
+
+  final String tableKey;
+  final PersistentEntity<Object> entity;
+  final PersistentEntity<Object> root;
+  final List<PersistentProperty> path;
 }

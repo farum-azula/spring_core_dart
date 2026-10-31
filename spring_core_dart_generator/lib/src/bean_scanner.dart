@@ -2,11 +2,27 @@ import 'package:analyzer/dart/ast/ast.dart'
     show
         AstNode,
         BlockFunctionBody,
+        BooleanLiteral,
+        CollectionElement,
+        DoubleLiteral,
+        Expression,
         ExpressionFunctionBody,
         FunctionDeclarationStatement,
         FunctionExpression,
+        Identifier,
+        IntegerLiteral,
+        ListLiteral,
+        MapLiteralEntry,
         MethodDeclaration,
-        ReturnStatement;
+        NullLiteral,
+        ParenthesizedExpression,
+        PrefixExpression,
+        PropertyAccess,
+        ReturnStatement,
+        SetOrMapLiteral,
+        StringLiteral,
+        VariableDeclaration;
+import 'package:analyzer/dart/ast/token.dart' show TokenType;
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -22,6 +38,7 @@ import 'package:spring_core_dart_generator/src/log_scanning.dart';
 
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
+part 'field_initializers.dart';
 part 'lookup_scanning.dart';
 
 // Annotations are matched by name in `package:spring_core_dart` (the
@@ -487,6 +504,11 @@ class BeanScanner {
   // the bean type inferred from the method body (bean_type_inference.dart).
   final _beanMethodDeclarations = <String, MethodDeclaration>{};
 
+  // Resolved initializers of the fields of introspected classes by
+  // `library#Class.field`, for `BeanProperty.initialValue`
+  // (field_initializers.dart).
+  final _fieldInitializers = <String, Expression>{};
+
   /// Resolves the bodies of the `@Bean` methods of [library]'s classes
   /// and of the classes they `@Import`, so that [scanLibrary] can register
   /// each bean under the type its method really returns.
@@ -506,6 +528,17 @@ class BeanScanner {
     LibraryElement library,
     Future<AstNode?> Function(Fragment fragment) astNodeFor,
   ) => resolveBeanMethodDeclarations(library, astNodeFor);
+
+  /// Resolves the initializers of the fields of the introspected classes
+  /// of [library], so that [scanLibrary] can describe the constant initial
+  /// value of each (`BeanProperty.initialValue`).
+  ///
+  /// Call it before [scanLibrary], like [resolveBeanMethods]. Without it,
+  /// no field has an initial value.
+  Future<void> resolveFieldInitializers(
+    LibraryElement library,
+    Future<AstNode?> Function(Fragment fragment) astNodeFor,
+  ) => resolveFieldInitializerDeclarations(library, astNodeFor);
 
   /// Adds to [module] everything [library] declares: beans, configurables,
   /// introspected classes, interface proxies, Flutter widgets and `@Log`
@@ -565,7 +598,7 @@ class BeanScanner {
             _dataRepository.isAssignableFrom(element) &&
             !_dataRepository.isExactly(element)) {
           if (element.typeParameters.isEmpty) {
-            _scanInterfaceProxy(element, primary: false);
+            _scanInterfaceProxy(element, primary: false, callable: false);
           }
           return;
         }
@@ -1123,6 +1156,7 @@ class BeanScanner {
               ownTypeParameter ||
               fieldType.nullabilitySuffix == NullabilitySuffix.question,
           writable: field.setter != null,
+          initialValue: initialValueOf(field),
           annotations: [
             ..._userAnnotations(field),
             if (field.getter case final getter?) ..._userAnnotations(getter),
@@ -4576,7 +4610,11 @@ class BeanScanner {
 
   // The interface becomes a bean created by `_$XImpl.create(r)`; every
   // method forwards to the `InvocationHandler` of a factory bean.
-  void _scanInterfaceProxy(ClassElement element, {required bool primary}) {
+  void _scanInterfaceProxy(
+    ClassElement element, {
+    required bool primary,
+    bool callable = true,
+  }) {
     final name = _requireName(element);
     final source = '${element.library.uri}#$name';
     if (!module.markScanned(source)) {
@@ -4665,10 +4703,14 @@ class BeanScanner {
         ),
       );
       // Request and response classes of the same package are introspected,
-      // so they can be (de)serialized without annotations of their own.
-      _introspectUsed(valueType, element);
-      for (final parameter in parameters) {
-        _introspectUsed(parameter.type, element);
+      // so they can be (de)serialized without annotations of their own (a
+      // Feign client's bodies). A data repository needs none: its entities
+      // are described by their `@Table`.
+      if (callable) {
+        _introspectUsed(valueType, element);
+        for (final parameter in parameters) {
+          _introspectUsed(parameter.type, element);
+        }
       }
     }
     final model = InterfaceProxyModel(
@@ -4677,6 +4719,7 @@ class BeanScanner {
       signatures: signatures,
       methods: methods,
       annotations: _userAnnotations(element),
+      callable: callable,
       supertypeArguments: {
         for (final supertype in element.allSupertypes)
           if (supertype.typeArguments.isNotEmpty &&

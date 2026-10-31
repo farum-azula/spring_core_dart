@@ -7,130 +7,25 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
+import 'dart:async' as _i5;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
-import 'package:spring_boot_dart/src/runners.dart' as _i4;
+import 'package:spring_boot_dart/src/runners.dart' as _i6;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i10;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i6;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i11;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
     as _i12;
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart'
-    as _i5;
+    as _i7;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
-import 'package:spring_web_dart/src/annotations.dart' as _i7;
+import 'package:spring_web_dart/src/annotations.dart' as _i4;
 
 import 'example.dart' as _i1;
-
-class _$OrdersClientProxy implements _i1.OrdersClient, _i2.Advised {
-  _$OrdersClientProxy(this._target, this._invoker);
-
-  final _i1.OrdersClient _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<List<Object?>> orders() =>
-      this._invoker.invokeAsync<List<Object?>>(
-        this,
-        this._target,
-        0,
-        const [],
-        (args) => this._target.orders(),
-      );
-}
-
-class _$OrdersTourProxy
-    implements _i1.OrdersTour, _i4.CommandLineRunner, _i2.Advised {
-  _$OrdersTourProxy(this._target, this._invoker);
-
-  final _i1.OrdersTour _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    0,
-    [args],
-    (args) => this._target.run((args[0] as List<String>)),
-  );
-
-  @override
-  _i1.OrdersClient get orders => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.orders,
-  ) as _i1.OrdersClient);
-
-  @override
-  _i5.OAuth2AuthorizedClientManager get authorizedClients =>
-      (this._invoker.invoke(
-        this,
-        this._target,
-        2,
-        const [],
-        (_) => this._target.authorizedClients,
-      ) as _i5.OAuth2AuthorizedClientManager);
-}
 
 /// Implements `OrdersClient` through an `InvocationHandler`.
 class _$OrdersClientImpl implements _i1.OrdersClient {
@@ -143,13 +38,13 @@ class _$OrdersClientImpl implements _i1.OrdersClient {
   static _$OrdersClientImpl $create(_i2.DependencyResolver r) {
     final metadata = _i2.InterfaceMetadata<_i1.OrdersClient>(
       typeName: r'OrdersClient',
-      annotations: const [_i6.FeignClient(r'orders', url: r'${partner.url}')],
+      annotations: const [_i3.FeignClient(r'orders', url: r'${partner.url}')],
       methods: [
         _i2.ProxyMethod(
           r'orders',
           returnType: const _i2.ListType<dynamic>(_i2.DynamicType()),
           isFuture: true,
-          annotations: const [_i7.GetMapping(r'/orders')],
+          annotations: const [_i4.GetMapping(r'/orders')],
           call: (target, arguments) => (target as _i1.OrdersClient).orders(),
         ),
       ],
@@ -161,7 +56,7 @@ class _$OrdersClientImpl implements _i1.OrdersClient {
   }
 
   @override
-  _i3.Future<List<Object?>> orders() => _i2.retypeFuture<List<Object?>>(
+  _i5.Future<List<Object?>> orders() => _i2.retypeFuture<List<Object?>>(
     this._handler.invoke(this._metadata.methods[0], const []),
   );
 }
@@ -174,42 +69,25 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     types: const [_i1.OrdersClient],
     primary: true,
     create: (r) => _$OrdersClientImpl.$create(r),
-    annotations: const [_i6.FeignClient(r'orders', url: r'${partner.url}')],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'orders',
-          declaringType: r'OrdersClient',
-          targetType: r'OrdersClient',
-          declaringTypes: [r'OrdersClient'],
-          returnType: r'Future',
-          annotations: [_i7.GetMapping(r'/orders')],
-          annotationTypes: [r'GetMapping'],
-          targetTypes: [r'OrdersClient'],
-          targetAnnotations: [
-            _i6.FeignClient(r'orders', url: r'${partner.url}'),
-          ],
-          targetAnnotationTypes: [r'FeignClient'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$OrdersClientProxy((target as _i1.OrdersClient), invoker),
+    annotations: const [_i3.FeignClient(r'orders', url: r'${partner.url}')],
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches OrdersClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
   _i2.BeanDefinition<_i1.OrdersTour>(
     name: r'ordersTour',
     source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#OrdersTour',
-    types: const [_i1.OrdersTour, _i4.CommandLineRunner],
+    types: const [_i1.OrdersTour, _i6.CommandLineRunner],
     dependencies: const [
       _i2.Dependency(_i1.OrdersClient, name: r'orders'),
       _i2.Dependency(
-        _i5.OAuth2AuthorizedClientManager,
+        _i7.OAuth2AuthorizedClientManager,
         name: r'authorizedClients',
       ),
     ],
     create: (r) => _i1.OrdersTour(
       r.dependency<_i1.OrdersClient>(name: r'orders'),
-      r.dependency<_i5.OAuth2AuthorizedClientManager>(
+      r.dependency<_i7.OAuth2AuthorizedClientManager>(
         name: r'authorizedClients',
       ),
     ),
@@ -217,54 +95,8 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       _i2.Component(),
       _i2.Log(topic: r'example'),
     ],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature(
-          name: r'run',
-          declaringType: r'CommandLineRunner',
-          targetType: r'OrdersTour',
-          declaringTypes: [r'OrdersTour', r'CommandLineRunner'],
-          returnType: r'Future',
-          parameterTypes: [r'List'],
-          parameterNames: [r'args'],
-          targetTypes: [r'OrdersTour', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'example'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-        _i2.MethodSignature(
-          name: r'orders',
-          declaringType: r'OrdersTour',
-          targetType: r'OrdersTour',
-          declaringTypes: [r'OrdersTour'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'OrdersClient',
-          targetTypes: [r'OrdersTour', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'example'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-        _i2.MethodSignature(
-          name: r'authorizedClients',
-          declaringType: r'OrdersTour',
-          targetType: r'OrdersTour',
-          declaringTypes: [r'OrdersTour'],
-          kind: _i2.MemberKind.getter,
-          returnType: r'OAuth2AuthorizedClientManager',
-          targetTypes: [r'OrdersTour', r'CommandLineRunner'],
-          targetAnnotations: [
-            _i2.Component(),
-            _i2.Log(topic: r'example'),
-          ],
-          targetAnnotationTypes: [r'Component', r'Log'],
-        ),
-      ],
-      create: (target, invoker) =>
-          _$OrdersTourProxy((target as _i1.OrdersTour), invoker),
+    aopProxy: _i2.AopProxyFactory.pruned(
+      reason: r'the build found no pointcut of the application that matches OrdersTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
     ),
   ),
 ]);
@@ -330,7 +162,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f25a6b2e',
+  fingerprint: '43fde0e6',
 );
 
 /// Starts the application: config files, environment, context, runners

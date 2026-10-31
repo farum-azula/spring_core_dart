@@ -1345,6 +1345,17 @@ class ForeignAdvice {
   /// Whether another module may declare advice the build cannot read (an
   /// auto-configuration with aspects); nothing is pruned then.
   bool unknown = false;
+
+  /// The annotations the annotation-driven advisors of the starters match
+  /// (`package:x/y.dart#Transactional`), as their pointcuts (or advisor
+  /// classes) declare them in a `static const annotationTypes` list: a
+  /// bean keeps its proxy only when it carries one of them.
+  final advisedAnnotations = <String>{};
+
+  /// Whether an annotation-driven advisor does not declare its
+  /// annotations: then any annotation from outside `spring_core_dart` and
+  /// the SDK keeps a bean's proxy, as it may be one it matches.
+  bool undeclaredAnnotations = false;
 }
 
 /// A `@DeclareParents` field of an aspect: it adds an interface to beans
@@ -1680,11 +1691,16 @@ class ProxyModel {
   /// like any other member instead of the generated `toString()`.
   final bool customToString;
 
-  /// Why no proxy class is generated: the type cannot be proxied, or the
-  /// build pruned it. Then only the signatures are emitted
-  /// (`AopProxyFactory.unavailable`), so advice that matches anyway fails
-  /// the startup with this reason instead of being skipped silently.
+  /// Why no proxy class is generated: the type cannot be proxied (then
+  /// only the signatures are emitted, `AopProxyFactory.unavailable`, so
+  /// advice that matches anyway fails the startup with this reason), or the
+  /// build pruned it ([pruned]: nothing but the reason is emitted).
   String? unavailableReason;
+
+  /// Whether [unavailableReason] is the build's pruning (no pointcut it
+  /// knows matches the bean), not a type that cannot be proxied: then no
+  /// signatures are emitted either (`AopProxyFactory.pruned`).
+  bool pruned = false;
 
   /// Set when the proxy is a subclass of the target, created by the
   /// container as the bean itself, instead of a wrapper around it.
@@ -2190,7 +2206,15 @@ class IntrospectedProperty {
     required this.nullable,
     required this.writable,
     required this.annotations,
+    this.initialValue,
   });
+
+  /// The constant the field is initialized with, when the generated code
+  /// can write it; `null` when there is none (no initializer, or one that
+  /// is not a constant). A [DartObject] is a referenced constant (an enum
+  /// value); a `List`, `Set` or `Map` holds such values or `null`, `bool`,
+  /// `int`, `double` and `String`.
+  final ({Object? value})? initialValue;
 
   /// The declared type as written, with nullability and type arguments,
   /// for `BeanProperty.typeInfo`.
@@ -2837,6 +2861,7 @@ class InterfaceProxyModel {
     required this.methods,
     required this.annotations,
     this.supertypeArguments = const {},
+    this.callable = true,
   });
 
   /// The name of the generated class, e.g. `_$CatalogClientImpl`.
@@ -2860,6 +2885,10 @@ class InterfaceProxyModel {
   /// (`{'CrudRepository': [Book, int]}`), written into
   /// `InterfaceMetadata.supertypeArguments`.
   final Map<String, List<DartType>> supertypeArguments;
+
+  /// Whether each method gets a `call` invoking it on an implementation
+  /// (a Feign fallback); false where none can exist (a data repository).
+  final bool callable;
 }
 
 /// A method of an [InterfaceProxyModel], written as the metadata the

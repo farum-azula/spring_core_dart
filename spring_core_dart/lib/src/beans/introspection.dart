@@ -84,6 +84,8 @@ final class BeanProperty<T extends Object> {
     this._set,
     this.nullable = false,
     this.typeInfo,
+    this.hasInitialValue = false,
+    this.initialValue,
     List<Object> annotations = const [],
   }) : annotations = List.unmodifiable(annotations);
 
@@ -102,6 +104,25 @@ final class BeanProperty<T extends Object> {
 
   /// The const annotations on the field or getter (e.g. constraints).
   final List<Object> annotations;
+
+  /// Whether the field is declared with an initializer that is a constant
+  /// the generator could write into the description, so [initialValue] is
+  /// meaningful (`bool inStock = true`).
+  ///
+  /// It is `false` for a field without an initializer, for a getter, and
+  /// for an initializer that is not a constant: `DateTime.now()`, a
+  /// non-`const` list (`[]`), a call, a reference to a non-const variable.
+  /// Written by the generator; `false` in hand-written introspections.
+  final bool hasInitialValue;
+
+  /// The constant the field starts with, when [hasInitialValue] is `true`
+  /// (`null` for an initializer that is `null`, or when it is not).
+  ///
+  /// The generator supports `null`, `bool`, `int`, `double`, `String`,
+  /// enum values, `const` lists, sets and maps of such values, and
+  /// references to public constants. A field of a `double` type with an
+  /// `int` initializer (`double rate = 1`) gives the `double`.
+  final Object? initialValue;
 
   final Object? Function(T bean) _get;
   final void Function(T bean, Object? value)? _set;
@@ -261,7 +282,8 @@ final class BeanMethod<T extends Object> {
 /// const isbn = BeanParameter('isbn', type: ClassType<String>(),
 ///     symbol: #isbn, isRequired: true);
 /// const tags = BeanParameter('tags',
-///     type: ListType<String>(ClassType<String>()), symbol: #tags);
+///     type: ListType<String>(ClassType<String>()), symbol: #tags,
+///     hasDefaultValue: true, defaultValue: <String>[]);
 /// ```
 ///
 /// Spring (Java): `java.lang.reflect.Parameter` (with `-parameters`).
@@ -273,6 +295,8 @@ final class BeanParameter {
     required this.type,
     this.symbol,
     this.isRequired = false,
+    this.hasDefaultValue = false,
+    this.defaultValue,
     this.annotations = const [],
   });
 
@@ -288,6 +312,25 @@ final class BeanParameter {
   /// Whether a value must be passed (positional without default, or
   /// `required`).
   final bool isRequired;
+
+  /// Whether the parameter declares a default value that the generator
+  /// could write into the description, so [defaultValue] is meaningful.
+  ///
+  /// Only constants it can re-create are described: `null`, `bool`, `int`,
+  /// `double`, `String`, enum values, `const` lists, sets and maps of such
+  /// values, and `const` objects of public classes. It is `false` for a
+  /// parameter without a default (a required one, or an optional one that
+  /// defaults to `null` implicitly) and for a default it cannot write
+  /// (one that refers to a private constant). Written by the generator for
+  /// the parameters of a [BeanConstructor]; `false` elsewhere.
+  final bool hasDefaultValue;
+
+  /// The default value when [hasDefaultValue] is `true` (`null` for an
+  /// explicit `= null`, and when there is none).
+  ///
+  /// A parameter written as `this.x = 5` or `super.x = 5` has the default
+  /// it declares.
+  final Object? defaultValue;
 
   /// The const annotations on the parameter.
   final List<Object> annotations;

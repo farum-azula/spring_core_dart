@@ -194,6 +194,7 @@ class ModuleEmitter {
     required String scannedDirectory,
     required ModuleModel module,
     List<Spec> extra = const [],
+    List<Expression> extraDefinitions = const [],
     Map<String, ({String? text, String? base64})> resources = const {},
   }) {
     _module = module;
@@ -229,6 +230,7 @@ class ModuleEmitter {
     final definitions = literalList([
       for (final bean in module.beans) _definition(bean),
       if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
+      ...extraDefinitions,
     ]);
     final arguments = <String, Expression>{
       if (module.imports.isNotEmpty)
@@ -768,6 +770,10 @@ class ModuleEmitter {
                 'type': _anyType(property.type, element),
                 if (property.nullable) 'nullable': literalTrue,
                 'typeInfo': _typeInfo(property.declaredType, element).$1,
+                if (property.initialValue case final initial?) ...{
+                  'hasInitialValue': literalTrue,
+                  'initialValue': _initialValue(initial.value, element),
+                },
                 'get': _closure(
                   ['bean'],
                   refer('bean').property(property.name).code,
@@ -855,6 +861,10 @@ class ModuleEmitter {
                       if (parameter.isNamed)
                         'symbol': CodeExpression(Code('#${parameter.name}')),
                       if (parameter.isRequired) 'isRequired': literalTrue,
+                      if (parameter.defaultValue case final value?) ...{
+                        'hasDefaultValue': literalTrue,
+                        'defaultValue': _constant(value, element),
+                      },
                       if (parameter.annotations.isNotEmpty)
                         'annotations': literalConstList([
                           for (final annotation in parameter.annotations)
@@ -1243,6 +1253,13 @@ class ModuleEmitter {
   // The runtime decides whether to proxy (any advisor matching one of the
   // signatures) and then calls `create` with the target and an invoker.
   Expression _proxyFactory(ProxyModel proxy, Element element) {
+    if (proxy.pruned) {
+      return _spring(
+        'AopProxyFactory',
+      ).newInstanceNamed('pruned', [], {
+        'reason': _str(proxy.unavailableReason!),
+      });
+    }
     final signatures = literalConstList([
       for (final member in proxy.members) _signature(proxy, member, element),
     ]);
@@ -1752,12 +1769,13 @@ class ModuleEmitter {
               for (final annotation in method.annotations)
                 _constant(annotation, element),
             ]),
-          'call': method.isVoid && !method.isFuture
-              ? _closure([
-                  'target',
-                  'arguments',
-                ], Block.of([call.statement, literalNull.returned.statement]))
-              : _closure(['target', 'arguments'], call.code, lambda: true),
+          if (model.callable)
+            'call': method.isVoid && !method.isFuture
+                ? _closure([
+                    'target',
+                    'arguments',
+                  ], Block.of([call.statement, literalNull.returned.statement]))
+                : _closure(['target', 'arguments'], call.code, lambda: true),
         },
       );
     }
@@ -2865,6 +2883,27 @@ class ModuleEmitter {
     }
     return refer(name, url);
   }
+
+  /// Writes the initial value of a field (see `InitialValue`): a literal, a
+  /// referenced constant, or a `const` collection of those.
+  Expression _initialValue(Object? value, Element element) => switch (value) {
+    null => literalNull,
+    final bool value => literalBool(value),
+    final num value => literalNum(value),
+    final String value => _str(value),
+    final DartObject value => _constant(value, element),
+    final List<Object?> value => literalConstList([
+      for (final item in value) _initialValue(item, element),
+    ]),
+    final Set<Object?> value => literalConstSet({
+      for (final item in value) _initialValue(item, element),
+    }),
+    final Map<Object?, Object?> value => literalConstMap({
+      for (final MapEntry(:key, value: item) in value.entries)
+        _initialValue(key, element): _initialValue(item, element),
+    }),
+    _ => throw StateError('Unsupported initial value $value'),
+  };
 
   /// Writes a constant value (a default value, an annotation instance) as
   /// code that re-creates it: literals, lists, maps, sets, records, types,

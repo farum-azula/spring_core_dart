@@ -1,0 +1,674 @@
+import 'package:spring_boot_starter_data/src/exceptions.dart';
+import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
+import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
+import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
+import 'package:spring_boot_starter_data/src/query/part_tree.dart';
+import 'package:spring_boot_starter_data/src/repository/sort.dart';
+import 'package:spring_boot_starter_data/src/store/data_store.dart';
+
+/// A SQL statement with the values to bind to its `?` markers, in order.
+///
+/// The values are column values (as `EntityConverter.toColumnValue` gives
+/// them); the `JdbcTemplate` that runs the statement applies the
+/// dialect's conversion. Nothing of a value is ever written into [sql].
+///
+/// Spring (Java): none; Spring Data JDBC's `Sql` plus the
+/// `SqlParameterSource` of `NamedParameterJdbcOperations`.
+final class BoundSql {
+  /// A statement running [sql] with [parameters].
+  const BoundSql(this.sql, [this.parameters = const []]);
+
+  /// The SQL, with `?` for each value.
+  final String sql;
+
+  /// The values of the markers, in order.
+  final List<Object?> parameters;
+
+  @override
+  String toString() => sql;
+}
+
+/// Writes the SQL of the repositories' operations for an entity, in the
+/// syntax of a [SqlDialect]: inserts, updates, deletes, selects by id and
+/// by a [Criteria], counts, and the statements of the child tables of a
+/// `@MappedCollection`.
+///
+/// Every table and column name is quoted by the dialect, and every value is
+/// a bind parameter: a value can never change the statement, only the
+/// names of the entity (which come from the application's classes and
+/// annotations) are written into it. The conditions of a [Criteria] mean
+/// what they mean in the in-memory store:
+///
+/// - a `null` argument of a simple property is `is null` (of the negated
+///   one `is not null`); any other comparison with null matches nothing;
+/// - `ignoreCase` compares `lower(column)` with `lower(?)` ([SqlDialect.lower]:
+///   SQLite's driver registers a `lower` that folds every letter);
+/// - the `like` family uses `ESCAPE '\'`: `startingWith`, `endingWith` and
+///   `containing` take their argument literally (its `%`, `_` and `\` are
+///   escaped), `like` takes `%` and `_` as wildcards and `\` as the escape
+///   character; a dialect whose `LIKE` ignores case (SQLite) gets its case
+///   sensitive operator ([SqlDialect.globOperator]) with the pattern
+///   translated;
+/// - `between` is inclusive; `in` of an empty collection matches nothing
+///   and `notIn` of one everything, without an invalid `in ()`;
+/// - an `AggregateReference` is its id, an enum its name.
+///
+/// Sorting names the null placement of every key (`NULLS FIRST` for
+/// descending and `NULLS LAST` for ascending unless the order says
+/// otherwise), as the in-memory store sorts, and ends with the id so equal
+/// keys keep a stable order. `distinct` is left out when the entity has an
+/// id: its rows are distinct already.
+///
+/// Spring (Java):
+/// `org.springframework.data.jdbc.core.convert.SqlGenerator` (with
+/// `org.springframework.data.relational.core.sql.render.SqlRenderer`).
+final class SqlGenerator {
+  /// A generator for [dialect], converting argument values with
+  /// [converter].
+  SqlGenerator({required this.dialect, required this.converter});
+
+  /// The database's syntax.
+  final SqlDialect dialect;
+
+  /// Turns argument values into column values.
+  final EntityConverter converter;
+
+  /// The quoted table of [entity].
+  String table(PersistentEntity<Object> entity) =>
+      dialect.table(entity.tableName, entity.schema);
+
+  String _q(String name) => dialect.quote(name);
+
+  /// The quoted columns of [entity]'s own table, separated by commas.
+  String columnList(PersistentEntity<Object> entity) =>
+      entity.columns.map((p) => _q(p.columnName)).join(', ');
+
+  PersistentProperty _id(PersistentEntity<Object> entity) =>
+      entity.idProperty ??
+      (throw InvalidDataAccessApiUsageException(
+        '${entity.introspection.className} has no @Id property: the JDBC '
+        'store keeps aggregates by id',
+      ));
+
+  // ---------------------------------------------------------------- write
+
+  /// `insert into t (columns) values (?, ...)` for the columns of [row]
+  /// (its keys, in order; leave out an id the database generates).
+  BoundSql insert(
+    PersistentEntity<Object> entity,
+    Map<String, Object?> row,
+  ) {
+    if (row.isEmpty) {
+      return BoundSql('insert into ${table(entity)} default values');
+    }
+    final columns = row.keys.map(_q).join(', ');
+    final markers = List.filled(row.length, '?').join(', ');
+    return BoundSql(
+      'insert into ${table(entity)} ($columns) values ($markers)',
+      row.values.toList(),
+    );
+  }
+
+  /// `update t set column = ?, ... where id = ? [and version = ?]`: every
+  /// column of [row] but the id is set; the version condition is added when
+  /// the entity has a `@Version` (the row carries the raised version, and
+  /// [expectedVersion] is the version the stored row must still have).
+  BoundSql update(
+    PersistentEntity<Object> entity,
+    Map<String, Object?> row, {
+    required Object? id,
+    Object? expectedVersion,
+  }) {
+    final idColumn = _id(entity).columnName;
+    final sets = [
+      for (final entry in row.entries)
+        if (entry.key != idColumn) entry,
+    ];
+    final parameters = <Object?>[];
+    final assignments = sets.isEmpty
+        ? '${_q(idColumn)} = ${_q(idColumn)}'
+        : sets
+              .map((e) {
+                parameters.add(e.value);
+                return '${_q(e.key)} = ?';
+              })
+              .join(', ');
+    final where = _byIdWhere(
+      entity,
+      id,
+      expectedVersion,
+      parameters,
+      checkVersion: true,
+    );
+    return BoundSql(
+      'update ${table(entity)} set $assignments$where',
+      parameters,
+    );
+  }
+
+  /// `delete from t where id = ? [and version = ?]`; the version condition
+  /// only when [expectedVersion] is given.
+  BoundSql deleteById(
+    PersistentEntity<Object> entity,
+    Object? id, {
+    Object? expectedVersion,
+  }) {
+    final parameters = <Object?>[];
+    final where = _byIdWhere(
+      entity,
+      id,
+      expectedVersion,
+      parameters,
+      checkVersion: expectedVersion != null,
+    );
+    return BoundSql('delete from ${table(entity)}$where', parameters);
+  }
+
+  String _byIdWhere(
+    PersistentEntity<Object> entity,
+    Object? id,
+    Object? expectedVersion,
+    List<Object?> parameters, {
+    required bool checkVersion,
+  }) {
+    parameters.add(id);
+    final buffer = StringBuffer(' where ${_q(_id(entity).columnName)} = ?');
+    if (checkVersion && entity.versionProperty != null) {
+      // A null expected version never matches (`= null`): bound as it is.
+      parameters.add(expectedVersion);
+      buffer.write(' and ${_q(entity.versionProperty!.columnName)} = ?');
+    }
+    return buffer.toString();
+  }
+
+  /// `delete from t [where criteria]`.
+  BoundSql deleteWhere(
+    PersistentEntity<Object> entity,
+    Criteria? criteria,
+  ) {
+    final parameters = <Object?>[];
+    final where = _where(entity, criteria, parameters);
+    return BoundSql('delete from ${table(entity)}$where', parameters);
+  }
+
+  // ----------------------------------------------------------------- read
+
+  /// `select columns from t where id = ?` with [lock] (a lock clause, or
+  /// empty).
+  BoundSql selectById(
+    PersistentEntity<Object> entity,
+    Object? id, {
+    String lock = '',
+  }) => BoundSql(
+    'select ${columnList(entity)} from ${table(entity)} '
+    'where ${_q(_id(entity).columnName)} = ?${_suffix(lock)}',
+    [id],
+  );
+
+  /// `select columns from t where id in (?, ...) order by id` for [ids]
+  /// (not empty).
+  BoundSql selectByIds(
+    PersistentEntity<Object> entity,
+    List<Object?> ids,
+  ) {
+    final idColumn = _q(_id(entity).columnName);
+    return BoundSql(
+      'select ${columnList(entity)} from ${table(entity)} '
+      'where $idColumn in (${List.filled(ids.length, '?').join(', ')}) '
+      'order by $idColumn',
+      ids,
+    );
+  }
+
+  /// The select of the aggregates that match [criteria] (all without it):
+  /// ordered by [sort], without duplicates when [distinct], skipping
+  /// [offset] rows and keeping [limit], followed by [lock].
+  ///
+  /// Without a sort but with an offset or a limit the rows are ordered by
+  /// id, so the pages are stable.
+  BoundSql select(
+    PersistentEntity<Object> entity, {
+    Criteria? criteria,
+    Sort sort = Sort.unsorted,
+    int? offset,
+    int? limit,
+    bool distinct = false,
+    String lock = '',
+  }) {
+    final parameters = <Object?>[];
+    final where = _where(entity, criteria, parameters);
+    final paged = (offset != null && offset > 0) || limit != null;
+    final order = sort.isSorted || paged
+        ? orderBy(entity, sort, alwaysTieBreak: true)
+        : '';
+    final window = dialect.limitOffset(
+      limit == null ? null : (limit < 0 ? 0 : limit),
+      offset == null || offset <= 0 ? null : offset,
+    );
+    final keyword = distinct && entity.idProperty == null
+        ? 'select distinct'
+        : 'select';
+    return BoundSql(
+      '$keyword ${columnList(entity)} from ${table(entity)}$where$order'
+      '${_suffix(window)}${_suffix(lock)}',
+      parameters,
+    );
+  }
+
+  /// `select count(*) from t [where criteria]`.
+  BoundSql count(PersistentEntity<Object> entity, Criteria? criteria) {
+    final parameters = <Object?>[];
+    final where = _where(entity, criteria, parameters);
+    return BoundSql(
+      'select count(*) from ${table(entity)}$where',
+      parameters,
+    );
+  }
+
+  /// `select 1 from t [where criteria] limit 1`.
+  BoundSql exists(PersistentEntity<Object> entity, Criteria? criteria) {
+    final parameters = <Object?>[];
+    final where = _where(entity, criteria, parameters);
+    return BoundSql(
+      'select 1 from ${table(entity)}$where '
+      '${dialect.limitOffset(1, null)}',
+      parameters,
+    );
+  }
+
+  String _suffix(String clause) => clause.isEmpty ? '' : ' $clause';
+
+  // ------------------------------------------------------------- children
+
+  /// `delete from child where reverse = ?`: the children of one root.
+  BoundSql deleteChildren(
+    PersistentEntity<Object> child,
+    String reverseColumn,
+    Object? rootId,
+  ) => BoundSql(
+    'delete from ${table(child)} where ${_q(reverseColumn)} = ?',
+    [rootId],
+  );
+
+  /// `delete from child where reverse in (select id from root where
+  /// criteria)`: the children of the roots that match.
+  BoundSql deleteChildrenWhere(
+    PersistentEntity<Object> child,
+    String reverseColumn,
+    PersistentEntity<Object> root,
+    Criteria? criteria,
+  ) {
+    final parameters = <Object?>[];
+    final where = _where(root, criteria, parameters);
+    return BoundSql(
+      'delete from ${table(child)} where ${_q(reverseColumn)} in '
+      '(select ${_q(_id(root).columnName)} from ${table(root)}$where)',
+      parameters,
+    );
+  }
+
+  /// The children of the roots [rootIds] (not empty) in one select:
+  /// `select columns, reverse[, key] from child where reverse in (...)
+  /// order by reverse[, key]`.
+  BoundSql selectChildren(
+    PersistentEntity<Object> child,
+    String reverseColumn,
+    String? keyColumn,
+    List<Object?> rootIds,
+  ) {
+    final own = {for (final p in child.columns) p.columnName};
+    final columns = [
+      columnList(child),
+      if (!own.contains(reverseColumn)) _q(reverseColumn),
+      if (keyColumn != null && !own.contains(keyColumn)) _q(keyColumn),
+    ].where((c) => c.isNotEmpty).join(', ');
+    final markers = List.filled(rootIds.length, '?').join(', ');
+    final order = keyColumn == null
+        ? ' order by ${_q(reverseColumn)}'
+        : ' order by ${_q(reverseColumn)}, ${_q(keyColumn)}';
+    return BoundSql(
+      'select $columns from ${table(child)} '
+      'where ${_q(reverseColumn)} in ($markers)$order',
+      rootIds,
+    );
+  }
+
+  // ---------------------------------------------------------------- order
+
+  /// The `order by` clause (with its leading space) of [sort]: each key
+  /// with its direction and explicit null placement, `lower(...)` for an
+  /// order that ignores case, and the id last (when [tieBreak] and the
+  /// entity has an id) so equal keys keep a stable order; [alwaysTieBreak]
+  /// adds it without a sort too.
+  ///
+  /// A property of the sort that is no column of [entity] is an
+  /// `InvalidDataAccessApiUsageException`, unless [free] is given: it then
+  /// turns the name into SQL (the `@Query` methods sort by the columns of
+  /// their own result).
+  String orderBy(
+    PersistentEntity<Object> entity,
+    Sort sort, {
+    bool alwaysTieBreak = false,
+    bool tieBreak = true,
+    String Function(String name)? free,
+  }) {
+    final terms = <String>[];
+    for (final order in sort.orders) {
+      final property = entity.property(order.property);
+      final String column;
+      if (property != null && !property.isMappedCollection) {
+        column = _q(property.columnName);
+      } else if (free != null) {
+        column = free(order.property);
+      } else {
+        throw InvalidDataAccessApiUsageException(
+          "No column '${order.property}' of "
+          '${entity.introspection.className} for sorting',
+        );
+      }
+      final nullsFirst = switch (order.nullHandling) {
+        NullHandling.nullsFirst => true,
+        NullHandling.nullsLast => false,
+        NullHandling.native => order.isDescending,
+      };
+      terms.add(
+        '${order.ignoreCase ? dialect.lower(column) : column} '
+        '${order.isDescending ? 'DESC' : 'ASC'} '
+        'NULLS ${nullsFirst ? 'FIRST' : 'LAST'}',
+      );
+    }
+    if (entity.idProperty case final id?
+        when tieBreak && (alwaysTieBreak || sort.isSorted)) {
+      terms.add('${_q(id.columnName)} ASC');
+    }
+    return terms.isEmpty ? '' : ' order by ${terms.join(', ')}';
+  }
+
+  // ---------------------------------------------------------------- where
+
+  String _where(
+    PersistentEntity<Object> entity,
+    Criteria? criteria,
+    List<Object?> parameters,
+  ) {
+    if (criteria == null || criteria.isEmpty) {
+      return '';
+    }
+    var next = 0;
+    final alternatives = <String>[];
+    for (final or in criteria.predicate) {
+      final conjunction = <String>[];
+      for (final part in or.parts) {
+        final property = _column(entity, part.path.first);
+        final count = part.type.argumentCount;
+        final arguments = criteria.arguments.sublist(next, next + count);
+        next += count;
+        conjunction.add(_condition(property, part, arguments, parameters));
+      }
+      alternatives.add(
+        conjunction.isEmpty ? '1 = 1' : '(${conjunction.join(' and ')})',
+      );
+    }
+    return ' where ${alternatives.join(' or ')}';
+  }
+
+  PersistentProperty _column(PersistentEntity<Object> entity, String name) {
+    final property = entity.property(name);
+    if (property == null || property.isMappedCollection) {
+      throw InvalidDataAccessApiUsageException(
+        "No column '$name' of ${entity.introspection.className} for a "
+        'condition',
+      );
+    }
+    return property;
+  }
+
+  static const _never = '1 = 0';
+  static const _always = '1 = 1';
+
+  String _condition(
+    PersistentProperty property,
+    Part part,
+    List<Object?> arguments,
+    List<Object?> parameters,
+  ) {
+    final ic = part.ignoreCase;
+    final column = _q(property.columnName);
+    final left = ic ? dialect.lower(column) : column;
+    final marker = ic ? dialect.lower('?') : '?';
+    Object? argument(int index) => converter.toColumnValue(arguments[index]);
+    String compare(String operator) {
+      final value = argument(0);
+      if (value == null) {
+        return _never;
+      }
+      parameters.add(value);
+      return '$left $operator $marker';
+    }
+
+    switch (part.type) {
+      case PartType.isNull:
+        return '$column is null';
+      case PartType.isNotNull:
+        return '$column is not null';
+      case PartType.isTrue:
+        parameters.add(true);
+        return '$column = ?';
+      case PartType.isFalse:
+        parameters.add(false);
+        return '$column = ?';
+      case PartType.simpleProperty:
+        return argument(0) == null ? '$column is null' : compare('=');
+      case PartType.negatingSimpleProperty:
+        return argument(0) == null ? '$column is not null' : compare('<>');
+      case PartType.lessThan:
+        return compare('<');
+      case PartType.lessThanEqual:
+        return compare('<=');
+      case PartType.greaterThan:
+        return compare('>');
+      case PartType.greaterThanEqual:
+        return compare('>=');
+      case PartType.between:
+        final low = argument(0);
+        final high = argument(1);
+        if (low == null || high == null) {
+          return _never;
+        }
+        parameters
+          ..add(low)
+          ..add(high);
+        return '$left between $marker and $marker';
+      case PartType.like:
+        return _like(column, part, _parse(argument(0)), parameters);
+      case PartType.notLike:
+        return _like(
+          column,
+          part,
+          _parse(argument(0)),
+          parameters,
+          negate: true,
+        );
+      case PartType.startingWith:
+        return _like(
+          column,
+          part,
+          _literal(argument(0), end: true),
+          parameters,
+        );
+      case PartType.endingWith:
+        return _like(
+          column,
+          part,
+          _literal(argument(0), start: true),
+          parameters,
+        );
+      case PartType.containing:
+        return _like(
+          column,
+          part,
+          _literal(argument(0), start: true, end: true),
+          parameters,
+        );
+      case PartType.notContaining:
+        return _like(
+          column,
+          part,
+          _literal(argument(0), start: true, end: true),
+          parameters,
+          negate: true,
+        );
+      case PartType.in_ || PartType.notIn:
+        final raw = arguments[0];
+        if (raw is! Iterable<Object?>) {
+          throw InvalidDataAccessApiUsageException(
+            "'${property.name}' ${part.type.name} needs a collection, not "
+            '${raw == null ? 'null' : raw.runtimeType}',
+          );
+        }
+        final elements = [
+          for (final element in raw) converter.toColumnValue(element),
+        ];
+        final isIn = part.type == PartType.in_;
+        if (isIn) {
+          // A null never equals anything: it takes no part.
+          final values = elements.nonNulls.toList();
+          if (values.isEmpty) {
+            return _never;
+          }
+          parameters.addAll(values);
+          return '$left in (${List.filled(values.length, marker).join(', ')})';
+        }
+        if (elements.isEmpty) {
+          return _always;
+        }
+        if (elements.contains(null)) {
+          // `x not in (..., null)` is never true.
+          return _never;
+        }
+        parameters.addAll(elements);
+        return '$left not in '
+            '(${List.filled(elements.length, marker).join(', ')})';
+    }
+  }
+
+  // ----------------------------------------------------------------- like
+
+  // A pattern: text, with `%` (any text) and `_` (one character) as
+  // wildcards; null when the argument is not a text (nothing matches).
+  List<Object>? _parse(Object? argument) {
+    if (argument is! String) {
+      return null;
+    }
+    final tokens = <Object>[];
+    final text = StringBuffer();
+    void flush() {
+      if (text.isNotEmpty) {
+        tokens.add(text.toString());
+        text.clear();
+      }
+    }
+
+    for (var i = 0; i < argument.length; i++) {
+      final c = argument[i];
+      if (c == r'\' && i + 1 < argument.length) {
+        text.write(argument[++i]);
+      } else if (c == '%') {
+        flush();
+        tokens.add(_Wildcard.any);
+      } else if (c == '_') {
+        flush();
+        tokens.add(_Wildcard.one);
+      } else {
+        text.write(c);
+      }
+    }
+    flush();
+    return tokens;
+  }
+
+  // The argument as literal text, with a wildcard before and/or after.
+  List<Object>? _literal(
+    Object? argument, {
+    bool start = false,
+    bool end = false,
+  }) {
+    if (argument is! String) {
+      return null;
+    }
+    return [
+      if (start) _Wildcard.any,
+      if (argument.isNotEmpty) argument,
+      if (end) _Wildcard.any,
+    ];
+  }
+
+  String _like(
+    String column,
+    Part part,
+    List<Object>? tokens,
+    List<Object?> parameters, {
+    bool negate = false,
+  }) {
+    if (tokens == null) {
+      return _never;
+    }
+    final not = negate ? 'not ' : '';
+    if (part.ignoreCase) {
+      parameters.add(_likeText(tokens));
+      return '${dialect.lower(column)} ${not}like ${dialect.lower('?')} '
+          r"escape '\'";
+    }
+    if (dialect.likeIgnoresCase) {
+      parameters.add(_globText(tokens));
+      return '$column $not${dialect.globOperator} ?';
+    }
+    parameters.add(_likeText(tokens));
+    return "$column ${not}like ? escape '\\'";
+  }
+
+  // The pattern for `like ... escape '\'`.
+  String _likeText(List<Object> tokens) {
+    final out = StringBuffer();
+    for (final token in tokens) {
+      switch (token) {
+        case _Wildcard.any:
+          out.write('%');
+        case _Wildcard.one:
+          out.write('_');
+        case final String text:
+          out.write(
+            text
+                .replaceAll(r'\', r'\\')
+                .replaceAll('%', r'\%')
+                .replaceAll('_', r'\_'),
+          );
+      }
+    }
+    return out.toString();
+  }
+
+  // The same pattern for `glob`: `*` and `?` are the wildcards, and a
+  // special character is a one-character class.
+  String _globText(List<Object> tokens) {
+    final out = StringBuffer();
+    for (final token in tokens) {
+      switch (token) {
+        case _Wildcard.any:
+          out.write('*');
+        case _Wildcard.one:
+          out.write('?');
+        case final String text:
+          out.write(
+            text
+                .replaceAll('[', '[[]')
+                .replaceAll('*', '[*]')
+                .replaceAll('?', '[?]'),
+          );
+      }
+    }
+    return out.toString();
+  }
+}
+
+enum _Wildcard { any, one }

@@ -13,7 +13,7 @@ void main() {
   Future<void> run(Future<void> Function() body) =>
       withExample((example) async {
         books = example.books;
-        await seedBooks(books);
+        await seedBooks(example.authors, books);
         await body();
       });
 

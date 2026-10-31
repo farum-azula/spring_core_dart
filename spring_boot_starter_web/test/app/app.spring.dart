@@ -2998,11 +2998,15 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             r'stock',
             type: const _i2.ClassType<int>(),
             symbol: #stock,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
           _i2.BeanParameter(
             r'genre',
             type: const _i2.EnumType<_i4.Genre>(_i4.Genre.values),
             symbol: #genre,
+            hasDefaultValue: true,
+            defaultValue: _i4.Genre.fiction,
           ),
         ],
         create: (positional, named) =>
@@ -3052,6 +3056,8 @@ _i2.BeanModule get $webTestBeans => _i2.BeanModule(
             r'stock',
             type: const _i2.ClassType<int>(),
             symbol: #stock,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
         ],
         create: (positional, named) =>

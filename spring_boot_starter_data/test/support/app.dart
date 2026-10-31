@@ -39,6 +39,7 @@ final class Example {
   AuthorRepository get authors => context.getBean<AuthorRepository>();
   PurchaseOrderRepository get orders =>
       context.getBean<PurchaseOrderRepository>();
+  ReviewRepository get reviews => context.getBean<ReviewRepository>();
   AccountRepository get accounts => context.getBean<AccountRepository>();
   TicketRepository get tickets => context.getBean<TicketRepository>();
   InMemoryDataStore get store => context.getBean<InMemoryDataStore>();
@@ -52,8 +53,13 @@ final class Example {
 AggregateReference<Author, int> author(int id) =>
     AggregateReference<Author, int>(id);
 
-/// The books the query tests run on, saved in this order (ids 1 to 8).
-Future<void> seedBooks(BookRepository books) async {
+/// The books the query tests run on, saved in this order (ids 1 to 8), by
+/// the two authors saved first (ids 1 and 2: the books reference them).
+Future<void> seedBooks(
+  AuthorRepository authors,
+  BookRepository books,
+) async {
+  await authors.saveAll([Author(name: 'Herbert'), Author(name: 'Gibson')]);
   await books.saveAll([
     Book(title: 'Dune', year: 1965, author: author(1)),
     Book(

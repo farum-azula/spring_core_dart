@@ -7,984 +7,32 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i4;
+import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i10;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i12;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i11;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i12;
+    as _i13;
 import 'package:spring_boot_starter_cache/src/annotations.dart' as _i8;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i6;
-import 'package:spring_boot_starter_data/src/repository/page.dart' as _i5;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i2;
-import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i9;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i9;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
+import 'package:spring_boot_starter_data/src/repository/page.dart' as _i4;
+import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i6;
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
     as _i7;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i13;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
+    as _i14;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:sqlite3/sqlite3.dart' as _i10;
 
 import 'integration_app.dart' as _i1;
 
-class _$ItemRepositoryProxy
-    implements
-        _i1.ItemRepository,
-        _i2.ListCrudRepository<_i1.Item, int>,
-        _i2.CrudRepository<_i1.Item, int>,
-        _i2.DataRepository<_i1.Item, int>,
-        _i3.Advised {
-  _$ItemRepositoryProxy(this._target, this._invoker);
-
-  final _i1.ItemRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<_i5.Page<_i1.Item>> findByCountGreaterThan(
-    int count,
-    _i5.Pageable pageable,
-  ) => this._invoker.invokeAsync<_i5.Page<_i1.Item>>(
-    this,
-    this._target,
-    0,
-    [count, pageable],
-    (args) => this._target.findByCountGreaterThan(
-      (args[0] as int),
-      (args[1] as _i5.Pageable),
-    ),
-  );
-
-  @override
-  _i4.Future<List<_i1.Item>> saveAll(Iterable<_i1.Item> entities) =>
-      this._invoker.invokeAsync<List<_i1.Item>>(this, this._target, 1, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.Item>)));
-
-  @override
-  _i4.Future<List<_i1.Item>> findAll() =>
-      this._invoker.invokeAsync<List<_i1.Item>>(
-        this,
-        this._target,
-        2,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<List<_i1.Item>> findAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<List<_i1.Item>>(this, this._target, 3, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<_i1.Item> save(_i1.Item entity) =>
-      this._invoker.invokeAsync<_i1.Item>(this, this._target, 4, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.Item)));
-
-  @override
-  _i4.Future<_i1.Item?> findById(int id) =>
-      this._invoker.invokeAsync<_i1.Item?>(this, this._target, 5, [
-        id,
-      ], (args) => this._target.findById((args[0] as int)));
-
-  @override
-  _i4.Future<bool> existsById(int id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    6,
-    [id],
-    (args) => this._target.existsById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    7,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(int id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    8,
-    [id],
-    (args) => this._target.deleteById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.Item entity) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    9,
-    [entity],
-    (args) => this._target.delete((args[0] as _i1.Item)),
-  );
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 10, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Item> entities) =>
-      this._invoker.invokeAsync<void>(this, this._target, 11, [
-        entities,
-      ], (args) => this._target.deleteAllOf((args[0] as Iterable<_i1.Item>)));
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    12,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$StockRepositoryProxy
-    implements
-        _i1.StockRepository,
-        _i2.ListCrudRepository<_i1.Stock, int>,
-        _i2.CrudRepository<_i1.Stock, int>,
-        _i2.DataRepository<_i1.Stock, int>,
-        _i3.Advised {
-  _$StockRepositoryProxy(this._target, this._invoker);
-
-  final _i1.StockRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<_i1.Stock?> findBySku(String sku) =>
-      this._invoker.invokeAsync<_i1.Stock?>(this, this._target, 0, [
-        sku,
-      ], (args) => this._target.findBySku((args[0] as String)));
-
-  @override
-  _i4.Future<_i1.Stock?> findOneBySku(String sku) =>
-      this._invoker.invokeAsync<_i1.Stock?>(this, this._target, 1, [
-        sku,
-      ], (args) => this._target.findOneBySku((args[0] as String)));
-
-  @override
-  _i4.Future<List<_i1.Stock>> saveAll(Iterable<_i1.Stock> entities) =>
-      this._invoker.invokeAsync<List<_i1.Stock>>(this, this._target, 2, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.Stock>)));
-
-  @override
-  _i4.Future<List<_i1.Stock>> findAll() =>
-      this._invoker.invokeAsync<List<_i1.Stock>>(
-        this,
-        this._target,
-        3,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<List<_i1.Stock>> findAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<List<_i1.Stock>>(this, this._target, 4, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<_i1.Stock> save(_i1.Stock entity) =>
-      this._invoker.invokeAsync<_i1.Stock>(this, this._target, 5, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.Stock)));
-
-  @override
-  _i4.Future<_i1.Stock?> findById(int id) =>
-      this._invoker.invokeAsync<_i1.Stock?>(this, this._target, 6, [
-        id,
-      ], (args) => this._target.findById((args[0] as int)));
-
-  @override
-  _i4.Future<bool> existsById(int id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    7,
-    [id],
-    (args) => this._target.existsById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    8,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(int id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    9,
-    [id],
-    (args) => this._target.deleteById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.Stock entity) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    10,
-    [entity],
-    (args) => this._target.delete((args[0] as _i1.Stock)),
-  );
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 11, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Stock> entities) =>
-      this._invoker.invokeAsync<void>(this, this._target, 12, [
-        entities,
-      ], (args) => this._target.deleteAllOf((args[0] as Iterable<_i1.Stock>)));
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    13,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$JobRepositoryProxy
-    implements
-        _i1.JobRepository,
-        _i2.ListCrudRepository<_i1.Job, int>,
-        _i2.CrudRepository<_i1.Job, int>,
-        _i2.DataRepository<_i1.Job, int>,
-        _i3.Advised {
-  _$JobRepositoryProxy(this._target, this._invoker);
-
-  final _i1.JobRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<_i1.Job?> findFirstByDoneFalseOrderById() =>
-      this._invoker.invokeAsync<_i1.Job?>(
-        this,
-        this._target,
-        0,
-        const [],
-        (args) => this._target.findFirstByDoneFalseOrderById(),
-      );
-
-  @override
-  _i4.Future<List<_i1.Job>> saveAll(Iterable<_i1.Job> entities) =>
-      this._invoker.invokeAsync<List<_i1.Job>>(this, this._target, 1, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.Job>)));
-
-  @override
-  _i4.Future<List<_i1.Job>> findAll() =>
-      this._invoker.invokeAsync<List<_i1.Job>>(
-        this,
-        this._target,
-        2,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<List<_i1.Job>> findAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<List<_i1.Job>>(this, this._target, 3, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<_i1.Job> save(_i1.Job entity) =>
-      this._invoker.invokeAsync<_i1.Job>(this, this._target, 4, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.Job)));
-
-  @override
-  _i4.Future<_i1.Job?> findById(int id) => this._invoker.invokeAsync<_i1.Job?>(
-    this,
-    this._target,
-    5,
-    [id],
-    (args) => this._target.findById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<bool> existsById(int id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    6,
-    [id],
-    (args) => this._target.existsById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    7,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(int id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    8,
-    [id],
-    (args) => this._target.deleteById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.Job entity) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    9,
-    [entity],
-    (args) => this._target.delete((args[0] as _i1.Job)),
-  );
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 10, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Job> entities) =>
-      this._invoker.invokeAsync<void>(this, this._target, 11, [
-        entities,
-      ], (args) => this._target.deleteAllOf((args[0] as Iterable<_i1.Job>)));
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    12,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$AuditRepositoryProxy
-    implements
-        _i1.AuditRepository,
-        _i2.ListCrudRepository<_i1.AuditLine, int>,
-        _i2.CrudRepository<_i1.AuditLine, int>,
-        _i2.DataRepository<_i1.AuditLine, int>,
-        _i3.Advised {
-  _$AuditRepositoryProxy(this._target, this._invoker);
-
-  final _i1.AuditRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<List<_i1.AuditLine>> saveAll(Iterable<_i1.AuditLine> entities) =>
-      this._invoker.invokeAsync<List<_i1.AuditLine>>(this, this._target, 0, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.AuditLine>)));
-
-  @override
-  _i4.Future<List<_i1.AuditLine>> findAll() =>
-      this._invoker.invokeAsync<List<_i1.AuditLine>>(
-        this,
-        this._target,
-        1,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<List<_i1.AuditLine>> findAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<List<_i1.AuditLine>>(this, this._target, 2, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<_i1.AuditLine> save(_i1.AuditLine entity) =>
-      this._invoker.invokeAsync<_i1.AuditLine>(this, this._target, 3, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.AuditLine)));
-
-  @override
-  _i4.Future<_i1.AuditLine?> findById(int id) =>
-      this._invoker.invokeAsync<_i1.AuditLine?>(this, this._target, 4, [
-        id,
-      ], (args) => this._target.findById((args[0] as int)));
-
-  @override
-  _i4.Future<bool> existsById(int id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    5,
-    [id],
-    (args) => this._target.existsById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    6,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(int id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    7,
-    [id],
-    (args) => this._target.deleteById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.AuditLine entity) =>
-      this._invoker.invokeAsync<void>(this, this._target, 8, [
-        entity,
-      ], (args) => this._target.delete((args[0] as _i1.AuditLine)));
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 9, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.AuditLine> entities) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        10,
-        [entities],
-        (args) =>
-            this._target.deleteAllOf((args[0] as Iterable<_i1.AuditLine>)),
-      );
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    11,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$LabelRepositoryProxy
-    implements
-        _i1.LabelRepository,
-        _i2.CrudRepository<_i1.Label, String>,
-        _i2.DataRepository<_i1.Label, String>,
-        _i3.Advised {
-  _$LabelRepositoryProxy(this._target, this._invoker);
-
-  final _i1.LabelRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<_i1.Label> save(_i1.Label entity) =>
-      this._invoker.invokeAsync<_i1.Label>(this, this._target, 0, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.Label)));
-
-  @override
-  _i4.Future<Iterable<_i1.Label>> saveAll(Iterable<_i1.Label> entities) =>
-      this._invoker.invokeAsync<Iterable<_i1.Label>>(this, this._target, 1, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.Label>)));
-
-  @override
-  _i4.Future<_i1.Label?> findById(String id) =>
-      this._invoker.invokeAsync<_i1.Label?>(this, this._target, 2, [
-        id,
-      ], (args) => this._target.findById((args[0] as String)));
-
-  @override
-  _i4.Future<bool> existsById(String id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    3,
-    [id],
-    (args) => this._target.existsById((args[0] as String)),
-  );
-
-  @override
-  _i4.Future<Iterable<_i1.Label>> findAll() =>
-      this._invoker.invokeAsync<Iterable<_i1.Label>>(
-        this,
-        this._target,
-        4,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<Iterable<_i1.Label>> findAllById(Iterable<String> ids) =>
-      this._invoker.invokeAsync<Iterable<_i1.Label>>(this, this._target, 5, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<String>)));
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    6,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(String id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    7,
-    [id],
-    (args) => this._target.deleteById((args[0] as String)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.Label entity) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    8,
-    [entity],
-    (args) => this._target.delete((args[0] as _i1.Label)),
-  );
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<String> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 9, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<String>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Label> entities) =>
-      this._invoker.invokeAsync<void>(this, this._target, 10, [
-        entities,
-      ], (args) => this._target.deleteAllOf((args[0] as Iterable<_i1.Label>)));
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    11,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$ShipmentRepositoryProxy
-    implements
-        _i1.ShipmentRepository,
-        _i2.ListCrudRepository<_i1.Shipment, int>,
-        _i2.CrudRepository<_i1.Shipment, int>,
-        _i2.DataRepository<_i1.Shipment, int>,
-        _i3.Advised {
-  _$ShipmentRepositoryProxy(this._target, this._invoker);
-
-  final _i1.ShipmentRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<List<_i1.Shipment>> saveAll(Iterable<_i1.Shipment> entities) =>
-      this._invoker.invokeAsync<List<_i1.Shipment>>(this, this._target, 0, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.Shipment>)));
-
-  @override
-  _i4.Future<List<_i1.Shipment>> findAll() =>
-      this._invoker.invokeAsync<List<_i1.Shipment>>(
-        this,
-        this._target,
-        1,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<List<_i1.Shipment>> findAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<List<_i1.Shipment>>(this, this._target, 2, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<_i1.Shipment> save(_i1.Shipment entity) =>
-      this._invoker.invokeAsync<_i1.Shipment>(this, this._target, 3, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.Shipment)));
-
-  @override
-  _i4.Future<_i1.Shipment?> findById(int id) =>
-      this._invoker.invokeAsync<_i1.Shipment?>(this, this._target, 4, [
-        id,
-      ], (args) => this._target.findById((args[0] as int)));
-
-  @override
-  _i4.Future<bool> existsById(int id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    5,
-    [id],
-    (args) => this._target.existsById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    6,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(int id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    7,
-    [id],
-    (args) => this._target.deleteById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.Shipment entity) =>
-      this._invoker.invokeAsync<void>(this, this._target, 8, [
-        entity,
-      ], (args) => this._target.delete((args[0] as _i1.Shipment)));
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 9, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Shipment> entities) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        10,
-        [entities],
-        (args) => this._target.deleteAllOf((args[0] as Iterable<_i1.Shipment>)),
-      );
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    11,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$ArchiveRepositoryProxy
-    implements
-        _i1.ArchiveRepository,
-        _i2.ListCrudRepository<_i1.Archived, int>,
-        _i2.CrudRepository<_i1.Archived, int>,
-        _i2.DataRepository<_i1.Archived, int>,
-        _i3.Advised {
-  _$ArchiveRepositoryProxy(this._target, this._invoker);
-
-  final _i1.ArchiveRepository _target;
-
-  final _i3.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i4.Future<List<_i1.Archived>> saveAll(Iterable<_i1.Archived> entities) =>
-      this._invoker.invokeAsync<List<_i1.Archived>>(this, this._target, 0, [
-        entities,
-      ], (args) => this._target.saveAll((args[0] as Iterable<_i1.Archived>)));
-
-  @override
-  _i4.Future<List<_i1.Archived>> findAll() =>
-      this._invoker.invokeAsync<List<_i1.Archived>>(
-        this,
-        this._target,
-        1,
-        const [],
-        (args) => this._target.findAll(),
-      );
-
-  @override
-  _i4.Future<List<_i1.Archived>> findAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<List<_i1.Archived>>(this, this._target, 2, [
-        ids,
-      ], (args) => this._target.findAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<_i1.Archived> save(_i1.Archived entity) =>
-      this._invoker.invokeAsync<_i1.Archived>(this, this._target, 3, [
-        entity,
-      ], (args) => this._target.save((args[0] as _i1.Archived)));
-
-  @override
-  _i4.Future<_i1.Archived?> findById(int id) =>
-      this._invoker.invokeAsync<_i1.Archived?>(this, this._target, 4, [
-        id,
-      ], (args) => this._target.findById((args[0] as int)));
-
-  @override
-  _i4.Future<bool> existsById(int id) => this._invoker.invokeAsync<bool>(
-    this,
-    this._target,
-    5,
-    [id],
-    (args) => this._target.existsById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<int> count() => this._invoker.invokeAsync<int>(
-    this,
-    this._target,
-    6,
-    const [],
-    (args) => this._target.count(),
-  );
-
-  @override
-  _i4.Future<void> deleteById(int id) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    7,
-    [id],
-    (args) => this._target.deleteById((args[0] as int)),
-  );
-
-  @override
-  _i4.Future<void> delete(_i1.Archived entity) =>
-      this._invoker.invokeAsync<void>(this, this._target, 8, [
-        entity,
-      ], (args) => this._target.delete((args[0] as _i1.Archived)));
-
-  @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) =>
-      this._invoker.invokeAsync<void>(this, this._target, 9, [
-        ids,
-      ], (args) => this._target.deleteAllById((args[0] as Iterable<int>)));
-
-  @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Archived> entities) =>
-      this._invoker.invokeAsync<void>(
-        this,
-        this._target,
-        10,
-        [entities],
-        (args) => this._target.deleteAllOf((args[0] as Iterable<_i1.Archived>)),
-      );
-
-  @override
-  _i4.Future<void> deleteAll() => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    11,
-    const [],
-    (args) => this._target.deleteAll(),
-  );
-}
-
-class _$GateProxy extends _i1.Gate implements _i3.Advised {
+class _$GateProxy extends _i1.Gate implements _i2.Advised {
   _$GateProxy();
 
-  _i3.ProxyInvoker? _$invoker;
+  _i2.ProxyInvoker? _$invoker;
 
-  _$GateProxy _$advise(_i3.ProxyInvoker invoker) {
+  _$GateProxy _$advise(_i2.ProxyInvoker invoker) {
     _$invoker = invoker;
     return this;
   }
@@ -993,30 +41,30 @@ class _$GateProxy extends _i1.Gate implements _i3.Advised {
   Object get aopTarget => this;
 
   @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
+  List<_i2.PointcutAdvisor> get aopAdvisors => _$invoker?.advisors ?? const [];
 
   @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvisor(advisor);
 
   @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).removeAdvisor(
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvisor(
         advisor,
       );
 
   @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).addAdvice(advice);
+  void addAdvice(_i2.MethodInterceptor advice) =>
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).addAdvice(advice);
 
   @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
-      (this._$invoker ?? _i3.ProxyInvoker.notAdvised(this)).removeAdvice(
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
+      (this._$invoker ?? _i2.ProxyInvoker.notAdvised(this)).removeAdvice(
         advice,
       );
 
   @override
-  _i4.Future<void> pause() {
+  _i3.Future<void> pause() {
     final _$i = this._$invoker;
     return _$i == null
         ? super.pause()
@@ -1030,62 +78,62 @@ class _$GateProxy extends _i1.Gate implements _i3.Advised {
   }
 
   @override
-  _i4.Future<void> Function()? get once {
+  _i3.Future<void> Function()? get once {
     final _$i = this._$invoker;
     return _$i == null
         ? super.once
         : (_$i.invoke(this, this, 1, const [], (_) => super.once)
-              as _i4.Future<void> Function()?);
+              as _i3.Future<void> Function()?);
   }
 
   @override
-  set once(_i4.Future<void> Function() value) {
+  set once(_i3.Future<void> Function() value) {
     final _$i = this._$invoker;
     if (_$i == null) {
       super.once = value;
     } else {
       _$i.invoke(this, this, 2, [value], (args) {
-        super.once = (args[0] as _i4.Future<void> Function());
+        super.once = (args[0] as _i3.Future<void> Function());
         return null;
       });
     }
   }
 }
 
-class _$AuditorProxy implements _i1.Auditor, _i3.Advised {
+class _$AuditorProxy implements _i1.Auditor, _i2.Advised {
   _$AuditorProxy(this._target, this._invoker);
 
   final _i1.Auditor _target;
 
-  final _i3.ProxyInvoker _invoker;
+  final _i2.ProxyInvoker _invoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
       this._invoker.addAdvisor(advisor);
 
   @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
       this._invoker.removeAdvisor(advisor);
 
   @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
+  void addAdvice(_i2.MethodInterceptor advice) =>
       this._invoker.addAdvice(advice);
 
   @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
       this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
-  _i4.Future<void> record(String text) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> record(String text) => this._invoker.invokeAsync<void>(
     this,
     this._target,
     0,
@@ -1094,14 +142,14 @@ class _$AuditorProxy implements _i1.Auditor, _i3.Advised {
   );
 
   @override
-  _i4.Future<void> nested(String text, bool fail) =>
+  _i3.Future<void> nested(String text, bool fail) =>
       this._invoker.invokeAsync<void>(this, this._target, 1, [
         text,
         fail,
       ], (args) => this._target.nested((args[0] as String), (args[1] as bool)));
 
   @override
-  _i4.Future<void> mandatory(String text) => this._invoker.invokeAsync<void>(
+  _i3.Future<void> mandatory(String text) => this._invoker.invokeAsync<void>(
     this,
     this._target,
     2,
@@ -1110,7 +158,7 @@ class _$AuditorProxy implements _i1.Auditor, _i3.Advised {
   );
 
   @override
-  _i4.Future<int> never() => this._invoker.invokeAsync<int>(
+  _i3.Future<int> never() => this._invoker.invokeAsync<int>(
     this,
     this._target,
     3,
@@ -1128,40 +176,40 @@ class _$AuditorProxy implements _i1.Auditor, _i3.Advised {
   ) as _i1.AuditRepository);
 }
 
-class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
+class _$WarehouseProxy implements _i1.Warehouse, _i2.Advised {
   _$WarehouseProxy(this._target, this._invoker);
 
   final _i1.Warehouse _target;
 
-  final _i3.ProxyInvoker _invoker;
+  final _i2.ProxyInvoker _invoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
       this._invoker.addAdvisor(advisor);
 
   @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
       this._invoker.removeAdvisor(advisor);
 
   @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
+  void addAdvice(_i2.MethodInterceptor advice) =>
       this._invoker.addAdvice(advice);
 
   @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
       this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
-  _i4.Future<void> addItem(String name, [Object? error]) =>
+  _i3.Future<void> addItem(String name, [Object? error]) =>
       this._invoker.invokeAsync<void>(
         this,
         this._target,
@@ -1172,7 +220,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
       );
 
   @override
-  _i4.Future<void> addItemTolerant(String name, Object error) =>
+  _i3.Future<void> addItemTolerant(String name, Object error) =>
       this._invoker.invokeAsync<void>(
         this,
         this._target,
@@ -1185,7 +233,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
       );
 
   @override
-  _i4.Future<void> addWithAudit(String name, {required bool fail}) =>
+  _i3.Future<void> addWithAudit(String name, {required bool fail}) =>
       this._invoker.invokeAsync<void>(
         this,
         this._target,
@@ -1198,13 +246,13 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
       );
 
   @override
-  _i4.Future<void> addWithNested({required bool failNested}) =>
+  _i3.Future<void> addWithNested({required bool failNested}) =>
       this._invoker.invokeAsync<void>(this, this._target, 3, [
         failNested,
       ], (args) => this._target.addWithNested(failNested: (args[0] as bool)));
 
   @override
-  _i4.Future<void> callMandatory() => this._invoker.invokeAsync<void>(
+  _i3.Future<void> callMandatory() => this._invoker.invokeAsync<void>(
     this,
     this._target,
     4,
@@ -1213,7 +261,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
   );
 
   @override
-  _i4.Future<int> callNever() => this._invoker.invokeAsync<int>(
+  _i3.Future<int> callNever() => this._invoker.invokeAsync<int>(
     this,
     this._target,
     5,
@@ -1222,7 +270,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
   );
 
   @override
-  _i4.Future<void> writeReadOnly() => this._invoker.invokeAsync<void>(
+  _i3.Future<void> writeReadOnly() => this._invoker.invokeAsync<void>(
     this,
     this._target,
     6,
@@ -1231,7 +279,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
   );
 
   @override
-  _i4.Future<int> countReadOnly() => this._invoker.invokeAsync<int>(
+  _i3.Future<int> countReadOnly() => this._invoker.invokeAsync<int>(
     this,
     this._target,
     7,
@@ -1240,26 +288,26 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
   );
 
   @override
-  _i4.Future<void> ship({required bool fail}) =>
+  _i3.Future<void> ship({required bool fail}) =>
       this._invoker.invokeAsync<void>(this, this._target, 8, [
         fail,
       ], (args) => this._target.ship(fail: (args[0] as bool)));
 
   @override
-  _i4.Future<int> sell(String sku, int amount) =>
+  _i3.Future<int> sell(String sku, int amount) =>
       this._invoker.invokeAsync<int>(this, this._target, 9, [
         sku,
         amount,
       ], (args) => this._target.sell((args[0] as String), (args[1] as int)));
 
   @override
-  _i4.Future<int?> peekWithTimeout(String sku) =>
+  _i3.Future<int?> peekWithTimeout(String sku) =>
       this._invoker.invokeAsync<int?>(this, this._target, 10, [
         sku,
       ], (args) => this._target.peekWithTimeout((args[0] as String)));
 
   @override
-  _i4.Future<String?> takeJob() => this._invoker.invokeAsync<String?>(
+  _i3.Future<String?> takeJob() => this._invoker.invokeAsync<String?>(
     this,
     this._target,
     11,
@@ -1268,30 +316,30 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
   );
 
   @override
-  _i4.Future<void> rename(int id, String name) =>
+  _i3.Future<void> rename(int id, String name) =>
       this._invoker.invokeAsync<void>(this, this._target, 12, [
         id,
         name,
       ], (args) => this._target.rename((args[0] as int), (args[1] as String)));
 
   @override
-  _i4.Future<_i1.Stock?> lockFromOtherStore(String sku) =>
+  _i3.Future<_i1.Stock?> lockFromOtherStore(String sku) =>
       this._invoker.invokeAsync<_i1.Stock?>(this, this._target, 13, [
         sku,
       ], (args) => this._target.lockFromOtherStore((args[0] as String)));
 
   @override
-  _i4.Future<_i4.Completer<Object?>> forgetsASave(_i4.Future<void> release) =>
-      this._invoker.invokeAsync<_i4.Completer<Object?>>(
+  _i3.Future<_i3.Completer<Object?>> forgetsASave(_i3.Future<void> release) =>
+      this._invoker.invokeAsync<_i3.Completer<Object?>>(
         this,
         this._target,
         14,
         [release],
-        (args) => this._target.forgetsASave((args[0] as _i4.Future<void>)),
+        (args) => this._target.forgetsASave((args[0] as _i3.Future<void>)),
       );
 
   @override
-  _i4.Future<void> archiveTitles(List<String> titles, {required bool fail}) =>
+  _i3.Future<void> archiveTitles(List<String> titles, {required bool fail}) =>
       this._invoker.invokeAsync<void>(
         this,
         this._target,
@@ -1304,7 +352,7 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
       );
 
   @override
-  _i4.Future<void> addItemAndArchive(String name, {required bool fail}) =>
+  _i3.Future<void> addItemAndArchive(String name, {required bool fail}) =>
       this._invoker.invokeAsync<void>(
         this,
         this._target,
@@ -1398,47 +446,47 @@ class _$WarehouseProxy implements _i1.Warehouse, _i3.Advised {
   ) as _i1.Gate);
 }
 
-class _$CatalogProxy implements _i1.Catalog, _i3.Advised {
+class _$CatalogProxy implements _i1.Catalog, _i2.Advised {
   _$CatalogProxy(this._target, this._invoker);
 
   final _i1.Catalog _target;
 
-  final _i3.ProxyInvoker _invoker;
+  final _i2.ProxyInvoker _invoker;
 
   @override
   Object get aopTarget => _target;
 
   @override
-  List<_i3.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
+  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
 
   @override
-  void addAdvisor(_i3.PointcutAdvisor advisor) =>
+  void addAdvisor(_i2.PointcutAdvisor advisor) =>
       this._invoker.addAdvisor(advisor);
 
   @override
-  bool removeAdvisor(_i3.PointcutAdvisor advisor) =>
+  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
       this._invoker.removeAdvisor(advisor);
 
   @override
-  void addAdvice(_i3.MethodInterceptor advice) =>
+  void addAdvice(_i2.MethodInterceptor advice) =>
       this._invoker.addAdvice(advice);
 
   @override
-  bool removeAdvice(_i3.MethodInterceptor advice) =>
+  bool removeAdvice(_i2.MethodInterceptor advice) =>
       this._invoker.removeAdvice(advice);
 
   @override
   String toString() => _target.toString();
 
   @override
-  _i4.Future<_i5.Page<_i1.Item>> page(int count, _i5.Pageable pageable) =>
-      this._invoker.invokeAsync<_i5.Page<_i1.Item>>(
+  _i3.Future<_i4.Page<_i1.Item>> page(int count, _i4.Pageable pageable) =>
+      this._invoker.invokeAsync<_i4.Page<_i1.Item>>(
         this,
         this._target,
         0,
         [count, pageable],
         (args) =>
-            this._target.page((args[0] as int), (args[1] as _i5.Pageable)),
+            this._target.page((args[0] as int), (args[1] as _i4.Pageable)),
       );
 
   @override
@@ -1472,279 +520,251 @@ class _$CatalogProxy implements _i1.Catalog, _i3.Advised {
 class _$ItemRepositoryImpl implements _i1.ItemRepository {
   _$ItemRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.ItemRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.ItemRepository> _metadata;
 
-  static _$ItemRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.ItemRepository>(
+  static _$ItemRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.ItemRepository>(
       typeName: r'ItemRepository',
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findByCountGreaterThan',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'count',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'pageable',
-              type: const _i3.ClassType<_i5.Pageable>(),
+              type: const _i2.ClassType<_i4.Pageable>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.GenericType<_i5.Page<_i1.Item>>([
-            _i3.ClassType<_i1.Item>(),
+          returnType: const _i2.GenericType<_i4.Page<_i1.Item>>([
+            _i2.ClassType<_i1.Item>(),
           ]),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).findByCountGreaterThan(
-                (arguments[0] as int),
-                (arguments[1] as _i5.Pageable),
-              ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Item>(_i3.ClassType<_i1.Item>()),
+              type: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Item>(_i3.ClassType<_i1.Item>()),
+          returnType: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ItemRepository).saveAll(
-            (arguments[0] as Iterable<_i1.Item>),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.Item>(_i3.ClassType<_i1.Item>()),
+          returnType: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ItemRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Item>(_i3.ClassType<_i1.Item>()),
+          returnType: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ItemRepository)
-              .findAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Item>(),
+              type: const _i2.ClassType<_i1.Item>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Item>(),
+          returnType: const _i2.ClassType<_i1.Item>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).save((arguments[0] as _i1.Item)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Item>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Item>(nullable: true),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).findById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).existsById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ItemRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).deleteById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Item>(),
+              type: const _i2.ClassType<_i1.Item>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).delete((arguments[0] as _i1.Item)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ItemRepository)
-              .deleteAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Item>(_i3.ClassType<_i1.Item>()),
+              type: const _i2.ListType<_i1.Item>(_i2.ClassType<_i1.Item>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ItemRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.Item>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.ItemRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'ListCrudRepository': [
-          const _i3.ClassType<_i1.Item>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Item>(),
+          const _i2.ClassType<int>(),
         ],
         r'CrudRepository': [
-          const _i3.ClassType<_i1.Item>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Item>(),
+          const _i2.ClassType<int>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.Item>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Item>(),
+          const _i2.ClassType<int>(),
         ],
       },
     );
     return _$ItemRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<_i5.Page<_i1.Item>> findByCountGreaterThan(
+  _i3.Future<_i4.Page<_i1.Item>> findByCountGreaterThan(
     int count,
-    _i5.Pageable pageable,
-  ) => _i3.retypeFuture<_i5.Page<_i1.Item>>(
+    _i4.Pageable pageable,
+  ) => _i2.retypeFuture<_i4.Page<_i1.Item>>(
     this._handler.invoke(this._metadata.methods[0], [count, pageable]),
   );
 
   @override
-  _i4.Future<List<_i1.Item>> saveAll(Iterable<_i1.Item> entities) =>
-      _i3.retypeFuture<List<_i1.Item>>(
+  _i3.Future<List<_i1.Item>> saveAll(Iterable<_i1.Item> entities) =>
+      _i2.retypeFuture<List<_i1.Item>>(
         this._handler.invoke(this._metadata.methods[1], [entities]),
       );
 
   @override
-  _i4.Future<List<_i1.Item>> findAll() => _i3.retypeFuture<List<_i1.Item>>(
+  _i3.Future<List<_i1.Item>> findAll() => _i2.retypeFuture<List<_i1.Item>>(
     this._handler.invoke(this._metadata.methods[2], const []),
   );
 
   @override
-  _i4.Future<List<_i1.Item>> findAllById(Iterable<int> ids) =>
-      _i3.retypeFuture<List<_i1.Item>>(
+  _i3.Future<List<_i1.Item>> findAllById(Iterable<int> ids) =>
+      _i2.retypeFuture<List<_i1.Item>>(
         this._handler.invoke(this._metadata.methods[3], [ids]),
       );
 
   @override
-  _i4.Future<_i1.Item> save(_i1.Item entity) => _i3.retypeFuture<_i1.Item>(
+  _i3.Future<_i1.Item> save(_i1.Item entity) => _i2.retypeFuture<_i1.Item>(
     this._handler.invoke(this._metadata.methods[4], [entity]),
   );
 
   @override
-  _i4.Future<_i1.Item?> findById(int id) => _i3.retypeFuture<_i1.Item?>(
+  _i3.Future<_i1.Item?> findById(int id) => _i2.retypeFuture<_i1.Item?>(
     this._handler.invoke(this._metadata.methods[5], [id]),
   );
 
   @override
-  _i4.Future<bool> existsById(int id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[6], [id]),
   );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[7], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(int id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[8], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.Item entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.Item entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[9], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[10], [ids]),
   );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Item> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.Item> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[11], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[12], const []),
   );
 }
@@ -1753,295 +773,266 @@ class _$ItemRepositoryImpl implements _i1.ItemRepository {
 class _$StockRepositoryImpl implements _i1.StockRepository {
   _$StockRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.StockRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.StockRepository> _metadata;
 
-  static _$StockRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.StockRepository>(
+  static _$StockRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.StockRepository>(
       typeName: r'StockRepository',
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findBySku',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'sku',
-              type: const _i3.ClassType<String>(),
+              type: const _i2.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Stock>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
           isFuture: true,
-          annotations: const [_i6.Lock(_i6.LockMode.pessimisticWrite)],
-          call: (target, arguments) => (target as _i1.StockRepository)
-              .findBySku((arguments[0] as String)),
+          annotations: const [_i5.Lock(_i5.LockMode.pessimisticWrite)],
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findOneBySku',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'sku',
-              type: const _i3.ClassType<String>(),
+              type: const _i2.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Stock>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
           isFuture: true,
           annotations: const [
-            _i6.Lock(
-              _i6.LockMode.pessimisticWrite,
+            _i5.Lock(
+              _i5.LockMode.pessimisticWrite,
               timeout: Duration(milliseconds: 50),
             ),
           ],
-          call: (target, arguments) => (target as _i1.StockRepository)
-              .findOneBySku((arguments[0] as String)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Stock>(_i3.ClassType<_i1.Stock>()),
+              type: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Stock>(_i3.ClassType<_i1.Stock>()),
+          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.StockRepository).saveAll(
-            (arguments[0] as Iterable<_i1.Stock>),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.Stock>(_i3.ClassType<_i1.Stock>()),
+          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.StockRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Stock>(_i3.ClassType<_i1.Stock>()),
+          returnType: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.StockRepository)
-              .findAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Stock>(),
+              type: const _i2.ClassType<_i1.Stock>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Stock>(),
+          returnType: const _i2.ClassType<_i1.Stock>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.StockRepository).save((arguments[0] as _i1.Stock)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Stock>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Stock>(nullable: true),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.StockRepository).findById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.StockRepository).existsById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.StockRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.StockRepository).deleteById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Stock>(),
+              type: const _i2.ClassType<_i1.Stock>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.StockRepository).delete(
-            (arguments[0] as _i1.Stock),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.StockRepository)
-              .deleteAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Stock>(_i3.ClassType<_i1.Stock>()),
+              type: const _i2.ListType<_i1.Stock>(_i2.ClassType<_i1.Stock>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.StockRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.Stock>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.StockRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'ListCrudRepository': [
-          const _i3.ClassType<_i1.Stock>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Stock>(),
+          const _i2.ClassType<int>(),
         ],
         r'CrudRepository': [
-          const _i3.ClassType<_i1.Stock>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Stock>(),
+          const _i2.ClassType<int>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.Stock>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Stock>(),
+          const _i2.ClassType<int>(),
         ],
       },
     );
     return _$StockRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<_i1.Stock?> findBySku(String sku) => _i3.retypeFuture<_i1.Stock?>(
+  _i3.Future<_i1.Stock?> findBySku(String sku) => _i2.retypeFuture<_i1.Stock?>(
     this._handler.invoke(this._metadata.methods[0], [sku]),
   );
 
   @override
-  _i4.Future<_i1.Stock?> findOneBySku(String sku) =>
-      _i3.retypeFuture<_i1.Stock?>(
+  _i3.Future<_i1.Stock?> findOneBySku(String sku) =>
+      _i2.retypeFuture<_i1.Stock?>(
         this._handler.invoke(this._metadata.methods[1], [sku]),
       );
 
   @override
-  _i4.Future<List<_i1.Stock>> saveAll(Iterable<_i1.Stock> entities) =>
-      _i3.retypeFuture<List<_i1.Stock>>(
+  _i3.Future<List<_i1.Stock>> saveAll(Iterable<_i1.Stock> entities) =>
+      _i2.retypeFuture<List<_i1.Stock>>(
         this._handler.invoke(this._metadata.methods[2], [entities]),
       );
 
   @override
-  _i4.Future<List<_i1.Stock>> findAll() => _i3.retypeFuture<List<_i1.Stock>>(
+  _i3.Future<List<_i1.Stock>> findAll() => _i2.retypeFuture<List<_i1.Stock>>(
     this._handler.invoke(this._metadata.methods[3], const []),
   );
 
   @override
-  _i4.Future<List<_i1.Stock>> findAllById(Iterable<int> ids) =>
-      _i3.retypeFuture<List<_i1.Stock>>(
+  _i3.Future<List<_i1.Stock>> findAllById(Iterable<int> ids) =>
+      _i2.retypeFuture<List<_i1.Stock>>(
         this._handler.invoke(this._metadata.methods[4], [ids]),
       );
 
   @override
-  _i4.Future<_i1.Stock> save(_i1.Stock entity) => _i3.retypeFuture<_i1.Stock>(
+  _i3.Future<_i1.Stock> save(_i1.Stock entity) => _i2.retypeFuture<_i1.Stock>(
     this._handler.invoke(this._metadata.methods[5], [entity]),
   );
 
   @override
-  _i4.Future<_i1.Stock?> findById(int id) => _i3.retypeFuture<_i1.Stock?>(
+  _i3.Future<_i1.Stock?> findById(int id) => _i2.retypeFuture<_i1.Stock?>(
     this._handler.invoke(this._metadata.methods[6], [id]),
   );
 
   @override
-  _i4.Future<bool> existsById(int id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[7], [id]),
   );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[8], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(int id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[9], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.Stock entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.Stock entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[10], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[11], [ids]),
   );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Stock> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.Stock> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[12], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[13], const []),
   );
 }
@@ -2050,263 +1041,238 @@ class _$StockRepositoryImpl implements _i1.StockRepository {
 class _$JobRepositoryImpl implements _i1.JobRepository {
   _$JobRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.JobRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.JobRepository> _metadata;
 
-  static _$JobRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.JobRepository>(
+  static _$JobRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.JobRepository>(
       typeName: r'JobRepository',
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findFirstByDoneFalseOrderById',
-          returnType: const _i3.ClassType<_i1.Job>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Job>(nullable: true),
           isFuture: true,
           annotations: const [
-            _i6.Lock(_i6.LockMode.pessimisticWrite, skipLocked: true),
+            _i5.Lock(_i5.LockMode.pessimisticWrite, skipLocked: true),
           ],
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).findFirstByDoneFalseOrderById(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Job>(_i3.ClassType<_i1.Job>()),
+              type: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Job>(_i3.ClassType<_i1.Job>()),
+          returnType: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.JobRepository).saveAll(
-            (arguments[0] as Iterable<_i1.Job>),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.Job>(_i3.ClassType<_i1.Job>()),
+          returnType: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.JobRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Job>(_i3.ClassType<_i1.Job>()),
+          returnType: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.JobRepository)
-              .findAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Job>(),
+              type: const _i2.ClassType<_i1.Job>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Job>(),
+          returnType: const _i2.ClassType<_i1.Job>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).save((arguments[0] as _i1.Job)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Job>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Job>(nullable: true),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).findById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).existsById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.JobRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).deleteById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Job>(),
+              type: const _i2.ClassType<_i1.Job>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).delete((arguments[0] as _i1.Job)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.JobRepository)
-              .deleteAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Job>(_i3.ClassType<_i1.Job>()),
+              type: const _i2.ListType<_i1.Job>(_i2.ClassType<_i1.Job>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.JobRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.Job>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.JobRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'ListCrudRepository': [
-          const _i3.ClassType<_i1.Job>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Job>(),
+          const _i2.ClassType<int>(),
         ],
         r'CrudRepository': [
-          const _i3.ClassType<_i1.Job>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Job>(),
+          const _i2.ClassType<int>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.Job>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Job>(),
+          const _i2.ClassType<int>(),
         ],
       },
     );
     return _$JobRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<_i1.Job?> findFirstByDoneFalseOrderById() =>
-      _i3.retypeFuture<_i1.Job?>(
+  _i3.Future<_i1.Job?> findFirstByDoneFalseOrderById() =>
+      _i2.retypeFuture<_i1.Job?>(
         this._handler.invoke(this._metadata.methods[0], const []),
       );
 
   @override
-  _i4.Future<List<_i1.Job>> saveAll(Iterable<_i1.Job> entities) =>
-      _i3.retypeFuture<List<_i1.Job>>(
+  _i3.Future<List<_i1.Job>> saveAll(Iterable<_i1.Job> entities) =>
+      _i2.retypeFuture<List<_i1.Job>>(
         this._handler.invoke(this._metadata.methods[1], [entities]),
       );
 
   @override
-  _i4.Future<List<_i1.Job>> findAll() => _i3.retypeFuture<List<_i1.Job>>(
+  _i3.Future<List<_i1.Job>> findAll() => _i2.retypeFuture<List<_i1.Job>>(
     this._handler.invoke(this._metadata.methods[2], const []),
   );
 
   @override
-  _i4.Future<List<_i1.Job>> findAllById(Iterable<int> ids) =>
-      _i3.retypeFuture<List<_i1.Job>>(
+  _i3.Future<List<_i1.Job>> findAllById(Iterable<int> ids) =>
+      _i2.retypeFuture<List<_i1.Job>>(
         this._handler.invoke(this._metadata.methods[3], [ids]),
       );
 
   @override
-  _i4.Future<_i1.Job> save(_i1.Job entity) => _i3.retypeFuture<_i1.Job>(
+  _i3.Future<_i1.Job> save(_i1.Job entity) => _i2.retypeFuture<_i1.Job>(
     this._handler.invoke(this._metadata.methods[4], [entity]),
   );
 
   @override
-  _i4.Future<_i1.Job?> findById(int id) => _i3.retypeFuture<_i1.Job?>(
+  _i3.Future<_i1.Job?> findById(int id) => _i2.retypeFuture<_i1.Job?>(
     this._handler.invoke(this._metadata.methods[5], [id]),
   );
 
   @override
-  _i4.Future<bool> existsById(int id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[6], [id]),
   );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[7], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(int id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[8], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.Job entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.Job entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[9], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[10], [ids]),
   );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Job> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.Job> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[11], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[12], const []),
   );
 }
@@ -2315,263 +1281,237 @@ class _$JobRepositoryImpl implements _i1.JobRepository {
 class _$AuditRepositoryImpl implements _i1.AuditRepository {
   _$AuditRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.AuditRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.AuditRepository> _metadata;
 
-  static _$AuditRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.AuditRepository>(
+  static _$AuditRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.AuditRepository>(
       typeName: r'AuditRepository',
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.AuditLine>(
-                _i3.ClassType<_i1.AuditLine>(),
+              type: const _i2.ListType<_i1.AuditLine>(
+                _i2.ClassType<_i1.AuditLine>(),
               ),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.AuditLine>(
-            _i3.ClassType<_i1.AuditLine>(),
+          returnType: const _i2.ListType<_i1.AuditLine>(
+            _i2.ClassType<_i1.AuditLine>(),
           ),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.AuditRepository).saveAll(
-            (arguments[0] as Iterable<_i1.AuditLine>),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.AuditLine>(
-            _i3.ClassType<_i1.AuditLine>(),
+          returnType: const _i2.ListType<_i1.AuditLine>(
+            _i2.ClassType<_i1.AuditLine>(),
           ),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.AuditRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.AuditLine>(
-            _i3.ClassType<_i1.AuditLine>(),
+          returnType: const _i2.ListType<_i1.AuditLine>(
+            _i2.ClassType<_i1.AuditLine>(),
           ),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.AuditRepository)
-              .findAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.AuditLine>(),
+              type: const _i2.ClassType<_i1.AuditLine>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.AuditLine>(),
+          returnType: const _i2.ClassType<_i1.AuditLine>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.AuditRepository).save(
-            (arguments[0] as _i1.AuditLine),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.AuditLine>(nullable: true),
+          returnType: const _i2.ClassType<_i1.AuditLine>(nullable: true),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.AuditRepository).findById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.AuditRepository).existsById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.AuditRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.AuditRepository).deleteById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.AuditLine>(),
+              type: const _i2.ClassType<_i1.AuditLine>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.AuditRepository).delete(
-            (arguments[0] as _i1.AuditLine),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.AuditRepository)
-              .deleteAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.AuditLine>(
-                _i3.ClassType<_i1.AuditLine>(),
+              type: const _i2.ListType<_i1.AuditLine>(
+                _i2.ClassType<_i1.AuditLine>(),
               ),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.AuditRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.AuditLine>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.AuditRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'ListCrudRepository': [
-          const _i3.ClassType<_i1.AuditLine>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.AuditLine>(),
+          const _i2.ClassType<int>(),
         ],
         r'CrudRepository': [
-          const _i3.ClassType<_i1.AuditLine>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.AuditLine>(),
+          const _i2.ClassType<int>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.AuditLine>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.AuditLine>(),
+          const _i2.ClassType<int>(),
         ],
       },
     );
     return _$AuditRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<List<_i1.AuditLine>> saveAll(Iterable<_i1.AuditLine> entities) =>
-      _i3.retypeFuture<List<_i1.AuditLine>>(
+  _i3.Future<List<_i1.AuditLine>> saveAll(Iterable<_i1.AuditLine> entities) =>
+      _i2.retypeFuture<List<_i1.AuditLine>>(
         this._handler.invoke(this._metadata.methods[0], [entities]),
       );
 
   @override
-  _i4.Future<List<_i1.AuditLine>> findAll() =>
-      _i3.retypeFuture<List<_i1.AuditLine>>(
+  _i3.Future<List<_i1.AuditLine>> findAll() =>
+      _i2.retypeFuture<List<_i1.AuditLine>>(
         this._handler.invoke(this._metadata.methods[1], const []),
       );
 
   @override
-  _i4.Future<List<_i1.AuditLine>> findAllById(Iterable<int> ids) =>
-      _i3.retypeFuture<List<_i1.AuditLine>>(
+  _i3.Future<List<_i1.AuditLine>> findAllById(Iterable<int> ids) =>
+      _i2.retypeFuture<List<_i1.AuditLine>>(
         this._handler.invoke(this._metadata.methods[2], [ids]),
       );
 
   @override
-  _i4.Future<_i1.AuditLine> save(_i1.AuditLine entity) =>
-      _i3.retypeFuture<_i1.AuditLine>(
+  _i3.Future<_i1.AuditLine> save(_i1.AuditLine entity) =>
+      _i2.retypeFuture<_i1.AuditLine>(
         this._handler.invoke(this._metadata.methods[3], [entity]),
       );
 
   @override
-  _i4.Future<_i1.AuditLine?> findById(int id) =>
-      _i3.retypeFuture<_i1.AuditLine?>(
+  _i3.Future<_i1.AuditLine?> findById(int id) =>
+      _i2.retypeFuture<_i1.AuditLine?>(
         this._handler.invoke(this._metadata.methods[4], [id]),
       );
 
   @override
-  _i4.Future<bool> existsById(int id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[5], [id]),
   );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[6], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(int id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[7], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.AuditLine entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.AuditLine entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[8], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[9], [ids]),
   );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.AuditLine> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.AuditLine> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[10], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[11], const []),
   );
 }
@@ -2580,248 +1520,222 @@ class _$AuditRepositoryImpl implements _i1.AuditRepository {
 class _$LabelRepositoryImpl implements _i1.LabelRepository {
   _$LabelRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.LabelRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.LabelRepository> _metadata;
 
-  static _$LabelRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.LabelRepository>(
+  static _$LabelRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.LabelRepository>(
       typeName: r'LabelRepository',
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Label>(),
+              type: const _i2.ClassType<_i1.Label>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Label>(),
+          returnType: const _i2.ClassType<_i1.Label>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.LabelRepository).save((arguments[0] as _i1.Label)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Label>(_i3.ClassType<_i1.Label>()),
+              type: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Label>(_i3.ClassType<_i1.Label>()),
+          returnType: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.LabelRepository).saveAll(
-            (arguments[0] as Iterable<_i1.Label>),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<String>(),
+              type: const _i2.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Label>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Label>(nullable: true),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.LabelRepository).findById(
-            (arguments[0] as String),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<String>(),
+              type: const _i2.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.LabelRepository)
-              .existsById((arguments[0] as String)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.Label>(_i3.ClassType<_i1.Label>()),
+          returnType: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.LabelRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<String>(_i3.ClassType<String>()),
+              type: const _i2.ListType<String>(_i2.ClassType<String>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Label>(_i3.ClassType<_i1.Label>()),
+          returnType: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.LabelRepository)
-              .findAllById((arguments[0] as Iterable<String>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.LabelRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<String>(),
+              type: const _i2.ClassType<String>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.LabelRepository)
-              .deleteById((arguments[0] as String)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Label>(),
+              type: const _i2.ClassType<_i1.Label>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.LabelRepository).delete(
-            (arguments[0] as _i1.Label),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<String>(_i3.ClassType<String>()),
+              type: const _i2.ListType<String>(_i2.ClassType<String>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.LabelRepository)
-              .deleteAllById((arguments[0] as Iterable<String>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Label>(_i3.ClassType<_i1.Label>()),
+              type: const _i2.ListType<_i1.Label>(_i2.ClassType<_i1.Label>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.LabelRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.Label>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.LabelRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'CrudRepository': [
-          const _i3.ClassType<_i1.Label>(),
-          const _i3.ClassType<String>(),
+          const _i2.ClassType<_i1.Label>(),
+          const _i2.ClassType<String>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.Label>(),
-          const _i3.ClassType<String>(),
+          const _i2.ClassType<_i1.Label>(),
+          const _i2.ClassType<String>(),
         ],
       },
     );
     return _$LabelRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<_i1.Label> save(_i1.Label entity) => _i3.retypeFuture<_i1.Label>(
+  _i3.Future<_i1.Label> save(_i1.Label entity) => _i2.retypeFuture<_i1.Label>(
     this._handler.invoke(this._metadata.methods[0], [entity]),
   );
 
   @override
-  _i4.Future<Iterable<_i1.Label>> saveAll(Iterable<_i1.Label> entities) =>
-      _i3.retypeFuture<Iterable<_i1.Label>>(
+  _i3.Future<Iterable<_i1.Label>> saveAll(Iterable<_i1.Label> entities) =>
+      _i2.retypeFuture<Iterable<_i1.Label>>(
         this._handler.invoke(this._metadata.methods[1], [entities]),
       );
 
   @override
-  _i4.Future<_i1.Label?> findById(String id) => _i3.retypeFuture<_i1.Label?>(
+  _i3.Future<_i1.Label?> findById(String id) => _i2.retypeFuture<_i1.Label?>(
     this._handler.invoke(this._metadata.methods[2], [id]),
   );
 
   @override
-  _i4.Future<bool> existsById(String id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(String id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[3], [id]),
   );
 
   @override
-  _i4.Future<Iterable<_i1.Label>> findAll() =>
-      _i3.retypeFuture<Iterable<_i1.Label>>(
+  _i3.Future<Iterable<_i1.Label>> findAll() =>
+      _i2.retypeFuture<Iterable<_i1.Label>>(
         this._handler.invoke(this._metadata.methods[4], const []),
       );
 
   @override
-  _i4.Future<Iterable<_i1.Label>> findAllById(Iterable<String> ids) =>
-      _i3.retypeFuture<Iterable<_i1.Label>>(
+  _i3.Future<Iterable<_i1.Label>> findAllById(Iterable<String> ids) =>
+      _i2.retypeFuture<Iterable<_i1.Label>>(
         this._handler.invoke(this._metadata.methods[5], [ids]),
       );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[6], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(String id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(String id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[7], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.Label entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.Label entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[8], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<String> ids) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<String> ids) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[9], [ids]),
       );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Label> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.Label> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[10], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[11], const []),
   );
 }
@@ -2830,261 +1744,236 @@ class _$LabelRepositoryImpl implements _i1.LabelRepository {
 class _$ShipmentRepositoryImpl implements _i1.ShipmentRepository {
   _$ShipmentRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.ShipmentRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.ShipmentRepository> _metadata;
 
-  static _$ShipmentRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.ShipmentRepository>(
+  static _$ShipmentRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.ShipmentRepository>(
       typeName: r'ShipmentRepository',
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Shipment>(
-                _i3.ClassType<_i1.Shipment>(),
+              type: const _i2.ListType<_i1.Shipment>(
+                _i2.ClassType<_i1.Shipment>(),
               ),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Shipment>(
-            _i3.ClassType<_i1.Shipment>(),
+          returnType: const _i2.ListType<_i1.Shipment>(
+            _i2.ClassType<_i1.Shipment>(),
           ),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .saveAll((arguments[0] as Iterable<_i1.Shipment>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.Shipment>(
-            _i3.ClassType<_i1.Shipment>(),
+          returnType: const _i2.ListType<_i1.Shipment>(
+            _i2.ClassType<_i1.Shipment>(),
           ),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ShipmentRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Shipment>(
-            _i3.ClassType<_i1.Shipment>(),
+          returnType: const _i2.ListType<_i1.Shipment>(
+            _i2.ClassType<_i1.Shipment>(),
           ),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .findAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Shipment>(),
+              type: const _i2.ClassType<_i1.Shipment>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Shipment>(),
+          returnType: const _i2.ClassType<_i1.Shipment>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository).save(
-            (arguments[0] as _i1.Shipment),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Shipment>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Shipment>(nullable: true),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .findById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .existsById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ShipmentRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .deleteById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Shipment>(),
+              type: const _i2.ClassType<_i1.Shipment>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .delete((arguments[0] as _i1.Shipment)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .deleteAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Shipment>(
-                _i3.ClassType<_i1.Shipment>(),
+              type: const _i2.ListType<_i1.Shipment>(
+                _i2.ClassType<_i1.Shipment>(),
               ),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ShipmentRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.Shipment>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.ShipmentRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'ListCrudRepository': [
-          const _i3.ClassType<_i1.Shipment>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Shipment>(),
+          const _i2.ClassType<int>(),
         ],
         r'CrudRepository': [
-          const _i3.ClassType<_i1.Shipment>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Shipment>(),
+          const _i2.ClassType<int>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.Shipment>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Shipment>(),
+          const _i2.ClassType<int>(),
         ],
       },
     );
     return _$ShipmentRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<List<_i1.Shipment>> saveAll(Iterable<_i1.Shipment> entities) =>
-      _i3.retypeFuture<List<_i1.Shipment>>(
+  _i3.Future<List<_i1.Shipment>> saveAll(Iterable<_i1.Shipment> entities) =>
+      _i2.retypeFuture<List<_i1.Shipment>>(
         this._handler.invoke(this._metadata.methods[0], [entities]),
       );
 
   @override
-  _i4.Future<List<_i1.Shipment>> findAll() =>
-      _i3.retypeFuture<List<_i1.Shipment>>(
+  _i3.Future<List<_i1.Shipment>> findAll() =>
+      _i2.retypeFuture<List<_i1.Shipment>>(
         this._handler.invoke(this._metadata.methods[1], const []),
       );
 
   @override
-  _i4.Future<List<_i1.Shipment>> findAllById(Iterable<int> ids) =>
-      _i3.retypeFuture<List<_i1.Shipment>>(
+  _i3.Future<List<_i1.Shipment>> findAllById(Iterable<int> ids) =>
+      _i2.retypeFuture<List<_i1.Shipment>>(
         this._handler.invoke(this._metadata.methods[2], [ids]),
       );
 
   @override
-  _i4.Future<_i1.Shipment> save(_i1.Shipment entity) =>
-      _i3.retypeFuture<_i1.Shipment>(
+  _i3.Future<_i1.Shipment> save(_i1.Shipment entity) =>
+      _i2.retypeFuture<_i1.Shipment>(
         this._handler.invoke(this._metadata.methods[3], [entity]),
       );
 
   @override
-  _i4.Future<_i1.Shipment?> findById(int id) => _i3.retypeFuture<_i1.Shipment?>(
+  _i3.Future<_i1.Shipment?> findById(int id) => _i2.retypeFuture<_i1.Shipment?>(
     this._handler.invoke(this._metadata.methods[4], [id]),
   );
 
   @override
-  _i4.Future<bool> existsById(int id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[5], [id]),
   );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[6], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(int id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[7], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.Shipment entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.Shipment entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[8], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[9], [ids]),
   );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Shipment> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.Shipment> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[10], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[11], const []),
   );
 }
@@ -3093,2119 +1982,407 @@ class _$ShipmentRepositoryImpl implements _i1.ShipmentRepository {
 class _$ArchiveRepositoryImpl implements _i1.ArchiveRepository {
   _$ArchiveRepositoryImpl(this._handler, this._metadata);
 
-  final _i3.InvocationHandler _handler;
+  final _i2.InvocationHandler _handler;
 
-  final _i3.InterfaceMetadata<_i1.ArchiveRepository> _metadata;
+  final _i2.InterfaceMetadata<_i1.ArchiveRepository> _metadata;
 
-  static _$ArchiveRepositoryImpl $create(_i3.DependencyResolver r) {
-    final metadata = _i3.InterfaceMetadata<_i1.ArchiveRepository>(
+  static _$ArchiveRepositoryImpl $create(_i2.DependencyResolver r) {
+    final metadata = _i2.InterfaceMetadata<_i1.ArchiveRepository>(
       typeName: r'ArchiveRepository',
       annotations: const [
-        _i6.UseStore(r'memory'),
-        _i6.UseDataSource(r'archive'),
+        _i5.UseStore(r'memory'),
+        _i5.UseDataSource(r'archive'),
       ],
       methods: [
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'saveAll',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Archived>(
-                _i3.ClassType<_i1.Archived>(),
+              type: const _i2.ListType<_i1.Archived>(
+                _i2.ClassType<_i1.Archived>(),
               ),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Archived>(
-            _i3.ClassType<_i1.Archived>(),
+          returnType: const _i2.ListType<_i1.Archived>(
+            _i2.ClassType<_i1.Archived>(),
           ),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository)
-              .saveAll((arguments[0] as Iterable<_i1.Archived>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAll',
-          returnType: const _i3.ListType<_i1.Archived>(
-            _i3.ClassType<_i1.Archived>(),
+          returnType: const _i2.ListType<_i1.Archived>(
+            _i2.ClassType<_i1.Archived>(),
           ),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ArchiveRepository).findAll(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ListType<_i1.Archived>(
-            _i3.ClassType<_i1.Archived>(),
+          returnType: const _i2.ListType<_i1.Archived>(
+            _i2.ClassType<_i1.Archived>(),
           ),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository)
-              .findAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'save',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Archived>(),
+              type: const _i2.ClassType<_i1.Archived>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Archived>(),
+          returnType: const _i2.ClassType<_i1.Archived>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository).save(
-            (arguments[0] as _i1.Archived),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'findById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<_i1.Archived>(nullable: true),
+          returnType: const _i2.ClassType<_i1.Archived>(nullable: true),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ArchiveRepository).findById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'existsById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.ClassType<bool>(),
+          returnType: const _i2.ClassType<bool>(),
           isFuture: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository)
-              .existsById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'count',
-          returnType: const _i3.ClassType<int>(),
+          returnType: const _i2.ClassType<int>(),
           isFuture: true,
-          call: (target, arguments) =>
-              (target as _i1.ArchiveRepository).count(),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'id',
-              type: const _i3.ClassType<int>(),
+              type: const _i2.ClassType<int>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository)
-              .deleteById((arguments[0] as int)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'delete',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entity',
-              type: const _i3.ClassType<_i1.Archived>(),
+              type: const _i2.ClassType<_i1.Archived>(),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository).delete(
-            (arguments[0] as _i1.Archived),
-          ),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllById',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'ids',
-              type: const _i3.ListType<int>(_i3.ClassType<int>()),
+              type: const _i2.ListType<int>(_i2.ClassType<int>()),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository)
-              .deleteAllById((arguments[0] as Iterable<int>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAllOf',
           parameters: [
-            _i3.BeanParameter(
+            _i2.BeanParameter(
               r'entities',
-              type: const _i3.ListType<_i1.Archived>(
-                _i3.ClassType<_i1.Archived>(),
+              type: const _i2.ListType<_i1.Archived>(
+                _i2.ClassType<_i1.Archived>(),
               ),
               isRequired: true,
             ),
           ],
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) => (target as _i1.ArchiveRepository)
-              .deleteAllOf((arguments[0] as Iterable<_i1.Archived>)),
         ),
-        _i3.ProxyMethod(
+        _i2.ProxyMethod(
           r'deleteAll',
-          returnType: const _i3.DynamicType(),
+          returnType: const _i2.DynamicType(),
           isFuture: true,
           isVoid: true,
-          call: (target, arguments) =>
-              (target as _i1.ArchiveRepository).deleteAll(),
         ),
       ],
       supertypeArguments: {
         r'ListCrudRepository': [
-          const _i3.ClassType<_i1.Archived>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Archived>(),
+          const _i2.ClassType<int>(),
         ],
         r'CrudRepository': [
-          const _i3.ClassType<_i1.Archived>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Archived>(),
+          const _i2.ClassType<int>(),
         ],
         r'DataRepository': [
-          const _i3.ClassType<_i1.Archived>(),
-          const _i3.ClassType<int>(),
+          const _i2.ClassType<_i1.Archived>(),
+          const _i2.ClassType<int>(),
         ],
       },
     );
     return _$ArchiveRepositoryImpl(
-      _i3.InterfaceProxies.handlerFor(r, metadata),
+      _i2.InterfaceProxies.handlerFor(r, metadata),
       metadata,
     );
   }
 
   @override
-  _i4.Future<List<_i1.Archived>> saveAll(Iterable<_i1.Archived> entities) =>
-      _i3.retypeFuture<List<_i1.Archived>>(
+  _i3.Future<List<_i1.Archived>> saveAll(Iterable<_i1.Archived> entities) =>
+      _i2.retypeFuture<List<_i1.Archived>>(
         this._handler.invoke(this._metadata.methods[0], [entities]),
       );
 
   @override
-  _i4.Future<List<_i1.Archived>> findAll() =>
-      _i3.retypeFuture<List<_i1.Archived>>(
+  _i3.Future<List<_i1.Archived>> findAll() =>
+      _i2.retypeFuture<List<_i1.Archived>>(
         this._handler.invoke(this._metadata.methods[1], const []),
       );
 
   @override
-  _i4.Future<List<_i1.Archived>> findAllById(Iterable<int> ids) =>
-      _i3.retypeFuture<List<_i1.Archived>>(
+  _i3.Future<List<_i1.Archived>> findAllById(Iterable<int> ids) =>
+      _i2.retypeFuture<List<_i1.Archived>>(
         this._handler.invoke(this._metadata.methods[2], [ids]),
       );
 
   @override
-  _i4.Future<_i1.Archived> save(_i1.Archived entity) =>
-      _i3.retypeFuture<_i1.Archived>(
+  _i3.Future<_i1.Archived> save(_i1.Archived entity) =>
+      _i2.retypeFuture<_i1.Archived>(
         this._handler.invoke(this._metadata.methods[3], [entity]),
       );
 
   @override
-  _i4.Future<_i1.Archived?> findById(int id) => _i3.retypeFuture<_i1.Archived?>(
+  _i3.Future<_i1.Archived?> findById(int id) => _i2.retypeFuture<_i1.Archived?>(
     this._handler.invoke(this._metadata.methods[4], [id]),
   );
 
   @override
-  _i4.Future<bool> existsById(int id) => _i3.retypeFuture<bool>(
+  _i3.Future<bool> existsById(int id) => _i2.retypeFuture<bool>(
     this._handler.invoke(this._metadata.methods[5], [id]),
   );
 
   @override
-  _i4.Future<int> count() => _i3.retypeFuture<int>(
+  _i3.Future<int> count() => _i2.retypeFuture<int>(
     this._handler.invoke(this._metadata.methods[6], const []),
   );
 
   @override
-  _i4.Future<void> deleteById(int id) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteById(int id) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[7], [id]),
   );
 
   @override
-  _i4.Future<void> delete(_i1.Archived entity) => _i3.retypeFuture<void>(
+  _i3.Future<void> delete(_i1.Archived entity) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[8], [entity]),
   );
 
   @override
-  _i4.Future<void> deleteAllById(Iterable<int> ids) => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllById(Iterable<int> ids) => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[9], [ids]),
   );
 
   @override
-  _i4.Future<void> deleteAllOf(Iterable<_i1.Archived> entities) =>
-      _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAllOf(Iterable<_i1.Archived> entities) =>
+      _i2.retypeFuture<void>(
         this._handler.invoke(this._metadata.methods[10], [entities]),
       );
 
   @override
-  _i4.Future<void> deleteAll() => _i3.retypeFuture<void>(
+  _i3.Future<void> deleteAll() => _i2.retypeFuture<void>(
     this._handler.invoke(this._metadata.methods[11], const []),
   );
 }
 
 /// Beans found by `@ComponentScan` in `lib/ and test/integration/app/`.
-_i3.BeanModule get $application => _i3.BeanModule(
+_i2.BeanModule get $application => _i2.BeanModule(
   r'application',
   [
-    _i3.BeanDefinition<_i1.ItemRepository>(
+    _i2.BeanDefinition<_i1.ItemRepository>(
       name: r'itemRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ItemRepository',
       types: const [
         _i1.ItemRepository,
-        _i2.ListCrudRepository<_i1.Item, int>,
-        _i2.CrudRepository<_i1.Item, int>,
-        _i2.DataRepository<_i1.Item, int>,
-        _i2.ListCrudRepository<dynamic, dynamic>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Item, int>,
+        _i6.CrudRepository<_i1.Item, int>,
+        _i6.DataRepository<_i1.Item, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ItemRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'findByCountGreaterThan',
-            declaringType: r'ItemRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'ItemRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int', r'Pageable'],
-            parameterNames: [r'count', r'pageable'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-          ),
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Item'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Item'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'ItemRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ItemRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ItemRepositoryProxy((target as _i1.ItemRepository), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ItemRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.StockRepository>(
+    _i2.BeanDefinition<_i1.StockRepository>(
       name: r'stockRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#StockRepository',
       types: const [
         _i1.StockRepository,
-        _i2.ListCrudRepository<_i1.Stock, int>,
-        _i2.CrudRepository<_i1.Stock, int>,
-        _i2.DataRepository<_i1.Stock, int>,
-        _i2.ListCrudRepository<dynamic, dynamic>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Stock, int>,
+        _i6.CrudRepository<_i1.Stock, int>,
+        _i6.DataRepository<_i1.Stock, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$StockRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'findBySku',
-            declaringType: r'StockRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'StockRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'sku'],
-            annotations: [_i6.Lock(_i6.LockMode.pessimisticWrite)],
-            annotationTypes: [r'Lock'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-          ),
-          _i3.MethodSignature(
-            name: r'findOneBySku',
-            declaringType: r'StockRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'StockRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'sku'],
-            annotations: [
-              _i6.Lock(
-                _i6.LockMode.pessimisticWrite,
-                timeout: Duration(milliseconds: 50),
-              ),
-            ],
-            annotationTypes: [r'Lock'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-          ),
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'ListCrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Stock'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Stock'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'StockRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'StockRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$StockRepositoryProxy((target as _i1.StockRepository), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches StockRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.JobRepository>(
+    _i2.BeanDefinition<_i1.JobRepository>(
       name: r'jobRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#JobRepository',
       types: const [
         _i1.JobRepository,
-        _i2.ListCrudRepository<_i1.Job, int>,
-        _i2.CrudRepository<_i1.Job, int>,
-        _i2.DataRepository<_i1.Job, int>,
-        _i2.ListCrudRepository<dynamic, dynamic>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Job, int>,
+        _i6.CrudRepository<_i1.Job, int>,
+        _i6.DataRepository<_i1.Job, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$JobRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'findFirstByDoneFalseOrderById',
-            declaringType: r'JobRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'JobRepository'],
-            returnType: r'Future',
-            annotations: [
-              _i6.Lock(_i6.LockMode.pessimisticWrite, skipLocked: true),
-            ],
-            annotationTypes: [r'Lock'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-          ),
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'ListCrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Job'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Job'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'JobRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'JobRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$JobRepositoryProxy((target as _i1.JobRepository), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches JobRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.AuditRepository>(
+    _i2.BeanDefinition<_i1.AuditRepository>(
       name: r'auditRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#AuditRepository',
       types: const [
         _i1.AuditRepository,
-        _i2.ListCrudRepository<_i1.AuditLine, int>,
-        _i2.CrudRepository<_i1.AuditLine, int>,
-        _i2.DataRepository<_i1.AuditLine, int>,
-        _i2.ListCrudRepository<dynamic, dynamic>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.AuditLine, int>,
+        _i6.CrudRepository<_i1.AuditLine, int>,
+        _i6.DataRepository<_i1.AuditLine, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuditRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'ListCrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'AuditLine'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'AuditLine'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'AuditRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'AuditRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$AuditRepositoryProxy((target as _i1.AuditRepository), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches AuditRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.LabelRepository>(
+    _i2.BeanDefinition<_i1.LabelRepository>(
       name: r'labelRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#LabelRepository',
       types: const [
         _i1.LabelRepository,
-        _i2.CrudRepository<_i1.Label, String>,
-        _i2.DataRepository<_i1.Label, String>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.CrudRepository<_i1.Label, String>,
+        _i6.DataRepository<_i1.Label, String>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$LabelRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Label'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Label'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'LabelRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'LabelRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$LabelRepositoryProxy((target as _i1.LabelRepository), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches LabelRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.ShipmentRepository>(
+    _i2.BeanDefinition<_i1.ShipmentRepository>(
       name: r'shipmentRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ShipmentRepository',
       types: const [
         _i1.ShipmentRepository,
-        _i2.ListCrudRepository<_i1.Shipment, int>,
-        _i2.CrudRepository<_i1.Shipment, int>,
-        _i2.DataRepository<_i1.Shipment, int>,
-        _i2.ListCrudRepository<dynamic, dynamic>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Shipment, int>,
+        _i6.CrudRepository<_i1.Shipment, int>,
+        _i6.DataRepository<_i1.Shipment, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ShipmentRepositoryImpl.$create(r),
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Shipment'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Shipment'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'ShipmentRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ShipmentRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) => _$ShipmentRepositoryProxy(
-          (target as _i1.ShipmentRepository),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ShipmentRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.ArchiveRepository>(
+    _i2.BeanDefinition<_i1.ArchiveRepository>(
       name: r'archiveRepository',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#ArchiveRepository',
       types: const [
         _i1.ArchiveRepository,
-        _i2.ListCrudRepository<_i1.Archived, int>,
-        _i2.CrudRepository<_i1.Archived, int>,
-        _i2.DataRepository<_i1.Archived, int>,
-        _i2.ListCrudRepository<dynamic, dynamic>,
-        _i2.CrudRepository<dynamic, dynamic>,
-        _i2.DataRepository<dynamic, dynamic>,
+        _i6.ListCrudRepository<_i1.Archived, int>,
+        _i6.CrudRepository<_i1.Archived, int>,
+        _i6.DataRepository<_i1.Archived, int>,
+        _i6.ListCrudRepository<dynamic, dynamic>,
+        _i6.CrudRepository<dynamic, dynamic>,
+        _i6.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ArchiveRepositoryImpl.$create(r),
       annotations: const [
-        _i6.UseStore(r'memory'),
-        _i6.UseDataSource(r'archive'),
+        _i5.UseStore(r'memory'),
+        _i5.UseDataSource(r'archive'),
       ],
-      aopProxy: _i3.AopProxyFactory(
-        signatures: const [
-          _i3.MethodSignature(
-            name: r'saveAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAll',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findAllById',
-            declaringType: r'ListCrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'ListCrudRepository', r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'save',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Archived'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'findById',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'existsById',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'count',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteById',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'int'],
-            parameterNames: [r'id'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'delete',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Archived'],
-            parameterNames: [r'entity'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllById',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'ids'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAllOf',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            parameterTypes: [r'Iterable'],
-            parameterNames: [r'entities'],
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i3.MethodSignature(
-            name: r'deleteAll',
-            declaringType: r'CrudRepository',
-            targetType: r'ArchiveRepository',
-            declaringTypes: [r'CrudRepository'],
-            returnType: r'Future',
-            targetTypes: [
-              r'ArchiveRepository',
-              r'ListCrudRepository',
-              r'CrudRepository',
-              r'DataRepository',
-            ],
-            targetAnnotations: [
-              _i6.UseStore(r'memory'),
-              _i6.UseDataSource(r'archive'),
-            ],
-            targetAnnotationTypes: [r'UseStore', r'UseDataSource'],
-            implementingTypes: [r'CrudRepository', r'DataRepository'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        create: (target, invoker) => _$ArchiveRepositoryProxy(
-          (target as _i1.ArchiveRepository),
-          invoker,
-        ),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ArchiveRepository, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
-    _i3.BeanDefinition<_i1.Gate>(
+    _i2.BeanDefinition<_i1.Gate>(
       name: r'gate',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Gate',
       types: const [_i1.Gate],
       create: (r) => _$GateProxy(),
-      annotations: const [_i3.Component()],
-      aopProxy: _i3.AopProxyFactory.subclass(
+      annotations: const [_i2.Component()],
+      aopProxy: _i2.AopProxyFactory.subclass(
         signatures: const [
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'pause',
             declaringType: r'Gate',
             targetType: r'Gate',
             declaringTypes: [r'Gate'],
             returnType: r'Future',
             targetTypes: [r'Gate'],
-            targetAnnotations: [_i3.Component()],
+            targetAnnotations: [_i2.Component()],
             targetAnnotationTypes: [r'Component'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'once',
             declaringType: r'Gate',
             targetType: r'Gate',
             declaringTypes: [r'Gate'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'Function',
             targetTypes: [r'Gate'],
-            targetAnnotations: [_i3.Component()],
+            targetAnnotations: [_i2.Component()],
             targetAnnotationTypes: [r'Component'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'once',
             declaringType: r'Gate',
             targetType: r'Gate',
             declaringTypes: [r'Gate'],
-            kind: _i3.MemberKind.setter,
+            kind: _i2.MemberKind.setter,
             returnType: r'Function',
             targetTypes: [r'Gate'],
-            targetAnnotations: [_i3.Component()],
+            targetAnnotations: [_i2.Component()],
             targetAnnotationTypes: [r'Component'],
           ),
         ],
@@ -5213,17 +2390,17 @@ _i3.BeanModule get $application => _i3.BeanModule(
             bean is _$GateProxy ? bean._$advise(invoker) : null,
       ),
     ),
-    _i3.BeanDefinition<_i1.Auditor>(
+    _i2.BeanDefinition<_i1.Auditor>(
       name: r'auditor',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Auditor',
       types: const [_i1.Auditor],
-      dependencies: const [_i3.Dependency(_i1.AuditRepository, name: r'lines')],
+      dependencies: const [_i2.Dependency(_i1.AuditRepository, name: r'lines')],
       create: (r) =>
           _i1.Auditor(r.dependency<_i1.AuditRepository>(name: r'lines')),
-      annotations: const [_i3.Service()],
-      aopProxy: _i3.AopProxyFactory(
+      annotations: const [_i2.Service()],
+      aopProxy: _i2.AopProxyFactory(
         signatures: const [
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'record',
             declaringType: r'Auditor',
             targetType: r'Auditor',
@@ -5236,10 +2413,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'nested',
             declaringType: r'Auditor',
             targetType: r'Auditor',
@@ -5252,10 +2429,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'mandatory',
             declaringType: r'Auditor',
             targetType: r'Auditor',
@@ -5268,10 +2445,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'never',
             declaringType: r'Auditor',
             targetType: r'Auditor',
@@ -5282,18 +2459,18 @@ _i3.BeanModule get $application => _i3.BeanModule(
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Auditor'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'lines',
             declaringType: r'Auditor',
             targetType: r'Auditor',
             declaringTypes: [r'Auditor'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'AuditRepository',
             targetTypes: [r'Auditor'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
         ],
@@ -5301,20 +2478,20 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _$AuditorProxy((target as _i1.Auditor), invoker),
       ),
     ),
-    _i3.BeanDefinition<_i1.Warehouse>(
+    _i2.BeanDefinition<_i1.Warehouse>(
       name: r'warehouse',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Warehouse',
       types: const [_i1.Warehouse],
       dependencies: const [
-        _i3.Dependency(_i1.ItemRepository, name: r'items'),
-        _i3.Dependency(_i1.StockRepository, name: r'stock'),
-        _i3.Dependency(_i1.JobRepository, name: r'jobs'),
-        _i3.Dependency(_i1.LabelRepository, name: r'labels'),
-        _i3.Dependency(_i1.ShipmentRepository, name: r'shipments'),
-        _i3.Dependency(_i1.ArchiveRepository, name: r'archive'),
-        _i3.Dependency(_i1.Auditor, name: r'auditor'),
-        _i3.Dependency(_i1.AuditRepository, name: r'audit'),
-        _i3.Dependency(_i1.Gate, name: r'gate'),
+        _i2.Dependency(_i1.ItemRepository, name: r'items'),
+        _i2.Dependency(_i1.StockRepository, name: r'stock'),
+        _i2.Dependency(_i1.JobRepository, name: r'jobs'),
+        _i2.Dependency(_i1.LabelRepository, name: r'labels'),
+        _i2.Dependency(_i1.ShipmentRepository, name: r'shipments'),
+        _i2.Dependency(_i1.ArchiveRepository, name: r'archive'),
+        _i2.Dependency(_i1.Auditor, name: r'auditor'),
+        _i2.Dependency(_i1.AuditRepository, name: r'audit'),
+        _i2.Dependency(_i1.Gate, name: r'gate'),
       ],
       create: (r) => _i1.Warehouse(
         r.dependency<_i1.ItemRepository>(name: r'items'),
@@ -5327,10 +2504,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
         r.dependency<_i1.AuditRepository>(name: r'audit'),
         r.dependency<_i1.Gate>(name: r'gate'),
       ),
-      annotations: const [_i3.Service()],
-      aopProxy: _i3.AopProxyFactory(
+      annotations: const [_i2.Service()],
+      aopProxy: _i2.AopProxyFactory(
         signatures: const [
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'addItem',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5341,10 +2518,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'addItemTolerant',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5357,10 +2534,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             ],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'addWithAudit',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5371,10 +2548,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'addWithNested',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5385,10 +2562,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'callMandatory',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5397,10 +2574,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'callNever',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5409,10 +2586,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'writeReadOnly',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5421,10 +2598,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'countReadOnly',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5433,10 +2610,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'ship',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5447,10 +2624,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'sell',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5461,10 +2638,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'peekWithTimeout',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5475,10 +2652,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'takeJob',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5487,10 +2664,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'rename',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5501,10 +2678,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'lockFromOtherStore',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5515,10 +2692,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'forgetsASave',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5529,10 +2706,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'archiveTitles',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5543,10 +2720,10 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'addItemAndArchive',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
@@ -5557,106 +2734,106 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i7.Transactional()],
             annotationTypes: [r'Transactional'],
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'items',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'ItemRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'stock',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'StockRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'jobs',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'JobRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'labels',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'LabelRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'shipments',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'ShipmentRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'archive',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'ArchiveRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'auditor',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'Auditor',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'audit',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'AuditRepository',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'gate',
             declaringType: r'Warehouse',
             targetType: r'Warehouse',
             declaringTypes: [r'Warehouse'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'Gate',
             targetTypes: [r'Warehouse'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
         ],
@@ -5664,17 +2841,17 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _$WarehouseProxy((target as _i1.Warehouse), invoker),
       ),
     ),
-    _i3.BeanDefinition<_i1.Catalog>(
+    _i2.BeanDefinition<_i1.Catalog>(
       name: r'catalog',
       source: r'asset:spring_boot_starter_data/test/integration/app/integration_app.dart#Catalog',
       types: const [_i1.Catalog],
-      dependencies: const [_i3.Dependency(_i1.ItemRepository, name: r'items')],
+      dependencies: const [_i2.Dependency(_i1.ItemRepository, name: r'items')],
       create: (r) =>
           _i1.Catalog(r.dependency<_i1.ItemRepository>(name: r'items')),
-      annotations: const [_i3.Service()],
-      aopProxy: _i3.AopProxyFactory(
+      annotations: const [_i2.Service()],
+      aopProxy: _i2.AopProxyFactory(
         signatures: const [
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'page',
             declaringType: r'Catalog',
             targetType: r'Catalog',
@@ -5685,40 +2862,40 @@ _i3.BeanModule get $application => _i3.BeanModule(
             annotations: [_i8.Cacheable(r'items')],
             annotationTypes: [r'Cacheable'],
             targetTypes: [r'Catalog'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'items',
             declaringType: r'Catalog',
             targetType: r'Catalog',
             declaringTypes: [r'Catalog'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'ItemRepository',
             targetTypes: [r'Catalog'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'calls',
             declaringType: r'Catalog',
             targetType: r'Catalog',
             declaringTypes: [r'Catalog'],
-            kind: _i3.MemberKind.getter,
+            kind: _i2.MemberKind.getter,
             returnType: r'int',
             targetTypes: [r'Catalog'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
-          _i3.MethodSignature(
+          _i2.MethodSignature(
             name: r'calls',
             declaringType: r'Catalog',
             targetType: r'Catalog',
             declaringTypes: [r'Catalog'],
-            kind: _i3.MemberKind.setter,
+            kind: _i2.MemberKind.setter,
             returnType: r'int',
             targetTypes: [r'Catalog'],
-            targetAnnotations: [_i3.Service()],
+            targetAnnotations: [_i2.Service()],
             targetAnnotationTypes: [r'Service'],
           ),
         ],
@@ -5726,73 +2903,82 @@ _i3.BeanModule get $application => _i3.BeanModule(
             _$CatalogProxy((target as _i1.Catalog), invoker),
       ),
     ),
+    _i2.BeanDefinition<_i9.JdbcDriver>(
+      name: r'sqlite3JdbcDriver',
+      source: r'package:spring_boot_starter_data#sqlite3',
+      types: const [_i9.JdbcDriver],
+      conditions: [_i9.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      create: (r) => _$sqlite3JdbcDriver(),
+    ),
   ],
   introspections: [
-    _i3.BeanIntrospection<_i1.Item>(
+    _i2.BeanIntrospection<_i1.Item>(
       className: r'Item',
       properties: [
-        _i3.BeanProperty<_i1.Item>(
+        _i2.BeanProperty<_i1.Item>(
           r'id',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.id,
           set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.Item>(
+        _i2.BeanProperty<_i1.Item>(
           r'name',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
           set: (bean, value) => bean.name = (value as String),
         ),
-        _i3.BeanProperty<_i1.Item>(
+        _i2.BeanProperty<_i1.Item>(
           r'count',
           type: int,
-          typeInfo: const _i3.ClassType<int>(),
+          typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.count,
           set: (bean, value) => bean.count = (value as int),
         ),
-        _i3.BeanProperty<_i1.Item>(
+        _i2.BeanProperty<_i1.Item>(
           r'version',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.version,
           set: (bean, value) => bean.version = (value as int?),
-          annotations: const [_i6.Version()],
+          annotations: const [_i5.Version()],
         ),
       ],
       methods: [
-        _i3.BeanMethod<_i1.Item>(
+        _i2.BeanMethod<_i1.Item>(
           r'toString',
           returnType: String,
           invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
         ),
       ],
-      annotations: const [_i6.Table(r'items')],
-      constructor: _i3.BeanConstructor<_i1.Item>(
+      annotations: const [_i5.Table(r'items')],
+      constructor: _i2.BeanConstructor<_i1.Item>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'name',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #name,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'count',
-            type: const _i3.ClassType<int>(),
+            type: const _i2.ClassType<int>(),
             symbol: #count,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'id',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #id,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'version',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #version,
           ),
         ],
@@ -5800,51 +2986,51 @@ _i3.BeanModule get $application => _i3.BeanModule(
             (Function.apply(_i1.Item.new, positional, named) as _i1.Item),
       ),
     ),
-    _i3.BeanIntrospection<_i1.Stock>(
+    _i2.BeanIntrospection<_i1.Stock>(
       className: r'Stock',
       properties: [
-        _i3.BeanProperty<_i1.Stock>(
+        _i2.BeanProperty<_i1.Stock>(
           r'id',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.id,
           set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.Stock>(
+        _i2.BeanProperty<_i1.Stock>(
           r'sku',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.sku,
           set: (bean, value) => bean.sku = (value as String),
         ),
-        _i3.BeanProperty<_i1.Stock>(
+        _i2.BeanProperty<_i1.Stock>(
           r'quantity',
           type: int,
-          typeInfo: const _i3.ClassType<int>(),
+          typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.quantity,
           set: (bean, value) => bean.quantity = (value as int),
         ),
       ],
-      annotations: const [_i6.Table(r'stock')],
-      constructor: _i3.BeanConstructor<_i1.Stock>(
+      annotations: const [_i5.Table(r'stock')],
+      constructor: _i2.BeanConstructor<_i1.Stock>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'sku',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #sku,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'quantity',
-            type: const _i3.ClassType<int>(),
+            type: const _i2.ClassType<int>(),
             symbol: #quantity,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'id',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #id,
           ),
         ],
@@ -5852,50 +3038,52 @@ _i3.BeanModule get $application => _i3.BeanModule(
             (Function.apply(_i1.Stock.new, positional, named) as _i1.Stock),
       ),
     ),
-    _i3.BeanIntrospection<_i1.Job>(
+    _i2.BeanIntrospection<_i1.Job>(
       className: r'Job',
       properties: [
-        _i3.BeanProperty<_i1.Job>(
+        _i2.BeanProperty<_i1.Job>(
           r'id',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.id,
           set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.Job>(
+        _i2.BeanProperty<_i1.Job>(
           r'name',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
           set: (bean, value) => bean.name = (value as String),
         ),
-        _i3.BeanProperty<_i1.Job>(
+        _i2.BeanProperty<_i1.Job>(
           r'done',
           type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
+          typeInfo: const _i2.ClassType<bool>(),
           get: (bean) => bean.done,
           set: (bean, value) => bean.done = (value as bool),
         ),
       ],
-      annotations: const [_i6.Table(r'jobs')],
-      constructor: _i3.BeanConstructor<_i1.Job>(
+      annotations: const [_i5.Table(r'jobs')],
+      constructor: _i2.BeanConstructor<_i1.Job>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'name',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #name,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'done',
-            type: const _i3.ClassType<bool>(),
+            type: const _i2.ClassType<bool>(),
             symbol: #done,
+            hasDefaultValue: true,
+            defaultValue: false,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'id',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #id,
           ),
         ],
@@ -5903,38 +3091,38 @@ _i3.BeanModule get $application => _i3.BeanModule(
             (Function.apply(_i1.Job.new, positional, named) as _i1.Job),
       ),
     ),
-    _i3.BeanIntrospection<_i1.AuditLine>(
+    _i2.BeanIntrospection<_i1.AuditLine>(
       className: r'AuditLine',
       properties: [
-        _i3.BeanProperty<_i1.AuditLine>(
+        _i2.BeanProperty<_i1.AuditLine>(
           r'id',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.id,
           set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.AuditLine>(
+        _i2.BeanProperty<_i1.AuditLine>(
           r'text',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.text,
           set: (bean, value) => bean.text = (value as String),
         ),
       ],
-      annotations: const [_i6.Table(r'audit_lines')],
-      constructor: _i3.BeanConstructor<_i1.AuditLine>(
+      annotations: const [_i5.Table(r'audit_lines')],
+      constructor: _i2.BeanConstructor<_i1.AuditLine>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'text',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #text,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'id',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #id,
           ),
         ],
@@ -5943,87 +3131,91 @@ _i3.BeanModule get $application => _i3.BeanModule(
                 as _i1.AuditLine),
       ),
     ),
-    _i3.BeanIntrospection<_i1.Label>(
+    _i2.BeanIntrospection<_i1.Label>(
       className: r'Label',
       properties: [
-        _i3.BeanProperty<_i1.Label>(
+        _i2.BeanProperty<_i1.Label>(
           r'name',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.name,
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.Label>(
+        _i2.BeanProperty<_i1.Label>(
           r'version',
           type: int,
-          typeInfo: const _i3.ClassType<int>(),
+          typeInfo: const _i2.ClassType<int>(),
           get: (bean) => bean.version,
-          annotations: const [_i6.Version()],
+          annotations: const [_i5.Version()],
         ),
       ],
-      annotations: const [_i6.Table(r'labels')],
-      constructor: _i3.BeanConstructor<_i1.Label>(
+      annotations: const [_i5.Table(r'labels')],
+      constructor: _i2.BeanConstructor<_i1.Label>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'name',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'version',
-            type: const _i3.ClassType<int>(),
+            type: const _i2.ClassType<int>(),
             symbol: #version,
+            hasDefaultValue: true,
+            defaultValue: 0,
           ),
         ],
         create: (positional, named) =>
             (Function.apply(_i1.Label.new, positional, named) as _i1.Label),
       ),
     ),
-    _i3.BeanIntrospection<_i1.Shipment>(
+    _i2.BeanIntrospection<_i1.Shipment>(
       className: r'Shipment',
       properties: [
-        _i3.BeanProperty<_i1.Shipment>(
+        _i2.BeanProperty<_i1.Shipment>(
           r'id',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.id,
           set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.Shipment>(
+        _i2.BeanProperty<_i1.Shipment>(
           r'destination',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.destination,
           set: (bean, value) => bean.destination = (value as String),
         ),
-        _i3.BeanProperty<_i1.Shipment>(
+        _i2.BeanProperty<_i1.Shipment>(
           r'parcels',
           type: List<_i1.Parcel>,
-          typeInfo: const _i3.ListType<_i1.Parcel>(_i3.ClassType<_i1.Parcel>()),
+          typeInfo: const _i2.ListType<_i1.Parcel>(_i2.ClassType<_i1.Parcel>()),
           get: (bean) => bean.parcels,
           set: (bean, value) => bean.parcels = (value as List<_i1.Parcel>),
-          annotations: const [_i6.MappedCollection()],
+          annotations: const [_i5.MappedCollection()],
         ),
       ],
-      annotations: const [_i6.Table(r'shipments')],
-      constructor: _i3.BeanConstructor<_i1.Shipment>(
+      annotations: const [_i5.Table(r'shipments')],
+      constructor: _i2.BeanConstructor<_i1.Shipment>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'destination',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #destination,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'parcels',
-            type: const _i3.ListType<_i1.Parcel>(_i3.ClassType<_i1.Parcel>()),
+            type: const _i2.ListType<_i1.Parcel>(_i2.ClassType<_i1.Parcel>()),
             symbol: #parcels,
+            hasDefaultValue: true,
+            defaultValue: const [],
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'id',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #id,
           ),
         ],
@@ -6032,23 +3224,23 @@ _i3.BeanModule get $application => _i3.BeanModule(
                 as _i1.Shipment),
       ),
     ),
-    _i3.BeanIntrospection<_i1.Parcel>(
+    _i2.BeanIntrospection<_i1.Parcel>(
       className: r'Parcel',
       properties: [
-        _i3.BeanProperty<_i1.Parcel>(
+        _i2.BeanProperty<_i1.Parcel>(
           r'label',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.label,
           set: (bean, value) => bean.label = (value as String),
         ),
       ],
-      annotations: const [_i6.Table(r'parcels')],
-      constructor: _i3.BeanConstructor<_i1.Parcel>(
+      annotations: const [_i5.Table(r'parcels')],
+      constructor: _i2.BeanConstructor<_i1.Parcel>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'label',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #label,
             isRequired: true,
           ),
@@ -6057,38 +3249,38 @@ _i3.BeanModule get $application => _i3.BeanModule(
             (Function.apply(_i1.Parcel.new, positional, named) as _i1.Parcel),
       ),
     ),
-    _i3.BeanIntrospection<_i1.Archived>(
+    _i2.BeanIntrospection<_i1.Archived>(
       className: r'Archived',
       properties: [
-        _i3.BeanProperty<_i1.Archived>(
+        _i2.BeanProperty<_i1.Archived>(
           r'id',
           type: int,
           nullable: true,
-          typeInfo: const _i3.ClassType<int>(nullable: true),
+          typeInfo: const _i2.ClassType<int>(nullable: true),
           get: (bean) => bean.id,
           set: (bean, value) => bean.id = (value as int?),
-          annotations: const [_i6.Id()],
+          annotations: const [_i5.Id()],
         ),
-        _i3.BeanProperty<_i1.Archived>(
+        _i2.BeanProperty<_i1.Archived>(
           r'title',
           type: String,
-          typeInfo: const _i3.ClassType<String>(),
+          typeInfo: const _i2.ClassType<String>(),
           get: (bean) => bean.title,
           set: (bean, value) => bean.title = (value as String),
         ),
       ],
-      annotations: const [_i6.Table(r'archived')],
-      constructor: _i3.BeanConstructor<_i1.Archived>(
+      annotations: const [_i5.Table(r'archived')],
+      constructor: _i2.BeanConstructor<_i1.Archived>(
         parameters: [
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'title',
-            type: const _i3.ClassType<String>(),
+            type: const _i2.ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
-          _i3.BeanParameter(
+          _i2.BeanParameter(
             r'id',
-            type: const _i3.ClassType<int>(nullable: true),
+            type: const _i2.ClassType<int>(nullable: true),
             symbol: #id,
           ),
         ],
@@ -6097,283 +3289,134 @@ _i3.BeanModule get $application => _i3.BeanModule(
                 as _i1.Archived),
       ),
     ),
-    _i3.BeanIntrospection<_i5.Page<dynamic>>(
-      className: r'Page',
-      specialize: (arguments) => arguments[0].capture(
-        <T>() => _i3.BeanIntrospection<_i5.Page<T>>(
-          className: r'Page',
-          properties: [
-            _i3.BeanProperty<_i5.Page<T>>(
-              r'totalPages',
-              type: int,
-              typeInfo: const _i3.ClassType<int>(),
-              get: (bean) => bean.totalPages,
-            ),
-            _i3.BeanProperty<_i5.Page<T>>(
-              r'totalElements',
-              type: int,
-              typeInfo: const _i3.ClassType<int>(),
-              get: (bean) => bean.totalElements,
-            ),
-          ],
-        ),
-      ),
-      properties: [
-        _i3.BeanProperty<_i5.Page<dynamic>>(
-          r'totalPages',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.totalPages,
-        ),
-        _i3.BeanProperty<_i5.Page<dynamic>>(
-          r'totalElements',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.totalElements,
-        ),
-      ],
-    ),
-    _i3.BeanIntrospection<_i5.Pageable>(
-      className: r'Pageable',
-      properties: [
-        _i3.BeanProperty<_i5.Pageable>(
-          r'isPaged',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.isPaged,
-        ),
-        _i3.BeanProperty<_i5.Pageable>(
-          r'isUnpaged',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.isUnpaged,
-        ),
-        _i3.BeanProperty<_i5.Pageable>(
-          r'pageNumber',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.pageNumber,
-        ),
-        _i3.BeanProperty<_i5.Pageable>(
-          r'pageSize',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.pageSize,
-        ),
-        _i3.BeanProperty<_i5.Pageable>(
-          r'offset',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.offset,
-        ),
-        _i3.BeanProperty<_i5.Pageable>(
-          r'sort',
-          type: _i9.Sort,
-          typeInfo: const _i3.ClassType<_i9.Sort>(),
-          get: (bean) => bean.sort,
-        ),
-        _i3.BeanProperty<_i5.Pageable>(
-          r'hasPrevious',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.hasPrevious,
-        ),
-      ],
-      methods: [
-        _i3.BeanMethod<_i5.Pageable>(
-          r'next',
-          returnType: _i5.Pageable,
-          invoke: (bean, arguments) => Function.apply(bean.next, arguments),
-        ),
-        _i3.BeanMethod<_i5.Pageable>(
-          r'previousOrFirst',
-          returnType: _i5.Pageable,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.previousOrFirst, arguments),
-        ),
-        _i3.BeanMethod<_i5.Pageable>(
-          r'first',
-          returnType: _i5.Pageable,
-          invoke: (bean, arguments) => Function.apply(bean.first, arguments),
-        ),
-        _i3.BeanMethod<_i5.Pageable>(
-          r'withPage',
-          returnType: _i5.Pageable,
-          parameterTypes: const [int],
-          invoke: (bean, arguments) => Function.apply(bean.withPage, arguments),
-        ),
-      ],
-    ),
-    _i3.BeanIntrospection<_i9.Sort>(
-      className: r'Sort',
-      properties: [
-        _i3.BeanProperty<_i9.Sort>(
-          r'orders',
-          type: List<_i9.SortOrder>,
-          typeInfo: const _i3.ListType<_i9.SortOrder>(
-            _i3.ClassType<_i9.SortOrder>(),
-          ),
-          get: (bean) => bean.orders,
-        ),
-        _i3.BeanProperty<_i9.Sort>(
-          r'isSorted',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.isSorted,
-        ),
-        _i3.BeanProperty<_i9.Sort>(
-          r'isUnsorted',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.isUnsorted,
-        ),
-        _i3.BeanProperty<_i9.Sort>(
-          r'hashCode',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.hashCode,
-        ),
-      ],
-      methods: [
-        _i3.BeanMethod<_i9.Sort>(
-          r'and',
-          returnType: _i9.Sort,
-          parameterTypes: const [_i9.Sort],
-          invoke: (bean, arguments) => Function.apply(bean.and, arguments),
-        ),
-        _i3.BeanMethod<_i9.Sort>(
-          r'descending',
-          returnType: _i9.Sort,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.descending, arguments),
-        ),
-        _i3.BeanMethod<_i9.Sort>(
-          r'ascending',
-          returnType: _i9.Sort,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.ascending, arguments),
-        ),
-        _i3.BeanMethod<_i9.Sort>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-    ),
-    _i3.BeanIntrospection<_i9.SortOrder>(
-      className: r'SortOrder',
-      properties: [
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'property',
-          type: String,
-          typeInfo: const _i3.ClassType<String>(),
-          get: (bean) => bean.property,
-        ),
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'direction',
-          type: _i9.Direction,
-          typeInfo: const _i3.EnumType<_i9.Direction>(_i9.Direction.values),
-          get: (bean) => bean.direction,
-        ),
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'nullHandling',
-          type: _i9.NullHandling,
-          typeInfo: const _i3.EnumType<_i9.NullHandling>(
-            _i9.NullHandling.values,
-          ),
-          get: (bean) => bean.nullHandling,
-        ),
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'ignoreCase',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.ignoreCase,
-        ),
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'isAscending',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.isAscending,
-        ),
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'isDescending',
-          type: bool,
-          typeInfo: const _i3.ClassType<bool>(),
-          get: (bean) => bean.isDescending,
-        ),
-        _i3.BeanProperty<_i9.SortOrder>(
-          r'hashCode',
-          type: int,
-          typeInfo: const _i3.ClassType<int>(),
-          get: (bean) => bean.hashCode,
-        ),
-      ],
-      methods: [
-        _i3.BeanMethod<_i9.SortOrder>(
-          r'with_',
-          returnType: _i9.SortOrder,
-          parameterTypes: const [_i9.Direction],
-          invoke: (bean, arguments) => Function.apply(bean.with_, arguments),
-        ),
-        _i3.BeanMethod<_i9.SortOrder>(
-          r'ignoringCase',
-          returnType: _i9.SortOrder,
-          invoke: (bean, arguments) =>
-              Function.apply(bean.ignoringCase, arguments),
-        ),
-        _i3.BeanMethod<_i9.SortOrder>(
-          r'withNullHandling',
-          returnType: _i9.SortOrder,
-          parameterTypes: const [_i9.NullHandling],
-          invoke: (bean, arguments) =>
-              Function.apply(bean.withNullHandling, arguments),
-        ),
-        _i3.BeanMethod<_i9.SortOrder>(
-          r'toString',
-          returnType: String,
-          invoke: (bean, arguments) => Function.apply(bean.toString, arguments),
-        ),
-      ],
-      constructor: _i3.BeanConstructor<_i9.SortOrder>(
-        parameters: [
-          _i3.BeanParameter(
-            r'property',
-            type: const _i3.ClassType<String>(),
-            isRequired: true,
-          ),
-          _i3.BeanParameter(
-            r'direction',
-            type: const _i3.EnumType<_i9.Direction>(_i9.Direction.values),
-            symbol: #direction,
-          ),
-          _i3.BeanParameter(
-            r'nullHandling',
-            type: const _i3.EnumType<_i9.NullHandling>(_i9.NullHandling.values),
-            symbol: #nullHandling,
-          ),
-          _i3.BeanParameter(
-            r'ignoreCase',
-            type: const _i3.ClassType<bool>(),
-            symbol: #ignoreCase,
-          ),
-        ],
-        create: (positional, named) =>
-            (Function.apply(_i9.SortOrder.new, positional, named)
-                as _i9.SortOrder),
-      ),
-    ),
   ],
   typeTests: {_i1.Soft: (value) => value is _i1.Soft},
 );
 
+final class _$Sqlite3Binding implements _i9.SqliteBinding {
+  const _$Sqlite3Binding();
+
+  @override
+  _i9.SqliteDatabase open(
+    String filename, {
+    _i9.SqliteOpenMode mode = _i9.SqliteOpenMode.readWriteCreate,
+    bool uri = false,
+  }) => _$sqlite3Guard(
+    () => _$Sqlite3Database(
+      _i10.sqlite3.open(
+        filename,
+        mode: _i10.OpenMode.values.byName(mode.name),
+        uri: uri,
+      ),
+    ),
+  );
+}
+
+final class _$Sqlite3Database implements _i9.SqliteDatabase {
+  _$Sqlite3Database(this._database);
+
+  final _i10.Database _database;
+
+  @override
+  void execute(String sql, [List<Object?> parameters = const []]) =>
+      _$sqlite3Guard(() => _database.execute(sql, parameters));
+
+  @override
+  ({List<String> columns, List<List<Object?>> rows}) select(
+    String sql, [
+    List<Object?> parameters = const [],
+  ]) => _$sqlite3Guard(() {
+    final result = _database.select(sql, parameters);
+    return (columns: result.columnNames, rows: result.rows);
+  });
+
+  @override
+  _i9.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+      _$sqlite3Guard(() {
+        final statement = _database.prepare(sql);
+        try {
+          return _$Sqlite3Cursor(statement, statement.selectCursor(parameters));
+        } on Object {
+          statement.close();
+          rethrow;
+        }
+      });
+
+  @override
+  void createFunction(
+    String name,
+    int argumentCount,
+    Object? Function(List<Object?> arguments) function,
+  ) => _$sqlite3Guard(
+    () => _database.createFunction(
+      functionName: name,
+      function: function,
+      argumentCount: _i10.AllowedArgumentCount(argumentCount),
+      deterministic: true,
+    ),
+  );
+
+  @override
+  int get updatedRows => _database.updatedRows;
+
+  @override
+  int get lastInsertRowId => _database.lastInsertRowId;
+
+  @override
+  bool get autocommit => _database.autocommit;
+
+  @override
+  void close() => _$sqlite3Guard(_database.close);
+}
+
+final class _$Sqlite3Cursor implements _i9.SqliteCursor {
+  _$Sqlite3Cursor(this._statement, this._cursor);
+
+  final _i10.PreparedStatement _statement;
+  final _i10.IteratingCursor _cursor;
+
+  @override
+  List<String> get columns => _cursor.columnNames;
+
+  @override
+  List<Object?>? next() => _$sqlite3Guard(
+    () => _cursor.moveNext()
+        ? [
+            for (var i = 0; i < _cursor.columnNames.length; i++)
+              _cursor.current.columnAt(i),
+          ]
+        : null,
+  );
+
+  @override
+  void close() => _statement.close();
+}
+
+// SqliteException as the SqlError the driver understands: its message (never
+// the statement's values) and its result codes.
+T _$sqlite3Guard<T>(T Function() action) {
+  try {
+    return action();
+  } on _i10.SqliteException catch (e) {
+    throw _i9.SqlError(
+      e.message,
+      vendorCode: e.resultCode,
+      extendedCode: e.extendedResultCode,
+    );
+  }
+}
+
+_i9.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i9.SqliteJdbcDriver(const _$Sqlite3Binding());
+
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i10.SpringApplication get springApplication => _i10.SpringApplication(
+_i11.SpringApplication get springApplication => _i11.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i11.springBootAutoConfiguration,
-    _i12.springBootStarterCacheAutoConfiguration,
-    _i13.springBootStarterLoggingAutoConfiguration,
+    _i12.springBootAutoConfiguration,
+    _i13.springBootStarterCacheAutoConfiguration,
+    _i14.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -6421,31 +3464,31 @@ _i10.SpringApplication get springApplication => _i10.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'eac3be00',
+  fingerprint: '25633dbb',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i10.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i11.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i10.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i11.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i10.ConfigurableApplicationContext reloadApplication(
-  _i10.ConfigurableApplicationContext running, {
+_i11.ConfigurableApplicationContext reloadApplication(
+  _i11.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i10.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i10.ConfigurableApplicationContext running, {
+Future<_i11.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i11.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

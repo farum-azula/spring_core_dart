@@ -7,190 +7,21 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
+import 'dart:async' as _i6;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i8;
-import 'package:spring_boot_dart/src/runners.dart' as _i5;
+import 'package:spring_boot_dart/src/runners.dart' as _i7;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i10;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i6;
+import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i11;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_web_dart/src/annotations.dart' as _i7;
-import 'package:spring_web_dart/src/sse/event_stream.dart' as _i4;
+import 'package:spring_web_dart/src/annotations.dart' as _i4;
+import 'package:spring_web_dart/src/sse/event_stream.dart' as _i5;
 
 import 'example.dart' as _i1;
-
-class _$CatalogClientProxy implements _i1.CatalogClient, _i2.Advised {
-  _$CatalogClientProxy(this._target, this._invoker);
-
-  final _i1.CatalogClient _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<_i1.Book> find(String isbn) => this._invoker.invokeAsync<_i1.Book>(
-    this,
-    this._target,
-    0,
-    [isbn],
-    (args) => this._target.find((args[0] as String)),
-  );
-
-  @override
-  _i3.Future<List<_i1.Book>> search(String query) =>
-      this._invoker.invokeAsync<List<_i1.Book>>(this, this._target, 1, [
-        query,
-      ], (args) => this._target.search((args[0] as String)));
-
-  @override
-  _i4.EventStream<_i1.StockChange> stock() => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (args) => this._target.stock(),
-  ) as _i4.EventStream<_i1.StockChange>);
-}
-
-class _$ShopProxy implements _i1.Shop, _i2.Advised {
-  _$ShopProxy(this._target, this._invoker);
-
-  final _i1.Shop _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<String?> title(String isbn) => this._invoker.invokeAsync<String?>(
-    this,
-    this._target,
-    0,
-    [isbn],
-    (args) => this._target.title((args[0] as String)),
-  );
-
-  @override
-  _i1.CatalogClient get catalog => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.catalog,
-  ) as _i1.CatalogClient);
-}
-
-class _$ShopTourProxy
-    implements _i1.ShopTour, _i5.CommandLineRunner, _i2.Advised {
-  _$ShopTourProxy(this._target, this._invoker);
-
-  final _i1.ShopTour _target;
-
-  final _i2.ProxyInvoker _invoker;
-
-  @override
-  Object get aopTarget => _target;
-
-  @override
-  List<_i2.PointcutAdvisor> get aopAdvisors => _invoker.advisors;
-
-  @override
-  void addAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.addAdvisor(advisor);
-
-  @override
-  bool removeAdvisor(_i2.PointcutAdvisor advisor) =>
-      this._invoker.removeAdvisor(advisor);
-
-  @override
-  void addAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.addAdvice(advice);
-
-  @override
-  bool removeAdvice(_i2.MethodInterceptor advice) =>
-      this._invoker.removeAdvice(advice);
-
-  @override
-  String toString() => _target.toString();
-
-  @override
-  _i3.Future<void> run(List<String> args) => this._invoker.invokeAsync<void>(
-    this,
-    this._target,
-    0,
-    [args],
-    (args) => this._target.run((args[0] as List<String>)),
-  );
-
-  @override
-  _i1.Shop get shop => (this._invoker.invoke(
-    this,
-    this._target,
-    1,
-    const [],
-    (_) => this._target.shop,
-  ) as _i1.Shop);
-
-  @override
-  _i1.CatalogClient get catalog => (this._invoker.invoke(
-    this,
-    this._target,
-    2,
-    const [],
-    (_) => this._target.catalog,
-  ) as _i1.CatalogClient);
-}
 
 /// Implements `CatalogClient` through an `InvocationHandler`.
 class _$CatalogClientImpl implements _i1.CatalogClient {
@@ -203,7 +34,7 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
   static _$CatalogClientImpl $create(_i2.DependencyResolver r) {
     final metadata = _i2.InterfaceMetadata<_i1.CatalogClient>(
       typeName: r'CatalogClient',
-      annotations: const [_i6.FeignClient(r'catalog', url: r'${catalog.url}')],
+      annotations: const [_i3.FeignClient(r'catalog', url: r'${catalog.url}')],
       methods: [
         _i2.ProxyMethod(
           r'find',
@@ -212,12 +43,12 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
               r'isbn',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i7.PathVariable()],
+              annotations: const [_i4.PathVariable()],
             ),
           ],
           returnType: const _i2.ClassType<_i1.Book>(),
           isFuture: true,
-          annotations: const [_i7.GetMapping(r'/books/{isbn}')],
+          annotations: const [_i4.GetMapping(r'/books/{isbn}')],
           call: (target, arguments) =>
               (target as _i1.CatalogClient).find((arguments[0] as String)),
         ),
@@ -228,21 +59,21 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
               r'query',
               type: const _i2.ClassType<String>(),
               isRequired: true,
-              annotations: const [_i7.RequestParam(r'q')],
+              annotations: const [_i4.RequestParam(r'q')],
             ),
           ],
           returnType: const _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
           isFuture: true,
-          annotations: const [_i7.GetMapping(r'/books')],
+          annotations: const [_i4.GetMapping(r'/books')],
           call: (target, arguments) =>
               (target as _i1.CatalogClient).search((arguments[0] as String)),
         ),
         _i2.ProxyMethod(
           r'stock',
-          returnType: const _i2.GenericType<_i4.EventStream<_i1.StockChange>>([
+          returnType: const _i2.GenericType<_i5.EventStream<_i1.StockChange>>([
             _i2.ClassType<_i1.StockChange>(),
           ]),
-          annotations: const [_i7.GetMapping(r'/stock/events')],
+          annotations: const [_i4.GetMapping(r'/stock/events')],
           call: (target, arguments) => (target as _i1.CatalogClient).stock(),
         ),
       ],
@@ -254,20 +85,20 @@ class _$CatalogClientImpl implements _i1.CatalogClient {
   }
 
   @override
-  _i3.Future<_i1.Book> find(String isbn) => _i2.retypeFuture<_i1.Book>(
+  _i6.Future<_i1.Book> find(String isbn) => _i2.retypeFuture<_i1.Book>(
     this._handler.invoke(this._metadata.methods[0], [isbn]),
   );
 
   @override
-  _i3.Future<List<_i1.Book>> search(String query) =>
+  _i6.Future<List<_i1.Book>> search(String query) =>
       _i2.retypeFuture<List<_i1.Book>>(
         this._handler.invoke(this._metadata.methods[1], [query]),
       );
 
   @override
-  _i4.EventStream<_i1.StockChange> stock() =>
+  _i5.EventStream<_i1.StockChange> stock() =>
       (this._handler.invoke(this._metadata.methods[2], const [])
-          as _i4.EventStream<_i1.StockChange>);
+          as _i5.EventStream<_i1.StockChange>);
 }
 
 /// Beans found by `@ComponentScan` in `example/`.
@@ -281,64 +112,9 @@ _i2.BeanModule get $application => _i2.BeanModule(
       types: const [_i1.CatalogClient],
       primary: true,
       create: (r) => _$CatalogClientImpl.$create(r),
-      annotations: const [_i6.FeignClient(r'catalog', url: r'${catalog.url}')],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'find',
-            declaringType: r'CatalogClient',
-            targetType: r'CatalogClient',
-            declaringTypes: [r'CatalogClient'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'isbn'],
-            parameterAnnotations: [
-              [_i7.PathVariable()],
-            ],
-            annotations: [_i7.GetMapping(r'/books/{isbn}')],
-            annotationTypes: [r'GetMapping'],
-            targetTypes: [r'CatalogClient'],
-            targetAnnotations: [
-              _i6.FeignClient(r'catalog', url: r'${catalog.url}'),
-            ],
-            targetAnnotationTypes: [r'FeignClient'],
-          ),
-          _i2.MethodSignature(
-            name: r'search',
-            declaringType: r'CatalogClient',
-            targetType: r'CatalogClient',
-            declaringTypes: [r'CatalogClient'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'query'],
-            parameterAnnotations: [
-              [_i7.RequestParam(r'q')],
-            ],
-            annotations: [_i7.GetMapping(r'/books')],
-            annotationTypes: [r'GetMapping'],
-            targetTypes: [r'CatalogClient'],
-            targetAnnotations: [
-              _i6.FeignClient(r'catalog', url: r'${catalog.url}'),
-            ],
-            targetAnnotationTypes: [r'FeignClient'],
-          ),
-          _i2.MethodSignature(
-            name: r'stock',
-            declaringType: r'CatalogClient',
-            targetType: r'CatalogClient',
-            declaringTypes: [r'CatalogClient'],
-            returnType: r'EventStream',
-            annotations: [_i7.GetMapping(r'/stock/events')],
-            annotationTypes: [r'GetMapping'],
-            targetTypes: [r'CatalogClient'],
-            targetAnnotations: [
-              _i6.FeignClient(r'catalog', url: r'${catalog.url}'),
-            ],
-            targetAnnotationTypes: [r'FeignClient'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$CatalogClientProxy((target as _i1.CatalogClient), invoker),
+      annotations: const [_i3.FeignClient(r'catalog', url: r'${catalog.url}')],
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches CatalogClient, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
     _i2.BeanDefinition<_i1.Shop>(
@@ -349,39 +125,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
       create: (r) =>
           _i1.Shop(r.dependency<_i1.CatalogClient>(name: r'catalog')),
       annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'title',
-            declaringType: r'Shop',
-            targetType: r'Shop',
-            declaringTypes: [r'Shop'],
-            returnType: r'Future',
-            parameterTypes: [r'String'],
-            parameterNames: [r'isbn'],
-            targetTypes: [r'Shop'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-          _i2.MethodSignature(
-            name: r'catalog',
-            declaringType: r'Shop',
-            targetType: r'Shop',
-            declaringTypes: [r'Shop'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'CatalogClient',
-            targetTypes: [r'Shop'],
-            targetAnnotations: [_i2.Service()],
-            targetAnnotationTypes: [r'Service'],
-          ),
-        ],
-        create: (target, invoker) => _$ShopProxy((target as _i1.Shop), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches Shop, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
     _i2.BeanDefinition<_i1.ShopTour>(
       name: r'shopTour',
       source: r'asset:spring_boot_starter_feign/example/example.dart#ShopTour',
-      types: const [_i1.ShopTour, _i5.CommandLineRunner],
+      types: const [_i1.ShopTour, _i7.CommandLineRunner],
       dependencies: const [
         _i2.Dependency(_i1.Shop, name: r'shop'),
         _i2.Dependency(_i1.CatalogClient, name: r'catalog'),
@@ -394,54 +145,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
         _i2.Component(),
         _i2.Log(topic: r'example'),
       ],
-      aopProxy: _i2.AopProxyFactory(
-        signatures: const [
-          _i2.MethodSignature(
-            name: r'run',
-            declaringType: r'CommandLineRunner',
-            targetType: r'ShopTour',
-            declaringTypes: [r'ShopTour', r'CommandLineRunner'],
-            returnType: r'Future',
-            parameterTypes: [r'List'],
-            parameterNames: [r'args'],
-            targetTypes: [r'ShopTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'shop',
-            declaringType: r'ShopTour',
-            targetType: r'ShopTour',
-            declaringTypes: [r'ShopTour'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'Shop',
-            targetTypes: [r'ShopTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-          _i2.MethodSignature(
-            name: r'catalog',
-            declaringType: r'ShopTour',
-            targetType: r'ShopTour',
-            declaringTypes: [r'ShopTour'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'CatalogClient',
-            targetTypes: [r'ShopTour', r'CommandLineRunner'],
-            targetAnnotations: [
-              _i2.Component(),
-              _i2.Log(topic: r'example'),
-            ],
-            targetAnnotationTypes: [r'Component', r'Log'],
-          ),
-        ],
-        create: (target, invoker) =>
-            _$ShopTourProxy((target as _i1.ShopTour), invoker),
+      aopProxy: _i2.AopProxyFactory.pruned(
+        reason: r'the build found no pointcut of the application that matches ShopTour, so it generated no proxy class for it (set the build option aop_prune: false to generate one for every bean).',
       ),
     ),
   ],
@@ -584,7 +289,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '704672da',
+  fingerprint: '92d7f9d9',
 );
 
 /// Starts the application: config files, environment, context, runners

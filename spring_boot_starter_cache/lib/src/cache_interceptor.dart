@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_cache/src/annotations.dart';
 import 'package:spring_boot_starter_cache/src/cache.dart';
 import 'package:spring_boot_starter_cache/src/cache_error_handler.dart';
 import 'package:spring_boot_starter_cache/src/cache_operation.dart';
@@ -30,6 +31,15 @@ import 'package:spring_boot_starter_cache/src/key_generator.dart';
 final class CacheAnnotationPointcut implements AnnotationPointcut {
   /// The pointcut; it has no settings.
   const CacheAnnotationPointcut();
+
+  /// The annotations this pointcut matches; the generator reads them to
+  /// give a proxy class only to the beans that carry one.
+  static const List<Type> annotationTypes = [
+    Cacheable,
+    CachePut,
+    CacheEvict,
+    Caching,
+  ];
 
   /// Whether [annotation] is a `@Cacheable`, `@CachePut`, `@CacheEvict`
   /// or `@Caching`.

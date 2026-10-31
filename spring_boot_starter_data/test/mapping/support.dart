@@ -6,7 +6,49 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 
 enum Genre { fiction, science }
 
-class Author {}
+/// A class nobody described.
+class Unmapped {}
+
+/// An aggregate the books reference.
+@Table('authors')
+class Author {
+  Author({this.id, this.name = ''});
+
+  @Id()
+  int? id;
+
+  String name;
+}
+
+BeanIntrospection<Author> authorIntrospection() => BeanIntrospection<Author>(
+  className: 'Author',
+  annotations: const [Table('authors')],
+  properties: [
+    prop<Author>(
+      'id',
+      int,
+      _intN,
+      (a) => a.id,
+      set: (a, v) => a.id = v as int?,
+      annotations: const [Id()],
+    ),
+    prop<Author>(
+      'name',
+      String,
+      _string,
+      (a) => a.name,
+      set: (a, v) => a.name = v! as String,
+    ),
+  ],
+  constructor: BeanConstructor<Author>(
+    parameters: [
+      param('id', _intN, named: true),
+      param('name', _string, named: true),
+    ],
+    create: (positional, named) =>
+        Function.apply(Author.new, positional, named) as Author,
+  ),
+);
 
 BeanProperty<T> prop<T extends Object>(
   String name,
@@ -15,6 +57,8 @@ BeanProperty<T> prop<T extends Object>(
   Object? Function(T) get, {
   void Function(T, Object?)? set,
   List<Object> annotations = const [],
+  bool hasInitialValue = false,
+  Object? initialValue,
 }) => BeanProperty<T>(
   name,
   type: type,
@@ -23,6 +67,8 @@ BeanProperty<T> prop<T extends Object>(
   get: get,
   set: set,
   annotations: annotations,
+  hasInitialValue: hasInitialValue,
+  initialValue: initialValue,
 );
 
 BeanParameter param(
@@ -715,6 +761,7 @@ BeanIntrospection<H> _holder<H extends Object, C extends Object>(
 RelationalMappingContext testContext({NamingStrategy? naming}) {
   final introspector = BeanIntrospector(
     introspections: [
+      authorIntrospection(),
       bookIntrospection(),
       itemIntrospection(),
       tagIntrospection(),

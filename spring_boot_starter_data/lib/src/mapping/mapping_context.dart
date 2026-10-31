@@ -32,7 +32,17 @@ class MappingException extends InvalidDataAccessApiUsageException {
 ///   on a root); [CreatedDate], [LastModifiedDate] (a `DateTime`),
 ///   [CreatedBy] and [LastModifiedBy] are the audit properties.
 /// * An `AggregateReference<X, ID>` is stored as its id: its
-///   `referencedType` is the type of `ID`.
+///   `referencedType` is the type of `ID`. A property marked [Reference]
+///   (`@Reference(Author) int authorId`) is stored as it is. Both reference
+///   another aggregate: `X` (or the annotation's class) must be described
+///   and marked [Table] with an `@Id`, whose type must be the type of the
+///   id (nullability aside); [OnDelete] says what the database does when
+///   the referenced aggregate is deleted (`setNull` needs a nullable
+///   property). A property whose type is itself an entity, without
+///   [MappedCollection], is refused with a hint to use one of the two.
+/// * [Unique] marks a property whose values are unique, and
+///   [UniqueConstraint] on the class lists the properties of a composite
+///   constraint; both become the entity's `uniqueConstraints`.
 /// * A [MappedCollection] on a `List<C>`, `Set<C>` or `Map<K, C>` (or on a
 ///   single `C`) holds children: `C` must be described and marked [Table];
 ///   its entity is built the same way, as a child (it takes no [Version]).
@@ -167,12 +177,85 @@ class RelationalMappingContext {
     }
     _checkEntity(className, properties, isChild: isChild);
     final table = introspection.annotations.whereType<Table>().firstOrNull;
+    final tableName = namingStrategy.tableName(className, table);
     return PersistentEntity<T>(
       introspection: introspection,
-      tableName: namingStrategy.tableName(className, table),
+      tableName: tableName,
       schema: table?.schema,
       properties: properties,
+      uniqueConstraints: _uniqueConstraints(
+        introspection,
+        className,
+        tableName,
+        properties,
+      ),
     );
+  }
+
+  // The constraints of the [Unique] properties and of the class's
+  // [UniqueConstraint]s, checked.
+  List<PersistentUniqueConstraint> _uniqueConstraints(
+    BeanIntrospection<Object> introspection,
+    String className,
+    String tableName,
+    List<PersistentProperty> properties,
+  ) {
+    final constraints = <PersistentUniqueConstraint>[
+      for (final p in properties)
+        if (p.isUnique)
+          PersistentUniqueConstraint(
+            name: 'uq_${tableName}_${p.columnName}',
+            properties: [p],
+          ),
+    ];
+    final stored = {
+      for (final p in properties)
+        if (!p.isMappedCollection) p.name: p,
+    };
+    for (final annotation
+        in introspection.annotations.whereType<UniqueConstraint>()) {
+      if (annotation.properties.isEmpty) {
+        throw MappingException(
+          '$className: a @UniqueConstraint needs at least one property',
+        );
+      }
+      final covered = <PersistentProperty>[];
+      for (final name in annotation.properties) {
+        final property = stored[name];
+        if (property == null) {
+          throw MappingException(
+            "$className: @UniqueConstraint names the property '$name', "
+            'which is not a stored property of $className (the stored '
+            'properties: ${stored.keys.join(', ')})',
+          );
+        }
+        if (covered.contains(property)) {
+          throw MappingException(
+            "$className: @UniqueConstraint names the property '$name' "
+            'twice',
+          );
+        }
+        covered.add(property);
+      }
+      constraints.add(
+        PersistentUniqueConstraint(
+          name:
+              annotation.name ??
+              'uq_${tableName}_${covered.map((p) => p.columnName).join('_')}',
+          properties: covered,
+        ),
+      );
+    }
+    final names = <String>{};
+    for (final constraint in constraints) {
+      if (!names.add(constraint.name.toLowerCase())) {
+        throw MappingException(
+          '$className has two unique constraints named '
+          "'${constraint.name}'",
+        );
+      }
+    }
+    return constraints;
   }
 
   void _checkEntity(
@@ -257,6 +340,7 @@ class RelationalMappingContext {
       child = _childEntity(where, type, path);
     }
     TypeInfo<Object?>? referenced;
+    Type? aggregateReferenceTarget;
     if (type is GenericType<Object?> &&
         type.isSubtypeOf<AggregateReference<Object?, Object?>>()) {
       if (type.arguments.length != 2) {
@@ -264,7 +348,69 @@ class RelationalMappingContext {
           '$where: an AggregateReference needs its two type arguments',
         );
       }
+      aggregateReferenceTarget = type.arguments[0].type;
       referenced = type.arguments[1];
+    }
+    final plain = annotations.whereType<Reference>().firstOrNull;
+    if (plain != null && aggregateReferenceTarget != null) {
+      throw MappingException(
+        '$where is an AggregateReference and marked @Reference: use one '
+        'of the two',
+      );
+    }
+    if (plain != null && mapped != null) {
+      throw MappingException(
+        '$where: a @MappedCollection cannot be a @Reference',
+      );
+    }
+    final target = plain?.target ?? aggregateReferenceTarget;
+    if (target != null) {
+      _checkReference(
+        where,
+        target,
+        referenced ?? type,
+        isAggregateReference: plain == null,
+      );
+    } else if (mapped == null) {
+      _checkNotAnEntity(where, owner.className, bean.name, type);
+    }
+    final onDelete = annotations.whereType<OnDelete>().firstOrNull;
+    if (onDelete != null) {
+      if (target == null) {
+        throw MappingException(
+          '$where: @OnDelete applies to a reference only: make it an '
+          'AggregateReference or mark it @Reference',
+        );
+      }
+      if (onDelete.action == OnDeleteAction.setNull && !type.nullable) {
+        throw MappingException(
+          '$where: @OnDelete(OnDeleteAction.setNull) needs a nullable '
+          'property, as the reference is set to null when the referenced '
+          'aggregate is deleted',
+        );
+      }
+    }
+    final (hasDefault, defaultValue) = _defaultOf(owner, bean);
+    if (onDelete?.action == OnDeleteAction.setDefault) {
+      if (!hasDefault) {
+        throw MappingException(
+          '$where: @OnDelete(OnDeleteAction.setDefault) needs a default '
+          'value (a constant initializer, `int? authorId = 1`, or a constant '
+          'default of the constructor parameter)',
+        );
+      }
+      if (defaultValue == null && !type.nullable) {
+        throw MappingException(
+          '$where: @OnDelete(OnDeleteAction.setDefault) with a null default '
+          'needs a nullable property',
+        );
+      }
+    }
+    final unique = annotations.any((a) => a is Unique);
+    if (unique && mapped != null) {
+      throw MappingException(
+        '$where: a @MappedCollection cannot be @Unique',
+      );
     }
     final column = annotations.whereType<Column>().firstOrNull;
     return PersistentProperty(
@@ -278,6 +424,101 @@ class RelationalMappingContext {
       mappedCollection: mapped,
       childEntity: child,
       referencedType: referenced,
+      referencedEntityType: target,
+      referencedEntity: target == null
+          ? null
+          : () => getRequiredPersistentEntityOfType(target),
+      onDelete: onDelete?.action ?? OnDeleteAction.noAction,
+      hasExplicitOnDelete: onDelete != null,
+      isUnique: unique,
+      hasDefaultValue: hasDefault,
+      defaultValue: defaultValue,
+    );
+  }
+
+  // The default value of [bean]: its field's constant initializer, else
+  // the constant default of the constructor parameter of the same name.
+  static (bool, Object?) _defaultOf(
+    BeanIntrospection<Object> owner,
+    BeanProperty<Object> bean,
+  ) {
+    if (bean.hasInitialValue) {
+      return (true, bean.initialValue);
+    }
+    for (final parameter
+        in owner.constructor?.parameters ?? const <BeanParameter>[]) {
+      if (parameter.name == bean.name && parameter.hasDefaultValue) {
+        return (true, parameter.defaultValue);
+      }
+    }
+    return (false, null);
+  }
+
+  // A reference needs a described aggregate with an `@Id` of the type the
+  // property holds.
+  void _checkReference(
+    String where,
+    Type target,
+    TypeInfo<Object?> idType, {
+    required bool isAggregateReference,
+  }) {
+    final introspection = introspector.forType(target);
+    if (introspection == null ||
+        !introspection.annotations.any((a) => a is Table)) {
+      throw MappingException(
+        '$where references $target, which is not described: mark '
+        '$target @Table (and register its module) so it can be referenced',
+      );
+    }
+    final ids = [
+      for (final p in introspection.properties)
+        if (p.annotationsOf<Id>().isNotEmpty) p,
+    ];
+    if (ids.length != 1) {
+      throw MappingException(
+        '$where references ${introspection.className}, which has '
+        '${ids.isEmpty ? 'no' : 'more than one'} @Id',
+      );
+    }
+    final id = ids.single;
+    final actual = id.typeInfo?.type;
+    if (actual != null && idType.type != actual && idType is! DynamicType) {
+      throw MappingException(
+        isAggregateReference
+            ? '$where is an AggregateReference<${introspection.className}, '
+                  '${idType.type}>, but ${introspection.className}.${id.name} '
+                  'is a $actual: the id type must be $actual'
+            : '$where is a @Reference(${introspection.className}) of type '
+                  '${idType.type}, but ${introspection.className}.${id.name} '
+                  'is a $actual: the property must be a $actual',
+      );
+    }
+  }
+
+  // `Author author;` without `@MappedCollection`: another aggregate (or a
+  // child) held as an object, which the starter never guesses.
+  void _checkNotAnEntity(
+    String where,
+    String ownerName,
+    String propertyName,
+    TypeInfo<Object?> type,
+  ) {
+    final introspection = introspector.forType(type.type);
+    if (introspection == null ||
+        !introspection.annotations.any((a) => a is Table)) {
+      return;
+    }
+    final name = introspection.className;
+    final id = [
+      for (final p in introspection.properties)
+        if (p.annotationsOf<Id>().isNotEmpty) p,
+    ].firstOrNull;
+    final idType = id?.typeInfo?.type ?? 'int';
+    throw MappingException(
+      '$where is another aggregate: use AggregateReference<$name, $idType> '
+      'or @Reference($name) $idType ${propertyName}Id (a field of an entity '
+      'type is never guessed: in Spring Data JDBC it would be a child of '
+      '$ownerName, a @MappedCollection)',
     );
   }
 

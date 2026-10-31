@@ -84,7 +84,7 @@ void main() {
 
     test('findAll, findAllById, existsById and count', () async {
       await withExample((app) async {
-        await seedBooks(app.books);
+        await seedBooks(app.authors, app.books);
         expect(ids(await app.books.findAll()), [1, 2, 3, 4, 5, 6, 7, 8]);
         expect(ids(await app.books.findAllById([5, 2, 99])), [2, 5]);
         expect(await app.books.existsById(3), isTrue);
@@ -95,7 +95,7 @@ void main() {
 
     test('findAllSorted and findAllPaged', () async {
       await withExample((app) async {
-        await seedBooks(app.books);
+        await seedBooks(app.authors, app.books);
         final byYear = await app.books.findAllSorted(
           Sort.byOrders([const SortOrder.desc('year')]),
         );
@@ -119,7 +119,7 @@ void main() {
   group('delete', () {
     test('deleteById, delete, deleteAllById, deleteAllOf, deleteAll', () async {
       await withExample((app) async {
-        await seedBooks(app.books);
+        await seedBooks(app.authors, app.books);
         await app.books.deleteById(1);
         expect(await app.books.existsById(1), isFalse);
         // A missing id is no error.
@@ -400,6 +400,9 @@ void main() {
   group('aggregate references', () {
     test('are stored as ids and read back as references', () async {
       await withExample((app) async {
+        await app.authors.saveAll(
+          [for (var i = 0; i < 7; i++) Author(name: 'A$i')],
+        );
         final saved = await app.books.save(
           Book(title: 'Dune', year: 1965, author: author(7)),
         );
@@ -416,11 +419,10 @@ void main() {
       '@UseStore(memory) with @UseDataSource has a store of its own',
       () async {
         await withExample((app) async {
-          await app.authors.save(Author(name: 'Herbert'));
-          expect(await app.authors.count(), 1);
+          await app.reviews.save(Review(text: 'Herbert is great'));
+          expect(await app.reviews.count(), 1);
           // The default store never saw it.
-          expect(app.store.size(app.entity<Author>()), 0);
-          expect(await app.authors.findByNameStartingWith('Her'), hasLength(1));
+          expect(app.store.size(app.entity<Review>()), 0);
         });
       },
     );

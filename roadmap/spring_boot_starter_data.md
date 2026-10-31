@@ -98,6 +98,52 @@ the application adds the driver it wants, the generator sees it.
 3. SQLite (the `sqlite3` package): server and Flutter; `spring.sql.init`
    (`schema.sql`, `data.sql`); migrations `db/migration/V1__*.sql`
    (Flyway's naming, `spring.sql.migration.*`).
+   Built (server); decided while building it:
+   - the driver: the generator writes a thin glue over `package:sqlite3`
+     into each module of an application that lists `sqlite3` (a template
+     in the starter, `lib/src/jdbc/drivers/sqlite3.dart.tmpl`, its symbols
+     imported through the module's prefixes); everything else
+     (`SqliteJdbcDriver`, `SqliteDialect`, transactions, savepoints, one
+     statement at a time per connection) is the starter's, without
+     importing `sqlite3`. `postgres` is one more row of the same table;
+   - the JDBC layer: `PooledDataSource`, `DataSourceTransactionManager`,
+     `JdbcTemplate`, `NamedParameterJdbcTemplate`, `JdbcClient`,
+     `DataClassRowMapper`; `JdbcDataStore` turns derived queries into SQL,
+     `@Query` with named parameters, SpEL and DTOs; one test suite runs on
+     the in-memory store and on SQLite and must give the same answers,
+     with hostile strings in every operator;
+   - startup: the `dataSource` bean runs scripts, migrations and the
+     schema check before handing out its first connection, so no
+     application code reaches the database first;
+   - SQLite's limits, in the docs: a `@Lock` query takes the database's
+     write lock and must be the transaction's first statement; no
+     statement timeout (the package cannot interrupt); a busy wait blocks
+     the isolate (keep `busy-timeout` short in a UI); two transactions
+     that read then write: the second fails with
+     `CannotAcquireLockException`; ids reused after a delete (no
+     `AUTOINCREMENT`); `lower()` folds ASCII only (to fix: a Dart
+     `lower` registered through the glue);
+   - references and keys (the owner): another aggregate is referenced
+     as `AggregateReference<Author, int>` or as a plain id
+     `@Reference(Author) int authorId` (the id type checked against the
+     target's `@Id`); a field typed as an entity is a startup error with
+     both forms as the hint (never guessed: Spring Data JDBC would read it
+     as a child). Every reference gets a foreign key and an index in
+     generated schemas; `@OnDelete(OnDeleteAction.cascade / setNull /
+     setDefault / restrict / noAction)` (Hibernate's name) is its action.
+     `@Unique` and `@UniqueConstraint([...])` (JPA's names: Dart cannot
+     add a named `unique:` to `@Column('x')`). Defaults: a field's
+     constant initializer (or the constructor parameter's constant
+     default), described by the generator, is the column's `DEFAULT` and
+     what `setDefault` sets. The in-memory store enforces all of it as
+     SQLite does with `foreign_keys = ON` (checked case by case against
+     sqlite3), and the shared suite runs it on both. `validate` checks
+     them: an explicit annotation missing in the database is an error, a
+     plain reference without a foreign key a warning;
+   - left for Flutter: the app's directory for relative file names
+     (`SqliteJdbcDriver.baseDirectory`, set by the Flutter starter), the
+     web build (WASM), a background isolate for the synchronous calls;
+     `@DataTest`.
 4. PostgreSQL (the `postgres` package): a connection pool
    (`spring.datasource.pool.*`), `FOR UPDATE` / `FOR SHARE`, `NOWAIT`,
    `SKIP LOCKED`.
@@ -119,7 +165,8 @@ the application adds the driver it wants, the generator sees it.
    - a distributed lock (`RedisLockRegistry`, Spring Integration's) and
      optimistic updates with `WATCH` / `MULTI`.
    Not in Flutter apps.
-6. Supabase: in its own starter, on its official packages
+6. Supabase, after the 0.6.0 release (the owner): in its own starter, on
+   its official packages
    ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)):
    a store for these repositories, its Auth as a login of the security
    starters.
@@ -726,8 +773,9 @@ model makes cheap.
   PostgreSQL advisory lock (`pg_advisory_lock`), the others wait, then
   find nothing to do. SQLite: one process, a `BEGIN IMMEDIATE`.
 - `spring.sql.init` (`schema.sql`, `data.sql`, `mode=embedded|always|
-  never`) for simple cases and tests, as in Boot; not both with Flyway
-  (Boot's rule: the start fails).
+  never`) for simple cases and tests, as in Boot; not both with
+  migrations on one database: the start fails (stricter than Boot, which
+  only advises against it — the schema has one owner).
 
 **Validation against the entities** (an extension;
 `spring.data.jdbc.schema=validate`, the default): after the migrations,

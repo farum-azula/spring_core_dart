@@ -93,6 +93,16 @@ final class MethodSecurityPointcut implements AnnotationPointcut {
   /// The stateless pointcut.
   const MethodSecurityPointcut();
 
+  /// The annotations this pointcut matches; the generator reads them to
+  /// give a proxy class only to the beans that carry one.
+  static const List<Type> annotationTypes = [
+    PreAuthorize,
+    PostAuthorize,
+    Secured,
+    PreFilter,
+    PostFilter,
+  ];
+
   @override
   bool matches(MethodSignature signature, String beanName) =>
       !MethodSecurityAttributes.of(signature).isEmpty;

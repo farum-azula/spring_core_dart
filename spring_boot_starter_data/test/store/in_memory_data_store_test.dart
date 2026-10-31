@@ -310,6 +310,9 @@ void main() {
     test(
       'an aggregate reference matches by its id, given as either',
       () => run(() async {
+        for (final name in ['x', 'y']) {
+          await store.insert(app.entity<Author>(), Author(name: name));
+        }
         await add('a', authorId: 1);
         await add('b', authorId: 2);
         await add('c');

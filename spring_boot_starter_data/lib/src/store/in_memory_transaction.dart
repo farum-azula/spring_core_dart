@@ -61,6 +61,11 @@ final class InMemoryTransaction {
   /// the store.
   Map<String, Map<Object?, StoredAggregate?>> writes = {};
 
+  /// The writes of the statement running, to undo it when it fails (a
+  /// statement is all or nothing, as in SQL); null between statements.
+  /// Internal to the store.
+  List<JournalEntry>? journal;
+
   /// The lock acquisitions, in order. Internal to the store.
   final acquisitions = <LockAcquisition>[];
 
@@ -83,6 +88,15 @@ final class InMemoryTransaction {
   @override
   String toString() => 'InMemoryTransaction($label, $state)';
 }
+
+/// One write of a statement, with what the row was before it: kept to undo
+/// a statement that failed. Internal to the in-memory store.
+typedef JournalEntry = ({
+  String table,
+  Object? id,
+  bool existed,
+  StoredAggregate? previous,
+});
 
 /// A point in a transaction that it can return to, with the writes as they
 /// were and without the locks taken since.

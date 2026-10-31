@@ -477,8 +477,8 @@ class Slow {
       );
       expect(output, contains(r'class_$OrdersProxy'));
       expect(output, isNot(contains(r'_$MailProxy')));
-      // The signatures stay: an advisor from elsewhere fails loudly.
-      expect(output, contains('AopProxyFactory.unavailable('));
+      // Nothing is generated for its members, only the reason.
+      expect(output, contains('AopProxyFactory.pruned('));
       expect(
         output,
         _has('found no pointcut of the application that matches Mail'),
@@ -504,15 +504,20 @@ class Slow {
       expect(all, contains(r'class_$SlowProxy'));
     });
 
+    test('nothing advises: no proxy class at all', () async {
+      // The build reads the advisors of the auto-configurations: with no
+      // aspect and none of their annotations, nothing is advised.
+      final none = await _generateApp(header);
+      expect(none, isNot(contains(r'class_$MailProxy')));
+      expect(none, isNot(contains(r'class_$OrdersProxy')));
+    });
+
     test('in doubt, every bean keeps its proxy', () async {
       final everything = await generate(
         "@Before('execution(* Orders.*(..))') void b() {}",
         prune: false,
       );
       expect(everything, contains(r'class_$MailProxy'));
-      // Without advice nothing is known about the advisors elsewhere.
-      final none = await _generateApp(header);
-      expect(none, contains(r'class_$MailProxy'));
       // A @ComponentScan module may be imported by any other module, whose
       // aspects the build cannot see: it is never pruned.
       final module = await _generate(
@@ -535,14 +540,19 @@ class _Noop implements MethodInterceptor {
 }
 """);
       expect(advisor, contains(r'class_$MailProxy'));
-      // A starter's annotation-driven advisor (`@Cacheable`) may match.
+      // A starter's annotation-driven advisor (`@Cacheable`) matches the
+      // beans carrying its annotations; a look-alike of the application's
+      // own advises nothing.
       final starter = await _generateApp("""
+import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart' as cache;
 $header
 class Cacheable { const Cacheable(); }
-@Service() class Cached { @Cacheable() void get() {} }
+@Service() class Cached { @cache.Cacheable('c') int get(int id) => id; }
+@Service() class LookAlike { @Cacheable() void get() {} }
 @Aspect() @Component() class A { @Before('execution(* Orders.*(..))') void b() {} }
 """);
       expect(starter, contains(r'class_$CachedProxy'));
+      expect(starter, isNot(contains(r'_$LookAlikeProxy')));
       expect(starter, isNot(contains(r'_$MailProxy')));
     });
   });
@@ -1481,7 +1491,8 @@ class NoCtor {
         output,
         _has(
           "BeanProperty<Form>(r'id', type: int, typeInfo: const "
-          'ClassType<int>(), get: (bean) => bean.id)',
+          'ClassType<int>(), hasInitialValue: true, initialValue: 1, '
+          'get: (bean) => bean.id)',
         ),
       );
       expect(
